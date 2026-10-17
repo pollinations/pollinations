@@ -24,9 +24,7 @@ await writeFile(
         ...existing
             .split("\n")
             .filter((line) =>
-                /^(ECONOMICS_PLANNING_FILE_ID|ECONOMICS_GOOGLE_DRIVE_CREDENTIALS)=/.test(
-                    line,
-                ),
+                /^ECONOMICS_GOOGLE_DRIVE_CREDENTIALS=/.test(line),
             ),
         `TINYBIRD_ECONOMICS_READ_TOKEN=${JSON.stringify(reader)}`,
         'POLLINATIONS_AUTH_BASE_URL="http://localhost:3000"',

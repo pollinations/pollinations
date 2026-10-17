@@ -120,7 +120,10 @@ export function canonicalPollenRows(
 
 export type DataSource = Exclude<
     keyof Data,
-    "providerObservations" | "vendorStatements" | "vendorPlans"
+    | "providerObservations"
+    | "vendorStatements"
+    | "vendorPlans"
+    | "planningError"
 >;
 
 export const DATA_SOURCES = [
@@ -136,10 +139,12 @@ export const DATA_SOURCES = [
 export async function loadAll(
     sources: readonly DataSource[] = DATA_SOURCES,
     signal?: AbortSignal,
+    journal?: EconomicsPrivateConfig,
 ): Promise<Data> {
     // Every requested source remains required. Unrelated views do not wait
     // for an expensive or unavailable endpoint they do not consume.
     const wanted = new Set(sources);
+    let planningError: string | undefined;
     if (wanted.has("privateConfig")) wanted.add("vendorLedger");
     const [
         opTransactions,
@@ -174,8 +179,14 @@ export async function loadAll(
                   signal,
               )
             : undefined,
-        wanted.has("privateConfig") ? fetchPlanning(signal) : undefined,
+        wanted.has("privateConfig")
+            ? fixturesMode()
+                ? parsePlanningDocument(PLANNING_DOCUMENT_FIXTURE)
+                : journal
+            : undefined,
     ]);
+    if (wanted.has("privateConfig") && !planningDocument)
+        planningError = "Planning document unavailable";
     const canonicalize = <T extends { vendor: string }>(row: T): T => ({
         ...row,
         vendor: canonicalVendor(row.vendor),
@@ -184,16 +195,21 @@ export async function loadAll(
     const vendorPlans = vendorLedger
         ?.filter((row) => row.type === "planned")
         .map(canonicalize);
-    for (const row of vendorPlans ?? []) validateVendorPlan(row);
-    const privateConfig = planningDocument
-        ? {
-              ...planningDocument,
-              forecastRules: ledgerForecastRules(
-                  vendorPlans ?? [],
-                  planningDocument,
-              ),
-          }
-        : undefined;
+    let privateConfig: Data["privateConfig"];
+    if (planningDocument) {
+        try {
+            for (const row of vendorPlans ?? []) validateVendorPlan(row);
+            privateConfig = {
+                ...planningDocument,
+                forecastRules: ledgerForecastRules(
+                    vendorPlans ?? [],
+                    planningDocument,
+                ),
+            };
+        } catch {
+            planningError = "Vendor planning rows are invalid";
+        }
+    }
 
     const providerObservations = collectProviderObservations({
         opTransactions,
@@ -220,17 +236,6 @@ export async function loadAll(
         userBalances,
         providerObservations,
         privateConfig,
+        ...(planningError ? { planningError } : {}),
     };
-}
-
-async function fetchPlanning(
-    signal?: AbortSignal,
-): Promise<EconomicsPrivateConfig> {
-    if (fixturesMode()) return parsePlanningDocument(PLANNING_DOCUMENT_FIXTURE);
-    const response = await fetch("/api/economics/planning", {
-        credentials: "same-origin",
-        signal,
-    });
-    if (!response.ok) throw new TbError("Planning document", response.status);
-    return parsePlanningDocument(await response.json());
 }

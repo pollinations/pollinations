@@ -1,13 +1,14 @@
 import { Heading, Surface, TabButton } from "@pollinations/ui";
 import { useMemo, useState } from "react";
 import { ProductMixCard } from "../components/ProductMixCard";
+import { useAmountDisplay } from "../components/ReconcilePro";
 import { TrendPlot } from "../components/TrendPlot";
 import {
     categoryLabel,
     EXPENSE_CATEGORY_ORDER,
     isComputeOrInfrastructureCategory,
 } from "../lib/categories";
-import { fmtUsd as axisUsd, fmtNumber } from "../lib/format";
+import { fmtUsd as axisUsd } from "../lib/format";
 import { monthLabel, monthName, monthShift } from "../lib/months";
 import { monthlyProductMix } from "../lib/productMix";
 import type { ReconciliationIssue } from "../lib/reconciliation";
@@ -22,7 +23,6 @@ import {
 } from "../lib/trends";
 import { unitEconomicsReport } from "../lib/unitEconomics";
 import type { Data } from "../types";
-import { fmtRunwayUsd as usd } from "./RunwayTab";
 
 type ExpenseCategory = (typeof EXPENSE_CATEGORY_ORDER)[number];
 type TrendRow = TrendMonth &
@@ -132,6 +132,7 @@ function TrendChart({
     scope?: TrendScope;
     onScopeChange?: (scope: TrendScope) => void;
 }) {
+    const { fmtNumber, fmtUsd: usd } = useAmountDisplay();
     const visibleSeries = series.filter((s) => !hiddenSeries.includes(s.key));
     const LegendItem = onToggleSeries ? "button" : "span";
     const active =
@@ -537,7 +538,7 @@ export function TrendsTab({
                             (issue) =>
                                 issue.month === row.month &&
                                 issue.group === "financial" &&
-                                issue.affects.includes("sales"),
+                                issue.vendor === "Stripe",
                         ),
                     pollenProvisional:
                         missingUsageMonths.has(row.month) ||

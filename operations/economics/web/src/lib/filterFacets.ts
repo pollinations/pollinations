@@ -9,12 +9,7 @@ import {
 } from "./months";
 import { resolveProvider, transactionCategory } from "./providerRegistry";
 
-export type LedgerTab =
-    | "sales"
-    | "op-transactions"
-    | "op-pollen"
-    | "vendor-ledger"
-    | "revenue-share-ledger";
+export type LedgerTab = "op-transactions" | "op-pollen" | "vendor-ledger";
 
 export type FacetOption = {
     value: string;
@@ -72,10 +67,6 @@ export function ledgerFacets(
     tab: LedgerTab,
     selection: LedgerFacetSelection,
 ): LedgerFacets {
-    if (tab === "revenue-share-ledger" || tab === "sales") {
-        return { vendors: [], categories: [] };
-    }
-
     if (tab === "op-transactions") {
         const rows = (data.opTransactions ?? []).filter(
             (row) =>

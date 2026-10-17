@@ -19,9 +19,15 @@ import {
     withUniqueRowKeys,
 } from "../components/DataTable";
 import { EvidenceAction, EvidencePreview } from "../components/Evidence";
+import { useAmountDisplay } from "../components/ReconcilePro";
 import { StatCards } from "../components/StatCards";
 import type { DriveDocumentLink } from "../lib/documents";
-import { fmtMarginPct, fmtNumber, fmtPeriod, fmtUsd } from "../lib/format";
+import {
+    fmtMarginPct,
+    fmtNumber,
+    fmtPeriod,
+    hasVisibleAmount,
+} from "../lib/format";
 import type { MonthFilterValue } from "../lib/months";
 import {
     creatorSettlementRows,
@@ -75,8 +81,19 @@ function revenueSources(row: RevenueShareRow) {
 }
 
 function RevenueShareTable({ rows }: { rows: RevenueShareRow[] }) {
+    const { pro, fmtUsd } = useAmountDisplay();
     const { headerProps, rows: sortedRows } = useSortableRows(
-        rows,
+        rows.filter(
+            (row) =>
+                pro ||
+                hasVisibleAmount([
+                    row.paidUsageUsd,
+                    row.paidCreatorEarningsUsd,
+                    row.paidPollinationsProfitUsd,
+                    row.questUsageUsd,
+                    row.questCreatorEarningsUsd,
+                ]),
+        ),
         SORT_COLUMNS,
         { key: "paidPollinationsProfit", direction: "desc" },
     );
@@ -239,6 +256,7 @@ export function RevenueShareTab({
     data: Data;
     month?: MonthFilterValue;
 }) {
+    const { fmtUsd } = useAmountDisplay();
     const [previewDocument, setPreviewDocument] =
         useState<DriveDocumentLink | null>(null);
     const rows = useMemo(() => revenueShareRows(data, month), [data, month]);

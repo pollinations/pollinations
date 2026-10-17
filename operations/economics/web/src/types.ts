@@ -195,7 +195,7 @@ export type ArchiveCheck = {
 export type EconomicsPrivateConfig = {
     recordedAt?: string;
     forecastRules: Record<string, PrivateForecastRule>;
-    documentUrl?: string;
+    vendorDocuments?: Record<string, string>;
     reviewNotes: {
         planNotes?: { entryId: string; explanation: string }[];
         archiveChecks?: ArchiveCheck[];
@@ -222,4 +222,5 @@ export type Data = {
     userBalances?: UserBalanceSummaryRow[];
     providerObservations?: ProviderObservation[];
     privateConfig?: EconomicsPrivateConfig;
+    planningError?: string;
 };

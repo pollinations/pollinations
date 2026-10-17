@@ -1,6 +1,5 @@
 export type Env = {
     Bindings: {
-        ECONOMICS_PLANNING_FILE_ID?: string;
         ECONOMICS_GOOGLE_DRIVE_CREDENTIALS?: string;
         ASSETS: { fetch: typeof fetch };
         POLLINATIONS_AUTH_BASE_URL?: string;

@@ -13,6 +13,7 @@ import {
     fmtUnsignedPct,
     fmtUsd,
     fmtUtcDateTime,
+    hasVisibleAmount,
 } from "./format";
 
 describe("format", () => {
@@ -175,4 +176,19 @@ describe("precision at inspection boundaries", () => {
         expect(fmtUnsignedPct(99.999)).toBe("<100%");
         expect(fmtUnsignedPct(100)).toBe("100%");
     });
+});
+
+it("filters only known sub-dollar amounts using raw magnitudes", () => {
+    expect(hasVisibleAmount([0, 0.99, -0.99])).toBe(false);
+    expect(hasVisibleAmount([1])).toBe(true);
+    expect(hasVisibleAmount([-1])).toBe(true);
+    expect(hasVisibleAmount([0, null])).toBe(true);
+    expect(hasVisibleAmount([undefined])).toBe(true);
+    expect(hasVisibleAmount([Number.NaN])).toBe(true);
+});
+
+it("removes binary arithmetic noise while retaining sub-cent precision", () => {
+    expect(fmtExactUsd(0.1 + 0.2)).toBe("$0.3");
+    expect(fmtExactNumber(-5.9399999999999995)).toBe("−5.94");
+    expect(fmtExactUsd(0.000472)).toBe("$0.000472");
 });

@@ -1,18 +1,18 @@
 import { HTTPException } from "hono/http-exception";
+import { VENDOR_JOURNALS_FOLDER_ID } from "../src/lib/driveSources";
+import {
+    assembleVendorJournals,
+    type VendorJournal,
+} from "../src/lib/vendorJournals";
 import type { Env } from "./env";
 
-// Fixed private file: callers cannot choose another Drive file or an arbitrary URL.
-export async function readPlanningDocument(
-    env: Env["Bindings"],
-): Promise<unknown> {
-    const fileId = env.ECONOMICS_PLANNING_FILE_ID;
-    if (
-        !env.ECONOMICS_GOOGLE_DRIVE_CREDENTIALS ||
-        !fileId ||
-        !/^[\w-]+$/.test(fileId)
-    )
+// Fixed private folder: callers cannot choose another Drive source or URL.
+type DriveEnv = Pick<Env["Bindings"], "ECONOMICS_GOOGLE_DRIVE_CREDENTIALS">;
+
+async function driveToken(env: DriveEnv): Promise<string> {
+    if (!env.ECONOMICS_GOOGLE_DRIVE_CREDENTIALS)
         throw new HTTPException(503, {
-            message: "Private planning document connection is not configured",
+            message: "Vendor journal connection is not configured",
         });
     let credentials: {
         client_email: string;
@@ -28,7 +28,7 @@ export async function readPlanningDocument(
             throw new Error();
     } catch {
         throw new HTTPException(503, {
-            message: "Private planning document credential is invalid",
+            message: "Vendor journal credential is invalid",
         });
     }
     const encode = (value: string) =>
@@ -69,29 +69,72 @@ export async function readPlanningDocument(
     });
     if (!tokenResponse.ok)
         throw new HTTPException(502, {
-            message: "Private planning document authentication failed",
+            message: "Vendor journal authentication failed",
         });
     const token = (await tokenResponse.json()) as { access_token?: string };
     if (!token.access_token)
         throw new HTTPException(502, {
-            message: "Private planning document authentication failed",
+            message: "Vendor journal authentication failed",
         });
-    const response = await fetch(
-        `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-        {
-            headers: { Authorization: `Bearer ${token.access_token}` },
-            signal: AbortSignal.timeout(15_000),
-        },
-    );
-    if (!response.ok)
-        throw new HTTPException(502, {
-            message: "Private planning document could not be read",
+    return token.access_token;
+}
+
+export async function readVendorJournals(env: DriveEnv) {
+    const token = await driveToken(env);
+    const headers = { Authorization: `Bearer ${token}` };
+    const files: { id: string; name: string }[] = [];
+    let pageToken = "";
+    do {
+        const query = new URLSearchParams({
+            q: `'${VENDOR_JOURNALS_FOLDER_ID}' in parents and trashed = false and mimeType = 'application/json'`,
+            fields: "nextPageToken,incompleteSearch,files(id,name)",
+            pageSize: "1000",
+            supportsAllDrives: "true",
+            includeItemsFromAllDrives: "true",
+            orderBy: "name",
         });
-    try {
-        return await response.json();
-    } catch {
-        throw new HTTPException(502, {
-            message: "Private planning document is not valid JSON",
-        });
+        if (pageToken) query.set("pageToken", pageToken);
+        const response = await fetch(
+            `https://www.googleapis.com/drive/v3/files?${query}`,
+            { headers, signal: AbortSignal.timeout(15_000) },
+        );
+        if (!response.ok)
+            throw new HTTPException(502, {
+                message: "Vendor journals could not be listed",
+            });
+        const page = (await response.json()) as {
+            files: { id: string; name: string }[];
+            nextPageToken?: string;
+            incompleteSearch?: boolean;
+        };
+        if (!Array.isArray(page.files) || page.incompleteSearch)
+            throw new HTTPException(502, {
+                message: "Vendor journal listing is incomplete",
+            });
+        files.push(...page.files);
+        pageToken = page.nextPageToken ?? "";
+    } while (pageToken);
+    const journals: { id: string; name: string; content: VendorJournal }[] = [];
+    // Bound parallel reads; one token and one complete snapshot per dashboard load.
+    for (let offset = 0; offset < files.length; offset += 8) {
+        journals.push(
+            ...(await Promise.all(
+                files.slice(offset, offset + 8).map(async (file) => {
+                    const response = await fetch(
+                        `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&supportsAllDrives=true`,
+                        { headers, signal: AbortSignal.timeout(15_000) },
+                    );
+                    if (!response.ok)
+                        throw new HTTPException(502, {
+                            message: `Vendor journal could not be read: ${file.name}`,
+                        });
+                    return {
+                        ...file,
+                        content: (await response.json()) as VendorJournal,
+                    };
+                }),
+            )),
+        );
     }
+    return assembleVendorJournals(journals);
 }

@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
+import { ReconcileProContext } from "../components/ReconcilePro";
 import type { Data, OpPollenRow, VendorLedgerRow } from "../types";
 import { ManagedInferenceTab } from "./UnitEconomicsTab";
 
@@ -142,10 +143,51 @@ it("includes unmatched provider costs while leaving status details to reconcilia
     );
     const cards = html.slice(0, html.indexOf("<table"));
     expect(cards).toContain('aria-label="Result"');
-    expect(cards).not.toMatch(/provisional/i);
+    expect(cards).toMatch(/provisional/i);
     expect(cards).toContain(">With credits<");
     expect(cards).toContain(">Without credits<");
     expect(cards).toContain("+$42");
     expect(cards).toContain("+$35");
     expect(cards).not.toContain(">Unknown<");
+});
+
+it("hides a tiny model while including its exact cost and usage in the headline totals", () => {
+    const smallUsage = {
+        ...usage("google"),
+        model: "tiny-model",
+        price_paid: 0.75,
+        price_quests: 0,
+        byop_paid: 0,
+        cost_paid: 0.6,
+    };
+    const smallCost = {
+        ...cost("google", "2026-09"),
+        entry_id: "tiny",
+        model: "tiny-model",
+        paid: -0.6,
+    };
+    const data: Data = {
+        opPollen: [usage("google"), smallUsage],
+        vendorLedger: [cost("google", "2026-09"), smallCost],
+    };
+    const before = JSON.stringify(data);
+    const html = renderToStaticMarkup(
+        createElement(ManagedInferenceTab, { data, month: "2026-09" }),
+    );
+    const cards = html.slice(0, html.indexOf("<table"));
+    expect(cards).toContain("$101 total");
+    expect(cards).toContain("$51 total");
+    expect(html).not.toContain("tiny-model");
+    const pro = renderToStaticMarkup(
+        createElement(
+            ReconcileProContext.Provider,
+            { value: true },
+            createElement(ManagedInferenceTab, { data, month: "2026-09" }),
+        ),
+    );
+    expect(pro).toContain("tiny-model");
+    expect(pro).toContain("$100.75 total");
+    expect(pro).toContain("$50.6 total");
+    expect(pro).toContain("$0.75");
+    expect(JSON.stringify(data)).toBe(before);
 });

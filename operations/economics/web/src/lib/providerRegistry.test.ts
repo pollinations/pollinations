@@ -19,6 +19,7 @@ import {
     canonicalProviderAccountId,
     cashOnlyTransaction,
     collectProviderObservations,
+    initializeProviderRegistry,
     ledgerCategory,
     meterDriftExplanation,
     missingProviderMappings,
@@ -98,6 +99,31 @@ const data = (overrides: Partial<Data> = {}): Data => ({
 });
 
 describe("provider registry", () => {
+    it("rejects invalid or incomplete Drive definitions without replacing the loaded catalog", () => {
+        const before = resolveProvider("aws");
+        const document = JSON.parse(
+            process.env.ECONOMICS_VENDOR_DETAILS ?? "null",
+        );
+        expect(() =>
+            initializeProviderRegistry({ version: 1, providers: [] }),
+        ).toThrow("incomplete");
+        const invalid = structuredClone(document);
+        invalid.providers[0].category = "made-up-category";
+        expect(() => initializeProviderRegistry(invalid)).toThrow(
+            "invalid definition",
+        );
+        const duplicate = structuredClone(document);
+        duplicate.providers.push(duplicate.providers[0]);
+        expect(() => initializeProviderRegistry(duplicate)).toThrow(
+            "invalid definition",
+        );
+        const mixed = structuredClone(document);
+        mixed.providers[0].modelLabels = {};
+        expect(() => initializeProviderRegistry(mixed)).toThrow(
+            "invalid definition",
+        );
+        expect(resolveProvider("aws")).toBe(before);
+    });
     it("keeps every canonical ID and alias unique", () => {
         const names = PROVIDER_REGISTRY.flatMap((provider) => [
             provider.id,

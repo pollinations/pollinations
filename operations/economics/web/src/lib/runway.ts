@@ -21,7 +21,7 @@ import {
     forecastPaymentTiming,
     forecastRuleEntries,
 } from "./forecastTerms";
-import { fmtUsd } from "./format";
+import { fmtNumber, fmtUsd } from "./format";
 import { canConvertToUsd, toUsd } from "./fx";
 import { monthShift, WINDOW_START } from "./months";
 import {
@@ -309,7 +309,7 @@ function ruleBasedForecasts(
             }
             if (scheduled.month < currentMonth) {
                 flags.push(
-                    `Scheduled ${vendor} ${scheduled.currency} ${scheduled.amount} (${scheduled.month}) is overdue or unmatched; confirm receipt/payment and link the Bank entry, or reschedule. It is not assumed settled.`,
+                    `Scheduled ${vendor} ${scheduled.currency} ${fmtNumber(scheduled.amount)} (${scheduled.month}) is overdue or unmatched; confirm receipt/payment and link the Bank entry, or reschedule. It is not assumed settled.`,
                 );
                 continue;
             }

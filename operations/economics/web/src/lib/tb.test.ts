@@ -59,24 +59,22 @@ describe("loadAll", () => {
         expect(result.revenueShare).toBeUndefined();
         expect(result.privateConfig).toBeUndefined();
     });
-    it("loads authenticated Drive decisions and non-posting Vendor plans", async () => {
+    it("reuses the loaded Drive decisions with non-posting Vendor plans", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn((input: RequestInfo | URL) => {
                 const pipe = decodeURIComponent(
                     String(input).split("/").at(-1) ?? "",
                 );
-                return Promise.resolve(
-                    Response.json(
-                        pipe === "planning"
-                            ? PLANNING_DOCUMENT_FIXTURE
-                            : { data: FIXTURES[pipe] },
-                    ),
-                );
+                return Promise.resolve(Response.json({ data: FIXTURES[pipe] }));
             }),
         );
 
-        const result = await loadAll();
+        const result = await loadAll(
+            undefined,
+            undefined,
+            PLANNING_DOCUMENT_FIXTURE,
+        );
 
         for (const rows of [result.vendorLedger, result.opPollen]) {
             expect(rows?.some((row) => row.vendor === "vast")).toBe(true);
@@ -108,7 +106,7 @@ describe("loadAll", () => {
         );
     });
 
-    it("fails closed when the Drive document is absent", async () => {
+    it("keeps missing journal data explicit when no source snapshot is supplied", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn((input: RequestInfo | URL) => {
@@ -123,9 +121,13 @@ describe("loadAll", () => {
             }),
         );
 
-        await expect(loadAll()).rejects.toThrow(
-            "Planning document: expected object",
+        const result = await loadAll();
+        expect(result.opTransactions).toHaveLength(
+            FIXTURES.economics_bank_ledger_api.length,
         );
+        expect(result.vendorLedger?.length).toBeGreaterThan(0);
+        expect(result.privateConfig).toBeUndefined();
+        expect(result.planningError).toBe("Planning document unavailable");
     });
 
     it("preserves dashboard authentication status", async () => {

@@ -31,12 +31,14 @@ The canonical Economics Tinybird datasource and pipe definitions
 (`economics_*`) live in
 [`enter.pollinations.ai/observability/`](../../enter.pollinations.ai/observability/).
 
-`operations/economics/provider-registry.json` is the single vendor list. Every
-counterparty that appears in the bank ledger, the vendor ledger, or a Runway
-line is registered there with its identity (aliases, accounts, connector) and
-its business category (`category`, plus `cashRules` for vendors whose bank
-description decides between purposes, and `runwayLine` for merchants folded
-into one Runway line). `web/src/lib/categories.ts` only defines the category
+The private [Vendor journals folder](https://drive.google.com/drive/folders/1GnyBRJEGtuZjdJl9qrBapH6jfUpmG9ei)
+owns vendor definitions, accounts, access and collection details, and business
+categories (`category`, `cashRules` and `runwayLine`). The dashboard reads and
+validates its files after sign-in, once per page load, before running calculations.
+There is no repository fallback. `operations/economics/provider-registry.json`
+keeps canonical vendor IDs/aliases and exact historical model mappings only.
+The two sources join on vendor ID; their vendor sets must match.
+`web/src/lib/categories.ts` only defines the category
 vocabulary; the vendor ledger `type` still maps `inference`/`gpu` to compute
 and `infra` to infrastructure. A vendor registered as `uncategorized` has not
 been reviewed yet and keeps its canonical supplied category until it is.
@@ -52,9 +54,9 @@ incomplete coverage or a classification exceeding its Sales component prevents
 an adjusted result.
 
 Planning amounts belong in non-posting Vendor `type=planned` rows; they never
-book actual spending or cash. The single private [Planning & review document](https://drive.google.com/file/d/1r9n-RL1B-s6BhcvaTUT_Oj_toFimnmal/view)
-holds remaining non-monetary rules and review notes, read through the approved
-local service-account connection. The old `economics_private_config` datasource
+book actual spending or cash. Each vendor journal holds that vendor’s remaining
+non-monetary rules and review notes alongside its definition. The app reads the
+folder through the approved service-account connection. The old `economics_private_config` datasource
 and endpoint were removed from staging after validating unchanged totals.
 Vendor source statements store invoice/report totals as
 non-posting facts (`type=statement`, `statement_amount`, zero paid/credit).

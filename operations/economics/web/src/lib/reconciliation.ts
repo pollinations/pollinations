@@ -45,7 +45,6 @@ export const RECONCILIATION_PAGES = {
     balances: "Balances",
     "vendor-ledger": "Vendor ledger",
     "op-transactions": "Bank",
-    sales: "Sales",
     "op-pollen": "Pollen",
 } as const;
 export type ReconciliationPage = keyof typeof RECONCILIATION_PAGES;
@@ -72,6 +71,7 @@ export type ReconciliationAmount = {
     group: ReconciliationGroup;
 };
 export type ReconciliationException = {
+    relatedAmounts?: ReconciliationAmount[];
     id: string;
     month: string;
     vendor: string;
@@ -455,6 +455,27 @@ export function reconciliationState(data: Data, now = new Date()) {
         if (reviewed || acknowledged.length) {
             acceptedExceptions.push({
                 id: `${row.month}|${row.vendor}`,
+                relatedAmounts: acknowledged.length
+                    ? [
+                          {
+                              amountUsd: acknowledged.reduce(
+                                  (sum, transaction) =>
+                                      sum +
+                                      Math.abs(
+                                          toUsd(
+                                              transaction.amount,
+                                              transaction.currency,
+                                              row.month,
+                                          ),
+                                      ),
+                                  0,
+                              ),
+                              amountLabel:
+                                  "Recorded payments · document unavailable",
+                              group: "validation",
+                          },
+                      ]
+                    : undefined,
                 month: row.month,
                 vendor: row.vendor,
                 messages: [
@@ -758,7 +779,7 @@ export function reconciliationState(data: Data, now = new Date()) {
                 "Stripe",
                 issue.financial ? "figures" : "quality",
                 issue.message,
-                ["sales", "trends", "runway"],
+                ["trends", "runway"],
                 issue.financial ? 0 : 2,
                 issue.financial ? null : 0,
                 issue.financial
@@ -877,6 +898,15 @@ export function reconciliationState(data: Data, now = new Date()) {
         exception.evidence = [
             ...new Set([...exception.evidence, ...issue.evidence]),
         ];
+        exception.relatedAmounts = issue.relatedAmounts?.length
+            ? issue.relatedAmounts
+            : [
+                  {
+                      amountUsd: issue.amountUsd,
+                      amountLabel: issue.amountLabel,
+                      group: issue.group,
+                  },
+              ];
         byKey.delete(exception.id);
     }
     return {

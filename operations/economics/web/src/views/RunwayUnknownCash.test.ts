@@ -74,7 +74,19 @@ it.each([true, false])(
                 ?.match(/<td\b[^>]*>[\s\S]*?<\/td>/g)
                 ?.find((item) => item.includes("(−300)"));
             const shown = cell?.replace(/<[^>]+>/g, "").replace(/\s+/g, "");
-            expect(shown).toBe("(−300)");
+            expect(shown).toBe(unknown ? "(−300)*" : "(−300)");
         }
     },
 );
+
+it("withholds forecast cards and columns when planning is unavailable", () => {
+    const html = renderToStaticMarkup(
+        createElement(RunwayTab, {
+            data: { planningError: "Drive unavailable" },
+            year: "2026",
+        }),
+    );
+    expect(html).not.toContain("Cash runway");
+    expect(html).not.toContain(">Plan<");
+    expect(html).toContain("Cash balance");
+});

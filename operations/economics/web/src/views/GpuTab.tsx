@@ -19,13 +19,14 @@ import {
     withUniqueRowKeys,
 } from "../components/DataTable";
 import { Gauge, gaugeParts } from "../components/EconomicsGauge";
+import { useAmountDisplay } from "../components/ReconcilePro";
 import { PairedStatCards } from "../components/StatCards";
 import {
     fmtMarginPct,
     fmtNumber,
     fmtRateUsd,
     fmtUnsignedPct,
-    fmtUsd,
+    hasVisibleAmount,
 } from "../lib/format";
 import {
     type GpuResourceRow,
@@ -40,12 +41,6 @@ import type { MonthFilterValue, ValueFilter } from "../lib/months";
 import { signedToneOrSoft } from "../lib/tone";
 import type { Data } from "../types";
 
-function fmtSignedUsd(value: number | null): string {
-    if (value == null) return "–";
-    const formatted = fmtUsd(value);
-    return value > 0 ? `+${formatted}` : formatted;
-}
-
 const RESOURCE_SORT_COLUMNS: readonly SortColumn<GpuResourceRow>[] = [
     { key: "resource", value: (row) => row.resourceName },
     { key: "vendor", value: (row) => row.vendor },
@@ -59,8 +54,17 @@ const RESOURCE_SORT_COLUMNS: readonly SortColumn<GpuResourceRow>[] = [
 ];
 
 function GpuInstanceTable({ rows }: { rows: GpuResourceRow[] }) {
+    const { pro, fmtUsd } = useAmountDisplay();
     const { headerProps, rows: sorted } = useSortableRows(
-        rows,
+        rows.filter(
+            (row) =>
+                pro ||
+                hasVisibleAmount([
+                    row.paidCostUsd,
+                    row.creditCostUsd,
+                    row.totalCostUsd,
+                ]),
+        ),
         RESOURCE_SORT_COLUMNS,
         { key: "totalCostUsd", direction: "desc" },
     );
@@ -213,6 +217,7 @@ export function GpuTab({
     month?: MonthFilterValue;
     vendor?: ValueFilter;
 }) {
+    const { pro, fmtUsd, fmtSignedUsd } = useAmountDisplay();
     const resourceRows = useMemo(
         () => visibleGpuResourceRows(gpuResourceRows(data, month), vendor),
         [data, month, vendor],
@@ -257,10 +262,27 @@ export function GpuTab({
         ],
         [],
     );
-    const { headerProps, rows: sorted } = useSortableRows(rows, sortColumns, {
-        key: "fullCostResultUsd",
-        direction: "asc",
-    });
+    const { headerProps, rows: sorted } = useSortableRows(
+        rows.filter(
+            (row) =>
+                pro ||
+                hasVisibleAmount([
+                    ...(row.kind === "overhead"
+                        ? []
+                        : [row.paidUsd, row.retainedUsd, row.questUsd]),
+                    row.paidCostUsd,
+                    row.creditCostUsd,
+                    row.totalCostUsd,
+                    row.currentResultUsd,
+                    row.fullCostResultUsd,
+                ]),
+        ),
+        sortColumns,
+        {
+            key: "fullCostResultUsd",
+            direction: "asc",
+        },
+    );
     const toggle = (key: string) => {
         setExpanded((current) => {
             const next = new Set(current);

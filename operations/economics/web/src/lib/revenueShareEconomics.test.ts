@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { Data, RevenueShareSourceRow } from "../types";
 import {
     creatorSettlementRows,
-    revenueShareLedgerRows,
     revenueShareRows,
     revenueShareSummary,
 } from "./revenueShareEconomics";
@@ -76,39 +75,6 @@ describe("revenueShareRows", () => {
                 "2026-07",
             ),
         ).toThrow("Revenue Share sources must be an array");
-    });
-});
-
-describe("revenueShareLedgerRows", () => {
-    it("returns one compact row for each developer source", () => {
-        const rows = revenueShareLedgerRows(
-            {
-                revenueShare: [
-                    share({
-                        row_type: "source",
-                        sources_json: JSON.stringify([
-                            ["app", "app-1", "App One", "openai"],
-                            ["app", "app-1", "App One", "flux"],
-                        ]),
-                    }),
-                ],
-            },
-            "2026-07",
-        );
-
-        expect(rows).toEqual([
-            expect.objectContaining({
-                recipientId: "developer-1",
-                source: {
-                    type: "app",
-                    id: "app-1",
-                    name: "App One",
-                    models: ["flux", "openai"],
-                },
-                paidCreatorEarningsUsd: 35,
-                questCreatorEarningsUsd: 15,
-            }),
-        ]);
     });
 });
 

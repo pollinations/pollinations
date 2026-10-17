@@ -65,6 +65,16 @@ export function fmtMonthDay(value: string): string {
     return name ? `${name.slice(0, 3)} ${Number(match[2])}` : value;
 }
 
+// Display filtering only: unknown amounts stay visible; totals use every record.
+export function hasVisibleAmount(
+    values: readonly (number | null | undefined)[],
+): boolean {
+    return values.some(
+        (value) =>
+            value == null || !Number.isFinite(value) || Math.abs(value) >= 1,
+    );
+}
+
 // Display whole units; preserve nonzero amounts below one without showing decimals.
 export function fmtSmartNumber(value: number): string {
     const magnitude = Math.abs(value);
@@ -94,9 +104,12 @@ export function fmtNumber(value: number | null | undefined): string {
 
 export function fmtExactNumber(value: number | null | undefined): string {
     if (value == null || !Number.isFinite(value)) return "–";
-    const magnitude = Math.abs(value).toLocaleString("en-US", {
-        maximumSignificantDigits: 21,
-    });
+    const magnitude = Number(Math.abs(value).toPrecision(12)).toLocaleString(
+        "en-US",
+        {
+            maximumSignificantDigits: 12,
+        },
+    );
     return value < 0 ? `−${magnitude}` : magnitude;
 }
 

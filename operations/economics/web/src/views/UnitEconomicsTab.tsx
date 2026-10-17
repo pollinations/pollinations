@@ -22,12 +22,13 @@ import {
     type GaugePalette,
     gaugeParts,
 } from "../components/EconomicsGauge";
+import { useAmountDisplay } from "../components/ReconcilePro";
 import { PairedStatCards } from "../components/StatCards";
 import {
     type ComputeMode,
     providerMonthComputeMode,
 } from "../lib/computeModes";
-import { fmtMarginPct, fmtUnsignedPct, fmtUsd } from "../lib/format";
+import { fmtMarginPct, fmtUnsignedPct, hasVisibleAmount } from "../lib/format";
 import { signedToneOrSoft } from "../lib/tone";
 import {
     type UnitEconomicsGrain,
@@ -38,12 +39,6 @@ import {
     unitPerformancePct,
 } from "../lib/unitEconomics";
 import type { Data } from "../types";
-
-function fmtSignedUsd(value: number | null): string {
-    if (value == null) return "–";
-    const formatted = fmtUsd(value);
-    return value > 0 ? `+${formatted}` : formatted;
-}
 
 function mixShare(left: number | null, right: number | null): number | null {
     if (left == null || right == null) return null;
@@ -79,6 +74,7 @@ function MixGauge({
 }
 
 function FullCostResult({ row }: { row: UnitEconomicsRow }) {
+    const { fmtUsd, fmtSignedUsd } = useAmountDisplay();
     return (
         <Tooltip
             triggerAs="span"
@@ -110,6 +106,7 @@ function FullCostResult({ row }: { row: UnitEconomicsRow }) {
 }
 
 function CurrentResult({ row }: { row: UnitEconomicsRow }) {
+    const { fmtUsd, fmtSignedUsd } = useAmountDisplay();
     return (
         <Tooltip
             triggerAs="span"
@@ -193,6 +190,7 @@ function UnitEconomicsTable({
     month: string;
     view: UnitEconomicsView;
 }) {
+    const { pro, fmtUsd, fmtSignedUsd } = useAmountDisplay();
     const grain: UnitEconomicsGrain = view === "vendors" ? "provider" : "model";
     const {
         modeIndex,
@@ -200,6 +198,7 @@ function UnitEconomicsTable({
         summary,
         currentResultUsd,
         fullCostResultUsd,
+        provisional,
     } = useMemo(
         () => unitEconomicsReport(data, month, view),
         [data, month, view],
@@ -228,7 +227,20 @@ function UnitEconomicsTable({
         [modeIndex, view],
     );
     const { headerProps, rows: sortedRows } = useSortableRows(
-        rows,
+        rows.filter(
+            (row) =>
+                pro ||
+                hasVisibleAmount([
+                    row.retainedPaidUsd,
+                    row.paidPollenUsd,
+                    row.questPollenUsd,
+                    row.providerCashUsd,
+                    row.providerCreditUsd,
+                    row.providerUsageUsd,
+                    row.netCashContributionUsd,
+                    row.economicContributionUsd,
+                ]),
+        ),
         sortColumns,
         DEFAULT_SORT,
     );
@@ -316,6 +328,11 @@ function UnitEconomicsTable({
         },
         {
             label: "Result",
+            total: data.planningError
+                ? "Review unavailable"
+                : provisional
+                  ? "Provisional"
+                  : undefined,
             items: [
                 {
                     label: "With credits",

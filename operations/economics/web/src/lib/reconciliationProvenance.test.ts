@@ -282,7 +282,7 @@ it("keeps supporting evidence and secondary amounts collapsed while preserving i
     expect(html).not.toContain("<details open");
 });
 
-it("scopes accepted exceptions to the overview year and page without adding open checks", () => {
+it("scopes accepted exceptions to the year across all pages without adding open checks", () => {
     const exception = {
         id: "2026-02|pruna",
         vendor: "pruna",
@@ -295,7 +295,6 @@ it("scopes accepted exceptions to the overview year and page without adding open
         createElement(ReconciliationTab, {
             issues: [],
             year: "2026",
-            initialPage: "inference",
             onOpen: () => {},
             acceptedExceptions: [
                 exception,
@@ -314,11 +313,11 @@ it("scopes accepted exceptions to the overview year and page without adding open
             ],
         }),
     );
-    expect(html).toContain("Known limitations · 1");
+    expect(html).toContain("Known limitations · 2");
     expect(html).toContain("0 open checks");
     expect(html).toContain("Accepted missing history.");
     expect(html).not.toContain("prior-year");
-    expect(html).not.toContain("bank-only");
+    expect(html).toContain("bank-only");
 });
 
 it("retains a verified bank invoice when its service-month cost is still missing", () => {

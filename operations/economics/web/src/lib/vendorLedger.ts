@@ -1,4 +1,5 @@
 import type { Data, VendorLedgerRow } from "../types";
+import { fmtNumber } from "./format";
 import { toUsd } from "./fx";
 
 export function vendorLedgerMonth(row: Pick<VendorLedgerRow, "start">): string {
@@ -91,7 +92,7 @@ export function vendorSourceDifferences(data: Data) {
                     explanation:
                         compared == null || recorded == null
                             ? `${row.resource_name}: linked source records are missing or incompatible. Difference unknown.`
-                            : `${row.resource_name}: ${recorded} ${row.currency} recorded; linked records total ${compared} ${row.currency}. ${balance ? `Balance snapshot ${row.start.slice(0, 10)} compared with linked funding and usage history; verify intervening coverage.` : `Source period ${row.start.slice(0, 10)} → ${row.end.slice(0, 10) || row.start.slice(0, 10)}. This difference is not an additional booked cost.`}`,
+                            : `${row.resource_name}: ${fmtNumber(recorded)} ${row.currency} recorded; linked records total ${fmtNumber(compared)} ${row.currency}. ${balance ? `Balance snapshot ${row.start.slice(0, 10)} compared with linked funding and usage history; verify intervening coverage.` : `Source period ${row.start.slice(0, 10)} → ${row.end.slice(0, 10) || row.start.slice(0, 10)}. This difference is not an additional booked cost.`}`,
                     evidence: [
                         ...new Set(
                             [row, ...linked].flatMap(

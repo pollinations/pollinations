@@ -67,7 +67,7 @@ function pollenChart(data: Data, issues: ReconciliationIssue[] = []) {
 }
 afterEach(() => vi.useRealTimers());
 
-it("keeps the recorded inference result without repeating its reconciliation status", () => {
+it("keeps the recorded inference result and marks incomplete coverage", () => {
     const data = completeData();
     data.vendorLedger?.push(cost("2026-09", "openai", -3));
     const before = JSON.stringify(data);
@@ -78,7 +78,7 @@ it("keeps the recorded inference result without repeating its reconciliation sta
         createElement(ManagedInferenceTab, { data, month: "2026-09" }),
     );
     const cards = html.slice(0, html.indexOf("<table"));
-    expect(cards).not.toContain("Provisional");
+    expect(cards).toContain("Provisional");
     expect(cards).toContain("+$147");
     expect(cards).not.toContain("Actual +$147");
     expect(cards).not.toContain(">Unknown<");

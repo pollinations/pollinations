@@ -505,15 +505,15 @@ describe("Sales ledger reconciliation", () => {
         coverage_complete: 1,
     };
     const issues = (rows: StripeSalesRow[]) =>
-        reconciliationState({ stripeSales: rows }, now).issues.filter((issue) =>
-            issue.affects.includes("sales"),
+        reconciliationState({ stripeSales: rows }, now).issues.filter(
+            (issue) => issue.vendor === "Stripe",
         );
-    it("links missing and unverified closed-month sales to Sales, Trends and Runway", () => {
+    it("links missing and unverified closed-month sales to Trends and Runway", () => {
         const missing = issues([]).find((issue) => issue.month === "2026-09");
         expect(missing?.messages).toEqual([
             "Calendar-month sales are missing.",
         ]);
-        expect(missing?.affects).toEqual(["sales", "trends", "runway"]);
+        expect(missing?.affects).toEqual(["trends", "runway"]);
         const unverified = issues([
             sales,
             { ...sales, currency: "EUR", coverage_complete: undefined },

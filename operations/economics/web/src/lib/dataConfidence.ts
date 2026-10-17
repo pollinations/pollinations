@@ -1,4 +1,7 @@
+import type { OpTransactionRow } from "../types";
+import { hasReconciledTransactionEvidence } from "./documents";
 import { fmtUsd } from "./format";
+import { toUsd } from "./fx";
 import type { ReconciliationIssue } from "./reconciliation";
 import type { unitEconomicsReport } from "./unitEconomics";
 
@@ -61,4 +64,32 @@ export function dataConfidence(
             ? `${issues.length} reconciliation ${issues.length === 1 ? "item" : "items"} in this period.`
             : "No issues detected by the available checks.",
     };
+}
+
+// Use the effective Bank ledger, not issue amounts: multiple issues can refer
+// to the same movement. This measures recorded cash only, not missing sources.
+export function unreconciledBankAmount(
+    transactions: OpTransactionRow[] | undefined,
+    year: string,
+): number | null {
+    const rows = transactions?.filter(
+        (row) => row.kind === "transaction" && row.date.startsWith(`${year}-`),
+    );
+    if (!rows?.length) return null;
+    const seen = new Set<string>();
+    let amount = 0;
+    for (const row of rows) {
+        const key = `${row.source}|${row.entry_id}`;
+        if (seen.has(key) || !Number.isFinite(row.amount)) return null;
+        seen.add(key);
+        if (!hasReconciledTransactionEvidence(row)) {
+            try {
+                amount += Math.abs(toUsd(row.amount, row.currency, row.date));
+            } catch {
+                // A missing conversion must not turn unknown money into zero.
+                return null;
+            }
+        }
+    }
+    return amount;
 }

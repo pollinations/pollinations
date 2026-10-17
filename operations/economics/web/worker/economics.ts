@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { StatusCode } from "hono/utils/http-status";
 import type { Env } from "./env.ts";
-import { readPlanningDocument } from "./planning";
+import { readVendorJournals } from "./planning";
 
 const READ_PIPES = new Set([
     "economics_bank_ledger_api",
@@ -14,13 +14,9 @@ const READ_PIPES = new Set([
 ]);
 
 export const economicsRoutes = new Hono<Env>()
-    .get("/planning", async (c) => {
+    .get("/vendor-journals", async (c) => {
         c.header("Cache-Control", "private, no-store");
-        const document = await readPlanningDocument(c.env);
-        return c.json({
-            ...(document as Record<string, unknown>),
-            documentUrl: `https://drive.google.com/file/d/${c.env.ECONOMICS_PLANNING_FILE_ID}/view`,
-        });
+        return c.json(await readVendorJournals(c.env));
     })
     .get("/pipes/:pipe", async (c) => {
         const pipe = c.req.param("pipe");
@@ -56,7 +52,7 @@ export const economicsRoutes = new Hono<Env>()
                 "__tb__deployment",
                 c.env.TINYBIRD_DEPLOYMENT_ID,
             );
-        const upstream = await fetch(url, {
+        const upstream = await fetch(url.toString(), {
             headers: { Authorization: `Bearer ${token}` },
         });
         return c.newResponse(upstream.body, {

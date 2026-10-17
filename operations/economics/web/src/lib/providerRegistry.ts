@@ -136,15 +136,160 @@ type ProviderRegistryFile = {
     // identify historical costs. Removing a model from the product does not
     // invalidate what it cost.
     retiredModels: string[];
-    providers: ProviderDefinition[];
+    providers: Pick<
+        ProviderDefinition,
+        "id" | "aliases" | "modelLabels" | "pollenComputeMode"
+    >[];
 };
 
 export type ProviderReconciliationExplanation =
     | PollenWitnessExplanation
     | MeterDriftExplanation;
 
-export const PROVIDER_REGISTRY = (registryJson as ProviderRegistryFile)
-    .providers;
+export let PROVIDER_REGISTRY: ProviderDefinition[] = [];
+let providerResolver:
+    | ReturnType<typeof createProviderResolver<ProviderDefinition>>
+    | undefined;
+
+// One immutable source snapshot per dashboard load. Never calculate with an
+// empty catalog or silently fall back to a second repository copy.
+export function initializeProviderRegistry(value: unknown): void {
+    const document = value as {
+        version?: unknown;
+        providers?: ProviderDefinition[];
+    } | null;
+    if (document?.version !== 1 || !Array.isArray(document.providers))
+        throw new Error("Vendor details: invalid document");
+    const mappings = new Map(
+        (registryJson as ProviderRegistryFile).providers.map((provider) => [
+            provider.id,
+            provider,
+        ]),
+    );
+    const seen = new Set<string>();
+    const text = (value: unknown): value is string =>
+        typeof value === "string" && value.trim().length > 0;
+    const month = (value: unknown) =>
+        value == null ||
+        (typeof value === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(value));
+    const providers = document.providers.map((provider) => {
+        if (
+            !provider ||
+            !text(provider.id) ||
+            seen.has(provider.id) ||
+            !mappings.has(provider.id) ||
+            !text(provider.label) ||
+            !(
+                provider.category === "uncategorized" ||
+                isCategory(provider.category)
+            ) ||
+            ![
+                "direct",
+                "capacity",
+                "mixed",
+                "internal",
+                "not_applicable",
+            ].includes(provider.meteringBasis) ||
+            typeof provider.monthlyReview !== "boolean" ||
+            typeof provider.balanceTracking !== "boolean" ||
+            !month(provider.activeFrom) ||
+            !month(provider.activeTo) ||
+            (provider.cashOnly !== undefined &&
+                typeof provider.cashOnly !== "boolean") ||
+            (provider.runwayLine !== undefined && !text(provider.runwayLine)) ||
+            !(provider.connector === null || text(provider.connector)) ||
+            !(
+                provider.collectionMethod === null ||
+                ["api", "cli", "dashboard", "internal"].includes(
+                    provider.collectionMethod,
+                )
+            ) ||
+            ["aliases", "modelLabels", "pollenComputeMode"].some((key) =>
+                Object.hasOwn(provider, key),
+            )
+        )
+            throw new Error(
+                `Vendor details: invalid definition ${provider?.id ?? ""}`,
+            );
+        for (const key of ["cashRules", "accounts", "access"] as const)
+            if (provider[key] !== undefined && !Array.isArray(provider[key]))
+                throw new Error(
+                    `Vendor details: invalid ${key} for ${provider.id}`,
+                );
+        for (const rule of provider.cashRules ?? []) {
+            if (
+                !rule ||
+                !isCategory(rule.category) ||
+                [rule.match, rule.equals].some(
+                    (values) =>
+                        values !== undefined &&
+                        (!Array.isArray(values) ||
+                            values.some(
+                                (v) => !text(v) || v !== v.trim().toLowerCase(),
+                            )),
+                ) ||
+                (rule.inflow !== undefined &&
+                    typeof rule.inflow !== "boolean") ||
+                (rule.cashOnly !== undefined &&
+                    typeof rule.cashOnly !== "boolean") ||
+                !(rule.match?.length || rule.equals?.length || rule.inflow)
+            )
+                throw new Error(
+                    `Vendor details: invalid cash rule for ${provider.id}`,
+                );
+        }
+        const accounts = new Set<string>();
+        for (const account of provider.accounts ?? []) {
+            if (
+                !account ||
+                !text(account.id) ||
+                !text(account.label) ||
+                !text(account.activeFrom) ||
+                !month(account.activeFrom) ||
+                !month(account.activeTo) ||
+                (account.activeTo != null &&
+                    account.activeTo < account.activeFrom) ||
+                (account.aliases !== undefined &&
+                    (!Array.isArray(account.aliases) ||
+                        account.aliases.some((alias) => !text(alias))))
+            )
+                throw new Error(
+                    `Vendor details: invalid account for ${provider.id}`,
+                );
+            for (const name of new Set(
+                [account.id, ...(account.aliases ?? [])].map(
+                    normalizeProviderName,
+                ),
+            )) {
+                if (accounts.has(name))
+                    throw new Error(
+                        `Vendor details: duplicate account for ${provider.id}`,
+                    );
+                accounts.add(name);
+            }
+        }
+        for (const access of provider.access ?? [])
+            if (
+                !access ||
+                !text(access.workspace) ||
+                !text(access.url) ||
+                !/^https?:\/\//.test(access.url)
+            )
+                throw new Error(
+                    `Vendor details: invalid access link for ${provider.id}`,
+                );
+        seen.add(provider.id);
+        return { ...provider, ...mappings.get(provider.id) };
+    });
+    if (seen.size !== mappings.size)
+        throw new Error("Vendor details: incomplete vendor catalog");
+    if (providerResolver)
+        throw new Error(
+            "Vendor details already loaded; reload to use a new revision",
+        );
+    PROVIDER_REGISTRY = providers;
+    providerResolver = createProviderResolver(PROVIDER_REGISTRY);
+}
 // Exact historical identities, with dated rules for aliases that changed model.
 export const CANONICAL_MODEL_RENAMES: Readonly<
     Record<string, CanonicalModelTarget>
@@ -172,7 +317,10 @@ export function pollenVendorOverride(
             month <= override.until,
     )?.to;
 }
-export const resolveProvider = createProviderResolver(PROVIDER_REGISTRY);
+export function resolveProvider(value: string): ProviderDefinition | undefined {
+    if (!providerResolver) throw new Error("Vendor details have not loaded");
+    return providerResolver(value);
+}
 
 export function normalizeProviderName(value: string): string {
     return value.trim().toLowerCase();

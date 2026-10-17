@@ -2,11 +2,12 @@ import {
     TabButton,
     TableBody,
     TableCell,
+    TableDisclosureButton,
     TableHead,
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
     DataTable,
     type SortColumn,
@@ -14,386 +15,692 @@ import {
     useSortableRows,
 } from "../components/DataTable";
 import { EvidenceAction, EvidencePreview } from "../components/Evidence";
-import { StatCards } from "../components/StatCards";
-import { dataConfidence } from "../lib/dataConfidence";
+import { useAmountDisplay } from "../components/ReconcilePro";
+import { categoryLabel } from "../lib/categories";
+import { unreconciledBankAmount } from "../lib/dataConfidence";
 import { type DriveDocumentLink, driveDocumentLink } from "../lib/documents";
-import { fmtExactUsd as fmtUsd } from "../lib/format";
+import { VENDOR_JOURNALS_URL } from "../lib/driveSources";
+import { hasVisibleAmount } from "../lib/format";
 import { monthName } from "../lib/months";
+import { canonicalProvider } from "../lib/providerRegistry";
 import {
     RECONCILIATION_GROUPS,
     RECONCILIATION_PAGES,
     RECONCILIATION_TYPES,
     type ReconciliationException,
-    type ReconciliationGroup,
     type ReconciliationIssue,
     type ReconciliationPage,
     type ReconciliationType,
 } from "../lib/reconciliation";
+import { vendorDirectoryRows } from "../lib/vendorDirectory";
+import type { Data, OpTransactionRow } from "../types";
+import { VendorAccounts } from "./VendorAccounts";
+import { journalEntries, VendorJournal } from "./VendorJournal";
 
-const SORT_COLUMNS: SortColumn<ReconciliationIssue>[] = [
+type VendorChecks = {
+    vendor: string;
+    issues: ReconciliationIssue[];
+    limitations: ReconciliationException[];
+    bankAmount: number | null;
+    unknowns: number;
+};
+
+const SORT_COLUMNS: SortColumn<VendorChecks>[] = [
     { key: "vendor", value: (row) => row.vendor },
-    { key: "month", value: (row) => row.month },
-    { key: "messages", value: (row) => row.messages.join(" ") },
-    { key: "amount", value: (row) => row.amountUsd },
-    {
-        key: "affects",
-        value: (row) =>
-            row.affects.map((page) => RECONCILIATION_PAGES[page]).join(", "),
-    },
+    { key: "checks", value: (row) => row.issues.length },
+    { key: "unknowns", value: (row) => row.unknowns },
+    { key: "amount", value: (row) => row.bankAmount },
 ];
 
 export function ReconciliationTab({
+    data,
     issues,
+    transactions,
     year,
     onOpen,
-    initialPage = null,
     acceptedExceptions = [],
 }: {
+    data?: Data;
     issues: ReconciliationIssue[];
+    transactions?: OpTransactionRow[];
     acceptedExceptions?: ReconciliationException[];
     year: string;
-    initialPage?: ReconciliationPage | null;
     onOpen: (page: ReconciliationPage, month: string) => void;
 }) {
+    const { pro, fmtUsd } = useAmountDisplay();
     const [previewDocument, setPreviewDocument] =
         useState<DriveDocumentLink | null>(null);
-    const [page, setPage] = useState<ReconciliationPage | "">(
-        initialPage ?? "",
+    const [type, setType] = useState<ReconciliationType | "known" | "">("");
+    const [query, setQuery] = useState("");
+    const directory = useMemo(
+        () => (data ? vendorDirectoryRows(data, new Date()) : []),
+        [data],
     );
-    const [type, setType] = useState<ReconciliationType | "">("");
-    const [section, setSection] = useState<ReconciliationGroup>("financial");
-    const scoped = issues.filter(
-        (row) =>
-            row.month.startsWith(`${year}-`) &&
-            (!page || row.affects.includes(page)),
+    const journal = useMemo(
+        () =>
+            data?.privateConfig
+                ? journalEntries(data.privateConfig, data.vendorPlans)
+                : [],
+        [data],
     );
+    const [expanded, setExpanded] = useState<string[]>([]);
+    const scoped = issues.filter((row) => row.month.startsWith(`${year}-`));
     const accepted = acceptedExceptions.filter(
         (row) =>
-            row.month.startsWith(`${year}-`) &&
-            (!page || row.affects.includes(page)),
+            row.month.startsWith(`${year}-`) && (!type || type === "known"),
     );
-    const financial = scoped.filter((row) => row.group === "financial");
-    const validation = scoped.filter((row) => row.group === "validation");
-    const modelDetails = scoped.filter((row) => row.group === "models");
-    const unknownFinancialAmounts = financial.filter(
-        (row) => row.amountUsd == null,
-    ).length;
-    const confidence = dataConfidence(scoped);
-    const sectionRows = scoped.filter((row) => row.group === section);
-    const visible = sectionRows.filter(
-        (row) => !type || row.types.includes(type),
+    const visible = scoped.filter(
+        (row) =>
+            (!type || (type !== "known" && row.types.includes(type))) &&
+            (pro ||
+                hasVisibleAmount([
+                    row.amountUsd,
+                    ...(row.relatedAmounts ?? []).map(
+                        (amount) => amount.amountUsd,
+                    ),
+                ])),
     );
-    const { rows, headerProps } = useSortableRows(visible, SORT_COLUMNS, {
+    const vendors = [
+        ...new Set([
+            ...(!type ? directory.map((row) => row.provider.id) : []),
+            ...visible.map((row) => canonicalProvider(row.vendor)),
+            ...accepted.map((row) => canonicalProvider(row.vendor)),
+            ...(!type
+                ? journal.map((row) =>
+                      canonicalProvider(row.journalVendor ?? row.vendor),
+                  )
+                : []),
+        ]),
+    ].filter((vendor) => {
+        const row = directory.find((row) => row.provider.id === vendor);
+        return [
+            vendor,
+            row?.provider.label,
+            ...(row?.accounts.flatMap((account) => [
+                account.id,
+                account.label,
+                account.login,
+            ]) ?? []),
+        ]
+            .join(" ")
+            .toLowerCase()
+            .includes(query.trim().toLowerCase());
+    });
+    const grouped: VendorChecks[] = vendors.map((vendor) => {
+        const vendorIssues = visible.filter(
+            (issue) => canonicalProvider(issue.vendor) === vendor,
+        );
+        return {
+            vendor,
+            issues: vendorIssues,
+            limitations: accepted.filter(
+                (row) => canonicalProvider(row.vendor) === vendor,
+            ),
+            unknowns: vendorIssues.filter((issue) => issue.amountUsd == null)
+                .length,
+            bankAmount: unreconciledBankAmount(
+                transactions?.filter(
+                    (row) => canonicalProvider(row.vendor) === vendor,
+                ),
+                year,
+            ),
+        };
+    });
+    const { rows, headerProps } = useSortableRows(grouped, SORT_COLUMNS, {
         key: "amount",
         direction: "desc",
     });
     const types = Object.keys(RECONCILIATION_TYPES) as ReconciliationType[];
-    const groups = [{ key: section, rows }];
-    const unknownAmounts = visible.filter(
-        (row) => row.amountUsd == null,
-    ).length;
+    const displayedChecks = grouped.reduce(
+        (sum, row) => sum + row.issues.length,
+        0,
+    );
+    const unknownAmounts = grouped.reduce((sum, row) => sum + row.unknowns, 0);
     return (
         <section className="flex flex-col gap-4">
-            <section aria-label="Reconciliation overview">
-                <StatCards
-                    items={[
-                        {
-                            label: "Data confidence",
-                            value: confidence.status,
-                            detail: `${scoped.length} open checks · ${year}`,
-                            tone: scoped.length ? "warn" : "success",
-                        },
-                        {
-                            label: "Financial gaps",
-                            value: financial.length,
-                            detail: unknownFinancialAmounts
-                                ? `${unknownFinancialAmounts} with unknown amounts`
-                                : "Could change totals",
-                            tone: financial.length ? "warn" : "base",
-                        },
-                        {
-                            label: "Amounts to validate",
-                            value: validation.length,
-                            detail: "Payments, documents and usage matches",
-                        },
-                        {
-                            label: "Model/GPU details",
-                            value: modelDetails.length,
-                            detail: "Allocation only; provider totals unchanged",
-                        },
-                    ]}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <input
+                    aria-label="Search vendors"
+                    placeholder="Search vendor or account…"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    className="w-64 rounded-lg border border-theme-text-soft/20 bg-transparent px-3 py-2 text-sm"
                 />
-            </section>
-            <fieldset
-                className="flex flex-wrap gap-2"
-                aria-label="Reconciliation sections"
-            >
-                {(
-                    Object.keys(RECONCILIATION_GROUPS) as ReconciliationGroup[]
-                ).map((key) => (
+                <a
+                    className="text-sm underline"
+                    href={VENDOR_JOURNALS_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                >
+                    Open vendor journals in Drive ↗
+                </a>
+            </div>
+            <fieldset className="flex flex-wrap gap-2" aria-label="Issue type">
+                <TabButton
+                    active={type === ""}
+                    aria-pressed={type === ""}
+                    size="sm"
+                    variant="soft"
+                    onClick={() => setType("")}
+                >
+                    All
+                </TabButton>
+                {types.map((key) => (
                     <TabButton
                         key={key}
-                        active={section === key}
-                        aria-pressed={section === key}
+                        active={type === key}
+                        aria-pressed={type === key}
                         size="sm"
                         variant="soft"
-                        onClick={() => {
-                            setSection(key);
-                            setType("");
-                        }}
+                        onClick={() => setType(key)}
                     >
-                        {RECONCILIATION_GROUPS[key]} ·{" "}
-                        {scoped.filter((row) => row.group === key).length}
+                        {RECONCILIATION_TYPES[key]} ·{" "}
+                        {scoped.filter((row) => row.types.includes(key)).length}
                     </TabButton>
                 ))}
+                <TabButton
+                    active={type === "known"}
+                    aria-pressed={type === "known"}
+                    size="sm"
+                    variant="soft"
+                    onClick={() => setType("known")}
+                >
+                    Known limitations ·{" "}
+                    {
+                        acceptedExceptions.filter((row) =>
+                            row.month.startsWith(`${year}-`),
+                        ).length
+                    }
+                </TabButton>
             </fieldset>
-            <div className="flex flex-wrap items-center gap-3">
-                <select
-                    aria-label="Affected page"
-                    value={page}
-                    onChange={(event) =>
-                        setPage(event.target.value as ReconciliationPage | "")
-                    }
-                    className="rounded border border-theme-border bg-surface-opaque px-2 py-1 text-sm"
-                >
-                    <option value="">All pages</option>
-                    {Object.entries(RECONCILIATION_PAGES).map(
-                        ([value, label]) => (
-                            <option key={value} value={value}>
-                                {label}
-                            </option>
-                        ),
-                    )}
-                </select>
-                <select
-                    aria-label="Issue type"
-                    value={type}
-                    onChange={(event) =>
-                        setType(event.target.value as ReconciliationType | "")
-                    }
-                    className="rounded border border-theme-border bg-surface-opaque px-2 py-1 text-sm"
-                >
-                    <option value="">All issue types</option>
-                    {types.map((key) => (
-                        <option key={key} value={key}>
-                            {RECONCILIATION_TYPES[key]} ·{" "}
-                            {
-                                sectionRows.filter((row) =>
-                                    row.types.includes(key),
-                                ).length
-                            }
-                        </option>
-                    ))}
-                </select>
-                <span className="text-sm text-theme-text-soft">
-                    {visible.length} items · {year}
-                    {unknownAmounts > 0
-                        ? ` · ${unknownAmounts} amounts unknown`
-                        : ""}
-                </span>
-            </div>
-            {visible.length === 0 && (
-                <p>No outstanding checks recorded for this selection.</p>
+            <span className="text-sm text-theme-text-soft">
+                {vendors.length} vendors · {displayedChecks} open checks ·{" "}
+                {year}
+                {unknownAmounts > 0
+                    ? ` · ${unknownAmounts} amounts unknown`
+                    : ""}
+            </span>
+            {vendors.length === 0 && (
+                <p>No checks to display for this selection.</p>
             )}
-            {visible.length > 0 && (
+            {vendors.length > 0 && (
                 <TableScroller>
                     <DataTable className="[&_td]:align-top [&_td]:whitespace-normal">
                         <TableHead>
                             <TableRow>
                                 <TableHeaderCell {...headerProps("vendor")}>
-                                    Provider
+                                    Vendor
                                 </TableHeaderCell>
-                                <TableHeaderCell {...headerProps("messages")}>
-                                    What to fix
+                                <TableHeaderCell
+                                    {...headerProps("checks")}
+                                    align="right"
+                                >
+                                    Open checks
                                 </TableHeaderCell>
-                                <TableHeaderCell {...headerProps("month")}>
-                                    Month
+                                <TableHeaderCell
+                                    {...headerProps("unknowns")}
+                                    align="right"
+                                >
+                                    Unknown amounts
                                 </TableHeaderCell>
                                 <TableHeaderCell
                                     {...headerProps("amount")}
                                     align="right"
                                 >
-                                    Unresolved amount
+                                    <span
+                                        title={`${year}: recorded bank money without reconciled evidence. Missing sources and provider cost differences are separate checks below.`}
+                                    >
+                                        Bank money to reconcile
+                                    </span>
                                 </TableHeaderCell>
-                                <TableHeaderCell {...headerProps("affects")}>
-                                    Affects
-                                </TableHeaderCell>
-                                <TableHeaderCell>Invoices</TableHeaderCell>
                             </TableRow>
                         </TableHead>
-                        {groups.map((group) => (
-                            <TableBody key={group.key}>
-                                <TableRow>
-                                    <TableHeaderCell
-                                        colSpan={6}
-                                        scope="rowgroup"
-                                        className="bg-surface-opaque"
-                                    >
-                                        {RECONCILIATION_GROUPS[group.key]} ·{" "}
-                                        {group.rows.length}
-                                    </TableHeaderCell>
-                                </TableRow>
-                                {group.rows.map((issue) => (
-                                    <TableRow key={issue.id}>
-                                        <TableCell className="font-semibold">
-                                            {issue.vendor}
-                                        </TableCell>
-                                        <TableCell className="min-w-64 max-w-xl">
-                                            {issue.types.map((key) => (
-                                                <span
-                                                    key={key}
-                                                    className="mr-2 text-xs text-theme-text-soft"
-                                                >
-                                                    {RECONCILIATION_TYPES[key]}
-                                                </span>
-                                            ))}
-                                            {issue.blockingMessages?.map(
-                                                (message) => (
-                                                    <p key={message}>
-                                                        {message}
-                                                    </p>
+                        {rows.map((group) => {
+                            const vendor = directory.find(
+                                (row) => row.provider.id === group.vendor,
+                            );
+                            const notes = journal.filter(
+                                (entry) =>
+                                    canonicalProvider(
+                                        entry.journalVendor ?? entry.vendor,
+                                    ) === group.vendor &&
+                                    (!vendor ||
+                                        entry.kind !== "Evidence review") &&
+                                    ![
+                                        ...group.issues,
+                                        ...group.limitations,
+                                    ].some(
+                                        (check) =>
+                                            check.month === entry.period &&
+                                            check.messages.some((message) =>
+                                                message.includes(entry.note),
+                                            ),
+                                    ) &&
+                                    !group.issues.some(
+                                        (check) =>
+                                            check.month === entry.period &&
+                                            check.reviewedNotes?.some((note) =>
+                                                note.message.includes(
+                                                    entry.note,
                                                 ),
-                                            )}
-                                            {issue.blockingMessages?.length &&
-                                            issue.messages.some(
-                                                (message) =>
-                                                    !issue.blockingMessages?.includes(
-                                                        message,
-                                                    ),
-                                            ) ? (
-                                                <p className="mt-2 text-xs text-theme-text-soft">
-                                                    Other checks
-                                                </p>
-                                            ) : null}
-                                            {issue.messages
-                                                .filter(
-                                                    (message) =>
-                                                        !issue.blockingMessages?.includes(
-                                                            message,
-                                                        ),
-                                                )
-                                                .map((message) => (
-                                                    <p key={message}>
-                                                        {message}
-                                                    </p>
-                                                ))}
-                                            <ReviewDetails
-                                                issue={issue}
-                                                onPreview={setPreviewDocument}
-                                            />
-                                        </TableCell>
-                                        <TableCell className="whitespace-nowrap">
-                                            {monthName(issue.month)}
-                                        </TableCell>
-                                        <TableCell
-                                            align="right"
-                                            className="min-w-36 max-w-48"
-                                        >
-                                            {issue.amountUsd != null ? (
-                                                <>
-                                                    {fmtUsd(issue.amountUsd)}
-                                                    <span className="block text-xs text-theme-text-soft">
-                                                        {issue.amountLabel}
-                                                    </span>
-                                                </>
-                                            ) : (
-                                                <span className="text-theme-text-soft">
-                                                    Unknown
+                                            ),
+                                    ),
+                            );
+                            const documentUrl =
+                                data?.privateConfig?.vendorDocuments?.[
+                                    group.vendor
+                                ];
+                            return (
+                                <TableBody key={group.vendor}>
+                                    <TableRow className="runway-summary">
+                                        <TableCell className="font-semibold">
+                                            <TableDisclosureButton
+                                                expanded={expanded.includes(
+                                                    group.vendor,
+                                                )}
+                                                onClick={() =>
+                                                    setExpanded((current) =>
+                                                        current.includes(
+                                                            group.vendor,
+                                                        )
+                                                            ? current.filter(
+                                                                  (vendor) =>
+                                                                      vendor !==
+                                                                      group.vendor,
+                                                              )
+                                                            : [
+                                                                  ...current,
+                                                                  group.vendor,
+                                                              ],
+                                                    )
+                                                }
+                                            >
+                                                {vendor?.provider.label ??
+                                                    group.vendor}
+                                            </TableDisclosureButton>
+                                            {group.limitations.length > 0 && (
+                                                <span className="ml-5 block text-xs font-normal text-theme-text-soft">
+                                                    {group.limitations.length}{" "}
+                                                    known{" "}
+                                                    {group.limitations
+                                                        .length === 1
+                                                        ? "limitation"
+                                                        : "limitations"}
                                                 </span>
                                             )}
-                                            <RelatedAmounts issue={issue} />
                                         </TableCell>
-                                        <TableCell className="min-w-40 max-w-60">
-                                            <div className="flex flex-wrap gap-x-2 gap-y-1">
-                                                {issue.affects.map((page) => (
-                                                    <button
-                                                        key={page}
-                                                        type="button"
-                                                        className="text-xs underline underline-offset-2"
-                                                        onClick={() =>
-                                                            onOpen(
-                                                                page,
-                                                                issue.month,
-                                                            )
-                                                        }
-                                                    >
-                                                        {
-                                                            RECONCILIATION_PAGES[
-                                                                page
-                                                            ]
-                                                        }
-                                                    </button>
-                                                ))}
-                                            </div>
+                                        <TableCell align="right">
+                                            {group.issues.length}
                                         </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col items-start gap-1">
-                                                {(issue.invoices ?? []).map(
-                                                    (evidence, i) => (
-                                                        <EvidenceAction
-                                                            key={evidence}
-                                                            evidence={evidence}
-                                                            onPreview={
-                                                                setPreviewDocument
-                                                            }
-                                                            previewLabel={`Preview invoice ${i + 1} for ${issue.vendor}`}
-                                                            openDocumentLabel={`invoice ${i + 1} for ${issue.vendor}`}
-                                                        />
-                                                    ),
+                                        <TableCell align="right">
+                                            {group.unknowns || "–"}
+                                        </TableCell>
+                                        <TableCell align="right">
+                                            {group.bankAmount == null
+                                                ? "–"
+                                                : fmtUsd(group.bankAmount)}
+                                        </TableCell>
+                                    </TableRow>
+                                    <TableRow
+                                        hidden={
+                                            !expanded.includes(group.vendor)
+                                        }
+                                    >
+                                        <TableCell colSpan={4} className="p-3">
+                                            <div className="space-y-4">
+                                                {vendor && (
+                                                    <p className="text-sm text-theme-text-soft">
+                                                        {categoryLabel(
+                                                            vendor.provider
+                                                                .category,
+                                                        )}
+                                                    </p>
                                                 )}
+                                                {documentUrl && (
+                                                    <a
+                                                        className="text-sm underline"
+                                                        href={documentUrl}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                    >
+                                                        Open{" "}
+                                                        {vendor?.provider
+                                                            .label ??
+                                                            group.vendor}{" "}
+                                                        journal in Drive ↗
+                                                    </a>
+                                                )}
+                                                {vendor && (
+                                                    <VendorAccounts
+                                                        row={vendor}
+                                                        journalAvailable={
+                                                            !!data?.privateConfig
+                                                        }
+                                                    />
+                                                )}
+                                                {group.issues.length > 0 ||
+                                                group.limitations.length > 0 ? (
+                                                    <DataTable>
+                                                        <TableHead>
+                                                            <TableRow>
+                                                                <TableHeaderCell>
+                                                                    Details
+                                                                </TableHeaderCell>
+                                                                <TableHeaderCell>
+                                                                    Month
+                                                                </TableHeaderCell>
+                                                                <TableHeaderCell align="right">
+                                                                    Amount
+                                                                </TableHeaderCell>
+                                                                <TableHeaderCell>
+                                                                    Affects
+                                                                </TableHeaderCell>
+                                                                <TableHeaderCell>
+                                                                    Invoices
+                                                                </TableHeaderCell>
+                                                            </TableRow>
+                                                        </TableHead>
+                                                        <TableBody>
+                                                            {group.issues.map(
+                                                                (issue) => (
+                                                                    <TableRow
+                                                                        key={
+                                                                            issue.id
+                                                                        }
+                                                                    >
+                                                                        <TableCell className="min-w-64 max-w-xl">
+                                                                            <p className="mb-1 text-xs text-theme-text-soft">
+                                                                                {
+                                                                                    RECONCILIATION_GROUPS[
+                                                                                        issue
+                                                                                            .group
+                                                                                    ]
+                                                                                }
+                                                                            </p>
+                                                                            {issue.types.map(
+                                                                                (
+                                                                                    key,
+                                                                                ) => (
+                                                                                    <span
+                                                                                        key={
+                                                                                            key
+                                                                                        }
+                                                                                        className="mr-2 text-xs text-theme-text-soft"
+                                                                                    >
+                                                                                        {
+                                                                                            RECONCILIATION_TYPES[
+                                                                                                key
+                                                                                            ]
+                                                                                        }
+                                                                                    </span>
+                                                                                ),
+                                                                            )}
+                                                                            {issue.blockingMessages?.map(
+                                                                                (
+                                                                                    message,
+                                                                                ) => (
+                                                                                    <p
+                                                                                        key={
+                                                                                            message
+                                                                                        }
+                                                                                    >
+                                                                                        {
+                                                                                            message
+                                                                                        }
+                                                                                    </p>
+                                                                                ),
+                                                                            )}
+                                                                            {issue
+                                                                                .blockingMessages
+                                                                                ?.length &&
+                                                                            issue.messages.some(
+                                                                                (
+                                                                                    message,
+                                                                                ) =>
+                                                                                    !issue.blockingMessages?.includes(
+                                                                                        message,
+                                                                                    ),
+                                                                            ) ? (
+                                                                                <p className="mt-2 text-xs text-theme-text-soft">
+                                                                                    Other
+                                                                                    checks
+                                                                                </p>
+                                                                            ) : null}
+                                                                            {issue.messages
+                                                                                .filter(
+                                                                                    (
+                                                                                        message,
+                                                                                    ) =>
+                                                                                        !issue.blockingMessages?.includes(
+                                                                                            message,
+                                                                                        ),
+                                                                                )
+                                                                                .map(
+                                                                                    (
+                                                                                        message,
+                                                                                    ) => (
+                                                                                        <p
+                                                                                            key={
+                                                                                                message
+                                                                                            }
+                                                                                        >
+                                                                                            {
+                                                                                                message
+                                                                                            }
+                                                                                        </p>
+                                                                                    ),
+                                                                                )}
+                                                                            <ReviewDetails
+                                                                                issue={
+                                                                                    issue
+                                                                                }
+                                                                                onPreview={
+                                                                                    setPreviewDocument
+                                                                                }
+                                                                            />
+                                                                        </TableCell>
+                                                                        <TableCell className="whitespace-nowrap">
+                                                                            {monthName(
+                                                                                issue.month,
+                                                                            )}
+                                                                        </TableCell>
+                                                                        <TableCell
+                                                                            align="right"
+                                                                            className="min-w-36 max-w-48"
+                                                                        >
+                                                                            {issue.amountUsd !=
+                                                                            null ? (
+                                                                                <>
+                                                                                    {fmtUsd(
+                                                                                        issue.amountUsd,
+                                                                                    )}
+                                                                                    <span className="block text-xs text-theme-text-soft">
+                                                                                        {
+                                                                                            issue.amountLabel
+                                                                                        }
+                                                                                    </span>
+                                                                                </>
+                                                                            ) : (
+                                                                                <span className="text-theme-text-soft">
+                                                                                    Unknown
+                                                                                </span>
+                                                                            )}
+                                                                            <RelatedAmounts
+                                                                                issue={
+                                                                                    issue
+                                                                                }
+                                                                            />
+                                                                        </TableCell>
+                                                                        <TableCell className="min-w-40 max-w-60">
+                                                                            <div className="flex flex-wrap gap-x-2 gap-y-1">
+                                                                                {issue.affects.map(
+                                                                                    (
+                                                                                        page,
+                                                                                    ) => (
+                                                                                        <button
+                                                                                            key={
+                                                                                                page
+                                                                                            }
+                                                                                            type="button"
+                                                                                            className="text-xs underline underline-offset-2"
+                                                                                            onClick={() =>
+                                                                                                onOpen(
+                                                                                                    page,
+                                                                                                    issue.month,
+                                                                                                )
+                                                                                            }
+                                                                                        >
+                                                                                            {
+                                                                                                RECONCILIATION_PAGES[
+                                                                                                    page
+                                                                                                ]
+                                                                                            }
+                                                                                        </button>
+                                                                                    ),
+                                                                                )}
+                                                                            </div>
+                                                                        </TableCell>
+                                                                        <TableCell>
+                                                                            <div className="flex flex-col items-start gap-1">
+                                                                                {(
+                                                                                    issue.invoices ??
+                                                                                    []
+                                                                                ).map(
+                                                                                    (
+                                                                                        evidence,
+                                                                                        i,
+                                                                                    ) => (
+                                                                                        <EvidenceAction
+                                                                                            key={
+                                                                                                evidence
+                                                                                            }
+                                                                                            evidence={
+                                                                                                evidence
+                                                                                            }
+                                                                                            onPreview={
+                                                                                                setPreviewDocument
+                                                                                            }
+                                                                                            previewLabel={`Preview invoice ${i + 1} for ${issue.vendor}`}
+                                                                                            openDocumentLabel={`invoice ${i + 1} for ${issue.vendor}`}
+                                                                                        />
+                                                                                    ),
+                                                                                )}
+                                                                            </div>
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                ),
+                                                            )}
+                                                            {group.limitations.map(
+                                                                (exception) => (
+                                                                    <KnownLimitationRow
+                                                                        key={
+                                                                            exception.id
+                                                                        }
+                                                                        exception={
+                                                                            exception
+                                                                        }
+                                                                        onPreview={
+                                                                            setPreviewDocument
+                                                                        }
+                                                                        onOpen={
+                                                                            onOpen
+                                                                        }
+                                                                    />
+                                                                ),
+                                                            )}
+                                                        </TableBody>
+                                                    </DataTable>
+                                                ) : (
+                                                    <p className="text-sm text-theme-text-soft">
+                                                        No open checks for this
+                                                        selection.
+                                                    </p>
+                                                )}
+                                                <VendorJournal
+                                                    entries={notes}
+                                                />
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        ))}
+                                </TableBody>
+                            );
+                        })}
                     </DataTable>
                 </TableScroller>
-            )}
-            {accepted.length > 0 && (
-                <details className="rounded-lg border border-theme-border p-3">
-                    <summary className="cursor-pointer font-semibold">
-                        Known limitations · {accepted.length}
-                    </summary>
-                    <p className="mt-2 text-sm text-theme-text-soft">
-                        Reviewed gaps retained for transparency; excluded from
-                        open-check counts.
-                    </p>
-                    <div className="mt-3 space-y-3">
-                        {accepted.map((exception) => (
-                            <article key={exception.id}>
-                                <p className="font-semibold">
-                                    {exception.vendor} ·{" "}
-                                    {monthName(exception.month)}
-                                </p>
-                                {exception.messages.map((message) => (
-                                    <p key={message} className="text-sm">
-                                        {message}
-                                    </p>
-                                ))}
-                                <div className="flex flex-wrap gap-2">
-                                    {supportingDocuments(
-                                        exception.evidence,
-                                    ).map((document, i) => (
-                                        <EvidenceAction
-                                            key={document.previewHref}
-                                            evidence={document.href}
-                                            onPreview={setPreviewDocument}
-                                            previewLabel={`Preview exception source ${i + 1} for ${exception.vendor}`}
-                                            openDocumentLabel={`exception source ${i + 1} for ${exception.vendor}`}
-                                        />
-                                    ))}
-                                </div>
-                            </article>
-                        ))}
-                    </div>
-                </details>
             )}
             <EvidencePreview
                 documentLink={previewDocument}
                 onClose={() => setPreviewDocument(null)}
             />
         </section>
+    );
+}
+
+function KnownLimitationRow({
+    exception,
+    onPreview,
+    onOpen,
+}: {
+    exception: ReconciliationException;
+    onPreview: (document: DriveDocumentLink) => void;
+    onOpen: (page: ReconciliationPage, month: string) => void;
+}) {
+    const { fmtUsd } = useAmountDisplay();
+    return (
+        <TableRow className="text-theme-text-soft">
+            <TableCell className="min-w-64 max-w-xl">
+                <p className="mb-1 text-xs">
+                    Known limitation · reviewed, not an open check
+                </p>
+                {exception.messages.map((message) => (
+                    <p key={message}>{message}</p>
+                ))}
+            </TableCell>
+            <TableCell>{monthName(exception.month)}</TableCell>
+            <TableCell align="right" className="min-w-36 max-w-48">
+                {exception.relatedAmounts?.length
+                    ? exception.relatedAmounts.map((amount, index) => (
+                          <p key={index}>
+                              {amount.amountUsd == null
+                                  ? "Unknown"
+                                  : fmtUsd(amount.amountUsd)}
+                              <span className="block text-xs">
+                                  {amount.amountLabel}
+                              </span>
+                          </p>
+                      ))
+                    : "–"}
+            </TableCell>
+            <TableCell>
+                <div className="flex flex-wrap gap-x-2 gap-y-1">
+                    {exception.affects.map((page) => (
+                        <button
+                            key={page}
+                            type="button"
+                            className="text-xs underline underline-offset-2"
+                            onClick={() => onOpen(page, exception.month)}
+                        >
+                            {RECONCILIATION_PAGES[page]}
+                        </button>
+                    ))}
+                </div>
+            </TableCell>
+            <TableCell>
+                <div className="flex flex-wrap gap-2">
+                    {supportingDocuments(exception.evidence).map(
+                        (document, i) => (
+                            <EvidenceAction
+                                key={document.previewHref}
+                                evidence={document.href}
+                                onPreview={onPreview}
+                                previewLabel={`Preview exception source ${i + 1} for ${exception.vendor}`}
+                                openDocumentLabel={`exception source ${i + 1} for ${exception.vendor}`}
+                            />
+                        ),
+                    )}
+                </div>
+            </TableCell>
+        </TableRow>
     );
 }
 
@@ -443,10 +750,12 @@ function ReviewDetails({
 }
 
 function RelatedAmounts({ issue }: { issue: ReconciliationIssue }) {
+    const { pro, fmtUsd } = useAmountDisplay();
     const amounts = (issue.relatedAmounts ?? []).filter(
         (amount) =>
-            amount.group !== issue.group ||
-            amount.amountLabel !== issue.amountLabel,
+            (amount.group !== issue.group ||
+                amount.amountLabel !== issue.amountLabel) &&
+            (pro || hasVisibleAmount([amount.amountUsd])),
     );
     if (!amounts.length) return null;
     return (

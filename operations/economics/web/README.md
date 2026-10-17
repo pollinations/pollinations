@@ -91,12 +91,30 @@ one grouped row, and unjoined cost stays visible as needs mapping or missing
 breakdown rows rather than spread across models.
 Collection and correction conventions live in
 `.claude/skills/economics-provider-collection/SKILL.md` at the repository root.
+Vendor definitions, accounts and notes come from the private
+[Vendor journals folder](https://drive.google.com/drive/folders/1GnyBRJEGtuZjdJl9qrBapH6jfUpmG9ei), one `<vendor-id>.json` per vendor.
+Reconciliation presents one expandable row per vendor, joining open checks,
+account cards and journal notes with links to the original Drive files. The
+separate Journal and Vendor directory pages have been removed. Cards join the existing
+ledger balance snapshots and journal evidence-check history; open checks
+come from the same reconciliation calculation. Snapshot dates never imply
+reviewed monthly coverage, and unknown accounts are not matched by guess.
+Invoices & evidence opens the Finance
+folder. No document copies are stored in the dashboard; financial amounts
+remain in the ledgers.
+
+`npm test` reads the vendor journals once to build a definition snapshot with the existing local
+`.dev.vars` Drive credential. For an offline or CI run, set
+`ECONOMICS_VENDOR_DETAILS_FILE` to an explicitly supplied JSON source snapshot;
+no second catalog is checked into the repository. Never put credentials in
+that file. Production builds do not read Drive; the signed-in app does.
+
 Collection retains reviewed business Drive checks in
-the private [Planning & review Drive document](https://drive.google.com/file/d/1r9n-RL1B-s6BhcvaTUT_Oj_toFimnmal/view) (`reviewNotes.archiveChecks`), scoped by provider,
+each vendor journal (`reviewNotes.archiveChecks`), scoped by provider,
 account and service month. Each check records `checkedAt`, `status` (`found`,
 `partial`, `not_found` or `blocked`), a short `note`, and exact archived
 `evidence` links. Collection updates these through the normal named-batch
-approval flow. The app reads this single document; it does not scan or synchronize the rest of Drive. The reconciliation table shows only compact preview/download actions for the
+approval flow. The app reads the vendor journals folder; it does not scan or synchronize the rest of Drive. The reconciliation table shows only compact preview/download actions for the
 verified supplier invoices already linked to the records. Receipts, exports and
 account/date/status notes stay in private collection metadata.
 These observations annotate open issues only and never change financial
@@ -125,13 +143,15 @@ provider coverage and cash. Forecast amounts are never duplicated in Drive.
 The document holds sales stop dates, review explanations and explicit
 `known_limitation` decisions. These do not verify missing costs or usage.
 
-The protected `/api/economics/planning` route reads one fixed
-`ECONOMICS_PLANNING_FILE_ID` with an approved server-only
-`ECONOMICS_GOOGLE_DRIVE_CREDENTIALS` binding (existing service-account JSON with
-`client_email` and `private_key`). Reads are private/no-store; failed access or malformed data
-blocks dependent views rather than silently losing rules. Credential setup
-requires separate approval. Local `decrypt-vars` preserves an already-approved
-connection; it never creates credentials or copies production secrets.
+The protected `/api/economics/vendor-journals` route reads the fixed Vendor
+journals folder with the existing server-only `ECONOMICS_GOOGLE_DRIVE_CREDENTIALS`
+binding. It lists every page and reads every vendor file, with bounded parallel
+requests, then combines them in memory. The signed-in app validates the complete
+catalog and journal before calculations load, and reuses that snapshot while
+navigating. Reload to read updates; no combined file or database copy is stored.
+Missing, malformed or duplicate vendor files block loading instead of silently
+losing rules. The old single-file planning binding is no longer used.
+Credential setup still requires separate approval.
 The old `economics_private_config` datasource and endpoint were removed from
 staging after the authenticated reader and unchanged totals were verified.
 Production migration is separate and has not been authorized.

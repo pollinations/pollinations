@@ -5,6 +5,12 @@ import { z } from "zod";
 const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
 const DEFAULT_TEMPLATE = "pollinations";
 const KEEP_SECONDS = 2 ** 31 - 1;
+const OUTPUT_LIMIT = 100_000;
+
+const cut = (text) =>
+    text.length > OUTPUT_LIMIT
+        ? `${text.slice(0, OUTPUT_LIMIT)}\n[cut at ${OUTPUT_LIMIT} characters]`
+        : text;
 
 function resolveApiUrl(env) {
     const baseUrl = (
@@ -17,8 +23,9 @@ function resolveApiUrl(env) {
     return `${baseUrl}/alpha/e2b`;
 }
 
-function jsonResult(value) {
+function jsonResult(value, isError = false) {
     return {
+        ...(isError && { isError }),
         content: [
             {
                 type: "text",
@@ -33,7 +40,7 @@ function toTimeoutMs(timeoutSeconds) {
     return (timeoutSeconds === 0 ? KEEP_SECONDS : timeoutSeconds) * 1000;
 }
 
-export function buildServer(token, env, SandboxImpl = Sandbox) {
+function buildServer(token, env) {
     const apiOpts = {
         apiKey: token,
         apiUrl: resolveApiUrl(env),
@@ -94,11 +101,11 @@ export function buildServer(token, env, SandboxImpl = Sandbox) {
                     ? { ...(metadata ?? {}), ...(name ? { name } : {}) }
                     : undefined;
             const timeoutMs = toTimeoutMs(timeout);
-            const sandbox = await SandboxImpl.create(resolvedTemplate, {
+            const sandbox = await Sandbox.create(resolvedTemplate, {
                 ...apiOpts,
-                ...(timeoutMs !== undefined ? { timeoutMs } : {}),
-                ...(mergedMetadata ? { metadata: mergedMetadata } : {}),
-                ...(envs ? { envs } : {}),
+                timeoutMs,
+                metadata: mergedMetadata,
+                envs,
             });
             return jsonResult({
                 sandboxId: sandbox.sandboxId,
@@ -124,11 +131,14 @@ export function buildServer(token, env, SandboxImpl = Sandbox) {
             }),
         },
         async ({ state }) => {
-            const paginator = SandboxImpl.list({
+            const paginator = Sandbox.list({
                 ...apiOpts,
                 ...(state ? { query: { state } } : {}),
             });
-            const sandboxes = await paginator.nextItems();
+            const sandboxes = [];
+            while (paginator.hasNext) {
+                sandboxes.push(...(await paginator.nextItems()));
+            }
             return jsonResult(sandboxes);
         },
     );
@@ -153,9 +163,9 @@ export function buildServer(token, env, SandboxImpl = Sandbox) {
         },
         async ({ sandboxId, timeout }) => {
             const timeoutMs = toTimeoutMs(timeout);
-            const sandbox = await SandboxImpl.connect(sandboxId, {
+            const sandbox = await Sandbox.connect(sandboxId, {
                 ...apiOpts,
-                ...(timeoutMs !== undefined ? { timeoutMs } : {}),
+                timeoutMs,
             });
             return jsonResult({
                 sandboxId: sandbox.sandboxId,
@@ -176,7 +186,7 @@ export function buildServer(token, env, SandboxImpl = Sandbox) {
             }),
         },
         async ({ sandboxId }) => {
-            const paused = await SandboxImpl.pause(sandboxId, apiOpts);
+            const paused = await Sandbox.pause(sandboxId, apiOpts);
             return jsonResult({
                 sandboxId,
                 paused,
@@ -195,7 +205,7 @@ export function buildServer(token, env, SandboxImpl = Sandbox) {
             }),
         },
         async ({ sandboxId }) => {
-            const killed = await SandboxImpl.kill(sandboxId, apiOpts);
+            const killed = await Sandbox.kill(sandboxId, apiOpts);
             return jsonResult({
                 sandboxId,
                 killed,
@@ -208,7 +218,7 @@ export function buildServer(token, env, SandboxImpl = Sandbox) {
         {
             title: "Run Command",
             description:
-                "Connect to a sandbox (resuming it if paused) and run a shell command.",
+                "Connect to a sandbox (resuming it if paused) and run a shell command. stdout and stderr are each cut at 100000 characters. For long commands, first use connect_sandbox to extend the paid lease; the command timeout does not extend it.",
             inputSchema: z.object({
                 sandboxId: z.string().min(1).describe("Sandbox ID."),
                 command: z
@@ -240,42 +250,31 @@ export function buildServer(token, env, SandboxImpl = Sandbox) {
             }),
         },
         async ({ sandboxId, command, cwd, user, envs, timeoutMs }) => {
-            const sandbox = await SandboxImpl.connect(sandboxId, apiOpts);
+            const sandbox = await Sandbox.connect(sandboxId, apiOpts);
             try {
                 const result = await sandbox.commands.run(command, {
-                    ...(cwd ? { cwd } : {}),
-                    ...(user ? { user } : {}),
-                    ...(envs ? { envs } : {}),
-                    ...(timeoutMs !== undefined ? { timeoutMs } : {}),
+                    cwd,
+                    user,
+                    envs,
+                    timeoutMs,
                 });
                 return jsonResult({
                     exitCode: result.exitCode,
-                    stdout: result.stdout,
-                    stderr: result.stderr,
+                    stdout: cut(result.stdout),
+                    stderr: cut(result.stderr),
                     ...(result.error ? { error: result.error } : {}),
                 });
             } catch (error) {
                 if (error instanceof CommandExitError) {
-                    return {
-                        isError: true,
-                        content: [
-                            {
-                                type: "text",
-                                text: JSON.stringify(
-                                    {
-                                        exitCode: error.exitCode,
-                                        stdout: error.stdout,
-                                        stderr: error.stderr,
-                                        ...(error.error
-                                            ? { error: error.error }
-                                            : {}),
-                                    },
-                                    null,
-                                    2,
-                                ),
-                            },
-                        ],
-                    };
+                    return jsonResult(
+                        {
+                            exitCode: error.exitCode,
+                            stdout: cut(error.stdout),
+                            stderr: cut(error.stderr),
+                            ...(error.error ? { error: error.error } : {}),
+                        },
+                        true,
+                    );
                 }
                 throw error;
             }
@@ -305,12 +304,8 @@ export function buildServer(token, env, SandboxImpl = Sandbox) {
             }),
         },
         async ({ sandboxId, path, content, user }) => {
-            const sandbox = await SandboxImpl.connect(sandboxId, apiOpts);
-            const info = await sandbox.files.write(
-                path,
-                content,
-                user ? { user } : undefined,
-            );
+            const sandbox = await Sandbox.connect(sandboxId, apiOpts);
+            const info = await sandbox.files.write(path, content, { user });
             return jsonResult(info);
         },
     );
@@ -320,7 +315,7 @@ export function buildServer(token, env, SandboxImpl = Sandbox) {
         {
             title: "Read File",
             description:
-                "Connect to a sandbox (resuming it if paused) and read a text file.",
+                "Connect to a sandbox (resuming it if paused) and read a text file, cut at 100000 characters. Use run_command with sed or tail to read another section of a larger file.",
             inputSchema: z.object({
                 sandboxId: z.string().min(1).describe("Sandbox ID."),
                 path: z
@@ -335,13 +330,13 @@ export function buildServer(token, env, SandboxImpl = Sandbox) {
             }),
         },
         async ({ sandboxId, path, user }) => {
-            const sandbox = await SandboxImpl.connect(sandboxId, apiOpts);
+            const sandbox = await Sandbox.connect(sandboxId, apiOpts);
             const content = await sandbox.files.read(path, {
                 format: "text",
-                ...(user ? { user } : {}),
+                user,
             });
             return {
-                content: [{ type: "text", text: String(content) }],
+                content: [{ type: "text", text: cut(content) }],
             };
         },
     );
@@ -375,67 +370,60 @@ function unauthorizedResponse() {
     );
 }
 
-export function createWorker({ SandboxImpl = Sandbox } = {}) {
-    return {
-        async fetch(request, env) {
-            const url = new URL(request.url);
+export default {
+    async fetch(request, env) {
+        const url = new URL(request.url);
 
-            if (url.pathname === "/health" && request.method === "GET") {
-                return Response.json({
-                    status: "ok",
-                    service: "machines-mcp",
-                    endpoint: "/",
-                });
-            }
-
-            if (url.pathname !== "/") {
-                return Response.json(
-                    {
-                        error: "not_found",
-                        message: "The MCP endpoint is served at /.",
-                    },
-                    { status: 404 },
-                );
-            }
-
-            const token = readBearerToken(request);
-            if (!token) return unauthorizedResponse();
-
-            if (
-                request.method === "POST" &&
-                Array.isArray(
-                    await request
-                        .clone()
-                        .json()
-                        .catch(() => null),
-                )
-            ) {
-                return Response.json(
-                    {
-                        error: "invalid_request",
-                        message: "Batch requests are not supported.",
-                    },
-                    { status: 400 },
-                );
-            }
-
-            const handler = createMcpHandler(
-                () => buildServer(token, env, SandboxImpl),
-                {
-                    legacy: "stateless",
-                    onerror: (error) => console.error(error),
-                },
-            );
-
-            return handler.fetch(request, {
-                authInfo: {
-                    token,
-                    clientId: "pollinations-api-key",
-                    scopes: [],
-                },
+        if (url.pathname === "/health" && request.method === "GET") {
+            return Response.json({
+                status: "ok",
+                service: "machines-mcp",
+                endpoint: "/",
             });
-        },
-    };
-}
+        }
 
-export default createWorker();
+        if (url.pathname !== "/") {
+            return Response.json(
+                {
+                    error: "not_found",
+                    message: "The MCP endpoint is served at /.",
+                },
+                { status: 404 },
+            );
+        }
+
+        const token = readBearerToken(request);
+        if (!token) return unauthorizedResponse();
+
+        if (
+            request.method === "POST" &&
+            Array.isArray(
+                await request
+                    .clone()
+                    .json()
+                    .catch(() => null),
+            )
+        ) {
+            return Response.json(
+                {
+                    error: "invalid_request",
+                    message: "Batch requests are not supported.",
+                },
+                { status: 400 },
+            );
+        }
+
+        const handler = createMcpHandler(() => buildServer(token, env), {
+            legacy: "stateless",
+            onerror: (error) => console.error(error),
+        });
+
+        return handler.fetch(request, {
+            authInfo: {
+                token,
+                clientId: "pollinations-api-key",
+                scopes: [],
+            },
+        });
+    },
+};

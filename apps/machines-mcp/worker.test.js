@@ -326,6 +326,7 @@ test("creates a sandbox, runs node --version, pauses it, runs another command in
 
 test("writes and reads files and lists sandboxes", async (t) => {
     const files = new Map();
+    const listTokens = [];
 
     t.mock.method(globalThis, "fetch", async (input, init) => {
         const req = new Request(input, init);
@@ -347,20 +348,25 @@ test("writes and reads files and lists sandboxes", async (t) => {
             url.pathname === "/alpha/e2b/v2/sandboxes" &&
             req.method === "GET"
         ) {
-            return Response.json([
-                {
-                    sandboxID: "sbx_files",
-                    templateID: "pollinations",
-                    alias: "pollinations",
-                    state: "running",
-                    cpuCount: 2,
-                    memoryMB: 2048,
-                    startedAt: "2026-10-16T08:00:00.000Z",
-                    endAt: "2026-10-16T08:10:00.000Z",
-                    envdVersion: "0.5.7",
-                    metadata: { name: "workbox" },
-                },
-            ]);
+            const token = url.searchParams.get("nextToken");
+            listTokens.push(token);
+            return Response.json(
+                [
+                    {
+                        sandboxID: token ? "sbx_second_page" : "sbx_files",
+                        templateID: "pollinations",
+                        alias: "pollinations",
+                        state: "running",
+                        cpuCount: 2,
+                        memoryMB: 2048,
+                        startedAt: "2026-10-16T08:00:00.000Z",
+                        endAt: "2026-10-16T08:10:00.000Z",
+                        envdVersion: "0.5.7",
+                        metadata: { name: "workbox" },
+                    },
+                ],
+                { headers: token ? {} : { "x-next-token": "page2" } },
+            );
         }
 
         if (url.pathname === "/files" && req.method === "POST") {
@@ -413,14 +419,26 @@ test("writes and reads files and lists sandboxes", async (t) => {
     assert.notEqual(read.isError, true);
     assert.equal(read.content[0].text, "hello from pollinations sandbox");
 
+    files.set("/home/user/long.txt", "x".repeat(100_001));
+    const longFile = await client.callTool({
+        name: "read_file",
+        arguments: { sandboxId: "sbx_files", path: "/home/user/long.txt" },
+    });
+    assert.equal(
+        longFile.content[0].text,
+        `${"x".repeat(100_000)}\n[cut at 100000 characters]`,
+    );
+
     const listed = await client.callTool({
         name: "list_sandboxes",
         arguments: {},
     });
     assert.notEqual(listed.isError, true);
     const sandboxes = JSON.parse(listed.content[0].text);
-    assert.equal(sandboxes.length, 1);
+    assert.equal(sandboxes.length, 2);
     assert.equal(sandboxes[0].sandboxId, "sbx_files");
+    assert.equal(sandboxes[1].sandboxId, "sbx_second_page");
+    assert.deepEqual(listTokens, [null, "page2"]);
     assert.equal(sandboxes[0].metadata.name, "workbox");
 });
 
@@ -500,6 +518,12 @@ test("keeps bearer tokens scoped to concurrent requests", async (t) => {
 
 test("connects to an existing sandbox and formats non-zero command exits as tool errors", async (t) => {
     let connectBody;
+    let commandOutput = {
+        stdout: "partial output\n",
+        stderr: "command failed\n",
+        exitCode: 2,
+        error: "exit status 2",
+    };
 
     t.mock.method(globalThis, "fetch", async (input, init) => {
         const req = new Request(input, init);
@@ -522,12 +546,7 @@ test("connects to an existing sandbox and formats non-zero command exits as tool
             url.pathname === "/process.Process/Start" &&
             req.method === "POST"
         ) {
-            return connectProcessStream({
-                stdout: "partial output\n",
-                stderr: "command failed\n",
-                exitCode: 2,
-                error: "exit status 2",
-            });
+            return connectProcessStream(commandOutput);
         }
 
         throw new Error(`Unexpected fetch: ${req.method} ${req.url}`);
@@ -561,4 +580,24 @@ test("connects to an existing sandbox and formats non-zero command exits as tool
         stderr: "command failed\n",
         error: "exit status 2",
     });
+
+    for (const exitCode of [0, 2]) {
+        commandOutput = {
+            stdout: "x".repeat(100_001),
+            stderr: "y".repeat(100_000),
+            exitCode,
+        };
+        const result = await client.callTool({
+            name: "run_command",
+            arguments: { sandboxId: "sbx_resume", command: "large output" },
+        });
+        assert.equal(result.isError === true, exitCode !== 0);
+        const output = JSON.parse(result.content[0].text);
+        assert.equal(output.exitCode, exitCode);
+        assert.equal(
+            output.stdout,
+            `${"x".repeat(100_000)}\n[cut at 100000 characters]`,
+        );
+        assert.equal(output.stderr, commandOutput.stderr);
+    }
 });

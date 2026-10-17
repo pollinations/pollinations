@@ -204,6 +204,10 @@ Python 3.11, polli, and coding harnesses), `run_command`, `write_file`,
 `kill_sandbox`. Sandboxes bill per running second while active and cost nothing
 while paused, with no additional MCP fee.
 
+Command output and file reads are cut at 100,000 characters with a marker.
+Before a long command, extend the paid lease with `connect_sandbox`; a command's
+`timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
 ### Billing and permissions
 
 Calls use the same Pollen wallet as the Pollinations API. The catalog endpoint

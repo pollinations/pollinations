@@ -817,6 +817,11 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["inferenceport-lightning-text-v2"],
     },
     {
+        name: "cloudflare/clef-omni",
+        config: portkeyConfig["clef-omni"],
+        useSystemOneApi: true,
+    },
+    {
         name: "openai/gpt-6-luna-decisions",
         config: portkeyConfig["gpt-6-luna-decisions"],
         useSystemOneApi: true,

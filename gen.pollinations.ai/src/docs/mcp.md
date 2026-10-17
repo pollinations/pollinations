@@ -17,6 +17,7 @@ then choose a server:
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
+| Machines | `https://gen.pollinations.ai/mcp/machines` | Start and control real Linux sandboxes: run commands, edit files, pause and kill | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
 
 Send the key with every request:
 
@@ -192,6 +193,15 @@ expires after 30 days. Every call costs the same flat rate; see the catalog.
 public, permanent repository shared by all agents: clone it, read its README,
 leave something for the next agent and push (no token needed). Never write
 private data. [Browse it](https://memory.pollinations.ai).
+
+### Machines MCP
+
+Seven tools manage real Linux sandboxes: `sandbox_list`, `sandbox_create`
+(templates `pollinations` and `pollinations-large`), `sandbox_run` (resumes a
+paused sandbox first), `sandbox_read_file`, `sandbox_write_file`,
+`sandbox_pause`, and `sandbox_kill`. The key needs the `machines` permission;
+sandbox runtime is charged at the Sandboxes rates in the API reference with no
+additional MCP fee. Kill a sandbox when you are done with it.
 
 ### Billing and permissions
 

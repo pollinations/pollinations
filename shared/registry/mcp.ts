@@ -46,7 +46,8 @@ export type McpBindingName =
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
-    | "COMPUTER_MCP";
+    | "COMPUTER_MCP"
+    | "MACHINES_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -211,6 +212,19 @@ export const MCP_SERVERS = [
         provider: "cloudflare",
         userScoped: true,
         pricing: COMPUTER_MCP_PRICING,
+    },
+    {
+        id: "machines",
+        name: "Machines",
+        description:
+            "Start and control real Linux sandboxes: run commands, edit files, pause and kill.",
+        binding: "MACHINES_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Sandbox runtime uses the listed per-second template rates. No additional MCP fee.",
+            rates: [],
+        },
     },
 ] as const satisfies readonly McpServerDefinition[];
 

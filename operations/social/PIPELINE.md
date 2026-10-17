@@ -86,7 +86,7 @@ Each `posts/<platform>/<job>/` folder holds one file per post and its `delivery.
 
 ### Summaries: `data/summaries/`
 
-- `daily/YYYY-MM-DD.json` — the day's summary from the `daily`-tier notes, with the numbers of the PRs it covers; its `highlights` (each with a `kind`: `model`, `api`, `app` or `product`) and its `changelog` feed `index.json`
+- `daily/YYYY-MM-DD.json` — the day's summary from the `daily`-tier notes, with the numbers of the PRs it covers; its `highlights` (every change worth showing users, each with a `kind`: `model`, `api` or `product`; apps are left to the app catalog) and its `changelog` feed `index.json`
 - `weekly/YYYY-MM-DD.json` — the week's summary. `YYYY-MM-DD` is the Sunday publish date; it covers the previous Sun→Sat window, read from those days' daily summaries and highlights. Saturday's daily is written just before it, in the same run
 - `monthly/YYYY-MM.json` — the month's summary, from its daily summaries
 

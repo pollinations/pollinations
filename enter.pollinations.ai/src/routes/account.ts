@@ -791,6 +791,41 @@ const profileResponseSchema = z.object({
         ),
 });
 
+const accountAppsResponseSchema = z.object({
+    apps: z.array(
+        z.object({
+            name: z.string(),
+            webUrl: z.string(),
+            screenshotUrl: z.string().nullable(),
+            description: z.string(),
+            category: z.string(),
+            platform: z.string(),
+            repositoryUrl: z.string().nullable(),
+            repositoryStars: z.number().nullable(),
+            issueUrl: z.string().nullable(),
+            approvedDate: z.string().nullable(),
+            byop: z.union([z.boolean(), z.number(), z.string()]),
+            requests24h: z.union([z.number(), z.string()]).nullable(),
+        }),
+    ),
+});
+
+type ListedAppRow = {
+    github_user_id: string;
+    name: string;
+    web_url: string;
+    screenshot_url: string | null;
+    description: string;
+    category: string;
+    platform: string;
+    github_repository_url: string | null;
+    github_repository_stars: string | null;
+    issue_url: string | null;
+    approved_date: string | null;
+    byop: boolean | number | string;
+    requests_24h: number | string | null;
+};
+
 const accountBalanceSchema = z.object({
     total: z
         .number()
@@ -1024,6 +1059,79 @@ export const accountRoutes = new Hono<Env>()
                     email: profile.email ?? null,
                 }),
             });
+        },
+    )
+    .get(
+        "/apps",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "List My Apps",
+            description:
+                "Returns community-catalog apps owned by the authenticated GitHub account. The dashboard calls this through Gen's account API.",
+            responses: {
+                200: {
+                    description: "Apps listed by the authenticated account",
+                    content: {
+                        "application/json": {
+                            schema: resolver(accountAppsResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            if (user.githubId === null) return c.json({ apps: [] });
+
+            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+            const rows = await fetchTinybirdRows<ListedAppRow>(
+                tinybirdOrigin,
+                "/v0/pipes/app_directory_public.json",
+                requireTinybirdReadToken(c.env),
+                { github_user_id: String(user.githubId), limit: "5000" },
+            );
+            const githubUserId = String(user.githubId);
+            const seen = new Set<string>();
+            const apps = rows
+                .filter((row) => row.github_user_id === githubUserId)
+                .sort((a, b) =>
+                    (b.approved_date ?? "").localeCompare(
+                        a.approved_date ?? "",
+                    ),
+                )
+                .filter((row) => {
+                    const key = `${row.name.toLowerCase()}|${row.web_url || row.github_repository_url || ""}`;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                })
+                .map((row) => ({
+                    name: row.name,
+                    webUrl: row.web_url,
+                    screenshotUrl: row.screenshot_url,
+                    description: row.description,
+                    category: row.category,
+                    platform: row.platform,
+                    repositoryUrl: row.github_repository_url,
+                    repositoryStars: (() => {
+                        const value = Number.parseInt(
+                            (row.github_repository_stars ?? "").replace(
+                                /^⭐/u,
+                                "",
+                            ),
+                            10,
+                        );
+                        return Number.isFinite(value) ? value : null;
+                    })(),
+                    issueUrl: row.issue_url || null,
+                    approvedDate: row.approved_date,
+                    byop: row.byop,
+                    requests24h: row.requests_24h,
+                }));
+
+            return c.json({ apps });
         },
     )
     .get(

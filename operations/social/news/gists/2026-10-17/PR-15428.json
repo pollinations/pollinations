@@ -1,0 +1,33 @@
+{
+  "pr_number": 15428,
+  "title": "feat(media): strip image metadata on upload with safe=privacy",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/15428",
+  "merged_at": "2026-10-17T08:09:56Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Media uploads can opt into image metadata stripping with `safe=privacy`, the `Pollinations-Safe: privacy` header, or `safe=true`. It removes supported metadata such as GPS location, camera details, and embedded text before storage while retaining orientation and colour profiles. The option works with multipart, JSON (including image data URLs), and raw image uploads; without it, upload bytes are preserved. Privacy-processed images are limited to 32 MiB (`413` if exceeded), unreadable images return `400`, and successful processing adds `X-Safety-Applied: privacy` to the response.",
+    "keywords": [
+      "media uploads",
+      "image privacy",
+      "metadata",
+      "EXIF",
+      "API",
+      "R2"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-17/PR-15428.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. Wearing a tiny gardener's apron, she gently removes little location-tag sprites from a photo before placing it in a flower-lined storage box, leaving its orientation arrow and colour swatch intact; she is small-to-medium in the scene, with a prominent lime green (#ecf874) glow, warm cream canvas, and mint-to-peach pastel gradients. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; chunky sprites, subtle CRT glow, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-10-17T08:11:37.133095+00:00",
+  "area": "API & reliability",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "6fb4b1218814de1e8a901ea53c8cef258011f69c",
+  "announcements": []
+}

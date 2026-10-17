@@ -1,4 +1,5 @@
-import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { z } from "zod";
 import { BooleanQueryParamSchema } from "./text.ts";
@@ -142,15 +143,36 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     }),
 });
 
+/**
+ * Registry-declared duration ceiling for a canonical model id, provider route,
+ * or alias. Undefined when the model declares none (image models, community
+ * endpoints), leaving the schema's own 1-120 bound to apply.
+ */
+function maxDurationForModel(model: string): number | undefined {
+    for (const [id, service] of Object.entries(IMAGE_SERVICES)) {
+        const definition = service as ModelDefinition;
+        if (id === model || definition.aliases.includes(model)) {
+            return definition.maxDuration;
+        }
+    }
+    return undefined;
+}
+
+// The registry is the source of truth for per-model duration limits: reject a
+// request only when the selected model declares a shorter ceiling (for example
+// veo at 8s, `mirelo/sfx-2.0` at 120s). Models without a declared ceiling keep
+// the schema's 1-120 bound.
 const validateDuration = (
     params: z.infer<typeof GenerateImageRequestQueryParamsBaseSchema>,
     ctx: z.RefinementCtx,
 ) => {
-    if (params.duration !== undefined && params.duration > 30) {
+    if (params.duration === undefined) return;
+    const max = maxDurationForModel(params.model);
+    if (max !== undefined && params.duration > max) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["duration"],
-            message: "Duration above 30 seconds is not supported.",
+            message: `Duration above ${max} seconds is not supported by ${params.model}.`,
         });
     }
 };

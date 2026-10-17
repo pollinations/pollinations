@@ -17,6 +17,7 @@ then choose a server:
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
+| DNS | `https://gen.pollinations.ai/mcp/dns` | Look up live DNS records for domain, website, and email troubleshooting | [Source](https://github.com/pollinations/pollinations/tree/main/apps/dns-mcp) |
 
 Send the key with every request:
 
@@ -141,6 +142,13 @@ with the link can access it, and it expires after 30 days.
 probabilities. Include relevant facts in `state`; confidence can remain high
 when facts are missing. Calls use Jev's listed model rate with no additional
 MCP fee.
+
+### DNS MCP
+
+`dns_lookup` queries Cloudflare's public DNS resolver for a name and record type,
+such as `A`, `AAAA`, `MX`, or `TXT`. It returns the DNS response status, records,
+and TTLs so agents can inspect website and email configuration. Lookups are
+free and require a Pollinations key. The key is not sent to the resolver.
 
 ### FFmpeg MCP
 

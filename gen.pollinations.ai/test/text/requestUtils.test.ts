@@ -197,3 +197,54 @@ describe("getSimpleTextRequestData", () => {
         expect(query.repetition_penalty).toBeUndefined();
     });
 });
+
+describe("GenerateTextRequestQueryParamsSchema parity with chat", () => {
+    it("rejects a seed above INT32_MAX like /v1/chat/completions", () => {
+        expect(() =>
+            GenerateTextRequestQueryParamsSchema.parse({
+                seed: "99999999999",
+            }),
+        ).toThrow();
+        expect(() =>
+            GenerateTextRequestQueryParamsSchema.parse({
+                seed: "-2",
+            }),
+        ).toThrow();
+    });
+
+    it("accepts seeds within the documented range", () => {
+        expect(
+            GenerateTextRequestQueryParamsSchema.parse({ seed: "0" }).seed,
+        ).toBe(0);
+        expect(
+            GenerateTextRequestQueryParamsSchema.parse({ seed: "2147483647" })
+                .seed,
+        ).toBe(2147483647);
+    });
+
+    it("rejects an invalid reasoning_effort like /v1/chat/completions", () => {
+        expect(() =>
+            GenerateTextRequestQueryParamsSchema.parse({
+                reasoning_effort: "banana",
+            }),
+        ).toThrow();
+    });
+
+    it("accepts every documented reasoning_effort value", () => {
+        for (const effort of [
+            "none",
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+        ]) {
+            expect(
+                GenerateTextRequestQueryParamsSchema.parse({
+                    reasoning_effort: effort,
+                }).reasoning_effort,
+            ).toBe(effort);
+        }
+    });
+});

@@ -1248,8 +1248,8 @@ For multi-speaker audio, set `model` to `elevenlabs/eleven-v3:dialogue` and put 
 | `safe` | `string` \| `boolean` | Optional safety features; accepts a comma-separated string or boolean shorthand. |
 | `voice` | `string` | default: `"alloy"` |
 | `response_format` | enum (6) — `"mp3"`, `"opus"`, `"aac"`, … | Defaults to mp3 except Gemini TTS (wav). Gemini TTS supports wav or raw 24 kHz pcm and rejects other explicit formats. |
-| `duration` | `number` | range: `0.5…300` |
-| `seconds` | `number` | range: `1…380` |
+| `duration` | `number` | range: `0.5…380` |
+| `seconds` | `number` | range: `0.5…380` |
 | `steps` | `integer` | range: `1…100` |
 | `negative_prompt` | `string` | — |
 | `instrumental` | `boolean` | — |

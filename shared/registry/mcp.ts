@@ -46,7 +46,8 @@ export type McpBindingName =
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
-    | "COMPUTER_MCP";
+    | "COMPUTER_MCP"
+    | "ARXIV_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -211,6 +212,18 @@ export const MCP_SERVERS = [
         provider: "cloudflare",
         userScoped: true,
         pricing: COMPUTER_MCP_PRICING,
+    },
+    {
+        id: "arxiv",
+        name: "arXiv",
+        description:
+            "Search arXiv for papers and read abstracts, authors, and links.",
+        binding: "ARXIV_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "arXiv lookups are free. No additional MCP fee.",
+            rates: [],
+        },
     },
 ] as const satisfies readonly McpServerDefinition[];
 

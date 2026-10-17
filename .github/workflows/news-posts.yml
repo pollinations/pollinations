@@ -285,6 +285,7 @@ jobs:
           filter: blob:none
           sparse-checkout-cone-mode: false
           sparse-checkout: |
+            /operations/social/news/data/
             /operations/social/news/posts/discord/
 
       - name: Save the model and community posts

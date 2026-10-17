@@ -1,4 +1,4 @@
-import { fmtUnsignedPct, fmtUsd } from "../lib/format";
+import { useAmountDisplay } from "./ReconcilePro";
 
 export type GaugePalette = "wallet" | "neutral";
 
@@ -49,6 +49,7 @@ export function Gauge({
     right: number;
     rightLabel: string;
 }) {
+    const { fmtUnsignedPct } = useAmountDisplay();
     const parts = gaugeParts(left, right);
     if (!parts) return <span className="text-theme-text-soft">–</span>;
     const colors = GAUGE_PALETTE[palette];
@@ -85,6 +86,7 @@ export function GaugeSummary({
     right: number;
     rightLabel: string;
 }) {
+    const { fmtUsd } = useAmountDisplay();
     const colors = GAUGE_PALETTE[palette];
     return (
         <div className="flex flex-wrap items-center gap-2">

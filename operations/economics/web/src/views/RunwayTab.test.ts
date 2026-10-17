@@ -252,7 +252,7 @@ describe("RunwayTab labels", () => {
         expect(html).toContain("full catalog");
         expect(html).toContain("restricted catalog");
         expect(cards).toContain("Snapshot · Sep 3");
-        expect(cards).toContain('aria-label="Paid 17.85% · Quest 82.15%"');
+        expect(cards).toContain('aria-label="Paid 18% · Quest 82%"');
         expect(cards).toContain(">18%</span>");
         expect(cards).toContain(">82%</span>");
         expect(cards).not.toContain("users ·");

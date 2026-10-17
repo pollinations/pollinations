@@ -16,8 +16,9 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
+import { useAmountDisplay } from "../components/ReconcilePro";
 import { StatCards } from "../components/StatCards";
-import { fmtExactUsd, fmtPeriod, fmtUsd } from "../lib/format";
+import { fmtPeriod } from "../lib/format";
 import {
     type ProviderAccountBalanceRow,
     providerAccountBalanceRows,
@@ -52,11 +53,8 @@ function balanceTone(value: number | null) {
     return value != null && value < -0.005 ? "text-intent-danger-text" : "";
 }
 
-function optionalUsd(value: number | null) {
-    return fmtExactUsd(value);
-}
-
 export function BalancesTab({ data }: { data: Data }) {
+    const { fmtUsd } = useAmountDisplay();
     const now = useMemo(() => new Date(), []);
     const rows = useMemo(
         () => providerAccountBalanceRows(data, now),
@@ -248,7 +246,7 @@ export function BalancesTab({ data }: { data: Data }) {
                                         : "–"}
                                 </TableCell>
                                 <TableCell align="right" numeric>
-                                    {optionalUsd(row.creditBalanceUsd)}
+                                    {fmtUsd(row.creditBalanceUsd)}
                                 </TableCell>
                                 <TableCell
                                     className={depletionTone(
@@ -286,7 +284,7 @@ export function BalancesTab({ data }: { data: Data }) {
                                     numeric
                                     className={balanceTone(row.cashBalanceUsd)}
                                 >
-                                    {optionalUsd(row.cashBalanceUsd)}
+                                    {fmtUsd(row.cashBalanceUsd)}
                                 </TableCell>
                             </TableRow>
                         ))}

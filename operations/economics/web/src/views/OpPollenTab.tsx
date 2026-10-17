@@ -13,7 +13,7 @@ import {
     TableScroller,
     useSortableRows,
 } from "../components/DataTable";
-import { fmtExactNumber as fmtNumber } from "../lib/format";
+import { useAmountDisplay } from "../components/ReconcilePro";
 import {
     type MonthFilterValue,
     matchesMonth,
@@ -24,6 +24,7 @@ import {
 import type { Data, OpPollenRow } from "../types";
 
 function PayoutValue({ label, value }: { label: string; value: number }) {
+    const { fmtNumber } = useAmountDisplay();
     return (
         <div>
             <dt className="text-xs font-medium uppercase tracking-wide text-theme-text-soft">
@@ -45,6 +46,7 @@ export function OpPollenTab({
     month?: MonthFilterValue;
     vendor?: ValueFilter;
 }) {
+    const { fmtNumber } = useAmountDisplay();
     const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
     const baseRows = useMemo(
         () =>

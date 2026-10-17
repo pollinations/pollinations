@@ -22,12 +22,7 @@ import { EvidenceAction, EvidencePreview } from "../components/Evidence";
 import { useAmountDisplay } from "../components/ReconcilePro";
 import { StatCards } from "../components/StatCards";
 import type { DriveDocumentLink } from "../lib/documents";
-import {
-    fmtMarginPct,
-    fmtNumber,
-    fmtPeriod,
-    hasVisibleAmount,
-} from "../lib/format";
+import { fmtNumber, fmtPeriod, hasVisibleAmount } from "../lib/format";
 import type { MonthFilterValue } from "../lib/months";
 import {
     creatorSettlementRows,
@@ -81,7 +76,7 @@ function revenueSources(row: RevenueShareRow) {
 }
 
 function RevenueShareTable({ rows }: { rows: RevenueShareRow[] }) {
-    const { pro, fmtUsd } = useAmountDisplay();
+    const { pro, fmtUsd, fmtMarginPct } = useAmountDisplay();
     const { headerProps, rows: sortedRows } = useSortableRows(
         rows.filter(
             (row) =>

@@ -24,7 +24,6 @@ import {
     fmtMonthDay,
     fmtNumber,
     fmtPeriod,
-    fmtUnsignedPct,
     fmtUsd,
     hasVisibleAmount,
 } from "../lib/format";
@@ -372,8 +371,11 @@ function SummaryRow({
 }
 
 export function RunwayTab({ data, year }: { data: Data; year: string }) {
-    const { fmtNumber: fmtRunwayTableValue, fmtUsd: fmtRunwayUsd } =
-        useAmountDisplay();
+    const {
+        fmtNumber: fmtRunwayTableValue,
+        fmtUsd: fmtRunwayUsd,
+        fmtUnsignedPct,
+    } = useAmountDisplay();
     const runway = useMemo(
         () =>
             buildRunway(
@@ -435,8 +437,7 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
     const balanceSplit = balances
         ? gaugeParts(balances.paid_balance, balances.quest_balance)
         : null;
-    const percent = (value: number | undefined) =>
-        fmtUnsignedPct(value == null ? null : Math.round(value));
+    const percent = (value: number | undefined) => fmtUnsignedPct(value);
     const last = runway.columns.at(-1);
     const runwayTone: StatTone =
         runway.runwayMonths == null

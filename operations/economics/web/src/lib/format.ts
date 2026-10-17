@@ -123,26 +123,32 @@ export function fmtRateUsd(value: number | null | undefined): string {
     return fmtExactUsd(Number(value.toPrecision(6)));
 }
 
-function percentageMagnitude(value: number): string {
+function percentageMagnitude(value: number, decimals: number): string {
     const magnitude = Math.abs(value);
-    if (magnitude > 0 && magnitude < 0.01) return "<0.01";
-    if (magnitude < 100 && magnitude >= 99.995) return "<100";
-    return magnitude.toLocaleString("en-US", { maximumFractionDigits: 2 });
+    const step = 10 ** -decimals;
+    if (magnitude > 0 && magnitude < step) return `<${step}`;
+    if (magnitude < 100 && magnitude >= 100 - step / 2) return "<100";
+    return magnitude.toLocaleString("en-US", {
+        maximumFractionDigits: decimals,
+    });
 }
 
-export function fmtPct(value: number | null): string {
+export function fmtPct(value: number | null, decimals = 2): string {
     if (value == null || !Number.isFinite(value)) return "–";
-    const magnitude = percentageMagnitude(value);
+    const magnitude = percentageMagnitude(value, decimals);
     return value < 0 ? `−${magnitude}%` : `+${magnitude}%`;
 }
 
 // Margin percentages carry the − sign but drop the leading + — a positive
 // margin is the unremarkable case.
-export function fmtMarginPct(value: number | null): string {
-    return fmtPct(value).replace(/^\+/, "");
+export function fmtMarginPct(value: number | null, decimals = 2): string {
+    return fmtPct(value, decimals).replace(/^\+/, "");
 }
 
-export function fmtUnsignedPct(value: number | null | undefined): string {
+export function fmtUnsignedPct(
+    value: number | null | undefined,
+    decimals = 2,
+): string {
     if (value == null || !Number.isFinite(value)) return "–";
-    return `${percentageMagnitude(value)}%`;
+    return `${percentageMagnitude(value, decimals)}%`;
 }

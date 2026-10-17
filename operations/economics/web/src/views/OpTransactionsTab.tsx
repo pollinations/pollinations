@@ -16,9 +16,10 @@ import {
 } from "../components/DataTable";
 import { EvidenceAction, EvidencePreview } from "../components/Evidence";
 import { SourceCell } from "../components/Provenance";
+import { useAmountDisplay } from "../components/ReconcilePro";
 import { categoryLabel } from "../lib/categories";
 import type { DriveDocumentLink } from "../lib/documents";
-import { fmtExactNumber as fmtNumber, fmtUtcDateTime } from "../lib/format";
+import { fmtUtcDateTime } from "../lib/format";
 import {
     type MonthFilterValue,
     matchesMonth,
@@ -40,6 +41,7 @@ export function OpTransactionsTab({
     month?: MonthFilterValue;
     vendor?: ValueFilter;
 }) {
+    const { fmtNumber } = useAmountDisplay();
     const [previewDocument, setPreviewDocument] =
         useState<DriveDocumentLink | null>(null);
     const [expanded, setExpanded] = useState<Set<string>>(() => new Set());

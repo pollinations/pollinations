@@ -28,7 +28,7 @@ import {
     type ComputeMode,
     providerMonthComputeMode,
 } from "../lib/computeModes";
-import { fmtMarginPct, fmtUnsignedPct, hasVisibleAmount } from "../lib/format";
+import { hasVisibleAmount } from "../lib/format";
 import { signedToneOrSoft } from "../lib/tone";
 import {
     type UnitEconomicsGrain,
@@ -190,7 +190,8 @@ function UnitEconomicsTable({
     month: string;
     view: UnitEconomicsView;
 }) {
-    const { pro, fmtUsd, fmtSignedUsd } = useAmountDisplay();
+    const { pro, fmtUsd, fmtSignedUsd, fmtMarginPct, fmtUnsignedPct } =
+        useAmountDisplay();
     const grain: UnitEconomicsGrain = view === "vendors" ? "provider" : "model";
     const {
         modeIndex,
@@ -252,8 +253,7 @@ function UnitEconomicsTable({
         summary.providerCashUsd,
         summary.providerCreditUsd,
     );
-    const percent = (value: number | undefined) =>
-        fmtUnsignedPct(value == null ? null : Math.round(value));
+    const percent = (value: number | undefined) => fmtUnsignedPct(value);
     const stats = [
         {
             label: "Pollen used",

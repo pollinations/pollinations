@@ -16,12 +16,9 @@ import {
 } from "../components/DataTable";
 import { EvidenceAction, EvidencePreview } from "../components/Evidence";
 import { SourceCell } from "../components/Provenance";
+import { useAmountDisplay } from "../components/ReconcilePro";
 import type { DriveDocumentLink } from "../lib/documents";
-import {
-    fmtMonthDay,
-    fmtExactNumber as fmtNumber,
-    fmtUtcDateTime,
-} from "../lib/format";
+import { fmtMonthDay, fmtUtcDateTime } from "../lib/format";
 import {
     type MonthFilterValue,
     matchesMonth,
@@ -89,6 +86,7 @@ export function VendorLedgerTab({
     month?: MonthFilterValue;
     vendor?: ValueFilter;
 }) {
+    const { fmtNumber } = useAmountDisplay();
     const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
     const [previewDocument, setPreviewDocument] =
         useState<DriveDocumentLink | null>(null);
@@ -369,9 +367,9 @@ export function VendorLedgerTab({
                                                     />
                                                     <DetailItem
                                                         label="Count"
-                                                        value={
-                                                            row.resource_count
-                                                        }
+                                                        value={fmtNumber(
+                                                            row.resource_count,
+                                                        )}
                                                     />
                                                     <DetailItem
                                                         label="Entry ID"

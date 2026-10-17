@@ -1,9 +1,9 @@
 import { CardIcon, Heading, Surface } from "@pollinations/ui";
-import { fmtNumber, fmtPct } from "../lib/format";
 import { monthName, monthShift } from "../lib/months";
 import { PRODUCT_STREAMS, type ProductMixMonth } from "../lib/productMix";
 import { trendPercentChange } from "../lib/trends";
 import { HeaderHint } from "./DataTable";
+import { useAmountDisplay } from "./ReconcilePro";
 import { TrendPlot } from "./TrendPlot";
 
 export function ProductMixCard({
@@ -17,6 +17,7 @@ export function ProductMixCard({
     previous?: ProductMixMonth;
     onInspect: (month: string) => void;
 }) {
+    const { fmtNumber, fmtPct } = useAmountDisplay();
     const active = rows.find((row) => row.month === activeMonth) ?? rows.at(-1);
     const slot = 528 / Math.max(1, rows.length);
     const x = (i: number) => 64 + slot * (i + 0.5);

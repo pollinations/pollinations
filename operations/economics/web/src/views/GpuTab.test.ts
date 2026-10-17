@@ -550,7 +550,7 @@ it("pairs GPU usage and funding with shares and keeps results as amounts", () =>
     expect(cards).toContain("$160");
     expect(cards).toContain("$40");
     expect(cards).toContain('aria-label="Paid 80% · Quest 20%"');
-    expect(cards).toContain('aria-label="Cash 76.92% · Credits 23.08%"');
+    expect(cards).toContain('aria-label="Cash 77% · Credits 23%"');
     expect(cards).toContain("$130 total");
     expect(cards).not.toContain("Actual");
     expect(cards).toContain("+$30");

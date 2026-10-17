@@ -21,13 +21,7 @@ import {
 import { Gauge, gaugeParts } from "../components/EconomicsGauge";
 import { useAmountDisplay } from "../components/ReconcilePro";
 import { PairedStatCards } from "../components/StatCards";
-import {
-    fmtMarginPct,
-    fmtNumber,
-    fmtRateUsd,
-    fmtUnsignedPct,
-    hasVisibleAmount,
-} from "../lib/format";
+import { fmtNumber, hasVisibleAmount } from "../lib/format";
 import {
     type GpuResourceRow,
     type GpuWorkloadRow,
@@ -54,7 +48,7 @@ const RESOURCE_SORT_COLUMNS: readonly SortColumn<GpuResourceRow>[] = [
 ];
 
 function GpuInstanceTable({ rows }: { rows: GpuResourceRow[] }) {
-    const { pro, fmtUsd } = useAmountDisplay();
+    const { pro, fmtUsd, fmtRateUsd, fmtNumber } = useAmountDisplay();
     const { headerProps, rows: sorted } = useSortableRows(
         rows.filter(
             (row) =>
@@ -217,7 +211,8 @@ export function GpuTab({
     month?: MonthFilterValue;
     vendor?: ValueFilter;
 }) {
-    const { pro, fmtUsd, fmtSignedUsd } = useAmountDisplay();
+    const { pro, fmtUsd, fmtSignedUsd, fmtMarginPct, fmtUnsignedPct } =
+        useAmountDisplay();
     const resourceRows = useMemo(
         () => visibleGpuResourceRows(gpuResourceRows(data, month), vendor),
         [data, month, vendor],
@@ -233,8 +228,7 @@ export function GpuTab({
     );
     const usageSplit = gaugeParts(stats.paidUsd, stats.questUsd);
     const fundingSplit = gaugeParts(stats.paidCostUsd, stats.creditCostUsd);
-    const percent = (value: number | undefined) =>
-        fmtUnsignedPct(value == null ? null : Math.round(value));
+    const percent = (value: number | undefined) => fmtUnsignedPct(value);
     const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
     const sortColumns = useMemo<SortColumn<GpuWorkloadRow>[]>(
         () => [

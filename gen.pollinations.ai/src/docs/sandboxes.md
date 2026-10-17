@@ -6,7 +6,9 @@ Run code, development servers and coding agents on a cloud Linux computer, power
 
 ### Create and connect
 
-Create a sandbox from the [dashboard](https://enter.pollinations.ai/sandboxes), or use the CLI below. You need Node.js 22 or newer and credits in your account.
+Create a sandbox from the [dashboard](https://enter.pollinations.ai/sandboxes), or use the CLI below. The CLI needs Node.js 20+ and account credits.
+
+<p align="left"><img src="https://media.pollinations.ai/7452f81b-4065-4af5-a65b-662c811e7ea2" alt="Sandboxes page on the dashboard" width="560"></p>
 
 ```bash
 npm install -g @pollinations/cli
@@ -17,7 +19,7 @@ ssh <id>.polli
 
 Replace `<id>` with the ID printed by `create`. For a sandbox created in the dashboard, run `polli sandbox ssh-config` once before connecting. VS Code's Remote-SSH uses the same `<id>.polli` host.
 
-The default template includes Python, Node.js and coding tools. Choose `pollinations-large` when creating a sandbox for more CPU and memory. To preview a web app running on port 3000:
+Templates include Python, Node.js and coding tools; `pollinations-large` has more CPU and memory. To preview port 3000:
 
 ```bash
 ssh -L 3000:localhost:3000 <id>.polli
@@ -42,6 +44,6 @@ For background work, `polli sandbox timeout <id> 14400` keeps it running for fou
 - CPU and memory usage is charged in **credits, prepaid 10 minutes ahead**. See [current rates and template sizes](https://gen.pollinations.ai/alpha/e2b/pricing).
 - Paused sandboxes incur no further charges. **Unused prepaid time is not refunded** when you pause, delete or shorten the timeout; resuming starts a new payment.
 - Creation needs enough account balance and key budget for the first payment. Up to **8 sandboxes** can run per account.
-- Deleting a sandbox leaves its dedicated API key. Revoke it separately from [API Keys](https://enter.pollinations.ai/keys) if no longer needed.
+- Pollinations templates created with `keys` permission receive a dedicated API key. Deletion leaves that key; revoke it from [API Keys](https://enter.pollinations.ai/keys) if no longer needed.
 
-For SSH troubleshooting, custom templates, storage and E2B SDK setup, see the [sandbox reference](https://github.com/pollinations/pollinations/blob/main/gen.pollinations.ai/src/docs/sandboxes-reference.md).
+For SSH troubleshooting, custom templates, storage and E2B SDK setup, see the [sandbox reference](#tag/sandboxes-api).

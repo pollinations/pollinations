@@ -115,6 +115,35 @@ describe("docs routes", () => {
                 },
             },
         });
+        for (const [path, defaultTimeout] of [
+            ["/alpha/e2b/sandboxes", 15],
+            ["/alpha/e2b/v2/sandboxes", 300],
+            ["/alpha/e2b/sandboxes/{id}/connect", 300],
+            ["/alpha/e2b/v2/sandboxes/{id}/connect", 300],
+        ] as const) {
+            expect(schema.paths[path].post).toHaveProperty(
+                [
+                    "requestBody",
+                    "content",
+                    "application/json",
+                    "schema",
+                    "properties",
+                    "timeout",
+                    "default",
+                ],
+                defaultTimeout,
+            );
+        }
+        expect(schema.paths["/alpha/e2b/sandboxes"].post).toMatchObject({
+            deprecated: true,
+        });
+        expect(
+            schema.tags?.find((tag) => tag.name === "Sandboxes API")
+                ?.description,
+        ).toContain("E2B_API_URL");
+        expect(
+            schema.tags?.find((tag) => tag.name === "Sandboxes")?.description,
+        ).not.toContain("E2B_API_URL");
         const connect =
             schema.paths["/alpha/e2b/v2/sandboxes/{id}/connect"].post;
         expect(connect).toHaveProperty(["responses", "201"]);
@@ -141,6 +170,31 @@ describe("docs routes", () => {
             schema["x-tagGroups"].find((group) => group.name === "Guides")
                 ?.tags,
         ).not.toContain("Sandboxes API");
+    });
+
+    it("includes the sandbox SDK reference in copied docs and sandbox sections", async () => {
+        for (const suffix of [
+            "",
+            "?section=sandboxes",
+            "?section=sandboxes-api",
+        ]) {
+            const ctx = createExecutionContext();
+            const res = await worker.fetch(
+                new Request(
+                    `https://gen.pollinations.ai/docs/llm.txt${suffix}`,
+                ),
+                envWithEnterSchema({ paths: {} }),
+                ctx,
+            );
+            await waitOnExecutionContext(ctx);
+            expect(res.status).toBe(200);
+            const text = await res.text();
+            expect(text).toContain(
+                "E2B_API_URL=https://gen.pollinations.ai/alpha/e2b",
+            );
+            expect(text).toContain("`machines` permission");
+            expect(text).toContain("--timeout 0");
+        }
     });
 
     it("generates valid request examples from the checked-out Gen schema", async () => {

@@ -447,96 +447,93 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
         .use("*", ...authenticate, requireSandboxAccess)
         // E2B's CLI still creates and connects through the deprecated v1 paths,
         // which take the same bodies as v2.
-        .on(
-            "POST",
-            ["/sandboxes", "/v2/sandboxes"],
-            sandboxDocs.create,
-            async (c) => {
-                const startTime = new Date();
-                const body = await readJson<NewSandbox>(c);
-                if (body.autoResume?.enabled) {
-                    throw new HTTPException(400, {
-                        message:
-                            "autoResume is not supported. Resume a paused sandbox with connect.",
-                    });
-                }
-                if (body.iam || body.volumeMounts?.length) {
-                    throw new HTTPException(400, {
-                        message: "iam and volumeMounts are not supported.",
-                    });
-                }
-                const until = keepUntil(body.timeout);
-                // An empty wallet cannot pay for any lease.
-                await requireAccountFunds(c, 0);
-                await requireCapacity(c);
+        .post("/sandboxes", sandboxDocs.createLegacy)
+        .post("/v2/sandboxes", sandboxDocs.create)
+        .on("POST", ["/sandboxes", "/v2/sandboxes"], async (c) => {
+            const startTime = new Date();
+            const body = await readJson<NewSandbox>(c);
+            if (body.autoResume?.enabled) {
+                throw new HTTPException(400, {
+                    message:
+                        "autoResume is not supported. Resume a paused sandbox with connect.",
+                });
+            }
+            if (body.iam || body.volumeMounts?.length) {
+                throw new HTTPException(400, {
+                    message: "iam and volumeMounts are not supported.",
+                });
+            }
+            const until = keepUntil(body.timeout);
+            // An empty wallet cannot pay for any lease.
+            await requireAccountFunds(c, 0);
+            await requireCapacity(c);
 
-                const response = await e2b(
-                    c.env,
-                    c.req.path.slice(E2B_PATH.length),
-                    {
-                        method: "POST",
-                        headers: { "content-type": "application/json" },
-                        body: JSON.stringify({
-                            ...body,
-                            // A lease that runs out pauses the sandbox, as polli and
-                            // the dashboard ask; E2B's SDKs omit this unless told
-                            // `lifecycle.onTimeout`, and E2B then kills it.
-                            autoPause: body.autoPause ?? true,
-                            ...(until && { timeout: KEEP_LEASE_SECONDS }),
-                            // Otherwise envd lets anyone who knows the sandbox ID run
-                            // commands and read files in it.
-                            secure: true,
-                            metadata: {
-                                ...body.metadata,
-                                [OWNER_KEY]: c.var.auth.requireUser().id,
-                            },
-                        }),
-                    },
+            const response = await e2b(
+                c.env,
+                c.req.path.slice(E2B_PATH.length),
+                {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({
+                        ...body,
+                        // A lease that runs out pauses the sandbox, as polli and
+                        // the dashboard ask; E2B's SDKs omit this unless told
+                        // `lifecycle.onTimeout`, and E2B then kills it.
+                        autoPause: body.autoPause ?? true,
+                        ...(until && { timeout: KEEP_LEASE_SECONDS }),
+                        // Otherwise envd lets anyone who knows the sandbox ID run
+                        // commands and read files in it.
+                        secure: true,
+                        metadata: {
+                            ...body.metadata,
+                            [OWNER_KEY]: c.var.auth.requireUser().id,
+                        },
+                    }),
+                },
+            );
+            if (!response.ok) return new Response(response.body, response);
+            const created = await response.json<CreatedSandbox>();
+
+            // The template sets the size, so the price is known only now.
+            let bill: Lease;
+            try {
+                const sandbox = await getSandbox(c.env, created.sandboxID);
+                if (!sandbox) {
+                    throw new HTTPException(502, {
+                        message: `Sandbox ${created.sandboxID} vanished after create`,
+                    });
+                }
+                bill = lease(
+                    sandbox,
+                    (Date.parse(sandbox.endAt) -
+                        Date.parse(sandbox.startedAt)) /
+                        1000,
                 );
-                if (!response.ok) return new Response(response.body, response);
-                const created = await response.json<CreatedSandbox>();
-
-                // The template sets the size, so the price is known only now.
-                let bill: Lease;
+                await requireAccountFunds(c, bill.price);
+                if (until) await setKeep(c, created.sandboxID, until);
+            } catch (error) {
+                // Never leave an unpaid sandbox running.
+                await e2b(c.env, `/sandboxes/${created.sandboxID}`, {
+                    method: "DELETE",
+                });
+                throw error;
+            }
+            await charge(c, bill, startTime);
+            if (LOGGED_IN_TEMPLATES.includes(body.templateID ?? "")) {
                 try {
-                    const sandbox = await getSandbox(c.env, created.sandboxID);
-                    if (!sandbox) {
-                        throw new HTTPException(502, {
-                            message: `Sandbox ${created.sandboxID} vanished after create`,
-                        });
-                    }
-                    bill = lease(
-                        sandbox,
-                        (Date.parse(sandbox.endAt) -
-                            Date.parse(sandbox.startedAt)) /
-                            1000,
-                    );
-                    await requireAccountFunds(c, bill.price);
-                    if (until) await setKeep(c, created.sandboxID, until);
+                    await logIn(c, created);
                 } catch (error) {
-                    // Never leave an unpaid sandbox running.
-                    await e2b(c.env, `/sandboxes/${created.sandboxID}`, {
-                        method: "DELETE",
+                    // The sandbox still works; `polli auth login` in it logs in.
+                    c.var.log.error("Sandbox login failed: {error}", {
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
                     });
-                    throw error;
                 }
-                await charge(c, bill, startTime);
-                if (LOGGED_IN_TEMPLATES.includes(body.templateID ?? "")) {
-                    try {
-                        await logIn(c, created);
-                    } catch (error) {
-                        // The sandbox still works; `polli auth login` in it logs in.
-                        c.var.log.error("Sandbox login failed: {error}", {
-                            error:
-                                error instanceof Error
-                                    ? error.message
-                                    : String(error),
-                        });
-                    }
-                }
-                return c.json(created, 201);
-            },
-        )
+            }
+            return c.json(created, 201);
+        })
         .get("/v2/sandboxes", sandboxDocs.list, async (c) => {
             // Listing is scoped to the caller's sandboxes, whatever they filter.
             const url = new URL(c.req.url);

@@ -113,15 +113,18 @@ function operation(summary: string, description: string, options: Description) {
     });
 }
 
-export const sandboxDocs = {
-    create: operation(
-        "Create sandbox",
-        "Create a secure E2B sandbox and prepay its runtime in credits. Auto-pause defaults to true. Auto-resume, IAM and volume mounts are unsupported. The unversioned path is a compatibility alias; prefer /alpha/e2b/v2/sandboxes.",
+const createDocs = (legacy: boolean) =>
+    operation(
+        legacy ? "Create sandbox (legacy)" : "Create sandbox",
+        "Create a secure E2B sandbox and prepay its runtime in credits. Auto-pause defaults to true. Auto-resume, IAM and volume mounts are unsupported. Creation uses the upstream timeout default when omitted: 15 seconds on v1, 300 on v2. Set timeout explicitly; prefer /alpha/e2b/v2/sandboxes.",
         {
+            deprecated: legacy,
             requestBody: body(
                 z.looseObject({
                     templateID: z.string(),
-                    timeout: timeout.default(300),
+                    timeout: (legacy ? timeout.min(0) : timeout).default(
+                        legacy ? 15 : 300,
+                    ),
                     autoPause: z.boolean().default(true),
                     metadata: strings.optional(),
                     envVars: strings.optional(),
@@ -144,7 +147,11 @@ export const sandboxDocs = {
                 ),
             },
         },
-    ),
+    );
+
+export const sandboxDocs = {
+    create: createDocs(false),
+    createLegacy: createDocs(true),
     list: operation(
         "List sandboxes",
         "List your sandboxes. Results are always scoped to your account, including when filtering metadata.",
@@ -256,7 +263,7 @@ export const sandboxDocs = {
     ),
     delete: operation(
         "Delete sandbox",
-        "Permanently delete the sandbox and its files. Ends renewal with no refund of unused prepaid time. Its dedicated API key remains until separately revoked.",
+        "Permanently delete the sandbox and its files. Ends renewal with no refund of unused prepaid time. If a dedicated API key was created for a Pollinations template, it remains until separately revoked.",
         {
             parameters: [id],
             responses: {

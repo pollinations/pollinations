@@ -61,6 +61,7 @@ import PUBLIC_STATS_MD from "../docs/public-stats.md?raw";
 import QUICK_START_MD from "../docs/quick-start.md?raw";
 import SAFETY_MD from "../docs/safety.md?raw";
 import SANDBOXES_MD from "../docs/sandboxes.md?raw";
+import SANDBOXES_REFERENCE_MD from "../docs/sandboxes-reference.md?raw";
 import TEXT_GENERATION_MD from "../docs/text-generation.md?raw";
 import VIDEO_GENERATION_MD from "../docs/video-generation.md?raw";
 import X402_PREPAID_KEYS_MD from "../docs/x402-prepaid-keys.md?raw";
@@ -387,6 +388,11 @@ const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
 const CODING_HARNESSES_SECTION = `## Coding Harnesses\n\n${CODING_HARNESSES_DOCS}`;
 const MCP_SECTION = `## MCP Servers\n\n${MCP_DOCS}`;
 const SANDBOXES_SECTION = `## Sandboxes\n\n${SANDBOXES_DOCS}`;
+const SANDBOXES_API_DOCS = [
+    "Manage cloud Linux sandboxes through the E2B-compatible API (alpha). Start with the [Sandboxes guide](#tag/sandboxes). File access and command execution use E2B SDK connections directly; only the management endpoints below are exposed through Pollinations.",
+    stripLeadingHeading(SANDBOXES_REFERENCE_MD.trim()),
+].join("\n\n");
+const SANDBOXES_API_SECTION = `## Sandboxes API\n\n${SANDBOXES_API_DOCS}`;
 
 const LLM_DOC_TEXT = [
     GEN_API_DOCS,
@@ -397,6 +403,7 @@ const LLM_DOC_TEXT = [
     CODING_HARNESSES_SECTION,
     MCP_SECTION,
     SANDBOXES_SECTION,
+    SANDBOXES_API_SECTION,
 ].join("\n\n");
 
 const LLM_DOC_SECTIONS: Record<string, string> = {
@@ -407,7 +414,8 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
     cli: CLI_SECTION,
     "coding-harnesses": CODING_HARNESSES_SECTION,
     mcp: MCP_SECTION,
-    sandboxes: SANDBOXES_SECTION,
+    sandboxes: [SANDBOXES_SECTION, SANDBOXES_API_SECTION].join("\n\n"),
+    "sandboxes-api": SANDBOXES_API_SECTION,
     x402: X402_PREPAID_KEYS_DOCS,
 };
 
@@ -656,8 +664,7 @@ function generationDocumentation(): OpenApiSchema {
             },
             {
                 name: DOC_TAGS.sandboxesApi,
-                description:
-                    "Manage cloud Linux sandboxes through the E2B-compatible API (alpha). Start with the [Sandboxes guide](#tag/sandboxes). File access and command execution use E2B SDK connections directly; only the management endpoints below are exposed through Pollinations.",
+                description: SANDBOXES_API_DOCS,
             },
             {
                 name: DOC_TAGS.errors,

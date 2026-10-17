@@ -150,6 +150,7 @@ function llmsTxt(c: Context<Env>): Response {
 - [MCP server catalog](${origin}/mcp): Agent tools and server URLs.
 - [OAuth protected resource metadata](${origin}/.well-known/oauth-protected-resource): RFC 9728 pointer to the authorization server that issues API keys.
 - [MCP AI Catalog](${origin}/.well-known/ai-catalog.json): SEP-2127 discovery of MCP Server Cards.
+- [Media storage](https://media.pollinations.ai/llms.txt): Upload and retrieve files; the store behind generated media URLs.
 
 ## Guides
 

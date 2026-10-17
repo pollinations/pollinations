@@ -36,6 +36,8 @@ import { requestIdentity } from "@/middleware/track.ts";
 import { requireAccountFunds } from "@/utils/generation-access.ts";
 import { permissionRequired } from "@/utils/refusals.ts";
 
+import { sandboxDocs } from "./e2b-docs.ts";
+
 // E2B's control API, forwarded under Pollinations keys. The SDKs talk to the
 // sandboxes themselves (commands, files, ports) directly at E2B with the
 // per-sandbox tokens these responses carry.
@@ -445,92 +447,97 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
         .use("*", ...authenticate, requireSandboxAccess)
         // E2B's CLI still creates and connects through the deprecated v1 paths,
         // which take the same bodies as v2.
-        .on("POST", ["/sandboxes", "/v2/sandboxes"], async (c) => {
-            const startTime = new Date();
-            const body = await readJson<NewSandbox>(c);
-            if (body.autoResume?.enabled) {
-                throw new HTTPException(400, {
-                    message:
-                        "autoResume is not supported. Resume a paused sandbox with connect.",
-                });
-            }
-            if (body.iam || body.volumeMounts?.length) {
-                throw new HTTPException(400, {
-                    message: "iam and volumeMounts are not supported.",
-                });
-            }
-            const until = keepUntil(body.timeout);
-            // An empty wallet cannot pay for any lease.
-            await requireAccountFunds(c, 0);
-            await requireCapacity(c);
-
-            const response = await e2b(
-                c.env,
-                c.req.path.slice(E2B_PATH.length),
-                {
-                    method: "POST",
-                    headers: { "content-type": "application/json" },
-                    body: JSON.stringify({
-                        ...body,
-                        // A lease that runs out pauses the sandbox, as polli and
-                        // the dashboard ask; E2B's SDKs omit this unless told
-                        // `lifecycle.onTimeout`, and E2B then kills it.
-                        autoPause: body.autoPause ?? true,
-                        ...(until && { timeout: KEEP_LEASE_SECONDS }),
-                        // Otherwise envd lets anyone who knows the sandbox ID run
-                        // commands and read files in it.
-                        secure: true,
-                        metadata: {
-                            ...body.metadata,
-                            [OWNER_KEY]: c.var.auth.requireUser().id,
-                        },
-                    }),
-                },
-            );
-            if (!response.ok) return new Response(response.body, response);
-            const created = await response.json<CreatedSandbox>();
-
-            // The template sets the size, so the price is known only now.
-            let bill: Lease;
-            try {
-                const sandbox = await getSandbox(c.env, created.sandboxID);
-                if (!sandbox) {
-                    throw new HTTPException(502, {
-                        message: `Sandbox ${created.sandboxID} vanished after create`,
+        .on(
+            "POST",
+            ["/sandboxes", "/v2/sandboxes"],
+            sandboxDocs.create,
+            async (c) => {
+                const startTime = new Date();
+                const body = await readJson<NewSandbox>(c);
+                if (body.autoResume?.enabled) {
+                    throw new HTTPException(400, {
+                        message:
+                            "autoResume is not supported. Resume a paused sandbox with connect.",
                     });
                 }
-                bill = lease(
-                    sandbox,
-                    (Date.parse(sandbox.endAt) -
-                        Date.parse(sandbox.startedAt)) /
-                        1000,
+                if (body.iam || body.volumeMounts?.length) {
+                    throw new HTTPException(400, {
+                        message: "iam and volumeMounts are not supported.",
+                    });
+                }
+                const until = keepUntil(body.timeout);
+                // An empty wallet cannot pay for any lease.
+                await requireAccountFunds(c, 0);
+                await requireCapacity(c);
+
+                const response = await e2b(
+                    c.env,
+                    c.req.path.slice(E2B_PATH.length),
+                    {
+                        method: "POST",
+                        headers: { "content-type": "application/json" },
+                        body: JSON.stringify({
+                            ...body,
+                            // A lease that runs out pauses the sandbox, as polli and
+                            // the dashboard ask; E2B's SDKs omit this unless told
+                            // `lifecycle.onTimeout`, and E2B then kills it.
+                            autoPause: body.autoPause ?? true,
+                            ...(until && { timeout: KEEP_LEASE_SECONDS }),
+                            // Otherwise envd lets anyone who knows the sandbox ID run
+                            // commands and read files in it.
+                            secure: true,
+                            metadata: {
+                                ...body.metadata,
+                                [OWNER_KEY]: c.var.auth.requireUser().id,
+                            },
+                        }),
+                    },
                 );
-                await requireAccountFunds(c, bill.price);
-                if (until) await setKeep(c, created.sandboxID, until);
-            } catch (error) {
-                // Never leave an unpaid sandbox running.
-                await e2b(c.env, `/sandboxes/${created.sandboxID}`, {
-                    method: "DELETE",
-                });
-                throw error;
-            }
-            await charge(c, bill, startTime);
-            if (LOGGED_IN_TEMPLATES.includes(body.templateID ?? "")) {
+                if (!response.ok) return new Response(response.body, response);
+                const created = await response.json<CreatedSandbox>();
+
+                // The template sets the size, so the price is known only now.
+                let bill: Lease;
                 try {
-                    await logIn(c, created);
+                    const sandbox = await getSandbox(c.env, created.sandboxID);
+                    if (!sandbox) {
+                        throw new HTTPException(502, {
+                            message: `Sandbox ${created.sandboxID} vanished after create`,
+                        });
+                    }
+                    bill = lease(
+                        sandbox,
+                        (Date.parse(sandbox.endAt) -
+                            Date.parse(sandbox.startedAt)) /
+                            1000,
+                    );
+                    await requireAccountFunds(c, bill.price);
+                    if (until) await setKeep(c, created.sandboxID, until);
                 } catch (error) {
-                    // The sandbox still works; `polli auth login` in it logs in.
-                    c.var.log.error("Sandbox login failed: {error}", {
-                        error:
-                            error instanceof Error
-                                ? error.message
-                                : String(error),
+                    // Never leave an unpaid sandbox running.
+                    await e2b(c.env, `/sandboxes/${created.sandboxID}`, {
+                        method: "DELETE",
                     });
+                    throw error;
                 }
-            }
-            return c.json(created, 201);
-        })
-        .get("/v2/sandboxes", async (c) => {
+                await charge(c, bill, startTime);
+                if (LOGGED_IN_TEMPLATES.includes(body.templateID ?? "")) {
+                    try {
+                        await logIn(c, created);
+                    } catch (error) {
+                        // The sandbox still works; `polli auth login` in it logs in.
+                        c.var.log.error("Sandbox login failed: {error}", {
+                            error:
+                                error instanceof Error
+                                    ? error.message
+                                    : String(error),
+                        });
+                    }
+                }
+                return c.json(created, 201);
+            },
+        )
+        .get("/v2/sandboxes", sandboxDocs.list, async (c) => {
             // Listing is scoped to the caller's sandboxes, whatever they filter.
             const url = new URL(c.req.url);
             const metadata = new URLSearchParams(
@@ -548,26 +555,26 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 { status: response.status, headers },
             );
         })
-        .get("/sandboxes/:id", async (c) => {
+        .get("/sandboxes/:id", sandboxDocs.get, async (c) => {
             const [sandbox] = await showKeeps(c.env, [await ownedSandbox(c)]);
             return c.json(sandbox);
         })
-        .delete("/sandboxes/:id", ownerOnly)
-        .get("/sandboxes/:id/metrics", ownerOnly)
+        .delete("/sandboxes/:id", sandboxDocs.delete, ownerOnly)
+        .get("/sandboxes/:id/metrics", sandboxDocs.metrics, ownerOnly)
         // `e2b sandbox logs` reads this deprecated v1 path.
-        .get("/sandboxes/:id/logs", ownerOnly)
+        .get("/sandboxes/:id/logs", sandboxDocs.logs, ownerOnly)
         // A pause ends a keep, as E2B's timeout would; a timeout or connect
         // longer than 10 minutes starts it again.
-        .post("/sandboxes/:id/pause", async (c) => {
+        .post("/sandboxes/:id/pause", sandboxDocs.pause, async (c) => {
             const response = await ownerOnly(c);
             if (response.ok && !keeper) {
                 await setKeep(c, c.req.param("id"), null);
             }
             return response;
         })
-        .put("/sandboxes/:id/network", ownerOnly)
+        .put("/sandboxes/:id/network", sandboxDocs.network, ownerOnly)
         // Like E2B's, a new timeout replaces the old one, kept or not.
-        .post("/sandboxes/:id/timeout", async (c) => {
+        .post("/sandboxes/:id/timeout", sandboxDocs.timeout, async (c) => {
             const sandbox = await ownedSandbox(c);
             const { timeout } = await readJson<{ timeout: number }>(c);
             const until = keepUntil(timeout);
@@ -584,6 +591,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
         .on(
             "POST",
             ["/sandboxes/:id/connect", "/v2/sandboxes/:id/connect"],
+            sandboxDocs.connect,
             async (c) => {
                 const sandbox = await ownedSandbox(c);
                 if (sandbox.state === "paused") await requireCapacity(c);
@@ -626,7 +634,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
 export const e2bRoutes = new Hono<Env>()
     // Not E2B's: the fixed rates callers pay, public so the docs, the
     // dashboard and Polli can show prices before anyone signs in.
-    .get("/pricing", (c) =>
+    .get("/pricing", sandboxDocs.pricing, (c) =>
         c.json({
             maxRunning: MAX_RUNNING_PER_USER,
             vcpuSecond: VCPU_SECOND * PRICE_MULTIPLIER,

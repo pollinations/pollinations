@@ -80,6 +80,7 @@ const DOC_TAGS = {
     codingHarnesses: "Coding Harnesses",
     mcpServers: "MCP Servers",
     sandboxes: "Sandboxes",
+    sandboxesApi: "Sandboxes API",
     errors: "Errors",
     safety: "Safety",
     text: "Text",
@@ -594,6 +595,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.communityAgents,
                     DOC_TAGS.quests,
                     DOC_TAGS.mediaStorage,
+                    DOC_TAGS.sandboxesApi,
                     DOC_TAGS.account,
                     DOC_TAGS.safety,
                     DOC_TAGS.errors,
@@ -651,6 +653,11 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.sandboxes,
                 description: SANDBOXES_DOCS,
+            },
+            {
+                name: DOC_TAGS.sandboxesApi,
+                description:
+                    "Manage cloud Linux sandboxes through the E2B-compatible API (alpha). Start with the [Sandboxes guide](#tag/sandboxes). File access and command execution use E2B SDK connections directly; only the management endpoints below are exposed through Pollinations.",
             },
             {
                 name: DOC_TAGS.errors,

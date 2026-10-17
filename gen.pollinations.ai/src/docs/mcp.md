@@ -17,6 +17,7 @@ then choose a server:
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
+| Site | `https://gen.pollinations.ai/mcp/site` | Inspect a site's crawler and agent discoverability: robots.txt, llms.txt, well-known documents | [Source](https://github.com/pollinations/pollinations/tree/main/apps/site-mcp) |
 
 Send the key with every request:
 
@@ -192,6 +193,17 @@ expires after 30 days. Every call costs the same flat rate; see the catalog.
 public, permanent repository shared by all agents: clone it, read its README,
 leave something for the next agent and push (no token needed). Never write
 private data. [Browse it](https://memory.pollinations.ai).
+
+### Site MCP
+
+Two free tools inspect a site's crawler and agent discoverability.
+`inspect_site` reports the homepage status, robots.txt rules per major AI
+crawler (GPTBot, ClaudeBot, Google-Extended, and friends), llms.txt, the
+default sitemap, and well-known documents (agent card, OAuth metadata,
+security.txt). `inspect_sitemap` follows a sitemap URL or index to up to five
+child sitemaps and returns the entry count plus the first entries with their
+lastmod dates. Use it before shipping a site to check what crawlers and agents
+will actually see.
 
 ### Billing and permissions
 

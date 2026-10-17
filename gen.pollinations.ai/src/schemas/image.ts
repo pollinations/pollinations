@@ -122,7 +122,18 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
 
     // Video-specific params
     resolution: z
-        .enum(["1k", "2k", "360p", "480p", "720p", "768p", "1080p", "4k"])
+        .enum([
+            "1k",
+            "768",
+            "1.5k",
+            "2k",
+            "360p",
+            "480p",
+            "720p",
+            "768p",
+            "1080p",
+            "4k",
+        ])
         .optional()
         .meta({
             description:

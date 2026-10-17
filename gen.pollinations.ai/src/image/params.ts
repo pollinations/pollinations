@@ -124,7 +124,18 @@ export const ImageParamsSchema = z
         duration: z.coerce.number().int().min(1).max(120).optional(),
         fps: z.coerce.number().optional(),
         resolution: z
-            .enum(["1k", "2k", "360p", "480p", "720p", "768p", "1080p", "4k"])
+            .enum([
+                "1k",
+                "768",
+                "1.5k",
+                "2k",
+                "360p",
+                "480p",
+                "720p",
+                "768p",
+                "1080p",
+                "4k",
+            ])
             .optional(),
         aspectRatio: z
             .enum([

@@ -247,6 +247,23 @@ describe("ImageParamsSchema", () => {
         ).toBe("medium");
     });
 
+    it("accepts FLUX 3 Image Klein's 768 and 1.5k tiers only on Klein", () => {
+        for (const resolution of ["768", "1.5k"] as const) {
+            expect(
+                ImageParamsSchema.safeParse({
+                    model: "black-forest-labs/flux-3-image-klein",
+                    resolution,
+                }).success,
+            ).toBe(true);
+            expect(
+                ImageParamsSchema.safeParse({
+                    model: "black-forest-labs/flux-3-image",
+                    resolution,
+                }).success,
+            ).toBe(false);
+        }
+    });
+
     it("rejects an unsupported resolution", () => {
         const result = ImageParamsSchema.safeParse({
             model: "google/veo-3.1-fast",

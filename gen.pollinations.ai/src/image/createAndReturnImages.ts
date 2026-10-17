@@ -34,6 +34,7 @@ import {
     callOpenRouterRecraftVectorAPI,
     callOpenRouterSeedreamFlashAPI,
     callOpenRouterSeedreamProAPI,
+    FLUX3_KLEIN_UPSTREAM,
 } from "./models/openRouterImageModel.ts";
 import {
     callFluxSchnellDeepInfraAPI,
@@ -912,6 +913,13 @@ const generateImage = async (
 
         case "black-forest-labs/flux-3-image":
             return await callOpenRouterFlux3API(prompt, safeParams);
+
+        case "black-forest-labs/flux-3-image-klein":
+            return await callOpenRouterFlux3API(
+                prompt,
+                safeParams,
+                FLUX3_KLEIN_UPSTREAM,
+            );
 
         case "microsoft/mai-image-2.6-flash":
         case "microsoft/mai-image-2.6": {

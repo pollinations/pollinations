@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "VISION_CHECK_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "vision-check",
+        name: "Vision Check",
+        description:
+            "Inspect UI screenshots and compare visual states with structured pass/fail checks.",
+        binding: "VISION_CHECK_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Visual inspection tools use the selected vision model's listed rate. No additional MCP fee.",
             rates: [],
         },
     },

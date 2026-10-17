@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tiny Fighter Arena — describe a fighter, watch it battle</title>
+  <meta name="description" content="Describe a fighter in one line. The AI brings it to life and sends it up a ladder of short, loudly commentated battles. Powered by Pollinations — bring your own Pollen." />
+  <meta property="og:title" content="Tiny Fighter Arena" />
+  <meta property="og:description" content="One line in, one fighter out, a ladder of challengers up. Describe a fighter, watch it battle." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="theme-color" content="#0b0c10" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b0c10'/%3E%3Cpath d='M8 10l3 6-3 6M14 22h10' stroke='%23ffb830' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E" />
+</head>
+<body>
+  <div class="arena-bg" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#" id="brandHome" title="Back to fighter creation">
+      <span class="brand-mini">TINY</span>
+      <span class="brand-main">FIGHTER&nbsp;ARENA</span>
+    </a>
+    <div class="topbar-right">
+      <button id="btnSound" class="chip-btn" type="button" aria-pressed="false" title="Spoken commentary on/off">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="icon-wave" d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path class="icon-waves" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        <span id="btnSoundLabel">VOICE OFF</span>
+      </button>
+      <div id="authBox" class="authbox"></div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ CREATE ============ -->
+    <section id="screen-create" class="screen">
+      <div class="hero-copy">
+        <p class="tagline">Describe a fighter. <strong>One line.</strong></p>
+        <p class="subline">The AI designs its look, stats, quirks and signature moves — then sends it up a ladder of challengers with live commentary. Clever descriptions win fights.</p>
+      </div>
+      <form id="createForm" class="create-form" autocomplete="off">
+        <div class="input-wrap">
+          <input id="fighterLine" type="text" maxlength="200" placeholder="e.g. a cheese grater golem that reflects light" aria-label="Describe your fighter in one line" />
+          <button class="btn-primary" type="submit" id="btnCreate">BRING IT TO LIFE</button>
+        </div>
+        <div class="examples" id="examples">
+          <span class="examples-label">try:</span>
+          <button type="button" class="example">a retired accountant who audits punches mid-fight</button>
+          <button type="button" class="example">a sentient disco ball with severe trust issues</button>
+          <button type="button" class="example">grandma, but the lasagna is a cannon</button>
+          <button type="button" class="example">a tiny ghost piloting a mech made of IKEA shelves</button>
+        </div>
+      </form>
+      <div id="recordBox" class="record" hidden></div>
+      <div id="createStatus" class="status" role="status" aria-live="polite"></div>
+    </section>
+
+    <!-- ============ FIGHTER CARD ============ -->
+    <section id="screen-card" class="screen" hidden>
+      <div class="card-hero">
+        <div class="portrait-frame">
+          <img id="cardPortrait" alt="Portrait of your fighter" />
+          <div class="portrait-load" id="cardPortraitLoad"><span>PAINTING…</span></div>
+        </div>
+        <div class="card-body">
+          <h2 id="cardName" class="fighter-title"></h2>
+          <p id="cardEpithet" class="fighter-epithet"></p>
+          <ul class="statbars" id="cardStats"></ul>
+          <div class="abilities" id="cardAbilities"></div>
+          <p class="quirk-line" id="cardQuirk"></p>
+          <p class="intro-line" id="cardIntro"></p>
+        </div>
+      </div>
+      <div class="row-actions">
+        <button id="btnFight" class="btn-primary">ENTER THE ARENA</button>
+        <button id="btnReroll" class="btn-ghost">REROLL</button>
+        <button id="btnNew" class="btn-ghost">NEW FIGHTER</button>
+      </div>
+      <div id="cardStatus" class="status" role="status" aria-live="polite"></div>
+    </section>
+
+    <!-- ============ FIGHT ============ -->
+    <section id="screen-fight" class="screen" hidden>
+      <div class="fight-meta">
+        <div class="ladder-pips" id="ladderPips" title="Ladder progress"></div>
+        <div class="round-counter" id="roundCounter">ROUND 1</div>
+      </div>
+      <div class="fight-stage">
+        <div class="fighter-corner corner-a" id="cornerA">
+          <div class="portrait-frame small">
+            <img alt="Your fighter" />
+            <div class="portrait-load"><span>…</span></div>
+          </div>
+          <div class="corner-name" id="cornerAName"></div>
+          <div class="stat-chips" id="cornerAStats"></div>
+          <div class="hpbar"><div class="hpfill" role="progressbar"></div><span class="hptext"></span></div>
+          <div class="floaters" aria-hidden="true"></div>
+        </div>
+        <div class="vs-badge" aria-hidden="true">VS</div>
+        <div class="fighter-corner corner-b" id="cornerB">
+          <div class="portrait-frame small">
+            <img alt="Challenger" />
+            <div class="portrait-load"><span>…</span></div>
+          </div>
+          <div class="corner-name" id="cornerBName"></div>
+          <div class="stat-chips" id="cornerBStats"></div>
+          <div class="hpbar"><div class="hpfill" role="progressbar"></div><span class="hptext"></span></div>
+          <div class="floaters" aria-hidden="true"></div>
+        </div>
+      </div>
+      <div class="announcer">
+        <div class="announcer-head">
+          <span class="live-dot" aria-hidden="true"></span> LIVE COMMENTARY
+          <span class="speaking-indicator" id="speakingIndicator" hidden>SPEAKING</span>
+        </div>
+        <div id="commentary" class="commentary" title="Click to fast-forward the typing" aria-live="polite">The crowd settles. The lights drop. Somewhere, a fog machine coughs.</div>
+      </div>
+      <div class="fight-controls" id="fightControls">
+        <button id="btnNext" class="btn-primary">NEXT ROUND</button>
+        <button id="btnSkip" class="btn-ghost">SKIP TO END</button>
+        <button id="btnAuto" class="chip-btn" aria-pressed="false">AUTO</button>
+      </div>
+      <div id="fightStatus" class="status" role="status" aria-live="polite"></div>
+    </section>
+
+    <!-- ============ RESULTS ============ -->
+    <section id="screen-results" class="screen" hidden>
+      <div class="verdict" id="verdictBox">
+        <div class="verdict-word" id="verdictWord">VICTORY</div>
+        <div class="verdict-sub" id="verdictSub"></div>
+      </div>
+      <div class="row-actions wrap">
+        <button id="btnShare" class="btn-primary">COPY SHARE LINK</button>
+        <button id="btnNextChallenger" class="btn-primary">NEXT CHALLENGER</button>
+        <button id="btnRematch" class="btn-ghost">REMATCH</button>
+        <button id="btnHome" class="btn-ghost">NEW FIGHTER</button>
+      </div>
+      <p class="share-hint" id="shareHint">The share link replays this exact matchup — same fighters, same blows, fresh commentary.</p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>powered by <a href="https://pollinations.ai" target="_blank" rel="noopener">pollinations</a> · bring your own pollen</span>
+    <a href="https://github.com/pollinations/pollinations" target="_blank" rel="noopener">source</a>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- auth modal -->
+  <div id="modal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h3 id="modalTitle">Bring your own Pollen</h3>
+      <p class="modal-text">Fights are generated live with Pollinations. Sign in to spend <strong>your own Pollen</strong> — the arena never sees your password and the key stays in this tab only.</p>
+      <button id="btnModalSignIn" class="btn-primary wide">SIGN IN WITH POLLEN</button>
+      <details class="paste-details">
+        <summary>or paste an API key</summary>
+        <div class="paste-row">
+          <input id="pasteKey" type="password" placeholder="sk_…" aria-label="API key" />
+          <button id="btnPasteKey" class="btn-ghost" type="button">USE KEY</button>
+        </div>
+        <p class="paste-hint" id="pasteHint"></p>
+      </details>
+      <button id="btnModalClose" class="btn-ghost wide" type="button">CLOSE</button>
+    </div>
+  </div>
+
+  <script src="core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

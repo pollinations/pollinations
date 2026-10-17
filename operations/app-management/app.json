@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🖼️",
+    "name": "Pollinations Demo",
+    "url": "https://huggingface.co/spaces/spitfire4794/pollinations-demo",
+    "description": "Pollinations Postcard Starter turns one prompt into a postcard: an image, a caption, and spoken narration. Visitors sign in with their own Pollen using the device flow (approve a short code, the key s",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "Spit-fires",
+    "githubUserId": "84981998",
+    "repositoryUrl": "https://github.com/Spit-fires/pollinations-demo",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-15",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17605",
+    "approvedDate": "2026-10-17",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/ca733cba-f70a-4a07-82c2-ff7387a9fb4e"
+  },
+  {
+    "emoji": "🖼️",
     "name": "Comic Page from One Prompt",
     "url": "https://huggingface.co/spaces/tomdacatto1/pollinations-comic-maker",
     "description": "A Hugging Face Space people duplicate: type one idea and get a four-panel comic page. The text model writes the script as JSON (title, fixed character looks, one caption per panel), the image model dr",

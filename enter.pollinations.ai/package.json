@@ -14,6 +14,7 @@
         "predev": "npm run build:ui",
         "dev:frontend": "vite dev --config frontend/vite.config.ts",
         "predev:frontend": "npm run build:ui",
+        "dev:frontend:production": "API_PROXY_TARGET=https://enter.pollinations.ai VITE_GEN_BASE_URL=https://gen.pollinations.ai npm run dev:frontend",
         "dev:worker": "npm run decrypt-vars && vite build --mode=development && wrangler dev --port 3001 --local --persist-to .wrangler/state --show-interactive-dev-session false",
         "dev:production": "npm run decrypt-vars:production && CLOUDFLARE_ENV=production vite dev",
         "pretest": "npm run build:ui && npm run test:code-agent-sdk && mkdir -p dist/client",

@@ -9,7 +9,7 @@ const here = fileURLToPath(new URL(".", import.meta.url));
 const uiBrand = fileURLToPath(
     new URL("../../packages/ui/src/brand", import.meta.url),
 );
-const apiProxyTarget = "http://localhost:3001";
+const apiProxyTarget = process.env.API_PROXY_TARGET ?? "http://localhost:3001";
 
 export default defineConfig({
     root: here,

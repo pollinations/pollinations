@@ -144,7 +144,7 @@ Every PR merged into `main` or `master` that month, counted per GitHub account (
 
 ### Deploy posts: `posts/discord/prs/`
 
-`YYYY-MM/delivery.json` has one entry per PR (`pr-<number>`), in the month it merged: its state and the Discord message id. The post and its picture are only in Discord. Every shipped PR is posted; production promotions only carry other PRs and are not.
+`YYYY-MM/delivery.json` has one entry per PR (`pr-<number>`), in the month it merged: its state and the Discord message id. The post and its picture are only in Discord. They are written as the PR gists' were: `prompts/summaries/pr.md` writes the PR's note with its picture prompt, and `prompts/posts/discord/pr.md` the text from that note. Every shipped PR is posted; production promotions only carry other PRs and are not.
 
 `held.json` saves the production and master scan cursors and pending PRs before any delivery. Each PR keeps its merge SHA, merge date and remaining targets, with no expiration. The targets come from the scanned production revision: its Cloudflare service filters, the website/E2B/Portkey workflow path lists, and existing application discovery. All required jobs must succeed at commits containing the PR; each job counts on its own, so another job failing in the same run doesn't hold the PR back. Observed successes are removed from the remaining targets and saved, so a later retry does not depend on old Actions records. A skipped service or unrelated manual app deploy cannot release it. Completed runs and their jobs are paginated back to the oldest pending merge as needed. Docs-only promotions have no deployment requirement and can post on the production push. A `master` PR waits for the hand-run `deploy-legacy-caches.yml`: each cache Worker it changes (`text.pollinations.ai/cloudflare-cache/`, `image.pollinations.ai/cloudflare-cache/`, or both for `shared/`) needs a `Deploy master` step that succeeded in a job started after the merge, since each job checks out master as it starts. A master PR that changes neither Worker posts on the next run. Failed or ambiguous sends remain held; the delivery record prevents a retry from sending twice.
 
@@ -214,7 +214,7 @@ A preview is the before/after check for any change to a prompt or a script: run 
 | `prs.py` | The day's merged PRs from GitHub → one note each (`prompts/summaries/pr.md`), with API changes and announced retirements; the daily keeps only those two in its `changelog` |
 | `posts.py` | `write JOB DATE` makes the post files' model calls and pictures into a work folder; `save JOB DATE` turns it into today's files in a `news` checkout. Neither commits |
 | `deliver.py` | `schedule` (Buffer), `send` (Discord; the model and community posts from their work folder), `mark` (a person settles a stuck send) |
-| `deploy_posts.py` | `--production CHECKOUT [--preview]`: held production PRs → affected deployment jobs → `prompts/posts/discord/pr.md` → Discord, recorded with `deliver.py` |
+| `deploy_posts.py` | `--production CHECKOUT [--preview]`: held production PRs → affected deployment jobs → the note and picture prompt (`prompts/summaries/pr.md`) → the text (`prompts/posts/discord/pr.md`) → Discord, recorded with `deliver.py` |
 | `contributors.py` | The month's merged PRs per GitHub account, for `data/contributors/<month>.json` |
 | `news_index.py` | `data/index.json`: model news, API changes and daily highlights for Enter `/news` |
 | `readme.py` | The README's Latest News: the index's 10 newest highlights except apps (Recent Apps lists those), each with a category badge (Model, API, Feature), linked title, date and text |
@@ -256,7 +256,7 @@ A preview is the before/after check for any change to a prompt or a script: run 
 4. **`publish_tier` gates what reaches the daily and weekly posts** — non-user-facing PRs stay out.
 5. **Model news comes from the live catalog.** The `/models` record dates a change when it is seen in production, not when its PR merged.
 6. **A PR is announced on Discord when it ships,** after the production deploy, not at merge.
-7. **One prompt file per post** — brand → tone → the post file. Each post is a fixed prompt and one model call; no agent, so content stays predictable.
+7. **One prompt file per post** — brand → tone → the post file. Each post is a fixed prompt and one model call (a deploy post: its note, then its text); no agent, so content stays predictable.
 8. **No content for quiet days** — no `daily`-tier notes, no posts.
 
 ---
@@ -297,7 +297,7 @@ operations/social/prompts/
     links.md                {links}          links posts may use
     characters-ref.jpg      the character sheet sent with every picture
   summaries/                the texts every post is written from
-    pr.md                   each merged PR: its note
+    pr.md                   each merged PR: its note and picture prompt
     daily.md
     weekly.md
     monthly.md
@@ -316,4 +316,4 @@ operations/social/prompts/
     discord/community.md
 ```
 
-A post file's settings say its `job`, its `tone` (the platform whose `tone.md` is the system prompt; a summary has none and is its own system prompt), its `temperature`, its `pictures` and the fields its reply must have. A post under `posts/<platform>/` is saved as `posts/<platform>/<job>/<date>.json`. A platform post's task is its text with the summary's recap filled in; the deploy post's task is its text with the PR filled in.
+A post file's settings say its `job`, its `tone` (the platform whose `tone.md` is the system prompt; a summary has none and is its own system prompt), its `temperature`, its `pictures` and the fields its reply must have. A post under `posts/<platform>/` is saved as `posts/<platform>/<job>/<date>.json`. A platform post's task is its text with the summary's recap filled in; the deploy post's task is its text with the PR's note filled in.

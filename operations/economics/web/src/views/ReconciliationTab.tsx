@@ -19,7 +19,6 @@ import { useAmountDisplay } from "../components/ReconcilePro";
 import { categoryLabel } from "../lib/categories";
 import { unreconciledBankAmount } from "../lib/dataConfidence";
 import { type DriveDocumentLink, driveDocumentLink } from "../lib/documents";
-import { VENDOR_JOURNALS_URL } from "../lib/driveSources";
 import { hasVisibleAmount } from "../lib/format";
 import { monthName } from "../lib/months";
 import { canonicalProvider } from "../lib/providerRegistry";
@@ -166,14 +165,6 @@ export function ReconciliationTab({
                     onChange={(event) => setQuery(event.target.value)}
                     className="w-64 rounded-lg border border-theme-text-soft/20 bg-transparent px-3 py-2 text-sm"
                 />
-                <a
-                    className="text-sm underline"
-                    href={VENDOR_JOURNALS_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                >
-                    Open vendor journals in Drive ↗
-                </a>
             </div>
             <fieldset className="flex flex-wrap gap-2" aria-label="Issue type">
                 <TabButton

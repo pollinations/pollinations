@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
-import { forecastLineRule, forecastRuleEntries } from "./forecastTerms";
+import {
+    automaticForecastRule,
+    forecastLineRule,
+    forecastRuleEntries,
+} from "./forecastTerms";
 import { parsePrivateConfig } from "./pipeContracts";
 import { PROVIDER_REGISTRY, resolveProvider } from "./providerRegistry";
 
@@ -13,6 +17,14 @@ const SYNTHETIC_LINES = new Set([
 ]);
 
 describe("forecast terms", () => {
+    it("keeps dormant Modal usage out of the automatic runway forecast", () => {
+        expect(automaticForecastRule("modal", "compute")).toBeNull();
+        expect(forecastLineRule("modal", "compute")).toMatchObject({
+            method: "one_off",
+            paymentTiming: "prepaid",
+        });
+    });
+
     it.each([
         ["vast.ai", "vast", "compute"],
         ["bedrock", "aws", "compute"],

@@ -10,6 +10,7 @@ export default defineConfig({
         },
     },
     test: {
+        setupFiles: ["operations/economics/web/src/setupPublicTests.ts"],
         include: [
             "shared/providers.test.ts",
             "apps/agent-json.test.ts",
@@ -17,8 +18,7 @@ export default defineConfig({
             "apps/chat/src/**/*.test.{js,jsx}",
             "operations/economics/web/src/lib/modelReconcile.test.ts",
             "operations/economics/web/src/lib/modelIdentity.test.ts",
-            "operations/economics/web/src/lib/providerRegistry.test.ts",
-            "operations/economics/web/src/lib/forecastTerms.test.ts",
+            "operations/economics/web/src/lib/providerRegistry.public.test.ts",
         ],
     },
 });

@@ -212,7 +212,6 @@ test("all three apps use real identity OAuth and keep sign-out independent", asy
         "economics_bank_ledger_api",
         "economics_vendor_ledger_api",
         "economics_pollen_usage_api",
-        "economics_private_config_api",
         "economics_revenue_share_api",
         "economics_stripe_sales_api",
         "economics_user_balances_api",

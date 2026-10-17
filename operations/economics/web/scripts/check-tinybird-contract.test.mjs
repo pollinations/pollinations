@@ -77,7 +77,6 @@ test.each([
         '[{"type":"app"}]',
         "Revenue Share source 0 is invalid",
     ],
-    ["economics_private_config_api", "config", "{}", "config: invalid shape"],
     [
         "economics_user_balances_api",
         "users",

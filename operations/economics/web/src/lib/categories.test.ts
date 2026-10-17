@@ -79,6 +79,15 @@ describe("canonical categories", () => {
         ).toBe("development");
         expect(
             transactionCategory(
+                transaction(
+                    "anthropic",
+                    "development",
+                    "Card transaction issued by Anthropic* Claude Sub ANTHROPIC.COM",
+                ),
+            ),
+        ).toBe("development");
+        expect(
+            transactionCategory(
                 transaction("anthropic", "saas", "Anthropic API"),
             ),
         ).toBe("compute");

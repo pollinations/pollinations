@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Pollen Art Lab](https://ovalprint1-sketch.github.io/pollen-app) | Pollen Art Lab turns a text idea into artwork using the Pollinations image API. Choose a style and aspect ratio, sign in with your Pollinations account (BYOP) and generate an image; each visitor spend | [@ovalprint1-sketch](https://github.com/ovalprint1-sketch) |
 | [💬 point-zero](https://point-zero.pages.dev) | Point Zero… where your big ideas begin! A website I developed to simplify access to AI and help students, programmers, and content creators learn, create, and save time 💛 🤖 Chat with free models ava | [@Developer-loqman-ameur](https://github.com/Developer-loqman-ameur) |
 | [🎮 Trolley Match](https://patbing.github.io/trolley-match) | Choose first in five trolley dilemmas, then compare your answers with live Jev decisions. Includes an order-swap experiment and session-only Bring Your Own Pollen sign-in. | [@patbing](https://github.com/patbing) |
 | [🎮 Switchyard](https://saauf.github.io/switchyard) | Choose first in six trolley dilemmas, compare with Jev, and reverse the description order. Includes free practice, exact prompts, probabilities, and session export. | [@Saauf](https://github.com/Saauf) |
@@ -30,7 +31,6 @@
 | [🛠️ Pollinations Blocks](https://github.com/Saauf/pollinations-blocks) | Android extension for MIT App Inventor and Kodular: text, images, speech, AAC/M4A recording and transcription, and questions about picked images. Device sign-in lets users spend their own Pollen; no u | [@Saauf](https://github.com/Saauf) |
 | [🛠️ Pollinations for MIT App Inventor](https://github.com/Drjacky/pollinations-appinventor) | One non-visible App Inventor extension (.aix) plus a ready sample project (.aia) that adds Pollinations to App Inventor apps (Kodular, Niotron and Android Builder take .aix files too). Everything is a | [@Drjacky](https://github.com/Drjacky) |
 | [✍️ Summering text](https://fedaasawalmeh753-cmyk.github.io/Mhcj) | A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, without a backend s | [@fedaasawalmeh753-cmyk](https://github.com/fedaasawalmeh753-cmyk) |
-| [🖼️ Image-Captioning-](https://zeros372.github.io/Image-Captioning-) | A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, without a backend s | [@zeros372](https://github.com/zeros372) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

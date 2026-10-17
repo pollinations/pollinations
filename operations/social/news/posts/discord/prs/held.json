@@ -1,5 +1,31 @@
 {
-  "held": {},
-  "production": "a8c45efabcf5264a173399306d3871a5981101ac",
+  "held": {
+    "17614": {
+      "merge_sha": "2289815f7fc4ddb024a8dac8e43ea6ff4449e431",
+      "merged_at": "2026-10-17T23:02:41Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/economics",
+        "deploy-cloudflare-production.yml:deploy-enter"
+      ]
+    },
+    "17833": {
+      "merge_sha": "de627865301f601983d993ec733fa74b51019184",
+      "merged_at": "2026-10-17T22:43:11Z",
+      "required": []
+    },
+    "17834": {
+      "merge_sha": "48fccb6df2d55f1e68f5b02d0d1f0a0ff5268f88",
+      "merged_at": "2026-10-17T22:53:16Z",
+      "required": []
+    },
+    "17836": {
+      "merge_sha": "2b0d85e67d6be18b35b34628fd21e940d4399cc9",
+      "merged_at": "2026-10-17T23:12:36Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/economics"
+      ]
+    }
+  },
+  "production": "58203fd986797344926103e90a52a80636a1a47e",
   "master": "02b0575f1ae6daad402bb2782119d7752403ad01"
 }

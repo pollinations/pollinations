@@ -184,10 +184,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00001,
     },
     "price": {
-      "completionTextTokens": 0.00005,
-      "promptCacheWriteTokens": 0.0000125,
-      "promptCachedTokens": 0.00000025,
-      "promptTextTokens": 0.00001,
+      "completionTextTokens": 0.0000375,
+      "promptCacheWriteTokens": 0.000009375,
+      "promptCachedTokens": 0.0000001875,
+      "promptTextTokens": 0.0000075,
     },
   },
   "anthropic/claude-fable-5.1:aws": {
@@ -198,10 +198,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00001,
     },
     "price": {
-      "completionTextTokens": 0.00005,
-      "promptCacheWriteTokens": 0.0000125,
-      "promptCachedTokens": 0.00000025,
-      "promptTextTokens": 0.00001,
+      "completionTextTokens": 0.0000375,
+      "promptCacheWriteTokens": 0.000009375,
+      "promptCachedTokens": 0.0000001875,
+      "promptTextTokens": 0.0000075,
     },
   },
   "anthropic/claude-fable-5:openrouter:vertex-global": {
@@ -262,10 +262,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       },
     },
     "price": {
-      "completionTextTokens": 0.0000005,
-      "promptCacheWriteTokens": 0.000000125,
-      "promptCachedTokens": 0.00000001,
-      "promptTextTokens": 0.0000001,
+      "completionTextTokens": 0.000000375,
+      "promptCacheWriteTokens": 0.00000009375,
+      "promptCachedTokens": 0.0000000075,
+      "promptTextTokens": 0.000000075,
     },
   },
   "anthropic/claude-haiku-5.5:aws": {
@@ -284,10 +284,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       },
     },
     "price": {
-      "completionTextTokens": 0.0000005,
-      "promptCacheWriteTokens": 0.000000125,
-      "promptCachedTokens": 0.00000001,
-      "promptTextTokens": 0.0000001,
+      "completionTextTokens": 0.000000375,
+      "promptCacheWriteTokens": 0.00000009375,
+      "promptCachedTokens": 0.0000000075,
+      "promptTextTokens": 0.000000075,
     },
   },
   "anthropic/claude-opus-4.6": {
@@ -354,10 +354,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000004,
     },
     "price": {
-      "completionTextTokens": 0.00002,
-      "promptCacheWriteTokens": 0.000005,
-      "promptCachedTokens": 0.0000002,
-      "promptTextTokens": 0.000004,
+      "completionTextTokens": 0.000015,
+      "promptCacheWriteTokens": 0.00000375,
+      "promptCachedTokens": 0.00000015,
+      "promptTextTokens": 0.000003,
     },
   },
   "anthropic/claude-opus-5.5:aws": {
@@ -368,10 +368,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000004,
     },
     "price": {
-      "completionTextTokens": 0.00002,
-      "promptCacheWriteTokens": 0.000005,
-      "promptCachedTokens": 0.0000002,
-      "promptTextTokens": 0.000004,
+      "completionTextTokens": 0.000015,
+      "promptCacheWriteTokens": 0.00000375,
+      "promptCachedTokens": 0.00000015,
+      "promptTextTokens": 0.000003,
     },
   },
   "anthropic/claude-opus-5.5:fast": {
@@ -424,10 +424,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
     "price": {
-      "completionTextTokens": 0.00001,
-      "promptCacheWriteTokens": 0.0000025,
-      "promptCachedTokens": 0.0000001,
-      "promptTextTokens": 0.000002,
+      "completionTextTokens": 0.0000075,
+      "promptCacheWriteTokens": 0.000001875,
+      "promptCachedTokens": 0.000000075,
+      "promptTextTokens": 0.0000015,
     },
   },
   "anthropic/claude-sonnet-5.5:aws": {
@@ -438,10 +438,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
     "price": {
-      "completionTextTokens": 0.00001,
-      "promptCacheWriteTokens": 0.0000025,
-      "promptCachedTokens": 0.0000001,
-      "promptTextTokens": 0.000002,
+      "completionTextTokens": 0.0000075,
+      "promptCacheWriteTokens": 0.000001875,
+      "promptCachedTokens": 0.000000075,
+      "promptTextTokens": 0.0000015,
     },
   },
   "assemblyai/universal-2": {

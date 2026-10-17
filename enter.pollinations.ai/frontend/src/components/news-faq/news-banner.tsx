@@ -65,6 +65,15 @@ const ANNOUNCEMENTS: Announcement[] = [
         },
     },
     {
+        date: "2026-10-17",
+        until: "2026-10-31",
+        label: "Updated",
+        title: "25% off selected Claude models",
+        text: "Haiku 5.5, Sonnet 5.5, Opus 5.5 and Fable 5.1: 25% off standard API prices.",
+        icon: WalletIcon,
+        cta: { label: "View models", href: "/models?q=anthropic" },
+    },
+    {
         date: "2026-10-13",
         until: "2026-10-27",
         label: "Updated",
@@ -84,15 +93,6 @@ const ANNOUNCEMENTS: Announcement[] = [
             label: "Visit the website",
             href: "https://pollinations.ai",
         },
-    },
-    {
-        date: "2026-10-06",
-        until: "2026-10-20",
-        label: "New",
-        title: "Pay with crypto",
-        text: "Buy Pollen packs with USDC: pick a pack, then choose Pay with Crypto.",
-        icon: WalletIcon,
-        cta: { label: "Buy Pollen", href: "/pollen" },
     },
 ];
 

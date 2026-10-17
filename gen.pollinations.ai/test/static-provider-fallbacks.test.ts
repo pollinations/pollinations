@@ -211,6 +211,23 @@ describe("static provider fallbacks", () => {
             });
             expect(fallback.cost).toEqual(primary.cost);
             expect(fallback.costVariants).toEqual(primary.costVariants);
+            for (const servedBy of [primary, fallback]) {
+                const billing = calculateUsageBilling({
+                    model,
+                    usage: {
+                        promptTextTokens: 1000,
+                        promptCachedTokens: 500,
+                        promptCacheWriteTokens: 200,
+                        completionTextTokens: 100,
+                    },
+                    servedBy,
+                    quotedBy: primary,
+                });
+                expect(billing.price.totalPrice).toBeCloseTo(
+                    billing.cost.totalCost * 0.75,
+                    12,
+                );
+            }
             expect(findModelByName(model)?.config()).toMatchObject({
                 provider: "anthropic",
                 model: upstream,

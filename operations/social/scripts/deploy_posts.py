@@ -37,13 +37,13 @@ from common import (
     get_repo_root,
     github_api_request,
     load_prompt,
-    parse_json_response,
+    pr_context,
     prompt_text,
     safe_truncate,
 )
 from deliver import deliver, send_discord, read_news, github as write_news
 from posts import fill, read_post
-from prs import app_for, fetch_pr_files
+from prs import analyze_pr, app_for, fetch_pr_files
 
 # The PR that replaced the merge-time posts: PRs merged before it were posted when they merged.
 CUTOVER_PR = 17666
@@ -217,28 +217,31 @@ def message(pr: dict, text: str, app: dict | None) -> dict:
 
 
 def prepare_post(pr: dict, token: str, webhook: str):
-    """Write the post and its picture, and return the call that sends it."""
+    """Write the PR's note, the post from the note and the picture from the note's prompt,
+    and return the call that sends it."""
     repository = get_env("GITHUB_REPOSITORY")
     changes, files = fetch_pr_files(repository, str(pr["number"]), get_env("GITHUB_TOKEN"))
     app = app_for(pr["head"]["ref"], files)
-    # Trust boundary: the body comes from a merged PR (repo write access). Capped as a size guard.
-    context = "\n".join([
-        f"PR #{pr['number']}: {pr['title']}",
-        f"App: {app['app_name']} ({app['app_url']})" if app else "",
-        f"\nDescription:\n{(pr['body'] or 'No description provided.')[:6000]}",
-        f"\nChanged files and their diff:\n{changes}",
-    ])
-    reply = call_pollinations_api(
-        load_prompt(f"posts/{POST['tone']}/tone"), fill(prompt_text(POST["text"]), pr=context),
-        token, temperature=POST["temperature"], response_format={"type": "json_object"},
+    author = pr["user"]["login"]
+    note = analyze_pr({
+        "number": pr["number"], "title": pr["title"], "body": pr["body"], "author": author,
+        "labels": [label["name"] for label in pr["labels"]], "branch": pr["head"]["ref"],
+        "base": pr["base"]["ref"], "area": None, "type": None, "source": None,
+    }, changes, token)
+    if not note or not note.get("summary") or not note.get("image_prompt"):
+        raise ValueError("the note has no summary or picture prompt")
+    gist = pr_context({**note, "pr_number": pr["number"], "title": pr["title"], "author": author,
+                       "url": pr["html_url"], **(app or {})})
+    text = call_pollinations_api(
+        load_prompt(f"posts/{POST['tone']}/tone"), fill(prompt_text(POST["text"]), gist=json.dumps(gist, indent=2)),
+        token, temperature=POST["temperature"],
     )
-    output = parse_json_response(reply) if reply else None
-    if not isinstance(output, dict) or not all(output.get(key) for key in POST["required"]):
-        raise ValueError("the reply has no text or picture prompt")
-    picture, _ = generate_image(output["image_prompt"], token)
+    if not text:
+        raise ValueError("the reply has no text")
+    picture, _ = generate_image(note["image_prompt"], token)
     if not picture:
         raise ValueError("the picture failed")
-    post = message(pr, output["text"], app)
+    post = message(pr, text, app)
     return lambda: send_discord(webhook, [post], picture)
 
 

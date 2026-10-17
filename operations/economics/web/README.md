@@ -2,16 +2,15 @@
 
 Economics UI for `economics.myceli.ai` and `economics.pollinations.ai`, backed
 by Economics Tinybird pipe outputs in `enter.pollinations.ai/observability/`.
-The app has three operating views:
+The main drawer contains Trends, Runway, Balances, Providers, Inference, GPUs
+and Revenue Share. The account menu contains Reconciliation, the raw Bank,
+Vendor and Pollen ledgers, and the private Finance evidence link.
 
-- **Insights:** Trends, Runway, Reconciliation, and Balances. Trends defaults to
-  the latest six completed months, with 3 / 6 / 12 month controls and no history
-  before January 2026. Summary cards total the selected period; chart month
-  selection changes only the monthly details. The page combines company and API
-  results, expense categories, credit funding, and Paid/Quest usage using the
-  same revenue, cost and credit calculations as Runway.
-- **Unit economics:** Vendors, Inference, GPUs, and Revenue Share.
-- **Ledgers:** Sales, Bank, Vendor, Pollen, and Revenue Share. Sales shows existing monthly Stripe facts by stream and settlement currency; closed-month coverage gaps link to Sales from Reconciliation.
+Reconciliation joins vendor accounts, journal notes and live checks on one page.
+The drawer badge shows recorded bank money to reconcile and all open checks for
+the year; known limitations are excluded. Pro restores small rows and exact
+decimals. There are no separate Sales, Journal, Vendor Directory or Revenue
+Share ledger pages. Sales is a calculation input, not another stored ledger.
 
 ## Run
 
@@ -74,8 +73,7 @@ Reads Economics pipes from `enter.pollinations.ai/observability/endpoints/`:
 `economics_bank_ledger_api`, `economics_vendor_ledger_api`,
 `economics_pollen_usage_api`, `economics_revenue_share_api`, and
 `economics_stripe_sales_api`, plus `economics_user_balances_api`. Revenue Share uses a deduplicated event
-materialization so the economic view and its compact source ledger share one
-calculation path. Creator usernames and current Paid/Quest balances come from
+materialization for the single Revenue Share insight. Creator usernames and current Paid/Quest balances come from
 the daily D1 user snapshot; only aggregate balances reach the Runway API.
 Stripe P&L revenue comes from reviewed account balance
 activity: separate Pollen/Ko-fi gross sales, fees, refunds, and reversals.
@@ -161,9 +159,22 @@ prepaid/credit balance and each funding lot's verified expiry. A scoped
 user-approved ignore-expiry assumption remains visibly distinct from verified
 terms. Unknown credit terms, incomplete
 Stripe coverage, and unmatched opening postpaid bills remain explicit gaps.
-Current Wise balance snapshots are verification
-only and are not stored as a second balance ledger. Revenue and Stripe fees use
+Current Wise balance snapshots are retained as non-posting statement confirmations
+in Bank; they verify reconstructed cash without becoming another opening balance. Revenue and Stripe fees use
 Stripe activity rather than Wise payout timing, while Cash change and Cash
 balance remain anchored to Wise; processor settlement timing bridges the two.
 Unspent Paid and Quest Pollen appear separately
 as non-cashable future usage exposure and are not deducted from cash runway.
+
+## Release checks
+
+Use the single [ledger consolidation migration](../migrations/2026-10-ledger-consolidation.md).
+It includes historical comparisons, rollout ordering, cleanup and recovery; no
+production migration runs automatically from this PR.
+
+Public CI tests repository model mappings with artificial vendor definitions via
+`apps/model-compatibility.vitest.config.ts`; it needs no Drive credential.
+The full `npm test` run remains an authenticated integration check against Drive
+(or an explicitly supplied private snapshot), including the real-account and
+forecast contracts in `*.integration.test.ts`. Run it before deployment; a green
+public CI run alone does not establish private-data or production readiness.

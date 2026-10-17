@@ -18,7 +18,7 @@ Use fixtures mode for UI development without password or Tinybird access:
 http://127.0.0.1:4180/?fixtures=1
 ```
 
-Live mode uses a password gate. Local development reads the staging Tinybird
+Live mode uses the shared admin-only Enter sign-in. Local development reads the staging Tinybird
 workspace through `secrets/web.dev.json`; production reads the production
 workspace through `secrets/web.json`. The credentials are exposed only to the
 Worker, never to the browser bundle.
@@ -48,8 +48,8 @@ curves use the existing ledger categories, at full cost before credits. Reviewed
 `prior_period_fraud` classifications and evidence are attached to existing Stripe
 transaction IDs. Sales derives earlier-month fraudulent refunds/disputes and
 their dispute fees from those records. Actuals remain
-unchanged; diamonds add back only those identified amounts. Sales exposes the
-native-currency breakdown and archived evidence. Missing review is not zero, and
+unchanged; diamonds add back only those identified amounts. The Sales query retains the
+native-currency breakdown and archived evidence for calculations. Missing review is not zero, and
 incomplete coverage or a classification exceeding its Sales component prevents
 an adjusted result.
 
@@ -91,10 +91,9 @@ The app and collection guides use `economics_vendor_ledger` and
 `economics_vendor_ledger_api`. Staging has the verified full-history copy;
 the unused `economics_compute_ledger` datasource and API were retired from
 staging. Their definitions are removed so later deployments do not recreate them.
-Production is unchanged: before deploying these deletions there, separately
-approve and verify its Vendor migration and switch all remaining consumers.
-Copy all raw versions, including tombstones, with a lossless format such as
-Parquet, and compare raw and effective rows exactly before switching readers.
+Follow the single [ledger consolidation migration](migrations/2026-10-ledger-consolidation.md)
+for preparation, source comparisons, reader switching, cleanup and recovery.
+Production execution remains separately approved.
 
 ### Stripe financial source (staging)
 

@@ -100,10 +100,12 @@ export const Route = createFileRoute("/_dashboard")({
             : Promise.resolve(null);
         const sessionUser = user as typeof user & {
             githubUsername?: string | null;
+            githubId?: string | null;
         };
         return {
             user,
             githubUsername: sessionUser?.githubUsername ?? "",
+            githubId: sessionUser?.githubId ?? "",
             apiKeys,
             balance,
             profile,

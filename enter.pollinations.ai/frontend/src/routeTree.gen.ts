@@ -27,6 +27,7 @@ import { Route as DashboardQuestsRouteImport } from './routes/_dashboard.quests'
 import { Route as DashboardPollenRouteImport } from './routes/_dashboard.pollen'
 import { Route as DashboardNewsRouteImport } from './routes/_dashboard.news'
 import { Route as DashboardMyModelsRouteImport } from './routes/_dashboard.my-models'
+import { Route as DashboardMyAppsRouteImport } from './routes/_dashboard.my-apps'
 import { Route as DashboardModelsRouteImport } from './routes/_dashboard.models'
 import { Route as DashboardKeysRouteImport } from './routes/_dashboard.keys'
 import { Route as DashboardActivityRouteImport } from './routes/_dashboard.activity'
@@ -121,6 +122,11 @@ const DashboardMyModelsRoute = DashboardMyModelsRouteImport.update({
   path: '/my-models',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardMyAppsRoute = DashboardMyAppsRouteImport.update({
+  id: '/my-apps',
+  path: '/my-apps',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardModelsRoute = DashboardModelsRouteImport.update({
   id: '/models',
   path: '/models',
@@ -158,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/keys': typeof DashboardKeysRoute
   '/models': typeof DashboardModelsRoute
   '/my-models': typeof DashboardMyModelsRoute
+  '/my-apps': typeof DashboardMyAppsRoute
   '/news': typeof DashboardNewsRoute
   '/pollen': typeof DashboardPollenRoute
   '/quests': typeof DashboardQuestsRoute
@@ -206,6 +213,7 @@ export interface FileRoutesById {
   '/_dashboard/keys': typeof DashboardKeysRoute
   '/_dashboard/models': typeof DashboardModelsRoute
   '/_dashboard/my-models': typeof DashboardMyModelsRoute
+  '/_dashboard/my-apps': typeof DashboardMyAppsRoute
   '/_dashboard/news': typeof DashboardNewsRoute
   '/_dashboard/pollen': typeof DashboardPollenRoute
   '/_dashboard/quests': typeof DashboardQuestsRoute
@@ -231,6 +239,7 @@ export interface FileRouteTypes {
     | '/keys'
     | '/models'
     | '/my-models'
+    | '/my-apps'
     | '/news'
     | '/pollen'
     | '/quests'
@@ -254,6 +263,7 @@ export interface FileRouteTypes {
     | '/keys'
     | '/models'
     | '/my-models'
+    | '/my-apps'
     | '/news'
     | '/pollen'
     | '/quests'
@@ -278,6 +288,7 @@ export interface FileRouteTypes {
     | '/_dashboard/keys'
     | '/_dashboard/models'
     | '/_dashboard/my-models'
+    | '/_dashboard/my-apps'
     | '/_dashboard/news'
     | '/_dashboard/pollen'
     | '/_dashboard/quests'
@@ -429,6 +440,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardMyModelsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/_dashboard/my-apps': {
+      id: '/_dashboard/my-apps'
+      path: '/my-apps'
+      fullPath: '/my-apps'
+      preLoaderRoute: typeof DashboardMyAppsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/_dashboard/models': {
       id: '/_dashboard/models'
       path: '/models'
@@ -466,6 +484,7 @@ interface DashboardRouteChildren {
   DashboardKeysRoute: typeof DashboardKeysRoute
   DashboardModelsRoute: typeof DashboardModelsRoute
   DashboardMyModelsRoute: typeof DashboardMyModelsRoute
+  DashboardMyAppsRoute: typeof DashboardMyAppsRoute
   DashboardNewsRoute: typeof DashboardNewsRoute
   DashboardPollenRoute: typeof DashboardPollenRoute
   DashboardQuestsRoute: typeof DashboardQuestsRoute
@@ -479,6 +498,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardKeysRoute: DashboardKeysRoute,
   DashboardModelsRoute: DashboardModelsRoute,
   DashboardMyModelsRoute: DashboardMyModelsRoute,
+  DashboardMyAppsRoute: DashboardMyAppsRoute,
   DashboardNewsRoute: DashboardNewsRoute,
   DashboardPollenRoute: DashboardPollenRoute,
   DashboardQuestsRoute: DashboardQuestsRoute,

@@ -17,34 +17,12 @@ port = 3000
 
 [assets]
 directory = "dist/client"
-not_found_handling = "single-page-application"
 binding = "ASSETS"
-# Run the Worker for everything except real asset files, so it can answer a
-# real 404 for missing files and unknown paths instead of letting the SPA
-# fallback serve the dashboard shell with 200 (issue #17787). Same shape as
-# pollinations.ai/wrangler.toml (#15261). The Worker decides which paths are
-# dashboard routes; see SPA_ROUTES in src/index.ts.
-run_worker_first = [
-    "/*",
-    "!/assets/*",
-    "!/brand-logos/*",
-    "!/checkout/*",
-    "!/payment-icons/*",
-    "!/favicon.ico",
-    "!/favicon-16x16.png",
-    "!/favicon-32x32.png",
-    "!/icon-192.png",
-    "!/icon-512.png",
-    "!/icon-maskable-512.png",
-    "!/apple-touch-icon.png",
-    "!/apple-touch-icon-152x152.png",
-    "!/apple-touch-icon-167x167.png",
-    "!/og-image.png",
-    "!/manifest.webmanifest",
-    "!/robots.txt",
-    "!/sitemap.xml",
-    "!/llms.txt",
-]
+# No SPA fallback at the asset layer: when a path matches no asset file,
+# the assets binding returns 404 and the Worker runs. The Worker serves real
+# files, the dashboard shell for SPA routes, or a real 404 (issue #17787).
+# See SPA_ROUTES in src/index.ts.
+run_worker_first = [ "/api/*", "/.well-known/*" ]
 
 [[d1_databases]]
 binding = "DB"

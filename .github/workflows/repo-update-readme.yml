@@ -1,8 +1,11 @@
-name: News / Sync README
+name: Repo / Update README
+
+# Each morning: the star history chart and the 12 newest news highlights, in one
+# auto-merged pull request.
 
 on:
   schedule:
-    - cron: '0 7 * * *'  # 07:00 UTC — after news generation at 06:00
+    - cron: '0 7 * * *'
   workflow_dispatch:
 
 jobs:
@@ -23,26 +26,11 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Overlay news branch data
-        run: |
-          git fetch origin news && git checkout origin/news -- operations/social/news/ || echo "No news branch data yet"
-          git restore --staged operations/social/news/ || true
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
           node-version: "22"
-
-      - name: Update Latest News section
-        run: python operations/social/scripts/readme.py
 
       - name: Update star history chart
         continue-on-error: true
@@ -50,10 +38,17 @@ jobs:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
         run: node .github/scripts/star-history-chart.mjs
 
+      - name: Update the latest news
+        # The news index on the news branch, rebuilt after every News / Posts run.
+        run: |
+          git fetch --depth=1 origin news
+          git show FETCH_HEAD:operations/social/news/data/index.json > "$RUNNER_TEMP/index.json"
+          python3 operations/social/scripts/readme.py "$RUNNER_TEMP/index.json" README.md
+
       - name: Check for changes
         id: changes
         run: |
-          if git diff --quiet -- README.md .github/assets/star-history-*.svg; then
+          if git diff --quiet -- .github/assets/star-history-*.svg README.md; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -65,22 +60,21 @@ jobs:
           GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
         run: |
           DATE=$(date -u +%Y-%m-%d)
-          BRANCH="readme-update-${DATE}"
+          BRANCH="readme-${DATE}"
 
           git config user.name "pollinations-ai[bot]"
           git config user.email "pollinations-ai[bot]@users.noreply.github.com"
 
           # Create branch, commit, push
           git checkout -b "$BRANCH"
-          git add README.md .github/assets/star-history-*.svg
+          git add .github/assets/star-history-*.svg README.md
           git commit -m "docs: update README — ${DATE}"
           git push -u origin "$BRANCH"
 
           # Create PR with auto-merge
           PR_URL=$(gh pr create \
             --title "docs: update README — ${DATE}" \
-            --body "Daily README update: Latest News and star history. Recent Apps is refreshed when an app is published." \
-            --label "NEWS" \
+            --body "Daily README update: the star history chart and the latest news." \
             --base main)
           echo "Created PR: $PR_URL"
 

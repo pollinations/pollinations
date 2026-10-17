@@ -1,0 +1,37 @@
+{
+  "pr_number": 17698,
+  "title": "feat(mcp): add Machines MCP worker for Pollinations sandboxes",
+  "author": "xiaotian1171",
+  "url": "https://github.com/pollinations/pollinations/pull/17698",
+  "merged_at": "2026-10-17T09:05:09Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added the Machines MCP server at https://gen.pollinations.ai/mcp/machines so agents can manage Linux sandboxes through eight tools: create_sandbox, run_command, write_file, read_file, list_sandboxes, connect_sandbox, pause_sandbox, and kill_sandbox. Creation defaults to the pollinations template, with pollinations-large also supported; callers can set a timeout, name, metadata, and environment variables. Commands return exit code, stdout, and stderr; file reads and command output are capped at 100,000 characters with a truncation marker. Listing covers all sandbox pages, and connecting can resume a paused sandbox or extend its lease before a long command. The server uses the caller’s API key and requires account:machines permission. Sandboxes are charged per running second, cost nothing while paused, and incur no additional MCP fee. Added Gen gateway bindings, registry discovery, documentation, and tests for routing, authorization, and sandbox operations.",
+    "keywords": [
+      "Machines MCP",
+      "Linux sandboxes",
+      "agent tools",
+      "E2B",
+      "Gen gateway",
+      "sandbox lifecycle"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-17/PR-17698.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli wears a tiny tool belt and helps a friendly CRT monitor robot tend a row of miniature Linux sandbox terrariums: one sprouts a code-plant, one rests under a pause symbol, and one glows as it resumes. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized, with consistent rounded proportions. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "generated_at": "2026-10-17T09:06:41.806570+00:00",
+  "area": "Agents & agent tools",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "df0991aaa3dd12122cd6666d1f1b8dec25987c62",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "df0991aaa3dd12122cd6666d1f1b8dec25987c62^1",
+    "after_ref": "df0991aaa3dd12122cd6666d1f1b8dec25987c62"
+  }
+}

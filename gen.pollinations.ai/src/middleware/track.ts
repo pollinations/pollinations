@@ -1,6 +1,9 @@
 import { getLogger } from "@logtape/logtape";
 import type { ApiKeyType } from "@shared/auth/api-key-creation.ts";
-import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
+import {
+    AUTO_TOP_UP_THRESHOLD_POLLEN,
+    LOW_BALANCE_SHARE,
+} from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
     type CommunityModelRewardResolution,
@@ -431,13 +434,23 @@ export const track = (eventType: EventType) =>
                     payerBucket = deduction.payerBucket;
                     billedPrice = deduction.billedPrice;
                     const totalPrice = responseTracking.price?.totalPrice ?? 0;
+                    const packBalance = deduction.postDeductionPackBalance;
+                    const lowBalanceThreshold =
+                        deduction.lastPackPollen == null
+                            ? null
+                            : LOW_BALANCE_SHARE * deduction.lastPackPollen;
+                    // Enter refills the balance when auto top-up is on. Without
+                    // it, Enter emails the user, so also call it on the charge
+                    // that takes the balance below a share of their last pack.
                     if (
                         totalPrice > 0 &&
                         payerBucket === "pack" &&
-                        deduction.postDeductionPackBalance != null &&
-                        deduction.postDeductionPackBalance <=
-                            AUTO_TOP_UP_THRESHOLD_POLLEN &&
-                        (await isAutoTopUpConfigured(db, userId))
+                        packBalance != null &&
+                        ((lowBalanceThreshold != null &&
+                            packBalance < lowBalanceThreshold &&
+                            packBalance + billedPrice >= lowBalanceThreshold) ||
+                            (packBalance <= AUTO_TOP_UP_THRESHOLD_POLLEN &&
+                                (await isAutoTopUpConfigured(db, userId))))
                     ) {
                         shouldRunAutoTopUp = true;
                     }

@@ -144,7 +144,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     const selectedPack =
         chosenPack ??
         POLLEN_PACKS.find(
-            (pack) => pack.amountUsd === billing?.lastPackAmountUsd,
+            (pack) => pack.amountUsd === billing?.lastPackPollen,
         ) ??
         POLLEN_PACKS.find(
             (pack) => pack.amountUsd === billing?.autoTopUp.packAmountUsd,

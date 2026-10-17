@@ -83,4 +83,25 @@ describe("GET /api/account/apps", () => {
         expect(await response.json()).toEqual({ apps: [] });
         expect(mocks.tinybird.state.pipeCalls).toHaveLength(0);
     }, 20_000);
+
+    test("returns an empty list when the linked GitHub user has no listings", async ({
+        accountToken,
+        mocks,
+    }) => {
+        await mocks.enable("github", "tinybird");
+        mocks.tinybird.state.appDirectoryResponse = [];
+
+        const response = await SELF.fetch(
+            "http://localhost:3000/api/account/apps",
+            { headers: { Authorization: `Bearer ${accountToken}` } },
+        );
+
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ apps: [] });
+        expect(mocks.tinybird.state.pipeCalls).toContainEqual(
+            expect.objectContaining({
+                url: expect.stringContaining("app_directory_public.json"),
+            }),
+        );
+    }, 20_000);
 });

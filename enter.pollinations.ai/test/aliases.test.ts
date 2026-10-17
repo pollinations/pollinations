@@ -185,6 +185,8 @@ test("Azure models use the approved public-price multipliers", () => {
         ["moonshotai/kimi-k2.6", 1],
         ["moonshotai/kimi-k2.6:azure:sweden", 1],
         ["deepseek/deepseek-v4.1-flash", 0.5],
+        // Approved 1x on the Azure primary; the Azure rate is unconfirmed.
+        ["microsoft/microsoft-decision-1", 1],
     ]);
 
     for (const model of getModels()) {

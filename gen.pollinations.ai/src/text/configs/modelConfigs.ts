@@ -135,7 +135,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "openai/gpt-6-luna-decisions",
     }),
-    "microsoft-decision-1": () =>
+    "microsoft/microsoft-decision-1:vercel": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
@@ -147,6 +147,13 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "microsoft/microsoft-decision-1",
     }),
+    // Stub until Microsoft publishes the Azure request shape and deployment.
+    // A maintainer replaces this before merge.
+    "microsoft-decision-1-azure": () => {
+        throw new Error(
+            "Azure route for Microsoft-Decision-1 is not configured",
+        );
+    },
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
         createAzureResponsesModelConfig(

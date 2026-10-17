@@ -28,6 +28,12 @@ export const DASHBOARD_NAV_ITEMS = [
         icon: CloudUploadIcon,
     },
     {
+        id: "my-apps",
+        to: "/my-apps",
+        label: "My Apps",
+        icon: SparkleIcon,
+    },
+    {
         id: "sandboxes",
         to: "/sandboxes",
         label: "Sandboxes",

@@ -133,16 +133,27 @@ only usage; it cannot mark the account complete.
 
 ## Source of truth
 
-Read `operations/economics/provider-registry.json` first.
+Read the private [Vendor journals](https://drive.google.com/drive/folders/1GnyBRJEGtuZjdJl9qrBapH6jfUpmG9ei) folder in business Drive first.
+Each canonical vendor has exactly one `<vendor-id>.json` containing `version: 1`,
+`vendor` definitions/accounts, `recordedAt`, `forecastRules` and `reviewNotes`.
+Read the vendor's existing check history before visiting the provider again;
+after a check, update that same file with account, service period, checked date,
+outcome, evidence links and next action. Preserve earlier checks. A balance
+snapshot and a monthly evidence review remain separate facts.
 
-- The registry owns canonical vendor IDs, aliases, account lifecycles,
-  active monthly-review status, balance-tracking decisions, access URLs, and
-  workspace domains. It is also the only vendor list: every bank or Runway
-  counterparty is registered with its business `category` (`compute`,
-  `infrastructure`, `development`, `operations`, `revenue_share`, `office`,
-  `admin`, `payroll`), optional `cashRules` (bank-description rules for mixed
-  vendors) and `runwayLine`. A new vendor in a bank statement needs a registry
-  entry before its cash can be categorized.
+`operations/economics/provider-registry.json` retains canonical vendor
+IDs/aliases and model compatibility mappings; join by vendor ID. Do not restore
+vendor definitions or account details into the repository.
+
+- The vendor's Drive file owns account lifecycles, active monthly-review status,
+  balance tracking, access URLs, workspace domains, business `category`,
+  optional `cashRules` and `runwayLine`. Create one file for a new vendor and
+  its identity entry in the repository before categorizing its cash. Update
+  existing files in place, preserving IDs; never recreate a combined catalog.
+- Notes belong to their vendor. `planNotes` reference the existing Vendor
+  ledger `entry_id`; amounts stay in the ledger. Stripe revenue-stream rules,
+  including Ko-fi's stop date, belong in `stripe.json`. Model mappings stay
+  in the repository. Invoices and exports stay at their original Finance links.
 - A vendor is in a month’s normal review only when `monthlyReview: true` and
   that month is within its `activeFrom`/`activeTo` bounds (inclusive). Apply
   the same month bounds to each account. Record excluded vendors with the

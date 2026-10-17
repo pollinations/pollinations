@@ -39,6 +39,19 @@ file in place; its ID and source links must remain stable. Monthly Close/2026 is
 `1ViPJBo8G9oRNLdns_GgYySSj6BBKo_vz`, with `09 September`, `10 October` and
 `Historical backfill` subfolders. Do not leave each new review at the root.
 
+The same root contains [Vendor journals](https://drive.google.com/drive/folders/1GnyBRJEGtuZjdJl9qrBapH6jfUpmG9ei)
+(`1GnyBRJEGtuZjdJl9qrBapH6jfUpmG9ei`): one `<vendor-id>.json` per vendor,
+combining definitions, accounts, review history, limitations and non-financial
+planning rules. The former combined Vendor-details and Reconciliation-journal
+files were superseded by this folder. Preserve each vendor file's ID when
+updating it. No separate runtime journal or catalog is maintained.
+
+The broader `Economics-source-register.json` remains a Finance archive/audit
+index, not an app data source. Do not copy its Bank amounts into vendor journals.
+The Economics service account inherits read-only access from Monthly Close;
+Elliot and Thomas retain their existing permissions. This does not grant the
+app access to the whole Finance archive.
+
 Keep reports, exports, close-review files and source registers out of `Invoices`.
 An existing standalone invoice has one canonical file ID; link to it from
 Economics and working papers instead of uploading another copy. Original ZIPs
@@ -160,7 +173,7 @@ after recording which business folders and references were checked; an access
 error means `archive check blocked`.
 
 For an open dashboard item, carry the reviewed archive check into
-the single private [Economics Planning & review document](https://drive.google.com/file/d/1r9n-RL1B-s6BhcvaTUT_Oj_toFimnmal/view)
+the owning vendor’s JSON file in [Vendor journals](https://drive.google.com/drive/folders/1GnyBRJEGtuZjdJl9qrBapH6jfUpmG9ei)
 under `reviewNotes.archiveChecks` through the normal
 named-batch/environment approval gate. Store `month` (service month), canonical
 `provider`, exact `account`, `checkedAt` (ISO timestamp), `status`, short `note`
@@ -168,8 +181,8 @@ named-batch/environment approval gate. Store `month` (service month), canonical
 for relevant retained sources awaiting reconciliation, `partial` when the
 required fact is still missing, `not_found` only after the recorded archive
 search, and `blocked` for an access failure. Found/partial checks require file
-links; folder links do not prove retention. Replace the same provider/account/
-month check on each review; remove obsolete checks after verified import.
+links; folder links do not prove retention. Append each new dated review and preserve earlier checks as history. Read the
+latest check for the same provider/account/month before repeating collection.
 These annotations never book money, certify coverage or clear issue counts.
 Do not put account observations into the public repository or provider registry.
 

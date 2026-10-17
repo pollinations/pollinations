@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-17T04:13:45.952662+00:00",
+  "generated_at": "2026-10-17T06:08:16.072711+00:00",
   "models": [
     {
       "id": "pr-14811:black-forest-labs/flux.2-max",
@@ -7378,6 +7378,56 @@
     }
   ],
   "highlights": [
+    {
+      "date": "2026-10-16",
+      "emoji": "🎵",
+      "title": "Stories from Echo Island",
+      "text": "Turn a character idea into an illustrated story and voice note. [Try it](https://huggingface.co/spaces/xiaotian1171/echo-island-pollinations-space).",
+      "prs": [
+        17719
+      ],
+      "kind": "app"
+    },
+    {
+      "date": "2026-10-16",
+      "emoji": "🎯",
+      "title": "Trolley dilemmas in Switchyard",
+      "text": "Make your choices, compare them with Jev, then see what changes when the descriptions switch order. [Try it](https://saauf.github.io/switchyard).",
+      "prs": [
+        17746
+      ],
+      "kind": "app"
+    },
+    {
+      "date": "2026-10-16",
+      "emoji": "🤖",
+      "title": "JavaScript in Computer MCP",
+      "text": "Agents can run JavaScript alongside bash, work with persistent files, and return structured results. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        16679
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-16",
+      "emoji": "🔗",
+      "title": "A System One API path",
+      "text": "Send TypeSafe decision requests to `/v1/systemone` using the same request and response shape as `/alpha/decisions`. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17711
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-10-16",
+      "emoji": "✨",
+      "title": "An SDK skill for agents",
+      "text": "Agents writing JavaScript apps can find a dedicated `@pollinations/sdk` quickstart for generating text and images. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "prs": [
+        17491
+      ],
+      "kind": "product"
+    },
     {
       "date": "2026-10-15",
       "emoji": "🚀",

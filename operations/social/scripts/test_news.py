@@ -561,6 +561,11 @@ class PostsTest(unittest.TestCase):
         self.assertFalse((self.news / x_file).exists())
         self.assertEqual(json.loads((self.news / summary_file).read_text())["changelog"][0]["pr_number"], 3)
         self.assertTrue(delivery.exists())
+        # Rewritten once more with nothing at all to keep, the day keeps no summary either.
+        self.notes["2026-10-06"] = [note(4, "2026-10-06T12:00:00Z", tier="discord_only")]
+        self.new("daily", "2026-10-06", overwrite=True)
+        self.assertFalse((self.news / summary_file).exists())
+        self.assertTrue(delivery.exists())
 
     def test_weekly_with_and_without_the_linkedin_rewrite(self):
         for long_linkedin, temperatures in ((False, [0.3, 0.7, 0.7, 0.7, 0.8]),

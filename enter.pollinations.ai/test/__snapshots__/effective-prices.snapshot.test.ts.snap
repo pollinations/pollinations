@@ -2086,6 +2086,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000004431,
     },
   },
+  "microsoft/microsoft-decision-1:vercel": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.000000042,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.000000042,
+    },
+  },
   "microsoft/trellis-2": {
     "cost": {
       "completionImageTokens": 0.24,

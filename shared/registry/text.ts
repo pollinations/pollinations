@@ -1728,14 +1728,15 @@ const TEXT_BASE_SERVICES = {
     "microsoft/microsoft-decision-1": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],
-        provider: "vercel",
+        provider: "azure",
         publisher: "Microsoft",
         category: "text",
         addedDate: new Date("2026-10-09").getTime(),
         priceMultiplier: 1, // Billed at cost, no margin.
-        paidOnly: true,
+        paidOnly: false,
         cost: {
-            // Vercel AI Gateway list price, the cheapest route.
+            // Azure rate unconfirmed: the Vercel and OpenRouter rate for the same
+            // Azure backend. Replace with Azure's published rate before merge.
             promptTextTokens: perMillion(0.042),
             completionTextTokens: perMillion(0),
         },

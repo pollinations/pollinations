@@ -53,6 +53,8 @@ const SORT_COLUMNS: SortColumn<VendorChecks>[] = [
 
 export function ReconciliationTab({
     data,
+    scope,
+    onClearScope,
     issues,
     transactions,
     year,
@@ -60,6 +62,8 @@ export function ReconciliationTab({
     acceptedExceptions = [],
 }: {
     data?: Data;
+    scope?: { ids: string[]; label: string } | null;
+    onClearScope?: () => void;
     issues: ReconciliationIssue[];
     transactions?: OpTransactionRow[];
     acceptedExceptions?: ReconciliationException[];
@@ -83,10 +87,14 @@ export function ReconciliationTab({
         [data],
     );
     const [expanded, setExpanded] = useState<string[]>([]);
-    const scoped = issues.filter((row) => row.month.startsWith(`${year}-`));
+    const scoped = issues.filter((row) =>
+        scope ? scope.ids.includes(row.id) : row.month.startsWith(`${year}-`),
+    );
     const accepted = acceptedExceptions.filter(
         (row) =>
-            row.month.startsWith(`${year}-`) && (!type || type === "known"),
+            !scope &&
+            row.month.startsWith(`${year}-`) &&
+            (!type || type === "known"),
     );
     const visible = scoped.filter(
         (row) =>
@@ -99,18 +107,7 @@ export function ReconciliationTab({
                     ),
                 ])),
     );
-    const vendors = [
-        ...new Set([
-            ...(!type ? directory.map((row) => row.provider.id) : []),
-            ...visible.map((row) => canonicalProvider(row.vendor)),
-            ...accepted.map((row) => canonicalProvider(row.vendor)),
-            ...(!type
-                ? journal.map((row) =>
-                      canonicalProvider(row.journalVendor ?? row.vendor),
-                  )
-                : []),
-        ]),
-    ].filter((vendor) => {
+    const matchesVendor = (vendor: string) => {
         const row = directory.find((row) => row.provider.id === vendor);
         return [
             vendor,
@@ -124,7 +121,19 @@ export function ReconciliationTab({
             .join(" ")
             .toLowerCase()
             .includes(query.trim().toLowerCase());
-    });
+    };
+    const vendors = [
+        ...new Set([
+            ...(!type && !scope ? directory.map((row) => row.provider.id) : []),
+            ...visible.map((row) => canonicalProvider(row.vendor)),
+            ...accepted.map((row) => canonicalProvider(row.vendor)),
+            ...(!type && !scope
+                ? journal.map((row) =>
+                      canonicalProvider(row.journalVendor ?? row.vendor),
+                  )
+                : []),
+        ]),
+    ].filter(matchesVendor);
     const grouped: VendorChecks[] = vendors.map((vendor) => {
         const vendorIssues = visible.filter(
             (issue) => canonicalProvider(issue.vendor) === vendor,
@@ -154,9 +163,26 @@ export function ReconciliationTab({
         (sum, row) => sum + row.issues.length,
         0,
     );
+    const totalChecks = scoped.filter(
+        (row) =>
+            (!type || (type !== "known" && row.types.includes(type))) &&
+            matchesVendor(canonicalProvider(row.vendor)),
+    ).length;
     const unknownAmounts = grouped.reduce((sum, row) => sum + row.unknowns, 0);
     return (
         <section className="flex flex-col gap-4">
+            {scope && (
+                <div className="flex items-center gap-3 text-sm">
+                    <span>{scope.label}</span>
+                    <button
+                        type="button"
+                        className="underline"
+                        onClick={onClearScope}
+                    >
+                        Show all checks
+                    </button>
+                </div>
+            )}
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <input
                     aria-label="Search vendors"
@@ -189,24 +215,29 @@ export function ReconciliationTab({
                         {scoped.filter((row) => row.types.includes(key)).length}
                     </TabButton>
                 ))}
-                <TabButton
-                    active={type === "known"}
-                    aria-pressed={type === "known"}
-                    size="sm"
-                    variant="soft"
-                    onClick={() => setType("known")}
-                >
-                    Known limitations ·{" "}
-                    {
-                        acceptedExceptions.filter((row) =>
-                            row.month.startsWith(`${year}-`),
-                        ).length
-                    }
-                </TabButton>
+                {!scope && (
+                    <TabButton
+                        active={type === "known"}
+                        aria-pressed={type === "known"}
+                        size="sm"
+                        variant="soft"
+                        onClick={() => setType("known")}
+                    >
+                        Known limitations ·{" "}
+                        {
+                            acceptedExceptions.filter((row) =>
+                                row.month.startsWith(`${year}-`),
+                            ).length
+                        }
+                    </TabButton>
+                )}
             </fieldset>
             <span className="text-sm text-theme-text-soft">
-                {vendors.length} vendors · {displayedChecks} open checks ·{" "}
-                {year}
+                {vendors.length} vendors ·{" "}
+                {displayedChecks === totalChecks
+                    ? `${totalChecks} open checks`
+                    : `${displayedChecks} of ${totalChecks} open checks shown · ${totalChecks - displayedChecks} below $1 (Pro)`}{" "}
+                · {scope ? scope.label : year}
                 {unknownAmounts > 0
                     ? ` · ${unknownAmounts} amounts unknown`
                     : ""}

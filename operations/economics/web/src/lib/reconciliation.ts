@@ -285,6 +285,31 @@ export function reconciliationState(data: Data, now = new Date()) {
             "Usage meter estimate · bill and impact unknown",
         );
     }
+    // Recurring budgets remain forecasts. Missing review evidence does not
+    // turn their amounts into booked costs or change recorded results.
+    const reviewedPlans = new Set(
+        data.privateConfig?.reviewNotes.planNotes?.map((note) => note.entryId),
+    );
+    for (const plan of data.vendorPlans ?? []) {
+        if (
+            plan.plan_cadence !== "monthly" ||
+            reviewedPlans.has(plan.entry_id) ||
+            (plan.end && plan.end < currentMonth)
+        )
+            continue;
+        add(
+            currentMonth,
+            plan.vendor,
+            "documents",
+            `Recurring forecast (${plan.plan_category}, ${plan.currency}${plan.start ? `, from ${plan.start}` : ""}) has no supporting review note. Confirm its basis; this is a forecast assumption, not a booked expense.`,
+            ["runway", "vendor-ledger"],
+            2,
+            null,
+            "Forecast assumption · basis unverified",
+            plan.evidence ? [plan.evidence] : [],
+            "validation",
+        );
+    }
     const runway = buildRunway(
         data.opTransactions ?? [],
         now,

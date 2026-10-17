@@ -202,7 +202,8 @@ it("keeps unknown amounts visible and hides known zero rows without clearing che
     expect(html).not.toContain("$0");
     expect(html).not.toContain("Verified zero");
     expect(html).toContain("1 vendors");
-    expect(html).toContain("1 open checks");
+    expect(html).toContain("1 of 2 open checks shown");
+    expect(html).toContain("1 below $1 (Pro)");
 });
 
 it("separates model-only details while keeping mixed financial issues visible", () => {
@@ -526,4 +527,30 @@ it("joins vendor accounts, journal history and checks without copying source dat
     assert(other);
     expect(html).toContain(other.label);
     expect(data).toEqual(before);
+});
+
+it("opens exactly the badge checks even when their period differs from the selected year", () => {
+    const other = {
+        ...issue,
+        id: "other",
+        month: "2025-09",
+        vendor: "other-vendor",
+    };
+    const html = renderToStaticMarkup(
+        createElement(ReconciliationTab, {
+            issues: [issue, other],
+            acceptedExceptions: [limitation],
+            year: "2026",
+            scope: { ids: [other.id], label: "Runway · 2025" },
+            onClearScope: () => {},
+            onOpen: () => {},
+        }),
+    );
+    expect(html).toContain("Runway · 2025");
+    expect(html).toContain("Show all checks");
+    expect(html).not.toContain("Known limitations");
+    expect(html).toContain("1 open checks");
+    expect(html).toContain("other-vendor");
+    expect(html).not.toContain("Historical receipt unavailable.");
+    expect(html).not.toContain(">aws<");
 });

@@ -937,6 +937,10 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
             // Display preferences still work when browser storage is unavailable.
         }
     };
+    const [checkScope, setCheckScope] = useState<{
+        ids: string[];
+        label: string;
+    } | null>(null);
     const [loadedView, setLoadedView] = useState<ActiveView | null>(null);
     const [loading, setLoading] = useState(false);
     const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -1241,6 +1245,8 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
                 {viewData && activeView === "close" && (
                     <ReconciliationTab
                         data={viewData}
+                        scope={checkScope}
+                        onClearScope={() => setCheckScope(null)}
                         transactions={viewData.opTransactions}
                         key={selectedYear}
                         issues={reconciliation?.issues ?? []}
@@ -1299,6 +1305,7 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
                 data={data}
                 footer={drawerFooter}
                 onViewChange={(value) => {
+                    setCheckScope(null);
                     setSelectedVendors([]);
                     setSelectedCategories([]);
                     setActiveView(value);
@@ -1342,6 +1349,12 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
                                             title={`${confidencePeriod} · ${confidence.detail}`}
                                             aria-label={`${relevantIssues.length} reconciliation items. ${confidencePeriod}. Data confidence: ${confidence.status}. Open reconciliation`}
                                             onClick={() => {
+                                                setCheckScope({
+                                                    ids: relevantIssues.map(
+                                                        (row) => row.id,
+                                                    ),
+                                                    label: `${viewTitle} · ${confidencePeriod}`,
+                                                });
                                                 setActiveView("close");
                                             }}
                                         >

@@ -833,3 +833,59 @@ it("keeps accepted historical detail gaps neutral without suppressing financial 
         ).summary,
     );
 });
+
+it("flags unsupported recurring forecasts without booking them as expenses", () => {
+    const plan: VendorLedgerRow = {
+        ...cost("test-budget", "planned"),
+        entry_id: "budget",
+        start: "2026-10",
+        end: "",
+        paid: 0,
+        credit: 0,
+        plan_amount: -123.45,
+        plan_category: "development",
+        plan_cadence: "monthly",
+        settled_by_entry_ids: [],
+    };
+    const config = parsePrivateConfig({
+        config: JSON.stringify({
+            forecastRules: {},
+            reviewNotes: {
+                providerCheckExplanations: [],
+                meterDriftExplanations: [],
+                pollenWitnessExplanations: [],
+            },
+        }),
+        recorded_at: "2026-10-14",
+    });
+    const data: Data = {
+        vendorLedger: [],
+        opTransactions: [],
+        vendorPlans: [plan],
+        privateConfig: config,
+    };
+    const before = structuredClone(data);
+    const issue = reconciliationState(data, now).issues.find(
+        (row) => row.vendor === "test-budget" && row.month === "2026-10",
+    );
+    expect(issue?.messages.join(" ")).toContain(
+        "has no supporting review note",
+    );
+    expect(issue?.group).toBe("validation");
+    expect(issue?.amountUsd).toBeNull();
+    expect(issue?.messages.join(" ")).not.toContain("123.45");
+    expect(data).toEqual(before);
+    config.reviewNotes.planNotes = [
+        {
+            entryId: "budget",
+            explanation: "Reviewed monthly budget assumption.",
+        },
+    ];
+    expect(
+        reconciliationState(data, now).issues.some((row) =>
+            row.messages.some((message) =>
+                message.includes("has no supporting review note"),
+            ),
+        ),
+    ).toBe(false);
+});

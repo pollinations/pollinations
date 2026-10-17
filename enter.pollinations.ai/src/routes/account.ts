@@ -762,6 +762,12 @@ async function respondDetailedUsage(
 
 // Response schemas for OpenAPI documentation
 const profileResponseSchema = z.object({
+    githubId: z
+        .number()
+        .nullable()
+        .describe(
+            "GitHub numeric user id; matches owner records in the community app catalog",
+        ),
     githubUsername: z.string().nullable().describe("GitHub username if linked"),
     image: z
         .string()
@@ -1014,6 +1020,7 @@ export const accountRoutes = new Hono<Env>()
             }
 
             return c.json({
+                githubId: profile.githubId ?? null,
                 githubUsername: profile.githubUsername ?? null,
                 image: profile.image ?? null,
                 communityEndpointsAllowed:

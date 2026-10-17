@@ -57,17 +57,6 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
-                id: "unicode",
-                name: "Unicode Inspector",
-                description:
-                    "Inspect text for common Unicode lookalikes and invisible control characters.",
-                url: "https://gen.pollinations.ai/mcp/unicode",
-                pricing: {
-                    description: "No external API or additional MCP fee.",
-                    rates: [],
-                },
-            },
-            {
                 id: "ffmpeg",
                 name: "FFmpeg",
                 description:

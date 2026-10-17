@@ -262,7 +262,7 @@ async def test_unpublished_workspace_file_in_final_answer_triggers_nudge(monkeyp
     nudges = [
         m
         for m in second_call_msgs
-        if m["role"] == "system" and "assets publish" in m["content"]
+        if m["role"] == "system" and "upload_media" in m["content"]
     ]
     assert nudges, "expected publish nudge to be injected"
 

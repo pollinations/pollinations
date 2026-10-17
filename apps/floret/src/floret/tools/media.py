@@ -1,11 +1,13 @@
-"""Publish data URIs and authenticated media URLs to public media hosting."""
+"""Publish sandbox files, data URIs and authenticated media URLs to public media hosting."""
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import mimetypes
 import os
 import uuid
+from pathlib import Path
 
 from floret.tools.gen import _fetch_bytes, _http_client, _key
 
@@ -47,8 +49,13 @@ def _name_for_bytes(data: bytes) -> str:
     return f"{uuid.uuid4().hex}{ext}"
 
 
+def _read_file(path: Path) -> bytes:
+    with path.open("rb") as file:
+        return file.read(MAX_UPLOAD_BYTES + 1)
+
+
 async def _read_source(source: str, filename: str | None) -> tuple[bytes, str]:
-    """Return (bytes, filename) for a data URI or HTTP(S) URL."""
+    """Return (bytes, filename) for a sandbox file, data URI or HTTP(S) URL."""
     if source.startswith("data:"):
         header, _, b64 = source.partition(",")
         if len(b64) > ((MAX_UPLOAD_BYTES + 2) // 3) * 4:
@@ -65,9 +72,13 @@ async def _read_source(source: str, filename: str | None) -> tuple[bytes, str]:
             path_name if mimetypes.guess_type(path_name)[0] else _name_for_bytes(data)
         )
         return data, name
-    raise ValueError(
-        "source must be an HTTP(S) URL or data URI; publish Computer files with assets publish"
-    )
+    path = Path(source)
+    if path.is_absolute():
+        data = await asyncio.to_thread(_read_file, path)
+        if len(data) > MAX_UPLOAD_BYTES:
+            raise ValueError(f"media exceeds {MAX_UPLOAD_BYTES} byte upload limit")
+        return data, filename or path.name
+    raise ValueError("source must be an absolute sandbox path, HTTP(S) URL or data URI")
 
 
 async def upload_media(source: str, filename: str | None = None) -> str:

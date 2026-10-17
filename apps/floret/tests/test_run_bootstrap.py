@@ -143,3 +143,43 @@ async def test_hosted_catalog_failure_preserves_last_valid_snapshot(monkeypatch)
     monkeypatch.setattr(registry, "_policy_snapshot", None)
     with pytest.raises(httpx.HTTPStatusError):
         await registry.warm_registry()
+
+
+async def test_sandbox_snapshot_preserves_global_policy_and_caller_filter(
+    tmp_path, monkeypatch
+):
+    import json
+
+    monkeypatch.setattr(registry, "_registry_cache", None)
+    monkeypatch.setattr(registry, "_policy_snapshot", None)
+    monkeypatch.setattr(registry, "_catalog_revision", None)
+    path = tmp_path / "catalog.json"
+    path.write_text(
+        json.dumps(
+            {
+                "version": "sandbox-1",
+                "catalog": [
+                    {
+                        "name": "sandbox-image",
+                        "category": "image",
+                        "output_modalities": ["image"],
+                        "supported_endpoints": ["/image/{prompt}"],
+                    }
+                ],
+                "review": {
+                    "revision": "sandbox-1",
+                    "catalogRevision": "sandbox-1",
+                    "incumbents": {"image.general": "sandbox-image"},
+                    "recommendations": [],
+                },
+            }
+        )
+    )
+    monkeypatch.setattr(registry.settings, "catalog_endpoint", "file://" + str(path))
+    await registry.warm_registry()
+    assert registry.pick_model("image") == "sandbox-image"
+    token = registry.set_request_catalog({})
+    try:
+        assert registry.pick_model("image") == ""
+    finally:
+        registry.reset_request_catalog(token)

@@ -2,9 +2,9 @@
   "date": "2025-10-11",
   "period_start": "2025-10-11",
   "period_end": "2025-10-11",
-  "title": "Image generation got a new Kontext route and less fragile URLs",
-  "summary": "A repair-and-reroute day: new Kontext support, steadier image and text services, cleaner model plumbing, and two more projects in the garden.\n\nAzure Flux Kontext joined the image model lineup, while image URL parameters and generated URLs were made more consistent. Mobile layout also received a pass, because browsers on small rectangles remain surprisingly opinionated.\n\nA reverted prompt-enhancer change removed a syntax error affecting image generation, and a startup regression in text.pollinations.ai was fixed. The result is less time spent discovering that a service has become philosophical about starting.\n\nBedrock-backed models moved onto Scaleway and Azure Myceli, with DeepSeek credentials updated for the new path. The site also completed its Vite migration cleanup, removing duplicate project structure left behind by the move.",
-  "pr_count": 16,
+  "title": "New routes for image generation and editing",
+  "summary": "Image and text models changed routes, Enter got more usable on phones, and an image-enhancement experiment was reverted the same day.\n\n`kontext` moved to Azure Flux Kontext for generation and image editing, with a 1024-pixel maximum side length. Nano Banana was added as a nectar-tier image model. GPT Image now uses `gpt-image-1-mini` for generation and `gpt-image-1` for edits with input images.\n\n`deepseek` now uses DeepSeek V3.1 with hybrid reasoning; the former reasoning model names remain as aliases. `mistral` moved from Small 3.1 to 3.2, and `mistral-naughty` replaced the `mistral-romance` listing while keeping the old name as an alias. A text-service startup fix addressed its TypeScript model imports.\n\nEnter’s sign-in, account and Balance layouts were adjusted for mobile. API key lists remain scrollable on narrow screens. The Pollen FAQ now explains model usage in images per Pollen and clarifies that one wallet works across apps.",
+  "pr_count": 12,
   "prs": [
     {
       "number": 4181,
@@ -12,14 +12,6 @@
     },
     {
       "number": 4458,
-      "date": "2025-10-11"
-    },
-    {
-      "number": 4481,
-      "date": "2025-10-11"
-    },
-    {
-      "number": 4483,
       "date": "2025-10-11"
     },
     {
@@ -43,19 +35,11 @@
       "date": "2025-10-11"
     },
     {
-      "number": 4490,
-      "date": "2025-10-11"
-    },
-    {
       "number": 4496,
       "date": "2025-10-11"
     },
     {
       "number": 4498,
-      "date": "2025-10-11"
-    },
-    {
-      "number": 4499,
       "date": "2025-10-11"
     },
     {
@@ -71,29 +55,44 @@
       "date": "2025-10-11"
     }
   ],
-  "generated_at": "2026-09-04T12:46:51.481304+00:00",
+  "generated_at": "2026-10-17T15:48:57.472492+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "New Creative Apps",
-      "text": "Launched three new AI tools: Virtual Makeup Studio, Packaging Designer, and Map-to-3D visualizer. [View repos](https://github.com/pollinations/pollinations/tree/main/apps)",
-      "kind": "app"
-    },
-    {
-      "emoji": "🚀",
-      "title": "Model Upgrades",
-      "text": "`kontext` model now uses Azure Flux for superior img2img results. `openai-audio` input limit increased to 10k characters."
+      "title": "Kontext for image editing",
+      "text": "Use `kontext` for text-to-image generation or edits based on an input image. [Explore the model](https://enter.pollinations.ai/models?q=kontext).",
+      "prs": [
+        4484
+      ],
+      "kind": "model"
     },
     {
       "emoji": "✨",
-      "title": "Prompt Enhancer",
-      "text": "The prompt enhancement system now supports image-based inputs to help refine your generation styles automatically."
+      "title": "Nano Banana added",
+      "text": "Generate images with `nanobanana`, the Gemini 2.5 Flash Image Preview model, at nectar tier. [Explore the model](https://enter.pollinations.ai/models?q=nanobanana).",
+      "prs": [
+        4489
+      ],
+      "kind": "model"
     },
     {
-      "emoji": "🎮",
-      "title": "Devil Summoner",
-      "text": "A new procedural text RPG with combat and demon recruitment. [Play it](https://gamedemo-a65.pages.dev/)",
-      "kind": "app"
+      "emoji": "🤖",
+      "title": "DeepSeek V3.1 with reasoning",
+      "text": "`deepseek` now uses DeepSeek V3.1 with hybrid reasoning. Existing `deepseek-reasoning` and `deepseek-r1-0528` names remain aliases. [Explore the model](https://enter.pollinations.ai/models?q=deepseek).",
+      "prs": [
+        4488
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Mistral Small 3.2",
+      "text": "`mistral` now uses Mistral Small 3.2. The previous 3.1 aliases still work. [Explore the model](https://enter.pollinations.ai/models?q=mistral).",
+      "prs": [
+        4488
+      ],
+      "kind": "model"
     }
-  ]
+  ],
+  "changelog": []
 }

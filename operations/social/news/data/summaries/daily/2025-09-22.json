@@ -2,9 +2,9 @@
   "date": "2025-09-22",
   "period_start": "2025-09-22",
   "period_end": "2025-09-22",
-  "title": "Gemini Search now points at the right Flash model",
-  "summary": "A garden-maintenance day: smoother Gemini Search, more community chat projects, and clearer signals from Pollen and Nano Banana.\n\nThe gemini-search route now uses the Vertex-specific gemini-2.5-flash-vertex model ID, keeping search requests on the intended model rather than relying on a name that sounds close enough for software.\n\nStrapick Chat and LLMS were added to the project listings, giving people two more community-built chat experiments to discover and poke at.\n\nPollen MVP moved to v0.2, while Nano Banana gained fuller logging and user-stat tracking. Telemetry now also records requested and actually used models correctly, making the system's account of itself a little less fictional.",
-  "pr_count": 6,
+  "title": "Free generation gets a clearer path",
+  "summary": "Free generation got a clearer entry point, two chat projects joined the list, and image and search requests got less mysterious.\n\nEnter added a registry for text and image generation services. Free services can be called without an API key, while generation requests now record model use, timing and response status.\n\nThe Chat Projects list added @mmojocoder’s minimal Strapick Chat and @yassineAbou’s LLMS, a cross-platform app for text chat and image generation.\n\nNano Banana now times out slow image requests and treats responses without image data as errors instead of passing them through. The image model registry also dropped its Azure-backed gptimage entry.",
+  "pr_count": 5,
   "prs": [
     {
       "number": 4039,
@@ -25,11 +25,19 @@
     {
       "number": 4132,
       "date": "2025-09-22"
-    },
-    {
-      "number": 4133,
-      "date": "2025-09-22"
     }
   ],
-  "generated_at": "2026-09-04T12:34:31.352978+00:00"
+  "generated_at": "2026-10-17T15:46:54.919029+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "Keyless free generation",
+      "text": "Call free registered generation services without an API key. [Explore the API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        4039
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

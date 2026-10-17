@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-25",
+  "period_start": "2026-08-25",
+  "period_end": "2026-08-25",
+  "generated_at": "2026-08-26T06:16:48.530054+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-25/images/reddit.jpg"
+    }
+  ],
+  "title": "Video, model catalog, and SDK updates",
+  "text": "19 PRs merged today. The useful parts:\n\nVideo generation gained Wan 3.0 through Fal Prime ([#13910](https://github.com/pollinations/pollinations/pull/13910)), while frame limits are now enforced from the model registry instead of being left to downstream interpretation ([#13908](https://github.com/pollinations/pollinations/pull/13908)). Fewer ways to accidentally request a small film festival.\n\nThe catalog is more inspectable: OpenAI-compatible `GET /v1/models/:model` landed ([#13875](https://github.com/pollinations/pollinations/pull/13875)), tool-calling capability is surfaced ([#13902](https://github.com/pollinations/pollinations/pull/13902)), Mistral regional price variants are excluded, and community model price/visibility changes now have a 12-hour delay. The paid-model filter was also reverted after proving too blunt an instrument.\n\nEarnings and quests are now available in the SDK via `accountEarnings()` and `accountQuests()`, plus `polli earnings` in the CLI ([#13822](https://github.com/pollinations/pollinations/pull/13822), [#13855](https://github.com/pollinations/pollinations/pull/13855), [#13866](https://github.com/pollinations/pollinations/pull/13866)). Account routes now send `no-store`, and SDK errors preserve request IDs through an `X-Request-Id` fallback.\n\nAlso: cached media generations can retry keylessly, hosted FFmpeg MCP was added ([#13915](https://github.com/pollinations/pollinations/pull/13915)), and EAS AI Studio joined the image lineup. Source and open work are in the [repo](https://github.com/pollinations/pollinations)."
+}

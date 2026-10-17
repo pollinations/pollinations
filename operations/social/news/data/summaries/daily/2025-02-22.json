@@ -2,8 +2,8 @@
   "date": "2025-02-22",
   "period_start": "2025-02-22",
   "period_end": "2025-02-22",
-  "title": "image1gen joins the project list",
-  "summary": "A small directory update: image1gen is now part of the growing project list.\n\nThe project directory now includes image1gen, making another community-built image tool easier to discover.",
+  "title": "image1gen joins the project directory",
+  "summary": "A community-made image generator joined the project directory.\n\nThe Creative & Interactive Applications listings in the README and website now include @oopshnik’s image1gen, a web interface for making images with the pollinations.ai API.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-02-22"
     }
   ],
-  "generated_at": "2026-09-04T13:59:20.397509+00:00"
+  "generated_at": "2026-10-17T15:34:08.861516+00:00",
+  "highlights": [],
+  "changelog": []
 }

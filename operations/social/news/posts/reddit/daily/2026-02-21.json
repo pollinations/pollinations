@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-02-21",
+  "period_start": "2026-02-21",
+  "period_end": "2026-02-21",
+  "generated_at": "2026-03-18T21:42:43.883190+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-21/images/reddit.jpg"
+    }
+  ],
+  "title": "Merged 5 PRs: Polly bot embedding overhaul, auto-deploy, new community apps",
+  "text": "We merged 5 PRs today across the infrastructure and community apps. The main focus was ripping out and replacing how the Polly bot handles embeddings.\n\nPreviously, embedding generation was a bottleneck. PRs #8473 and #8474 overhauled the entire pipeline. We moved to batching embeddings, removed some stale KPI tracking that was adding unnecessary overhead, and forced context updates on restart. Performance is noticeably better, and the documentation has been updated to reflect the new setup.\n\nWe also open-sourced the Polly bot itself (#8467) and hooked it up to an auto-deploy GitHub workflow. If you want to see how we are wiring up the RAG pipeline or just want to fork the bot for your own server, the source is now in the open.\n\nOn the community side, two new apps got merged. Someone built \"BrainrotMaker\" for the Creative section (#8432), which generates exactly what the name implies. We also added \"ppo\" to the Chat interface (#7328).\n\nEverything is live on the main repo. If you're building against the API and notice any weirdness with the new batched embeddings or bot responses, open an issue."
+}

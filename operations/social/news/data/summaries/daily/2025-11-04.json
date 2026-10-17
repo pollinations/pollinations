@@ -2,9 +2,9 @@
   "date": "2025-11-04",
   "period_start": "2025-11-04",
   "period_end": "2025-11-04",
-  "title": "Text API gained Sonar, model discovery, and sturdier streaming",
-  "summary": "A practical API day: more text models, easier setup, steadier streaming, and a few less surprising corners of the infrastructure.\n\nPerplexity Sonar models are now available through the text API, alongside a new endpoint for discovering supported text models. Streaming was tested and repaired, and Perplexity responses now handle empty finish reasons without falling over on an empty string.\n\nAPI keys now use the plln_ prefix, frontend calls moved to the enter.pollinations.ai API, and configuration was centralized to keep key handling consistent. The API docs also picked up a Quick Start, because the shortest path to pixels should not require archaeology.\n\nTier gating was removed from the registry, while Discord and weekly digest updates kept the project’s public pulse current. Terms and privacy language was also updated for the Myceli branding and open-source community.",
-  "pr_count": 19,
+  "title": "Perplexity Sonar joins the text models",
+  "summary": "Perplexity Sonar models and public model discovery landed alongside Pollen estimates, streaming repairs, and a website migration still needing a build fix.\n\nAdded `perplexity-fast` and `perplexity-reasoning`, both with tool support. Response validation now accepts the empty finish reason Perplexity can return in regular and streaming completions.\n\nAdded a public text-model list endpoint and browser-ready examples in the API docs. The website was switched toward Enter’s image, text, and model endpoints, with clearer image-generation errors and a restored full-color image watermark. A follow-up configuration edit introduced duplicate declarations that block the frontend build, so the website migration should not be treated as working end to end.\n\nEnter gained text and image pricing tables showing model-specific rates and estimated output per Pollen. The service registry also dropped tier requirements and tier-based queue limits; the changes do not establish a new price or guarantee access to a particular model.",
+  "pr_count": 15,
   "prs": [
     {
       "number": 4942,
@@ -31,10 +31,6 @@
       "date": "2025-11-04"
     },
     {
-      "number": 4979,
-      "date": "2025-11-04"
-    },
-    {
       "number": 4984,
       "date": "2025-11-04"
     },
@@ -55,10 +51,6 @@
       "date": "2025-11-04"
     },
     {
-      "number": 4995,
-      "date": "2025-11-04"
-    },
-    {
       "number": 4996,
       "date": "2025-11-04"
     },
@@ -67,15 +59,7 @@
       "date": "2025-11-04"
     },
     {
-      "number": 5000,
-      "date": "2025-11-04"
-    },
-    {
       "number": 5002,
-      "date": "2025-11-04"
-    },
-    {
-      "number": 5004,
       "date": "2025-11-04"
     },
     {
@@ -83,5 +67,35 @@
       "date": "2025-11-04"
     }
   ],
-  "generated_at": "2026-09-04T12:04:38.387326+00:00"
+  "generated_at": "2026-10-17T15:51:34.540407+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Perplexity Sonar arrives",
+      "text": "Use `perplexity-fast` for conversational text and tool calls. [View the model](https://enter.pollinations.ai/models?q=perplexity-fast).",
+      "prs": [
+        4969
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Sonar with reasoning",
+      "text": "Try `perplexity-reasoning` for reasoning-capable conversations with tool support. [View the model](https://enter.pollinations.ai/models?q=perplexity-reasoning).",
+      "prs": [
+        4969
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Public text model discovery",
+      "text": "Fetch the text-model list without authentication from `GET /api/generate/text/models`. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        4973
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

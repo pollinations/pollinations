@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-05-10",
+  "period_start": "2026-05-03",
+  "period_end": "2026-05-09",
+  "generated_at": "2026-05-10T06:52:29.920629+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-10/images/reddit.jpg"
+    }
+  ],
+  "title": "41 PRs merged: Embeddings restack, Llama/Gemma models, and better upstream errors",
+  "text": "We merged 41 PRs this week across the infrastructure. A good chunk of this was dealing with model additions and making our error handling less of a black box.\n\nFirst, we restacked the embeddings modality (PR #10358). We also added Meta Llama models to codex, and Gemma text models via DeepInfra. Gemini embedding 2 is now marked as paid-only.\n\nOn the infrastructure side, we finally fixed how we handle upstream errors. Previously, if a provider failed, we were just throwing generic 500s. PR #10811 surfaces the actual upstream error codes, and #10665 propagates the upstream URLs in those errors. It makes debugging much less painful. We also mapped Replicate content-filter errors to 4xx so they stop looking like server crashes.\n\nFor developers using BYOP (Bring Your Own Provider), we simplified margin billing and added cloud-provider billing with key rotation across OpenRouter, DeepInfra, and AWS credits.\n\nLastly, the community app showcase grew by 11 new projects this week, including ZenWall AI, PolliGPT, and Storyframe Studio.\n\nCode and full changelog are in the repo: github.com/pollinations/pollinations"
+}

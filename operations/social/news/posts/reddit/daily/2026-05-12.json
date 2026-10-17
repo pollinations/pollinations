@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-12",
+  "period_start": "2026-05-12",
+  "period_end": "2026-05-12",
+  "generated_at": "2026-05-13T06:58:41.218591+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-12/images/reddit.jpg"
+    }
+  ],
+  "title": "Merged 3 PRs: Auto top-ups, Pollenforge CLI, and Storytale",
+  "text": "Just a quick update on what shipped today across 3 merged PRs.\n\nFirst, we finally wired up Stripe Portal for auto top-ups (PR #10561). If you're running heavy workloads and chewing through Pollen credits, you've probably hit a wall mid-generation. You can now set a threshold and let it handle the rest. It's entirely optional, but it should save those of you building heavier apps from babysitting your API calls. The free tier remains exactly the same.\n\nSecond, we added Pollenforge-CLI to the build (PR #10903). For those who prefer staying in the terminal rather than writing HTTP requests from scratch, this provides a standard CLI wrapper for the infrastructure. It's barebones right now but gets the job done.\n\nLastly, Storytale was added to the games directory (PR #10904). It's a multiplayer storytelling experiment built on top of the text endpoints. It serves as a good reference implementation if you're looking to build stateful chat applications or turn-based logic using the API.\n\nCode and discussions are in the repo as always. Let us know if the CLI breaks anything on your end."
+}

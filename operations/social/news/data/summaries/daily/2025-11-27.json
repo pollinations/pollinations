@@ -2,9 +2,9 @@
   "date": "2025-11-27",
   "period_start": "2025-11-27",
   "period_end": "2025-11-27",
-  "title": "Two new models join the API",
-  "summary": "A garden-maintenance day with two new models, smoother multi-provider routing, and fewer operational loose ends.\n\nClaude Opus 4.5 is now available through Bedrock with sensible default token handling, and Nano Banana Pro (Gemini 3 Pro Image) joins the image lineup. More capable text and image experiments, same HTTP-shaped interface.\n\nOpenAI schema validation was relaxed so requests can travel more smoothly across providers. A Portkey gateway deployment path was also automated, because routing models should not require a small pilgrimage.\n\nThe image service health check now uses its /about endpoint, and the Wrangler deployment command no longer forces an environment that could get in the way. Small operational changes, fewer mysterious red lights.",
-  "pr_count": 10,
+  "title": "Claude Opus 4.5 joins the text models",
+  "summary": "Claude Opus 4.5 and Nano Banana Pro joined the model lineup, chat validation got less picky, and three community projects joined the listings.\n\nAdded Claude Opus 4.5 as `claude-large`, with image input and tool support. `claude` now selects Sonnet 4.5, while Haiku moves to `claude-fast`. Bedrock models also default to 16,384 max tokens unless a request specifies otherwise.\n\nAdded `nanobanana-pro`, backed by Gemini 3 Pro Image, to the image model registry. It uses the existing Nano Banana image-generation path, including width and height parameters, and is described as supporting 4K images and Thinking.\n\nChat completion validation now accepts provider-specific finish reasons in regular and streaming responses, plus assistant messages with missing content. That keeps valid Gemini responses from being rejected for not looking quite enough like OpenAI.",
+  "pr_count": 4,
   "prs": [
     {
       "number": 5426,
@@ -19,33 +19,30 @@
       "date": "2025-11-27"
     },
     {
-      "number": 5433,
-      "date": "2025-11-27"
-    },
-    {
-      "number": 5436,
-      "date": "2025-11-27"
-    },
-    {
       "number": 5439,
-      "date": "2025-11-27"
-    },
-    {
-      "number": 5442,
-      "date": "2025-11-27"
-    },
-    {
-      "number": 5444,
-      "date": "2025-11-27"
-    },
-    {
-      "number": 5446,
-      "date": "2025-11-27"
-    },
-    {
-      "number": 5447,
       "date": "2025-11-27"
     }
   ],
-  "generated_at": "2026-09-04T12:19:08.187289+00:00"
+  "generated_at": "2026-10-17T15:53:18.890044+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Claude Opus 4.5 added",
+      "text": "Use `claude-large` for Claude Opus 4.5 with image input and tool support. `claude` now selects Sonnet 4.5; Haiku is available as `claude-fast`. [Browse Claude Opus 4.5](https://enter.pollinations.ai/models?q=claude-large).",
+      "prs": [
+        5426
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Nano Banana Pro added",
+      "text": "Generate images with `nanobanana-pro`, backed by Gemini 3 Pro Image and described as supporting 4K output and Thinking. [Browse Nano Banana Pro](https://enter.pollinations.ai/models?q=nanobanana-pro).",
+      "prs": [
+        5427
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

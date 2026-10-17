@@ -2,9 +2,9 @@
   "date": "2025-09-30",
   "period_start": "2025-09-30",
   "period_end": "2025-09-30",
-  "title": "Chat projects gain J.A.R.V.I.S., with clearer model guidance",
-  "summary": "A garden-maintenance day: a new chat project, friendlier signup and UI details, plus caching that remembers a little more.\n\nJ.A.R.V.I.S. joined the available chat projects, while the LLM guide now documents seed-tier image models so builders can find the lighter-weight image options without spelunking through configuration.\n\nSignup now handles people who already have a Polar customer record, and the UI received font and visual cleanup. A special Bee Request review session also moved community requests through the garden.\n\nCache metadata was streamlined, path exclusions were corrected, and POST requests to the root path can now be cached. The cache continues its long campaign to make repeated work someone else's problem.",
-  "pr_count": 7,
+  "title": "A simpler account page and smoother signup",
+  "summary": "Account and signup friction got trimmed, repeat text requests gained a cache path, and the community directory grew by one assistant.\n\nEnter’s account page now shows a more precise Pollen balance, puts the customer portal and sign-out in the profile menu, and simplifies API key creation by removing the allowed-domains prompt. Key deletion now asks for confirmation. Signup also handles accounts whose customer record already exists.\n\nPOST requests to the root of the text API can now return cached responses instead of always reaching the origin, making cache hits faster. Root-path GET requests still bypass the cache.\n\nThe community projects directory added @hadadarjt’s J.A.R.V.I.S., a context-aware chat assistant that uses Pollinations for image and audio generation.",
+  "pr_count": 5,
   "prs": [
     {
       "number": 2589,
@@ -23,17 +23,21 @@
       "date": "2025-09-30"
     },
     {
-      "number": 4253,
-      "date": "2025-09-30"
-    },
-    {
-      "number": 4255,
-      "date": "2025-09-30"
-    },
-    {
       "number": 4257,
       "date": "2025-09-30"
     }
   ],
-  "generated_at": "2026-09-04T12:39:17.261393+00:00"
+  "generated_at": "2026-10-17T15:47:40.836750+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "A tidier account page",
+      "text": "See your Pollen balance at four decimal places, create API keys without an allowed-domains prompt, and find the customer portal in your profile menu. [Open API keys](https://enter.pollinations.ai/keys).",
+      "prs": [
+        4207
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

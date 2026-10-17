@@ -60,27 +60,46 @@
     {
       "emoji": "🚀",
       "title": "Claude Sonnet 4.6",
-      "text": "The default `claude` model alias now points to Sonnet 4.6. Smarter reasoning, better coding, same generous free tier."
+      "text": "The default `claude` model alias now points to Sonnet 4.6. Smarter reasoning, better coding, same generous free tier.",
+      "prs": [
+        8520
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🤖",
       "title": "New Agent Models",
-      "text": "Added `nomnom` (web research) and `polly` (coding) to the [text API](https://gen.pollinations.ai). Specialized agents with reasoning capabilities."
+      "text": "Added `nomnom` (web research) and `polly` (coding) to the [text API](https://gen.pollinations.ai). Specialized agents with reasoning capabilities.",
+      "prs": [
+        8517
+      ],
+      "kind": "model"
     },
     {
       "emoji": "⚡",
       "title": "Polly Gets Deep",
-      "text": "The Discord bot now uses GraphQL to read repositories directly. You can now ask it significantly harder questions about the codebase."
+      "text": "The Discord bot now uses GraphQL to read repositories directly. You can now ask it significantly harder questions about the codebase.",
+      "prs": [
+        8515
+      ],
+      "kind": "product"
     },
     {
       "emoji": "📱",
       "title": "ExplainMyBigO",
-      "text": "New dev tool in the showcase. Paste your spaghetti code, get an instant Big-O time and space complexity analysis."
+      "text": "New dev tool in the showcase. Paste your spaghetti code, get an instant Big-O time and space complexity analysis.",
+      "prs": [
+        8496
+      ],
+      "kind": "app"
     },
     {
       "emoji": "🪙",
       "title": "Spore Rebalance",
-      "text": "Starting Feb 24 at 14:00 UTC, the free tier moves from 1 Pollen/day to $1.5/week. Better aligned with rewarding active builders. Points-based dynamic tiers coming later this week."
+      "text": "Starting Feb 24 at 14:00 UTC, the free tier moves from 1 Pollen/day to $1.5/week. Better aligned with rewarding active builders. Points-based dynamic tiers coming later this week.",
+      "prs": [],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

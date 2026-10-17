@@ -2,8 +2,8 @@
   "date": "2025-04-23",
   "period_start": "2025-04-23",
   "period_end": "2025-04-23",
-  "title": "FoodAnaly joins the project garden",
-  "summary": "A small garden update: FoodAnaly is now listed among projects built with pollinations.\n\nFoodAnaly was added to the project list, making another community-built use of pollinations easier to discover.",
+  "title": "FoodAnaly joins the community project list",
+  "summary": "The community project list gained FoodAnaly, an app for examining what’s in your food.\n\nFoodAnaly was added to the LLM Integrations list, projects CSV, and README. It helps people explore food ingredients, nutrition, dietary insights, and alternatives.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-04-23"
     }
   ],
-  "generated_at": "2026-09-04T12:31:10.028618+00:00"
+  "generated_at": "2026-10-17T15:38:07.763062+00:00",
+  "highlights": [],
+  "changelog": []
 }

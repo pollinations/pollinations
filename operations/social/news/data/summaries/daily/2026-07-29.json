@@ -45,12 +45,21 @@
       "emoji": "🚀",
       "title": "Polli Agent",
       "text": "Send one OpenAI-compatible streaming request and get coordinated text, images, audio, video, web search, and media stitching back. One prompt, many petals. [Try it](https://polli.pollinations.ai)",
-      "kind": "app"
+      "prs": [
+        12702,
+        12857
+      ],
+      "kind": "product"
     },
     {
       "emoji": "✨",
       "title": "Agent Run Tokens",
-      "text": "Community agents can now use short-lived delegated tokens to generate on a caller’s Pollen budget without ever handling their API key. Tiny keys, fewer ways to spill honey. [API Docs](https://gen.pollinations.ai/docs)"
+      "text": "Community agents can now use short-lived delegated tokens to generate on a caller’s Pollen budget without ever handling their API key. Tiny keys, fewer ways to spill honey. [API Docs](https://gen.pollinations.ai/docs)",
+      "prs": [
+        12844
+      ],
+      "kind": "api"
     }
-  ]
+  ],
+  "changelog": []
 }

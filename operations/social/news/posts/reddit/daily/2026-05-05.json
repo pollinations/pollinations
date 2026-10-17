@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-05",
+  "period_start": "2026-05-05",
+  "period_end": "2026-05-05",
+  "generated_at": "2026-05-06T06:52:11.050581+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-05/images/reddit.jpg"
+    }
+  ],
+  "title": "Shipping 4 ecosystem apps and fixing Anthropic cache_control routing quirks",
+  "text": "Merged 5 PRs today. The main one to note is a fix for how we handle Anthropic-specific payload fields across the unified text endpoint.\n\nIf you've been using the text API to hot-swap between Claude and other models, you might have hit some unexpected validation errors recently. We were accidentally leaving `cache_control` blocks attached to content parts when routing requests. Anthropic expects these for prompt caching, but passing that exact same structure to OpenAI or local Llama instances causes them to reject the request outright.\n\nPR #10696 strips `cache_control` from the content array before routing to non-Anthropic backends. Cross-model routing should be working cleanly again without requiring you to manually format the payload differently per model.\n\nWe also merged four new community apps into the showcase build (Worl Tools, App forge, Pyanchor, and ZenWall AI). You can check out the source for these or submit your own project at https://github.com/pollinations/pollinations.\n\nCode is deployed. Let us know if the text endpoint is still throwing 400s for anyone."
+}

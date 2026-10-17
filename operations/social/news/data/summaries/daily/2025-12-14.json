@@ -2,9 +2,9 @@
   "date": "2025-12-14",
   "period_start": "2025-12-14",
   "period_end": "2025-12-14",
-  "title": "More things to explore in Creative and Chat",
-  "summary": "A garden-maintenance day: more community creations, cleaner image output, steadier model compatibility, and less mysterious contribution plumbing.\n\nPolliVision and Northpolelibrary joined the Creative collection, while SaturnAI was added to Chat. A few more doors into the ecosystem, because one model catalog was apparently not enough.\n\nImage handling now better respects requested aspect ratios, updates facial upscaling, and addresses face distortion in Zimage alongside its safety filtering.\n\nThe OpenAI Large model ID now matches Azure's response, while o1, reasoning, and GPT-5 series requests consistently use the temperature setting those models require. Less parameter archaeology for people just trying to get an answer.",
-  "pr_count": 12,
+  "title": "Z-Image gets better proportions and faces",
+  "summary": "Better-shaped Z-Image outputs, steadier reasoning-model requests, clearer Gemini tools, and three new community projects.\n\nZ-Image generation now sizes images around the requested aspect ratio, upscales backgrounds, and restores detected faces. The pipeline also adds a safety check that returns an error for flagged images.\n\nText requests now use the supported temperature of 1 for o1, o3, o4, and GPT-5 series models, including when callers omit the setting. That prevents unsupported-temperature errors across the affected OpenAI routes.\n\nGemini-large now uses Google Search and URL Context when no tools are supplied; a custom tools array overrides the defaults. Model capability listings were also corrected so unsupported tool features are not advertised.",
+  "pr_count": 9,
   "prs": [
     {
       "number": 5899,
@@ -19,23 +19,11 @@
       "date": "2025-12-14"
     },
     {
-      "number": 5989,
-      "date": "2025-12-14"
-    },
-    {
       "number": 5992,
       "date": "2025-12-14"
     },
     {
       "number": 5996,
-      "date": "2025-12-14"
-    },
-    {
-      "number": 6003,
-      "date": "2025-12-14"
-    },
-    {
-      "number": 6006,
       "date": "2025-12-14"
     },
     {
@@ -55,5 +43,27 @@
       "date": "2025-12-14"
     }
   ],
-  "generated_at": "2026-09-04T12:32:46.655579+00:00"
+  "generated_at": "2026-10-17T15:55:17.402386+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Sharper Z-Image portraits",
+      "text": "Generate Z-Image pictures at your requested aspect ratio, with upscaled backgrounds and restoration for detected faces. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        5899,
+        5901
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Gemini-large finds context",
+      "text": "`gemini-large` now defaults to Google Search and URL Context when you don't supply tools. Pass your own `tools` array to override those defaults. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        5992
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

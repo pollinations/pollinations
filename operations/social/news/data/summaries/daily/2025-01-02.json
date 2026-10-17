@@ -2,8 +2,8 @@
   "date": "2025-01-02",
   "period_start": "2025-01-02",
   "period_end": "2025-01-02",
-  "title": "Image prompt enhancement gets a clearer path through text",
-  "summary": "A small builder-friendly day: smoother image prompt enhancement and a clearer map to the SDKs.\n\nPrompt-enhancement requests coming from image.pollinations.ai are no longer caught by the usual text endpoint rate limiting, keeping image generations moving when they need text help behind the scenes. A follow-up fixed the syntax issue in that change, because software enjoys making simple routing rules ceremonial.\n\nThe project now has a dedicated SDKs and libraries section, giving builders a more direct route from an idea to code that talks to Pollinations.",
+  "title": "SDKs and community projects are easier to find",
+  "summary": "A tune-up for image prompt enhancement and text requests, with SDKs made easier to find.\n\nThe README and website showcase gained an SDKs & Libraries section covering React and Python integrations. AI-Bloom was also added to the project list, and Pollinations Gallery was marked as new.\n\nImage prompt-enhancement requests now identify themselves to the text API and bypass its normal per-IP queue. Image safe mode also changed how it handles content flags.\n\nJSON mode now accepts `json: true` as a boolean without a type error. Other text traffic is limited to one concurrent request per IP, with a longer delay after generation errors; Sur also moved to an OpenAI-backed variant.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,5 +19,7 @@
       "date": "2025-01-02"
     }
   ],
-  "generated_at": "2026-09-04T13:33:17.605708+00:00"
+  "generated_at": "2026-10-17T15:32:51.703741+00:00",
+  "highlights": [],
+  "changelog": []
 }

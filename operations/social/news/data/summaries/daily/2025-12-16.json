@@ -2,14 +2,10 @@
   "date": "2025-12-16",
   "period_start": "2025-12-16",
   "period_end": "2025-12-16",
-  "title": "API keys became a little less ceremonial",
-  "summary": "A tuning day: smoother API key handling, more predictable model controls, fresh community projects, and a bot that learned not to interrupt.\n\nThe playground now has a single unified API key path, the dashboard displays and copies keys correctly, and API key and usage endpoints are grouped more clearly in the docs. Small interface fixes also make tooltips behave sensibly across desktop and mobile, while the hello API key code got a cleanup pass.\n\nText requests can now use repetition_penalty, Seedream receives seed values for reproducible image generations, and Gemini Large reports cached prompt tokens correctly. A new public model stats endpoint also makes it easier to see what the model garden is doing.\n\nIA-Books, an AI ebook generator, Yerty AI chat, and TuffMeter were added to the growing list of things people have built with pollinations. The news workflow also got an update to help keep that ecosystem legible.",
-  "pr_count": 16,
+  "title": "Playgrounds get clearer errors and less waiting",
+  "summary": "Chat gained a repetition control, playgrounds got less cryptic, and three community projects joined the directories.\n\nText and image playgrounds now distinguish denied requests, rate limits and other failures. Image generation retries rate-limited requests when a retry delay is available. Hello also makes unavailable models easier to identify, labels video output separately, and runs theme design, copy and background requests in parallel instead of spacing them 75 seconds apart.\n\nChat completions gained a `repetition_penalty` parameter with values from 0 to 2. Seedream 4.5 Pro now passes the requested seed to its provider, while a cached-token usage fix prevents some `gemini-large` requests from failing.\n\nThe dashboard can once again retrieve and copy full publishable keys. New keys use `pk_` and `sk_` prefixes, and key previews show their beginning rather than their suffix. Pricing and key tooltips now respond to hover on desktop and taps on touch devices, without appearing above key dialogs.",
+  "pr_count": 12,
   "prs": [
-    {
-      "number": 6049,
-      "date": "2025-12-16"
-    },
     {
       "number": 6050,
       "date": "2025-12-16"
@@ -24,10 +20,6 @@
     },
     {
       "number": 6061,
-      "date": "2025-12-16"
-    },
-    {
-      "number": 6064,
       "date": "2025-12-16"
     },
     {
@@ -55,15 +47,7 @@
       "date": "2025-12-16"
     },
     {
-      "number": 6091,
-      "date": "2025-12-16"
-    },
-    {
       "number": 6092,
-      "date": "2025-12-16"
-    },
-    {
-      "number": 6093,
       "date": "2025-12-16"
     },
     {
@@ -71,5 +55,26 @@
       "date": "2025-12-16"
     }
   ],
-  "generated_at": "2026-09-04T12:34:16.968285+00:00"
+  "generated_at": "2026-10-17T15:55:51.272542+00:00",
+  "highlights": [
+    {
+      "emoji": "🎯",
+      "title": "Tune text repetition",
+      "text": "Use `repetition_penalty` in chat completion requests to adjust repetition, with values from 0 to 2. [See the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        6060
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "✨",
+      "title": "Theme generation skips the queue",
+      "text": "Hello now generates theme design, copy and backgrounds in parallel instead of spacing publishable-key requests 75 seconds apart.",
+      "prs": [
+        6079
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

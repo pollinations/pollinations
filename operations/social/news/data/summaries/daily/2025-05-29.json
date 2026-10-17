@@ -2,8 +2,8 @@
   "date": "2025-05-29",
   "period_start": "2025-05-29",
   "period_end": "2025-05-29",
-  "title": "Queue access now recognizes Nectar users consistently",
-  "summary": "A small engine-room day: smoother queue access, saner cache behavior, and stage-aware GPT image routing.\n\nQueue handling was tightened so Nectar users can bypass the line regardless of how they authenticate. The queue now has fewer opinions about which login path brought you there.\n\nCloudflare cache keys now exclude authentication parameters, preventing auth details from creating needless cache variants and making cached image requests behave more consistently.\n\nThe GPT image integration now selects its endpoint based on deployment stage, giving the image stack a cleaner path through its different environments.",
+  "title": "Nectar requests skip the queue",
+  "summary": "A day of request-path work: Nectar queue bypass, more reusable text caching, and stage-based GPT Image routing.\n\nQueue handling now accounts for authentication and user tier. Nectar-tier requests bypass the queue whether authenticated by token or registered referrer; other token-authenticated requests enter with no queue interval. Referrer validation was added, and GPT Image access now checks authentication directly rather than using queue bypass as a proxy.\n\nText cache keys now ignore authentication and request-control fields, so otherwise identical requests can use the same cached result instead of creating separate entries.\n\nGPT Image requests now select an endpoint by user stage instead of at random: Seed uses one endpoint, while Flower and Nectar use another. Failed Turbo and Flux fetches now return an error immediately rather than retrying.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,5 +23,7 @@
       "date": "2025-05-29"
     }
   ],
-  "generated_at": "2026-09-04T12:53:03.827752+00:00"
+  "generated_at": "2026-10-17T15:41:07.151799+00:00",
+  "highlights": [],
+  "changelog": []
 }

@@ -24,7 +24,13 @@
     {
       "emoji": "🤖",
       "title": "OpenClaw Integration",
-      "text": "Set up AI coding agents in one command with the new OpenClaw landing page and auto-install script."
+      "text": "Set up AI coding agents in one command with the new OpenClaw landing page and auto-install script.",
+      "prs": [
+        8165,
+        8167
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

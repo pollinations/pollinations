@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-30",
+  "period_start": "2026-08-30",
+  "period_end": "2026-08-30",
+  "generated_at": "2026-08-31T06:38:13.255746+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-30/images/reddit.jpg"
+    }
+  ],
+  "title": "Embeddings, Floret media map, and story studio",
+  "text": "Four PRs merged today.\n\nThe main API change is community `/embeddings` endpoint support (#13406). Community embedding models can now sit behind the same surface people already use for text and media, instead of requiring a separate integration path. PR: https://github.com/pollinations/pollinations/pull/13406\n\nFloret also got broader model and media support (#14106), including a live map of the media garden. The useful part is discoverability: it is easier to see what media capabilities exist and where they fit before wiring them into an app. PR: https://github.com/pollinations/pollinations/pull/14106\n\nOn the app side, AI Story & Image Studio was added to the image flow (#14128). A prompt can now become a story with accompanying images, rather than stopping at a single generated frame. PR: https://github.com/pollinations/pollinations/pull/14128\n\nThe README was refreshed as well (#14138), because documentation has a habit of becoming historical fiction when the API moves faster than the prose. PR: https://github.com/pollinations/pollinations/pull/14138\n\nThe endpoints and examples are in the repo: https://github.com/pollinations/pollinations\n\nEmbedding-model coverage and the Floret media map are the two areas where feedback from people building against the API would be especially useful."
+}

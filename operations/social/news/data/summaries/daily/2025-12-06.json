@@ -2,18 +2,16 @@
   "date": "2025-12-06",
   "period_start": "2025-12-06",
   "period_end": "2025-12-06",
-  "title": "Flux joins the creative toolkit",
-  "summary": "A small garden day: Flux arrived in Creative while the workflow plumbing got clearer names.\n\nFlux AI has been added to Creative, giving people another image model to experiment with through the same simple Pollinations interface.\n\nInternal workflow naming was standardized for clearer logic and easier maintenance. The software now has slightly fewer opportunities to confuse its future caretakers.",
-  "pr_count": 2,
+  "title": "Flux AI joins the creative projects list",
+  "summary": "The creative projects list gained Flux AI and tidied up a couple of older listings.\n\nAdded kinai9661’s Cloudflare Workers-based adaptive image generation app, Flux AI, to the site’s creative projects list and project directories. The refreshed lists also dropped the “new” marker from AI Stickers Generator and StickerHub.",
+  "pr_count": 1,
   "prs": [
-    {
-      "number": 5725,
-      "date": "2025-12-06"
-    },
     {
       "number": 5751,
       "date": "2025-12-06"
     }
   ],
-  "generated_at": "2026-09-04T12:25:26.208243+00:00"
+  "generated_at": "2026-10-17T15:54:03.965143+00:00",
+  "highlights": [],
+  "changelog": []
 }

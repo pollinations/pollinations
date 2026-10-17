@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-02-16",
+  "period_start": "2026-02-16",
+  "period_end": "2026-02-16",
+  "generated_at": "2026-02-17T06:20:26.526015+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-16/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-16/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-16/images/instagram-3.jpg"
+    }
+  ],
+  "text": "The garden is blooming! 🌸✨ We just merged 20 updates and things are looking lush.\n\nFirst up: BYOP is now POLLEN! 🐝🍯 Earn badges, get credits, keep building. It’s a whole new vibe for our ecosystem.\n\nCreatives, we see you! 👀 New tools for video consistency, character design, and a literal Sticker Garden (so cute). Plus, a bunch of new dev tools to keep your workflows smooth.\n\nOpen source, open hearts. Come build with us! 💻🌱\n\nLink in bio to see the full changelog!\n\n#pollinations #opensource #aiart #pixelart #indiedev #cozyvibes #generativeai #buildinpublic #8bit #retrogaming",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

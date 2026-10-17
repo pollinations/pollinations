@@ -2,8 +2,8 @@
   "date": "2025-01-10",
   "period_start": "2025-01-10",
   "period_end": "2025-01-10",
-  "title": "Text generation gets more model-aware",
-  "summary": "A small maintenance day for text generation reliability, project discovery, and docs that match reality.\n\nText generation services now support multiple models with improved error handling, making the shared text endpoint a little more resilient when the machinery behind it disagrees.\n\nThe projects list now includes the Polli API Dashboard, while outdated jsonMode documentation was removed so the API reference better reflects the interface people actually use.",
+  "title": "More choices for text generation",
+  "summary": "Three text models joined the lineup, a community dashboard made the projects list, and the JSON-mode example got tidier.\n\nAdded Scaleway-backed `qwen-coder`, `mistral`, and `llama` text models, with JSON-mode support. Text responses now retain full completion objects, alongside changes to streaming, caching, and error handling. The text model list also gained `llama` and dropped `llamalight`.\n\nAdded @sugamdeol’s Polli API Dashboard to the homepage’s SDK Libraries list and the README project table. It shows real-time statistics from the text feed.\n\nSimplified the JavaScript text-generation example while keeping `jsonMode` documented in the request-body example as an optional way to request valid JSON.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,5 +19,17 @@
       "date": "2025-01-10"
     }
   ],
-  "generated_at": "2026-09-04T13:37:25.070678+00:00"
+  "generated_at": "2026-10-17T15:32:52.033799+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Three more text models",
+      "text": "Generate text with `qwen-coder`, `mistral`, or `llama`, with JSON-mode support. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        969
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

@@ -1,0 +1,63 @@
+{
+  "date": "2025-08-10",
+  "period_start": "2025-08-03",
+  "period_end": "2025-08-09",
+  "title": "The project directory grew in several directions",
+  "summary": "Eight community projects joined the showcase while image caching became more adaptable, multilingual, and easier to inspect.\n\nEight projects joined the showcase across chat, image generation, creative tools, and object identification. They include multilingual chatbot Botzy AI, multimodal chat tool Island AI, and Visiora’s prompt-to-image workflow. Project tables also got refreshed entries and star counts, shorter descriptions, and a corrected Island AI link.\n\nThe image cache Worker moved to TypeScript and Hono, with exact and semantic caching split into replaceable components. Semantic matching gained multilingual embeddings and prompt-length-dependent thresholds, with tests for small but meaningful prompt changes. Response headers and analytics now make it easier to tell an exact hit from a semantic one—and, for semantic hits, how close the prompts were.\n\nEstimated generation totals and rates returned to the image and text feeds. Feed-switch button labels were also protected from automatic rephrasing, so the controls keep saying what they mean.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 3410,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3411,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3412,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3413,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3414,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3424,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3488,
+      "date": "2025-08-05"
+    },
+    {
+      "number": 3489,
+      "date": "2025-08-05"
+    },
+    {
+      "number": 3490,
+      "date": "2025-08-05"
+    },
+    {
+      "number": 3491,
+      "date": "2025-08-05"
+    },
+    {
+      "number": 3360,
+      "date": "2025-08-06"
+    },
+    {
+      "number": 3526,
+      "date": "2025-08-06"
+    },
+    {
+      "number": 3450,
+      "date": "2025-08-07"
+    }
+  ],
+  "generated_at": "2026-10-17T16:05:31.405078+00:00"
+}

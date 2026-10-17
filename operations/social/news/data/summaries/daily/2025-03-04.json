@@ -2,8 +2,8 @@
   "date": "2025-03-04",
   "period_start": "2025-03-04",
   "period_end": "2025-03-04",
-  "title": "Phi-4 joins the text model lineup",
-  "summary": "A small garden day: Phi-4 arrived in text, and two community projects got easier to find.\n\ntext.pollinations.ai now includes Microsoft's Phi-4, while Cloudflare-backed models have moved behind the Portkey router. More model choice, with the routing plumbing kept out of the way where it belongs.\n\nThe projects list now points to ComfyUI-Pollinations and a Chinese DeepSeek tutorial, making it easier to find both node-based image workflows and Chinese-language guidance for building with AI.",
+  "title": "Phi-4 joins the chat models",
+  "summary": "Phi-4 joined the chat models, while community contributions made ComfyUI integration and a Chinese-language DeepSeek tutorial easier to find.\n\nAdded Phi-4 Multimodal Instruct as the `phi` chat model. The same PR moved `llama` to Portkey routing and added routing configurations for several existing models.\n\nAdded 1038lab’s ComfyUI-Pollinations node to the README and website SDK and library lists. The node uses the Pollinations API to generate images and text from prompts across multiple models.\n\nAdded isinry’s tutorial on giving a DeepSeek chat UI image generation through the Pollinations API to the README and website tutorial lists.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,5 +19,17 @@
       "date": "2025-03-04"
     }
   ],
-  "generated_at": "2026-09-04T12:02:41.361587+00:00"
+  "generated_at": "2026-10-17T15:34:45.508052+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Phi-4 joins chat",
+      "text": "Use `phi` to chat with Phi-4 Multimodal Instruct. [Browse the model](https://enter.pollinations.ai/models?q=phi).",
+      "prs": [
+        1268
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

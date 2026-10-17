@@ -2,20 +2,12 @@
   "date": "2026-01-08",
   "period_start": "2026-01-08",
   "period_end": "2026-01-08",
-  "title": "Docs got easier to navigate",
-  "summary": "A garden-maintenance day: clearer docs, cleaner contribution paths, and telemetry put back on its rails.\n\nAuthentication guidance and the main project README were expanded, while API docs now show the canonical model names without breaking existing alias-based requests. Less scavenger hunting; old integrations keep working.\n\nDeveloper project labels and automation were broadened, and the app submission workflow received a syntax update to keep contributions moving through the pipeline.\n\nAnalytics meter tracking was restored so internal usage signals remain correctly separated and observable. The pipes continue doing pipe things.",
-  "pr_count": 7,
+  "title": "Clearer guidance for API keys",
+  "summary": "A documentation cleanup made API keys, first requests, and model names easier to navigate.\n\nAuthentication guides now explain publishable and secret keys, per-model restrictions, and several ways to pass a key in a request. The website docs also have separate examples for each key type.\n\nThe new GitHub organization profile includes image, text, and chat quick starts. The main README now has clearer navigation and explains how contributors can earn Pollen.\n\nAPI docs now show primary model names instead of aliases and list available text models in the chat schema. AWS Nova Micro appears as `nova-fast`; the old `nova-micro` name remains an alias.",
+  "pr_count": 3,
   "prs": [
     {
       "number": 6899,
-      "date": "2026-01-08"
-    },
-    {
-      "number": 6909,
-      "date": "2026-01-08"
-    },
-    {
-      "number": 6916,
       "date": "2026-01-08"
     },
     {
@@ -23,17 +15,11 @@
       "date": "2026-01-08"
     },
     {
-      "number": 6923,
-      "date": "2026-01-08"
-    },
-    {
-      "number": 6941,
-      "date": "2026-01-08"
-    },
-    {
       "number": 6942,
       "date": "2026-01-08"
     }
   ],
-  "generated_at": "2026-09-04T11:29:31.286758+00:00"
+  "generated_at": "2026-10-17T15:58:30.165210+00:00",
+  "highlights": [],
+  "changelog": []
 }

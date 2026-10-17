@@ -2,8 +2,8 @@
   "date": "2025-07-23",
   "period_start": "2025-07-23",
   "period_end": "2025-07-23",
-  "title": "Mimir project details got easier to find",
-  "summary": "A small garden pass: Mimir now points more clearly to its code and project details.\n\nThe Mimir project listing now includes its GitHub link and refreshed project details, giving people a clearer path from discovery to source code.",
+  "title": "Mimir AIP listing gets its details right",
+  "summary": "A small community-project tidy-up: Mimir AIP now has the right credit and a repository link.\n\nThe community project listing now credits @CiaranMcAleer instead of @pipeline and includes a link to Mimir AIP’s GitHub repository.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-07-23"
     }
   ],
-  "generated_at": "2026-09-04T12:12:33.396048+00:00"
+  "generated_at": "2026-10-17T15:44:06.985728+00:00",
+  "highlights": [],
+  "changelog": []
 }

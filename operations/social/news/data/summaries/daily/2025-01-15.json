@@ -2,9 +2,9 @@
   "date": "2025-01-15",
   "period_start": "2025-01-15",
   "period_end": "2025-01-15",
-  "title": "Text requests get steadier pacing",
-  "summary": "A small text-platform tuning day: smoother request handling and better visibility into token usage.\n\nThe text API now uses queue intervals to space requests more consistently, making bursts of generation traffic less likely to turn into a tiny stampede.\n\nToken usage tracking was added to analytics and the feed, giving people a clearer view of how text generation is being used.",
-  "pr_count": 3,
+  "title": "Requested temperature reaches text generation",
+  "summary": "Text requests got more predictable pacing, shared queues for nearby IPs, and correct temperature forwarding.\n\nThe OpenAI generation path now forwards the requested temperature, so that setting reaches the model.\n\nText requests are queued one at a time, with starts spaced at least three seconds apart per IP group. The separate 40-requests-per-minute limit is unchanged.\n\nQueue grouping now uses the first three segments of an IPv4 address, so addresses with the same /24-style prefix are paced together.",
+  "pr_count": 2,
   "prs": [
     {
       "number": 1008,
@@ -13,11 +13,9 @@
     {
       "number": 1009,
       "date": "2025-01-15"
-    },
-    {
-      "number": 1012,
-      "date": "2025-01-15"
     }
   ],
-  "generated_at": "2026-09-04T13:40:24.638519+00:00"
+  "generated_at": "2026-10-17T15:32:52.378338+00:00",
+  "highlights": [],
+  "changelog": []
 }

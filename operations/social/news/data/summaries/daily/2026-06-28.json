@@ -80,36 +80,57 @@
     {
       "emoji": "🩺",
       "title": "Real-time Model Health",
-      "text": "Added `GET /v1/models/status` so you can programmatically check if a model is awake before throwing requests at it. Cached for 60 seconds. Check the [API Docs](https://gen.pollinations.ai/docs)."
+      "text": "Added `GET /v1/models/status` so you can programmatically check if a model is awake before throwing requests at it. Cached for 60 seconds. Check the [API Docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        12077
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🪙",
       "title": "Get Paid to Ship",
-      "text": "The 'App Listed' quest is live. Build something, get it listed in the public directory, and earn Pollen directly to your wallet."
+      "text": "The 'App Listed' quest is live. Build something, get it listed in the public directory, and earn Pollen directly to your wallet.",
+      "prs": [
+        12088
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🧩",
       "title": "Prompt Your Own Puzzles",
       "text": "PolliCross uses our image API to generate playable Picross/Nonogram levels from whatever text prompt you can think of. [Try it](https://zqigolden.github.io/pollicross/)",
+      "prs": [
+        12073
+      ],
       "kind": "app"
     },
     {
       "emoji": "📖",
       "title": "Inpainted Storybooks",
       "text": "Storiva is a clever Android app that uses AI inpainting to seamlessly put a child's face into custom-generated story illustrations. [Try it](https://play.google.com/store/apps/details?id=com.ismafly.storiva)",
+      "prs": [
+        12068
+      ],
       "kind": "app"
     },
     {
       "emoji": "🌍",
       "title": "World Weaver",
       "text": "A tool that orchestrates text, image, and video models through our unified API to generate entire environments at once. [View repo](https://github.com/MrMegnis/world-generator)",
+      "prs": [
+        12074
+      ],
       "kind": "app"
     },
     {
       "emoji": "🎵",
       "title": "Endless Audio",
       "text": "Generative Soundscape turns text prompts into continuous, never-ending music streams. [Try it](https://generative-soundscape.vercel.app/)",
+      "prs": [
+        12071
+      ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

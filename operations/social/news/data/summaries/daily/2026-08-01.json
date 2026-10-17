@@ -99,5 +99,44 @@
       "date": "2026-08-01"
     }
   ],
-  "generated_at": "2026-09-04T11:49:13.840256+00:00"
+  "generated_at": "2026-09-04T11:49:13.840256+00:00",
+  "highlights": [
+    {
+      "emoji": "🎵",
+      "title": "Kokoro TTS joins audio",
+      "text": "Generate speech with Kokoro using 54 voices and MP3, Opus, FLAC, WAV, or PCM output on the audio endpoints. [Browse Kokoro](https://enter.pollinations.ai/models?q=kokoro).",
+      "prs": [
+        12982
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Inkling Small joins text",
+      "text": "Try Inkling Small for text, image and audio understanding, with tools and reasoning support. [Browse Inkling Small](https://enter.pollinations.ai/models?q=inkling-small).",
+      "prs": [
+        13011
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "DeepSeek gets a refresh",
+      "text": "The `deepseek` route and its existing aliases now use the DeepSeek V4 Flash 0731 checkpoint. [Browse DeepSeek](https://enter.pollinations.ai/models?q=deepseek).",
+      "prs": [
+        13007
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Declare community endpoint inputs",
+      "text": "Community endpoint owners can specify which input modalities their endpoints accept; the model catalog now carries that information too. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        12868
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

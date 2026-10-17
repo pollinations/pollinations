@@ -2,9 +2,9 @@
   "date": "2025-01-31",
   "period_start": "2025-01-01",
   "period_end": "2025-01-31",
-  "title": "More brains behind the text endpoint",
-  "summary": "January widened the models builders can reach through one API while steadily making generation, documentation, and community pathways less archaeological.\n\nDeepSeek Coder V3, GPT-4o as openai-large, Claude Hybridspace, and DeepSeek-R1 joined the text API, alongside a realistic persona and better Persian text handling. One endpoint acquired a more varied cabinet of minds.\n\nImage generation received profiling, worker coordination, monitoring, and a Cloudflare AI Workers route for 1024px Flux Schnell images. Text requests gained model-aware handling, queue intervals, prompt-enhancer maintenance, and priority queue bypasses.\n\nSDK and npm-module pointers, current endpoint diagrams, vision API documentation, a status dashboard, and the Artistic Styles Book made it easier to find the route from idea to a working call.\n\nOpenHands and community projects became more visible, with restored project listings, new submission templates and guidelines, and additions including Kushai, Pollinations Chat, and the Polli API Dashboard. Unity and the Gmail agent also received practical upkeep.",
-  "pr_count": 61,
+  "title": "A clearer front door for community projects",
+  "summary": "January made Pollinations easier to explore while expanding text and image options and tightening the APIs behind them.\n\nThe rebuilt homepage made examples, integrations, and community work easier to find. The project directory gained categories, restored missing entries, and added a GitHub form for submitting apps.\n\nDeepSeek-V3, DeepSeek reasoning models, GPT-4o vision, Claude 3.5 Haiku, and Qwen Coder broadened the model choices. JSON mode, temperature forwarding, web-search defaults, and vision examples made those choices more usable.\n\nRequests began mapping to supported aspect ratios and defaulting to 1024×1024. Prompt handling was corrected to preserve Persian and other non-Latin text, while authorized requests gained a priority path around the regular queue.\n\nText and image request pacing, routing, and error handling were revised, with clearer JSON errors and more tests and instrumentation. Text feed events also stopped including requester IP addresses.",
+  "pr_count": 49,
   "prs": [
     {
       "number": 949,
@@ -47,10 +47,6 @@
       "date": "2025-01-08"
     },
     {
-      "number": 967,
-      "date": "2025-01-08"
-    },
-    {
       "number": 969,
       "date": "2025-01-10"
     },
@@ -69,10 +65,6 @@
     {
       "number": 983,
       "date": "2025-01-12"
-    },
-    {
-      "number": 986,
-      "date": "2025-01-13"
     },
     {
       "number": 988,
@@ -99,10 +91,6 @@
       "date": "2025-01-14"
     },
     {
-      "number": 1004,
-      "date": "2025-01-14"
-    },
-    {
       "number": 1008,
       "date": "2025-01-15"
     },
@@ -111,15 +99,7 @@
       "date": "2025-01-15"
     },
     {
-      "number": 1012,
-      "date": "2025-01-15"
-    },
-    {
       "number": 1016,
-      "date": "2025-01-16"
-    },
-    {
-      "number": 1017,
       "date": "2025-01-16"
     },
     {
@@ -128,10 +108,6 @@
     },
     {
       "number": 1022,
-      "date": "2025-01-16"
-    },
-    {
-      "number": 1023,
       "date": "2025-01-16"
     },
     {
@@ -215,26 +191,6 @@
       "date": "2025-01-28"
     },
     {
-      "number": 1107,
-      "date": "2025-01-28"
-    },
-    {
-      "number": 1108,
-      "date": "2025-01-28"
-    },
-    {
-      "number": 1109,
-      "date": "2025-01-28"
-    },
-    {
-      "number": 1112,
-      "date": "2025-01-29"
-    },
-    {
-      "number": 1117,
-      "date": "2025-01-29"
-    },
-    {
       "number": 1118,
       "date": "2025-01-29"
     },
@@ -243,13 +199,9 @@
       "date": "2025-01-30"
     },
     {
-      "number": 1122,
-      "date": "2025-01-31"
-    },
-    {
       "number": 1124,
       "date": "2025-01-31"
     }
   ],
-  "generated_at": "2026-09-04T15:14:01.375271+00:00"
+  "generated_at": "2026-10-17T16:08:30.093425+00:00"
 }

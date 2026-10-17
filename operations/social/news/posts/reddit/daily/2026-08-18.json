@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-18",
+  "period_start": "2026-08-18",
+  "period_end": "2026-08-18",
+  "generated_at": "2026-08-19T06:15:06.065065+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-18/images/reddit.jpg"
+    }
+  ],
+  "title": "Browser BYOP docs and community transcription landed",
+  "text": "12 PRs merged today. The main changes were browser auth guidance, community transcription support, and some cleanup around image/community endpoints.\n\nBrowser apps using BYOP now have a clearer documented path: static browser clients should use App Keys and PKCE rather than treating `pk_` keys as the normal browser integration. `pk_` is now documented as legacy. This is mostly documentation, but it removes a surprisingly easy way to build yourself into an awkward auth corner.\n\nCommunity models can now expose speech-to-text through the audio API. The formatter work also consolidates transcription output and stops inventing subtitle data when a provider did not return it. Boring behavior is generally preferable for APIs that feed downstream tools.\n\nOn images, DiddyDiffusion, AI Art & Image Generator, and Kokoro Roto were added to the directory. The community image endpoint download path was also consolidated, which should make future provider additions less repetitive. Hobby GPUs remain invited to wake up and do something useful.\n\nOther merged work included an Enter redirect URI validation fix, a new Intelligent Diagnostic Assessment entry in Learn, README updates, and regenerated API docs.\n\nDocs: https://github.com/pollinations/pollinations\nAPI reference: https://github.com/pollinations/pollinations/blob/master/APIDOCS.md\n\nThe browser-key migration notes are worth sanity-checking if you maintain a static frontend."
+}

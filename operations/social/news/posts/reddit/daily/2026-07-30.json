@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-30",
+  "period_start": "2026-07-30",
+  "period_end": "2026-07-30",
+  "generated_at": "2026-07-31T07:08:56.250456+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-30/images/reddit.jpg"
+    }
+  ],
+  "title": "Eleven merges: OCR, Weaver, and model routing",
+  "text": "11 PRs merged today. The useful version:\n\n- Mistral OCR 4 is available, and AssemblyAI moved to Universal-3.5 Pro. OCR and transcription both got newer machinery without adding another pile of integration surface.\n- Cohere Command A+ and Qwen3.7 Flash were added. Kimi K3 moved to Fireworks; Step and the Pruna image models moved to DeepInfra. Existing model handles stay put where possible, because changing a provider should not require everyone to edit a config file for sport.\n- The media agent is now called Weaver and is served from `weaver.pollinations.ai`. Its file serving is confined to temp storage, which is a less adventurous interpretation of “serve a file.”\n- User identity handling now uses stable IDs across the repository. GitHub username changes should no longer split or erase app history.\n\nThe README was also refreshed.\n\nCode and merged PRs: https://github.com/pollinations/pollinations/pulls\nRepository: https://github.com/pollinations/pollinations\n\nThe provider moves are operational changes, so please report any unexpected model behavior with the model name, endpoint, and a minimal request/response pair."
+}

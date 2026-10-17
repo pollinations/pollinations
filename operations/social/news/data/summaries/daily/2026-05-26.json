@@ -16,7 +16,12 @@
     {
       "emoji": "🤖",
       "title": "LLM-Ready Docs",
-      "text": "We added \"Copy for LLMs\" buttons to the [Dashboard](https://enter.pollinations.ai) rail. One click grabs context-aware API, CLI, or MCP docs so you can paste them straight into your AI coding assistant and get back to building."
+      "text": "We added \"Copy for LLMs\" buttons to the [Dashboard](https://enter.pollinations.ai) rail. One click grabs context-aware API, CLI, or MCP docs so you can paste them straight into your AI coding assistant and get back to building.",
+      "prs": [
+        10960
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

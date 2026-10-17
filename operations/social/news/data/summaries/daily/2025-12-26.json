@@ -2,16 +2,12 @@
   "date": "2025-12-26",
   "period_start": "2025-12-26",
   "period_end": "2025-12-26",
-  "title": "The playground gets a proper front door",
-  "summary": "A small access-and-usability day: smoother playground login, permission-aware model discovery, live page translation, and a tidier repo.\n\nThe playground now has a login flow, alongside redirect-based authentication using temporary API keys. Apps can move people through auth without making them juggle credentials in the open.\n\nThe /models endpoints can filter results by API key permissions, so clients see the models available to the credentials they actually brought.\n\nPer-page translation now includes a live status indicator, while the monorepo root got cleared of stray files. One makes the interface more legible; the other makes finding things slightly less archaeological.",
-  "pr_count": 5,
+  "title": "App authorization meets playground sign-in",
+  "summary": "Apps can request model-scoped access, the playground gained sign-in, and the site added per-page translation.\n\nThird-party apps gained a redirect-based flow for requesting API keys with selected model access. The playground gained Login and Logout controls, and uses the current key for image and text generation.\n\nThe site added per-page translation based on browser language, including list content and News, with a visible translation indicator and English fallback. The Apps showcase also fetches its listings from GitHub.\n\nThe model-list endpoints filter results for restricted API keys while leaving unrestricted lists intact. `/v1/models` also adopted an OpenAI-compatible list response.",
+  "pr_count": 4,
   "prs": [
     {
       "number": 6410,
-      "date": "2025-12-26"
-    },
-    {
-      "number": 6437,
       "date": "2025-12-26"
     },
     {
@@ -27,5 +23,36 @@
       "date": "2025-12-26"
     }
   ],
-  "generated_at": "2026-09-04T12:41:46.368218+00:00"
+  "generated_at": "2026-10-17T15:56:55.485093+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "Connect apps, then create",
+      "text": "Third-party apps can request access to selected models through a redirect flow. Sign in to the playground to generate images and text with the models available to your key. [Try the playground](https://pollinations.ai/play).",
+      "prs": [
+        6410,
+        6467
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "Pages in your language",
+      "text": "Site pages can translate to your browser language, including News and list content. An indicator shows when translation is active, with English as the fallback. [Visit pollinations.ai](https://pollinations.ai).",
+      "prs": [
+        6466
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Model lists match access",
+      "text": "With a restricted API key, `/v1/models`, `/image/models`, and `/text/models` list only permitted models. `/v1/models` also returns an OpenAI-compatible list. [Browse the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        6464
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

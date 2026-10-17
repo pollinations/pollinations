@@ -48,7 +48,12 @@
     {
       "emoji": "🚀",
       "title": "New Provider: api.airforce",
-      "text": "Added `imagen` (Google Imagen 3) and `grok-video` (xAI Grok Imagine Video) models via [api.airforce](https://api.airforce)."
+      "text": "Added `imagen` (Google Imagen 3) and `grok-video` (xAI Grok Imagine Video) models via [api.airforce](https://api.airforce).",
+      "prs": [
+        8001
+      ],
+      "kind": "model"
     }
-  ]
+  ],
+  "changelog": []
 }

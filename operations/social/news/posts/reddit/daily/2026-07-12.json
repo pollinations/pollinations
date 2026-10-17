@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-12",
+  "period_start": "2026-07-12",
+  "period_end": "2026-07-12",
+  "generated_at": "2026-07-13T13:07:44.652695+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-12/images/reddit.jpg"
+    }
+  ],
+  "title": "Dashboard and documentation fixes from seven merged PRs",
+  "text": "Seven PRs merged today, mostly around making the dashboard and docs less annoying to use.\n\nThe activity dashboard is now materialized (#11939), with a follow-up dedupe fix (#12349). The practical result is a faster, cleaner view of Pollen activity without repeated events making the timeline look more productive than it was.\n\nDashboard model selection also got a search bar (#12286). This is small, but the model list had reached the point where finding one by scrolling felt like archaeological work.\n\nA few documentation papercuts were fixed: the Python OpenAI SDK quick-start now uses the required `/v1` in `base_url` (#12246), media documentation links were repaired (#12359), and expired README images were replaced (#12360). Copy-paste examples should now fail for more interesting reasons.\n\nMuse Spark 1.1 was also added (#12350).\n\nPRs: https://github.com/pollinations/pollinations/pulls?q=is%3Apr+is%3Amerged\nRepo: https://github.com/pollinations/pollinations\nDocs: https://pollinations.ai/docs"
+}

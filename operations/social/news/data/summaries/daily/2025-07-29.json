@@ -2,30 +2,16 @@
   "date": "2025-07-29",
   "period_start": "2025-07-29",
   "period_end": "2025-07-29",
-  "title": "The API now has a map",
-  "summary": "A garden-maintenance day: clearer API docs, queryable usage data, and a development setup with fewer mysterious local incantations.\n\nAn OpenAPI specification gives builders a machine-readable reference for the platform API, making it easier to inspect endpoints, generate clients, and wire pollinations into things without archaeology.\n\nA new Tinybird hourly_token_usage endpoint adds configurable usage queries, giving the system a clearer view of token activity over time.\n\nThe development shell was made reproducible and smoother to use, with sops-based secrets management included so local setup has fewer handwritten rituals.",
-  "pr_count": 5,
+  "title": "Image API gets an OpenAPI spec",
+  "summary": "A quiet day for the image API: its existing options are now described in an OpenAPI spec.\n\nAn OpenAPI 3.0.3 spec now documents image generation models and parameters, alongside authentication and rate limits. This adds a spec file, not a new docs route or a change to API behavior.",
+  "pr_count": 1,
   "prs": [
-    {
-      "number": 3283,
-      "date": "2025-07-29"
-    },
-    {
-      "number": 3349,
-      "date": "2025-07-29"
-    },
-    {
-      "number": 3350,
-      "date": "2025-07-29"
-    },
     {
       "number": 3351,
       "date": "2025-07-29"
-    },
-    {
-      "number": 3357,
-      "date": "2025-07-29"
     }
   ],
-  "generated_at": "2026-09-04T12:13:41.718440+00:00"
+  "generated_at": "2026-10-17T15:44:26.086334+00:00",
+  "highlights": [],
+  "changelog": []
 }

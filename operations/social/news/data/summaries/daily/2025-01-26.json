@@ -2,8 +2,8 @@
   "date": "2025-01-26",
   "period_start": "2025-01-26",
   "period_end": "2025-01-26",
-  "title": "A brighter tab in the browser",
-  "summary": "A small visual tune-up: pollinations is now a little easier to spot in a crowded browser tab bar.\n\nThe favicon now uses lime, giving pollinations a small but more recognizable presence among the usual forest of open tabs.",
+  "title": "A more visible browser tab",
+  "summary": "A small visual update made pollinations easier to find in a crowded browser.\n\nThe favicon changed to lime at 16×16 and 32×32 sizes, with a matching logo SVG. It should be easier to spot among crowded tabs.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-01-26"
     }
   ],
-  "generated_at": "2026-09-04T14:02:30.871022+00:00"
+  "generated_at": "2026-10-17T15:32:53.345371+00:00",
+  "highlights": [],
+  "changelog": []
 }

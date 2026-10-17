@@ -43,5 +43,53 @@
       "date": "2026-03-14"
     }
   ],
-  "generated_at": "2026-03-18T22:13:38.553614+00:00"
+  "generated_at": "2026-03-18T22:13:38.553614+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Generate with Pruna p-image",
+      "text": "Create images with `p-image` through the core API. [Explore the model](https://enter.pollinations.ai/models?q=p-image).",
+      "prs": [
+        9077
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Edit with Pruna p-image-edit",
+      "text": "Modify images with `p-image-edit` through the core API. [Explore the model](https://enter.pollinations.ai/models?q=p-image-edit).",
+      "prs": [
+        9077
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Make video with Pruna",
+      "text": "Generate video with `p-video` through the core API. [Explore the model](https://enter.pollinations.ai/models?q=p-video).",
+      "prs": [
+        9077
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Images through standard SDKs",
+      "text": "Use OpenAI-compatible image generation and editing endpoints to create or modify images with standard SDKs. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        9105
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "✨",
+      "title": "More nanobanana-2 size options",
+      "text": "Set `imageSize` on `nanobanana-2`, including the new 0.5K resolution tier. [Explore the model](https://enter.pollinations.ai/models?q=nanobanana-2).",
+      "prs": [
+        9087
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

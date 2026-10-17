@@ -147,5 +147,44 @@
       "date": "2026-03-28"
     }
   ],
-  "generated_at": "2026-09-04T11:53:26.251794+00:00"
+  "generated_at": "2026-09-04T11:53:26.251794+00:00",
+  "highlights": [
+    {
+      "emoji": "🎯",
+      "title": "Build workflows with Flowra",
+      "text": "Explore a community-built, node-based AI workflow builder. [Try it](https://flowra-8mj.pages.dev/).",
+      "prs": [
+        9671
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "💡",
+      "title": "Explore Pollinations Tools Hub",
+      "text": "Try three browser-based AI tools built with the Pollinations API. [Try it](https://lokiodinson.netlify.app/ai).",
+      "prs": [
+        9687
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Chat with PolliChatter",
+      "text": "Try a community-built unified chat interface with a dark theme. [Try it](https://pollichatter.netlify.app/).",
+      "prs": [
+        9681
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "🌟",
+      "title": "Check Seed Plan eligibility",
+      "text": "A community tool estimates eligibility from your GitHub open-source activity. [Try it](https://app-j.pl/Pollinations/).",
+      "prs": [
+        9685
+      ],
+      "kind": "app"
+    }
+  ],
+  "changelog": []
 }

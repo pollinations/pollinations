@@ -2,9 +2,9 @@
   "date": "2025-10-27",
   "period_start": "2025-10-27",
   "period_end": "2025-10-27",
-  "title": "Text API calls got simpler to make and authenticate",
-  "summary": "A garden-maintenance day: easier GET requests, clearer account guidance, more community projects, and one correctly versioned bot.\n\nGET-based text generation now has a simplified endpoint and can accept tokens as query parameters. Frontend API keys are also visible and copyable, with full model access, while pk_ key authentication was repaired. Less ceremony between an idea and an HTTP request.\n\nTier benefits and product mappings were refreshed, auth.pollinations.ai users now see a migration notice, and the FAQ gained a payment-method voting link. Model cost information was also updated so the surrounding documentation better matches the machinery.\n\nFour new community creations joined the Creative Projects list, while the description-condensing workflow was pointed at the correct debouncer version. One is inspiration; the other keeps automation from developing opinions.",
-  "pr_count": 10,
+  "title": "Shorter paths to text generation",
+  "summary": "Text generation got a simpler URL, publishable keys became easier to use, and Seedream 4.0 joined the image lineup.\n\nA new GET text endpoint accepts a prompt in the URL and an optional model parameter, defaulting to openai. Enter also added copyable publishable API keys and support for using them in GET text and image URLs; secret keys remain masked and use the Authorization header.\n\nByteDance ARK Seedream 4.0 was added for Nectar-tier image generation, with a configured maximum side length of 2048 pixels. The same change fixed authentication for publishable keys; a smaller update corrected provider labels for kontext and turbo.\n\nThe tier panel now displays updated daily Pollen amounts and explains refill timing and non-carryover. It also adds guidance for people whose tier differs between the older auth site and Enter. The Pollen FAQ now links to a vote on payment methods. The tier change updated displayed amounts, not the code that grants Pollen.",
+  "pr_count": 9,
   "prs": [
     {
       "number": 4806,
@@ -31,10 +31,6 @@
       "date": "2025-10-27"
     },
     {
-      "number": 4824,
-      "date": "2025-10-27"
-    },
-    {
       "number": 4828,
       "date": "2025-10-27"
     },
@@ -47,5 +43,37 @@
       "date": "2025-10-27"
     }
   ],
-  "generated_at": "2026-09-04T12:55:39.504247+00:00"
+  "generated_at": "2026-10-17T15:50:23.118893+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "Text from a GET request",
+      "text": "Generate text by putting a prompt in a GET URL. An optional model parameter defaults to openai. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        4806
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Copyable publishable API keys",
+      "text": "Create a publishable key in Enter, copy it later, and use it in the `key` parameter of GET text and image requests. [Manage API keys](https://enter.pollinations.ai/keys).",
+      "prs": [
+        4808,
+        4819,
+        4821
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Seedream 4.0 image generation",
+      "text": "Generate images with ByteDance ARK Seedream 4.0 on the Nectar tier, with a configured maximum side length of 2048 pixels. [Find Seedream on Enter](https://enter.pollinations.ai/models?q=seedream).",
+      "prs": [
+        4819
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-26",
+  "period_start": "2026-08-26",
+  "period_end": "2026-08-26",
+  "generated_at": "2026-08-27T09:15:50.518510+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-26/images/reddit.jpg"
+    }
+  ],
+  "title": "11 merges: Discord quests, MCP search, media inputs",
+  "text": "11 PRs merged today.\n\nThe user-facing change is Discord account linking: joining the Discord can now be represented as a Quest, while the membership logic behind it was simplified in a follow-up refactor. The useful part is that community participation now has a less imaginary connection to Pollen; the less useful part is that OAuth still exists.\n\nMCP gained two practical capabilities: Exa Search support and multiple inputs in the FFmpeg MCP. Agents can now fetch web context and assemble media from more than one input without pretending every workflow is a single-file pipeline.\n\nThree integrations were added to the app directories: Descriptly under writing, plus Pollinations App and Dery AI under image.\n\nOperational cleanup included targeted Enter production deploys, blocking requests from overdrawn wallets, removing the dashboard status notice, and refreshing the README.\n\nPRs: [#13741](https://github.com/pollinations/pollinations/pull/13741), [#13941](https://github.com/pollinations/pollinations/pull/13941), [#13946](https://github.com/pollinations/pollinations/pull/13946), [#13950](https://github.com/pollinations/pollinations/pull/13950), [#13969](https://github.com/pollinations/pollinations/pull/13969), [#13970](https://github.com/pollinations/pollinations/pull/13970), [#13973](https://github.com/pollinations/pollinations/pull/13973), [#13982](https://github.com/pollinations/pollinations/pull/13982), [#14002](https://github.com/pollinations/pollinations/pull/14002), [#14004](https://github.com/pollinations/pollinations/pull/14004), [#14013](https://github.com/pollinations/pollinations/pull/14013).\n\nDocs: https://pollinations.ai/docs"
+}

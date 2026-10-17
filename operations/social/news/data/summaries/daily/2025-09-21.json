@@ -2,8 +2,8 @@
   "date": "2025-09-21",
   "period_start": "2025-09-21",
   "period_end": "2025-09-21",
-  "title": "Gemini Search can now look things up without ceremony",
-  "summary": "A Gemini-heavy day: grounded search, full Nano Banana support, and DeepSeek V3.1 through Vertex AI.\n\ngemini-search gained automatic Google Search grounding, the Vertex AI tool format was corrected, and the search transform/auth path was tightened up. Ask for current information; the model now has a more reliable route to it.\n\nNano Banana (Gemini) now has full model support, including a simple image-generation prompt prefix so requests reach the image path with less interpretive dance.\n\nDeepSeek V3.1 joined the Google Vertex AI lineup, ChickyTutor gained prompt management alongside model fixes, and ChadGpt was added to the community project list.",
+  "title": "Nano Banana joins the image API",
+  "summary": "A model-heavy day: Nano Banana image generation, search-grounded Gemini, DeepSeek V3.1, and a language tutor.\n\nAdded `nanobanana` for text-to-image generation and image edits using one or more reference image URLs. A follow-up prefixes prompts to steer Gemini toward producing an image. The model requires seed tier or higher.\n\nAdded `gemini-search` so callers can request Google Search-grounded answers without supplying the search tool themselves. Follow-up changes corrected the Vertex AI tool format and model resolution, and adjusted authentication initialization.\n\nAdded `deepseek` as a seed-tier text model with tool support and aliases for DeepSeek V3.1.",
   "pr_count": 8,
   "prs": [
     {
@@ -39,5 +39,46 @@
       "date": "2025-09-21"
     }
   ],
-  "generated_at": "2026-09-04T12:33:51.061061+00:00"
+  "generated_at": "2026-10-17T15:47:01.386156+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Nano Banana image generation",
+      "text": "Use `nanobanana` to generate an image from a prompt or edit one using reference image URLs. [Browse the model](https://enter.pollinations.ai/models?q=nanobanana).",
+      "prs": [
+        4114,
+        4120
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Gemini with search grounding",
+      "text": "Ask `gemini-search` questions that need current information without adding the Google Search tool yourself. [Browse the model](https://enter.pollinations.ai/models?q=gemini-search).",
+      "prs": [
+        4109,
+        4112
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "DeepSeek V3.1 added",
+      "text": "Use the seed-tier `deepseek` text model for conversations and tool-calling requests. [Browse the model](https://enter.pollinations.ai/models?q=deepseek).",
+      "prs": [
+        4119
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "💡",
+      "title": "A language tutor model",
+      "text": "Practice a language with `chickytutor`, a text-only tutor available without signing in. [Browse the model](https://enter.pollinations.ai/models?q=chickytutor).",
+      "prs": [
+        4110
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

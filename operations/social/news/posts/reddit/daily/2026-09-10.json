@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-10",
+  "period_start": "2026-09-10",
+  "period_end": "2026-09-10",
+  "generated_at": "2026-09-11T06:29:09.448987+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-10/images/reddit.jpg"
+    }
+  ],
+  "title": "10 merges across chat, writing, CLI, and docs",
+  "text": "Today’s 10 merged PRs were mostly about making existing paths behave less surprisingly, plus adding a couple of writing tools.\n\nChat now honors explicit limits and tool settings instead of quietly drifting from the request (#14664). That is the sort of fix that sounds small until an agent ignores the part of the API call you actually cared about.\n\nWriting gained StoryCraft AI and YouTube Transcription AI by MrPaloma (#14669, #14694): one for turning an idea into a more finished story workflow, the other for starting from video material rather than a blank document.\n\nFor local tooling, polli-cli now has a Bloom harness for wiring Bloom into Pollinations text workflows (#14670).\n\nA few less visible fixes should make heavier usage calmer: inline reference images use less memory (#14684), staging models now point at staging OpenWebUI (#14685), and application deployments preserve KPI secrets (#14697).\n\nThe README and generated API reference were also refreshed (#14675, #14692). Docs: https://github.com/pollinations/pollinations/blob/main/APIDOCS.md\n\nFull code and PR history: https://github.com/pollinations/pollinations\n\nThe interesting question for us is whether explicit chat controls now cover the settings people actually need, or whether there are still parameters being accepted but not consistently enforced."
+}

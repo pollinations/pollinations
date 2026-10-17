@@ -2,16 +2,12 @@
   "date": "2025-12-31",
   "period_start": "2025-12-31",
   "period_end": "2025-12-31",
-  "title": "Gemini 3 Flash gets its fast lane back",
-  "summary": "A small New Year's Eve tune-up: clearer balances in the dashboard and Gemini 3 Flash back in fast mode.\n\nGemini 3 Flash fast mode now explicitly runs with a zero thinking budget, restoring the quick-response path for prompts that do not need extra deliberation.\n\nThe dashboard now separates tier and pack balances into two columns, while dropping pending spend from the display. Less arithmetic required to understand what is available.",
-  "pr_count": 3,
+  "title": "Pollen balances now separate tier grants from packs",
+  "summary": "Two precise fixes: Pollen balances account for tier resets, and Gemini 3 Flash fast mode uses a zero-token thinking budget.\n\nTier grants and purchased packs now have separate balances, so daily tier resets do not distort the displayed total. Billable requests use the tier balance first, and Enter’s dashboard reads both balances from the new authenticated balance endpoint.\n\nRequests to disable thinking for Gemini 3 Flash now send a zero-token thinking budget instead of selecting minimal thinking. Gemini 2.5 and Gemini 3 Pro keep their existing model-specific settings.",
+  "pr_count": 2,
   "prs": [
     {
       "number": 6645,
-      "date": "2025-12-31"
-    },
-    {
-      "number": 6663,
       "date": "2025-12-31"
     },
     {
@@ -19,5 +15,7 @@
       "date": "2025-12-31"
     }
   ],
-  "generated_at": "2026-09-04T12:45:16.781076+00:00"
+  "generated_at": "2026-10-17T15:57:20.183110+00:00",
+  "highlights": [],
+  "changelog": []
 }

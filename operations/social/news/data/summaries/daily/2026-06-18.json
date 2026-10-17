@@ -79,5 +79,44 @@
       "date": "2026-06-18"
     }
   ],
-  "generated_at": "2026-09-04T11:54:34.914447+00:00"
+  "generated_at": "2026-09-04T11:54:34.914447+00:00",
+  "highlights": [
+    {
+      "emoji": "🎯",
+      "title": "Compare models in Pollen Studio",
+      "text": "Test image, text, and speech models side by side. [Try it](https://pollenstudio.cru2.net).",
+      "prs": [
+        11903
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "📱",
+      "title": "Practice writing across languages",
+      "text": "Lingua Memory Card uses text models to correct your writing sentence by sentence. [Try it](https://lingua-memory-card.vercel.app/).",
+      "prs": [
+        11890
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Explore public platform stats",
+      "text": "Query five read-only statistics pipes, including an app-directory endpoint. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        11888
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "💡",
+      "title": "OpenAPI at a familiar path",
+      "text": "Fetch the API schema from `/openapi.json` for tools that expect the conventional path. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        11901
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

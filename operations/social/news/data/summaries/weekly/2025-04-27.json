@@ -1,0 +1,47 @@
+{
+  "date": "2025-04-27",
+  "period_start": "2025-04-20",
+  "period_end": "2025-04-26",
+  "title": "The project garden grew—and got easier to browse",
+  "summary": "The community showcase became easier to browse while text ads and API information got some careful upkeep.\n\nRuangRiung, ImageGen AI Image, and FoodAnaly joined the community project lists. Showcase entries also gained GitHub star counts and sorting by stars, making established projects easier to find. The projects CSV now lists older submissions first.\n\nAd selection gained configurable domain matching using referrer headers, with an origin fallback. Conversation history and streaming responses now skip additional ads when a Pollinations redirect link is already present. Affiliate matching and text-response ad handling were adjusted too.\n\nFive public resources were added to describe API endpoints, models, capabilities, and usage for agents and developers, including llms.txt, agents.json, arazzo.json, and mcp.json.\n\nMistral Small 3 moved to a different provider route, and image-generation response data stopped including requester IP addresses.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 1729,
+      "date": "2025-04-20"
+    },
+    {
+      "number": 1731,
+      "date": "2025-04-20"
+    },
+    {
+      "number": 1735,
+      "date": "2025-04-20"
+    },
+    {
+      "number": 1739,
+      "date": "2025-04-22"
+    },
+    {
+      "number": 1760,
+      "date": "2025-04-22"
+    },
+    {
+      "number": 1762,
+      "date": "2025-04-22"
+    },
+    {
+      "number": 1765,
+      "date": "2025-04-22"
+    },
+    {
+      "number": 1767,
+      "date": "2025-04-22"
+    },
+    {
+      "number": 1770,
+      "date": "2025-04-23"
+    }
+  ],
+  "generated_at": "2026-10-17T16:08:15.525624+00:00"
+}

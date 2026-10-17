@@ -80,25 +80,40 @@
     {
       "emoji": "🎬",
       "title": "Grok gets the picture",
-      "text": "You can now pass an initial image URL to `grok-video-pro` to guide video generation. Image-to-video via xAI is officially live."
+      "text": "You can now pass an initial image URL to `grok-video-pro` to guide video generation. Image-to-video via xAI is officially live.",
+      "prs": [
+        9544,
+        9545
+      ],
+      "kind": "api"
     },
     {
       "emoji": "💻",
       "title": "PowerShell gets pollinated",
       "text": "Generate AI content directly from your Windows command line with the new PollinationsAiPS module. [View repo](https://github.com/BananaAcid/PollinationsAiPS/)",
+      "prs": [
+        9572
+      ],
       "kind": "app"
     },
     {
       "emoji": "🎮",
       "title": "Game engines can talk",
       "text": "'Talking with Unity' brings our voice AI, speech recognition, and text-to-speech directly into Unity projects. [Try it](https://www.ai-ministries.com/apps/talking-unity/)",
+      "prs": [
+        9567
+      ],
       "kind": "app"
     },
     {
       "emoji": "📱",
       "title": "Native iOS multitasking",
       "text": "Vector AI Agent is a free Apple Shortcut that routes requests across multiple models directly from your Mac or iPhone. [Try it](https://routinehub.co/shortcut/24957/)",
+      "prs": [
+        9575
+      ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

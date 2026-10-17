@@ -32,22 +32,40 @@
     {
       "emoji": "🧠",
       "title": "Kimi gets a brain upgrade",
-      "text": "The `kimi` text model now runs Moonshot's K2-thinking model under the hood. You get reasoning blocks and a massive 128K context window for your largest prompts."
+      "text": "The `kimi` text model now runs Moonshot's K2-thinking model under the hood. You get reasoning blocks and a massive 128K context window for your largest prompts.",
+      "prs": [
+        10155
+      ],
+      "kind": "model"
     },
     {
       "emoji": "⚡",
       "title": "50x faster text generation",
-      "text": "We migrated `deepseek`, `glm`, `minimax`, and `qwen-large` to Fireworks AI. Latency dropped off a cliff, and Qwen got bumped to its 396B flagship version. Try them in the [Unified API](https://gen.pollinations.ai)."
+      "text": "We migrated `deepseek`, `glm`, `minimax`, and `qwen-large` to Fireworks AI. Latency dropped off a cliff, and Qwen got bumped to its 396B flagship version. Try them in the [Unified API](https://gen.pollinations.ai).",
+      "prs": [
+        10156,
+        10160
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🖼️",
       "title": "Sana hits 0.165s per image",
-      "text": "The default Sana [image model](https://gen.pollinations.ai/image/models) was upgraded to 1.6B and moved to GH200 instances. Better pixels, delivered in a fraction of a second."
+      "text": "The default Sana [image model](https://gen.pollinations.ai/image/models) was upgraded to 1.6B and moved to GH200 instances. Better pixels, delivered in a fraction of a second.",
+      "prs": [
+        10159
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🌐",
       "title": "Client-side OpenAI SDK support",
-      "text": "We adjusted our CORS headers so standard OpenAI SDKs now work directly from the browser. Build your frontend apps without fighting preflight errors."
+      "text": "We adjusted our CORS headers so standard OpenAI SDKs now work directly from the browser. Build your frontend apps without fighting preflight errors.",
+      "prs": [
+        10165
+      ],
+      "kind": "api"
     }
-  ]
+  ],
+  "changelog": []
 }

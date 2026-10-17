@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-02-28",
+  "period_start": "2026-02-28",
+  "period_end": "2026-02-28",
+  "generated_at": "2026-03-18T21:49:26.746532+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-28/images/reddit.jpg"
+    }
+  ],
+  "title": "Rewrote the text service in Hono and TypeScript, plus 8 other fixes",
+  "text": "We merged 9 PRs today. The biggest chunk of work was rewriting the text service to use Hono and TypeScript. It's faster, less brittle, and easier to maintain.\n\nWhile we were in the text API, we added a context_window field to all text models so you don't have to guess how many tokens you can stuff into a prompt. We also updated the /models endpoint to hide paid-only models if your account doesn't have a balance. Less clutter in the response.\n\nOn the infrastructure side, we fixed a bug in the PollenRateLimiter to restore burst accumulation. If you were getting throttled weirdly on burst requests recently, that's why. We also hardened the media upload endpoint—added strict file size limits and magic byte checking so people stop trying to upload weird binaries.\n\nFinally, we upgraded minimax to M2.5 via Fireworks, added PollenPages for generating illustrated books, and fixed the CatGPT deployment. Yes, CatGPT is a real deployment we maintain.\n\nCode is open as always at github.com/pollinations/pollinations."
+}

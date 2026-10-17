@@ -24,12 +24,21 @@
     {
       "emoji": "🚀",
       "title": "Nova-Fast Reliability",
-      "text": "We routed `nova-fast` through a cross-region profile to stop it from hitting rate limits during peak hours. Less throttling, more generating. Check the [available models](https://gen.pollinations.ai/v1/models)."
+      "text": "We routed `nova-fast` through a cross-region profile to stop it from hitting rate limits during peak hours. Less throttling, more generating. Check the [available models](https://gen.pollinations.ai/v1/models).",
+      "prs": [
+        11587
+      ],
+      "kind": "model"
     },
     {
       "emoji": "⚡",
       "title": "Faster Dashboard",
-      "text": "We optimized the database queries for developer earnings. Checking your balance on the [Dashboard](https://enter.pollinations.ai) is now significantly faster and less likely to buckle under heavy load."
+      "text": "We optimized the database queries for developer earnings. Checking your balance on the [Dashboard](https://enter.pollinations.ai) is now significantly faster and less likely to buckle under heavy load.",
+      "prs": [
+        11592
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

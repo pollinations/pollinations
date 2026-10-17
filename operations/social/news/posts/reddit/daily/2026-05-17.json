@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-17",
+  "period_start": "2026-05-17",
+  "period_end": "2026-05-17",
+  "generated_at": "2026-05-18T07:18:06.704074+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-17/images/reddit.jpg"
+    }
+  ],
+  "title": "Shipped: Video start/end frames, audio diarization, and 40 ecosystem updates",
+  "text": "Merged 42 PRs today. The bulk of it is community additions to the ecosystem, but we pushed two core infrastructure updates that solve some annoying workflow problems.\n\nFirst, video generation now supports A-to-B transitions via positional image arrays. You can pass a start frame and an end frame, and the providers will handle the interpolation between them. If you've been trying to force consistency across generated clips, this gives you actual anchor points instead of just hoping the prompt holds the scene together.\n\nSecond, audio transcriptions now support OpenAI's diarization. The endpoint returns speaker mapping alongside the text, so you actually get who said what instead of a flat wall of text. Helpful if you're piping interview audio or multi-speaker podcast chunks through the API.\n\nThe rest of the merges are community additions. We had 38 new apps and agents added to the ecosystem today. A few standouts from the list include SillyTavern-Localyze, AGI Desktop Personal Assistant, and several specialized image generation tools. The sheer volume of tooling being built on top of the open endpoints right now is slightly overwhelming, in a good way.\n\nCode and docs for the new video and audio parameters are up on the GitHub repo: github.com/pollinations/pollinations\n\nAll endpoints are live. As always, everything is open source and the free tier is generous enough to build with."
+}

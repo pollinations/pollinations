@@ -2,9 +2,9 @@
   "date": "2026-01-15",
   "period_start": "2026-01-15",
   "period_end": "2026-01-15",
-  "title": "Account balances and authorization got a more coherent shape",
-  "summary": "A small account-and-community maintenance day: smoother authorization, crypto balance support, and workflows that mind their own files.\n\nKey permissions were refactored alongside account profiles and smarter authorization preselection, while the balance API was aligned with its expected response structure. Less ceremony when connecting an account; fewer surprises for anything reading its balance.\n\nNOWPayments integration added crypto payment support and a cryptoBalance path, giving people who prefer on-chain rails another route into the ecosystem.\n\nThe Reddit workflow was updated for the current Devvit patch, the daily Instagram post landed, and Biome CI now checks the files a PR actually changes instead of getting distracted by merge commits. Software briefly remembers what it was asked to inspect.",
-  "pr_count": 6,
+  "title": "Keys can grant scoped account access",
+  "summary": "More control over what an app's key can access, a crypto option for Pollen, and a Play login crash fixed.\n\nKey creation and authorization now share controls for allowed models, Pollen budget, expiry, and account permissions. Apps can preselect these options when sending someone through authorization, and permitted keys can access new profile, balance, and usage endpoints.\n\nNOWPayments checkout was added alongside fiat checkout on Enter. Crypto Pollen has its own balance, while the dashboard shows a combined paid balance.\n\nPlay now reads the balance API's current response field and checks for a value before formatting it, fixing a crash after login.",
+  "pr_count": 3,
   "prs": [
     {
       "number": 6733,
@@ -15,21 +15,21 @@
       "date": "2026-01-15"
     },
     {
-      "number": 7308,
-      "date": "2026-01-15"
-    },
-    {
-      "number": 7309,
-      "date": "2026-01-15"
-    },
-    {
-      "number": 7320,
-      "date": "2026-01-15"
-    },
-    {
       "number": 7324,
       "date": "2026-01-15"
     }
   ],
-  "generated_at": "2026-09-04T11:35:41.914109+00:00"
+  "generated_at": "2026-10-17T15:59:15.466381+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "Scoped access for app keys",
+      "text": "Apps can preselect model access, a Pollen budget, expiry, and account permissions during authorization. Permitted keys can also fetch profile, balance, and usage data through new endpoints. [Connect user wallets](https://gen.pollinations.ai/docs#tag/connect-user-wallets).",
+      "prs": [
+        7303
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

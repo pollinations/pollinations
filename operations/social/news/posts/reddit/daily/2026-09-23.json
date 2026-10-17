@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-23",
+  "period_start": "2026-09-23",
+  "period_end": "2026-09-23",
+  "generated_at": "2026-09-24T06:30:47.627029+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-23/images/reddit.jpg"
+    }
+  ],
+  "title": "18 merges: models, routing, and reliability",
+  "text": "18 PRs merged today. The visible part is mostly model availability and less time spent staring at a queue.\n\nImage got three Azure-backed additions: MAI Image 2.6, MAI Image 2.6 Flash, and FLUX 1.1 Pro. GPT Image now has a higher per-user RPM path when an OpenAI fallback exists, which should reduce unnecessary throttling for requests that already have somewhere valid to go.\n\nText gained GPT-5.3 Codex on Azure plus MiMo V2.6 Flash and Pro through OpenRouter. MiniMax M2.7 was rerouted off DeepInfra after that provider moved its endpoint to M3. Model discovery also now filters against recent reliability, because a model listed as available but currently refusing to answer is technically discoverable and practically decorative.\n\nFloret now uses the shared MCP media tools. Agent publishing was enabled for MCP quest contributors, and community-model publishing was opened up for Saauf. The UI package now publishes through npm OIDC; login also syncs the platform name from GitHub.\n\nDocs and generated API references were refreshed, and the quest logic keeps one paid app-spend quest instead of accumulating duplicates.\n\nCode and PR history: https://github.com/pollinations/pollinations\nDocs: https://pollinations.ai/docs"
+}

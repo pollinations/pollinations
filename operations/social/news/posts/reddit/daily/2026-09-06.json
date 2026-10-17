@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-06",
+  "period_start": "2026-09-06",
+  "period_end": "2026-09-06",
+  "generated_at": "2026-09-07T06:38:19.638749+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-06/images/reddit.jpg"
+    }
+  ],
+  "title": "Managed agents and streams got sturdier",
+  "text": "Ten PRs landed today, mostly in the category of software doing less mysterious waiting and failing.\n\nManaged agents now report selected MCP startup failures instead of burying them, and MCP gained device-flow login for cases where a browser redirect is not the right ritual. MCP call failures also return structured errors, while provider errors were unified without discarding the diagnostics that usually explain what happened.\n\nStreaming billing got two related fixes: text streams are validated before splitting, and managed-agent streams accept provisional usage. The useful outcome is that successful streams should no longer trip over incomplete token accounting on their way out.\n\nThe dashboard no longer blocks loading on billing and earnings work it does not need to render. Polli is back on PR review duty; its scraping, request handling, and data controls were also tightened, because an automated reviewer should have boundaries.\n\nThere is also a README refresh and general review cleanup.\n\nRelevant changes:\n- https://github.com/pollinations/pollinations/pull/13900\n- https://github.com/pollinations/pollinations/pull/14480\n- https://github.com/pollinations/pollinations/pull/14502\n- https://github.com/pollinations/pollinations/pull/14515\n- https://github.com/pollinations/pollinations/pull/14523\n\nThe remaining question is whether the new error shape is useful across clients, not merely more structured on paper."
+}

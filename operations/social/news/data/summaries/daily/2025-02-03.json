@@ -2,8 +2,8 @@
   "date": "2025-02-03",
   "period_start": "2025-02-03",
   "period_end": "2025-02-03",
-  "title": "The showcase gets a new descent",
-  "summary": "A small garden day: one new project in the showcase, and some unnecessary space-lab scenery shown the airlock.\n\nAbyss Ascending joined the project showcase, giving another community-built experiment a place in the garden.\n\nHybrid space lab background images were removed, simplifying the visual layer where they appeared.",
+  "title": "An underwater adventure joins the showcase",
+  "summary": "A new underwater text adventure joined the showcase, while three website sections traded background images for solid colors.\n\nAbyss Ascending, @brain.diver’s web-based generative text adventure set in a sci-fi underwater world, was added to the README and creative-app showcase.\n\nThe community, team, and supporter sections now use solid-color backgrounds in place of images. Their gradients remain unchanged, and eight unused image assets were removed.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,5 +15,7 @@
       "date": "2025-02-03"
     }
   ],
-  "generated_at": "2026-09-04T13:33:49.163019+00:00"
+  "generated_at": "2026-10-17T15:33:07.233459+00:00",
+  "highlights": [],
+  "changelog": []
 }

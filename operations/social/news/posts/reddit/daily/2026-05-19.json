@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-19",
+  "period_start": "2026-05-19",
+  "period_end": "2026-05-19",
+  "generated_at": "2026-05-20T07:08:55.095654+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-19/images/reddit.jpg"
+    }
+  ],
+  "title": "Added Gemini 3.5 Flash via Vertex, migrated video models to Replicate",
+  "text": "Merged three PRs today focusing on infrastructure stability and model updates.\n\nFirst, we added Gemini 3.5 Flash to the text endpoint via Vertex AI (PR #11181). If you are using the unified chat endpoint, you can pass model=gemini-3.5-flash now. It is fast and handles context well, making it a solid default for standard text generation tasks.\n\nOn the video side, we migrated seedream5 and seedance-pro over to Replicate (PR #11073). The previous setup was getting flaky under load, so offloading this should make video generation significantly more reliable. As part of this cleanup, we finally retired the legacy seedance model. If your scripts were still pointing to it, you will need to update your API calls to use seedance-pro instead.\n\nFinally, we added Duwit to the business directory (PR #11175). It is always good to see what people are actually building with the infrastructure.\n\nAll changes are live. You can check the code or open an issue on the repo at github.com/pollinations/pollinations if the video migration broke anything in your existing pipeline."
+}

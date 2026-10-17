@@ -48,28 +48,49 @@
     {
       "emoji": "📊",
       "title": "Transaction History",
-      "text": "You can now see exactly where your Pollen is going. Check your last 5 requests directly on the Pollen page, or browse the full history on your [Dashboard](https://enter.pollinations.ai)."
+      "text": "You can now see exactly where your Pollen is going. Check your last 5 requests directly on the Pollen page, or browse the full history on your [Dashboard](https://enter.pollinations.ai).",
+      "prs": [
+        11711
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🚀",
       "title": "Siriusly Fast Elevators",
       "text": "The Sirius Cybernetics Elevator Challenge app now defaults to Mistral, dropping response times from 10s to 1.2s. Even the API errors are now delivered in-character. [Try it](https://pollinations.ai)",
-      "kind": "app"
+      "prs": [
+        11855
+      ],
+      "kind": "product"
     },
     {
       "emoji": "⚡",
       "title": "Faster Image Generation",
-      "text": "We rewired the [image generation](https://gen.pollinations.ai/image/models) load balancer to favor GPUs with the lowest recent latency. More traffic goes to the 4090s, meaning fewer timeouts and faster pixels."
+      "text": "We rewired the [image generation](https://gen.pollinations.ai/image/models) load balancer to favor GPUs with the lowest recent latency. More traffic goes to the 4090s, meaning fewer timeouts and faster pixels.",
+      "prs": [
+        11869,
+        11871
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🧠",
       "title": "GLM-5.2 Upgrade",
-      "text": "The `glm` model slug now points to Z.ai's GLM-5.2, expanding the context window from 198k to a massive 1 million tokens."
+      "text": "The `glm` model slug now points to Z.ai's GLM-5.2, expanding the context window from 198k to a massive 1 million tokens.",
+      "prs": [
+        11873
+      ],
+      "kind": "model"
     },
     {
       "emoji": "✨",
       "title": "Auto-Upgrading Model Slugs",
-      "text": "Clean slugs like `openai-large` and `claude-large` now automatically resolve to the latest versions (like GPT-5.5 and Opus 4.8). If you need the old stuff, versioned slugs still work. Check the [available models](https://gen.pollinations.ai/v1/models)."
+      "text": "Clean slugs like `openai-large` and `claude-large` now automatically resolve to the latest versions (like GPT-5.5 and Opus 4.8). If you need the old stuff, versioned slugs still work. Check the [available models](https://gen.pollinations.ai/v1/models).",
+      "prs": [
+        11875
+      ],
+      "kind": "model"
     }
-  ]
+  ],
+  "changelog": []
 }

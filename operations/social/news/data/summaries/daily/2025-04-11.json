@@ -2,8 +2,8 @@
   "date": "2025-04-11",
   "period_start": "2025-04-11",
   "period_end": "2025-04-11",
-  "title": "Share links now carry their visual preview",
-  "summary": "A small garden-maintenance day: better link previews, a less fussy frontend, and clearer agent integration tracking.\n\nThe missing SEO image was fixed, so pollinations pages can present the intended image when they travel through search engines and link previews.\n\nA frontend-side content filter was removed, leaving the interface closer to the capabilities exposed by the underlying platform rather than adding a separate browser gate.\n\nRepository integration tracking and documentation were added to pollinator-agent, making its connections to the wider code garden easier to follow and maintain.",
+  "title": "Frontend NSFW filter removed",
+  "summary": "Frontend filtering changed, text-response referral selection was adjusted, and social preview images got their missing metadata.\n\nThe frontend no longer filters content on an NSFW basis. This changes frontend behavior, not necessarily filtering elsewhere.\n\nReferral matching now considers both input messages and generated text. Referral links have a 10% selection probability, while the Ko-fi fallback is selected 30% of the time when no relevant affiliate is found, rather than every time.\n\nPages now include image metadata for social previews. The change also removes duplicate social tags and updates the site's logo, icons, and banner assets.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,5 +19,7 @@
       "date": "2025-04-11"
     }
   ],
-  "generated_at": "2026-09-04T12:25:11.049094+00:00"
+  "generated_at": "2026-10-17T16:02:32.141556+00:00",
+  "highlights": [],
+  "changelog": []
 }

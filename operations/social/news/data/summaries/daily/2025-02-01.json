@@ -2,8 +2,8 @@
   "date": "2025-02-01",
   "period_start": "2025-02-01",
   "period_end": "2025-02-01",
-  "title": "Deep Saga joins the project listings",
-  "summary": "A small community update: Deep Saga is now on the project map.\n\nDeep Saga is now listed among projects built with pollinations, giving the community another thing to inspect, borrow from, or accidentally turn into a weekend project.",
+  "title": "Deep Saga joins the creative app listings",
+  "summary": "A community-made Android RPG joined the creative app listings.\n\nDeep Saga, an Android text-based RPG with AI-generated scene images, was added to the README and website’s creative app listings.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-02-01"
     }
   ],
-  "generated_at": "2026-09-04T13:33:16.351524+00:00"
+  "generated_at": "2026-10-17T15:33:00.294440+00:00",
+  "highlights": [],
+  "changelog": []
 }

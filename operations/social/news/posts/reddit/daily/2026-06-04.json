@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-06-04",
+  "period_start": "2026-06-04",
+  "period_end": "2026-06-04",
+  "generated_at": "2026-06-05T07:25:14.248122+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-04/images/reddit.jpg"
+    }
+  ],
+  "title": "SDK alpha with model catalog helper, UI updates, and Klein restored",
+  "text": "Just pushed three PRs today. The most immediate fix is for the Klein image model. We had a host outage that temporarily took it offline, so PR #11618 points the routing to a fresh RunPod pod. It is back online and resolving normally.\n\nFor developers building on top of the API, we are cutting new alpha releases for the SDK and UI libraries.\n\nPR #11610 adds a model catalog helper to the SDK and sets up a client subpath. Previously, managing model lists client-side was a bit too manual. The helper abstracts that away so you can query available models directly without writing boilerplate.\n\nPR #11611 brings a design-system upgrade to the UI library alongside a new alpha showcase. If you are building custom interfaces for the text or image endpoints, the updated components should be more predictable to work with.\n\nAll changes are live. You can pull the latest SDK alpha via npm. As always, everything is open source. The routing fixes and SDK source are in the main repo at https://github.com/pollinations/pollinations. Let us know if the new RunPod instance for Klein gives you any latency issues."
+}

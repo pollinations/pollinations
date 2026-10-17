@@ -1,0 +1,251 @@
+{
+  "date": "2025-11-09",
+  "period_start": "2025-11-02",
+  "period_end": "2025-11-08",
+  "title": "More models, easier to find and call",
+  "summary": "More models and familiar API routes arrived while image generation, Pollen accounting, and text responses got less surprising.\n\nPerplexity Sonar joined as `perplexity-fast` and `perplexity-reasoning`, alongside the Mistral Nemo model `naughty`. Claude Haiku 4.5 gained the shorter `claude` name while retaining its previous name as an alias. Public model lists and OpenAI-compatible chat-completion and model-list paths make these options easier to discover and use with existing clients. Audio chat responses can also retain their transcript and audio data.\n\nGPT Image and Enter now preserve valid requested dimensions when passing them to models, while Flux workers scale oversized jobs toward a 768×768 pixel budget to reduce memory failures. Fixes also addressed Kontext generation and editing, removed NanoBanana’s hardcoded 25-second timeout, and improved errors when Gemini returns no image. Flux load checks now ignore stale servers rather than unnecessarily reducing generation steps.\n\nEnter now separates tier and pack Pollen in the balance display and draws from tier Pollen first. Model-specific pricing tables show estimated output per Pollen, and image usage estimates and token tracking were corrected. Publishable-key limits moved to cost-based accounting, with follow-up fixes for refill timing, bucket persistence, and clearer 429 responses.\n\nThe legacy text API stopped inserting referral links by default, then disabled its ad system for regular and streaming responses. Streams now pass through without the wrapper modifying them; an explicit test marker remains available.",
+  "pr_count": 60,
+  "prs": [
+    {
+      "number": 4868,
+      "date": "2025-11-02"
+    },
+    {
+      "number": 4919,
+      "date": "2025-11-02"
+    },
+    {
+      "number": 4920,
+      "date": "2025-11-02"
+    },
+    {
+      "number": 4923,
+      "date": "2025-11-02"
+    },
+    {
+      "number": 4932,
+      "date": "2025-11-03"
+    },
+    {
+      "number": 4953,
+      "date": "2025-11-03"
+    },
+    {
+      "number": 4956,
+      "date": "2025-11-03"
+    },
+    {
+      "number": 4942,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4960,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4967,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4969,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4971,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4973,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4984,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4985,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4990,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4991,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4992,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4996,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4999,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 5002,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 5006,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4951,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 4959,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5008,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5009,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5010,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5011,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5014,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5016,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5017,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5020,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5022,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5025,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5026,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5030,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5032,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5033,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5035,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5038,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5042,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5046,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5047,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5053,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5001,
+      "date": "2025-11-06"
+    },
+    {
+      "number": 5057,
+      "date": "2025-11-06"
+    },
+    {
+      "number": 5067,
+      "date": "2025-11-06"
+    },
+    {
+      "number": 5076,
+      "date": "2025-11-06"
+    },
+    {
+      "number": 5080,
+      "date": "2025-11-06"
+    },
+    {
+      "number": 5054,
+      "date": "2025-11-07"
+    },
+    {
+      "number": 5083,
+      "date": "2025-11-07"
+    },
+    {
+      "number": 5084,
+      "date": "2025-11-07"
+    },
+    {
+      "number": 5085,
+      "date": "2025-11-07"
+    },
+    {
+      "number": 5089,
+      "date": "2025-11-07"
+    },
+    {
+      "number": 5091,
+      "date": "2025-11-07"
+    },
+    {
+      "number": 5096,
+      "date": "2025-11-07"
+    },
+    {
+      "number": 5105,
+      "date": "2025-11-07"
+    },
+    {
+      "number": 5113,
+      "date": "2025-11-08"
+    },
+    {
+      "number": 5116,
+      "date": "2025-11-08"
+    },
+    {
+      "number": 5118,
+      "date": "2025-11-08"
+    }
+  ],
+  "generated_at": "2026-10-17T16:06:32.663108+00:00"
+}

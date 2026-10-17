@@ -32,12 +32,21 @@
     {
       "emoji": "🎨",
       "title": "Seedream 5.0",
-      "text": "New `seedream5` model added for image generation. It's lighter, newer, and available on the [Unified API](https://gen.pollinations.ai)."
+      "text": "New `seedream5` model added for image generation. It's lighter, newer, and available on the [Unified API](https://gen.pollinations.ai).",
+      "prs": [
+        8622
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🚀",
       "title": "Gemini 3.1 Arrives",
-      "text": "Upgraded `gemini-large` to 3.1 Pro and added `nanobanana-2` (Gemini 3.1 Flash) for high-speed image generation."
+      "text": "Upgraded `gemini-large` to 3.1 Pro and added `nanobanana-2` (Gemini 3.1 Flash) for high-speed image generation.",
+      "prs": [
+        8634
+      ],
+      "kind": "model"
     }
-  ]
+  ],
+  "changelog": []
 }

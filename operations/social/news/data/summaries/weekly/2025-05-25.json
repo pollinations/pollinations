@@ -1,0 +1,99 @@
+{
+  "date": "2025-05-25",
+  "period_start": "2025-05-18",
+  "period_end": "2025-05-24",
+  "title": "GPT Image grew from generation to editing",
+  "summary": "Image generation grew into editing, MCP gained a proper authorization flow, and the model and community directories kept expanding.\n\nThe week’s biggest addition was `gptimage`: JPEG generation at up to 1024 pixels per side, followed by editing when a request includes an image. Requests gained low, medium, high and hd quality options, clearer failures, and consistent queue handling. Later fixes narrowed editing inputs: string inputs are fetched as URLs; data URIs, local file paths and direct Buffer inputs are not accepted.\n\nMCP authorization moved from session polling to OAuth 2.1, with PKCE, client registration and refresh tokens. The MCP package also fixed an ES module error when launched with `npx`.\n\nWebSim’s HTML generator gained a `model` query parameter, defaulting to `openai-large`, and now favors single-file output. By week’s end, `openai-large` routed to GPT-4.1 rather than GPT-4.1 Mini, and the `grok` listing pointed to Azure-hosted Grok-3 Mini with tool support. Text-stream changes also improved DeepSeek v3 reasoning output and OpenAI-compatible formatting.\n\nCommunity additions ranged from match-cut video and AI-generated shorts to codebase Q&A, website building, recipes, writing, puzzles, drawing and Telegram bots. Windows Walker brought voice and text commands to Windows actions. The Mirexa AI Chat listing was also clarified and deduplicated.",
+  "pr_count": 22,
+  "prs": [
+    {
+      "number": 1992,
+      "date": "2025-05-18"
+    },
+    {
+      "number": 1988,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2001,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2006,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2007,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2009,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2011,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2013,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2016,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2018,
+      "date": "2025-05-20"
+    },
+    {
+      "number": 2021,
+      "date": "2025-05-20"
+    },
+    {
+      "number": 2023,
+      "date": "2025-05-20"
+    },
+    {
+      "number": 2024,
+      "date": "2025-05-20"
+    },
+    {
+      "number": 2028,
+      "date": "2025-05-20"
+    },
+    {
+      "number": 2033,
+      "date": "2025-05-20"
+    },
+    {
+      "number": 2035,
+      "date": "2025-05-21"
+    },
+    {
+      "number": 2051,
+      "date": "2025-05-22"
+    },
+    {
+      "number": 2057,
+      "date": "2025-05-23"
+    },
+    {
+      "number": 2059,
+      "date": "2025-05-24"
+    },
+    {
+      "number": 2070,
+      "date": "2025-05-24"
+    },
+    {
+      "number": 2073,
+      "date": "2025-05-24"
+    },
+    {
+      "number": 2077,
+      "date": "2025-05-24"
+    }
+  ],
+  "generated_at": "2026-10-17T16:04:27.966518+00:00"
+}

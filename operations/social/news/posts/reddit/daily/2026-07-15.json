@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-15",
+  "period_start": "2026-07-15",
+  "period_end": "2026-07-15",
+  "generated_at": "2026-07-16T06:58:36.544614+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-15/images/reddit.jpg"
+    }
+  ],
+  "title": "Community models, 3D monitoring, and usage fixes",
+  "text": "17 PRs merged today. The main change is that community models can now be kept private while they are being tested, then made public when they are ready. There is also a price floor for community models, so model listings cannot accidentally become an exercise in discovering negative economics.\n\n3D generation is now documented end-to-end and appears in the Model Monitor. The monitor previously had the familiar problem where a capability existed, but the control room had not been informed.\n\nThe Enter dashboard was refactored to use URL routes, which makes navigation less dependent on application state surviving exactly as intended. We also clarified My Models access and updated publisher information.\n\nOn accounting and provider behavior: Vertex image billing fallbacks were removed, upstream Vertex error metadata is preserved, and Veo pricing is now split by resolution. These are small-looking changes that matter when trying to explain a request after it has happened.\n\nDocs were regenerated, the README was updated, and the polli CLI demo video is now embedded in Scalar docs and the README. GPT-5.6 models were also promoted, and renamed GitHub usernames now sync correctly.\n\nCode and PR history: https://github.com/pollinations/pollinations\nDocs: https://pollinations.ai/docs"
+}

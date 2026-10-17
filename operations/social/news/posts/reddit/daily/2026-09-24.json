@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-24",
+  "period_start": "2026-09-24",
+  "period_end": "2026-09-24",
+  "generated_at": "2026-09-25T06:30:38.794899+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-24/images/reddit.jpg"
+    }
+  ],
+  "title": "Eleven merged PRs: Enter, models, and GATEKEEPER",
+  "text": "11 PRs merged today. The largest visible change is a quieter Enter account/dashboard and model-catalog pass: less duplicated content, simpler model health and pricing presentation, and the model-changes card now only reports live changes.\n\nThe earnings endpoints now accept up to 365 days of history, which is useful for anyone doing annual exports instead of repeatedly discovering that time is, in fact, longer than 30 days.\n\nOn the model side, `inclusionai/ling-3.0-flash-vl` now accepts video input (from quest #15318). Grok 4.6 gained xAI Direct as a third fallback, and Fireworks serverless models were moved ahead of the September 25 shutdown.\n\nDeveloper paper cuts: `polli-cli whoami` is now an alias for `auth status`; the README and generated API docs were refreshed.\n\nAlso: GATEKEEPER was added to Games. Its rules are written at runtime, which is either a game mechanic or a compact demonstration of why software needs adult supervision.\n\nPRs: https://github.com/pollinations/pollinations/pulls\nDocs: https://docs.pollinations.ai\nSource: https://github.com/pollinations/pollinations"
+}

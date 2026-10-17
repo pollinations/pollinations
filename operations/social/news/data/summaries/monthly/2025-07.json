@@ -2,9 +2,9 @@
   "date": "2025-07-31",
   "period_start": "2025-07-01",
   "period_end": "2025-07-31",
-  "title": "The community garden filled out",
-  "summary": "July made Pollinations easier to discover and integrate, while expanding image generation and quietly strengthening the systems underneath.\n\nThe project directory grew across games, chat, creative tools, learning, and hack-and-build projects, with listings, links, repositories, and examples kept navigable. Builders now have a much clearer record of what others have made with the stack.\n\nFlux Kontext and the BPAIGen+Kontext hybrid model joined the image API, while image.pollinations.ai began its TypeScript migration. The image pipeline also gained richer request and response traces for keeping the pixels flowing sensibly.\n\nRevamped API documentation, an OpenAPI specification, and MCP client setup guidance made Pollinations easier to inspect, connect, and build against without reconstructing the service from scattered clues.\n\nRouting, authentication, and request capacity received practical attention: Roblox load balancing, shared tier-based concurrency handling, smoother auth flows, and reduced contention in the authentication path. Usage analytics and more precise Pollen accounting rounded out the operational picture.",
-  "pr_count": 59,
+  "title": "The community directory grew",
+  "summary": "July brought more community-built apps into view while image generation, text models, and API access kept changing underneath them.\n\nNew games, chat tools, prompt builders, and coding projects joined the showcase. Broken links, credits, and project tables also got a cleanup.\n\nGemma, GLM-4 9B Chat, and new Llama and Mistral routes joined the roster. OpenAI aliases changed providers and models several times; by month’s end, `openai` routed to GPT-4.1 Nano.\n\n`model=kontext` added Seed-tier text-to-image and image-to-image generation, then gained a BPAIGen-first fallback path and a larger configured size limit. Image requests also gained `guidance_scale`; an OpenAPI spec documented the image API’s existing options.\n\nAnonymous model access was corrected, and text and image requests moved to a shared tier-aware queue. API examples, MCP setup instructions, and authentication lookup work made the system easier to use and less wasteful behind the scenes.",
+  "pr_count": 48,
   "prs": [
     {
       "number": 2713,
@@ -107,10 +107,6 @@
       "date": "2025-07-12"
     },
     {
-      "number": 2998,
-      "date": "2025-07-12"
-    },
-    {
       "number": 2999,
       "date": "2025-07-12"
     },
@@ -167,10 +163,6 @@
       "date": "2025-07-16"
     },
     {
-      "number": 3158,
-      "date": "2025-07-16"
-    },
-    {
       "number": 2888,
       "date": "2025-07-18"
     },
@@ -187,14 +179,6 @@
       "date": "2025-07-18"
     },
     {
-      "number": 3219,
-      "date": "2025-07-22"
-    },
-    {
-      "number": 3229,
-      "date": "2025-07-22"
-    },
-    {
       "number": 3260,
       "date": "2025-07-22"
     },
@@ -203,27 +187,7 @@
       "date": "2025-07-23"
     },
     {
-      "number": 3261,
-      "date": "2025-07-24"
-    },
-    {
-      "number": 3283,
-      "date": "2025-07-29"
-    },
-    {
-      "number": 3349,
-      "date": "2025-07-29"
-    },
-    {
-      "number": 3350,
-      "date": "2025-07-29"
-    },
-    {
       "number": 3351,
-      "date": "2025-07-29"
-    },
-    {
-      "number": 3357,
       "date": "2025-07-29"
     },
     {
@@ -231,17 +195,9 @@
       "date": "2025-07-30"
     },
     {
-      "number": 3365,
-      "date": "2025-07-30"
-    },
-    {
-      "number": 3373,
-      "date": "2025-07-30"
-    },
-    {
       "number": 3384,
       "date": "2025-07-31"
     }
   ],
-  "generated_at": "2026-09-04T15:25:00.951968+00:00"
+  "generated_at": "2026-10-17T16:08:55.275858+00:00"
 }

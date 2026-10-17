@@ -2,20 +2,12 @@
   "date": "2025-11-30",
   "period_start": "2025-11-30",
   "period_end": "2025-11-30",
-  "title": "The community showcase got a much better map",
-  "summary": "A garden-maintenance day: a larger community showcase, clearer account status, and a few less dramatic ways for APIs and databases to behave.\n\nAdded 13 community projects plus ViralFlow AI to the showcase, then refreshed descriptions for xibe-chat-cli, Prompt Vision, Fikiri Chat AI, Samaritan AI, ReThink AI, GPTAI.host, LINE Blessing Images Bot, Pollinations Gallery, AI Stickers Generator, and PDF-to-Speech. More things people built with the API are now easier to find and understand.\n\nFixed tier panels that could show \"Unknown Tier\" and zero daily Pollen, while caching Polar API calls so account checks are less likely to run into rate limits. The account page has been persuaded to report what it actually knows.\n\nfinish_reason values can now pass through even when providers invent a new string, and Llama 3.1 8B on mistral-fast has an explicit max-token limit. Fewer schema arguments with the outside world; more predictable generations.",
-  "pr_count": 18,
+  "title": "More community projects in the showcase",
+  "summary": "The showcase grew, while fixes targeted model validation, tier display, Polar rate limits, and event-record reliability.\n\nThirteen projects were added to the showcase, spanning terminal chat, image galleries, sticker making, a LINE image bot, and PDF-to-speech. ViralFlow AI joined the creative projects list, while descriptions for existing listings became clearer. These are showcase and listing changes, not changes to the apps themselves.\n\nThe Llama 3.1 8B configuration now requests at most 4096 output tokens, below the model’s 8192-token limit. That prevents validation errors caused by the previous default.\n\nCustomer-state and tier routes now reuse cached Polar data to reduce rate-limit errors. A separate lookup fix lets the Tier panel return an active subscription’s tier name and daily Pollen allowance instead of showing “Unknown Tier” and “0 pollen/day.”",
+  "pr_count": 16,
   "prs": [
     {
-      "number": 5457,
-      "date": "2025-11-30"
-    },
-    {
       "number": 5477,
-      "date": "2025-11-30"
-    },
-    {
-      "number": 5479,
       "date": "2025-11-30"
     },
     {
@@ -79,5 +71,7 @@
       "date": "2025-11-30"
     }
   ],
-  "generated_at": "2026-09-04T12:21:13.754624+00:00"
+  "generated_at": "2026-10-17T15:53:43.048905+00:00",
+  "highlights": [],
+  "changelog": []
 }

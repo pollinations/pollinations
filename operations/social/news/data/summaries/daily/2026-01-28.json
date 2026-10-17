@@ -2,20 +2,12 @@
   "date": "2026-01-28",
   "period_start": "2026-01-28",
   "period_end": "2026-01-28",
-  "title": "Kimi moves up to K2.5",
-  "summary": "Kimi got a K2.5 upgrade, error handling became more honest, and the secret-rotation machinery got a needed tune-up.\n\nThe Kimi text model was upgraded to K2.5 through Fireworks AI, bringing the newer model into the unified text endpoint.\n\nBad image fetches now return a clear 400 response rather than a generic server error, while klein-large concurrency was tuned down to avoid memory crashes under load.\n\nEnter tokens were rotated and a hardcoded-token exposure was cleaned up; the rotation script now updates the corresponding Modal secret too. Security maintenance: unglamorous, effective, ideally boring.",
-  "pr_count": 7,
+  "title": "Kimi moves to K2.5",
+  "summary": "Kimi gained image input and a larger context window; vision errors got clearer, and klein-large got a steadier footing.\n\nThe `kimi` endpoint now routes to Kimi K2.5, adding image input and a 256,000-token context window. New aliases include `kimi-k2.5`, `kimi-k2p5`, and `kimi-large`.\n\nFailed image URLs in Claude and Gemini vision requests now return client errors instead of generic 500s, with clearer messages for missing images, access restrictions, oversized files, and other fetch failures.\n\nPurchase options and payment methods are clearer, the beta-Pollen explanation includes examples, and API-key delete controls stay visible while the table scrolls.",
+  "pr_count": 4,
   "prs": [
     {
       "number": 7710,
-      "date": "2026-01-28"
-    },
-    {
-      "number": 7721,
-      "date": "2026-01-28"
-    },
-    {
-      "number": 7722,
       "date": "2026-01-28"
     },
     {
@@ -29,11 +21,19 @@
     {
       "number": 7746,
       "date": "2026-01-28"
-    },
-    {
-      "number": 7754,
-      "date": "2026-01-28"
     }
   ],
-  "generated_at": "2026-09-04T11:46:49.140500+00:00"
+  "generated_at": "2026-10-17T16:01:26.721950+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Kimi gets image input",
+      "text": "Send text and images to `kimi`, now backed by Kimi K2.5 with a 256,000-token context window. [Browse the model](https://enter.pollinations.ai/models?q=kimi).",
+      "prs": [
+        7728
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

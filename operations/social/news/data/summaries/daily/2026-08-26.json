@@ -56,23 +56,40 @@
     {
       "emoji": "🔗",
       "title": "Connect your Discord account",
-      "text": "Link Discord to your Pollinations account, verify hive membership, and claim a 1-Pollen community Quest. [Connect your account](https://enter.pollinations.ai/keys)"
+      "text": "Link Discord to your Pollinations account, verify hive membership, and claim a 1-Pollen community Quest. [Connect your account](https://enter.pollinations.ai/keys)",
+      "prs": [
+        13741,
+        13950
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎬",
       "title": "FFmpeg MCP takes multiple inputs",
-      "text": "Combine separate video, audio, and media files in one MCP job, then get the finished file hosted on Pollinations Media. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)"
+      "text": "Combine separate video, audio, and media files in one MCP job, then get the finished file hosted on Pollinations Media. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)",
+      "prs": [
+        14002
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🔍",
       "title": "Exa Search MCP joins the agent toolbox",
-      "text": "Prompt agents can now search the web and fetch pages through Exa in the shared MCP catalog. The internet remains largely unformatted. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)"
+      "text": "Prompt agents can now search the web and fetch pages through Exa in the shared MCP catalog. The internet remains largely unformatted. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)",
+      "prs": [
+        14013
+      ],
+      "kind": "product"
     },
     {
       "emoji": "💡",
       "title": "Descriptly writes alt-text suggestions for PR images",
       "text": "Use Pollinations vision models to spot changed images in pull requests and propose accessible descriptions. [View repo](https://github.com/g33ky00/descriptly)",
+      "prs": [
+        13969
+      ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

@@ -2,18 +2,16 @@
   "date": "2025-06-15",
   "period_start": "2025-06-15",
   "period_end": "2025-06-15",
-  "title": "Image overlays get their proper mark",
-  "summary": "A small tuning day: clearer image attribution and better visibility into LLM performance.\n\nThe shared pollinations logo is now available for image overlays, giving generated visuals a consistent project signature.\n\nTinybird tracking was added for LLM performance, making it easier to observe how the text stack behaves once it meets actual humans.",
-  "pr_count": 2,
+  "title": "Text requests get compatibility tweaks and performance tracking",
+  "summary": "A text API tune-up tightened model request compatibility and added content-free performance tracking.\n\nRequests to `gpt-4o-mini-search-preview` now use its supported parameters, and Azure Grok requests handle seed values differently. Optional tracking records timing, token usage and outcomes without sending message content; tracking failures do not interrupt generation.",
+  "pr_count": 1,
   "prs": [
     {
       "number": 2425,
       "date": "2025-06-15"
-    },
-    {
-      "number": 2501,
-      "date": "2025-06-15"
     }
   ],
-  "generated_at": "2026-09-04T13:01:39.757087+00:00"
+  "generated_at": "2026-10-17T15:42:30.849818+00:00",
+  "highlights": [],
+  "changelog": []
 }

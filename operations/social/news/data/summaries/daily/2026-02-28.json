@@ -43,5 +43,35 @@
       "date": "2026-02-28"
     }
   ],
-  "generated_at": "2026-03-18T21:49:26.746532+00:00"
+  "generated_at": "2026-03-18T21:49:26.746532+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "MiniMax moves to M2.5",
+      "text": "Generate text with MiniMax M2.5; legacy M2.1 access remains available. [Browse models](https://enter.pollinations.ai/models?q=minimax).",
+      "prs": [
+        8617
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "💡",
+      "title": "Check model context windows",
+      "text": "Read `context_window` in `/v1/models` to see the token limit for each text model. [Browse the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        8688
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Delete media uploads",
+      "text": "A DELETE endpoint gives apps a way to remove media uploads through the API. [Browse the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        8655
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

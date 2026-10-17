@@ -1,0 +1,135 @@
+{
+  "date": "2026-01-25",
+  "period_start": "2026-01-18",
+  "period_end": "2026-01-24",
+  "title": "Images gained motion, and the model shelf grew",
+  "summary": "New media models landed while usage, checkout, and API-key behavior became easier to inspect and less likely to fail for the wrong reason.\n\nWan 2.6 was added as `wan` for 720p image-to-video clips lasting 2–15 seconds, with optional auto-dubbed audio. `klein-large` brought 9B image generation and reference-image editing under a non-commercial license, while `gemini-legacy` added Gemini 2.5 Pro with a 1M-token context window and multimodal inputs. Image work also clarified z-image output limits and aligned Klein editing requests around query parameters and JSON arrays of reference images.\n\nEnter gained daily graphs for requests and Pollen spending, with time ranges, API-key and model filters, and CSV exports. A daily usage API returns breakdowns by date, model, and billing source. Account profiles gained `nextResetAt` for the next daily Pollen reset, and apps gained `GET /api/account/key` to check a key’s expiry, permissions, budget, and rate-limit status without generating anything.\n\nPollen pack checkout moved through Polar before Stripe replaced it on the pack buttons later in the week. Stripe checkout was added for $5, $10, $20, and $50 packs, with promotion codes, tax handling, VAT IDs, and invoices; existing crypto balances were preserved when crypto purchases were removed. Insufficient Pollen and exhausted key budgets now return HTTP 402, leaving 403 for access denied.\n\nImage requests without a model parameter use the default again. Claude Sonnet 4.5 and Opus 4.5 fallbacks supply the `max_tokens` value Vertex AI requires, and Claude fallbacks convert remote image URLs for Vertex AI and Bedrock. API-key verification was raised to 10,000 requests per second; rate limits now return 429 rather than resembling invalid keys. Model Monitor also separates billing and access errors from model health.",
+  "pr_count": 31,
+  "prs": [
+    {
+      "number": 7355,
+      "date": "2026-01-18"
+    },
+    {
+      "number": 7411,
+      "date": "2026-01-18"
+    },
+    {
+      "number": 7431,
+      "date": "2026-01-18"
+    },
+    {
+      "number": 7437,
+      "date": "2026-01-18"
+    },
+    {
+      "number": 7062,
+      "date": "2026-01-19"
+    },
+    {
+      "number": 7438,
+      "date": "2026-01-19"
+    },
+    {
+      "number": 7457,
+      "date": "2026-01-19"
+    },
+    {
+      "number": 7462,
+      "date": "2026-01-19"
+    },
+    {
+      "number": 7467,
+      "date": "2026-01-19"
+    },
+    {
+      "number": 7475,
+      "date": "2026-01-19"
+    },
+    {
+      "number": 7054,
+      "date": "2026-01-20"
+    },
+    {
+      "number": 7478,
+      "date": "2026-01-20"
+    },
+    {
+      "number": 7499,
+      "date": "2026-01-20"
+    },
+    {
+      "number": 7484,
+      "date": "2026-01-21"
+    },
+    {
+      "number": 7513,
+      "date": "2026-01-21"
+    },
+    {
+      "number": 7518,
+      "date": "2026-01-21"
+    },
+    {
+      "number": 7522,
+      "date": "2026-01-21"
+    },
+    {
+      "number": 7523,
+      "date": "2026-01-21"
+    },
+    {
+      "number": 7533,
+      "date": "2026-01-21"
+    },
+    {
+      "number": 7538,
+      "date": "2026-01-21"
+    },
+    {
+      "number": 7552,
+      "date": "2026-01-22"
+    },
+    {
+      "number": 7495,
+      "date": "2026-01-23"
+    },
+    {
+      "number": 7601,
+      "date": "2026-01-23"
+    },
+    {
+      "number": 7610,
+      "date": "2026-01-23"
+    },
+    {
+      "number": 7613,
+      "date": "2026-01-23"
+    },
+    {
+      "number": 7609,
+      "date": "2026-01-24"
+    },
+    {
+      "number": 7614,
+      "date": "2026-01-24"
+    },
+    {
+      "number": 7617,
+      "date": "2026-01-24"
+    },
+    {
+      "number": 7624,
+      "date": "2026-01-24"
+    },
+    {
+      "number": 7629,
+      "date": "2026-01-24"
+    },
+    {
+      "number": 7631,
+      "date": "2026-01-24"
+    }
+  ],
+  "generated_at": "2026-10-17T16:07:26.684619+00:00"
+}

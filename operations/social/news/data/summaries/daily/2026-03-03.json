@@ -24,7 +24,12 @@
     {
       "emoji": "🚀",
       "title": "Suno v5, Flux 2 Dev & Step 3.5 Flash",
-      "text": "We wired up three new models. Generate music, pixels, and text through the [Unified API](https://gen.pollinations.ai) without changing your integration."
+      "text": "We wired up three new models. Generate music, pixels, and text through the [Unified API](https://gen.pollinations.ai) without changing your integration.",
+      "prs": [
+        8774
+      ],
+      "kind": "model"
     }
-  ]
+  ],
+  "changelog": []
 }

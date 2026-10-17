@@ -2,8 +2,8 @@
   "date": "2025-03-20",
   "period_start": "2025-03-20",
   "period_end": "2025-03-20",
-  "title": "Text API gets another model and a cache",
-  "summary": "A small text-and-audio tooling day: Groq Qwen support, cached text responses, and a Python audio example.\n\ntext.pollinations.ai now supports Groq Qwen, while Cloudflare caching helps repeat text requests return with less waiting around.\n\nThe API docs now include a Python example for audio interaction with the OpenAI model, so developers have one less endpoint-shaped mystery to solve.",
+  "title": "More options for text and vision",
+  "summary": "Qwen reasoning joined the model list, Mistral gained a vision-capable backend, and the text API got a cache Worker.\n\nAdded `qwen-reasoning` (Qwen QWQ 32B) through Groq and changed `mistral` to vision-capable Mistral Small 3.1 2503. Mistral-based personas use the new handler too.\n\nAdded a Python API example that sends a base64-encoded WAV file to `openai-audio` as `input_audio` and prints the transcription.\n\nAdded a text API Worker that can return cached responses from R2 and send cache misses to the origin. Image-request analytics also moved to the image cache Worker, where cache hits and generation outcomes can be recorded separately.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,5 +19,26 @@
       "date": "2025-03-20"
     }
   ],
-  "generated_at": "2026-09-04T12:12:39.539951+00:00"
+  "generated_at": "2026-10-17T15:36:04.699651+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Qwen reasoning added",
+      "text": "Use `qwen-reasoning` for Qwen QWQ 32B through the text API. [Browse the model](https://enter.pollinations.ai/models?q=qwen-reasoning).",
+      "prs": [
+        1400
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Mistral gets vision",
+      "text": "`mistral` now uses vision-capable Mistral Small 3.1 2503. [Browse the model](https://enter.pollinations.ai/models?q=mistral).",
+      "prs": [
+        1400
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

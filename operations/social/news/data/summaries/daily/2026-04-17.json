@@ -32,19 +32,31 @@
     {
       "emoji": "🚀",
       "title": "Polli CLI hits v0.1.0",
-      "text": "The terminal client is officially stable. It now streams text by default, formats tables without breaking your terminal, and plays audio directly via the new `--play` flag."
+      "text": "The terminal client is officially stable. It now streams text by default, formats tables without breaking your terminal, and plays audio directly via the new `--play` flag.",
+      "prs": [
+        10282,
+        10287
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🧠",
       "title": "Flashlearn",
       "text": "Turn your documents into true/false flashcards and AI audio lessons. Because reading is hard. [Try it](http://flashlearn.asquareportal.com/)",
+      "prs": [
+        10289
+      ],
       "kind": "app"
     },
     {
       "emoji": "📱",
       "title": "Ciel AI",
       "text": "A full-featured, mobile-first AI assistant powered entirely by our API. Good inspiration for your own mobile builds. [Try it](https://ciel-ai-v1.netlify.app)",
+      "prs": [
+        10290
+      ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

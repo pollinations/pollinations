@@ -20,7 +20,12 @@
     {
       "emoji": "🎨",
       "title": "gptimage-2 is Live",
-      "text": "OpenAI's new `gptimage-2` model is now available on the [image generation API](https://gen.pollinations.ai/image/models). Generate fresh pixels with zero price markup."
+      "text": "OpenAI's new `gptimage-2` model is now available on the [image generation API](https://gen.pollinations.ai/image/models). Generate fresh pixels with zero price markup.",
+      "prs": [
+        10402
+      ],
+      "kind": "model"
     }
-  ]
+  ],
+  "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2025-07-05",
   "period_start": "2025-07-05",
   "period_end": "2025-07-05",
-  "title": "Websim gets a cleaner home and Bearer authentication",
-  "summary": "A small infrastructure day: cleaner Websim auth and shared concurrency plumbing.\n\nwebsim.pollinations.ai was moved into the root directory and now uses Bearer auth, making the service layout and access path more consistent.\n\nTier-based concurrency logic was extracted into a shared ipQueue module, giving services one reusable way to manage request capacity instead of growing their own queue ecosystems.",
+  "title": "Text and image requests share a tier-aware queue",
+  "summary": "Shared tier-aware queueing gives token-backed image requests more room, while Websim gains optional authenticated text API calls.\n\nConcurrency caps moved into a shared IP queue for text and image requests: 1 for anonymous requests, 3 for seed, 10 for flower, and 30 for nectar. Token-backed image requests are no longer restricted to one concurrent request, and nectar requests no longer bypass the queue.\n\nToken-backed text requests retain a one-second queue interval, while image requests keep a zero-second interval. Token and referrer lookups are cached for 30 seconds.\n\nWebsim moved into its own top-level directory, and its worker can send authenticated text API requests when configured. Requests remain token-free otherwise.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,5 +15,7 @@
       "date": "2025-07-05"
     }
   ],
-  "generated_at": "2026-09-04T12:04:44.904953+00:00"
+  "generated_at": "2026-10-17T15:43:30.178961+00:00",
+  "highlights": [],
+  "changelog": []
 }

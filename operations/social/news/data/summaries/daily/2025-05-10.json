@@ -2,8 +2,8 @@
   "date": "2025-05-10",
   "period_start": "2025-05-10",
   "period_end": "2025-05-10",
-  "title": "The project garden got two new entries",
-  "summary": "A documentation-and-community day: clearer audio and MCP guidance, plus two more projects in the garden.\n\nAiphoto智能绘画 and the SingodiyaTech bot were added to the community project list, making two more things people have built with pollinations easier to find.\n\nThe audio response-format documentation was corrected, while the MCP server docs were trimmed and now point builders toward MCPollinations as an alternative. Documentation: where software admits what it actually does.",
+  "title": "Two community projects join the directory",
+  "summary": "Two community projects joined the directory, while the MCP and audio guides got more useful.\n\nThe project lists now include Aiphoto智能绘画, which makes images from Chinese-language descriptions, and SingodiyaTech, a Telegram bot offering AI features.\n\nThe MCP guides now list Pink Pixel’s community-maintained MCPollinations server alongside the official server, with installation details. The website guide also drops an outdated Node.js image and audio example.\n\nThe text-to-speech POST docs now show that `/openai` returns JSON containing base64-encoded audio at `choices[0].message.audio.data`, rather than a raw MP3. The cURL, Python, and JavaScript examples show how to decode it.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,5 +23,7 @@
       "date": "2025-05-10"
     }
   ],
-  "generated_at": "2026-09-04T12:39:48.346576+00:00"
+  "generated_at": "2026-10-17T15:39:17.980797+00:00",
+  "highlights": [],
+  "changelog": []
 }

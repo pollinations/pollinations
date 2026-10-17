@@ -76,22 +76,41 @@
     {
       "emoji": "✨",
       "title": "Public media galleries",
-      "text": "Tag an upload to publish it in a shareable, newest-first gallery at `GET /media?tag=`; leave it untagged and it stays private. [API Docs](https://gen.pollinations.ai/docs)"
+      "text": "Tag an upload to publish it in a shareable, newest-first gallery at `GET /media?tag=`; leave it untagged and it stays private. [API Docs](https://gen.pollinations.ai/docs)",
+      "prs": [
+        12277
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🚀",
       "title": "GPT Image models rerouted",
-      "text": "`gptimage`, `gptimage-large`, and `gpt-image-2` now use dedicated Azure routes with regional failover, so image generations and edits have somewhere else to go when one garden closes."
+      "text": "`gptimage`, `gptimage-large`, and `gpt-image-2` now use dedicated Azure routes with regional failover, so image generations and edits have somewhere else to go when one garden closes.",
+      "prs": [
+        12430,
+        12467,
+        12470
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🌟",
       "title": "Model speed, measured properly",
-      "text": "Model Monitor now sorts models by streamed completion throughput in tokens per second. Less folklore, more `tok/s`. [Check the monitor](https://model-monitor.pollinations.ai)"
+      "text": "Model Monitor now sorts models by streamed completion throughput in tokens per second. Less folklore, more `tok/s`. [Check the monitor](https://model-monitor.pollinations.ai)",
+      "prs": [
+        12287
+      ],
+      "kind": "product"
     },
     {
       "emoji": "💡",
       "title": "Seeds reach the SDK API",
-      "text": "`@pollinations/sdk` now forwards seeds to Gen, giving SDK users reproducible generations without client-side retry roulette. [View package](https://www.npmjs.com/package/@pollinations/sdk)"
+      "text": "`@pollinations/sdk` now forwards seeds to Gen, giving SDK users reproducible generations without client-side retry roulette. [View package](https://www.npmjs.com/package/@pollinations/sdk)",
+      "prs": [
+        12457
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

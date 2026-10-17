@@ -79,5 +79,17 @@
       "date": "2026-06-27"
     }
   ],
-  "generated_at": "2026-09-04T11:58:08.599297+00:00"
+  "generated_at": "2026-09-04T11:58:08.599297+00:00",
+  "highlights": [
+    {
+      "emoji": "🎯",
+      "title": "Quest rewards dashboard",
+      "text": "A new dashboard Worker provides real-time Quest and Pollen reward data from the rewards ledger.",
+      "prs": [
+        12012
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

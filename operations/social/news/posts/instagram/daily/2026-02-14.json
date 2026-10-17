@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-02-14",
+  "period_start": "2026-02-14",
+  "period_end": "2026-02-14",
+  "generated_at": "2026-03-18T21:36:09.859613+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-14/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-14/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-14/images/instagram-3.jpg"
+    }
+  ],
+  "text": "A few things shipped this week. Grok learned how to turn images into video, and we gave the Wan video model a safety net (DashScope fallback) so it stops falling over when you need it. GPT image editing is back online and doing its thing. Oh, and OpenClaw documentation is finally generalized and has a permanent home in the apps section.\n\nEverything is live via the API. Check the repo for the code.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #generativeai #webdev #aiart #buildinpublic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

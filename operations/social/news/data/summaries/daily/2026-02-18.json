@@ -32,17 +32,30 @@
     {
       "emoji": "📅",
       "title": "Build Diary",
-      "text": "The [Community page](https://hello.pollinations.ai) now features an interactive timeline of the project's history. Navigate daily changes and digests with keyboard controls."
+      "text": "The [Community page](https://hello.pollinations.ai) now features an interactive timeline of the project's history. Navigate daily changes and digests with keyboard controls.",
+      "prs": [
+        8366
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🐛",
       "title": "Readable Errors",
-      "text": "The [API](https://gen.pollinations.ai) now extracts actual human-readable messages from upstream JSON errors. No more raw dumps when providers fail."
+      "text": "The [API](https://gen.pollinations.ai) now extracts actual human-readable messages from upstream JSON errors. No more raw dumps when providers fail.",
+      "prs": [
+        8379
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🌱",
       "title": "Seed Tier Logic",
-      "text": "GitHub activity qualification now uses a rolling 90-day window instead of resetting yearly. Your status is safe in January."
+      "text": "GitHub activity qualification now uses a rolling 90-day window instead of resetting yearly. Your status is safe in January.",
+      "prs": [
+        8385
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

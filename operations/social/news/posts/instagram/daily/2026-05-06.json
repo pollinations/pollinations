@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-05-06",
+  "period_start": "2026-05-06",
+  "period_end": "2026-05-06",
+  "generated_at": "2026-05-07T06:56:34.210839+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-06/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-06/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-06/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Two quiet but important updates to the infra this week.\n\nFirst: we fixed BYOP attribution. If you build something cool, you should actually get the credit when people use it. That's persisting properly now.\n\nSecond: smarter text routing and automated key rotation across OpenRouter, DeepInfra, and AWS. The engine just juggles the resources automatically now. Less hiccups, smoother generation, no manual key wrangling required.\n\nCode is open as always. Link in bio if you want to poke around the repo.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #backenddev #buildinpublic #infrastructure #techart",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

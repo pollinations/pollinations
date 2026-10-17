@@ -2,8 +2,8 @@
   "date": "2025-04-16",
   "period_start": "2025-04-16",
   "period_end": "2025-04-16",
-  "title": "The project directory got easier to navigate",
-  "summary": "A tidy day: clearer project discovery, fresher Python docs, and a less cluttered model shelf.\n\nVibeCoder now lives under Tools & Interfaces, and Generator Text AI joined the project list. Two small map updates for a growing garden of things people have built.\n\nThe website's Python SDK example was updated so developers have a fresher starting point when making their first API call.\n\nRedundant LLM model entries were removed, leaving a cleaner set of choices behind the unified text endpoint.",
+  "title": "A smaller text model catalog",
+  "summary": "A catalog cleanup, a new community listing, and a Python example that matches the SDK.\n\nRemoved llamalight, llama-vision, llama-scaleway, and pixtral from the text model list. Mistral remains listed for text-and-image input.\n\nAdded @ayick13’s Indonesian-language Generator Text AI to the project directory and moved @Aashir__Shaikh’s VibeCoder into Tools & Interfaces. VibeCoder itself and its links are unchanged.\n\nUpdated the website example to create a `pollinations.Image` with the selected model and image settings, then call `Generate(prompt=..., save=True)`.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,5 +23,7 @@
       "date": "2025-04-16"
     }
   ],
-  "generated_at": "2026-09-04T12:28:41.166043+00:00"
+  "generated_at": "2026-10-17T15:37:54.544992+00:00",
+  "highlights": [],
+  "changelog": []
 }

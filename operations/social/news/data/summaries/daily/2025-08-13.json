@@ -2,8 +2,8 @@
   "date": "2025-08-13",
   "period_start": "2025-08-13",
   "period_end": "2025-08-13",
-  "title": "Clearer handling when things go sideways",
-  "summary": "A small resilience pass: clearer errors and a fresh sync with master.\n\nError handling was tightened up and the latest upstream changes were merged in, making the affected flow more resilient when software inevitably encounters reality.",
+  "title": "Two GPT-5 options added to the text API",
+  "summary": "Two GPT-5 options joined the text API, alongside model-routing changes and sturdier error handling.\n\nAdded text-only `gpt5` for the nectar tier and `gpt-5-nano` for anonymous use. Both support tools; Nano also accepts image input.\n\nMapped `deepseek-reasoning` to DeepSeek R1 0528 on Vertex AI. `openai-large` moved from flower to seed, with its maximum input reduced from 9,000 to 5,000 characters.\n\nThe text service now catches failures while sending error responses, and the OpenAI-compatible client passes the model key to request transforms and adds error diagnostics. The chance of adding a referral link also dropped from 8% to 3%.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,26 @@
       "date": "2025-08-13"
     }
   ],
-  "generated_at": "2026-09-04T12:21:16.634759+00:00"
+  "generated_at": "2026-10-17T15:45:21.247741+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "GPT-5 for text",
+      "text": "Use `gpt5` for text-only requests with tool support on the nectar tier. [Browse the model](https://enter.pollinations.ai/models?q=gpt5).",
+      "prs": [
+        3661
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "GPT-5 Nano for anonymous use",
+      "text": "Use `gpt-5-nano` without signing in for text or image input, with tool support. [Browse the model](https://enter.pollinations.ai/models?q=gpt-5-nano).",
+      "prs": [
+        3661
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

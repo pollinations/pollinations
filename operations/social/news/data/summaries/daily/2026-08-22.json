@@ -151,5 +151,26 @@
       "date": "2026-08-22"
     }
   ],
-  "generated_at": "2026-09-04T11:53:02.600970+00:00"
+  "generated_at": "2026-09-04T11:53:02.600970+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Pollen Image Studio",
+      "text": "Make images in an online studio powered by the Pollinations image API. [Try it](https://image.lanprint.com).",
+      "prs": [
+        13673
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Dery Lau AI",
+      "text": "Make images together in this collaborative app built with the Pollinations image API. [Try it](https://derylau.my.id).",
+      "prs": [
+        13711
+      ],
+      "kind": "app"
+    }
+  ],
+  "changelog": []
 }

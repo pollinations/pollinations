@@ -2,14 +2,10 @@
   "date": "2025-12-04",
   "period_start": "2025-12-04",
   "period_end": "2025-12-04",
-  "title": "The app garden added 13 new projects",
-  "summary": "A community-heavy day: 13 new apps in the directory, broader model coverage, sturdier media routes, and a cleaner contributor workflow.\n\nThe community directory picked up a substantial batch of things people built: creative tools including ViralFlow AI, SAGE, LineSketch AI, Thelas.ia, Ecoverse AI, Cinepoca, and a Gemini Telegram bot; chat projects including Debootai, HelpChatGPT, MindFlow, and SimplifyMind AI; plus Godville Heroic Moment, TeleChars AI, and more. The ecosystem continues to be a surprisingly effective index of what people do with a URL and insufficient sleep.\n\nBoth Seedream and Seedance model variants are now available, while fixes improved Bedrock token handling, audio-model detection, and image prompts containing newlines. Audio users also get clearer migration guidance as model support evolves.\n\nGitHub issue handling was tidied up: COMMUNITY became INBOX, app submissions are kept out of the general flow, external issues receive the correct inbox label, and submission templates point to the right place. Polly, an issue-creation helper bot, joined the maintenance crew.",
-  "pr_count": 25,
+  "title": "More control over Seedream and Seedance",
+  "summary": "Seedream and Seedance gained clearer model choices, audio and prompt requests got more predictable, and thirteen community projects joined the directory.\n\nSeedream and Seedance gained separate standard and pro choices. `seedream` selects Seedream 4.0, while `seedream-pro` selects 4.5 with 4K and multi-image support. For video, `seedance` selects Lite and `seedance-pro` selects Pro-Fast; both support text-to-video and image-to-video. Seedance usage is now represented in video tokens across model listings, usage headers and Enter pricing.\n\nSimple GET text requests now recognize audio-output models and request audio, fixing 400 responses for models such as `openai-audio`. That model's input limit was reduced to 2,500 characters and its completion limit to 512 tokens. Errors point to Enter for full audio capabilities, and the auth page notes a planned move by Dec. 8.\n\nThirteen community projects joined the directories, spanning line art, video creation, social posting, note-taking, chat, Telegram characters, waste identification and a Godville browser extension. The Projects page submission button was also corrected to open the current app-submission template.",
+  "pr_count": 19,
   "prs": [
-    {
-      "number": 5566,
-      "date": "2025-12-04"
-    },
     {
       "number": 5604,
       "date": "2025-12-04"
@@ -35,15 +31,7 @@
       "date": "2025-12-04"
     },
     {
-      "number": 5627,
-      "date": "2025-12-04"
-    },
-    {
       "number": 5629,
-      "date": "2025-12-04"
-    },
-    {
-      "number": 5631,
       "date": "2025-12-04"
     },
     {
@@ -59,23 +47,11 @@
       "date": "2025-12-04"
     },
     {
-      "number": 5642,
-      "date": "2025-12-04"
-    },
-    {
       "number": 5644,
       "date": "2025-12-04"
     },
     {
       "number": 5648,
-      "date": "2025-12-04"
-    },
-    {
-      "number": 5652,
-      "date": "2025-12-04"
-    },
-    {
-      "number": 5654,
       "date": "2025-12-04"
     },
     {
@@ -107,5 +83,26 @@
       "date": "2025-12-04"
     }
   ],
-  "generated_at": "2026-09-04T12:24:06.004469+00:00"
+  "generated_at": "2026-10-17T15:54:32.688071+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Two Seedream choices",
+      "text": "Choose `seedream` for Seedream 4.0, or `seedream-pro` for 4.5 with 4K and multi-image support. [Explore Seedream Pro](https://enter.pollinations.ai/models?q=seedream-pro).",
+      "prs": [
+        5616
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Seedance Lite or Pro",
+      "text": "Generate from text or images with `seedance` for Lite or `seedance-pro` for Pro-Fast. Both default to 720p and five seconds, with a ten-second maximum. [Explore Seedance Pro](https://enter.pollinations.ai/models?q=seedance-pro).",
+      "prs": [
+        5616
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

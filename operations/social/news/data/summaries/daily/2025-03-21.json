@@ -2,8 +2,8 @@
   "date": "2025-03-21",
   "period_start": "2025-03-21",
   "period_end": "2025-03-21",
-  "title": "MCP can generate images, with docs to prove it",
-  "summary": "A small but useful day: MCP learned to make images, its docs got clearer, and o3-mini gained a thinking dial.\n\nMCP gained image generation support, and the documentation now includes a screenshot so people can see the setup before asking their agent to make pixels.\n\no3-mini now accepts a reasoning_effort parameter, giving builders a direct knob for how much thinking they want from the model.",
+  "title": "Image generation gets an MCP server",
+  "summary": "Assistants gained image-generation tools, while the text API learned to parse a reasoning-effort setting.\n\nAdded an MCP server for assistants such as Claude. Its tools create image URLs, fetch images as base64, and list available image models. Generation accepts a prompt with optional model, seed, width, and height.\n\nThe text API parser now extracts `reasoning_effort` from requests. Documentation describes `low`, `medium`, and `high` for `openai-reasoning` (o3-mini); the supplied change does not establish that the value reaches the model provider.\n\nRenamed the MCP package and command to `pollinations-model-context-protocol`, updated setup instructions, and added interface screenshots. The audio documentation also gained a link for exploring voices.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,5 +19,18 @@
       "date": "2025-03-21"
     }
   ],
-  "generated_at": "2026-09-04T12:13:15.501100+00:00"
+  "generated_at": "2026-10-17T15:36:07.067124+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Images through MCP",
+      "text": "Assistants such as Claude can use MCP tools to create image URLs, fetch images, and list image models. Generation supports optional model, seed, and size settings. [Explore the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        1407,
+        1409
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

@@ -23,5 +23,35 @@
       "date": "2026-02-13"
     }
   ],
-  "generated_at": "2026-03-18T21:29:41.035981+00:00"
+  "generated_at": "2026-03-18T21:29:41.035981+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "GLM moves to version 5",
+      "text": "Use Z.ai's GLM-5 for text generation, replacing GLM 4.7. [Find GLM-5](https://enter.pollinations.ai/models?q=GLM-5).",
+      "prs": [
+        8206
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Scribe v2 transcription",
+      "text": "Transcribe speech with ElevenLabs Scribe v2 through an OpenAI-compatible API. [Find Scribe v2](https://enter.pollinations.ai/models?q=Scribe%20v2).",
+      "prs": [
+        8208
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Consistent video resolutions",
+      "text": "Choose video resolution through a unified system across Wan, Veo, Grok and LTX-2. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        8210
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

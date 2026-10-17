@@ -2,8 +2,8 @@
   "date": "2025-03-05",
   "period_start": "2025-03-05",
   "period_end": "2025-03-05",
-  "title": "Audio generation arrives through the text API",
-  "summary": "A text API day that quietly became an audio API too, with streaming sound and sturdier tools for chat agents.\n\ntext.pollinations.ai gained audio model support and PCM16 streaming output, with follow-up fixes to make the stream usable in practice. Send text, receive audio; software remains determined to make every interface eventually produce sound.\n\nThe API documentation now covers audio generation, and the README's audio-model link leads there instead of making builders forage through the repository.\n\nFunction-calling tool parameters were fixed, while search-tool handling received a round of improvements and follow-up repairs. Agents can spend a little less time arguing with their own tool schema.",
+  "title": "Audio generation gets voices and streaming",
+  "summary": "Audio generation gained voices and PCM16 streaming, while function calling and search got more predictable.\n\nAdded `openai-audio` to the text API with a selectable voice and binary audio responses. Streaming defaults to PCM16, while non-streaming defaults to MP3; requests can specify their own audio settings, including format. The audio docs and README now show how to use it.\n\nThe text API now forwards `tools` and `tool_choice` from chat request bodies, so function-calling requests retain the parameters they need.\n\nSearch requests now give Polly the current date when no system message is supplied, preserve options such as response format on follow-up requests, and use sequential tool calls. The search flow uses its default search tool and automatic tool selection rather than caller-supplied tools; the scrape tool is no longer part of that flow.",
   "pr_count": 9,
   "prs": [
     {
@@ -43,5 +43,28 @@
       "date": "2025-03-05"
     }
   ],
-  "generated_at": "2026-09-04T12:03:26.528176+00:00"
+  "generated_at": "2026-10-17T15:34:52.463324+00:00",
+  "highlights": [
+    {
+      "emoji": "🎵",
+      "title": "Audio joins the text API",
+      "text": "Generate speech with `openai-audio` and choose a voice; `alloy` is the default. [Explore the model](https://enter.pollinations.ai/models?q=openai-audio).",
+      "prs": [
+        1269,
+        1271
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "Stream audio as PCM16",
+      "text": "Streaming `openai-audio` requests default to PCM16, while non-streaming requests default to MP3. You can also supply your own audio format and voice settings. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        1273,
+        1274
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

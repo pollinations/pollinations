@@ -2,18 +2,10 @@
   "date": "2026-01-14",
   "period_start": "2026-01-14",
   "period_end": "2026-01-14",
-  "title": "A cleaner path through authorization",
-  "summary": "A tuning day: smoother authorization, refreshed DeepSeek serving, cleaner developer tooling, and fewer unnecessary pipes.\n\nThe authorize page got a UI pass, while publishable-key protections were corrected to keep access predictable and shared resources healthy.\n\nDeepSeek V3.2 was migrated to Fireworks AI, keeping the model available through Pollinations' single text endpoint while refreshing its serving path.\n\nPolliDev joined the developer-tools lineup, and a gradual Biome adoption plan landed to modernize formatting and linting without detonating the codebase in one go.",
-  "pr_count": 8,
+  "title": "Clearer app authorization and key guidance",
+  "summary": "Clearer authorization, a new developer-tool listing, and a provider change for DeepSeek V3.2.\n\nThe authorization page now lists text, image, audio, and video permissions alongside Pollen balance, key expiry, and model access. API-key guidance was also corrected across the docs and product surfaces: publishable keys are described as limited to 1 Pollen per IP per hour, and both key types spend from the account balance. The rate-limit behavior itself did not change.\n\nPolliDev, a tool for managing generative image assets and prompts, was added to the Dev_Tools catalog and README showcase. The YouTube MASHINA showcase entry was removed.\n\nDeepSeek V3.2 now routes through Fireworks AI in the shared model registry and text API. Its `deepseek-v3` and `deepseek-reasoning` aliases remain; provider-specific token overrides were also removed for GLM-4.7 and MiniMax M2.1.",
+  "pr_count": 4,
   "prs": [
-    {
-      "number": 7078,
-      "date": "2026-01-14"
-    },
-    {
-      "number": 7230,
-      "date": "2026-01-14"
-    },
     {
       "number": 7239,
       "date": "2026-01-14"
@@ -23,15 +15,7 @@
       "date": "2026-01-14"
     },
     {
-      "number": 7275,
-      "date": "2026-01-14"
-    },
-    {
       "number": 7283,
-      "date": "2026-01-14"
-    },
-    {
-      "number": 7284,
       "date": "2026-01-14"
     },
     {
@@ -39,5 +23,7 @@
       "date": "2026-01-14"
     }
   ],
-  "generated_at": "2026-09-04T11:35:01.258618+00:00"
+  "generated_at": "2026-10-17T15:59:14.526042+00:00",
+  "highlights": [],
+  "changelog": []
 }

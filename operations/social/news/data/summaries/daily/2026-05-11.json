@@ -20,7 +20,12 @@
     {
       "emoji": "📈",
       "title": "Developer Earnings Dashboard",
-      "text": "Track the Pollen your apps are generating. Visualize daily earnings, active users, and top-performing apps directly in the [Dashboard](https://enter.pollinations.ai)."
+      "text": "Track the Pollen your apps are generating. Visualize daily earnings, active users, and top-performing apps directly in the [Dashboard](https://enter.pollinations.ai).",
+      "prs": [
+        10727
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

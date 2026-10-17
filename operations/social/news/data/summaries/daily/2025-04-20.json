@@ -2,8 +2,8 @@
   "date": "2025-04-20",
   "period_start": "2025-04-20",
   "period_end": "2025-04-20",
-  "title": "Cleaner model metadata and a fresher project garden",
-  "summary": "A small garden-maintenance day: fresher model records, another community project, and sharper bad-traffic detection.\n\nLLM metadata now carries current versions and dates, while RuangRiung AI Image Generator joins the growing list of projects built with pollinations.\n\nReferrer and origin headers can now identify known bad domains with a 100% ad probability, giving traffic handling a clearer signal when the robots arrive wearing fake moustaches.",
+  "title": "RuangRiung joins the project catalog",
+  "summary": "A quieter day: a bilingual image app joined the catalog, while text API ad controls and agent-readable API metadata got updates.\n\nThe project catalog added RuangRiung AI Image Generator, a web app that supports Indonesian and English.\n\nText API ad selection gained configurable domain matching for referrer headers, with a fallback to origin information when no referrer is present. Matching domains can be selected for ads on every request.\n\nFive public resources now describe API endpoints, models, capabilities, and usage for AI agents and developers, including llms.txt, agents.json, arazzo.json, and mcp.json.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,5 +19,7 @@
       "date": "2025-04-20"
     }
   ],
-  "generated_at": "2026-09-04T12:29:57.889487+00:00"
+  "generated_at": "2026-10-17T15:38:11.358208+00:00",
+  "highlights": [],
+  "changelog": []
 }

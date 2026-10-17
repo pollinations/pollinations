@@ -2,8 +2,8 @@
   "date": "2025-10-18",
   "period_start": "2025-10-18",
   "period_end": "2025-10-18",
-  "title": "Creative projects and side utilities get a little more room",
-  "summary": "A small garden day: one new creative project in the directory and groundwork for useful side tools.\n\nThe creative projects list now includes Green Hope AI, while backend groundwork landed for side utilities. More things to explore; less reason for them to live in a drawer.",
+  "title": "Green Hope AI joins the creative projects list",
+  "summary": "Two community contributions: an editable thumbnail project for the showcase and a standalone email utility.\n\nGreen Hope AI was added to the creative projects list. It generates thumbnails and lets people adjust text, placement, styles, and effects without starting over.\n\nJay-1409 added a separate Next.js utility for sending custom and welcome emails through Brevo or Resend, with reusable templates for other messages. It is not connected to existing Pollinations services.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,5 +15,7 @@
       "date": "2025-10-18"
     }
   ],
-  "generated_at": "2026-09-04T12:49:28.050158+00:00"
+  "generated_at": "2026-10-17T15:49:01.444718+00:00",
+  "highlights": [],
+  "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2025-01-03",
   "period_start": "2025-01-03",
   "period_end": "2025-01-03",
-  "title": "Image generation gets a performance tune-up",
-  "summary": "A focused image-infrastructure day: faster generation paths, clearer progress signals, and more dependable worker coordination.\n\nImage generation gained profiling and optimization work to identify slow paths and make the pixel factory move with less ceremony.\n\nThe image service now has stronger server registration, check-in integration, progress monitoring, and logging. The machinery is becoming easier to observe while it does its mysterious GPU rituals.",
+  "title": "Image requests follow supported aspect ratios",
+  "summary": "Image generation got more predictable request handling and a better-instrumented queue, with worker routing tidied up behind the scenes.\n\nRequested dimensions now map to the closest supported aspect ratio, and short prompts respect an explicit `enhance=false`. Prompt handling also changed: non-ASCII characters are removed before prompts reach the image backend. Tests were added across generation, processing, caching and queues.\n\nQueueing events reach feed listeners again, while timing and queue statistics make image-generation bottlenecks easier to trace. The image cache is now bounded, image file operations use asynchronous I/O, and queue counts come from Flux jobs.\n\nWorker registration and queue tracking now distinguish Flux, Turbo and translation services. Follow-up fixes align translation routing, handle unknown registration types and avoid a self-request when a server pool is empty. Flux also retains more generation steps under moderate load.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,5 +27,7 @@
       "date": "2025-01-03"
     }
   ],
-  "generated_at": "2026-09-04T13:35:30.683114+00:00"
+  "generated_at": "2026-10-17T15:32:51.708859+00:00",
+  "highlights": [],
+  "changelog": []
 }

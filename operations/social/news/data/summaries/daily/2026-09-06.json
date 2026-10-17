@@ -55,7 +55,9 @@
       "text": "Sign in through the local stdio MCP with `startDeviceLogin`, `pollDeviceLogin`, and `whoAmI`. [Explore the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         14480
-      ]
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

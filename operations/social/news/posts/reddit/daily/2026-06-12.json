@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-06-12",
+  "period_start": "2026-06-12",
+  "period_end": "2026-06-12",
+  "generated_at": "2026-06-13T07:15:37.930822+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-12/images/reddit.jpg"
+    }
+  ],
+  "title": "Added Kimi k2.7 code model, provider migrations, and API boolean fixes",
+  "text": "Just merged three PRs today focusing on provider migrations and a mildly embarrassing boolean parsing bug.\n\nFirst, we added the Kimi k2.7 code model via OpenRouter (PR #11753). If you're using our text endpoint for coding tasks, it's worth testing against the existing Llama and Qwen models.\n\nSpeaking of Qwen, we did some infrastructure shuffling (PR #11762). We moved Wan and Qwen image/video generation off Alibaba and onto Replicate, and shifted qwen-coder-large over to OpenRouter. This gives us better stability and cheaper inference overall, which is necessary to keep the free tier generous without blowing up the server costs.\n\nFinally, the bug fix (PR #11758). If you were hitting the text routes and passing ?stream=false or ?json=false and wondering why it was completely ignoring you, it was because the backend was evaluating the string \"false\" as a truthy value. Classic web dev trap. Boolean query parameters are now parsed correctly, so stream and json flags will actually respect your explicit requests instead of defaulting to true.\n\nEverything is live on the API. You can check the code and full commit history on our GitHub repo at github.com/pollinations/pollinations. Let me know if the provider switch causes any weird latency spikes for the image or video routes."
+}

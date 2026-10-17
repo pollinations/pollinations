@@ -1,0 +1,167 @@
+{
+  "date": "2025-06-08",
+  "period_start": "2025-06-01",
+  "period_end": "2025-06-07",
+  "title": "A bigger, easier-to-browse project garden",
+  "summary": "The community directory grew easier to explore while image generation, text models, and ad controls got more useful.\n\nCommunity projects arrived throughout the week, from Spanish-language creative tools and Minecraft agents to social bots, Roblox conversations, and image-making apps. The directory gained seven categories, clearer project links, and a Vibe Coding landing view. Some listings were later rearranged or removed, so the week's additions are not all part of the final lineup.\n\nGPT Image can preserve transparent PNG output, and generation and editing requests gained an optional `transparent=true` parameter. Identical simultaneous requests share a generation instead of duplicating work, failed generations can be retried, and image safety checks expanded to fetched editing inputs.\n\nAuthenticated users gained a Show Ads setting, and turning it off also excludes text-service ads. For eligible requests, ads are appended rather than replacing answers, JSON-mode responses skip them, and conversations avoid repeated ads. Streaming setup now waits for the eligibility check.\n\n`deepseek-reasoning` moved to DeepSeek R1-0528, and `elixposearch` joined the lineup for search-enhanced generation; neither supports tools. DeepSeek response handling was simplified, queue pacing was adjusted, and two referrers no longer force the llamascout model.",
+  "pr_count": 39,
+  "prs": [
+    {
+      "number": 2208,
+      "date": "2025-06-01"
+    },
+    {
+      "number": 2213,
+      "date": "2025-06-01"
+    },
+    {
+      "number": 2216,
+      "date": "2025-06-01"
+    },
+    {
+      "number": 2217,
+      "date": "2025-06-01"
+    },
+    {
+      "number": 2219,
+      "date": "2025-06-01"
+    },
+    {
+      "number": 2240,
+      "date": "2025-06-02"
+    },
+    {
+      "number": 2242,
+      "date": "2025-06-02"
+    },
+    {
+      "number": 2244,
+      "date": "2025-06-02"
+    },
+    {
+      "number": 2223,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2246,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2247,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2248,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2252,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2253,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2261,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2262,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2265,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2266,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2269,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2272,
+      "date": "2025-06-04"
+    },
+    {
+      "number": 2282,
+      "date": "2025-06-05"
+    },
+    {
+      "number": 2283,
+      "date": "2025-06-05"
+    },
+    {
+      "number": 2296,
+      "date": "2025-06-05"
+    },
+    {
+      "number": 2320,
+      "date": "2025-06-05"
+    },
+    {
+      "number": 2323,
+      "date": "2025-06-06"
+    },
+    {
+      "number": 2325,
+      "date": "2025-06-06"
+    },
+    {
+      "number": 2346,
+      "date": "2025-06-06"
+    },
+    {
+      "number": 2285,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2347,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2349,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2350,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2351,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2352,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2353,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2354,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2355,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2359,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2360,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2361,
+      "date": "2025-06-07"
+    }
+  ],
+  "generated_at": "2026-10-17T16:04:48.367075+00:00"
+}

@@ -2,8 +2,8 @@
   "date": "2025-06-05",
   "period_start": "2025-06-05",
   "period_end": "2025-06-05",
-  "title": "Project discovery got a clearer map",
-  "summary": "A garden-maintenance day: clearer project docs, steadier text streaming, and one rescued README logo.\n\nThe projects list and its documentation were reorganized and refined, making it easier to browse what the community has built without treating the repository like an archaeological site.\n\nThe text.pollinations.ai streaming ad integration now handles its async flow correctly, keeping streaming responses coordinated instead of letting JavaScript improvise.\n\nA broken logo image in the README was repaired, restoring a small but useful bit of orientation for people landing in the repo.",
+  "title": "Projects are easier to explore",
+  "summary": "The project directory got seven clearer paths, while streaming setup and the README logo got small repairs.\n\nThe project directory now groups apps into seven categories and opens on Vibe Coding. The README and PROJECTS.md also have categorized listings with clearer links to projects, demos, creators, and repositories.\n\nThe text API now waits for its ad eligibility check before setting up OpenAI-compatible response streams, including error responses.\n\nA broken logo image was replaced, and the README now displays it at full available width.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,5 +23,17 @@
       "date": "2025-06-05"
     }
   ],
-  "generated_at": "2026-09-04T12:57:38.924392+00:00"
+  "generated_at": "2026-10-17T15:41:50.685532+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Explore projects by category",
+      "text": "Browse community projects across Vibe Coding, Creative, Games, Hack-&-Build, Chat, Social Bots, and Learn. The directory now opens on Vibe Coding. [Explore projects](https://pollinations.ai).",
+      "prs": [
+        2282
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

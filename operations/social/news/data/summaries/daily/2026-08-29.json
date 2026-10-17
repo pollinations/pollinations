@@ -71,5 +71,26 @@
       "date": "2026-08-29"
     }
   ],
-  "generated_at": "2026-09-04T11:22:29.538585+00:00"
+  "generated_at": "2026-09-04T11:22:29.538585+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "Model limits at a glance",
+      "text": "Check context-window and video-duration limits in model details, on desktop or mobile. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        14011
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "DeepSeek Harness CLI setup",
+      "text": "Use `polli harness dsh on|off|status` to configure, inspect, or remove DeepSeek Harness as a Pollinations provider. [Explore the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        14107
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

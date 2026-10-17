@@ -2,14 +2,10 @@
   "date": "2025-05-06",
   "period_start": "2025-05-06",
   "period_end": "2025-05-06",
-  "title": "Tool calling is now available across the model roster",
-  "summary": "A garden-maintenance day: universal tool parameters, fresh community project listings, and less cryptic cloud authentication.\n\nAll models can now receive a tools parameter, making it easier to build agents and structured workflows without treating each model provider as a separate species.\n\nThe public projects list now includes Define and Polynate, keeping the map of things people are building with pollinations current. One outdated listing was also cleared away.\n\nBidara joined the available personas, while Google Cloud authentication errors became more useful when credentials decide to become a small mystery.",
-  "pr_count": 5,
+  "title": "Bidara brings biomimicry into the conversation",
+  "summary": "A biomimicry guide joined the models, tool support became easier to check, and the community project list got a tidy-up.\n\nAdded `bidara`, a text-and-image persona that guides users through a biomimicry design process, pauses for feedback between steps, and asks for peer-reviewed citations. The same PR also made Google Cloud authentication failures return cleanly instead of throwing.\n\nThe `/models` endpoint now includes a `tools` capability flag, so developers can check which listed models support tool calls. This improves capability reporting; it does not change tool-calling behavior.\n\nDefine, a REST API for generating definitions with controls for length, tone, context, and language, was added to the README and website listings. PrivatePollenAI was removed from both at its owner's request.",
+  "pr_count": 4,
   "prs": [
-    {
-      "number": 1893,
-      "date": "2025-05-06"
-    },
     {
       "number": 1898,
       "date": "2025-05-06"
@@ -27,5 +23,26 @@
       "date": "2025-05-06"
     }
   ],
-  "generated_at": "2026-09-04T12:37:51.259615+00:00"
+  "generated_at": "2026-10-17T15:39:10.700281+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Meet Bidara",
+      "text": "Work through a biomimicry design problem with `bidara`, a text-and-image persona that asks for feedback between steps and requests peer-reviewed citations. [Explore the model](https://enter.pollinations.ai/models?q=bidara).",
+      "prs": [
+        1911
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Check model tool support",
+      "text": "The `/models` endpoint now reports a `tools` flag, so you can check tool-call support before choosing a model. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        1903
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

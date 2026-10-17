@@ -24,17 +24,30 @@
     {
       "emoji": "📦",
       "title": "SDK Upgrades: Audio & BYOP",
-      "text": "The hive has ears. You can now run Whisper Speech-to-Text, handle media uploads, and let users spend their own Pollen credits directly through the SDK."
+      "text": "The hive has ears. You can now run Whisper Speech-to-Text, handle media uploads, and let users spend their own Pollen credits directly through the SDK.",
+      "prs": [
+        8856
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🧠",
       "title": "Step-3.5-Flash Available",
-      "text": "`step-3.5-flash` is now wired up and ready for chat completions via the [Unified API](https://gen.pollinations.ai)."
+      "text": "`step-3.5-flash` is now wired up and ready for chat completions via the [Unified API](https://gen.pollinations.ai).",
+      "prs": [
+        8871
+      ],
+      "kind": "model"
     },
     {
       "emoji": "💾",
       "title": "Media Storage Upgrades",
-      "text": "Name tags for your files. Media downloads now preserve your original filenames, and re-uploading an existing file automatically resets its 14-day expiration timer."
+      "text": "Name tags for your files. Media downloads now preserve your original filenames, and re-uploading an existing file automatically resets its 14-day expiration timer.",
+      "prs": [
+        8886
+      ],
+      "kind": "api"
     }
-  ]
+  ],
+  "changelog": []
 }

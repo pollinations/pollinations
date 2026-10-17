@@ -36,17 +36,30 @@
     {
       "emoji": "🚀",
       "title": "Drag-and-Drop Uploads",
-      "text": "You can now upload local images (up to 5MB) directly on the Play page instead of hunting for URLs."
+      "text": "You can now upload local images (up to 5MB) directly on the Play page instead of hunting for URLs.",
+      "prs": [
+        9156
+      ],
+      "kind": "product"
     },
     {
       "emoji": "📊",
       "title": "Omniscient Model Monitor",
-      "text": "The model monitor now tracks audio and video models alongside text and images, so you know exactly what's up (or down)."
+      "text": "The model monitor now tracks audio and video models alongside text and images, so you know exactly what's up (or down).",
+      "prs": [
+        9187
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🧠",
       "title": "Qwen3.5 397B Arrives",
-      "text": "We've added Qwen3.5 397B to the [Unified API](https://gen.pollinations.ai). Massive 262K context window, vision, and reasoning capabilities are now a single endpoint away."
+      "text": "We've added Qwen3.5 397B to the [Unified API](https://gen.pollinations.ai). Massive 262K context window, vision, and reasoning capabilities are now a single endpoint away.",
+      "prs": [
+        9225
+      ],
+      "kind": "model"
     }
-  ]
+  ],
+  "changelog": []
 }

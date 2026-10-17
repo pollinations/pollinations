@@ -2,18 +2,16 @@
   "date": "2025-07-16",
   "period_start": "2025-07-16",
   "period_end": "2025-07-16",
-  "title": "One more project in the ecosystem",
-  "summary": "A small garden day: one more community project surfaced, and the contributor toolchain got tidier.\n\nBerrry Computer joined the project list, making another thing built with pollinations easier to find.\n\nBiome formatter and linter support landed, giving contributors a shared automated baseline for code style and checks.",
-  "pr_count": 2,
+  "title": "Berrry Computer joins the Vibe Coding project list",
+  "summary": "A community project joined the Vibe Coding list: tweet an app idea, get a small AI-powered web app.\n\nAdded @vgrichina’s Berrry Computer to the project list. It turns app ideas sent in tweet replies into small web apps that use pollinations.ai for dynamic AI experiences.",
+  "pr_count": 1,
   "prs": [
     {
       "number": 3150,
       "date": "2025-07-16"
-    },
-    {
-      "number": 3158,
-      "date": "2025-07-16"
     }
   ],
-  "generated_at": "2026-09-04T12:10:37.111111+00:00"
+  "generated_at": "2026-10-17T15:44:07.087330+00:00",
+  "highlights": [],
+  "changelog": []
 }

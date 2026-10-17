@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-05-12",
+  "period_start": "2026-05-12",
+  "period_end": "2026-05-12",
+  "generated_at": "2026-05-13T06:58:41.218591+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-12/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-12/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-12/images/instagram-3.jpg"
+    }
+  ],
+  "text": "shipped a few things this week to keep the garden growing. \n\n1. auto top-ups for Pollen credits. because running out of juice mid-generation is a buzzkill. set it and forget it.\n2. Pollenforge-CLI is now in the build. for those who prefer the comfort of their terminal.\n3. added Storytale to the greenhouse — multiplayer storytelling powered by AI.\n\ncode is open, as always. check the repo to build something weird with us.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #commandline #gamedev",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

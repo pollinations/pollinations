@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-19",
+  "period_start": "2026-04-19",
+  "period_end": "2026-04-19",
+  "generated_at": "2026-04-20T06:41:37.001187+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-19/images/reddit.jpg"
+    }
+  ],
+  "title": "SDK v4.3.0, upgraded Fireworks models, and fixing the GitHub auto-bans",
+  "text": "Merged 10 PRs today across the infrastructure and community showcase. A few notable updates.\n\nSDK v4.3.0 is out. We handled some NPM package maintenance and rolled out device authentication and key management. This should make handling long-term sessions and programmatic access a bit less painful. You can find the updated implementation in the repo at github.com/pollinations/pollinations.\n\nWe also upgraded our Fireworks models, bumping to Minimax 2.7 and Qwen VL. Practically, this means larger context windows and better vision-language processing on the text/chat endpoints. Same API, just smarter routing under the hood.\n\nOn the auth side, we pushed a fix to stop auto-banning users who delete or suspend their GitHub accounts. Previously, if you nuked your GitHub, our auth sync would interpret that as a reason to ban your Pollinations account. We've added some mercy logic so you don't lose your pollen credits just because you decided to scrub your online footprint.\n\nFinally, the community showcase is getting crowded. We merged PRs for 8 new community apps across the learn, business, writing, and image categories, including Aureon, PollenHours, and ManhwaGen.\n\nCode is open as always. Let us know if the new device auth breaks anything on your end."
+}

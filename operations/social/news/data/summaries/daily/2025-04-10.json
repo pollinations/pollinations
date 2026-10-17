@@ -2,8 +2,8 @@
   "date": "2025-04-10",
   "period_start": "2025-04-10",
   "period_end": "2025-04-10",
-  "title": "DominiSigns joins the project garden",
-  "summary": "A small but useful garden update: DominiSigns is now on the project list.\n\nThe project list now includes DominiSigns, giving the community another concrete example of what people are building with pollinations.",
+  "title": "DominiSigns joins the project list",
+  "summary": "A community project for translating text and audio into Dominican Sign Language joined the project list.\n\nDominiSigns was added to the README project table and the website’s Tools & Interfaces list. The community project uses AI and a 3D avatar to translate text and audio into Dominican Sign Language.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-04-10"
     }
   ],
-  "generated_at": "2026-09-04T12:24:36.273071+00:00"
+  "generated_at": "2026-10-17T15:37:22.041296+00:00",
+  "highlights": [],
+  "changelog": []
 }

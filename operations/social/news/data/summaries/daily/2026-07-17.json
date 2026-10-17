@@ -43,5 +43,18 @@
       "date": "2026-07-17"
     }
   ],
-  "generated_at": "2026-09-04T11:46:05.355659+00:00"
+  "generated_at": "2026-09-04T11:46:05.355659+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Sana Sprint joins images",
+      "text": "Generate images with Sana Sprint 1.6B, newly added to the image model lineup. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        12521,
+        12524
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

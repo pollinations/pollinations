@@ -2,8 +2,8 @@
   "date": "2025-05-30",
   "period_start": "2025-05-30",
   "period_end": "2025-05-30",
-  "title": "Account preferences get a proper home",
-  "summary": "A small maintenance day: account preferences, steadier hosted redirects, and another project in the garden.\n\nThe auth service now includes user preference management, laying the groundwork for accounts that remember how people want to use the platform instead of making them explain themselves repeatedly.\n\nCloudflare Worker imports now use the local IP utility, while the Netlify redirect function was repaired and brought in line with ad-compliance requirements. The plumbing is behaving more like plumbing.\n\nPixPal was added to the public project list, giving another community-built use of pollinations a place on the map.",
+  "title": "Preferences get an API",
+  "summary": "User preferences gained an API, PixPal joined the catalog, and ads and image-cache behavior got some careful repairs.\n\nAuthenticated users can now read and update preferences through GET and POST `/preferences`, either one key at a time or in batches. The same PR changed GPT Image access to exclude Seed-tier users and made edited-image filenames follow the response content type.\n\nPixPal was added to the README and website catalog. The community-built assistant works with images, screenshots, 3D games, and blog posts.\n\nAffiliate and fallback ads now carry an explicit ad label, including in streaming responses. Ad-generation instructions also account for conversation language and preserve markdown links. The PR fixed a redirect-function naming conflict and disabled image ads.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,5 +23,17 @@
       "date": "2025-05-30"
     }
   ],
-  "generated_at": "2026-09-04T12:53:43.902942+00:00"
+  "generated_at": "2026-10-17T15:41:23.515892+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "User preferences API",
+      "text": "Read and update your preferences through authenticated GET and POST `/preferences` requests, one key or several at a time. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        2184
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-06-28",
+  "period_start": "2026-06-28",
+  "period_end": "2026-06-28",
+  "generated_at": "2026-06-29T07:36:42.854712+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-28/images/reddit.jpg"
+    }
+  ],
+  "title": "Added model status endpoint, fixed reasoning params, and 13 new apps",
+  "text": "Merged 17 PRs today. The bulk of it is infrastructure cleanup and handling upstream provider quirks, plus a lot of community app submissions.\n\nFirst, we added a /v1/models/status endpoint. It's backed by a Tinybird proxy with caching. If you're building on top of the API, you can now programmatically check model health instead of finding out via timeouts.\n\nSecond, we pushed a couple of routing fixes. API providers are getting increasingly pedantic about payload validation. Sending `reasoning_effort` to a non-reasoning model now throws errors upstream, so we're stripping that parameter before it hits them. We also had to repoint `gptimage` to a new Azure resource after East US 2 got blocked. Standard infrastructure whack-a-mole.\n\nFinally, the app ecosystem is growing fast. We merged 13 new community apps into the directory today (ranging from generative soundscapes to chat clients). To support this, we enabled the 'app listed' quest. If you build something with the API and list it in the ecosystem directory, it now pays out a fixed Pollen reward directly to your wallet upon merge.\n\nCode and open PRs: https://github.com/pollinations/pollinations"
+}

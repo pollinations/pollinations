@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-02-22",
+  "period_start": "2026-02-15",
+  "period_end": "2026-02-21",
+  "generated_at": "2026-02-22T06:21:53.563202+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-22/images/reddit.jpg"
+    }
+  ],
+  "title": "Weekly update: OpenAI-compatible API, App Showcase overhaul, 48 PRs merged",
+  "text": "We merged 48 PRs this week. The most useful addition for developers is `polly-api` (#8234), which exposes an OpenAI-compatible endpoint. If you have existing tooling or agents that speak OpenAI, you can now point them at our infrastructure without rewriting your client code.\n\nThe App Showcase received a significant renovation. We added markdown support for descriptions, improved the metrics UI, and implemented a proper badge system. We also rebranded the credit system from 'Bring Your Own Prompts' to simply 'Pollen' to stop confusing everyone.\n\nHousekeeping note: We've moved our npm packages to the `@pollinations_ai` scope. The old packages are deprecated but will function for a while; please update your dependencies when you can.\n\nOther shipments include 'Auto Polly' (a self-healing repo agent), the Qwen3Guard safety model, and an interactive Build Diary on the community page. As always, the code is open.\n\nCheck the repo: https://github.com/pollinations/pollinations"
+}

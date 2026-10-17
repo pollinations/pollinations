@@ -75,7 +75,8 @@
       "text": "Generate or edit images with the paid-only `openai/gpt-image-2.5-flare` and `openai/gpt-image-2.5-sunburst` models. They support quality options, custom edit dimensions, and PNG transparency. [Explore image models](https://gen.pollinations.ai/image/models).",
       "prs": [
         14589
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "📱",
@@ -84,7 +85,8 @@
       "prs": [
         12790,
         14584
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🔗",
@@ -93,6 +95,34 @@
       "prs": [
         14587,
         14601
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": [
+    {
+      "pr_number": 14566,
+      "url": "https://github.com/pollinations/pollinations/pull/14566",
+      "merged_at": "2026-09-08T08:21:52Z",
+      "api_changes": [
+        {
+          "id": "pr-14566:POST /upload",
+          "endpoint": "POST /upload",
+          "summary": "Upload media",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:id",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
       ]
     }
   ]

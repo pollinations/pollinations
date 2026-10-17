@@ -1,0 +1,75 @@
+{
+  "date": "2025-07-06",
+  "period_start": "2025-06-29",
+  "period_end": "2025-07-05",
+  "title": "Model routes and access tiers got a reset",
+  "summary": "Model access, request queueing, and API guidance got more consistent, while a new image model and community projects gave people more to build with.\n\nAnonymous requests default to the anonymous tier, with access to `openai`, `openai-fast`, MIDIjourney, Elixpo Search, and now Bidara. The week's routing changes settled on GPT-4o mini for `openai`, GPT-4.1 for `openai-large`, and GPT-4.1 nano for `openai-fast` and `openai-roblox`. Unknown text models return 404; insufficient access returns 402.\n\nText and image requests now share per-IP concurrency limits: 1 anonymous, 3 seed, 10 flower, and 30 nectar. Token-backed image requests are no longer limited to one at a time, while nectar requests use the queue too. Token-validation and referrer caching reduce repeated lookups.\n\nSeed-tier users gained `model=kontext` for voxel-art generation from a prompt or supplied image URL, with output capped at 640 pixels on the longest side. The API docs gained Kontext image-to-image examples alongside clearer authentication and tier guidance and broader multimodal examples.\n\nThe listings gained RETIME, an accessible, time-bending text adventure; YankoviC's AI-assisted Accordion IDE; PairFusion's collaborative IDE; and Argent Script, a text-to-speech tool. Four rather different answers to what you can build with an API.",
+  "pr_count": 16,
+  "prs": [
+    {
+      "number": 2713,
+      "date": "2025-07-01"
+    },
+    {
+      "number": 2715,
+      "date": "2025-07-01"
+    },
+    {
+      "number": 2708,
+      "date": "2025-07-02"
+    },
+    {
+      "number": 2725,
+      "date": "2025-07-02"
+    },
+    {
+      "number": 2730,
+      "date": "2025-07-02"
+    },
+    {
+      "number": 2737,
+      "date": "2025-07-02"
+    },
+    {
+      "number": 2739,
+      "date": "2025-07-02"
+    },
+    {
+      "number": 2665,
+      "date": "2025-07-03"
+    },
+    {
+      "number": 2749,
+      "date": "2025-07-03"
+    },
+    {
+      "number": 2759,
+      "date": "2025-07-03"
+    },
+    {
+      "number": 2721,
+      "date": "2025-07-04"
+    },
+    {
+      "number": 2766,
+      "date": "2025-07-04"
+    },
+    {
+      "number": 2791,
+      "date": "2025-07-04"
+    },
+    {
+      "number": 2795,
+      "date": "2025-07-04"
+    },
+    {
+      "number": 2800,
+      "date": "2025-07-05"
+    },
+    {
+      "number": 2806,
+      "date": "2025-07-05"
+    }
+  ],
+  "generated_at": "2026-10-17T16:05:18.202419+00:00"
+}

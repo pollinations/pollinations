@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-07-13",
+  "period_start": "2026-07-13",
+  "period_end": "2026-07-13",
+  "generated_at": "2026-07-14T06:53:54.115890+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-13/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-13/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-13/images/instagram-3.jpg"
+    }
+  ],
+  "text": "35 PRs merged today. The Greenhouse got a larger creative toolbox: new image studios, writing tools, games, learning apps, build things, and some delightful nonsense.\n\nAI Night now has a proper front door for 16 July in Berlin. New app-use quests can earn Pollen. Under the soil, deployment checks got sturdier too. Software remains a garden with more plumbing than expected. 🌱🐝\n\nDetails, apps, and the repo: pollinations.ai\n\n#pollinations #opensource #aitools #pixelart #creativecoding #buildinpublic #indiedev #generativeai #aiart #opensourceprojects #berlintech #hackerspace",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

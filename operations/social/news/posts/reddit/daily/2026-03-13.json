@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-03-13",
+  "period_start": "2026-03-13",
+  "period_end": "2026-03-13",
+  "generated_at": "2026-03-14T06:14:34.829767+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-13/images/reddit.jpg"
+    }
+  ],
+  "title": "Fixed the 25h tier upgrade lag, added dirtberry-pro, and hourly Pollen refills",
+  "text": "We finally fixed the Seed tier upgrade workflow. It was taking up to 25 hours to process GitHub activity upgrades, which defeats the purpose of an automated system. PR #8985 brings that down to a few seconds. If you contribute, you shouldn't have to wait a day to get your credits. We also switched Pollen refills to an hourly drip rather than a daily batch.\n\nOn the infrastructure side, we moved Klein 4B off Modal and over to a dedicated pipeline at bpaigen.com. We also merged a few new models: `dirtberry-pro` is now available for image generation, and Seraphyn joined as a community provider supplying `qwen3-tts` for audio.\n\nFor anyone building frontends or tracking stats, we exposed a public user data endpoint (`d1_user_public`) via Tinybird. It's mostly useful if you're building leaderboards or usage dashboards for your apps.\n\nLastly, CatGPT got a rewrite. It now supports BYOP auth, has a light theme, and the codebase is much simpler if you want to fork it. Gratisfy was also added to the build.\n\nCode, docs, and ongoing PRs are in the repo: https://github.com/pollinations/pollinations"
+}

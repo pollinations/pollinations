@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-05-20",
+  "period_start": "2026-05-20",
+  "period_end": "2026-05-20",
+  "generated_at": "2026-05-21T07:13:01.310566+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-20/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-20/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-20/images/instagram-3.jpg"
+    }
+  ],
+  "text": "A few quiet fixes this week. Polly learned how to render markdown tables properly instead of making a mess, and we finally taught her to stop asking endless follow-up questions. Just the data, thanks. We also mapped upstream text provider rate limits to clean 502s, so when external APIs get tired, your logs actually tell you why. Less noise, cleaner outputs. \n\ncode is open: github.com/pollinations\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #webdev #apidesign #buildinpublic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

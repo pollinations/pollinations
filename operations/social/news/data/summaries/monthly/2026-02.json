@@ -2,24 +2,12 @@
   "date": "2026-02-28",
   "period_start": "2026-02-01",
   "period_end": "2026-02-28",
-  "title": "The multimodal shelf got much larger",
-  "summary": "February expanded the API across text, image, audio and video while making the surrounding tools, apps and community garden much easier to build in.\n\nLTX-2, Imagen 3 and 4, Flux 2 Dev, GLM-5, Claude Opus 4.6 and Sonnet 4.6, Seedream 5.0 Lite, Gemini 3.1 Flash, ElevenLabs audio models, Grok Imagine and more joined the unified API. Video also gained consistent resolution controls, Grok image-to-video, and sturdier Wan routing.\n\nOpenClaw arrived with an installer, integration guide, web search and tool configuration. Polly became open source, gained embeddings and token-aware retrieval, moved into the monorepo, and began helping diagnose bugs before they reach humans.\n\nThe Play page absorbed its docs, API documentation gained code samples and error guidance, self-hosting guides covered RTX 5090 deployments, and polly-api offered a drop-in OpenAI-compatible route. The text backend also moved to Hono and TypeScript for faster streaming, smarter model access and visible context limits.\n\nPollen badges made credits more visible across apps, while the showcase grew with assistants, generators, creative tools and PollenPages. A rebuilt app registry, daily health checks, an interactive build diary and dashboard controls gave the growing collection more shape without pretending software gardens prune themselves.",
-  "pr_count": 232,
+  "title": "More ways to generate",
+  "summary": "February widened the models and tools people can build with, while making credits, apps, and API behavior easier to understand.\n\nThe API added models across text, image, audio, and video, including Claude Opus and Sonnet 4.6, Whisper transcription, ElevenLabs voices, Grok image-to-video, and Seedream 5.0 Lite. Video dimensions became more consistent across models.\n\nOpenClaw gained setup tooling and an integration guide; Play gained embedded docs; and API docs gained code samples. The text API was rewritten in Hono and TypeScript, while model listings began exposing context limits and filtering by access.\n\nThe showcase gained apps ranging from SlidePainter to PollenPages, restored missing entries, and reorganized its registry into 15 categories. Daily health checks now hide broken apps until they are fixed.\n\nMicrobe joined the tier configuration, daily refills were corrected, and existing API keys became editable without replacement. Pollen badges appeared across apps, making credit use more visible.",
+  "pr_count": 218,
   "prs": [
     {
       "number": 7269,
-      "date": "2026-02-02"
-    },
-    {
-      "number": 7843,
-      "date": "2026-02-02"
-    },
-    {
-      "number": 7845,
-      "date": "2026-02-02"
-    },
-    {
-      "number": 7846,
       "date": "2026-02-02"
     },
     {
@@ -39,23 +27,7 @@
       "date": "2026-02-02"
     },
     {
-      "number": 7861,
-      "date": "2026-02-02"
-    },
-    {
       "number": 7866,
-      "date": "2026-02-02"
-    },
-    {
-      "number": 7867,
-      "date": "2026-02-02"
-    },
-    {
-      "number": 7869,
-      "date": "2026-02-02"
-    },
-    {
-      "number": 7874,
       "date": "2026-02-02"
     },
     {
@@ -67,31 +39,11 @@
       "date": "2026-02-03"
     },
     {
-      "number": 7870,
-      "date": "2026-02-03"
-    },
-    {
       "number": 7875,
       "date": "2026-02-03"
     },
     {
-      "number": 7889,
-      "date": "2026-02-03"
-    },
-    {
-      "number": 7900,
-      "date": "2026-02-03"
-    },
-    {
       "number": 7904,
-      "date": "2026-02-03"
-    },
-    {
-      "number": 7905,
-      "date": "2026-02-03"
-    },
-    {
-      "number": 7907,
       "date": "2026-02-03"
     },
     {
@@ -100,14 +52,6 @@
     },
     {
       "number": 7917,
-      "date": "2026-02-04"
-    },
-    {
-      "number": 7926,
-      "date": "2026-02-04"
-    },
-    {
-      "number": 7930,
       "date": "2026-02-04"
     },
     {
@@ -935,5 +879,5 @@
       "date": "2026-02-28"
     }
   ],
-  "generated_at": "2026-09-04T15:15:51.679757+00:00"
+  "generated_at": "2026-10-17T16:09:52.672608+00:00"
 }

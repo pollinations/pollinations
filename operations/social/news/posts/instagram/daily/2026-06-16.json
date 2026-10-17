@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-06-16",
+  "period_start": "2026-06-16",
+  "period_end": "2026-06-16",
+  "generated_at": "2026-06-17T07:44:49.613429+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-16/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-16/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-16/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Routing fixes, stable UI tabs, and a return to pure ASCII. \n\nMerged a few nice quality-of-life updates this week. Gemini requests now route smoothly with Vertex fallbacks, so things just work. Local dev is a bit faster since we pre-fill localhost URIs for new app keys. Oh, and we reverted the Sirius elevator game back to its plain, pre-update ASCII glory. Sometimes the old ways are the best ways.\n\nCode's open, as always. Link in bio to build something.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #asciiart #retrocomputing",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

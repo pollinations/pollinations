@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-13",
+  "period_start": "2026-07-13",
+  "period_end": "2026-07-13",
+  "generated_at": "2026-07-14T06:53:54.115890+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-13/images/reddit.jpg"
+    }
+  ],
+  "title": "35 PRs merged across apps, quests, and ops",
+  "text": "35 PRs merged today. Most of them are new community projects in the Greenhouse, which now has additions across image, writing, chat, learning, build, games, bots, business, and video/audio.\n\nImage gained Pollinations Image Studio, CarouselCraft AI, MURI, Pollinations Image Lab, Magic Story Image, Thumbsnare, and Silenos. Writing gained StoryWeaver and Hookly. Learning picked up JadiKelas, Blaze Prep, and studybuddy. Build has Markitdown-for-Everyone, Deco Spacio, ScrollStop UGC Ad Studio, and Code Canvas Complete. There is also BOOK TO GAME, Crestbound TCG, Talkti, NovAI, and, inevitably, worst AI.\n\nQuests now support `use_app` and `app_active`, so useful app activity can earn Pollen rather than only existing around it. The implementation is in the open if you want to inspect or help break it: https://github.com/pollinations/pollinations\n\nPollinations AI Night now has a proper `/night` page, RSVP source tracking, and artwork crops that fit the inconvenient shapes social platforms insist on. It is July 16 at Block1 Berlin.\n\nUnder the floorboards: KPI activations are preaggregated, Vast Flux deployment and canary checks were hardened, and catgpt got durable selfie URLs, nanobanana-2-lite, catch-up behavior, and CLI ask support.\n\nDocs and API references: https://pollinations.ai/docs"
+}

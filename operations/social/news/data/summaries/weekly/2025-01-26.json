@@ -1,0 +1,51 @@
+{
+  "date": "2025-01-26",
+  "period_start": "2025-01-19",
+  "period_end": "2025-01-25",
+  "title": "The text API grew in models and capacity",
+  "summary": "More ways to make things, fewer obstacles in the request path, and a rebuilt front door for finding what the community has made.\n\nClaude 3.5 Haiku, Qwen 2.5 Coder 32B, and DeepSeek reasoning joined the text API. The request limit rose from 40 to 200 per minute, while model routing and error handling were tightened. The 56,000-character input check was removed for `openai` by the following day.\n\nThe homepage rebuild made projects, integration examples, and news easier to explore across screen sizes. Tutorials gained an interactive book of more than 90 artistic styles, community tools were linked from the site and README, and familiar image-prompt redirects were restored.\n\nRequests without dimensions now default to 1024×1024, and Flux Schnell gained 1024×1024 generation through Cloudflare Workers AI. Prompt sanitization preserves Persian and other non-Latin characters. Flux and Turbo received lower maximum side lengths, and four image-model variants were removed.\n\nA Realistic persona prompt emphasizes actionable advice that accounts for real-world constraints. Unity’s image instructions now favor raw Pollinations URLs with `enhance=true`, while selfie prompts refer to the current user’s preferred aesthetic.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 1042,
+      "date": "2025-01-20"
+    },
+    {
+      "number": 1046,
+      "date": "2025-01-20"
+    },
+    {
+      "number": 1048,
+      "date": "2025-01-20"
+    },
+    {
+      "number": 1056,
+      "date": "2025-01-21"
+    },
+    {
+      "number": 1063,
+      "date": "2025-01-23"
+    },
+    {
+      "number": 1064,
+      "date": "2025-01-23"
+    },
+    {
+      "number": 1067,
+      "date": "2025-01-23"
+    },
+    {
+      "number": 1076,
+      "date": "2025-01-24"
+    },
+    {
+      "number": 1036,
+      "date": "2025-01-25"
+    },
+    {
+      "number": 1085,
+      "date": "2025-01-25"
+    }
+  ],
+  "generated_at": "2026-10-17T16:03:03.983111+00:00"
+}

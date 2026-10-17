@@ -2,8 +2,8 @@
   "date": "2025-04-28",
   "period_start": "2025-04-28",
   "period_end": "2025-04-28",
-  "title": "Imagine’s generated-text controls stopped freelancing",
-  "summary": "A small garden-maintenance day: steadier Imagine controls, cleaner streaming behavior, and another community project in the directory.\n\nThe Imagine interface got a fix for the text-generated button behaving unpredictably, making the creation flow less adventurous than intended.\n\nThe response delivery path was updated so streaming output and p-ads markers are handled consistently instead of taking separate, slightly mysterious routes.\n\nEcho AI joined the community project list, while the Mistral model backend moved from Cloudflare to Scaleway.",
+  "title": "Mistral gets a different engine",
+  "summary": "Mistral changed engines, Echo AI joined the project list, and a few text and image interface edges got tidied up.\n\nThe `mistral` text model now routes to `mistral-small-3.1-24b-instruct-2503` instead of the Cloudflare model, retaining its 8,192-token maximum and 0.3 temperature.\n\n@3ch0AI’s Echo AI was added to the Tools & Interfaces list. It’s an HTML chat interface built with Pollinations text and image generation, streaming responses, and authentication.\n\nThe image editor’s inactive Imagine button now says “Write the 'Imagine' word only”; its active copy is unchanged.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,5 +27,17 @@
       "date": "2025-04-28"
     }
   ],
-  "generated_at": "2026-09-04T12:32:42.849720+00:00"
+  "generated_at": "2026-10-17T15:38:31.017686+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Mistral changes engines",
+      "text": "The `mistral` text model now uses `mistral-small-3.1-24b-instruct-2503`, retaining its 8,192-token maximum. [Browse the model](https://enter.pollinations.ai/models?q=mistral).",
+      "prs": [
+        1807
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

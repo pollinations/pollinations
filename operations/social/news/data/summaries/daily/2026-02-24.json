@@ -108,22 +108,39 @@
     {
       "emoji": "⚡",
       "title": "Claude Direct & Caching",
-      "text": "Migrated Claude models directly to Anthropic. Prompt caching is now live, making repeated context faster and cheaper. [API Docs](https://enter.pollinations.ai/api/docs)"
+      "text": "Migrated Claude models directly to Anthropic. Prompt caching is now live, making repeated context faster and cheaper. [API Docs](https://enter.pollinations.ai/api/docs)",
+      "prs": [
+        8537
+      ],
+      "kind": "model"
     },
     {
       "emoji": "📦",
       "title": "NPM Package Rename",
-      "text": "Packages are now `ompc` and `mcp`. Less typing, plus `claude-fast` is the new default model. [View on NPM](https://www.npmjs.com/package/@pollinations_ai/model-context-protocol)"
+      "text": "Packages are now `ompc` and `mcp`. Less typing, plus `claude-fast` is the new default model. [View on NPM](https://www.npmjs.com/package/@pollinations_ai/model-context-protocol)",
+      "prs": [
+        8532
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🗂️",
       "title": "The Garden Organized",
-      "text": "Sorted 542 ecosystem apps into 15 categories like \"Vibe Coding\" and \"AI Studio\" for better discoverability on the [Main Website](https://hello.pollinations.ai)."
+      "text": "Sorted 542 ecosystem apps into 15 categories like \"Vibe Coding\" and \"AI Studio\" for better discoverability on the [Main Website](https://hello.pollinations.ai).",
+      "prs": [
+        8527
+      ],
+      "kind": "product"
     },
     {
       "emoji": "💻",
       "title": "Community Tool: fuckits",
-      "text": "A new CLI utility that turns natural language descriptions into executable shell scripts. Yes, that is the real name."
+      "text": "A new CLI utility that turns natural language descriptions into executable shell scripts. Yes, that is the real name.",
+      "prs": [
+        7305
+      ],
+      "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

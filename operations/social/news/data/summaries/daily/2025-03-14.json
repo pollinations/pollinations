@@ -2,8 +2,8 @@
   "date": "2025-03-14",
   "period_start": "2025-03-14",
   "period_end": "2025-03-14",
-  "title": "The project garden picked up six more things to try",
-  "summary": "A community-garden day: more projects to explore, Pixtral on the text API, and fewer broken voices pretending to be choices.\n\nThe community project list now includes StoryMagic, Pollinations Feed Showcase, Elixpo Art for Chrome, RoastMaster AI, roastmyselfie.app, and broader project updates. The submission template was simplified too, because discovering weird little AI apps should require less paperwork.\n\nPixtral is now available through text.pollinations.ai, adding another model option behind the same straightforward text endpoint.\n\ntext.pollinations.ai added Google Vertex service-account authentication, improving the backend plumbing used to connect model access without asking humans to perform credential rituals by hand.",
+  "title": "More ways to chat with images",
+  "summary": "Vision chat gained new models, the community showcase grew, and Gemini and audio configurations got some necessary housekeeping.\n\nPixtral 12B and `llama-vision` were added as vision-capable chat options, while `phi` was configured as Phi-4 Instruct. Image generation was also adjusted so requests fall through to ComfyUI after a Cloudflare Flux failure.\n\nThe community showcase added StoryMagic for customizable children's stories, roastmyselfie.app for selfie roasts, and RoastMaster AI for selfie and text roasts. The project submission form also got simpler.\n\nThe project lists added a multi-model AI Chat Assistant, the realtime Pollinations Feed art showcase, the Elixpo Art browser extension, and the Jackey image-generation Discord bot. Related Elixpo listings were consolidated.",
   "pr_count": 10,
   "prs": [
     {
@@ -47,5 +47,26 @@
       "date": "2025-03-14"
     }
   ],
-  "generated_at": "2026-09-04T12:08:39.014262+00:00"
+  "generated_at": "2026-10-17T15:35:30.690317+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "More vision chat options",
+      "text": "Chat with images using Pixtral 12B or `llama-vision`. [Explore llama-vision](https://enter.pollinations.ai/models?q=llama-vision).",
+      "prs": [
+        1342
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Phi-4 Instruct joins chat",
+      "text": "Try Phi-4 Instruct through the `phi` model option. [Explore phi](https://enter.pollinations.ai/models?q=phi).",
+      "prs": [
+        1342
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

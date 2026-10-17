@@ -2,9 +2,9 @@
   "date": "2026-02-04",
   "period_start": "2026-02-04",
   "period_end": "2026-02-04",
-  "title": "More control in the Enter dashboard",
-  "summary": "A dashboard-focused day: tighter API-key and model controls, cleaner infrastructure, and metrics that now count the right things.\n\nEnter gained an API-key management dialog with enable controls and budgets, plus category-level select-all toggles for model permissions. The dashboard UI was also reorganized and its Linux import casing fixed, because files can apparently have opinions about capitalization.\n\nAzure configuration was cleaned up: Midijourney now points to GPT-5.2, while GPT Image moved to East US 2. Mostly plumbing, but useful plumbing is what keeps the pixels arriving.\n\nThe D7 activation-rate calculation was corrected, and the February 4 Instagram post was prepared. Better numbers, plus the regular proof that the garden is still alive.",
-  "pr_count": 7,
+  "title": "API keys are easier to manage",
+  "summary": "API keys became easier to edit, midijourney moved to GPT-5.2, and Enter got a mobile-friendly tidy-up.\n\nExisting keys can now be renamed, enabled or disabled, and updated with new Pollen budgets, expiry dates, account permissions, and model restrictions without being deleted. Text, Image, and Video permissions also have category-level Select all and Deselect all controls.\n\nThe `midijourney` text model now routes to GPT-5.2 while keeping its prompt transform. GPT Image routing was updated, and unused model configurations were removed.\n\nDashboard sections have clearer visual treatments, pricing tables scroll on narrow screens, and the API-key editor draws model choices from the shared registry. A follow-up corrected import casing for Linux builds and added targeted TypeScript checks.",
+  "pr_count": 5,
   "prs": [
     {
       "number": 7537,
@@ -12,14 +12,6 @@
     },
     {
       "number": 7917,
-      "date": "2026-02-04"
-    },
-    {
-      "number": 7926,
-      "date": "2026-02-04"
-    },
-    {
-      "number": 7930,
       "date": "2026-02-04"
     },
     {
@@ -35,5 +27,27 @@
       "date": "2026-02-04"
     }
   ],
-  "generated_at": "2026-09-04T11:50:34.523518+00:00"
+  "generated_at": "2026-10-17T16:02:07.269460+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "Edit keys without replacing them",
+      "text": "Rename, disable, or update an existing API key's budget, expiry, and permissions. Select or deselect whole Text, Image, or Video model categories when restricting access. [Manage API keys](https://enter.pollinations.ai/keys).",
+      "prs": [
+        7537,
+        7949
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Midijourney now uses GPT-5.2",
+      "text": "The `midijourney` text model now routes to GPT-5.2 while keeping its prompt transform. [View the model](https://enter.pollinations.ai/models?q=midijourney).",
+      "prs": [
+        7917
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

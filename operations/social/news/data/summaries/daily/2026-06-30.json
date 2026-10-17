@@ -51,5 +51,35 @@
       "date": "2026-06-30"
     }
   ],
-  "generated_at": "2026-09-04T11:58:54.807530+00:00"
+  "generated_at": "2026-09-04T11:58:54.807530+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Nano Banana 2 Lite",
+      "text": "Generate images with `nanobanana-2-lite`, a lighter option powered by Gemini 3.1 Flash-Lite Image. [Browse the model](https://enter.pollinations.ai/models?q=nanobanana-2-lite).",
+      "prs": [
+        12132
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Claude Sonnet 5",
+      "text": "Use `claude-sonnet-5` for text and vision tasks with tool support and a 1M-token context window. [Browse the model](https://enter.pollinations.ai/models?q=claude-sonnet-5).",
+      "prs": [
+        12133
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "Quests in the CLI",
+      "text": "Check earned Quest rewards with `polli quests` and administer community models with `polli my-models`. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        12107
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

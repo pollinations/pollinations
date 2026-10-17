@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-18",
+  "period_start": "2026-05-18",
+  "period_end": "2026-05-18",
+  "generated_at": "2026-05-19T07:08:41.874282+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-18/images/reddit.jpg"
+    }
+  ],
+  "title": "Removed artificial fetch timeouts and added vision capability validation",
+  "text": "Merged a few fixes today for the pollinations.ai infrastructure, mostly dealing with how we handle timeouts and unsupported requests.\n\nFirst, we stopped prematurely killing long-running jobs. PR #11113 removes some artificial fetch timeouts that were stepping on the toes of heavier generation tasks. Along the same lines, PR #11132 bumps the AssemblyAI transcription polling timeout from 120 seconds to 240 seconds. Transcribing massive audio files takes time, and blindly severing the connection at the two-minute mark was causing unnecessary failures. If a job is actively processing, we're going to let it finish now.\n\nSecond, we're failing faster when things definitely won't work. PR #11139 adds validation for chat image model capabilities. Previously, if you piped an image into an LLM endpoint that lacked vision support, the request would just hang or fail downstream in a confusing way. Now, we check the model's capabilities upfront. If it can't process images, the API kicks it back immediately.\n\nBasically: let the working jobs finish, and kill the impossible requests instantly.\n\nAs always, the infrastructure is open source. You can check out the code and the full commit history on our GitHub repo (github.com/pollinations/pollinations). Let us know if you're still seeing any weird timeout behaviors on longer audio or video generations."
+}

@@ -1,0 +1,119 @@
+{
+  "date": "2025-05-04",
+  "period_start": "2025-04-27",
+  "period_end": "2025-05-03",
+  "title": "A local path into Pollinations MCP",
+  "summary": "This week made Pollinations easier to connect to local tools, gave text requests more room, and refined the routes behind image generation.\n\nThe MCP server was reorganized around STDIO, with an `npx` setup path and a `pollinations-mcp` CLI entry point for local clients. Its image, text, audio, and resource services were revised alongside the setup instructions.\n\nThe text request limit rose fourfold, from 512,000 to 2,048,000 characters. The `mistral` model moved to `mistral-small-3.1-24b-instruct-2503` while retaining its 8,192-token maximum; model listings were also updated to name the GPT-4.1 variants and remove `openai-reasoning` and `gemini` from the available-model list.\n\nImage generation gained Dreamshaper and Turbo fallbacks between Cloudflare Flux and ComfyUI, and Dreamshaper requests stopped sending a seed parameter that caused errors. A later change simplified the path after a Dreamshaper failure: requests now fall through to the general ComfyUI call rather than trying the dedicated Turbo fallback first.\n\nNine projects joined the listings, spanning chat interfaces, design tools, image generation, browser controls, and AI pipelines. The directory also gained priority-and-star sorting, a 15-day window for the 🆕 marker, and a renamed “Featured” category.",
+  "pr_count": 27,
+  "prs": [
+    {
+      "number": 1794,
+      "date": "2025-04-27"
+    },
+    {
+      "number": 1798,
+      "date": "2025-04-27"
+    },
+    {
+      "number": 1803,
+      "date": "2025-04-28"
+    },
+    {
+      "number": 1807,
+      "date": "2025-04-28"
+    },
+    {
+      "number": 1817,
+      "date": "2025-04-28"
+    },
+    {
+      "number": 1819,
+      "date": "2025-04-28"
+    },
+    {
+      "number": 1820,
+      "date": "2025-04-28"
+    },
+    {
+      "number": 1786,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1828,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1829,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1832,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1834,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1838,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1835,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1841,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1845,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1850,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1851,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1854,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1856,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1861,
+      "date": "2025-05-01"
+    },
+    {
+      "number": 1745,
+      "date": "2025-05-02"
+    },
+    {
+      "number": 1865,
+      "date": "2025-05-02"
+    },
+    {
+      "number": 1868,
+      "date": "2025-05-02"
+    },
+    {
+      "number": 1869,
+      "date": "2025-05-02"
+    },
+    {
+      "number": 1883,
+      "date": "2025-05-02"
+    },
+    {
+      "number": 1884,
+      "date": "2025-05-02"
+    }
+  ],
+  "generated_at": "2026-10-17T16:04:11.853491+00:00"
+}

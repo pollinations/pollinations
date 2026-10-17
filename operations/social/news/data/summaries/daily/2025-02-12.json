@@ -2,8 +2,8 @@
   "date": "2025-02-12",
   "period_start": "2025-02-12",
   "period_end": "2025-02-12",
-  "title": "Anime AI Generation joins the project directory",
-  "summary": "A small directory update: Anime AI Generation is now easier to discover.\n\nThe project listings now include Anime AI Generation, making another community-built use of pollinations easier to find.",
+  "title": "An anime character creator joins the directory",
+  "summary": "The community project directory gained an AI anime character creator.\n\nAnime AI Generation, a community website for creating anime characters with AI, was added to the README project table and the website’s Tools & Interfaces directory.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-02-12"
     }
   ],
-  "generated_at": "2026-09-04T13:38:57.103126+00:00"
+  "generated_at": "2026-10-17T15:33:41.341846+00:00",
+  "highlights": [],
+  "changelog": []
 }

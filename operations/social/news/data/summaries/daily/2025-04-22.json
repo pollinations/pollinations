@@ -2,8 +2,8 @@
   "date": "2025-04-22",
   "period_start": "2025-04-22",
   "period_end": "2025-04-22",
-  "title": "The project directory now leads with what the community is using",
-  "summary": "A directory-focused day: better project discovery, cleaner chat history, and a refreshed Mistral model.\n\nProject listings now show GitHub star counts and sort by popularity, making it easier to find the apps people have already put through their paces. ImageGen AI Image also joined the list, while CSV exports were reordered to better match the directory.\n\nConversation history now avoids showing duplicate ads. A small change, but repeated UI furniture is how software slowly becomes haunted.\n\nThe Mistral model configuration was refreshed, keeping the multi-model text endpoint current alongside the rest of the ecosystem.",
+  "title": "Popular projects are easier to find",
+  "summary": "Project stars make the showcase easier to browse, a new image app joins the list, and text conversations stop repeating ads.\n\nProject listings gained GitHub star counts and now put more-starred entries first. Separately, the projects CSV now lists older submissions before newer ones.\n\nImageGen AI Image was added to the website and README project lists. It uses the Pollinations image API to turn descriptions into images, with prompt enhancement, adjustable settings, and downloads.\n\nConversation history and streaming responses now skip additional ads when a Pollinations redirect link is already present. The same changeset adjusted affiliate matching and text-response ad handling, moved Mistral Small 3 to a different provider route, and removed requester IP addresses from image-generation response data.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,5 +27,17 @@
       "date": "2025-04-22"
     }
   ],
-  "generated_at": "2026-09-04T12:30:36.101334+00:00"
+  "generated_at": "2026-10-17T15:38:15.006878+00:00",
+  "highlights": [
+    {
+      "emoji": "🌟",
+      "title": "Find popular community projects",
+      "text": "Project listings now show GitHub star counts and put more-starred projects first. [Explore the showcase](https://pollinations.ai).",
+      "prs": [
+        1739
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

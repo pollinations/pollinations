@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-31",
+  "period_start": "2026-05-31",
+  "period_end": "2026-05-31",
+  "generated_at": "2026-06-01T07:40:04.018021+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-31/images/reddit.jpg"
+    }
+  ],
+  "title": "Shipped a React SDK with auth provider and UI components",
+  "text": "We merged PR #11217 today, which adds a native React SDK and UI component package to the pollinations.ai ecosystem.\n\nIf you've been manually wiring up HTTP calls for image or text generation in your React apps, this should save you some boilerplate. The package includes an auth provider context and a few drop-in UI components. The goal is to make it trivial to wrap your app in the provider and immediately start calling the models without managing the fetch lifecycle, caching, or token state yourself.\n\nIt's still early days for this specific package, so the API surface area is intentionally small. We're prioritizing stability over shipping 50 different wrapper hooks right now. The auth context handles the heavy lifting, and the UI components are meant to be headless-ish so you can style them however your app needs.\n\nYou can check out the implementation or open an issue if the provider isn't playing nice with your specific state management setup. \n\nCode is up on GitHub: https://github.com/pollinations/pollinations\n\nDocs are being updated to reflect the new package, but the TypeScript definitions should guide you through the basics in the meantime. Let us know if you run into edge cases with the auth context."
+}

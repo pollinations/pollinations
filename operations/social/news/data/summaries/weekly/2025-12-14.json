@@ -1,0 +1,235 @@
+{
+  "date": "2025-12-14",
+  "period_start": "2025-12-07",
+  "period_end": "2025-12-13",
+  "title": "The model menu got wider",
+  "summary": "More models and tools arrived, while Chat and the rebuilt playground made them easier to use.\n\n`openai-large` moved to GPT-5.2, with `openai-reasoning` as an alias and a 16,384-token completion cap. Image generation gained the alpha `zimage` model with 2× upscaling. Flux now keeps four steps even when concurrency rises, and generated images no longer carry a Pollinations logo.\n\nThe chat API added Gemini built-in tools, including code execution, Search, Maps, URL context, computer use, and file search. With no tools specified, `gemini` defaults to code execution, Search, and URL context; supplied tools take precedence. A separate fix lets Claude requests routed through Bedrock accept HTTP image URLs on `/v1/chat/completions`.\n\nChat added controls for image dimensions, seed, and quality, plus video seed, duration, aspect ratio, and audio. The rebuilt hello.pollinations.ai playground brings image and text generation, vision-capable model selection, interactive API examples, and community creations into one responsive site.\n\nListings added G4F projects, Discord companions and image bots, creative studios, storytelling and learning tools, a video editor, and WordPress content plugins. Several December 13 PRs listed the same projects more than once; the listings represent distinct apps, not extra launches.",
+  "pr_count": 56,
+  "prs": [
+    {
+      "number": 5718,
+      "date": "2025-12-07"
+    },
+    {
+      "number": 5770,
+      "date": "2025-12-07"
+    },
+    {
+      "number": 5776,
+      "date": "2025-12-07"
+    },
+    {
+      "number": 5711,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5719,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5753,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5788,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5792,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5798,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5800,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5801,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5803,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5811,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5794,
+      "date": "2025-12-09"
+    },
+    {
+      "number": 5834,
+      "date": "2025-12-09"
+    },
+    {
+      "number": 5831,
+      "date": "2025-12-10"
+    },
+    {
+      "number": 5864,
+      "date": "2025-12-10"
+    },
+    {
+      "number": 5867,
+      "date": "2025-12-10"
+    },
+    {
+      "number": 5552,
+      "date": "2025-12-11"
+    },
+    {
+      "number": 5844,
+      "date": "2025-12-11"
+    },
+    {
+      "number": 5868,
+      "date": "2025-12-11"
+    },
+    {
+      "number": 5872,
+      "date": "2025-12-11"
+    },
+    {
+      "number": 5875,
+      "date": "2025-12-11"
+    },
+    {
+      "number": 5890,
+      "date": "2025-12-11"
+    },
+    {
+      "number": 5881,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5906,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5921,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5922,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5923,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5924,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5927,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5931,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5947,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5949,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5950,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5952,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5953,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5954,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5955,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5956,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5957,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5958,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5960,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5961,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5962,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5963,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5964,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5965,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5966,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5967,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5968,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5969,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5970,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5972,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5973,
+      "date": "2025-12-13"
+    },
+    {
+      "number": 5976,
+      "date": "2025-12-13"
+    }
+  ],
+  "generated_at": "2026-10-17T16:06:52.621373+00:00"
+}

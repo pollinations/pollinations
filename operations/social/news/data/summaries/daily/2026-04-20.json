@@ -36,24 +36,39 @@
     {
       "emoji": "🔐",
       "title": "The golden handshake",
-      "text": "The BYOP authorization screen got a complete redesign. Upfront spending limits and a cleaner flow so you actually know what you're agreeing to when handing over your pollen."
+      "text": "The BYOP authorization screen got a complete redesign. Upfront spending limits and a cleaner flow so you actually know what you're agreeing to when handing over your pollen.",
+      "prs": [
+        10229
+      ],
+      "kind": "product"
     },
     {
       "emoji": "📊",
       "title": "Dashboard spring cleaning",
-      "text": "We simplified the API key filter in the [Dashboard](https://enter.pollinations.ai) and added direct key filtering to the SDK. Track your usage without fighting the UI."
+      "text": "We simplified the API key filter in the [Dashboard](https://enter.pollinations.ai) and added direct key filtering to the SDK. Track your usage without fighting the UI.",
+      "prs": [
+        10239
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🌟",
       "title": "Insight Engine blooms again",
       "text": "Insight Engine has been rewired to use the latest endpoints and is back in the community showcase. [Try it](https://erbharatmalhotra.github.io/Insight_Engine/)",
+      "prs": [
+        10368
+      ],
       "kind": "app"
     },
     {
       "emoji": "🔍",
       "title": "X-Ray vision for repos",
       "text": "Reporay joins the community showcase. Feed it a GitHub URL, get architectural insights and summaries back. [Try it](https://repo-ray.vercel.app)",
+      "prs": [
+        10369
+      ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-12",
+  "period_start": "2026-04-12",
+  "period_end": "2026-04-12",
+  "generated_at": "2026-04-13T06:40:41.248883+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-12/images/reddit.jpg"
+    }
+  ],
+  "title": "Infrastructure update: Sana hits 165ms, Fireworks migrations, browser SDKs fixed",
+  "text": "Just pushed a few infrastructure updates to the text and image routing. 5 PRs merged today.\n\nThe most noticeable change is for image generation. We migrated Sana Sprint 1.6B over to a GH200 node. Generation times dropped to roughly 165ms. It is fast enough now that you can basically treat it as real-time for most UI interactions.\n\nOn the text side, we did a fairly large migration of our model routing. Deepseek, GLM, Qwen-large, and Minimax are now running through Fireworks AI. We also bumped Kimi to use K2-thinking on Bedrock. If you are hitting the text endpoints, you should see lower latency across the board and better reasoning outputs from the Kimi swap.\n\nFinally, we fixed a CORS issue that was breaking browser integrations. If you tried to use the standard OpenAI JS/TS SDK directly from a browser frontend pointing to our API, it would fail on the preflight request. We updated the backend to properly reflect CORS headers (PR #10165). You can now call the endpoints client-side without running your own proxy.\n\nCode and open roadmap are in the repo: https://github.com/pollinations/pollinations\nDocs for the endpoints: https://pollinations.ai/docs\n\nLet me know if you hit any weird edge cases with the new routing."
+}

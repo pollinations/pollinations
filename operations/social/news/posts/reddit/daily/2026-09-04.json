@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-04",
+  "period_start": "2026-09-04",
+  "period_end": "2026-09-04",
+  "generated_at": "2026-09-05T06:28:12.926631+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-04/images/reddit.jpg"
+    }
+  ],
+  "title": "22 merged PRs: Responses, MCP, and Polli streaming",
+  "text": "22 PRs merged today. The larger thread is that there are now more ways to talk to models without each integration inventing its own small dialect.\n\nStateless Responses support now works across text models, and Polli gained OpenAI-compatible streaming. Managed prompt agents now run in `gen`; caller-provided tools are ignored rather than rejected, which is less surprising for clients that attach built-ins by default.\n\nMCP support also expanded: Pollinations MCP can be added to Open WebUI using the user’s own key, Nectar MCP was added to image, and Open WebUI no longer injects builtin tools into every chat. Polli also picked up search, diagram/visual work, intelligence updates, and deployment work.\n\nOn models: GPT-6 Astra and MiniMax H3 Max Turbo are available. The HA gateway build now includes Pollin Uptime.\n\nA few less glamorous fixes matter just as much: unsupported upstream media statuses are preserved, generation-infrastructure errors use the shared handler, the zero-Pollen authorization notice was tightened up, and the first API-key quest can auto-claim. Docs examples now use curated request bodies.\n\nPR list and code: https://github.com/pollinations/pollinations/pulls\nDocs: https://github.com/pollinations/pollinations#readme\n\nStill worth stress-testing: Responses edge cases across providers, Open WebUI tool behavior, and streaming clients that make optimistic assumptions about chunks."
+}

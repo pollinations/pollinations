@@ -2,36 +2,12 @@
   "date": "2025-12-10",
   "period_start": "2025-12-10",
   "period_end": "2025-12-10",
-  "title": "Chat generation and Claude image inputs got their footing back",
-  "summary": "A garden-maintenance day: chat fixes, Claude compatibility, a filled-in news archive, and smoother community workflows.\n\nChat.pollinations.ai generation was restored, Claude Code gained routing support, and Claude/Bedrock image URLs are now converted cleanly to base64. Less ceremony between a prompt, an image, and a usable response.\n\nNews files from late July through early December were backfilled, alongside a workflow and pipeline for keeping updates flowing and a fix for branch filtering. The changelog is becoming less of an archaeological dig.\n\nAdding the app:review label now reliably starts the app-submission workflow, and Lily, an AI Discord companion, joined the socialBots directory.",
-  "pr_count": 10,
+  "title": "More control over images and video in Chat",
+  "summary": "Chat gained image and video controls, Claude image URL inputs got a fix, and a Discord companion joined the project directory.\n\nChat gained a Generation Options modal for image dimensions, seed and quality, plus video seed, duration, aspect ratio and audio. Those settings are passed to generation requests. Image generation now defaults to 1024×1024 with enhancement off; Chat also routes generation and model requests through gen.pollinations.ai and recovers when a saved active chat no longer exists.\n\nClaude requests routed through Bedrock now convert HTTP image URLs to base64 data URLs, fixing image URL input on `/v1/chat/completions`. The existing Vertex AI conversion remains unchanged.\n\nLily – AI Discord Companion was added to the socialBots project directory with an install link. Its listing describes a bot that remembers user facts and relationships, responds to emotional tone, and decides when to join a conversation.",
+  "pr_count": 3,
   "prs": [
     {
-      "number": 5829,
-      "date": "2025-12-10"
-    },
-    {
       "number": 5831,
-      "date": "2025-12-10"
-    },
-    {
-      "number": 5845,
-      "date": "2025-12-10"
-    },
-    {
-      "number": 5847,
-      "date": "2025-12-10"
-    },
-    {
-      "number": 5848,
-      "date": "2025-12-10"
-    },
-    {
-      "number": 5849,
-      "date": "2025-12-10"
-    },
-    {
-      "number": 5861,
       "date": "2025-12-10"
     },
     {
@@ -39,13 +15,21 @@
       "date": "2025-12-10"
     },
     {
-      "number": 5865,
-      "date": "2025-12-10"
-    },
-    {
       "number": 5867,
       "date": "2025-12-10"
     }
   ],
-  "generated_at": "2026-09-04T12:29:35.449856+00:00"
+  "generated_at": "2026-10-17T15:54:46.526997+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Chat generation controls",
+      "text": "Set image dimensions, seed and quality, or adjust video duration, aspect ratio and audio from Chat's new Generation Options modal. [Open Chat](https://chat.pollinations.ai).",
+      "prs": [
+        5831
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

@@ -119,5 +119,45 @@
       "date": "2026-07-18"
     }
   ],
-  "generated_at": "2026-09-04T11:47:09.414182+00:00"
+  "generated_at": "2026-09-04T11:47:09.414182+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "GPT-OSS joins the lineup",
+      "text": "Try `gpt-oss` for reasoning and tool calling with a 131,072-token context window. [Explore GPT-OSS](https://enter.pollinations.ai/models?q=gpt-oss).",
+      "prs": [
+        12566
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "HappyHorse video generation",
+      "text": "HappyHorse 1.1 adds a paid-only video generation option. [Explore HappyHorse](https://enter.pollinations.ai/models?q=HappyHorse%201.1).",
+      "prs": [
+        12577
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "More text models",
+      "text": "Try Kimi K3, Grok 4.5, Gemma 4 31B, MiMo V2.5/Pro, and Qwen3.7 Max through the unified API. [Explore Kimi K3](https://enter.pollinations.ai/models?q=Kimi%20K3).",
+      "prs": [
+        12577
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "CatGPT community gallery",
+      "text": "CatGPT now collects generated memes in a public gallery, including images its Discord bot delivers. Uploaded reference images remain unlisted.",
+      "prs": [
+        12549,
+        12558
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

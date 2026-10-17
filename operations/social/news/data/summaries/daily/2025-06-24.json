@@ -2,14 +2,10 @@
   "date": "2025-06-24",
   "period_start": "2025-06-24",
   "period_end": "2025-06-24",
-  "title": "Default text requests now take the fast lane",
-  "summary": "A tuning day: faster default text, leaner auth, personalized model routing, and an early semantic cache for images.\n\nThe default text model now points to openai-fast, while authentication token validation was optimized by 83%. Less time spent checking credentials; more time spent getting a response.\n\nA user-specific model mapping system landed, creating the groundwork for accounts to resolve model choices according to their own configuration rather than one universal mapping.\n\nA proof of concept adds caching for vectorized images using text embeddings, exploring a semantic memory layer for repeated or closely related image work.",
-  "pr_count": 7,
+  "title": "Text requests get a faster default",
+  "summary": "Text requests got a faster default, authentication shed redundant queries, and Unfoldtech joined the creative projects.\n\nText requests that omit a model now default to `openai-fast`; explicitly selected models are unchanged. Configurable routing was also added for specified authenticated users, alongside the `openai-roblox` model and changes to several model tier labels.\n\nToken validation now gets user details in one query instead of three. A test response fell from roughly 12 seconds to 2.1 seconds, and image generation now reuses one authentication result throughout a request.\n\nUnfoldtech, created by kengkreingkrai, was added to Creative Projects. It turns Pexels image inspiration into prompts and generated images, with IPTC metadata embedded in downloads.",
+  "pr_count": 4,
   "prs": [
-    {
-      "number": 2600,
-      "date": "2025-06-24"
-    },
     {
       "number": 2605,
       "date": "2025-06-24"
@@ -25,15 +21,19 @@
     {
       "number": 2619,
       "date": "2025-06-24"
-    },
-    {
-      "number": 2622,
-      "date": "2025-06-24"
-    },
-    {
-      "number": 2630,
-      "date": "2025-06-24"
     }
   ],
-  "generated_at": "2026-09-04T13:04:19.100116+00:00"
+  "generated_at": "2026-10-17T15:43:01.777310+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Faster default text model",
+      "text": "Text requests without a `model` now use `openai-fast`. Explicitly selected models are unchanged. [Browse the model](https://enter.pollinations.ai/models?q=openai-fast).",
+      "prs": [
+        2615
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

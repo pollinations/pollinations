@@ -2,9 +2,9 @@
   "date": "2025-09-26",
   "period_start": "2025-09-26",
   "period_end": "2025-09-26",
-  "title": "Two new image models joined the garden",
-  "summary": "New image models, smarter concurrency, and a round of observability work made the garden more useful and less mysterious.\n\nNanobanana and Seedream are now available through the image service, alongside corrected provider mapping and tracking headers so image requests reach the infrastructure they are meant to reach and remain easier to trace.\n\nModel improvements landed with tier-aware concurrency controls and rate-limit monitoring, giving the platform a clearer view of demand while keeping model access orderly when the queue gets lively.\n\nTelemetry now preserves error events when cost resolution is unavailable, text moderation outcomes are tracked, and a staging deployment plus an environment-file hotfix make it safer to test changes before they wander into production.",
-  "pr_count": 13,
+  "title": "More room in the image queue",
+  "summary": "Image queues got more room, image responses got clearer usage details, and the community project list grew.\n\nNanobanana and Seedream queues moved from 45-second to 30-second intervals. Flower users can make up to 3 requests per interval and Nectar users up to 6, instead of the previous cap of 1 for everyone. The `gemini` text model also switched to Vertex AI.\n\nImage responses gained headers for the model used, user tier, and completion image tokens, with tracking preserved through conversion and resizing. Enter added Nanobanana and Seedream to its image model registry, while Flux Kontext and Turbo gained explicit per-image prices. Flux remains priced at zero.\n\nEnter corrected its Pollen balance display and checkout return URL, and added GPT-5 Chat to its text usage registry. Text requests that need a signed-in session now give a more specific message. The text API root also gained a permanent redirect to its documentation.",
+  "pr_count": 10,
   "prs": [
     {
       "number": 4161,
@@ -16,14 +16,6 @@
     },
     {
       "number": 4183,
-      "date": "2025-09-26"
-    },
-    {
-      "number": 4184,
-      "date": "2025-09-26"
-    },
-    {
-      "number": 4185,
       "date": "2025-09-26"
     },
     {
@@ -53,43 +45,19 @@
     {
       "number": 4203,
       "date": "2025-09-26"
-    },
-    {
-      "number": 4204,
-      "date": "2025-09-26"
     }
   ],
-  "generated_at": "2026-09-04T12:37:26.329653+00:00",
+  "generated_at": "2026-10-17T15:47:38.348833+00:00",
   "highlights": [
     {
-      "date": "2025-09-27",
-      "emoji": "🚀",
-      "title": "GPT-5 Arrives",
-      "text": "The `openai` and `openai-fast` endpoints are now powered by GPT-5 Mini and Nano models. [Text API](https://enter.pollinations.ai)"
-    },
-    {
-      "date": "2025-09-27",
-      "emoji": "🎨",
-      "title": "4K Image Generation",
-      "text": "Added `seedream` (ByteDance ARK 4.0) for 4K images and `nanobanana` (Gemini 2.5 Flash). [Image API](https://enter.pollinations.ai)"
-    },
-    {
-      "date": "2025-09-27",
-      "emoji": "🤖",
-      "title": "DeepSeek V3.1",
-      "text": "The powerful DeepSeek V3.1 model is now available via the text API."
-    },
-    {
-      "date": "2025-09-27",
-      "emoji": "🖼️",
-      "title": "Reference Images",
-      "text": "You can now use reference images in the editor and API to guide generation style and composition."
-    },
-    {
-      "date": "2025-09-27",
-      "emoji": "🔍",
-      "title": "Live Search",
-      "text": "The `gemini-search` model now features automatic Google Search grounding for real-time answers."
+      "emoji": "🎯",
+      "title": "See which image model ran",
+      "text": "Image API responses now include `x-model-used`, `x-user-tier`, and `x-completion-image-tokens` headers, so you can inspect the model and usage behind a generated image. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        4183
+      ],
+      "kind": "api"
     }
-  ]
+  ],
+  "changelog": []
 }

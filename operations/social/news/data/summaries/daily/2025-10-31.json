@@ -2,16 +2,12 @@
   "date": "2025-10-31",
   "period_start": "2025-10-31",
   "period_end": "2025-10-31",
-  "title": "A new mobile app joins the image garden",
-  "summary": "A garden-maintenance day: a new image app, smoother Gemini access, reliable daily tiers, and fewer mysterious notifications.\n\nReImagine, a mobile app for AI image transformation, was added to the ecosystem. Another small surface for turning prompts and existing images into something else entirely.\n\nenter.pollinations.ai now has IOnet deployment infrastructure and nanobanana (Gemini) activated, while requests bypass unnecessary IP queueing. Gemini text responses are also preserved through error handling, and Flux requests report the actual Flux model name in tracking headers rather than an implementation detail.\n\nThe tier system was updated so daily refills work with V2 products, with a script added to check tier status. Discord PR notifications were simplified and now only mention the update role when a PR explicitly asks for it: fewer unsolicited pings, an ancient engineering goal.",
-  "pr_count": 13,
+  "title": "ReImagine brings image transformations to mobile",
+  "summary": "A mobile image app and Gemini image editing joined a round of fixes for tiers, Flux responses, and Enter request handling.\n\nCommunity contributor ismailazdad added ReImagine, a React Native app for transforming one image with kontext or combining two to four with gptimage. It keeps local version history and lets users save or share results.\n\nThe image model registry gained nanobanana for image-to-image generation through Enter, with a 2048-pixel maximum side length. Gemini refusals now retain their specific feedback instead of becoming generic errors.\n\nSeed, Flower, and Nectar tier detection now uses the updated subscription products. The tier panel reads the product name and daily Pollen amount from Polar rather than showing hardcoded values.",
+  "pr_count": 6,
   "prs": [
     {
       "number": 4863,
-      "date": "2025-10-31"
-    },
-    {
-      "number": 4875,
       "date": "2025-10-31"
     },
     {
@@ -23,31 +19,7 @@
       "date": "2025-10-31"
     },
     {
-      "number": 4887,
-      "date": "2025-10-31"
-    },
-    {
-      "number": 4889,
-      "date": "2025-10-31"
-    },
-    {
       "number": 4891,
-      "date": "2025-10-31"
-    },
-    {
-      "number": 4892,
-      "date": "2025-10-31"
-    },
-    {
-      "number": 4894,
-      "date": "2025-10-31"
-    },
-    {
-      "number": 4895,
-      "date": "2025-10-31"
-    },
-    {
-      "number": 4896,
       "date": "2025-10-31"
     },
     {
@@ -59,5 +31,17 @@
       "date": "2025-10-31"
     }
   ],
-  "generated_at": "2026-09-04T12:57:56.212121+00:00"
+  "generated_at": "2026-10-17T15:50:45.297455+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Gemini image transformations",
+      "text": "Use `nanobanana` for image-to-image generation through Enter, with output up to 2048 pixels on a side. [Browse the model](https://enter.pollinations.ai/models?q=nanobanana).",
+      "prs": [
+        4886
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

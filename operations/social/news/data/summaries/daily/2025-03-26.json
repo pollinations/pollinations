@@ -2,8 +2,8 @@
   "date": "2025-03-26",
   "period_start": "2025-03-26",
   "period_end": "2025-03-26",
-  "title": "Text API tunnel monitoring gets a repair",
-  "summary": "A small maintenance day for the text stack: better tunnel visibility and another interface experiment.\n\nCloudflare tunnel monitoring for text.pollinations.ai was fixed, making it easier to keep an eye on the route between prompts and generated text.\n\nThe text interface gained a second iteration of an ad test, continuing experiments around how lightweight support can coexist with an open AI endpoint.",
+  "title": "A chat model for Roblox projects",
+  "summary": "Roblox-focused chat joins the model list, while image fallbacks and text API diagnostics get some attention.\n\nAdded `roblox-rp`, a censored chat model with a system prompt for Roblox development, Lua, and roleplay.\n\nExpanded keyword matching for dating and NSFW prompts, revised referral messages, and added `/redirect/*` handling for referral links and analytics.\n\nRestored Cloudflare SDXL as the image fallback when Cloudflare Flux fails, before trying ComfyUI. `gpt-4o-mini` now uses its primary configuration rather than randomly choosing between two; tunnel restart configuration and text API diagnostics were also added.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,5 +15,17 @@
       "date": "2025-03-26"
     }
   ],
-  "generated_at": "2026-09-04T12:16:52.987885+00:00"
+  "generated_at": "2026-10-17T15:36:26.707471+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Roblox-focused chat",
+      "text": "Use `roblox-rp` for Roblox development, Lua, and roleplay in a censored chat model. [Browse the model](https://enter.pollinations.ai/models?q=roblox-rp).",
+      "prs": [
+        1442
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

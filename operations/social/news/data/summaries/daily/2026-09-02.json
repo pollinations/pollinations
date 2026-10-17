@@ -83,7 +83,8 @@
       "text": "Use `/v1/responses` with 56 supported models, including JSON and streaming responses. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         14239
-      ]
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🤖",
@@ -91,16 +92,17 @@
       "text": "Try `google/gemini-3.8-flash` for chat, streaming, structured output, tools, reasoning, and multimodal input. [Explore available models](https://gen.pollinations.ai/v1/models).",
       "prs": [
         14362
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🔗",
       "title": "More apps for agents",
       "text": "Connect agents to Gmail, Slack, GitHub, Drive, and other apps through the new Composio MCP connector. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
-        14249,
-        14355
-      ]
+        14249
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎨",
@@ -120,5 +122,6 @@
       ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

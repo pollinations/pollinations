@@ -2,9 +2,9 @@
   "date": "2026-01-16",
   "period_start": "2026-01-16",
   "period_end": "2026-01-16",
-  "title": "Play can now make audio and keep its outputs around",
-  "summary": "A garden-maintenance day: audio arrived in Play, account tooling got clearer, and the API learned to report trouble more honestly.\n\nThe Play experience gained audio generation, a cleaner login UI, and more reliable output persistence. Login also now preselects profile and balance permissions, reducing the amount of permission archaeology required to get started.\n\nAccount endpoint response schemas are now documented, the dashboard shows a service-availability KPI, and usage-data CSV downloads work again. Slightly fewer mysteries hiding behind a button labeled export.\n\nThe gen.pollinations.ai proxy was simplified, while image requests through Azure now return the correct upstream error status codes. APIs should fail with less interpretive dance when something goes wrong.",
-  "pr_count": 9,
+  "title": "Play adds audio generation",
+  "summary": "Audio arrived in Play, account access got simpler, and image errors stopped disguising rejected requests as server failures.\n\nPlay now generates audio with model-specific voice choices and a player for the result. Output stays visible when switching models, and the login panel shows account and Pollen details when available.\n\nLogin from pollinations.ai now preselects profile and balance permissions on the authorization page. The gen API also forwards account profile, balance, and usage requests, while the frontend clears a stored key when a profile request returns 401. The frontend’s default text model changed to `gemini-fast`.\n\nAccount API docs now spell out profile, balance, and usage responses with curl examples. The Pollen usage CSV link points to the account usage endpoint and requests up to 10,000 records.",
+  "pr_count": 7,
   "prs": [
     {
       "number": 7329,
@@ -27,15 +27,7 @@
       "date": "2026-01-16"
     },
     {
-      "number": 7359,
-      "date": "2026-01-16"
-    },
-    {
       "number": 7361,
-      "date": "2026-01-16"
-    },
-    {
-      "number": 7363,
       "date": "2026-01-16"
     },
     {
@@ -43,5 +35,26 @@
       "date": "2026-01-16"
     }
   ],
-  "generated_at": "2026-09-04T11:36:28.971635+00:00"
+  "generated_at": "2026-10-17T15:59:43.928355+00:00",
+  "highlights": [
+    {
+      "emoji": "🎵",
+      "title": "Make audio in Play",
+      "text": "Generate audio, choose from a model’s available voices, and listen to the result in Play. [Try Play](https://pollinations.ai/play).",
+      "prs": [
+        7352
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Account data through gen",
+      "text": "Request your profile, Pollen balance, and usage through `gen.pollinations.ai/account/*`. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        7351
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2025-03-07",
   "period_start": "2025-03-07",
   "period_end": "2025-03-07",
-  "title": "Text routing gets a cleaner path",
-  "summary": "A small routing cleanup: Scaleway moves to Portkey and an old Cloudflare text-generation path retires.\n\nScaleway text generation now routes through Portkey, while an obsolete Cloudflare-specific generator has been removed. Fewer parallel paths to maintain; the API keeps doing its thing.",
+  "title": "Text models move onto a shared route",
+  "summary": "Text model routing got simpler, and `claude-hybridspace` became `claude`.\n\nScaleway-backed models and the former Cloudflare client now use the existing Portkey route. The migration retains model-specific prompts. The model list also renames `claude-hybridspace` to `claude` and describes it as Claude 3.5 Haiku; callers using the old name will need to update it.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-03-07"
     }
   ],
-  "generated_at": "2026-09-04T12:04:35.315743+00:00"
+  "generated_at": "2026-10-17T15:34:53.402218+00:00",
+  "highlights": [],
+  "changelog": []
 }

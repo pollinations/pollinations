@@ -2,9 +2,9 @@
   "date": "2026-01-17",
   "period_start": "2026-01-17",
   "period_end": "2026-01-17",
-  "title": "Two more ways to ask machines for useful things",
-  "summary": "New research and image models landed alongside cleaner chat tooling, better docs, and a tidier control room.\n\nNomNom joined the text lineup as an alpha web-research model, with its naming and attribution cleaned up for a less mysterious launch. Image generation also gained Klein on Modal, now exposed under the shorter `klein` name because model names apparently require pruning too.\n\nChat.pollinations.ai gained BYOP integration support, while a new code-formatting skill gives agents one less excuse to return beautifully chaotic indentation.\n\nBloom Studio's URL was updated and the API documentation now fully describes MessageContentPart, making integration work slightly less dependent on archaeological inference.",
-  "pr_count": 11,
+  "title": "Klein adds image generation and editing",
+  "summary": "Two models joined the garden, chat gained Bring Your Own Pollen, and the model monitor stopped mistaking slow for broken.\n\nFLUX.2 [klein] 4B was added for text-to-image generation and editing with reference images. Its primary model ID is `klein`, with `flux-klein` retained as an alias.\n\nThe community-built `nomnom` model was added for search, scraping, and crawling in Alpha. `gemini-scrape` and `web-research` remain aliases, and configured token-limit overrides were removed across several models.\n\nCommunity contributor CloudCompile added Bring Your Own Pollen to chat.pollinations.ai. People can connect their own key for model listings and chat, image, and video requests, see their Pollen balance, then disconnect to return to the default key. Bloom Studio’s catalog listing was also updated to point to its current site.",
+  "pr_count": 8,
   "prs": [
     {
       "number": 7311,
@@ -23,23 +23,11 @@
       "date": "2026-01-17"
     },
     {
-      "number": 7386,
-      "date": "2026-01-17"
-    },
-    {
       "number": 7392,
       "date": "2026-01-17"
     },
     {
-      "number": 7398,
-      "date": "2026-01-17"
-    },
-    {
       "number": 7399,
-      "date": "2026-01-17"
-    },
-    {
-      "number": 7400,
       "date": "2026-01-17"
     },
     {
@@ -51,5 +39,37 @@
       "date": "2026-01-17"
     }
   ],
-  "generated_at": "2026-09-04T11:37:09.731472+00:00"
+  "generated_at": "2026-10-17T15:59:48.433220+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Generate and edit with Klein",
+      "text": "Use `klein` to generate images from text or edit images with references. `flux-klein` remains an alias. [Browse Klein](https://enter.pollinations.ai/models?q=klein).",
+      "prs": [
+        7399,
+        7402
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "NomNom researches the web",
+      "text": "Use the Alpha `nomnom` text model for web search, scraping, and crawling. [Browse NomNom](https://enter.pollinations.ai/models?q=nomnom).",
+      "prs": [
+        7360,
+        7403
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "💡",
+      "title": "Bring your Pollen to chat",
+      "text": "Connect your own API key in chat.pollinations.ai for model listings, chat, image, and video requests. See your Pollen balance in the sidebar, and disconnect whenever you want to return to the default key. [Try community chat](https://chat.pollinations.ai).",
+      "prs": [
+        7311
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

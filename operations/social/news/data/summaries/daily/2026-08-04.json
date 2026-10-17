@@ -32,7 +32,12 @@
     {
       "emoji": "✨",
       "title": "Command A Plus, less translation",
-      "text": "Native messages, `reasoning_effort`, tool calls, streaming, and verified image inputs now pass through more faithfully on Cohere Command A Plus."
+      "text": "Native messages, `reasoning_effort`, tool calls, streaming, and verified image inputs now pass through more faithfully on Cohere Command A Plus.",
+      "prs": [
+        13032
+      ],
+      "kind": "model"
     }
-  ]
+  ],
+  "changelog": []
 }

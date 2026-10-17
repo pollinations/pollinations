@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-27",
+  "period_start": "2026-08-27",
+  "period_end": "2026-08-27",
+  "generated_at": "2026-08-28T09:22:05.506652+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-27/images/reddit.jpg"
+    }
+  ],
+  "title": "13 merges: model search, references, and studios",
+  "text": "13 PRs merged today.\n\nThe model browser got search filters in [#13996](https://github.com/pollinations/pollinations/pull/13996), and autocomplete is working again after [#14044](https://github.com/pollinations/pollinations/pull/14044). Canonical model slugs are now announced in [#13587](https://github.com/pollinations/pollinations/pull/13587), which should make model selection less dependent on knowing the exact current spelling of a thing.\n\nGeneration controls expanded in a few directions. Seedance now accepts reference media inputs ([#14010](https://github.com/pollinations/pollinations/pull/14010)); image support was separated from generic input limits ([#14029](https://github.com/pollinations/pollinations/pull/14029)); and GLM-5.3 Flash was added in [#14069](https://github.com/pollinations/pollinations/pull/14069). The text guide also has a reasoning quickstart now: [#13927](https://github.com/pollinations/pollinations/pull/13927).\n\nTwo more tools entered the app garden: Pollinations Studio in chat ([#14046](https://github.com/pollinations/pollinations/pull/14046)) and AI Studio, a realtime audio/video creator, in image ([#14047](https://github.com/pollinations/pollinations/pull/14047)).\n\nFor contributors, merged Quest PR authors should now receive their reward ([#14031](https://github.com/pollinations/pollinations/pull/14031)). Model cards also link to their earnings activity ([#14014](https://github.com/pollinations/pollinations/pull/14014)).\n\nThe README and FFmpeg MCP docs were refreshed too: [repo](https://github.com/pollinations/pollinations)."
+}

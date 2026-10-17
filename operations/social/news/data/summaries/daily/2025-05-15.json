@@ -2,8 +2,8 @@
   "date": "2025-05-15",
   "period_start": "2025-05-15",
   "period_end": "2025-05-15",
-  "title": "Project directory gets a small cleanup",
-  "summary": "A quiet directory-maintenance day: cleaner project listings and one new badge.\n\nThe project list now has aligned categories, and KoboldAI Lite is shown under its current name. MseeP.ai also joins the badge garden.",
+  "title": "Project categories line up",
+  "summary": "A small cleanup day: project categories and names got tidier, and the README gained an assessment badge.\n\nThe site’s project list now includes creative apps and tools/interfaces, matching the categories used to organize featured projects.\n\nThe directory now calls KoboldAI Lite by its correct name and no longer puts manually added 🆕 markers in project names.\n\nThe README gained a badge linking to Pollinations’ MseeP.ai listing. It changes no application code or security behavior.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,5 +15,7 @@
       "date": "2025-05-15"
     }
   ],
-  "generated_at": "2026-09-04T12:43:09.496435+00:00"
+  "generated_at": "2026-10-17T15:39:39.038409+00:00",
+  "highlights": [],
+  "changelog": []
 }

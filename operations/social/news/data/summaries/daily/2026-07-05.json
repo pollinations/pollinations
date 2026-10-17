@@ -32,25 +32,40 @@
     {
       "emoji": "⚡",
       "title": "Gemini Prompt Caching",
-      "text": "Send `cache_control` markers with your Gemini requests to cache large contexts. Deterministic hits, faster responses, and significantly cheaper repeated queries via the [Unified API](https://gen.pollinations.ai)."
+      "text": "Send `cache_control` markers with your Gemini requests to cache large contexts. Deterministic hits, faster responses, and significantly cheaper repeated queries via the [Unified API](https://gen.pollinations.ai).",
+      "prs": [
+        12215,
+        12233
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🌟",
       "title": "Sprout",
       "text": "A new community creation has landed in the Greenhouse directory. [Try it](https://murderszn.github.io/sprout/)",
+      "prs": [
+        12237
+      ],
       "kind": "app"
     },
     {
       "emoji": "🎨",
       "title": "/motion",
       "text": "An open-source generative graphics studio for designing WebGL shader visuals and looping motion backgrounds. [Try it](https://motion-e93d3.web.app/)",
+      "prs": [
+        12238
+      ],
       "kind": "app"
     },
     {
       "emoji": "🤖",
       "title": "LLM Playground",
       "text": "A new chat workspace supporting multiple models, custom AI characters, and team servers with per-member quotas. [Try it](https://llmplayground.net)",
+      "prs": [
+        12241
+      ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

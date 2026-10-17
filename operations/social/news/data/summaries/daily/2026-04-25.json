@@ -23,5 +23,26 @@
       "date": "2026-04-25"
     }
   ],
-  "generated_at": "2026-09-04T11:45:59.864325+00:00"
+  "generated_at": "2026-09-04T11:45:59.864325+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "Media metadata endpoint",
+      "text": "Get a file’s size and content type as JSON with `GET /{hash}/metadata`, without downloading the file.",
+      "prs": [
+        10449
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "📱",
+      "title": "Hourly usage views",
+      "text": "See how your usage changes hour by hour in the dashboard’s daily view, including on mobile.",
+      "prs": [
+        10453
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

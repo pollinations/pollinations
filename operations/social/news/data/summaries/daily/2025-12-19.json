@@ -2,16 +2,12 @@
   "date": "2025-12-19",
   "period_start": "2025-12-19",
   "period_end": "2025-12-19",
-  "title": "Instagram workflows got harder to confuse",
-  "summary": "A garden-maintenance day: sturdier Instagram workflows, working Gemini tools, clearer video errors, and fewer stray branches.\n\nInstagram prompts now carry Pollinations' identity, while the workflow gained authentication fixes, stricter image validation, and safer handling for nested image URLs. URLs remain a surprisingly ambitious data format.\n\nThe API now accepts video_url content, Gemini Fast's code execution, search, and URL-context tools are working again, and the Text API no longer advertises an unused n parameter.\n\nVeo content moderation failures now return a clear 400 response instead of looking like a server-side crash, giving callers an actionable answer.",
-  "pr_count": 10,
+  "title": "Gemini chat requests can include video",
+  "summary": "Gemini gained video input, Unity got a darker persona, and several API edge cases became less surprising.\n\nChat completions gained `video_url` content parts for Gemini models, so a message can pair a video URL with text for analysis. Video and image URL objects also accept an optional `mime_type`.\n\nUnity’s persona was rewritten with a darker, mood-aware conversational style. It now directs visual requests to `generate_image` and keeps a consistent appearance for selfies. Its supernatural powers and memory are character fiction, not platform capabilities.\n\nImage requests can handle unencoded reference-image URLs that contain their own query parameters, with guidance for invalid URLs. Veo polling now returns HTTP 400 for prompt or policy errors instead of reporting them as server failures.",
+  "pr_count": 6,
   "prs": [
     {
       "number": 6066,
-      "date": "2025-12-19"
-    },
-    {
-      "number": 6173,
       "date": "2025-12-19"
     },
     {
@@ -20,10 +16,6 @@
     },
     {
       "number": 6186,
-      "date": "2025-12-19"
-    },
-    {
-      "number": 6190,
       "date": "2025-12-19"
     },
     {
@@ -37,15 +29,28 @@
     {
       "number": 6210,
       "date": "2025-12-19"
-    },
-    {
-      "number": 6211,
-      "date": "2025-12-19"
-    },
-    {
-      "number": 6213,
-      "date": "2025-12-19"
     }
   ],
-  "generated_at": "2026-09-04T12:36:39.506994+00:00"
+  "generated_at": "2026-10-17T15:56:05.599474+00:00",
+  "highlights": [
+    {
+      "emoji": "🎯",
+      "title": "Video input for Gemini",
+      "text": "Send a `video_url` alongside text in a Gemini chat-completion request to ask questions about a video. The URL object can also include a `mime_type`. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        6186
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Unity’s darker side",
+      "text": "Unity has a darker, mood-aware conversational style and can use `generate_image` for visual requests, including selfies with a consistent appearance.",
+      "prs": [
+        6066
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

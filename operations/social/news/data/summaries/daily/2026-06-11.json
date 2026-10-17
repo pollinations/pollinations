@@ -21,12 +21,20 @@
       "emoji": "🌱",
       "title": "Wikimind Joins the Showcase",
       "text": "A new community-built learning tool that wires up translation for interactive messaging. [Try it](https://chpalitom09-bot.github.io/Wikimind-5/)",
+      "prs": [
+        11743
+      ],
       "kind": "app"
     },
     {
       "emoji": "🚀",
       "title": "Claude Fable 5 is Live",
-      "text": "Anthropic's Mythos-class model is now wired up via AWS Bedrock. 1M context window, vision, and tool support ready to go on the [text endpoint](https://gen.pollinations.ai/v1/chat/completions)."
+      "text": "Anthropic's Mythos-class model is now wired up via AWS Bedrock. 1M context window, vision, and tool support ready to go on the [text endpoint](https://gen.pollinations.ai/v1/chat/completions).",
+      "prs": [
+        11744
+      ],
+      "kind": "model"
     }
-  ]
+  ],
+  "changelog": []
 }

@@ -79,5 +79,35 @@
       "date": "2026-05-16"
     }
   ],
-  "generated_at": "2026-09-04T11:49:59.032575+00:00"
+  "generated_at": "2026-09-04T11:49:59.032575+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Image-to-video with LTX-2",
+      "text": "Give LTX-2 a starting image to generate a video from it. [Browse models](https://enter.pollinations.ai/models?q=ltx-2).",
+      "prs": [
+        10971
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Mood boards from a concept",
+      "text": "MoodCanvas AI turns a single concept into an aesthetic mood board using the Pollinations Image API. [Try it](https://moodcanvasai.netlify.app/).",
+      "prs": [
+        11020
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "✨",
+      "title": "Plan a trip with Navaro",
+      "text": "Enter a destination, trip length, and interests to get a personalized day-by-day itinerary. [Try it](https://navaro-ai.netlify.app).",
+      "prs": [
+        11019
+      ],
+      "kind": "app"
+    }
+  ],
+  "changelog": []
 }

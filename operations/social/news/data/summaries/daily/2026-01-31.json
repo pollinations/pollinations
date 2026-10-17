@@ -2,16 +2,12 @@
   "date": "2026-01-31",
   "period_start": "2026-01-31",
   "period_end": "2026-01-31",
-  "title": "Moltbot joins the Social Bots collection",
-  "summary": "A maintenance-minded day: a new social bot example, sturdier tier operations, and some overdue repository tidying.\n\nThe Social_Bots examples now include Moltbot configured with a Pollinations.ai provider, giving builders another open reference for wiring AI into social automation.\n\nTier refill scheduling moved from Cloudflare cron to GitHub Actions, while auth hooks now receive execution context for Tinybird logging. Less invisible machinery, more traceable invisible machinery.\n\nAPI-key secrets were standardized across GitHub workflows, an obsolete fundraising folder was removed, and the latest Instagram posts were prepared. The garden shed has labels again.",
-  "pr_count": 9,
+  "title": "Paid-only models get a clear boundary",
+  "summary": "Paid-only model balances are now explicit, Moltbot joined the catalog, and SDXL Turbo left the image roster.\n\nSeven models, including `claude-large`, `nanobanana-pro` and `veo`, now require purchased-pack or crypto Pollen rather than daily tier grants. The model API exposes a `paid_only` field, while Play and Enter label the affected models and explain which balance applies.\n\nThe Social_Bots catalog now includes @its3li’s Moltbot, a Telegram and WhatsApp assistant built with Pollinations. It also takes a featured spot in the README.\n\nThe `turbo` image model was removed from the registry and its dedicated routing. Self-hosted image routing retains the zimage and Flux pools.",
+  "pr_count": 4,
   "prs": [
     {
       "number": 7708,
-      "date": "2026-01-31"
-    },
-    {
-      "number": 7719,
       "date": "2026-01-31"
     },
     {
@@ -23,25 +19,11 @@
       "date": "2026-01-31"
     },
     {
-      "number": 7801,
-      "date": "2026-01-31"
-    },
-    {
-      "number": 7818,
-      "date": "2026-01-31"
-    },
-    {
-      "number": 7819,
-      "date": "2026-01-31"
-    },
-    {
       "number": 7821,
-      "date": "2026-01-31"
-    },
-    {
-      "number": 7825,
       "date": "2026-01-31"
     }
   ],
-  "generated_at": "2026-09-04T11:48:40.820665+00:00"
+  "generated_at": "2026-10-17T16:01:53.210798+00:00",
+  "highlights": [],
+  "changelog": []
 }

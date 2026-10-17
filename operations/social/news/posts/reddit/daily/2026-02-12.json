@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-02-12",
+  "period_start": "2026-02-12",
+  "period_end": "2026-02-12",
+  "generated_at": "2026-02-13T10:57:38.492088+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-12/images/reddit.jpg"
+    }
+  ],
+  "title": "OpenClaw now supports web search models and tool configuration",
+  "text": "We just merged support for web search models in OpenClaw. Previously limited to internal context, the agent can now query external sources via the updated tool configuration. This update is aimed at workflows requiring real-time data access rather than just static knowledge bases.\n\nWe also refactored the landing page into a tabbed UI with a shared connection step. The goal was to reduce friction during the initial setup—getting the agent connected and configured shouldn't require jumping between multiple screens. \n\nThe changes are live in the repo now. We're looking for feedback on the tool config structure specifically."
+}

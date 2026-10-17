@@ -2,9 +2,9 @@
   "date": "2025-12-24",
   "period_start": "2025-12-24",
   "period_end": "2025-12-24",
-  "title": "Image generation gets its Azure wiring",
-  "summary": "A quiet holiday maintenance pass: sturdier model integrations, a new Creative app, and a repaired path for community submissions.\n\nGPT Image 1.5 credentials were added for the gptimage-large model, keeping another image-generation route ready to return pixels instead of configuration errors.\n\nOpenAI-compatible requests can now survive mangled endpoint paths, while Gemini and Vertex AI receive sanitized tool schemas. More clients and agent setups should reach the model without tripping over API dialects.\n\nn8n-grok joined the Creative collection, and the app-submission workflow was patched so community projects have a smoother path into the ecosystem.",
-  "pr_count": 6,
+  "title": "Fewer dead ends for chat clients and tools",
+  "summary": "A day of removing avoidable errors from chat, tools, and image generation, while making room for another community app.\n\nOpenAI-compatible clients that append extra path segments can now reach chat completions instead of getting a 404. Gemini tool calls no longer fail when their schemas contain fields Vertex AI does not support. Model lookups also became case-insensitive, and DeepSeek V3.2’s registry ID was corrected.\n\nA missing configuration that caused `gptimage-large` image generation requests to fail was added.\n\nThe Indonesian-language n8n-grok image generator joined the creative app directory. App submissions now get stronger duplicate checks before proceeding, with borderline matches flagged for review.",
+  "pr_count": 5,
   "prs": [
     {
       "number": 6394,
@@ -23,13 +23,11 @@
       "date": "2025-12-24"
     },
     {
-      "number": 6433,
-      "date": "2025-12-24"
-    },
-    {
       "number": 6434,
       "date": "2025-12-24"
     }
   ],
-  "generated_at": "2026-09-04T12:40:18.262798+00:00"
+  "generated_at": "2026-10-17T15:56:34.484219+00:00",
+  "highlights": [],
+  "changelog": []
 }

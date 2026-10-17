@@ -2,9 +2,9 @@
   "date": "2025-05-12",
   "period_start": "2025-05-12",
   "period_end": "2025-05-12",
-  "title": "The project directory got a more useful map",
-  "summary": "A directory-gardening day: better project discovery, clearer Special Bee tracking, and a little more order around the edges.\n\nKoboldAI is now featured prominently with current links and correct attribution, while MVKProject Nexus API and new Special Bee projects joined the directory. Featured-project sorting was also tightened up, because a showcase should not behave like a junk drawer.\n\nDocumentation and token tracking were added for Special Bee requests, giving contributors and project users a clearer view of how those requests work and what they consume.\n\nFeed listener access gained authentication, making the connection point more deliberate while preserving the project’s growing ecosystem of shared tools.",
-  "pr_count": 9,
+  "title": "More access for image-feed listeners",
+  "summary": "The image feed gained authenticated access, while the community project directory got a larger crop of things to explore.\n\nAuthenticated listeners can now receive additional image-feed events, including events replayed when they connect. The existing content filters remain in place for public listeners.\n\nThe project directory added chat tools, image generators, interactive stories, a picture-book plugin, video-thumbnail tooling, and MVKProject Nexus API. KoboldAI gained a featured spot, corrected links and creator credit, while sorting changes make featured projects appear in the intended order.\n\nImages generated with meoow models now use the standard logo. An affiliate rotation weight was also adjusted.",
+  "pr_count": 8,
   "prs": [
     {
       "number": 1951,
@@ -20,10 +20,6 @@
     },
     {
       "number": 1955,
-      "date": "2025-05-12"
-    },
-    {
-      "number": 1956,
       "date": "2025-05-12"
     },
     {
@@ -43,5 +39,19 @@
       "date": "2025-05-12"
     }
   ],
-  "generated_at": "2026-09-04T12:41:06.444484+00:00"
+  "generated_at": "2026-10-17T15:39:48.726586+00:00",
+  "highlights": [
+    {
+      "emoji": "🌟",
+      "title": "More community projects",
+      "text": "Explore new community builds for interactive stories, picture books, chat, image generation, and video thumbnails. [Browse the showcase](https://pollinations.ai).",
+      "prs": [
+        1951,
+        1959,
+        1962
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

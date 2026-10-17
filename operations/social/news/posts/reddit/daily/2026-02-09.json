@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-02-09",
+  "period_start": "2026-02-09",
+  "period_end": "2026-02-09",
+  "generated_at": "2026-03-18T19:58:13.615251+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-09/images/reddit.jpg"
+    }
+  ],
+  "title": "Update: Polly gets embeddings, simplified balance logic, and legacy model support",
+  "text": "Just merged a few quality-of-life updates for the platform.\n\n**Polly (our Discord bot) got a brain boost.** We swapped in OpenAI embeddings (#8111) and tweaked the system prompt (#8123). Context retrieval should be much sharper now, so she actually remembers what you're talking about.\n\n**Credit logic is cleaner.** We fixed an edge case with balance deduction (#8117). Instead of splitting costs across buckets, it's now a single-bucket deduction that allows for negative balances—much simpler for the backend to handle.\n\n**Model flexibility.** Added support for hidden models and `claude-legacy` for those who need specific older versions (#8101).\n\nAs always, the repo is open if you want to see how we implemented the embedding switch or the balance logic. Happy building."
+}

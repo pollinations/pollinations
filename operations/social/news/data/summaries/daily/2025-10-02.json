@@ -2,9 +2,9 @@
   "date": "2025-10-02",
   "period_start": "2025-10-02",
   "period_end": "2025-10-02",
-  "title": "Creative experiments get a larger stage",
-  "summary": "A community-gallery day: 21 new projects surfaced, plus cleaner model-provider metadata behind the API.\n\nThe project showcase now includes Imagine Draw AI alongside Anime Comic Movie and MultiAgent—more examples of people using the API to make weird, visual, and collaborative things.\n\nThree new projects plus PrisimAI, Quilix, YooAI, Petfuse, iTouch, Hythme AI, Gainzr AI, and Dreamator-AI were added to the gallery. The directory continues its gradual transformation into evidence that people will build anything if you give them an HTTP endpoint.\n\nTwo additional batches added eight more projects to the showcase, giving visitors more real-world starting points than another generic prompt box.",
-  "pr_count": 9,
+  "title": "Community projects stretch beyond image generators",
+  "summary": "A community harvest brought image tools, agents, comics, diagrams, and travel helpers to the showcase, plus a clearer image-model response header.\n\nFour additions to the showcase take different routes through Pollinations: Chaos Canvas turns players’ words into surreal images, EasyGen makes exportable diagrams, ExodusAI brings chat and visual tools to WhatsApp, and Ai Studio adds model and dimension controls for image creation.\n\nThe showcase gained browser, mobile-friendly, and desktop image tools alongside chat apps including PrisimAI and Petfuse. The additions include an Arabic coding and IT education platform, Hythme AI. Imagine Draw AI was listed in two batches; it is one project, not two.\n\nAnime Comic Movie assembles generated scenes from character and location images, while MultiAgent coordinates specialized agents for research and other tasks. Other additions use Pollinations for travel insights, prompt organization, and chat with document and image understanding.",
+  "pr_count": 8,
   "prs": [
     {
       "number": 4277,
@@ -37,11 +37,9 @@
     {
       "number": 4295,
       "date": "2025-10-02"
-    },
-    {
-      "number": 4302,
-      "date": "2025-10-02"
     }
   ],
-  "generated_at": "2026-09-04T12:40:48.125104+00:00"
+  "generated_at": "2026-10-17T15:47:51.053787+00:00",
+  "highlights": [],
+  "changelog": []
 }

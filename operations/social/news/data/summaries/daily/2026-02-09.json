@@ -28,17 +28,24 @@
     {
       "emoji": "🚀",
       "title": "Massive Model Drop",
-      "text": "Added `imagen-4`, `flux-2-dev`, `grok-video`, and `LTX-2` for next-level image and video generation."
+      "text": "Added `imagen-4`, `flux-2-dev`, `grok-video`, and `LTX-2` for next-level image and video generation.",
+      "prs": [],
+      "kind": "model"
     },
     {
       "emoji": "🎵",
       "title": "Audio Studio",
-      "text": "Generate music with `elevenmusic`, transcribe with `whisper`, and use emotive TTS with `eleven_v3`."
+      "text": "Generate music with `elevenmusic`, transcribe with `whisper`, and use emotive TTS with `eleven_v3`.",
+      "prs": [],
+      "kind": "model"
     },
     {
       "emoji": "🧠",
       "title": "Smarter Claude",
-      "text": "Upgraded `claude-large` to the latest Claude 3 Opus 4.6 for enhanced reasoning."
+      "text": "Upgraded `claude-large` to the latest Claude 3 Opus 4.6 for enhanced reasoning.",
+      "prs": [],
+      "kind": "model"
     }
-  ]
+  ],
+  "changelog": []
 }

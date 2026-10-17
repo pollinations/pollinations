@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-03-18",
+  "period_start": "2026-03-18",
+  "period_end": "2026-03-18",
+  "generated_at": "2026-03-19T06:19:59.721818+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-18/images/reddit.jpg"
+    }
+  ],
+  "title": "16 PRs merged: ESP32-S3 support, auth sync fixes, and new bots",
+  "text": "Just merged 16 PRs today. The highlight for the hardware folks is that we now have a build for NEURGenerator running on ESP32-S3 microcontrollers (PR #9271). Getting generation to play nice with constrained memory is always an interesting problem.\n\nOn the infrastructure side, we pushed a couple of necessary fixes. PR #9260 hardens the GitHub username sync on login. We were seeing some edge cases where auth states got out of sync, which is now patched. We also fixed a bug where diary image URLs were pulling the wrong original folder dates and throwing 404s (PR #9284). If your image history was acting up this week, this should resolve it.\n\nThe rest of the queue was mostly community app additions. We're seeing a high volume of bot integrations lately—OpenRelay, PromptPilot, and something called Suspicious Helper just got added to the bots registry. Along with those, we merged integrations for desktop novel generation (NovelSeek-Pro-PC), a children's story creator, and a few new chat interfaces (Nova, Luna, Parallel).\n\nEverything is live on the main branch. You can check the full diffs and updated registry in the repo at github.com/pollinations/pollinations. If you're building something that hits the API, open a PR to get added to the showcase."
+}

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-10-07",
+  "period_start": "2026-10-07",
+  "period_end": "2026-10-07",
+  "generated_at": "2026-10-08T06:33:15.419311+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-07/images/reddit.jpg"
+    }
+  ],
+  "title": "Merged: video references, CLI fixes, and three models",
+  "text": "Today's recap covers 16 selected merged PRs, not every merge.\n\nThree models were added: [Nex N2.5 Pro](https://github.com/pollinations/pollinations/pull/16340), [Nex N2.5 Mini](https://github.com/pollinations/pollinations/pull/16341), and [Mistral Large 4](https://github.com/pollinations/pollinations/pull/16606). All three accept image input and support reasoning; Pro and Mistral Large 4 also support tool calling.\n\nThe [SDK video update](https://github.com/pollinations/pollinations/pull/16705) adds image, video, and audio reference URLs, individually or as arrays. The existing first- and last-frame image option remains. That gives video requests more ways to specify source material without replacing the frame controls people already use.\n\nTwo Polli CLI fixes address different kinds of missing context. It now [creates missing output folders](https://github.com/pollinations/pollinations/pull/15780) before generation requests and stops before the request if folder creation fails. [Quickly entered chat follow-ups](https://github.com/pollinations/pollinations/pull/16618) now stay in order and include the preceding reply.\n\n[Account dashboard work](https://github.com/pollinations/pollinations/pull/16678) moves keys and quest actions to the public account API. The app catalog added [SoloForge AI](https://github.com/pollinations/pollinations/pull/16664) and [Audio](https://github.com/pollinations/pollinations/pull/16665); [new submissions](https://github.com/pollinations/pollinations/pull/16232) now need Pollinations credit, a platform, and a screenshot. Signed-out announcements and a few mobile sign-in and Connect layout details also got cleaned up."
+}

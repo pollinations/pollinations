@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-06-01",
+  "period_start": "2026-06-01",
+  "period_end": "2026-06-01",
+  "generated_at": "2026-06-02T07:34:33.015388+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-01/images/reddit.jpg"
+    }
+  ],
+  "title": "Merged 26 PRs: chart rendering, WAV header fixes, API quirk smoothing",
+  "text": "Merged 26 PRs today across the stack. Mostly fixing weird API edge cases and audio stream corruption, plus one decent feature addition.\n\nFirst, Polly (our default agent) now has a render_visual tool. You can ask it to output explicit tables and charts and it handles the formatting instead of just dumping raw markdown or hallucinating a layout.\n\nOn the audio side, we tracked down a bug corrupting TTS responses. We were miscalculating WAV RIFF header sizes in the stream, which caused some audio players to choke. That's patched. We also added support for text/srt/vtt response formats in the Whisper STT endpoint.\n\nWe spent a lot of time today smoothing out upstream API quirks. Grok models were throwing errors if you passed reasoning_effort to non-reasoning endpoints, so we added a transform to strip that out automatically. Same deal with stream_options for non-OpenAI Azure models and stripping Cache-Control headers for Grok. Just standardizing the inputs so you don't have to think about which model provider you're hitting when using the unified endpoints.\n\nFinally, 15 new community apps got merged into the showcase today, ranging from resume builders to flight loggers. You can see the full list of what people are building or submit your own at github.com/pollinations/pollinations.\n\nCode is all open. Let us know if the audio streams are behaving better for you now."
+}

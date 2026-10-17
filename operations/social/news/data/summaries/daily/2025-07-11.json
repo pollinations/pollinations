@@ -2,8 +2,8 @@
   "date": "2025-07-11",
   "period_start": "2025-07-11",
   "period_end": "2025-07-11",
-  "title": "Project directory got a cleanup pass",
-  "summary": "A quiet garden day: cleaner project listings, refreshed docs, and a little repository maintenance.\n\nThe community project listings were reorganized and refreshed, including updated README and PROJECTS.md tables. The toai.chat entry also dropped an invalid URL field, so the directory points people at projects with less archaeological ambiguity.\n\nA follow-up housekeeping pass landed alongside the directory work, keeping the repository's accumulated edges from becoming permanent architecture.",
+  "title": "Community showcase links got a cleanup",
+  "summary": "A spring-cleaning day for the community project showcase: fewer dead links and tidier project tables.\n\nDead project links were removed, and some entries now point to working demos or repositories. The cleanup covered projects across chat, creative, games, learning, and other categories.\n\nThe toai.chat listing no longer includes an invalid website URL; its description, author credit, and repository link remain.\n\nThe README and PROJECTS.md tables were updated after the listing cleanup, with a note that external project links may become unavailable. The table generator’s import was also fixed.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,5 +23,7 @@
       "date": "2025-07-11"
     }
   ],
-  "generated_at": "2026-09-04T12:07:25.788454+00:00"
+  "generated_at": "2026-10-17T15:43:40.799689+00:00",
+  "highlights": [],
+  "changelog": []
 }

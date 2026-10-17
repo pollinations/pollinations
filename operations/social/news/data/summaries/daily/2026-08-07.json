@@ -79,5 +79,26 @@
       "date": "2026-08-07"
     }
   ],
-  "generated_at": "2026-09-04T11:50:33.754812+00:00"
+  "generated_at": "2026-09-04T11:50:33.754812+00:00",
+  "highlights": [
+    {
+      "emoji": "🎵",
+      "title": "Grok Transcribe joins audio",
+      "text": "Transcribe speech with `grok-transcribe`, including a speaker-diarized JSON option. [Browse the model](https://enter.pollinations.ai/models?q=grok-transcribe).",
+      "prs": [
+        13170
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Send 3D prompts as JSON",
+      "text": "POST to `/3d/{prompt}` with model, image, resolution, and seed parameters in a JSON body. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        13069
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

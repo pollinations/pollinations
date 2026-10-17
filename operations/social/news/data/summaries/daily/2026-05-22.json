@@ -16,7 +16,12 @@
     {
       "emoji": "📱",
       "title": "Dashboard Navigation Update",
-      "text": "Mobile users can now always see the sign-in button regardless of screen height, plus new theme-aware scrollbars across the [Dashboard](https://enter.pollinations.ai)."
+      "text": "Mobile users can now always see the sign-in button regardless of screen height, plus new theme-aware scrollbars across the [Dashboard](https://enter.pollinations.ai).",
+      "prs": [
+        11236
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

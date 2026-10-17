@@ -63,5 +63,35 @@
       "date": "2026-03-30"
     }
   ],
-  "generated_at": "2026-09-04T11:54:59.370703+00:00"
+  "generated_at": "2026-09-04T11:54:59.370703+00:00",
+  "highlights": [
+    {
+      "emoji": "🎯",
+      "title": "Translate Unity games",
+      "text": "XUnity.AutoPollinationTranslator uses the Pollinations API for real-time Unity game translation. [View repo](https://github.com/kikyo2006/XUnity.AutoPollinationTranslator).",
+      "prs": [
+        9742
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Signatures ready for vectors",
+      "text": "Onyx Sign generates minimalist 2D signatures and exports handwriting-ready vector files. [Try it](https://onyxsign.vercel.app/).",
+      "prs": [
+        9744
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "💡",
+      "title": "Make a learning game",
+      "text": "Learnty generates personalized learning games with AI. [Try it](https://learnty.site).",
+      "prs": [
+        9745
+      ],
+      "kind": "app"
+    }
+  ],
+  "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2025-02-25",
   "period_start": "2025-02-25",
   "period_end": "2025-02-25",
-  "title": "Text API learns to stream and call tools",
-  "summary": "Text generation got streaming, function calling, and a quieter way to share Bing rate limits.\n\nThe text API now supports streaming responses alongside function calling, with model handling refactored underneath to make tool-enabled requests behave more consistently. Less waiting for a full answer; more useful ways for apps to let models do actual work.\n\nBing API keys now rotate across requests, distributing rate limits instead of having one key absorb the entire stampede. Small infrastructure change, fewer avoidable bottlenecks.",
+  "title": "Text API gains function calling",
+  "summary": "The text API added function calls and streaming responses, with some less glamorous web-search plumbing alongside them.\n\nClients can pass `tools` and `tool_choice` in completion requests, receive tool calls, and send function results back in follow-up messages. The OpenAI-compatible response format preserves those calls.\n\nRequests with `stream: true` can receive provider-backed, OpenAI-style server-sent events instead of waiting for a completed response. Streaming errors use a format streaming clients can read.\n\nSearch requests can be distributed across two Bing API keys. Search tool handling was also separated by response mode: non-streaming search handles web search and scraping calls on the server, while streaming search passes the configured tools to the model.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,5 +19,27 @@
       "date": "2025-02-25"
     }
   ],
-  "generated_at": "2026-09-04T14:01:27.468905+00:00"
+  "generated_at": "2026-10-17T15:34:16.588222+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Function calls in text",
+      "text": "Pass `tools` and `tool_choice` in a completion request, then send tool results back in a follow-up message. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        1232,
+        1234
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🚀",
+      "title": "Streaming text responses",
+      "text": "Set `stream: true` to receive OpenAI-style server-sent events as the provider generates a response. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        1234
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

@@ -2,9 +2,9 @@
   "date": "2025-10-31",
   "period_start": "2025-10-01",
   "period_end": "2025-10-31",
-  "title": "The API became easier to actually use",
-  "summary": "October made Pollinations easier to reach from real apps, broadened its model and image tooling, and gave Hacktoberfest contributors more places to plant things.\n\nRewritten docs, Bearer tokens, browser CORS, simpler GET text generation, and copyable frontend keys reduced the distance between an idea and a working HTTP call.\n\nGPT-5-mini, Claude 4.5 Haiku, Azure Flux Kontext, Azure OpenAI Nano 5, and nanobanana expanded the lineup while clearer refusals, image sizing, queue tuning, and safety timeouts made generation more legible and reliable.\n\nNew project ideas, contributor guidance, automated subdomain deployments, and tools like the opposite-prompt generator gave community work a clearer path from issue to something people can visit.\n\nThe Creative Projects directory added a steady run of community apps, from virtual makeup and AI dungeon masters to image transformation and dream decoding. An HTTP endpoint remains a remarkably effective seed packet.",
-  "pr_count": 171,
+  "title": "The community built more than image generators",
+  "summary": "October made Pollinations easier to build with: more community apps, broader model choices, simpler API access, and clearer Pollen accounting.\n\nHacktoberfest and other submissions filled the project directory with design tools, agents, games, bots, and mobile apps, including AI Packaging Designer and ReImagine. An app registry and deployment workflow added a path for hosting Hacktoberfest projects on Pollinations subdomains.\n\nThe model lineup gained Claude Haiku 4.5 and Seedream 4.0, while gptimage returned for generation and editing and gained a high-quality Nectar option. Seedream’s image budget grew, and Nano Banana gained image-to-image support through Enter.\n\nImage-model listings and metadata became available through dedicated endpoints. Bearer authentication, browser preflight support, a GET text endpoint, and copyable publishable keys made common requests easier to wire up; the API guide gained fuller text, image, and audio examples.\n\nEnter’s dashboard and FAQ made balances, keys, model access, and Pollen rules easier to read. Its subscription panel now distinguishes an assigned tier from an active Polar subscription and reads active product details from Polar.",
+  "pr_count": 129,
   "prs": [
     {
       "number": 4246,
@@ -47,10 +47,6 @@
       "date": "2025-10-02"
     },
     {
-      "number": 4302,
-      "date": "2025-10-02"
-    },
-    {
       "number": 4283,
       "date": "2025-10-04"
     },
@@ -79,15 +75,7 @@
       "date": "2025-10-05"
     },
     {
-      "number": 4307,
-      "date": "2025-10-05"
-    },
-    {
       "number": 4313,
-      "date": "2025-10-05"
-    },
-    {
-      "number": 4315,
       "date": "2025-10-05"
     },
     {
@@ -123,23 +111,7 @@
       "date": "2025-10-05"
     },
     {
-      "number": 4383,
-      "date": "2025-10-06"
-    },
-    {
       "number": 4250,
-      "date": "2025-10-07"
-    },
-    {
-      "number": 4384,
-      "date": "2025-10-07"
-    },
-    {
-      "number": 4389,
-      "date": "2025-10-07"
-    },
-    {
-      "number": 4391,
       "date": "2025-10-07"
     },
     {
@@ -171,10 +143,6 @@
       "date": "2025-10-07"
     },
     {
-      "number": 4408,
-      "date": "2025-10-07"
-    },
-    {
       "number": 4411,
       "date": "2025-10-07"
     },
@@ -195,10 +163,6 @@
       "date": "2025-10-08"
     },
     {
-      "number": 4282,
-      "date": "2025-10-09"
-    },
-    {
       "number": 4414,
       "date": "2025-10-09"
     },
@@ -213,10 +177,6 @@
     {
       "number": 4451,
       "date": "2025-10-09"
-    },
-    {
-      "number": 4186,
-      "date": "2025-10-10"
     },
     {
       "number": 4400,
@@ -251,14 +211,6 @@
       "date": "2025-10-11"
     },
     {
-      "number": 4481,
-      "date": "2025-10-11"
-    },
-    {
-      "number": 4483,
-      "date": "2025-10-11"
-    },
-    {
       "number": 4484,
       "date": "2025-10-11"
     },
@@ -279,19 +231,11 @@
       "date": "2025-10-11"
     },
     {
-      "number": 4490,
-      "date": "2025-10-11"
-    },
-    {
       "number": 4496,
       "date": "2025-10-11"
     },
     {
       "number": 4498,
-      "date": "2025-10-11"
-    },
-    {
-      "number": 4499,
       "date": "2025-10-11"
     },
     {
@@ -319,19 +263,7 @@
       "date": "2025-10-14"
     },
     {
-      "number": 4546,
-      "date": "2025-10-14"
-    },
-    {
-      "number": 4549,
-      "date": "2025-10-14"
-    },
-    {
       "number": 4553,
-      "date": "2025-10-15"
-    },
-    {
-      "number": 4554,
       "date": "2025-10-15"
     },
     {
@@ -375,10 +307,6 @@
       "date": "2025-10-18"
     },
     {
-      "number": 4468,
-      "date": "2025-10-19"
-    },
-    {
       "number": 4506,
       "date": "2025-10-19"
     },
@@ -395,20 +323,8 @@
       "date": "2025-10-19"
     },
     {
-      "number": 4626,
-      "date": "2025-10-20"
-    },
-    {
-      "number": 4659,
-      "date": "2025-10-21"
-    },
-    {
       "number": 4676,
       "date": "2025-10-21"
-    },
-    {
-      "number": 4664,
-      "date": "2025-10-22"
     },
     {
       "number": 4671,
@@ -427,22 +343,6 @@
       "date": "2025-10-22"
     },
     {
-      "number": 4684,
-      "date": "2025-10-22"
-    },
-    {
-      "number": 4687,
-      "date": "2025-10-22"
-    },
-    {
-      "number": 4690,
-      "date": "2025-10-22"
-    },
-    {
-      "number": 4691,
-      "date": "2025-10-22"
-    },
-    {
       "number": 4695,
       "date": "2025-10-22"
     },
@@ -455,10 +355,6 @@
       "date": "2025-10-22"
     },
     {
-      "number": 4656,
-      "date": "2025-10-23"
-    },
-    {
       "number": 4708,
       "date": "2025-10-23"
     },
@@ -467,15 +363,7 @@
       "date": "2025-10-23"
     },
     {
-      "number": 4721,
-      "date": "2025-10-23"
-    },
-    {
       "number": 4729,
-      "date": "2025-10-23"
-    },
-    {
-      "number": 4730,
       "date": "2025-10-23"
     },
     {
@@ -484,10 +372,6 @@
     },
     {
       "number": 4716,
-      "date": "2025-10-24"
-    },
-    {
-      "number": 4735,
       "date": "2025-10-24"
     },
     {
@@ -516,10 +400,6 @@
     },
     {
       "number": 4351,
-      "date": "2025-10-25"
-    },
-    {
-      "number": 4784,
       "date": "2025-10-25"
     },
     {
@@ -579,10 +459,6 @@
       "date": "2025-10-27"
     },
     {
-      "number": 4824,
-      "date": "2025-10-27"
-    },
-    {
       "number": 4828,
       "date": "2025-10-27"
     },
@@ -599,20 +475,8 @@
       "date": "2025-10-28"
     },
     {
-      "number": 4835,
-      "date": "2025-10-28"
-    },
-    {
-      "number": 4838,
-      "date": "2025-10-28"
-    },
-    {
       "number": 4843,
       "date": "2025-10-28"
-    },
-    {
-      "number": 4846,
-      "date": "2025-10-29"
     },
     {
       "number": 4848,
@@ -631,19 +495,11 @@
       "date": "2025-10-29"
     },
     {
-      "number": 4855,
-      "date": "2025-10-29"
-    },
-    {
       "number": 4857,
       "date": "2025-10-29"
     },
     {
       "number": 4863,
-      "date": "2025-10-31"
-    },
-    {
-      "number": 4875,
       "date": "2025-10-31"
     },
     {
@@ -655,31 +511,7 @@
       "date": "2025-10-31"
     },
     {
-      "number": 4887,
-      "date": "2025-10-31"
-    },
-    {
-      "number": 4889,
-      "date": "2025-10-31"
-    },
-    {
       "number": 4891,
-      "date": "2025-10-31"
-    },
-    {
-      "number": 4892,
-      "date": "2025-10-31"
-    },
-    {
-      "number": 4894,
-      "date": "2025-10-31"
-    },
-    {
-      "number": 4895,
-      "date": "2025-10-31"
-    },
-    {
-      "number": 4896,
       "date": "2025-10-31"
     },
     {
@@ -691,5 +523,5 @@
       "date": "2025-10-31"
     }
   ],
-  "generated_at": "2026-09-04T15:27:32.133633+00:00"
+  "generated_at": "2026-10-17T16:09:26.286067+00:00"
 }

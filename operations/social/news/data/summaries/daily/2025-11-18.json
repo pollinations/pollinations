@@ -2,8 +2,8 @@
   "date": "2025-11-18",
   "period_start": "2025-11-18",
   "period_end": "2025-11-18",
-  "title": "Kimi K2 Thinking and Gemini 3 Pro join the model garden",
-  "summary": "New reasoning and pro models arrived while the model catalog and usage calculations got a needed alignment pass.\n\nTwo more text models are now available through the unified endpoint: Kimi K2 Thinking for deliberate reasoning and Gemini 3 Pro for another capable general-purpose option. More choices, same HTTP call.\n\nModel endpoints now expose their modelId directly, while model IDs and tests were updated to keep the catalog aligned with what actually runs. A small cleanup for anyone building model pickers or routing requests.\n\nCost and price calculations now resolve against the actual selected model rather than a mismatched reference. The accounting machinery has been reminded to read the label on the jar.",
+  "title": "Two reasoning models join the text API",
+  "summary": "Two reasoning models arrived, model listings moved to the gateway, and requests got clearer model reporting and errors.\n\nKimi K2 Thinking and Gemini 3 Pro Preview were added with reasoning and tool support. Gemini 3 Pro Preview also accepts image, audio, and video input.\n\nThe gateway's text and image model endpoints now return registry-backed listings with aliases, pricing, descriptions, and capability metadata. The old backend `/models` endpoints return HTTP 410 and point to their replacements. The `openai` alias now selects GPT-5 Nano, while `openai-large` selects GPT-4.1.\n\nImage responses now identify the model actually used for Turbo and Flux requests. Invalid model names and image parameters return HTTP 400; text-service errors have a structured response. Upstream IDs were corrected for three text models, Gemini's uppercase `STOP` finish reason is accepted, and streaming requests ask providers for usage data.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,5 +23,35 @@
       "date": "2025-11-18"
     }
   ],
-  "generated_at": "2026-09-04T12:14:43.754268+00:00"
+  "generated_at": "2026-10-17T15:52:42.704080+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Kimi K2 Thinking",
+      "text": "Use `kimi-k2-thinking` for text-based reasoning and tool use. [Browse the model](https://enter.pollinations.ai/models?q=kimi-k2-thinking).",
+      "prs": [
+        5367
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Gemini 3 Pro Preview",
+      "text": "Use `gemini-3-pro` for reasoning and tool use with text, image, audio, or video input. [Browse the model](https://enter.pollinations.ai/models?q=gemini-3-pro).",
+      "prs": [
+        5367
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Richer model listings",
+      "text": "The gateway's text and image model endpoints now include aliases, pricing, descriptions, and capability metadata, making it easier to choose a model programmatically. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        5342
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

@@ -2,9 +2,9 @@
   "date": "2026-01-27",
   "period_start": "2026-01-27",
   "period_end": "2026-01-27",
-  "title": "A new web-research skill joins the toolbox",
-  "summary": "A maintenance-minded day: a new research skill, steadier account handling, fresher community updates, and better operational visibility.\n\nAdded a web-research skill, giving agents another way to gather context before they start confidently inventing it.\n\nTier management moved to D1, Polar was simplified to webhook-only handling, and a problematic balance-reset cron was disabled so account balances stay more dependable.\n\nFour new community highlights landed alongside a README news update, making recent projects and platform changes easier to find.",
-  "pr_count": 7,
+  "title": "Tier Pollen gets a daily balance",
+  "summary": "Tier Pollen moved to daily balances, while Enter and the README caught up on yesterday's model and SDK news.\n\nTier and Pollen balances moved to D1. New accounts start on Spore with 1 Pollen; tier balances reset at 00:00 UTC without rollover, including 500 Pollen for Router. Requests draw from the tier balance first, then crypto, then packs. Enter also gained a clearer tier-balance breakdown. Pack checkout currently returns 503, while the customer portal remains available.\n\nEnter's news highlights now cover Wan 2.6 image-to-video with audio, Klein Large image generation and editing, the Pollinations provider for Vercel AI SDK, and Gemini 2.5 Pro. This was a news update, not a model or SDK change.\n\nThe README's ten-item Latest News list now includes those January 26 highlights, rotating out older entries.",
+  "pr_count": 3,
   "prs": [
     {
       "number": 7618,
@@ -15,25 +15,11 @@
       "date": "2026-01-27"
     },
     {
-      "number": 7693,
-      "date": "2026-01-27"
-    },
-    {
-      "number": 7700,
-      "date": "2026-01-27"
-    },
-    {
       "number": 7703,
-      "date": "2026-01-27"
-    },
-    {
-      "number": 7716,
-      "date": "2026-01-27"
-    },
-    {
-      "number": 7718,
       "date": "2026-01-27"
     }
   ],
-  "generated_at": "2026-09-04T11:46:01.517978+00:00"
+  "generated_at": "2026-10-17T16:01:17.655790+00:00",
+  "highlights": [],
+  "changelog": []
 }

@@ -55,7 +55,9 @@
       "text": "Give multipart or JSON uploads an account-scoped custom ID. An ID that is already reserved returns 409 instead of overwriting existing media. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         14555
-      ]
+      ],
+      "kind": "api"
     }
-  ]
+  ],
+  "changelog": []
 }

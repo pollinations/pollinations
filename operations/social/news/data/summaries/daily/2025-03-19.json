@@ -2,8 +2,8 @@
   "date": "2025-03-19",
   "period_start": "2025-03-19",
   "period_end": "2025-03-19",
-  "title": "Case Me joins the creative app garden",
-  "summary": "A small community update: Case Me is now part of the creative app showcase.\n\nCase Me was added to the Creative & Interactive Applications showcase, giving people another concrete example of what can be built with pollinations.",
+  "title": "A Brazilian project joins the showcase",
+  "summary": "The community showcase gained Case Me, a Brazilian project for customized phone cases.\n\nCase Me was added to the README and Creative & Interactive Applications showcase. The project describes a vending machine for phone cases customized with photos, other images, and chosen colors; its listing includes Portuguese and English descriptions.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-03-19"
     }
   ],
-  "generated_at": "2026-09-04T12:11:58.374984+00:00"
+  "generated_at": "2026-10-17T15:35:52.501286+00:00",
+  "highlights": [],
+  "changelog": []
 }

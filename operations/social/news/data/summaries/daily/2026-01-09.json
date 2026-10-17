@@ -2,14 +2,10 @@
   "date": "2026-01-09",
   "period_start": "2026-01-09",
   "period_end": "2026-01-09",
-  "title": "Chat got a storyboard engine and clearer model choices",
-  "summary": "A documentation-and-polish day: clearer chat models, a new storyboard tool, a DeepSeek backend move, and less repository moss.\n\nOnyx, an AI storyboard engine, joined chat, while the model picker now shows dual names and more useful tooltips. Less guesswork when choosing the machine that will interpret your prompt.\n\nAPI schemas dropped unused parameters and gained model-specific guidance; BYOP documentation and the authorize UI were refreshed; the unified architecture graduated from ASCII art to Mermaid diagrams. TeleChars listings were consolidated too.\n\nThe DeepSeek V3.2 backend migrated from Azure/Myceli to Google Vertex AI, keeping the model available through the same simple text endpoint while the plumbing changes underneath.",
-  "pr_count": 13,
+  "title": "A storyboard app joins the catalog",
+  "summary": "A new community storyboard app, clearer app authorization, and model usage estimates made for a day of useful housekeeping.\n\nThe community app catalog added @eneryu’s Onyx, which turns scripts into noir-style visual storyboards. A duplicate TeleChars AI listing was also consolidated.\n\nA new Bring Your Own Pollen guide explains how apps can let people authorize with Pollinations and use their own Pollen. The authorization screen now identifies the app receiving access more plainly.\n\nEnter’s model table now estimates how far one Pollen goes using observed usage, with workload-based estimates when that data is unavailable. A public endpoint also provides aggregated model usage stats.",
+  "pr_count": 8,
   "prs": [
-    {
-      "number": 6572,
-      "date": "2026-01-09"
-    },
     {
       "number": 6788,
       "date": "2026-01-09"
@@ -31,18 +27,6 @@
       "date": "2026-01-09"
     },
     {
-      "number": 6973,
-      "date": "2026-01-09"
-    },
-    {
-      "number": 6975,
-      "date": "2026-01-09"
-    },
-    {
-      "number": 6978,
-      "date": "2026-01-09"
-    },
-    {
       "number": 6979,
       "date": "2026-01-09"
     },
@@ -51,13 +35,21 @@
       "date": "2026-01-09"
     },
     {
-      "number": 6989,
-      "date": "2026-01-09"
-    },
-    {
       "number": 6990,
       "date": "2026-01-09"
     }
   ],
-  "generated_at": "2026-09-04T11:30:14.643348+00:00"
+  "generated_at": "2026-10-17T15:58:47.688918+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "Bring Your Own Pollen",
+      "text": "Build apps where people authorize with Pollinations and use their own Pollen. The authorization screen now makes clearer which app they’re connecting to. [Connect user wallets](https://gen.pollinations.ai/docs#tag/connect-user-wallets).",
+      "prs": [
+        6947
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

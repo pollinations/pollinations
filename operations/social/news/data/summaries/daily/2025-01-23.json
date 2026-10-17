@@ -2,8 +2,8 @@
   "date": "2025-01-23",
   "period_start": "2025-01-23",
   "period_end": "2025-01-23",
-  "title": "1024px Flux Schnell images get a new worker route",
-  "summary": "A compact tuning pass: larger Flux Schnell images get a new route, docs become easier to navigate, and text gains a more grounded persona.\n\nFlux Schnell generation at 1024×1024 now uses Cloudflare AI Workers, improving the path for larger image requests while the surrounding image plumbing gets a few small fixes.\n\nThe documentation now points developers to a pollinations npm module and a server-status dashboard. Less archaeology before the first API call.\n\nA new realistic persona with deliberately balanced personality traits is available for more grounded character-driven text interactions.",
+  "title": "Larger default images, with some model changes",
+  "summary": "Images got a larger default size, text gained a practical-minded persona, and two community tools became easier to find.\n\nImage requests without dimensions now default to 1024×1024, and Flux Schnell gained 1024×1024 generation through Cloudflare Workers AI. Flux and Turbo have lower maximum side lengths, while flux-realism, flux-anime, flux-3d, and any-dark were removed from the available image models. The text service also changed the backend used for llama requests.\n\nThe text service gained a Realistic assistant persona prompt focused on practical problem-solving, context-aware tone, actionable advice, and solutions that account for real-world constraints.\n\nThe homepage and README now point readers to a community Node.js package for image generation and LLM access, plus a dashboard for monitoring text and image servers.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,5 +19,26 @@
       "date": "2025-01-23"
     }
   ],
-  "generated_at": "2026-09-04T14:00:26.110547+00:00"
+  "generated_at": "2026-10-17T15:32:53.274040+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Larger images by default",
+      "text": "Image requests without dimensions now default to 1024×1024. Flux Schnell also gained 1024×1024 generation through Cloudflare Workers AI. [Try the playground](https://pollinations.ai/play).",
+      "prs": [
+        1067
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "A Realistic assistant persona",
+      "text": "A new text persona prompt emphasizes grounded brainstorming, actionable advice, and answers that account for real-world constraints.",
+      "prs": [
+        1064
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

@@ -75,5 +75,18 @@
       "date": "2026-07-01"
     }
   ],
-  "generated_at": "2026-09-04T11:42:21.227240+00:00"
+  "generated_at": "2026-09-04T11:42:21.227240+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "More GPT Image control",
+      "text": "Request `gpt-image-2` images at resolutions up to 3840px, rounded to multiples of 16, and choose low, medium, or high quality without the setting being silently changed. [Browse the model](https://enter.pollinations.ai/models?q=gpt-image-2).",
+      "prs": [
+        12060,
+        12092
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

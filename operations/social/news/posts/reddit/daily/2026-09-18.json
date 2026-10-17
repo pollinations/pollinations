@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-18",
+  "period_start": "2026-09-18",
+  "period_end": "2026-09-18",
+  "generated_at": "2026-09-19T06:26:50.531194+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-18/images/reddit.jpg"
+    }
+  ],
+  "title": "Five model routes and usage filters landed",
+  "text": "10 PRs merged today, mostly adding model coverage and making the operational bits less mysterious.\n\nNew routes:\n- `openai/gpt-4o-mini` via OpenRouter\n- `tencent/hy4-preview` via OpenRouter\n- `tencent/hy3` via OpenRouter, with AtlasCloud fallback\n- `black-forest-labs/flux.2-max` via Replicate\n- Jev typed-decision model plus a Jev MCP server\n\nThe practical result is five more options for text, video, image, and structured decision workloads without each client needing another provider-specific integration. The fallback on HY3 is there because a model route that works only when the upstream feels cooperative is not really a route.\n\n`polli-cli` can now filter usage by API key, model, and day range. This should make answering \"what used these credits?\" less archaeological, especially for shared projects or model comparisons.\n\nWe also changed usage-header parsing so all usage values are treated as numbers rather than whatever type an upstream happened to send. Small refactor, but metering bugs tend to become folklore if left alone.\n\nREADME and generated API docs were refreshed against production. Code and PR history: https://github.com/pollinations/pollinations\n\nCurrent API reference: https://github.com/pollinations/pollinations/blob/main/APIDOCS.md"
+}

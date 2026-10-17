@@ -16,7 +16,12 @@
     {
       "emoji": "🌍",
       "title": "Local Currency Support",
-      "text": "Stripe adaptive pricing is live. You can now buy Pollen packs in your local currency instead of doing mental math against the USD. [Dashboard](https://enter.pollinations.ai)"
+      "text": "Stripe adaptive pricing is live. You can now buy Pollen packs in your local currency instead of doing mental math against the USD. [Dashboard](https://enter.pollinations.ai)",
+      "prs": [
+        11172
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

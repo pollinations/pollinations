@@ -1,0 +1,27 @@
+{
+  "date": "2025-08-03",
+  "period_start": "2025-07-27",
+  "period_end": "2025-08-02",
+  "title": "Kontext gained a second engine",
+  "summary": "This week tuned the model lineup and image API, then tightened a few limits and fixes around the edges.\n\nThe image API gained an OpenAPI spec for its existing models, parameters, authentication, and rate limits. A separate change gave `kontext` a BPAIGen-first path with Kontext as fallback, raised its configured maximum side length to 1216 pixels, and added optional `guidance_scale` control. Image responses also report which service generated the image. The spec documents the API; it does not add a docs route or change API behavior.\n\nGLM-4 9B Chat was added with an 8,192-token configuration. Across two changes, the `openai` aliases were rerouted; by the end of the week, `openai`, `openai-fast`, and `openai-roblox` pointed to Azure GPT-4.1 Nano, while `openai-large` pointed to Azure GPT-4.1. The model list also lost `openai-reasoning`, and DeepSeek R1 0528’s maximum output was set to 2,000 tokens.\n\nAd selection was fixed so blocked referrers are excluded rather than triggering ads. Audio limits were tightened, error logging was made more robust for message collections, and image-parameter debugging and a token-validation performance test were added.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 3351,
+      "date": "2025-07-29"
+    },
+    {
+      "number": 3364,
+      "date": "2025-07-30"
+    },
+    {
+      "number": 3384,
+      "date": "2025-07-31"
+    },
+    {
+      "number": 3359,
+      "date": "2025-08-01"
+    }
+  ],
+  "generated_at": "2026-10-17T16:05:31.493591+00:00"
+}

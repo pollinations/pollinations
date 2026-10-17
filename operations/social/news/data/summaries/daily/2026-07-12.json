@@ -40,17 +40,30 @@
     {
       "emoji": "✨",
       "title": "The hive’s ledger",
-      "text": "Track exact Pollen spend and earnings together in a fast Activity dashboard, with infinite event history and daily breakdowns."
+      "text": "Track exact Pollen spend and earnings together in a fast Activity dashboard, with infinite event history and daily breakdowns.",
+      "prs": [
+        11939
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🔍",
       "title": "Find a model without spelunking",
-      "text": "The dashboard’s Models catalog now searches names, brands, and descriptions while keeping category tabs pinned."
+      "text": "The dashboard’s Models catalog now searches names, brands, and descriptions while keeping category tabs pinned.",
+      "prs": [
+        12286
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🚀",
       "title": "Muse Spark 1.1",
-      "text": "`muse-spark-1.1` is now available for paid text and vision generation, with always-on reasoning for harder prompts. [Browse models](https://gen.pollinations.ai/v1/models)"
+      "text": "`muse-spark-1.1` is now available for paid text and vision generation, with always-on reasoning for harder prompts. [Browse models](https://gen.pollinations.ai/v1/models)",
+      "prs": [
+        12350
+      ],
+      "kind": "model"
     }
-  ]
+  ],
+  "changelog": []
 }

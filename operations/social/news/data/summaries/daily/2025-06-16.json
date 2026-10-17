@@ -2,8 +2,8 @@
   "date": "2025-06-16",
   "period_start": "2025-06-16",
   "period_end": "2025-06-16",
-  "title": "Model availability gets a cleaner public shape",
-  "summary": "A small garden day: cleaner model discovery and another community image project on the map.\n\nThe models list endpoint was tidied up to focus on available model data, with Pollen-native language replacing dollar-centric references where applicable.\n\nCelebrity AI Image Generator was added to the community project list, making one more built-with-pollinations experiment easier to find.",
+  "title": "A tidier model catalog",
+  "summary": "The model catalog got easier to browse, and the Creative Projects list gained a celebrity image generator.\n\n`GET /models` no longer returns pricing fields. It lists non-community models first, then community models, alphabetically within each group. The catalog also assigns `openai-fast` (GPT-4.1 Nano) to the anonymous tier and refreshes OpenAI model descriptions and provider labels. Text-generation telemetry now retains complete usage data, including cached-token counts.\n\nThe Creative Projects list now includes @Colin-Zero’s Celebrity AI Image Generator, which uses Pollinations.ai and a1.art to make celebrity images from text or selfies from uploaded photos.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,5 +15,17 @@
       "date": "2025-06-16"
     }
   ],
-  "generated_at": "2026-09-04T13:02:15.583548+00:00"
+  "generated_at": "2026-10-17T15:42:32.068164+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "GPT-4.1 Nano in anonymous tier",
+      "text": "The model catalog now assigns `openai-fast` (GPT-4.1 Nano) to the anonymous tier. [Browse the model](https://enter.pollinations.ai/models?q=openai-fast).",
+      "prs": [
+        2502
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

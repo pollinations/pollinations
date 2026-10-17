@@ -71,5 +71,35 @@
       "date": "2026-05-02"
     }
   ],
-  "generated_at": "2026-09-04T11:47:36.689670+00:00"
+  "generated_at": "2026-09-04T11:47:36.689670+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "GPT-5.5 joins the text API",
+      "text": "Use `gpt-5.5` for text generation with reasoning and tool calling. [View the model](https://enter.pollinations.ai/models?q=gpt-5.5).",
+      "prs": [
+        10598
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "AssemblyAI transcription models",
+      "text": "Transcribe audio with `universal-2` or `universal-3-pro` through the audio API, SDK, or CLI. [View universal-3-pro](https://enter.pollinations.ai/models?q=universal-3-pro).",
+      "prs": [
+        10616
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Grok Imagine takes references",
+      "text": "Use a reference image for image-to-image generation with Grok Imagine or Grok Imagine Pro. [Browse models](https://enter.pollinations.ai/models?q=grok-imagine).",
+      "prs": [
+        10617
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

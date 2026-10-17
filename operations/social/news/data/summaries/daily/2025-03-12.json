@@ -2,16 +2,12 @@
   "date": "2025-03-12",
   "period_start": "2025-03-12",
   "period_end": "2025-03-12",
-  "title": "Text API gets another model and smoother message handling",
-  "summary": "A small, useful day for text.pollinations.ai: a new Mistral model, better compatibility, and two more projects growing in public.\n\nMistral Small 24B from Scaleway joined text.pollinations.ai, while system messages are now translated into user messages for models that do not support them. One endpoint, more model quirks quietly handled.\n\nAll text.pollinations.ai requests now register with the text feed, alongside Google service-account authentication work for the service.\n\nPromptPix, an Android app, was added to the project list. MiReXa AI also arrived under its new name with audio generation in the mix.",
-  "pr_count": 6,
+  "title": "Mistral Small 24B joins text generation",
+  "summary": "Mistral Small 24B joined the text API, reasoning-model prompts got more reliable, and two community projects got their listings updated.\n\nThe text API added `mistral`, backed by Mistral Small 24B. Another model choice, without another endpoint to learn.\n\n@taylorsnupe’s PromptPix Android app joined the project list; it generates images from prompts as you scroll and lets you save favorites. @withthatway’s chatbot listing was updated to MiReXa AI and now includes audio generation among its features.\n\nFor DeepSeek and other affected reasoning models that do not accept the system role, the text client now converts system messages into prefixed user messages. That includes configured default prompts; models that support system messages keep their existing behavior.",
+  "pr_count": 5,
   "prs": [
     {
       "number": 1324,
-      "date": "2025-03-12"
-    },
-    {
-      "number": 1325,
       "date": "2025-03-12"
     },
     {
@@ -31,5 +27,17 @@
       "date": "2025-03-12"
     }
   ],
-  "generated_at": "2026-09-04T12:07:15.593594+00:00"
+  "generated_at": "2026-10-17T15:34:53.692247+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Mistral Small 24B added",
+      "text": "Generate text with `mistral`, backed by Mistral Small 24B. [Browse the model](https://enter.pollinations.ai/models?q=mistral).",
+      "prs": [
+        1330
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

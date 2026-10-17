@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-23",
+  "period_start": "2026-04-23",
+  "period_end": "2026-04-23",
+  "generated_at": "2026-04-24T06:36:55.491346+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-23/images/reddit.jpg"
+    }
+  ],
+  "title": "MCP v2.1.0 overhaul, auth changes for Play, and mobile UI fixes",
+  "text": "We merged 6 PRs today across the stack. The bulk of the work went into overhauling our Model Context Protocol (MCP) implementation and fixing mobile layouts that have been broken for a while.\n\nFirst, MCP is now at v2.1.0 (PR #10379). We moved to a dynamic registry, added account tools, and cleaned up the single-gateway logic. If you're building custom tools or hooking up local agents to pollinations, the routing is significantly more predictable now and shouldn't require as many hardcoded workarounds.\n\nSecond, we gated generation on the Play interface behind a login (PR #10416). We removed the anonymous publishable key. We kept it open as long as we could to reduce friction, but tying generations to accounts is necessary at this scale to manage abuse and actually persist user history. The free tier remains exactly the same, you just need to auth now.\n\nFinally, we shipped a batch of frontend sanity checks (#10415, #10425, #10426, #10427). Mobile modals actually stay within the viewport, the header doesn't break on small screens, and the API key dialog scroll is finally contained inside the modal instead of scrolling the entire page behind it.\n\nCode is open as always at https://github.com/pollinations/pollinations. Let us know if the MCP dynamic registry changes break any of your existing local setups."
+}

@@ -16,7 +16,12 @@
     {
       "emoji": "🎨",
       "title": "GPT Images Liberated",
-      "text": "We relocated `gpt-image-1-mini` and `gpt-image-1.5` to a new region to sidestep some overly enthusiastic content filters. Reliable, block-free generation is back on the [Unified API](https://gen.pollinations.ai)."
+      "text": "We relocated `gpt-image-1-mini` and `gpt-image-1.5` to a new region to sidestep some overly enthusiastic content filters. Reliable, block-free generation is back on the [Unified API](https://gen.pollinations.ai).",
+      "prs": [
+        9032
+      ],
+      "kind": "model"
     }
-  ]
+  ],
+  "changelog": []
 }

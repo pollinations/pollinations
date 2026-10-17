@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-04-21",
+  "period_start": "2026-04-21",
+  "period_end": "2026-04-21",
+  "generated_at": "2026-04-22T06:35:12.500271+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-21/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-21/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-21/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Shipped a few things this week.\n\nDropped some heavyweight models into the mix—Claude Opus (xlarge) and Qwen3-TTS are now live. Your text and audio pipelines just got a lot stronger.\n\nAlso spent some time taming rogue orphan processes that were busy-looping on Windows. They have been gently but firmly terminated.\n\nCleaned up some legacy docs (Nomnom was hungry) and added 'AI Models Laboratory' and 'Scene2Text' to the community greenhouse. Keep building cool stuff.\n\nCode is open, as always. Link in bio.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #machinelearning #webdev #buildinpublic #llm #retroaesthetic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

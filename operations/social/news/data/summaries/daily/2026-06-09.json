@@ -20,7 +20,12 @@
     {
       "emoji": "🎬",
       "title": "HD Video Generation",
-      "text": "Pruna video generation now supports explicit resolution control. Choose between `p-video-720p` and `p-video-1080p` for your next generation. Check the [Unified API](https://gen.pollinations.ai)."
+      "text": "Pruna video generation now supports explicit resolution control. Choose between `p-video-720p` and `p-video-1080p` for your next generation. Check the [Unified API](https://gen.pollinations.ai).",
+      "prs": [
+        11698
+      ],
+      "kind": "model"
     }
-  ]
+  ],
+  "changelog": []
 }

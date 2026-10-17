@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-03-15",
+  "period_start": "2026-03-08",
+  "period_end": "2026-03-14",
+  "generated_at": "2026-03-15T06:25:52.957902+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-15/images/reddit.jpg"
+    }
+  ],
+  "title": "31 PRs merged: OpenAI compatibility, new models, and fixing a 25-hour workflow",
+  "text": "Merged 31 PRs this week. Mostly focused on API standardization and infrastructure cleanup.\n\nWe added OpenAI-compatible image generation endpoints. If you already have tools or scripts built around the OpenAI spec, you can now just point the base URL at our API and it will work natively. We also wired up several new models to the backend, including dirtberry, claude-airforce, Pruna models for image and video generation, and Seraphyn as a community provider for qwen3-tts.\n\nOn the infrastructure side, we finally fixed the seed upgrade workflow. It previously took around 25 hours to process upgrades. We refactored the scoring logic and it now runs in seconds. Not our proudest previous metric, but we'll take the win. We also switched Pollen refills to an hourly schedule, which should smooth out rate limits for developers testing heavier apps.\n\nFor the frontend, we shipped a redesign introducing a new palette system and scene backgrounds. BYOP (Bring Your Own Provider) is also becoming our standard pattern across the ecosystem. We attached the BYOP and media upload services to a few more community apps this week, including AI Dungeon Master and CatGPT.\n\nCode and full changelog are open as always: https://github.com/pollinations/pollinations\n\nLet us know if the new OpenAI endpoints behave weirdly with your existing setups."
+}

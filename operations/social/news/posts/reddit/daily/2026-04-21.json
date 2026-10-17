@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-21",
+  "period_start": "2026-04-21",
+  "period_end": "2026-04-21",
+  "generated_at": "2026-04-22T06:35:12.500271+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-21/images/reddit.jpg"
+    }
+  ],
+  "title": "Infrastructure update: Claude Opus 4.7, Qwen3-TTS, and killing orphan Windows processes",
+  "text": "Merged 7 PRs today. The main changes are some heavyweight model additions and fixing a particularly annoying Windows bug.\n\nOn the model front, we added Claude Opus 4.7 (routing as `claude-xlarge` via Bedrock), registered Qwen3-TTS for audio generation via DashScope, and bumped Kimi to k2.6 on Fireworks. They are live on the text and audio endpoints now. Standard HTTP calls apply.\n\nFor anyone running MCP on Windows, we finally fixed the issue where orphan processes would busy-loop and eat your CPU if the parent process exited unexpectedly. The child processes now correctly detect the parent's death and shut down gracefully instead of spinning forever. Apologies to anyone whose fans have been working overtime this week.\n\nWe also merged two new community apps into the showcase: AI Models Laboratory for image generation and Scene2Text for writing.\n\nFinally, some basic doc hygiene. We dropped the legacy balance permission requirements from the examples. If you were copying those older snippets, they'll be cleaner now.\n\nYou can hit the endpoints or see the full commit history on our GitHub. As always, the free tier is generous, just pass your prompts.\n\nDocs: https://github.com/pollinations/pollinations"
+}

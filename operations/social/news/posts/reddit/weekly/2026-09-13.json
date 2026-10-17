@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-09-13",
+  "period_start": "2026-09-06",
+  "period_end": "2026-09-12",
+  "generated_at": "2026-09-13T06:32:41.130676+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-13/images/reddit.jpg"
+    }
+  ],
+  "title": "Weekly update: agents, media routes, and model catalog",
+  "text": "96 PRs merged this week. The visible theme was giving agents more useful failure modes and fewer decorative ones.\n\nManaged code agents now have a workspace, persistent per-user filesystem, bash via computer MCP, paired hosted-agent function items, higher prompt/tool-call limits, and better status/error reporting. There is still plenty of surface area here, but an agent failing should now more often say why it failed rather than simply becoming a small mystery.\n\nMedia work is converging on shared routes: media models are available through Chat and Responses, those routes accept image parts, generated files use media storage, and cached media can be recovered on demand. MCP also reuses generated-media URLs instead of regenerating them because apparently URLs should survive longer than a goldfish.\n\nThe catalog and billing paths got less ambiguous: canonical model IDs and provider mappings were tightened, model fallbacks can be caller-defined, usage/earnings breakdowns landed, and stream usage handling was hardened around provisional and cost-only updates.\n\nAlso shipped: device-flow MCP login, SDK `embeddings()`, GIMP 3 BYOP image generation/editing, DeepSeek V4.1 Flash, GPT Image 2.5 paid models, and 1080p MiniMax H3 Max Turbo support.\n\nChanges and review trail: https://github.com/pollinations/pollinations\nDocs/API reference: https://pollinations.ai/docs"
+}

@@ -2,8 +2,8 @@
   "date": "2025-06-25",
   "period_start": "2025-06-25",
   "period_end": "2025-06-25",
-  "title": "Embedding service is available again",
-  "summary": "A small but useful repair: embeddings are back on the workbench.\n\nA commit-level fix re-enables the embedding service, restoring a useful building block for semantic search, retrieval, clustering, and other text-aware projects.",
+  "title": "Image caching gets less literal",
+  "summary": "Image caching learned to recognize similar prompts—and stopped treating three dots as a new idea.\n\nImage requests now use BGE-based semantic caching, so similar prompts can match cached results instead of requiring an exact match. Prompt normalization also removes punctuation and collapses repeated whitespace, making variants like `test.`, `test...`, and `test` equivalent for matching.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-06-25"
     }
   ],
-  "generated_at": "2026-09-04T13:04:57.077522+00:00"
+  "generated_at": "2026-10-17T15:42:48.932650+00:00",
+  "highlights": [],
+  "changelog": []
 }

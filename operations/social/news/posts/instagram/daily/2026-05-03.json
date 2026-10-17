@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-05-03",
+  "period_start": "2026-05-03",
+  "period_end": "2026-05-03",
+  "generated_at": "2026-05-04T06:58:28.152838+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-03/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-03/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-03/images/instagram-3.jpg"
+    }
+  ],
+  "text": "7 PRs merged this week. The big ones: Meta's Llama models are now wired up (including vision capabilities). We added opt-in safety guardrails for generation, so you can filter out the weird stuff if you want to. Audio endpoints will now politely reject STT models instead of getting confused.\n\nAlso, three new projects hit the community showcase: Storyframe Studio, Lkalma, and the AIGC Control Console. Love seeing what you all build with this infrastructure.\n\nCheck the repo for the full changelog. Keep tinkering. 🌿\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #llamamodel #aiartcommunity #webdev",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

@@ -2,8 +2,8 @@
   "date": "2025-03-27",
   "period_start": "2025-03-27",
   "period_end": "2025-03-27",
-  "title": "MCP server installation got less dramatic",
-  "summary": "A garden-maintenance day: MCP installs became sturdier and four community-built projects landed in the showcase.\n\nThe MCP server package and docs were refreshed, while install failures were addressed with an AbortController polyfill. Connecting pollinations to MCP-compatible tools should now involve fewer dependency-era surprises.\n\nThe community project list now includes pollinations-tg-bot, toai.chat, IMyself AI, and TeekGenAI—more examples of people building useful, strange, and internet-shaped things with the API.",
+  "title": "MCP installation gets a clearer path",
+  "summary": "Four community projects joined the showcase while the MCP package got a more usable installation path.\n\nThe MCP package was renamed to `@pollinations/model-context-protocol`, and its executable and Claude Desktop installer were updated to use the published package. The quick start was shortened, and the package now declares Node.js 14 as its minimum with an AbortController fallback for older versions.\n\nThe project showcase added toai.chat for terminal-based AI chat via curl and TeekGenAI for prompt-to-image generation without a login. Both are community-built ways to use Pollinations without building an interface first.\n\nThe community listings added a Chinese-language Telegram bot for chat, images, speech, and transcription, alongside IMyself AI, which offers image, text, and audio generation plus speech-to-text in Chinese and English.",
   "pr_count": 7,
   "prs": [
     {
@@ -35,5 +35,7 @@
       "date": "2025-03-27"
     }
   ],
-  "generated_at": "2026-09-04T12:17:27.808884+00:00"
+  "generated_at": "2026-10-17T15:36:33.078307+00:00",
+  "highlights": [],
+  "changelog": []
 }

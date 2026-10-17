@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-24",
+  "period_start": "2026-08-24",
+  "period_end": "2026-08-24",
+  "generated_at": "2026-08-25T06:15:25.064469+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-24/images/reddit.jpg"
+    }
+  ],
+  "title": "MCP registry, atomic budgets, and Kontext fixes",
+  "text": "16 PRs merged today. The main change is that managed agents now have a hosted MCP registry and Gen proxy (#13672), plus audio transcription exposed through MCP (#13809). This should make agent setup less dependent on everyone carrying their own pile of endpoint glue.\n\nA few accounting and routing fixes were less visible but more important than they sound: API-key budgets are now reserved atomically instead of using read-then-compare (#13166), overdrawn requests no longer emit credits (#13803), and fallback outcomes use a unified tracking path (#13086). Software continues to discover that “mostly settled correctly” is not a valid ledger state.\n\nKontext generation via Azure is restored (#13836), with better failure attribution (#13860). Nova Canvas is priced by output dimensions (#13831), Qwen3.8 27B pricing was aligned (#13834), and the Mistral ZDR pricing variant is excluded (#13838).\n\nAlso shipped: shorter dashboard announcements, UTC clarification for Activity timestamps, an endpoint-agent request example, README updates, and FreeChat CLI in the app directory.\n\nCode and PR history: https://github.com/pollinations/pollinations/pulls\nDocs: https://github.com/pollinations/pollinations"
+}

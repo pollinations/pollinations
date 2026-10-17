@@ -15,5 +15,17 @@
       "date": "2026-02-12"
     }
   ],
-  "generated_at": "2026-02-13T10:57:38.492088+00:00"
+  "generated_at": "2026-02-13T10:57:38.492088+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "OpenClaw gets web search",
+      "text": "Use Gemini and Perplexity web search capabilities in OpenClaw. Claude Opus and Gemini Pro have also joined its model roster.",
+      "prs": [
+        8187
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

@@ -1,0 +1,63 @@
+{
+  "date": "2025-11-23",
+  "period_start": "2025-11-16",
+  "period_end": "2025-11-22",
+  "title": "More models, clearer names",
+  "summary": "The API gained more ways to talk to models, while model discovery and request behavior became more consistent.\n\nKimi K2 Thinking and Gemini 3 Pro Preview joined the text API with reasoning and tool support; Gemini also accepts image, audio, and video input. Fast options changed too: `openai-fast` moved to GPT-5 Nano, and `mistral-fast` added Llama 3.1 8B with tools. Gemini is listed as `gemini-large`, while its earlier IDs still work as aliases.\n\nChat completions gained OpenAI-compatible audio fields. Requests can carry base64 audio in wav, mp3, flac, opus, or pcm16 format, and ask for audio output with a chosen voice and format.\n\nGateway model listings gained aliases, pricing, descriptions, and capability metadata. The image picker was updated to read the new model objects and show descriptions, while a pricing-page button added a way to vote on future models.\n\nEnter’s text, image, and chat routes adopted one authentication and Pollen-balance rule, with successful uncached requests billed by usage. Image responses now identify the model used for Turbo and Flux; invalid model names and image parameters return HTTP 400, and text-service errors have a structured response.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 5247,
+      "date": "2025-11-16"
+    },
+    {
+      "number": 5316,
+      "date": "2025-11-16"
+    },
+    {
+      "number": 5318,
+      "date": "2025-11-16"
+    },
+    {
+      "number": 5324,
+      "date": "2025-11-16"
+    },
+    {
+      "number": 5327,
+      "date": "2025-11-16"
+    },
+    {
+      "number": 5333,
+      "date": "2025-11-16"
+    },
+    {
+      "number": 5335,
+      "date": "2025-11-16"
+    },
+    {
+      "number": 5293,
+      "date": "2025-11-18"
+    },
+    {
+      "number": 5342,
+      "date": "2025-11-18"
+    },
+    {
+      "number": 5345,
+      "date": "2025-11-18"
+    },
+    {
+      "number": 5367,
+      "date": "2025-11-18"
+    },
+    {
+      "number": 5369,
+      "date": "2025-11-19"
+    },
+    {
+      "number": 5383,
+      "date": "2025-11-21"
+    }
+  ],
+  "generated_at": "2026-10-17T16:06:35.330183+00:00"
+}

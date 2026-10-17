@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-04-29",
+  "period_start": "2026-04-29",
+  "period_end": "2026-04-29",
+  "generated_at": "2026-04-30T06:49:48.842923+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-29/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-29/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-29/images/instagram-3.jpg"
+    }
+  ],
+  "text": "10 PRs merged. mostly infrastructure and making things less annoying.\n\nmoved generation to its own dedicated gateway (gen.pollinations.ai) to keep things tidy. BYOP now has unlimited budgets for the heavy tinkerers, plus stricter auth so you don't leak your keys.\n\nvideo generation finally gets seed support so you can reproduce results, and we fixed those weird 500 errors when an image URL fails (it's a 400 now, as the HTTP gods intended). plus, new community apps added to the registry.\n\ncode is open, as always. github.com/pollinations/pollinations 🐝✨\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #webdev #generativeai #buildinpublic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

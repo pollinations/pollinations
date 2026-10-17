@@ -2,16 +2,12 @@
   "date": "2026-01-04",
   "period_start": "2026-01-04",
   "period_end": "2026-01-04",
-  "title": "More ways to make images",
-  "summary": "A buzzing day for model choice, Gemini tools, image generation, and the small bits of automation that keep the garden growing.\n\nImage generation picked up a SANA-Sprint server and Flux as its own io.net model, giving builders more distinct routes from prompt to pixels.\n\nGemini gained Google Search, URL context, and code execution tools where supported. Gemini Fast was kept on the fast path by leaving code execution out of that variant.\n\nQwen3-Coder is now available through OVHcloud, pricing displays full model names, and response content blocks formally include image URLs so multimodal clients have a less interpretive experience.",
-  "pr_count": 11,
+  "title": "Flux is its own image model again",
+  "summary": "Flux got its own lane, Gemini learned a few more tools, and Qwen Coder moved to Qwen3.\n\nRequests for `flux` now use Flux Schnell instead of resolving to `zimage`, which remains the default. A separate SANA-Sprint 1.6B image-generation backend was also added, designed to generate images in two inference steps.\n\nGemini chat requests gained support for code execution, Google Search, and URL context. `gemini-search` defaults to Google Search, while callers can choose tools explicitly. Responses can now include generated plots and charts as `image_url` content blocks. A follow-up removed automatic code execution from `gemini-fast` so it works with structured-output requests.\n\nThe `qwen-coder` API name now routes to Qwen3-Coder-30B-A3B-Instruct, with an 8,192-token maximum. Enter’s pricing page also shows human-readable model names and brings text, image, and video models into one sectioned table.",
+  "pr_count": 8,
   "prs": [
     {
       "number": 6638,
-      "date": "2026-01-04"
-    },
-    {
-      "number": 6794,
       "date": "2026-01-04"
     },
     {
@@ -39,17 +35,40 @@
       "date": "2026-01-04"
     },
     {
-      "number": 6836,
-      "date": "2026-01-04"
-    },
-    {
       "number": 6839,
-      "date": "2026-01-04"
-    },
-    {
-      "number": 6842,
       "date": "2026-01-04"
     }
   ],
-  "generated_at": "2026-09-04T11:25:12.326267+00:00"
+  "generated_at": "2026-10-17T15:58:09.329947+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Flux gets its own lane",
+      "text": "Choose `flux` for Flux Schnell instead of having the request resolve to `zimage`. `zimage` remains the default. [Browse Flux](https://enter.pollinations.ai/models?q=flux).",
+      "prs": [
+        6832
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "More tools for Gemini",
+      "text": "Use Gemini with code execution, Google Search, or URL context; pass a `tools` array to choose what a request uses. Generated charts can come back as `image_url` content blocks. [Explore the API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        6818,
+        6830
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Qwen Coder moves to Qwen3",
+      "text": "`qwen-coder` now routes to Qwen3-Coder-30B-A3B-Instruct, with an 8,192-token maximum. [Browse the model](https://enter.pollinations.ai/models?q=qwen-coder).",
+      "prs": [
+        6810
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

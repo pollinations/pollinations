@@ -2,22 +2,10 @@
   "date": "2026-01-24",
   "period_start": "2026-01-24",
   "period_end": "2026-01-24",
-  "title": "API keys and request errors are easier to diagnose",
-  "summary": "A garden-maintenance day: clearer API behavior, sturdier model fallbacks, and more paths for community news to escape into the internet.\n\nAdded an endpoint for checking API key status, made invalid-key and missing-auth errors distinct, and corrected rate-limit responses so clients can identify what happened and respond properly.\n\nKlein 4B web editing now follows the same protocol as Klein 9B, while Claude fallback configurations correctly convert image URLs before passing them along.\n\nThe news workflow can now publish through Buffer to LinkedIn and Twitter, Reddit prompt files gained a home of their own, and the latest Instagram post landed alongside documentation and workflow-script cleanup.",
-  "pr_count": 10,
+  "title": "Apps can check API keys without generating anything",
+  "summary": "Apps gained a way to check API keys, while image editing, Claude fallbacks, and authentication errors got less confusing.\n\nA new GET /api/account/key endpoint lets apps validate a key and inspect its expiry, permissions, remaining Pollen budget, and rate-limit status. Authentication errors are clearer too: invalid or missing keys return distinct guidance, while rate-limited requests return 429 instead of looking like bad keys.\n\nKlein 4B’s editing endpoint now takes prompt and settings in query parameters and up to 10 base64 reference images as a JSON array, matching Klein 9B and the existing TypeScript client.\n\nWhen a Claude fallback uses Vertex AI or Bedrock, remote image URLs are converted to base64 before the request, preventing image inputs from failing on those routes.",
+  "pr_count": 6,
   "prs": [
-    {
-      "number": 7599,
-      "date": "2026-01-24"
-    },
-    {
-      "number": 7600,
-      "date": "2026-01-24"
-    },
-    {
-      "number": 7606,
-      "date": "2026-01-24"
-    },
     {
       "number": 7609,
       "date": "2026-01-24"
@@ -35,10 +23,6 @@
       "date": "2026-01-24"
     },
     {
-      "number": 7628,
-      "date": "2026-01-24"
-    },
-    {
       "number": 7629,
       "date": "2026-01-24"
     },
@@ -47,5 +31,17 @@
       "date": "2026-01-24"
     }
   ],
-  "generated_at": "2026-09-04T11:43:51.331850+00:00"
+  "generated_at": "2026-10-17T16:01:03.630671+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "Check API key status",
+      "text": "Apps can use `GET /api/account/key` to validate a key and inspect its expiry and permissions without making a generation request. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        7624
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

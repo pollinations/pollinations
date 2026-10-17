@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-03",
+  "period_start": "2026-09-03",
+  "period_end": "2026-09-03",
+  "generated_at": "2026-09-04T06:29:46.366930+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-03/images/reddit.jpg"
+    }
+  ],
+  "title": "Open WebUI, model fallbacks, and CLI harness",
+  "text": "18 PRs merged today. The largest user-facing change is a hosted Open WebUI workspace configured to use Pollinations as its only login path, plus an Open WebUI entry in chat. That should make the existing model surface less dependent on everyone assembling their own UI stack first.\n\nThe model catalog also got less opaque. Prompt-agent catalog metadata is now derived correctly, community model metadata is used where expected, filters moved into search, catalog schemas were clarified, and publishing delay was reduced. Small metadata bugs have a special talent for becoming product behavior, so this is mostly cleanup with practical consequences.\n\nRouting got more defensive: degraded models now have fallbacks, GPT Image has OpenAI fallbacks, and Qwen/FLUX fallback pricing was aligned. Qwen3.8 Max 0902 on Alibaba was added as well.\n\nOther shipped pieces: a Discord adapter for the OSAII Swarm Community Agent, an AI Homework Solver in Learn, account app-connection refinements, renderable agent tool calls, and preserved timestamped audio cache headers.\n\nFor local tooling, `polli` now has an OpenClaw harness, so wiring it up no longer needs a small ritual involving config files.\n\nCode and current README: https://github.com/pollinations/pollinations\nDocs and endpoints: https://pollinations.ai\n\nThe Open WebUI and fallback paths are the bits most likely to reveal rough edges under real traffic."
+}

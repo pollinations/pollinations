@@ -1,0 +1,135 @@
+{
+  "date": "2025-11-02",
+  "period_start": "2025-10-26",
+  "period_end": "2025-11-01",
+  "title": "The tier panel got closer to the source of truth",
+  "summary": "Enter made tiers and generation paths easier to understand while expanding what people can do with images.\n\nEnter now distinguishes an assigned tier from an active Polar subscription. Its panel shows the active product and daily Pollen, offers an activation path when a tier is assigned without an active subscription, and calculates refill timing from subscription start. Later changes aligned tier detection with updated subscription products and read product names and Pollen amounts from Polar instead of hardcoding them. The earlier checkout button starts checkout; it does not, by itself, establish that a tier is active.\n\nSeedream 4.0 joined the Nectar-tier image lineup, then gained a maximum pixel budget of 4096×4096 while requests without dimensions default to 1024×1024. `nanobanana` added Gemini image-to-image generation through Enter, with output up to 2048 pixels on a side. The new models sit alongside community apps for opposite-prompt images and mobile image transformations.\n\nA GET endpoint now accepts a text prompt in the URL, with an optional model parameter that defaults to `openai`. Enter added copyable publishable keys for GET text and image URLs, while secret keys continue to use the Authorization header. Generation routes also accept a session cookie or bearer API key; tier and subscription routes remain session-only.\n\nEnter’s image proxy now forwards request methods, headers, and bodies as expected. Enter image requests bypass the per-IP queue, while other image requests have tighter queue and concurrency limits. Flux failures now return the original error instead of silently switching models, and Gemini image refusals retain their specific feedback.",
+  "pr_count": 31,
+  "prs": [
+    {
+      "number": 4633,
+      "date": "2025-10-26"
+    },
+    {
+      "number": 4734,
+      "date": "2025-10-26"
+    },
+    {
+      "number": 4783,
+      "date": "2025-10-26"
+    },
+    {
+      "number": 4793,
+      "date": "2025-10-26"
+    },
+    {
+      "number": 4796,
+      "date": "2025-10-26"
+    },
+    {
+      "number": 4805,
+      "date": "2025-10-26"
+    },
+    {
+      "number": 4806,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4808,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4814,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4818,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4819,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4821,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4828,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4829,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4830,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4822,
+      "date": "2025-10-28"
+    },
+    {
+      "number": 4843,
+      "date": "2025-10-28"
+    },
+    {
+      "number": 4848,
+      "date": "2025-10-29"
+    },
+    {
+      "number": 4851,
+      "date": "2025-10-29"
+    },
+    {
+      "number": 4852,
+      "date": "2025-10-29"
+    },
+    {
+      "number": 4853,
+      "date": "2025-10-29"
+    },
+    {
+      "number": 4857,
+      "date": "2025-10-29"
+    },
+    {
+      "number": 4863,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4876,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4886,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4891,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4899,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4903,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4904,
+      "date": "2025-11-01"
+    },
+    {
+      "number": 4909,
+      "date": "2025-11-01"
+    },
+    {
+      "number": 4910,
+      "date": "2025-11-01"
+    }
+  ],
+  "generated_at": "2026-10-17T16:06:26.044646+00:00"
+}

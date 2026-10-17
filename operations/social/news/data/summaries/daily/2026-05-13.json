@@ -24,27 +24,48 @@
     {
       "emoji": "🗺️",
       "title": "Public Roadmap",
-      "text": "The homepage now clearly splits what just shipped from what's coming next, plus better visibility for developer earnings. [View site](https://hello.pollinations.ai)"
+      "text": "The homepage now clearly splits what just shipped from what's coming next, plus better visibility for developer earnings. [View site](https://hello.pollinations.ai)",
+      "prs": [
+        10729
+      ],
+      "kind": "product"
     },
     {
       "emoji": "📖",
       "title": "Docs Cleanup",
-      "text": "We stripped the marketing fluff out of the Pollen FAQ. Just straight answers about wallets and tiers now."
+      "text": "We stripped the marketing fluff out of the Pollen FAQ. Just straight answers about wallets and tiers now.",
+      "prs": [
+        10821
+      ],
+      "kind": "product"
     },
     {
       "emoji": "💳",
       "title": "Pollen Packs",
-      "text": "Updated the Pollen pack tier structures and fixed some Stripe checkout metadata. Buying credits is now slightly more robust."
+      "text": "Updated the Pollen pack tier structures and fixed some Stripe checkout metadata. Buying credits is now slightly more robust.",
+      "prs": [
+        10868
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎵",
       "title": "Cheaper Audio",
-      "text": "ElevenLabs text-to-speech is now cheaper to generate. Scribe has moved to the paid tier because servers aren't free. [View API](https://gen.pollinations.ai/docs)"
+      "text": "ElevenLabs text-to-speech is now cheaper to generate. Scribe has moved to the paid tier because servers aren't free. [View API](https://gen.pollinations.ai/docs)",
+      "prs": [
+        10935
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🧹",
       "title": "Community Polish",
-      "text": "Trimmed the copy on the community page and unstyled some links. Less reading, more building. [Join Discord](https://chat.pollinations.ai)"
+      "text": "Trimmed the copy on the community page and unstyled some links. Less reading, more building. [Join Discord](https://chat.pollinations.ai)",
+      "prs": [
+        10937
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

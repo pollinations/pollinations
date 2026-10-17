@@ -2,14 +2,10 @@
   "date": "2025-10-09",
   "period_start": "2025-10-09",
   "period_end": "2025-10-09",
-  "title": "Two new ways to play with generated visuals",
-  "summary": "A community-garden day: new visual apps, a clearer interface, and image usage tracking that listens to the headers.\n\nThe app garden grew with a Virtual Makeup Try-On and a Hacktoberfest project that turns maps into 3D isometric buildings. Pixels continue finding strange and useful jobs.\n\nUI refinements improve visual hierarchy and accessibility, making the surrounding tools a little less interested in hiding their own controls.\n\nIssue #4361 now has its implementation, closing out another community-requested addition.",
-  "pr_count": 5,
+  "title": "Community apps turn images into design mockups",
+  "summary": "Three community image apps landed, alongside a small readability pass on the Enter dashboard.\n\nAdityaTel89 added Map to 3D Isometric Buildings, which turns map screenshots and a location description into downloadable isometric city artwork. Prateek Verma added AI Packaging Designer, which turns product photos into box, bottle, bag, or can mockups with preset or custom styling.\n\nanmolsah added Virtual Makeup Studio for trying AI-generated looks on a selfie. It includes four style presets, custom prompts, a before-and-after slider, and downloads.\n\nThe dashboard now labels balances in pollen, renames the API key action to “Create new key,” and adjusts FAQ, table, and button styling for clearer visual hierarchy.",
+  "pr_count": 4,
   "prs": [
-    {
-      "number": 4282,
-      "date": "2025-10-09"
-    },
     {
       "number": 4414,
       "date": "2025-10-09"
@@ -27,5 +23,35 @@
       "date": "2025-10-09"
     }
   ],
-  "generated_at": "2026-09-04T12:44:55.474508+00:00"
+  "generated_at": "2026-10-17T15:48:19.785206+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Maps become isometric cities",
+      "text": "Upload or paste a map screenshot, describe the location, and make downloadable isometric city artwork.",
+      "prs": [
+        4414
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Product photos become packaging",
+      "text": "Turn a product photo into a box, bottle, bag, or can mockup. Choose a style or write your own description.",
+      "prs": [
+        4443
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "✨",
+      "title": "Try on AI makeup",
+      "text": "Apply a preset or custom makeup look to a selfie, compare it with the original, and download the result.",
+      "prs": [
+        4442
+      ],
+      "kind": "app"
+    }
+  ],
+  "changelog": []
 }

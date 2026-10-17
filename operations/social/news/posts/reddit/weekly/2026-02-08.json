@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-02-08",
+  "period_start": "2026-02-01",
+  "period_end": "2026-02-07",
+  "generated_at": "2026-03-18T22:22:09.582030+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-08/images/reddit.jpg"
+    }
+  ],
+  "title": "Weekly update: ElevenLabs TTS, Claude 4.6, and fixing Portkey 524 timeouts",
+  "text": "Merged 15 PRs this week across infrastructure, model updates, and GSoC prep.\n\nAudio and video generation got the most attention. We added an ElevenLabs TTS endpoint (#7281), which has been requested for a while. On the video side, we integrated the LTX-2 video generation model and pulled in several models via api.airforce, including Imagen 3, imagen-4, flux-2-dev, and Grok Imagine Video. Grok video is still in alpha and required adding SSE support to get the streams working properly.\n\nFor the text API, claude-large is now running Opus 4.6 on Bedrock. We also migrated Mistral to OVHcloud. This broke initially due to a config key case mismatch, but that's patched and running smoothly now on a shared API key.\n\nInfrastructure-wise, if you were hitting 524 timeouts recently, that should be resolved. We moved the Portkey gateway to a custom domain to bypass the issue. We also added dashboard panels to track model usage by tier, and restricted five heavier models to paid-only to keep the free tier sustainable.\n\nFinally, we're gearing up for Google Summer of Code. The READMEs and contributing guidelines are updated, and we fixed some minor routing bugs on the GSoC HMR page.\n\nCode and changelog are in the repo as always."
+}

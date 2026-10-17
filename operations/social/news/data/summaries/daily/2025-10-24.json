@@ -2,16 +2,12 @@
   "date": "2025-10-24",
   "period_start": "2025-10-24",
   "period_end": "2025-10-24",
-  "title": "API access got easier to wire into real apps",
-  "summary": "A practical access day: easier API auth, browser connectivity, a more open Enter, and clearer usage signals.\n\nBearer-token authentication is now supported alongside API keys, the authentication docs explain how to use it, and the FAQ has been updated for the simpler platform access model. Less guessing which header goes where.\n\nCORS support now lets browser clients reach Pollinations services, making frontend experiments and client-side integrations considerably less ceremonial.\n\nTier restrictions were removed from enter.pollinations.ai while its queue system was simplified. Generation endpoints also gained a switch for controlling anonymous access when a deployment needs it.",
-  "pr_count": 8,
+  "title": "Enter tokens open up model access",
+  "summary": "Enter token holders gained broader model access, Bearer-authenticated browser calls got support, and generation responses gained clearer usage counts.\n\nValid Enter tokens now bypass tier checks for text models and Kontext image generation; Kontext still has a queue interval and concurrency caps. The Pollen FAQ was updated to explain which models frontend and server-to-server keys can access and how daily grants are spent.\n\nEnter API-key authentication now accepts `Authorization: Bearer <key>`, and its image and text proxy routes handle browser preflight requests with that header. The API guide and interactive docs explain and support Bearer authentication.\n\nImage and text responses gained consistent model and token-usage headers when the data is available. Streaming text responses can report usage in HTTP trailers, and image responses now use `x-usage-completion-image-tokens` in place of the older header.",
+  "pr_count": 7,
   "prs": [
     {
       "number": 4716,
-      "date": "2025-10-24"
-    },
-    {
-      "number": 4735,
       "date": "2025-10-24"
     },
     {
@@ -39,5 +35,36 @@
       "date": "2025-10-24"
     }
   ],
-  "generated_at": "2026-09-04T12:53:27.928496+00:00"
+  "generated_at": "2026-10-17T15:49:48.494492+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "More models with Enter tokens",
+      "text": "Valid Enter tokens now bypass tier checks for text models and Kontext image generation. Kontext still has queue and concurrency limits. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        4753
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Bearer keys for browser calls",
+      "text": "Authenticate Enter generation requests with `Authorization: Bearer <key>`. Its image and text proxy routes also accept browser preflight requests using that header. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        4751,
+        4757
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "💡",
+      "title": "Usage counts in responses",
+      "text": "Read model and token-usage headers on image and text responses when the data is available. Streaming text responses can provide usage in HTTP trailers. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        4756
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

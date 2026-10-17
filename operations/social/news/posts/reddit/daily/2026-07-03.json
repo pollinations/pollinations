@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-03",
+  "period_start": "2026-07-03",
+  "period_end": "2026-07-03",
+  "generated_at": "2026-07-04T06:58:25.652675+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-03/images/reddit.jpg"
+    }
+  ],
+  "title": "Flow Linnom in chat, search billing itemization, and localStorage fixes",
+  "text": "Merged three PRs today covering model additions, billing transparency, and a long-standing state bug.\n\nFirst, PR #12070 adds Flow Linnom to the chat models. It is live in the Greenhouse now. You can hit it via the standard chat endpoint just like the others.\n\nSecond, PR #12210 fixes how we handle search fees for Perplexity and Gemini. Previously, the cost for advanced search models wasn't cleanly surfaced, making usage tracking confusing for heavy users. These now show up as itemized billing adjustments in your Pollen wallet. You will actually see exactly what your search queries are costing you instead of wondering why your balance dropped.\n\nFinally, PR #11956 fixes a silent failure issue with localStorage. If you were uploading heavy attachments or hoarding massive context windows, the browser would hit the 5MB localStorage limit and just silently drop data. It was a terrible UX. The app now properly catches the quota exception and warns you before you lose your session state.\n\nAll changes are live. You can review the code and open issues on our GitHub: github.com/pollinations/pollinations."
+}

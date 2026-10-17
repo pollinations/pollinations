@@ -32,7 +32,12 @@
     {
       "emoji": "🎯",
       "title": "Side Quests Unlocked",
-      "text": "The passive tier system is out. You can now track bounties and claim Pollen credits for things like GitHub contributions or cross-modality model usage directly from the new Quest [dashboard](https://enter.pollinations.ai)."
+      "text": "The passive tier system is out. You can now track bounties and claim Pollen credits for things like GitHub contributions or cross-modality model usage directly from the new Quest [dashboard](https://enter.pollinations.ai).",
+      "prs": [
+        11856
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

@@ -152,22 +152,74 @@
     {
       "emoji": "🔗",
       "title": "LangChain Support",
-      "text": "Python developers can now integrate Pollinations models directly into agents and RAG pipelines with the new `langchain-pollinations` package."
+      "text": "Python developers can now integrate Pollinations models directly into agents and RAG pipelines with the new `langchain-pollinations` package.",
+      "prs": [
+        8445
+      ],
+      "kind": "app"
     },
     {
       "emoji": "📱",
       "title": "Pollinations on Android",
-      "text": "A dedicated community-built Android client is now available. Generate images and chat natively on mobile."
+      "text": "A dedicated community-built Android client is now available. Generate images and chat natively on mobile.",
+      "prs": [
+        7937
+      ],
+      "kind": "app"
     },
     {
       "emoji": "🎨",
       "title": "Pollenboard",
-      "text": "A self-hostable, all-in-one frontend for those who want to run their own interface on top of our APIs."
+      "text": "A self-hostable, all-in-one frontend for those who want to run their own interface on top of our APIs.",
+      "prs": [
+        7257,
+        8481
+      ],
+      "kind": "app"
     },
     {
       "emoji": "🚀",
       "title": "Showcase Expansion",
-      "text": "Added 30+ new community apps, including D&D tools, IoT pixel art displays, and YouTube summarizers. The [Showcase](https://hello.pollinations.ai) is getting crowded."
+      "text": "Added 30+ new community apps, including D&D tools, IoT pixel art displays, and YouTube summarizers. The [Showcase](https://hello.pollinations.ai) is getting crowded.",
+      "prs": [
+        7224,
+        7232,
+        7244,
+        7248,
+        7250,
+        7257,
+        7627,
+        7636,
+        7658,
+        7662,
+        7664,
+        7682,
+        7695,
+        7699,
+        7811,
+        7849,
+        7885,
+        7909,
+        7919,
+        7937,
+        7988,
+        8047,
+        8050,
+        8146,
+        8297,
+        8374,
+        8396,
+        8416,
+        8442,
+        8445,
+        8469,
+        8471,
+        8481,
+        8482,
+        8486
+      ],
+      "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

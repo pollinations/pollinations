@@ -2,8 +2,8 @@
   "date": "2025-05-14",
   "period_start": "2025-05-14",
   "period_end": "2025-05-14",
-  "title": "Dynamic images and clearer signals from the edge",
-  "summary": "A small but useful pass on dynamic image delivery, browser-friendly errors, and knowing what reaches the page.\n\nImage generation can now be tailored dynamically, while error responses include CORS headers so browser-based apps can actually inspect them. A tracking-pixel helper also adds a lightweight way to understand how things are being used.",
+  "title": "Ads follow the conversation",
+  "summary": "Text API work made affiliate copy more context-aware and browser errors readable, with analytics plumbing added behind the scenes.\n\nAffiliate ad copy is now written to match the response and recent conversation instead of translating existing ad text. The ad marker is kept out of messages sent to the text model.\n\nNon-OK responses from the text origin now include a CORS header, so cross-origin browser requests can inspect the error.\n\nA non-cacheable tracking-pixel function was added for request analytics.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,5 +15,7 @@
       "date": "2025-05-14"
     }
   ],
-  "generated_at": "2026-09-04T12:42:24.900433+00:00"
+  "generated_at": "2026-10-17T15:39:39.541005+00:00",
+  "highlights": [],
+  "changelog": []
 }

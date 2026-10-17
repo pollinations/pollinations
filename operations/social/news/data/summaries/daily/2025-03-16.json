@@ -2,8 +2,8 @@
   "date": "2025-03-16",
   "period_start": "2025-03-16",
   "period_end": "2025-03-16",
-  "title": "The community app garden gets a little bigger",
-  "summary": "A small garden day: one more creative app in the showcase and cleaner paths to the projects people are building.\n\nJenny AI joined the Creative & Interactive Applications showcase, while the README and project list were refreshed so people can find what the community is building without archaeology.",
+  "title": "Jenny AI joins the creative app directory",
+  "summary": "A community-directory day: Jenny AI joined the listings, Elixpo projects got clearer credit, and a duplicate entry disappeared.\n\nJenny AI was added to the README and website directory. The chatbot and character-creation app uses Pollinations for image generation and vision, and lists text-to-speech and speech-to-text features.\n\nThe README and website project list now credit Ayushman Bhattacharya for Pollinations Feed and the Elixpo Art Chrome Extension. The README also groups the Elixpo projects and describes Feed by its realtime bento-grid interface.\n\nThe project listings gained Jenny AI and lost a duplicate Chrome Extension entry, making the directory a little easier to browse.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,5 +15,7 @@
       "date": "2025-03-16"
     }
   ],
-  "generated_at": "2026-09-04T12:10:04.770890+00:00"
+  "generated_at": "2026-10-17T15:35:41.022720+00:00",
+  "highlights": [],
+  "changelog": []
 }

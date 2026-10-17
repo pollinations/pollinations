@@ -2,9 +2,9 @@
   "date": "2025-12-03",
   "period_start": "2025-12-03",
   "period_end": "2025-12-03",
-  "title": "Chat gained two more places to wander",
-  "summary": "A garden-maintenance day: better chat options, upgraded image models, sturdier integrations, and fewer ways for credentials to escape into the wild.\n\nNoir Ink Tattoo Studio and Synapse joined the chat lineup, while a fix cleaned up issues around thinking-enabled chats. More personalities, fewer mysterious pauses.\n\nSeedream moved to 4.5, Seedance moved to Pro-Fast, and the image path now handles fallback behavior and dimension scaling more reliably.\n\nAqua API was added to vibeCoding, and Telegram image-to-image requests now correctly recognize files served through Telegram's CDN.",
-  "pr_count": 10,
+  "title": "Seedream and Seedance get new engines",
+  "summary": "Seedream 4.5 and Seedance Pro-Fast lead a day of sturdier media requests, cleaner chat settings, and new community projects.\n\nSeedream moved to 4.5, with a 2048-pixel default side length and support for up to 14 reference images. Seedance now uses Pro-Fast for both text-to-video and image-to-video. Smaller Seedream requests are scaled to the model’s minimum size, eligible failures fall back to 4.0, and reference images served with generic file types work across Seedream, Seedance, and Vertex AI Gemini.\n\nChat now sends thinking settings only to Claude and omits a default top_p value that could conflict with Bedrock requests. Video generation requests also use the image API base URL.\n\nThe community directories added Noir Ink Tattoo Studio for tattoo designs, Synapse for multi-model chat, and Aqua, a project for learning API development.",
+  "pr_count": 9,
   "prs": [
     {
       "number": 5579,
@@ -41,11 +41,28 @@
     {
       "number": 5610,
       "date": "2025-12-03"
-    },
-    {
-      "number": 5621,
-      "date": "2025-12-03"
     }
   ],
-  "generated_at": "2026-09-04T12:23:16.203959+00:00"
+  "generated_at": "2026-10-17T15:53:59.674386+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Seedream 4.5 images",
+      "text": "Generate with `seedream` at a 2048-pixel default side length, or use up to 14 reference images for image-to-image work. [Browse Seedream](https://enter.pollinations.ai/models?q=seedream).",
+      "prs": [
+        5597
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Seedance Pro-Fast video",
+      "text": "Use `seedance` for text-to-video or image-to-video generation with the Pro-Fast model. [Browse Seedance](https://enter.pollinations.ai/models?q=seedance).",
+      "prs": [
+        5597
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

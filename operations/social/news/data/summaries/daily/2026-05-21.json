@@ -24,7 +24,12 @@
     {
       "emoji": "🔌",
       "title": "MCP Server",
-      "text": "The Model Context Protocol (MCP) server is now officially wired into the main [API Docs](https://gen.pollinations.ai/docs). Connect your local AI agents directly to the hive."
+      "text": "The Model Context Protocol (MCP) server is now officially wired into the main [API Docs](https://gen.pollinations.ai/docs). Connect your local AI agents directly to the hive.",
+      "prs": [
+        11201
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

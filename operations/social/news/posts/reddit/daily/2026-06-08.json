@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-06-08",
+  "period_start": "2026-06-08",
+  "period_end": "2026-06-08",
+  "generated_at": "2026-06-09T07:10:13.245218+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-08/images/reddit.jpg"
+    }
+  ],
+  "title": "Wired our ecosystem dashboards directly to the live model catalog",
+  "text": "For a while, keeping track of which models were actually available across the different pollinations interfaces was a bit of a manual chore. We would add a new Llama or Mistral endpoint to the infrastructure, and then someone would have to remember to update the UI components so users knew it existed.\n\nToday we merged PR #11613, which finally fixes this. We ripped out the static UI lists and wired the dashboards directly to our live model catalog.\n\nNow, when a new model gets added to the routing layer, it propagates to the ecosystem dashboards automatically. It is a simple architectural change, but it removes an unnecessary bottleneck in how we ship updates. It means a single source of truth, less manual config, and fewer questions about why a newly supported model is not showing up in the dropdown menus yet.\n\nIf you are building your own frontend on top of our API and want to pull the live catalog dynamically instead of hardcoding your UI, you can query the models endpoint directly to stay synced with the infrastructure.\n\nAll code is open source at github.com/pollinations/pollinations. Let us know if the routing looks off or if anything breaks in the dashboard views."
+}

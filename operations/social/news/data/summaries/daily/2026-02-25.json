@@ -68,22 +68,39 @@
     {
       "emoji": "🚀",
       "title": "Media Uploads",
-      "text": "New `media.pollinations.ai` service. Upload up to 10MB, get a hash, keep your app's assets persistent."
+      "text": "New `media.pollinations.ai` service. Upload up to 10MB, get a hash, keep your app's assets persistent.",
+      "prs": [
+        5684
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🎨",
       "title": "Grok-Imagine",
-      "text": "Added `grok-imagine` (alpha). xAI's latest visual model is now available for generation."
+      "text": "Added `grok-imagine` (alpha). xAI's latest visual model is now available for generation.",
+      "prs": [
+        8329
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎵",
       "title": "Custom Voices",
-      "text": "Audio API now accepts custom ElevenLabs voice IDs. Bring your own clones instead of just using presets."
+      "text": "Audio API now accepts custom ElevenLabs voice IDs. Bring your own clones instead of just using presets.",
+      "prs": [
+        8488
+      ],
+      "kind": "api"
     },
     {
       "emoji": "✨",
       "title": "Website Refresh",
-      "text": "Complete redesign with a new \"flywheel\" narrative and clearer [contributor tiers](https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md)."
+      "text": "Complete redesign with a new \"flywheel\" narrative and clearer [contributor tiers](https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md).",
+      "prs": [
+        8577
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

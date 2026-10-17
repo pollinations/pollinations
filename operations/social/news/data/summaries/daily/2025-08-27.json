@@ -2,8 +2,8 @@
   "date": "2025-08-27",
   "period_start": "2025-08-27",
   "period_end": "2025-08-27",
-  "title": "Event logs now carry user tier context",
-  "summary": "A small observability upgrade: events now arrive with a little more context attached.\n\nUser tier tracking was added to event logging and supporting scripts, giving the project clearer context when examining how different parts of the platform are used.",
+  "title": "Text completions report user tier",
+  "summary": "A small text API update makes user tier visible in completions and usage tracking.\n\nText completions now include `user_tier`, set to the authenticated tier or `anonymous`. Text event tracking records the tier too, making usage easier to break down.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,17 @@
       "date": "2025-08-27"
     }
   ],
-  "generated_at": "2026-09-04T12:27:21.202696+00:00"
+  "generated_at": "2026-10-17T15:45:52.394119+00:00",
+  "highlights": [
+    {
+      "emoji": "💡",
+      "title": "Tier in text completions",
+      "text": "Text completions now include `user_tier`, showing the authenticated tier or `anonymous`.",
+      "prs": [
+        3876
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

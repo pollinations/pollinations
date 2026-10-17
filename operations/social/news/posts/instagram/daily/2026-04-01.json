@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-04-01",
+  "period_start": "2026-04-01",
+  "period_end": "2026-04-01",
+  "generated_at": "2026-04-02T06:24:59.107942+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-01/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-01/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-01/images/instagram-3.jpg"
+    }
+  ],
+  "text": "7 PRs merged this week.\n\nThe big one: video generation via LTX-2 just hit warp speed on GH200. Your ideas render faster now. \n\nWe also added four new community apps to the greenhouse (math, sci-vis, writing, and a graphic editor), and did some much-needed maintenance on the Sirius Cybernetics elevator game. Nomnom ate the bugs, so no more getting stuck in the void on logout.\n\nGo build something weird. Link in bio to see the new apps.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #videogeneration #openweight #gamedev #webdev",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

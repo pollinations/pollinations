@@ -2,16 +2,12 @@
   "date": "2025-03-25",
   "period_start": "2025-03-25",
   "period_end": "2025-03-25",
-  "title": "API docs got more practical",
-  "summary": "A documentation-and-observability day: clearer image uploads, a new community project, and better signals from the cache layer.\n\nThe API documentation was refreshed and now includes base64 image-upload examples, giving builders a clearer path from encoded image data to generated pixels.\n\nVibeCoder by Aashir Shaikh was added to the project directory: another small proof that people keep finding strange and useful things to build with a few HTTP calls.\n\nThe Cloudflare image-cache worker now emits analytics events, making it easier to observe how the image delivery layer behaves in the wild.",
-  "pr_count": 4,
+  "title": "VibeCoder joins the creative app listings",
+  "summary": "A community coding app joined the showcase, while the API docs got clearer about local images and text completions.\n\nVibeCoder, a community web app for coding without writing syntax, was added to the README and website app lists.\n\nThe API docs now show how to send a local JPEG as a base64 data URL in Python and JavaScript, alongside the existing image-URL approach.\n\nThe docs clarify that the OpenAI-compatible text API currently supports only the completion endpoint.",
+  "pr_count": 3,
   "prs": [
     {
       "number": 1221,
-      "date": "2025-03-25"
-    },
-    {
-      "number": 1387,
       "date": "2025-03-25"
     },
     {
@@ -23,5 +19,7 @@
       "date": "2025-03-25"
     }
   ],
-  "generated_at": "2026-09-04T12:15:58.160296+00:00"
+  "generated_at": "2026-10-17T15:36:26.319563+00:00",
+  "highlights": [],
+  "changelog": []
 }

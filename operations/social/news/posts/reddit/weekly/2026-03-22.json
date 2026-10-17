@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-03-22",
+  "period_start": "2026-03-15",
+  "period_end": "2026-03-21",
+  "generated_at": "2026-03-22T06:16:15.361378+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-22/images/reddit.jpg"
+    }
+  ],
+  "title": "61 PRs merged: Qwen3.5, hourly tier refills, frontend caching, and multipart editing",
+  "text": "We merged 61 PRs this week. A lot of it was infrastructure plumbing, but there are a few structural updates worth mentioning if you are building on the API.\n\nFirst, we added Qwen3.5 397B via Fireworks to the text endpoints. We also pushed several API hardening updates: rejecting empty upstream completions with a 502 instead of failing silently, and properly invalidating the KV cache when API key permissions change. If you are using Klein, it now supports multi-image editing via a new multipart endpoint.\n\nFor the free tiers (Spore and Seed), we moved pollen refills to an hourly schedule via Cloudflare Cron. You no longer have to wait out a full day if you burn through your allocation testing a script.\n\nOn the frontend, we implemented lazy-loading for markdown, SWR caching, and chunk splitting to improve load times. The model monitor got a redesign, and we bumped the Tinybird model stats limit from 50 to 200 so you can actually see what is routing where.\n\nLastly, the community shipped a lot. 28 new apps were added to the ecosystem this week, ranging from Claude Code CLI plugins to ESP32-S3 code generators.\n\nCode is open as always: github.com/pollinations/pollinations. Let us know if the hourly cron jobs break anything on your end."
+}

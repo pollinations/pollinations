@@ -2,14 +2,10 @@
   "date": "2025-01-13",
   "period_start": "2025-01-13",
   "period_end": "2025-01-13",
-  "title": "OpenHands coding assistant gets a proper welcome",
-  "summary": "A small public-facing day: OpenHands became easier to spot, and text.pollinations.ai planning joined the open repository.\n\nOpenHands coding assistant announcements were added and then given clearer styling and more visibility, so visitors are more likely to find the new coding help without spelunking through the site.\n\nA strategy document for text.pollinations.ai was added to the repository, keeping the service’s future direction visible alongside the code.",
-  "pr_count": 3,
+  "title": "Feature requests get a clearer path",
+  "summary": "A small community-facing cleanup made feature requests, OpenHands information, and contribution paths easier to find.\n\nThe homepage now points people to GitHub issues for feature requests, with the message moved into a more visible announcement.\n\nThe homepage announcement links to the OpenHands repository, and the README adds OpenHands to its feature and news sections.\n\nThe README now makes GitHub issues and Discord easier to find alongside other ways to contribute. Contact and link layouts were also adjusted for desktop and mobile.",
+  "pr_count": 2,
   "prs": [
-    {
-      "number": 986,
-      "date": "2025-01-13"
-    },
     {
       "number": 988,
       "date": "2025-01-13"
@@ -19,5 +15,7 @@
       "date": "2025-01-13"
     }
   ],
-  "generated_at": "2026-09-04T13:38:40.175500+00:00"
+  "generated_at": "2026-10-17T15:32:52.380323+00:00",
+  "highlights": [],
+  "changelog": []
 }

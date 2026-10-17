@@ -1,0 +1,59 @@
+{
+  "date": "2025-07-13",
+  "period_start": "2025-07-06",
+  "period_end": "2025-07-12",
+  "title": "More things to make, play, and learn from",
+  "summary": "The community showcase grew while its links, credits, and documentation got a careful trim.\n\nVOID.AI joined the Chat list; PairFusion and CraftUI appeared in the refreshed project tables; and AIStorium, AI Word Search, and Prompt Explorer joined the showcase. The additions range from coding help to generated stories, printable puzzles, and prompt exploration.\n\nProject listings received corrected credits and repository links, working demo links replaced some dead ends, and outdated entries were removed. The toai.chat listing now credits @Veallym0n and points to the right repository; the README and PROJECTS.md tables were refreshed alongside the cleanup.\n\nThe README gained an example for launching the Pollinations MCP package from an MCP client, and the Open Web UI tutorial now points to the intended guide. The README’s existing CLI example still has a Markdown code-fence error to fix.",
+  "pr_count": 12,
+  "prs": [
+    {
+      "number": 2849,
+      "date": "2025-07-07"
+    },
+    {
+      "number": 2841,
+      "date": "2025-07-08"
+    },
+    {
+      "number": 2927,
+      "date": "2025-07-09"
+    },
+    {
+      "number": 2782,
+      "date": "2025-07-11"
+    },
+    {
+      "number": 2984,
+      "date": "2025-07-11"
+    },
+    {
+      "number": 2985,
+      "date": "2025-07-11"
+    },
+    {
+      "number": 2986,
+      "date": "2025-07-11"
+    },
+    {
+      "number": 2987,
+      "date": "2025-07-12"
+    },
+    {
+      "number": 2992,
+      "date": "2025-07-12"
+    },
+    {
+      "number": 2999,
+      "date": "2025-07-12"
+    },
+    {
+      "number": 3003,
+      "date": "2025-07-12"
+    },
+    {
+      "number": 3016,
+      "date": "2025-07-12"
+    }
+  ],
+  "generated_at": "2026-10-17T16:05:15.903842+00:00"
+}

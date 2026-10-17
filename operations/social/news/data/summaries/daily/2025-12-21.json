@@ -2,9 +2,9 @@
   "date": "2025-12-21",
   "period_start": "2025-12-21",
   "period_end": "2025-12-21",
-  "title": "Chat got a studio, and model tools got their bearings",
-  "summary": "A busy winter day: sharper chat tooling, more controllable video, smoother app submissions, and plenty of community signposts.\n\nAI Chat Studio was added to chat, while the MCP server received a v2 overhaul. Gemini tool support, Gemini Large code execution and URL context, and Perplexity Reasoning were also repaired so capable models can get back to doing the useful weird stuff.\n\nVeo can now interpolate from a supplied last frame, giving video builders a better handle on where a generation lands. Image-input examples were added to the API docs, alongside updates to the z-image generation path.\n\nhello.pollinations.ai now uses the gen.pollinations.ai API, with build fixes and a cleaner component-based layout. The app-submission flow also moved to gen with retries, more forgiving optional fields, URL validation, and sensible defaults.",
-  "pr_count": 23,
+  "title": "Hello makes more room for the community",
+  "summary": "Veo gained first-to-last-frame video, the MCP server picked up a toolbox, and Hello gave community projects and contributors more room.\n\nHello now sends generation requests directly to the unified API, retries rate-limited requests, and adds a dreams theme. Its Community page highlights contributors from the past year, while refreshed tier and app pages make submissions easier to find. The submission workflow now checks Enter registration, accepts fewer required fields, and grants Flower tier when an eligible, labeled contribution is merged. AI Chat Studio also joined the project directory.\n\nVeo video requests can take first and last frame URLs, giving creators control over both ends of a generated clip. Z-Image Turbo now generates at the requested resolution rather than generating smaller images and upscaling them, with dimensions still capped at 2048.\n\nMCP server v2 routes generation through the unified API and adds tools for video, parallel image generation, image description, video analysis, transcription, web search, tool-calling chat, and model pricing. It now uses API keys, fetches model lists from the API, and requires Node.js 18 or newer.",
+  "pr_count": 16,
   "prs": [
     {
       "number": 5941,
@@ -23,10 +23,6 @@
       "date": "2025-12-21"
     },
     {
-      "number": 6259,
-      "date": "2025-12-21"
-    },
-    {
       "number": 6273,
       "date": "2025-12-21"
     },
@@ -39,10 +35,6 @@
       "date": "2025-12-21"
     },
     {
-      "number": 6280,
-      "date": "2025-12-21"
-    },
-    {
       "number": 6282,
       "date": "2025-12-21"
     },
@@ -51,19 +43,11 @@
       "date": "2025-12-21"
     },
     {
-      "number": 6289,
-      "date": "2025-12-21"
-    },
-    {
       "number": 6294,
       "date": "2025-12-21"
     },
     {
       "number": 6295,
-      "date": "2025-12-21"
-    },
-    {
-      "number": 6300,
       "date": "2025-12-21"
     },
     {
@@ -79,25 +63,43 @@
       "date": "2025-12-21"
     },
     {
-      "number": 6311,
-      "date": "2025-12-21"
-    },
-    {
-      "number": 6313,
-      "date": "2025-12-21"
-    },
-    {
       "number": 6314,
       "date": "2025-12-21"
     },
     {
       "number": 6317,
       "date": "2025-12-21"
-    },
-    {
-      "number": 6318,
-      "date": "2025-12-21"
     }
   ],
-  "generated_at": "2026-09-04T12:38:09.649453+00:00"
+  "generated_at": "2026-10-17T15:56:48.091855+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Steer both ends of a video",
+      "text": "Give Veo a first frame and a last frame by passing two URLs in `image`, separated by a pipe or comma. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        6317
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "More tools for MCP",
+      "text": "The MCP server now supports video generation, parallel images, image description, video analysis, transcription, web search, and tool-calling chat. [Explore the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        6232
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🌟",
+      "title": "Meet the contributors",
+      "text": "Hello's Community page now features a tribute to GitHub contributors from the past year, with links to their profiles. [Visit the community](https://pollinations.ai).",
+      "prs": [
+        6278
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

@@ -2,20 +2,12 @@
   "date": "2025-12-01",
   "period_start": "2025-12-01",
   "period_end": "2025-12-01",
-  "title": "Video generation lands with Veo and Seedance",
-  "summary": "Video generation joins the garden, while the community gets clearer ways to participate and the public site gets its December tune-up.\n\nPollinations can now generate video through Veo and Seedance, bringing another medium into the same open infrastructure already used for images, text, audio, and assorted experiments.\n\nA new login-provider voting issue gives the community a direct place to weigh in on sign-in options, while tier and Pollen values were refreshed alongside new Claude skills for managing tiers and making issues.\n\nChat.Pollinations.AI was synced with its website code, the site messaging now more clearly describes a community-built project, and a December news banner keeps visitors pointed at what changed.",
-  "pr_count": 10,
+  "title": "Video generation joins the prompt route",
+  "summary": "Preview video generation arrived alongside richer chat controls, a December news banner, and clearer community-focused docs.\n\nPreview support for Veo 3.1 Fast and Seedance adds MP4 output, with image-to-video input for Seedance. Requests can set duration, aspect ratio, and audio; Enter also adds per-second video pricing information.\n\nThe chat app adds session controls for the system prompt and generation settings, renders charts in messages, and puts streamed reasoning in a collapsible panel. Sidebar and layout changes make those controls easier to reach.\n\nA dismissible December news banner lists Pollen tiers and featured models. A link beneath GitHub sign-in invites votes on other login providers; neither change alters account balances or sign-in options.",
+  "pr_count": 6,
   "prs": [
     {
-      "number": 5431,
-      "date": "2025-12-01"
-    },
-    {
       "number": 5434,
-      "date": "2025-12-01"
-    },
-    {
-      "number": 5452,
       "date": "2025-12-01"
     },
     {
@@ -23,15 +15,7 @@
       "date": "2025-12-01"
     },
     {
-      "number": 5484,
-      "date": "2025-12-01"
-    },
-    {
       "number": 5512,
-      "date": "2025-12-01"
-    },
-    {
-      "number": 5534,
       "date": "2025-12-01"
     },
     {
@@ -47,5 +31,26 @@
       "date": "2025-12-01"
     }
   ],
-  "generated_at": "2026-09-04T12:21:52.841054+00:00"
+  "generated_at": "2026-10-17T15:53:43.726390+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Veo and Seedance video",
+      "text": "Generate preview MP4 videos with `veo` or `seedance`; Seedance also accepts an image to animate. Set `duration`, `aspectRatio`, and `audio` on the prompt route. [Browse Veo](https://enter.pollinations.ai/models?q=veo).",
+      "prs": [
+        5434
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "💡",
+      "title": "Charts and controls in chat",
+      "text": "Adjust the system prompt and generation settings for a chat session, view charts in messages, and expand streamed reasoning when you want to inspect it. [Explore chat](https://chat.pollinations.ai).",
+      "prs": [
+        5536
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

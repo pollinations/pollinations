@@ -108,7 +108,8 @@
       "prs": [
         14618,
         14648
-      ]
+      ],
+      "kind": "api"
     },
     {
       "emoji": "✨",
@@ -116,7 +117,8 @@
       "text": "Give `nvidia/asset-harvester` one image and get a Gaussian-splat PLY through the 3D API. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         14556
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎨",
@@ -124,7 +126,8 @@
       "text": "A GIMP 3 plug-in adds image generation and editing, with controls that adapt to each model’s capabilities.",
       "prs": [
         14569
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎯",
@@ -141,7 +144,9 @@
       "text": "Call `embeddings()` from the Pollinations SDK for text, batch, or multimodal inputs, with typed responses. [View the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         14450
-      ]
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

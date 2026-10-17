@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-13",
+  "period_start": "2026-09-13",
+  "period_end": "2026-09-13",
+  "generated_at": "2026-09-14T06:39:02.992318+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-13/images/reddit.jpg"
+    }
+  ],
+  "title": "Endpoint modalities, agent KPIs, and harness fixes",
+  "text": "11 PRs merged today.\n\nThe most visible API change is that endpoint agents can now declare their input and output modalities (#14800). This gives callers a machine-readable way to determine what an agent accepts and produces, rather than inferring it from a model name, prompt convention, or a regrettable amount of trial traffic.\n\nGen also gained a Polli brain override (#14799), while agent and MCP usage KPIs are now independently switchable (#14819). The latter is mostly operational plumbing, but it should make it easier to tell which subsystem is responsible when a graph develops opinions.\n\nA few reliability fixes landed around the community-model path: tighter monitoring (#14836), referral-arrival tracking for key budgets (#14833), and always syncing Gen secrets after a production deploy (#14835). Stream-read errors and terminal diagnostics are now preserved instead of getting smoothed into less useful failure states (#14839).\n\nFloret has stopped introducing itself as Polli (#14809). Identity is difficult, apparently, even for software.\n\nThe README and harness guidance were refreshed, including corrected model examples and setup notes (#14803, #14838, #14840). Code and PR history: https://github.com/pollinations/pollinations and https://github.com/pollinations/pollinations/pulls"
+}

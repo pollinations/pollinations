@@ -103,7 +103,8 @@
       "text": "Use `openai/gpt-6-astra` for text and vision requests, with tools, structured output, and streaming support. [Explore text models](https://gen.pollinations.ai/v1/models).",
       "prs": [
         14464
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎨",
@@ -111,7 +112,8 @@
       "text": "Generate 5-, 10-, or 15-second clips with `minimax/minimax-h3-max-turbo`, including synchronized audio and optional first- and last-frame inputs. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         14428
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🔗",
@@ -119,7 +121,8 @@
       "text": "Use the stateless, OpenAI-compatible `/v1/responses` endpoint across built-in, community, and agent-backed text models, with streaming, tools, and structured output. [See the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         14376
-      ]
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🌟",
@@ -139,5 +142,6 @@
       ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

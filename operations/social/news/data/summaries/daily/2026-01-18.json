@@ -2,8 +2,8 @@
   "date": "2026-01-18",
   "period_start": "2026-01-18",
   "period_end": "2026-01-18",
-  "title": "Account details and docs now agree on where things live",
-  "summary": "A small maintenance pass: clearer account information, working Klein edits, and contact details pointed at reality.\n\nThe account endpoint now includes a Pollen reset date, while its documentation was corrected to use the actual endpoint path. Less endpoint archaeology, more knowing when your balance resets.\n\nFixed the request format for the Klein edit endpoint so edit calls can get on with editing rather than debating payload structure.\n\nUpdated the Code of Conduct contact email so reports and questions reach the right place.",
+  "title": "Account profiles show the next Pollen reset",
+  "summary": "Account profiles gained a Pollen reset timestamp, Flux Klein editing got its request format corrected, and two bits of documentation were tidied up.\n\nThe account profile response gained `nextResetAt`, an ISO 8601 timestamp for the next daily Pollen reset, or `null` when no tier grant has been recorded. The account docs were also corrected to show `/account/profile`, `/account/balance`, and `/account/usage` without the `/api` prefix.\n\nFlux Klein image editing now sends prompt, dimensions, and optional seed in the URL query, with a JSON array of base64 images in the POST body. Width and height still default to 1024.\n\nThe Code of Conduct now directs reports of abusive or harassing behavior to core@pollinations.ai.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,5 +23,17 @@
       "date": "2026-01-18"
     }
   ],
-  "generated_at": "2026-09-04T11:37:55.791738+00:00"
+  "generated_at": "2026-10-17T15:59:59.954913+00:00",
+  "highlights": [
+    {
+      "emoji": "💡",
+      "title": "Pollen reset timestamp",
+      "text": "Read `nextResetAt` from the account profile response to see when the next daily Pollen reset is due. It returns `null` if no tier grant has been recorded yet. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        7355
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

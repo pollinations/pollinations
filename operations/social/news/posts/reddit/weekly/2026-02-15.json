@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-02-15",
+  "period_start": "2026-02-08",
+  "period_end": "2026-02-14",
+  "generated_at": "2026-02-16T10:04:13.429831+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-15/images/reddit.jpg"
+    }
+  ],
+  "title": "Shipping OpenClaw agents, Grok video, and embedding upgrades",
+  "text": "We merged 27 PRs this week, focusing heavily on agentic capabilities and media generation consistency.\n\n**Core Updates:**\n*   **OpenClaw Integration:** Added web search and agent capabilities, allowing for one-command agent deployment.\n*   **Polly API & Embeddings:** Upgraded the core API service and implemented better embeddings for improved context retrieval.\n*   **Media Generation:** Integrated Grok Image-to-Video and unified video resolutions across the platform.\n*   **Model Support:** Added GLM-5, Qwen-character model, and ElevenLabs Scribe v2.\n\nWe also refactored the docs to live directly within the Play page and overhauled the App Showcase UI. Code is available on GitHub."
+}

@@ -1,0 +1,75 @@
+{
+  "date": "2025-01-19",
+  "period_start": "2025-01-12",
+  "period_end": "2025-01-18",
+  "title": "GPT-4o joins the text API",
+  "summary": "The text API gained a bigger model, more predictable request handling, and clearer paths for people using and contributing to it.\n\nThe new `openai-large` option adds GPT-4o chat and vision support, while `openai` remains GPT-4o-mini. The docs now show image analysis with URLs or base64 data, and web-search requests get a search-specific default prompt when callers do not supply one.\n\nThe configured text API limit rose from 20 to 40 requests per minute. Separately, text requests now enter a queue that starts them at least three seconds apart per IP group; addresses sharing an IPv4 /24-style prefix share that pacing. Request-delay and rate-limit bypass rules were also tightened.\n\nRequested temperature now reaches the OpenAI generation path. Invalid messages receive JSON errors, empty message arrays receive a 400 response, and handling improved for missing query parameters and omitted generation options. Tracking, backend tests, and pull-request test coverage also improved.\n\nText API feed events no longer include requester IP addresses. It is a small change with a straightforward benefit: the feed needs the event, not the address behind it.",
+  "pr_count": 16,
+  "prs": [
+    {
+      "number": 981,
+      "date": "2025-01-12"
+    },
+    {
+      "number": 983,
+      "date": "2025-01-12"
+    },
+    {
+      "number": 988,
+      "date": "2025-01-13"
+    },
+    {
+      "number": 994,
+      "date": "2025-01-13"
+    },
+    {
+      "number": 997,
+      "date": "2025-01-14"
+    },
+    {
+      "number": 1000,
+      "date": "2025-01-14"
+    },
+    {
+      "number": 1001,
+      "date": "2025-01-14"
+    },
+    {
+      "number": 1003,
+      "date": "2025-01-14"
+    },
+    {
+      "number": 1008,
+      "date": "2025-01-15"
+    },
+    {
+      "number": 1009,
+      "date": "2025-01-15"
+    },
+    {
+      "number": 1016,
+      "date": "2025-01-16"
+    },
+    {
+      "number": 1019,
+      "date": "2025-01-16"
+    },
+    {
+      "number": 1022,
+      "date": "2025-01-16"
+    },
+    {
+      "number": 1026,
+      "date": "2025-01-17"
+    },
+    {
+      "number": 1027,
+      "date": "2025-01-17"
+    },
+    {
+      "number": 1034,
+      "date": "2025-01-17"
+    }
+  ],
+  "generated_at": "2026-10-17T16:03:02.062739+00:00"
+}

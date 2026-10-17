@@ -2,18 +2,10 @@
   "date": "2025-08-03",
   "period_start": "2025-08-03",
   "period_end": "2025-08-03",
-  "title": "Creative Projects got a clearer, larger showcase",
-  "summary": "A garden-maintenance day: more community projects on display, clearer front-page signals, and better contributor rails.\n\nThe Creative Projects page now explains itself with a “What is this?” entry and adds Imagine Draw AI, Aimpress, and Evolve AI to the growing list of things people are building with pollinations.\n\nFront-page statistics were restored, text generation rates were corrected, and the project showcase picked up Discord bot, GitHub stars, and documentation updates. Numbers and links: software's preferred way of proving it exists.\n\nClaude Code workflow support and a claude.md guide were added to the repository, giving contributors clearer rails for working with the codebase.",
-  "pr_count": 8,
+  "title": "Generation counters return to the front page",
+  "summary": "Front-page counters returned while the community showcase picked up four more projects and a cleanup.\n\nGeneration count badges are back on the image and text feeds, with estimated totals and rates. Feed-switch button labels are also protected from automatic rephrasing.\n\nThe Creative Projects directory gained Imagine Draw AI and Aimpress for image generation, Evolve AI for speech, code and images, and What is this? for identifying objects in photos.\n\nProject tables gained refreshed entries and star counts, and the Discord bot listing now points to its contributor’s repository. Long descriptions and author names are shortened so the tables remain readable.",
+  "pr_count": 6,
   "prs": [
-    {
-      "number": 3408,
-      "date": "2025-08-03"
-    },
-    {
-      "number": 3409,
-      "date": "2025-08-03"
-    },
     {
       "number": 3410,
       "date": "2025-08-03"
@@ -39,5 +31,7 @@
       "date": "2025-08-03"
     }
   ],
-  "generated_at": "2026-09-04T12:15:56.537732+00:00"
+  "generated_at": "2026-10-17T15:44:52.694245+00:00",
+  "highlights": [],
+  "changelog": []
 }

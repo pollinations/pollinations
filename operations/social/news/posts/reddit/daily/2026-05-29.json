@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-29",
+  "period_start": "2026-05-29",
+  "period_end": "2026-05-29",
+  "generated_at": "2026-05-30T06:58:00.844570+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-29/images/reddit.jpg"
+    }
+  ],
+  "title": "Real-time voice API, Claude Opus 4.8, and active generation retention.",
+  "text": "Merged 5 PRs today for pollinations.ai. The main updates are a new WebSocket endpoint for real-time voice, several new models, and a structural fix to how we handle R2 storage.\n\nFirst, we added `gpt-realtime-2` for real-time voice and audio streaming. It's accessible via our WebSocket API. If you are building voice agents or need low-latency audio streaming, this routes it through a single connection.\n\nSecond, we expanded the text model lineup. Claude Opus 4.8 is now live. We also added the Perplexity Sonar lineup and StepFun Step 3.5 Flash. You can hit these through the standard text endpoint as usual.\n\nFinally, on the infrastructure side, we changed how we handle object TTLs in Cloudflare R2. Previously, generations expired on a strict timeline. Now, the TTL refreshes on access. If a generation is actively being viewed or fetched, it stays alive. This effectively gives infinite retention for active assets, while still clearing out the abandoned generations so our storage costs don't spiral out of control.\n\nCode and updated docs are in the repo: https://github.com/pollinations/pollinations\n\nLet me know if the WebSocket implementation gives anyone trouble or if you notice any latency spikes with the new models."
+}

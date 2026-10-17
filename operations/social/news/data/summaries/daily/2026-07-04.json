@@ -19,5 +19,17 @@
       "date": "2026-07-04"
     }
   ],
-  "generated_at": "2026-09-04T11:42:55.428035+00:00"
+  "generated_at": "2026-09-04T11:42:55.428035+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Claude Fable 5 returns",
+      "text": "Claude Fable 5 is back as a text model with adaptive thinking support. [View the model](https://enter.pollinations.ai/models?q=global.anthropic.claude-fable-5).",
+      "prs": [
+        12222
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

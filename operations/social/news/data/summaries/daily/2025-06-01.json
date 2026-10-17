@@ -2,8 +2,8 @@
   "date": "2025-06-01",
   "period_start": "2025-06-01",
   "period_end": "2025-06-01",
-  "title": "GPT Image learned to leave the background out",
-  "summary": "A small image-stack tune-up: transparent GPT Image outputs, smarter repeat-request caching, safer handling, and some retired UI swept away.\n\nGPT Image now supports transparency, so generated assets can arrive ready for compositing instead of carrying an obligatory rectangle. Consecutive requests also cache more effectively, with prompt logging added to make the image pipeline easier to inspect when software develops opinions.\n\nAzure content safety was added to the image flow, while user preference defaults were refreshed and utility scripts were reorganized. The visible result is a cleaner starting point; the invisible result is fewer loose wires behind it.\n\nUnused Events UI and stale YouTube links were removed, making the surface a little less haunted by things that no longer happen.",
+  "title": "GPT Image keeps transparent backgrounds",
+  "summary": "GPT Image gained transparent PNGs and less duplicated generation, while ad preferences became editable and image safety checks expanded.\n\nGPT Image now returns PNGs without the usual JPEG conversion, preserving transparent backgrounds. Identical image requests made at the same time also share one generation instead of starting duplicates; failed generations can be retried.\n\nAuthenticated users can now view and change their ad preference with a Show Ads toggle. Existing explicit choices are preserved, while previously unset preferences default to on. The site also dropped its YouTube social link and an unused video component.\n\nGPT Image prompt moderation now uses Azure Content Safety, and image-editing requests also check fetched input images. The checks block content rated medium or high severity across hate, self-harm, sexual content, and violence.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,5 +27,26 @@
       "date": "2025-06-01"
     }
   ],
-  "generated_at": "2026-09-04T12:55:00.021222+00:00"
+  "generated_at": "2026-10-17T15:41:32.736680+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Transparent GPT Image output",
+      "text": "Generate PNGs with transparent backgrounds using `gptimage`, without the usual JPEG conversion flattening them. [Browse the model](https://enter.pollinations.ai/models?q=gptimage).",
+      "prs": [
+        2216
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Choose whether to show ads",
+      "text": "Authenticated users can now view and change their ad preference with a Show Ads toggle in settings.",
+      "prs": [
+        2213
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

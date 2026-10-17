@@ -2,9 +2,9 @@
   "date": "2026-01-01",
   "period_start": "2026-01-01",
   "period_end": "2026-01-01",
-  "title": "VisionAI joins chat",
-  "summary": "New Year's work: VisionAI arrives in chat while tier, wallet, and submission plumbing gets made less haunted.\n\nPollinations VisionAI is now available in chat, giving conversations another way to look at things before confidently describing them.\n\nAccount initialization now checks Polar when a D1 balance is empty, and benefit-grant webhooks correctly handle tier changes. The less visible parts of access management received their annual watering.\n\nThe tier-app-submission workflow now avoids an infinite loop, so submissions can move through the system without rediscovering themselves indefinitely.",
-  "pr_count": 5,
+  "title": "Pollen balances and subscription tiers stay in sync",
+  "summary": "A little New Year housekeeping: Pollen and tier fixes, VisionAI in the app showcase, and expired Seedream promo labels cleared away.\n\nBalance lookup now checks Polar when the stored balance is zero, helping purchased Pollen appear without overwriting a spent balance. Subscription grant events also update both the stored tier and daily Pollen balance after tier changes.\n\n@Superheroghost’s Pollinations VisionAI was added to the app catalog and README showcase. The public image-generation UI supports Pollinations models and API keys.\n\nThe expired 99% off badge and promotional descriptions were removed from `seedream` and `seedream-pro`, following the promotion’s scheduled December 31 end.",
+  "pr_count": 4,
   "prs": [
     {
       "number": 6631,
@@ -21,11 +21,9 @@
     {
       "number": 6694,
       "date": "2026-01-01"
-    },
-    {
-      "number": 6699,
-      "date": "2026-01-01"
     }
   ],
-  "generated_at": "2026-09-04T11:23:41.628795+00:00"
+  "generated_at": "2026-10-17T15:57:39.254102+00:00",
+  "highlights": [],
+  "changelog": []
 }

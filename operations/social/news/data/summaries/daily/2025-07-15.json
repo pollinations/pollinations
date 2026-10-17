@@ -2,8 +2,8 @@
   "date": "2025-07-15",
   "period_start": "2025-07-15",
   "period_end": "2025-07-15",
-  "title": "Chat projects get a DeepSeek starting point",
-  "summary": "A small project-directory tune-up: a DeepSeek chat prompt and fresh Mindcraft links.\n\nAdded a DeepSeek prompt to chat projects, giving builders another ready-made route into the model without beginning from a blank text box.\n\nUpdated the Mindcraft project entry with its current URL and repository, so the project directory leads somewhere useful rather than historical.",
+  "title": "DeepSeek Prompt joins the chat projects list",
+  "summary": "A community-listing day: DeepSeek Prompt joined the chat projects, and Mindcraft’s links now point to its maintained home.\n\nThe community projects list added DeepSeek Prompt, an app for organizing prompt templates and using Pollinations APIs to analyze and improve them.\n\nThe Mindcraft game listing now points to its current website and maintained GitHub repository.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,5 +15,7 @@
       "date": "2025-07-15"
     }
   ],
-  "generated_at": "2026-09-04T12:10:00.734282+00:00"
+  "generated_at": "2026-10-17T15:43:54.839579+00:00",
+  "highlights": [],
+  "changelog": []
 }

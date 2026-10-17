@@ -88,28 +88,49 @@
     {
       "emoji": "🎬",
       "title": "Wan 3.0 video generation",
-      "text": "`wan-3.0` now makes 5-second text-to-video and image-to-video clips with optional audio, start frames, and 480p through 1080p output. [API Docs](https://gen.pollinations.ai/docs)"
+      "text": "`wan-3.0` now makes 5-second text-to-video and image-to-video clips with optional audio, start frames, and 480p through 1080p output. [API Docs](https://gen.pollinations.ai/docs)",
+      "prs": [
+        13910
+      ],
+      "kind": "model"
     },
     {
       "emoji": "✨",
       "title": "Hosted FFmpeg for prompt agents",
-      "text": "Agents can now select a managed FFmpeg tool to process media and receive stored outputs—no server maintenance, a small mercy. [MCP Server Docs](https://gen.pollinations.ai/docs#tag/mcp-server)"
+      "text": "Agents can now select a managed FFmpeg tool to process media and receive stored outputs—no server maintenance, a small mercy. [MCP Server Docs](https://gen.pollinations.ai/docs#tag/mcp-server)",
+      "prs": [
+        13915
+      ],
+      "kind": "product"
     },
     {
       "emoji": "💡",
       "title": "Model lookup, OpenAI-style",
-      "text": "OpenAI-compatible clients can inspect a single accessible model with `GET /v1/models/:model`, including aliases and registry metadata. [API Docs](https://gen.pollinations.ai/docs)"
+      "text": "OpenAI-compatible clients can inspect a single accessible model with `GET /v1/models/:model`, including aliases and registry metadata. [API Docs](https://gen.pollinations.ai/docs)",
+      "prs": [
+        13875
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🌟",
       "title": "Pollen earnings in code and CLI",
-      "text": "Check developer earnings from TypeScript with `accountEarnings()` or run `polli earnings --days 30 --json` for scriptable totals and per-entity detail."
+      "text": "Check developer earnings from TypeScript with `accountEarnings()` or run `polli earnings --days 30 --json` for scriptable totals and per-entity detail.",
+      "prs": [
+        13822,
+        13855
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎨",
       "title": "EAS AI STUDIO joins the garden",
       "text": "A collaborative image-making app built on the Pollinations image API is now in the community showcase. [Try it](https://www.ekin-ai-studio.my.id)",
+      "prs": [
+        13863
+      ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2025-01-25",
   "period_start": "2025-01-25",
   "period_end": "2025-01-25",
-  "title": "The frontend got a practical refresh",
-  "summary": "A small frontend maintenance day: smoother UI work and the public files to back it up.\n\nThe web experience received a UI/UX and performance pass, while missing public assets were restored so the frontend has the files it expects. Less drama from the browser, which is generally the goal.",
+  "title": "A rebuilt homepage",
+  "summary": "A homepage rebuild made projects, examples, and news easier to find, while a follow-up put useful website redirects back in place.\n\nThe homepage gained responsive layouts, new visuals, community and supporter sections, and expandable news. Project listings and integration examples were also reworked, making it easier to find things people have built and how to build your own.\n\nThe image feed, image editor, and LLM-based text transformations were reworked as part of the frontend overhaul.\n\nPublic files restored redirects from `/prompt/*` and `/p/*` to the image prompt endpoint and added routing for several site paths. The update also added a web-app manifest and crawler and funding files.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,5 +15,17 @@
       "date": "2025-01-25"
     }
   ],
-  "generated_at": "2026-09-04T14:01:51.160498+00:00"
+  "generated_at": "2026-10-17T15:32:53.076017+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "A new homepage",
+      "text": "Find community projects, integration examples, and expandable news on the rebuilt Pollinations homepage. [Explore the site](https://pollinations.ai).",
+      "prs": [
+        1036
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

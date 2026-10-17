@@ -2,8 +2,8 @@
   "date": "2025-10-26",
   "period_start": "2025-10-26",
   "period_end": "2025-10-26",
-  "title": "An opposite-prompt generator is now live",
-  "summary": "A community-shaped day: a new prompt toy shipped, auth got sturdier, and account flows received some necessary reality checks.\n\nA Hacktoberfest contribution added an opposite-prompt generator, then deployment wiring brought it into the running app. Useful for turning a prompt on its head without having to argue with your own imagination.\n\nAuthorization and x-api-key handling were repaired, covered with tests, and given better logging. A broken auth.pollinations.ai link was also fixed, so both the sign-in path and the diagnostics around it should behave more like software.\n\nTier activation gained its first Polar-backed phases, while wallet controls were tidied to avoid showing misleading account timing or actions.",
+  "title": "A prompt generator that takes the opposite route",
+  "summary": "A community app made image prompts do the opposite, while Enter gained a tier checkout entry point and clearer generation authentication.\n\nAnkit Anand added the Opposite Prompt Generator, and its Hacktoberfest showcase entry was merged. The React app turns an image prompt into a short semantic opposite, generates an image from it, and lets users copy the prompt or image URL, download the image, and retry a failed load.\n\nEnter added a panel showing a signed-in user's assigned tier and a checkout button for Seed, Flower, or Nectar. The change starts a Polar checkout; it does not establish that completing checkout activates a tier. A follow-up removed the inaccurate refill countdown and disabled the $10, $25, and $50 Pollen top-up buttons.\n\nEnter's generation routes now accept either a session cookie or an API key in an `Authorization: Bearer` header, while tier and Polar routes remain session-only. The work also tightened anonymous-access rules, adjusted chat request validation, and removed the `/openai/chat/completions` alias in favor of `/api/generate/openai`.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,5 +31,18 @@
       "date": "2025-10-26"
     }
   ],
-  "generated_at": "2026-09-04T12:54:57.572252+00:00"
+  "generated_at": "2026-10-17T15:49:59.347741+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Opposite Prompt Generator",
+      "text": "Turn an image prompt into its semantic opposite, then generate an image from the result. Copy the new prompt or image URL, or download the image.",
+      "prs": [
+        4633,
+        4796
+      ],
+      "kind": "app"
+    }
+  ],
+  "changelog": []
 }

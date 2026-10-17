@@ -2,20 +2,12 @@
   "date": "2025-04-14",
   "period_start": "2025-04-14",
   "period_end": "2025-04-14",
-  "title": "Model routing got a quieter cleanup",
-  "summary": "A garden-maintenance day: cleaner model plumbing, a living app directory, and the right people and signals back where they belong.\n\nDeepSeek and Portkey endpoints and model mappings were refactored, while available-model handlers now use direct references instead of an extra indirection layer. Same one-endpoint model access, with fewer moving parts underneath.\n\nThe dev apps list is now backed by a dynamic Google Sheet, making it easier to keep track of what the community is building without maintaining a static inventory by hand.\n\nMCPollinations received its correct project attribution, missing affiliates were added to the registry, and ad-skip analytics were restored after taking an accidental detour out of the codebase.",
-  "pr_count": 6,
+  "title": "MCPollinations gets the right credit",
+  "summary": "A housekeeping day: correct project credit, tidier text model routing, and changes to referral matching.\n\nCorrected the MCPollinations author credit to Pink Pixel in the project list and README. Its description and links stayed the same.\n\nRefactored DeepSeek and Portkey handling in the text API, including model mappings and endpoint selection for DeepSeek-V3.\n\nAdded three affiliates to referral matching. Text responses no longer need Markdown formatting to be eligible for referral links, while the chance of showing Ko-fi when nothing matches was reduced.",
+  "pr_count": 3,
   "prs": [
     {
       "number": 1660,
-      "date": "2025-04-14"
-    },
-    {
-      "number": 1662,
-      "date": "2025-04-14"
-    },
-    {
-      "number": 1665,
       "date": "2025-04-14"
     },
     {
@@ -23,13 +15,11 @@
       "date": "2025-04-14"
     },
     {
-      "number": 1667,
-      "date": "2025-04-14"
-    },
-    {
       "number": 1668,
       "date": "2025-04-14"
     }
   ],
-  "generated_at": "2026-09-04T12:27:17.004317+00:00"
+  "generated_at": "2026-10-17T15:37:40.794756+00:00",
+  "highlights": [],
+  "changelog": []
 }

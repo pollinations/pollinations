@@ -16,7 +16,12 @@
     {
       "emoji": "🔄",
       "title": "Live Model Catalog",
-      "text": "The [dashboard](https://enter.pollinations.ai), SDK, and MCP server now fetch models dynamically. New AI models will appear in your API key settings the second they drop."
+      "text": "The [dashboard](https://enter.pollinations.ai), SDK, and MCP server now fetch models dynamically. New AI models will appear in your API key settings the second they drop.",
+      "prs": [
+        11613
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

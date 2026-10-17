@@ -1,0 +1,39 @@
+{
+  "date": "2025-08-17",
+  "period_start": "2025-08-10",
+  "period_end": "2025-08-16",
+  "title": "More ways to use the text API",
+  "summary": "New text models arrived while model access, request accounting, and error handling got a careful tune-up.\n\nThe nectar tier gained text-only `gpt5` with tool support, and anonymous users gained `roblox-rp`, a roleplay model that routes requests to either Llama 3 8B Instruct or Mistral Small 2402. `gpt-5-nano` was added, then removed from the model list the following day, so it is not presented as a current option.\n\nText-request events now record timing, status, model selection, token usage, and moderation results. Error handling also improved: the service catches failures while sending error responses, and the OpenAI-compatible client supplies better model context and diagnostics.\n\nThe Special Bee request path was removed in favor of tier-based guidance across the dashboard, docs, schemas, and the `gpt-image-1` access error. Model-list adjustments included a move for `openai-large` from flower to seed and back to flower, a lower input limit of 5,000 characters, and removal of `claudyclaude`. No change to tier eligibility or API request handling was reported with the guidance update.\n\nEasyGen joined the chat projects list with prompt-to-Mermaid diagrams, instant previews, and editable source. Pollix AI, a multilingual Telegram assistant with image understanding, joined the project list and social bots catalog.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 3581,
+      "date": "2025-08-10"
+    },
+    {
+      "number": 3590,
+      "date": "2025-08-12"
+    },
+    {
+      "number": 3661,
+      "date": "2025-08-13"
+    },
+    {
+      "number": 3656,
+      "date": "2025-08-14"
+    },
+    {
+      "number": 3679,
+      "date": "2025-08-14"
+    },
+    {
+      "number": 3695,
+      "date": "2025-08-14"
+    },
+    {
+      "number": 3696,
+      "date": "2025-08-14"
+    }
+  ],
+  "generated_at": "2026-10-17T16:05:35.531093+00:00"
+}

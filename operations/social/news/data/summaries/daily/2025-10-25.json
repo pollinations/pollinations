@@ -2,16 +2,12 @@
   "date": "2025-10-25",
   "period_start": "2025-10-25",
   "period_end": "2025-10-25",
-  "title": "Hacktoberfest projects can land on pollinations subdomains",
-  "summary": "A Hacktoberfest housekeeping day: smoother project deployments, manual workflow controls, and a freshly renamed challenge.\n\nHacktoberfest deployment work now supports publishing projects to pollinations subdomains, with groundwork in place for Turnstile verification. A small bridge between contributing code and putting it somewhere people can actually visit.\n\nThe Hacktoberfest deployment workflow can now be triggered manually, making it easier to rerun or publish work without waiting for the exact right sequence of automation to occur.\n\nThe elevator challenge was renamed and its related workflows were cleaned up, including a follow-up pass to make sure the new identity stuck in the places automation likes to hide.",
-  "pr_count": 4,
+  "title": "A home for Hacktoberfest apps",
+  "summary": "Hacktoberfest apps gained a subdomain hosting path, API requests from app origins gained verification, and an elevator acquired a more specific address.\n\nAdded a deployment workflow and app registry for hosting Hacktoberfest projects on pollinations.ai subdomains. The registry includes six apps, and CatGPT moved into the Hacktoberfest app directory.\n\nAdded Turnstile verification to the text and image API cache workers for requests from localhost and non-API pollinations.ai subdomains.\n\nRenamed the Sirius Cybernetics elevator challenge directory and its configured subdomain without changing the app. Follow-up work kept the deployment workflow from processing the app registry as an app and moved the edit debounce to description processing.",
+  "pr_count": 3,
   "prs": [
     {
       "number": 4351,
-      "date": "2025-10-25"
-    },
-    {
-      "number": 4784,
       "date": "2025-10-25"
     },
     {
@@ -23,28 +19,7 @@
       "date": "2025-10-25"
     }
   ],
-  "generated_at": "2026-09-04T12:54:15.380587+00:00",
-  "highlights": [
-    {
-      "emoji": "🚀",
-      "title": "Claude 4.5 Haiku",
-      "text": "The new `claude-4.5-haiku` model is now live! Access it via the [Text API](https://enter.pollinations.ai) for faster, smarter responses."
-    },
-    {
-      "emoji": "🔗",
-      "title": "Browser-Ready API",
-      "text": "Added CORS support and standard `Authorization: Bearer` headers, enabling secure, direct API calls from browser applications."
-    },
-    {
-      "emoji": "📚",
-      "title": "Docs Overhaul",
-      "text": "A complete rewrite of our [API Documentation](https://enter.pollinations.ai/api/docs) features a new structure and expanded examples for Python, JS, and cURL."
-    },
-    {
-      "emoji": "🌐",
-      "title": "Auto-Deploy Apps",
-      "text": "Hacktoberfest projects now automatically deploy to `*.pollinations.ai` subdomains — try the [View repo](https://github.com/pollinations/pollinations/tree/main/apps/ai-dungeon-master).",
-      "kind": "app"
-    }
-  ]
+  "generated_at": "2026-10-17T15:49:54.396750+00:00",
+  "highlights": [],
+  "changelog": []
 }

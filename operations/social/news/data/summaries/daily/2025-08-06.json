@@ -2,30 +2,20 @@
   "date": "2025-08-06",
   "period_start": "2025-08-06",
   "period_end": "2025-08-06",
-  "title": "Qwen3-Coder joins the model lineup",
-  "summary": "A garden-maintenance day: Qwen3-Coder landed, the cache learned TypeScript, and a few layers of project clutter disappeared.\n\nAdded Qwen3-Coder for code-focused text generation, refreshed the DeepSeek provider, and cleaned up model configuration. More options for people asking models to write the software that will inevitably ask for more models.\n\nThe Cloudflare cache implementation moved to TypeScript, while hourly usage filtering was updated for more reliable account-level tracking. Less mysterious infrastructure beneath the same simple HTTP calls.\n\nUpdated the Island AI project link and simplified the visual asset layout by moving assets to the root. Small housekeeping changes, now with fewer folders pretending to be architecture.",
-  "pr_count": 5,
+  "title": "Image cache gets a more modular foundation",
+  "summary": "A small maintenance day: a more modular image cache and a corrected Island AI link.\n\nThe image cache Worker was ported to TypeScript and Hono, with exact and semantic caching split into replaceable components. Cache bypass and hit-or-miss response headers make its behavior easier to inspect.\n\nThe project directory link for Island AI was updated to islandai.app.",
+  "pr_count": 2,
   "prs": [
     {
       "number": 3360,
       "date": "2025-08-06"
     },
     {
-      "number": 3496,
-      "date": "2025-08-06"
-    },
-    {
-      "number": 3525,
-      "date": "2025-08-06"
-    },
-    {
       "number": 3526,
-      "date": "2025-08-06"
-    },
-    {
-      "number": 3527,
       "date": "2025-08-06"
     }
   ],
-  "generated_at": "2026-09-04T12:18:08.761182+00:00"
+  "generated_at": "2026-10-17T15:44:58.203359+00:00",
+  "highlights": [],
+  "changelog": []
 }

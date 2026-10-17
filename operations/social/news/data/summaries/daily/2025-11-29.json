@@ -2,8 +2,8 @@
   "date": "2025-11-29",
   "period_start": "2025-11-29",
   "period_end": "2025-11-29",
-  "title": "More control over cached responses",
-  "summary": "A small maintenance day: fresher cache control, a new Chat project, cleaner model names, and fewer old events hanging around.\n\nA new DELETE endpoint lets builders explicitly invalidate cached data when their app needs a fresh result, rather than waiting for the cache to age out on its own.\n\nPolliPalmTop has been added to Chat projects, while model aliases were reorganized and normalized so model naming stays more predictable across the API.\n\nBuffered events now clear after a day, keeping transient system state from accumulating indefinitely. A Zod dependency dedupe also gets CI builds back onto solid ground, because builds enjoy inventing new forms of weather.",
+  "title": "Image cache entries can be invalidated",
+  "summary": "Image cache invalidation arrived, an Android community app joined the directory, and model metadata and usage accounting got tidier.\n\nA new DELETE endpoint accepts the original image prompt and query parameters to invalidate a cached result. Its JSON response reports the outcome for each cache store.\n\nThe community-built Android app was added to the Chat projects listing and project directories. It brings Pollinations-powered chat, web search, and image generation to a phone.\n\nText and image model lists now label pricing in Pollen and expose the specialized-model flag as `is_specialized`. Shared registry data also supplies Enter’s model descriptions and modalities, while alias cleanup removes a few misleading entries.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,28 +27,17 @@
       "date": "2025-11-29"
     }
   ],
-  "generated_at": "2026-09-04T12:20:24.602442+00:00",
+  "generated_at": "2026-10-17T15:53:29.150310+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Nano Banana Pro",
-      "text": "New `nanobanana-pro` model (powered by Gemini 3 Pro) featuring 4K resolution support and built-in reasoning capabilities."
-    },
-    {
-      "emoji": "🤖",
-      "title": "Claude Opus 4.5",
-      "text": "Access the powerful new Claude Opus 4.5 model via the text API using the model ID `claude-xlarge`. Check the [API Docs](https://enter.pollinations.ai/api/docs)."
-    },
-    {
-      "emoji": "🛠️",
-      "title": "Advanced API Control",
-      "text": "Added pass-through support for advanced parameters like `logprobs`, `logit_bias`, and `stream_options` for fine-grained generation control."
-    },
-    {
-      "emoji": "📱",
-      "title": "PolliPalmTop App",
-      "text": "A new Android app featuring AI chat, web search, and image generation. [Try it](https://aiworld.institute/server/pollipalmtopv1.apk)",
-      "kind": "app"
+      "title": "Invalidate cached images",
+      "text": "Send DELETE to `/delete/prompt/:prompt` with the original prompt and query parameters to invalidate an image cache entry. The JSON response reports the deletion results.",
+      "prs": [
+        5463
+      ],
+      "kind": "api"
     }
-  ]
+  ],
+  "changelog": []
 }

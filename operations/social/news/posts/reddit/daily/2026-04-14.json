@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-14",
+  "period_start": "2026-04-14",
+  "period_end": "2026-04-14",
+  "generated_at": "2026-04-15T06:34:15.194090+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-14/images/reddit.jpg"
+    }
+  ],
+  "title": "Shipped reasoning flag for Gemini images and fixed usage exports",
+  "text": "Just merged a couple of PRs today.\n\nThe main one (#10196) adds a reasoning flag for Gemini image models. If you've been using Gemini through our endpoint, you can now pass a flag to force the model into a reasoning step before it returns an image. It slows down the response slightly, but the prompt adherence is noticeably better for complex spatial requests. You can check the docs for the exact parameter, but it's just a boolean toggle in the JSON payload.\n\nThe second update (#10222) is a fix for the codex usage exports. If you're pulling heavy volume and trying to export your usage data, the newline/enter parsing was quietly breaking the CSV exports for power users. That's patched. Your logs should actually be readable again without requiring you to run them through a regex script first.\n\nCode is up on the main repo (github.com/pollinations/pollinations). Let me know if the export formatting is still acting up for anyone pulling massive datasets."
+}

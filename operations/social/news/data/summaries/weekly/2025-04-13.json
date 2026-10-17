@@ -1,0 +1,59 @@
+{
+  "date": "2025-04-13",
+  "period_start": "2025-04-06",
+  "period_end": "2025-04-12",
+  "title": "The homepage got a text feed",
+  "summary": "Text became easier to explore, while model options, community projects, and the links around them got attention.\n\nThe homepage now switches between image and text feeds. The text feed pairs a stream of generated responses with an editor, while projects open on a Featured category with tabs for browsing.\n\nAffiliate-link processing was added to regular and streamed chat completions, with no referral links by default. When enabled with `p-ads`, selection considers both the conversation and generated text; a streamed response can append a link at the end. Later adjustments made trigger matches probabilistic and reduced how often Ko-fi appears when no relevant offer is found.\n\n`llamascout` was added through Cloudflare with a 4096-token output limit. The `mistral` and `qwen-qwq` mappings now use Cloudflare models, and the `deepseek-reasoning` listing identifies DeepSeek-R1 Distill Qwen 32B rather than full DeepSeek R1.\n\nGoalani, a voice-enabled AI fitness coach, and DominiSigns, which translates text and audio into Dominican Sign Language with a 3D avatar, were added to the project listings.",
+  "pr_count": 12,
+  "prs": [
+    {
+      "number": 1575,
+      "date": "2025-04-07"
+    },
+    {
+      "number": 1579,
+      "date": "2025-04-07"
+    },
+    {
+      "number": 1584,
+      "date": "2025-04-08"
+    },
+    {
+      "number": 1586,
+      "date": "2025-04-08"
+    },
+    {
+      "number": 1588,
+      "date": "2025-04-09"
+    },
+    {
+      "number": 1571,
+      "date": "2025-04-10"
+    },
+    {
+      "number": 1621,
+      "date": "2025-04-11"
+    },
+    {
+      "number": 1622,
+      "date": "2025-04-11"
+    },
+    {
+      "number": 1625,
+      "date": "2025-04-11"
+    },
+    {
+      "number": 1488,
+      "date": "2025-04-12"
+    },
+    {
+      "number": 1634,
+      "date": "2025-04-12"
+    },
+    {
+      "number": 1637,
+      "date": "2025-04-12"
+    }
+  ],
+  "generated_at": "2026-10-17T16:03:53.671813+00:00"
+}

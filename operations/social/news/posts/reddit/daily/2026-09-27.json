@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-27",
+  "period_start": "2026-09-27",
+  "period_end": "2026-09-27",
+  "generated_at": "2026-09-28T06:42:25.143367+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-27/images/reddit.jpg"
+    }
+  ],
+  "title": "App Quests now reward approved submissions",
+  "text": "18 PRs merged today. The main change is that app Quests now connect submissions to rewards: submit an app with its Quest number, and once the app is approved, the Quest can close and the submitter can claim Pollen. The Quest badge also distinguishes claimable rewards from available Quests ([#15566](https://github.com/pollinations/pollinations/pull/15566), [#14650](https://github.com/pollinations/pollinations/pull/14650)). Approval is still a step; submitting an app alone doesn’t complete the Quest.\n\nOn the discovery side, community publisher search is fixed and the model list shows all statuses by default. Model title links got cleaned up. We added image2gpt and Simple Image Generator to the app directory, published a verified Vercel AI SDK guide, and regenerated the API reference from the deployed spec rather than letting the docs describe a slightly different universe ([#15586](https://github.com/pollinations/pollinations/pull/15586), [#15532](https://github.com/pollinations/pollinations/pull/15532), [#15545](https://github.com/pollinations/pollinations/pull/15545)).\n\nThe Enter dashboard uses space more sensibly now. Flow shares its sign-in, has fixes for cold starts, its landing route and account menu, and adds capture retry and persistent review routes ([#15558](https://github.com/pollinations/pollinations/pull/15558), [#15588](https://github.com/pollinations/pollinations/pull/15588), [#15597](https://github.com/pollinations/pollinations/pull/15597)). Phone-sized full-screen dialogs have more room. We also stopped auto top-up after the first declined payment and fixed Polli CLI text generation hanging when stdin stays open. Code and the remaining PRs are in [the repo](https://github.com/pollinations/pollinations)."
+}

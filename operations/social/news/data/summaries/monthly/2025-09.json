@@ -2,9 +2,9 @@
   "date": "2025-09-30",
   "period_start": "2025-09-01",
   "period_end": "2025-09-30",
-  "title": "More models, more ways to steer pixels",
-  "summary": "September expanded the things people can build with—new image and text models, grounded Gemini Search, a growing community showcase, and the first foundations for Pollen.\n\nSeedream 4.0 and Nano Banana joined the image service, reference images arrived across image models, and GPT-5 Mini, GPT-5 Nano, and DeepSeek V3.1 broadened the text lineup. Gemini Search also gained automatic Google Search grounding, making current-information requests less ceremonial.\n\nProject listings gained a broad set of creative, builder, chat, and learning experiments, from CapyIMG and Prompt2Image for VS Code to StoryWeaver AI, Pollinations OpenAI Proxy, EduGen AI, and J.A.R.V.I.S. The directory became a more useful map of what simple endpoints enable in the wild.\n\nPollen shipped its first MVP and moved to v0.2, establishing the groundwork for the community credit system while its signals and user-stat tracking became clearer.\n\nModel configuration and transforms were consolidated, queues gained saner concurrency and interval handling, and logging improved across chat, image generation, moderation, and model usage. The machinery is now easier to operate without consulting the walls.",
-  "pr_count": 80,
+  "title": "Images gained references",
+  "summary": "September brought more ways to generate and edit images, a clearer path to API access through Enter, and a wider range of community-built tools.\n\nNanobanana and Seedream joined the image API, and the editor gained support for up to four reference images on supported models. Queue changes gave Flower and Nectar users more room for image requests.\n\nEnter added GitHub sign-in, API key management, a Pollen balance view, and routes for free and paid generation. Later changes simplified the account page and made balance checks and request tracking more precise.\n\nFamiliar OpenAI model IDs were reassigned as GPT-5 Mini and Nano arrived; DeepSeek V3.1 and search-grounded Gemini were also added. Token caps and routing changes made model behavior more predictable.\n\nThe community directory grew with image generators, chat apps, a collaborative comics tool, developer utilities, and projects in Japanese, Portuguese, Persian, and Turkish.",
+  "pr_count": 67,
   "prs": [
     {
       "number": 3905,
@@ -27,19 +27,7 @@
       "date": "2025-09-03"
     },
     {
-      "number": 3951,
-      "date": "2025-09-03"
-    },
-    {
-      "number": 3954,
-      "date": "2025-09-03"
-    },
-    {
       "number": 3958,
-      "date": "2025-09-04"
-    },
-    {
-      "number": 3959,
       "date": "2025-09-04"
     },
     {
@@ -52,10 +40,6 @@
     },
     {
       "number": 3975,
-      "date": "2025-09-06"
-    },
-    {
-      "number": 3976,
       "date": "2025-09-06"
     },
     {
@@ -85,10 +69,6 @@
     {
       "number": 4013,
       "date": "2025-09-11"
-    },
-    {
-      "number": 4019,
-      "date": "2025-09-17"
     },
     {
       "number": 4075,
@@ -125,10 +105,6 @@
     {
       "number": 4087,
       "date": "2025-09-18"
-    },
-    {
-      "number": 4092,
-      "date": "2025-09-19"
     },
     {
       "number": 4109,
@@ -183,10 +159,6 @@
       "date": "2025-09-22"
     },
     {
-      "number": 4133,
-      "date": "2025-09-22"
-    },
-    {
       "number": 4135,
       "date": "2025-09-23"
     },
@@ -205,10 +177,6 @@
     {
       "number": 4144,
       "date": "2025-09-23"
-    },
-    {
-      "number": 4147,
-      "date": "2025-09-24"
     },
     {
       "number": 4156,
@@ -251,14 +219,6 @@
       "date": "2025-09-26"
     },
     {
-      "number": 4184,
-      "date": "2025-09-26"
-    },
-    {
-      "number": 4185,
-      "date": "2025-09-26"
-    },
-    {
       "number": 4191,
       "date": "2025-09-26"
     },
@@ -287,10 +247,6 @@
       "date": "2025-09-26"
     },
     {
-      "number": 4204,
-      "date": "2025-09-26"
-    },
-    {
       "number": 4222,
       "date": "2025-09-28"
     },
@@ -315,17 +271,9 @@
       "date": "2025-09-30"
     },
     {
-      "number": 4253,
-      "date": "2025-09-30"
-    },
-    {
-      "number": 4255,
-      "date": "2025-09-30"
-    },
-    {
       "number": 4257,
       "date": "2025-09-30"
     }
   ],
-  "generated_at": "2026-09-04T15:26:43.429903+00:00"
+  "generated_at": "2026-10-17T16:09:15.104541+00:00"
 }

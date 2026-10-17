@@ -16,7 +16,12 @@
     {
       "emoji": "🔗",
       "title": "OpenClaw Integration",
-      "text": "Setting up OpenClaw with Pollinations is now faster and less prone to configuration errors thanks to native CLI onboarding for v2026.3."
+      "text": "Setting up OpenClaw with Pollinations is now faster and less prone to configuration errors thanks to native CLI onboarding for v2026.3.",
+      "prs": [
+        9316
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

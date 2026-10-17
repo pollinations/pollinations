@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-02-26",
+  "period_start": "2026-02-26",
+  "period_end": "2026-02-26",
+  "generated_at": "2026-02-27T06:17:09.686070+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-26/images/reddit.jpg"
+    }
+  ],
+  "title": "Added health checks to the app directory and rewrote the API docs",
+  "text": "Shipped a few maintenance updates today to keep the ecosystem clean.\n\nThe biggest change is automated gardening for the app directory. We added daily health checks that auto-remove stale apps (#8546). If an endpoint goes down, it shouldn't clutter the list. We also added platform badges (#8636) so you can see where things actually run before clicking.\n\nDocumentation got a significant overhaul (#8597). Restructured the API docs and added actual code samples that work. Trying to make the barrier to entry lower for new contributors.\n\nOn the backend, tuned the model monitor to exclude user errors from health checks (#8599). 400s aren't 500s, and our alerting shouldn't treat them the same way.\n\nCode is open as always."
+}

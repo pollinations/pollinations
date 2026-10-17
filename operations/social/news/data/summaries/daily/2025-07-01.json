@@ -2,8 +2,8 @@
   "date": "2025-07-01",
   "period_start": "2025-07-01",
   "period_end": "2025-07-01",
-  "title": "Roblox requests get steadier routing",
-  "summary": "A small reliability pass: steadier Roblox routing, stronger privacy handling, and saner anonymous-user access defaults.\n\nThe Roblox endpoint now uses load balancing, helping spread requests more reliably instead of asking one endpoint to do all the gardening. Nexad privacy handling was tightened alongside it.\n\nTier-gating defaults for anonymous users were corrected, making access behavior more consistent before anyone has signed in.",
+  "title": "Anonymous model access corrected",
+  "summary": "Anonymous model access got corrected while text routing, ad-request privacy, and image cache matching were tightened.\n\nUnauthenticated requests now default to the anonymous tier. The tier fix restores anonymous access to `openai` and extends it to `openai-fast`, MIDIjourney, and Elixpo Search. Text requests return 402 for insufficient access and 404 for unknown models; GPT Image requires flower tier or higher.\n\nRoblox-backed text routing gained random selection across six Azure endpoints. A subsequent tier fix restored `openai` as GPT-4.1 Mini, identified `openai-fast` as GPT-4.1 Nano, moved the Roblox model to flower-tier access, and mapped `openai-audio` to `gpt-4o-mini-audio-preview`.\n\nAuthenticated nex.ad requests no longer include the user's IP or fire impression URLs. Image semantic-cache matches now require a higher similarity score, reducing loose matches. Azure endpoint parsing also accepts `cognitiveservices.azure.com` addresses.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,5 +15,7 @@
       "date": "2025-07-01"
     }
   ],
-  "generated_at": "2026-09-04T12:02:14.333546+00:00"
+  "generated_at": "2026-10-17T15:43:04.645453+00:00",
+  "highlights": [],
+  "changelog": []
 }

@@ -2,18 +2,16 @@
   "date": "2025-09-04",
   "period_start": "2025-09-04",
   "period_end": "2025-09-04",
-  "title": "Text generation transforms got a cleanup pass",
-  "summary": "A small engine-room day: text generation transforms were cleaned up and buttoned down.\n\nThe text generation transform system was refactored and finalized, simplifying the machinery behind how text requests are prepared and handled.",
-  "pr_count": 2,
+  "title": "Text generation configuration gets tidier",
+  "summary": "A quieter day spent making text model configuration and transforms less surprising.\n\nText generation now reads provider settings directly from model definitions and composes model transforms in a clearer pipeline. Failed transforms fall back to the original request, and system-message support is set per model, including for DeepSeek Reasoning.",
+  "pr_count": 1,
   "prs": [
     {
       "number": 3958,
       "date": "2025-09-04"
-    },
-    {
-      "number": 3959,
-      "date": "2025-09-04"
     }
   ],
-  "generated_at": "2026-09-04T12:28:37.875389+00:00"
+  "generated_at": "2026-10-17T15:46:02.660623+00:00",
+  "highlights": [],
+  "changelog": []
 }

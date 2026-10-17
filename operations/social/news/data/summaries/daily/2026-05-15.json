@@ -72,28 +72,49 @@
     {
       "emoji": "🤖",
       "title": "GPT-5.4-Mini added",
-      "text": "OpenAI's `gpt-5.4-mini` is now live on the free tier with full support for text, images, tools, and streaming."
+      "text": "OpenAI's `gpt-5.4-mini` is now live on the free tier with full support for text, images, tools, and streaming.",
+      "prs": [
+        10981
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🚀",
       "title": "Mistral 4 arrives",
-      "text": "Added the new `mistral-4` model and bumped the default `mistral` alias to 3.2. Both are available on the free tier."
+      "text": "Added the new `mistral-4` model and bumped the default `mistral` alias to 3.2. Both are available on the free tier.",
+      "prs": [
+        10972
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🔓",
       "title": "DeepSeek V4 Flash is free",
-      "text": "We moved some infrastructure around and dropped the paid-only restriction on `deepseek-v4-flash`. Have at it."
+      "text": "We moved some infrastructure around and dropped the paid-only restriction on `deepseek-v4-flash`. Have at it.",
+      "prs": [
+        10977
+      ],
+      "kind": "model"
     },
     {
       "emoji": "⚡",
       "title": "Faster Qwen Vision",
-      "text": "Swapped the default `qwen-vision` endpoint to the non-thinking instruct variant for much faster visual tasks. If you need it to ponder its existence, `qwen-vision-pro` is still there."
+      "text": "Swapped the default `qwen-vision` endpoint to the non-thinking instruct variant for much faster visual tasks. If you need it to ponder its existence, `qwen-vision-pro` is still there.",
+      "prs": [
+        10969,
+        10978
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎨",
       "title": "PromptArt Telegram Bot",
       "text": "A new community bot for generating styled images without wrestling with prompts. [Try it](https://t.me/promptart_ai_bot)",
+      "prs": [
+        10986
+      ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

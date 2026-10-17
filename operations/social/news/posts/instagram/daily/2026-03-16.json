@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-03-16",
+  "period_start": "2026-03-16",
+  "period_end": "2026-03-16",
+  "generated_at": "2026-03-17T06:24:31.300128+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-16/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-16/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-16/images/instagram-3.jpg"
+    }
+  ],
+  "text": "shipped 4 PRs today. the big one: pollen now refills hourly for spore and seed tiers. no more waiting around for the daily reset. we also finally fixed the models page so it stops jumping around when you click tabs, bumped our tinybird stats tracking limits up to 200, and smoothed out some nanobanana generation quirks.\n\nall live on the site and github. go build something weird.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #generativeai",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

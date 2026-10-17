@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-09",
+  "period_start": "2026-04-09",
+  "period_end": "2026-04-09",
+  "generated_at": "2026-04-10T06:34:17.589313+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-09/images/reddit.jpg"
+    }
+  ],
+  "title": "Made gptimage-large and FLUX.1 free, fixed DeepSeek routing, merged 23 PRs.",
+  "text": "Merged 23 PRs today. The short version: heavier image models are now free, DeepSeek should stop dropping your connections, and we merged a massive wave of community apps.\n\nFirst, we dropped the paywall on gptimage-large and FLUX.1 Kontext. You can hit these via the standard API without needing a paid tier or specific headers.\n\nSecond, we had to roll back Kimi and DeepSeek routing. We recently tried moving them to Azure, but they kept dropping connections and timing out. We've routed them back through Fireworks. It is stable again. If you were getting 500s on chat endpoints over the last couple of days, this was why.\n\nUnder the hood, we spent some time paying down technical debt. Consolidated a bunch of model providers, upgraded some base models, and cleaned up the routing configs.\n\nFinally, the community showcase is getting crowded in a good way. We merged 20 new community apps today across image generation, chat, video, and games. If you want to see what people are building or submit your own, the repo is open.\n\nCode and docs are at github.com/pollinations/pollinations."
+}

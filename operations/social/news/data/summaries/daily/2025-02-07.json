@@ -2,9 +2,9 @@
   "date": "2025-02-07",
   "period_start": "2025-02-07",
   "period_end": "2025-02-07",
-  "title": "More projects found their way into the garden",
-  "summary": "A garden-tending day: more community projects, clearer API request IDs, private feed controls, and Hormoz 8B.\n\nPolliSonic Generator and urSapere AI were added to the community projects list, while project entries now include submission dates. The directory is becoming a slightly more useful record of what people are building.\n\nOpenAI-style API responses now receive unique IDs prefixed with pllns_, making individual requests easier to identify and trace in apps built on the endpoint.\n\nClients can now mark requests private to skip feed broadcasting, and Hormoz 8B was enabled for people who want another text-model option.",
-  "pr_count": 7,
+  "title": "More ways to generate text and images",
+  "summary": "New chat and image options, private text requests, and three community projects made for a varied day in the garden.\n\nHormoz 8B was added for chat with temperature and JSON-mode support. The turbo image model was enabled with prompt enhancement and a 768-pixel maximum side length.\n\nText requests gained a `private=true` option that keeps responses off the public feed, and the model list gained `deepseek-reasoner` while retiring `qwen`. OpenAI-style responses also now have consistent `pllns_` IDs, completion objects, and choice indexes.\n\nElliotEtag added the browser-based coding assistant pollinations.diy to the monorepo. The project listings also gained @brain.diver’s MIDI melody maker PolliSonic Generator and withthatway’s multimodel chatbot urSapere AI.",
+  "pr_count": 6,
   "prs": [
     {
       "number": 1155,
@@ -12,10 +12,6 @@
     },
     {
       "number": 1162,
-      "date": "2025-02-07"
-    },
-    {
-      "number": 1163,
       "date": "2025-02-07"
     },
     {
@@ -35,5 +31,44 @@
       "date": "2025-02-07"
     }
   ],
-  "generated_at": "2026-09-04T13:37:09.283839+00:00"
+  "generated_at": "2026-10-17T15:33:40.450176+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Hormoz 8B joins chat",
+      "text": "Chat with Hormoz 8B, with temperature control and JSON-mode support. [View the model](https://enter.pollinations.ai/models?q=hormoz).",
+      "prs": [
+        1155
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Turbo image generation",
+      "text": "Generate images with `turbo`, including prompt enhancement and a maximum side length of 768 pixels. [View the model](https://enter.pollinations.ai/models?q=turbo).",
+      "prs": [
+        1155
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "DeepSeek R1 Full",
+      "text": "Use `deepseek-reasoner` for DeepSeek R1 Full text generation. [View the model](https://enter.pollinations.ai/models?q=deepseek-reasoner).",
+      "prs": [
+        1165
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Keep text off the feed",
+      "text": "Set `private=true` in a text request’s GET query or POST body to skip broadcasting its response to the public feed. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        1165
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

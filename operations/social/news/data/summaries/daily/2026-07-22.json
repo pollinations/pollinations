@@ -68,29 +68,48 @@
     {
       "emoji": "🎨",
       "title": "Community image endpoints",
-      "text": "Community providers can now serve images through the standard `/image/{prompt}` and OpenAI-compatible `/v1/images/generations` APIs. [Try image generation](https://gen.pollinations.ai/image/{prompt})"
+      "text": "Community providers can now serve images through the standard `/image/{prompt}` and OpenAI-compatible `/v1/images/generations` APIs. [Try image generation](https://gen.pollinations.ai/image/{prompt})",
+      "prs": [
+        12206
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🚀",
       "title": "Gemini 3.6 Flash",
-      "text": "Google text models now run through Vertex endpoints with streaming, reasoning, tools, multimodal inputs, and native Google Search intact. [Browse models](https://gen.pollinations.ai/v1/models)"
+      "text": "Google text models now run through Vertex endpoints with streaming, reasoning, tools, multimodal inputs, and native Google Search intact. [Browse models](https://gen.pollinations.ai/v1/models)",
+      "prs": [
+        12651
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🤖",
       "title": "Laguna S 2.1",
-      "text": "`laguna` brings tool use, optional reasoning, and a mildly excessive 1,048,576-token context window to the text API. [Check the API docs](https://gen.pollinations.ai/docs)"
+      "text": "`laguna` brings tool use, optional reasoning, and a mildly excessive 1,048,576-token context window to the text API. [Check the API docs](https://gen.pollinations.ai/docs)",
+      "prs": [
+        12663
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎨",
       "title": "Anime Legends Generator",
       "text": "Make anime-inspired legendary characters from a prompt. [Try it](https://anime.caasexpresss.com)",
+      "prs": [
+        12664
+      ],
       "kind": "app"
     },
     {
       "emoji": "✨",
       "title": "Arika",
       "text": "A community-built conversational AI for chats with slightly less robot energy. [Try it](https://arika.hizumi.in)",
+      "prs": [
+        12666
+      ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-03-04",
+  "period_start": "2026-03-04",
+  "period_end": "2026-03-04",
+  "generated_at": "2026-03-05T06:16:31.436274+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-04/images/reddit.jpg"
+    }
+  ],
+  "title": "Added image-to-image for flux-2-dev, Suno routing fixes, and publishable keys",
+  "text": "Merged 11 PRs today. The most notable change is that the flux-2-dev model now officially supports image inputs. If you've been trying to pass base images to it and getting rejected, that's sorted out now.\n\nWe also pushed a fix for the GET /audio/:text endpoint. The routing for the Suno model was acting up, but it now properly directs to generateSunoMusic under the hood. Text-to-music should be routing correctly again.\n\nOn the infrastructure side, we updated publishable keys. They now support app URL tracking and BYOP settings, which makes attribution a lot richer if you're embedding the API in your own projects. We also tweaked the community app submission pipeline. Apps now require approval before a PR is actually created. It keeps the repo history cleaner and saves everyone CI cycles.\n\nSix new apps from the community got added to the showcase today, including a prompt lab and an image gallery. You can check out the source or submit your own over at github.com/pollinations/pollinations.\n\nLet us know if the flux-2-dev image inputs are behaving as expected for your specific use cases."
+}

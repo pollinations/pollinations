@@ -20,7 +20,12 @@
     {
       "emoji": "🧠",
       "title": "Gemini Image Reasoning",
-      "text": "Gemini can now think before it draws. Append `?reasoning=true` to your [image requests](https://gen.pollinations.ai/image/{prompt}) to enable native reasoning modes for complex prompts."
+      "text": "Gemini can now think before it draws. Append `?reasoning=true` to your [image requests](https://gen.pollinations.ai/image/{prompt}) to enable native reasoning modes for complex prompts.",
+      "prs": [
+        10196
+      ],
+      "kind": "api"
     }
-  ]
+  ],
+  "changelog": []
 }

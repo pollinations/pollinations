@@ -20,7 +20,12 @@
     {
       "emoji": "⚡",
       "title": "Z-Image gets two RTX 5090 hives",
-      "text": "Z-Image now runs across two replicas at ~1.09 images/sec, with p95 generation under 3.75 seconds. The bees have redundancy now. [Try it](https://pollinations.ai/play)"
+      "text": "Z-Image now runs across two replicas at ~1.09 images/sec, with p95 generation under 3.75 seconds. The bees have redundancy now. [Try it](https://pollinations.ai/play)",
+      "prs": [
+        12589
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

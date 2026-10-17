@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-04-20",
+  "period_start": "2026-04-20",
+  "period_end": "2026-04-20",
+  "generated_at": "2026-04-21T06:34:59.169341+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-20/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-20/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-20/images/instagram-3.jpg"
+    }
+  ],
+  "text": "6 PRs merged today.\n\nWe redesigned the BYOP authorization flow so granting access feels less like a sketchy wire transfer and more like a polite handshake. Also spent some time simplifying our daily usage pipes and fixing account payloads—cleaner analytics, better privacy, less junk in the trunk.\n\nPlus, two new apps (Insight Engine and Reporay) just landed in the community showcase. \n\nCode is open, as always. Link in bio to build something.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #aiart #developer",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

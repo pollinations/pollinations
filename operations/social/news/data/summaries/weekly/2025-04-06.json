@@ -1,0 +1,95 @@
+{
+  "date": "2025-04-06",
+  "period_start": "2025-03-30",
+  "period_end": "2025-04-05",
+  "title": "Model names became more useful",
+  "summary": "Model choices became easier to discover and use, while text requests and image feeds got less surprising.\n\nThe `gemini` name now points to Gemini 2.5 Pro Experimental, text requests accept defined aliases, and two OpenAI aliases changed destinations. Mistral listings now identify five configurations that accept image input, while a DeepSeek entry was renamed to distinguish the distilled model from full DeepSeek R1.\n\nPOST cache keys now include the entire request body, so parameters such as seeds no longer risk sharing a cached response. Most text models gained a Llama 4-derived conversational prompt, while specialized prompts remain in place. Model records became smaller, and upstream errors now carry more useful detail.\n\nThe image feed editor now fetches model choices from the API, with a loading state and fallback list. Image token extraction gained a header fallback when no token is supplied. Feed filtering also became stricter: listeners exclude events flagged for mature prompt terms and no longer accept `nsfw=true` as a bypass.\n\nThe text server stopped adding NSFW referral links to responses, and streaming content-filter failures now return a simpler message with a `content_policy` flag.",
+  "pr_count": 21,
+  "prs": [
+    {
+      "number": 1492,
+      "date": "2025-03-31"
+    },
+    {
+      "number": 1493,
+      "date": "2025-03-31"
+    },
+    {
+      "number": 1496,
+      "date": "2025-03-31"
+    },
+    {
+      "number": 1497,
+      "date": "2025-03-31"
+    },
+    {
+      "number": 1498,
+      "date": "2025-03-31"
+    },
+    {
+      "number": 1501,
+      "date": "2025-03-31"
+    },
+    {
+      "number": 1502,
+      "date": "2025-04-01"
+    },
+    {
+      "number": 1510,
+      "date": "2025-04-01"
+    },
+    {
+      "number": 1477,
+      "date": "2025-04-02"
+    },
+    {
+      "number": 1518,
+      "date": "2025-04-02"
+    },
+    {
+      "number": 1533,
+      "date": "2025-04-02"
+    },
+    {
+      "number": 1540,
+      "date": "2025-04-03"
+    },
+    {
+      "number": 1547,
+      "date": "2025-04-03"
+    },
+    {
+      "number": 1552,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1555,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1556,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1558,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1559,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1563,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1564,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1568,
+      "date": "2025-04-05"
+    }
+  ],
+  "generated_at": "2026-10-17T16:03:49.466344+00:00"
+}

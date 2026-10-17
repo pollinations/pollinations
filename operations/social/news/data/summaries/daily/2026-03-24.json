@@ -32,25 +32,39 @@
     {
       "emoji": "🔓",
       "title": "Open App Submissions",
-      "text": "The gates are open—developers on the free tier can now submit their projects to the [Community App Showcase](https://hello.pollinations.ai) without being auto-rejected by the validation bot."
+      "text": "The gates are open—developers on the free tier can now submit their projects to the [Community App Showcase](https://hello.pollinations.ai) without being auto-rejected by the validation bot.",
+      "prs": [
+        9526
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🍎",
       "title": "VeroClass AI Teacher Hub",
       "text": "AI-powered tools for educators to streamline lesson planning and classroom management. [Try it](https://teachers.veroclass.org)",
+      "prs": [
+        9519
+      ],
       "kind": "app"
     },
     {
       "emoji": "🏷️",
       "title": "Metadatagenerator",
       "text": "A new community tool for generating metadata and prompts for microstock marketplaces. [Try it](https://metadatagenerator.online/)",
+      "prs": [
+        9520
+      ],
       "kind": "app"
     },
     {
       "emoji": "✈️",
       "title": "TelegramChannelAI",
       "text": "Automate your Telegram channel management with this new community-built content generation pipeline. [View repo](https://github.com/rrs1979/TelegramChannelAI)",
+      "prs": [
+        9528
+      ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

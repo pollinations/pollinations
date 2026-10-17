@@ -2,16 +2,12 @@
   "date": "2026-01-19",
   "period_start": "2026-01-19",
   "period_end": "2026-01-19",
-  "title": "Usage data is easier to read and trust",
-  "summary": "A garden-maintenance day: clearer usage visibility, fresher public updates, and less drama in the deployment plumbing.\n\nA new usage analytics graph gives people a clearer view of activity, while Klein model tracking now records the correct model ID. Fewer mysteries in the dashboard, which is generally preferable to interpretive analytics.\n\nWeekly news, README updates, highlights, and social posts keep the public record current, while improved social metadata makes links to pollinations.ai and enter.pollinations.ai render more usefully when shared.\n\nBYOD and Authorize names now validate correctly, and legal pages have consistent styling and current dates. Not glamorous, but forms and legal pages are where software goes to reveal its personality.",
-  "pr_count": 15,
+  "title": "Usage gets a closer look",
+  "summary": "Daily usage graphs and exports arrived alongside smoother app authorization, a simpler Pollen checkout, and tidier public pages.\n\nEnter gained a Usage tab with daily graphs for API requests and Pollen spending. You can switch time ranges, filter by API key and model, inspect per-model details, and distinguish tier usage from paid Pollen. A new daily usage endpoint returns JSON or CSV, and detailed exports can include up to 50,000 records.\n\nBYOD authorization now accepts redirect hostnames up to 253 characters as temporary API key names, rather than rejecting names over 32 characters.\n\nThe checkout change removes the crypto purchase option and routes Pollen pack purchases through Polar. Existing crypto balances are preserved.",
+  "pr_count": 6,
   "prs": [
     {
       "number": 7062,
-      "date": "2026-01-19"
-    },
-    {
-      "number": 7430,
       "date": "2026-01-19"
     },
     {
@@ -19,23 +15,7 @@
       "date": "2026-01-19"
     },
     {
-      "number": 7439,
-      "date": "2026-01-19"
-    },
-    {
-      "number": 7456,
-      "date": "2026-01-19"
-    },
-    {
       "number": 7457,
-      "date": "2026-01-19"
-    },
-    {
-      "number": 7459,
-      "date": "2026-01-19"
-    },
-    {
-      "number": 7460,
       "date": "2026-01-19"
     },
     {
@@ -47,47 +27,30 @@
       "date": "2026-01-19"
     },
     {
-      "number": 7468,
-      "date": "2026-01-19"
-    },
-    {
-      "number": 7469,
-      "date": "2026-01-19"
-    },
-    {
-      "number": 7473,
-      "date": "2026-01-19"
-    },
-    {
-      "number": 7474,
-      "date": "2026-01-19"
-    },
-    {
       "number": 7475,
       "date": "2026-01-19"
     }
   ],
-  "generated_at": "2026-09-04T11:38:40.272777+00:00",
+  "generated_at": "2026-10-17T16:00:35.607666+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "New Model: NomNom",
-      "text": "Added `nomnom` (alias `gemini-scrape`) for web research, scraping, and crawling capabilities. [API Docs](https://enter.pollinations.ai/api/docs)"
+      "emoji": "📱",
+      "title": "Explore your API usage",
+      "text": "See daily requests or Pollen usage in Enter, filter by API key and model, and switch between seven-day, 30-day, and all-history views. Download the details as CSV.",
+      "prs": [
+        7062
+      ],
+      "kind": "product"
     },
     {
-      "emoji": "🎨",
-      "title": "Klein Image Model",
-      "text": "Deployed FLUX.2 `klein` model for faster text-to-image and precise image editing. [Try it](https://hello.pollinations.ai)"
-    },
-    {
-      "emoji": "🎵",
-      "title": "Audio Generation",
-      "text": "Text-to-speech with voice selection is now available directly on the Play page."
-    },
-    {
-      "emoji": "🔑",
-      "title": "Bring Your Own Key",
-      "text": "Connect your personal API key to [chat.pollinations.ai](https://chat.pollinations.ai) for custom usage limits and billing."
+      "emoji": "💡",
+      "title": "Daily usage by API",
+      "text": "Query `/api/account/usage/daily` for usage grouped by date, model, and billing source, returned as JSON or CSV. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        7062
+      ],
+      "kind": "api"
     }
-  ]
+  ],
+  "changelog": []
 }

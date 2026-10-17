@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-06-14",
+  "period_start": "2026-06-14",
+  "period_end": "2026-06-14",
+  "generated_at": "2026-06-15T07:52:14.393578+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-14/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-14/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-14/images/instagram-3.jpg"
+    }
+  ],
+  "text": "6 pull requests merged today. We moved model routes over to Fireworks, which means we now have Qwen3.7 Plus and a massive 512K context window. Nomnom is eating well today.\n\nWe also spent some time making embedded apps feel actually native—shared themes, proper height reporting, and auth modals that match your background. Finally, we taught Polly how to read numbers and currencies without tripping over LaTeX collisions. It's the little things.\n\nCode is open as always. Link in bio.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #llm #qwen",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

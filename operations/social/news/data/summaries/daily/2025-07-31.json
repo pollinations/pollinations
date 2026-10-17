@@ -2,8 +2,8 @@
   "date": "2025-07-31",
   "period_start": "2025-07-31",
   "period_end": "2025-07-31",
-  "title": "More precise Pollen accounting",
-  "summary": "A small accounting tune-up: Pollen calculations now run on more precise cost data.\n\nPollen cost calculations now use newer, more precise usage data, making the credit system better aligned with the infrastructure it supports.",
+  "title": "GLM-4 9B Chat joins the text models",
+  "summary": "One PR reshaped the text model lineup: GLM-4 9B Chat was added, three OpenAI routes moved to GPT-4.1 Nano, and the model list got a trim.\n\nAdded GLM-4 9B Chat through Intelligence.io with an 8,192-token model configuration.\n\nUpdated openai, openai-fast, and openai-roblox to route to Azure GPT-4.1 Nano. The openai listing replaces GPT-4o Mini, while openai-roblox moves to anonymous access.\n\nSet DeepSeek R1 0528’s maximum output to 2,000 tokens and removed openai-reasoning (O3) from the available model list.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,26 @@
       "date": "2025-07-31"
     }
   ],
-  "generated_at": "2026-09-04T12:14:43.336864+00:00"
+  "generated_at": "2026-10-17T15:44:40.493189+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "GLM-4 9B Chat added",
+      "text": "Try GLM-4 9B Chat, added with an 8,192-token model configuration. [Find the model](https://enter.pollinations.ai/models?q=GLM-4).",
+      "prs": [
+        3384
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "OpenAI routes get Nano",
+      "text": "`openai`, `openai-fast`, and `openai-roblox` now route to Azure GPT-4.1 Nano; the `openai` listing replaces GPT-4o Mini. [Find the model](https://enter.pollinations.ai/models?q=openai).",
+      "prs": [
+        3384
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

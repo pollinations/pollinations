@@ -2,14 +2,10 @@
   "date": "2025-10-19",
   "period_start": "2025-10-19",
   "period_end": "2025-10-19",
-  "title": "Claude 4.5 Haiku joins the text endpoint",
-  "summary": "A community-heavy day: a new Claude model, automatic app deployments, and a larger garden of things people built.\n\nClaude 4.5 Haiku is now available alongside the rest of the model lineup: another fast option for chat, agents, and whatever small linguistic machinery people are building this week.\n\nHacktoberfest projects can now deploy automatically to subdomains, while a new AI Dungeon Master joins the app garden. Less deployment ceremony, more chance of being defeated by an imaginary goblin.\n\nSeven new community projects landed in the showcase, and BeeCoder was added to vibeCoding.js—more evidence that giving people simple AI HTTP calls produces a pleasantly strange amount of software.",
-  "pr_count": 5,
+  "title": "Claude Haiku 4.5 joins the model list",
+  "summary": "Claude Haiku 4.5 joined the model list while the community brought a solo RPG and seven projects to the showcase.\n\nAdded Claude Haiku 4.5 as `claudyclaude`, with text and image input plus tool support. The model work also raised an existing model’s input limit from 10,000 to 30,000 characters and adjusted parameter handling so downstream APIs validate ranges and several models use provider temperature defaults.\n\ncodevector-2003 added AI Dungeon Master, a fantasy RPG that generates story scenes and images. Players can take suggested paths or write their own actions, with dice combat, character stats, inventory, story history and browser-based saves.\n\nSeven projects joined the showcase, spanning editable thumbnails, API examples, image generation, an iOS Shortcut and browser-based agent tools. BeeCoder, which connects VS Code Copilot to Pollinations, also joined the vibe-coding project list.",
+  "pr_count": 4,
   "prs": [
-    {
-      "number": 4468,
-      "date": "2025-10-19"
-    },
     {
       "number": 4506,
       "date": "2025-10-19"
@@ -27,5 +23,17 @@
       "date": "2025-10-19"
     }
   ],
-  "generated_at": "2026-09-04T12:50:12.696098+00:00"
+  "generated_at": "2026-10-17T15:49:10.882553+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Claude Haiku 4.5 added",
+      "text": "Send text or images to `claudyclaude`, with tool support for workflows that need it. [View the model](https://enter.pollinations.ai/models?q=claudyclaude).",
+      "prs": [
+        4615
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

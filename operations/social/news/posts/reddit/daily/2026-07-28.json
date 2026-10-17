@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-28",
+  "period_start": "2026-07-28",
+  "period_end": "2026-07-28",
+  "generated_at": "2026-07-29T07:06:14.434793+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-28/images/reddit.jpg"
+    }
+  ],
+  "title": "Twelve merged PRs: Wan deadline and directory updates",
+  "text": "12 PRs merged today.\n\nThe operational fix is #12783: Wan 2.7 jobs running through Replicate now get a longer deadline. Video generation has a habit of finishing immediately after the old timeout decides it has seen enough, so this should reduce avoidable failures for longer renders.\n\nThe app directory also picked up a fairly broad batch of additions:\n\n- Image: Anime Forge, Vtrace\n- Video/audio: Driftpod.fm\n- Build: Pollinations AI Studio, AI Health Studio\n- Writing: StoryStudio\n- Chat: MyEntMap, Lumina Chat, Le petit AI\n\nThat is anime generation, story tooling, vector work, visual mapping, wellness tooling, and a podcast-shaped rabbit hole added in one pass. The directory is becoming a better record of what people actually make with the API, rather than a carefully curated museum of demos.\n\n#12787 rotates Polli’s easter-egg statuses, and #12813 updates the README/public noticeboard.\n\nPRs and source are in the main repo: https://github.com/pollinations/pollinations\n\nRelevant changes: https://github.com/pollinations/pollinations/pull/12783 and https://github.com/pollinations/pollinations/pull/12813\n\nIf a project using Pollinations is missing from the directory, the app listings are intentionally ordinary data changes. Send a PR rather than waiting for a form to achieve consciousness."
+}

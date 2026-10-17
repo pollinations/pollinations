@@ -1,0 +1,271 @@
+{
+  "date": "2025-12-28",
+  "period_start": "2025-12-21",
+  "period_end": "2025-12-27",
+  "title": "A bigger home for the community",
+  "summary": "The site became a better home for community apps, while creation tools, model access, and API accounting grew more predictable.\n\nA themeable replacement frontend brought the playground, app directory, community page, and docs together. The directory consolidated 318 listings, added new community projects throughout the week, and made submissions easier to find and review. Hello also gave recent contributors more space.\n\nVeo gained first-to-last-frame video inputs, and Play added up to four reference-image URLs for supported models. GPT Image 1.5 joined as `gptimage-large` for generation and editing; subsequent fixes addressed its configuration, reference-image editing, and large input handling. Z-Image Turbo also began generating at the requested resolution instead of upscaling a smaller image.\n\nThird-party apps gained a redirect flow for requesting access to selected models. The playground added sign-in and uses the current key for generation, while model-list endpoints show restricted keys only the models they can use. `/v1/models` also gained an OpenAI-compatible list response.\n\nMCP server v2 moved to the unified API and added tools spanning video, parallel images, analysis, transcription, search, and tool-calling chat. OpenAI-compatible chat paths, Gemini tool schemas and thinking settings, case-insensitive model lookups, and DeepSeek V3.2 routing received compatibility work.",
+  "pr_count": 65,
+  "prs": [
+    {
+      "number": 5941,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6175,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6232,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6256,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6273,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6278,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6279,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6282,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6285,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6294,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6295,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6303,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6306,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6309,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6314,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6317,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6162,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6308,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6320,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6325,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6330,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6332,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6340,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6345,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6349,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6356,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6360,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6297,
+      "date": "2025-12-23"
+    },
+    {
+      "number": 6328,
+      "date": "2025-12-23"
+    },
+    {
+      "number": 6368,
+      "date": "2025-12-23"
+    },
+    {
+      "number": 6369,
+      "date": "2025-12-23"
+    },
+    {
+      "number": 6373,
+      "date": "2025-12-23"
+    },
+    {
+      "number": 6389,
+      "date": "2025-12-23"
+    },
+    {
+      "number": 6393,
+      "date": "2025-12-23"
+    },
+    {
+      "number": 6398,
+      "date": "2025-12-23"
+    },
+    {
+      "number": 6394,
+      "date": "2025-12-24"
+    },
+    {
+      "number": 6404,
+      "date": "2025-12-24"
+    },
+    {
+      "number": 6425,
+      "date": "2025-12-24"
+    },
+    {
+      "number": 6428,
+      "date": "2025-12-24"
+    },
+    {
+      "number": 6434,
+      "date": "2025-12-24"
+    },
+    {
+      "number": 5682,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6403,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6406,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6408,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6412,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6414,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6420,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6422,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6432,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6439,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6440,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6443,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6445,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6446,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6458,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6459,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6460,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6410,
+      "date": "2025-12-26"
+    },
+    {
+      "number": 6464,
+      "date": "2025-12-26"
+    },
+    {
+      "number": 6466,
+      "date": "2025-12-26"
+    },
+    {
+      "number": 6467,
+      "date": "2025-12-26"
+    },
+    {
+      "number": 6472,
+      "date": "2025-12-27"
+    },
+    {
+      "number": 6478,
+      "date": "2025-12-27"
+    },
+    {
+      "number": 6480,
+      "date": "2025-12-27"
+    },
+    {
+      "number": 6492,
+      "date": "2025-12-27"
+    }
+  ],
+  "generated_at": "2026-10-17T16:07:04.367557+00:00"
+}

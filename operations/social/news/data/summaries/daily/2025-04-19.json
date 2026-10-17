@@ -2,9 +2,9 @@
   "date": "2025-04-19",
   "period_start": "2025-04-19",
   "period_end": "2025-04-19",
-  "title": "April's model lineup got a configuration pass",
-  "summary": "A garden-maintenance day: refreshed model configuration, clearer TTS docs, and three more community projects on the map.\n\nThe AI model list and its configuration were refreshed for April, keeping the shared text endpoint's available setup current.\n\nOkeyAI, BlackWave, and DesmondBot were added to the project list—a small but useful record of what people are building with Pollinations.\n\nText-to-Speech API documentation was updated, while PR tracking moved into its own file so the project’s paper trail stops spreading across the furniture.",
-  "pr_count": 6,
+  "title": "Three models added to the lineup",
+  "summary": "Three models joined the configuration, three community projects joined the directory, and the speech API example got its fields in the right places.\n\nModel configuration now includes `openai-reasoning` with text and image input, `llama-vision` for image understanding, and `gemini` using Gemini 2.5 Flash Preview. The `openai` and `openai-large` aliases also changed their underlying models.\n\nThe project listings gained DesmondBot, a snarky bot built with the text API and OpenWebUI; OkeyAI, which focuses on African languages and cultural contexts; and BlackWave, a text-to-image app.\n\nThe OpenAI-compatible text-to-speech POST docs now show `modalities: [\"text\", \"audio\"]` and place `voice` and `format` inside the `audio` object. The parameter table was updated to match.",
+  "pr_count": 5,
   "prs": [
     {
       "number": 1716,
@@ -23,13 +23,39 @@
       "date": "2025-04-19"
     },
     {
-      "number": 1726,
-      "date": "2025-04-19"
-    },
-    {
       "number": 1727,
       "date": "2025-04-19"
     }
   ],
-  "generated_at": "2026-09-04T12:29:19.099120+00:00"
+  "generated_at": "2026-10-17T15:38:04.582252+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Reasoning with image input",
+      "text": "`openai-reasoning` was added using OpenAI o4-mini, with support for text and image input. [Browse the model](https://enter.pollinations.ai/models?q=openai-reasoning).",
+      "prs": [
+        1727
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Llama gets vision",
+      "text": "`llama-vision` was added using Llama 3.2 11B Vision. [Browse the model](https://enter.pollinations.ai/models?q=llama-vision).",
+      "prs": [
+        1727
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "Gemini 2.5 Flash Preview",
+      "text": "`gemini` was added using Gemini 2.5 Flash Preview. [Browse the model](https://enter.pollinations.ai/models?q=gemini).",
+      "prs": [
+        1727
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

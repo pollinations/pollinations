@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-05-15",
+  "period_start": "2026-05-15",
+  "period_end": "2026-05-15",
+  "generated_at": "2026-05-16T06:45:30.298497+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-15/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-15/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-15/images/instagram-3.jpg"
+    }
+  ],
+  "text": "15 PRs merged this week. The infrastructure garden is growing.\n\nWe added GPT-5.4-mini and Mistral 4, and moved DeepSeek V4 Flash to the free tier because why not. We also taught the API to properly blame you (400) instead of us (500) when user input is bad. Dashboard now has accurate \"NEW\" badges, and the CLI docs are finally synced up.\n\nGo build something weird. API and docs at pollinations.ai 🌸\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #llm #webdev #buildinpublic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

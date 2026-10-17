@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-04-03",
+  "period_start": "2026-04-03",
+  "period_end": "2026-04-03",
+  "generated_at": "2026-04-04T06:20:10.893185+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-03/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-03/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-03/images/instagram-3.jpg"
+    }
+  ],
+  "text": "19 PRs merged. The SDK got a massive overhaul this week: dedicated audio endpoints for TTS and music, plus image editing is live. Added programmatic API key management so you can create and revoke keys without leaving your terminal. We also cleaned up the app directory, fed the stale data to the void, and wired up some new Discord bot frameworks. Gemini 3.1 Flash Lite is in, Claude is on Bedrock. Code is open, docs are updated.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #python #webdev",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

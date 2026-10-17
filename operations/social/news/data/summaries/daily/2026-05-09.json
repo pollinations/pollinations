@@ -47,5 +47,35 @@
       "date": "2026-05-09"
     }
   ],
-  "generated_at": "2026-09-04T11:48:17.533426+00:00"
+  "generated_at": "2026-09-04T11:48:17.533426+00:00",
+  "highlights": [
+    {
+      "emoji": "💡",
+      "title": "Readable math in Polly",
+      "text": "Polly can render Markdown tables, LaTeX equations, and code blocks in Discord messages. [Join the community chat](https://discord.gg/k9F7SyTgqn).",
+      "prs": [
+        10639
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Meet idol-interaction",
+      "text": "Try a community game built with Pollinations-powered character generation and chat. [Try it](https://spritenguyen.github.io/idol-interaction-game-2/).",
+      "prs": [
+        10796
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Explore Viatosis",
+      "text": "Explore a medical e-learning platform that uses Pollinations for AI-generated illustrations. [Try it](https://www.viatosis.tech).",
+      "prs": [
+        10802
+      ],
+      "kind": "app"
+    }
+  ],
+  "changelog": []
 }

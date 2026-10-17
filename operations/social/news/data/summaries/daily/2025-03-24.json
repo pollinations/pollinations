@@ -2,14 +2,10 @@
   "date": "2025-03-24",
   "period_start": "2025-03-24",
   "period_end": "2025-03-24",
-  "title": "More ways to build with audio",
-  "summary": "An audio-forward garden-tending day: MCP audio support, speech docs, text endpoint upkeep, and a tidier project map.\n\nAudio got a broader path through the stack: the MCP server can now support audio generation, the API docs include a speech-to-text example, and a text-to-speech project joined the gallery. Less guessing how to get from words to sound, or sound back to words.\n\ntext.pollinations.ai received feature, model, and security updates, keeping the shared text endpoint current while it continues to front a small zoo of models.\n\nFreeAI was added to the README and project list, while an older API Playground listing was retired. The gallery is a little more useful as a map of what people are actually building.",
-  "pr_count": 8,
+  "title": "MCP assistants gain text and audio tools",
+  "summary": "Assistants gained text and audio tools, two chat models joined the lineup, and the community gallery picked up new projects.\n\nThe Pollinations MCP server expanded beyond images: assistants can now generate text, produce spoken responses, read supplied text aloud, and discover available models and voices. A new JavaScript documentation example also shows how to transcribe audio.\n\nAdded `mistral-roblox` and `phi-mini` to text chat. OpenAI-compatible chat requests are now private by default; the same update set an 8,000-token maximum for Qwen Coder on Scaleway and switched Gemini 2.0 Flash Lite to its non-preview model ID.\n\nAdded Azad-sl’s Chinese-language text-to-speech project and FreeAI, which combines chat, image generation, and voice synthesis. OkeyAI API Playground was removed from the project listings.",
+  "pr_count": 7,
   "prs": [
-    {
-      "number": 1422,
-      "date": "2025-03-24"
-    },
     {
       "number": 1426,
       "date": "2025-03-24"
@@ -39,5 +35,35 @@
       "date": "2025-03-24"
     }
   ],
-  "generated_at": "2026-09-04T12:15:13.016587+00:00"
+  "generated_at": "2026-10-17T15:36:34.110375+00:00",
+  "highlights": [
+    {
+      "emoji": "🎵",
+      "title": "MCP can speak now",
+      "text": "Let an AI assistant generate text, produce a spoken response, or read your text aloud. The MCP server also lists available models and voices. [Explore MCP tools](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        1434
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Mistral Roblox joins chat",
+      "text": "Try `mistral-roblox`, a Mistral chat model routed through Scaleway. [View the model](https://enter.pollinations.ai/models?q=mistral-roblox).",
+      "prs": [
+        1431
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Phi Mini joins chat",
+      "text": "Try `phi-mini`, powered by Phi-4 Mini Instruct on Azure. [View the model](https://enter.pollinations.ai/models?q=phi-mini).",
+      "prs": [
+        1431
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

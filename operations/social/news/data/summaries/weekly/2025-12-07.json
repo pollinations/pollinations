@@ -1,0 +1,255 @@
+{
+  "date": "2025-12-07",
+  "period_start": "2025-11-30",
+  "period_end": "2025-12-06",
+  "title": "Video found its way into the workflow",
+  "summary": "Video became easier to make, media models gained clearer choices, and the routes into generation got shorter.\n\nPreview MP4 generation arrived for Veo 3.1 Fast and Seedance, then chat added `/video`, model selection, and in-conversation playback. Seedance also gained image-to-video handling and, by week’s end, two explicit choices: `seedance` for Lite and `seedance-pro` for Pro-Fast.\n\nThe final Seedream split makes `seedream` the 4.0 choice and `seedream-pro` the 4.5 choice, with 4K and multi-image support. Media request fixes improved handling of small images and reference images with generic file types. GPT Image edits now keep img2img requests on `gpt-image-1-mini`.\n\nThe new `gen.pollinations.ai` gateway adds shorter image and text routes, OpenAI-compatible requests, and a `/models` shortcut. The docs now use those paths and explain text query parameters. `nova-micro` joined the text models for conversations and tool use.\n\nSession-level system prompts and generation settings, charts in messages, and collapsible streamed reasoning give chat more room for actual work. Request changes also keep model-specific thinking settings from being sent where they do not belong.",
+  "pr_count": 61,
+  "prs": [
+    {
+      "number": 5477,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5480,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5483,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5491,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5492,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5493,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5494,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5495,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5496,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5497,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5498,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5499,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5500,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5501,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5502,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5503,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5434,
+      "date": "2025-12-01"
+    },
+    {
+      "number": 5467,
+      "date": "2025-12-01"
+    },
+    {
+      "number": 5512,
+      "date": "2025-12-01"
+    },
+    {
+      "number": 5536,
+      "date": "2025-12-01"
+    },
+    {
+      "number": 5544,
+      "date": "2025-12-01"
+    },
+    {
+      "number": 5545,
+      "date": "2025-12-01"
+    },
+    {
+      "number": 5553,
+      "date": "2025-12-02"
+    },
+    {
+      "number": 5565,
+      "date": "2025-12-02"
+    },
+    {
+      "number": 5573,
+      "date": "2025-12-02"
+    },
+    {
+      "number": 5575,
+      "date": "2025-12-02"
+    },
+    {
+      "number": 5577,
+      "date": "2025-12-02"
+    },
+    {
+      "number": 5579,
+      "date": "2025-12-03"
+    },
+    {
+      "number": 5586,
+      "date": "2025-12-03"
+    },
+    {
+      "number": 5587,
+      "date": "2025-12-03"
+    },
+    {
+      "number": 5589,
+      "date": "2025-12-03"
+    },
+    {
+      "number": 5597,
+      "date": "2025-12-03"
+    },
+    {
+      "number": 5603,
+      "date": "2025-12-03"
+    },
+    {
+      "number": 5606,
+      "date": "2025-12-03"
+    },
+    {
+      "number": 5609,
+      "date": "2025-12-03"
+    },
+    {
+      "number": 5610,
+      "date": "2025-12-03"
+    },
+    {
+      "number": 5604,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5605,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5613,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5616,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5622,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5625,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5629,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5637,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5639,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5641,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5644,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5648,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5656,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5661,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5665,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5666,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5668,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5670,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5671,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5672,
+      "date": "2025-12-05"
+    },
+    {
+      "number": 5674,
+      "date": "2025-12-05"
+    },
+    {
+      "number": 5676,
+      "date": "2025-12-05"
+    },
+    {
+      "number": 5677,
+      "date": "2025-12-05"
+    },
+    {
+      "number": 5717,
+      "date": "2025-12-05"
+    },
+    {
+      "number": 5751,
+      "date": "2025-12-06"
+    }
+  ],
+  "generated_at": "2026-10-17T16:06:53.099621+00:00"
+}

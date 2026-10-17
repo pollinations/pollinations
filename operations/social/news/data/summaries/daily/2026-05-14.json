@@ -24,7 +24,12 @@
     {
       "emoji": "⚡",
       "title": "ElevenLabs Flash v2.5",
-      "text": "Ultra-low latency speech generation is here. Pass `elevenflash` to the [Audio API](https://gen.pollinations.ai/audio/{text}) for faster text-to-speech at half the credit cost."
+      "text": "Ultra-low latency speech generation is here. Pass `elevenflash` to the [Audio API](https://gen.pollinations.ai/audio/{text}) for faster text-to-speech at half the credit cost.",
+      "prs": [
+        10936
+      ],
+      "kind": "model"
     }
-  ]
+  ],
+  "changelog": []
 }

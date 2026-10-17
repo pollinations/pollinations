@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-03-18",
+  "period_start": "2026-03-18",
+  "period_end": "2026-03-18",
+  "generated_at": "2026-03-19T06:19:59.721818+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-18/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-18/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-18/images/instagram-3.jpg"
+    }
+  ],
+  "text": "16 PRs merged this week. The bots are officially taking over (Discord, Telegram, and something called a \"Suspicious Helper\"). We also saw AI getting squeezed onto ESP32-S3 microcontrollers, some desktop novel generators, and much-needed fixes to auth sync and diary dates (no more time-traveling 404s).\n\nCheck out the new apps in the repo. You all are building weird and wonderful things. Keep it up. 🐝✨\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #microcontrollers #botdevelopment #buildinpublic #retroaesthetic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

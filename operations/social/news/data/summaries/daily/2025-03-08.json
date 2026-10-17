@@ -2,8 +2,8 @@
   "date": "2025-03-08",
   "period_start": "2025-03-08",
   "period_end": "2025-03-08",
-  "title": "A small way to support the garden",
-  "summary": "One small site update: a clearer path for people who want to support the project.\n\nThe Latest News section now points people to the Ko-Fi tip button, making it easier for anyone who wants to toss a little support toward the open infrastructure.",
+  "title": "README news points to ways to support the project",
+  "summary": "A small README update made the project’s support options easier to find.\n\nThe Latest News section now mentions the Tip Us button and the optional Ko-Fi–Discord connection for premium Discord roles. An older MentatBot news item was removed.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-03-08"
     }
   ],
-  "generated_at": "2026-09-04T12:05:05.232068+00:00"
+  "generated_at": "2026-10-17T15:35:00.279421+00:00",
+  "highlights": [],
+  "changelog": []
 }

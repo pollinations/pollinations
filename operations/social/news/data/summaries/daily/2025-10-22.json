@@ -2,14 +2,10 @@
   "date": "2025-10-22",
   "period_start": "2025-10-22",
   "period_end": "2025-10-22",
-  "title": "The API docs got a proper rewrite",
-  "summary": "A garden-maintenance day: clearer API docs, more contributor paths, automated repo chores, and steadier image-model handling.\n\nPollinations' API documentation was rewritten for a clearer path from first HTTP call to a working app, while the Pollen FAQ gained clearer answers and launch-timeline details. Less archaeological digging through markdown.\n\nHacktoberfest guidance landed in the README and project index, alongside a new AI Blog Title Generator project idea and support for submitting projects in batches. The community garden has more seed packets now.\n\nNew GitHub Actions can regenerate project documentation and condense PR or issue descriptions automatically. Claude Code automation was also upgraded to v1 with Sonnet 4.5 and fork-PR support, making outside contributions easier to work with.",
-  "pr_count": 12,
+  "title": "More community projects in the directory",
+  "summary": "The garden got more projects and clearer API guides, while image usage, pricing, and request limits received a closer look.\n\nThe project catalog added nine Hacktoberfest apps and eight other submissions, spanning Telegram bots, image tools, an Android app, and a Markdown editor. BeeCoder joined the Vibe Coding listings, and several existing projects received corrected contributor credits.\n\nThe API guide now runs from quick start to advanced usage, with expanded Python, JavaScript, and cURL examples for text, images, and audio. The Pollen FAQ also clarifies how key types, free-model limits, and Pollen spending currently work, while keeping planned Front-End Key spending distinct from existing capabilities.\n\nGPT Image tracking now reports actual output-token usage instead of a fixed one-token count. Image-model pricing and the free-or-paid labels for several models were corrected in the registry.",
+  "pr_count": 7,
   "prs": [
-    {
-      "number": 4664,
-      "date": "2025-10-22"
-    },
     {
       "number": 4671,
       "date": "2025-10-22"
@@ -27,22 +23,6 @@
       "date": "2025-10-22"
     },
     {
-      "number": 4684,
-      "date": "2025-10-22"
-    },
-    {
-      "number": 4687,
-      "date": "2025-10-22"
-    },
-    {
-      "number": 4690,
-      "date": "2025-10-22"
-    },
-    {
-      "number": 4691,
-      "date": "2025-10-22"
-    },
-    {
       "number": 4695,
       "date": "2025-10-22"
     },
@@ -55,5 +35,7 @@
       "date": "2025-10-22"
     }
   ],
-  "generated_at": "2026-09-04T12:52:01.652412+00:00"
+  "generated_at": "2026-10-17T15:49:36.045161+00:00",
+  "highlights": [],
+  "changelog": []
 }

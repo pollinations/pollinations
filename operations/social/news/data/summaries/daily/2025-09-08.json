@@ -2,8 +2,8 @@
   "date": "2025-09-08",
   "period_start": "2025-09-08",
   "period_end": "2025-09-08",
-  "title": "Pollen gets its first MVP",
-  "summary": "A small but foundational step: Pollen has an MVP.\n\nThe first MVP for Pollen landed, establishing the groundwork for the community credit system.",
+  "title": "GitHub sign-in comes to Enter",
+  "summary": "Enter gained GitHub sign-in, API key management and a balance dashboard, with the Pollen plumbing underneath.\n\nA new Enter auth service adds GitHub sign-in and sessions, giving people a signed-in place to manage their API access.\n\nThe dashboard adds a view of the customer meter balance and controls to create, list and delete API keys.\n\nThe same PR adds customer integration, API proxy routes and generation-event handling, with database migrations, observability and tests for the new flows.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,17 @@
       "date": "2025-09-08"
     }
   ],
-  "generated_at": "2026-09-04T12:29:49.241206+00:00"
+  "generated_at": "2026-10-17T15:46:11.759079+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "Manage keys in Enter",
+      "text": "Sign in with GitHub to create and manage API keys and view your customer meter balance. [Open API keys](https://enter.pollinations.ai/keys).",
+      "prs": [
+        3676
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

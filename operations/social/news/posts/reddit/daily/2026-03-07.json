@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-03-07",
+  "period_start": "2026-03-07",
+  "period_end": "2026-03-07",
+  "generated_at": "2026-03-18T22:08:12.640749+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-07/images/reddit.jpg"
+    }
+  ],
+  "title": "Normalizing finish_reasons, fixing Flux dimensions, and new showcase apps",
+  "text": "We merged 6 PRs today focusing on schema compatibility, image generation stability, and ecosystem additions.\n\nFirst, the OpenAI schema normalization tradeoff. PR 8908 updated our `finish_reason` outputs to align with OpenAI's format, which helps when dropping our endpoints into standard tooling. However, enforcing strict compliance via Portkey ended up breaking tool calls for Gemini models. PR 8909 adjusts this: we keep the normalized `finish_reason` but drop the strict Portkey wrapper so Gemini tool calls actually work again. \n\nSecond, we fixed an issue with Flux-2-dev where arbitrary image dimensions were causing failures. The underlying api.airforce provider only supports specific aspect ratios and sizes for this model. PR 8918 introduces automatic dimension snapping. If you request an unsupported size, the API now snaps it to the nearest supported rectangle before routing the request. \n\nFinally, three new projects were added to the community showcase: the Pollinations CLI (PR 8921, which also cleans up some outdated docs), NovelCraft AI for local writing assistance (PR 8928), and a new media generation client (PR 8923). \n\nYou can view the new apps at pollinations.ai/showcase or check the commits on github.com/pollinations/pollinations. Let us know if the Flux dimension snapping interferes with any specific workflows you were relying on."
+}

@@ -2,9 +2,9 @@
   "date": "2025-11-05",
   "period_start": "2025-11-05",
   "period_end": "2025-11-05",
-  "title": "The API got easier to plug into",
-  "summary": "A broad maintenance pass made the API friendlier, image generation less constrained, and the website substantially less dramatic.\n\nText prompt requests now return the thing they asked for instead of an unexpected JSON wrapper, public endpoints received more browser-friendly CORS handling, and OpenAI-compatible paths were added for projects already speaking that dialect. Model endpoints were moved ahead of auth where needed, while the API docs gained tags and shed a legacy route from view.\n\nImage generation no longer applies dimension scaling limits, Flux step calculation and concurrent-request counting were corrected, and the PWA can generate transparent watermark logos. The model roster was also pruned and renamed into something less like an abandoned group chat.\n\nSign-in and routing received a solid repair pass: a router race behind login loops was removed, broken sign-in was fixed, and the site moved to the enter.pollinations.ai API with centralized key management. Header, footer, social icons, terms-page routing, and a few alignment details were also brought back into line.",
-  "pr_count": 24,
+  "title": "A new Mistral option and a simpler Claude name",
+  "summary": "A new Mistral model and OpenAI-compatible routes arrived alongside a long day of image, sign-in, and website repairs.\n\nAdded `naughty`, an uncensored Mistral Nemo text model with tool support. Claude Haiku 4.5 is now listed as `claude`, with its previous name retained as an alias; three older model entries were removed.\n\nEnter added standard OpenAI-compatible chat-completion and model-list paths. Public generation routes gained cross-origin preflight handling, image models can be listed without signing in, and the text GET route now returns plain text or raw audio rather than wrapping either in chat-completion JSON. The API reference was reorganized around text, image, and auth.\n\nImage generation no longer rescales requested dimensions before sending them to a model, preserving valid sizes such as 1536×1024 for gptimage. Flux now ignores stale servers when judging load, avoiding unnecessary reductions in generation steps. NanoBanana’s images-per-Pollen estimate was corrected, and the image watermark gained a transparent color logo.",
+  "pr_count": 22,
   "prs": [
     {
       "number": 4951,
@@ -12,10 +12,6 @@
     },
     {
       "number": 4959,
-      "date": "2025-11-05"
-    },
-    {
-      "number": 5005,
       "date": "2025-11-05"
     },
     {
@@ -83,10 +79,6 @@
       "date": "2025-11-05"
     },
     {
-      "number": 5041,
-      "date": "2025-11-05"
-    },
-    {
       "number": 5042,
       "date": "2025-11-05"
     },
@@ -103,5 +95,26 @@
       "date": "2025-11-05"
     }
   ],
-  "generated_at": "2026-09-04T12:05:24.884130+00:00"
+  "generated_at": "2026-10-17T15:51:37.285458+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Naughty joins text models",
+      "text": "Try `naughty`, an uncensored Mistral Nemo text model with tool support. [View the model](https://enter.pollinations.ai/models?q=naughty).",
+      "prs": [
+        5030
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Standard chat completion path",
+      "text": "OpenAI-compatible clients can use `https://enter.pollinations.ai/api/generate` as their base URL with `/v1/chat/completions` and `/v1/models`.",
+      "prs": [
+        5032
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

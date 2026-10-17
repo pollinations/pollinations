@@ -2,9 +2,9 @@
   "date": "2025-04-05",
   "period_start": "2025-04-05",
   "period_end": "2025-04-05",
-  "title": "Model choices now stay in sync",
-  "summary": "A garden-maintenance day: fresher model menus, steadier text requests, working redirects, and safer image feeds.\n\nThe available-model list now fetches from the API instead of relying on a static list, and the duplicate DeepSeek Reasoning entry has been removed. Fewer stale menus, fewer identical models pretending to be two models.\n\nPOST parameters are now passed correctly, text prompts were consolidated to reduce duplication, a conversational Llama 4 prompt was added, and an initial text filter landed. The endpoint should be more predictable both for callers and for the prompts behind it.\n\nAffiliate links can be mapped back after a click, analytics parameters were corrected, and /redirect/* routes now have an explicit redirect rule. Small plumbing work, which is usually where the missing plumbing turns out to be.",
-  "pr_count": 10,
+  "title": "Model lists get less brittle",
+  "summary": "Model selection got more adaptable, text requests got more predictable, and image feeds got stricter filtering.\n\nThe image feed editor now fetches model options from the image API, so newly available models can appear without a frontend change. It also has a loading state and a fallback list if the request fails. Separately, the DeepSeek-R1 Distill Qwen 32B entry was renamed to avoid colliding with the full DeepSeek R1 model.\n\nPOST text cache keys now use the entire request body, preventing requests with different parameters, such as seeds, from sharing a cached response. Most text models also gained a Llama 4-derived conversational prompt, while models with specialized prompts keep them.\n\nThe image service now marks feed events whose prompts match mature terms. Feed listeners filter those events alongside flagged content, and no longer accept `nsfw=true` to bypass filtering.",
+  "pr_count": 8,
   "prs": [
     {
       "number": 1552,
@@ -35,17 +35,21 @@
       "date": "2025-04-05"
     },
     {
-      "number": 1567,
-      "date": "2025-04-05"
-    },
-    {
       "number": 1568,
-      "date": "2025-04-05"
-    },
-    {
-      "number": 1569,
       "date": "2025-04-05"
     }
   ],
-  "generated_at": "2026-09-04T12:22:07.575186+00:00"
+  "generated_at": "2026-10-17T16:02:37.064109+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "An adaptable model picker",
+      "text": "The image feed editor fetches its model choices from the API, so new options can appear without a frontend update.",
+      "prs": [
+        1552
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

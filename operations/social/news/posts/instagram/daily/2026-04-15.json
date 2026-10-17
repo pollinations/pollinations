@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-04-15",
+  "period_start": "2026-04-15",
+  "period_end": "2026-04-15",
+  "generated_at": "2026-04-16T06:34:45.585891+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-15/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-15/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-15/images/instagram-3.jpg"
+    }
+  ],
+  "text": "A little bit of housekeeping and some new toys this week.\n\nWe decluttered the dashboard so you don't have to look at your expired API keys anymore (you're welcome). Veo 3.1 Fast video generation is restored to the GA version, meaning your moving pictures will render quicker. Oh, and we added Neon Runner to the games section.\n\nCheck the repo to play around or build your own. Everything's open.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #gamedev #aivideo #buildinpublic #developerlife",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

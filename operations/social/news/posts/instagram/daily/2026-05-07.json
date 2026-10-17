@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-05-07",
+  "period_start": "2026-05-07",
+  "period_end": "2026-05-07",
+  "generated_at": "2026-05-08T06:33:44.368779+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-07/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-07/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-07/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Five PRs merged this week. The big ones: vector embeddings are now live in the API, meaning your apps can finally remember things. We also wired up Seedance 2.0 for better video generation, and spent some time cleaning up the dashboard and simplifying BYOP margin billing so it actually makes sense.\n\nLess friction, more moving pictures. Code is open as always.\n\npollinations.ai\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #machinelearning #generativeai #webdev #buildinpublic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

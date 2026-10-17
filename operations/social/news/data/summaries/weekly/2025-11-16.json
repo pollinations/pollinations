@@ -1,0 +1,239 @@
+{
+  "date": "2025-11-16",
+  "period_start": "2025-11-09",
+  "period_end": "2025-11-15",
+  "title": "Community chat grew up quickly",
+  "summary": "A community-built chat app grew into a more capable front end while the APIs, image pipeline, and Pollen experience got a substantial tune-up.\n\nCloudCompile’s chat interface joined the repo with text and image modes, model selection, locally saved conversations, and speech input. Follow-up work added image paste and drag-and-drop, model search, streamed replies, and better mobile interactions. A useful example of the community building on the same APIs everyone else uses.\n\nClaude Sonnet 4.5 arrived as `claude-large` with image input and tools; Grok 4 Fast arrived as `grok` with tools. Chat also gained `reasoning_effort` and `thinking_budget` passthrough, support for provider reasoning fields, and preserved Perplexity citation URLs. Enter’s chat endpoint now supplies the `openai` default when a request omits a model, rather than leaving backend services to choose one silently.\n\nPollen pack buttons were connected to checkout for $5, $10, $20, and $50 packs. Enter’s tier panel became more precise about active and canceled subscriptions, target tiers, end dates, and lookup errors. New accounts now start on Spore rather than Seed, and the FAQ was updated to match.\n\nImage generation gained retries for server errors, Seedream 4.0 began fetching reference images before image-to-image requests, and prompts containing slashes or UTF-8 characters got routing fixes. Exact-match caching moved into Enter’s image route: cache hits can return without a key, while misses follow the usual authenticated generation path.",
+  "pr_count": 57,
+  "prs": [
+    {
+      "number": 5126,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5127,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5128,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5129,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5131,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5143,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5145,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5146,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5147,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5148,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5081,
+      "date": "2025-11-11"
+    },
+    {
+      "number": 5110,
+      "date": "2025-11-11"
+    },
+    {
+      "number": 5144,
+      "date": "2025-11-11"
+    },
+    {
+      "number": 5158,
+      "date": "2025-11-11"
+    },
+    {
+      "number": 5166,
+      "date": "2025-11-11"
+    },
+    {
+      "number": 5174,
+      "date": "2025-11-11"
+    },
+    {
+      "number": 5175,
+      "date": "2025-11-11"
+    },
+    {
+      "number": 5179,
+      "date": "2025-11-11"
+    },
+    {
+      "number": 5182,
+      "date": "2025-11-11"
+    },
+    {
+      "number": 5183,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5186,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5188,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5194,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5195,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5198,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5201,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5209,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5211,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5214,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5217,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5218,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5222,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5225,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5152,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5232,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5235,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5239,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5240,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5241,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5242,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5245,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5251,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5252,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5248,
+      "date": "2025-11-14"
+    },
+    {
+      "number": 5259,
+      "date": "2025-11-14"
+    },
+    {
+      "number": 5260,
+      "date": "2025-11-14"
+    },
+    {
+      "number": 5261,
+      "date": "2025-11-14"
+    },
+    {
+      "number": 5266,
+      "date": "2025-11-14"
+    },
+    {
+      "number": 5269,
+      "date": "2025-11-14"
+    },
+    {
+      "number": 5283,
+      "date": "2025-11-14"
+    },
+    {
+      "number": 5286,
+      "date": "2025-11-14"
+    },
+    {
+      "number": 5287,
+      "date": "2025-11-14"
+    },
+    {
+      "number": 5295,
+      "date": "2025-11-15"
+    },
+    {
+      "number": 5304,
+      "date": "2025-11-15"
+    },
+    {
+      "number": 5305,
+      "date": "2025-11-15"
+    },
+    {
+      "number": 5308,
+      "date": "2025-11-15"
+    },
+    {
+      "number": 5310,
+      "date": "2025-11-15"
+    }
+  ],
+  "generated_at": "2026-10-17T16:06:31.967901+00:00"
+}

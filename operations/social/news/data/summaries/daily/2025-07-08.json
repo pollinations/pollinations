@@ -2,8 +2,8 @@
   "date": "2025-07-08",
   "period_start": "2025-07-08",
   "period_end": "2025-07-08",
-  "title": "VOID.AI joins chat projects",
-  "summary": "A new chat-model option landed: VOID.AI is now available in chat projects.\n\nChat projects can now use VOID.AI, adding another model option through the same unified chat setup.",
+  "title": "VOID.AI joins the Chat projects list",
+  "summary": "A community addition: VOID.AI joined the Chat projects list.\n\nThe community project VOID.AI was added to the Chat projects list, with links to its app and source code. Its listing describes an AI mentor for code walkthroughs, writing help, and everyday advice.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-07-08"
     }
   ],
-  "generated_at": "2026-09-04T12:05:52.962910+00:00"
+  "generated_at": "2026-10-17T15:43:23.884348+00:00",
+  "highlights": [],
+  "changelog": []
 }

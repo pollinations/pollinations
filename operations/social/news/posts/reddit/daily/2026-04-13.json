@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-13",
+  "period_start": "2026-04-13",
+  "period_end": "2026-04-13",
+  "generated_at": "2026-04-14T06:34:18.792227+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-13/images/reddit.jpg"
+    }
+  ],
+  "title": "Dev update: RTX 4090 int4 fixes, codex cleanup, and showcase additions",
+  "text": "Just merged 9 PRs today. Mostly community showcase additions and some backend cleanup.\n\nOn the infrastructure side, we fixed the int4 model path for the RTX 4090 nodes and sorted out the https heartbeat for z-image. If you were seeing weird timeouts or dropped connections there, this should resolve it. We also stripped out the serviceId model lookups in codex, simplifying how the registry handles routing. Less magic in the routing layer is usually better for everyone's sanity.\n\nThe bulk of the updates were to the app showcase. We added a batch of new community projects: Overtli Studio Suite, StyleOps, The Institute of Everything, Pigment, PseudoWrite, Tawer_bot, and JFOAC. It is always interesting seeing how people wire up the endpoints.\n\nWe also spent some time fixing attribution in APPS.md. We restored the entries for tomdacatto's AI video generator and Polli-com (@abhi5hek1979), and corrected the owner of PollGen to @XHyperDEVX. The showcase is entirely community-driven, so keeping the credits accurate is a priority.\n\nCode and full commit history are open as always at github.com/pollinations/pollinations. Let us know if the 4090 nodes are behaving better for you now."
+}

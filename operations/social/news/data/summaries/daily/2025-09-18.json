@@ -2,8 +2,8 @@
   "date": "2025-09-18",
   "period_start": "2025-09-18",
   "period_end": "2025-09-18",
-  "title": "Prompt2Image joins the creative project shelf",
-  "summary": "A small garden update: Prompt2Image for VS Code is now easier for creative coders to discover.\n\nThe Prompt2Image VS Code extension is now listed among Pollinations creative projects, making one more way to turn prompts into pixels easier to find.",
+  "title": "Prompt2Image joins Creative Projects",
+  "summary": "A community-built VS Code image tool found a spot in Creative Projects.\n\nThe Creative Projects listing now includes @MaazS07’s Prompt2Image VS Code extension. It lets developers generate a project-ready image from a prompt in the Command Palette.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-09-18"
     }
   ],
-  "generated_at": "2026-09-04T12:32:41.154108+00:00"
+  "generated_at": "2026-10-17T15:46:27.660623+00:00",
+  "highlights": [],
+  "changelog": []
 }

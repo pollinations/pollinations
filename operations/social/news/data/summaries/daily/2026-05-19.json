@@ -24,13 +24,21 @@
     {
       "emoji": "🚀",
       "title": "Gemini 3.5 Flash",
-      "text": "Google's `gemini-3.5-flash` is now live on the [text endpoint](https://gen.pollinations.ai/v1/chat/completions). Fast, capable of reasoning, and ready for tool use and code execution."
+      "text": "Google's `gemini-3.5-flash` is now live on the [text endpoint](https://gen.pollinations.ai/v1/chat/completions). Fast, capable of reasoning, and ready for tool use and code execution.",
+      "prs": [
+        11181
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🌸",
       "title": "Duwit joins the showcase",
       "text": "Another community-built app hits the greenhouse directory. [Try it](https://duwit-45a37.web.app/)",
+      "prs": [
+        11175
+      ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

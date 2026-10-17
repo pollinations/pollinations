@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-10",
+  "period_start": "2026-04-10",
+  "period_end": "2026-04-10",
+  "generated_at": "2026-04-11T06:20:34.096177+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-10/images/reddit.jpg"
+    }
+  ],
+  "title": "Routed Gemini 2.5 Flash Lite to Vertex, added dynamic balance estimates",
+  "text": "Just merged three PRs today focusing on infrastructure reliability and some quality-of-life UI updates for pollinations.ai.\n\nFirst, we routed `gemini-2.5-flash-lite` to the Vertex global endpoint (PR 10118). If you were hitting timeouts or latency spikes with Flash Lite recently, this should stabilize it. The global endpoint handles our text generation load distribution much better. You can hit it via the standard text API by specifying the model.\n\nSecond, we added dynamic request estimates to the pricing table based on your actual balance (PR 10051). Previously, you had to look at your pollen count and mentally divide it by the cost per request to figure out what you had left. Now the dashboard reads your balance and outputs the exact number of images, text, or audio generations you can run. Small update, but it stops you from having to do mental math just to see if you have enough credits for a batch job.\n\nFinally, pushed a minor UI fix (PR 10109) to restore the website title sizes and align the subtitle patterns on the play interface. Things were looking slightly disjointed after the last layout update.\n\nAll updates are live. Code is open on [GitHub](https://github.com/pollinations/pollinations). Let me know if the Gemini routing feels faster or more stable in your specific regions."
+}

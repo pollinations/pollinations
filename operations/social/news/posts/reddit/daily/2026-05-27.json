@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-27",
+  "period_start": "2026-05-27",
+  "period_end": "2026-05-27",
+  "generated_at": "2026-05-28T07:15:38.850527+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-27/images/reddit.jpg"
+    }
+  ],
+  "title": "Opened 5 flagship models to free tier, rewrote API docs generator",
+  "text": "Merged 4 PRs today for pollinations.ai. Mostly focusing on model access and cleaning up some technical debt.\n\nFirst, we added 6 new models and opened 5 of them to the free tier. We also migrated midijourney to Azure and DeepSeek to Fireworks, which helped us drop the cost on embeddings. If you're building heavily on the free tier, this should give you more room to experiment without hitting walls.\n\nOn the infrastructure side, we completely rewrote the API docs generator using a custom markdown builder (PR #11302). Generating docs automatically is always a bit of a nightmare, but the new output is significantly cleaner to read. You can check the updated docs at github.com/pollinations/pollinations.\n\nA couple of smaller fixes:\n- Claude Opus (claude-opus-4-7) was throwing errors when receiving specific sampling parameters, so we're now stripping temperature, top_p, and top_k before passing the request.\n- We updated the developer earnings export to expose `baseline_price` and `cost_usd`. It's better to just show exactly what things cost and what the margins are so there's no guessing.\n\nAll code is open source. Let us know if anything breaks with the new model routing."
+}

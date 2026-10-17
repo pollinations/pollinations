@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-06-14",
+  "period_start": "2026-06-14",
+  "period_end": "2026-06-14",
+  "generated_at": "2026-06-15T07:52:14.393578+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-14/images/reddit.jpg"
+    }
+  ],
+  "title": "Routed models to Fireworks (512K context), added Qwen3.7 Plus, fixed embeds",
+  "text": "Merged 6 PRs today focusing on model routing and making embeds suck less.\n\nFirst, we moved our model routes to Fireworks (PR #11793). The immediate benefit here is that we now have Qwen3.7 Plus available, and we can support a 512K context window. If you've been hitting context limits on long document processing or massive prompts, this should give you some breathing room.\n\nSecond, we spent some time making the playground and websim actually embed-friendly. Previously, dropping these into an iframe was a gamble with heights and themes. PR #11791 and #11795 added proper embed height reporting so the iframe can size itself correctly instead of cutting off content. We also forced theme sharing across all *.pollinations.ai subdomains (#11800) and fixed the auth modal backdrop to match the app background (#11801). It finally feels native when you embed it elsewhere.\n\nFinally, fixed a weird edge case in Polly's text parsing (#11213). The LaTeX renderer was colliding with currency symbols, meaning the parser was occasionally swallowing dollar signs when trying to format math. We fixed the regex collision, patched a bold font key issue, and cleaned up history placeholders.\n\nAll code is open and available at https://github.com/pollinations/pollinations. Let us know if the 512K context breaks anything new."
+}

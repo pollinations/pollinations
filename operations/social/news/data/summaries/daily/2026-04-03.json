@@ -88,29 +88,49 @@
     {
       "emoji": "🚀",
       "title": "Gemini 3.1 Flash Lite",
-      "text": "Google's lightweight multimodal model is now live on the [text API](https://gen.pollinations.ai/v1/models). Fast processing and a 1M token context window for when you have entirely too much to say."
+      "text": "Google's lightweight multimodal model is now live on the [text API](https://gen.pollinations.ai/v1/models). Fast processing and a 1M token context window for when you have entirely too much to say.",
+      "prs": [
+        9885
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🔗",
       "title": "Programmatic API Keys",
-      "text": "You can now create, list, and revoke API keys directly via endpoints. Automate your access management instead of clicking around the [dashboard](https://enter.pollinations.ai)."
+      "text": "You can now create, list, and revoke API keys directly via endpoints. Automate your access management instead of clicking around the [dashboard](https://enter.pollinations.ai).",
+      "prs": [
+        9904
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🎨",
       "title": "SDK gets a paintbrush and a voice",
-      "text": "The [NPM SDK](https://www.npmjs.com/package/@pollinations_ai/sdk) now features dedicated methods for text-to-speech, music generation, and OpenAI-compatible image editing."
+      "text": "The [NPM SDK](https://www.npmjs.com/package/@pollinations_ai/sdk) now features dedicated methods for text-to-speech, music generation, and OpenAI-compatible image editing.",
+      "prs": [
+        9887,
+        9889
+      ],
+      "kind": "product"
     },
     {
       "emoji": "📱",
       "title": "Genie AI",
       "text": "A massive new community app featuring live web search, document analysis, and multimodal generation just dropped in the showcase. [Try it](https://cantalopapps.com/genie-ai)",
+      "prs": [
+        9908
+      ],
       "kind": "app"
     },
     {
       "emoji": "🤖",
       "title": "Discord bot family",
       "text": "We added a functional multi-model bot framework to the apps directory, complete with per-channel routing. Deploy your own AI staff. [View repos](https://github.com/pollinations/pollinations)",
-      "kind": "app"
+      "prs": [
+        9902
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

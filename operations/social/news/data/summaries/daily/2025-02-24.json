@@ -2,8 +2,8 @@
   "date": "2025-02-24",
   "period_start": "2025-02-24",
   "period_end": "2025-02-24",
-  "title": "The project garden got easier to explore",
-  "summary": "A garden-maintenance day: more projects to discover, clearer attribution, and sturdier text-generation plumbing.\n\nThe project section was cleaned up and the Gacha bot joined the growing list of things people are building with pollinations.\n\nAuthor links now use a new shared approach, making it easier to connect projects and contributions to their makers.\n\nServer updates, more reliable tests and API handling, and a DRY refactor of text generation modules tightened the machinery behind text.pollinations.ai. Less duplicated code, fewer opportunities for software to develop opinions.",
+  "title": "More ways to use text generation",
+  "summary": "Two text options and longer OpenAI requests led the day, alongside a new community bot and some careful work under the text API’s hood.\n\nAdded `openai-reasoning`, backed by o1-mini, and `hypnosis-tracy`, a self-help hypnosis persona. The OpenAI text request limit doubled from 256,000 to 512,000 message characters.\n\nGacha joined the Social Bots listings with chat, web search, and character-aware image generation. Project repository links now point directly to their repos, and authors can link to profiles beyond Discord.\n\nOpenAI-style responses preserve existing IDs and creation timestamps. Several text generators moved to a shared client, while SearchGPT gained support for an explicitly selected model instead of always forcing its default. The changes also adjusted Hugging Face request limits and expanded integration tests.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,5 +31,35 @@
       "date": "2025-02-24"
     }
   ],
-  "generated_at": "2026-09-04T14:00:37.487590+00:00"
+  "generated_at": "2026-10-17T15:34:24.132671+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Reasoning with o1-mini",
+      "text": "Use `openai-reasoning` for text requests routed to o1-mini. [Browse the model](https://enter.pollinations.ai/models?q=openai-reasoning).",
+      "prs": [
+        1229
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "Meet hypnosis-tracy",
+      "text": "Try `hypnosis-tracy`, a self-help hypnosis persona backed by the text generator. [Browse the model](https://enter.pollinations.ai/models?q=hypnosis-tracy).",
+      "prs": [
+        1229
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🚀",
+      "title": "Longer text requests",
+      "text": "The OpenAI text request limit doubled to 512,000 message characters, leaving more room for long conversations and inputs. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        1229
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

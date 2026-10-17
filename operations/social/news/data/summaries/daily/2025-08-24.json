@@ -2,18 +2,16 @@
   "date": "2025-08-24",
   "period_start": "2025-08-24",
   "period_end": "2025-08-24",
-  "title": "Claude can search the web and connect to Sequa",
-  "summary": "A small but useful expansion: Claude workflows can now browse the web and talk to Sequa AI.\n\nClaude workflows now have web search enabled and can integrate with Sequa AI through MCP, giving chats a route to current information and external tools rather than relying entirely on what the model remembers.",
-  "pr_count": 2,
+  "title": "A route into the codebase",
+  "summary": "A small community-maintenance day: clearer codebase guidance, more projects in the catalog, and a tidier Claude workflow.\n\nSequa AI's Pollinations codebase-knowledge MCP URL was added to the README, website news, and MCP guidance, making the connection easier for contributors to find.\n\nThe project catalog gained entries including websim-pollinations-ai and Visiora. The website also gained a projects anchor and listed NavyAI and Nebius as supporters.\n\nThe Claude workflow now permits `mcp_sequa_search_web` instead of `web_search`, and the separate automated Claude PR-review workflow was removed.",
+  "pr_count": 1,
   "prs": [
-    {
-      "number": 3836,
-      "date": "2025-08-24"
-    },
     {
       "number": 3841,
       "date": "2025-08-24"
     }
   ],
-  "generated_at": "2026-09-04T12:25:36.264029+00:00"
+  "generated_at": "2026-10-17T15:45:45.157412+00:00",
+  "highlights": [],
+  "changelog": []
 }

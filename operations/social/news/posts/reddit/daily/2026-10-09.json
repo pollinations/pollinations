@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-10-09",
+  "period_start": "2026-10-09",
+  "period_end": "2026-10-09",
+  "generated_at": "2026-10-10T06:30:11.746320+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-09/images/reddit.jpg"
+    }
+  ],
+  "title": "Audio models and agent fixes merged today",
+  "text": "Today’s recap covers 36 selected merged PRs, not every merge. The larger additions are [MAI-Voice-2.1 and Flash text-to-speech](https://github.com/pollinations/pollinations/pull/16800), with 97 voices each; [MAI Transcribe 2](https://github.com/pollinations/pollinations/pull/16798) for multilingual file transcription with timed segments; and a [separate model for streaming PCM transcription](https://github.com/pollinations/pollinations/pull/16802). GPT-6 Luna Decisions was also added for streaming text and JSON decisions. Decisions requests no longer have a local timeout, and a provider’s region rejection can now reach a model’s declared fallback.\n\nAgent sessions should waste less prompt cache as conversations grow. The Responses API now keeps [parallel Gemini tool calls separate and streams their arguments incrementally](https://github.com/pollinations/pollinations/pull/16864); `/v1/messages` accepts supported PDF document blocks. Canonical model IDs containing unencoded slashes resolve correctly. Image and video query options accept boolean-like values such as `1` and `yes`, but reject unknown values rather than guessing.\n\nA few less glamorous fixes matter too: SDK uploads retain a `File`’s name, usage CSV exports return text instead of being parsed as JSON, and Windows audio playback handles relative paths. Docs now spell out model limits, hourly buckets in daily usage responses, and subtitle-format support. Four community apps joined the catalog, with screenshots added to 31 listings that lacked them.\n\nThe [repo and PR history](https://github.com/pollinations/pollinations/pulls) have the details. If you’re using Gemini tools or the new transcription models, edge-case reports are useful."
+}

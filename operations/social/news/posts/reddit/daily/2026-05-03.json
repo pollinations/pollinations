@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-03",
+  "period_start": "2026-05-03",
+  "period_end": "2026-05-03",
+  "generated_at": "2026-05-04T06:58:28.152838+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-03/images/reddit.jpg"
+    }
+  ],
+  "title": "Added Llama vision models, opt-in generation safety, and fixed audio routing",
+  "text": "Merged 7 PRs today. The main updates are Llama models with vision support and some structural fixes to the API endpoints.\n\nFirst, we added Meta's Llama models to the codex (PR #10640). You can now pass images to them through the standard endpoints.\n\nWe also rolled out opt-in safety checking for generation requests (PR #10627). If you're building an app for public use and want guardrails, you can toggle this on. We immediately ran into an edge case where oversized inputs were breaking the safety scanner, so we patched it to scan the tail of the input instead (PR #10645).\n\nOn the audio side, we fixed a routing issue where STT (speech-to-text) models were slipping through to TTS (text-to-speech) endpoints (PR #10651). The API now correctly rejects them before trying to process. Less silent failing, more predictable errors.\n\nThree new community apps were added to the showcase today: Lkalma, Storyframe Studio, and the Pollinations AIGC Control Console. If you build something using the infrastructure, open a PR to add it to the list.\n\nCode, docs, and the full changelog are open as always at github.com/pollinations/pollinations."
+}

@@ -28,7 +28,12 @@
     {
       "emoji": "🦞",
       "title": "pollinations.ai × OpenClaw",
-      "text": "Power your [OpenClaw](https://openclaw.ai) agent with 25+ AI models — Kimi K2.5, DeepSeek, Claude, Gemini & more. One script, free credits, 30 seconds. [Get started →](https://openclaw.pollinations.ai)"
+      "text": "Power your [OpenClaw](https://openclaw.ai) agent with 25+ AI models — Kimi K2.5, DeepSeek, Claude, Gemini & more. One script, free credits, 30 seconds. [Get started →](https://openclaw.pollinations.ai)",
+      "prs": [
+        8249
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

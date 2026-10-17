@@ -2,9 +2,9 @@
   "date": "2025-12-15",
   "period_start": "2025-12-15",
   "period_end": "2025-12-15",
-  "title": "More visibility and control around API usage",
-  "summary": "A garden-maintenance day: clearer usage tracking, better model controls, repaired app deployments, and fresh community signage.\n\nA new /api/usage endpoint and model-level usage signals give builders clearer ways to track consumption, while pending-spend tracking and data-access repairs make those numbers behave more reliably. The pricing UI also got a clarity pass, because billing information should not require archaeology.\n\nSeedance-Pro now accepts an aspect-ratio parameter for more intentional video framing. API keys can also be scoped by model permissions, giving apps a cleaner way to expose exactly the models they intend to use.\n\nThe app collection was cleaned up and its Hacktoberfest-era structure renamed to simply apps. Model Monitor deployment paths, production-branch publishing, and SPA redirects were fixed, while the changelog generator joined the app registry. Less mystery-meat routing, more working tools.",
-  "pr_count": 18,
+  "title": "More ways to see where Pollen goes",
+  "summary": "Usage exports and model-restricted keys landed alongside clearer Pollen balances, a Seedance video fix, and some care for community apps.\n\nAdded `/api/usage` with JSON and CSV exports, timestamp pagination, and a dashboard CSV download. The dashboard now shows recent spend pending against the Pollen balance, while balance checks account for that spend before allowing more requests. Image-pricing labels also make flat per-image costs easier to distinguish from prompt-dependent token costs. The usage work also added a separate frontend for generation, model discovery, API docs, and app browsing.\n\nKey settings now let users choose which text, image, and video models a key may access. Generation checks those permissions after resolving model aliases; unrestricted keys keep access to all models.\n\nSeedance Pro now passes `aspectRatio` through to video generation instead of ignoring it, including portrait requests such as 9:16. Requests without a ratio default to 16:9.",
+  "pr_count": 13,
   "prs": [
     {
       "number": 5740,
@@ -39,23 +39,7 @@
       "date": "2025-12-15"
     },
     {
-      "number": 6026,
-      "date": "2025-12-15"
-    },
-    {
       "number": 6030,
-      "date": "2025-12-15"
-    },
-    {
-      "number": 6031,
-      "date": "2025-12-15"
-    },
-    {
-      "number": 6033,
-      "date": "2025-12-15"
-    },
-    {
-      "number": 6043,
       "date": "2025-12-15"
     },
     {
@@ -67,10 +51,6 @@
       "date": "2025-12-15"
     },
     {
-      "number": 6052,
-      "date": "2025-12-15"
-    },
-    {
       "number": 6053,
       "date": "2025-12-15"
     },
@@ -79,27 +59,35 @@
       "date": "2025-12-15"
     }
   ],
-  "generated_at": "2026-09-04T12:33:23.352396+00:00",
+  "generated_at": "2026-10-17T15:55:36.632866+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "GPT-5.2 & Gemini Tools",
-      "text": "Upgraded `openai-large` to GPT-5.2 and enabled Google Search & Code Execution by default for Gemini models."
+      "emoji": "🎯",
+      "title": "Export your usage",
+      "text": "Inspect usage through `/api/usage`, paginate by timestamp, or export JSON or CSV. The dashboard has a CSV download too. [API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        5869
+      ],
+      "kind": "api"
     },
     {
-      "emoji": "🎨",
-      "title": "Face-Aware Upscaling",
-      "text": "Enhanced image generation with GFPGAN face restoration and MediaPipe detection for sharper portraits."
+      "emoji": "🔗",
+      "title": "Choose models per API key",
+      "text": "Set which text, image, and video models an API key can use. Requests for models outside its allowed list are rejected, even when they use an alias. [Manage keys](https://enter.pollinations.ai/keys).",
+      "prs": [
+        5978
+      ],
+      "kind": "api"
     },
     {
       "emoji": "✨",
-      "title": "New Website Experience",
-      "text": "Complete rebuild of [hello.pollinations.ai](https://hello.pollinations.ai) with AI-powered theming and dynamic 3D backgrounds."
-    },
-    {
-      "emoji": "🚫",
-      "title": "No More Watermarks",
-      "text": "Removed the pollinations.ai logo from all generated images—outputs are now clean by default."
+      "title": "A new place to explore",
+      "text": "A separate frontend brings a generation playground, model discovery, API documentation, an app directory, and a theme editor together.",
+      "prs": [
+        5869
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

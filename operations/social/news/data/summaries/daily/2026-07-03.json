@@ -25,7 +25,11 @@
       "emoji": "🤖",
       "title": "Flow Linnom",
       "text": "A new multi-model chat interface joins the community directory. For when querying just one LLM isn't enough. [Try it](https://flow.linnom.com)",
+      "prs": [
+        12070
+      ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

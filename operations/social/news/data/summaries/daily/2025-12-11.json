@@ -2,9 +2,9 @@
   "date": "2025-12-11",
   "period_start": "2025-12-11",
   "period_end": "2025-12-11",
-  "title": "The website got a more adaptive coat of paint",
-  "summary": "A garden-maintenance day: a more adaptive site, smarter app curation, and refreshed service plumbing.\n\npollinations.ai was refactored with AI theming, while the Enter dashboard received cleaner header controls and banner styling. The front door and the control room now look a little more like they belong to the same organism.\n\nApp submissions now get smarter review handling, Robatika joined the creative app ecosystem, and the daily highlights and README news were refreshed so people can find what the community has been making.\n\nAPI credentials for chat.polli and the Pollinations service were updated to keep the plumbing current behind the endpoints people use.",
-  "pr_count": 8,
+  "title": "A rebuilt home for making and exploring",
+  "summary": "A rebuilt playground led the day, with community listings, news updates, and smaller key and dashboard fixes alongside it.\n\nThe hello.pollinations.ai rebuild added a responsive playground for image and text generation, vision-capable model selection, interactive API examples, community creations, and themed visuals. Prompt-driven theme-generation controls remain disabled in production.\n\nRobatika joined the Creative projects directory as a Pollinations-powered chat app. The highlights file and README also caught up with December 7 news; those edits document earlier model and API changes rather than introducing them.\n\nEnter’s header buttons no longer wrap, and its notices have clearer placement and styling. The Hacktoberfest chat app’s fallback key was changed to a publishable key for browser requests.",
+  "pr_count": 6,
   "prs": [
     {
       "number": 5552,
@@ -19,15 +19,7 @@
       "date": "2025-12-11"
     },
     {
-      "number": 5870,
-      "date": "2025-12-11"
-    },
-    {
       "number": 5872,
-      "date": "2025-12-11"
-    },
-    {
-      "number": 5873,
       "date": "2025-12-11"
     },
     {
@@ -39,5 +31,17 @@
       "date": "2025-12-11"
     }
   ],
-  "generated_at": "2026-09-04T12:30:17.181830+00:00"
+  "generated_at": "2026-10-17T15:54:49.605244+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "A new place to play",
+      "text": "The rebuilt site brings image and text generation, vision-capable model selection, interactive API examples, and community creations together.",
+      "prs": [
+        5552
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

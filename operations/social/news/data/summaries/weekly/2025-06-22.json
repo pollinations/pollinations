@@ -1,0 +1,31 @@
+{
+  "date": "2025-06-22",
+  "period_start": "2025-06-15",
+  "period_end": "2025-06-21",
+  "title": "Text requests got a quieter tune-up",
+  "summary": "A week of making the text API and model catalog easier to use, while giving a few inventive community projects room to grow.\n\nRequest handling was adjusted for `gpt-4o-mini-search-preview` and Azure Grok. Optional performance tracking records timing, token usage and outcomes without message content, and tracking failures do not interrupt generation. Telemetry also retains complete usage data, including cached-token counts.\n\n`GET /models` no longer returns pricing fields. It groups non-community models before community models and sorts each group alphabetically. The catalog also assigns `openai-fast` (GPT-4.1 Nano) to the anonymous tier and refreshes OpenAI descriptions and provider labels.\n\nThe project lists gained two Roblox games built around talking to AI characters, plus @Colin-Zero’s Celebrity AI Image Generator. The directory also picked up corrected links and lost some duplicate entries. Even an escape room needs housekeeping.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 2425,
+      "date": "2025-06-15"
+    },
+    {
+      "number": 2502,
+      "date": "2025-06-16"
+    },
+    {
+      "number": 2512,
+      "date": "2025-06-16"
+    },
+    {
+      "number": 2517,
+      "date": "2025-06-18"
+    },
+    {
+      "number": 2544,
+      "date": "2025-06-18"
+    }
+  ],
+  "generated_at": "2026-10-17T16:05:01.771804+00:00"
+}

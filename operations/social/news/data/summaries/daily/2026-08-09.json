@@ -37,17 +37,30 @@
       "emoji": "🎨",
       "title": "Stoicky joins the app garden",
       "text": "An AI video-automation tool for faceless creators, built with Pollinations image and text inference. [Try it](https://stoicky.vercel.app)",
+      "prs": [
+        13213
+      ],
       "kind": "app"
     },
     {
       "emoji": "🔗",
       "title": "Model Monitor gets two gardens",
-      "text": "Inspect Official and Community models separately, with modality health, outage badges, and no-traffic models scoped to the view. [Check the monitor](https://model-monitor.pollinations.ai)"
+      "text": "Inspect Official and Community models separately, with modality health, outage badges, and no-traffic models scoped to the view. [Check the monitor](https://model-monitor.pollinations.ai)",
+      "prs": [
+        13214
+      ],
+      "kind": "product"
     },
     {
       "emoji": "✨",
       "title": "Image queues found another door",
-      "text": "FLUX and DreamShaper requests can retry another worker when one is full or unreachable—less waiting, fewer dead ends."
+      "text": "FLUX and DreamShaper requests can retry another worker when one is full or unreachable—less waiting, fewer dead ends.",
+      "prs": [
+        13218,
+        13221
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2025-02-05",
   "period_start": "2025-02-05",
   "period_end": "2025-02-05",
-  "title": "Gemini Flash 2.0 and thinking modes join the text lineup",
-  "summary": "A small discovery-day update: new Gemini text capabilities, clearer project news, and Titan-GPT in the social bot garden.\n\nText Pollinations now highlights Gemini Flash 2.0 and its thinking capabilities, with the news and README updated so the growing model menu is easier to find.\n\nTitan-GPT has been added to the Social Bots section, giving visitors one more example of what people are building on the infrastructure.",
+  "title": "Two Gemini options for the text API",
+  "summary": "Two Gemini models joined the text API, while Pollinations.DIY and a community Telegram bot found their way into the project listings.\n\nThe text API added `gemini` for Gemini 2.0 Flash and `gemini-thinking` for Gemini 2.0 Flash Thinking. Requests can pass through temperature and JSON-mode options.\n\nPollinations.DIY, a browser coding environment built on bolt.diy with Pollinations services, was added to the website and README. The API docs also gained image and text SSE feed examples, while the news section was reorganized.\n\nTitan-GPT was added to the website and README Social Bots lists. The free Telegram bot offers Pollinations-powered image and text generation.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,5 +19,26 @@
       "date": "2025-02-05"
     }
   ],
-  "generated_at": "2026-09-04T13:36:30.030765+00:00"
+  "generated_at": "2026-10-17T15:33:29.869957+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Gemini 2.0 Flash",
+      "text": "Use `gemini` through the text API, with temperature and JSON-mode options. [Browse the model](https://enter.pollinations.ai/models?q=gemini).",
+      "prs": [
+        1152
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "💡",
+      "title": "Gemini Flash Thinking",
+      "text": "Use `gemini-thinking` for Gemini 2.0 Flash Thinking through the text API. [Browse the model](https://enter.pollinations.ai/models?q=gemini-thinking).",
+      "prs": [
+        1152
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

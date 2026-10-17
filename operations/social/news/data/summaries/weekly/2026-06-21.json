@@ -1,0 +1,199 @@
+{
+  "date": "2026-06-21",
+  "period_start": "2026-06-14",
+  "period_end": "2026-06-20",
+  "title": "Bigger contexts, newer models, more image choices",
+  "summary": "More room for big prompts and better image generation, backed by routing fixes and clearer ways to explore the platform.\n\nThe `glm` slug moved to GLM-5.2 with a 1M-token context window and half the previous Pollen cost. MiniMax M3 gained a 512K-token window, Qwen Large moved to Qwen3.7 Plus, and three Ideogram 4.0 variants joined the image API. Clean slugs such as `openai-large` and `claude-large` now follow newer models, while versioned names remain available.\n\nImage requests now favor GPUs with lower recent latency instead of being spread uniformly, with latency tracking isolated to keep the weights stable. Text routing also changed across Fireworks, Gemini, and Claude; after proxy artifacts appeared in Gemini completions, its connection was returned to direct Vertex. The goal is fewer timeouts and fewer surprises in the response.\n\nFive read-only stats endpoints expose platform health, weekly app activity, and the community app directory. The OpenAPI schema gained the conventional `/openapi.json` path, the API reference was refreshed, and public app metrics received their daily update. Less guesswork for anyone building against the API.\n\nA quests dashboard gives contributors a place to find tasks, track progress, and collect Pollen. Transaction history makes recent Pollen spending visible. For app builders, the React SDK gained an EmbedBridge for trusted-host iframe handshakes, key sharing, and theme syncing; new app keys also pre-fill a localhost OAuth callback.",
+  "pr_count": 47,
+  "prs": [
+    {
+      "number": 11213,
+      "date": "2026-06-14"
+    },
+    {
+      "number": 11791,
+      "date": "2026-06-14"
+    },
+    {
+      "number": 11793,
+      "date": "2026-06-14"
+    },
+    {
+      "number": 11795,
+      "date": "2026-06-14"
+    },
+    {
+      "number": 11800,
+      "date": "2026-06-14"
+    },
+    {
+      "number": 11801,
+      "date": "2026-06-14"
+    },
+    {
+      "number": 11807,
+      "date": "2026-06-15"
+    },
+    {
+      "number": 11810,
+      "date": "2026-06-15"
+    },
+    {
+      "number": 11816,
+      "date": "2026-06-15"
+    },
+    {
+      "number": 11609,
+      "date": "2026-06-16"
+    },
+    {
+      "number": 11828,
+      "date": "2026-06-16"
+    },
+    {
+      "number": 11835,
+      "date": "2026-06-16"
+    },
+    {
+      "number": 11836,
+      "date": "2026-06-16"
+    },
+    {
+      "number": 11711,
+      "date": "2026-06-17"
+    },
+    {
+      "number": 11846,
+      "date": "2026-06-17"
+    },
+    {
+      "number": 11855,
+      "date": "2026-06-17"
+    },
+    {
+      "number": 11869,
+      "date": "2026-06-17"
+    },
+    {
+      "number": 11870,
+      "date": "2026-06-17"
+    },
+    {
+      "number": 11871,
+      "date": "2026-06-17"
+    },
+    {
+      "number": 11873,
+      "date": "2026-06-17"
+    },
+    {
+      "number": 11875,
+      "date": "2026-06-17"
+    },
+    {
+      "number": 11876,
+      "date": "2026-06-17"
+    },
+    {
+      "number": 11643,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11872,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11880,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11881,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11882,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11885,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11886,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11888,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11889,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11890,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11891,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11901,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11903,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11904,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11905,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11907,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11909,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11916,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11915,
+      "date": "2026-06-19"
+    },
+    {
+      "number": 11918,
+      "date": "2026-06-19"
+    },
+    {
+      "number": 11921,
+      "date": "2026-06-19"
+    },
+    {
+      "number": 11923,
+      "date": "2026-06-19"
+    },
+    {
+      "number": 11925,
+      "date": "2026-06-19"
+    },
+    {
+      "number": 11926,
+      "date": "2026-06-19"
+    },
+    {
+      "number": 11927,
+      "date": "2026-06-20"
+    }
+  ],
+  "generated_at": "2026-10-17T16:07:38.560159+00:00"
+}

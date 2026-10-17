@@ -2,8 +2,8 @@
   "date": "2025-03-31",
   "period_start": "2025-03-31",
   "period_end": "2025-03-31",
-  "title": "The project garden gets six new entries",
-  "summary": "A community roll call: six more projects showing pollinations growing through art tools, bots, WordPress, mobile, and audio.\n\nThe community project lists now feature Elixpo Art, LAHGen, the AlphaLLM Discord bot, a WordPress AI Vision Block, a Flutter/Dart SDK, and Podcast #1500. Images, chat, WordPress, mobile, and a podcast: the usual tidy definition of \"API user\" continues to fail.",
+  "title": "More ways to make images",
+  "summary": "Six community projects joined the lists, from image-making tools and a Flutter SDK to a podcast where the models do the talking.\n\nThe creative-app showcase added Ayushman Bhattacharya’s Elixpo Art, which supports aspect ratios and reference images, and LAHGen, a text-to-image app with multiple artistic styles.\n\nThe project lists added mahmood-asadi’s WordPress AI Vision Block, which saves generated images to the Media Library with a post, and @Meenapintu’s Flutter/Dart SDK for text, image and audio generation.\n\nThe directory added @the_yerminator’s AlphaLLM Discord bot for conversation-aware text, images and voice, alongside @brain.diver’s Podcast #1500, where LLMs discuss topics including vibe coding. Project-submission instructions also gained an attribution requirement.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,5 +31,7 @@
       "date": "2025-03-31"
     }
   ],
-  "generated_at": "2026-09-04T12:19:39.724551+00:00"
+  "generated_at": "2026-10-17T15:36:49.195277+00:00",
+  "highlights": [],
+  "changelog": []
 }

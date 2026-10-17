@@ -1,0 +1,19 @@
+{
+  "date": "2025-08-31",
+  "period_start": "2025-08-24",
+  "period_end": "2025-08-30",
+  "title": "Text completions gained a tier label",
+  "summary": "A quiet week of making text usage easier to understand and the Pollinations ecosystem easier to explore.\n\nText completions now include `user_tier`, set to the authenticated tier or `anonymous`. Text event tracking records it too, so usage can be broken down by tier.\n\nSequa AI's codebase-knowledge MCP URL was added to the README, website news, and MCP guidance. The Claude workflow now permits `mcp_sequa_search_web`, and the separate automated Claude PR-review workflow was removed.\n\nThe catalog added projects including websim-pollinations-ai and Visiora. The website gained a projects anchor and listed NavyAI and Nebius as supporters.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 3841,
+      "date": "2025-08-24"
+    },
+    {
+      "number": 3876,
+      "date": "2025-08-27"
+    }
+  ],
+  "generated_at": "2026-10-17T16:05:44.166023+00:00"
+}

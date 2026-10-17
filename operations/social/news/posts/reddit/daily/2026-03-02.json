@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-03-02",
+  "period_start": "2026-03-02",
+  "period_end": "2026-03-02",
+  "generated_at": "2026-03-18T22:02:15.687943+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-02/images/reddit.jpg"
+    }
+  ],
+  "title": "Update: Removing default system prompts, fixing Vertex schemas, and 17 merged PRs",
+  "text": "Merged 17 PRs today. The bulk of it is a harvest of community apps, but we shipped a few core fixes that should make API interactions less annoying.\n\nFirst, we removed default system prompts from general-purpose models (#8536). We were previously injecting them by default, which meant models weren't behaving exactly like their raw counterparts. That's gone. If you call a model now, you get the base model behavior unless you explicitly pass a system prompt.\n\nWe also fixed a classic JavaScript moment where vision and multimodal messages were returning [object Object] instead of actual data (#8729). That's patched. Alongside that, we added an allowlist to sanitize tool schemas for Vertex AI compatibility (#8621) because Vertex was being incredibly strict about schema formats and dropping requests.\n\nOn the UI front, the playground model selector now shows human-readable display names instead of raw model string IDs (#8450). Small quality of life update, but it saves you from having to memorize routing strings.\n\nFinally, we merged 13 new community apps into the ecosystem across the Learn, Chat, Video, and Games categories. If you submitted one, your tier should automatically update to Flower (10 pollen/day).\n\nCode and docs: github.com/pollinations/pollinations"
+}

@@ -103,5 +103,53 @@
       "date": "2026-08-08"
     }
   ],
-  "generated_at": "2026-09-04T11:51:19.602702+00:00"
+  "generated_at": "2026-09-04T11:51:19.602702+00:00",
+  "highlights": [
+    {
+      "emoji": "🎵",
+      "title": "Make songs with Silenos",
+      "text": "Silenos Música connects Acestep and ElevenLabs to help you create songs and sounds. [Try it](https://www.silenos.es/musica).",
+      "prs": [
+        13190
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Paint cityscapes in GIMP",
+      "text": "Orange City is a GIMP 3.2 plugin for stylized oil-painted cityscapes with AI-generated skies. [View repo](https://github.com/GermanIllan/orange_city).",
+      "prs": [
+        13199
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "💡",
+      "title": "Study with Studdy",
+      "text": "Generate personalized study guides, interactive flashcards, and quizzes for any topic. [Try it](https://bharkodat-ux.github.io/studdy).",
+      "prs": [
+        13207
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Build stories together",
+      "text": "Archetype is an Android storytelling game for 2–4 players, with AI-generated story sparks powered by the Pollinations text API. [View repo](https://github.com/xnet-admin-1/archetype-game).",
+      "prs": [
+        13195
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Try FluxFlow CLI",
+      "text": "Use a CLI-based AI agent for coding, documentation, creative work, and Pollinations-powered image generation. [Try it](https://www.npmjs.com/package/fluxflow-cli).",
+      "prs": [
+        13202
+      ],
+      "kind": "app"
+    }
+  ],
+  "changelog": []
 }

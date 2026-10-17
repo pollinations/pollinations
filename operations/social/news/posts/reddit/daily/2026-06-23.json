@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-06-23",
+  "period_start": "2026-06-23",
+  "period_end": "2026-06-23",
+  "generated_at": "2026-06-24T07:07:47.585940+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-23/images/reddit.jpg"
+    }
+  ],
+  "title": "Shipped Stable Audio 3 and Inception Mercury, plus mobile UI fixes",
+  "text": "Merged a few pull requests today updating the audio and text models available on the API.\n\nFirst, we swapped out Stable Audio 2.5 for Stable Audio 3. We added it via Stability's official API (#11912) and also wired up the Medium variant via fal (#11961). If you're generating sound effects or tracks, the endpoint is the same, but the output quality is noticeably better now. We also fixed the pricing card so it correctly shows the flat-rate per generation for Stable Audio.\n\nOn the text side, we added Inception Mercury to the roster (#11964). It's available through the standard text endpoint if you want to test it against the usual suspects like Llama or Mistral.\n\nFinally, we did some cleanup on the model catalog UI (#11967). The mobile view was getting a bit cramped with the growing list of models, so that's been padded and realigned to actually be readable on a phone.\n\nEverything is live on the free tier. You can hit the endpoints directly or check the repo if you want to see how we're routing the new models: github.com/pollinations/pollinations"
+}

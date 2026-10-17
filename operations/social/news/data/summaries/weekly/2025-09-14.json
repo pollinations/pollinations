@@ -1,0 +1,39 @@
+{
+  "date": "2025-09-14",
+  "period_start": "2025-09-07",
+  "period_end": "2025-09-13",
+  "title": "Enter became a home for API access",
+  "summary": "Enter gained a place to manage API access while model routing and request limits became more explicit.\n\nGitHub sign-in, API key controls, and a customer meter balance view give people one place to manage their access. The work also added the customer, proxy, and generation-event plumbing behind those flows.\n\n`openai-large` now resolves to GPT-5 Nano; GPT-4.1 and its alias left the available models list, while `openai-fast` remains on GPT-4.1 Nano. Backend-model-ID aliases were added for Mistral Small 3.1 24B and DeepSeek R1 0528. Mistral Small 2402 Romance Companion became visible in the catalog, moved to the flower tier, and gained two aliases.\n\nText requests now respect each model’s configured `max_tokens` cap. Image requests without dimensions use `sideLength` for both sides; Flux’s maximum side length changed from 1280 to 768, and Azure GPT-4.1’s token settings changed from 1024 to 512.\n\nCapyUniverse – CapyIMG, a Portuguese-language browser image generator, was added to Creative Projects. It offers prompt and exclusion fields, size and aspect-ratio controls, and a choice of one to four images.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 3676,
+      "date": "2025-09-08"
+    },
+    {
+      "number": 3977,
+      "date": "2025-09-10"
+    },
+    {
+      "number": 4008,
+      "date": "2025-09-10"
+    },
+    {
+      "number": 4012,
+      "date": "2025-09-10"
+    },
+    {
+      "number": 4015,
+      "date": "2025-09-10"
+    },
+    {
+      "number": 4018,
+      "date": "2025-09-10"
+    },
+    {
+      "number": 4013,
+      "date": "2025-09-11"
+    }
+  ],
+  "generated_at": "2026-10-17T16:05:52.500194+00:00"
+}

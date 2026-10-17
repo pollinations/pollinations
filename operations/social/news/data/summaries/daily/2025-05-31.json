@@ -2,8 +2,8 @@
   "date": "2025-05-31",
   "period_start": "2025-05-31",
   "period_end": "2025-05-31",
-  "title": "Prompt enhancement speaks Chinese again",
-  "summary": "A garden-maintenance day: multilingual prompts fixed, audio docs clarified, and two community projects added to the map.\n\nThe Chinese translation path in the prompt enhancer now sends its authentication token correctly, restoring a small but important piece of multilingual prompt polish.\n\nThe speech-to-text documentation was corrected to describe the formats the service really supports. Fewer mystery uploads, fewer arguments with file extensions.\n\nLLM7.io joined the LLM integrations listing and Comeback AI was added to the project list, making the growing collection of things built around pollinations a little easier to find.",
+  "title": "More reliable image prompts across languages",
+  "summary": "Image prompt translation got a reliability fix, two community projects joined the lists, and speech-to-text docs got more precise.\n\nThe image prompt enhancer was updated to reduce rate-limited requests that could leave Chinese and other non-English prompts poorly translated.\n\nLLM7.io joined the LLM Integrations list; it uses Pollinations text generation for an open multimodal platform. Comeback AI joined the project showcase with persona-based replies and generated speech.\n\nPython and JavaScript examples now specify MP3 and WAV, rather than suggesting other audio formats are supported.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,5 +23,7 @@
       "date": "2025-05-31"
     }
   ],
-  "generated_at": "2026-09-04T12:54:22.994137+00:00"
+  "generated_at": "2026-10-17T15:41:24.103404+00:00",
+  "highlights": [],
+  "changelog": []
 }

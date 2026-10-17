@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-02-14",
+  "period_start": "2026-02-14",
+  "period_end": "2026-02-14",
+  "generated_at": "2026-03-18T21:36:09.859613+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-14/images/reddit.jpg"
+    }
+  ],
+  "title": "Grok image-to-video support, GPT edits fixed, and Wan video fallbacks",
+  "text": "Merged four PRs today to unbreak a few endpoints and expand the video capabilities.\n\nFirst, Grok-video now accepts image-to-video inputs. If you were trying to pass an initial frame before and getting rejected, the routing is fixed and it should process normally.\n\nWe also added an Alibaba DashScope fallback for the Wan video model. Wan has been getting hammered lately, so this should significantly reduce the timeout errors if you're hitting the API for video generation.\n\nOn the image side, GPT image editing (/images/edits) was quietly failing because of a stale API version. We bumped the version, so sending masks and prompts through the GPT endpoint actually works again instead of silently dropping your request into the void.\n\nFinally, the OpenClaw documentation has been generalized and moved to a permanent home in the news and apps section to make it easier to reference.\n\nEverything is live on the API. You can check the repo at github.com/pollinations/pollinations to see the implementation details, or open an issue when you find whatever we inevitably break next."
+}

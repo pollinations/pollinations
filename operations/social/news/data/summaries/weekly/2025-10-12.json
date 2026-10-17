@@ -1,0 +1,195 @@
+{
+  "date": "2025-10-12",
+  "period_start": "2025-10-05",
+  "period_end": "2025-10-11",
+  "title": "Image generation found new routes",
+  "summary": "Model routes and accounting got a careful tune-up while image tools, Enter, and community apps became more useful.\n\n`gptimage` returned for generation and editing, then gained separate model routes for those tasks. Kontext returned to the seed-tier image configuration and moved to a route supporting generation and input-image edits. Nano Banana joined the nectar-tier lineup, and the image API gained `/about` for model details. A busy week for pixels.\n\n`openai-large` switched to GPT-5 Chat without its former 20,000-character input cap. `deepseek` moved to V3.1 with hybrid reasoning, and `mistral` moved to Small 3.2; existing names remain aliases where noted. Alias resolution also became more consistent across pricing, free-usage checks, and the shared text registry.\n\nEnter’s FAQ expanded from the dashboard to sign-in, with clearer explanations of grants, model access, wallets, Quests, and image usage per Pollen. Balances, API keys, and account layouts got readability and mobile improvements. Generation tracking also began using the authenticated user’s tier; that change does not add tier-based usage enforcement.\n\n`openai-audio` gained higher input and completion limits. Registered wildcard referrers can authenticate subdomains without registering each one, while exact matches retain priority and parent domains still need their own match. The docs also gained GPT-5 parameter and verbatim TTS guidance.",
+  "pr_count": 46,
+  "prs": [
+    {
+      "number": 2666,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4276,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4313,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4333,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4344,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4346,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4347,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4348,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4353,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4354,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4356,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4250,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4392,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4394,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4395,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4396,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4397,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4398,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4405,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4411,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4413,
+      "date": "2025-10-08"
+    },
+    {
+      "number": 4420,
+      "date": "2025-10-08"
+    },
+    {
+      "number": 4438,
+      "date": "2025-10-08"
+    },
+    {
+      "number": 4441,
+      "date": "2025-10-08"
+    },
+    {
+      "number": 4414,
+      "date": "2025-10-09"
+    },
+    {
+      "number": 4442,
+      "date": "2025-10-09"
+    },
+    {
+      "number": 4443,
+      "date": "2025-10-09"
+    },
+    {
+      "number": 4451,
+      "date": "2025-10-09"
+    },
+    {
+      "number": 4400,
+      "date": "2025-10-10"
+    },
+    {
+      "number": 4463,
+      "date": "2025-10-10"
+    },
+    {
+      "number": 4466,
+      "date": "2025-10-10"
+    },
+    {
+      "number": 4470,
+      "date": "2025-10-10"
+    },
+    {
+      "number": 4471,
+      "date": "2025-10-10"
+    },
+    {
+      "number": 4475,
+      "date": "2025-10-10"
+    },
+    {
+      "number": 4181,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4458,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4484,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4486,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4487,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4488,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4489,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4496,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4498,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4501,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4503,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4504,
+      "date": "2025-10-11"
+    }
+  ],
+  "generated_at": "2026-10-17T16:06:13.781782+00:00"
+}

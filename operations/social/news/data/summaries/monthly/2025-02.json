@@ -2,9 +2,9 @@
   "date": "2025-02-28",
   "period_start": "2025-02-01",
   "period_end": "2025-02-28",
-  "title": "The project garden kept growing",
-  "summary": "February made the growing Pollinations ecosystem easier to discover while giving the text API more capable, private, and reliable ways to work.\n\nA steady run of community apps joined or refreshed the project directory, from Deep Saga and Abyss Ascending to Pal Chat, Musify, Gacha bot, image tools, bots, and model pickers. Submission dates and shared author links also made the directory a better record of who is building what.\n\nThe text API gained streaming responses and function calling, followed by OpenAI-compatible and SSE formatting fixes. Portkey took over gateway duties, while model handling and text-generation modules were simplified underneath.\n\nGemini Flash 2.0 and its thinking capabilities were surfaced in Text Pollinations, Hormoz 8B joined the lineup, and the docs began clearly marking which text models accept image input. Less model-menu archaeology for builders.\n\nLlamaGuard NSFW detection arrived, OpenAI-compatible requests became private by default, and clients gained explicit private-feed controls. Referral tracking, refreshed sharing assets, analytics events, clearer terms, and quieter infrastructure work helped keep the surrounding system legible.",
-  "pr_count": 46,
+  "title": "More capable text requests",
+  "summary": "February broadened what people could build with the text API while making requests more private and bringing more community projects into view.\n\nGemini, reasoning, and other model options joined the text API. Function calling and OpenAI-style streaming gave clients more ways to work with responses; follow-up changes tightened stream formatting and errors.\n\nText requests gained a private option, and OpenAI-compatible requests became private by default. Image prompts gained LlamaGuard checks, feed events gained maturity data, and the turbo image model gained prompt enhancement.\n\nNew listings ranged from text adventures and chat apps to coding tools, image generators, bots, a model comparison tool, and Musify. The showcase increasingly reflected what people were already building with the API.\n\nVision and feed documentation became more specific, project submission copy got simpler, and share previews gained a banner that link previews can resolve. Smaller website cleanups removed unused imagery and improved project links.",
+  "pr_count": 44,
   "prs": [
     {
       "number": 1128,
@@ -44,10 +44,6 @@
     },
     {
       "number": 1162,
-      "date": "2025-02-07"
-    },
-    {
-      "number": 1163,
       "date": "2025-02-07"
     },
     {
@@ -112,10 +108,6 @@
     },
     {
       "number": 1209,
-      "date": "2025-02-20"
-    },
-    {
-      "number": 1211,
       "date": "2025-02-20"
     },
     {
@@ -191,5 +183,5 @@
       "date": "2025-02-28"
     }
   ],
-  "generated_at": "2026-09-04T15:15:14.520537+00:00"
+  "generated_at": "2026-10-17T16:08:42.787861+00:00"
 }

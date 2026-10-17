@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-17",
+  "period_start": "2026-04-17",
+  "period_end": "2026-04-17",
+  "generated_at": "2026-04-18T06:24:06.330017+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-17/images/reddit.jpg"
+    }
+  ],
+  "title": "Polli CLI v0.1.0 released, model registry pricing separated, 5 PRs merged",
+  "text": "Merged 5 PRs today. The main focus was getting the CLI out of alpha and fixing some architectural debt in the model registry.\n\nFirst, the Polli CLI is officially v0.1.0. We dropped the alpha tag, hardened the publish CI so releases stop failing silently, and added a video demo skill. It also handles streaming properly now. If you're using it in your terminal, run an update.\n\nSecond, we separated price from cost in the model registry (PR #10224). Previously these were coupled, which made no sense when trying to track internal compute overhead versus what actually costs pollen credits for users. Decoupling them makes the registry much easier to maintain and gives us cleaner metrics going forward.\n\nFinally, we merged two community additions to the ecosystem. Flashlearn was added to the learning resources, and Ciel AI is now available in chat.\n\nCode is open as always. You can check the CLI changes or the registry updates on the main repo at github.com/pollinations/pollinations. Let us know if the 0.1.0 CLI breaks anything in your existing workflows."
+}

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-06",
+  "period_start": "2026-08-06",
+  "period_end": "2026-08-06",
+  "generated_at": "2026-08-07T06:31:31.656338+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-08-06/images/reddit.jpg"
+    }
+  ],
+  "title": "Community catalog, model ordering, and routing fixes",
+  "text": "12 PRs merged today, mostly around making the catalog less of an archaeological dig.\n\nThe community app catalog moved to JSON and now has an app screenshot URL contract: [#13110](https://github.com/pollinations/pollinations/pull/13110), [#13142](https://github.com/pollinations/pollinations/pull/13142). That gives directory clients a stable place to get app metadata and previews instead of inferring both from whatever happened to be rendered.\n\nModel selection got several small-but-connected changes: official and community models are separated, ordering is deterministic, variable pricing is exposed, the pricing list is simpler, and the community model UI is standardized. Relevant PRs: [#13118](https://github.com/pollinations/pollinations/pull/13118), [#13135](https://github.com/pollinations/pollinations/pull/13135), [#13140](https://github.com/pollinations/pollinations/pull/13140), [#13143](https://github.com/pollinations/pollinations/pull/13143), [#13144](https://github.com/pollinations/pollinations/pull/13144), and [#13152](https://github.com/pollinations/pollinations/pull/13152). Catalog rendering also does less unnecessary work.\n\nOn the plumbing side, Portkey now routes through its service binding ([#13127](https://github.com/pollinations/pollinations/pull/13127)), and Whisper was added to bots ([#13137](https://github.com/pollinations/pollinations/pull/13137)). We also added a larger tab button size ([#13141](https://github.com/pollinations/pollinations/pull/13141)) and recorded a second FLUX Vast worker in the docs ([#13155](https://github.com/pollinations/pollinations/pull/13155)).\n\nRepo: https://github.com/pollinations/pollinations"
+}

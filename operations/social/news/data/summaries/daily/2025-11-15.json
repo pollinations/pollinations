@@ -2,20 +2,12 @@
   "date": "2025-11-15",
   "period_start": "2025-11-15",
   "period_end": "2025-11-15",
-  "title": "A smoother path into Pollen",
-  "summary": "A garden-maintenance day: smoother onboarding, cleaner model plumbing, and fewer environment-specific surprises.\n\nAdded the entry-level Spore tier and cleaned up checkout messaging and cross-origin handling, so getting started should involve fewer browser arguments and clearer beta context.\n\nRemoved the unused bpaigen model and backend model defaults, leaving model selection with fewer stale assumptions hiding in the pipes.\n\nConfigured Polar Sandbox for development and staging, unified ENTER_TOKEN handling across environments, and removed unnecessary header forwarding while making tests more reliable.",
-  "pr_count": 7,
+  "title": "Spore becomes the registration tier",
+  "summary": "Spore became the starting tier, model defaults got a clearer home, and gateway-to-backend request failures got a fix.\n\nNew accounts now start on Spore rather than Seed. Enter shows the new tier, subscription routes recognize it, and the Pollen FAQ no longer promises Seed’s daily Pollen to new registrants. Subscription status matching was also corrected.\n\nEnter’s chat completions use `openai` when no model is specified. The text and image backends no longer silently substitute their own models; requests that reach them without a valid model are rejected instead.\n\nA configuration mismatch behind 403 responses on gateway-to-backend text and image requests was corrected. Proxy handling and authenticated text and audio tests were also tidied up.",
+  "pr_count": 5,
   "prs": [
     {
-      "number": 5289,
-      "date": "2025-11-15"
-    },
-    {
       "number": 5295,
-      "date": "2025-11-15"
-    },
-    {
-      "number": 5303,
       "date": "2025-11-15"
     },
     {
@@ -35,27 +27,7 @@
       "date": "2025-11-15"
     }
   ],
-  "generated_at": "2026-09-04T12:13:18.984569+00:00",
-  "highlights": [
-    {
-      "emoji": "🚀",
-      "title": "New Models: Claude 4.5 & Grok 4",
-      "text": "Access `claude-large` (Sonnet 4.5) and `grok` (Grok 4 Fast) via the [Text API](https://enter.pollinations.ai)."
-    },
-    {
-      "emoji": "🧠",
-      "title": "Reasoning Tokens",
-      "text": "View the raw \"thinking\" process for reasoning models like o1, DeepSeek R1, and Claude in API responses."
-    },
-    {
-      "emoji": "🛡️",
-      "title": "Privacy Update",
-      "text": "Completely removed Google Analytics and user tracking scripts from the platform."
-    },
-    {
-      "emoji": "🌱",
-      "title": "New \"Spore\" Tier",
-      "text": "Introduced a new entry-level subscription tier for casual creators on [pollinations.ai](https://enter.pollinations.ai)."
-    }
-  ]
+  "generated_at": "2026-10-17T15:52:34.445919+00:00",
+  "highlights": [],
+  "changelog": []
 }

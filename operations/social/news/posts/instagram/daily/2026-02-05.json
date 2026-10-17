@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-02-05",
+  "period_start": "2026-02-05",
+  "period_end": "2026-02-05",
+  "generated_at": "2026-03-18T19:58:13.604901+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-05/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-05/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-05/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Summer is coming early to the Pollinations garden! 🌻✨\n\nWe’re prepping the soil for Google Summer of Code (GSOC) and it’s gonna be a vibe. 🐝💻 We just polished up our Contributing Guidelines and Readme to make them super fresh and easy to follow. Plus, we fixed up our mentor contacts so you can actually reach us! (oops lol).\n\nOpen source is about growth, and we want YOU to come plant some seeds with us. Whether you're a coding wizard or just curious, there's space in our garden.\n\nReady to build cool AI stuff? Check the repo link in bio! 🌱\n\n#pollinations #gsoc #opensource #pixelart #cozyvibes #codinglife #summerofcode #aiart #indiedev #buildinpublic #retrogaming #8bit\n\n#pollinations #gsoc #opensource #pixelart #cozyvibes #codinglife #summerofcode #aiart #indiedev #buildinpublic #retrogaming #8bit",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

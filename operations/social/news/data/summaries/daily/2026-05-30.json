@@ -43,5 +43,35 @@
       "date": "2026-05-30"
     }
   ],
-  "generated_at": "2026-09-04T11:51:53.070314+00:00"
+  "generated_at": "2026-09-04T11:51:53.070314+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Remix image prompts with PetalGen",
+      "text": "Break a long image prompt into structured modules you can remix. [Try it](https://petalgen.tools4all.ai).",
+      "prs": [
+        11423
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Chat your way to images",
+      "text": "RagmyAI offers a conversational interface for generating images with Pollinations. [Try it](https://ragmyai.com).",
+      "prs": [
+        11417
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Translate pages in Firefox",
+      "text": "AI Web Translator is a Firefox add-on for web translation with Bring Your Own Key support. [Try it](https://addons.mozilla.org/en-US/firefox/addon/ai-web-translator-byok/).",
+      "prs": [
+        11416
+      ],
+      "kind": "app"
+    }
+  ],
+  "changelog": []
 }

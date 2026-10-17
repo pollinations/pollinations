@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-06-04",
+  "period_start": "2026-06-04",
+  "period_end": "2026-06-04",
+  "generated_at": "2026-06-05T07:25:14.248122+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-04/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-04/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-04/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Servers go down, tiny digital bees fix them. 🛠️ Klein is back online after a host outage (we just pointed it at a new pod, but let's pretend it involved tiny wrenches).\n\nWe also pushed fresh alpha releases for the SDK and UI libraries this week. The design system is getting a glow-up and the model catalog is easier to navigate. Code is in the open, as always. 🌱\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #webdev #buildinpublic #ui",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-22",
+  "period_start": "2026-07-22",
+  "period_end": "2026-07-22",
+  "generated_at": "2026-07-23T07:00:03.935510+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-22/images/reddit.jpg"
+    }
+  ],
+  "title": "14 merged PRs: models, routing, and review fixes",
+  "text": "14 PRs merged today. The practical changes are mostly around making model access less fragile and community maintenance less annoying.\n\nImage: community image endpoints now plug into the standard API path (#12206). Flux on Vast got deployment hardening plus a queue cap (#12637), and reference-image downloads now get validation before they become somebody else's incident (#12655). Timed-out Replicate predictions are explicitly cancelled (#12656).\n\nText: Google text models now route through OpenRouter (#12651), Laguna S 2.1 was added (#12663), and Arika joined chat (#12666). Free models are also ranked by Pollen value first (#12668), which should make the default selection less arbitrary.\n\nCommunity/admin: app submission was simplified (#12642), app-review labels should stop rerunning themselves (#12662), and community models have an activation toggle (#12643). Two community image apps were added: AI Anime Legends Generator (#12664) and the new image endpoint work above.\n\nThe generated API docs were refreshed twice because production continued moving while the docs were being refreshed (#12646, #12659). Normal repository weather.\n\nCode and PRs: https://github.com/pollinations/pollinations\nAPI docs: https://github.com/pollinations/pollinations/blob/master/APIDOCS.md\n\nThe main thing worth testing is whether community image endpoints behave like the established image API in the cases your app actually uses."
+}

@@ -2,14 +2,10 @@
   "date": "2025-09-17",
   "period_start": "2025-09-17",
   "period_end": "2025-09-17",
-  "title": "The creative-project garden got three new blooms",
-  "summary": "A community-directory day: eight new projects across creative, builder, chat, and learning corners, plus a sturdier chat sanitizer.\n\nThe community showcase now features the Pollinations AI Demo, Mixbash.com, StoryWeaver AI, and ☬ SHΞNΞRATOR—four more examples of people turning simple AI endpoints into strange and useful things.\n\nPollinations OpenAI Proxy and unpkg.ai joined the Hack-and-Build collection, giving developers two more reference points for putting AI infrastructure to work without making a small consultancy out of it.\n\nチャットGPT 日本語 was added to Chat Projects and EduGen AI to Learn, making the community catalog a little more useful for Japanese-language chat and education-focused experiments.",
-  "pr_count": 9,
+  "title": "More ways to make things",
+  "summary": "Eight community directory additions, from collaborative comics to developer tools and projects in Japanese and Portuguese.\n\nThe Creative Projects directory added two image generators, Mixbash’s bring-your-own-key model interface, and StoryWeaver AI, which uses Pollinations text and image APIs to build shared comic-style stories. The listings also now distinguish the official Pollinations MCP server from a community-maintained project.\n\nHack-and-Build added an OpenAI-compatible proxy for Pollinations text, image, and speech services, plus unpkg.ai, which generates JavaScript ESM modules on demand.\n\nThe directory added a Japanese-language chat project and EduGen AI, a Brazilian Portuguese tool that creates slide images for teachers. Both listings include language tags and translated descriptions.",
+  "pr_count": 8,
   "prs": [
-    {
-      "number": 4019,
-      "date": "2025-09-17"
-    },
     {
       "number": 4075,
       "date": "2025-09-17"
@@ -43,5 +39,7 @@
       "date": "2025-09-17"
     }
   ],
-  "generated_at": "2026-09-04T12:31:59.421848+00:00"
+  "generated_at": "2026-10-17T15:46:37.583210+00:00",
+  "highlights": [],
+  "changelog": []
 }

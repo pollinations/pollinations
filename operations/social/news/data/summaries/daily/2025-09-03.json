@@ -2,9 +2,9 @@
   "date": "2025-09-03",
   "period_start": "2025-09-03",
   "period_end": "2025-09-03",
-  "title": "Hack & Build gets more things to build with",
-  "summary": "A garden-maintenance day: more Hack & Build examples up front, cleaner model plumbing underneath, and a proper security mailbox.\n\nThe project gallery now includes an AI Agent Portal and an AI Image Generator, giving builders two more open examples to explore, remix, and ship from.\n\nModel configurations, FLUX improvements, transform functions, and the generic OpenAI client were reorganized into a simpler service architecture. Less configuration archaeology when adding or operating models.\n\nCost metadata moved into its own module with stronger validation for incomplete model data, while a new SECURITY.md gives researchers a clear route for responsible disclosure.",
-  "pr_count": 7,
+  "title": "Text models reshuffled, FLUX routing adjusted",
+  "summary": "GPT-5 Nano became the default `openai` model, FLUX routing got fallbacks, and two community projects joined the listings.\n\nThe default `openai` model was changed to GPT-5 Nano, while `openai-fast` remains on GPT-4.1 Nano. Public model listings exclude hidden models and provider identifiers, several older model entries were removed, and `openai-large` moved to the seed tier. For `flux` image requests, registered ComfyUI servers became the first choice, with Cloudflare fallbacks and progress updates for each fallback.\n\nThe Creative Projects list gained a bilingual AI Image Generator with prompt optimization and progress display. Hack & Build gained AI Agent Portal, where Architect, Coder, and QA agents collaborate on development tasks from a single prompt.\n\nA SECURITY.md policy was added to explain how to report vulnerabilities privately, what information to include, and how maintainers handle responses and reporter credit.",
+  "pr_count": 5,
   "prs": [
     {
       "number": 3905,
@@ -25,15 +25,19 @@
     {
       "number": 3950,
       "date": "2025-09-03"
-    },
-    {
-      "number": 3951,
-      "date": "2025-09-03"
-    },
-    {
-      "number": 3954,
-      "date": "2025-09-03"
     }
   ],
-  "generated_at": "2026-09-04T12:28:00.820431+00:00"
+  "generated_at": "2026-10-17T15:46:13.831522+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "GPT-5 Nano becomes the default",
+      "text": "The `openai` text model is updated to GPT-5 Nano; `openai-fast` keeps GPT-4.1 Nano. [Browse models](https://enter.pollinations.ai/models?q=openai).",
+      "prs": [
+        3947
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

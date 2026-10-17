@@ -2,14 +2,10 @@
   "date": "2025-11-12",
   "period_start": "2025-11-12",
   "period_end": "2025-11-12",
-  "title": "Image generation got a simpler, sturdier path",
-  "summary": "A tuning day: image generation was simplified, stuck requests were cleared, and the API got more transparent about models and failures.\n\nThe image worker was reduced to a thin proxy while its cache moved directly into enter.pollinations.ai. Empty cached images no longer trigger ORB errors, and refreshed Azure GPT Image credentials improve generation stability. Fewer layers, fewer mysterious pixels.\n\nThe Pollen rate limiter was simplified and its timeout behavior fixed so requests do not remain stuck waiting. Tracking and user-blocking systems were also removed, keeping the path between an idea and an API response notably less bureaucratic.\n\nSirius Cybernetics moved to enter.pollinations.ai with Claude Haiku 4.5, reasoning tokens can now pass through responses, and the model reference table now uses the real model IDs. The mobile view can read its tooltips too.",
-  "pr_count": 15,
+  "title": "Reasoning options reach the chat API",
+  "summary": "Chat gained reasoning controls, image caching moved into Enter, and generation shed several tracking paths.\n\nChat requests gained `reasoning_effort` and `thinking_budget` passthrough, with response schemas that accept provider reasoning fields in regular and streaming responses. The Elevator Challenge moved its requests to Enter's chat API, while the image API spec now documents its existing query options.\n\nExact-match image caching moved into Enter's image route. Cache hits can return an image without a key; misses still go through authentication, rate limiting, and generation. Earlier cache changes addressed empty entries and chunked responses, though the later worker change also allowed existing zero-byte entries to be served. The GPT Image backend configuration was updated without changing its API.\n\nImage and text generation shed specified analytics and request-logging paths. Several image-user blocking paths were also removed; content-safety checks and image-model hourly limits remain.",
+  "pr_count": 14,
   "prs": [
-    {
-      "number": 5111,
-      "date": "2025-11-12"
-    },
     {
       "number": 5183,
       "date": "2025-11-12"
@@ -67,5 +63,26 @@
       "date": "2025-11-12"
     }
   ],
-  "generated_at": "2026-09-04T12:11:18.893618+00:00"
+  "generated_at": "2026-10-17T15:52:10.714711+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Chat reasoning controls",
+      "text": "Set `reasoning_effort` or `thinking_budget` in chat requests. Provider reasoning fields can also come through in regular and streaming responses. [Try the chat API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        5198
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Reusable image cache hits",
+      "text": "Exact-match image requests can return a cached result without a key; uncached requests still follow the usual generation path. [Try image generation](https://gen.pollinations.ai/docs).",
+      "prs": [
+        5217
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

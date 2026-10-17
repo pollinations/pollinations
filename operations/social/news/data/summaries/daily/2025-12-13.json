@@ -2,18 +2,10 @@
   "date": "2025-12-13",
   "period_start": "2025-12-13",
   "period_end": "2025-12-13",
-  "title": "The app garden got substantially weirder",
-  "summary": "A community harvest: a sizable new app catalog, Gemini tool support, and quieter improvements beneath the flowerbed.\n\nThe community showcase added a large crop of creative tools: AI Story Illustrator, imgs_ai_bot, ChimeraStudio, Storycraft Pro, Sugen, Imagly AI, BinaryPH RSS AI, CHRONOS Time Machine, and Viral Flow. There is now more machinery for turning prompts into images, stories, feeds, and whatever a time machine counts as.\n\nGames and learning gained Nikke-DB Story/Roleplaying Generator, ii's Stupid Menu, a DnD Character Sheet Helper, Kinexus, and Word Master. The catalog continues to make a convincing case that AI infrastructure should occasionally be allowed to have fun.\n\nNew community apps cover calorie tracking, tone rewriting, general chat, YouTube search, a Pollinations Codex, and content automation. Instagram automation also joined the news feed, because apparently the internet still requires posts.",
-  "pr_count": 27,
+  "title": "Gemini chat gains built-in tools",
+  "summary": "Gemini gained built-in tools, while the community added a small ecosystem of storytelling, creative, learning, and coding projects.\n\nThe chat API now accepts Gemini tool types for code execution, Google Search, Maps, URL context, computer use, and file search alongside OpenAI-style function tools. The `gemini` model defaults to code execution, Search, and URL context when a request supplies no tools; explicitly supplied tools take precedence.\n\nThe community project listings added NIKKE roleplay with responsive Live2D characters, a no-code builder for choice-based games, D&D character sheets, illustrated and narrated story tools, a historical scene generator, and a Gorilla Tag mod menu with a Pollinations-powered assistant. Several PRs listed the same projects more than once; they represent distinct apps, not extra launches.\n\nNew community listings cover browser-based image studios, a Telegram art bot, a multi-style image generator, and a video editor for shorts and documentaries. Two WordPress plugins use Pollinations text and images for content workflows, including turning RSS items into posts.",
+  "pr_count": 24,
   "prs": [
-    {
-      "number": 5919,
-      "date": "2025-12-13"
-    },
-    {
-      "number": 5940,
-      "date": "2025-12-13"
-    },
     {
       "number": 5947,
       "date": "2025-12-13"
@@ -107,13 +99,21 @@
       "date": "2025-12-13"
     },
     {
-      "number": 5974,
-      "date": "2025-12-13"
-    },
-    {
       "number": 5976,
       "date": "2025-12-13"
     }
   ],
-  "generated_at": "2026-09-04T12:32:08.616540+00:00"
+  "generated_at": "2026-10-17T15:55:23.799135+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Gemini gets built-in tools",
+      "text": "Send Gemini built-in tools such as `code_execution`, `google_search`, and `url_context` through the chat API. With no tools specified, `gemini` uses those three by default. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        5976
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

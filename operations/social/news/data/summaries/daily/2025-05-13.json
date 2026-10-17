@@ -2,8 +2,8 @@
   "date": "2025-05-13",
   "period_start": "2025-05-13",
   "period_end": "2025-05-13",
-  "title": "Vibe Coding gets its own corner of the project garden",
-  "summary": "A community-directory day: more Vibe Coding projects, two new app listings, and ads that can finally bring their own pixels.\n\nThe project directory now has a dedicated Vibe Coding category, a cleaner organization, and more examples of people building things with AI. Browsing what the community has made should require slightly less archaeological work.\n\nMoneyPrinterTurbo and Imagemate AI were added to the project list, giving builders two more concrete examples of Pollinations-powered work in the wild.\n\nAd placements marked with p-ads can now use generated imagery, with improved contextualization to make the result fit the surrounding page rather than arrive as a small unrelated billboard.",
+  "title": "Conversation-aware ads gain images",
+  "summary": "Ads gained contextual images and sharper copy, while the project directory made more room for vibe coding and community creations.\n\nAds triggered by `p-ads` can now include a generated 120×120 image. Ad copy draws on the last three messages and the current content, making it more relevant to the conversation while preserving markdown links.\n\nThe project gallery now groups AI-assisted coding and website-building projects under Vibe Coding ✨, removes duplicate listings from other categories, and includes the category in featured-project selection.\n\nThe project lists now include MoneyPrinterTurbo, which uses Pollinations text generation for short-video scripts, and Imagemate AI, an Android app that generates images from text prompts.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,5 +27,17 @@
       "date": "2025-05-13"
     }
   ],
-  "generated_at": "2026-09-04T12:41:43.052008+00:00"
+  "generated_at": "2026-10-17T15:39:38.624984+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Generated images for ads",
+      "text": "Ads triggered by `p-ads` can pair a generated 120×120 image with concise copy shaped by the recent conversation. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        1966
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

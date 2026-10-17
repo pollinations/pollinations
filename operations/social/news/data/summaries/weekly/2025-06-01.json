@@ -1,0 +1,135 @@
+{
+  "date": "2025-06-01",
+  "period_start": "2025-05-25",
+  "period_end": "2025-05-31",
+  "title": "Tiers began shaping the request path",
+  "summary": "This week made requests more deliberate: user tiers began shaping routing and queues, while developers gained finer control over text, images, and account preferences.\n\nSeed, Flower, and Nectar tiers were added, with Seed as the default. GPT Image moved from random endpoint selection to tier-based routing; a later change excluded Seed users from GPT Image access. Queue handling also became tier-aware: Nectar requests bypass the queue, while other token-authenticated requests enter with no queue interval. Authentication and queue checks were made more consistent across APIs.\n\nText requests can pass temperature, top_p, presence_penalty, and frequency_penalty to compatible providers, with request values taking precedence over model defaults. Text caching now reuses results across requests that differ only in authentication or request-control fields. The dashboard gained token and trusted-domain guidance and a tier display; authenticated users also gained GET and POST /preferences for reading and updating settings.\n\nAzure GPT Image edits can use multiple reference images supplied as comma-separated URLs. Download filenames improved for generated and edited images, while changes to prompt enhancement reduced rate-limited requests that could affect non-English prompts. Failed Turbo and Flux fetches now return errors immediately rather than retrying.\n\nThe listings gained a code-generating Websim app, DreamHer, AI Content Describer, PixPal, LLM7.io, and Comeback AI. SillyTavern was also added to the project lists with a clearer description of its existing text and image integration. The range runs from accessibility tools to creative assistants; the infrastructure is only half the story.",
+  "pr_count": 31,
+  "prs": [
+    {
+      "number": 2086,
+      "date": "2025-05-25"
+    },
+    {
+      "number": 2089,
+      "date": "2025-05-25"
+    },
+    {
+      "number": 2103,
+      "date": "2025-05-26"
+    },
+    {
+      "number": 2104,
+      "date": "2025-05-26"
+    },
+    {
+      "number": 2106,
+      "date": "2025-05-26"
+    },
+    {
+      "number": 2108,
+      "date": "2025-05-26"
+    },
+    {
+      "number": 2119,
+      "date": "2025-05-26"
+    },
+    {
+      "number": 2122,
+      "date": "2025-05-26"
+    },
+    {
+      "number": 2126,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2128,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2129,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2131,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2138,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2140,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2143,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2144,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2151,
+      "date": "2025-05-28"
+    },
+    {
+      "number": 2155,
+      "date": "2025-05-28"
+    },
+    {
+      "number": 2159,
+      "date": "2025-05-28"
+    },
+    {
+      "number": 2162,
+      "date": "2025-05-29"
+    },
+    {
+      "number": 2166,
+      "date": "2025-05-29"
+    },
+    {
+      "number": 2167,
+      "date": "2025-05-29"
+    },
+    {
+      "number": 2171,
+      "date": "2025-05-29"
+    },
+    {
+      "number": 2172,
+      "date": "2025-05-30"
+    },
+    {
+      "number": 2174,
+      "date": "2025-05-30"
+    },
+    {
+      "number": 2178,
+      "date": "2025-05-30"
+    },
+    {
+      "number": 2184,
+      "date": "2025-05-30"
+    },
+    {
+      "number": 2187,
+      "date": "2025-05-31"
+    },
+    {
+      "number": 2188,
+      "date": "2025-05-31"
+    },
+    {
+      "number": 2192,
+      "date": "2025-05-31"
+    },
+    {
+      "number": 2198,
+      "date": "2025-05-31"
+    }
+  ],
+  "generated_at": "2026-10-17T16:04:31.784785+00:00"
+}

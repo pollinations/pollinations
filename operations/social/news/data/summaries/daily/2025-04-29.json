@@ -2,20 +2,12 @@
   "date": "2025-04-29",
   "period_start": "2025-04-29",
   "period_end": "2025-04-29",
-  "title": "Image generation gets backup routes",
-  "summary": "A garden-maintenance day: more reliable image fallbacks, tighter text controls, clearer contribution docs, and some careful project tending.\n\nDreamshaper and Turbo servers now act as fallbacks for image generation, giving requests more places to land when a primary route is unavailable.\n\nA new doNotRephrase option lets callers preserve wording when they need the model to stop helpfully rewriting it. Sometimes the original sentence is, regrettably, the requirement.\n\nAura Chat joined the project lists, while work continued on the Pollinator agent.",
-  "pr_count": 9,
+  "title": "More chances for image requests to succeed",
+  "summary": "Image generation got more fallback routes, affiliate recommendations became more selective, and a community chatbot joined the directory.\n\nImage generation gained Dreamshaper and Turbo server fallbacks between Cloudflare Flux and ComfyUI. Dreamshaper requests also avoid a seed parameter that caused errors.\n\nAffiliate matching now prefers higher-priority offers when they are equally relevant and filters offers blocked in the request's country when country information is available. The eligible offer list was also updated.\n\nThe LLM Integrations list now includes Aura Chat bot, a community chatbot built with Pollinations text and image generation.",
+  "pr_count": 6,
   "prs": [
     {
       "number": 1786,
-      "date": "2025-04-29"
-    },
-    {
-      "number": 1822,
-      "date": "2025-04-29"
-    },
-    {
-      "number": 1824,
       "date": "2025-04-29"
     },
     {
@@ -35,13 +27,11 @@
       "date": "2025-04-29"
     },
     {
-      "number": 1836,
-      "date": "2025-04-29"
-    },
-    {
       "number": 1838,
       "date": "2025-04-29"
     }
   ],
-  "generated_at": "2026-09-04T12:33:20.771332+00:00"
+  "generated_at": "2026-10-17T15:38:38.084434+00:00",
+  "highlights": [],
+  "changelog": []
 }

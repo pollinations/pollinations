@@ -2,8 +2,8 @@
   "date": "2025-11-28",
   "period_start": "2025-11-28",
   "period_end": "2025-11-28",
-  "title": "Image output gets its full 4K option back",
-  "summary": "A compact compatibility pass: 4K images, sturdier multi-provider chat calls, clearer errors, and quieter balance checks.\n\nnanobanana-pro can now serve 4K generation requests correctly, restoring high-resolution output for projects that need more than thumbnail-sized pixels.\n\nThe OpenAI-compatible schema is more forgiving across providers, while Azure requests now handle max_tokens correctly and surface upstream error statuses instead of disguising them.\n\nLocal balance tracking reduces repeated Polar API calls and the rate-limit friction that comes with asking the same question too often.",
+  "title": "Nano Banana Pro gets 4K output",
+  "summary": "Nano Banana Pro gained 4K output while chat compatibility, error reporting, and balance checks got less brittle.\n\nNano Banana Pro now supports 1K, 2K, and 4K output based on requested dimensions, with dimensions mapped to the closest supported aspect ratio. Its default side length also increased from 1024 to 2048 pixels.\n\nThe chat API now accepts content-part arrays in more message roles, along with document file parts, Anthropic cache controls, and provider-specific content types. Streaming errors preserve upstream HTTP statuses, and Azure OpenAI requests translate `max_tokens` for newer models.\n\nEnter now tracks recent meter balances locally and updates them after billable requests, reducing balance-check calls to Polar and the chance of requests encountering its API rate limits.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,5 +23,17 @@
       "date": "2025-11-28"
     }
   ],
-  "generated_at": "2026-09-04T12:19:48.286323+00:00"
+  "generated_at": "2026-10-17T15:53:13.167229+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Nano Banana Pro in 4K",
+      "text": "Request up to 4K output from `nanobanana-pro`. Its default side length is now 2048 pixels, up from 1024. [Browse the model](https://enter.pollinations.ai/models?q=nanobanana-pro).",
+      "prs": [
+        5454
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

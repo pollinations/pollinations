@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-11",
+  "period_start": "2026-08-11",
+  "period_end": "2026-08-11",
+  "generated_at": "2026-08-12T06:36:37.655695+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-11/images/reddit.jpg"
+    }
+  ],
+  "title": "Community previews and tunnel recovery fixes merged",
+  "text": "Four PRs merged today.\n\nThe most visible change is a backfill of 762 screenshots for the community app catalog. The catalog now has visual previews for a much larger share of submitted projects, which makes browsing less dependent on names, descriptions, and optimistic assumptions about what an app does. PR: https://github.com/pollinations/pollinations/pull/13271\n\nNews feeds should be current again. Raw content URLs now explicitly target the news branch instead of relying on the default branch behavior, which had left some updates stale. PR: https://github.com/pollinations/pollinations/pull/13292\n\nKlein's image GPU tunnel now restarts when it enters a degraded state. This is a small reliability fix, but it removes one manual recovery path from image infrastructure. PR: https://github.com/pollinations/pollinations/pull/13284\n\nThe README was also updated for 2026-08-11: https://github.com/pollinations/pollinations/pull/13279\n\nRepository and current docs: https://github.com/pollinations/pollinations\n\nNothing especially theatrical here: more catalog context, fresher news, and one fewer tunnel that needs somebody to notice it is having a bad day."
+}

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-04-12",
+  "period_start": "2026-04-05",
+  "period_end": "2026-04-11",
+  "generated_at": "2026-04-12T06:31:06.535848+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-12/images/reddit.jpg"
+    }
+  ],
+  "title": "36 PRs merged: FLUX.1 free, backend routing, and automated repo triage",
+  "text": "Merged 36 PRs this week. A lot of backend shuffling, some free tier upgrades, and we handed the repo keys over to the AI.\n\n**Free Tier**\nBoth gptimage-large and FLUX.1 Kontext are now completely free. No auth required, just hit the endpoints.\n\n**Backend & Stability**\nWe spent some time playing backend musical chairs to stabilize things. Rolled DeepSeek and Kimi back to Fireworks from Azure. We also routed gemini-2.5-flash-lite to the Vertex global endpoint.\n\n**Repo Automation**\nWe fully handed over issue triage to Polly. The AI now dynamically evaluates and decides every action on incoming GitHub issues. If it arbitrarily closes your valid bug report, let us know, but so far the automation pipeline is holding up.\n\n**Docs & DX**\nWe compressed APIDOCS.md from 94KB down to a much more readable 37KB. Added dynamic balance-based request estimates to the pricing table so you can actually see what your credits will yield. Also updated llm.txt with the new account and media endpoints.\n\n**Community Showcase**\nMerged about 20 new community apps into the showcase, spanning image generation, chat, video, and games. The ecosystem is growing faster than we can manually track, which is exactly why the bot is doing the triage now.\n\nAll code, updates, and the new docs are in the repo: https://github.com/pollinations/pollinations"
+}

@@ -1,0 +1,55 @@
+{
+  "date": "2025-02-02",
+  "period_start": "2025-01-26",
+  "period_end": "2025-02-01",
+  "title": "DeepSeek-R1 joins the text models",
+  "summary": "A new reasoning model arrived while community projects became easier to discover and submit, with smaller improvements to request handling and site details.\n\nThe reasoning-enabled `deepseek-r1` model was added. `llamalight` now uses Llama 3.1 8B through Cloudflare, and `p1` was removed from the model list.\n\nProjects missing after a UI update were restored and organized by category. A Submit Your Project button and GitHub issue form replaced the email-based route. Kushai’s AI PowerPoint Generator, Pollinations Chat, and Deep Saga joined the listings during the week.\n\nThe text API’s per-IP queue cap was removed, image request queues were adjusted, and authorized image requests gained a priority path. Requests without valid authorization still use the regular image queue.\n\nA lime favicon makes the tab easier to spot; logo variants add color elsewhere. Supporter links without a protocol now open as HTTPS destinations, and the prompt enhancer’s documentation and feed correctly label it Azure OpenAI. The enhancer’s behavior did not change.",
+  "pr_count": 11,
+  "prs": [
+    {
+      "number": 1087,
+      "date": "2025-01-26"
+    },
+    {
+      "number": 1094,
+      "date": "2025-01-27"
+    },
+    {
+      "number": 1096,
+      "date": "2025-01-27"
+    },
+    {
+      "number": 1101,
+      "date": "2025-01-28"
+    },
+    {
+      "number": 1102,
+      "date": "2025-01-28"
+    },
+    {
+      "number": 1105,
+      "date": "2025-01-28"
+    },
+    {
+      "number": 1106,
+      "date": "2025-01-28"
+    },
+    {
+      "number": 1118,
+      "date": "2025-01-29"
+    },
+    {
+      "number": 1120,
+      "date": "2025-01-30"
+    },
+    {
+      "number": 1124,
+      "date": "2025-01-31"
+    },
+    {
+      "number": 1128,
+      "date": "2025-02-01"
+    }
+  ],
+  "generated_at": "2026-10-17T16:03:16.350228+00:00"
+}

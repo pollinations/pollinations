@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-05-17",
+  "period_start": "2026-05-10",
+  "period_end": "2026-05-16",
+  "generated_at": "2026-05-17T06:55:42.330783+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-17/images/reddit.jpg"
+    }
+  ],
+  "title": "Weekly infra update: dev earnings dashboard, accurate 4xx errors, model routing",
+  "text": "Merged 60 PRs this week. A lot of plumbing, some new models, and finally fixing how we handle upstream errors.\n\nFirst, error codes. We stopped being lazy and now classify upstream user-input errors as 4xx instead of throwing a generic 500. We're also surfacing the actual fetch error when a user-provided image URL fails, rather than just returning an empty object.\n\nOn the infrastructure side, we shipped the developer earnings dashboard and added Stripe portal auto top-ups. We also aligned our R2 cache headers and codified a 30-day lifecycle for media to keep storage costs predictable.\n\nModel routing got a heavy update. Qwen-vision is now routed via OpenRouter (specifically the non-thinking instruct variant). Added ElevenLabs flash v2.5 for TTS, GPT-5.4-mini, and unhid seedream. For LTX-2 image-to-video, the gateway now downloads the image and passes base64 to the backend directly.\n\nWe also automated community quests. Payout transactions are now migrated to use GitHub IDs, which cuts down on manual tracking.\n\nFinally, the community ecosystem keeps growing. We merged over 25 new apps into the registry this week, ranging from AI trip planners to local LLM clients.\n\nCode is open as always: https://github.com/pollinations/pollinations"
+}

@@ -2,16 +2,12 @@
   "date": "2025-12-25",
   "period_start": "2025-12-25",
   "period_end": "2025-12-25",
-  "title": "The app garden got a dozen new sprouts",
-  "summary": "A community harvest: new apps in the directory, better image editing, smoother Enter UX, and more automation around the edges.\n\nThe community directory added new chat tools including DOPPYai, IA Bob Goods Coloring Book Generator, Nuvole AI Lite, and nusanexus; creative additions PromptPi!, AI Logo Generator, and Business Name Generator; plus BCA Nepal, Word Wagon, and AquaMind in Learn. More things people built with the same open infrastructure, now easier to find.\n\nImage generation can now take a reference image by URL, and gptimage-large was updated to the API version that supports image editing. Bring an image, ask for a variation, receive the usual amount of pixels.\n\nThe text cache moved to enter.pollinations.ai, docs components gained retries for rate limits, and the beta banner and mobile footer received layout fixes. Small interface repairs, which are often the whole difference between a tool and a tiny obstacle course.",
-  "pr_count": 22,
+  "title": "Reference images come to Play",
+  "summary": "Reference images reached Play, nine community apps joined the directory, and text caching moved into Enter.\n\nPlay now accepts up to four reference-image URLs for models that support image input, with thumbnails for reviewing and removing them. API errors are also shown more clearly. A separate update addressed reference-image editing support for `gptimage-large`.\n\nThe app directory gained tools for aquarium care, vocabulary study, Indonesian-language chat, coursework, image-to-prompt workflows, logo and name generation, coloring books, and Persian-language image generation. PromptPi! stands out for turning images into prompts in batches.\n\nThe Flower-tier flow now applies subscription changes after qualifying PR merges or registration rechecks, and app submissions enter the same review path. Earlier dry runs are not corrected retroactively.",
+  "pr_count": 17,
   "prs": [
     {
       "number": 5682,
-      "date": "2025-12-25"
-    },
-    {
-      "number": 6397,
       "date": "2025-12-25"
     },
     {
@@ -67,10 +63,6 @@
       "date": "2025-12-25"
     },
     {
-      "number": 6457,
-      "date": "2025-12-25"
-    },
-    {
       "number": 6458,
       "date": "2025-12-25"
     },
@@ -81,19 +73,19 @@
     {
       "number": 6460,
       "date": "2025-12-25"
-    },
-    {
-      "number": 6461,
-      "date": "2025-12-25"
-    },
-    {
-      "number": 6462,
-      "date": "2025-12-25"
-    },
-    {
-      "number": 6463,
-      "date": "2025-12-25"
     }
   ],
-  "generated_at": "2026-09-04T12:41:06.893885+00:00"
+  "generated_at": "2026-10-17T15:57:19.538657+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Reference images in Play",
+      "text": "Add up to four image URLs when generating with a model that supports image input. Review the thumbnails, remove what you don't need, and generate. [Try Play](https://pollinations.ai/play).",
+      "prs": [
+        6443
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

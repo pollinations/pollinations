@@ -2,9 +2,9 @@
   "date": "2025-09-06",
   "period_start": "2025-09-06",
   "period_end": "2025-09-06",
-  "title": "The Creative Projects garden gets two new inhabitants",
-  "summary": "A small garden day: clearer text API docs, two new community projects, and some model configuration pruning.\n\nAI Image Generator and CVRON AI were added to the Creative Projects list, giving visitors two more concrete examples of what people are building with Pollinations.\n\nThe text.pollinations.ai root URL now redirects directly to the API documentation. Less wandering around; more sending prompts to models.\n\nCommunity model cost definitions were removed as part of ongoing configuration housekeeping.",
-  "pr_count": 4,
+  "title": "More controls for community image-making",
+  "summary": "Two community image generators joined Creative Projects, and the text API’s root now points to its documentation.\n\nRishabh Mishra’s React-based image generator was added to Creative Projects, with style, quality and resolution controls and a history of generated images.\n\nCVRON AI, an image generator built with the Pollinations API, was added to Creative Projects with a Turkish-language tag and an English description.\n\nThe root of text.pollinations.ai now redirects to the API documentation instead of the community UI.",
+  "pr_count": 3,
   "prs": [
     {
       "number": 3973,
@@ -17,30 +17,9 @@
     {
       "number": 3975,
       "date": "2025-09-06"
-    },
-    {
-      "number": 3976,
-      "date": "2025-09-06"
     }
   ],
-  "generated_at": "2026-09-04T12:29:13.483091+00:00",
-  "highlights": [
-    {
-      "emoji": "🚀",
-      "title": "GPT-5 Nano Support",
-      "text": "The Text API now includes access to OpenAI's GPT-5 Nano model for next-gen performance. Check the [API Docs](https://enter.pollinations.ai/api/docs)."
-    },
-    {
-      "emoji": "🤖",
-      "title": "AI Agent Portal",
-      "text": "A new multi-agent development environment for building complex projects. [Try it](https://agent.makululinux.com/)",
-      "kind": "app"
-    },
-    {
-      "emoji": "🌍",
-      "title": "CVRON AI Added",
-      "text": "New Turkish-language focused image generator with `tr-TR` support. [Try it](https://cvronai.rf.gd)",
-      "kind": "app"
-    }
-  ]
+  "generated_at": "2026-10-17T15:46:04.085439+00:00",
+  "highlights": [],
+  "changelog": []
 }

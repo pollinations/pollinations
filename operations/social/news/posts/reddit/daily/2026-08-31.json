@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-31",
+  "period_start": "2026-08-31",
+  "period_end": "2026-08-31",
+  "generated_at": "2026-09-01T06:31:29.452077+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-31/images/reddit.jpg"
+    }
+  ],
+  "title": "34 merges: community video, CLI profiles, catalog cleanup",
+  "text": "34 PRs merged today. The visible change is that the model catalog is becoming less of a collection of special cases.\n\nCommunity models now support a video modality, all community categories are shown, queued changes are visible, embeddings can be published, and listings are sorted by popularity. We also moved listing parsing and effective-state resolution behind schemas and `ModelInfo`, which should mean fewer cases where the catalog knows something different from the API.\n\nGeneration options expanded: full Inkling is available through Fireworks, Grok 4.6 moved to Azure, and Azure FLUX.2 Pro/Flex were added. Inkling Opus audio now goes out as Ogg rather than whatever the adapter happened to imply.\n\nOn the client side, `polli-cli` 0.1.12 adds Pi and OpenCode harness profiles, including Pi provider key configuration. The text API also stopped helpfully rewriting omitted inputs and stale provider transforms; preserving request shape turned out to be more useful than guessing.\n\nA few accounting/signal fixes landed too: text leaderboards exclude video events, community health is separate from service KPI, MCP servers and pricing appear alongside models, and collaborative issue quests are supported.\n\nRepo: https://github.com/pollinations/pollinations\nDocs/API reference: https://pollinations.ai/docs\n\nThe catalog refactor is still active. If a listing category, modality, or queued update looks wrong, an issue with the returned payload is more useful than a screenshot."
+}

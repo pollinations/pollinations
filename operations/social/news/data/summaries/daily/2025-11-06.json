@@ -2,20 +2,12 @@
   "date": "2025-11-06",
   "period_start": "2025-11-06",
   "period_end": "2025-11-06",
-  "title": "Text API gets a quieter default",
-  "summary": "A garden-maintenance day: quieter text generation, clearer Pollen usage plumbing, contributor credit, and freshly aligned infrastructure.\n\nAds are now disabled by default on text.pollinations.ai, making the text endpoint a little more like infrastructure and a little less like a billboard.\n\nThe first pollen-based rate limiter for frontend keys landed with its staging migration, while balance accounting was split between tier and pack and the frontend learned the new meter IDs. The result is a clearer foundation for tracking and managing app usage.\n\nDiscord PR notifications now identify both the person who opened a pull request and the person who merged it, with follow-up patches making sure usernames arrive intact. The Hacktoberfest report also made it into the README.",
-  "pr_count": 12,
+  "title": "Pollen balances get a clearer split",
+  "summary": "Pollen balances became easier to read, publishable-key limits began tracking usage costs, and the legacy text API stopped adding referral links by default.\n\nEnter now shows tier and pack Pollen separately alongside their combined balance and a daily allowance indicator. Generation requests draw from tier Pollen first, then pack Pollen; a follow-up updated the frontend meter configuration.\n\nThe legacy text API no longer inserts referral links by default. The explicit p-ads test marker remains available.\n\nPublishable API keys moved from a three-request bucket to a Pollen-based limit per key and IP. The limiter charges the request's actual Pollen cost and reports retry timing in rate-limit headers; secret keys bypass it.",
+  "pr_count": 5,
   "prs": [
     {
       "number": 5001,
-      "date": "2025-11-06"
-    },
-    {
-      "number": 5045,
-      "date": "2025-11-06"
-    },
-    {
-      "number": 5055,
       "date": "2025-11-06"
     },
     {
@@ -23,15 +15,7 @@
       "date": "2025-11-06"
     },
     {
-      "number": 5065,
-      "date": "2025-11-06"
-    },
-    {
       "number": 5067,
-      "date": "2025-11-06"
-    },
-    {
-      "number": 5075,
       "date": "2025-11-06"
     },
     {
@@ -39,21 +23,11 @@
       "date": "2025-11-06"
     },
     {
-      "number": 5077,
-      "date": "2025-11-06"
-    },
-    {
-      "number": 5078,
-      "date": "2025-11-06"
-    },
-    {
-      "number": 5079,
-      "date": "2025-11-06"
-    },
-    {
       "number": 5080,
       "date": "2025-11-06"
     }
   ],
-  "generated_at": "2026-09-04T12:06:06.978631+00:00"
+  "generated_at": "2026-10-17T15:51:18.304485+00:00",
+  "highlights": [],
+  "changelog": []
 }

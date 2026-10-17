@@ -2,8 +2,8 @@
   "date": "2025-05-26",
   "period_start": "2025-05-26",
   "period_end": "2025-05-26",
-  "title": "More control over how text models think out loud",
-  "summary": "A small reliability pass: better text-generation controls, a clearer SillyTavern connection, and auth that handles bad tokens without drama.\n\nText generation now accepts the full set of common sampling controls: temperature, top_p, presence_penalty, and frequency_penalty. More knobs for people who have opinions about repetition.\n\nSillyTavern was added to the project list and documented in the README, making the connection easier to find for roleplay and character-chat builders.\n\nAuthentication and queue handling were standardized, token validation gained a straightforward REST GET endpoint, and invalid tokens no longer have the power to crash a server.",
+  "title": "More control over text generation",
+  "summary": "More control over text sampling, a clearer SillyTavern listing, and sturdier request handling across the APIs.\n\nText requests now pass `temperature`, `top_p`, `presence_penalty`, and `frequency_penalty` through to compatible providers. Values supplied in a request take precedence over model defaults, giving developers more control over the output.\n\nThe project lists now include SillyTavern and describe its existing use of Pollinations for both text and image generation. The integration itself did not change.\n\nShared authentication and queue handling brings more consistent behavior across text and image requests. Invalid tokens now return a 401 error instead of crashing the text server; token validation and queue decisions were also tightened up.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,5 +31,17 @@
       "date": "2025-05-26"
     }
   ],
-  "generated_at": "2026-09-04T12:51:02.470013+00:00"
+  "generated_at": "2026-10-17T15:40:44.030861+00:00",
+  "highlights": [
+    {
+      "emoji": "🎯",
+      "title": "Tune text sampling",
+      "text": "Set `temperature`, `top_p`, `presence_penalty`, and `frequency_penalty` in text requests to shape the output. Supplied values take precedence over model defaults. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        2106
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

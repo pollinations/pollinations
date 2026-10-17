@@ -2,24 +2,12 @@
   "date": "2026-02-02",
   "period_start": "2026-02-02",
   "period_end": "2026-02-02",
-  "title": "Fresh guides for running image models on RTX 5090s",
-  "summary": "A garden-maintenance day: clearer self-hosting guides, live model discovery, stronger shared-infrastructure guardrails, and a fresh round of community updates.\n\nNew Vast.ai deployment guides cover Flux, Z-Image, and TwinFlow on RTX 5090 hardware, giving self-hosters a more direct path from rented GPU to image endpoint.\n\nThe MCP integration dropped its model cache and now fetches available models directly from the API, so connected tools see a more current model catalog without cache archaeology.\n\nA new LLM-based abuse detection script, Microbe tier support, dedicated refill-cron credentials, and dashboard alerting tighten the operational loop around keeping the commons usable.",
-  "pr_count": 13,
+  "title": "A home for GSoC 2026 contributors",
+  "summary": "A GSoC contributor hub, image-generation groundwork, and a new entry tier led the day; news copy and MCP model listings got tidied up too.\n\nA GSoC app was added with project ideas, mentor profiles, a timeline, application guidance, FAQs, and an assistant for contributor questions. The ideas range from gaming SDKs and a CLI to a platform health agent and multimodal semantic cache.\n\nA TwinFlow-Z-Image-Turbo server was added with aspect-ratio-preserving scaling up to 1280×1280 pixels and a five-step default. Flux Schnell’s GPU setup was also updated for RTX 5090 hardware.\n\nMicrobe was added to the tier configuration at 0.1 Pollen per day. Enter’s tier panel and the Hello page now show five tiers, with Microbe described as the entry tier and Spore as verified. Signup and verification logic did not change.",
+  "pr_count": 6,
   "prs": [
     {
       "number": 7269,
-      "date": "2026-02-02"
-    },
-    {
-      "number": 7843,
-      "date": "2026-02-02"
-    },
-    {
-      "number": 7845,
-      "date": "2026-02-02"
-    },
-    {
-      "number": 7846,
       "date": "2026-02-02"
     },
     {
@@ -39,47 +27,21 @@
       "date": "2026-02-02"
     },
     {
-      "number": 7861,
-      "date": "2026-02-02"
-    },
-    {
       "number": 7866,
-      "date": "2026-02-02"
-    },
-    {
-      "number": 7867,
-      "date": "2026-02-02"
-    },
-    {
-      "number": 7869,
-      "date": "2026-02-02"
-    },
-    {
-      "number": 7874,
       "date": "2026-02-02"
     }
   ],
-  "generated_at": "2026-09-04T11:49:16.996941+00:00",
+  "generated_at": "2026-10-17T16:02:04.628870+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "Kimi K2.5",
-      "text": "Upgraded model with vision support and improved reasoning capabilities."
-    },
-    {
-      "emoji": "🧠",
-      "title": "Web Research",
-      "text": "Claude can now use `perplexity` and `gemini-search` tools for real-time answers."
-    },
-    {
-      "emoji": "💎",
-      "title": "Premium Access",
-      "text": "High-end models `veo`, `claude-large`, and `seedream-pro` are now available for credit holders."
-    },
-    {
-      "emoji": "📱",
-      "title": "Moltbot Integration",
-      "text": "Use pollinations.ai on Telegram & WhatsApp via the new Moltbot provider."
+      "emoji": "💡",
+      "title": "GSoC ideas take shape",
+      "text": "Explore GSoC 2026 project ideas, mentor profiles, application guidance, and a contributor Q&A assistant in the new GSoC app.",
+      "prs": [
+        7269
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

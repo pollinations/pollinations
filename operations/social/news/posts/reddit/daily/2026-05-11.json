@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-11",
+  "period_start": "2026-05-11",
+  "period_end": "2026-05-11",
+  "generated_at": "2026-05-12T06:54:49.929823+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-11/images/reddit.jpg"
+    }
+  ],
+  "title": "Added developer earnings dashboard and fixed R2 cache headers",
+  "text": "Merged a couple of PRs today that address some long-standing friction points.\n\nFirst, PR #10727 brings the developer earnings dashboard online. If you are building apps on top of the infrastructure, you can finally see your usage and earnings data in one place instead of asking us to pull numbers for you. It is basic for now, but it gives you the actual data you need to see if your app is gaining traction.\n\nSecond, PR #10748 fixes an annoyance with how we were handling Cloudflare R2 cache headers. Repeat media requests were not caching properly, causing unnecessary latency. We aligned the headers to ensure instant loads for repeat requests and codified a strict 30-day lifecycle for media retention. While we were digging around in the storage config, we also bumped the maximum media size limits.\n\nIf you notice any weird caching behavior on images or video generation over the next few days, open an issue.\n\nCode and roadmap are open as always: github.com/pollinations/pollinations"
+}

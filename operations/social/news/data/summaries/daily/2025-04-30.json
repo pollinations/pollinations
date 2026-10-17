@@ -2,9 +2,9 @@
   "date": "2025-04-30",
   "period_start": "2025-04-30",
   "period_end": "2025-04-30",
-  "title": "More things built with pollinations found their way onto the project list",
-  "summary": "A community-directory day: more pollinations-powered projects, tidier model descriptions, and a few better signals about how people find things.\n\nNailsGen, imggen.top, and WebGeniusAI joined the showcase, while the broader project list got a cleanup and DesmondBot's link was brought up to date. The garden has more paths now.\n\nMistral's model copy was standardized, making the available text models a little easier to compare without translating between descriptions first.\n\nProject interactions can now carry an ad-clicked event parameter, and Draft Alpha was added to the affiliate system.",
-  "pr_count": 8,
+  "title": "Three more projects in the community directory",
+  "summary": "Three community projects joined the directory, while project sorting, an affiliate listing, and Mistral model descriptions got a tidy-up.\n\nNailsGen brings AI nail-art designs, imggen.top adds a Chinese-language FLUX image generator, and WebGeniusAI generates HTML websites with Pollinations visuals.\n\nThe former “For Teens” category is now “Featured.” Projects sort by priority and GitHub stars, the 🆕 marker applies only to submissions from the past 15 days, and DesmondBot’s listing points to its updated URL.\n\nThe AI UX-writing tool was added with matching terms for brand voice, copywriting, and product content.",
+  "pr_count": 7,
   "prs": [
     {
       "number": 1835,
@@ -16,10 +16,6 @@
     },
     {
       "number": 1845,
-      "date": "2025-04-30"
-    },
-    {
-      "number": 1848,
       "date": "2025-04-30"
     },
     {
@@ -39,5 +35,7 @@
       "date": "2025-04-30"
     }
   ],
-  "generated_at": "2026-09-04T12:34:01.222502+00:00"
+  "generated_at": "2026-10-17T15:38:40.224992+00:00",
+  "highlights": [],
+  "changelog": []
 }

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-12",
+  "period_start": "2026-09-12",
+  "period_end": "2026-09-12",
+  "generated_at": "2026-09-13T06:31:17.380329+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-12/images/reddit.jpg"
+    }
+  ],
+  "title": "17 PRs: durable agents and model updates",
+  "text": "17 PRs merged today.\n\nThe agent work is probably the consequential part: computer MCP now has a persistent per-user filesystem plus bash, while code-agent failures report their actual status/message. We also raised agent step and tool-call limits 3x, gave isolates more CPU/subrequest headroom, and emit tool results as content parts. The previous configuration was occasionally asking an agent to finish a task while quietly rationing its oxygen.\n\nOn the API side, community model IDs now get a prefix and key permissions were migrated with them. Callers can provide their own fallback model chain; Perplexity search options pass through unchanged and billing derives from the returned tier. Monitor model categories now come from catalog metadata, and the retired binary-cache read-through is gone.\n\nDeepSeek V4.1 Flash is available. Minimax H3 Max Turbo can produce 1080p video. Pollination_chatbot was added to image. The staging MCP worker and Floret shell isolation also got fixes.\n\nFinally, 402 balance notices now link to standalone top-up and key-editor pages, which is a more useful outcome than a dead-end error.\n\nCode and PR history: https://github.com/pollinations/pollinations\nDocs: https://pollinations.ai/docs"
+}

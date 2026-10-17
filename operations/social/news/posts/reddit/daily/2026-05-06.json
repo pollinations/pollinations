@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-06",
+  "period_start": "2026-05-06",
+  "period_end": "2026-05-06",
+  "generated_at": "2026-05-07T06:56:34.210839+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-06/images/reddit.jpg"
+    }
+  ],
+  "title": "Update: Persisted BYOP attribution and automated key rotation for text routing",
+  "text": "Merged two backend PRs today focused on routing and attribution.\n\nFirst, PR #10708 fixes an issue where BYOP (Bring Your Own Provider) attribution was getting dropped during certain request lifecycles. If you're supplying your own keys to the infrastructure, you need accurate usage tracking. This update persists the attribution state properly throughout the request cycle so developers actually get the credit and tracking they expect.\n\nSecond, PR #10712 overhauls how we handle cloud-provider billing and key rotation for text generation. We've added smarter routing logic across OpenRouter, DeepInfra, and AWS. Previously, hitting rate limits or exhausting credits on a specific key required manual intervention or caused request friction. The system now automatically rotates keys and routes requests around exhausted quotas without dropping the connection.\n\nIt's mostly invisible plumbing, but if you're building apps that hammer the text endpoints, you should notice fewer timeouts and better reliability.\n\nCode and routing logic are in the main repo: github.com/pollinations/pollinations. Let us know if you spot any weird routing behavior."
+}

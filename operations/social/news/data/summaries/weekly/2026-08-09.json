@@ -1,0 +1,399 @@
+{
+  "date": "2026-08-09",
+  "period_start": "2026-08-02",
+  "period_end": "2026-08-08",
+  "title": "The app garden got proper roots",
+  "summary": "The app garden grew, while the catalogs and APIs underneath it became easier to browse, build with, and debug.\n\nThe community directory moved its 859 entries from Markdown into a validated, newest-first catalog with support for verified screenshots. New additions spanned study tools, visual agent workflows, jewelry rendering, music, GIMP plugins, games, and terminal-based assistants. A strange and increasingly useful collection now has sturdier infrastructure beneath it.\n\nThe dashboard now separates Official and Community models, preserves search across scopes, uses clearer filters and ordering, and progressively loads the official catalog. It also says when the catalog cannot load instead of presenting an empty table. Canonical model entries keep older IDs working as aliases, while responses identify the model actually used.\n\nKrea 2 Medium joined image generation, Grok Imagine Video 1.5 added video with synchronized audio, and qwen3.8-max added text, image, and video input support. Grok Transcribe expanded the transcription endpoint with speaker-diarized output. Cohere Command A Plus requests also gained more faithful handling of messages, tools, streaming, reasoning effort, and supported images.\n\nThe 3D endpoint gained structured JSON POST requests for model choice, reference images, resolution, and seeds, while existing GET requests remain supported. Longer text requests received improved routing and timeout handling; image generation gained a shared-registry FLUX fallback. Invalid image inputs now produce useful client errors rather than looking like model failures.",
+  "pr_count": 97,
+  "prs": [
+    {
+      "number": 12631,
+      "date": "2026-08-02"
+    },
+    {
+      "number": 13016,
+      "date": "2026-08-02"
+    },
+    {
+      "number": 13020,
+      "date": "2026-08-02"
+    },
+    {
+      "number": 13022,
+      "date": "2026-08-02"
+    },
+    {
+      "number": 13024,
+      "date": "2026-08-02"
+    },
+    {
+      "number": 13028,
+      "date": "2026-08-02"
+    },
+    {
+      "number": 13029,
+      "date": "2026-08-02"
+    },
+    {
+      "number": 13012,
+      "date": "2026-08-03"
+    },
+    {
+      "number": 13025,
+      "date": "2026-08-03"
+    },
+    {
+      "number": 13034,
+      "date": "2026-08-03"
+    },
+    {
+      "number": 13035,
+      "date": "2026-08-03"
+    },
+    {
+      "number": 13041,
+      "date": "2026-08-03"
+    },
+    {
+      "number": 13046,
+      "date": "2026-08-03"
+    },
+    {
+      "number": 13047,
+      "date": "2026-08-03"
+    },
+    {
+      "number": 13048,
+      "date": "2026-08-03"
+    },
+    {
+      "number": 12978,
+      "date": "2026-08-04"
+    },
+    {
+      "number": 13032,
+      "date": "2026-08-04"
+    },
+    {
+      "number": 13043,
+      "date": "2026-08-04"
+    },
+    {
+      "number": 13063,
+      "date": "2026-08-04"
+    },
+    {
+      "number": 13074,
+      "date": "2026-08-04"
+    },
+    {
+      "number": 12276,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 12924,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13006,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13064,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13067,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13079,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13087,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13088,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13089,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13090,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13091,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13092,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13093,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13094,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13096,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13099,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13103,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13104,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13106,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13108,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13109,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13113,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13123,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 13110,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13118,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13127,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13135,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13137,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13140,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13141,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13142,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13143,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13144,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13152,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13155,
+      "date": "2026-08-06"
+    },
+    {
+      "number": 13059,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13069,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13070,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13156,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13157,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13158,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13159,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13160,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13162,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13163,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13164,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13165,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13168,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13169,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13170,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13172,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13173,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13175,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 12882,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13171,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13177,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13181,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13184,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13188,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13189,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13190,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13191,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13193,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13194,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13195,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13196,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13199,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13200,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13201,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13202,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13203,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13204,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13205,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13206,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13207,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13208,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13210,
+      "date": "2026-08-08"
+    }
+  ],
+  "generated_at": "2026-10-17T16:07:53.925903+00:00"
+}

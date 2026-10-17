@@ -2,9 +2,9 @@
   "date": "2025-12-18",
   "period_start": "2025-12-18",
   "period_end": "2025-12-18",
-  "title": "Gemini 3 Flash and GPT-5 behave more predictably",
-  "summary": "A model-tuning day: Gemini 3 Flash became the default, audio unlocked its full voice set, and the builder tools got clearer.\n\nGemini 3 Flash is now the default Gemini model, with its preview route pointed at the global region for broader availability. Azure-hosted GPT-5 models also stop having their temperature setting forcibly overridden. Model routing: still mostly plumbing, until it is your plumbing.\n\nThe OpenAI Audio model now exposes all supported voices, giving text-to-speech builders the complete set instead of a mysteriously smaller shelf.\n\nAPI keys now include last-used tracking and lifecycle controls, production-log scripts are easier for humans to read, and learn.js gained a Discord bot tutorial for people who would like their bot to leave the terminal occasionally.",
-  "pr_count": 10,
+  "title": "Gemini 3 Flash takes the default route",
+  "summary": "Gemini 3 Flash became the default Gemini route, chat requests got more consistent, and Enter gained clearer API key status while a tier refactor was rolled back.\n\n`gemini` and `gemini-search` now route to Gemini 3 Flash Preview, while `gemini-fast` provides Gemini 2.5 Flash Lite. The Gemini 3 Flash region was also corrected after the new aliases returned 404s.\n\n`openai-audio` now accepts all 13 voices listed in its model registry. Temperature handling also checks the resolved model, preventing unsupported values from causing 400 errors when an alias routes to GPT-5 or an o-series model.\n\nA new Learn tutorial walks through building a Python Discord bot with Pollinations text generation, Flux images, and voice, including conversation context and error handling.",
+  "pr_count": 8,
   "prs": [
     {
       "number": 6115,
@@ -16,10 +16,6 @@
     },
     {
       "number": 6144,
-      "date": "2025-12-18"
-    },
-    {
-      "number": 6154,
       "date": "2025-12-18"
     },
     {
@@ -41,11 +37,20 @@
     {
       "number": 6171,
       "date": "2025-12-18"
-    },
-    {
-      "number": 6174,
-      "date": "2025-12-18"
     }
   ],
-  "generated_at": "2026-09-04T12:35:36.300614+00:00"
+  "generated_at": "2026-10-17T15:55:59.311897+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Gemini 3 Flash routing",
+      "text": "Use `gemini` for Gemini 3 Flash Preview, or `gemini-fast` for Gemini 2.5 Flash Lite. `gemini-search` now uses Gemini 3 Flash Preview too. [Browse the model](https://enter.pollinations.ai/models?q=gemini-3-flash-preview).",
+      "prs": [
+        6144,
+        6157
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

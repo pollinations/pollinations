@@ -2,9 +2,9 @@
   "date": "2026-01-20",
   "period_start": "2026-01-20",
   "period_end": "2026-01-20",
-  "title": "Z-Image gets more reliable resolution handling",
-  "summary": "A small tuning day: steadier Z-Image dimensions, clearer API errors, and better instructions for the beings editing the codebase.\n\nUpdated the resolution math for Z-Image so requested dimensions are handled more consistently. Pixels remain stubbornly rectangular, but the calculations now agree.\n\nError responses are consolidated into clearer HTTP status codes, making it easier for apps to distinguish access issues from account-related requests and respond correctly.\n\nAdded Claude Code configuration and improved AGENTS.md so people and coding agents working on the repository have better project-specific guidance from the start.",
-  "pr_count": 4,
+  "title": "Clearer limits for z-image output",
+  "summary": "z-image got explicit output limits, billing errors got their own status code, and support links got tidied up.\n\nUpdated z-image’s resolution math for 2× SPAN upscaling. Requests can specify outputs up to 2,359,296 pixels in total, with each dimension between 256 and 4096 pixels. Oversized requests are rejected instead of silently scaled down.\n\nInsufficient Pollen balance now returns HTTP 402, alongside exhausted API key budgets; HTTP 403 is reserved for access denied. Model Monitor also separates billing and access-denied counts and excludes 402 responses from health calculations.\n\nRemoved donation links from the README and funding configuration. The support section now directs readers to Enter for an API key, and a legacy text-model wrapper no longer turns model errors into donation requests.",
+  "pr_count": 3,
   "prs": [
     {
       "number": 7054,
@@ -17,11 +17,9 @@
     {
       "number": 7499,
       "date": "2026-01-20"
-    },
-    {
-      "number": 7505,
-      "date": "2026-01-20"
     }
   ],
-  "generated_at": "2026-09-04T11:39:21.780826+00:00"
+  "generated_at": "2026-10-17T16:00:10.084350+00:00",
+  "highlights": [],
+  "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2025-08-14",
   "period_start": "2025-08-14",
   "period_end": "2025-08-14",
-  "title": "A new Roblox-flavored text model joins the rotation",
-  "summary": "A small garden day: another text model, tidier message plumbing, and a new community project on the map.\n\nThe roblox-rp Bedrock model is now available with random selection, adding another route for playful roleplay-style text generation.\n\nMessage sanitization moved into a dedicated utility, while text event data received a defined source structure. Less duplicated cleanup logic, more predictable foundations for text features.\n\nPollix AI was added to the project list, making another community-built use of the infrastructure easier to discover.",
+  "title": "A new text model for Roblox roleplay",
+  "summary": "A new roleplay text model, a community Telegram bot, and better accounting for text requests.\n\nAdded `roblox-rp` with anonymous access and tool support. Requests randomly route to Llama 3 8B Instruct or Mistral Small 2402 on Bedrock. The same work extracted message sanitization into a shared utility and removed `claudyclaude` from the available model list.\n\nAdded Pollix AI, a multilingual Telegram assistant with fast replies and image understanding, to the project list and social bots catalog.\n\nReworked text-request events to record timing, status, model selection, token usage, and moderation results. The model list also dropped `gpt-5-nano`, while `openai-large` access changed from seed to flower.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,5 +23,18 @@
       "date": "2025-08-14"
     }
   ],
-  "generated_at": "2026-09-04T12:21:57.747679+00:00"
+  "generated_at": "2026-10-17T15:45:24.512086+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Roblox roleplay text model",
+      "text": "Try `roblox-rp` for roleplay text with tool support and anonymous access. Requests route to either Llama 3 8B Instruct or Mistral Small 2402. [Browse the model](https://enter.pollinations.ai/models?q=roblox-rp).",
+      "prs": [
+        3679,
+        3696
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

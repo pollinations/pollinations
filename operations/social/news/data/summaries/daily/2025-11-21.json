@@ -2,8 +2,8 @@
   "date": "2025-11-21",
   "period_start": "2025-11-21",
   "period_end": "2025-11-21",
-  "title": "Frontend now handles image model data cleanly",
-  "summary": "A small frontend fix keeps image model handling from becoming an object lesson.\n\nThe frontend now properly handles image model objects, keeping image model selection and display behavior aligned with the data coming from the platform.",
+  "title": "Image model picker handles the new API response",
+  "summary": "The image model picker caught up with the API’s switch from strings to objects.\n\nThe frontend image model dropdown now reads model objects instead of expecting strings. It uses each model’s name as its ID, shows its description when available, and keeps the full object for model details. Text models are unchanged.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-11-21"
     }
   ],
-  "generated_at": "2026-09-04T12:16:47.153025+00:00"
+  "generated_at": "2026-10-17T15:52:51.304273+00:00",
+  "highlights": [],
+  "changelog": []
 }

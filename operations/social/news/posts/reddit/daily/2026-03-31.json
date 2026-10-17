@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-03-31",
+  "period_start": "2026-03-31",
+  "period_end": "2026-03-31",
+  "generated_at": "2026-04-01T06:32:18.354401+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-31/images/reddit.jpg"
+    }
+  ],
+  "title": "Update: itch.io compatibility, responsive backgrounds, and a CatGPT Discord bot",
+  "text": "Merged 9 PRs today. Mostly UI fixes and community additions to the ecosystem.\n\nFirst, we pushed some itch.io compatibility fixes and responsive Lottie backgrounds for the Sirius Cybernetics Elevator (#9607, #9789). If you've ever tried to make responsive backgrounds behave inside an itch.io iframe, you know it's an exercise in patience. It scales correctly now.\n\nSomeone built a CatGPT Discord bot (#9765) that generates sassy webcomics. It's live in the repo if you want to look at how they hooked up the image generation endpoint to Discord's API.\n\nThe rest of the merges are community submissions to the ecosystem directory. We added an AI RPG Engine to the games section, vocamax for learning, and a handful of specialized bots and image tools (Exovia Destek, Soy Cosmo, labol lens, and an Arabic smart kitchen AI).\n\nIf you're building something that hits the API and want it listed, open a PR. Free tier remains open, no keys required for basic usage.\n\nCode and open PRs are here: github.com/pollinations/pollinations"
+}

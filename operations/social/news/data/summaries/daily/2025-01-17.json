@@ -2,8 +2,8 @@
   "date": "2025-01-17",
   "period_start": "2025-01-17",
   "period_end": "2025-01-17",
-  "title": "GPT-4o joins the text endpoint as openai-large",
-  "summary": "GPT-4o arrived on the text endpoint, and the vision API got documentation for people who prefer maps to archaeology.\n\nThe text API now exposes GPT-4o through Azure under the openai-large model name, with the endpoint work landing alongside the integration. One model label, a larger brain behind it.\n\nDocumentation was added for the vision API, giving builders a clearer path from image input to useful model output.",
+  "title": "GPT-4o joins the text API",
+  "summary": "GPT-4o joined the text API, web-search defaults got clearer, and vision requests gained working examples.\n\nAdded `openai-large` as a GPT-4o chat model with vision support. The existing `openai` option remains on GPT-4o-mini, and its model-list description now says so.\n\nText requests using web search now get a search-specific system prompt when the caller does not provide one. The default prompt also no longer suggests adding Pollinations links to responses.\n\nThe API documentation now shows how to send image URLs or base64-encoded images for analysis with GPT-4o and GPT-4o-mini, including a Python example.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,5 +19,17 @@
       "date": "2025-01-17"
     }
   ],
-  "generated_at": "2026-09-04T13:58:33.350204+00:00"
+  "generated_at": "2026-10-17T15:32:52.769784+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "GPT-4o joins the model list",
+      "text": "Use `openai-large` for GPT-4o chat and vision requests; `openai` remains the GPT-4o-mini option. [Browse the model](https://enter.pollinations.ai/models?q=openai-large).",
+      "prs": [
+        1026
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

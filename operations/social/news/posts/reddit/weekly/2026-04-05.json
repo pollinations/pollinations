@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-04-05",
+  "period_start": "2026-03-29",
+  "period_end": "2026-04-04",
+  "generated_at": "2026-04-05T06:25:00.901187+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-05/images/reddit.jpg"
+    }
+  ],
+  "title": "66 PRs merged: Audio/video upgrades, new SDK endpoints, and API key management",
+  "text": "We merged 66 PRs this week. A lot of it was infrastructure plumbing, but several user-facing updates are live.\n\nFirst, the audio and video engines got a significant overhaul. We added ACE-Step 1.5 for music generation, fixed nova-reel multi-shot video generation, and implemented media caching. For STT, we enabled scribe speaker diarization and whisper word-level timestamps.\n\nThe SDK and API also got updated. We separated out dedicated TTS and music endpoints and added support for image editing via POST /v1/images/edits. The default image model is now zimage. We also finally shipped API key management endpoints (create, list, revoke) and fixed a caching bug where stale API key data was hanging around after updates.\n\nOn the model side, Wan 2.7 image models are available via DashScope (we fixed a bug where they were ignoring width/height parameters). Klein 4B was migrated to RunPod for better stability, and we added the gemini-3.1-flash-lite-preview model. We also migrated Claude models to AWS Bedrock and immediately had to revert our naming scheme changes because it broke things.\n\nFinally, the community directory grew by about 20 apps, and we deployed a new Discord bot family. This includes CatGPT (now with vision) and an opposite-prompt bot, which we immediately had to patch for NSFW safety rules, because obviously.\n\nDocs and examples are updated in the repo: github.com/pollinations/pollinations"
+}

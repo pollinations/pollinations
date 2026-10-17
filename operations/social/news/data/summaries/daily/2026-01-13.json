@@ -2,9 +2,9 @@
   "date": "2026-01-13",
   "period_start": "2026-01-13",
   "period_end": "2026-01-13",
-  "title": "The app garden got a serious expansion",
-  "summary": "A community harvest day: dozens of Pollinations-powered apps joined the directory while its categories, docs, and event plumbing caught up.\n\nThe Apps directory gained a large crop of creative projects: image studios, presentation and flyer makers, thumbnail tools, prompt and world generators, video demos, and assorted strange little machines for making things. There is now considerably more evidence that people will build anything if you give them an image URL.\n\nThe directory added chat apps, AI assistants, social and Telegram bots, automated replies, and Pollinations-powered studios. The chat category continues to demonstrate that every interface eventually becomes a text box with opinions.\n\nNew directory entries cover developer tooling, n8n integration, YouTube automation, editors and converters, language learning, education, games, and a couple of vibe-oriented projects. The ecosystem is broadening in its usual unplanned-but-useful direction.",
-  "pr_count": 80,
+  "title": "Creative tools fill the app catalog",
+  "summary": "A community-heavy day added dozens of app listings, then tidied the catalog that has to hold them.\n\nAgent-added listings brought community projects for image generation, photo editing, writing, presentations, flyers, and short videos into the catalog. Examples include PixArt AI for iOS artwork, Whiskautoz for bulk images, Postify for WordPress drafts, and Pimp my Pics for photo effects. These PRs added listings, not new Pollinations API features.\n\nThe catalog gained community chat clients, social bots, and conversational tools across several languages. Listings range from Telegram and Discord bots to Pollinations AI Studio’s dialogue, image, and video client, plus InstAI’s image-sharing platform. The work makes those projects easier to discover; it does not change their underlying behavior.\n\nOther agent-added listings span decision-making games, language-learning quests, transcription, knowledge maps, and developer workflows. Among them are Lapse Game 2075, ScrollQuest, Faster Vox, community-made n8n nodes for Pollinations image and text APIs, and a console editor with LLM tools. The range is a useful reminder that an app catalog rarely stays inside its categories.",
+  "pr_count": 73,
   "prs": [
     {
       "number": 7072,
@@ -12,10 +12,6 @@
     },
     {
       "number": 7079,
-      "date": "2026-01-13"
-    },
-    {
-      "number": 7084,
       "date": "2026-01-13"
     },
     {
@@ -100,10 +96,6 @@
     },
     {
       "number": 7134,
-      "date": "2026-01-13"
-    },
-    {
-      "number": 7135,
       "date": "2026-01-13"
     },
     {
@@ -279,10 +271,6 @@
       "date": "2026-01-13"
     },
     {
-      "number": 7202,
-      "date": "2026-01-13"
-    },
-    {
       "number": 7203,
       "date": "2026-01-13"
     },
@@ -307,25 +295,11 @@
       "date": "2026-01-13"
     },
     {
-      "number": 7220,
-      "date": "2026-01-13"
-    },
-    {
-      "number": 7226,
-      "date": "2026-01-13"
-    },
-    {
       "number": 7229,
-      "date": "2026-01-13"
-    },
-    {
-      "number": 7234,
-      "date": "2026-01-13"
-    },
-    {
-      "number": 7237,
       "date": "2026-01-13"
     }
   ],
-  "generated_at": "2026-09-04T11:34:14.571754+00:00"
+  "generated_at": "2026-10-17T16:00:52.915940+00:00",
+  "highlights": [],
+  "changelog": []
 }

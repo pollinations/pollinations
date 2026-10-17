@@ -35,5 +35,17 @@
       "date": "2026-04-18"
     }
   ],
-  "generated_at": "2026-09-04T11:45:19.982924+00:00"
+  "generated_at": "2026-09-04T11:45:19.982924+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Multimodal Image Generator",
+      "text": "Try a community-built web interface for the image API. The project also includes an open-source CLI. [Try it](https://mowenyun.github.io/multimodal-image-generator/).",
+      "prs": [
+        10306
+      ],
+      "kind": "app"
+    }
+  ],
+  "changelog": []
 }

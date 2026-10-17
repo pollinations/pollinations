@@ -2,8 +2,8 @@
   "date": "2025-05-05",
   "period_start": "2025-05-05",
   "period_end": "2025-05-05",
-  "title": "Streaming cache gets less forgetful",
-  "summary": "A small streaming reliability pass: fewer cache surprises, cleaner code underneath.\n\nStreaming cache issues were fixed, making repeat streamed responses more reliable while cleaning up related code.",
+  "title": "Streaming text responses can be cached",
+  "summary": "A cache repair for streaming text: completed responses can now be reused without compression getting in the way.\n\nReworked the text API cache so completed streams can be stored and reused. Equivalent requests across different hosts now share a cache key, and response headers are normalized to avoid double compression.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-05-05"
     }
   ],
-  "generated_at": "2026-09-04T12:37:11.545851+00:00"
+  "generated_at": "2026-10-17T15:38:57.988441+00:00",
+  "highlights": [],
+  "changelog": []
 }

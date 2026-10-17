@@ -2,8 +2,8 @@
   "date": "2025-02-23",
   "period_start": "2025-02-23",
   "period_end": "2025-02-23",
-  "title": "Project links and community tools got a refresh",
-  "summary": "A quiet garden pass: a project moved house and another joined the map.\n\nurSapere AI now points to its new Vercel home, and PrivatePollenAI has been added to the projects list. Small map updates, fewer dead ends.",
+  "title": "A new community chat app joins the directory",
+  "summary": "A new community chat app joined the directory, and an existing listing got a better address.\n\nPrivatePollenAI joined the project directory and LLM Integrations list. It stores chat data locally, uses Pollinations for text and image generation, and lets users choose a model and set custom system instructions. The urSapere AI listing also got an updated website link and creator attribution.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,5 +15,7 @@
       "date": "2025-02-23"
     }
   ],
-  "generated_at": "2026-09-04T13:59:58.155005+00:00"
+  "generated_at": "2026-10-17T15:34:10.180868+00:00",
+  "highlights": [],
+  "changelog": []
 }

@@ -119,5 +119,44 @@
       "date": "2026-08-15"
     }
   ],
-  "generated_at": "2026-09-04T11:52:08.899931+00:00"
+  "generated_at": "2026-09-04T11:52:08.899931+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Make your own prompt agents",
+      "text": "Create an editable agent in My Models or the Polli CLI with a system prompt, a Pollinations base model, public MCP servers, and optional Pollinations tools.",
+      "prs": [
+        12336
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Pollinations tools for MCP",
+      "text": "Connect an MCP client to hosted tools for chat, image, video, audio, model discovery, and balance. [See MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        13111
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🌟",
+      "title": "Pollen for growing apps",
+      "text": "New quests award Pollen for an external user's successful paid request and for reaching 10 distinct external users.",
+      "prs": [
+        13303
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎵",
+      "title": "A voice agent for businesses",
+      "text": "Indish Marketer's Voice Agent answers from your business knowledge base and captures leads through spoken conversations. [Try it](https://voice.prototools.in).",
+      "prs": [
+        13396
+      ],
+      "kind": "app"
+    }
+  ],
+  "changelog": []
 }

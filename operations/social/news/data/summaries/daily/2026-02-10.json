@@ -28,7 +28,12 @@
     {
       "emoji": "📚",
       "title": "Docs Meet Play",
-      "text": "Documentation merged directly into the Play page—configure models visually and copy generated API code instantly."
+      "text": "Documentation merged directly into the Play page—configure models visually and copy generated API code instantly.",
+      "prs": [
+        8130
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

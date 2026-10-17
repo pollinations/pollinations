@@ -1,0 +1,79 @@
+{
+  "date": "2025-03-02",
+  "period_start": "2025-02-23",
+  "period_end": "2025-03-01",
+  "title": "Text requests can call tools and stream replies",
+  "summary": "The text API gained tools and streaming, then spent the rest of the week making those responses more predictable, while community-built apps kept arriving.\n\nCompletion requests gained `tools` and `tool_choice`, with tool calls preserved in OpenAI-compatible responses and function results accepted in follow-up messages. Requests using `stream: true` gained provider-backed server-sent events. Subsequent changes made chunks consistently readable as SSE and checked that streams end with one `[DONE]` event. Software found several ways to finish a stream; the API is aiming for one.\n\nThe OpenAI text request limit doubled to 512,000 message characters. The model list gained `openai-reasoning`, backed by o1-mini, and the `hypnosis-tracy` persona. SearchGPT also gained support for an explicitly selected model.\n\nThe text API moved several generators to a shared client and updated its Cloudflare chat completions integration. OpenAI-style responses retain existing IDs and timestamps; request fields and stream chunks are handled more consistently. Error handling was tightened so streaming API errors return HTTP errors, while the later overhaul preserved provider error details. OpenAI-backed routes also moved through a gateway client.\n\nPrivatePollenAI joined the directory with local chat storage and Pollinations-powered text and images. Gacha joined the social bots list with chat, web search, and character-aware image generation; Musify joined the creative apps list with an AI music assistant, voice commands, and playlists. Directory links and creator attribution also got some maintenance.",
+  "pr_count": 17,
+  "prs": [
+    {
+      "number": 1213,
+      "date": "2025-02-23"
+    },
+    {
+      "number": 1222,
+      "date": "2025-02-23"
+    },
+    {
+      "number": 1224,
+      "date": "2025-02-24"
+    },
+    {
+      "number": 1226,
+      "date": "2025-02-24"
+    },
+    {
+      "number": 1228,
+      "date": "2025-02-24"
+    },
+    {
+      "number": 1229,
+      "date": "2025-02-24"
+    },
+    {
+      "number": 1230,
+      "date": "2025-02-24"
+    },
+    {
+      "number": 1231,
+      "date": "2025-02-24"
+    },
+    {
+      "number": 1232,
+      "date": "2025-02-25"
+    },
+    {
+      "number": 1233,
+      "date": "2025-02-25"
+    },
+    {
+      "number": 1234,
+      "date": "2025-02-25"
+    },
+    {
+      "number": 1236,
+      "date": "2025-02-26"
+    },
+    {
+      "number": 1237,
+      "date": "2025-02-26"
+    },
+    {
+      "number": 1217,
+      "date": "2025-02-27"
+    },
+    {
+      "number": 1254,
+      "date": "2025-02-27"
+    },
+    {
+      "number": 1257,
+      "date": "2025-02-27"
+    },
+    {
+      "number": 1259,
+      "date": "2025-02-28"
+    }
+  ],
+  "generated_at": "2026-10-17T16:03:32.691685+00:00"
+}

@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-05-17",
+  "period_start": "2026-05-17",
+  "period_end": "2026-05-17",
+  "generated_at": "2026-05-18T07:18:06.704074+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-17/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-17/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-17/images/instagram-3.jpg"
+    }
+  ],
+  "text": "42 PRs merged this week. The greenhouse is officially overflowing with 38 new community apps—from pixel asset forges to local agents.\n\nWe also shipped A-to-B video transitions (pass a start and end frame, watch the pixels figure out the rest) and audio diarization (the API finally knows who is saying what in your transcripts).\n\nThanks to everyone building in the open. Pull the latest from the repo to play with the new video and audio endpoints, or check the showcase to see what everyone's making. Link in bio. 🐝🌱\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #generativeai #webdev",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

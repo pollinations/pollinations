@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-03-08",
+  "period_start": "2026-03-01",
+  "period_end": "2026-03-07",
+  "generated_at": "2026-03-08T06:19:52.781661+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-08/images/reddit.jpg"
+    }
+  ],
+  "title": "41 merged PRs: flux-2-dev, suno-v5, sdk upgrades, and media service fixes",
+  "text": "We merged 41 PRs this week. Mostly expanding the model roster and cleaning up edge cases in the API.\n\nNew models: `suno-v5`, `step-3.5-flash`, and `flux-2-dev` are now live. We added image input support for `flux-2-dev` and had to write a quick fix to snap its dimensions to supported sizes so it stops throwing errors. Suno routing is also fixed to properly hit `generateSunoMusic` on GET `/audio/:text`.\n\nOn the SDK side, `@pollinations_ai/sdk` now supports Speech-to-Text and Media Uploads via account endpoints. We also updated the media service itself—removed the delete function, added `Content-Disposition`, and put the filename in the hash.\n\nA small but necessary fix: we normalized `finish_reason` to match OpenAI's format. We dropped Portkey strict compliance for this because downstream tools were breaking without the standard OpenAI finish states. We also excluded 4xx errors from our internal model monitor request counts. Turns out user errors shouldn't tank our internal success rate metrics.\n\nFinally, we added abuse detection cron support and better GitHub account syncing to keep the banned list accurate. The community showcase got flooded with about 20 new apps. To handle the volume, we shifted app approvals to happen before PR creation, which keeps the queue a lot cleaner.\n\nRepo and docs: https://github.com/pollinations/pollinations"
+}

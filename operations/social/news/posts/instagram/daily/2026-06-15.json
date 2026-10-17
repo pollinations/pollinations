@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-06-15",
+  "period_start": "2026-06-15",
+  "period_end": "2026-06-15",
+  "generated_at": "2026-06-16T07:52:46.854159+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-15/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-15/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-15/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Shipped a few things this week to make the pixels flow better.\n\nIdeogram 4.0 is now on the image roster (turbo, balanced, and quality) for when you need those extra crisp generations. We also added an embed bridge so host-shared auth actually feels seamless when you're dropping apps into the playground. \n\nFinally, cleaned up the mobile UI. The account menu no longer wraps weirdly and just says 'Connect' like it should. Sometimes it's the little things.\n\nPlay around with the new models on pollinations.ai 🌸\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #ideogram #webdev #uiux #generativeai #buildinpublic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

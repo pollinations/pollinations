@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-03-19",
+  "period_start": "2026-03-19",
+  "period_end": "2026-03-19",
+  "generated_at": "2026-03-20T06:16:28.939246+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-19/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-19/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-19/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Setup scripts are basically digital plumbing. You only notice them when they're broken, and when they are, everything is terrible.\n\nWe just merged a fix for the OpenClaw setup script (v2026.3). It now does exactly what it's supposed to do: gets completely out of your way so you can actually build things. Less time configuring, more time creating.\n\nEverything is in the repo. Go make something weird today. 🛠️✨\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #codinglife #developer #lofiart #buildinpublic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

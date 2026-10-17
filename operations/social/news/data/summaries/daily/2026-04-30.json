@@ -32,12 +32,21 @@
     {
       "emoji": "⚡",
       "title": "Edge Text Generation",
-      "text": "Text generation now runs directly on the edge worker. One less network hop means faster responses when hitting the [text API](https://gen.pollinations.ai/v1/chat/completions)."
+      "text": "Text generation now runs directly on the edge worker. One less network hop means faster responses when hitting the [text API](https://gen.pollinations.ai/v1/chat/completions).",
+      "prs": [
+        10555
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🚀",
       "title": "Llama 3.3 70B",
-      "text": "Meta's Llama 3.3 70B Instruct is now live. Just pass `llama` to the [text endpoint](https://gen.pollinations.ai/v1/models) and see what it has to say."
+      "text": "Meta's Llama 3.3 70B Instruct is now live. Just pass `llama` to the [text endpoint](https://gen.pollinations.ai/v1/models) and see what it has to say.",
+      "prs": [
+        10582
+      ],
+      "kind": "model"
     }
-  ]
+  ],
+  "changelog": []
 }

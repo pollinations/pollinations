@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-10",
+  "period_start": "2026-07-10",
+  "period_end": "2026-07-10",
+  "generated_at": "2026-07-11T06:43:42.410378+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-10/images/reddit.jpg"
+    }
+  ],
+  "title": "Added GPT 5.6, Seedream 5 Pro, and fixed Gemini GA migration",
+  "text": "Merged 5 PRs today. Main changes are new models and some backend caching fixes.\n\nFirst, GPT 5.6 and Seedream 5 Pro are now available through the main endpoint. We also had to push a quick fix for Gemini. Google retired the preview model ID for gemini-3.1-flash-lite, which was causing routing failures. We've migrated it to the GA model ID, so if your Gemini calls were dropping earlier today, they should be stable now.\n\nOn the infrastructure side, we added caching to the model health consumers. Previously, we were running redundant checks and essentially hammering our own health endpoints. Caching this drops the unnecessary load and speeds up the health checks overall.\n\nFor the CLI, we added `**kwargs` support for rewards in `polli-cli`. Passing quest parameters was a bit too rigid, so this gives you more flexibility when handling reward callbacks in your scripts.\n\nFinally, we expanded the community models allowlist to include JustScriptzz, riofndev, and solarnode-developement. If you're building community models and want to get added, just open an issue.\n\nCode and logs are in the repo: https://github.com/pollinations/pollinations"
+}

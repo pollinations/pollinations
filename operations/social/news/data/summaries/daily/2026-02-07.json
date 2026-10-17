@@ -23,5 +23,44 @@
       "date": "2026-02-07"
     }
   ],
-  "generated_at": "2026-03-18T19:58:13.610048+00:00"
+  "generated_at": "2026-03-18T19:58:13.610048+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Imagen 4 added",
+      "text": "Generate images with `imagen-4`. [View the model](https://enter.pollinations.ai/models?q=imagen-4).",
+      "prs": [
+        8063
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Flux 2 Dev added",
+      "text": "Generate images with `flux-2-dev`. [View the model](https://enter.pollinations.ai/models?q=flux-2-dev).",
+      "prs": [
+        8063
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Grok Video added",
+      "text": "Try video generation with `grok-video`, marked Alpha. [View the model](https://enter.pollinations.ai/models?q=grok-video).",
+      "prs": [
+        8063
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "ElevenLabs speech endpoint",
+      "text": "Turn text into speech through `/v1/audio/speech`, with voice mapping for OpenAI-compatible requests. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        7281
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

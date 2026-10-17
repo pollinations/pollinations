@@ -1,0 +1,95 @@
+{
+  "date": "2025-05-11",
+  "period_start": "2025-05-04",
+  "period_end": "2025-05-10",
+  "title": "The text-model garden grew",
+  "summary": "More ways to build with text models arrived alongside quieter work to make their responses, capabilities, and documentation more predictable.\n\nThe catalog gained `openai-fast` for text and image input, `openai-roblox` with tool support, and two guided personas: the in-character `mirexa` and biomimicry-focused `bidara`. The `openai` and `deepseek-reasoning` mappings were also updated. More choices are useful; knowing what each choice does is better.\n\nText-cache changes made completed streaming responses reusable, let equivalent requests across hosts share a cache key, and normalized headers to avoid double compression. The earlier cache rework also made requests easier to distinguish without losing streaming response types.\n\nThe `/models` endpoint gained a `tools` capability flag, and the OpenAI-compatible endpoint now forwards complete `response_format` objects, including supplied JSON schemas. `llama-vision` was removed from the available text-model list, while the Portkey mapping stopped selecting upstream models for eleven aliases, including `claude`, `gemini`, and `command-r`; that change added no replacement routing.\n\nA Websim Worker was added to turn a prompt in a URL path into self-contained HTML, with Pollinations images and linked subpages. The MCP guides now include the community-maintained MCPollinations server, and text-to-speech POST examples show how to decode the base64 audio returned in JSON.",
+  "pr_count": 21,
+  "prs": [
+    {
+      "number": 1890,
+      "date": "2025-05-04"
+    },
+    {
+      "number": 1891,
+      "date": "2025-05-04"
+    },
+    {
+      "number": 1892,
+      "date": "2025-05-04"
+    },
+    {
+      "number": 1894,
+      "date": "2025-05-04"
+    },
+    {
+      "number": 1896,
+      "date": "2025-05-04"
+    },
+    {
+      "number": 1904,
+      "date": "2025-05-05"
+    },
+    {
+      "number": 1898,
+      "date": "2025-05-06"
+    },
+    {
+      "number": 1903,
+      "date": "2025-05-06"
+    },
+    {
+      "number": 1909,
+      "date": "2025-05-06"
+    },
+    {
+      "number": 1911,
+      "date": "2025-05-06"
+    },
+    {
+      "number": 1916,
+      "date": "2025-05-08"
+    },
+    {
+      "number": 1924,
+      "date": "2025-05-08"
+    },
+    {
+      "number": 1925,
+      "date": "2025-05-08"
+    },
+    {
+      "number": 1920,
+      "date": "2025-05-09"
+    },
+    {
+      "number": 1926,
+      "date": "2025-05-09"
+    },
+    {
+      "number": 1927,
+      "date": "2025-05-09"
+    },
+    {
+      "number": 1930,
+      "date": "2025-05-09"
+    },
+    {
+      "number": 1922,
+      "date": "2025-05-10"
+    },
+    {
+      "number": 1935,
+      "date": "2025-05-10"
+    },
+    {
+      "number": 1937,
+      "date": "2025-05-10"
+    },
+    {
+      "number": 1938,
+      "date": "2025-05-10"
+    }
+  ],
+  "generated_at": "2026-10-17T16:08:15.593243+00:00"
+}

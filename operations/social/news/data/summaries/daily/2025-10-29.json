@@ -2,14 +2,10 @@
   "date": "2025-10-29",
   "period_start": "2025-10-29",
   "period_end": "2025-10-29",
-  "title": "Image requests get better size handling",
-  "summary": "A tuning day: cleaner image sizing, more reliable model access, and less manual deployment and announcement work.\n\nImage generation now handles requested dimensions more cleanly, with Seedream configuration brought into line as well. Fewer surprises between the size you ask for and the pixels that arrive.\n\nThe enter proxy now forwards headers correctly and restores model access, while the Kontext registry was aligned with its actual configuration. Azure OpenAI Nano 5 also joined the configured model lineup.\n\nA CI/CD pipeline now handles enter-services deployments, and PR review plus Discord announcement automation keeps changes moving and the community informed without someone repeatedly pressing the same buttons.",
-  "pr_count": 7,
+  "title": "More room for Seedream images",
+  "summary": "Seedream gets a larger canvas, image routing gets tidier, and several model settings change.\n\nSeedream’s maximum pixel budget increased from 2048×2048 to 4096×4096. Requests without dimensions now default to 1024×1024, rather than the maximum. Other image models keep their existing defaults.\n\nEnter’s image proxy now forwards request methods, headers, and bodies as expected. Kontext requests through Enter no longer hit the Seed-tier check, and its model configuration now matches the registry used for resolution and tier enforcement. Seedream requests are restricted to Enter.\n\n`openai-large` now uses GPT-4.1 instead of GPT-5 Chat. The same update changes input and output limits for several models and raises the required tiers for `qwen-coder` and `mistral`.",
+  "pr_count": 5,
   "prs": [
-    {
-      "number": 4846,
-      "date": "2025-10-29"
-    },
     {
       "number": 4848,
       "date": "2025-10-29"
@@ -27,13 +23,21 @@
       "date": "2025-10-29"
     },
     {
-      "number": 4855,
-      "date": "2025-10-29"
-    },
-    {
       "number": 4857,
       "date": "2025-10-29"
     }
   ],
-  "generated_at": "2026-09-04T12:57:17.561860+00:00"
+  "generated_at": "2026-10-17T15:50:26.003184+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "A larger Seedream canvas",
+      "text": "Seedream now supports a maximum pixel budget of 4096×4096. Leave dimensions out for a 1024×1024 image, or specify a larger size through Enter. [View Seedream](https://enter.pollinations.ai/models?q=seedream).",
+      "prs": [
+        4848
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-04-19",
+  "period_start": "2026-04-12",
+  "period_end": "2026-04-18",
+  "generated_at": "2026-04-19T06:32:36.167679+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-19/images/reddit.jpg"
+    }
+  ],
+  "title": "CLI v0.1.0, inference routing migrations, and OpenAI SDK browser support",
+  "text": "Merged 29 PRs this week. Mostly focused on inference routing, some long-overdue plumbing, and getting our CLI out the door.\n\nFirst, the `polli` CLI is officially at v0.1.0. If you've ever wanted to generate images, run video demo skills, or hit text models directly from your terminal without writing a wrapper script, it's ready. You can check the source at github.com/pollinations/polli.\n\nOn the infrastructure side, we spent a lot of time migrating models to faster hardware and providers. Kimi, Deepseek, GLM, Qwen-large, and Minimax are now routing through Fireworks. We also moved Sana Sprint 1.6B over to GH200s. You should notice a latency drop on these. We also separated price from cost in the model registry to make the internal accounting less of a headache.\n\nFor the frontend devs: we finally fixed the CORS request headers. The OpenAI SDKs will now work directly from the browser when hitting our endpoints. No more proxy workarounds needed.\n\nOther notable plumbing: added a reasoning flag for Gemini image models, fixed an int4 model path issue for RTX 4090s, and the dashboard will now actually hide your expired API keys so you don't have to look at them.\n\nThe community showcase continues to grow faster than we can easily track. 14 new apps merged this week, including a few games, learning tools, and a multimodal image generator.\n\nCode is open, as always. Let us know if the CLI breaks anything on your machine."
+}

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-10-04",
+  "period_start": "2026-09-27",
+  "period_end": "2026-10-03",
+  "generated_at": "2026-10-04T08:11:07.320495+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-10-04/images/reddit.jpg"
+    }
+  ],
+  "title": "Weekly update: agent sandboxes, larger inputs, and Quest links",
+  "text": "165 PRs merged this week. The useful bits, rather than the changelog in numerical order:\n\n- **Agents:** Polli gained Codex, Claude Code, and Hermes harnesses, plus sandbox commands and ripgrep in its runtime. Gen now supports [E2B-compatible sandboxes](https://github.com/pollinations/pollinations/pull/15656), so an agent can get somewhere to run code instead of merely suggesting that someone else run it.\n- **Inputs:** Streaming uploads now support 400 MiB; chat has a 100 MiB inline-image path and accepts large PDFs and supported audio inputs. The SDK also gained speech inputs, audioTransform, and cancellation before dispatch and while reading response bodies. These are separate paths with separate limits, not one universal 400 MiB request limit.\n- **Models:** Additions include Lightning Image Turbo, Gemini 3.5 Transcribe, ElevenLabs stem separation, Azure TTS, and two decisions models. We also added weekly model evals with rate-limit-aware runs; the catalog now makes modality and status easier to inspect.\n- **Community:** App submissions can be linked to Quests, and Quest issues gained pagination and reporter rewards. The site’s new Home, Apps, and Community pages make a growing directory less of a scavenger hunt.\n\nThere were also less photogenic fixes: Windows CLI exit codes, Flow cold starts, narrow-screen auth, and image-input validation. The website v2 work is still being assembled; this isn’t a claim that every route is finished.\n\nCode and the full PR trail are in the [repo](https://github.com/pollinations/pollinations). If you try the sandbox or larger-input paths, reports of where they fail would be especially useful."
+}

@@ -2,8 +2,8 @@
   "date": "2025-07-18",
   "period_start": "2025-07-18",
   "period_end": "2025-07-18",
-  "title": "A new AI Dream Girl Studio project joins chat",
-  "summary": "A small tuning day: a new chat project for creators, queue migration work, and a caching experiment returned to the workbench.\n\nChat projects gained AI Dream Girl Studio, giving people another ready-to-use creative space to build with.\n\nThe backend queue received migration and handling updates for Nebius, alongside formatting cleanup. Mostly plumbing, which is where software keeps its surprises.\n\nModel-specific semantic caching with Vectorize was introduced and then reverted in the same stretch, keeping the production path clean while the approach gets another look.",
+  "title": "New text models, with routing and queue changes",
+  "summary": "Three text models joined the roster, routing and queues changed, and a semantic-cache experiment was rolled back.\n\nAdded `llama-fast-roblox`, `mistral-roblox`, and `mistral-nemo-roblox`. Several existing models changed providers or routes, including `openai-large` moving from GPT-4.1 to GPT-4o Mini. Queue concurrency changed by tier, and `gptimage` requests below Nectar tier now use flux.\n\nAI Dream Girl Studio joined the chat projects list. Its creator uses Pollinations-generated character visuals alongside animation, voiceovers, and storytelling.\n\nModel-specific semantic caching was merged for the text API, then reverted the same day. Text requests do not use the proposed Vectorize path to reuse responses for similar prompts.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,5 +23,26 @@
       "date": "2025-07-18"
     }
   ],
-  "generated_at": "2026-09-04T12:11:14.908444+00:00"
+  "generated_at": "2026-10-17T15:44:18.973304+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Llama fast Roblox added",
+      "text": "Try `llama-fast-roblox` through the text API. [View the model](https://enter.pollinations.ai/models?q=llama-fast-roblox).",
+      "prs": [
+        3205
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Two Mistral Roblox options",
+      "text": "The text model roster also gained `mistral-roblox` and `mistral-nemo-roblox`. [View mistral-roblox](https://enter.pollinations.ai/models?q=mistral-roblox).",
+      "prs": [
+        3205
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

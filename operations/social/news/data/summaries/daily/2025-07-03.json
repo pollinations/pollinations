@@ -2,8 +2,8 @@
   "date": "2025-07-03",
   "period_start": "2025-07-03",
   "period_end": "2025-07-03",
-  "title": "Two more projects join the garden",
-  "summary": "A small community day: two new projects added to the growing list of things people are making.\n\nThe community project list now includes YankoviC and PairFusion, giving people two more concrete examples of what can be built with pollinations infrastructure.",
+  "title": "A Weird Al-themed language joins Hack-&-Build",
+  "summary": "Two community coding projects joined the lists, while model names and pricing metadata got a correction.\n\nYankoviC was added to the project list. Its Accordion IDE uses Pollinations for tab autocomplete and chat assistance while people learn the language.\n\nPairFusion was added to the Vibe Coding project list, with links to its demo and repository. It offers an AI-assisted collaborative IDE for real-time pair programming and feedback.\n\nThe model list now identifies `openai` as GPT-4o Mini and `openai-audio` as GPT-4o Mini Audio Preview. Pricing metadata was also revised across several listed models.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,5 +19,7 @@
       "date": "2025-07-03"
     }
   ],
-  "generated_at": "2026-09-04T12:03:35.311949+00:00"
+  "generated_at": "2026-10-17T15:43:08.328969+00:00",
+  "highlights": [],
+  "changelog": []
 }

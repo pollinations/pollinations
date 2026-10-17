@@ -56,18 +56,35 @@
     {
       "emoji": "🎨",
       "title": "Flux-2-dev gets eyes",
-      "text": "You can now pass an `?image=<url>` parameter to the `flux-2-dev` model for image-to-image generation via our [Unified API](https://gen.pollinations.ai). Pixels in, different pixels out."
+      "text": "You can now pass an `?image=<url>` parameter to the `flux-2-dev` model for image-to-image generation via our [Unified API](https://gen.pollinations.ai). Pixels in, different pixels out.",
+      "prs": [
+        8819
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🔑",
       "title": "Name tags for your apps",
-      "text": "Bring Your Own Pollen (BYOP) authorization screens now display your app name and GitHub handle. Users finally know exactly who they are sharing their pollen with."
+      "text": "Bring Your Own Pollen (BYOP) authorization screens now display your app name and GitHub handle. Users finally know exactly who they are sharing their pollen with.",
+      "prs": [
+        8564
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🚀",
       "title": "Six new apps hit the showcase",
       "text": "The community shipped a massive batch of tools this week, including [AiApps](https://connor.ct.ws/aiapps/), [PromptLab Studio](https://promptlabstudio.vercel.app/), and a dedicated AI image gallery.",
+      "prs": [
+        8769,
+        8781,
+        8800,
+        8802,
+        8808,
+        8827
+      ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

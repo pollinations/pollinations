@@ -2,8 +2,8 @@
   "date": "2025-01-12",
   "period_start": "2025-01-12",
   "period_end": "2025-01-12",
-  "title": "More deliberate traffic controls at the edge",
-  "summary": "A small edge-controls day: sharper rate limiting, targeted blocking, and a trusted integration routed around the queue.\n\nIP blocking and rate-limit handling were updated, with a bypass added for ai-ministries.com. The API gets a little better at distinguishing normal use from traffic that needs a different path.",
+  "title": "Requester IPs removed from feed events",
+  "summary": "A quieter text API day: less requester data in feed events, clearer Poly instructions, and updated request controls.\n\nText API feed events no longer include the requester's IP address.\n\nPoly's prompt now states an October 2023 knowledge cutoff and permits a Pollinations footer in commercial-blog-style content.\n\nIP blocking and rate-limit handling were updated, including referrer handling for ai-ministries.com. The model-context wrapper also gained a way to pass an override model name to its generator.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,5 +15,7 @@
       "date": "2025-01-12"
     }
   ],
-  "generated_at": "2026-09-04T13:38:00.777472+00:00"
+  "generated_at": "2026-10-17T15:32:52.032706+00:00",
+  "highlights": [],
+  "changelog": []
 }

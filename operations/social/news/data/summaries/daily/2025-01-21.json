@@ -2,8 +2,8 @@
   "date": "2025-01-21",
   "period_start": "2025-01-21",
   "period_end": "2025-01-21",
-  "title": "Gmail agent gets a cleanup pass",
-  "summary": "A small Gmail agent cleanup day: fewer rough edges, more dependable email automation.\n\nThe Gmail agent received targeted tweaks and fixes, making the email-connected workflow a little less likely to discover a new and inventive way to misbehave.",
+  "title": "DeepSeek reasoning added to the text API",
+  "summary": "One text API PR added DeepSeek reasoning, tightened OpenRouter routing, and removed an OpenAI input check.\n\nThe text API gained a `deepseek-reasoner` handler. DeepSeek requests now use the selected model and record reasoning content when the provider returns it.\n\nSupported model aliases now map to OpenRouter provider IDs, with `deepseek/deepseek-chat` as the fallback for unknown aliases. OpenRouter errors also get structured handling in the text server.\n\nThe text API no longer applies its 56,000-character input check to the `openai` model.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,17 @@
       "date": "2025-01-21"
     }
   ],
-  "generated_at": "2026-09-04T13:59:46.907962+00:00"
+  "generated_at": "2026-10-17T15:32:52.768606+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "DeepSeek reasoning support",
+      "text": "Use `deepseek-reasoner` through the text API. Reasoning content is recorded when the model returns it. [Browse the model](https://enter.pollinations.ai/models?q=deepseek-reasoner).",
+      "prs": [
+        1056
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

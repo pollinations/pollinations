@@ -36,22 +36,40 @@
     {
       "emoji": "🚀",
       "title": "Polly API",
-      "text": "Access Polly's web research and coding skills via a new OpenAI-compatible endpoint. Check the [API Docs](https://enter.pollinations.ai/api/docs)."
+      "text": "Access Polly's web research and coding skills via a new OpenAI-compatible endpoint. Check the [API Docs](https://enter.pollinations.ai/api/docs).",
+      "prs": [
+        8234
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🛡️",
       "title": "New Safety Model",
-      "text": "Qwen3Guard-8B is now available via the API for fast content moderation and safety classification."
+      "text": "Qwen3Guard-8B is now available via the API for fast content moderation and safety classification.",
+      "prs": [
+        8279
+      ],
+      "kind": "model"
     },
     {
       "emoji": "✨",
       "title": "Showcase Upgrade",
-      "text": "Explore the redesigned [App Showcase](https://hello.pollinations.ai) with AI-enhanced descriptions and real-time usage metrics."
+      "text": "Explore the redesigned [App Showcase](https://hello.pollinations.ai) with AI-enhanced descriptions and real-time usage metrics.",
+      "prs": [
+        8248
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎮",
       "title": "Community Apps",
-      "text": "New additions include the \"Nova Defense\" Discord bot and the AI-powered Roblox game \"Convince the CRAZY Idol\"."
+      "text": "New additions include the \"Nova Defense\" Discord bot and the AI-powered Roblox game \"Convince the CRAZY Idol\".",
+      "prs": [
+        7978,
+        8288
+      ],
+      "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

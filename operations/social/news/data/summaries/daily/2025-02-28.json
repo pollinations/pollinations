@@ -2,8 +2,8 @@
   "date": "2025-02-28",
   "period_start": "2025-02-28",
   "period_end": "2025-02-28",
-  "title": "Text streaming gets a simpler route",
-  "summary": "A small text API cleanup: simpler streaming, with a gateway now handling the traffic.\n\ntext.pollinations.ai now uses the Portkey gateway and has simplified stream handling, making the plumbing behind generated text a little less elaborate.",
+  "title": "Cleaner text streams and clearer errors",
+  "summary": "One text API overhaul tightened streaming and error handling while moving OpenAI-backed requests through a new gateway client.\n\nThe merged text API change simplifies streaming responses, tests that streams end with a single SSE [DONE] event, and preserves provider error details in API errors.\n\nCloudflare requests omit the unsupported seed parameter, and the shared OpenAI-compatible client adds a default system prompt only when the selected model has one configured.\n\nOpenAI model aliases, OpenAI-backed personas, search, and referral processing were moved from a direct Azure OpenAI client to a Portkey gateway client. Request parsing and referrer handling were also consolidated into a shared utility.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-02-28"
     }
   ],
-  "generated_at": "2026-09-04T12:02:01.006066+00:00"
+  "generated_at": "2026-10-17T15:34:37.629058+00:00",
+  "highlights": [],
+  "changelog": []
 }

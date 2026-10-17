@@ -2,8 +2,8 @@
   "date": "2025-05-09",
   "period_start": "2025-05-09",
   "period_end": "2025-05-09",
-  "title": "The project garden gets two new entries",
-  "summary": "A quiet garden day: two community projects added, with some text-model plumbing kept current behind the hedge.\n\nRizqi O Chatbot and KoboldAI were added to the community project list, making two more things built with Pollinations easier to find.\n\nThe available-models registry and Portkey text-generation path were updated, keeping the text API's model map and routing machinery in step.",
+  "title": "Text model routing gets narrower",
+  "summary": "Text-model routing was pared back, two community projects joined the directory, and Mirexa’s listing got a clearer label.\n\nThe Portkey mapping no longer selects upstream models for eleven text-model aliases, including `claude`, `gemini`, and `command-r`. No replacement routing was added in the change.\n\nThe project list added @ray23-bit’s Indonesian-language Rizqi O Chatbot, which combines chat, images, and text-to-audio, and @henk717’s KoboldAI, a browser-based writing interface that uses Pollinations for image generation.\n\nMirexa’s model description now identifies it as an AI companion using GPT-4.1 and lists Azure as its provider. Model behavior did not change.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,5 +23,7 @@
       "date": "2025-05-09"
     }
   ],
-  "generated_at": "2026-09-04T12:39:05.505097+00:00"
+  "generated_at": "2026-10-17T15:39:18.431346+00:00",
+  "highlights": [],
+  "changelog": []
 }

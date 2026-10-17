@@ -16,7 +16,12 @@
     {
       "emoji": "🚀",
       "title": "React Auth & UI Packages",
-      "text": "Drop in a `PolliProvider` to get SSR-safe auth hooks, OAuth login, and wallet UI components with two imports. Stop writing auth boilerplate and check the [React Docs](https://react-hooks.pollinations.ai)."
+      "text": "Drop in a `PolliProvider` to get SSR-safe auth hooks, OAuth login, and wallet UI components with two imports. Stop writing auth boilerplate and check the [React Docs](https://react-hooks.pollinations.ai).",
+      "prs": [
+        11217
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

@@ -1,0 +1,35 @@
+{
+  "date": "2025-06-29",
+  "period_start": "2025-06-22",
+  "period_end": "2025-06-28",
+  "title": "Text requests take a faster default route",
+  "summary": "The week made common requests less fussy while giving two community-made creative tools a place to be found.\n\nText requests without a model now default to `openai-fast`; explicitly selected models are unchanged. Configurable routing was added for specified authenticated users, alongside `openai-roblox` and updates to several model tier labels.\n\nToken validation now fetches user details in one query instead of three. A test response dropped from roughly 12 seconds to 2.1 seconds, and image generation reuses one authentication result throughout a request.\n\nBGE-based semantic caching lets similar image prompts match cached results without being identical. Normalization also strips punctuation and collapses repeated whitespace, so `test.`, `test...`, and `test` match the same way.\n\nCraftUI became the first entry in the Vibe Coding projects list, turning prompts and images into editable UI components. Unfoldtech joined Creative Projects with a path from Pexels inspiration to prompts and generated images, including IPTC metadata in downloads.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 2560,
+      "date": "2025-06-22"
+    },
+    {
+      "number": 2605,
+      "date": "2025-06-24"
+    },
+    {
+      "number": 2613,
+      "date": "2025-06-24"
+    },
+    {
+      "number": 2615,
+      "date": "2025-06-24"
+    },
+    {
+      "number": 2619,
+      "date": "2025-06-24"
+    },
+    {
+      "number": 2638,
+      "date": "2025-06-25"
+    }
+  ],
+  "generated_at": "2026-10-17T16:05:01.427179+00:00"
+}

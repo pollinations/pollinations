@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-10-12",
+  "period_start": "2026-10-12",
+  "period_end": "2026-10-12",
+  "generated_at": "2026-10-13T06:10:47.394597+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-12/images/reddit.jpg"
+    }
+  ],
+  "title": "Model-scoped keys, stricter streams, and media fixes",
+  "text": "Today’s recap covers 57 selected merged PRs, not every merge. The changes I’d flag:\n\n- **API and media:** Claude Opus 5.5 fast mode was added for text and image inputs ([#16954](https://github.com/pollinations/pollinations/pull/16954)). Speech requests honor supported speed settings; Whisper subtitle formats return measured segments; GPT Transcribe accepts plain-text output. DreamShaper keeps approximately the requested aspect ratio when shrinking oversized images. The SDK and CLI now reject incomplete streams instead of returning plausible-looking partial output ([#16622](https://github.com/pollinations/pollinations/pull/16622), [#16778](https://github.com/pollinations/pollinations/pull/16778)).\n\n- **Keys and usage:** API keys can allow specific model IDs without granting access to an entire category ([#17213](https://github.com/pollinations/pollinations/pull/17213)). Dashboard activity can group requests by model or key, and editing a key preserves limits you haven’t changed.\n\n- **Agent tooling:** Added a REST-based Agent Skill, Markdown docs for clients that request them, and website links for agent discovery ([#16945](https://github.com/pollinations/pollinations/pull/16945), [#16988](https://github.com/pollinations/pollinations/pull/16988)). The SDK’s Conversation helper was removed ahead of 5.1.0; callers can pass messages directly.\n\n- **Community and site:** Added Roblox NPC examples, Pollen Village, Colmena’s multi-model chat studio, and other apps. App pre-review now reads READMEs in submitted repository folders. Enter’s news page separates announcements, updates, and changelog entries; legacy text routing and cache-miss handling also got work.\n\nIf model-scoped keys or stream termination expose an awkward edge case, a minimal repro on the relevant PR would help."
+}

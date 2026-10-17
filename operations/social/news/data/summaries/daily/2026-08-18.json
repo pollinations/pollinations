@@ -60,25 +60,39 @@
     {
       "emoji": "🎵",
       "title": "Community models can transcribe now",
-      "text": "Register and call community speech-to-text models through the OpenAI-compatible `/v1/audio/transcriptions` endpoint, with audio usage returned per request. [API Docs](https://gen.pollinations.ai/docs)"
+      "text": "Register and call community speech-to-text models through the OpenAI-compatible `/v1/audio/transcriptions` endpoint, with audio usage returned per request. [API Docs](https://gen.pollinations.ai/docs)",
+      "prs": [
+        13416
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🎨",
       "title": "DiddyDiffusion",
       "text": "A lightweight browser image playground that connects to your Pollinations account and generates with a short-lived BYOP budget. [Try it](https://raw.githack.com/umm-dev/DiddyDiffusion/main/index.html)",
+      "prs": [
+        13530
+      ],
       "kind": "app"
     },
     {
       "emoji": "💡",
       "title": "Intelligent Diagnostic Assessment",
       "text": "An AI-powered starting-point assessment for learners and educators: find the gaps before the lesson finds you. [Try it](https://proyectodescartes.org/IATools/182_Prueba_Diagn%c3%b3stica)",
+      "prs": [
+        13532
+      ],
       "kind": "app"
     },
     {
       "emoji": "🎨",
       "title": "Kokoro Roto — Anime Art Generator",
       "text": "Generate anime characters and scenes from a prompt, mood preset, and format choice—no signup ceremony required. [Try it](https://geneberna.github.io/kokoro-roto-anime)",
+      "prs": [
+        13550
+      ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

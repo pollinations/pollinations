@@ -29,17 +29,29 @@
       "emoji": "🎨",
       "title": "IMADreamer joins the garden",
       "text": "A free, Pollinations-powered image generator for turning prompts into pixels. [Try it](https://fastnow.github.io/imadreamer)",
+      "prs": [
+        13306
+      ],
       "kind": "app"
     },
     {
       "emoji": "💡",
       "title": "Models, now in a proper row",
-      "text": "`Pollinations.models()` now reliably returns the available model array, so SDK apps can discover what the API has on offer. [SDK](https://www.npmjs.com/package/@pollinations/sdk)"
+      "text": "`Pollinations.models()` now reliably returns the available model array, so SDK apps can discover what the API has on offer. [SDK](https://www.npmjs.com/package/@pollinations/sdk)",
+      "prs": [
+        13300
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🔗",
       "title": "Let MCP requests breathe",
-      "text": "Authenticated MCP requests can now run past 30 seconds when the job actually needs the time. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)"
+      "text": "Authenticated MCP requests can now run past 30 seconds when the job actually needs the time. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)",
+      "prs": [
+        13301
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

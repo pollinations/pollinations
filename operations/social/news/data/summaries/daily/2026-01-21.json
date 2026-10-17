@@ -2,24 +2,16 @@
   "date": "2026-01-21",
   "period_start": "2026-01-21",
   "period_end": "2026-01-21",
-  "title": "More models for words and moving pictures",
-  "summary": "A model-heavy day: new text and video options, clearer Flux validation, and better visibility across the app garden.\n\nAdded Alibaba Wan 2.6 for image-to-video, klein-large (9B) for text, and gemini-legacy backed by Gemini 2.5 Pro. One endpoint, three more things to try making.\n\nFlux dimension validation now catches unsupported image sizes more reliably, alongside refreshed io.net instance documentation. Less interpretive dance between a request and an error.\n\nAPPS.md now includes issue-tracking columns, making it easier to see where community-built apps stand, while Fable Friend joined the Games collection.",
-  "pr_count": 10,
+  "title": "Images can become dubbed video",
+  "summary": "A model-heavy day: image-to-video with optional dubbing, a larger Klein, Gemini 2.5 Pro, and a monitor that knows a bad request is not a broken model.\n\nWan 2.6 was added as `wan` for image-to-video generation. It produces 720p clips lasting 2–15 seconds, with auto-dubbed audio on by default and an option to turn it off. Usage reporting separates audio seconds from video.\n\nThe 9B `klein-large` model was added for text-to-image generation and reference-image editing. Flux also gained a 1024×1024 total-pixel cap, clearer dimension validation, and HTTP errors instead of server crashes on unexpected generation failures.\n\n`gemini-legacy` was added with a 1M-token context window and support for text, image, audio, and video inputs. It returns text and supports reasoning, tools, search, and code execution.",
+  "pr_count": 7,
   "prs": [
     {
       "number": 7484,
       "date": "2026-01-21"
     },
     {
-      "number": 7504,
-      "date": "2026-01-21"
-    },
-    {
       "number": 7513,
-      "date": "2026-01-21"
-    },
-    {
-      "number": 7517,
       "date": "2026-01-21"
     },
     {
@@ -41,11 +33,37 @@
     {
       "number": 7538,
       "date": "2026-01-21"
-    },
-    {
-      "number": 7541,
-      "date": "2026-01-21"
     }
   ],
-  "generated_at": "2026-09-04T11:41:52.309111+00:00"
+  "generated_at": "2026-10-17T16:00:39.550526+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Turn images into video",
+      "text": "Use `wan` to turn an image into a 720p video lasting 2–15 seconds. Auto-dubbed audio is on by default; set `audio=false` to skip it. [View the model](https://enter.pollinations.ai/models?q=wan).",
+      "prs": [
+        7513
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Klein gets a 9B variant",
+      "text": "Generate images or edit them with reference images using `klein-large`. The 9B model has a non-commercial license. [View the model](https://enter.pollinations.ai/models?q=klein-large).",
+      "prs": [
+        7523
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Gemini 2.5 Pro added",
+      "text": "Use `gemini-legacy` for a 1M-token context window, multimodal inputs, reasoning, tools, search, and code execution. It returns text. [View the model](https://enter.pollinations.ai/models?q=gemini-legacy).",
+      "prs": [
+        7518
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

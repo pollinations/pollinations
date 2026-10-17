@@ -59,5 +59,17 @@
       "date": "2026-06-13"
     }
   ],
-  "generated_at": "2026-09-04T11:53:46.254320+00:00"
+  "generated_at": "2026-09-04T11:53:46.254320+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "UI from a script tag",
+      "text": "Use `@pollinations/ui` through a CDN via `window.PollinationsUI`, without setting up a React build. [Explore the UI package](https://www.npmjs.com/package/@pollinations/ui).",
+      "prs": [
+        11777
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

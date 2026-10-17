@@ -2,16 +2,12 @@
   "date": "2025-04-12",
   "period_start": "2025-04-12",
   "period_end": "2025-04-12",
-  "title": "A cleaner text feed lands on the site",
-  "summary": "A garden-maintenance day: a new text feed, refreshed model routing, sturdier sharing metadata, and a little more visibility into real-world usage.\n\nThe site now has a Text Feed, with filtering that keeps it focused on direct entries rather than everything that arrived through a referrer. A small window into what people are making with text.\n\nMistral, QWQ, and DeepSeek Reasoning now run through Cloudflare-backed model integrations, keeping several useful text and reasoning options available behind the same simple endpoint.\n\nStatic Open Graph metadata replaces React Helmet for more dependable link previews, while pollinator-agent repository integrations were refreshed. The internet remains largely a network of bots passing metadata to other bots.",
-  "pr_count": 6,
+  "title": "The homepage gets a text feed",
+  "summary": "A text feed joined the homepage, Llama 4 Scout joined the model lineup, and link previews stopped depending on JavaScript.\n\nThe homepage now has a toggle between image and text feeds. The new text feed includes a stream of generated responses and an editor; projects now open on a Featured category with tabs for browsing.\n\nAdded `llamascout` through Cloudflare with a 4096-token output limit. The `mistral` and `qwen-qwq` mappings now use Cloudflare models, while the `deepseek-reasoning` listing points to DeepSeek-R1 Distill Qwen 32B rather than full DeepSeek R1.\n\nOpen Graph and Twitter Card metadata moved into the initial HTML, letting link previews read the site title, description, and banner without running React.",
+  "pr_count": 3,
   "prs": [
     {
       "number": 1488,
-      "date": "2025-04-12"
-    },
-    {
-      "number": 1632,
       "date": "2025-04-12"
     },
     {
@@ -19,17 +15,30 @@
       "date": "2025-04-12"
     },
     {
-      "number": 1635,
-      "date": "2025-04-12"
-    },
-    {
       "number": 1637,
-      "date": "2025-04-12"
-    },
-    {
-      "number": 1640,
       "date": "2025-04-12"
     }
   ],
-  "generated_at": "2026-09-04T12:25:49.180631+00:00"
+  "generated_at": "2026-10-17T15:37:37.660612+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "A feed for text",
+      "text": "Switch between image and text feeds on the homepage, and use the editor alongside a stream of generated responses. [Visit Pollinations](https://pollinations.ai).",
+      "prs": [
+        1488
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Llama 4 Scout added",
+      "text": "Use `llamascout` for text generation, with a 4096-token output limit. [Browse the model](https://enter.pollinations.ai/models?q=llamascout).",
+      "prs": [
+        1634
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

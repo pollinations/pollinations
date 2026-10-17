@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-06-11",
+  "period_start": "2026-06-11",
+  "period_end": "2026-06-11",
+  "generated_at": "2026-06-12T07:33:12.808105+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-11/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-11/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-11/images/instagram-3.jpg"
+    }
+  ],
+  "text": "two small but mighty updates to the garden this week.\n\nfirst, claude fable 5 is now live on the text endpoint via bedrock. just another brain to bounce your prompts off of. \n\nsecond, we added Wikimind to the community showcase (check the learn section). it's a really cool way to map out knowledge and fall down rabbit holes. we love seeing what you all build with the infrastructure.\n\npollen credits still flow the same. code is open. keep building weird things.\n\ntry it out at pollinations.ai 🌸\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #llm #anthropic #claude #communitybuilds",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

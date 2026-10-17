@@ -2,9 +2,9 @@
   "date": "2025-05-31",
   "period_start": "2025-05-01",
   "period_end": "2025-05-31",
-  "title": "Images learned to work from references",
-  "summary": "May expanded Pollinations from generation into image editing and more capable model workflows, while giving the growing community ecosystem a much better map.\n\nImage generation gained editing support, first through Azure GPT Image and then across Pollinations, with multi-reference edits, dynamic delivery, and stage-aware routing making the image stack more useful for real creative workflows.\n\nNew routes and models arrived alongside universal tool parameters, reliable JSON Schema output, full sampling controls, and fixes across streaming and provider integrations. Builders could ask more from one endpoint without learning each provider's private dialect.\n\nDozens of community builds were added or refreshed, while featured sorting, categories, Vibe Coding, Special Bee tracking, and clearer project links made the directory more useful as a record of what people are actually building.\n\nMCP-ready OAuth, a dedicated GitHub sign-in home, user tiers and preferences, steadier queue and cache behavior, and clearer request controls laid practical foundations for people and tools using the service at scale.",
-  "pr_count": 107,
+  "title": "GPT Image grows beyond generation",
+  "summary": "May brought more control over images and text, easier ways to build with Pollinations, and a growing directory of community projects.\n\nThe image API added `gptimage`, then gained editing, quality settings, and edits using multiple image URLs. Prompt translation and image error handling also received fixes.\n\nText requests gained a larger character limit, new model options, JSON Schema forwarding, and sampling controls. Model listings became more precise, while streaming responses and cache reuse got steadier.\n\nThe MCP server gained a local `npx` setup path and later OAuth 2.1 for clients. WebSim added prompt-generated, single-file HTML with a selectable model; guides clarified MCP setup and audio responses.\n\nCommunity additions ranged from chat and writing tools to image apps, coding interfaces, accessibility software, and bots. The directory also gained a Vibe Coding category and cleaner featured-project ordering.",
+  "pr_count": 101,
   "prs": [
     {
       "number": 1861,
@@ -57,10 +57,6 @@
     {
       "number": 1904,
       "date": "2025-05-05"
-    },
-    {
-      "number": 1893,
-      "date": "2025-05-06"
     },
     {
       "number": 1898,
@@ -140,10 +136,6 @@
     },
     {
       "number": 1955,
-      "date": "2025-05-12"
-    },
-    {
-      "number": 1956,
       "date": "2025-05-12"
     },
     {
@@ -295,23 +287,11 @@
       "date": "2025-05-24"
     },
     {
-      "number": 2079,
-      "date": "2025-05-25"
-    },
-    {
       "number": 2086,
       "date": "2025-05-25"
     },
     {
-      "number": 2087,
-      "date": "2025-05-25"
-    },
-    {
       "number": 2089,
-      "date": "2025-05-25"
-    },
-    {
-      "number": 2090,
       "date": "2025-05-25"
     },
     {
@@ -340,10 +320,6 @@
     },
     {
       "number": 2126,
-      "date": "2025-05-27"
-    },
-    {
-      "number": 2127,
       "date": "2025-05-27"
     },
     {
@@ -435,5 +411,5 @@
       "date": "2025-05-31"
     }
   ],
-  "generated_at": "2026-09-04T15:23:34.303640+00:00"
+  "generated_at": "2026-10-17T16:08:56.307439+00:00"
 }

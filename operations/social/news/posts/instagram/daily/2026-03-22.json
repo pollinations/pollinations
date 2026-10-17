@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-03-22",
+  "period_start": "2026-03-22",
+  "period_end": "2026-03-22",
+  "generated_at": "2026-03-23T06:22:56.237825+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-22/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-22/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-22/images/instagram-3.jpg"
+    }
+  ],
+  "text": "3 PRs merged this week to keep the digital garden growing. The big ones: Alibaba's Qwen models (text and vision) are now live on the API. Better yet, we put qwen-large and qwen-vision on the free tier because paywalls for good vision models are boring. Also, LND Ai just sprouted in the image generation greenhouse. Go build something weird with them. 🌱✨ docs are in the usual place.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #qwen #machinelearning #buildinpublic #generativeai",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

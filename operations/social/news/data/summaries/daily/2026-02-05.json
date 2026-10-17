@@ -20,7 +20,12 @@
     {
       "emoji": "💎",
       "title": "Paid Models Update",
-      "text": "`claude`, `grok`, `kontext`, `seedream`, and `seedance-pro` are moving to paid-only."
+      "text": "`claude`, `grok`, `kontext`, `seedream`, and `seedance-pro` are moving to paid-only.",
+      "prs": [
+        7986
+      ],
+      "kind": "model"
     }
-  ]
+  ],
+  "changelog": []
 }

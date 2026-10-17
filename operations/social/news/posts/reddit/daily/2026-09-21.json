@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-21",
+  "period_start": "2026-09-21",
+  "period_end": "2026-09-21",
+  "generated_at": "2026-09-22T06:30:12.955487+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-21/images/reddit.jpg"
+    }
+  ],
+  "title": "Three model routers and MCP installation landed",
+  "text": "17 PRs merged today. The substantial part is routing: three code-agent routers now make model selection from some combination of complexity, cost, provider health, and tiered fallback behavior. The implementations are [polyrouter](https://github.com/pollinations/pollinations/pull/15041), [triage-router](https://github.com/pollinations/pollinations/pull/15069), and the [tiered health router](https://github.com/pollinations/pollinations/pull/15141). They overlap deliberately; routing policy is one of those things that looks obvious until a provider route starts returning smoke.\n\n`polli mcp` can now install MCP servers into 13 coding agents ([#15032](https://github.com/pollinations/pollinations/pull/15032)). This should remove a fair amount of manual config archaeology, though agent-specific edge cases will presumably continue reproducing in the walls.\n\nOn the model and provider side: Azure GPT nano/mini now advertise reasoning, verified provider costs were refreshed, Vertex is restored as a primary Gemini route, and `x-ai/grok-4.7` is available through OpenRouter ([#15190](https://github.com/pollinations/pollinations/pull/15190), [#15267](https://github.com/pollinations/pollinations/pull/15267), [#15268](https://github.com/pollinations/pollinations/pull/15268), [#15278](https://github.com/pollinations/pollinations/pull/15278)).\n\nEnter also got shared controls/dialogs/links, a simplified model catalog search, and its Models, Agents, and MCP tabs restored. Docs were regenerated in [APIDOCS.md](https://github.com/pollinations/pollinations/blob/main/APIDOCS.md), and a browser image app gained Bees Pollination."
+}

@@ -1,0 +1,123 @@
+{
+  "date": "2025-03-30",
+  "period_start": "2025-03-23",
+  "period_end": "2025-03-29",
+  "title": "MCP grew beyond images",
+  "summary": "Assistants gained more ways to use Pollinations, while the APIs, docs, and community showcase became easier to navigate.\n\nThe MCP server gained tools for generating text and speech, reading supplied text aloud, and discovering models and voices. The package also got a clearer installation path, a shorter quick start, and support for Node.js 14 and 15.\n\nAdded `mistral-roblox`, `phi-mini`, and the Roblox-focused `roblox-rp` chat model. Model-list requests now bypass caching, so changes to the lineup need not wait behind a stale response.\n\nStreaming and non-streaming SearchGPT requests now have separate cache entries. OpenAI-compatible chat requests are private by default, malformed image options resolve to false, and Cloudflare SDXL is again the fallback if Cloudflare Flux fails.\n\nDocumentation added local JPEG data-URL examples, audio transcription guidance, and clearer audio, vision, and request-body examples. It also clarifies that the OpenAI-compatible text API currently supports only the completion endpoint; installation guidance and site links received a pass too.",
+  "pr_count": 28,
+  "prs": [
+    {
+      "number": 1406,
+      "date": "2025-03-23"
+    },
+    {
+      "number": 1420,
+      "date": "2025-03-23"
+    },
+    {
+      "number": 1426,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1427,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1429,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1430,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1431,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1432,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1434,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1221,
+      "date": "2025-03-25"
+    },
+    {
+      "number": 1437,
+      "date": "2025-03-25"
+    },
+    {
+      "number": 1439,
+      "date": "2025-03-25"
+    },
+    {
+      "number": 1442,
+      "date": "2025-03-26"
+    },
+    {
+      "number": 1443,
+      "date": "2025-03-26"
+    },
+    {
+      "number": 1452,
+      "date": "2025-03-27"
+    },
+    {
+      "number": 1453,
+      "date": "2025-03-27"
+    },
+    {
+      "number": 1454,
+      "date": "2025-03-27"
+    },
+    {
+      "number": 1456,
+      "date": "2025-03-27"
+    },
+    {
+      "number": 1457,
+      "date": "2025-03-27"
+    },
+    {
+      "number": 1458,
+      "date": "2025-03-27"
+    },
+    {
+      "number": 1461,
+      "date": "2025-03-27"
+    },
+    {
+      "number": 1460,
+      "date": "2025-03-28"
+    },
+    {
+      "number": 1470,
+      "date": "2025-03-28"
+    },
+    {
+      "number": 1471,
+      "date": "2025-03-28"
+    },
+    {
+      "number": 1474,
+      "date": "2025-03-28"
+    },
+    {
+      "number": 1483,
+      "date": "2025-03-29"
+    },
+    {
+      "number": 1485,
+      "date": "2025-03-29"
+    },
+    {
+      "number": 1487,
+      "date": "2025-03-29"
+    }
+  ],
+  "generated_at": "2026-10-17T16:03:51.819586+00:00"
+}

@@ -2,14 +2,10 @@
   "date": "2025-11-30",
   "period_start": "2025-11-01",
   "period_end": "2025-11-30",
-  "title": "A larger model garden, one HTTP-shaped path",
-  "summary": "November made Pollinations easier to build on: more models and media capabilities arrived while the routes from prompt to result became clearer, steadier, and more visible.\n\nClaude Sonnet 4.5, Grok 4 Fast, Kimi K2 Thinking, Gemini 3 Pro, Claude Opus 4.5, Perplexity Sonar, and Nano Banana Pro joined the API, alongside model discovery, cleaner aliases, real model IDs, and broader OpenAI-compatible request handling.\n\nImage infrastructure was simplified around enter.pollinations.ai, with better caching, retries, aspect-ratio preservation, reference-image support, clearer errors, 4K Nano Banana Pro output, and more reliable vision inputs.\n\nBuilders gained a Quick Start, browser-friendly CORS, direct text responses, streaming repairs, readable fallbacks, citations, usage tracking, cache invalidation, and audio support through OpenAI-compatible APIs. The machinery increasingly returns both answers and useful receipts.\n\nAuthentication, model routing, image caching, staging, and token handling converged around enter.pollinations.ai, while persistent Pollen accounting, balance refreshes, and clearer account status made usage plumbing more dependable.",
-  "pr_count": 221,
+  "title": "More models, clearer discovery",
+  "summary": "November made more models and media available through Enter, while tightening the billing, compatibility, and discovery paths around them.\n\nPerplexity Sonar, Grok, Kimi, Gemini 3 Pro, and updated Claude options joined the text lineup. Gateway model listings gained aliases, pricing, and capability metadata, giving apps a better way to find the right model.\n\nChat completions gained audio input and output fields, reasoning controls, and broader support for provider-specific responses. Fixes preserved streams, citations, image URLs, and request parameters that had been getting lost between clients and models.\n\nImage requests became less prone to unwanted resizing, silent model substitution, and avoidable failures. Nano Banana Pro joined the registry and gained 1K, 2K, and 4K output; Enter also gained exact-match image caching and a way to invalidate entries.\n\nEnter split tier and pack balances, connected Pollen pack checkout, and made Spore the starting tier. Generation routes adopted a consistent authentication and positive-balance rule, while cached balance checks and clearer tier status reduced friction around account state.",
+  "pr_count": 165,
   "prs": [
-    {
-      "number": 4898,
-      "date": "2025-11-01"
-    },
     {
       "number": 4904,
       "date": "2025-11-01"
@@ -35,31 +31,11 @@
       "date": "2025-11-02"
     },
     {
-      "number": 4921,
-      "date": "2025-11-02"
-    },
-    {
       "number": 4923,
       "date": "2025-11-02"
     },
     {
-      "number": 4900,
-      "date": "2025-11-03"
-    },
-    {
-      "number": 4929,
-      "date": "2025-11-03"
-    },
-    {
       "number": 4932,
-      "date": "2025-11-03"
-    },
-    {
-      "number": 4935,
-      "date": "2025-11-03"
-    },
-    {
-      "number": 4939,
       "date": "2025-11-03"
     },
     {
@@ -95,10 +71,6 @@
       "date": "2025-11-04"
     },
     {
-      "number": 4979,
-      "date": "2025-11-04"
-    },
-    {
       "number": 4984,
       "date": "2025-11-04"
     },
@@ -119,10 +91,6 @@
       "date": "2025-11-04"
     },
     {
-      "number": 4995,
-      "date": "2025-11-04"
-    },
-    {
       "number": 4996,
       "date": "2025-11-04"
     },
@@ -131,15 +99,7 @@
       "date": "2025-11-04"
     },
     {
-      "number": 5000,
-      "date": "2025-11-04"
-    },
-    {
       "number": 5002,
-      "date": "2025-11-04"
-    },
-    {
-      "number": 5004,
       "date": "2025-11-04"
     },
     {
@@ -152,10 +112,6 @@
     },
     {
       "number": 4959,
-      "date": "2025-11-05"
-    },
-    {
-      "number": 5005,
       "date": "2025-11-05"
     },
     {
@@ -223,10 +179,6 @@
       "date": "2025-11-05"
     },
     {
-      "number": 5041,
-      "date": "2025-11-05"
-    },
-    {
       "number": 5042,
       "date": "2025-11-05"
     },
@@ -247,19 +199,7 @@
       "date": "2025-11-06"
     },
     {
-      "number": 5045,
-      "date": "2025-11-06"
-    },
-    {
-      "number": 5055,
-      "date": "2025-11-06"
-    },
-    {
       "number": 5057,
-      "date": "2025-11-06"
-    },
-    {
-      "number": 5065,
       "date": "2025-11-06"
     },
     {
@@ -267,32 +207,12 @@
       "date": "2025-11-06"
     },
     {
-      "number": 5075,
-      "date": "2025-11-06"
-    },
-    {
       "number": 5076,
-      "date": "2025-11-06"
-    },
-    {
-      "number": 5077,
-      "date": "2025-11-06"
-    },
-    {
-      "number": 5078,
-      "date": "2025-11-06"
-    },
-    {
-      "number": 5079,
       "date": "2025-11-06"
     },
     {
       "number": 5080,
       "date": "2025-11-06"
-    },
-    {
-      "number": 4950,
-      "date": "2025-11-07"
     },
     {
       "number": 5054,
@@ -311,10 +231,6 @@
       "date": "2025-11-07"
     },
     {
-      "number": 5087,
-      "date": "2025-11-07"
-    },
-    {
       "number": 5089,
       "date": "2025-11-07"
     },
@@ -324,18 +240,6 @@
     },
     {
       "number": 5096,
-      "date": "2025-11-07"
-    },
-    {
-      "number": 5098,
-      "date": "2025-11-07"
-    },
-    {
-      "number": 5101,
-      "date": "2025-11-07"
-    },
-    {
-      "number": 5102,
       "date": "2025-11-07"
     },
     {
@@ -355,18 +259,6 @@
       "date": "2025-11-08"
     },
     {
-      "number": 5120,
-      "date": "2025-11-08"
-    },
-    {
-      "number": 5103,
-      "date": "2025-11-10"
-    },
-    {
-      "number": 5123,
-      "date": "2025-11-10"
-    },
-    {
       "number": 5126,
       "date": "2025-11-10"
     },
@@ -383,19 +275,7 @@
       "date": "2025-11-10"
     },
     {
-      "number": 5130,
-      "date": "2025-11-10"
-    },
-    {
       "number": 5131,
-      "date": "2025-11-10"
-    },
-    {
-      "number": 5136,
-      "date": "2025-11-10"
-    },
-    {
-      "number": 5141,
       "date": "2025-11-10"
     },
     {
@@ -439,19 +319,11 @@
       "date": "2025-11-11"
     },
     {
-      "number": 5169,
-      "date": "2025-11-11"
-    },
-    {
       "number": 5174,
       "date": "2025-11-11"
     },
     {
       "number": 5175,
-      "date": "2025-11-11"
-    },
-    {
-      "number": 5178,
       "date": "2025-11-11"
     },
     {
@@ -461,10 +333,6 @@
     {
       "number": 5182,
       "date": "2025-11-11"
-    },
-    {
-      "number": 5111,
-      "date": "2025-11-12"
     },
     {
       "number": 5183,
@@ -563,14 +431,6 @@
       "date": "2025-11-13"
     },
     {
-      "number": 5255,
-      "date": "2025-11-13"
-    },
-    {
-      "number": 5257,
-      "date": "2025-11-13"
-    },
-    {
       "number": 5248,
       "date": "2025-11-14"
     },
@@ -595,19 +455,7 @@
       "date": "2025-11-14"
     },
     {
-      "number": 5274,
-      "date": "2025-11-14"
-    },
-    {
-      "number": 5282,
-      "date": "2025-11-14"
-    },
-    {
       "number": 5283,
-      "date": "2025-11-14"
-    },
-    {
-      "number": 5284,
       "date": "2025-11-14"
     },
     {
@@ -619,15 +467,7 @@
       "date": "2025-11-14"
     },
     {
-      "number": 5289,
-      "date": "2025-11-15"
-    },
-    {
       "number": 5295,
-      "date": "2025-11-15"
-    },
-    {
-      "number": 5303,
       "date": "2025-11-15"
     },
     {
@@ -675,18 +515,6 @@
       "date": "2025-11-16"
     },
     {
-      "number": 5339,
-      "date": "2025-11-16"
-    },
-    {
-      "number": 5340,
-      "date": "2025-11-16"
-    },
-    {
-      "number": 5343,
-      "date": "2025-11-16"
-    },
-    {
       "number": 5293,
       "date": "2025-11-18"
     },
@@ -703,35 +531,15 @@
       "date": "2025-11-18"
     },
     {
-      "number": 5362,
-      "date": "2025-11-19"
-    },
-    {
       "number": 5369,
       "date": "2025-11-19"
-    },
-    {
-      "number": 5370,
-      "date": "2025-11-19"
-    },
-    {
-      "number": 5381,
-      "date": "2025-11-20"
     },
     {
       "number": 5383,
       "date": "2025-11-21"
     },
     {
-      "number": 5389,
-      "date": "2025-11-22"
-    },
-    {
       "number": 5379,
-      "date": "2025-11-25"
-    },
-    {
-      "number": 5412,
       "date": "2025-11-25"
     },
     {
@@ -755,31 +563,7 @@
       "date": "2025-11-27"
     },
     {
-      "number": 5433,
-      "date": "2025-11-27"
-    },
-    {
-      "number": 5436,
-      "date": "2025-11-27"
-    },
-    {
       "number": 5439,
-      "date": "2025-11-27"
-    },
-    {
-      "number": 5442,
-      "date": "2025-11-27"
-    },
-    {
-      "number": 5444,
-      "date": "2025-11-27"
-    },
-    {
-      "number": 5446,
-      "date": "2025-11-27"
-    },
-    {
-      "number": 5447,
       "date": "2025-11-27"
     },
     {
@@ -819,15 +603,7 @@
       "date": "2025-11-29"
     },
     {
-      "number": 5457,
-      "date": "2025-11-30"
-    },
-    {
       "number": 5477,
-      "date": "2025-11-30"
-    },
-    {
-      "number": 5479,
       "date": "2025-11-30"
     },
     {
@@ -891,5 +667,5 @@
       "date": "2025-11-30"
     }
   ],
-  "generated_at": "2026-09-04T15:28:16.250233+00:00"
+  "generated_at": "2026-10-17T16:09:25.231413+00:00"
 }

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-19",
+  "period_start": "2026-07-19",
+  "period_end": "2026-07-19",
+  "generated_at": "2026-07-20T07:16:55.571287+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-19/images/reddit.jpg"
+    }
+  ],
+  "title": "Z-Image deployment hardened on Vast",
+  "text": "Two Z-Image changes merged today.\n\nPR #12589 hardens the Z-Image deployment on Vast. The practical result is that Z-Image now has a sturdier home on that provider rather than relying on deployment assumptions that were too easy to break in production.\n\nPR #12590 also marks the Z-Image provider as Vast. This is small metadata with useful consequences: provider attribution now matches where the model is actually being deployed, which makes routing and operational debugging less mysterious later.\n\nThe pair is deliberately boring infrastructure work. Model availability is only interesting when it stays available, and deployment configuration has a habit of becoming architecture once enough people depend on it.\n\nCode:\n- https://github.com/pollinations/pollinations/pull/12589\n- https://github.com/pollinations/pollinations/pull/12590\n- https://github.com/pollinations/pollinations\n\nIf you are using Z-Image and see provider-specific behavior that still looks wrong, an issue with the request details is more useful than a screenshot of the error. We are still tightening the edges around deployment and provider reporting."
+}

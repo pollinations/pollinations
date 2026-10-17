@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-05-31",
+  "period_start": "2026-05-24",
+  "period_end": "2026-05-30",
+  "generated_at": "2026-05-31T07:15:39.740007+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-31/images/reddit.jpg"
+    }
+  ],
+  "title": "Weekly update: Real-time voice API, 6 new models, and docs rewrite",
+  "text": "We merged 18 PRs this week, mostly focused on expanding the model roster and cleaning up the developer experience.\n\nThe biggest addition is the real-time voice and audio API (gpt-realtime-2). We also pushed a bit of a model avalanche, adding Claude Opus 4.8, the Perplexity Sonar lineup, and StepFun Step 3.5 Flash. Under the hood, we shifted DeepSeek to Fireworks and Midijourney to Azure for better stability, and opened 5 more models to the free tier. We also fixed an annoying bug by stripping temperature, top_p, and top_k parameters for claude-opus-4-7 so it stops throwing validation errors.\n\nOn the tooling side, we completely rewrote the API docs generator using a custom markdown builder. We added scalar markdown sources and rail copy buttons. It is significantly easier to read now, whether you are a human or a scraper pulling context. You can check the new layout at [pollinations.ai/docs](https://pollinations.ai/docs).\n\nInfra changes include a fix to refresh R2 storage TTL on access to prevent premature cache expiration. We also exposed baseline_price and cost_usd in the developer earnings export so you can actually see what your apps are costing versus making.\n\nFinally, the community showcase is getting crowded. 6 new apps were added this week, including Helix AI, RagmyAI, and PetalGen. You can see the full code and PR list on our [github](https://github.com/pollinations/pollinations)."
+}

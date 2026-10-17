@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-03-06",
+  "period_start": "2026-03-06",
+  "period_end": "2026-03-06",
+  "generated_at": "2026-03-07T06:09:23.813149+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-06/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-06/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-06/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Shipped a few updates this week to make the infrastructure a little smarter. The JS SDK now handles Speech-to-Text and media uploads natively. We also fixed up the media service—downloads are cleaner, and files hash properly now. Oh, and step-3.5-flash is officially routed and ready in the text backend. Build something weird with it. Code's on GitHub as always. 🐝✨\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #webdev #javascript #aiart #npm",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

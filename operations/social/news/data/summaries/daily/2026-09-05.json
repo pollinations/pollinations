@@ -79,7 +79,8 @@
       "text": "Generate images with `microsoft/mai-image-2.5-flash`, or edit one JPEG or PNG reference image. [Explore image models](https://gen.pollinations.ai/image/models).",
       "prs": [
         14469
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🤖",
@@ -87,7 +88,8 @@
       "text": "The paid-only `qwen/qwen3.8-flash` model has been added to the text API. [Explore text models](https://gen.pollinations.ai/v1/models).",
       "prs": [
         14467
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎵",
@@ -95,7 +97,8 @@
       "text": "Community-model publishers can register OpenAI-compatible `/v1/audio/speech` endpoints that accept text, voice, and format options and stream audio responses. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         14387
-      ]
+      ],
+      "kind": "api"
     },
     {
       "emoji": "✨",
@@ -103,7 +106,9 @@
       "text": "Build with ordered assistant and MCP results, lifecycle streaming events, and stateless history replay in the Responses API. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         14360
-      ]
+      ],
+      "kind": "api"
     }
-  ]
+  ],
+  "changelog": []
 }

@@ -24,12 +24,21 @@
     {
       "emoji": "⚡",
       "title": "DeepSeek & Kimi Upgrades",
-      "text": "Migrated DeepSeek and Kimi to new infrastructure. Expect significantly fewer dropped connections and faster response times when chatting in the [Playground](https://pollinations.ai/play)."
+      "text": "Migrated DeepSeek and Kimi to new infrastructure. Expect significantly fewer dropped connections and faster response times when chatting in the [Playground](https://pollinations.ai/play).",
+      "prs": [
+        10116
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🌍",
       "title": "Gemini Flash Lite Routing",
-      "text": "Rerouted Gemini 2.5 Flash Lite to global endpoints to pool quota. It should now actually survive when everyone tries to hit the [Text API](https://gen.pollinations.ai/v1/chat/completions) at the exact same time."
+      "text": "Rerouted Gemini 2.5 Flash Lite to global endpoints to pool quota. It should now actually survive when everyone tries to hit the [Text API](https://gen.pollinations.ai/v1/chat/completions) at the exact same time.",
+      "prs": [
+        10118
+      ],
+      "kind": "model"
     }
-  ]
+  ],
+  "changelog": []
 }

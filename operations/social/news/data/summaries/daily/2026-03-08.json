@@ -16,7 +16,12 @@
     {
       "emoji": "🎨",
       "title": "Fresh coat of pixels",
-      "text": "The [main website](https://hello.pollinations.ai) has a new look. We replaced the old theming engine with a cohesive color palette and dynamic retro pixel art backgrounds. Much cozier."
+      "text": "The [main website](https://hello.pollinations.ai) has a new look. We replaced the old theming engine with a cohesive color palette and dynamic retro pixel art backgrounds. Much cozier.",
+      "prs": [
+        8902
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

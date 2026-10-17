@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-05-03",
+  "period_start": "2026-04-26",
+  "period_end": "2026-05-02",
+  "generated_at": "2026-05-03T06:49:51.643514+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-03/images/reddit.jpg"
+    }
+  ],
+  "title": "41 PRs merged: gen.pollinations.ai migration, GPT-5.5, Llama 3.3, and BYOP auth",
+  "text": "Merged 41 PRs this week. The heaviest lift was structural: we moved text and image generation out to a dedicated worker at gen.pollinations.ai. We've set up 308 redirects for /api/generate/*, so your existing API calls won't break, but it's worth updating your endpoints when you have a minute to avoid the hop.\n\nModel roster updates: Added GPT-5.5 (Azure swedencentral) and Llama 3.3 70b (via Fireworks). We also brought in AssemblyAI for speech-to-text and routed Deepseek Pro through Fireworks.\n\nOn the stability front, we dropped the Azure round-robin for gpt-image-2 and wired it directly to OpenAI. It's just more reliable. We also fixed Grok routing to a working non-reasoning Azure deployment and enabled image-to-image (reference images) for Grok Imagine. If you're doing video, Nova Reel now supports seeds for better reproducibility.\n\nFor BYOP (Bring Your Own Provider) users, you can now bind a client_id to a redirect_uri allowlist, and we've enabled unlimited BYOP budgets. The CLI (polli-cli) was also updated to accept piped auth tokens for easier scripting.\n\nFinally, we merged OpenClaw setup integration and added several new community apps to the showcase (StoryForge, Frieze, YSOAI, LAHgen).\n\nCode and full changelog: https://github.com/pollinations/pollinations\nDocs: https://docs.pollinations.ai"
+}

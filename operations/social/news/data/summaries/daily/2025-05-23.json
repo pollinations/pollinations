@@ -2,8 +2,8 @@
   "date": "2025-05-23",
   "period_start": "2025-05-23",
   "period_end": "2025-05-23",
-  "title": "Windows Walker joins the project garden",
-  "summary": "A small discovery upgrade: Windows Walker is now on the map.\n\nThe project list now includes Windows Walker, making another community-built use of pollinations easier to find.",
+  "title": "Windows Walker joins the project directory",
+  "summary": "A community-built Windows assistant found its way into the project directory.\n\nWindows Walker was added to the README project list and the website’s LLM Integrations directory. Built by @supershivam, the Electron assistant uses ChatGPT and PowerShell to turn voice or text commands into Windows actions.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-05-23"
     }
   ],
-  "generated_at": "2026-09-04T12:48:53.050856+00:00"
+  "generated_at": "2026-10-17T15:40:23.644837+00:00",
+  "highlights": [],
+  "changelog": []
 }

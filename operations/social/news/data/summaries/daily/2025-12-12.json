@@ -2,32 +2,16 @@
   "date": "2025-12-12",
   "period_start": "2025-12-12",
   "period_end": "2025-12-12",
-  "title": "Model routing got less mysterious",
-  "summary": "A garden-maintenance day: sturdier model routing, a repaired app-review pipeline, fresh community listings, and a pile of small fixes that make the machinery less theatrical.\n\nGPT-5.2 mappings were updated, the reasoning endpoint gained a cleaner alias, and Claude response parsing became more resilient. Tool-call tests add a fence around the whole arrangement, because model output remains an adventurous data format.\n\nThe app-submission workflow now reacts to labels, uses the authenticated generation endpoint, handles multiline PR bodies correctly, and sends reviews through claude-large. Less workflow archaeology for people submitting things they built.\n\nHighlights from late July through early December were backfilled, while Aqua AI Generator and NextGenTools joined the social and creative app listings.",
-  "pr_count": 17,
+  "title": "GPT-5.2 takes the large-model slot",
+  "summary": "GPT-5.2 moved into the large-model routes, two creative community projects joined the listings, and the Pollen checkout buttons returned.\n\n`openai-large` moved from GPT-4.1 to GPT-5.2, and `openai-reasoning` became an alias of the same model. The `openai` route was corrected to GPT-5 Mini, while `openai-fast` remains on GPT-5 Nano. GPT-5.2 also gained a 16,384-token completion cap.\n\nThe community listings added @shaqkao1206’s Aqua AI Generator, a Discord bot with reference images, remixing, and configurable generation, and @roni123332’s NextGenTools, which prepares generated and vectorized images for stock submissions.\n\nThe $5, $10, $20, and $50 purchase buttons were temporarily disabled, then reconnected to their checkout packs. The temporary balance-panel warning was removed; these changes do not establish a separate fix to how credits are applied.",
+  "pr_count": 8,
   "prs": [
     {
       "number": 5881,
       "date": "2025-12-12"
     },
     {
-      "number": 5891,
-      "date": "2025-12-12"
-    },
-    {
-      "number": 5897,
-      "date": "2025-12-12"
-    },
-    {
       "number": 5906,
-      "date": "2025-12-12"
-    },
-    {
-      "number": 5911,
-      "date": "2025-12-12"
-    },
-    {
-      "number": 5918,
       "date": "2025-12-12"
     },
     {
@@ -47,33 +31,26 @@
       "date": "2025-12-12"
     },
     {
-      "number": 5926,
-      "date": "2025-12-12"
-    },
-    {
       "number": 5927,
-      "date": "2025-12-12"
-    },
-    {
-      "number": 5928,
-      "date": "2025-12-12"
-    },
-    {
-      "number": 5929,
-      "date": "2025-12-12"
-    },
-    {
-      "number": 5930,
       "date": "2025-12-12"
     },
     {
       "number": 5931,
       "date": "2025-12-12"
-    },
-    {
-      "number": 5934,
-      "date": "2025-12-12"
     }
   ],
-  "generated_at": "2026-09-04T12:31:00.791327+00:00"
+  "generated_at": "2026-10-17T15:55:09.707693+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "GPT-5.2 for larger tasks",
+      "text": "Use GPT-5.2 through `openai-large` or its `openai-reasoning` alias, with completions up to 16,384 tokens. [Browse the model](https://enter.pollinations.ai/models?q=gpt-5.2).",
+      "prs": [
+        5921,
+        5924
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

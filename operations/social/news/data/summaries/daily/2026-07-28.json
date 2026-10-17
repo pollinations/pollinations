@@ -60,25 +60,39 @@
     {
       "emoji": "🎬",
       "title": "Wan gets more runway",
-      "text": "Long Wan 2.7 text-to-video and image-to-video generations now have up to 15 minutes to finish. The machine is permitted to think in frames."
+      "text": "Long Wan 2.7 text-to-video and image-to-video generations now have up to 15 minutes to finish. The machine is permitted to think in frames.",
+      "prs": [
+        12783
+      ],
+      "kind": "product"
     },
     {
       "emoji": "✨",
       "title": "Story seeds, illustrated",
       "text": "Turn a theme into a multi-page story with AI-written text, images, and optional narration. [Try it](https://eiigen.github.io/storystudio-app)",
+      "prs": [
+        12826
+      ],
       "kind": "app"
     },
     {
       "emoji": "🎨",
       "title": "Pixels, meet paths",
       "text": "Convert raster artwork into scalable SVG paths for reuse at any size. [Try it](https://vtrace-two.vercel.app)",
+      "prs": [
+        12827
+      ],
       "kind": "app"
     },
     {
       "emoji": "🚀",
       "title": "A studio grew in the garden",
       "text": "One community workspace for switching between GPT, Claude, Gemini, and DeepSeek, then generating images with Pollinations. [Try it](https://sashafilipov.github.io/pollinations-ai-studio)",
+      "prs": [
+        12823
+      ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

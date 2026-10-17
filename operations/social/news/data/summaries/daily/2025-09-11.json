@@ -2,8 +2,8 @@
   "date": "2025-09-11",
   "period_start": "2025-09-11",
   "period_end": "2025-09-11",
-  "title": "Clearer queue visibility and refreshed model handling",
-  "summary": "A small engine-room update: clearer queue logs and refreshed model handling.\n\nQueue logging got more detailed and model updates landed, making the generation pipeline easier to observe and maintain while it does its usual mysterious work.",
+  "title": "Romance Companion joins the visible model catalog",
+  "summary": "Romance Companion became easier to find, image and token settings changed, and queue diagnostics got more useful.\n\nMistral Small 2402 Romance Companion is no longer hidden and moves from the nectar tier to the flower tier. It also has `mistral-nemo-instruct-2407-romance` and `mistral-roblox` aliases.\n\nImage requests without explicit dimensions now use `sideLength` for width and height instead of capping them at 1024. Flux’s maximum side length drops from 1280 to 768, while Azure GPT-4.1’s max-tokens and max-completion-tokens settings drop from 1024 to 512.\n\nQueue-full 429s and text-service error logs now carry more user context for troubleshooting. Error response JSON is unchanged; the text service also corrects the casing of two transform imports.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,20 +11,17 @@
       "date": "2025-09-11"
     }
   ],
-  "generated_at": "2026-09-04T12:31:05.329545+00:00",
+  "generated_at": "2026-10-17T15:46:25.202435+00:00",
   "highlights": [
     {
-      "date": "2025-09-13",
-      "emoji": "💎",
-      "title": "Pollen MVP",
-      "text": "– Launched the foundation for user accounts and subscriptions with a new authentication system and [Polar.sh](https://polar.sh) integration."
-    },
-    {
-      "date": "2025-09-13",
-      "emoji": "🎨",
-      "title": "New Community App",
-      "text": "– Added **CapyIMG** to our showcase, a browser-based AI image generation tool powered by pollinations.ai. [Try it](https://capyuniverse.pages.dev/capyimg.html)",
-      "kind": "app"
+      "emoji": "🤖",
+      "title": "Romance Companion is visible",
+      "text": "Find Mistral Small 2402 Romance Companion in the model catalog. It also has the aliases `mistral-nemo-instruct-2407-romance` and `mistral-roblox`. [Browse the model](https://enter.pollinations.ai/models?q=mistral-nemo-instruct-2407-romance).",
+      "prs": [
+        4013
+      ],
+      "kind": "model"
     }
-  ]
+  ],
+  "changelog": []
 }

@@ -1,0 +1,71 @@
+{
+  "date": "2025-03-09",
+  "period_start": "2025-03-02",
+  "period_end": "2025-03-08",
+  "title": "The text API found its voice",
+  "summary": "This week added a voice to the text API while making model routing and chat tools more predictable.\n\n`openai-audio` added speech generation with selectable voices and binary audio responses. Streams default to PCM16, non-streaming responses to MP3, and callers can choose their own audio settings.\n\nPhi-4 Multimodal Instruct joined chat as `phi`. Routing work moved `llama`, Scaleway-backed models, and the former Cloudflare client onto the existing Portkey route while retaining model-specific prompts. `claude-hybridspace` was renamed `claude`, so callers using the old name need to update it.\n\nThe text API now forwards `tools` and `tool_choice`. Search also preserves options such as response format on follow-ups, supplies the current date when needed, and makes sequential tool calls through its default search tool.\n\nThe README and website now list 1038lab’s ComfyUI-Pollinations node and isinry’s Chinese-language tutorial for adding image generation to a DeepSeek chat UI.",
+  "pr_count": 15,
+  "prs": [
+    {
+      "number": 1264,
+      "date": "2025-03-04"
+    },
+    {
+      "number": 1267,
+      "date": "2025-03-04"
+    },
+    {
+      "number": 1268,
+      "date": "2025-03-04"
+    },
+    {
+      "number": 1269,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1271,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1272,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1273,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1274,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1275,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1276,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1277,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1281,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1283,
+      "date": "2025-03-06"
+    },
+    {
+      "number": 1286,
+      "date": "2025-03-07"
+    },
+    {
+      "number": 1287,
+      "date": "2025-03-08"
+    }
+  ],
+  "generated_at": "2026-10-17T16:03:30.540905+00:00"
+}

@@ -2,22 +2,35 @@
   "date": "2025-07-30",
   "period_start": "2025-07-30",
   "period_end": "2025-07-30",
-  "title": "A new hybrid image model joins the garden",
-  "summary": "A new hybrid image model arrived while the image pipeline learned to leave more useful traces behind.\n\nImage generation now includes the BPAIGen+Kontext hybrid model, giving builders another option for producing images through the same simple API.\n\nImage request logging and Tinybird analytics gained richer request and response data, making it easier to understand how image generation is being used and keep the service tuned.",
-  "pr_count": 3,
+  "title": "Kontext gets a second image engine",
+  "summary": "One PR gave `kontext` a BPAIGen-first fallback path, added image guidance control, and changed where two text aliases point.\n\nThe existing `kontext` model now tries BPAIGen first and falls back to Kontext if that fails. Its configured maximum side length increased from 640 to 1216 pixels; the `?model=kontext` name and Seed tier requirement stay the same.\n\nImage requests now accept an optional `guidance_scale` parameter and report which service is generating the image. The same PR removed `gptimage` from the image model list and made invalid seeds fall back to 42.\n\nThe `openai` alias now maps to `gpt-4.1-nano-roblox`, while `openai-large` maps to `azure-gpt-4.1`. Both previously mapped to `gpt-4o-mini`.",
+  "pr_count": 1,
   "prs": [
     {
       "number": 3364,
       "date": "2025-07-30"
-    },
-    {
-      "number": 3365,
-      "date": "2025-07-30"
-    },
-    {
-      "number": 3373,
-      "date": "2025-07-30"
     }
   ],
-  "generated_at": "2026-09-04T12:14:12.315511+00:00"
+  "generated_at": "2026-10-17T15:44:33.300329+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "More room for Kontext",
+      "text": "`kontext` now tries BPAIGen first, with Kontext as a fallback, and its configured maximum side length has increased to 1216 pixels. [Browse the model](https://enter.pollinations.ai/models?q=kontext).",
+      "prs": [
+        3364
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Adjust image guidance",
+      "text": "Image requests now accept an optional `guidance_scale` parameter. [See the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        3364
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

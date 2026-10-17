@@ -1,0 +1,151 @@
+{
+  "date": "2025-09-28",
+  "period_start": "2025-09-21",
+  "period_end": "2025-09-27",
+  "title": "The image workflow grew beyond prompts",
+  "summary": "New image and text models arrived while reference images, request pacing, and Pollen usage became easier to work with.\n\nNanobanana and Seedream 4.0 joined the image API with reference-image generation. The editor now accepts up to four references for Nanobanana, Seedream, and Kontext, and the API accepts reference URLs separated by pipes or commas. Nanobanana also gained guidance for non-square requests and clearer handling of slow or empty responses.\n\nThe text lineup added DeepSeek V3.1 and search-grounded Gemini. By the end of the week, `openai` mapped to GPT-5 Mini, `openai-fast` to GPT-5 Nano, and seed-tier `openai-large` to GPT-5 Chat. The smaller GPT-5 models support image input and tools; `openai-audio` also raised its input limit from 2,000 to 5,000 characters.\n\nEnter added a registry for text and image generation services, allowing free registered services to be called without an API key. Paid requests gained session and positive-balance checks, while cached responses are not charged. Generation tracking now includes timing, response status, cache hits, and failures; image responses expose the model, tier, and completion image tokens in headers.\n\nA per-IP bottleneck was fixed so authenticated requests can use their configured concurrency allowance. Nanobanana and Seedream queue intervals fell from 45 to 30 seconds, with up to three requests per interval for Flower users and six for Nectar users, rather than one for everyone. Nectar-tier concurrency also rose from 50 to 100 requests.",
+  "pr_count": 35,
+  "prs": [
+    {
+      "number": 4109,
+      "date": "2025-09-21"
+    },
+    {
+      "number": 4110,
+      "date": "2025-09-21"
+    },
+    {
+      "number": 4111,
+      "date": "2025-09-21"
+    },
+    {
+      "number": 4112,
+      "date": "2025-09-21"
+    },
+    {
+      "number": 4114,
+      "date": "2025-09-21"
+    },
+    {
+      "number": 4115,
+      "date": "2025-09-21"
+    },
+    {
+      "number": 4119,
+      "date": "2025-09-21"
+    },
+    {
+      "number": 4120,
+      "date": "2025-09-21"
+    },
+    {
+      "number": 4039,
+      "date": "2025-09-22"
+    },
+    {
+      "number": 4121,
+      "date": "2025-09-22"
+    },
+    {
+      "number": 4122,
+      "date": "2025-09-22"
+    },
+    {
+      "number": 4126,
+      "date": "2025-09-22"
+    },
+    {
+      "number": 4132,
+      "date": "2025-09-22"
+    },
+    {
+      "number": 4135,
+      "date": "2025-09-23"
+    },
+    {
+      "number": 4141,
+      "date": "2025-09-23"
+    },
+    {
+      "number": 4142,
+      "date": "2025-09-23"
+    },
+    {
+      "number": 4143,
+      "date": "2025-09-23"
+    },
+    {
+      "number": 4144,
+      "date": "2025-09-23"
+    },
+    {
+      "number": 4156,
+      "date": "2025-09-24"
+    },
+    {
+      "number": 4158,
+      "date": "2025-09-24"
+    },
+    {
+      "number": 4162,
+      "date": "2025-09-24"
+    },
+    {
+      "number": 4164,
+      "date": "2025-09-24"
+    },
+    {
+      "number": 4176,
+      "date": "2025-09-25"
+    },
+    {
+      "number": 4177,
+      "date": "2025-09-25"
+    },
+    {
+      "number": 4182,
+      "date": "2025-09-25"
+    },
+    {
+      "number": 4161,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4167,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4183,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4191,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4192,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4194,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4195,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4198,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4202,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4203,
+      "date": "2025-09-26"
+    }
+  ],
+  "generated_at": "2026-10-17T16:06:01.243970+00:00"
+}

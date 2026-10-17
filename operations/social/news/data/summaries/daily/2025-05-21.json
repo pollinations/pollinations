@@ -2,8 +2,8 @@
   "date": "2025-05-21",
   "period_start": "2025-05-21",
   "period_end": "2025-05-21",
-  "title": "Azure GPT Image can now edit images",
-  "summary": "A small but useful addition: Azure GPT Image now handles edits, not just fresh pixels.\n\nThe Azure GPT Image integration now supports image editing, so apps using that backend can modify existing images as well as generate new ones.",
+  "title": "GPT Image can edit existing images",
+  "summary": "GPT Image gained editing support and more quality choices, with requests now following the same image queue.\n\nThe gptimage integration now supports image editing when a request includes an image, while requests without one continue to generate new images. Image inputs can be URLs, file paths, base64 data, or buffers.\n\nImage requests now accept low, medium, high, or hd quality. Invalid values fall back to medium.\n\nValid tokens no longer bypass the image queue for gptimage requests.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,17 @@
       "date": "2025-05-21"
     }
   ],
-  "generated_at": "2026-09-04T12:47:45.769022+00:00"
+  "generated_at": "2026-10-17T15:40:13.482152+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Edit with GPT Image",
+      "text": "Provide an image with your `gptimage` request to edit it, or leave it out to generate a new one. Image inputs support URLs, file paths, base64 data, and buffers. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        2035
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

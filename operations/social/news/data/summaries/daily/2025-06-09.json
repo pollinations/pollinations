@@ -2,8 +2,8 @@
   "date": "2025-06-09",
   "period_start": "2025-06-09",
   "period_end": "2025-06-09",
-  "title": "Models and queues get a tune-up",
-  "summary": "A small engine-room update: refreshed models and queue configuration.\n\nUpdated model configuration alongside queue changes, keeping generation requests moving through the system with a little less mystery.",
+  "title": "The llama alias points to Scout",
+  "summary": "The `llama` alias moved to Scout, while authenticated requests got more queue room outside the seed tier.\n\nThe `llama` text-model name now selects Llama 4 Scout 17B rather than the separate Llama 3.3 70B model.\n\nThe queue cap for token-authenticated requests rose from 3 to 20 outside the seed tier. Seed remains capped at 3.\n\nNectar-tier requests bypass the queue only when token-authenticated. The same model update removed `openai-roblox` from the available text models.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,17 @@
       "date": "2025-06-09"
     }
   ],
-  "generated_at": "2026-09-04T12:59:36.809004+00:00"
+  "generated_at": "2026-10-17T15:42:08.093548+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Llama now selects Scout",
+      "text": "Requests using `llama` now select Llama 4 Scout 17B instead of Llama 3.3 70B. [Browse the model](https://enter.pollinations.ai/models?q=llama).",
+      "prs": [
+        2381
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

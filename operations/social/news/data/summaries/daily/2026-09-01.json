@@ -131,7 +131,8 @@
       "text": "Use `wan-pro` or `wan-3.0` for text-, image-, or reference-to-video requests. `wan-3.0` also accepts a second image as an end frame. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         14229
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🤖",
@@ -141,7 +142,8 @@
         14312,
         14319,
         14320
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🔗",
@@ -149,7 +151,8 @@
       "text": "Configure Prime Agent with Pollinations models using `polli harness prime on|off|status`. [Explore the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         14176
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "💡",
@@ -157,7 +160,9 @@
       "text": "Community models in Play now have a dot showing their 24-hour uptime, so you can check model health before choosing one. [Open Play](https://pollinations.ai/play).",
       "prs": [
         13675
-      ]
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-06-29",
+  "period_start": "2026-06-29",
+  "period_end": "2026-06-29",
+  "generated_at": "2026-06-30T07:14:06.870568+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-29/images/reddit.jpg"
+    }
+  ],
+  "title": "Merged today: community text endpoints, atomic syncs, and nanobanana fixes",
+  "text": "Merged 3 PRs today. Main focus was opening up the text endpoints and fixing some weird generation behavior.\n\nFirst, community text endpoints (#11567). You can now hook up your own models to the text generation API. We've had a lot of requests for this from people wanting to route custom or fine-tuned models through the standard HTTP format. It's live.\n\nSecond, we fixed an issue where the nanobanana-2 model was completely clobbering reference images (#12103). It was treating reference images as a vague suggestion and overwriting them entirely instead of using them as actual references. It now properly respects the reference structure.\n\nFinally, we pushed an atomic replace for the APPS.md to Tinybird sync (#12104, fixing #12099). We were seeing dropped data during the sync process. Moving to an atomic replace clears that up, which is critical for making sure community app submissions actually get tracked and Quests stay claimable.\n\nEverything is open source. Repos are updated. Let us know if the community endpoints throw any weird errors."
+}

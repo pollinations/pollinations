@@ -32,17 +32,30 @@
     {
       "emoji": "📊",
       "title": "SlidePainter",
-      "text": "Generate illustrated slide decks and export to PDF with this new community app."
+      "text": "Generate illustrated slide decks and export to PDF with this new community app.",
+      "prs": [
+        8341
+      ],
+      "kind": "app"
     },
     {
       "emoji": "👾",
       "title": "Pixel Art & Markdown",
-      "text": "A cozy new retro theme is available, plus app descriptions are now auto-formatted via the [Text API](https://gen.pollinations.ai)."
+      "text": "A cozy new retro theme is available, plus app descriptions are now auto-formatted via the [Text API](https://gen.pollinations.ai).",
+      "prs": [
+        8334
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎨",
       "title": "UI Theme Cycling",
-      "text": "Click the [pollinations.ai](https://hello.pollinations.ai) logo to instantly cycle through visual themes."
+      "text": "Click the [pollinations.ai](https://hello.pollinations.ai) logo to instantly cycle through visual themes.",
+      "prs": [
+        8360
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

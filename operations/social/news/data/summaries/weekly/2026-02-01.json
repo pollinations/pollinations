@@ -1,0 +1,91 @@
+{
+  "date": "2026-02-01",
+  "period_start": "2026-01-25",
+  "period_end": "2026-01-31",
+  "title": "Pollen balances got clearer boundaries",
+  "summary": "This week made Pollen balances easier to understand while tightening model routing, image-worker registration, and the edges around failed requests.\n\nTier Pollen moved to daily balances that reset at 00:00 UTC without rollover. Requests use the tier balance before crypto and pack Pollen, and Enter now shows the breakdown more clearly. Separately, seven paid-only models were set to use purchased-pack or crypto Pollen rather than daily grants; the model API, Play, and Enter now identify them.\n\n`kimi` now routes to Kimi K2.5, with image input, a 256,000-token context window, and new aliases. `nova-fast` and Claude 3.5 Haiku moved to native Bedrock routing through Portkey, with Nova Lite as a fallback for `nova-fast`. Failed image URLs in Claude and Gemini vision requests now return clearer client errors instead of generic 500s.\n\nConfigurable registration addresses were added for Flux, Z-Image, and Sana workers to help avoid network filtering that could prevent registration. Supporter-logo generation switched to Z-Image, and the retired `turbo` image model was removed from the registry and its dedicated routing.\n\nEnter brought back a banner showing the three newest GitHub-hosted highlights. News and README updates covered recent model, SDK, and payment-option announcements; those copy changes were not themselves implementations. The catalog also added @its3li’s Moltbot, a Telegram and WhatsApp assistant built with Pollinations.",
+  "pr_count": 20,
+  "prs": [
+    {
+      "number": 7649,
+      "date": "2026-01-25"
+    },
+    {
+      "number": 7650,
+      "date": "2026-01-25"
+    },
+    {
+      "number": 7652,
+      "date": "2026-01-25"
+    },
+    {
+      "number": 7668,
+      "date": "2026-01-26"
+    },
+    {
+      "number": 7673,
+      "date": "2026-01-26"
+    },
+    {
+      "number": 7675,
+      "date": "2026-01-26"
+    },
+    {
+      "number": 7676,
+      "date": "2026-01-26"
+    },
+    {
+      "number": 7618,
+      "date": "2026-01-27"
+    },
+    {
+      "number": 7671,
+      "date": "2026-01-27"
+    },
+    {
+      "number": 7703,
+      "date": "2026-01-27"
+    },
+    {
+      "number": 7710,
+      "date": "2026-01-28"
+    },
+    {
+      "number": 7728,
+      "date": "2026-01-28"
+    },
+    {
+      "number": 7729,
+      "date": "2026-01-28"
+    },
+    {
+      "number": 7746,
+      "date": "2026-01-28"
+    },
+    {
+      "number": 7763,
+      "date": "2026-01-29"
+    },
+    {
+      "number": 7799,
+      "date": "2026-01-30"
+    },
+    {
+      "number": 7708,
+      "date": "2026-01-31"
+    },
+    {
+      "number": 7720,
+      "date": "2026-01-31"
+    },
+    {
+      "number": 7779,
+      "date": "2026-01-31"
+    },
+    {
+      "number": 7821,
+      "date": "2026-01-31"
+    }
+  ],
+  "generated_at": "2026-10-17T16:07:34.073043+00:00"
+}

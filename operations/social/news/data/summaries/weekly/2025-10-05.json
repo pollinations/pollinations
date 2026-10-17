@@ -1,0 +1,99 @@
+{
+  "date": "2025-10-05",
+  "period_start": "2025-09-28",
+  "period_end": "2025-10-04",
+  "title": "Image models became easier to discover",
+  "summary": "This week made models easier to find, repeat text requests faster on cache hits, and the growing community easier to explore.\n\nA new `/api/generate/image/models` endpoint lets apps retrieve the available image models programmatically. An API reference and OpenAPI schema now cover generation requests, image parameters, model listings, and structured errors.\n\nThe projects list gained Persian-language chat, a context-aware assistant, image tools, diagrams, comics, travel helpers, and multi-agent workflows. Hacktoberfest and Contributor badge guidelines, along with a Code of Conduct, also made participation clearer.\n\nSmaller cache metadata avoids R2 metadata-size failures, while more precise exclusions leave similarly named paths cacheable. HEAD requests now use the corresponding GET entry, and repeat POST requests to the text API root can return cached responses instead of always reaching the origin.\n\nWhen Nano Banana produces no image, the API now surfaces an available explanation or refusal reason instead of a generic error. Nanobanana and Seedream received longer queue intervals and lower Flower and Nectar concurrency caps; authenticated requests from the same IP share a queue. Seedream now requires Flower, Kontext was removed from the available models, and prompt enhancement returns the original prompt without rewriting it.",
+  "pr_count": 22,
+  "prs": [
+    {
+      "number": 4222,
+      "date": "2025-09-28"
+    },
+    {
+      "number": 4229,
+      "date": "2025-09-29"
+    },
+    {
+      "number": 2589,
+      "date": "2025-09-30"
+    },
+    {
+      "number": 4207,
+      "date": "2025-09-30"
+    },
+    {
+      "number": 4208,
+      "date": "2025-09-30"
+    },
+    {
+      "number": 4221,
+      "date": "2025-09-30"
+    },
+    {
+      "number": 4257,
+      "date": "2025-09-30"
+    },
+    {
+      "number": 4246,
+      "date": "2025-10-01"
+    },
+    {
+      "number": 4247,
+      "date": "2025-10-01"
+    },
+    {
+      "number": 4277,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4286,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4287,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4289,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4291,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4292,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4294,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4295,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4283,
+      "date": "2025-10-04"
+    },
+    {
+      "number": 4305,
+      "date": "2025-10-04"
+    },
+    {
+      "number": 4306,
+      "date": "2025-10-04"
+    },
+    {
+      "number": 4326,
+      "date": "2025-10-04"
+    },
+    {
+      "number": 4327,
+      "date": "2025-10-04"
+    }
+  ],
+  "generated_at": "2026-10-17T16:06:06.130427+00:00"
+}

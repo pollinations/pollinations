@@ -24,7 +24,13 @@
     {
       "emoji": "✨",
       "title": "Uncapped Generations",
-      "text": "We removed the artificial timeouts on our text and image endpoints, and doubled the timeout for audio transcriptions. Your massive, long-running requests will actually finish now instead of dying at the 90-second mark. Let the models cook via the [Unified API](https://gen.pollinations.ai)."
+      "text": "We removed the artificial timeouts on our text and image endpoints, and doubled the timeout for audio transcriptions. Your massive, long-running requests will actually finish now instead of dying at the 90-second mark. Let the models cook via the [Unified API](https://gen.pollinations.ai).",
+      "prs": [
+        11113,
+        11132
+      ],
+      "kind": "api"
     }
-  ]
+  ],
+  "changelog": []
 }

@@ -1,0 +1,47 @@
+{
+  "date": "2025-09-21",
+  "period_start": "2025-09-14",
+  "period_end": "2025-09-20",
+  "title": "Creative Projects filled out",
+  "summary": "The community directory grew in several directions at once: more ways to make images and stories, more tools for developers, and more projects beyond English.\n\nTwo image generators joined the directory alongside StoryWeaver AI, which uses Pollinations text and image APIs for shared comic-style stories. Prompt2Image also joined: a VS Code extension that generates project-ready images from the Command Palette.\n\nNew listings include Mixbash’s bring-your-own-key model interface, an OpenAI-compatible proxy for Pollinations text, image, and speech services, and unpkg.ai for generating JavaScript ESM modules on demand. The directory also now distinguishes the official Pollinations MCP server from a community-maintained project.\n\nA Japanese-language chat project and EduGen AI, a Brazilian Portuguese tool that creates slide images for teachers, joined with language tags and translated descriptions.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 4075,
+      "date": "2025-09-17"
+    },
+    {
+      "number": 4076,
+      "date": "2025-09-17"
+    },
+    {
+      "number": 4077,
+      "date": "2025-09-17"
+    },
+    {
+      "number": 4078,
+      "date": "2025-09-17"
+    },
+    {
+      "number": 4080,
+      "date": "2025-09-17"
+    },
+    {
+      "number": 4081,
+      "date": "2025-09-17"
+    },
+    {
+      "number": 4083,
+      "date": "2025-09-17"
+    },
+    {
+      "number": 4084,
+      "date": "2025-09-17"
+    },
+    {
+      "number": 4087,
+      "date": "2025-09-18"
+    }
+  ],
+  "generated_at": "2026-10-17T16:05:54.567648+00:00"
+}

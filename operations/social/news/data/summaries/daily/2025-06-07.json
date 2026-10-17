@@ -2,8 +2,8 @@
   "date": "2025-06-07",
   "period_start": "2025-06-07",
   "period_end": "2025-06-07",
-  "title": "The creative-project garden got considerably stranger",
-  "summary": "A community-directory day: ten additions spanning creative tools, chat, games, and bots, plus some quiet text-service cleanup.\n\nThe community projects directory added Text2Image_audio, CatGPT Meme Generator, Image Creator, GeoNameBase.com, an X-Files image generator, DeepEx, and MrEgonAI. More things people built with the API are now easier to find, ranging from practical image tools to the inevitable alien-adjacent generator.\n\nA Mita Roblox joined the games category, AI drafterplus was added to chat projects, and GPT_Project landed in Social Bots with corrected details. The directory continues its important work of proving that one API can escape into nearly any corner of the internet.\n\nReferrer handling, auth logic, and the text service were streamlined behind the scenes, keeping the request path tidier while the public project catalog grows.",
+  "title": "More creative projects in the directory",
+  "summary": "Community projects filled out the directory while text request queues and model selection got a tune-up.\n\nThe Creative projects directory gained listings for Chinese-language image and audio generation, cat comics, multilingual image prompts, and other image-making tools. Separate edits rearranged the directory and removed two listings, so the additions do not all represent the final lineup.\n\nA Mita joined the games directory with AI conversations in Roblox. AI drafterplus was added to the chat directory in two PRs, and GPT_Project’s listing was corrected and moved to Social Bots.\n\nText-service queue settings now allow up to three token-authenticated requests per one-second interval and pace requests with a referrer at one per three-second interval. Roblox and gacha11211 referrers also no longer force the llamascout model.",
   "pr_count": 12,
   "prs": [
     {
@@ -55,5 +55,7 @@
       "date": "2025-06-07"
     }
   ],
-  "generated_at": "2026-09-04T12:59:01.127059+00:00"
+  "generated_at": "2026-10-17T15:42:11.249945+00:00",
+  "highlights": [],
+  "changelog": []
 }

@@ -2,9 +2,9 @@
   "date": "2025-03-31",
   "period_start": "2025-03-01",
   "period_end": "2025-03-31",
-  "title": "One text endpoint, a larger model zoo",
-  "summary": "March widened the shared API into a more capable multimodal workbench while making its growing model roster, documentation, and community garden easier to navigate.\n\nPhi-4, Gemini, Pixtral, Mistral Small, Groq Qwen, qwen-reasoning, and phi-mini expanded the text lineup, while OpenAI-compatible chat, model discovery, reasoning controls, and Portkey routing made the variety easier for existing clients to use.\n\nAudio generation and PCM16 streaming arrived through the text API, then reached MCP alongside speech-to-text examples and clearer audio documentation. Words can now become sound through more than one route, as interfaces inevitably demand.\n\nThe MCP server gained image and audio generation, sturdier installation, and more practical setup documentation, giving agent-connected tools a clearer path to making pixels and sound.\n\nThe showcase grew steadily across creative apps, bots, SDKs, tutorials, mobile tools, WordPress, and audio projects. Featured projects, language indicators, simpler submissions, and gallery curation made the work people are building easier to find.",
-  "pr_count": 111,
+  "title": "More models behind one text API",
+  "summary": "March made Pollinations easier to use from existing tools, with more model choices, broader audio support, and a growing community directory.\n\nGemini, Qwen reasoning, Mistral Small, and new vision and Roblox-focused options joined the chat lineup. An OpenAI-compatible chat endpoint gave existing clients a familiar way in.\n\nThe text API gained selectable voices and streaming audio. The MCP server grew from image generation to text, speech, and model discovery, then got a clearer package and installation path.\n\nProjects moved higher on the homepage as the directory gained creative apps, bots, tutorials, and SDKs. ComfyUI and OpenWebUI guides offered more ways to connect Pollinations to tools people already use.\n\nModel routing, image fallbacks, and request defaults were adjusted. Cache work for image and text responses, plus a SearchGPT streaming fix, made repeat requests and response formats more predictable.",
+  "pr_count": 106,
   "prs": [
     {
       "number": 1264,
@@ -131,10 +131,6 @@
       "date": "2025-03-12"
     },
     {
-      "number": 1325,
-      "date": "2025-03-12"
-    },
-    {
       "number": 1328,
       "date": "2025-03-12"
     },
@@ -247,10 +243,6 @@
       "date": "2025-03-17"
     },
     {
-      "number": 1382,
-      "date": "2025-03-17"
-    },
-    {
       "number": 1391,
       "date": "2025-03-18"
     },
@@ -311,10 +303,6 @@
       "date": "2025-03-23"
     },
     {
-      "number": 1422,
-      "date": "2025-03-24"
-    },
-    {
       "number": 1426,
       "date": "2025-03-24"
     },
@@ -344,10 +332,6 @@
     },
     {
       "number": 1221,
-      "date": "2025-03-25"
-    },
-    {
-      "number": 1387,
       "date": "2025-03-25"
     },
     {
@@ -411,10 +395,6 @@
       "date": "2025-03-28"
     },
     {
-      "number": 1481,
-      "date": "2025-03-29"
-    },
-    {
       "number": 1483,
       "date": "2025-03-29"
     },
@@ -451,5 +431,5 @@
       "date": "2025-03-31"
     }
   ],
-  "generated_at": "2026-09-04T15:15:51.539987+00:00"
+  "generated_at": "2026-10-17T16:08:33.904698+00:00"
 }

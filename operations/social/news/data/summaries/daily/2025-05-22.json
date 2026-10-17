@@ -2,8 +2,8 @@
   "date": "2025-05-22",
   "period_start": "2025-05-22",
   "period_end": "2025-05-22",
-  "title": "Image generation can now edit, too",
-  "summary": "A small but useful expansion: pollinations images can now be edited as well as generated.\n\nImage support grew beyond generating from scratch: users can now edit existing images through pollinations.",
+  "title": "Image editing input handling tightened",
+  "summary": "A small image-editing fix changed how inputs are sent to Azure and made API errors easier to diagnose.\n\nAzure GPT Image editing now fetches string image inputs before sending them as multipart images. The change removes handling for base64 data URIs, local file paths, and Buffer inputs, and preserves response status and text when Azure returns an error.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-05-22"
     }
   ],
-  "generated_at": "2026-09-04T12:48:17.751504+00:00"
+  "generated_at": "2026-10-17T15:40:08.884543+00:00",
+  "highlights": [],
+  "changelog": []
 }

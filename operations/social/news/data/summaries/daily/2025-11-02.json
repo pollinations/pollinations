@@ -2,9 +2,9 @@
   "date": "2025-11-02",
   "period_start": "2025-11-02",
   "period_end": "2025-11-02",
-  "title": "Flux workers got steadier, with a live view of the machinery",
-  "summary": "A tuning day: steadier Flux workers, properly labeled audio responses, and a few cleaner edges.\n\nIO.NET Flux workers received stability and monitoring work, alongside a real-time server monitor. Image generation infrastructure now has a better chance to behave itself—and a way to see when it does not.\n\nThe OpenAI-audio response schema now includes its audio field, making audio output easier for API clients to identify and consume without inference by archaeology.\n\nThe site footer was finalized, while image token tracking was consolidated under completionImageTokens for a more consistent accounting path.",
-  "pr_count": 5,
+  "title": "Audio responses keep their audio",
+  "summary": "Audio responses keep their data, the homepage gets a tidier footer, and image generation gets sturdier workers and clearer usage tracking.\n\nThe chat completion response schema now includes an optional audio object, so `openai-audio` responses can retain their transcript and base64-encoded audio data.\n\nThe homepage footer gained a responsive black-and-white layout with contact details and link columns. The X link was restored, and the News section can now be linked to directly.\n\nFlux workers now scale oversized requests toward a 768×768 pixel budget to reduce GPU out-of-memory failures. Image models also share a token-tracking field, so Nano Banana usage headers can reflect the token count reported by Vertex AI instead of defaulting to one.",
+  "pr_count": 4,
   "prs": [
     {
       "number": 4868,
@@ -19,13 +19,11 @@
       "date": "2025-11-02"
     },
     {
-      "number": 4921,
-      "date": "2025-11-02"
-    },
-    {
       "number": 4923,
       "date": "2025-11-02"
     }
   ],
-  "generated_at": "2026-09-04T12:03:06.802362+00:00"
+  "generated_at": "2026-10-17T15:50:45.934146+00:00",
+  "highlights": [],
+  "changelog": []
 }

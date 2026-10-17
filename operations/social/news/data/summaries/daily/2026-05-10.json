@@ -151,5 +151,35 @@
       "date": "2026-05-10"
     }
   ],
-  "generated_at": "2026-09-04T11:49:17.979751+00:00"
+  "generated_at": "2026-09-04T11:49:17.979751+00:00",
+  "highlights": [
+    {
+      "emoji": "💡",
+      "title": "Bring your key to chat",
+      "text": "Chat has a Bring Your Own Pollen modal for using a custom API key, alongside clearer errors and a better mobile layout. [Try chat](https://chat.pollinations.ai).",
+      "prs": [
+        10787
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Community Quest workflows",
+      "text": "Community Quests now have issue templates and status tracking, with a workflow for Pollen payouts.",
+      "prs": [
+        10715
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "EaglePollen Video joins the showcase",
+      "text": "Explore a community app that automates TikTok video generation. [Try it](https://eagle.nomadedark.com.br/).",
+      "prs": [
+        10818
+      ],
+      "kind": "app"
+    }
+  ],
+  "changelog": []
 }

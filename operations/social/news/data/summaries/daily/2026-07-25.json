@@ -47,5 +47,26 @@
       "date": "2026-07-25"
     }
   ],
-  "generated_at": "2026-09-04T11:48:31.304313+00:00"
+  "generated_at": "2026-09-04T11:48:31.304313+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Claude Opus 5 added",
+      "text": "Use `claude-opus-5` directly, or access it through the paid-only `claude-large` alias. [View the model](https://enter.pollinations.ai/models?q=claude-opus-5).",
+      "prs": [
+        12751
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "Titles for community models",
+      "text": "Give your community endpoint a title separate from its description. The title appears on model cards and in `polli my-models list`.",
+      "prs": [
+        12692
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-11",
+  "period_start": "2026-09-11",
+  "period_end": "2026-09-11",
+  "generated_at": "2026-09-12T06:26:29.349394+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-11/images/reddit.jpg"
+    }
+  ],
+  "title": "Managed code agents and model parameters shipped",
+  "text": "11 PRs merged today.\n\nThe largest change is managed code agents: agents can now ship from GitHub rather than requiring the usual manual assembly path. That should make agent iteration less ceremonial, though there are still plenty of edge cases around repository shape and deployment behavior to find.\n\nChat model metadata now exposes the parameters each model actually supports. The previous situation was effectively “here are some knobs; perhaps they do something.” Clients can now make more honest controls instead of presenting a generic parameter panel and hoping the backend agrees.\n\nA few catalog and account-path fixes also landed: low text balances now surface top-up links, unknown agent costs no longer leak into free pricing, queued publications are cancelled when an agent becomes private, and prompt-agent error messages survive the trip back to the caller.\n\nThe garden also gained Polli Visual Studio, tool-complexity routing, NewEra AI Agent and Talk AI Companion in chat, plus Ziban for images.\n\nCode and current README: https://github.com/pollinations/pollinations\n\nThe merged work is in the PR list: https://github.com/pollinations/pollinations/pulls?q=is%3Apr+is%3Amerged"
+}

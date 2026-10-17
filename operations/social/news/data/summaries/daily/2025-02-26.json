@@ -2,8 +2,8 @@
   "date": "2025-02-26",
   "period_start": "2025-02-26",
   "period_end": "2025-02-26",
-  "title": "Text API plays more nicely with OpenAI-compatible clients",
-  "summary": "A small but useful text API tune-up: cleaner OpenAI compatibility and less surprising streaming output.\n\ntext.pollinations.ai received compatibility and streaming-formatting fixes: Cloudflare/OpenAI integrations should connect more cleanly, while SSE responses are formatted more consistently for clients consuming streamed text.",
+  "title": "Cloudflare chat completions speak OpenAI",
+  "summary": "A text API debugging day: Cloudflare compatibility, consistent SSE output, and less surprising stream errors and replays.\n\nThe text API now uses Cloudflare's OpenAI-compatible chat completions endpoint and omits null or undefined request fields, including nested optional parameters.\n\nText API streams preserve existing SSE events and wrap other chunks as data events. Plain-text chunks become chat completion deltas, so clients receive SSE-formatted output even when an upstream stream does not provide it.\n\nStreaming API errors now return HTTP error responses rather than successful streams. Completed streams are sanitized before caching and marked for replay on repeat requests.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,5 +15,7 @@
       "date": "2025-02-26"
     }
   ],
-  "generated_at": "2026-09-04T14:02:05.320834+00:00"
+  "generated_at": "2026-10-17T15:34:25.231358+00:00",
+  "highlights": [],
+  "changelog": []
 }

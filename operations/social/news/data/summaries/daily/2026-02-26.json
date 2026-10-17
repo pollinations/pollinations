@@ -36,12 +36,21 @@
     {
       "emoji": "📚",
       "title": "Docs Overhaul",
-      "text": "Restructured [API Docs](https://enter.pollinations.ai/api/docs) with copy-pasteable code samples in multiple languages. Less reading, more building."
+      "text": "Restructured [API Docs](https://enter.pollinations.ai/api/docs) with copy-pasteable code samples in multiple languages. Less reading, more building.",
+      "prs": [
+        8597
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🏷️",
       "title": "Ecosystem Sorting",
-      "text": "Added platform badges to the app registry. Filter the 500+ apps by Web, Discord, CLI, or Mobile."
+      "text": "Added platform badges to the app registry. Filter the 500+ apps by Web, Discord, CLI, or Mobile.",
+      "prs": [
+        8635
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

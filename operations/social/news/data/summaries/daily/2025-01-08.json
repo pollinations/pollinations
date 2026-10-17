@@ -2,18 +2,26 @@
   "date": "2025-01-08",
   "period_start": "2025-01-08",
   "period_end": "2025-01-08",
-  "title": "Text service gets sturdier guardrails",
-  "summary": "A small maintenance pass: repaired text-service tests and taught the workflow to check itself.\n\nTest repairs and an initial workflow-checking setup give texxt.pollinations.ai a more reliable path for catching regressions before they wander into production.",
-  "pr_count": 2,
+  "title": "Text model choices changed",
+  "summary": "One text-and-image API PR added a small Llama option, fixed OpenRouter model selection, and made queue behavior less mysterious.\n\nAdded `llamalight` (Llama 3.2 3B Instruct) and an Azure-backed `gpt-4o-mini-roblox` generator with JSON-mode support. The listed Llama 3.3 70B chat and Llama 3.1 completion options were removed.\n\nOpenRouter requests now use the specified model instead of always using DeepSeek Chat. Requests over the existing 300-item per-IP queue limit now receive a structured JSON 429 error.\n\nThe image queue wait changed from 500 ms per queued item to a fixed 500 ms. The same PR added text-request analytics, image-failure logging, and updated integration tests.",
+  "pr_count": 1,
   "prs": [
     {
       "number": 965,
       "date": "2025-01-08"
-    },
-    {
-      "number": 967,
-      "date": "2025-01-08"
     }
   ],
-  "generated_at": "2026-09-04T13:36:51.454538+00:00"
+  "generated_at": "2026-10-17T15:32:52.047682+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Llamalight joins text models",
+      "text": "Try `llamalight`, based on Llama 3.2 3B Instruct, for text generation. [Browse the model](https://enter.pollinations.ai/models?q=llamalight).",
+      "prs": [
+        965
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

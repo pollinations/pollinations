@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-10-08",
+  "period_start": "2026-10-08",
+  "period_end": "2026-10-08",
+  "generated_at": "2026-10-09T06:32:03.630134+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-08/images/reddit.jpg"
+    }
+  ],
+  "title": "Responses coverage, larger uploads, and a dated changelog",
+  "text": "Today's merged PRs include a fairly useful API consistency change: every Chat Completions text model now has a `/v1/responses` path through a Chat-to-Responses adapter. Community text endpoints can also return JSON without implementing SSE; streaming clients get the completed answer as a valid event stream. Gemini tool calls retain their thought signatures, and schemas with arrays lacking `items` are accepted. [Responses PR](https://github.com/pollinations/pollinations/pull/16811) · [community endpoint PR](https://github.com/pollinations/pollinations/pull/16732)\n\nOn the media side, p-video now receives the requested aspect ratio, Recraft vector handling uses its supported ratios, and large audio and image-edit uploads can pass the coordinator's former 32 MiB RPC limit. The Qwen-Audio 3.0 TTS Flash replacement was merged for October 9, with existing Qwen TTS IDs retained as aliases. [Upload PR](https://github.com/pollinations/pollinations/pull/16853)\n\nSmaller fixes remove some guesswork: generated image filenames follow the response content type, raw uploads preserve Unicode filenames, and usage records include prompt cache-write tokens. The CLI no longer offers an audio speed option the API ignored. [CLI changes](https://github.com/pollinations/pollinations/pull/16738) · [usage PR](https://github.com/pollinations/pollinations/pull/16843)\n\nEnter News now has an index-backed, dated changelog rather than hand-written announcements. The safety docs also clarify an important boundary: request-text checks inspect the request, not generated output. A Quest contribution added Pi Workbench, a browser workspace with a terminal and project files. [News PR](https://github.com/pollinations/pollinations/pull/16828) · [safety docs PR](https://github.com/pollinations/pollinations/pull/16328) · [Pi Workbench PR](https://github.com/pollinations/pollinations/pull/16033)"
+}

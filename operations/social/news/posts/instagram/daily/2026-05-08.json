@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-05-08",
+  "period_start": "2026-05-08",
+  "period_end": "2026-05-08",
+  "generated_at": "2026-05-09T06:41:09.594479+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-08/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-08/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-08/images/instagram-3.jpg"
+    }
+  ],
+  "text": "9 PRs merged this week. The image API now actually respects your width and height requests (we dropped the pre-scaling, so you get exactly the pixels you asked for). We also wired up Gemma 26B to the text endpoint via DeepInfra, smoothed out some auth redirects, and saw some great community apps drop (terminal images and toddler flashcards). Code is open. Build something weird. 🐝✨\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #gemma #generativeai #buildinpublic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

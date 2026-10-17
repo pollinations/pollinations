@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-10-04",
+  "period_start": "2026-10-04",
+  "period_end": "2026-10-04",
+  "generated_at": "2026-10-05T06:45:05.004316+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-04/images/reddit.jpg"
+    }
+  ],
+  "title": "37 PRs merged: games, Open WebUI, and request fixes",
+  "text": "37 PRs merged today. The most visible batch is community-made: nine games involving voice mysteries, impostors, and postcards, plus two learning apps, Tunemory and Chorus. There are also [new video and community-model Quests](https://github.com/pollinations/pollinations/pull/15732). Quest rewards and availability are still evolving in alpha.\n\nOpen WebUI now has model pins, Pollen guidance, and sharing defaults set up, with more capacity for the production instance ([defaults](https://github.com/pollinations/pollinations/pull/16249), [capacity](https://github.com/pollinations/pollinations/pull/16438)).\n\nSeveral less visible fixes are about not changing a request on its way through the system. SDK raw generation keeps text options; base64 images keep their declared MIME types; MIDIjourney keeps multipart system instructions; and Gemini on Vertex keeps every system message. Play also stops attaching image references to models that cannot use them. The SSE parser now accepts `data:` frames without a trailing space, because apparently even a space can be load-bearing ([parser fix](https://github.com/pollinations/pollinations/pull/16217)).\n\nOn the tooling side, Claude MCP management respects `CLAUDE_CONFIG_DIR`, sandbox SSH paths with spaces are quoted, and a failed SDK reauthorization no longer discards a saved connection. Updated Polli CLI, SDK, and UI packages are out ([release PR](https://github.com/pollinations/pollinations/pull/16436)). If a request still loses an input, a minimal reproduction on the relevant PR would help."
+}

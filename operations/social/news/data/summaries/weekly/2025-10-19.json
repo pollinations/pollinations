@@ -1,0 +1,67 @@
+{
+  "date": "2025-10-19",
+  "period_start": "2025-10-12",
+  "period_end": "2025-10-18",
+  "title": "Image generation got better guardrails",
+  "summary": "Image generation got firmer limits and fewer unnecessary waits, while the model catalog and community projects list got some attention too.\n\nFlux Kontext safety checks now return a timeout error after 30 seconds rather than leaving requests waiting indefinitely. After several cache-limit changes, the generated-image cache ended the week capped at 1,000 entries with oldest-entry eviction. Progress bars also stopped filling non-TTY logs.\n\nTelemetry moved into the background, and cached-image requests stopped making a provider lookup for every hit. The anonymous queue-limit change was reverted, leaving anonymous and registered requests with up to five slots each.\n\nEnter’s model-list proxy was corrected to request the upstream model-list endpoint. Unused text services, orphaned IDs, and the Mistral Nemo aliases were removed; image provider lookups also moved to the shared registry.\n\nGreen Hope AI joined the creative projects list with editable generated thumbnails. Jay-1409 also contributed a standalone Next.js email utility with reusable templates; it is separate from Pollinations services.",
+  "pr_count": 14,
+  "prs": [
+    {
+      "number": 4536,
+      "date": "2025-10-14"
+    },
+    {
+      "number": 4537,
+      "date": "2025-10-14"
+    },
+    {
+      "number": 4541,
+      "date": "2025-10-14"
+    },
+    {
+      "number": 4553,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4563,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4564,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4565,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4566,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4572,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4573,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4591,
+      "date": "2025-10-17"
+    },
+    {
+      "number": 4596,
+      "date": "2025-10-17"
+    },
+    {
+      "number": 4512,
+      "date": "2025-10-18"
+    },
+    {
+      "number": 4588,
+      "date": "2025-10-18"
+    }
+  ],
+  "generated_at": "2026-10-17T16:06:09.699124+00:00"
+}

@@ -1,0 +1,219 @@
+{
+  "date": "2026-01-04",
+  "period_start": "2025-12-28",
+  "period_end": "2026-01-03",
+  "title": "Z-Image became the default",
+  "summary": "Image generation got a new default and better ways to explore it, while Pollen accounting and request handling received a thorough tune-up.\n\n`zimage` became the default image model, and `flux` requests now resolve to it. Larger Z-Image requests gained 2× SPAN upscaling with pixel limits that preserve the requested aspect ratio. The year-end Seedream promotion was added with a December 31 end date, then its expired labels were removed.\n\nTier grants and purchased packs now have separate balances, so daily tier resets do not distort the displayed total. Billable requests use tier Pollen first; balance lookup and subscription-tier updates were also adjusted to keep purchases, grants, and the dashboard in sync.\n\nStreaming text POSTs now bypass deduplication so SSE chunks can arrive as they are generated. Across text and image generation, `seed=-1` bypasses gateway caches and produces a fresh seed instead of repeat results. Chat gained more `reasoning_effort` options, Gemini 3 Flash fast mode sends a zero-token thinking budget, and GPT-5.2 routing was updated to address blocked text responses.\n\nPlay gained a Watch Feed for completed community images, with grid and single-image views plus prompt and model labels. Model Monitor gained a default 60-minute health view alongside its 5-minute view, and its table became easier to navigate on smaller screens.",
+  "pr_count": 52,
+  "prs": [
+    {
+      "number": 6511,
+      "date": "2025-12-28"
+    },
+    {
+      "number": 6520,
+      "date": "2025-12-28"
+    },
+    {
+      "number": 6522,
+      "date": "2025-12-28"
+    },
+    {
+      "number": 6417,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6453,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6527,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6543,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6549,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6559,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6561,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6565,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6569,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6570,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6575,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6578,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6580,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6582,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6586,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6588,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6589,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6590,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6592,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6593,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6595,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6596,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6599,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6571,
+      "date": "2025-12-30"
+    },
+    {
+      "number": 6622,
+      "date": "2025-12-30"
+    },
+    {
+      "number": 6623,
+      "date": "2025-12-30"
+    },
+    {
+      "number": 6624,
+      "date": "2025-12-30"
+    },
+    {
+      "number": 6627,
+      "date": "2025-12-30"
+    },
+    {
+      "number": 6632,
+      "date": "2025-12-30"
+    },
+    {
+      "number": 6636,
+      "date": "2025-12-30"
+    },
+    {
+      "number": 6637,
+      "date": "2025-12-30"
+    },
+    {
+      "number": 6639,
+      "date": "2025-12-30"
+    },
+    {
+      "number": 6645,
+      "date": "2025-12-31"
+    },
+    {
+      "number": 6672,
+      "date": "2025-12-31"
+    },
+    {
+      "number": 6631,
+      "date": "2026-01-01"
+    },
+    {
+      "number": 6680,
+      "date": "2026-01-01"
+    },
+    {
+      "number": 6689,
+      "date": "2026-01-01"
+    },
+    {
+      "number": 6694,
+      "date": "2026-01-01"
+    },
+    {
+      "number": 6722,
+      "date": "2026-01-02"
+    },
+    {
+      "number": 6726,
+      "date": "2026-01-02"
+    },
+    {
+      "number": 6737,
+      "date": "2026-01-02"
+    },
+    {
+      "number": 6628,
+      "date": "2026-01-03"
+    },
+    {
+      "number": 6744,
+      "date": "2026-01-03"
+    },
+    {
+      "number": 6746,
+      "date": "2026-01-03"
+    },
+    {
+      "number": 6747,
+      "date": "2026-01-03"
+    },
+    {
+      "number": 6752,
+      "date": "2026-01-03"
+    },
+    {
+      "number": 6754,
+      "date": "2026-01-03"
+    },
+    {
+      "number": 6755,
+      "date": "2026-01-03"
+    },
+    {
+      "number": 6764,
+      "date": "2026-01-03"
+    }
+  ],
+  "generated_at": "2026-10-17T16:07:18.041114+00:00"
+}

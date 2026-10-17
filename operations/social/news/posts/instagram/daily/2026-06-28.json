@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-06-28",
+  "period_start": "2026-06-28",
+  "period_end": "2026-06-28",
+  "generated_at": "2026-06-29T07:36:42.854712+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-28/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-28/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-28/images/instagram-3.jpg"
+    }
+  ],
+  "text": "17 PRs merged this week. The ecosystem is growing so fast we had to add a new quest for it—get your app listed in the Greenhouse, earn Pollen. Simple.\n\nWe also dropped a /v1/models/status endpoint so you can programmatically check model health instead of guessing, and repointed some Azure resources to dodge overzealous filters. 13 new community apps sprouted this week (shoutout to PolliCross, World Weaver, and the rest). Code is always in the open. 🌿✨\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #codinglife #developercommunity",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "date": "2025-07-27",
+  "period_start": "2025-07-20",
+  "period_end": "2025-07-26",
+  "title": "Gemma joins anonymous text generation",
+  "summary": "A quiet week brought another anonymous text model, less database contention around authentication, and a more accurate community-project listing.\n\n`gemma-roblox`, backed by Gemma 2 9B IT Fast, was added for anonymous text generation with tool support and up to 1,024 output tokens.\n\nPer-user metric writes were disabled at several call sites and an API-token lookup index was added to address contention affecting authentication requests. Text-generation success and error analytics moved from the text server to the cache worker.\n\nThe community-project listing now credits @CiaranMcAleer and links to Mimir AIP’s GitHub repository.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 3260,
+      "date": "2025-07-22"
+    },
+    {
+      "number": 3234,
+      "date": "2025-07-23"
+    }
+  ],
+  "generated_at": "2026-10-17T16:05:17.677118+00:00"
+}

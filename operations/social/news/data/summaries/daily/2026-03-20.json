@@ -52,17 +52,34 @@
     {
       "emoji": "🎨",
       "title": "Klein Multi-Image Blending",
-      "text": "The Klein model's image-to-image pipeline now accepts up to four parallel reference images via a multipart endpoint. Check the [API Docs](https://enter.pollinations.ai/api/docs) to start blending."
+      "text": "The Klein model's image-to-image pipeline now accepts up to four parallel reference images via a multipart endpoint. Check the [API Docs](https://enter.pollinations.ai/api/docs) to start blending.",
+      "prs": [
+        9350
+      ],
+      "kind": "api"
     },
     {
       "emoji": "💻",
       "title": "PowerShell & .NET Integrations",
-      "text": "You can now pipe text and image generation directly into your Windows scripting and Azure workflows. Because sometimes you just need to generate pixels from a terminal."
+      "text": "You can now pipe text and image generation directly into your Windows scripting and Azure workflows. Because sometimes you just need to generate pixels from a terminal.",
+      "prs": [
+        9343,
+        9344
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🌟",
       "title": "Showcase Explosion",
-      "text": "The community directory is growing. New additions include a daily cryptid generator, a Turkish financial analysis bot, a markdown story exporter, and an AI bouquet designer. See what people are building on the [main website](https://hello.pollinations.ai)."
+      "text": "The community directory is growing. New additions include a daily cryptid generator, a Turkish financial analysis bot, a markdown story exporter, and an AI bouquet designer. See what people are building on the [main website](https://hello.pollinations.ai).",
+      "prs": [
+        9323,
+        9349,
+        9353,
+        9354
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

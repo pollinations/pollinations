@@ -2,16 +2,12 @@
   "date": "2026-01-03",
   "period_start": "2026-01-03",
   "period_end": "2026-01-03",
-  "title": "Random seeds are random again",
-  "summary": "A tidy maintenance day: genuinely random generation, self-updating API docs, and a repo that sorts itself a little better.\n\nImage and text generation now correctly treats seed=-1 as a request for fresh output, bypassing cached results where needed. Asking for randomness no longer produces software's favorite kind of surprise: the same thing twice.\n\nDocumentation now consistently points builders to gen.pollinations.ai, while APIDOCS.md can regenerate automatically to stay aligned with the API. Mobile users can also scroll the API key and pricing tables instead of negotiating with a narrow screen.\n\nFour new community highlights and the latest README news were published, while a new workflow automatically organizes issues and PRs into four project categories. More signal on the front page, less archaeological work in the repo.",
-  "pr_count": 9,
+  "title": "Random seeds produce fresh results",
+  "summary": "Random-seed requests got their randomness back, while mobile tables and the API docs became easier to use.\n\nThree PRs fixed `seed=-1` across text and image generation: requests bypass gateway caches, and the services turn -1 into a fresh seed instead of producing repeat results. An explicit image `seed=0` also stays intact.\n\nAPI key and Pricing tables now scroll inside their own containers on narrow screens, rather than pushing the whole page sideways.\n\nThe README, quick references, app template and service docs now direct developers to `gen.pollinations.ai`. The regenerated API reference adds a vision example and clarifies the `/v1/models` response format and model-restricted keys.",
+  "pr_count": 8,
   "prs": [
     {
       "number": 6628,
-      "date": "2026-01-03"
-    },
-    {
-      "number": 6690,
       "date": "2026-01-03"
     },
     {
@@ -43,5 +39,7 @@
       "date": "2026-01-03"
     }
   ],
-  "generated_at": "2026-09-04T11:24:40.937437+00:00"
+  "generated_at": "2026-10-17T15:57:56.598626+00:00",
+  "highlights": [],
+  "changelog": []
 }

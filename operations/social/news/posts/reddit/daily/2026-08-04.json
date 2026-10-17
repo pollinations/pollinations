@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-04",
+  "period_start": "2026-08-04",
+  "period_end": "2026-08-04",
+  "generated_at": "2026-08-05T07:03:30.409425+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-08-04/images/reddit.jpg"
+    }
+  ],
+  "title": "Five merged fixes for models, proxies, and docs",
+  "text": "Five PRs merged today. Most of this is cleanup, which is usually where the interesting compatibility bugs are hiding.\n\n- Invalid image URLs now return a proper `400` instead of making callers infer what went wrong: https://github.com/pollinations/pollinations/pull/12978\n- Inkling and Cohere proxy handling was simplified. In particular, Command A Plus requests should now pass through with less interpretation by the proxy: https://github.com/pollinations/pollinations/pull/13032\n- Model entries were consolidated, making selection simpler while preserving existing links rather than quietly breaking them: https://github.com/pollinations/pollinations/pull/13043\n- Model display titles got a polish pass. Small catalog naming inconsistencies are not exciting until someone has to choose a model from a long list: https://github.com/pollinations/pollinations/pull/13074\n- The README was updated as well: https://github.com/pollinations/pollinations/pull/13063\n\nThe practical outcome: clearer API failures, less proxy-specific behavior around Cohere, and a catalog that is easier to scan without changing old integrations. The repository is here if you want to inspect the diffs or find something we missed: https://github.com/pollinations/pollinations"
+}

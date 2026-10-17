@@ -55,5 +55,35 @@
       "date": "2026-04-04"
     }
   ],
-  "generated_at": "2026-09-04T11:42:04.890697+00:00"
+  "generated_at": "2026-09-04T11:42:04.890697+00:00",
+  "highlights": [
+    {
+      "emoji": "🎵",
+      "title": "More detailed speech transcripts",
+      "text": "Get speaker diarization with Scribe or word-level timestamps with Whisper through the STT API. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        9603
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Storyboards on an infinite canvas",
+      "text": "Plan scenes on an infinite canvas and generate images with StoryBoard AI. [Try it](https://storyboard-ai-ochre.vercel.app/).",
+      "prs": [
+        9937
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Longer Nova Reel videos",
+      "text": "Create multi-shot Nova Reel videos up to 60 seconds long, up from 30 seconds. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        9938
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

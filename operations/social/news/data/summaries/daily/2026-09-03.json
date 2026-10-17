@@ -97,7 +97,8 @@
       "text": "Use the paid-only `qwen/qwen3.8-max-0902` text model through the [Pollinations API](https://gen.pollinations.ai/v1/chat/completions).",
       "prs": [
         14383
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🔗",
@@ -105,7 +106,8 @@
       "text": "Configure OpenClaw with `polli harness openclaw on`, choose a default model with `--model`, and use the managed Polli media-generation skill. [Explore the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         14343
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎯",
@@ -122,7 +124,9 @@
       "text": "The community agent gained Discord commands to connect, ask questions, check status, and disconnect.",
       "prs": [
         14325
-      ]
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

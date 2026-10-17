@@ -2,8 +2,8 @@
   "date": "2025-01-20",
   "period_start": "2025-01-20",
   "period_end": "2025-01-20",
-  "title": "A new Claude option, with the machinery watched",
-  "summary": "A small garden day: a new Claude model, better Persian text handling, and a style guide for making images weirder.\n\nClaude Hybridspace joined the text model lineup, alongside rate-limit updates and EC2 monitoring to keep an eye on the hardware doing the unglamorous part.\n\nText sanitization now preserves Persian character encoding correctly, so Persian prompts and output are less likely to be mangled by a helpful-looking cleanup step.\n\nThe tutorials section now includes the Artistic Styles Book, giving image makers a more direct map through the many aesthetic directions pixels can be pushed.",
+  "title": "More text models, more room for requests",
+  "summary": "Two more text models joined the API, Persian image prompts kept their characters, and 90-plus artistic styles found a place in the tutorials.\n\nAdded `claude-hybridspace`, backed by Claude 3.5 Haiku, and `qwen-coder`, backed by Qwen 2.5 Coder 32B. `llamalight` now uses Llama 3.1 8B Instruct, the text API limit rose from 40 to 200 requests per minute, and the 56,000-character input limit now applies only to `openai`.\n\nImage prompt sanitization now preserves Persian and other non-Latin characters while removing control characters, so those prompts reach generation without losing their text.\n\nThe README and homepage tutorials now link an interactive book showing over 90 artistic styles made with Pollinations, with HTML and PDF versions.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,5 +19,26 @@
       "date": "2025-01-20"
     }
   ],
-  "generated_at": "2026-09-04T13:59:08.108269+00:00"
+  "generated_at": "2026-10-17T15:32:53.180902+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Claude Hybridspace joins text",
+      "text": "Use `claude-hybridspace` to send text requests to Claude 3.5 Haiku. [Browse the model](https://enter.pollinations.ai/models?q=claude-hybridspace).",
+      "prs": [
+        1042
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Qwen Coder joins text",
+      "text": "Use `qwen-coder` for text requests backed by Qwen 2.5 Coder 32B. [Browse the model](https://enter.pollinations.ai/models?q=qwen-coder).",
+      "prs": [
+        1042
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

@@ -2,9 +2,9 @@
   "date": "2025-11-16",
   "period_start": "2025-11-16",
   "period_end": "2025-11-16",
-  "title": "Audio joins the OpenAI API toolkit",
-  "summary": "A tuning day: OpenAI audio support arrived while model routing, keys, and text infrastructure got considerably less haunted.\n\nOpenAI audio API support landed, giving builders another route for audio workloads alongside the existing text, image, and model endpoints.\n\nThe fast OpenAI route now points at GPT-5 Nano, the default-model parameter was fixed, and a voting button lets people signal which models they want to see supported next.\n\nPublishable-key creation now clearly marks its beta status, while service and cost metadata were consolidated behind the scenes. Less mystery machinery, which is the preferred kind of machinery.",
-  "pr_count": 10,
+  "title": "Audio joins chat completions",
+  "summary": "Audio entered chat completions, fast text got new model options, and Enter’s generation routes adopted one authentication and Pollen rule.\n\nChat completion requests gained OpenAI-compatible audio fields. Messages can include base64 audio in wav, mp3, flac, opus, or pcm16 format, and requests can specify text or audio output with a voice and format.\n\n`openai-fast` moved to GPT-5 Nano. The new text-only `mistral-fast` offers Llama 3.1 8B with tool support and two additional aliases; `mistral-small` now points to Mistral Small 3.2. A button beside model pricing also gives visitors a route to vote on future models.\n\nEnter’s text, image, and chat routes now require authentication and a positive Pollen balance for every model. The free-model pricing exception was removed; successful uncached requests are billed by usage. Publishable-key creation also gained a beta warning, while the key documentation clarified its existing limit.",
+  "pr_count": 7,
   "prs": [
     {
       "number": 5247,
@@ -33,19 +33,37 @@
     {
       "number": 5335,
       "date": "2025-11-16"
-    },
-    {
-      "number": 5339,
-      "date": "2025-11-16"
-    },
-    {
-      "number": 5340,
-      "date": "2025-11-16"
-    },
-    {
-      "number": 5343,
-      "date": "2025-11-16"
     }
   ],
-  "generated_at": "2026-09-04T12:14:06.976779+00:00"
+  "generated_at": "2026-10-17T15:52:47.624411+00:00",
+  "highlights": [
+    {
+      "emoji": "🎵",
+      "title": "Audio in chat completions",
+      "text": "Send base64 `input_audio` in wav, mp3, flac, opus, or pcm16 format, or request audio output with a voice and format. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        5327
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Llama 3.1 8B with tools",
+      "text": "Use the new text-only `mistral-fast` model for Llama 3.1 8B with tool support. It also accepts `llama-3.1-8b` and `llama-fast` as aliases. [Browse the model](https://enter.pollinations.ai/models?q=mistral-fast).",
+      "prs": [
+        5316
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "⚡",
+      "title": "GPT-5 Nano on openai-fast",
+      "text": "`openai-fast` now uses GPT-5 Nano instead of GPT-4.1 Nano. [Browse the model](https://enter.pollinations.ai/models?q=openai-fast).",
+      "prs": [
+        5316
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

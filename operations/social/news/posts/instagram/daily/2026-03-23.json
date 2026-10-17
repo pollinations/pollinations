@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-03-23",
+  "period_start": "2026-03-23",
+  "period_end": "2026-03-23",
+  "generated_at": "2026-03-24T06:22:35.615045+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-23/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-23/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-23/images/instagram-3.jpg"
+    }
+  ],
+  "text": "24 PRs merged this week. We plugged in a lot of new brains: Amazon Nova, Alibaba Qwen, Grok, and Wan2.2 video models are all live on the endpoints.\n\nIf you're building headless, we added Device Authorization Grant (RFC 8628) so CLI login is actually usable now instead of being a headache. Also tweaked the tier system — Flower and Nectar tiers now get hourly pollen refills, and we fixed the GitHub scoring so leveling up makes more sense.\n\nOh, and free-tier AI MIDI generation is a thing now. Go make some noise. Docs and endpoints are in the usual spot.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #llm #generativeai #buildinpublic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-04-09",
+  "period_start": "2026-04-09",
+  "period_end": "2026-04-09",
+  "generated_at": "2026-04-10T06:34:17.589313+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-09/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-09/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-09/images/instagram-3.jpg"
+    }
+  ],
+  "text": "23 PRs merged today. The big news: gptimage-large and FLUX.1 Kontext are now completely free. We dropped the paywall so you can generate heavier pixels without thinking about credits.\n\nWe also welcomed a massive wave of 20 new community apps to the ecosystem—everything from AI wallpapers to Isekai character generators. The garden is growing fast. 🌱\n\nFinally, if DeepSeek or Kimi were dropping connections for you lately, we fixed it. Rolled back the routing, ate the bugs, connections are stable again.\n\nSee what people are building at pollinations.ai/apps\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #aiartcommunity #generativeai #webdev",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

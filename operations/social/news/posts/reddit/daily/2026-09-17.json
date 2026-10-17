@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-17",
+  "period_start": "2026-09-17",
+  "period_end": "2026-09-17",
+  "generated_at": "2026-09-18T06:29:30.834688+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-17/images/reddit.jpg"
+    }
+  ],
+  "title": "Five builder tools and clearer account states",
+  "text": "13 PRs merged today.\n\nThe app catalog picked up five builder tools: Regexly, Codeverter, SQLCraft, TestMine, and ApiScribe. DCORE was also added to the image directory. The useful part is that these are now discoverable in the same place as the rest of the ecosystem, rather than existing as links somebody has to remember.\n\nAccount work got less decorative and more truthful. Shared account identity, the app user menu, and wallet status landed in #14951. Activity usage and earnings cards now use a leaner empty state (#15053), which matters because an empty dashboard should not pretend it has a story to tell.\n\nModel health now has one thin proxy at `/models/status` (#15052), instead of making clients infer status through heavier paths. Checkout handling was hardened in #15015; fraud actions remain manual by design.\n\nDocs caught up with production: APIDOCS.md was regenerated, the README was refreshed, and the agent documentation now points contributors toward collective memory.\n\nPRs and code: https://github.com/pollinations/pollinations/pulls\nDocs: https://github.com/pollinations/pollinations/blob/master/APIDOCS.md\n\nThe model-status endpoint is intentionally small. Feedback from anyone consuming it from a client or monitoring job would be useful."
+}

@@ -1,0 +1,87 @@
+{
+  "date": "2025-03-23",
+  "period_start": "2025-03-16",
+  "period_end": "2025-03-22",
+  "title": "More choices for text and vision",
+  "summary": "This week expanded what people can build with Pollinations, while making repeat requests cheaper and community projects easier to find.\n\nThe `mistral` chat model moved to vision-capable Mistral Small, then to Mistral Small 3.1 2503. `qwen-reasoning` joined the text model list through Groq. The text API also gained parsing for `reasoning_effort`, though the supplied changes do not establish whether that setting reaches the model provider.\n\nAn MCP server gave assistants tools to create image URLs, fetch images, and list image models. A community guide showed how to connect Pollinations text models to OpenWebUI, while a new Python example demonstrated audio transcription.\n\nAn image cache Worker was added to reuse results for matching URLs, followed by a text API Worker that can serve cached responses from R2. Image-request analytics moved to the image cache Worker so cache hits and generation outcomes can be recorded separately.\n\nJenny AI, Watch TV with neko, PixPax, Case Me, and OkeyAI API Playground joined the project listings. Existing entries gained clearer author credit and links, and a duplicate listing was removed.",
+  "pr_count": 19,
+  "prs": [
+    {
+      "number": 1365,
+      "date": "2025-03-16"
+    },
+    {
+      "number": 1372,
+      "date": "2025-03-16"
+    },
+    {
+      "number": 1369,
+      "date": "2025-03-17"
+    },
+    {
+      "number": 1378,
+      "date": "2025-03-17"
+    },
+    {
+      "number": 1379,
+      "date": "2025-03-17"
+    },
+    {
+      "number": 1380,
+      "date": "2025-03-17"
+    },
+    {
+      "number": 1391,
+      "date": "2025-03-18"
+    },
+    {
+      "number": 1393,
+      "date": "2025-03-18"
+    },
+    {
+      "number": 1395,
+      "date": "2025-03-18"
+    },
+    {
+      "number": 1396,
+      "date": "2025-03-18"
+    },
+    {
+      "number": 1399,
+      "date": "2025-03-19"
+    },
+    {
+      "number": 1383,
+      "date": "2025-03-20"
+    },
+    {
+      "number": 1400,
+      "date": "2025-03-20"
+    },
+    {
+      "number": 1401,
+      "date": "2025-03-20"
+    },
+    {
+      "number": 1407,
+      "date": "2025-03-21"
+    },
+    {
+      "number": 1409,
+      "date": "2025-03-21"
+    },
+    {
+      "number": 1412,
+      "date": "2025-03-21"
+    },
+    {
+      "number": 1415,
+      "date": "2025-03-22"
+    },
+    {
+      "number": 1417,
+      "date": "2025-03-22"
+    }
+  ],
+  "generated_at": "2026-10-17T16:03:37.305231+00:00"
+}

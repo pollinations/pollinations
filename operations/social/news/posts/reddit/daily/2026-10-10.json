@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-10-10",
+  "period_start": "2026-10-10",
+  "period_end": "2026-10-10",
+  "generated_at": "2026-10-11T06:29:49.985515+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-10/images/reddit.jpg"
+    }
+  ],
+  "title": "Play page, PDF inputs, and API discovery merged",
+  "text": "A batch of merged PRs this week connects a few pieces that were previously awkward to find or use.\n\nThe v2 Play page brings image, video, and audio generation into one interface. Inputs remain in shareable URLs, and the page includes uploads, previews, downloads, and copyable API URLs for its requests. Model descriptions can also be expanded with Enter. The main Play change is [#16213](https://github.com/pollinations/pollinations/pull/16213).\n\nOn the input side, [#16898](https://github.com/pollinations/pollinations/pull/16898) added base64 PDF support for Claude on Bedrock and GPT on Azure/OpenAI, including GPT models using the Responses API. [#16925](https://github.com/pollinations/pollinations/pull/16925) corrected Nova 2 Lite video input so clips reach the model; unsupported video formats and audio now get explicit errors. Related media-fetch errors now say “media” instead of assuming everything is an image.\n\nFor discovery, [#16862](https://github.com/pollinations/pollinations/pull/16862) added an AI Catalog and MCP server cards, while [#16908](https://github.com/pollinations/pollinations/pull/16908) added an RFC 9727 API catalog pointing to the OpenAPI description and docs. The API reference was regenerated too.\n\nSmaller fixes include rejecting directories passed to CLI upload and audio commands, pointing the bare `tts` alias to `openai/tts-1`, restoring redirects for old image links, and correcting app listings and language tags. If you try the Play page, I'm interested in cases where its copyable API URL doesn't match the request you expected."
+}

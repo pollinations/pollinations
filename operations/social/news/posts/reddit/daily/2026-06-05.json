@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-06-05",
+  "period_start": "2026-06-05",
+  "period_end": "2026-06-05",
+  "generated_at": "2026-06-06T07:01:45.598172+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-05/images/reddit.jpg"
+    }
+  ],
+  "title": "Shipped a standalone playground app and updated SDK model metadata.",
+  "text": "Merged a few pull requests today focusing on the playground environment and how we handle model metadata in the SDK.\n\nThe most noticeable change is the new standalone playground app (PR #11630). We extracted the playground environment so you can test models and prompts without having to spin up or navigate through the rest of the infrastructure. It is a lot lighter and gets out of your way faster.\n\nUnder the hood, we cleaned up the model registry and SDK. PR #11631 adds proper model titles to the registry while preserving the longer descriptions, which was causing some formatting headaches previously. Alongside that, the SDK now correctly uses the model catalog category field (PR #11617). If you are querying the catalog programmatically, the metadata should actually make sense now instead of requiring manual parsing workarounds.\n\nFinally, we merged some UI primitives, specifically adding app-owned theme colors (PR #11635). It is a small quality-of-life update for developers building on top of the API who want their UI components to inherit specific color themes automatically.\n\nCode and full commit history are up on the repo: github.com/pollinations/pollinations"
+}

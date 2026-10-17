@@ -2,8 +2,8 @@
   "date": "2025-08-12",
   "period_start": "2025-08-12",
   "period_end": "2025-08-12",
-  "title": "EasyGen joins the chat project garden",
-  "summary": "A small discovery upgrade: EasyGen AI diagrams now have a place in chatProjects.\n\nEasyGen AI diagram generation is now listed in chatProjects, making the diagram tool easier to discover from the chat ecosystem.",
+  "title": "EasyGen joins the chat projects list",
+  "summary": "A community addition puts prompt-to-diagram creation on the chat projects list.\n\nThe chat projects list now includes EasyGen, a community app that turns plain-language prompts into Mermaid diagrams and flowcharts with an instant preview and editable source.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-08-12"
     }
   ],
-  "generated_at": "2026-09-04T12:20:40.996319+00:00"
+  "generated_at": "2026-10-17T15:45:10.251556+00:00",
+  "highlights": [],
+  "changelog": []
 }

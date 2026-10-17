@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-09",
+  "period_start": "2026-08-09",
+  "period_end": "2026-08-09",
+  "generated_at": "2026-08-10T06:37:58.810843+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-08-09/images/reddit.jpg"
+    }
+  ],
+  "title": "Six merges: routing, monitor ownership, provider errors",
+  "text": "Six PRs merged today, mostly around making failure states less ambiguous and image routing less stubborn.\n\nImage generation now retries pool workers after 503s (#13218), and DreamShaper load can spill across Vast workers rather than concentrating on whichever worker happened to be selected first (#13221). The goal is not to pretend capacity is infinite; it is to stop a temporarily busy worker from becoming everyone’s problem.\n\nThe model monitor is now split by ownership (#13214), separating official infrastructure from community-run capacity. That should make the status view more useful when diagnosing whether an issue is in the shared fleet, upstream, or elsewhere.\n\nWe also reconciled and hardened the Vast production fleet (#13217), and upstream payment failures are now remapped as upstream failures (#13219). Error classification sounds boring until someone spends an afternoon debugging the wrong layer.\n\nFinally, Stoicky was added to the video_audio creator-tool catalog (#13213).\n\nCode and merge history: https://github.com/pollinations/pollinations/pulls\n\nProject/docs: https://github.com/pollinations/pollinations and https://pollinations.ai/docs\n\nThe worker-routing changes are the area most likely to reveal edge cases under real traffic, so reports with request timing, model, and response status are particularly useful."
+}

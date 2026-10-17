@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-04-28",
+  "period_start": "2026-04-28",
+  "period_end": "2026-04-28",
+  "generated_at": "2026-04-29T06:47:56.134419+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-28/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-28/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-28/images/instagram-3.jpg"
+    }
+  ],
+  "text": "6 PRs merged today. The main event was the gpt-image-2 infrastructure dance — we tried spreading it across 5 Azure regions before just switching to OpenAI direct. Sometimes the simplest route wins.\n\nAlso shipped: first-class OpenClaw integration, smoothed out some API edge cases (no more 500s for empty transcriptions), and updated the app submission protocol. It's now a little clearer how to hit that Flower tier. 🌸\n\nCode is open. PRs welcome.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #softwareengineering #webdev",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

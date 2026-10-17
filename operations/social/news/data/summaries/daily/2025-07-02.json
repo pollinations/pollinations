@@ -2,8 +2,8 @@
   "date": "2025-07-02",
   "period_start": "2025-07-02",
   "period_end": "2025-07-02",
-  "title": "Flux Kontext joins the image toolbox",
-  "summary": "A garden-maintenance day: Flux Kontext arrived, auth got smoother, and another community game made the list.\n\nFlux Kontext support landed in the image service, followed by model-side optimizations and conflict resolution to keep the new path working cleanly. More image-making machinery, because apparently pixels need their own supply chain.\n\nauth.pollinations.ai received UI and UX improvements, making the account flow clearer for people getting set up and returning to their tools.\n\nRETIME - FABRIC OF REALITY was added to the games project list, giving another community-built experiment a place in the public ecosystem.",
+  "title": "Flux Kontext adds voxel-art generation",
+  "summary": "Flux Kontext brought voxel-art generation, while sign-in got a clearer layout and the community games list gained a time-bending adventure.\n\nTwo PRs added `model=kontext` for seed-tier users, supporting text-to-image generation and image-to-image generation from a supplied image URL. Outputs are capped at 640 pixels on the longest side. GPT Image was also marked as requiring the flower tier.\n\nThe auth page gained a responsive layout, a redesigned login button, and a GitHub profile badge for signed-in users. Token-validation caching was added to reduce repeated database lookups.\n\nRETIME - FABRIC OF REALITY joined the community games list. The Pollinations-powered text adventure has screen-reader accessibility, story-shaping choices, and time-based mechanics.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,5 +27,18 @@
       "date": "2025-07-02"
     }
   ],
-  "generated_at": "2026-09-04T12:02:55.425172+00:00"
+  "generated_at": "2026-10-17T15:43:10.217199+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Flux Kontext voxel art",
+      "text": "Generate voxel art with `model=kontext` from a prompt or a supplied image URL. Available from the seed tier. [Browse the model](https://enter.pollinations.ai/models?q=kontext).",
+      "prs": [
+        2730,
+        2737
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

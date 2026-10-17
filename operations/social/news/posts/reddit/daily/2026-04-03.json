@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-03",
+  "period_start": "2026-04-03",
+  "period_end": "2026-04-03",
+  "generated_at": "2026-04-04T06:20:10.893185+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-03/images/reddit.jpg"
+    }
+  ],
+  "title": "SDK audio overhaul, image editing, and programmatic API keys",
+  "text": "Merged 19 PRs today. The main focus was a heavy SDK overhaul and sorting out some model backend routing.\n\nSDK changes:\n- Split audio into dedicated TTS and music endpoints.\n- Added image editing support via POST /v1/images/edits.\n- Swapped the default image model from flux to zimage.\n- Relaxed video duration validation so newer models stop throwing errors.\n\nModel routing:\n- Migrated Claude traffic to AWS Bedrock. We tried renaming the models to a version-based scheme, immediately realized that would break things for existing integrations, and reverted the naming scheme in the very next PR.\n- Added gemini-3.1-flash-lite-preview.\n\nInfra & Ecosystem:\n- You can now manage API keys programmatically (create, list, revoke endpoints are live).\n- Shipped a base Discord bot family framework (including a bot that strictly generates the opposite of your prompt).\n- Did a pass on the app directory to clear out stale data and dead apps.\n\nDocs and examples are updated in the readme: github.com/pollinations/pollinations"
+}

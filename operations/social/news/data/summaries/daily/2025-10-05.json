@@ -2,9 +2,9 @@
   "date": "2025-10-05",
   "period_start": "2025-10-05",
   "period_end": "2025-10-05",
-  "title": "Image models got clearer names and better context",
-  "summary": "A community-maintenance day: clearer model names, easier contributing, more flexible app setup, and a freshly weeded project directory.\n\nThe model catalog now shows more useful information for image models and keeps their original model names visible instead of making people decode aliases. A small victory for knowing what you are actually asking the API to do.\n\nPriority users can now use the nanobanana and seedream models, while referrer authentication accepts wildcard domains for apps that live across subdomains.\n\nA dedicated Hacktoberfest 2025 area and documented app-idea proposal workflow make it easier for new contributors to find the work, propose something useful, and get local development running without archaeology.",
-  "pr_count": 13,
+  "title": "Image models get a metadata endpoint",
+  "summary": "Image model details and wildcard referrers joined the API, while Hacktoberfest gained app starters and the community showcase got a tidy-up.\n\nThe image API gained `/about`, which returns each model’s name, tier, enhance flag, and maximum side length as JSON. `/models` still returns names only.\n\nRegistered wildcard domains can now authenticate requests from their subdomains without a separate registration for each one. Exact matches take priority, and a wildcard does not cover its parent domain. A separate change added configurable concurrency caps for selected nanobanana and seedream users; other users keep their tier-based caps.\n\nA new Hacktoberfest 2025 folder sets out how to submit frontend apps, with an HTML image-generation starter, a React/Vite placeholder starter, and two examples: CatGPT and the Sirius Cybernetics Elevator Challenge. Contributors can optionally propose an idea for feedback before building.",
+  "pr_count": 11,
   "prs": [
     {
       "number": 2666,
@@ -15,15 +15,7 @@
       "date": "2025-10-05"
     },
     {
-      "number": 4307,
-      "date": "2025-10-05"
-    },
-    {
       "number": 4313,
-      "date": "2025-10-05"
-    },
-    {
-      "number": 4315,
       "date": "2025-10-05"
     },
     {
@@ -59,5 +51,36 @@
       "date": "2025-10-05"
     }
   ],
-  "generated_at": "2026-09-04T12:42:17.856444+00:00"
+  "generated_at": "2026-10-17T15:48:13.941591+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Image model details via API",
+      "text": "Call the image API’s `/about` endpoint to get model names, tiers, enhance flags, and maximum side lengths as JSON. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        4276
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Wildcard referrer domains",
+      "text": "A registered domain such as `*.example.com` can authenticate requests from its subdomains, including nested ones. The parent domain still needs its own match. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        4347
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "✨",
+      "title": "Hacktoberfest app starters",
+      "text": "Build a frontend Pollinations app using the new HTML starter, or browse CatGPT and the elevator game for ideas. You can propose an idea for feedback before submitting an app. [Read the contributor guide](https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md).",
+      "prs": [
+        4344,
+        4353
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

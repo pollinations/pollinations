@@ -2,8 +2,8 @@
   "date": "2025-03-15",
   "period_start": "2025-03-15",
   "period_end": "2025-03-15",
-  "title": "The project showcase got easier to browse",
-  "summary": "A community-facing day: better project discovery, two new showcase entries, and a refreshed Unity integration.\n\nA featured tab now gives standout community projects their own shelf, while the showcase added CalcuBite AI and a Node.js client library. More things people built with Pollinations, arranged with slightly less archaeological effort.\n\nThe Unity JavaScript integration was refreshed, keeping the path from game project to generative API a little more current.",
+  "title": "Projects get a more prominent place",
+  "summary": "Projects moved up front, community additions joined the showcase, and Unity’s image instructions got a tune-up.\n\nProjects moved higher on the homepage, with a new “For Teens 🚀” tab drawing from featured projects across existing categories. The update also renamed “Creative & Interactive Applications” to “Creative Apps” and broadened the mature-content check.\n\nThe project listings gained CalcuBite AI, which estimates nutrition from food photos. The SDK showcase also added a community Node.js and TypeScript client covering images, text, and speech.\n\nThe Unity persona now points image generation to `flux` instead of Unity, with expanded image-style instructions.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,5 +23,17 @@
       "date": "2025-03-15"
     }
   ],
-  "generated_at": "2026-09-04T12:09:20.900974+00:00"
+  "generated_at": "2026-10-17T15:35:40.330772+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "Featured projects up front",
+      "text": "Find featured projects in the new “For Teens 🚀” tab. Projects also sit higher on the homepage, so there’s less scrolling before you find something to try. [Explore projects](https://pollinations.ai).",
+      "prs": [
+        1202
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

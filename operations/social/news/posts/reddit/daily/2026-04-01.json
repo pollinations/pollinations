@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-01",
+  "period_start": "2026-04-01",
+  "period_end": "2026-04-01",
+  "generated_at": "2026-04-02T06:24:59.107942+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-01/images/reddit.jpg"
+    }
+  ],
+  "title": "Deployed LTX-2 video generation to GH200 and merged 4 community apps",
+  "text": "Just pushed a batch of updates to the infrastructure and merged a few community PRs. Main shift today is on the video generation side.\n\nWe deployed LTX-2 to our GH200 node (PR #9616). We are handling token auth for this now. If you've been hitting the video endpoints, you should notice generation times dropping significantly with the GH200 doing the heavy lifting. The HTTP API remains the same, just faster.\n\nOn the community side, we merged four new apps into the ecosystem (#9795, #9796, #9797, #9798). SciVis AI and ItacaLab (a graphic editor for authors) are now wired up to the image endpoints. Puzzel Math and ContentAI were added to the learn and writing categories, respectively. Always good to see what people are building with the open endpoints. You can check out the source for these in our main repo.\n\nFinally, a couple of bug fixes for the Sirius apps. Fixed an issue where the Bring Your Own Prompt (BYOP) feature wasn't persisting to localstorage properly (#9816), which was wiping context between sessions. Also patched the elevator game so it actually redirects you to the login screen when you log out (#9819), rather than leaving you in a weird ghost state.\n\nCode and docs are up on GitHub if you want to look at the implementation details. Let us know if the LTX-2 deployment causes any weird timeouts on your end."
+}

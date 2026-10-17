@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-06-12",
+  "period_start": "2026-06-12",
+  "period_end": "2026-06-12",
+  "generated_at": "2026-06-13T07:15:37.930822+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-12/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-12/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-12/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Three PRs merged today to keep the garden growing. We swapped out some infrastructure — Wan and Qwen are now running off Replicate, and we wired up qwen-coder-large and kimi k2.7 via OpenRouter. Better coding models, smoother routing.\n\nAlso caught a bug where the text API was getting confused by boolean query params (stream/json). True is true again, false is false. Order is restored in the universe.\n\nEverything is live at pollinations.ai.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #webdev #apidesign #codinglife",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

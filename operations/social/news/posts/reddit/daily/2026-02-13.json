@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-02-13",
+  "period_start": "2026-02-13",
+  "period_end": "2026-02-13",
+  "generated_at": "2026-03-18T21:29:41.035981+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-13/images/reddit.jpg"
+    }
+  ],
+  "title": "Merged: GLM 5, ElevenLabs Scribe v2 STT, and unified video resolutions",
+  "text": "Just pushed a few updates to the infrastructure. \n\nFirst, we upgraded the GLM model from 4.7 to 5. We also flipped the default Portkey gateway to production, so routing should be more stable for text generation. \n\nFor audio, we added ElevenLabs Scribe v2 for Speech-to-Text (STT). If you are building transcription or voice-driven apps, this should give you better accuracy out of the box without changing your existing HTTP calls.\n\nVideo generation got a much-needed cleanup. We finally unified the video resolution system across the board. If you have been dealing with weird aspect ratio edge cases or silent failures on specific dimensions, this should resolve most of them. As part of this, we migrated Wan over to Airforce.\n\nAlso pushed a small fix to the dashboard UI. The tier panel colors now actually match your active tier, and we fixed some missing cursor-pointer states that were annoying to click through.\n\nEverything is live on the API. You can check the code and recent commits over at https://github.com/pollinations/pollinations. If the new video resolutions break any of your existing workflows, open an issue and let me know."
+}

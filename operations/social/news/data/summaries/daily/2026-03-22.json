@@ -24,13 +24,22 @@
     {
       "emoji": "🤖",
       "title": "Qwen Models & Vision",
-      "text": "Alibaba's Qwen models (`qwen-coder-large`, `qwen-large`, and `qwen-vision`) are now live on the [Unified API](https://gen.pollinations.ai). 1M context windows and image understanding, completely unlocked for the free tier."
+      "text": "Alibaba's Qwen models (`qwen-coder-large`, `qwen-large`, and `qwen-vision`) are now live on the [Unified API](https://gen.pollinations.ai). 1M context windows and image understanding, completely unlocked for the free tier.",
+      "prs": [
+        9444,
+        9450
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎨",
       "title": "LND Ai Showcase",
       "text": "LND Ai has been added to the community showcase. Another solid text-to-image tool built entirely by hitting our API. [Try it](https://www.namansoni.in/text-to-image).",
+      "prs": [
+        9420
+      ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

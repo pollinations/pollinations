@@ -1,0 +1,67 @@
+{
+  "date": "2025-02-09",
+  "period_start": "2025-02-02",
+  "period_end": "2025-02-08",
+  "title": "More choices for text and images",
+  "summary": "More models and community-built tools arrived, while the APIs got clearer controls for filtering, privacy, and image inputs.\n\nThe text API added `gemini`, `gemini-thinking`, Hormoz 8B, and `deepseek-reasoner`. The `turbo` image model gained prompt enhancement with a 768-pixel maximum side length. Temperature and JSON-mode options are available for the new Gemini and Hormoz chat options; `qwen` was retired from the model list.\n\nImage prompts gained LlamaGuard classification alongside existing checks, and feed filtering now accounts for additional maturity flags. The `end_generating` event gained nested maturity data and dropped `originalPrompt`. Text requests also gained `private=true` to keep responses off the public feed.\n\nThe project listings gained an underwater text adventure, an iOS chat app, a browser coding environment, a Telegram bot, a MIDI melody maker, and a multimodel chatbot. Pollinations.DIY also joined the monorepo. Apparently one API can lead to quite a few different tabs.\n\nOpenAI-style responses gained consistent IDs, completion objects, and choice indexes. The docs added image and text SSE feed examples and clarified which models accept image inputs: `openai`, `openai-large`, and `claude-hybridspace`, but not Gemini models currently. Website sections also switched from background images to solid colors, with unused assets removed.",
+  "pr_count": 14,
+  "prs": [
+    {
+      "number": 1136,
+      "date": "2025-02-03"
+    },
+    {
+      "number": 1138,
+      "date": "2025-02-03"
+    },
+    {
+      "number": 1111,
+      "date": "2025-02-04"
+    },
+    {
+      "number": 1146,
+      "date": "2025-02-04"
+    },
+    {
+      "number": 1152,
+      "date": "2025-02-05"
+    },
+    {
+      "number": 1154,
+      "date": "2025-02-05"
+    },
+    {
+      "number": 1160,
+      "date": "2025-02-05"
+    },
+    {
+      "number": 1155,
+      "date": "2025-02-07"
+    },
+    {
+      "number": 1162,
+      "date": "2025-02-07"
+    },
+    {
+      "number": 1165,
+      "date": "2025-02-07"
+    },
+    {
+      "number": 1171,
+      "date": "2025-02-07"
+    },
+    {
+      "number": 1172,
+      "date": "2025-02-07"
+    },
+    {
+      "number": 1174,
+      "date": "2025-02-07"
+    },
+    {
+      "number": 1158,
+      "date": "2025-02-08"
+    }
+  ],
+  "generated_at": "2026-10-17T16:03:18.990197+00:00"
+}

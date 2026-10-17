@@ -2,8 +2,8 @@
   "date": "2025-07-07",
   "period_start": "2025-07-07",
   "period_end": "2025-07-07",
-  "title": "MCP setup now has a map",
-  "summary": "A small documentation pass makes MCP client configuration easier to find and use.\n\nThe README now includes MCP client configuration, giving developers a clearer path to connect compatible clients to pollinations without treating setup like an archaeological dig.",
+  "title": "MCP client setup added to the README",
+  "summary": "A README update adds an MCP client configuration example, with a Markdown wrinkle in the existing CLI example.\n\nThe README now shows how to configure an MCP client to launch `@pollinations/model-context-protocol` with `npx`. The existing command-line example remains, but a missing code fence leaves its Markdown malformed.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-07-07"
     }
   ],
-  "generated_at": "2026-09-04T12:05:20.103211+00:00"
+  "generated_at": "2026-10-17T15:43:23.091231+00:00",
+  "highlights": [],
+  "changelog": []
 }

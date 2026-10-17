@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-04-10",
+  "period_start": "2026-04-10",
+  "period_end": "2026-04-10",
+  "generated_at": "2026-04-11T06:20:34.096177+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-10/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-10/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-10/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Shipped a few things this week to make the infrastructure a little nicer to use. \n\nFirst, we added dynamic balance estimates to the pricing table, so you no longer have to do mental math to figure out what your pollen balance actually means. Second, fixed the website headers—they're big again, and the subtitles match the pattern. Finally, routed Gemini 2.5 Flash Lite to the Vertex global endpoint for better reliability.\n\nLess math, nicer fonts, steadier pipes. All live at pollinations.ai 🧮✨\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #webdev #uiux #llm #gemini #buildinpublic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

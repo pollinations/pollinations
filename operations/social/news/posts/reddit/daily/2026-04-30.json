@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-04-30",
+  "period_start": "2026-04-30",
+  "period_end": "2026-04-30",
+  "generated_at": "2026-05-01T06:52:11.495172+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-30/images/reddit.jpg"
+    }
+  ],
+  "title": "Text gen moved to edge workers, Llama 3.3 added, Bedrock configs flattened",
+  "text": "We merged 5 PRs today for pollinations.ai. The main architectural change is moving text generation directly into the gen worker (#10555). By handling text generation at the edge rather than passing it through the main backend, latency is noticeably lower for chat and text completion endpoints. If you have older clients still hitting /api/generate/*, we added a strict 308-redirect to the new gen endpoint so nothing should break on your end (#10576).\n\nOn the model side, we added Llama 3.3 70b via Fireworks (#10582). You can hit it through the standard text endpoint now. We also had to flatten the nova-fast Bedrock config down to a single target (#10581). The previous routing setup was causing unnecessary overhead, so nova-fast actually goes fast again.\n\nFinally, we cleaned up the docs (#10577). The CLI, auth, and error sections went missing during a recent refactor, so those are restored. Also deduped the Bring Your Own Provider (BYOP) section to make it readable.\n\nAll code is open at github.com/pollinations/pollinations. Let me know if the edge text generation changes cause any weird behavior for your existing scripts."
+}

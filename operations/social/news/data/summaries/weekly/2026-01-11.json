@@ -1,0 +1,167 @@
+{
+  "date": "2026-01-11",
+  "period_start": "2026-01-04",
+  "period_end": "2026-01-10",
+  "title": "One SDK for generation",
+  "summary": "A wider model lineup got a simpler way in: one SDK, clearer app authorization, and better guidance for choosing what to use.\n\n`@pollinations/sdk` 4.0.1 brought image, video, text, chat, audio, and model-list requests into one package for Node.js and browsers. It adds streaming, batch and conversation helpers, typed responses, retries, and timeouts. It replaces the old React package, but does not include React hooks.\n\n`flux` once again selects Flux Schnell rather than resolving to the default `zimage`. GLM-4.7 and MiniMax-M2.1 joined as reasoning and tool-capable options, `qwen-coder` moved to Qwen3-Coder, and `perplexity-reasoning` now routes to Sonar Reasoning Pro. Claude Sonnet and Opus changed provider routes, while model documentation and alias handling became more consistent.\n\nA Bring Your Own Pollen guide explains how an app can let people authorize with Pollinations and use their own Pollen. The authorization screen more plainly identifies the app receiving access. Updated key guides, quick starts, and an OpenCode configuration installer make the first steps easier to find.\n\nGemini gained optional code execution, Google Search, and URL context, with generated charts returned as image content. Perplexity plain-text answers now include source URLs when citations are returned. The Play page gained a video player, and fixes addressed image-seed caching, supported seed ranges, Claude response formatting, and Gemini token accounting.",
+  "pr_count": 39,
+  "prs": [
+    {
+      "number": 6638,
+      "date": "2026-01-04"
+    },
+    {
+      "number": 6797,
+      "date": "2026-01-04"
+    },
+    {
+      "number": 6810,
+      "date": "2026-01-04"
+    },
+    {
+      "number": 6818,
+      "date": "2026-01-04"
+    },
+    {
+      "number": 6820,
+      "date": "2026-01-04"
+    },
+    {
+      "number": 6830,
+      "date": "2026-01-04"
+    },
+    {
+      "number": 6832,
+      "date": "2026-01-04"
+    },
+    {
+      "number": 6839,
+      "date": "2026-01-04"
+    },
+    {
+      "number": 6767,
+      "date": "2026-01-05"
+    },
+    {
+      "number": 6853,
+      "date": "2026-01-05"
+    },
+    {
+      "number": 6854,
+      "date": "2026-01-05"
+    },
+    {
+      "number": 6828,
+      "date": "2026-01-06"
+    },
+    {
+      "number": 6867,
+      "date": "2026-01-06"
+    },
+    {
+      "number": 6875,
+      "date": "2026-01-06"
+    },
+    {
+      "number": 6879,
+      "date": "2026-01-06"
+    },
+    {
+      "number": 6880,
+      "date": "2026-01-06"
+    },
+    {
+      "number": 6886,
+      "date": "2026-01-06"
+    },
+    {
+      "number": 6889,
+      "date": "2026-01-06"
+    },
+    {
+      "number": 6893,
+      "date": "2026-01-06"
+    },
+    {
+      "number": 6786,
+      "date": "2026-01-07"
+    },
+    {
+      "number": 6895,
+      "date": "2026-01-07"
+    },
+    {
+      "number": 6897,
+      "date": "2026-01-07"
+    },
+    {
+      "number": 6901,
+      "date": "2026-01-07"
+    },
+    {
+      "number": 6899,
+      "date": "2026-01-08"
+    },
+    {
+      "number": 6918,
+      "date": "2026-01-08"
+    },
+    {
+      "number": 6942,
+      "date": "2026-01-08"
+    },
+    {
+      "number": 6788,
+      "date": "2026-01-09"
+    },
+    {
+      "number": 6947,
+      "date": "2026-01-09"
+    },
+    {
+      "number": 6949,
+      "date": "2026-01-09"
+    },
+    {
+      "number": 6952,
+      "date": "2026-01-09"
+    },
+    {
+      "number": 6969,
+      "date": "2026-01-09"
+    },
+    {
+      "number": 6979,
+      "date": "2026-01-09"
+    },
+    {
+      "number": 6988,
+      "date": "2026-01-09"
+    },
+    {
+      "number": 6990,
+      "date": "2026-01-09"
+    },
+    {
+      "number": 6998,
+      "date": "2026-01-10"
+    },
+    {
+      "number": 7002,
+      "date": "2026-01-10"
+    },
+    {
+      "number": 7005,
+      "date": "2026-01-10"
+    },
+    {
+      "number": 7009,
+      "date": "2026-01-10"
+    },
+    {
+      "number": 7020,
+      "date": "2026-01-10"
+    }
+  ],
+  "generated_at": "2026-10-17T16:07:11.977381+00:00"
+}

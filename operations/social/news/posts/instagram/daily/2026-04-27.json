@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-04-27",
+  "period_start": "2026-04-27",
+  "period_end": "2026-04-27",
+  "generated_at": "2026-04-28T06:51:50.995459+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-27/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-27/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-27/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Sometimes building AI infrastructure is launching cool new things. Mostly, it's plumbing. \n\nThis week we did both. DeepSeek Pro and Grok are stable again after some backend pipe-routing (shoutout to Fireworks and Azure). We also added two new tools to the greenhouse: StoryForge for writing and Frieze for image generation.\n\nEverything is live, open, and free to use. Go build something weird.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #deepseek #grok #aiart #webdev",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

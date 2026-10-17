@@ -2,8 +2,8 @@
   "date": "2025-03-13",
   "period_start": "2025-03-13",
   "period_end": "2025-03-13",
-  "title": "Text API gets its model plumbing in one place",
-  "summary": "A text-stack maintenance day: cleaner model routing, saner token limits, steadier queues, and a path for supporting models.\n\ntext.pollinations.ai consolidated its models through Portkey, making the growing model lineup easier to route and maintain without every integration becoming its own small weather system.\n\nLlamaGuard now respects model-specific token limits, while the text feed and queue system received fixes to keep requests moving through the right paths.\n\nAdded a feature/model donation wrapper, laying groundwork for people to directly support the models and features they use.",
+  "title": "Safer defaults for text generation",
+  "summary": "Text requests got safer token defaults and shorter queue spacing, while image feeds and model routing received a tune-up.\n\nRequests that omit `max_tokens` now get model-specific defaults for Llamaguard and Llama 3.1 8B Instruct, helping prevent Llamaguard context-window errors. Explicit token limits are unchanged.\n\nText requests from the same IP are now spaced 6 seconds apart instead of 12. Image feed handling also filters private events for non-NSFW listeners and treats `private=true` as `nofeed`.\n\nClaude 3.5 Haiku and Hormoz 8B now use the Portkey gateway. Claude handler errors now return a chat completion marked `donation_request: true`, while the web search tool defaults to 3 results and accepts 1–7.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,5 +23,7 @@
       "date": "2025-03-13"
     }
   ],
-  "generated_at": "2026-09-04T12:07:54.076799+00:00"
+  "generated_at": "2026-10-17T15:35:19.016493+00:00",
+  "highlights": [],
+  "changelog": []
 }

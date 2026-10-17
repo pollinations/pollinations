@@ -2,18 +2,10 @@
   "date": "2026-01-10",
   "period_start": "2026-01-10",
   "period_end": "2026-01-10",
-  "title": "Model calls got more forgiving",
-  "summary": "A maintenance-minded day: more reliable model requests, a cleaner SDK, and a repository that is slightly less haunted by old folders.\n\nModel names are now sanitized and aliased before reaching gen.pollinations.ai, preventing avoidable 4xx responses. The Portkey gateway also picked up Gemini's negative-token fix, while model statistics now come from one cache instead of competing sources.\n\nThe SDK moved into a clearer packages/ layout and retired deprecated features, making the codebase easier to navigate and maintain without carrying historical luggage forever.\n\nAssets and tools were reorganized, and the news and Reddit workflow moved into a dedicated social/ folder. Dead ad-system code was also removed, because software does not improve when its fossils are carefully preserved.",
-  "pr_count": 9,
+  "title": "One SDK for generation in Node.js and browsers",
+  "summary": "A unified SDK replaces the old React package, text model names get less fussy, and account and model-stats pages become clearer.\n\nThe team added `@pollinations/sdk` 4.0.1 with image, video, text, chat, audio, and model-list requests through the unified API. It includes streaming, batch and conversation helpers, typed responses, retries, and timeouts. This is a breaking replacement for the old React package; React hooks are not included.\n\nText-generation validation now accepts registry aliases as well as service IDs. `kimi` replaces `kimi-k2-thinking` as the service ID, while `kimi-k2-thinking` and `kimi-k2` remain aliases; `kimi-reasoning` was added and `kimi-thinking` removed. The gateway also picked up a Gemini token-accounting fix so downstream analytics do not calculate negative visible-token counts.\n\nThe legacy auth page removed its login button and now directs people to Enter for accounts and tokens. Its notice says registrations, logins, and token management are disabled there, while anonymous API calls still work.",
+  "pr_count": 5,
   "prs": [
-    {
-      "number": 6993,
-      "date": "2026-01-10"
-    },
-    {
-      "number": 6996,
-      "date": "2026-01-10"
-    },
     {
       "number": 6998,
       "date": "2026-01-10"
@@ -31,17 +23,21 @@
       "date": "2026-01-10"
     },
     {
-      "number": 7010,
-      "date": "2026-01-10"
-    },
-    {
-      "number": 7016,
-      "date": "2026-01-10"
-    },
-    {
       "number": 7020,
       "date": "2026-01-10"
     }
   ],
-  "generated_at": "2026-09-04T11:30:56.733870+00:00"
+  "generated_at": "2026-10-17T15:58:53.573685+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "Unified generation SDK",
+      "text": "Use `@pollinations/sdk` for image, video, text, chat, and audio requests from Node.js or the browser, with streaming and batch helpers. It replaces the old React package; React hooks are not included.",
+      "prs": [
+        7002
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

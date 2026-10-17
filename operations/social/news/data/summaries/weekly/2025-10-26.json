@@ -1,0 +1,115 @@
+{
+  "date": "2025-10-26",
+  "period_start": "2025-10-19",
+  "period_end": "2025-10-25",
+  "title": "More ways to reach the models",
+  "summary": "Model access got easier to use and measure while community projects filled the directory and gained a path to their own app homes.\n\nClaude Haiku 4.5 joined the list as `claudyclaude`, with text and image input and tool support. Later in the week, valid Enter tokens gained access past tier checks for text models and Kontext image generation, though Kontext retains queue and concurrency limits. Enter generation requests also gained Bearer authentication and browser preflight support.\n\nCommunity additions ranged from a solo fantasy RPG and Telegram characters to image tools, an Android app, a Python SDK and a PR-summarizing GitHub Action. Hacktoberfest submissions made up a substantial part of the new listings, alongside corrected contributor credits and BeeCoder’s Vibe Coding listing.\n\nNectar users gained a `quality=high` option for `gptimage`, with tier-based queue limits. GPT Image tracking now counts actual output tokens instead of a fixed one-token estimate, and image-model pricing and free-or-paid labels were corrected in the registry.\n\nImage and text responses gained consistent model and token-usage headers when that data is available; streaming text can report usage in HTTP trailers. The API guide expanded its text, image and audio examples, while the Pollen FAQ clarified key access, free-model limits and spending without treating planned features as current ones.",
+  "pr_count": 26,
+  "prs": [
+    {
+      "number": 4506,
+      "date": "2025-10-19"
+    },
+    {
+      "number": 4612,
+      "date": "2025-10-19"
+    },
+    {
+      "number": 4615,
+      "date": "2025-10-19"
+    },
+    {
+      "number": 4616,
+      "date": "2025-10-19"
+    },
+    {
+      "number": 4676,
+      "date": "2025-10-21"
+    },
+    {
+      "number": 4671,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4675,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4682,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4683,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4695,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4709,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4712,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4708,
+      "date": "2025-10-23"
+    },
+    {
+      "number": 4720,
+      "date": "2025-10-23"
+    },
+    {
+      "number": 4729,
+      "date": "2025-10-23"
+    },
+    {
+      "number": 4733,
+      "date": "2025-10-23"
+    },
+    {
+      "number": 4716,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4749,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4751,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4753,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4756,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4757,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4759,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4351,
+      "date": "2025-10-25"
+    },
+    {
+      "number": 4785,
+      "date": "2025-10-25"
+    },
+    {
+      "number": 4786,
+      "date": "2025-10-25"
+    }
+  ],
+  "generated_at": "2026-10-17T16:06:20.067914+00:00"
+}

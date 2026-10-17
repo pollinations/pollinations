@@ -40,29 +40,48 @@
     {
       "emoji": "🎵",
       "title": "Qwen3-TTS Audio Models",
-      "text": "The hive learns to speak Qwen. Hit the [Audio API](https://gen.pollinations.ai/audio/{text}) with the new instruct variant to control emotion and style parameters."
+      "text": "The hive learns to speak Qwen. Hit the [Audio API](https://gen.pollinations.ai/audio/{text}) with the new instruct variant to control emotion and style parameters.",
+      "prs": [
+        10342
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🧠",
       "title": "Claude Opus 4.7",
-      "text": "Anthropic's heavy hitter is now wired up via Bedrock. Pass `claude-xlarge` or `claude-opus-4.7` to the [Text API](https://gen.pollinations.ai/v1/chat/completions) for state-of-the-art reasoning."
+      "text": "Anthropic's heavy hitter is now wired up via Bedrock. Pass `claude-xlarge` or `claude-opus-4.7` to the [Text API](https://gen.pollinations.ai/v1/chat/completions) for state-of-the-art reasoning.",
+      "prs": [
+        10343
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🚀",
       "title": "Kimi 2.6 Upgrade",
-      "text": "The default Kimi text model just got smarter. We bumped it to v2.6 under the hood, keeping your old aliases intact."
+      "text": "The default Kimi text model just got smarter. We bumped it to v2.6 under the hood, keeping your old aliases intact.",
+      "prs": [
+        10393
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🧪",
       "title": "AI Models Laboratory",
       "text": "A new Next.js/Three.js playground for real-time generative creation just dropped in the community showcase. [Try it](https://iamge-lab-website.vercel.app/)",
+      "prs": [
+        10374
+      ],
       "kind": "app"
     },
     {
       "emoji": "✍️",
       "title": "Scene2Text",
       "text": "A picture is worth a thousand tokens. Turn scenes into text with this new community-built app. [Try it](https://scene2text.static.jp/)",
+      "prs": [
+        10375
+      ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

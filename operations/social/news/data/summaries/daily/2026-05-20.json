@@ -24,7 +24,13 @@
     {
       "emoji": "🤖",
       "title": "Polly Upgrades",
-      "text": "We've tuned Polly's voice to drop the annoying chatbot fluff, improved LaTeX and markdown rendering for tables, and batched code blocks to keep your chat clean."
+      "text": "We've tuned Polly's voice to drop the annoying chatbot fluff, improved LaTeX and markdown rendering for tables, and batched code blocks to keep your chat clean.",
+      "prs": [
+        11194,
+        11195
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

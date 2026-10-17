@@ -28,7 +28,12 @@
     {
       "emoji": "🚀",
       "title": "Standalone Playground",
-      "text": "Test image, video, text, and audio generation in one place without writing code. The new [Interactive Playground](https://pollinations.ai/play) supports multimodal inputs, video frame controls, and audio uploads."
+      "text": "Test image, video, text, and audio generation in one place without writing code. The new [Interactive Playground](https://pollinations.ai/play) supports multimodal inputs, video frame controls, and audio uploads.",
+      "prs": [
+        11630
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

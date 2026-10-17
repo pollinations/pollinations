@@ -2,8 +2,8 @@
   "date": "2025-03-28",
   "period_start": "2025-03-28",
   "period_end": "2025-03-28",
-  "title": "qwen-reasoning and phi-mini are visible in the OpenAI-compatible API again",
-  "summary": "A garden-maintenance day: restored model discovery, clearer API docs, and a freshly curated creative-app showcase.\n\nThe OpenAI API model list now includes qwen-reasoning and phi-mini, so applications discovering available models through the endpoint can find and use them without guessing names or maintaining their own workaround list.\n\nThe API docs were reorganized into a more unified reference, making the route from simple HTTP call to generated text, images, audio, or video a little less archaeological.\n\nRiffle joined the Creative Apps section while the project gallery received a small curation pass. The showcase remains a useful map of what people are actually building with the infrastructure.",
+  "title": "Clearer API docs and broader MCP support",
+  "summary": "Clearer API examples, less stale model lists, and a little pruning in the community showcase.\n\nThe API docs gained clearer audio, vision, and request-body examples. Version 1.0.6 of @pollinations/model-context-protocol adds support for Node.js 14 and 15, with installation and troubleshooting guidance.\n\nRequests to /openai/models now bypass caching, so model-list changes such as qwen-reasoning and phi-mini can appear without waiting for a stale response to expire.\n\nRiffle, which uses Pollinations to work readers’ vocabulary words into English-reading content, was added to the project listings. The TeekGenAI listing was removed; neither change alters the image API.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,5 +23,7 @@
       "date": "2025-03-28"
     }
   ],
-  "generated_at": "2026-09-04T12:18:21.586907+00:00"
+  "generated_at": "2026-10-17T15:36:45.131564+00:00",
+  "highlights": [],
+  "changelog": []
 }

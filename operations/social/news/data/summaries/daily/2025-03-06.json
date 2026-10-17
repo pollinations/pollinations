@@ -2,8 +2,8 @@
   "date": "2025-03-06",
   "period_start": "2025-03-06",
   "period_end": "2025-03-06",
-  "title": "A small way to support the project",
-  "summary": "A small website addition makes it easier for the community to support pollinations.\n\nThe website now includes a Ko-Fi widget, giving people who want to help keep the garden watered a direct route to do so.",
+  "title": "A new way to support Pollinations",
+  "summary": "Ko-fi joined the ways to support Pollinations, while the homepage news list got a small cleanup.\n\nThe homepage gained a floating Ko-fi “Tip Us” widget and a news entry explaining Ko-fi support, including the option to connect a Discord account for premium roles. GitHub’s funding links and the website’s funding details were updated, and the homepage news list no longer repeats its lead story.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,17 @@
       "date": "2025-03-06"
     }
   ],
-  "generated_at": "2026-09-04T12:03:59.273555+00:00"
+  "generated_at": "2026-10-17T15:34:45.461856+00:00",
+  "highlights": [
+    {
+      "emoji": "💡",
+      "title": "Support through Ko-fi",
+      "text": "The homepage now has a Ko-fi “Tip Us” widget, with an option to connect a Discord account for premium roles. [Visit Pollinations](https://pollinations.ai).",
+      "prs": [
+        1283
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

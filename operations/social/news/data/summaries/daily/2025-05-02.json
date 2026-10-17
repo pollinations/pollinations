@@ -2,8 +2,8 @@
   "date": "2025-05-02",
   "period_start": "2025-05-02",
   "period_end": "2025-05-02",
-  "title": "Four more projects join the pollinations garden",
-  "summary": "A garden-maintenance day: four community projects surfaced, Mistral got a new gateway route, and developer tooling was refreshed.\n\nCoNavic, PollinateAI, Mimir AIP, and Dreamscape AI were added to the project lists, making it easier to find things people are building with the infrastructure.\n\nMistral models now run through the Portkey gateway, updating the path behind the shared text API without changing the simple endpoint people build against.\n\nThe Pollinations MCP Server and GitHub authentication service were refreshed, keeping the tooling around AI-assisted development and account access current.",
+  "title": "A local path into Pollinations MCP",
+  "summary": "Local MCP setup got simpler, four community projects joined the directory, and Mistral traffic took a new route.\n\nThe MCP server was reorganized around STDIO for local clients, with an `npx` setup path and a `pollinations-mcp` CLI entry point. Assistant instructions and image, text, audio, and resource services were revised alongside a session-based GitHub sign-in service.\n\nThe Creative Apps directory added @Auspicious14’s PollinateAI for visual design inspiration and @sizzlebop’s Dreamscape AI, which combines image generation and styling with chat, voice chat, and research tools.\n\nThe project listings added @mkantwala’s CoNavic browser extension for natural-language tab and bookmark controls, plus @CiaranMcAleer’s Mimir AIP framework for AI pipelines with Pollinations provider support.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,5 +31,17 @@
       "date": "2025-05-02"
     }
   ],
-  "generated_at": "2026-09-04T12:35:19.556385+00:00"
+  "generated_at": "2026-10-17T15:39:00.718680+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "MCP for local clients",
+      "text": "Run the Pollinations MCP server through `npx` or the `pollinations-mcp` CLI entry point, using STDIO to connect a local client. [MCP server docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        1745
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

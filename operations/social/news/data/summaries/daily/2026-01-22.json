@@ -2,22 +2,16 @@
   "date": "2026-01-22",
   "period_start": "2026-01-22",
   "period_end": "2026-01-22",
-  "title": "Pollinations joins the Vercel AI SDK toolkit",
-  "summary": "A garden-maintenance day: smoother SDK access, fresher app stats, and the economics dashboard moved into production.\n\nA Pollinations provider was added to Dev_Tools for the Vercel AI SDK, giving JavaScript builders a more direct path from SDK calls to Pollinations models.\n\nA weekly workflow now updates app star counts, keeping the ecosystem's public map a little less stale. Stars: still an imperfect metric, now at least refreshed regularly.\n\nThe Economics Dashboard was deployed to production and cleaned up, making the Pollen-side machinery easier to inspect without wandering through unfinished plumbing.",
-  "pr_count": 3,
+  "title": "Vercel AI SDK provider added to the directory",
+  "summary": "A community-built Vercel AI SDK provider joined the developer tools directory.\n\nThe community-built Pollinations Provider was added to the developer tools directory and README app list. It supports text, image, and speech generation through the Vercel AI SDK.",
+  "pr_count": 1,
   "prs": [
-    {
-      "number": 7539,
-      "date": "2026-01-22"
-    },
     {
       "number": 7552,
       "date": "2026-01-22"
-    },
-    {
-      "number": 7562,
-      "date": "2026-01-22"
     }
   ],
-  "generated_at": "2026-09-04T11:42:30.059317+00:00"
+  "generated_at": "2026-10-17T16:00:31.015302+00:00",
+  "highlights": [],
+  "changelog": []
 }

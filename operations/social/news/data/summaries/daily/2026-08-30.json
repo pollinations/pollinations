@@ -28,18 +28,30 @@
     {
       "emoji": "🚀",
       "title": "Community Embeddings",
-      "text": "Community embedding models now work through the standard OpenAI-compatible `/v1/embeddings` endpoint. The vector garden is open."
+      "text": "Community embedding models now work through the standard OpenAI-compatible `/v1/embeddings` endpoint. The vector garden is open.",
+      "prs": [
+        13406
+      ],
+      "kind": "api"
     },
     {
       "emoji": "✨",
       "title": "Floret Media Tools",
-      "text": "Floret now discovers the live catalog for text, images, video, audio, transcription, and audio transforms—returning usable public media URLs and streaming tool progress."
+      "text": "Floret now discovers the live catalog for text, images, video, audio, transcription, and audio transforms—returning usable public media URLs and streaming tool progress.",
+      "prs": [
+        14106
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎨",
       "title": "AI Story & Image Studio",
       "text": "Turn a prompt into a short story with matching illustrations in one go. [Try it](https://adventuretreehouse.com)",
+      "prs": [
+        14128
+      ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

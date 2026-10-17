@@ -1,0 +1,263 @@
+{
+  "date": "2025-12-21",
+  "period_start": "2025-12-14",
+  "period_end": "2025-12-20",
+  "title": "Pollen became easier to account for",
+  "summary": "This week made the unified API easier to understand and harder to trip over, from Pollen accounting and model routing to image, video, and concurrent requests.\n\nUsage gained a JSON and CSV API, timestamp pagination, and a dashboard download. Enter now shows recent spend pending against balances and includes it in balance checks. New accounts are assigned the SPORE tier automatically, removing a manual activation step. The result is a clearer answer to two practical questions: what did my requests cost, and what can I use next?\n\n`gemini` and `gemini-search` now route to Gemini 3 Flash Preview, while `gemini-fast` routes to Gemini 2.5 Flash Lite. `gemini-large` supplies Search and URL Context by default unless callers provide their own tools. Reasoning-model temperature handling now accounts for resolved aliases, avoiding unsupported-value errors; chat also gained `repetition_penalty`, and `openai-audio` accepts its listed voices.\n\nZ-Image now respects requested proportions and improves backgrounds and detected faces. Seedance Pro passes through aspect ratios, Seedream 4.5 Pro passes through seeds, and Veo can use a supplied image as its first frame. Gemini chat requests can include a video URL alongside text. Reference-image URLs with their own query parameters work too, while Veo prompt and policy failures return a more useful HTTP 400.\n\nAPI keys can be limited to selected text, image, and video models, with permissions checked after aliases resolve. The dashboard restored full publishable-key copying and made key previews clearer. Text and image playgrounds now distinguish denied requests from rate limits and other errors; image generation can retry when a retry delay is supplied. Hello also runs theme design, copy, and background requests in parallel.",
+  "pr_count": 63,
+  "prs": [
+    {
+      "number": 5899,
+      "date": "2025-12-14"
+    },
+    {
+      "number": 5901,
+      "date": "2025-12-14"
+    },
+    {
+      "number": 5986,
+      "date": "2025-12-14"
+    },
+    {
+      "number": 5992,
+      "date": "2025-12-14"
+    },
+    {
+      "number": 5996,
+      "date": "2025-12-14"
+    },
+    {
+      "number": 6008,
+      "date": "2025-12-14"
+    },
+    {
+      "number": 6009,
+      "date": "2025-12-14"
+    },
+    {
+      "number": 6011,
+      "date": "2025-12-14"
+    },
+    {
+      "number": 6013,
+      "date": "2025-12-14"
+    },
+    {
+      "number": 5740,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 5869,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 5977,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 5978,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6015,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6019,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6021,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6025,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6030,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6045,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6051,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6053,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6055,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6050,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6056,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6060,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6061,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6072,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6075,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6076,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6078,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6079,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6090,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6092,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6094,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6046,
+      "date": "2025-12-17"
+    },
+    {
+      "number": 6068,
+      "date": "2025-12-17"
+    },
+    {
+      "number": 6101,
+      "date": "2025-12-17"
+    },
+    {
+      "number": 6116,
+      "date": "2025-12-17"
+    },
+    {
+      "number": 6121,
+      "date": "2025-12-17"
+    },
+    {
+      "number": 6122,
+      "date": "2025-12-17"
+    },
+    {
+      "number": 6123,
+      "date": "2025-12-17"
+    },
+    {
+      "number": 6115,
+      "date": "2025-12-18"
+    },
+    {
+      "number": 6139,
+      "date": "2025-12-18"
+    },
+    {
+      "number": 6144,
+      "date": "2025-12-18"
+    },
+    {
+      "number": 6155,
+      "date": "2025-12-18"
+    },
+    {
+      "number": 6157,
+      "date": "2025-12-18"
+    },
+    {
+      "number": 6159,
+      "date": "2025-12-18"
+    },
+    {
+      "number": 6161,
+      "date": "2025-12-18"
+    },
+    {
+      "number": 6171,
+      "date": "2025-12-18"
+    },
+    {
+      "number": 6066,
+      "date": "2025-12-19"
+    },
+    {
+      "number": 6178,
+      "date": "2025-12-19"
+    },
+    {
+      "number": 6186,
+      "date": "2025-12-19"
+    },
+    {
+      "number": 6195,
+      "date": "2025-12-19"
+    },
+    {
+      "number": 6196,
+      "date": "2025-12-19"
+    },
+    {
+      "number": 6210,
+      "date": "2025-12-19"
+    },
+    {
+      "number": 6202,
+      "date": "2025-12-20"
+    },
+    {
+      "number": 6209,
+      "date": "2025-12-20"
+    },
+    {
+      "number": 6223,
+      "date": "2025-12-20"
+    },
+    {
+      "number": 6236,
+      "date": "2025-12-20"
+    },
+    {
+      "number": 6237,
+      "date": "2025-12-20"
+    },
+    {
+      "number": 6239,
+      "date": "2025-12-20"
+    },
+    {
+      "number": 6241,
+      "date": "2025-12-20"
+    },
+    {
+      "number": 6248,
+      "date": "2025-12-20"
+    }
+  ],
+  "generated_at": "2026-10-17T16:06:58.236402+00:00"
+}

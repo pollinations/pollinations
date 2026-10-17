@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-04-02",
+  "period_start": "2026-04-02",
+  "period_end": "2026-04-02",
+  "generated_at": "2026-04-03T06:24:18.470220+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-02/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-02/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-02/images/instagram-3.jpg"
+    }
+  ],
+  "text": "11 PRs merged this week. Audio got a massive bump with ACE-Step 1.5 and OpenAI's new models (mini and large) — your generated beats and voices sound a lot better now. We also wired up Wan 2.7 for when you need to generate very large, very pretty pixels. \n\nCatGPT now has vision, meaning the AI cat can actually see the images you upload before roasting them. Plus, five new community apps joined the ecosystem. We invalidated some stale API key caches while we were at it. Nomnom ate the old ones.\n\nCode is open. Link in bio to build something.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #generativeai #buildinpublic #audiogen #openweight",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

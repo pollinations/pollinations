@@ -2,8 +2,8 @@
   "date": "2025-03-22",
   "period_start": "2025-03-22",
   "period_end": "2025-03-22",
-  "title": "Two more ways to learn from the project garden",
-  "summary": "A small community-garden update: an API playground and an OpenWebUI tutorial joined the projects list.\n\nThe projects list now includes the OkeyAI API Playground and an OpenWebUI tutorial, giving builders a couple more concrete references for putting Pollinations APIs to work.",
+  "title": "A guide to using Pollinations in OpenWebUI",
+  "summary": "Two community additions: an OpenWebUI setup guide and an API playground in the project list.\n\nA community tutorial was added to the README and website, showing how to connect Pollinations text models to OpenWebUI without signup or API keys.\n\nOkeyAI API Playground was added to the LLM Integrations project list, giving visitors another community project to explore.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,5 +15,7 @@
       "date": "2025-03-22"
     }
   ],
-  "generated_at": "2026-09-04T12:13:54.249851+00:00"
+  "generated_at": "2026-10-17T15:36:07.590452+00:00",
+  "highlights": [],
+  "changelog": []
 }

@@ -108,38 +108,70 @@
     {
       "emoji": "🚀",
       "title": "Amazon Nova arrives",
-      "text": "The Nova model family (Pro, Canvas, and Reel) is now wired up for text, image, and video generation. We also enabled image-to-image variation support for Canvas."
+      "text": "The Nova model family (Pro, Canvas, and Reel) is now wired up for text, image, and video generation. We also enabled image-to-image variation support for Canvas.",
+      "prs": [
+        9218,
+        9455
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🧠",
       "title": "Grok learns to reason",
-      "text": "Added official xAI integration for `grok-imagine` and `grok-video-pro`, plus upgraded text models featuring `grok-reasoning` with a casual 2M token context window."
+      "text": "Added official xAI integration for `grok-imagine` and `grok-video-pro`, plus upgraded text models featuring `grok-reasoning` with a casual 2M token context window.",
+      "prs": [
+        9446,
+        9448
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎨",
       "title": "Qwen image models",
-      "text": "Added Alibaba's `qwen-image-plus` and `qwen-image-edit-plus`. Native CJK text rendering and multi-image editing are now on the menu."
+      "text": "Added Alibaba's `qwen-image-plus` and `qwen-image-edit-plus`. Native CJK text rendering and multi-image editing are now on the menu.",
+      "prs": [
+        9443
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎬",
       "title": "Fast, free, and moving",
-      "text": "Added `wan-fast` for free 5-second video generation. We also defaulted `audio=true` across the video API, so supported models will just generate sound automatically."
+      "text": "Added `wan-fast` for free 5-second video generation. We also defaulted `audio=true` across the video API, so supported models will just generate sound automatically.",
+      "prs": [
+        9454,
+        9497
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🔐",
       "title": "Headless in the hive",
-      "text": "Implemented RFC 8628 Device Authorization Grant. You can now securely authenticate terminal tools and headless scripts without complex browser workarounds."
+      "text": "Implemented RFC 8628 Device Authorization Grant. You can now securely authenticate terminal tools and headless scripts without complex browser workarounds.",
+      "prs": [
+        9392
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🎵",
       "title": "Free the MIDI",
-      "text": "We split the `midijourney` text model into a free base version (Claude Haiku) and a large variant (Claude Opus) for complex compositions."
+      "text": "We split the `midijourney` text model into a free base version (Claude Haiku) and a large variant (Claude Opus) for complex compositions.",
+      "prs": [
+        9496
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🌟",
       "title": "Showcase additions",
       "text": "Phicasso Chat (browser-native privacy) and AI MIDI Generator (text-to-multitrack) have joined the community showcase. [Try them](https://hello.pollinations.ai)",
+      "prs": [
+        9462,
+        9481
+      ],
       "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

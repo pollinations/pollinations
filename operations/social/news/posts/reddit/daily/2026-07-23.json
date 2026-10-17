@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-07-23",
+  "period_start": "2026-07-23",
+  "period_end": "2026-07-23",
+  "generated_at": "2026-07-24T07:00:22.839538+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-23/images/reddit.jpg"
+    }
+  ],
+  "title": "Twelve merges: models, routing, and tool fixes",
+  "text": "12 PRs merged today. The useful part is that several model and routing changes landed without asking callers to learn a new endpoint dialect.\n\nGemini Flash Lite moved to 3.5, LongCat 2.0 was added, and CSM 1B speech is now available. Grok Imagine Pro and Grok Video Pro now route through OpenRouter, which gives those routes a less bespoke failure mode. `grok-imagine` also defaults to 2K output now; pixels remain undefeated at consuming bandwidth.\n\nAzure-backed inference is answering again after restoring a rotated key. We also added missing model-brand logos, regenerated `APIDOCS.md`, and updated the README.\n\nOn the agent side, Polli was reorganized, its prompt was trimmed, and a batch of tool bugs was fixed. The goal is less prompt furniture and fewer cases where the assistant confidently debates a tool instead of using it. Community publishing was enabled for `gggff123` as well.\n\nCode and PR history: https://github.com/pollinations/pollinations\n\nCurrent API reference: https://github.com/pollinations/pollinations/blob/master/APIDOCS.md\n\nIf a model route, speech output, or the new Grok defaults behave strangely in an existing app, an issue with the request shape and response body is more useful than a screenshot of the vibes."
+}

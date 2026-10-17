@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-06-09",
+  "period_start": "2026-06-09",
+  "period_end": "2026-06-09",
+  "generated_at": "2026-06-10T07:24:37.659831+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-09/images/reddit.jpg"
+    }
+  ],
+  "title": "Fixed Wan-Pro image-to-video 500s, routed Pruna models via Replicate",
+  "text": "Wan-Pro image-to-video has been throwing 500 errors for the last bit. If you were trying to animate an image and just getting server panics back, that's fixed. PR #11701 tracked down the failure point, merged the fix, and it is now deployed. The endpoint is back to actually returning video instead of giving up.\n\nOn the infrastructure side, we also shipped a routing update for Pruna models (PR #11698). We are now routing these directly through Replicate. The main benefit here is stability. We get much more reliable routing and can finally enforce explicit resolutions rather than just sending the prompt and hoping the output matches the dimensions the user actually asked for.\n\nIf you are hitting the video or image generation endpoints, everything remains available via standard HTTP GET requests. Just pass your prompt and parameters in the URL.\n\nAll the infrastructure code is open if you want to see how the Replicate routing is implemented under the hood: https://github.com/pollinations/pollinations\n\nLet us know if Wan-Pro acts up again or if the new Pruna routing introduces any unexpected latency. We will be monitoring the logs."
+}

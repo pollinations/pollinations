@@ -2,28 +2,16 @@
   "date": "2025-12-29",
   "period_start": "2025-12-29",
   "period_end": "2025-12-29",
-  "title": "Bigger images, with a simpler route to Z-Image",
-  "summary": "A garden-maintenance day: sharper large images, a React audio hook, better browsing, and sturdier community workflow plumbing.\n\nThe image stack gained SPAN 2x upscaling for large outputs, deployment tuning for Z-Image on IO.net, and a Flux alias that routes to Z-Image. Z-Image requests also now have bounded pixel counts and fixed steps, because unbounded image jobs eventually become a small weather system.\n\nThe React package added usePollinationsAudio for text-to-speech, along with its TypeScript definitions. Frontend builders can now wire generated speech into an app without inventing their own wrapper around the audio endpoint.\n\nThe Play page gained single and grid feed views, while the model monitor became usable on smaller screens with horizontal scrolling. Community discovery also got refreshed with Insight Engine, Myceli links, weekly news, highlights, and README updates.",
-  "pr_count": 32,
+  "title": "A better view of what people are making",
+  "summary": "A new image feed and React audio hook arrived alongside Z-Image upscaling and a tidier path for community app submissions.\n\nThe Play page gained a Watch Feed with single-image and grid views. It shows completed images across models, with prompt and model labels, while model selection stays in the Play view. On smaller screens, the Model Monitor table now scrolls horizontally so its latency and error columns remain reachable.\n\n`@pollinations/react` added `usePollinationsAudio` to build text-to-speech URLs from text, with optional voice, model, and seed settings. A follow-up added its TypeScript definition.\n\nZ-Image work added 2× SPAN upscaling for larger images and pixel-count limits that preserve the requested aspect ratio. Its native and output budgets were subsequently adjusted, generation was set to nine inference steps, and `steps` was removed from the request schema. The default image model changed to `zimage`; requests for `flux` now resolve to it rather than a separate Flux model.",
+  "pr_count": 23,
   "prs": [
-    {
-      "number": 6167,
-      "date": "2025-12-29"
-    },
     {
       "number": 6417,
       "date": "2025-12-29"
     },
     {
       "number": 6453,
-      "date": "2025-12-29"
-    },
-    {
-      "number": 6456,
-      "date": "2025-12-29"
-    },
-    {
-      "number": 6495,
       "date": "2025-12-29"
     },
     {
@@ -39,19 +27,11 @@
       "date": "2025-12-29"
     },
     {
-      "number": 6557,
-      "date": "2025-12-29"
-    },
-    {
       "number": 6559,
       "date": "2025-12-29"
     },
     {
       "number": 6561,
-      "date": "2025-12-29"
-    },
-    {
-      "number": 6564,
       "date": "2025-12-29"
     },
     {
@@ -67,15 +47,7 @@
       "date": "2025-12-29"
     },
     {
-      "number": 6574,
-      "date": "2025-12-29"
-    },
-    {
       "number": 6575,
-      "date": "2025-12-29"
-    },
-    {
-      "number": 6577,
       "date": "2025-12-29"
     },
     {
@@ -88,14 +60,6 @@
     },
     {
       "number": 6582,
-      "date": "2025-12-29"
-    },
-    {
-      "number": 6583,
-      "date": "2025-12-29"
-    },
-    {
-      "number": 6585,
       "date": "2025-12-29"
     },
     {
@@ -135,33 +99,39 @@
       "date": "2025-12-29"
     }
   ],
-  "generated_at": "2026-09-04T12:43:51.477732+00:00",
+  "generated_at": "2026-10-17T15:57:58.225386+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "New Model: GPT Image Large",
-      "text": "Access GPT Image 1.5 via the `gptimage-large` model ID for high-fidelity generations."
+      "emoji": "🎨",
+      "title": "Watch images take shape",
+      "text": "The Play page has a Watch Feed for completed community images, with single-image and grid views plus prompt and model labels. [Open the playground](https://pollinations.ai/play).",
+      "prs": [
+        6417
+      ],
+      "kind": "product"
     },
     {
-      "emoji": "🤖",
-      "title": "DeepSeek V3.2",
-      "text": "Upgraded to the latest DeepSeek V3.2 model with reduced pricing and improved performance."
+      "emoji": "🎵",
+      "title": "Text-to-speech for React",
+      "text": "Use `usePollinationsAudio` to build a speech URL from text, with optional voice, model, and seed settings. The hook also has a TypeScript definition. [Explore the React SDK](https://react.pollinations.ai).",
+      "prs": [
+        6527,
+        6569
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎨",
-      "title": "Image-to-Image Upgrades",
-      "text": "Now supports multiple input images (pipe-separated) and automatic resizing for better results."
-    },
-    {
-      "emoji": "📱",
-      "title": "New Community Apps",
-      "text": "Try [IDPhotoGen](https://id-photo-gen.thangoffer91.workers.dev), [PromptPi](https://chromewebstore.google.com/detail/promptpi-image-to-prompt/dmcckiclfondnkgncnajmdcblimekgbk), and [Nuvole AI Lite](https://nuvoleai.com).",
-      "kind": "app"
-    },
-    {
-      "emoji": "🎥",
-      "title": "Veo Image-to-Video",
-      "text": "Turn images into videos using the updated `veo` model capabilities. [API Docs](https://enter.pollinations.ai/api/docs)"
+      "title": "Larger Z-Image output",
+      "text": "Larger Z-Image requests can use 2× SPAN upscaling while preserving the requested aspect ratio. `zimage` is now the default image model, and `flux` requests resolve to it. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        6586,
+        6595,
+        6596,
+        6599
+      ],
+      "kind": "model"
     }
-  ]
+  ],
+  "changelog": []
 }

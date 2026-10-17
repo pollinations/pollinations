@@ -2,9 +2,9 @@
   "date": "2026-01-12",
   "period_start": "2026-01-12",
   "period_end": "2026-01-12",
-  "title": "The app garden got substantially larger",
-  "summary": "A community harvest day: dozens of new projects joined the directory while submissions, routing, and public updates got a careful tune-up.\n\n35 newly catalogued projects landed across chat, creative tools, games, learning, social bots, and developer tools. New additions range from text-to-speech, image, and video experiments to recipe finders, language practice, bots, galleries, and a Limnoria plugin. The README now carries the latest ten entries too. The directory continues its quiet transformation into a fairly convincing map of what people build with a simple AI API.\n\nThe submission template received accessibility improvements, namespace validation now handles spaces and @ symbols correctly, and artifact and Claude Skill categories were refreshed. Workflow automation also identifies authors correctly when manually run and keeps review labels in sync, while tier explanations give contributors clearer guidance before they submit.\n\nClaude requests can now fall back from Bedrock to Vertex AI, with cost tracking corrected along the route. Default API-key handling was deduplicated, and a lightweight Python agent replaced the previous Claude Code action. Less ceremony, fewer single points of failure.",
-  "pr_count": 49,
+  "title": "The community app catalog grew in several directions",
+  "summary": "A community-heavy day: dozens of app listings, a fallback route for Claude, and clearer rules for submitting apps.\n\nThirty-four PRs added app listings spanning image and video creation, chat, classroom tools, games, bots, and developer tools. Examples include Vibed’s AI-assisted coding workspace, Orchive’s orchard advice, Hibiscus’s image and video studio, and FragBin’s shareable snippets. A separate PR refreshed the README’s ten-app showcase. Most catalog entries came through the app-adding agent, with further additions from the team.\n\nRequests to `claude` and `claude-large` now route through AWS Bedrock first, with automatic fallback to Google Vertex AI if Bedrock fails. The change gives both Claude models another provider path without changing their model IDs.\n\nApp submission validation now requires Seed tier or higher, distinguishes unregistered or unset-tier accounts from rejected Spore submissions, and handles names containing spaces, quotes, or @ in duplicate checks. The submission form and review categories were revised, while the Hello and Enter tier explanations now spell out the Seed-to-Flower path and note that tier values may change during beta.",
+  "pr_count": 43,
   "prs": [
     {
       "number": 6347,
@@ -103,15 +103,7 @@
       "date": "2026-01-12"
     },
     {
-      "number": 7050,
-      "date": "2026-01-12"
-    },
-    {
       "number": 7051,
-      "date": "2026-01-12"
-    },
-    {
-      "number": 7063,
       "date": "2026-01-12"
     },
     {
@@ -123,19 +115,11 @@
       "date": "2026-01-12"
     },
     {
-      "number": 7077,
-      "date": "2026-01-12"
-    },
-    {
       "number": 7081,
       "date": "2026-01-12"
     },
     {
       "number": 7082,
-      "date": "2026-01-12"
-    },
-    {
-      "number": 7087,
       "date": "2026-01-12"
     },
     {
@@ -187,15 +171,7 @@
       "date": "2026-01-12"
     },
     {
-      "number": 7111,
-      "date": "2026-01-12"
-    },
-    {
       "number": 7112,
-      "date": "2026-01-12"
-    },
-    {
-      "number": 7145,
       "date": "2026-01-12"
     },
     {
@@ -203,27 +179,7 @@
       "date": "2026-01-12"
     }
   ],
-  "generated_at": "2026-09-04T11:33:15.398325+00:00",
-  "highlights": [
-    {
-      "emoji": "🚀",
-      "title": "New Models",
-      "text": "Added `glm` (GLM-4.7), `minimax` (MiniMax-M2.1), and Perplexity with citations. Check the [API Docs](https://enter.pollinations.ai/api/docs)."
-    },
-    {
-      "emoji": "🎁",
-      "title": "Free Tier Upgrades",
-      "text": "Active users are now automatically upgraded to the Seed tier ($3/day) based on activity."
-    },
-    {
-      "emoji": "📱",
-      "title": "New AI Apps",
-      "text": "Try **Study Buzz** (study tools), **Onyx** (noir storyboards), and **Player or AI** (Roblox game)."
-    },
-    {
-      "emoji": "🎥",
-      "title": "Video Playback",
-      "text": "Video generations now render with native players and improved tooltips."
-    }
-  ]
+  "generated_at": "2026-10-17T15:59:47.046773+00:00",
+  "highlights": [],
+  "changelog": []
 }

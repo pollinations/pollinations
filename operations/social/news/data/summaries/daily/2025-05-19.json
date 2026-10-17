@@ -2,8 +2,8 @@
   "date": "2025-05-19",
   "period_start": "2025-05-19",
   "period_end": "2025-05-19",
-  "title": "Six more things built with pollinations found their way into the garden",
-  "summary": "A community harvest: six new projects joined the list, with quieter improvements to image errors and cache metadata underneath.\n\nThe community project list now includes an AI YouTube Shorts Generator, Favorite Puzzles, FoldaScan, Pollin-Coder, PolliBot, and The Promised Pen. A small catalog update, but a useful reminder that the API keeps escaping into increasingly specific corners of the internet.\n\nThe Azure GPT Image integration gained improved error handling, while the Cloudflare cache worker now handles metadata more reliably. Less mystery when an image request goes sideways; fewer cache details wandering off into the woods.",
+  "title": "GPT Image joins the image model list",
+  "summary": "GPT Image joined the model list, six community projects joined the showcase, and the text cache learned to keep better notes.\n\nAdded `gptimage` with JPEG output and a 1024-pixel maximum side length. Failed requests now return clearer errors instead of silently falling back to another model.\n\nThe project list gained an AI YouTube Shorts generator, Favorite Puzzles, and The Promised Pen, a novel-writing app that can draft and rewrite using story context.\n\nThree more projects joined the showcase: FoldaScan for asking questions about a codebase, Pollin-Coder for building website layouts and content from a description, and PolliBot for image and text generation through Telegram.",
   "pr_count": 8,
   "prs": [
     {
@@ -39,5 +39,17 @@
       "date": "2025-05-19"
     }
   ],
-  "generated_at": "2026-09-04T12:45:29.825391+00:00"
+  "generated_at": "2026-10-17T16:02:31.336354+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "GPT Image added",
+      "text": "Generate JPEG images with `gptimage`, with a maximum side length of 1024 pixels. [Browse the model](https://enter.pollinations.ai/models?q=gptimage).",
+      "prs": [
+        2016
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

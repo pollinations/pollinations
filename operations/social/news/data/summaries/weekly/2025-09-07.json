@@ -1,0 +1,47 @@
+{
+  "date": "2025-09-07",
+  "period_start": "2025-08-31",
+  "period_end": "2025-09-06",
+  "title": "Text models got a clearer shape",
+  "summary": "The week made model selection and request handling more predictable while community builders added new ways to make images.\n\nGPT-5 Nano became the default `openai` model, while `openai-fast` stayed on GPT-4.1 Nano. Public listings now omit hidden models and provider identifiers, older entries were removed, and `openai-large` moved to the seed tier. The next day's configuration work made provider settings and transforms easier to follow, with failed transforms falling back to the original request.\n\n`flux` image requests now prefer registered ComfyUI servers, with Cloudflare fallbacks and progress updates as each fallback is tried. Image routing has a clearer plan for when the first choice does not work.\n\nThree image generators joined Creative Projects, offering features including prompt optimization, generation progress, style and resolution controls, and image history. Hack & Build also gained AI Agent Portal, which brings Architect, Coder, and QA agents together around a single development prompt.\n\nSystem-message support is now set per text model, including DeepSeek Reasoning. The text API root points to its documentation, and a SECURITY.md file explains how to report vulnerabilities privately.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 3905,
+      "date": "2025-09-03"
+    },
+    {
+      "number": 3914,
+      "date": "2025-09-03"
+    },
+    {
+      "number": 3925,
+      "date": "2025-09-03"
+    },
+    {
+      "number": 3947,
+      "date": "2025-09-03"
+    },
+    {
+      "number": 3950,
+      "date": "2025-09-03"
+    },
+    {
+      "number": 3958,
+      "date": "2025-09-04"
+    },
+    {
+      "number": 3973,
+      "date": "2025-09-06"
+    },
+    {
+      "number": 3974,
+      "date": "2025-09-06"
+    },
+    {
+      "number": 3975,
+      "date": "2025-09-06"
+    }
+  ],
+  "generated_at": "2026-10-17T16:05:46.137341+00:00"
+}

@@ -2,14 +2,10 @@
   "date": "2025-04-15",
   "period_start": "2025-04-15",
   "period_end": "2025-04-15",
-  "title": "Azure GPT-4.1 joins the text API",
-  "summary": "GPT-4.1 landed on the text API while nine more community-built things appeared in the project garden.\n\nGPT-4.1 is now available through the openai-large route on text.pollinations.ai, adding another capable option behind the same simple text endpoint.\n\nThe community project list now includes Generator AI Image, MalaysiaPrompt, Strain Navigator, B&W SVG Generator, DreamBig, NetSim, the Raftar.xyz Discord bot, Smpldev, and an AI/Teens talk. Image tools, playgrounds, bots, network simulators: apparently the API has been wandering around.",
-  "pr_count": 11,
+  "title": "GPT-4.1 takes over `openai-large`",
+  "summary": "`openai-large` moved to GPT-4.1 while the community directory filled up with image tools, bots, playgrounds and more.\n\nThe text API’s `openai-large` model now routes to Azure GPT-4.1 instead of GPT-4o mini, with text and image inputs still supported. `openai-reasoning` was removed from the advertised model list, and referral links will appear less often.\n\nThree projects joined the directory: Generator AI Image, an Indonesian image-generation site; MalaysiaPrompt, which also offers text-to-prompt and image-to-text tools; and B&W SVG Generator, which turns Flux-generated images into black-and-white vectors.\n\nThe project listings gained DreamBig for chat, images and voice; NetSim for web simulation; and Raftar.xyz, a Discord bot with AI commands. Apparently a prompt can end up just about anywhere.",
+  "pr_count": 10,
   "prs": [
-    {
-      "number": 1671,
-      "date": "2025-04-15"
-    },
     {
       "number": 1672,
       "date": "2025-04-15"
@@ -51,5 +47,17 @@
       "date": "2025-04-15"
     }
   ],
-  "generated_at": "2026-09-04T12:27:55.277718+00:00"
+  "generated_at": "2026-10-17T15:37:50.883999+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "GPT-4.1 for `openai-large`",
+      "text": "Use `openai-large` for GPT-4.1 with text or image inputs. [Browse the model](https://enter.pollinations.ai/models?q=openai-large).",
+      "prs": [
+        1675
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

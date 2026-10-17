@@ -16,7 +16,12 @@
     {
       "emoji": "🛠️",
       "title": "GENEXUS AI",
-      "text": "Added to the developer tools showcase. Another backend integration for the ecosystem."
+      "text": "Added to the developer tools showcase. Another backend integration for the ecosystem.",
+      "prs": [
+        7236
+      ],
+      "kind": "app"
     }
-  ]
+  ],
+  "changelog": []
 }

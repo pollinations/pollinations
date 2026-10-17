@@ -2,8 +2,8 @@
   "date": "2025-09-28",
   "period_start": "2025-09-28",
   "period_end": "2025-09-28",
-  "title": "Text caching gets tidier",
-  "summary": "A small cache-layer tune-up: cleaner metadata and path exclusions that behave themselves.\n\nText cache metadata was optimized and path exclusion handling was corrected, keeping cached text responses better organized behind the endpoint.",
+  "title": "Text cache metadata fits again",
+  "summary": "A small text-cache tune-up: smaller metadata, precise path exclusions, and consistent HEAD lookups.\n\nThe text cache now stores a smaller set of response, request, and Cloudflare metadata to avoid R2 metadata-size failures.\n\nOnly `/models`, `/feed`, and `/openai/models` are excluded. Paths that merely start with those names can be cached.\n\nHEAD requests now look up the corresponding GET cache entry and return headers without a body. Timing and metadata-size diagnostics were also added.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-09-28"
     }
   ],
-  "generated_at": "2026-09-04T12:38:05.508820+00:00"
+  "generated_at": "2026-10-17T15:47:17.734725+00:00",
+  "highlights": [],
+  "changelog": []
 }

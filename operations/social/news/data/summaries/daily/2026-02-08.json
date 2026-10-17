@@ -68,12 +68,21 @@
     {
       "emoji": "🐝",
       "title": "Polly Bot Open Source",
-      "text": "Released the full source code for the Polly Discord bot. Fork it, remix it, build your own AI-powered bot."
+      "text": "Released the full source code for the Polly Discord bot. Fork it, remix it, build your own AI-powered bot.",
+      "prs": [
+        8078
+      ],
+      "kind": "product"
     },
     {
       "emoji": "✨",
       "title": "Frontend Redesign",
-      "text": "Fresh header authentication flow, theme customization bar, and an overhauled Play page experience."
+      "text": "Fresh header authentication flow, theme customization bar, and an overhauled Play page experience.",
+      "prs": [
+        8087
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

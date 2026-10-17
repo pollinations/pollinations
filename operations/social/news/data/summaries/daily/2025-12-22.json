@@ -2,9 +2,9 @@
   "date": "2025-12-22",
   "period_start": "2025-12-22",
   "period_end": "2025-12-22",
-  "title": "The app garden got a few new specimens",
-  "summary": "A community-garden day: new apps, cleaner contribution flows, fresh themes, steadier operations, and a site migration underneath it all.\n\nBhaujAI joined hackAndBuild, Asive AI joined chat, and Multi Image Generator joined creative. The community directory now has a single source of truth, alongside refreshed weekly news and four new highlights.\n\nApp submission enhancements were restored and the generated contribution PRs now include fuller details, readable formatting, repository links, and valid YAML. Less archaeology for maintainers, more useful context for everyone.\n\nGrayscale and plants theme presets landed, giving builders a pair of new visual defaults: one austere, one chlorophyll-adjacent.",
-  "pr_count": 18,
+  "title": "A new frontend for pollinations.ai",
+  "summary": "A rebuilt site frontend and a cleaner app directory led the day, alongside clearer subscription details and more honest model-health numbers.\n\nMerged a themeable replacement frontend that brings the theme creator, image playground, app directory, community page and docs together. A grayscale preset was added, the plants preset got a shorter name, and the contributors section gained a repository link.\n\nConsolidated 318 app listings into one date-sorted directory, which supplies the Apps page and the README’s recent-app list. Submission review gained clearer summaries and checks, while a workflow fix lets issue-form submissions create PRs again.\n\nThe project galleries added BhaujAI for business and creator tasks, Asive AI for coding and chat, and Multi Image Generator for side-by-side image-model comparisons.",
+  "pr_count": 11,
   "prs": [
     {
       "number": 6162,
@@ -15,23 +15,11 @@
       "date": "2025-12-22"
     },
     {
-      "number": 6319,
-      "date": "2025-12-22"
-    },
-    {
       "number": 6320,
       "date": "2025-12-22"
     },
     {
-      "number": 6321,
-      "date": "2025-12-22"
-    },
-    {
       "number": 6325,
-      "date": "2025-12-22"
-    },
-    {
-      "number": 6327,
       "date": "2025-12-22"
     },
     {
@@ -43,10 +31,6 @@
       "date": "2025-12-22"
     },
     {
-      "number": 6339,
-      "date": "2025-12-22"
-    },
-    {
       "number": 6340,
       "date": "2025-12-22"
     },
@@ -55,15 +39,7 @@
       "date": "2025-12-22"
     },
     {
-      "number": 6348,
-      "date": "2025-12-22"
-    },
-    {
       "number": 6349,
-      "date": "2025-12-22"
-    },
-    {
-      "number": 6350,
       "date": "2025-12-22"
     },
     {
@@ -71,35 +47,21 @@
       "date": "2025-12-22"
     },
     {
-      "number": 6359,
-      "date": "2025-12-22"
-    },
-    {
       "number": 6360,
       "date": "2025-12-22"
     }
   ],
-  "generated_at": "2026-09-04T12:38:47.879760+00:00",
+  "generated_at": "2026-10-17T15:56:40.026595+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "New Models",
-      "text": "Default `gemini` is now **Gemini 3 Flash**, plus added **Perplexity Sonar Reasoning Pro**. [API Docs](https://enter.pollinations.ai/api/docs)"
-    },
-    {
-      "emoji": "🎥",
-      "title": "Veo Video Upgrades",
-      "text": "Added **Image-to-Video** and **Frame Interpolation** (start/end frames) support for the `veo` model."
-    },
-    {
-      "emoji": "🔗",
-      "title": "MCP Server v2.0",
-      "text": "Major update adding video generation, analysis, and web search tools."
-    },
-    {
-      "emoji": "🎵",
-      "title": "New Voices",
-      "text": "Added 7 new voices (Coral, Verse, Sage, etc.) to the `openai-audio` model."
+      "emoji": "🎨",
+      "title": "A themeable site frontend",
+      "text": "The replacement pollinations.ai frontend brings the theme creator, image playground, app directory, community page and docs together. [Explore pollinations.ai](https://pollinations.ai).",
+      "prs": [
+        6345
+      ],
+      "kind": "product"
     }
-  ]
+  ],
+  "changelog": []
 }

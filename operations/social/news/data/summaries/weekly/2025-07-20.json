@@ -1,0 +1,71 @@
+{
+  "date": "2025-07-20",
+  "period_start": "2025-07-13",
+  "period_end": "2025-07-19",
+  "title": "Chat projects became a wider world",
+  "summary": "Ten community projects widened the ways people use Pollinations, while the text API gained new models and changed how some requests are routed.\n\nCommunity additions ranged from EvilChat and the multi-model UltimaX Intelligence interface to the Chinese-language cultivation sandbox 云渺仙途：凡尘篇. AI Dream Girl Studio brought generated character visuals into animation, voiceovers, and storytelling. The directory increasingly looks less like a list of demos and more like a collection of places to spend time.\n\nEzPromptla, Promptgenerator.art, and DeepSeek Prompt joined the directory with different approaches to building, previewing, and improving prompts. SocialScribe added browser-based writing controls; Querynator5000 offers a natural-language database interface; and Berrry Computer turns tweeted app ideas into small AI-powered web apps.\n\nThe model roster gained `llama-fast-roblox`, `mistral-roblox`, and `mistral-nemo-roblox`. Several existing models changed providers or routes, including `openai-large` moving from GPT-4.1 to GPT-4o Mini. Queue concurrency changed by tier, and `gptimage` requests below Nectar tier now use flux. A model-specific semantic-cache change was merged, then reverted the same day; the proposed response-reuse path is not in use.\n\nProject links, credits, and star counts were tidied up, and Mindcraft’s listing now points to its maintained website and repository. Small fixes, but useful when a directory is supposed to lead somewhere.",
+  "pr_count": 15,
+  "prs": [
+    {
+      "number": 3018,
+      "date": "2025-07-13"
+    },
+    {
+      "number": 3040,
+      "date": "2025-07-13"
+    },
+    {
+      "number": 3053,
+      "date": "2025-07-13"
+    },
+    {
+      "number": 3055,
+      "date": "2025-07-13"
+    },
+    {
+      "number": 3061,
+      "date": "2025-07-13"
+    },
+    {
+      "number": 3064,
+      "date": "2025-07-13"
+    },
+    {
+      "number": 3074,
+      "date": "2025-07-14"
+    },
+    {
+      "number": 3090,
+      "date": "2025-07-14"
+    },
+    {
+      "number": 3101,
+      "date": "2025-07-15"
+    },
+    {
+      "number": 3124,
+      "date": "2025-07-15"
+    },
+    {
+      "number": 3150,
+      "date": "2025-07-16"
+    },
+    {
+      "number": 2888,
+      "date": "2025-07-18"
+    },
+    {
+      "number": 3197,
+      "date": "2025-07-18"
+    },
+    {
+      "number": 3205,
+      "date": "2025-07-18"
+    },
+    {
+      "number": 3207,
+      "date": "2025-07-18"
+    }
+  ],
+  "generated_at": "2026-10-17T16:05:24.774426+00:00"
+}

@@ -2,14 +2,10 @@
   "date": "2025-06-06",
   "period_start": "2025-06-06",
   "period_end": "2025-06-06",
-  "title": "DeepSeek R1-0528 and ElixpoSearch join the model shelf",
-  "summary": "New reasoning and search models arrived alongside domain-auth tooling and a round of account-system cleanup.\n\nThe text API picked up DeepSeek R1-0528 for reasoning work and ElixpoSearch for search-oriented tasks. More options through the same endpoint, because model routing is apparently a garden now.\n\nA new domain-management command-line tool makes it easier to configure domains for user authentication without turning the setup process into a browser-tab expedition.\n\nUser metrics, refreshed account-tier descriptions, and per-user interaction tracking add more visibility around how accounts and platform surfaces are used.",
-  "pr_count": 6,
+  "title": "Updated reasoning and search-enhanced text models",
+  "summary": "DeepSeek R1-0528 and a search-enhanced model joined the text lineup, alongside clearer tier docs and new per-user metrics.\n\n`deepseek-reasoning` now uses DeepSeek R1-0528, with `deepseek-r1-0528` replacing its old alias. The new `elixposearch` model adds search-enhanced text generation. Neither model supports tools. The same PR also simplified streaming ad handling, removing the generic Ko-fi fallback when a forced ad cannot be generated.\n\nThe API docs now group authentication guidance around getting started, referrers, tokens, and tiers, including a warning against putting API tokens in frontend code. Tier descriptions were revised, and the Special Bee request form now links to the tier docs and asks for fewer fields.\n\nAdmin-only endpoints now manage per-user metrics separately from editable preferences. Ad redirects can record clicks without waiting on the metrics request, while authentication and queue-bypass handling were also adjusted.",
+  "pr_count": 3,
   "prs": [
-    {
-      "number": 2319,
-      "date": "2025-06-06"
-    },
     {
       "number": 2323,
       "date": "2025-06-06"
@@ -19,17 +15,30 @@
       "date": "2025-06-06"
     },
     {
-      "number": 2328,
-      "date": "2025-06-06"
-    },
-    {
-      "number": 2341,
-      "date": "2025-06-06"
-    },
-    {
       "number": 2346,
       "date": "2025-06-06"
     }
   ],
-  "generated_at": "2026-09-04T12:58:20.690838+00:00"
+  "generated_at": "2026-10-17T15:41:56.385390+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "DeepSeek reasoning updated",
+      "text": "`deepseek-reasoning` now uses DeepSeek R1-0528. Its alias is now `deepseek-r1-0528`. [Browse the model](https://enter.pollinations.ai/models?q=deepseek-reasoning).",
+      "prs": [
+        2346
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Search-enhanced text with ElixpoSearch",
+      "text": "Try `elixposearch` for search-enhanced text generation. [Browse the model](https://enter.pollinations.ai/models?q=elixposearch).",
+      "prs": [
+        2346
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": []
 }

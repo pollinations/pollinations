@@ -2,8 +2,8 @@
   "date": "2025-08-22",
   "period_start": "2025-08-22",
   "period_end": "2025-08-22",
-  "title": "A cleaner, more current public surface",
-  "summary": "A small documentation sweep: fewer stale references, less archaeological software marketing.\n\nOld references to gptimage and tier announcements were removed, keeping public-facing copy aligned with the project as it exists now.",
+  "title": "Image docs and news tidied up",
+  "summary": "A quiet docs cleanup removed outdated image and tier announcements without changing the API.\n\nThe README and website news no longer include GPT Image or tier announcements. Image API docs now describe image-to-image input for Kontext only, without GPT Image examples or the documented `transparent` parameter. This was a documentation change, not a change to model access or API behavior.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,19 +11,7 @@
       "date": "2025-08-22"
     }
   ],
-  "generated_at": "2026-09-04T12:25:00.814032+00:00",
-  "highlights": [
-    {
-      "date": "2025-08-23",
-      "emoji": "🚀",
-      "title": "New AI Models",
-      "text": "Added support for **GPT-5 Nano**, **Claude 3.5 Haiku**, **OpenAI o3**, and **Gemini 2.5 Flash Lite** to the [Text API](https://enter.pollinations.ai)."
-    },
-    {
-      "date": "2025-08-23",
-      "emoji": "📊",
-      "title": "Usage Statistics API",
-      "text": "New endpoint to track hourly token usage, costs, and request counts with detailed filtering options. Check the [API Docs](https://enter.pollinations.ai/api/docs)."
-    }
-  ]
+  "generated_at": "2026-10-17T15:45:35.924621+00:00",
+  "highlights": [],
+  "changelog": []
 }

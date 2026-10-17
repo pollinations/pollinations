@@ -2,9 +2,9 @@
   "date": "2025-07-12",
   "period_start": "2025-07-12",
   "period_end": "2025-07-12",
-  "title": "The community project garden got more playable",
-  "summary": "A community-directory day: new games and learning tools joined the showcase, and the links were persuaded to keep working.\n\nThe Games showcase now includes AIStorium and AI Word Search, giving visitors two more examples of people building odd, useful, and pleasantly unnecessary things with Pollinations.\n\nPrompt Explorer was added to the Learn category, while the OpenWebUI tutorial link was updated so the path from curiosity to working example has fewer dead ends.\n\nProject listings were refreshed, broken links restored, and build issues resolved. The directory continues its difficult work of being a directory that points somewhere.",
-  "pr_count": 6,
+  "title": "Two more games join the showcase",
+  "summary": "Three community projects joined the showcase, while outdated project and tutorial links got a tidy-up.\n\nAIStorium joined the Games list with interactive stories, images, and audio generated through Pollinations. AI Word Search joined with personalized puzzles that can be printed or shared.\n\nPrompt Explorer was added to the Learn projects list. Its Android app combines AI art and prompt exploration with Pollinations image generation, history, and favorites.\n\nThe Open Web UI tutorial now points to the intended guide. The project showcase also dropped outdated listings, corrected the Anime Character Generator link, and updated its project tables.",
+  "pr_count": 5,
   "prs": [
     {
       "number": 2987,
@@ -12,10 +12,6 @@
     },
     {
       "number": 2992,
-      "date": "2025-07-12"
-    },
-    {
-      "number": 2998,
       "date": "2025-07-12"
     },
     {
@@ -31,5 +27,7 @@
       "date": "2025-07-12"
     }
   ],
-  "generated_at": "2026-09-04T12:08:09.248776+00:00"
+  "generated_at": "2026-10-17T15:43:51.586891+00:00",
+  "highlights": [],
+  "changelog": []
 }

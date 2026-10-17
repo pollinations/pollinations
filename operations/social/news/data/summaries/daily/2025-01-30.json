@@ -2,8 +2,8 @@
   "date": "2025-01-30",
   "period_start": "2025-01-30",
   "period_end": "2025-01-30",
-  "title": "A smoother path through the generation queue",
-  "summary": "A small queueing upgrade makes priority generation requests move with less waiting around.\n\nPriority access can now be handled through token-based queue bypasses, giving eligible requests a more direct route when the system is busy.",
+  "title": "Priority access for image generation",
+  "summary": "Image generation gained a priority path for authorized requests; the regular queue remains unchanged.\n\nAdded token-based access that lets authorized image requests bypass the per-IP generation queue. Requests without a valid token continue through the normal queue.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-01-30"
     }
   ],
-  "generated_at": "2026-09-04T14:04:55.087390+00:00"
+  "generated_at": "2026-10-17T15:32:53.648718+00:00",
+  "highlights": [],
+  "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2025-06-04",
   "period_start": "2025-06-04",
   "period_end": "2025-06-04",
-  "title": "Another community project joins the garden",
-  "summary": "A small directory update: \"Yo el director\" is now part of the growing list of projects built with pollinations.\n\n\"Yo el director\" was added to the project list, making one more thing built with pollinations easier to find.",
+  "title": "A Spanish-language video project joins the directory",
+  "summary": "The project directory gained Yo el director, a Spanish-language tool for making movies and YouTube content with Pollinations.\n\nYo el director was added to the README and the site's Tools & Interfaces list. The community project uses Pollinations to create movies and YouTube content.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-06-04"
     }
   ],
-  "generated_at": "2026-09-04T12:57:04.017390+00:00"
+  "generated_at": "2026-10-17T15:41:36.859888+00:00",
+  "highlights": [],
+  "changelog": []
 }

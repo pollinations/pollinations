@@ -91,5 +91,35 @@
       "date": "2026-03-01"
     }
   ],
-  "generated_at": "2026-03-18T21:55:46.428517+00:00"
+  "generated_at": "2026-03-18T21:55:46.428517+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Pollinations in ComfyUI",
+      "text": "A community integration adds dedicated ComfyUI nodes for image, video, text, and audio generation, with native API key management.",
+      "prs": [
+        8720
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Bloom CLI joins the showcase",
+      "text": "Try a community-built, open-source terminal coding agent powered by the Pollinations API.",
+      "prs": [
+        8322
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Anime art with AnimePollen",
+      "text": "Generate anime art with a free community-built app now in the showcase.",
+      "prs": [
+        8157
+      ],
+      "kind": "app"
+    }
+  ],
+  "changelog": []
 }

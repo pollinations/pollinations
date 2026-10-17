@@ -1,0 +1,43 @@
+{
+  "date": "2025-01-05",
+  "period_start": "2024-12-29",
+  "period_end": "2025-01-04",
+  "title": "Image requests got more predictable",
+  "summary": "The week focused on making image requests more predictable, queues easier to understand, and community integrations easier to find.\n\nRequested dimensions now map to the closest supported aspect ratio, and short prompts respect an explicit `enhance=false`. Prompt-enhancement requests identify themselves to the text API and bypass its normal per-IP queue. Image safe-mode flag handling also changed. Non-ASCII characters are now removed before prompts reach the image backend—a request-handling change worth knowing if your prompts use them.\n\nQueueing events reach feed listeners again, and new timing and queue statistics help locate generation bottlenecks. The image cache is bounded, file operations use asynchronous I/O, and queue counts come from Flux jobs. Worker registration and routing now distinguish Flux, Turbo and translation services, with follow-up fixes for empty server pools and unknown registration types.\n\nThe README and website showcase gained an SDKs & Libraries section for React and Python integrations. AI-Bloom joined the project list, and Pollinations Gallery was marked as new.\n\nJSON mode now accepts the boolean `json: true`. Other text traffic is limited to one concurrent request per IP, with a longer delay after generation errors, and Sur moved to an OpenAI-backed variant.",
+  "pr_count": 8,
+  "prs": [
+    {
+      "number": 949,
+      "date": "2025-01-02"
+    },
+    {
+      "number": 950,
+      "date": "2025-01-02"
+    },
+    {
+      "number": 951,
+      "date": "2025-01-02"
+    },
+    {
+      "number": 953,
+      "date": "2025-01-03"
+    },
+    {
+      "number": 955,
+      "date": "2025-01-03"
+    },
+    {
+      "number": 957,
+      "date": "2025-01-03"
+    },
+    {
+      "number": 959,
+      "date": "2025-01-03"
+    },
+    {
+      "number": 960,
+      "date": "2025-01-03"
+    }
+  ],
+  "generated_at": "2026-10-17T16:02:59.929143+00:00"
+}

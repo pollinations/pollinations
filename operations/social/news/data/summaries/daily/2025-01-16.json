@@ -2,16 +2,12 @@
   "date": "2025-01-16",
   "period_start": "2025-01-16",
   "period_end": "2025-01-16",
-  "title": "Text and image services get a sturdier test net",
-  "summary": "A maintenance-forward day: stronger text and image tests, plus generated Mentat Scripts.\n\nThe text and image backends gained dedicated test workflows, expanded seed coverage, and repaired test suites. Less glamorous than a new endpoint, but useful: generated results now have more automated checks standing between a change and a surprise.\n\nAdded generation support for Mentat Scripts, giving the project another way to turn prompts into usable code-shaped output.",
-  "pr_count": 5,
+  "title": "Clearer errors for malformed text requests",
+  "summary": "A maintenance day for text requests: clearer errors, tighter queue rules, and more backend tests.\n\nThe text API now returns JSON errors for invalid messages, and the OpenAI-compatible endpoint rejects an empty messages array with a 400 response. Handling for missing query parameters and omitted generation options also improved.\n\nImage Pollinations referrers no longer bypass rate limiting, though they still bypass the request queue. Text request-delay bypass now follows Roblox-referrer classification rather than codes supplied with a request.\n\nA new workflow runs affected text or image backend tests on pull requests, alongside added text-generation tests and coverage tooling. The text API also dropped qwen-coder from its model list and removed unused provider implementations.",
+  "pr_count": 3,
   "prs": [
     {
       "number": 1016,
-      "date": "2025-01-16"
-    },
-    {
-      "number": 1017,
       "date": "2025-01-16"
     },
     {
@@ -21,11 +17,9 @@
     {
       "number": 1022,
       "date": "2025-01-16"
-    },
-    {
-      "number": 1023,
-      "date": "2025-01-16"
     }
   ],
-  "generated_at": "2026-09-04T13:40:59.038015+00:00"
+  "generated_at": "2026-10-17T15:32:52.390860+00:00",
+  "highlights": [],
+  "changelog": []
 }

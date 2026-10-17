@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-05-21",
+  "period_start": "2026-05-21",
+  "period_end": "2026-05-21",
+  "generated_at": "2026-05-22T07:08:59.727647+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-21/images/reddit.jpg"
+    }
+  ],
+  "title": "GitHub OAuth restored, Gemini Search rates halved, MCP docs wired",
+  "text": "Small infrastructure update today. Three PRs merged that fix a couple of annoyances and clean up some documentation.\n\nFirst, if you were trying to log in via GitHub recently and got bounced, that's fixed. We accidentally had the wrong OAuth app credentials active in production. It's been restored to the correct prod creds (PR #11228), so auth is routing normally again.\n\nSecond, we adjusted the billing logic for Gemini Search. It was running at a higher tier rate than intended. We've reset it to the base Vertex rates (PR #11226). If you're using the gemini-search endpoint heavily, you should see your pollen credit burn rate drop by about half starting today.\n\nFinally, some housekeeping on the MCP (Model Context Protocol) side. The MCP documentation is now wired directly into our main API reference generator at /docs. We also got the test suite passing reliably for the MCP package and trimmed down the standalone README since the docs are now centralized (PR #11201).\n\nCode and open PRs are on our GitHub as always: https://github.com/pollinations/pollinations. Let us know if the GitHub auth fix is still giving anyone trouble."
+}

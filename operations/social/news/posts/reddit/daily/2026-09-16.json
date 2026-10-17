@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-16",
+  "period_start": "2026-09-16",
+  "period_end": "2026-09-16",
+  "generated_at": "2026-09-17T06:30:59.952384+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-16/images/reddit.jpg"
+    }
+  ],
+  "title": "37 merges: agents, Computer MCP, model reliability",
+  "text": "Merged 37 PRs today. The visible result is a larger catalog of things people can actually use, plus less brittle infrastructure underneath them.\n\nNew catalog entries include Pollen Craft, CatGPT (with three verified comics), Barnaby the Crow, Moko the Remembering Fox, Comicstyles, cogitor, GitMuse, and the Sirius Elevator descent chapter. ElevenLabs Music v2.5 is also available.\n\nComputer MCP picked up a collective-memory repo, caller-authored GitHub commits, `xan`, `html-to-markdown`, `file`, `just-git`, and a default curl User-Agent. That is mostly plumbing, until an agent needs to inspect a file, turn a page into markdown, and leave a commit under the person who asked for it.\n\nSeveral fixes are intentionally boring: preserve agent 4xx responses and terminal error details, pass empty agent output through instead of manufacturing a 502, retain omitted fields on agent updates, allow 1,000-character descriptions, and redeploy code agents after production deploys.\n\nOn model operations, the dashboard now defaults to healthy models, the community catalog is cached in KV, Gemini Fast falls back through Vertex global, and a dead Z-Image GPU host was replaced. Open WebUI got container/model-list caching work too.\n\nDocs were refreshed, including MCP servers and prompt-agent guidance: https://github.com/pollinations/pollinations and https://pollinations.ai/docs"
+}

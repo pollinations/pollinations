@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-06-26",
+  "period_start": "2026-06-26",
+  "period_end": "2026-06-26",
+  "generated_at": "2026-06-27T07:01:50.614720+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-26/images/reddit.jpg"
+    }
+  ],
+  "title": "Fixed pollen top-up quest tracking and added REKTY AI bot",
+  "text": "Just merged a quick batch of 4 PRs today, mostly cleaning up edge cases in the quest system.\n\nIf you were doing pollen top-ups recently and the quests weren't triggering, that's on us. We had a few blind spots in the tracking logic. PR #12005 fixes an off-by-one style issue where exactly 100 pollen top-ups weren't counting. We also wired up Polar top-ups to properly register in the quest checks (PR #12006).\n\nTo make the state management less of a headache going forward, we split the legacy and launch top-up quests into separate tracks (PR #12008). It's cleaner and means older accounts won't get stuck in a weird state when interacting with the newer quest system.\n\nOn the bot side, we merged PR #12010 which adds REKTY AI to the bot roster. You can ping it now through the usual endpoints.\n\nAll code is up on the repo: https://github.com/pollinations/pollinations\n\nLet us know if the quest tracking is still dropping events for anyone."
+}

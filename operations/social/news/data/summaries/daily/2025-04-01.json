@@ -2,8 +2,8 @@
   "date": "2025-04-01",
   "period_start": "2025-04-01",
   "period_end": "2025-04-01",
-  "title": "Text models get easier to reach and easier to diagnose",
-  "summary": "A small text-model maintenance day: Gemini upgrades, flexible model aliases, and better clues when requests go sideways.\n\ntext.pollinations.ai received a Gemini upgrade plus improved error logging, while the model layer gained an extended alias system and demo support. More ways to ask for the model you mean; fewer mysteries when it declines to cooperate.",
+  "title": "Gemini moves to 2.5 Pro Experimental",
+  "summary": "Gemini got a new model behind its familiar name, text models gained aliases, and responses shed some unwanted links.\n\nThe `gemini` text model now maps to Gemini 2.5 Pro Experimental through Vertex AI, replacing Gemini 2.0 Flash Lite Preview.\n\nText model lookup now accepts defined aliases as well as primary names. DeepSeek reasoning mappings and persona model configurations were also updated.\n\nThe text server no longer adds NSFW referral links to generated responses. `/openai/models` now returns smaller OpenAI-style records that identify each model’s provider; richer error logging should help diagnose provider failures.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,5 +15,26 @@
       "date": "2025-04-01"
     }
   ],
-  "generated_at": "2026-09-04T12:20:11.852555+00:00"
+  "generated_at": "2026-10-17T15:36:56.347805+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Gemini 2.5 Pro Experimental",
+      "text": "Requests using `gemini` now map to Gemini 2.5 Pro Experimental instead of Gemini 2.0 Flash Lite Preview. [Browse the model](https://enter.pollinations.ai/models?q=gemini).",
+      "prs": [
+        1502
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Aliases for text models",
+      "text": "Text model requests can use defined aliases alongside primary model names. An included demo maps `gpt4` to `openai-large`. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        1510
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
 }

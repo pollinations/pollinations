@@ -2,8 +2,8 @@
   "date": "2025-08-10",
   "period_start": "2025-08-10",
   "period_end": "2025-08-10",
-  "title": "A little less special-link archaeology",
-  "summary": "A quiet cleanup day: old special bee request links have left the garden.\n\nRemoved special bee request links and their remaining references, simplifying the public surface and clearing out an old detour.",
+  "title": "Access guidance moves to tier wording",
+  "summary": "The Special Bee request path was removed, with access guidance and schemas updated to use tier wording.\n\nRemoved the Special Bee request form and upgrade links. The auth dashboard now describes Flower and Nectar access as limited during beta, and the gpt-image-1 access error points users to tier information instead of the removed form. Docs and published schemas also use tier wording. The PR shows no change to tier eligibility or API request handling.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,5 +11,7 @@
       "date": "2025-08-10"
     }
   ],
-  "generated_at": "2026-09-04T12:19:24.022056+00:00"
+  "generated_at": "2026-10-17T15:45:08.659470+00:00",
+  "highlights": [],
+  "changelog": []
 }

@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-06-05",
+  "period_start": "2026-06-05",
+  "period_end": "2026-06-05",
+  "generated_at": "2026-06-06T07:01:45.598172+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-05/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-05/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-05/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Shipped a few things this week to make building a bit nicer. The big one: a brand new standalone Playground app so you can test ideas without wrestling with setup. We also rewired the SDK to handle model metadata smarter (Nomnom approves of the cleaner data), and added app-owned theme colors so your UI primitives look exactly how you want them to. 4 PRs merged. Everything's open source, as always. Go play. 🌻\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #uiux #developer #retroaesthetic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

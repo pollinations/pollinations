@@ -2,9 +2,9 @@
   "date": "2025-01-28",
   "period_start": "2025-01-28",
   "period_end": "2025-01-28",
-  "title": "DeepSeek-R1 joins the text model roster",
-  "summary": "A community-facing day: DeepSeek-R1 arrived, lost projects returned, and sharing your own project got a proper submission path.\n\nDeepSeek-R1 was added to the available models, giving builders another reasoning model behind the same simple text endpoint. Model plumbing: mostly invisible until it gives your app a new brain.\n\nThe projects section lost in the previous UI update was restored. A GitHub issue template now gives community projects a consistent path into the showcase instead of relying on archaeology and good intentions.\n\nThe site footer now identifies pollinations as Berlin-based and open source. Small metadata, useful signal: the garden has coordinates and its gates are not locked.",
-  "pr_count": 7,
+  "title": "DeepSeek-R1 joins the text models",
+  "summary": "DeepSeek-R1 was added, the community showcase got its projects back, and submitting an app became less of a scavenger hunt.\n\nAdded the reasoning-enabled `deepseek-r1` chat model. `llamalight` now uses Llama 3.1 8B through Cloudflare, while `p1` was removed from the model list. The text API’s per-IP queue cap was removed, and image request queues were adjusted.\n\nThe Projects page now has a Submit Your Project button that opens a structured GitHub issue form. The README links to the form too, replacing the previous email-based submission route.\n\nProjects missing after the previous UI update were restored and organized into categories covering integrations, creative apps, tools, bots, libraries, and tutorials. The README project list and image-generation figures were updated, and the website footer now identifies Pollinations as open source and based in Berlin.",
+  "pr_count": 4,
   "prs": [
     {
       "number": 1101,
@@ -21,19 +21,28 @@
     {
       "number": 1106,
       "date": "2025-01-28"
-    },
-    {
-      "number": 1107,
-      "date": "2025-01-28"
-    },
-    {
-      "number": 1108,
-      "date": "2025-01-28"
-    },
-    {
-      "number": 1109,
-      "date": "2025-01-28"
     }
   ],
-  "generated_at": "2026-09-04T14:03:42.573751+00:00"
+  "generated_at": "2026-10-17T15:33:15.095339+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "DeepSeek-R1 joins the models",
+      "text": "Try reasoning-enabled chat with `deepseek-r1`, based on DeepSeek-R1 Distill Qwen 32B. [Browse the model](https://enter.pollinations.ai/models?q=deepseek-r1).",
+      "prs": [
+        1105
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "Submit your project",
+      "text": "Built something with Pollinations? The Projects page now has a Submit Your Project button that opens a GitHub issue form. [Explore projects](https://pollinations.ai).",
+      "prs": [
+        1106
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
 }

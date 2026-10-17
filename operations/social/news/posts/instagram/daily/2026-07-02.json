@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "daily",
+  "date": "2026-07-02",
+  "period_start": "2026-07-02",
+  "period_end": "2026-07-02",
+  "generated_at": "2026-07-03T07:02:57.060504+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-02/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-02/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-02/images/instagram-3.jpg"
+    }
+  ],
+  "text": "9 PRs merged this week. The big one: we do 3D now. You can generate 3D models via Trellis 2 and Rodin 2.5.\n\nWe also routed Flux to a self-hosted pool of 5090s, which means generations are coming back in under 3 seconds. Fast enough to outrun your own prompt regret.\n\nOther things that happened: proper OAuth 2.1 for secure API delegation (finally), the community models alpha keeps expanding with new allowlists, and the video models endpoint actually returns video models now instead of everything.\n\nDocs and code are open on GitHub. Go build something weird.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #3dgeneration #openmodels #generativeai #buildinpublic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

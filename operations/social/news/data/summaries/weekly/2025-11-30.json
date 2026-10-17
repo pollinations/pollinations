@@ -1,0 +1,75 @@
+{
+  "date": "2025-11-30",
+  "period_start": "2025-11-23",
+  "period_end": "2025-11-29",
+  "title": "New models, bigger images",
+  "summary": "New models drew the attention, while a week of compatibility and reliability fixes made them easier to use through the same APIs.\n\nClaude Opus 4.5 joined as `claude-large`, alongside Sonnet 4.5 as `claude` and Haiku as `claude-fast`. Nano Banana Pro joined the image lineup, then gained 1K, 2K, and 4K output with a 2048-pixel default side length.\n\nImage URLs now work in Vertex AI vision requests, and text parsing preserves parameters such as `max_tokens`. Chat validation accepts more provider-specific finish reasons and content formats, while Azure OpenAI requests translate `max_tokens` for newer models. The common API got less inclined to reject a valid response for having the wrong accent.\n\nResponse tracking now reads a clone instead of consuming the caller’s stream. Proxy and streaming errors preserve upstream HTTP statuses, and broader integration tests cover text models, recorded upstream responses, and audio output.\n\nEnter now tracks recent meter balances locally and updates them after billable requests, reducing balance-check calls. Model lists label pricing in Pollen, expose `is_specialized`, and draw descriptions and modalities from shared registry data.",
+  "pr_count": 16,
+  "prs": [
+    {
+      "number": 5379,
+      "date": "2025-11-25"
+    },
+    {
+      "number": 5415,
+      "date": "2025-11-26"
+    },
+    {
+      "number": 5416,
+      "date": "2025-11-26"
+    },
+    {
+      "number": 5426,
+      "date": "2025-11-27"
+    },
+    {
+      "number": 5427,
+      "date": "2025-11-27"
+    },
+    {
+      "number": 5432,
+      "date": "2025-11-27"
+    },
+    {
+      "number": 5439,
+      "date": "2025-11-27"
+    },
+    {
+      "number": 5453,
+      "date": "2025-11-28"
+    },
+    {
+      "number": 5454,
+      "date": "2025-11-28"
+    },
+    {
+      "number": 5456,
+      "date": "2025-11-28"
+    },
+    {
+      "number": 5460,
+      "date": "2025-11-28"
+    },
+    {
+      "number": 5375,
+      "date": "2025-11-29"
+    },
+    {
+      "number": 5463,
+      "date": "2025-11-29"
+    },
+    {
+      "number": 5471,
+      "date": "2025-11-29"
+    },
+    {
+      "number": 5473,
+      "date": "2025-11-29"
+    },
+    {
+      "number": 5476,
+      "date": "2025-11-29"
+    }
+  ],
+  "generated_at": "2026-10-17T16:06:45.476582+00:00"
+}

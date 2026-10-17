@@ -2,9 +2,9 @@
   "date": "2025-12-17",
   "period_start": "2025-12-17",
   "period_end": "2025-12-17",
-  "title": "Veo can turn images into video again",
-  "summary": "A garden-maintenance day: Veo image-to-video is back, the hello API path is taking form, and the project became easier to join and operate.\n\nImage-to-video support was restored for the Veo model, so a starting image can once again make the jump into motion instead of stopping at a very cinematic still frame.\n\nhello.pollinations.ai gained an API proxy Worker and its required Worker entry point, putting a cleaner front door in place for API requests.\n\nNullVector joined the social bots, and Discord invite links were unified so people following the project have fewer chances to land at competing doors to the same room.",
-  "pr_count": 8,
+  "title": "Veo can use an image as its first frame",
+  "summary": "Veo gained image-guided video generation, Enter shed a manual tier step, and Hello’s API calls got a single route.\n\nVeo image-to-video requests now pass the supplied `image` to the model as a reference first frame. If a request includes multiple images, it uses the first.\n\nNew accounts are assigned the SPORE subscription automatically, replacing Enter’s manual Activate Tier button. The tier panel now explains pending setup, subscription syncing handles cancellations and revocations, and pending usage is counted across meter balances. A smaller pricing-page update clarifies that its Pollen estimate uses a seven-day community average.\n\nNullVector, a Discord assistant that picks models based on the task, joined the socialBots listings. Community and documentation links were also aligned around one Discord invite.",
+  "pr_count": 7,
   "prs": [
     {
       "number": 6046,
@@ -12,10 +12,6 @@
     },
     {
       "number": 6068,
-      "date": "2025-12-17"
-    },
-    {
-      "number": 6096,
       "date": "2025-12-17"
     },
     {
@@ -39,5 +35,7 @@
       "date": "2025-12-17"
     }
   ],
-  "generated_at": "2026-09-04T12:34:54.009382+00:00"
+  "generated_at": "2026-10-17T15:55:42.599676+00:00",
+  "highlights": [],
+  "changelog": []
 }

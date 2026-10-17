@@ -1,0 +1,91 @@
+{
+  "date": "2025-05-18",
+  "period_start": "2025-05-11",
+  "period_end": "2025-05-17",
+  "title": "The community showcase grew up",
+  "summary": "The community project directory grew into a better-organized showcase, while image-feed access and conversation-aware ads got more capable.\n\nNew listings ranged from IRINA and Anisurge to Windows multimodel chat, image generators, interactive stories, picture-book tools, and short-video tooling. The directory also gained a Vibe Coding category, tidier project names and links, and more consistent featured-project ordering.\n\nAds triggered by `p-ads` gained optional generated 120×120 images. Their copy now uses recent messages and the current response for context, preserves markdown links, and keeps the ad marker out of messages sent to the text model.\n\nAuthenticated listeners can receive additional image-feed events, including events replayed on connection. Public listeners retain the existing content filters.\n\nText-origin errors gained a CORS header so browser clients can inspect non-OK responses. The week also brought a request-analytics tracking-pixel function, standard logos for images generated with meoow models, and a README assessment badge.",
+  "pr_count": 20,
+  "prs": [
+    {
+      "number": 1945,
+      "date": "2025-05-11"
+    },
+    {
+      "number": 1951,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1952,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1954,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1955,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1959,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1962,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1964,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1965,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1966,
+      "date": "2025-05-13"
+    },
+    {
+      "number": 1968,
+      "date": "2025-05-13"
+    },
+    {
+      "number": 1970,
+      "date": "2025-05-13"
+    },
+    {
+      "number": 1973,
+      "date": "2025-05-13"
+    },
+    {
+      "number": 1974,
+      "date": "2025-05-13"
+    },
+    {
+      "number": 1975,
+      "date": "2025-05-14"
+    },
+    {
+      "number": 1976,
+      "date": "2025-05-14"
+    },
+    {
+      "number": 1978,
+      "date": "2025-05-15"
+    },
+    {
+      "number": 1981,
+      "date": "2025-05-15"
+    },
+    {
+      "number": 1986,
+      "date": "2025-05-16"
+    },
+    {
+      "number": 1987,
+      "date": "2025-05-17"
+    }
+  ],
+  "generated_at": "2026-10-17T16:04:12.697880+00:00"
+}

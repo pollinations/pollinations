@@ -6,6 +6,14 @@ import { describe, expect } from "vitest";
 import { test } from "../fixtures.ts";
 
 describe("GET /api/account/apps", () => {
+    test("requires authentication", async () => {
+        const response = await SELF.fetch(
+            "http://localhost:3000/api/account/apps",
+        );
+
+        expect(response.status).toBe(401);
+    });
+
     test("returns only the signed-in GitHub user's unique listings, newest first", async ({
         accountToken,
         mocks,

@@ -269,6 +269,7 @@ type BuyPollenPanelProps = {
     /** Reload the wallet and billing after Top-up changed them. */
     onWalletChange?: () => void;
     initialPack?: PollenPackKey;
+    purchaseCredited?: boolean;
 };
 
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
@@ -276,6 +277,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     returnToTopUp,
     onWalletChange,
     initialPack,
+    purchaseCredited,
 }) => (
     <>
         <TopUpPanel
@@ -283,6 +285,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
             returnToTopUp={returnToTopUp}
             onWalletChange={onWalletChange}
             initialPack={initialPack}
+            purchaseCredited={purchaseCredited}
         />
         <Footnotes>
             {/* When auto top-up charges, stated before anyone turns it on.

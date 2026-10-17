@@ -176,7 +176,7 @@ export function useVotingIssues() {
 
 /* ── Quests ─────────────────────────────────────────────────────────────── */
 
-/** Completed GitHub Quest rewards: global totals plus the top contributors. */
+/** Completed Quests: global totals plus the top contributors. */
 export type QuestLeaderboardData = {
     leaderboard: {
         githubLogin: string;
@@ -186,7 +186,6 @@ export type QuestLeaderboardData = {
     totals: {
         contributors: number;
         completedQuests: number;
-        totalPollen: number;
     };
 };
 

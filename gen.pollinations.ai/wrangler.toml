@@ -359,10 +359,6 @@ binding = "ASK_JEV_MCP"
 service = "ask-jev-mcp"
 
 [[env.test.services]]
-binding = "UNICODE_MCP"
-service = "unicode-mcp"
-
-[[env.test.services]]
 binding = "FFMPEG_MCP"
 service = "pollinations-ffmpeg-mcp"
 

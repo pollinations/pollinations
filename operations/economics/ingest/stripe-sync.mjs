@@ -326,8 +326,31 @@ export async function sync(exports, token) {
     return { transactions: rows.length, accountMonths: coverage.size };
 }
 
-// Staging reuses Enter's existing event datasource. Copy original events once,
-// rather than inventing a second checkout/payment ledger or adding their amounts.
+// The sales join needs charge identity only. Never mirror customer details or
+// the full production webhook payload into staging.
+export function enterIdentityEvent(event) {
+    assert(event.event_id && event.charge_id, "Missing Enter payment identity");
+    assert(
+        ["charge.succeeded", "payment_intent.succeeded"].includes(
+            event.event_type,
+        ),
+        "Unsupported Enter event type",
+    );
+    return {
+        timestamp: event.timestamp,
+        event_type: event.event_type,
+        event_id: event.event_id,
+        livemode: 1,
+        payload: JSON.stringify({
+            data: {
+                object:
+                    event.event_type === "charge.succeeded"
+                        ? { id: event.charge_id }
+                        : { latest_charge: event.charge_id },
+            },
+        }),
+    };
+}
 export async function syncEnter(start, end, readToken, writeToken) {
     assert(
         Number.isInteger(start) && Number.isInteger(end) && start < end,
@@ -359,9 +382,9 @@ export async function syncEnter(start, end, readToken, writeToken) {
         writeToken,
     );
     const known = new Set(existing.map((row) => row.event_id));
-    // UTC bounds limit this read; source events and payloads are preserved exactly.
+    // UTC bounds limit the read; only the identity fields cross into staging.
     const events = await query(
-        `SELECT * FROM stripe_event WHERE livemode = 1 AND event_type IN ('charge.succeeded', 'payment_intent.succeeded') AND timestamp >= toDateTime(${start}) AND timestamp < toDateTime(${end}) ORDER BY timestamp`,
+        `SELECT timestamp, event_type, event_id, livemode, if(event_type = 'charge.succeeded', JSONExtractString(payload, 'data', 'object', 'id'), JSONExtractString(payload, 'data', 'object', 'latest_charge')) AS charge_id FROM stripe_event WHERE livemode = 1 AND event_type IN ('charge.succeeded', 'payment_intent.succeeded') AND timestamp >= toDateTime(${start}) AND timestamp < toDateTime(${end}) ORDER BY timestamp`,
         readToken,
     );
     const added = [];
@@ -376,7 +399,7 @@ export async function syncEnter(start, end, readToken, writeToken) {
         );
         if (!known.has(event.event_id)) {
             known.add(event.event_id);
-            added.push(event);
+            added.push(enterIdentityEvent(event));
         }
     }
     for (let offset = 0; offset < added.length; offset += 250) {

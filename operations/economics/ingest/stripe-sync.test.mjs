@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
     ACCOUNTS,
+    enterIdentityEvent,
     mergeTransactions,
     normalize,
     totals,
@@ -135,4 +136,30 @@ test("refresh preserves reviewed transaction classifications without duplicating
         mergeTransactions(refreshed, [{ exported: source, stream: "pollen" }]),
         refreshed,
     );
+});
+
+test("Enter staging mirror retains charge identity without customer payloads", () => {
+    for (const event_type of ["charge.succeeded", "payment_intent.succeeded"]) {
+        const row = enterIdentityEvent({
+            event_id: "evt_test",
+            event_type,
+            timestamp: "2026-09-01 00:00:00",
+            charge_id: "ch_test",
+            customer_email: "private@example.invalid",
+            payload: "private source payload",
+        });
+        assert.deepEqual(Object.keys(row).sort(), [
+            "event_id",
+            "event_type",
+            "livemode",
+            "payload",
+            "timestamp",
+        ]);
+        assert.ok(!JSON.stringify(row).includes("private"));
+        const object = JSON.parse(row.payload).data.object;
+        assert.equal(
+            object[event_type === "charge.succeeded" ? "id" : "latest_charge"],
+            "ch_test",
+        );
+    }
 });

@@ -14,10 +14,12 @@ import { CATEGORY_IDS } from "./categories";
 import { isDatedRules } from "./modelIdentity";
 import {
     activeProviderAccounts,
+    CANONICAL_MODEL_RENAMES,
     canonicalProvider,
     canonicalProviderAccountId,
     cashOnlyTransaction,
     collectProviderObservations,
+    initializeProviderRegistry,
     ledgerCategory,
     meterDriftExplanation,
     missingProviderMappings,
@@ -97,6 +99,31 @@ const data = (overrides: Partial<Data> = {}): Data => ({
 });
 
 describe("provider registry", () => {
+    it("rejects invalid or incomplete Drive definitions without replacing the loaded catalog", () => {
+        const before = resolveProvider("aws");
+        const document = JSON.parse(
+            process.env.ECONOMICS_VENDOR_DETAILS ?? "null",
+        );
+        expect(() =>
+            initializeProviderRegistry({ version: 1, providers: [] }),
+        ).toThrow("incomplete");
+        const invalid = structuredClone(document);
+        invalid.providers[0].category = "made-up-category";
+        expect(() => initializeProviderRegistry(invalid)).toThrow(
+            "invalid definition",
+        );
+        const duplicate = structuredClone(document);
+        duplicate.providers.push(duplicate.providers[0]);
+        expect(() => initializeProviderRegistry(duplicate)).toThrow(
+            "invalid definition",
+        );
+        const mixed = structuredClone(document);
+        mixed.providers[0].modelLabels = {};
+        expect(() => initializeProviderRegistry(mixed)).toThrow(
+            "invalid definition",
+        );
+        expect(resolveProvider("aws")).toBe(before);
+    });
     it("keeps every canonical ID and alias unique", () => {
         const names = PROVIDER_REGISTRY.flatMap((provider) => [
             provider.id,
@@ -292,6 +319,55 @@ describe("provider registry", () => {
         }
     });
 
+    it("starts monthly checks with the first active account and retains earlier observed activity", () => {
+        const provider = resolveProvider("e2b");
+        if (!provider?.accounts?.length)
+            throw new Error("E2B accounts missing");
+        const firstMonth = provider.accounts
+            .map((account) => account.activeFrom)
+            .sort()[0];
+        const before = new Date(`${firstMonth}-01T00:00:00Z`);
+        before.setUTCMonth(before.getUTCMonth() - 1);
+        const previousMonth = before.toISOString().slice(0, 7);
+        const seed = cloud({ start: `${previousMonth}-01 00:00:00` });
+        expect(
+            providerReviewRows(data({ vendorLedger: [seed] })).some(
+                (row) => row.provider === "e2b",
+            ),
+        ).toBe(false);
+        expect(
+            providerReviewRows(
+                data({
+                    vendorLedger: [
+                        cloud({
+                            start: `${firstMonth}-01 00:00:00`,
+                        }),
+                    ],
+                }),
+            ).find((row) => row.provider === "e2b"),
+        ).toMatchObject({
+            month: firstMonth,
+            monthlyReview: true,
+        });
+        expect(
+            providerReviewRows(
+                data({
+                    vendorLedger: [
+                        {
+                            ...seed,
+                            vendor: "e2b",
+                            evidence: "",
+                        },
+                    ],
+                }),
+            ).find((row) => row.provider === "e2b"),
+        ).toMatchObject({
+            month: previousMonth,
+            monthlyReview: true,
+            sources: ["cloud"],
+        });
+    });
+
     it("resolves manually approved aliases and leaves unknown names visible", () => {
         expect(resolveProvider(" BedRock ")?.id).toBe("aws");
         expect(canonicalProvider("aws-bedrock")).toBe("aws");
@@ -403,12 +479,12 @@ describe("provider registry", () => {
             ),
         ).toBe("myceli-ai");
 
-        const pausedAfterAugust = [
-            "digitalocean",
-            "mistral",
-            "pruna",
-            "runpod",
-        ];
+        const mistral = resolveProvider("mistral");
+        expect(mistral).toBeDefined();
+        if (!mistral) throw new Error("mistral is not registered");
+        expect(activeProviderAccounts(mistral, "2026-09")).toHaveLength(1);
+
+        const pausedAfterAugust = ["digitalocean", "pruna", "runpod"];
         for (const providerId of pausedAfterAugust) {
             const provider = resolveProvider(providerId);
             expect(provider).toBeDefined();
@@ -426,7 +502,7 @@ describe("provider registry", () => {
 
     it("keeps source-backed Pollen witness explanations unique and canonical", () => {
         const explanations =
-            PRIVATE_CONFIG_FIXTURE.reconciliation.pollenWitnessExplanations;
+            PRIVATE_CONFIG_FIXTURE.reviewNotes.pollenWitnessExplanations;
         const keys = explanations.map(
             (explanation) => `${explanation.month}|${explanation.provider}`,
         );
@@ -462,15 +538,14 @@ describe("provider registry", () => {
 
     it("finds historical reconciliation explanations by the renamed vendor", () => {
         const explanation = {
-            ...PRIVATE_CONFIG_FIXTURE.reconciliation
-                .pollenWitnessExplanations[0],
+            ...PRIVATE_CONFIG_FIXTURE.reviewNotes.pollenWitnessExplanations[0],
             provider: "vast.ai",
         };
         expect(
             pollenWitnessExplanation(explanation.month, "vast", {
                 ...PRIVATE_CONFIG_FIXTURE,
-                reconciliation: {
-                    ...PRIVATE_CONFIG_FIXTURE.reconciliation,
+                reviewNotes: {
+                    ...PRIVATE_CONFIG_FIXTURE.reviewNotes,
                     pollenWitnessExplanations: [explanation],
                 },
             }),
@@ -479,7 +554,7 @@ describe("provider registry", () => {
 
     it("keeps reviewed provider limitations unique, canonical, and archived", () => {
         const explanations =
-            PRIVATE_CONFIG_FIXTURE.reconciliation.providerCheckExplanations;
+            PRIVATE_CONFIG_FIXTURE.reviewNotes.providerCheckExplanations;
         const keys = explanations.map(
             (explanation) => `${explanation.month}|${explanation.provider}`,
         );
@@ -513,7 +588,7 @@ describe("provider registry", () => {
 
     it("keeps explained meter drift unique, canonical, and archived", () => {
         const explanations =
-            PRIVATE_CONFIG_FIXTURE.reconciliation.meterDriftExplanations;
+            PRIVATE_CONFIG_FIXTURE.reviewNotes.meterDriftExplanations;
         const keys = explanations.map(
             (explanation) => `${explanation.month}|${explanation.provider}`,
         );
@@ -866,5 +941,45 @@ describe("providerReviewRows", () => {
             cloudflare?.expectedAccounts.map((account) => account.id),
         ).toEqual(["pollinations", "myceli"]);
         expect(resolveProvider("myceli")).toBeUndefined();
+    });
+});
+
+describe("historical canonical mapping contracts", () => {
+    it("uses canonical provider keys, dated evidence and non-overlapping rules", () => {
+        for (const [alias, target] of Object.entries(CANONICAL_MODEL_RENAMES)) {
+            if (typeof target === "string") {
+                expect(target, alias).toContain("/");
+                continue;
+            }
+            for (const rule of target) {
+                expect(rule.model, alias).toContain("/");
+                expect(rule.evidence.length, alias).toBeGreaterThan(0);
+                expect(rule.from, alias).toMatch(/^\d{4}-\d{2}$/);
+                expect(rule.from <= (rule.until ?? "9999-12"), alias).toBe(
+                    true,
+                );
+                if (rule.provider) {
+                    expect(resolveProvider(rule.provider)?.id, alias).toBe(
+                        rule.provider,
+                    );
+                }
+            }
+            for (let i = 0; i < target.length; i++) {
+                for (const other of target.slice(i + 1)) {
+                    const rule = target[i];
+                    if (
+                        rule.provider &&
+                        other.provider &&
+                        rule.provider !== other.provider
+                    )
+                        continue;
+                    expect(
+                        rule.from > (other.until ?? "9999-12") ||
+                            other.from > (rule.until ?? "9999-12"),
+                        alias,
+                    ).toBe(true);
+                }
+            }
+        }
     });
 });

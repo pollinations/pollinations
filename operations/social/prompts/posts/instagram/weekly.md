@@ -1,7 +1,6 @@
 ---
 job: weekly
 tone: instagram
-file: instagram.json
 temperature: 0.7
 pictures: ["instagram-1.jpg", "instagram-2.jpg", "instagram-3.jpg"]
 required: ["caption"]

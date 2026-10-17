@@ -1,4 +1,5 @@
 import { Scalar } from "@scalar/hono-api-reference";
+import { getPublicUrl } from "@shared/public-origin.ts";
 import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import { getImageModelIds, getVideoModelIds } from "@shared/registry/image.ts";
@@ -1059,9 +1060,19 @@ export async function buildMergedOpenApiSpec(
     };
 }
 
+const SCALAR_CDN =
+    "https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.74.0/dist/browser/standalone.js";
+const SCALAR_INTEGRITY =
+    "sha384-VXnKAz61Xwc3tbw1P+KKrUP7YbcsSl1Ik4is5UnogJyw9XEYZ5Ay/T1i0zPYtSZH";
+
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     const routes = new Hono<Env>()
         .get("/", async (c, next) => {
+            const publicUrl = getPublicUrl(c);
+            if (publicUrl.hostname === "gen.myceli.ai") {
+                publicUrl.hostname = "gen.pollinations.ai";
+                return c.redirect(publicUrl.href, 302);
+            }
             c.header("Vary", "Accept", { append: true });
             if (c.req.header("accept")?.includes("text/markdown")) {
                 // Cloudflare ignores Vary on cached responses: keep it private.
@@ -1072,7 +1083,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             }
             const response = await Scalar<Env>({
                 // Pin the CDN bundle so sidebar changes are verified before upgrading.
-                cdn: "https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.74.0",
+                cdn: SCALAR_CDN,
                 pageTitle: SEO_TITLE,
                 title: SEO_TITLE,
                 favicon: FAVICON_DATA_URI,
@@ -1107,7 +1118,10 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 },
             })(c, next);
             if (!response) return;
-            const html = await response.text();
+            const html = (await response.text()).replace(
+                `<script src="${SCALAR_CDN}">`,
+                `<script src="${SCALAR_CDN}" integrity="${SCALAR_INTEGRITY}" crossorigin="anonymous">`,
+            );
             const htmlWithMeta = withHtmlClass(
                 injectDocsSocialHead(html, c),
                 "dark",

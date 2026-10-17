@@ -1,0 +1,150 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+    Client,
+    StreamableHTTPClientTransport,
+} from "@modelcontextprotocol/client";
+import worker from "./worker.js";
+
+const TOKEN = "sk_test_request_scoped";
+const EXPECTED_TOOLS = ["check_contrast", "rank_palette"];
+
+function localFetch(input, init) {
+    const request = input instanceof Request ? input : new Request(input, init);
+    return worker.fetch(request);
+}
+
+async function connectClient(options = {}) {
+    const client = new Client(
+        { name: "contrast-mcp-worker-test", version: "0.0.1" },
+        { capabilities: {}, ...options },
+    );
+    const transport = new StreamableHTTPClientTransport(
+        new URL("https://contrast-mcp.pollinations.ai"),
+        {
+            fetch: localFetch,
+            requestInit: {
+                headers: { Authorization: `Bearer ${TOKEN}` },
+            },
+        },
+    );
+    await client.connect(transport);
+    return client;
+}
+
+test("serves health and requires bearer auth", async () => {
+    const health = await worker.fetch(
+        new Request("https://contrast-mcp.pollinations.ai/health"),
+    );
+    assert.equal(health.status, 200);
+    assert.equal((await health.json()).endpoint, "/");
+
+    const unauthorized = await worker.fetch(
+        new Request("https://contrast-mcp.pollinations.ai", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "{}",
+        }),
+    );
+    assert.equal(unauthorized.status, 401);
+    assert.equal(
+        unauthorized.headers.get("www-authenticate"),
+        'Bearer realm="contrast-mcp.pollinations.ai"',
+    );
+
+    const oldEndpoint = await worker.fetch(
+        new Request("https://contrast-mcp.pollinations.ai/mcp"),
+    );
+    assert.equal(oldEndpoint.status, 404);
+});
+
+test("serves current and 2025 Streamable HTTP without sessions", async () => {
+    const modern = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
+    assert.equal(modern.getProtocolEra(), "modern");
+    assert.deepEqual(
+        (await modern.listTools()).tools.map(({ name }) => name).sort(),
+        EXPECTED_TOOLS,
+    );
+    await modern.close();
+
+    const legacy = await connectClient();
+    assert.equal(legacy.getProtocolEra(), "legacy");
+    assert.deepEqual(
+        (await legacy.listTools()).tools.map(({ name }) => name).sort(),
+        EXPECTED_TOOLS,
+    );
+    await legacy.close();
+});
+
+test("rejects JSON-RPC batches", async () => {
+    const response = await worker.fetch(
+        new Request("https://contrast-mcp.pollinations.ai", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${TOKEN}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify([
+                { jsonrpc: "2.0", id: 1, method: "tools/list" },
+            ]),
+        }),
+    );
+    assert.equal(response.status, 400);
+});
+
+test("checks WCAG 2.2 contrast and normalizes shorthand colors", async (t) => {
+    const client = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
+    t.after(() => client.close());
+    const result = await client.callTool({
+        name: "check_contrast",
+        arguments: { foreground: "#000", background: "#fff" },
+    });
+    assert.notEqual(result.isError, true);
+    assert.deepEqual(JSON.parse(result.content[0].text), {
+        foreground: "#000000",
+        background: "#ffffff",
+        ratio: 21,
+        wcag_2_2: {
+            normal_text: { aa: true, aaa: true },
+            large_text: { aa: true, aaa: true },
+            non_text: { aa: true },
+        },
+    });
+});
+
+test("ranks a palette without letting rounded ratios pass", async (t) => {
+    const client = await connectClient();
+    t.after(() => client.close());
+    const result = await client.callTool({
+        name: "rank_palette",
+        arguments: {
+            background: "#fff",
+            colors: ["#006ffb", "#000", "#fff"],
+            minimum_ratio: 4.5,
+        },
+    });
+    assert.notEqual(result.isError, true);
+    assert.deepEqual(JSON.parse(result.content[0].text), {
+        background: "#ffffff",
+        minimum_ratio: 4.5,
+        colors: [
+            { color: "#000000", ratio: 21, passes: true },
+            { color: "#006ffb", ratio: 4.5, passes: false },
+            { color: "#ffffff", ratio: 1, passes: false },
+        ],
+    });
+});
+
+test("rejects invalid colors before running a tool", async (t) => {
+    const client = await connectClient();
+    t.after(() => client.close());
+    const result = await client.callTool({
+        name: "check_contrast",
+        arguments: { foreground: "red", background: "#fff" },
+    });
+    assert.equal(result.isError, true);
+});

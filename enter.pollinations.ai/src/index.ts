@@ -20,6 +20,33 @@ function isApiDocsPath(path: string): boolean {
     return path === "/api/docs" || path.startsWith("/api/docs/");
 }
 
+// SPA dashboard routes mirrored from the TanStack router routeTree.gen.ts
+// (frontend/src/routeTree.gen.ts). Used by the catch-all below to decide
+// whether a missing path should fall back to /index.html or to a real 404.
+const SPA_ROUTES: ReadonlySet<string> = new Set([
+    "/",
+    "/authorize",
+    "/device",
+    "/edit-key",
+    "/error",
+    "/grant",
+    "/privacy",
+    "/refunds",
+    "/terms",
+    "/top-up",
+    "/account",
+    "/activity",
+    "/keys",
+    "/models",
+    "/my-models",
+    "/news",
+    "/pollen",
+    "/quests",
+    "/sandboxes",
+    "/sign-in",
+    "/app/sign-in",
+]);
+
 function redirectLegacyDocs(c: Context<Env>): Response {
     const reqUrl = new URL(c.req.url);
     const publicOrigin = new URL(getPublicOrigin(c));
@@ -70,7 +97,27 @@ const app = new Hono<Env>()
         return c.redirect(url.toString(), 308);
     })
     .route("/.well-known", wellKnownRoutes)
-    .route("/api", api);
+    .route("/api", api)
+    // Issue #17787: SPA fallback (not_found_handling = "single-page-application")
+    // currently rewrites every unknown path to /index.html with 200 text/html,
+    // so an agent that GETs /auth.md or /llms-full.txt sees the dashboard shell.
+    // wrangler.toml routes everything except real asset files to the Worker;
+    // the Worker forwards the request to the assets binding, falls back to
+    // /index.html only for known SPA routes, and 404s the rest (matches
+    // gen.pollinations.ai and the main site after #15261).
+    .get("*", async (c) => {
+        const path = c.req.path;
+        const wantsIndex = path === "/" || SPA_ROUTES.has(path);
+        const assetResponse = await c.env.ASSETS.fetch(c.req.raw);
+        if (assetResponse.status !== 404) return assetResponse;
+        if (wantsIndex) {
+            const indexResponse = await c.env.ASSETS.fetch(
+                new Request(new URL("/index.html", c.req.url), c.req.raw),
+            );
+            if (indexResponse.status === 200) return indexResponse;
+        }
+        return c.notFound();
+    });
 
 app.notFound(async (c: Context<Env>) => {
     return await handleError(new HTTPException(404), c);

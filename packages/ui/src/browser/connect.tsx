@@ -5,40 +5,42 @@ import { AppUserMenu } from "../modules/app-user-menu/AppUserMenu.tsx";
 import { ConnectAuth } from "./connect-auth.tsx";
 import { CONNECT_ATTRIBUTES, connectOptions } from "./connect-options.ts";
 
+// Marks the account menu's panel, which is portalled to <body>.
+const MENU = "polli-connect-menu";
+
 // Our React apps load Tailwind's preflight; host pages don't. This scoped copy
 // keeps browser defaults and the page's inherited text styles out of the
-// button and its menu (portalled to <body>). It sits in the base layer, so the
-// package's utility classes still win.
+// button and its menu, and nothing else on the page. It sits in the base
+// layer, so the package's utility classes still win.
 const RESET = `
 polli-connect { display: inline-block; }
 @layer base {
-    :where(polli-connect, [data-scope="popover"][data-part="content"]) {
+    :where(polli-connect, .${MENU}) {
         font: 400 1rem/1.5 var(--polli-font-body);
         letter-spacing: normal;
         text-transform: none;
         text-align: start;
         color: var(--polli-color-text-strong);
     }
-    :where(polli-connect) *,
-    :where([data-scope="popover"][data-part="content"]),
-    :where([data-scope="popover"][data-part="content"]) * {
+    :where(polli-connect, .${MENU}) *,
+    :where(.${MENU}) {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
         border: 0 solid;
     }
-    :where(polli-connect, [data-scope="popover"][data-part="content"]) :where(button) {
+    :where(polli-connect, .${MENU}) :where(button) {
         font: inherit;
         letter-spacing: inherit;
         color: inherit;
         border-radius: 0;
         background-color: transparent;
     }
-    :where(polli-connect, [data-scope="popover"][data-part="content"]) :where(a) {
+    :where(polli-connect, .${MENU}) :where(a) {
         color: inherit;
         text-decoration: inherit;
     }
-    :where(polli-connect, [data-scope="popover"][data-part="content"]) :where(img, svg) {
+    :where(polli-connect, .${MENU}) :where(img, svg) {
         display: block;
         vertical-align: middle;
     }
@@ -112,7 +114,7 @@ class PolliConnect extends HTMLElement {
     #render() {
         this.#root?.render(
             <ConnectAuth {...connectOptions(this)} onChange={this.#setKey}>
-                <AppUserMenu />
+                <AppUserMenu menuClassName={MENU} />
             </ConnectAuth>,
         );
     }

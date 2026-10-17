@@ -31,6 +31,8 @@ export type AutomaticForecastRule = ForecastLineRule & {
 const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     // Revenue
     "polar|revenue": { method: "one_off", paymentTiming: "direct" },
+    // September API advance is a single receipt, not recurring pack sales.
+    "pollinations|revenue": { method: "one_off", paymentTiming: "direct" },
     "stripe sales|revenue": { method: "last", paymentTiming: "direct" },
     "stripe refunds|revenue": { method: "last", paymentTiming: "direct" },
 
@@ -54,6 +56,16 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     },
 
     // Metered compute and infrastructure projected from the Compute ledger.
+    "e2b|infrastructure": {
+        method: "last",
+        paymentTiming: "prepaid",
+        automaticUsage: true,
+    },
+    "anthropic|compute": {
+        method: "last",
+        paymentTiming: "prepaid",
+        automaticUsage: true,
+    },
     "assemblyai|compute": {
         method: "last",
         paymentTiming: "prepaid",
@@ -140,12 +152,8 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         paymentTiming: "prepaid",
         automaticUsage: true,
     },
-    // Modal usage is covered by the $30 monthly plan credit per workspace.
-    "modal|compute": {
-        method: "last",
-        paymentTiming: "prepaid",
-        automaticUsage: true,
-    },
+    // Modal is no longer used; retain historical usage and any remaining credit.
+    "modal|compute": { method: "one_off", paymentTiming: "prepaid" },
     "openrouter|compute": {
         method: "last",
         paymentTiming: "prepaid",
@@ -201,7 +209,6 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     // Reviewed historical or discontinued metered lines. One-time means their
     // observed cash stays historical and is never repeated automatically.
     "airforce|compute": { method: "one_off", paymentTiming: null },
-    "anthropic|compute": { method: "one_off", paymentTiming: "prepaid" },
     "bytedance|compute": { method: "one_off", paymentTiming: "postpaid" },
     "daytona|infrastructure": {
         method: "one_off",
@@ -230,6 +237,9 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         paymentTiming: "direct",
     },
     "github|development": { method: "last", paymentTiming: "direct" },
+    // Actions and Packages are covered by GitHub discounts. Enterprise seats
+    // remain Development; new cash-funded infrastructure must be reviewed.
+    "github|infrastructure": { method: "funded", paymentTiming: null },
     "openai|development": {
         method: "fixed",
         paymentTiming: "direct",
@@ -279,6 +289,7 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     "rent & utilities|office": { method: "last", paymentTiming: "direct" },
 
     // Admin and payroll
+    "wise|admin": { method: "last", paymentTiming: "direct" },
     "accounting & filings|admin": {
         method: "fixed",
         paymentTiming: "direct",

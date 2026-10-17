@@ -9,7 +9,7 @@ import unittest
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 import requests
 
@@ -1066,7 +1066,7 @@ class DeliverTest(unittest.TestCase):
         def pr(number, merged_at="2026-10-21T10:00:00Z", base="main"):
             return {"number": number, "title": f"PR {number}", "body": "", "merged_at": merged_at,
                     "merge_commit_sha": f"pr{number}", "base": {"ref": base},
-                    "head": {"ref": "feature"}, "user": {"login": "bee"},
+                    "head": {"ref": "feature"}, "user": {"login": "bee"}, "labels": [],
                     "html_url": f"https://github.com/pollinations/pollinations/pull/{number}"}
         workflow = "deploy-cloudflare-production.yml"
         api = {
@@ -1100,8 +1100,12 @@ class DeliverTest(unittest.TestCase):
             response.raise_for_status = lambda: None
             response.json = lambda: {"content": {"sha": hashlib.sha1(self.store[path]).hexdigest()}}
             return response
-        def output(system, context, *args, **kwargs):
-            return json.dumps({"text": "Faster images", "image_prompt": "bee"})
+        # The note writes the picture prompt, as the PR gist did; the post is written from the note.
+        note = json.dumps({"summary": "Images render faster.", "image_prompt": "a bee racing a snail"})
+        def output(system, task, *args, **kwargs):
+            self.assertIn("Discord Voice", system)
+            self.assertIn('"summary": "Images render faster."', task)
+            return "Faster images"
         env = {"GITHUB_REPOSITORY": "pollinations/pollinations", "POLLINATIONS_TOKEN": "test",
                "DISCORD_REALTIME_WEBHOOK_URL": "https://discord.test/realtime"}
         def answer(path, **params):
@@ -1112,6 +1116,7 @@ class DeliverTest(unittest.TestCase):
              patch("deploy_posts.github", side_effect=answer), \
              patch("deploy_posts.write_news", side_effect=write), \
              patch("deploy_posts.fetch_pr_files", side_effect=lambda repo, n, token: changes[n]), \
+             patch("prs.call_pollinations_api", return_value=note), \
              patch("deploy_posts.call_pollinations_api", side_effect=output), \
              patch("deploy_posts.generate_image", return_value=(b"jpeg", "https://media.pollinations.ai/abc")) as picture, \
              patch("deploy_posts.subprocess.check_output", return_value="production"), \
@@ -1131,7 +1136,7 @@ class DeliverTest(unittest.TestCase):
             state = json.loads(self.store[deploy_posts.HELD_PATH])
             self.assertEqual(list(state["held"]), ["2"])
             self.assertEqual((state["production"], state["master"]), ("production", "master"))
-            self.assertEqual(picture.call_count, 2)
+            self.assertEqual(picture.call_args_list, [call("a bee racing a snail", "test")] * 2)
             record = json.loads(self.store[f"{NEWS_REL_DIR}/posts/discord/prs/2026-10/delivery.json"])
             self.assertEqual((record["pr-1"]["state"], record["pr-3"]["state"]), ("done", "done"))
             deploy_posts.main()  # no new deploy: Gen stays held, docs are not sent twice

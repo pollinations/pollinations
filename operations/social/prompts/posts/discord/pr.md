@@ -2,23 +2,22 @@
 job: pr
 tone: discord
 temperature: 0.7
-required: ["text", "image_prompt"]
 ---
-# Discord Post For Each Deployed PR
+# Discord Post For Each Merged PR
 
-A deploy just shipped this pull request. Read it and announce the change.
+Given a PR's factual gist, write a short message announcing the change.
 
-{pr}
+PR gist:
+{gist}
 
-The diff is what the PR does; the title and description are the author's account of it. Keep a claim from the description only when the diff supports it. What Pollinations pays providers (costs, credit fees, margins) is internal, even when the PR says "bills" for it: never mention it. Mention what users pay only when the diff changes the price users are charged.
+Use exact model values from announcements when present, and the summary for billing context. A field ending in `Tokens` can represent one image or character; use explicit units from the catalog or summary, and omit a rate if its unit is unknown. A scheduled change has not happened yet. Missing values are unknown; do not invent them.
 
-Return JSON with two fields:
+- 150-400 characters total, hard maximum 400. Pick the key change and at most two supporting details; do not list everything.
+- Start with a one-line summary of what changed
+- Bullet points with emojis if needed
+- Written for people who use the tools — skip internal details
+- **Pick the load-bearing specifics out of the gist and put them in the message**: names (models, endpoints, packages, providers, features), numbers (versions, defaults, prices, limits, sizes, timeouts), and before/after values when behavior changes. Don't substitute them with category labels ("updated plans", "new model added", "API improvements"). If the PR is about changing a value or naming a thing, the message must include that value or name.
+- Plain language, no hype
+- Describe the merged change without routine deployment disclaimers. Include announced effective dates for scheduled changes; do not claim it is live without evidence.
 
-- `text`: the announcement, 150-400 characters, hard maximum 400.
-  - Start with a one-line summary of what changed, then the key change and at most two supporting details.
-  - Bullet points with emojis if needed. Written for people who use the tools; skip internal details.
-  - Keep the load-bearing specifics: names (models, endpoints, packages, providers, features), numbers (versions, defaults, limits, sizes) and before/after values when behavior changes. Never replace them with category labels ("new model added", "API improvements").
-  - Plain language, no hype. Include announced effective dates for scheduled changes.
-- `image_prompt`: a 1-2 sentence pixel art scene for the post's picture. Use the project's own symbols or mascot when the PR has one, and lean into cuteness, coziness and friendship with the bee.
-
-Return ONLY the JSON object.
+Return ONLY the announcement text. No JSON, no markdown fences, no explanation.

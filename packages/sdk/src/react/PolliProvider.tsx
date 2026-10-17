@@ -232,6 +232,15 @@ export function PolliProvider({
         warnAuthSetup(appKey, currentRedirectUrl());
     }, [appKey]);
 
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const resume = (event: PageTransitionEvent) => {
+            if (event.persisted) loginStarted.current = false;
+        };
+        window.addEventListener("pageshow", resume);
+        return () => window.removeEventListener("pageshow", resume);
+    }, []);
+
     const updateApiKey = useCallback(
         (nextApiKey: string | null) => {
             let storageError: Error | null = null;

@@ -4,6 +4,12 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+## [5.1.0-alpha.20] - 2026-10-17
+
+### Fixed
+- Sign-in can be retried after browser Back restores the app from the
+  back/forward cache, with fresh OAuth state and PKCE verification.
+
 ## [5.1.0-alpha.19] - 2026-10-14
 
 ### Fixed

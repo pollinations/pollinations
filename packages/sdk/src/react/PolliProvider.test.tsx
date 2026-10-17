@@ -17,7 +17,11 @@ function memoryStorage(initial: Record<string, string> = {}) {
 
 function stubWindow(href: string) {
     const url = new URL(href);
-    const win: Record<string, unknown> = {
+    const events = new EventTarget();
+    const win = {
+        addEventListener: events.addEventListener.bind(events),
+        removeEventListener: events.removeEventListener.bind(events),
+        dispatchEvent: events.dispatchEvent.bind(events),
         location: {
             href,
             hash: url.hash,
@@ -165,6 +169,64 @@ describe("PolliProvider", () => {
             "https://app.example/?view=connect",
         );
         expect(auth?.error).toBeNull();
+    });
+
+    it("allows a fresh login after browser Back restores the page", async () => {
+        const win = stubWindow("https://app.example/?view=connect");
+        const storage = memoryStorage();
+        const navigate = vi.fn();
+        Object.defineProperty(win.location, "href", {
+            get: () => "https://app.example/?view=connect",
+            set: navigate,
+        });
+        let login: ReturnType<typeof useAuthActions>["login"] | undefined;
+        function Capture() {
+            login = useAuthActions().login;
+            return null;
+        }
+        let renderer: ReturnType<typeof create>;
+        await act(async () => {
+            renderer = create(
+                <PolliProvider appKey="pk_test" storage={storage}>
+                    <Capture />
+                </PolliProvider>,
+            );
+        });
+        await act(async () => {
+            login?.();
+            login?.();
+            await vi.waitFor(() => expect(navigate).toHaveBeenCalledTimes(1));
+        });
+        const firstState = storage.getItem("polli:pk_test:oauth_state");
+        const firstVerifier = storage.getItem("polli:pk_test:oauth_verifier");
+        await act(async () => {
+            win.dispatchEvent(
+                Object.assign(new Event("pageshow"), { persisted: false }),
+            );
+            login?.();
+        });
+        expect(navigate).toHaveBeenCalledTimes(1);
+        await act(async () => {
+            win.dispatchEvent(
+                Object.assign(new Event("pageshow"), { persisted: true }),
+            );
+            login?.();
+            await vi.waitFor(() => expect(navigate).toHaveBeenCalledTimes(2));
+        });
+        expect(storage.getItem("polli:pk_test:oauth_state")).not.toBe(
+            firstState,
+        );
+        expect(storage.getItem("polli:pk_test:oauth_verifier")).not.toBe(
+            firstVerifier,
+        );
+        const request = new URL(navigate.mock.calls[1][0]);
+        expect(request.searchParams.get("state")).toBe(
+            storage.getItem("polli:pk_test:oauth_state"),
+        );
+        expect(request.searchParams.get("redirect_uri")).toBe(
+            "https://app.example/",
+        );
+        await act(async () => renderer.unmount());
     });
 
     it("reports a storage write failure and allows a subsequent login", async () => {

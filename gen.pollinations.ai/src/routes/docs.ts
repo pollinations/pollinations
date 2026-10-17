@@ -555,11 +555,7 @@ function generationDocumentation(): OpenApiSchema {
         "x-tagGroups": [
             {
                 name: "Get Started",
-                tags: [
-                    DOC_TAGS.quickStart,
-                    DOC_TAGS.authentication,
-                    DOC_TAGS.x402PrepaidKeys,
-                ],
+                tags: [DOC_TAGS.quickStart, DOC_TAGS.authentication],
             },
             {
                 name: "Guides",
@@ -595,6 +591,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.quests,
                     DOC_TAGS.mediaStorage,
                     DOC_TAGS.account,
+                    DOC_TAGS.x402PrepaidKeys,
                     DOC_TAGS.safety,
                     DOC_TAGS.errors,
                     DOC_TAGS.publicStats,

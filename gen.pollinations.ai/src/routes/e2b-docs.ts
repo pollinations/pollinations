@@ -90,7 +90,7 @@ function entry(
 const CREATE =
     "Pollinations turns auto-pause on by default, enforces secured access and prepays the first lease from your credits. A timeout over 600 seconds keeps the sandbox running until then, prepaid 10 minutes at a time. Enabled `autoResume`, an `iam` configuration or non-empty `volumeMounts` return 400.";
 const CONNECT =
-    "Resumes a paused sandbox. Only `timeout` is used: extra runtime is prepaid from your credits, and a timeout over 600 seconds keeps the sandbox running until then.";
+    "Resumes a paused sandbox. Only `timeout` is used, 300 seconds if omitted. You prepay only the time beyond the current lease, and a timeout over 600 seconds keeps the sandbox running until then.";
 
 export const sandboxDocs = {
     create: entry("Create sandbox", {
@@ -176,6 +176,8 @@ export const sandboxDocs = {
         e2bPage: "update-sandbox-network",
         e2bTitle: "Update sandbox network",
         byId: true,
+        // Blocks all outbound traffic except the Pollinations API.
+        example: { denyOut: ["0.0.0.0/0"], allowOut: ["gen.pollinations.ai"] },
     }),
     pricing: describeRoute({
         tags: ["Sandboxes API"],

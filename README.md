@@ -53,18 +53,18 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 <!-- Updated daily by .github/workflows/repo-update-readme.yml from the news index. -->
 <!-- news:start -->
-- 🤖 [JavaScript in Computer MCP](https://gen.pollinations.ai/docs#tag/mcp-servers) <sub>Oct 16</sub>
-- ✨ [An SDK skill for agents](https://www.npmjs.com/package/@pollinations/sdk) <sub>Oct 16</sub>
-- 💡 [Sandboxes keep their work](https://gen.pollinations.ai/docs) <sub>Oct 15</sub>
-- ✨ [3D in the SDK](https://www.npmjs.com/package/@pollinations/sdk) <sub>Oct 14</sub>
-- 🔗 [React generation hooks](https://www.npmjs.com/package/@pollinations/sdk) <sub>Oct 14</sub>
-- 💡 [Manage sandboxes in Enter](https://enter.pollinations.ai/keys) <sub>Oct 13</sub>
-- 💡 See usage your way <sub>Oct 12</sub>
-- 🔗 [API access for sandboxed agents](https://gen.pollinations.ai/docs) <sub>Oct 12</sub>
-- 🚀 Longer, larger sandboxes <sub>Oct 11</sub>
-- 🤖 [Polli keeps the conversation going](https://chat.pollinations.ai) <sub>Oct 11</sub>
-- 🎨 [A new Play page](https://pollinations.ai/play) <sub>Oct 10</sub>
-- 💻 Pi in a browser workbench <sub>Oct 8</sub>
+- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> JavaScript in Computer MCP](https://gen.pollinations.ai/docs#tag/mcp-servers) <sub>Oct 16</sub>
+- [<img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> A System One API path](https://gen.pollinations.ai/docs) <sub>Oct 16</sub>
+- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> An SDK skill for agents](https://www.npmjs.com/package/@pollinations/sdk) <sub>Oct 16</sub>
+- [<img src="https://img.shields.io/badge/API-0ea5e9?style=flat-square" alt="API" align="top"> Media jobs without waiting](https://gen.pollinations.ai/docs) <sub>Oct 15</sub>
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> Models for typed decisions](https://enter.pollinations.ai/models) <sub>Oct 15</sub>
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> Sound effects for video](https://enter.pollinations.ai/models?q=mirelo/sfx-2.0) <sub>Oct 15</sub>
+- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> Sandboxes keep their work](https://gen.pollinations.ai/docs) <sub>Oct 15</sub>
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> Lightning Text v2.1](https://enter.pollinations.ai/models?q=inferenceport-ai/lightning-text-v2.1) <sub>Oct 14</sub>
+- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> 3D in the SDK](https://www.npmjs.com/package/@pollinations/sdk) <sub>Oct 14</sub>
+- [<img src="https://img.shields.io/badge/Feature-f59e0b?style=flat-square" alt="Feature" align="top"> React generation hooks](https://www.npmjs.com/package/@pollinations/sdk) <sub>Oct 14</sub>
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> Kandinsky video with audio](https://enter.pollinations.ai/models?q=kandinskylab/kandinsky-6.0-lite) <sub>Oct 13</sub>
+- [<img src="https://img.shields.io/badge/Model-8b5cf6?style=flat-square" alt="Model" align="top"> Qwen image editing](https://enter.pollinations.ai/models?q=qwen/qwen-image-2.1-turbo) <sub>Oct 13</sub>
 <!-- news:end -->
 
 [More news on enter.pollinations.ai →](https://enter.pollinations.ai/news)

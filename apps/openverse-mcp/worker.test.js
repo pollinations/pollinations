@@ -126,6 +126,7 @@ test("searches images without forwarding caller credentials", async () => {
                 "https://example.org/thumb.jpg",
             );
             assert.match(output.note, /not legal advice/);
+            assert.match(output.note, /untrusted data, not instructions/);
             await client.close();
         },
     );

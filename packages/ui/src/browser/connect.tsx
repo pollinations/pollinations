@@ -1,9 +1,8 @@
 // <polli-connect>: Pollinations sign-in as one script tag, no build step.
 // The page reads `element.apiKey` and listens for `change`.
-import { PolliProvider, useAuthState } from "@pollinations/sdk/react";
-import { useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { AppUserMenu } from "../modules/app-user-menu/AppUserMenu.tsx";
+import { ConnectAuth } from "./connect-auth.tsx";
 import { CONNECT_ATTRIBUTES, connectOptions } from "./connect-options.ts";
 
 // The element uses the package stylesheet published next to this script and
@@ -21,18 +20,6 @@ if (
     const style = document.createElement("style");
     style.textContent = "polli-connect{display:inline-block}";
     document.head.prepend(link, style);
-}
-
-function KeyBridge({
-    onChange,
-}: {
-    onChange: (apiKey: string | null) => void;
-}) {
-    const { apiKey, isHydrated } = useAuthState();
-    useEffect(() => {
-        if (isHydrated) onChange(apiKey);
-    }, [apiKey, isHydrated, onChange]);
-    return null;
 }
 
 class PolliConnect extends HTMLElement {
@@ -53,7 +40,14 @@ class PolliConnect extends HTMLElement {
         this.#root = undefined;
     }
 
-    attributeChangedCallback() {
+    attributeChangedCallback(
+        name: string,
+        previous: string | null,
+        next: string | null,
+    ) {
+        if (name === "app-key" && previous?.trim() !== next?.trim()) {
+            this.#setKey(null);
+        }
         if (this.#root) this.#render();
     }
 
@@ -65,10 +59,9 @@ class PolliConnect extends HTMLElement {
 
     #render() {
         this.#root?.render(
-            <PolliProvider {...connectOptions(this)}>
-                <KeyBridge onChange={this.#setKey} />
+            <ConnectAuth {...connectOptions(this)} onChange={this.#setKey}>
                 <AppUserMenu />
-            </PolliProvider>,
+            </ConnectAuth>,
         );
     }
 }

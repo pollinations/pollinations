@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import deliver
 import deploy_posts
 import posts
+import readme
 from common import (NEWS_REL_DIR, build_daily_summary_artifact, call_pollinations_api, daily_summary_input,
                     fetch_all_snapshots, monthly_digest_input, post_recap, weekly_digest_input)
 from contributors import github_account, rank_contributors
@@ -376,6 +377,24 @@ def note(number, merged_at, tier="daily"):
             "area": "Models", "type": "Feature", "source": "Team", "category": "feature", "user_facing": True,
             "publish_tier": tier, "importance": "major", "summary": f"Change {number} ships. Ünïcode ✓",
             "keywords": ["models"]}
+
+
+class ReadmeTest(unittest.TestCase):
+    def test_the_readme_lists_the_12_newest_highlights_as_one_liners(self):
+        highlights = [{"date": "2026-10-16", "emoji": "🎵", "title": f"Item {n}",
+                       "text": f"Try it. [Open it](https://example.com/{n})."} for n in range(13)]
+        highlights[1] = {"date": "2026-10-16", "title": "No link", "text": "Plain."}
+        with tempfile.TemporaryDirectory() as directory:
+            index, readme_file = Path(directory, "index.json"), Path(directory, "README.md")
+            index.write_text(json.dumps({"highlights": highlights}))
+            readme_file.write_text("intro\n<!-- news:start -->\n- old\n<!-- news:end -->\noutro\n")
+            with patch("sys.argv", ["readme.py", str(index), str(readme_file)]):
+                readme.main()
+            text = readme_file.read_text()
+        lines = text.split("<!-- news:start -->\n")[1].split("<!-- news:end -->")[0].splitlines()
+        self.assertEqual(len(lines), 12)
+        self.assertEqual(lines[:2], ["- 🎵 [Item 0](https://example.com/0)", "- No link"])
+        self.assertTrue(text.startswith("intro\n") and text.endswith("outro\n") and "- old" not in text)
 
 
 class TextCallTest(unittest.TestCase):

@@ -49,13 +49,31 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 > Get started at [enter.pollinations.ai](https://enter.pollinations.ai) and check out the [API docs](https://gen.pollinations.ai/docs)
 
+## 🆕 Latest News
+
+<!-- Updated daily by .github/workflows/repo-update-readme.yml from the news index. -->
+<!-- news:start -->
+- 🎵 [Stories from Echo Island](https://huggingface.co/spaces/xiaotian1171/echo-island-pollinations-space)
+- 🎯 [Trolley dilemmas in Switchyard](https://saauf.github.io/switchyard)
+- 🤖 [JavaScript in Computer MCP](https://gen.pollinations.ai/docs#tag/mcp-servers)
+- 🔗 [A System One API path](https://gen.pollinations.ai/docs)
+- ✨ [An SDK skill for agents](https://www.npmjs.com/package/@pollinations/sdk)
+- 🚀 [Media jobs without waiting](https://gen.pollinations.ai/docs)
+- 🤖 [Models for typed decisions](https://enter.pollinations.ai/models)
+- 🎵 [Sound effects for video](https://enter.pollinations.ai/models?q=mirelo/sfx-2.0)
+- 💡 [Sandboxes keep their work](https://gen.pollinations.ai/docs)
+- 📱 [Pollinations in Android blocks](https://github.com/Saauf/pollinations-blocks)
+- 🤖 [Lightning Text v2.1](https://enter.pollinations.ai/models?q=inferenceport-ai/lightning-text-v2.1)
+- ✨ [3D in the SDK](https://www.npmjs.com/package/@pollinations/sdk)
+<!-- news:end -->
+
 ---
 
 ## 🌱 Introduction
 
 [pollinations.ai](https://pollinations.ai) is an open-source generative AI platform based in Berlin, powering 500+ community projects with accessible text, image, video, audio, 3D and embeddings generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
 
-<!-- Updated daily by .github/workflows/repo-update-star-history.yml.
+<!-- Updated daily by .github/workflows/repo-update-readme.yml.
      Regenerate locally with:
      GITHUB_TOKEN=$(gh auth token) node .github/scripts/star-history-chart.mjs -->
 <a href="https://star-history.com/#pollinations/pollinations&Date">

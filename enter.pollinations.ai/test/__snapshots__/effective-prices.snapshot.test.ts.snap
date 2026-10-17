@@ -2496,6 +2496,30 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000007385,
     },
   },
+  "nvidia/nemotron-3.5-super-vl": {
+    "cost": {
+      "completionTextTokens": 0.0000005275,
+      "promptCachedTokens": 0.0000000211,
+      "promptTextTokens": 0.00000015825,
+    },
+    "price": {
+      "completionTextTokens": 0.0000005275,
+      "promptCachedTokens": 0.0000000211,
+      "promptTextTokens": 0.00000015825,
+    },
+  },
+  "nvidia/nemotron-3.5-super-vl:openrouter:deepinfra-fp4": {
+    "cost": {
+      "completionTextTokens": 0.000001055,
+      "promptCachedTokens": 0.0000001055,
+      "promptTextTokens": 0.000000211,
+    },
+    "price": {
+      "completionTextTokens": 0.000001055,
+      "promptCachedTokens": 0.0000001055,
+      "promptTextTokens": 0.000000211,
+    },
+  },
   "openai/gpt-4o-mini": {
     "cost": {
       "completionTextTokens": 0.000000633,

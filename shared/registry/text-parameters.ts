@@ -255,6 +255,19 @@ export const CHAT_PARAMETERS = {
         "response_format",
         "stop",
     ],
+    // Shared by the Together and DeepInfra FP4 endpoints: neither accepts seed,
+    // and only Together lists logprobs.
+    openRouterNemotronSuperVl: [
+        ...TOOL_CHAT,
+        ...SAMPLING,
+        ...PENALTIES,
+        "stop",
+        "top_k",
+        "min_p",
+        "repetition_penalty",
+        "logit_bias",
+        ...OPENROUTER_REASONING,
+    ],
     mimo: [...SAMPLED_CHAT, ...PENALTIES, ...OPENROUTER_REASONING],
     openRouterGlm53: [
         ...SAMPLED_CHAT,

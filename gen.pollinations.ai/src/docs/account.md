@@ -7,6 +7,7 @@ Self-service endpoints for the authenticated user. Endpoints require authenticat
 | Endpoint | Description |
 |----------|-------------|
 | `GET /account/profile` | GitHub username, image, and community model access |
+| `GET /account/apps` | Community directory apps listed by the account's GitHub user |
 | `GET /account/balance` | Current pollen balance |
 | `GET /account/quests` | Read-only quest status |
 | `GET /account/usage` | Per-request usage history with costs (account-wide) |

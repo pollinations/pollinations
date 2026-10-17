@@ -34,6 +34,10 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { discordConfigFromEnv } from "../services/discord.ts";
+import {
+    type AppDirectoryRow,
+    formatListedApps,
+} from "../services/listed-apps.ts";
 import { checkQuestsForUser } from "../services/quest-checker.ts";
 import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
 import {
@@ -791,6 +795,30 @@ const profileResponseSchema = z.object({
         ),
 });
 
+const listedAppSchema = z.object({
+    name: z.string(),
+    emoji: z.string(),
+    description: z.string(),
+    category: z.string(),
+    platform: z.string().describe("Comma-separated platforms"),
+    webUrl: z.string().nullable().describe("Live app URL"),
+    repositoryUrl: z.string().nullable(),
+    screenshotUrl: z.string().nullable(),
+    byop: z.boolean().describe("The app spends its users' Pollen"),
+    requests24h: z
+        .number()
+        .nullable()
+        .describe("Requests gen settled for the app in the last 24 hours"),
+    approvedDate: z.string().nullable().describe("YYYY-MM-DD"),
+    issueUrl: z.string().nullable().describe("The app submission issue"),
+});
+
+const accountAppsResponseSchema = z.object({
+    apps: z
+        .array(listedAppSchema)
+        .describe("The account's directory listings, newest first"),
+});
+
 const accountBalanceSchema = z.object({
     total: z
         .number()
@@ -1023,6 +1051,47 @@ export const accountRoutes = new Hono<Env>()
                     name: profile.name ?? null,
                     email: profile.email ?? null,
                 }),
+            });
+        },
+    )
+    .get(
+        "/apps",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Listed Apps",
+            description:
+                "Returns the community directory apps listed by the account's linked GitHub user, newest approval first, with the fields the dashboard shows. The catalog itself is public.",
+            responses: {
+                200: {
+                    description: "The account's directory listings",
+                    content: {
+                        "application/json": {
+                            schema: resolver(accountAppsResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+
+            const [account] = await drizzle(c.env.DB)
+                .select({ githubId: userTable.githubId })
+                .from(userTable)
+                .where(eq(userTable.id, user.id))
+                .limit(1);
+            if (account?.githubId == null) return c.json({ apps: [] });
+
+            const rows = await fetchTinybirdRows<AppDirectoryRow>(
+                new URL(c.env.TINYBIRD_INGEST_URL).origin,
+                "/v0/pipes/app_directory_public.json",
+                requireTinybirdReadToken(c.env),
+                { limit: "5000" },
+            );
+            return c.json({
+                apps: formatListedApps(rows, String(account.githubId)),
             });
         },
     )

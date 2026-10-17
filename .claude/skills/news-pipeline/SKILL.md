@@ -73,6 +73,7 @@ Check in order:
 2. **Changelog, API:** only the post-deploy docs PR that regenerates `APIDOCS.md` records API changes, kept in the `changelog` of its merge day's daily.
 3. **Updates:** a daily highlight with `kind: product`. `model` and `api` belong to the Changelog; a PR its note rates other than `daily` never reaches a daily.
 4. **Window:** `index.json` keeps the last 30 days (at least 10 highlights). It is rebuilt after every `news-posts.yml` run and at 06:30; raw GitHub files are cached for about 5 minutes.
+5. **README:** the 07:00 README pull request (`repo-update-readme.yml`) lists the 12 newest highlights; they show once that PR merges.
 
 ## Check locally
 

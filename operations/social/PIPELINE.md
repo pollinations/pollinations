@@ -27,6 +27,9 @@ SCHEDULED POSTS (news-posts.yml: a posts job writes and saves, a deliver job sen
 
 AFTER THOSE (news-build-index.yml)
   news_index.py → data/index.json (Enter /news)
+
+07:00 DAILY (repo-update-readme.yml)
+  star history chart + readme.py: the 12 newest highlights → one auto-merged README PR
 ```
 
 | Time (UTC) | Saved | Delivery |
@@ -43,7 +46,7 @@ The Saturday daily is written on Sunday and never delivered: the week replaces i
 
 ### Branch Strategy
 
-- **`main` branch** — source code only.
+- **`main` branch** — source code; the README's Latest News list is refreshed by the daily README pull request, together with the star history chart.
 - **`news` branch** — all generated content, in two halves: `data/` (what we keep and read back) and `posts/` (what each platform received). Unprotected (direct commits).
 
 ---
@@ -163,7 +166,7 @@ Every PR merged into `main` or `master` that month, counted per GitHub account (
 
 ### Enter `/news`: `data/index.json`
 
-`news_index.py` (workflow `news-build-index.yml`, after every `news-posts.yml` run and at 06:30) writes `index.json` from the files above; Enter's `/news` page reads only this file. It keeps the last 30 days (at least 10 highlights):
+`news_index.py` (workflow `news-build-index.yml`, after every `news-posts.yml` run and at 06:30) writes `index.json` from the files above; Enter's `/news` page reads only this file, and the daily README pull request takes its 12 newest highlights. It keeps the last 30 days (at least 10 highlights):
 
 | Section | Source | Dated |
 |---|---|---|
@@ -191,6 +194,7 @@ Announce a decided retirement with a row in the PR description. Registry comment
 | `news-posts.yml` | 06:00 daily, 18:00 Sunday, 14:00 Wednesday | posts job: `posts.py write` + `save` + push, one post at a time; deliver job: `deliver.py` (only it holds the Buffer and Discord keys) |
 | `news-deploy-posts.yml` | production pushes and every completed Cloudflare, website, Applications, E2B and Portkey run (a run that failed may still have deployed the jobs a PR needs); manual readiness preview by default | `deploy_posts.py` |
 | `news-build-index.yml` | after `news-posts.yml`, and 06:30 daily | `news_index.py` → `data/index.json` |
+| `repo-update-readme.yml` | 07:00 daily | the star history chart and `readme.py` (the 12 newest highlights as one-liners, between the README's news markers), in one auto-merged PR |
 
 ### Manual runs of `news-posts.yml`
 
@@ -213,6 +217,7 @@ A preview is the before/after check for any change to a prompt or a script: run 
 | `deploy_posts.py` | `--production CHECKOUT [--preview]`: held production PRs → affected deployment jobs → `prompts/posts/discord/pr.md` → Discord, recorded with `deliver.py` |
 | `contributors.py` | The month's merged PRs per GitHub account, for `data/contributors/<month>.json` |
 | `news_index.py` | `data/index.json`: model news, API changes and daily highlights for Enter `/news` |
+| `readme.py` | The README's Latest News: the index's 12 newest highlights, title linked, no dates |
 | `common.py` | Shared: prompt loading and brand injection, the model and picture calls, file builders, note helpers |
 | `test_news.py` | Tests (`python3 -m unittest operations/social/scripts/test_news.py`) |
 

@@ -51,16 +51,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-10-16** – **🎵 Stories from Echo Island** Turn a character idea into an illustrated story and voice note. [Try it](https://huggingface.co/spaces/xiaotian1171/echo-island-pollinations-space).
+- **2026-10-16** – **🎯 Trolley dilemmas in Switchyard** Make your choices, compare them with Jev, then see what changes when the descriptions switch order. [Try it](https://saauf.github.io/switchyard).
+- **2026-10-16** – **🤖 JavaScript in Computer MCP** Agents can run JavaScript alongside bash, work with persistent files, and return structured results. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).
+- **2026-10-16** – **🔗 A System One API path** Send TypeSafe decision requests to `/v1/systemone` using the same request and response shape as `/alpha/decisions`. [Read the API docs](https://gen.pollinations.ai/docs).
+- **2026-10-16** – **✨ An SDK skill for agents** Agents writing JavaScript apps can find a dedicated `@pollinations/sdk` quickstart for generating text and images. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk).
 - **2026-10-15** – **🚀 Media jobs without waiting** Send `Prefer: respond-async` for image, video, audio or 3D generation, then check the job and download its result when it finishes. The SDK has async methods for the same flow. [Read the API docs](https://gen.pollinations.ai/docs).
 - **2026-10-15** – **🤖 Models for typed decisions** Ask Perplexity Decider V1.1 27B or Microsoft-Decision-1 to score fixed choices and return probabilities instead of prose. Both accept decision requests through `/alpha/decisions`. [Browse models](https://enter.pollinations.ai/models).
 - **2026-10-15** – **🎵 Sound effects for video** Give `mirelo/sfx-2.0` a video URL and a sound prompt to add synchronized effects to the clip. [View the model](https://enter.pollinations.ai/models?q=mirelo/sfx-2.0).
 - **2026-10-15** – **💡 Sandboxes keep their work** New sandboxes default to pausing rather than deleting when their lease expires, so their files remain available. You can also name them and see estimated costs before choosing a template. [Read the sandbox docs](https://gen.pollinations.ai/docs).
 - **2026-10-15** – **📱 Pollinations in Android blocks** Pollinations Blocks brings text, images, speech and transcription to MIT App Inventor and Kodular projects. [View repo](https://github.com/Saauf/pollinations-blocks).
-- **2026-10-14** – **🤖 Lightning Text v2.1** Use `inferenceport-ai/lightning-text-v2.1` with text or image input, JSON output, and tool calling. It requires paid Pollen. [View the model](https://enter.pollinations.ai/models?q=inferenceport-ai/lightning-text-v2.1).
-- **2026-10-14** – **✨ 3D in the SDK** Generate binary 3D output with `model3d()`, discover 3D models with `models("3d")`, and get typed model status and speech word timings in the SDK alpha. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).
-- **2026-10-14** – **🔗 React generation hooks** The React SDK now has hooks for image, text, audio, video, and transcription generation, plus a streaming transport for Vercel AI SDK’s `useChat`. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).
-- **2026-10-14** – **🎯 Guess the model** Read an anonymous AI answer and guess which of four models wrote it. Five rounds, no API key needed. [Try it](https://patbing.github.io/model-match).
-- **2026-10-14** – **🎨 Make a tiny fighter** Describe a fighter in one line, then see AI give it a portrait, moves, stats, and a battle. [Try it](https://tomdacatto.github.io/pollinations-fighter-arena).
 ---
 
 ## 🌱 Introduction

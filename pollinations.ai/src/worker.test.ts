@@ -1,4 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
+import { ROUTE_META } from "./routeMeta";
 import worker from "./worker";
 
 // HTMLRewriter is a Cloudflare runtime global that plain vitest doesn't ship.
@@ -132,13 +133,12 @@ describe("documentation entry redirect", () => {
     });
 });
 
-describe("agent discovery", () => {
-    const htmlAsset = () =>
-        new Response(
-            "<!doctype html><html><head><title></title></head></html>",
-            { headers: { "content-type": "text/html; charset=utf-8" } },
-        );
+const htmlAsset = () =>
+    new Response("<!doctype html><html><head><title></title></head></html>", {
+        headers: { "content-type": "text/html; charset=utf-8" },
+    });
 
+describe("agent discovery", () => {
     test("adds links when the asset response has immutable headers", async () => {
         const asset = await fetch("data:text/html,%3Chtml%3Eok%3C%2Fhtml%3E");
         expect(() => asset.headers.set("Link", "test")).toThrow();
@@ -192,5 +192,107 @@ describe("agent discovery", () => {
         );
         expect(missing.status).toBe(404);
         expect(missing.headers.has("Link")).toBe(false);
+    });
+});
+
+describe("markdown for agents", () => {
+    test.each(["text/markdown", "text/markdown;q=0.5", "Text/Markdown; q=1"])(
+        "serves the homepage for %s",
+        async (accept) => {
+            const response = await worker.fetch(
+                new Request("https://pollinations.ai/", {
+                    headers: { accept },
+                }),
+                { ASSETS: { fetch: async () => htmlAsset() } },
+            );
+
+            expect(response.status).toBe(200);
+            expect(response.headers.get("content-type")).toBe(
+                "text/markdown; charset=utf-8",
+            );
+            expect(response.headers.get("Vary")).toBe("Accept");
+            expect(response.headers.get("Link")).toContain("service-desc");
+
+            const body = await response.text();
+            expect(body).toContain(`# ${ROUTE_META["/"].title}`);
+            expect(body).toContain(ROUTE_META["/"].description);
+            expect(body).not.toContain("<html");
+        },
+    );
+
+    test.each([
+        "text/markdown;q=0",
+        "text/markdown;q=0.000, */*;q=1",
+        "text/markdown-other",
+        "text/html",
+    ])("keeps HTML when Markdown is not accepted: %s", async (accept) => {
+        const response = await worker.fetch(
+            new Request("https://pollinations.ai/", { headers: { accept } }),
+            { ASSETS: { fetch: async () => htmlAsset() } },
+        );
+        expect(response.headers.get("content-type")).toContain("text/html");
+    });
+
+    test.each(["/apps", "/community", "/play", "/terms"])(
+        "keeps the complete HTML for %s",
+        async (path) => {
+            const response = await worker.fetch(
+                new Request(`https://pollinations.ai${path}`, {
+                    headers: { accept: "text/markdown" },
+                }),
+                { ASSETS: { fetch: async () => htmlAsset() } },
+            );
+            expect(response.headers.get("content-type")).toContain("text/html");
+        },
+    );
+
+    test("HEAD returns the Markdown headers without a body", async () => {
+        const response = await worker.fetch(
+            new Request("https://pollinations.ai/", {
+                method: "HEAD",
+                headers: { accept: "text/markdown" },
+            }),
+            { ASSETS: { fetch: vi.fn() } },
+        );
+        expect(response.headers.get("content-type")).toContain("text/markdown");
+        expect(await response.text()).toBe("");
+    });
+
+    test("keeps HTML as the default without the markdown accept header", async () => {
+        const response = await worker.fetch(
+            new Request("https://pollinations.ai/"),
+            {
+                ASSETS: { fetch: async () => htmlAsset() },
+            },
+        );
+
+        expect(response.headers.get("content-type")).toContain("text/html");
+        expect(response.headers.get("Vary")).toBe("Accept");
+    });
+
+    test("leaves assets on their own content type", async () => {
+        const png = new Response("", {
+            headers: { "content-type": "image/png" },
+        });
+        const response = await worker.fetch(
+            new Request("https://pollinations.ai/art/star.png", {
+                headers: { accept: "text/markdown" },
+            }),
+            { ASSETS: { fetch: async () => png } },
+        );
+
+        expect(response.headers.get("content-type")).toBe("image/png");
+    });
+
+    test("leaves unknown routes on the HTML 404", async () => {
+        const response = await worker.fetch(
+            new Request("https://pollinations.ai/not-a-page", {
+                headers: { accept: "text/markdown" },
+            }),
+            { ASSETS: { fetch: async () => htmlAsset() } },
+        );
+
+        expect(response.status).toBe(404);
+        expect(response.headers.get("content-type")).toContain("text/html");
     });
 });

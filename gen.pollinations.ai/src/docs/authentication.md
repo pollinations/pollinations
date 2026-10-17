@@ -2,6 +2,8 @@
 
 Use a secret key from [enter.pollinations.ai](https://enter.pollinations.ai/keys) for generation requests. Model listing endpoints work without authentication.
 
+<p align="left"><img src="https://media.pollinations.ai/dab7992b-9bf7-471d-8660-c30ab844f45e" alt="Create secret key dialog with budget, expiry and permissions" width="560"></p>
+
 | Type | Prefix | Use case | Rate limits | Description |
 |------|--------|----------|-------------|-------------|
 | Secret key | `sk_` | API requests | None | Personal secret keys stay out of browser code. Browser apps use a user-authorized secret key (`sk_`) from [Connect User Wallets](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md). Secret keys have configurable model permissions, account permissions, and budgets. |
@@ -16,3 +18,5 @@ Two ways to authenticate generation requests:
 - Query param: `?key=YOUR_API_KEY`
 
 For detailed integration guidance on user-pays authorization, including OAuth discovery and token exchange, see [Connect User Wallets](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md).
+
+To buy a prepaid API key with USDC without a Pollinations account, see [x402 Prepaid Keys](https://gen.pollinations.ai/docs#tag/x402-prepaid-keys).

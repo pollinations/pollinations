@@ -21,16 +21,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ CastSheet](https://fi8vni13.github.io/castsheet) | Character reference boards for AI production. Describe a character, pick a style, and CastSheet generates a three-view sheet (front · side · back) and a 2×2 expression grid with the free Pollinations | [@fi8vni13](https://github.com/fi8vni13) |
+| [🖼️ Pollen Art Lab](https://ovalprint1-sketch.github.io/pollen-app) | Pollen Art Lab turns a text idea into artwork using the Pollinations image API. Choose a style and aspect ratio, sign in with your Pollinations account (BYOP) and generate an image; each visitor spend | [@ovalprint1-sketch](https://github.com/ovalprint1-sketch) |
+| [💬 point-zero](https://point-zero.pages.dev) | Point Zero… where your big ideas begin! A website I developed to simplify access to AI and help students, programmers, and content creators learn, create, and save time 💛 🤖 Chat with free models ava | [@Developer-loqman-ameur](https://github.com/Developer-loqman-ameur) |
+| [🎮 Trolley Match](https://patbing.github.io/trolley-match) | Choose first in five trolley dilemmas, then compare your answers with live Jev decisions. Includes an order-swap experiment and session-only Bring Your Own Pollen sign-in. | [@patbing](https://github.com/patbing) |
+| [🎮 Switchyard](https://saauf.github.io/switchyard) | Choose first in six trolley dilemmas, compare with Jev, and reverse the description order. Includes free practice, exact prompts, probabilities, and session export. | [@Saauf](https://github.com/Saauf) |
+| [🎮 PollinationsCraft](https://github.com/rekty/pollinations-craft/releases/tag/v1.0.0) | A Paper plugin that adds Pollinations to a Minecraft server, paid with the owner's own Pollen: **villager NPCs with personas** that players talk to by right-clicking or /polli say , each NPC with its | [@rekty](https://github.com/rekty) |
 | [🎮 PolliCraft](https://drjacky.github.io/PolliCraft) | A Minecraft server plugin (Paper, Folia, Spigot) that adds Pollinations to a server with one jar. The server owner pays with their own Pollen: one API key goes in plugins/PolliCraft/config.yml (or the | [@Drjacky](https://github.com/Drjacky) |
 | [🎬 Echo Island](https://huggingface.co/spaces/xiaotian1171/echo-island-pollinations-space) | Turn a character idea into an illustrated story and voice note. Duplicate this static Hugging Face Space and sign in with your own Pollen; narration falls back when timestamped voice is unavailable. | [@xiaotian1171](https://github.com/xiaotian1171) |
 | [🛠️ Pollinations Blocks](https://github.com/Saauf/pollinations-blocks) | Android extension for MIT App Inventor and Kodular: text, images, speech, AAC/M4A recording and transcription, and questions about picked images. Device sign-in lets users spend their own Pollen; no u | [@Saauf](https://github.com/Saauf) |
 | [🛠️ Pollinations for MIT App Inventor](https://github.com/Drjacky/pollinations-appinventor) | One non-visible App Inventor extension (.aix) plus a ready sample project (.aia) that adds Pollinations to App Inventor apps (Kodular, Niotron and Android Builder take .aix files too). Everything is a | [@Drjacky](https://github.com/Drjacky) |
-| [✍️ Summering text](https://fedaasawalmeh753-cmyk.github.io/Mhcj) | A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, without a backend s | [@fedaasawalmeh753-cmyk](https://github.com/fedaasawalmeh753-cmyk) |
-| [🖼️ Image-Captioning-](https://zeros372.github.io/Image-Captioning-) | A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, without a backend s | [@zeros372](https://github.com/zeros372) |
-| [🎮 The Basement Circuit](https://fisventurous.github.io/The-Basement-Circuit) | A gritty, low-stakes text-to-fighter autobattler. Pollinations inks a complete fight card from a single line of text (up to 80 characters), equipping your contender with distinct personality traits, t | [@fisventurous](https://github.com/fisventurous) |
-| [🎮 Tiny Fighter Arena](https://tomdacatto.github.io/pollinations-fighter-arena) | Describe a fighter in one line and watch it battle. The AI designs the whole fighter (name, look, three moves, a quirk, stats and a fighting style), an image model draws its portrait, and it fights a | [@tomdacatto](https://github.com/tomdacatto) |
-| [🎮 Model Match](https://patbing.github.io/model-match) | A five-round guessing game: read one anonymous answer and pick which of four AI models wrote it. All 96 answers are pre-generated with the Pollinations API; no keys or API calls while you play. | [@patbing](https://github.com/patbing) |
-| [🎬 Bit — tech stories told by an AI agent](https://bit.sessionweave.com) | Bit is a small robot mascot who tells true tech stories (security incidents, open-source projects, AI news) in short vertical videos for TikTok, Instagram and YouTube Shorts, in Italian and English. E | [@EnzinoBB](https://github.com/EnzinoBB) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -51,16 +51,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-10-16** – **🎵 Stories from Echo Island** Turn a character idea into an illustrated story and voice note. [Try it](https://huggingface.co/spaces/xiaotian1171/echo-island-pollinations-space).
+- **2026-10-16** – **🎯 Trolley dilemmas in Switchyard** Make your choices, compare them with Jev, then see what changes when the descriptions switch order. [Try it](https://saauf.github.io/switchyard).
+- **2026-10-16** – **🤖 JavaScript in Computer MCP** Agents can run JavaScript alongside bash, work with persistent files, and return structured results. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).
+- **2026-10-16** – **🔗 A System One API path** Send TypeSafe decision requests to `/v1/systemone` using the same request and response shape as `/alpha/decisions`. [Read the API docs](https://gen.pollinations.ai/docs).
+- **2026-10-16** – **✨ An SDK skill for agents** Agents writing JavaScript apps can find a dedicated `@pollinations/sdk` quickstart for generating text and images. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk).
 - **2026-10-15** – **🚀 Media jobs without waiting** Send `Prefer: respond-async` for image, video, audio or 3D generation, then check the job and download its result when it finishes. The SDK has async methods for the same flow. [Read the API docs](https://gen.pollinations.ai/docs).
 - **2026-10-15** – **🤖 Models for typed decisions** Ask Perplexity Decider V1.1 27B or Microsoft-Decision-1 to score fixed choices and return probabilities instead of prose. Both accept decision requests through `/alpha/decisions`. [Browse models](https://enter.pollinations.ai/models).
 - **2026-10-15** – **🎵 Sound effects for video** Give `mirelo/sfx-2.0` a video URL and a sound prompt to add synchronized effects to the clip. [View the model](https://enter.pollinations.ai/models?q=mirelo/sfx-2.0).
 - **2026-10-15** – **💡 Sandboxes keep their work** New sandboxes default to pausing rather than deleting when their lease expires, so their files remain available. You can also name them and see estimated costs before choosing a template. [Read the sandbox docs](https://gen.pollinations.ai/docs).
 - **2026-10-15** – **📱 Pollinations in Android blocks** Pollinations Blocks brings text, images, speech and transcription to MIT App Inventor and Kodular projects. [View repo](https://github.com/Saauf/pollinations-blocks).
-- **2026-10-14** – **🤖 Lightning Text v2.1** Use `inferenceport-ai/lightning-text-v2.1` with text or image input, JSON output, and tool calling. It requires paid Pollen. [View the model](https://enter.pollinations.ai/models?q=inferenceport-ai/lightning-text-v2.1).
-- **2026-10-14** – **✨ 3D in the SDK** Generate binary 3D output with `model3d()`, discover 3D models with `models("3d")`, and get typed model status and speech word timings in the SDK alpha. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).
-- **2026-10-14** – **🔗 React generation hooks** The React SDK now has hooks for image, text, audio, video, and transcription generation, plus a streaming transport for Vercel AI SDK’s `useChat`. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).
-- **2026-10-14** – **🎯 Guess the model** Read an anonymous AI answer and guess which of four models wrote it. Five rounds, no API key needed. [Try it](https://patbing.github.io/model-match).
-- **2026-10-14** – **🎨 Make a tiny fighter** Describe a fighter in one line, then see AI give it a portrait, moves, stats, and a battle. [Try it](https://tomdacatto.github.io/pollinations-fighter-arena).
 ---
 
 ## 🌱 Introduction

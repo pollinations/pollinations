@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-17T06:08:16.072711+00:00",
+  "generated_at": "2026-10-17T08:04:48.234553+00:00",
   "models": [
     {
       "id": "pr-14811:black-forest-labs/flux.2-max",
@@ -5877,6 +5877,42 @@
           "after": {
             "currency": "pollen",
             "completionVideoSeconds": "0.01"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-17615:deepseek/deepseek-v4.1-flash",
+      "model_id": "deepseek/deepseek-v4.1-flash",
+      "title": "DeepSeek V4.1 Flash",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-17",
+      "pr": 17615,
+      "url": "https://github.com/pollinations/pollinations/pull/17615",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": true,
+          "after": false
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000002",
+            "promptCachedTokens": "0.000000006",
+            "completionTextTokens": "0.0000006"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.000000003",
+            "promptImageTokens": "0.00000015",
+            "completionTextTokens": "0.0000006"
           }
         }
       }

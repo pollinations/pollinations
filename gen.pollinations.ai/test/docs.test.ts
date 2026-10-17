@@ -47,6 +47,34 @@ describe("docs routes", () => {
         vi.restoreAllMocks();
     });
 
+    it("redirects the alternate docs hostname to the registered sign-in host", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.myceli.ai/docs?view=reference"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(response.status).toBe(302);
+        expect(response.headers.get("Location")).toBe(
+            "https://gen.pollinations.ai/docs?view=reference",
+        );
+    });
+
+    it("serves canonical docs through the upstream hostname without a redirect loop", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.myceli.ai/docs", {
+                headers: { "X-Forwarded-Host": "gen.pollinations.ai" },
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Location")).toBeNull();
+    });
+
     it("generates valid request examples from the checked-out Gen schema", async () => {
         // Enter and Media validate their own source schemas in their own suites.
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -617,6 +645,9 @@ describe("docs routes", () => {
 
         expect(response.status).toBe(200);
         const html = await response.text();
+        expect(html).toContain(
+            '<script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.74.0/dist/browser/standalone.js" integrity="sha384-VXnKAz61Xwc3tbw1P+KKrUP7YbcsSl1Ik4is5UnogJyw9XEYZ5Ay/T1i0zPYtSZH" crossorigin="anonymous">',
+        );
         expect(html).toContain(".scalar-app .markdown table");
         expect(html).toContain("overflow-x: auto");
         expect(html).toContain(

@@ -391,10 +391,7 @@ export function buildCurl(
     op: Operation,
 ): string {
     const upperMethod = method.toUpperCase();
-    const params = visibleParams(
-        path,
-        asArr(op.parameters).map((p) => deref(spec, asObj(p))),
-    );
+    const params = visibleParams(path, asArr(op.parameters) as Schema[]);
     const queryParams = params.filter((p) => asObj(p).in === "query");
     const pathParams = params.filter((p) => asObj(p).in === "path");
     let url = `${operationBaseUrl(spec, path, op)}${path}`;
@@ -546,10 +543,7 @@ export function renderEndpoint(
     }
 
     // Parameters
-    const params = visibleParams(
-        path,
-        asArr(op.parameters).map((p) => deref(spec, asObj(p))),
-    );
+    const params = visibleParams(path, asArr(op.parameters) as Schema[]);
     if (params.length) {
         out.push(CALLOUT.params);
         out.push("");

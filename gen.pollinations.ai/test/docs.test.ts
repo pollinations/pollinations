@@ -12,6 +12,7 @@ import {
 } from "../scripts/generate-apidocs.ts";
 import { requestExampleErrors } from "../scripts/validate-request-examples.ts";
 import worker from "../src/index.ts";
+import { E2B_PATH, e2bRoutes } from "../src/routes/e2b.ts";
 
 function envWithEnterSchema(schema: unknown): CloudflareBindings {
     return {
@@ -75,6 +76,42 @@ describe("docs routes", () => {
             "seed=:seed",
         );
         expect(requestExampleErrors(schema)).toEqual([]);
+    });
+
+    it("lists every sandbox route in the API reference, linking E2B for fields", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({ paths: {} }),
+        );
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/open-api/generate-schema",
+            ),
+            envWithEnterSchema({ paths: {} }),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        const schema = (await response.json()) as Spec;
+        const routes = e2bRoutes.routes.filter(
+            ({ method }) => method !== "ALL",
+        );
+        expect(routes.length).toBeGreaterThan(0);
+        for (const { method, path } of routes) {
+            const docPath = `${E2B_PATH}${path.replace(":id", "{id}")}`;
+            const operation = schema.paths[docPath]?.[method.toLowerCase()];
+            expect(operation, `${method} ${docPath}`).toMatchObject({
+                tags: ["Sandboxes API"],
+            });
+            if (path !== "/pricing") {
+                expect(operation.description).toContain(
+                    "https://docs.e2b.dev/api-reference/sandboxes/",
+                );
+            }
+        }
+        expect(schema.paths[`${E2B_PATH}/pricing`].get.security).toEqual([]);
+        expect(schema.paths[`${E2B_PATH}/sandboxes`].post.deprecated).toBe(
+            true,
+        );
     });
 
     it("serves a gen-owned OpenAPI schema and merges public Enter paths only", async () => {

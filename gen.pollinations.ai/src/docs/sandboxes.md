@@ -1,6 +1,6 @@
 ## Sandboxes
 
-A cloud Linux computer you open with SSH or VS Code, powered by E2B (alpha) and paid with credits. Uses [E2B's API](https://docs.e2b.dev/api-reference/sandboxes/create-sandbox-v2) with the restrictions below.
+A cloud Linux computer you open with SSH or VS Code, powered by E2B (alpha) and paid with credits.
 
 ### Create and connect
 
@@ -24,16 +24,7 @@ For dashboard-created sandboxes, run `polli sandbox ssh-config` first. VS Code's
 
 ### Use E2B SDKs or the API
 
-Use a [Pollinations secret key](https://enter.pollinations.ai/keys) with `account:machines` permission:
-
-```bash
-export E2B_API_URL=https://gen.pollinations.ai/alpha/e2b
-export E2B_API_KEY=sk_...
-```
-
-For REST requests, use this base URL and send the key as `Authorization: Bearer <key>`. Only your own sandboxes are accessible.
-
-Supported: create and connect/resume (prefer v2), list (`/v2/sandboxes` only), inspect, pause, delete, timeout, per-sandbox metrics, logs (`/sandboxes/{id}/logs`) and network updates. Other endpoints return 403. Creation rejects enabled auto-resume, supplied IAM configuration and nonempty volume mounts with 400.
+E2B's SDKs, CLI and REST API work with a Pollinations key: see [Sandboxes API](#tag/sandboxes-api) for the setup, supported endpoints and differences.
 
 ### Credits and runtime
 

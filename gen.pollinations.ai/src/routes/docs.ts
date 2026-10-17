@@ -50,7 +50,6 @@ import ACCOUNT_MD from "../docs/account.md?raw";
 import ASYNC_JOBS_MD from "../docs/async-jobs.md?raw";
 import AUDIO_GENERATION_MD from "../docs/audio-generation.md?raw";
 import AUTHENTICATION_MD from "../docs/authentication.md?raw";
-import E2B_SANDBOXES from "../docs/e2b-sandboxes.json";
 import EMBEDDINGS_MD from "../docs/embeddings.md?raw";
 import ERRORS_MD from "../docs/errors.md?raw";
 import IMAGE_GENERATION_MD from "../docs/image-generation.md?raw";
@@ -62,6 +61,7 @@ import PUBLIC_STATS_MD from "../docs/public-stats.md?raw";
 import QUICK_START_MD from "../docs/quick-start.md?raw";
 import SAFETY_MD from "../docs/safety.md?raw";
 import SANDBOXES_MD from "../docs/sandboxes.md?raw";
+import SANDBOXES_API_MD from "../docs/sandboxes-api.md?raw";
 import TEXT_GENERATION_MD from "../docs/text-generation.md?raw";
 import VIDEO_GENERATION_MD from "../docs/video-generation.md?raw";
 import X402_PREPAID_KEYS_MD from "../docs/x402-prepaid-keys.md?raw";
@@ -388,7 +388,7 @@ const PUBLISH_AGENT_SECTION = `## Publish an Agent\n\n${PUBLISH_AGENT_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
 const CODING_HARNESSES_SECTION = `## Coding Harnesses\n\n${CODING_HARNESSES_DOCS}`;
 const MCP_SECTION = `## MCP Servers\n\n${MCP_DOCS}`;
-const SANDBOXES_SECTION = `## Sandboxes\n\n${SANDBOXES_DOCS}`;
+const SANDBOXES_SECTION = `## Sandboxes\n\n${SANDBOXES_DOCS}\n\n### Sandboxes API\n\n${SANDBOXES_API_MD.trim()}`;
 
 const LLM_DOC_TEXT = [
     GEN_API_DOCS,
@@ -658,8 +658,7 @@ function generationDocumentation(): OpenApiSchema {
             },
             {
                 name: DOC_TAGS.sandboxesApi,
-                description:
-                    "Sandbox management endpoints from E2B's API, limited to what Pollinations supports. Setup, credits and restrictions: [Sandboxes guide](#tag/sandboxes). Rates: [pricing](https://gen.pollinations.ai/alpha/e2b/pricing).",
+                description: SANDBOXES_API_MD.trim(),
             },
             {
                 name: DOC_TAGS.errors,
@@ -1049,15 +1048,10 @@ export async function buildMergedOpenApiSpec(
         fetchEnterSchema(c),
         fetchMediaSchema(c).catch(() => undefined),
     ]);
-    const merged = mergeSchemas(generationSchema, enterSchema, mediaSchema);
-    // E2B's sandbox operations, from the reviewed snapshot (scripts/sync-e2b-schema.ts).
-    merged.paths = { ...asRecord(merged.paths), ...E2B_SANDBOXES.paths };
-    merged.components = mergeComponents(
-        asRecord(merged.components),
-        E2B_SANDBOXES.components,
-    );
     return {
-        ...injectSamples(merged),
+        ...injectSamples(
+            mergeSchemas(generationSchema, enterSchema, mediaSchema),
+        ),
         // Keep contributor identity after merging so publication can reject a
         // partial reference without changing the live endpoint's availability.
         "x-schema-sources": {

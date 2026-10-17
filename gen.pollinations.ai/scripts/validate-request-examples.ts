@@ -190,7 +190,7 @@ export function requestExampleErrors(spec: Spec): string[] {
                     .slice(-templateParts.length);
                 for (const { parameter, ref } of parameters.values()) {
                     const name = String(parameter.name);
-                    let value: unknown;
+                    let value: string | null | undefined;
                     if (parameter.in === "query")
                         value = url.searchParams.get(name);
                     else if (parameter.in === "header")
@@ -213,16 +213,6 @@ export function requestExampleErrors(spec: Spec): string[] {
                     } else {
                         if (!parameter.schema)
                             throw new Error(`parameter ${name} has no schema`);
-                        const paramSchema = resolve(parameter.schema);
-                        if (
-                            parameter.in === "query" &&
-                            paramSchema.type === "array"
-                        ) {
-                            const explode = parameter.explode ?? true;
-                            value = explode
-                                ? url.searchParams.getAll(name)
-                                : String(value).split(",");
-                        }
                         validate(`${ref}/schema`, value, true);
                     }
                 }

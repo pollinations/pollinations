@@ -12,6 +12,7 @@ import { AuthModalLoading } from "@pollinations/ui/auth";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
+    getGrantedOAuthScope,
     isClientMetadataUrl,
     PKCE_S256_CHALLENGE_REGEX,
     sanitizeAuthorizeAccountPermissions,
@@ -324,6 +325,10 @@ export function Authorize() {
             } = keyPermissions.permissions;
             const grantedAccountPermissions =
                 sanitizeAuthorizeAccountPermissions(accountPermissions) ?? [];
+            const grantedScope = getGrantedOAuthScope(
+                requestedScopes,
+                grantedAccountPermissions,
+            );
             const appName = attribution?.clientHost
                 ? `${attribution.appName} (${attribution.clientHost})`
                 : attribution?.appName || redirectHostname;
@@ -364,9 +369,7 @@ export function Authorize() {
                         // Same convention as the code flow below: the token
                         // response must echo the granted scope when it
                         // differs from the requested one (RFC 6749 §5.1)
-                        scope: requestedScopes.size
-                            ? grantedAccountPermissions.join(" ")
-                            : undefined,
+                        scope: grantedScope,
                     },
                 });
                 if (!res.ok) {
@@ -398,9 +401,7 @@ export function Authorize() {
                                 // distinct from undefined (nothing requested)
                                 // — RFC 6749 §5.1 needs the token response to
                                 // echo the former
-                                scope: requestedScopes.size
-                                    ? grantedAccountPermissions.join(" ")
-                                    : undefined,
+                                scope: grantedScope,
                                 codeChallenge: code_challenge,
                                 codeChallengeMethod: "S256",
                                 expiresIn,

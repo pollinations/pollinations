@@ -2,7 +2,12 @@
 // (gen's routes/e2b.ts). E2B's metadata is set once at create, so the keep
 // lives here: a timeout or pause changes it.
 
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+    integer,
+    primaryKey,
+    sqliteTable,
+    text,
+} from "drizzle-orm/sqlite-core";
 import { apikey } from "./better-auth.ts";
 
 export const sandboxKeep = sqliteTable("sandbox_keep", {
@@ -14,3 +19,19 @@ export const sandboxKeep = sqliteTable("sandbox_keep", {
     }),
     until: integer("until", { mode: "timestamp" }).notNull(),
 });
+
+// Sandbox ports gen serves at its own domain (gen's routes/e2b.ts): a request
+// wakes the sandbox, paid in advance like a connect.
+export const sandboxPort = sqliteTable(
+    "sandbox_port",
+    {
+        sandboxId: text("sandbox_id").notNull(),
+        port: integer("port").notNull(),
+        // As for a keep: the key that shared the port pays each wake; without
+        // one (shared from the dashboard), the sandbox's owner does.
+        apiKeyId: text("api_key_id").references(() => apikey.id, {
+            onDelete: "cascade",
+        }),
+    },
+    (table) => [primaryKey({ columns: [table.sandboxId, table.port] })],
+);

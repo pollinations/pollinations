@@ -74,6 +74,8 @@ TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=g
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
+# Shared sandbox ports locally: http://<port>-<sandbox id>.localhost:8788
+SANDBOX_DOMAIN = "localhost"
 [dev]
 port = 8788
 
@@ -414,6 +416,7 @@ TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event_v2"
 PORTKEY_GATEWAY_URL = "https://portkey.test"
 AI_GATEWAY_API_KEY = "not-a-secret-workers-test-only"
 E2B_API_KEY = "not-a-secret-workers-test-only"
+SANDBOX_DOMAIN = "sandbox.test"
 AWS_ACCESS_KEY_ID = "not-a-secret-workers-test-only"
 AWS_SECRET_ACCESS_KEY = "not-a-secret-workers-test-only"
 AWS_REGION = "us-east-1"

@@ -8,12 +8,13 @@ import {
 import { signSessionToken } from "@shared/auth/session-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import { apikey, user } from "@shared/db/better-auth.ts";
-import { sandboxKeep } from "@shared/db/sandbox.ts";
+import { sandboxKeep, sandboxPort } from "@shared/db/sandbox.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, expect, vi } from "vitest";
 import worker from "../src/index.ts";
+import { sandboxPortHost } from "../src/routes/e2b.ts";
 
 const E2B = "https://api.e2b.app";
 // The fake's 2 vCPU, 512 MiB sandbox for 300 s, at E2B's list rates.
@@ -31,6 +32,14 @@ type Sandbox = {
     metadata: Record<string, string>;
     secure?: boolean;
     autoPause?: boolean;
+};
+
+type PortRequest = {
+    host: string;
+    method: string;
+    path: string;
+    trafficToken: string | null;
+    body: string;
 };
 
 type WrittenFile = {
@@ -54,6 +63,7 @@ function stubE2b() {
     const sandboxes: Sandbox[] = [];
     const events: Record<string, unknown>[] = [];
     const files: WrittenFile[] = [];
+    const portRequests: PortRequest[] = [];
     let created = 0;
     const realFetch = globalThis.fetch;
     vi.stubGlobal("fetch", async (input: RequestInfo, init?: RequestInit) => {
@@ -74,6 +84,32 @@ function stubE2b() {
                 content: await file.text(),
             });
             return Response.json([{ type: "file" }]);
+        }
+        // E2B's proxy in front of each sandbox port answers only while the
+        // sandbox runs; the fake's server echoes what reached it.
+        const port = url.hostname.match(/^(\d+)-(\w+)\.e2b\.app$/);
+        if (port) {
+            const sandbox = sandboxes.find((s) => s.sandboxID === port[2]);
+            if (sandbox?.state !== "running") {
+                return Response.json(
+                    {
+                        sandboxId: port[2],
+                        message: "The sandbox was not found",
+                        code: 502,
+                    },
+                    { status: 502 },
+                );
+            }
+            portRequests.push({
+                host: url.host,
+                method: request.method,
+                path: url.pathname + url.search,
+                trafficToken: request.headers.get("e2b-traffic-access-token"),
+                body: await request.text(),
+            });
+            return new Response(`port ${port[1]} says hi`, {
+                headers: { "x-app": "echo" },
+            });
         }
         if (url.origin !== E2B) return realFetch(input, init);
         // The team key replaces the caller's key.
@@ -188,13 +224,17 @@ function stubE2b() {
             sandbox.state = "running";
             sandbox.endAt =
                 resumed || endAt > sandbox.endAt ? endAt : sandbox.endAt;
-            return Response.json(sandbox, { status: resumed ? 201 : 200 });
+            return Response.json(
+                { ...sandbox, trafficAccessToken: "traffic" },
+                { status: resumed ? 201 : 200 },
+            );
         }
         return new Response("unexpected", { status: 500 });
     });
     return {
         sandboxes,
         files,
+        portRequests,
         leases: () => events.filter((e) => e.eventType === "sandbox.lease"),
     };
 }
@@ -760,4 +800,137 @@ test("the pollinations templates come logged in with a key from enter's key API"
         sandboxID,
         largeID,
     ]);
+});
+
+// A shared port's own host, as a browser would reach it.
+const visit = (host: string, path = "/", init?: RequestInit) =>
+    SELF.fetch(`https://${host}${path}`, init);
+
+const sharePort = (key: string, sandboxID: string, port: number) =>
+    call(key, `/sandboxes/${sandboxID}/ports/${port}`, { method: "PUT" });
+
+test("only hosts of the form <port>-<sandbox id> under the sandbox domain name a port", () => {
+    expect(sandboxPortHost(env, "8080-ixyz123.sandbox.test")).toEqual({
+        port: 8080,
+        sandboxID: "ixyz123",
+    });
+    for (const host of [
+        "gen.pollinations.ai",
+        "sandbox.test",
+        "ixyz123.sandbox.test",
+        "0-ixyz123.sandbox.test",
+        "65536-ixyz123.sandbox.test",
+        "8080-ixyz123.a.sandbox.test",
+        "8080-ixyz123.sandbox.test.evil",
+        "8080-ixyz123.notsandbox.test",
+    ]) {
+        expect(sandboxPortHost(env, host), host).toBeNull();
+    }
+});
+
+test("a shared port wakes its paused sandbox, paid in advance by the key that shared it", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+    const other = await sandboxKey();
+    const created = await createSandbox(owner.key);
+    const { sandboxID } = await created.json<{ sandboxID: string }>();
+
+    // Only the owner can share it.
+    expect((await sharePort(other.key, sandboxID, 3000)).status).toBe(404);
+    const shared = await sharePort(owner.key, sandboxID, 3000);
+    expect(shared.status).toBe(200);
+    expect(await shared.json()).toEqual({
+        url: `https://3000-${sandboxID}.sandbox.test`,
+    });
+
+    await post(owner.key, `/sandboxes/${sandboxID}/pause`);
+    const host = `3000-${sandboxID}.sandbox.test`;
+    const response = await visit(host, "/hello?x=1", {
+        method: "POST",
+        body: "hi",
+    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-app")).toBe("echo");
+    expect(await response.text()).toBe("port 3000 says hi");
+    expect(e2b.sandboxes[0].state).toBe("running");
+    expect(e2b.portRequests).toEqual([
+        {
+            host: `3000-${sandboxID}.e2b.app`,
+            method: "POST",
+            path: "/hello?x=1",
+            trafficToken: "traffic",
+            body: "hi",
+        },
+    ]);
+
+    // The wake is a connect, paid like the owner's own; requests inside the
+    // lease pay nothing more.
+    await (await visit(host, "/again")).text();
+    expect(e2b.portRequests).toHaveLength(2);
+    await vi.waitFor(() => expect(e2b.leases()).toHaveLength(2));
+    const wake = e2b.leases()[1];
+    expect(wake).toMatchObject({
+        requestPath: `/alpha/e2b/sandboxes/${sandboxID}/connect`,
+        userId: owner.userId,
+        apiKeyId: owner.id,
+    });
+    expect(wake.totalPrice).toBeCloseTo(LEASE_300S, 5);
+    expect(await questPollen(owner.userId)).toBeCloseTo(10 - 2 * LEASE_300S, 5);
+
+    // A sandbox its owner paused inside the cached lease wakes again.
+    await post(owner.key, `/sandboxes/${sandboxID}/pause`);
+    expect(await (await visit(host)).text()).toBe("port 3000 says hi");
+    expect(e2b.sandboxes[0].state).toBe("running");
+    await vi.waitFor(() => expect(e2b.leases()).toHaveLength(3));
+});
+
+test("an unshared port, a gone sandbox or a payer who can't pay gets no wake", async () => {
+    const e2b = stubE2b();
+    const db = drizzle(env.DB);
+    const owner = await sandboxKey();
+    const broke = await sandboxKey(0);
+    const created = await createSandbox(owner.key);
+    const { sandboxID } = await created.json<{ sandboxID: string }>();
+
+    const unshared = await visit(`4000-${sandboxID}.sandbox.test`);
+    expect(unshared.status).toBe(404);
+    expect(await unshared.text()).toBe("No sandbox port is shared here.\n");
+
+    await sharePort(owner.key, sandboxID, 4000);
+    const unshare = await call(
+        owner.key,
+        `/sandboxes/${sandboxID}/ports/4000`,
+        {
+            method: "DELETE",
+        },
+    );
+    expect(unshare.status).toBe(204);
+    expect((await visit(`4000-${sandboxID}.sandbox.test`)).status).toBe(404);
+
+    // A killed sandbox's port stops being shared.
+    await sharePort(owner.key, sandboxID, 4001);
+    await call(owner.key, `/sandboxes/${sandboxID}`, { method: "DELETE" });
+    expect((await visit(`4001-${sandboxID}.sandbox.test`)).status).toBe(404);
+    expect(await db.select().from(sandboxPort)).toEqual([]);
+
+    e2b.sandboxes.push({
+        sandboxID: "asleep",
+        startedAt: inSeconds(-600),
+        endAt: inSeconds(-300),
+        cpuCount: 2,
+        memoryMB: 512,
+        state: "paused",
+        metadata: { pollinations_user: broke.userId },
+    });
+    await db
+        .insert(sandboxPort)
+        .values({ sandboxId: "asleep", port: 4002, apiKeyId: broke.id });
+    const refused = await visit("4002-asleep.sandbox.test");
+    expect(refused.status).toBe(402);
+    expect(await refused.text()).toMatch(
+        /^This sandbox is asleep and could not be woken: Insufficient balance\..*Top up at https:\/\//,
+    );
+    expect(e2b.sandboxes.at(-1)?.state).toBe("paused");
+    expect(e2b.portRequests).toEqual([]);
+    expect(await questPollen(broke.userId)).toBe(0);
 });

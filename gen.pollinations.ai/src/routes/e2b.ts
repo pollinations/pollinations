@@ -9,7 +9,7 @@ import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { user } from "@shared/db/better-auth.ts";
-import { sandboxKeep } from "@shared/db/sandbox.ts";
+import { sandboxKeep, sandboxPort } from "@shared/db/sandbox.ts";
 import { handleError } from "@shared/error.ts";
 import { sendToTinybird } from "@shared/events.ts";
 import { ensureConfigured } from "@shared/logger.ts";
@@ -19,7 +19,7 @@ import {
     priceToEventParams,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
-import { eq, inArray, lte } from "drizzle-orm";
+import { and, eq, inArray, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { type Context, Hono, type MiddlewareHandler, type Next } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -75,6 +75,9 @@ const MAX_TIMEOUT_SECONDS = 2 ** 31 - 1;
 // then, past E2B's 24-hour run too. It pays with the key that set the timeout,
 // or as the owner when the dashboard set it.
 const KEEP_LEASE_SECONDS = 600;
+// A request to a shared port wakes its sandbox, or extends a lease that ends
+// within a minute, with a connect for E2B's default lease.
+const WAKE_MARGIN_MS = 60_000;
 
 type SandboxDetail = {
     sandboxID: string;
@@ -100,6 +103,7 @@ type CreatedSandbox = {
     sandboxID: string;
     domain?: string | null;
     envdAccessToken?: string;
+    trafficAccessToken?: string | null;
 };
 
 type E2bContext = Context<Env>;
@@ -603,6 +607,34 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 return response;
             },
         )
+        // Not E2B's: serves a port at https://<port>-<id>.<SANDBOX_DOMAIN>,
+        // where a request wakes the sandbox. Like a keep, the key that shares
+        // it pays the wakes, or the owner when the dashboard shared it.
+        .put("/sandboxes/:id/ports/:port", async (c) => {
+            const domain = c.env.SANDBOX_DOMAIN;
+            if (!domain) {
+                throw new HTTPException(503, {
+                    message: "Sandbox ports are not configured",
+                });
+            }
+            const { sandboxID } = await ownedSandbox(c);
+            const port = sharedPort(c.req.param("port"));
+            const apiKeyId = c.var.auth.apiKey?.id ?? null;
+            await drizzle(c.env.DB)
+                .insert(sandboxPort)
+                .values({ sandboxId: sandboxID, port, apiKeyId })
+                .onConflictDoUpdate({
+                    target: [sandboxPort.sandboxId, sandboxPort.port],
+                    set: { apiKeyId },
+                });
+            return c.json({ url: `https://${port}-${sandboxID}.${domain}` });
+        })
+        .delete("/sandboxes/:id/ports/:port", async (c) => {
+            const { sandboxID } = await ownedSandbox(c);
+            const port = sharedPort(c.req.param("port"));
+            await unsharePort(c.env, sandboxID, port);
+            return c.body(null, 204);
+        })
         // Everything else (templates, snapshots, forks, volumes, secrets,
         // webhooks, ...) stays closed until someone reviews how it is billed.
         .all("*", () => {
@@ -663,6 +695,199 @@ async function loadPayer(
     return { user: { id: result.user.id, tier: result.user.tier }, apiKey };
 }
 
+// This API as `payer`, for the cron and port wakes: every call is checked and
+// charged like the payer's own.
+function payerApi(
+    env: CloudflareBindings,
+    ctx: ExecutionContext,
+    payer: GenerationAuthSnapshot,
+) {
+    const api = new Hono<Env>()
+        .use("*", requestId())
+        .use("*", logger)
+        .route(E2B_PATH, sandboxApi(true, authFromSnapshot(payer)));
+    return (sandboxID: string, action: string, body = {}) =>
+        api.fetch(
+            new Request(
+                `${PUBLIC_URLS.gen.production}${E2B_PATH}/sandboxes/${sandboxID}/${action}`,
+                {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify(body),
+                },
+            ),
+            env,
+            ctx,
+        );
+}
+
+function sharedPort(value: string) {
+    const port = Number(value);
+    if (!Number.isInteger(port) || port < 1 || port > 65535) {
+        throw new HTTPException(400, { message: `Invalid port ${value}` });
+    }
+    return port;
+}
+
+type WokenPort = { origin: string; token?: string; until: number };
+
+// ponytail: a per-isolate cache, so requests inside a paid lease make no D1,
+// enter or E2B call. Each isolate wakes on its own, which costs nothing while
+// the lease runs, and an unshare reaches other isolates only when their cached
+// lease ends. Move it to a Durable Object per sandbox if that matters.
+const wokenPorts = new Map<string, WokenPort>();
+
+async function unsharePort(
+    env: CloudflareBindings,
+    sandboxID: string,
+    port: number,
+) {
+    wokenPorts.delete(`${port}-${sandboxID}`);
+    await drizzle(env.DB)
+        .delete(sandboxPort)
+        .where(
+            and(
+                eq(sandboxPort.sandboxId, sandboxID),
+                eq(sandboxPort.port, port),
+            ),
+        );
+}
+
+const portRefusal = (status: number, message: string) =>
+    new Response(`${message}\n`, {
+        status,
+        headers: { "content-type": "text/plain; charset=utf-8" },
+    });
+
+// The sandbox and port a host like 8080-<sandbox id>.<SANDBOX_DOMAIN> names.
+export function sandboxPortHost(env: CloudflareBindings, hostname: string) {
+    const domain = env.SANDBOX_DOMAIN;
+    if (!domain || !hostname.endsWith(`.${domain}`)) return null;
+    const match = hostname
+        .slice(0, -domain.length - 1)
+        .match(/^(\d{1,5})-([a-z0-9]+)$/);
+    const port = Number(match?.[1]);
+    return match && port >= 1 && port <= 65535
+        ? { port, sandboxID: match[2] }
+        : null;
+}
+
+// Wakes a shared port's sandbox with a connect as the port's payer, so the
+// lease is paid in advance and capped like the payer's own connect.
+async function wakePort(
+    env: CloudflareBindings,
+    ctx: ExecutionContext,
+    port: number,
+    sandboxID: string,
+): Promise<WokenPort | Response> {
+    const notShared = portRefusal(404, "No sandbox port is shared here.");
+    const shared = await drizzle(env.DB)
+        .select()
+        .from(sandboxPort)
+        .where(
+            and(
+                eq(sandboxPort.sandboxId, sandboxID),
+                eq(sandboxPort.port, port),
+            ),
+        )
+        .get();
+    if (!shared) return notShared;
+    // A port of a sandbox that is gone, or whose payer is, stops being shared.
+    const sandbox = await getSandbox(env, sandboxID);
+    const payer = sandbox
+        ? await loadPayer(env, shared.apiKeyId, sandbox.metadata?.[OWNER_KEY])
+        : null;
+    if (!sandbox || !payer) {
+        await unsharePort(env, sandboxID, port);
+        return notShared;
+    }
+    const response = await payerApi(env, ctx, payer)(sandboxID, "connect", {
+        timeout: DEFAULT_TIMEOUT_SECONDS,
+    });
+    if (!response.ok) {
+        const { message } = await response
+            .json<{ message: string }>()
+            .catch(() => ({ message: `E2B returned ${response.status}` }));
+        return portRefusal(
+            response.status,
+            `This sandbox is asleep and could not be woken: ${message}`,
+        );
+    }
+    const connected = await response.json<CreatedSandbox>();
+    const now = Date.now();
+    const woken = {
+        origin: `https://${port}-${sandboxID}.${connected.domain || "e2b.app"}`,
+        token: connected.trafficAccessToken ?? undefined,
+        // Connect never shortens a running sandbox's lease.
+        until: Math.max(
+            now + DEFAULT_TIMEOUT_SECONDS * 1000,
+            sandbox.state === "running" ? Date.parse(sandbox.endAt) : 0,
+        ),
+    };
+    wokenPorts.set(`${port}-${sandboxID}`, woken);
+    return woken;
+}
+
+/**
+ * Serves a shared sandbox port at its own host: a request to a paused
+ * sandbox resumes it first, and one to a sandbox whose lease ends within a
+ * minute extends it, both paid by the port's payer. Everything else, WebSocket
+ * upgrades and streamed bodies included, passes through to E2B unchanged.
+ */
+export async function servePort(
+    request: Request,
+    env: CloudflareBindings,
+    ctx: ExecutionContext,
+    { port, sandboxID }: { port: number; sandboxID: string },
+) {
+    const key = `${port}-${sandboxID}`;
+    const wake = () =>
+        wakePort(env, ctx, port, sandboxID).catch(async (error) => {
+            await ensureConfigured({
+                level: env.LOG_LEVEL || "debug",
+                format: env.LOG_FORMAT || "text",
+            });
+            getLogger(["gen", "sandbox-port"]).error(
+                "Waking sandbox {sandboxID} failed: {error}",
+                { sandboxID, error: String(error) },
+            );
+            return portRefusal(502, "This sandbox could not be woken.");
+        });
+    const cached = wokenPorts.get(key);
+    let woken =
+        cached && cached.until - Date.now() >= WAKE_MARGIN_MS
+            ? cached
+            : await wake();
+    if (woken instanceof Response) return woken;
+    const url = new URL(request.url);
+    const headers = new Headers(request.headers);
+    headers.delete("host");
+    const send = ({ origin, token }: WokenPort) => {
+        if (token) headers.set("e2b-traffic-access-token", token);
+        return fetch(`${origin}${url.pathname}${url.search}`, {
+            method: request.method,
+            headers,
+            body: request.body,
+            redirect: "manual",
+        });
+    };
+    const response = await send(woken);
+    // E2B answers 502 "The sandbox was not found" for a sandbox that stopped
+    // inside the cached lease, paused or killed by its owner. A request whose
+    // body is not spent yet wakes it and tries again; any other, the next one.
+    if (
+        woken !== cached ||
+        response.status !== 502 ||
+        !(await response.clone().text()).includes("sandbox was not found")
+    ) {
+        return response;
+    }
+    wokenPorts.delete(key);
+    if (request.body !== null) return response;
+    woken = await wake();
+    return woken instanceof Response ? woken : send(woken);
+}
+
 /**
  * Keeps each kept sandbox running until its timeout, through this API as the
  * key that set it: every renewal is checked and charged like the owner's own.
@@ -714,23 +939,9 @@ export async function keepSandboxes(
             sandbox.metadata?.[OWNER_KEY],
         );
         if (!payer) return end(sandboxID, "its payer is gone");
-        const api = new Hono<Env>()
-            .use("*", requestId())
-            .use("*", logger)
-            .route(E2B_PATH, sandboxApi(true, authFromSnapshot(payer)));
+        const api = payerApi(env, ctx, payer);
         const post = (action: string, body = {}) =>
-            api.fetch(
-                new Request(
-                    `${PUBLIC_URLS.gen.production}${E2B_PATH}/sandboxes/${sandboxID}/${action}`,
-                    {
-                        method: "POST",
-                        headers: { "content-type": "application/json" },
-                        body: JSON.stringify(body),
-                    },
-                ),
-                env,
-                ctx,
-            );
+            api(sandboxID, action, body);
         const timeout = Math.ceil((renewTo - now) / 1000);
         const restart =
             !paused &&

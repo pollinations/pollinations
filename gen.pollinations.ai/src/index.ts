@@ -36,7 +36,13 @@ import {
     createDocsRoutes,
     LLMS_FULL_TEXT,
 } from "./routes/docs.ts";
-import { E2B_PATH, e2bRoutes, keepSandboxes } from "./routes/e2b.ts";
+import {
+    E2B_PATH,
+    e2bRoutes,
+    keepSandboxes,
+    sandboxPortHost,
+    servePort,
+} from "./routes/e2b.ts";
 import { jobRoutes } from "./routes/jobs.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
 import { mcpCardRoutes } from "./routes/mcp-card.ts";
@@ -307,7 +313,17 @@ app.notFound(async (c: Context<Env>) => {
 app.onError(handleError);
 
 export default {
-    fetch: app.fetch,
+    // A shared sandbox port's host belongs to the sandbox, not to gen's API.
+    fetch: (
+        request: Request,
+        env: CloudflareBindings,
+        ctx: ExecutionContext,
+    ) => {
+        const port = sandboxPortHost(env, new URL(request.url).hostname);
+        return port
+            ? servePort(request, env, ctx, port)
+            : app.fetch(request, env, ctx);
+    },
     // The only cron, every 10 minutes (wrangler.toml).
     scheduled: (_controller, env, ctx) => keepSandboxes(env, ctx),
 } satisfies ExportedHandler<CloudflareBindings>;

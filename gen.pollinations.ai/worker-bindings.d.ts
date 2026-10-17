@@ -21,6 +21,8 @@ interface CloudflareBindings {
     INFERENCEPORT_API_KEY?: string;
     STABILITY_API_KEY?: string;
     E2B_API_KEY?: string;
+    // Shared sandbox ports are served at <port>-<sandbox id>.<SANDBOX_DOMAIN>.
+    SANDBOX_DOMAIN?: string;
     KV: KVNamespace;
     MEDIA: Service<import("../media.pollinations.ai/src/media-upload.ts").MediaUpload>;
     TEXT_BUCKET: R2Bucket;

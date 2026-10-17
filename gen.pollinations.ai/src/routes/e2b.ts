@@ -9,7 +9,7 @@ import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { user } from "@shared/db/better-auth.ts";
-import { sandboxKeep } from "@shared/db/sandbox.ts";
+import { sandboxKeep, sandboxWake } from "@shared/db/sandbox.ts";
 import { handleError } from "@shared/error.ts";
 import { sendToTinybird } from "@shared/events.ts";
 import { ensureConfigured } from "@shared/logger.ts";
@@ -19,7 +19,7 @@ import {
     priceToEventParams,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
-import { eq, inArray, lte } from "drizzle-orm";
+import { and, eq, inArray, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { type Context, Hono, type MiddlewareHandler, type Next } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -44,6 +44,8 @@ const E2B_API = "https://api.e2b.app";
 export const E2B_PATH = "/alpha/e2b";
 // One E2B team runs every user's sandboxes; this metadata key names the owner.
 const OWNER_KEY = "pollinations_user";
+// Marks a sandbox created with auto-resume, which E2B wakes on traffic.
+const WAKE_KEY = "pollinations_wake";
 const MAX_RUNNING_PER_USER = 8;
 // E2B ends a sandbox's run 24 hours after it starts or resumes.
 const MAX_RUN_MS = 24 * 60 * 60_000;
@@ -191,16 +193,26 @@ async function showKeeps(env: CloudflareBindings, sandboxes: SandboxDetail[]) {
     });
 }
 
-// E2B's concurrency limit is per team, so each user may hold only a few.
+// E2B's concurrency limit is per team, so each user may hold only a few. A
+// paused sandbox that wakes on traffic counts as running: E2B resumes it
+// without asking gen.
 async function requireCapacity(c: E2bContext) {
-    const query = new URLSearchParams({
-        metadata: `${OWNER_KEY}=${c.var.auth.requireUser().id}`,
-        state: "running",
-        limit: String(MAX_RUNNING_PER_USER),
-    });
-    const response = await e2b(c.env, `/v2/sandboxes?${query}`);
-    if (!response.ok) throw await upstreamError(response);
-    if ((await response.json<unknown[]>()).length >= MAX_RUNNING_PER_USER) {
+    const owner = `${OWNER_KEY}=${c.var.auth.requireUser().id}`;
+    const count = async (state: string, metadata: string) => {
+        const query = new URLSearchParams({
+            metadata,
+            state,
+            limit: String(MAX_RUNNING_PER_USER),
+        });
+        const response = await e2b(c.env, `/v2/sandboxes?${query}`);
+        if (!response.ok) throw await upstreamError(response);
+        return (await response.json<unknown[]>()).length;
+    };
+    const [running, waking] = await Promise.all([
+        count("running", owner),
+        count("paused", `${owner}&${WAKE_KEY}=true`),
+    ]);
+    if (running + waking >= MAX_RUNNING_PER_USER) {
         throw new HTTPException(429, {
             message: `At most ${MAX_RUNNING_PER_USER} sandboxes can run at once. Kill or pause one first.`,
         });
@@ -283,6 +295,54 @@ async function charge(c: E2bContext, { cost, price }: Lease, startTime: Date) {
     );
 }
 
+// The whole seconds of the sandbox's current or last run that nobody has paid
+// for: a run E2B started on traffic, with a lease of its own (5 minutes, or
+// the create timeout if longer). E2B reports a paused sandbox's last run
+// until its pause.
+function unpaidSeconds(sandbox: SandboxDetail, wake: { paidUntil: Date }) {
+    const from = Math.max(
+        wake.paidUntil.getTime(),
+        Date.parse(sandbox.startedAt),
+    );
+    return Math.floor(Math.max(0, Date.parse(sandbox.endAt) - from) / 1000);
+}
+
+// Charges the caller for a woken run, so the rest of gen can take E2B's lease
+// as paid, as for any sandbox. Returns the sandbox's wake record, if any.
+async function settleWake(c: E2bContext, sandbox: SandboxDetail) {
+    const db = drizzle(c.env.DB);
+    const where = eq(sandboxWake.sandboxId, sandbox.sandboxID);
+    const wake = await db.select().from(sandboxWake).where(where).get();
+    if (!wake) return null;
+    const seconds = unpaidSeconds(sandbox, wake);
+    if (!seconds) return wake;
+    const startTime = new Date();
+    const bill = lease(sandbox, seconds);
+    await requireAccountFunds(c, bill.price);
+    // Only the request that moves `paidUntil` charges, so a run is paid once.
+    const paidUntil = new Date(sandbox.endAt);
+    const moved = await db
+        .update(sandboxWake)
+        .set({ paidUntil })
+        .where(and(where, eq(sandboxWake.paidUntil, wake.paidUntil)))
+        .run();
+    if (moved.meta.changes) await charge(c, bill, startTime);
+    return { ...wake, paidUntil };
+}
+
+// A pause or kill ends a woken run: charge it first, but stop it even if it
+// can't be paid. Gen's cron kills a woken sandbox nobody pays for.
+async function stopRun(c: E2bContext) {
+    const sandbox = await ownedSandbox(c);
+    await settleWake(c, sandbox).catch((error) =>
+        c.var.log.warn("Woken sandbox {id} not paid: {error}", {
+            id: sandbox.sandboxID,
+            error: error instanceof Error ? error.message : String(error),
+        }),
+    );
+    return forward(c);
+}
+
 // Timeout and connect end the lease at now + timeout (connect never shortens
 // a running sandbox's lease). The caller pays in advance for the seconds past
 // the running sandbox's current lease. Pausing or shortening a lease gives up
@@ -298,6 +358,7 @@ async function extendLease(
             message: "timeout must be a number of seconds",
         });
     }
+    const wake = await settleWake(c, sandbox);
     const now = startTime.getTime();
     const paidUntil =
         sandbox.state === "running"
@@ -314,6 +375,12 @@ async function extendLease(
         body: JSON.stringify({ timeout }),
     });
     if (response.ok && bill.price > 0) await charge(c, bill, startTime);
+    if (response.ok && wake) {
+        await drizzle(c.env.DB)
+            .update(sandboxWake)
+            .set({ paidUntil: new Date(Math.max(endAt, paidUntil)) })
+            .where(eq(sandboxWake.sandboxId, sandbox.sandboxID));
+    }
     return new Response(response.body, response);
 }
 
@@ -448,12 +515,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
         .on("POST", ["/sandboxes", "/v2/sandboxes"], async (c) => {
             const startTime = new Date();
             const body = await readJson<NewSandbox>(c);
-            if (body.autoResume?.enabled) {
-                throw new HTTPException(400, {
-                    message:
-                        "autoResume is not supported. Resume a paused sandbox with connect.",
-                });
-            }
+            const wakes = body.autoResume?.enabled === true;
             if (body.iam || body.volumeMounts?.length) {
                 throw new HTTPException(400, {
                     message: "iam and volumeMounts are not supported.",
@@ -483,6 +545,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                         metadata: {
                             ...body.metadata,
                             [OWNER_KEY]: c.var.auth.requireUser().id,
+                            [WAKE_KEY]: wakes ? "true" : undefined,
                         },
                     }),
                 },
@@ -507,6 +570,15 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 );
                 await requireAccountFunds(c, bill.price);
                 if (until) await setKeep(c, created.sandboxID, until);
+                if (wakes) {
+                    await drizzle(c.env.DB)
+                        .insert(sandboxWake)
+                        .values({
+                            sandboxId: created.sandboxID,
+                            apiKeyId: c.var.auth.apiKey?.id ?? null,
+                            paidUntil: new Date(sandbox.endAt),
+                        });
+                }
             } catch (error) {
                 // Never leave an unpaid sandbox running.
                 await e2b(c.env, `/sandboxes/${created.sandboxID}`, {
@@ -552,14 +624,20 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             const [sandbox] = await showKeeps(c.env, [await ownedSandbox(c)]);
             return c.json(sandbox);
         })
-        .delete("/sandboxes/:id", ownerOnly)
+        .delete("/sandboxes/:id", stopRun)
         .get("/sandboxes/:id/metrics", ownerOnly)
         // `e2b sandbox logs` reads this deprecated v1 path.
         .get("/sandboxes/:id/logs", ownerOnly)
+        // Not E2B's: the keeper charges a woken run here.
+        .post("/sandboxes/:id/settle", async (c) => {
+            if (!keeper) throw new HTTPException(404, { message: "Not found" });
+            await settleWake(c, await ownedSandbox(c));
+            return c.body(null, 204);
+        })
         // A pause ends a keep, as E2B's timeout would; a timeout or connect
         // longer than 10 minutes starts it again.
         .post("/sandboxes/:id/pause", async (c) => {
-            const response = await ownerOnly(c);
+            const response = await stopRun(c);
             if (response.ok && !keeper) {
                 await setKeep(c, c.req.param("id"), null);
             }
@@ -586,7 +664,13 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             ["/sandboxes/:id/connect", "/v2/sandboxes/:id/connect"],
             async (c) => {
                 const sandbox = await ownedSandbox(c);
-                if (sandbox.state === "paused") await requireCapacity(c);
+                // A sandbox that wakes on traffic is counted already.
+                if (
+                    sandbox.state === "paused" &&
+                    !sandbox.metadata?.[WAKE_KEY]
+                ) {
+                    await requireCapacity(c);
+                }
                 const { timeout } = await readJson<{ timeout: number }>(c);
                 const until = keepUntil(timeout);
                 const response = await extendLease(
@@ -714,23 +798,7 @@ export async function keepSandboxes(
             sandbox.metadata?.[OWNER_KEY],
         );
         if (!payer) return end(sandboxID, "its payer is gone");
-        const api = new Hono<Env>()
-            .use("*", requestId())
-            .use("*", logger)
-            .route(E2B_PATH, sandboxApi(true, authFromSnapshot(payer)));
-        const post = (action: string, body = {}) =>
-            api.fetch(
-                new Request(
-                    `${PUBLIC_URLS.gen.production}${E2B_PATH}/sandboxes/${sandboxID}/${action}`,
-                    {
-                        method: "POST",
-                        headers: { "content-type": "application/json" },
-                        body: JSON.stringify(body),
-                    },
-                ),
-                env,
-                ctx,
-            );
+        const post = asPayer(env, ctx, payer, sandboxID);
         const timeout = Math.ceil((renewTo - now) / 1000);
         const restart =
             !paused &&
@@ -761,4 +829,92 @@ export async function keepSandboxes(
             ),
         ),
     );
+
+    // Then the runs E2B started on traffic, after the renewals, which charge
+    // for one too. A run lasts at least 5 minutes, so this sees every run,
+    // running or, once paused, at its end; a pause or kill through gen charges
+    // it first. E2B can't stop a sandbox waking, so one whose payer is gone or
+    // can't pay is killed, after one unpaid run.
+    // ponytail: a cron run late by more than the second between a pause and the
+    // next wake misses the earlier run; E2B's resume events list every run if
+    // that matters.
+    const settle = async ({
+        sandboxId: sandboxID,
+        apiKeyId,
+        paidUntil,
+    }: typeof sandboxWake.$inferSelect) => {
+        const forget = () =>
+            db.delete(sandboxWake).where(eq(sandboxWake.sandboxId, sandboxID));
+        const sandbox = await getSandbox(env, sandboxID);
+        if (!sandbox) return forget();
+        if (!unpaidSeconds(sandbox, { paidUntil })) return;
+        const payer = await loadPayer(
+            env,
+            apiKeyId,
+            sandbox.metadata?.[OWNER_KEY],
+        );
+        const response = payer
+            ? await asPayer(env, ctx, payer, sandboxID)("settle")
+            : null;
+        if (response?.ok) return;
+        const why = response
+            ? `${response.status} ${(await response.text()).slice(0, 300)}`
+            : "its payer is gone";
+        if (response && response.status !== 402 && response.status !== 403) {
+            log.info("Not charging woken sandbox {sandboxID}: {why}", {
+                sandboxID,
+                why,
+            });
+            return;
+        }
+        log.info("Killing woken sandbox {sandboxID}: {why}", {
+            sandboxID,
+            why,
+        });
+        await e2b(env, `/sandboxes/${sandboxID}`, { method: "DELETE" });
+        await forget();
+    };
+    const woken = await db.select().from(sandboxWake);
+    await Promise.all(
+        woken.map((row) =>
+            settle(row).catch((error) =>
+                log.error(
+                    "Charging woken sandbox {sandboxID} failed: {error}",
+                    {
+                        sandboxID: row.sandboxId,
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                    },
+                ),
+            ),
+        ),
+    );
+}
+
+// This API as `payer`, for the keeper's calls on one sandbox.
+function asPayer(
+    env: CloudflareBindings,
+    ctx: ExecutionContext,
+    payer: GenerationAuthSnapshot,
+    sandboxID: string,
+) {
+    const api = new Hono<Env>()
+        .use("*", requestId())
+        .use("*", logger)
+        .route(E2B_PATH, sandboxApi(true, authFromSnapshot(payer)));
+    return (action: string, body = {}) =>
+        api.fetch(
+            new Request(
+                `${PUBLIC_URLS.gen.production}${E2B_PATH}/sandboxes/${sandboxID}/${action}`,
+                {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify(body),
+                },
+            ),
+            env,
+            ctx,
+        );
 }

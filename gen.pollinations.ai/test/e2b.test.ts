@@ -8,7 +8,7 @@ import {
 import { signSessionToken } from "@shared/auth/session-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import { apikey, user } from "@shared/db/better-auth.ts";
-import { sandboxKeep } from "@shared/db/sandbox.ts";
+import { sandboxKeep, sandboxWake } from "@shared/db/sandbox.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -227,6 +227,14 @@ const questPollen = async (userId: string) =>
 
 const keeps = () => drizzle(env.DB).select().from(sandboxKeep);
 
+const wakes = () => drizzle(env.DB).select().from(sandboxWake);
+
+const runCron = async () => {
+    const ctx = createExecutionContext();
+    await worker.scheduled(createScheduledController(), env, ctx);
+    await waitOnExecutionContext(ctx);
+};
+
 afterEach(() => {
     vi.unstubAllGlobals();
 });
@@ -434,11 +442,9 @@ test("refuses keys without the scope, unpaid leases and closed endpoints", async
     expect(e2b.sandboxes).toEqual([]);
 
     const owner = await sandboxKey();
-    const autoResume = await createSandbox(owner.key, {
-        autoResume: { enabled: true },
-    });
-    expect(autoResume.status).toBe(400);
     expect((await post(owner.key, "/sandboxes/sbx1/fork")).status).toBe(403);
+    // Only gen's cron charges woken runs.
+    expect((await post(owner.key, "/sandboxes/sbx1/settle")).status).toBe(404);
 
     // A user may run eight sandboxes at once.
     for (let i = 0; i < 8; i++) {
@@ -681,6 +687,141 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
     expect(await questPollen(broke.userId)).toBe(0);
     expect(await questPollen(capped.userId)).toBe(10);
     expect(await questPollen(banned.userId)).toBe(10);
+});
+
+test("a sandbox E2B wakes on traffic pays for every woken run", async () => {
+    const e2b = stubE2b();
+    const db = drizzle(env.DB);
+    const owner = await sandboxKey();
+    const created = await createSandbox(owner.key, {
+        autoResume: { enabled: true },
+    });
+    expect(created.status).toBe(201);
+    const [sandbox] = e2b.sandboxes;
+    // Only gen marks a sandbox that wakes.
+    expect(sandbox.metadata).toEqual({
+        pollinations_user: owner.userId,
+        pollinations_wake: "true",
+    });
+    await createSandbox(owner.key, { metadata: { pollinations_wake: "true" } });
+    expect(e2b.sandboxes[1].metadata).toEqual({
+        pollinations_user: owner.userId,
+    });
+    const [wake] = await wakes();
+    expect(wake).toMatchObject({
+        sandboxId: sandbox.sandboxID,
+        apiKeyId: owner.id,
+    });
+    expect(wake.paidUntil.getTime()).toBe(Date.parse(sandbox.endAt));
+    const paid = () => e2b.leases().map((lease) => lease.totalPrice as number);
+    await vi.waitFor(() => expect(paid()).toHaveLength(2));
+
+    // The paid lease ended an hour ago; since then E2B paused the sandbox and
+    // traffic woke it, for a run of 300 s that gen never saw.
+    const run = (
+        state: "running" | "paused",
+        startedAt: number,
+        endAt: number,
+    ) =>
+        Promise.all([
+            Object.assign(sandbox, {
+                state,
+                startedAt: inSeconds(startedAt),
+                endAt: inSeconds(endAt),
+            }),
+            db
+                .update(sandboxWake)
+                .set({ paidUntil: new Date(Date.now() - 3_600_000) }),
+        ]);
+
+    // The cron charges a running one once.
+    await run("running", -60, 240);
+    await runCron();
+    await runCron();
+    await vi.waitFor(() => expect(paid()).toHaveLength(3));
+    // And one it finds paused at the end of its run.
+    await run("paused", -700, -400);
+    await runCron();
+    await vi.waitFor(() => expect(paid()).toHaveLength(4));
+    // A pause through gen charges the run's whole lease first.
+    await run("running", -10, 290);
+    expect(
+        (await post(owner.key, `/sandboxes/${sandbox.sandboxID}/pause`)).status,
+    ).toBe(204);
+    await vi.waitFor(() => expect(paid()).toHaveLength(5));
+    // A connect charges the unpaid run, then its own lease, which counts as
+    // paid for the cron.
+    await run("paused", -700, -400);
+    const resumed = await post(
+        owner.key,
+        `/v2/sandboxes/${sandbox.sandboxID}/connect`,
+        { timeout: 300 },
+    );
+    expect(resumed.status).toBe(201);
+    await runCron();
+    await vi.waitFor(() => expect(paid()).toHaveLength(7));
+    for (const price of paid()) expect(price).toBeCloseTo(LEASE_300S, 4);
+    expect(await questPollen(owner.userId)).toBeCloseTo(10 - 7 * LEASE_300S, 4);
+});
+
+test("the cron kills a woken sandbox nobody pays for, and paused ones that wake count as running", async () => {
+    const e2b = stubE2b();
+    const db = drizzle(env.DB);
+    const owner = await sandboxKey();
+    const broke = await sandboxKey(0);
+    const revoked = await sandboxKey();
+    await db
+        .update(apikey)
+        .set({ enabled: false })
+        .where(eq(apikey.id, revoked.id));
+    const sandbox = (
+        sandboxID: string,
+        userId: string,
+        state: "running" | "paused",
+    ) => ({
+        sandboxID,
+        startedAt: inSeconds(-60),
+        endAt: inSeconds(state === "running" ? 240 : -30),
+        cpuCount: 2,
+        memoryMB: 512,
+        state,
+        metadata: { pollinations_user: userId, pollinations_wake: "true" },
+    });
+    e2b.sandboxes.push(
+        sandbox("broke", broke.userId, "running"),
+        sandbox("revoked", revoked.userId, "paused"),
+        sandbox("paid", owner.userId, "running"),
+        ...Array.from({ length: 7 }, (_, i) =>
+            sandbox(`asleep${i}`, owner.userId, "paused"),
+        ),
+    );
+    const longAgo = new Date(Date.now() - 3_600_000);
+    await db.insert(sandboxWake).values([
+        { sandboxId: "broke", apiKeyId: broke.id, paidUntil: longAgo },
+        { sandboxId: "revoked", apiKeyId: revoked.id, paidUntil: longAgo },
+        {
+            sandboxId: "paid",
+            apiKeyId: owner.id,
+            paidUntil: new Date(e2b.sandboxes[2].endAt),
+        },
+        { sandboxId: "gone", apiKeyId: owner.id, paidUntil: longAgo },
+    ]);
+
+    await runCron();
+    expect(e2b.sandboxes.map((s) => s.sandboxID).slice(0, 2)).toEqual([
+        "paid",
+        "asleep0",
+    ]);
+    expect((await wakes()).map((wake) => wake.sandboxId)).toEqual(["paid"]);
+    expect(e2b.leases()).toEqual([]);
+
+    // One running and seven that may wake: no room for another, but waking
+    // one of the seven needs none.
+    expect((await createSandbox(owner.key)).status).toBe(429);
+    const resumed = await post(owner.key, "/v2/sandboxes/asleep0/connect", {
+        timeout: 300,
+    });
+    expect(resumed.status).toBe(201);
 });
 
 test("the account owner's session token runs sandboxes without a key scope", async () => {

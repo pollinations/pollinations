@@ -1,0 +1,33 @@
+{
+  "pr_number": 17803,
+  "title": "docs: list sandbox endpoints in the API reference",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17803",
+  "merged_at": "2026-10-17T15:36:09Z",
+  "labels": [],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added a Sandboxes API section to the API reference covering 12 served endpoints and pricing. It documents the `https://gen.pollinations.ai/alpha/e2b` base URL, `account:machines` secret-key permission, account-scoped access, E2B SDK environment variables, and Pollinations-specific rules for prepaid runtime, auto-pause, refused options and errors. Each endpoint links to E2B for request and response fields rather than duplicating them. Shortened the Sandboxes guide around dashboard and CLI setup, credits and runtime, including Node.js 20+ setup and SSH examples. Added a test that checks every served sandbox route has an API-reference entry; sandbox handlers are unchanged.",
+    "keywords": [
+      "sandboxes",
+      "API reference",
+      "E2B",
+      "OpenAPI",
+      "CLI",
+      "documentation"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-17/PR-17803.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli points a tiny terminal-shaped pointer at a glowing lime green (#ecf874) API reference on a retro monitor, with a neat row of sandbox route cards beside a potted code-plant. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses and stays small within the scene, rendered in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-17T15:37:34.801066+00:00",
+  "area": "Docs & support",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "ceac44ba916e3ac9d1ded6c9a5e330e3ea9a1ff9",
+  "announcements": []
+}

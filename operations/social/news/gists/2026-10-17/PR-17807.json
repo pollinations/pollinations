@@ -1,0 +1,32 @@
+{
+  "pr_number": 17807,
+  "title": "docs: move x402 prepaid keys out of Get Started",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17807",
+  "merged_at": "2026-10-17T15:48:17Z",
+  "labels": [],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Moved x402 Prepaid Keys from Get Started to Resources, immediately after Account. Get Started now contains Quick Start and Authentication; existing documentation links and API endpoints are unchanged.",
+    "keywords": [
+      "documentation",
+      "navigation",
+      "x402",
+      "prepaid keys",
+      "resources"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-17/PR-17807.jpg",
+    "prompt": "In a cozy pixel art reading nook, Polli moves an 'x402 Prepaid Keys' card from a Get Started shelf to a Resources shelf beside Account, with code-plants growing nearby. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and tiny librarian glasses; she is small within the scene, never oversized, and strictly pixel art. Cozy 8-bit pixel art aesthetic with chunky retro sprites, a prominent soft lime green (#ecf874) and pastel gradient background, warm lighting, and lo-fi vibes like Stardew Valley or A Short Hike; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-10-17T15:49:33.851597+00:00",
+  "area": "Docs & support",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "da4133fe5eebe8c40a2c5b913252b881668fe169",
+  "announcements": []
+}

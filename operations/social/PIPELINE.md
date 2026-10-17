@@ -11,7 +11,7 @@ Each day's merged PRs are read from GitHub once, by the daily post: one **note**
 ## How it runs
 
 ```
-PRODUCTION PUSH / SUCCESSFUL DEPLOY (news-deploy-posts.yml, all five production workflows)
+PRODUCTION PUSH / COMPLETED DEPLOY (news-deploy-posts.yml, all five production workflows)
   deploy_posts.py: new production PRs → held.json → check affected jobs → one Discord post
                    each, with a picture
 
@@ -143,7 +143,7 @@ Every PR merged into `main` or `master` that month, counted per GitHub account (
 
 `YYYY-MM/delivery.json` has one entry per PR (`pr-<number>`), in the month it merged: its state and the Discord message id. The post and its picture are only in Discord. A `none` classification records `done` with `skipped: none` and generates no picture or message.
 
-`held.json` saves the production scan cursor and pending PRs before any delivery. Each PR keeps its merge SHA, merge date and remaining targets, with no expiration. The targets come from the scanned production revision: its Cloudflare service filters, the website/E2B/Portkey workflow path lists, and existing application discovery. All required jobs must succeed at commits containing the PR. Observed successes are removed from the remaining targets and saved, so a later retry does not depend on old Actions records. A skipped service or unrelated manual app deploy cannot release it. Successful runs and jobs are paginated back to the oldest pending merge as needed. Docs-only promotions have no deployment requirement and can post on the production push. Failed or ambiguous sends remain held; the delivery record prevents a retry from sending twice.
+`held.json` saves the production scan cursor and pending PRs before any delivery. Each PR keeps its merge SHA, merge date and remaining targets, with no expiration. The targets come from the scanned production revision: its Cloudflare service filters, the website/E2B/Portkey workflow path lists, and existing application discovery. All required jobs must succeed at commits containing the PR; each job counts on its own, so another job failing in the same run doesn't hold the PR back. Observed successes are removed from the remaining targets and saved, so a later retry does not depend on old Actions records. A skipped service or unrelated manual app deploy cannot release it. Completed runs and their jobs are paginated back to the oldest pending merge as needed. Docs-only promotions have no deployment requirement and can post on the production push. Failed or ambiguous sends remain held; the delivery record prevents a retry from sending twice.
 
 ### Platform envelope
 
@@ -189,7 +189,7 @@ Announce a decided retirement with a row in the PR description. Registry comment
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `news-posts.yml` | 06:00 daily, 18:00 Sunday, 14:00 Wednesday | posts job: `posts.py write` + `save` + push, one post at a time; deliver job: `deliver.py` (only it holds the Buffer and Discord keys) |
-| `news-deploy-posts.yml` | production pushes and successful Cloudflare, website, Applications, E2B and Portkey runs; manual readiness preview by default | `deploy_posts.py` |
+| `news-deploy-posts.yml` | production pushes and every completed Cloudflare, website, Applications, E2B and Portkey run (a run that failed may still have deployed the jobs a PR needs); manual readiness preview by default | `deploy_posts.py` |
 | `news-build-index.yml` | after `news-posts.yml`, and 06:30 daily | `news_index.py` → `data/index.json` |
 
 ### Manual runs of `news-posts.yml`
@@ -223,7 +223,7 @@ A preview is the before/after check for any change to a prompt or a script: run 
 1. **One run at a time.** `news-posts.yml` and `news-deploy-posts.yml` runs queue; none is cancelled.
 2. **Writing and delivering are separate jobs.** Rerunning a delivery never writes new posts; a failed post never stops the others' delivery.
 3. **Save once.** Each post is one commit to `news`; a saved date (its summary in `data/summaries/`) is skipped unless `overwrite` is set.
-4. **Never twice.** `delivery.json` is written before each send, with the file's sha, so two runs can't both claim a post. Buffer and Discord confirm a send. An unclear result (`attempt`) fails the run until a person checks the channel and runs `deliver.py mark JOB DATE PLATFORM done|failed` (for a deploy post, sets its entry to `done` or removes it).
+4. **Never twice.** `delivery.json` is written before each send, with the file's sha, so two runs can't both claim a post. Buffer and Discord confirm a send. An unclear result (`attempt`) fails the run until a person checks the channel and runs `deliver.py mark JOB DATE PLATFORM done|failed` (for a deploy post: `deliver.py mark prs MONTH PR done|failed`).
 5. **Buffer only gets posts scheduled at today's slots;** nothing is posted right away.
 6. **The posts only read the model record:** the 06:00 run saves it, so a failed or repeated post never moves what the next one compares.
 7. **Start dates.** `deliver.py` refuses dates before its `START` (daily 2026-10-12, weekly 2026-10-18, models 2026-10-14, community 2026-10-21); `deploy_posts.py` skips PRs merged before the PR that introduced it (#17666), which were posted when they merged. Older posts went out with the previous senders.

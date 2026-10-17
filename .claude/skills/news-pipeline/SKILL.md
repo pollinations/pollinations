@@ -10,7 +10,7 @@ How it works: `operations/social/PIPELINE.md`. Everything generated lives on the
 ## Rules
 
 - **Preview first.** A manual `news-posts.yml` run defaults to `run: preview`: it writes into a throwaway checkout, prints the diff and keeps the texts and pictures with the run (artifact `preview`); it sends and saves nothing. Compare with what is on `news`, then run it live.
-- **Never send twice.** Read the `delivery.json` before delivering again. Settle a scheduled post with `deliver.py mark`; a deploy post's entry is edited by hand (below).
+- **Never send twice.** Read the `delivery.json` before delivering again. Settle any post, deploy posts included, with `deliver.py mark` (below).
 - **Ask before anything people see:** a live run (`run: all` or `deliver`), a deploy-posts run, `mark` and any edit of a `delivery.json` each need the user's go.
 
 ## Find what happened
@@ -48,13 +48,13 @@ A day is saved once its summary in `data/summaries/daily/` is; a daily rerun wit
 
 ## A missing deploy post
 
-Production pushes discover new main PRs; successful Cloudflare, website, Applications, E2B and Portkey runs retry them. `discord/held.json` keeps the production scan cursor and pending PRs with their remaining deployment jobs. Each PR waits until every affected service/app has a successful deployment containing its merge commit. A PR with no deployment target can post at promotion. There is no age cutoff.
+Production pushes discover new main PRs; every completed Cloudflare, website, Applications, E2B and Portkey run checks them again. `posts/discord/prs/held.json` keeps the production scan cursor and pending PRs with their remaining deployment jobs. Each PR waits until every affected service/app has a successful deployment job containing its merge commit; another job failing in the same run doesn't hold it back. A PR with no deployment target can post at promotion. There is no age cutoff.
 
 Successful target checks are saved so they do not expire with Actions history. The workflow reads its path rules from the scanned production revision's deployment workflows and reuses application discovery. `none` posts are recorded as `done` with `skipped: none`, without a picture or Discord send. Delivery entries are `pr-<number>` in `posts/discord/prs/<merge month>/delivery.json`.
 
 - Preview readiness first: `gh workflow run news-deploy-posts.yml -f preview=true` (the manual default). It reads live GitHub state but never saves or sends.
 - A red run: rerun it (`gh run rerun <id>`) or `gh workflow run news-deploy-posts.yml -f preview=false`. PRs already `done` are skipped.
-- `attempt`: look in the Discord channel. Found it: set the entry's `state` to `done`. Not there: remove the entry, then rerun.
+- `attempt`: look in the Discord channel. Found it: `GITHUB_TOKEN=$(gh auth token) python operations/social/scripts/deliver.py mark prs <merge month> <PR> done`. Certainly not there: `… failed`, then rerun.
 - No post at all: check `posts/discord/prs/held.json` and the required deployment jobs, then the delivery record for a `none` skip. PRs merged before #17666 were posted at merge; `master` PRs get no deploy post. Never advance the scan cursor or delete a held PR to clear a failure.
 
 ## Settle a stuck send (`attempt`)

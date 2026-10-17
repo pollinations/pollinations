@@ -51,23 +51,31 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-10-16** – **🎵 Stories from Echo Island** Turn a character idea into an illustrated story and voice note. [Try it](https://huggingface.co/spaces/xiaotian1171/echo-island-pollinations-space).
-- **2026-10-16** – **🎯 Trolley dilemmas in Switchyard** Make your choices, compare them with Jev, then see what changes when the descriptions switch order. [Try it](https://saauf.github.io/switchyard).
-- **2026-10-16** – **🤖 JavaScript in Computer MCP** Agents can run JavaScript alongside bash, work with persistent files, and return structured results. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).
-- **2026-10-16** – **🔗 A System One API path** Send TypeSafe decision requests to `/v1/systemone` using the same request and response shape as `/alpha/decisions`. [Read the API docs](https://gen.pollinations.ai/docs).
-- **2026-10-16** – **✨ An SDK skill for agents** Agents writing JavaScript apps can find a dedicated `@pollinations/sdk` quickstart for generating text and images. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk).
-- **2026-10-15** – **🚀 Media jobs without waiting** Send `Prefer: respond-async` for image, video, audio or 3D generation, then check the job and download its result when it finishes. The SDK has async methods for the same flow. [Read the API docs](https://gen.pollinations.ai/docs).
-- **2026-10-15** – **🤖 Models for typed decisions** Ask Perplexity Decider V1.1 27B or Microsoft-Decision-1 to score fixed choices and return probabilities instead of prose. Both accept decision requests through `/alpha/decisions`. [Browse models](https://enter.pollinations.ai/models).
-- **2026-10-15** – **🎵 Sound effects for video** Give `mirelo/sfx-2.0` a video URL and a sound prompt to add synchronized effects to the clip. [View the model](https://enter.pollinations.ai/models?q=mirelo/sfx-2.0).
-- **2026-10-15** – **💡 Sandboxes keep their work** New sandboxes default to pausing rather than deleting when their lease expires, so their files remain available. You can also name them and see estimated costs before choosing a template. [Read the sandbox docs](https://gen.pollinations.ai/docs).
-- **2026-10-15** – **📱 Pollinations in Android blocks** Pollinations Blocks brings text, images, speech and transcription to MIT App Inventor and Kodular projects. [View repo](https://github.com/Saauf/pollinations-blocks).
+<!-- Updated daily by .github/workflows/repo-update-readme.yml from the news index. -->
+<!-- news:start -->
+- 🎵 [Stories from Echo Island](https://huggingface.co/spaces/xiaotian1171/echo-island-pollinations-space)
+- 🎯 [Trolley dilemmas in Switchyard](https://saauf.github.io/switchyard)
+- 🤖 [JavaScript in Computer MCP](https://gen.pollinations.ai/docs#tag/mcp-servers)
+- 🔗 [A System One API path](https://gen.pollinations.ai/docs)
+- ✨ [An SDK skill for agents](https://www.npmjs.com/package/@pollinations/sdk)
+- 🚀 [Media jobs without waiting](https://gen.pollinations.ai/docs)
+- 🤖 [Models for typed decisions](https://enter.pollinations.ai/models)
+- 🎵 [Sound effects for video](https://enter.pollinations.ai/models?q=mirelo/sfx-2.0)
+- 💡 [Sandboxes keep their work](https://gen.pollinations.ai/docs)
+- 📱 [Pollinations in Android blocks](https://github.com/Saauf/pollinations-blocks)
+- 🤖 [Lightning Text v2.1](https://enter.pollinations.ai/models?q=inferenceport-ai/lightning-text-v2.1)
+- ✨ [3D in the SDK](https://www.npmjs.com/package/@pollinations/sdk)
+<!-- news:end -->
+
+[More news on enter.pollinations.ai →](https://enter.pollinations.ai/news)
+
 ---
 
 ## 🌱 Introduction
 
 [pollinations.ai](https://pollinations.ai) is an open-source generative AI platform based in Berlin, powering 500+ community projects with accessible text, image, video, audio, 3D and embeddings generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
 
-<!-- Updated daily by .github/workflows/news-sync-readme.yml.
+<!-- Updated daily by .github/workflows/repo-update-readme.yml.
      Regenerate locally with:
      GITHUB_TOKEN=$(gh auth token) node .github/scripts/star-history-chart.mjs -->
 <a href="https://star-history.com/#pollinations/pollinations&Date">

@@ -1,11 +1,11 @@
 ---
-job: monthly
-tone: twitter
-temperature: 0.7
-pictures: ["cover.jpg"]
-strip_picture_prompt: true
+job: daily
+tone: x
+temperature: 0.8
+pictures: ["x.jpg"]
+required: ["tweet"]
 ---
-Create the visual concept for this monthly website build-diary cover. The post text is not published; focus on image_prompt.
+Write a tweet about today's shipped work.
 
 {recap}
 
@@ -26,13 +26,3 @@ Output Format (JSON only):
 }
 
 Return ONLY the JSON object. No markdown fences, no explanation.
-
-## Monthly Image Identity
-
-This image is the visual cover for one month in the website build diary.
-
-- Create one calm, cohesive pixel-art scene representing the month's main themes.
-- Use the shared Pollinations visual identity and characters.
-- Prefer one readable focal point over a crowded collage.
-- Avoid dates, statistics, logos, headlines, dashboards, and small text in the image.
-- Keep enough quiet space that the image sits comfortably beside editorial text.

@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🖼️",
+    "name": "Comic Page from One Prompt",
+    "url": "https://huggingface.co/spaces/tomdacatto1/pollinations-comic-maker",
+    "description": "A Hugging Face Space people duplicate: type one idea and get a four-panel comic page. The text model writes the script as JSON (title, fixed character looks, one caption per panel), the image model dr",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "tomdacatto",
+    "githubUserId": "204561696",
+    "repositoryUrl": "https://github.com/tomdacatto/pollinations-comic-maker",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-13",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17338",
+    "approvedDate": "2026-10-17",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/52ca108a-af3c-4d21-bb5b-d4d6259e89ed"
+  },
+  {
+    "emoji": "🖼️",
     "name": "CastSheet",
     "url": "https://fi8vni13.github.io/castsheet",
     "description": "Character reference boards for AI production. Describe a character, pick a style, and CastSheet generates a three-view sheet (front · side · back) and a 2×2 expression grid with the free Pollinations ",

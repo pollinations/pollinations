@@ -206,9 +206,20 @@ it("imports only live routes and referenced schemas, with Pollinations overrides
 
 it("keeps the committed snapshot in step with the sandbox routes", () => {
     // A new or removed route in e2b.ts needs a refresh: npx tsx scripts/sync-e2b-schema.ts
-    expect(Object.keys(snapshot.paths).sort()).toEqual(
-        Object.keys(paths)
-            .map((p) => `/alpha/e2b${p}`)
+    const operations = Object.entries(snapshot.paths).flatMap(([path, item]) =>
+        Object.keys(item)
+            .filter((method) => method !== "parameters")
+            .map((method) => `${method.toUpperCase()} ${path}`),
+    );
+    expect(operations.sort()).toEqual(
+        e2bRoutes.routes
+            .filter(
+                ({ method, path }) => method !== "ALL" && path !== "/pricing",
+            )
+            .map(
+                ({ method, path }) =>
+                    `${method} /alpha/e2b${path.replace(":id", "{sandboxID}")}`,
+            )
             .sort(),
     );
     for (const item of Object.values(snapshot.paths)) {

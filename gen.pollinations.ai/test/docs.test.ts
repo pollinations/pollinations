@@ -162,6 +162,13 @@ describe("docs routes", () => {
                 "/api/quests/catalog": {
                     get: { tags: ["✨ Quests"], security: [] },
                 },
+                "/x402/keys": {
+                    get: { tags: ["👤 Account"] },
+                },
+                "/x402/keys/{packKey}": {
+                    get: { tags: ["👤 Account"] },
+                    post: { tags: ["👤 Account"] },
+                },
                 "/api/account/quests/rewards": {
                     get: { tags: ["👤 Account"] },
                 },
@@ -205,6 +212,15 @@ describe("docs routes", () => {
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
         expect(schema.paths["/realtime"]).toBeDefined();
         expect(schema.paths["/v1/realtime"]).toBeDefined();
+        expect(schema).toHaveProperty([
+            "paths",
+            "/v1/systemone",
+            "post",
+            "requestBody",
+            "content",
+            "application/json",
+            "schema",
+        ]);
         const jobStatusGet = (
             schema.paths["/v1/jobs/{id}"] as Record<string, unknown>
         )?.get as { tags?: string[] } | undefined;
@@ -252,6 +268,9 @@ describe("docs routes", () => {
         expect(schema.paths["/account/agents"]).toBeDefined();
         expect(schema.paths["/account/agents/{id}"]).toBeDefined();
         expect(schema.paths["/quests/catalog"]).toBeDefined();
+        expect(schema.paths["/api/x402/keys"]).toBeDefined();
+        expect(schema.paths["/api/x402/keys/{packKey}"]).toBeDefined();
+        expect(schema.paths["/x402/keys/{packKey}"]).toBeUndefined();
         expect(schema.paths["/api/account/key"]).toBeUndefined();
         expect(schema.paths["/api/account/profile"]).toBeUndefined();
         expect(schema.paths["/api/account/quests"]).toBeUndefined();
@@ -269,9 +288,13 @@ describe("docs routes", () => {
         const guides = schema["x-tagGroups"].find(
             (group) => group.name === "Guides",
         );
+        const getStarted = schema["x-tagGroups"].find(
+            (group) => group.name === "Get Started",
+        );
         const resources = schema["x-tagGroups"].find(
             (group) => group.name === "Resources",
         );
+        expect(getStarted?.tags).toContain("x402 Prepaid Keys");
         expect(guides?.tags).toContain("Publish a Model");
         expect(guides?.tags).not.toContain("Community Models");
         expect(resources?.tags).toContain("Community Models");
@@ -301,6 +324,9 @@ describe("docs routes", () => {
         ).toContain("polli harness dsh on");
         expect(schema.tags.map((tag) => tag.name)).toContain("MCP Servers");
         expect(schema.tags.map((tag) => tag.name)).toContain("Quests");
+        expect(schema.tags.map((tag) => tag.name)).toContain(
+            "x402 Prepaid Keys",
+        );
         expect(schema.tags.map((tag) => tag.name)).toContain("Media Storage");
         expect(schema.tags.map((tag) => tag.name)).toContain("Account");
         expect(schema.tags.map((tag) => tag.name)).not.toContain("🌸 BYOP");
@@ -417,6 +443,28 @@ describe("docs routes", () => {
             schema.paths["/quests/catalog"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
         expect(questsCatalogGet?.security).toEqual([]);
+
+        const purchase = schema.paths[
+            "/api/x402/keys/{packKey}"
+        ] as unknown as {
+            servers: { url: string }[];
+            get: { tags: string[]; security: unknown[] };
+            post: { tags: string[]; security: unknown[] };
+        };
+        expect(purchase.servers).toEqual([
+            { url: "https://enter.pollinations.ai" },
+        ]);
+        for (const operation of [purchase.get, purchase.post]) {
+            expect(operation.tags).toEqual(["x402 Prepaid Keys"]);
+            expect(operation.security).toEqual([]);
+        }
+        const amountList = schema.paths["/api/x402/keys"] as unknown as {
+            servers: { url: string }[];
+            get: { tags: string[]; security: unknown[] };
+        };
+        expect(amountList.servers).toEqual(purchase.servers);
+        expect(amountList.get.tags).toEqual(["x402 Prepaid Keys"]);
+        expect(amountList.get.security).toEqual([]);
 
         vi.mocked(fetch).mockResolvedValue(Response.json(schema));
         await expect(
@@ -541,6 +589,25 @@ describe("docs routes", () => {
         expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
         expect(html).toContain("window.location.hash === '#tag/byop'");
         expect(html).toContain("#tag/connect-user-wallets");
+    });
+
+    it("puts the dashboard and help links in the docs drawer", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        const html = await response.text();
+        for (const href of [
+            "https://enter.pollinations.ai",
+            "https://discord.com/channels/885844321461485618/889573359111774329",
+            "https://github.com/pollinations/pollinations/issues",
+        ]) {
+            expect(html).toContain(`href=\\"${href}\\"`);
+        }
     });
 
     it("serves the guide as Markdown when an agent prefers it", async () => {
@@ -776,6 +843,7 @@ describe("docs routes", () => {
         expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/exa");
         expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/composio");
         expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/computer");
+        expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/machines");
         expect(mcpBody).toContain("### Pollinations MCP");
         expect(mcpBody).toContain("### FFmpeg MCP");
         expect(mcpBody).toContain("### Exa Search MCP");

@@ -1,5 +1,5 @@
 import type { Data } from "../types";
-import { EXPENSE_CATEGORY_ORDER } from "./categories";
+import { EXPENSE_CATEGORY_ORDER, pnlSource } from "./categories";
 import { toUsd } from "./fx";
 import { modelReconcileRows } from "./modelReconcile";
 import { monthShift, reportingMonths, WINDOW_START } from "./months";
@@ -157,6 +157,16 @@ export function monthlyTrends(data: Data, scope: TrendScope, now = new Date()) {
                             : value + (row.creditValues?.[column.id] ?? 0);
                     }),
             );
+            if (
+                total == null &&
+                pnlSource(category) === "bank" &&
+                (data.opTransactions ?? []).some(
+                    (row) =>
+                        row.kind === "transaction" &&
+                        row.date.slice(0, 7) === month,
+                )
+            )
+                return 0;
             return total == null ? null : -total;
         };
         const adjustments = sales

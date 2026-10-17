@@ -513,3 +513,15 @@ it("shares recorded totals with Runway while unmatched payments stay in reconcil
     ).toBeNull();
     expect(JSON.stringify(data)).toBe(before);
 });
+
+it("shows an inactive Bank category as zero only in a month with recorded Bank activity", () => {
+    const data: Data = {
+        stripeSales: [sale("2026-09")],
+        vendorLedger: [cost("2026-09")],
+        opTransactions: [bank({})],
+    };
+    const recorded = find(data, "company");
+    expect(recorded.payroll).toBe(400);
+    expect(recorded.office).toBe(0);
+    expect(find({ ...data, opTransactions: [] }, "company").office).toBeNull();
+});

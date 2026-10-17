@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-03",
+  "period_start": "2026-09-03",
+  "period_end": "2026-09-03",
+  "generated_at": "2026-09-04T06:29:46.366930+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-03/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: Open WebUI now runs as a Pollinations chat workspace, using Pollinations as the only login. Model search owns its filters; the catalog explains itself. Added degraded-model fallbacks and one-command OpenClaw setup. 18 PRs, because apparently Tuesday had plans."
+}

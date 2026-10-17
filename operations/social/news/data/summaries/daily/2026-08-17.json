@@ -1,0 +1,115 @@
+{
+  "date": "2026-08-17",
+  "period_start": "2026-08-17",
+  "period_end": "2026-08-17",
+  "title": "API keys became less mysterious at the edges",
+  "summary": "A busy day for builders and key holders: better model tooling, a rebuilt catalog, visible quest progress, and fewer authentication-shaped traps.\n\nKey creation now accepts fractional expiry periods correctly, publishable keys can save their first redirect URI and become app keys, and invalid keys return an actionable 401 with a route to fix them. Permission screens also consistently read redirect metadata and now include an account's own private models, so valid grants do not quietly disappear during edits.\n\nAnyone can now probe upstream model IDs and test private endpoints before saving them in My Models. Polli CLI gained image-model creation, testing, pricing metadata, and clearer documentation for image editing and public model setup; meanwhile, one publisher-access path now covers community models and managed agents.\n\nThe models catalog was rebuilt for desktop and mobile with better metadata, model-type icons, copy controls, accessible tooltips, and useful Free and New markers. Meadows joined the app registry as a single chat playground for text, image, video, and audio models, while a small toggle-dialog fix restored the ancient art of putting spaces between words.",
+  "pr_count": 19,
+  "prs": [
+    {
+      "number": 12809,
+      "date": "2026-08-17"
+    },
+    {
+      "number": 13078,
+      "date": "2026-08-17"
+    },
+    {
+      "number": 13371,
+      "date": "2026-08-17"
+    },
+    {
+      "number": 13386,
+      "date": "2026-08-17"
+    },
+    {
+      "number": 13400,
+      "date": "2026-08-17"
+    },
+    {
+      "number": 13469,
+      "date": "2026-08-17"
+    },
+    {
+      "number": 13474,
+      "date": "2026-08-17"
+    },
+    {
+      "number": 13482,
+      "date": "2026-08-17"
+    },
+    {
+      "number": 13484,
+      "date": "2026-08-17"
+    },
+    {
+      "number": 13491,
+      "date": "2026-08-17"
+    },
+    {
+      "number": 13492,
+      "date": "2026-08-17"
+    },
+    {
+      "number": 13493,
+      "date": "2026-08-17"
+    },
+    {
+      "number": 13494,
+      "date": "2026-08-17"
+    },
+    {
+      "number": 13503,
+      "date": "2026-08-17"
+    },
+    {
+      "number": 13504,
+      "date": "2026-08-17"
+    },
+    {
+      "number": 13505,
+      "date": "2026-08-17"
+    },
+    {
+      "number": 13508,
+      "date": "2026-08-17"
+    },
+    {
+      "number": 13509,
+      "date": "2026-08-17"
+    },
+    {
+      "number": 13512,
+      "date": "2026-08-17"
+    }
+  ],
+  "generated_at": "2026-08-18T06:14:31.289997+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "The model garden got labels",
+      "text": "The redesigned model catalog makes official and community models easier to compare across desktop and mobile, with clearer pricing, access details, and copyable model info. [Browse models](https://enter.pollinations.ai/keys)"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Image models get a CLI key",
+      "text": "Community model builders can now create, price, validate, and list image endpoints with `polli-cli my-models`, including image-edit input support."
+    },
+    {
+      "emoji": "💡",
+      "title": "Every hive gets a probe",
+      "text": "Any account can fetch upstream model IDs and test a private community endpoint from My Models before saving it. Blind configuration, a cherished software tradition, is optional now."
+    },
+    {
+      "emoji": "🎯",
+      "title": "Quest bars grow leaves",
+      "text": "Measurable Quests now show exact progress and goal bars for things like top-ups, app users, and GitHub account age."
+    },
+    {
+      "emoji": "🌟",
+      "title": "A meadow for every model",
+      "text": "Meadows puts Pollinations text, image, video, and audio models in one chat playground for side-by-side experimentation. [Try it](https://meadowy.roboticrobot.xyz)",
+      "kind": "app"
+    }
+  ]
+}

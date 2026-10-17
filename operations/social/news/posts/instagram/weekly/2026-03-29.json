@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-03-29",
+  "period_start": "2026-03-22",
+  "period_end": "2026-03-28",
+  "generated_at": "2026-03-29T06:22:53.391278+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-29/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-29/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-29/images/instagram-3.jpg"
+    }
+  ],
+  "text": "86 PRs merged this week. The repo was busy.\n\nWe added an avalanche of frontier models: Alibaba Qwen, Amazon Nova, xAI Grok, and Wan2.2 video. All available through the usual endpoints.\n\nWe also moved all tiers to hourly pollen refills. If you burn through your allowance, you just wait an hour instead of a month. Makes more sense for how people actually build.\n\nOther updates: Headless auth for CLI logins, a new App Ecosystem dashboard for BYOP tracking, and we scrubbed some corporate marketing speak off the site. We're a hackerspace, not a B2B SaaS platform.\n\nCheck the repo for the full changelog. Keep building. 🐝👾\n\n#pollinations #opensource #aitools #pixelart #creativecoding #buildinpublic #indiedev #llm #webdev #generativeai",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

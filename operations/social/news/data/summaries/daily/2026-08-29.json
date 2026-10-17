@@ -1,0 +1,75 @@
+{
+  "date": "2026-08-29",
+  "period_start": "2026-08-29",
+  "period_end": "2026-08-29",
+  "title": "More legible model choices, plus GLM-5.3 on Fireworks",
+  "summary": "A model-selection and developer-tools day: clearer catalog limits, GLM-5.3 through Fireworks, one-command DeepSeek Harness setup, and dramatically faster usage history.\n\nGLM-5.3 is now routed through Fireworks with its reasoning, JSON, tool-calling, streaming, cache accounting, and million-token context support intact. The catalog also now shows chat context windows and supported video durations directly in model-detail tooltips, while publishing and rollout docs make model IDs easier to name, find, and keep using compatibly.\n\nThe CLI gained `polli harness dsh on|off|status`, wiring DeepSeek Harness in as a native provider with a dedicated child key, snapshots, rollback, status checks, and clean removal. The coding-harness guide was pared down around the shared lifecycle, because setup documentation should not require its own expedition.\n\nGeneration-event delivery now sends once instead of retrying application-side after transient responses, and usage-history reads return stored rows directly rather than aggregating and deduplicating an entire window at query time. A 30-day production view with 95k rows now reads in 0.03 seconds instead of processing 11.3 million aggregated rows for 15.9 seconds.",
+  "pr_count": 16,
+  "prs": [
+    {
+      "number": 14011,
+      "date": "2026-08-29"
+    },
+    {
+      "number": 14050,
+      "date": "2026-08-29"
+    },
+    {
+      "number": 14090,
+      "date": "2026-08-29"
+    },
+    {
+      "number": 14092,
+      "date": "2026-08-29"
+    },
+    {
+      "number": 14094,
+      "date": "2026-08-29"
+    },
+    {
+      "number": 14098,
+      "date": "2026-08-29"
+    },
+    {
+      "number": 14099,
+      "date": "2026-08-29"
+    },
+    {
+      "number": 14101,
+      "date": "2026-08-29"
+    },
+    {
+      "number": 14103,
+      "date": "2026-08-29"
+    },
+    {
+      "number": 14104,
+      "date": "2026-08-29"
+    },
+    {
+      "number": 14107,
+      "date": "2026-08-29"
+    },
+    {
+      "number": 14109,
+      "date": "2026-08-29"
+    },
+    {
+      "number": 14111,
+      "date": "2026-08-29"
+    },
+    {
+      "number": 14115,
+      "date": "2026-08-29"
+    },
+    {
+      "number": 14117,
+      "date": "2026-08-29"
+    },
+    {
+      "number": 14127,
+      "date": "2026-08-29"
+    }
+  ],
+  "generated_at": "2026-09-04T11:22:29.538585+00:00"
+}

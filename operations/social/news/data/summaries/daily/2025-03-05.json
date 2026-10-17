@@ -1,0 +1,47 @@
+{
+  "date": "2025-03-05",
+  "period_start": "2025-03-05",
+  "period_end": "2025-03-05",
+  "title": "Audio generation arrives through the text API",
+  "summary": "A text API day that quietly became an audio API too, with streaming sound and sturdier tools for chat agents.\n\ntext.pollinations.ai gained audio model support and PCM16 streaming output, with follow-up fixes to make the stream usable in practice. Send text, receive audio; software remains determined to make every interface eventually produce sound.\n\nThe API documentation now covers audio generation, and the README's audio-model link leads there instead of making builders forage through the repository.\n\nFunction-calling tool parameters were fixed, while search-tool handling received a round of improvements and follow-up repairs. Agents can spend a little less time arguing with their own tool schema.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 1269,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1271,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1272,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1273,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1274,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1275,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1276,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1277,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1281,
+      "date": "2025-03-05"
+    }
+  ],
+  "generated_at": "2026-09-04T12:03:26.528176+00:00"
+}

@@ -1,0 +1,87 @@
+{
+  "date": "2025-11-04",
+  "period_start": "2025-11-04",
+  "period_end": "2025-11-04",
+  "title": "Text API gained Sonar, model discovery, and sturdier streaming",
+  "summary": "A practical API day: more text models, easier setup, steadier streaming, and a few less surprising corners of the infrastructure.\n\nPerplexity Sonar models are now available through the text API, alongside a new endpoint for discovering supported text models. Streaming was tested and repaired, and Perplexity responses now handle empty finish reasons without falling over on an empty string.\n\nAPI keys now use the plln_ prefix, frontend calls moved to the enter.pollinations.ai API, and configuration was centralized to keep key handling consistent. The API docs also picked up a Quick Start, because the shortest path to pixels should not require archaeology.\n\nTier gating was removed from the registry, while Discord and weekly digest updates kept the project’s public pulse current. Terms and privacy language was also updated for the Myceli branding and open-source community.",
+  "pr_count": 19,
+  "prs": [
+    {
+      "number": 4942,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4960,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4967,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4969,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4971,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4973,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4979,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4984,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4985,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4990,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4991,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4992,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4995,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4996,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 4999,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 5000,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 5002,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 5004,
+      "date": "2025-11-04"
+    },
+    {
+      "number": 5006,
+      "date": "2025-11-04"
+    }
+  ],
+  "generated_at": "2026-09-04T12:04:38.387326+00:00"
+}

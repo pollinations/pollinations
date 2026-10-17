@@ -1,0 +1,43 @@
+{
+  "date": "2025-08-03",
+  "period_start": "2025-08-03",
+  "period_end": "2025-08-03",
+  "title": "Creative Projects got a clearer, larger showcase",
+  "summary": "A garden-maintenance day: more community projects on display, clearer front-page signals, and better contributor rails.\n\nThe Creative Projects page now explains itself with a “What is this?” entry and adds Imagine Draw AI, Aimpress, and Evolve AI to the growing list of things people are building with pollinations.\n\nFront-page statistics were restored, text generation rates were corrected, and the project showcase picked up Discord bot, GitHub stars, and documentation updates. Numbers and links: software's preferred way of proving it exists.\n\nClaude Code workflow support and a claude.md guide were added to the repository, giving contributors clearer rails for working with the codebase.",
+  "pr_count": 8,
+  "prs": [
+    {
+      "number": 3408,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3409,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3410,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3411,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3412,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3413,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3414,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3424,
+      "date": "2025-08-03"
+    }
+  ],
+  "generated_at": "2026-09-04T12:15:56.537732+00:00"
+}

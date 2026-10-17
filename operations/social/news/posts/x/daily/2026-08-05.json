@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-08-05",
+  "period_start": "2026-08-05",
+  "period_end": "2026-08-05",
+  "generated_at": "2026-08-06T07:03:28.616100+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-08-05/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 23 PRs: MCP can list account Quests; API-key auth and permissions now live in one place; generation defaults are more predictable; SDK helpers make one request. Also added 11 community apps. The garden has receipts now."
+}

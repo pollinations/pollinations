@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-05-24",
+  "period_start": "2026-05-17",
+  "period_end": "2026-05-23",
+  "generated_at": "2026-05-24T07:03:48.326047+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-24/images/twitter.jpg"
+    }
+  ],
+  "text": "55 PRs merged. Video generation now takes start/end frames for transitions. Audio gets diarization and doubled timeouts (turns out transcription takes time). Shipped Gemini 3.5 Flash via Vertex, better markdown rendering, and ~35 new community apps."
+}

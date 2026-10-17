@@ -1,0 +1,23 @@
+{
+  "date": "2025-11-19",
+  "period_start": "2025-11-19",
+  "period_end": "2025-11-19",
+  "title": "Website content stays in sync",
+  "summary": "A small garden-maintenance day: synced website content and a cleaner Gemini model name.\n\nAdded website digest synchronization, keeping the public-facing site aligned with its source content instead of relying on manual drift management.\n\nGemini 3 Pro is now presented as gemini-large, simplifying the model naming surface for people choosing an endpoint.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 5362,
+      "date": "2025-11-19"
+    },
+    {
+      "number": 5369,
+      "date": "2025-11-19"
+    },
+    {
+      "number": 5370,
+      "date": "2025-11-19"
+    }
+  ],
+  "generated_at": "2026-09-04T12:15:17.651319+00:00"
+}

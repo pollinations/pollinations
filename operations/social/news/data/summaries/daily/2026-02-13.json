@@ -1,0 +1,27 @@
+{
+  "date": "2026-02-13",
+  "period_start": "2026-02-13",
+  "period_end": "2026-02-13",
+  "title": "Heavyweight models for text and audio",
+  "summary": "A heavy shipping day bringing GLM-5, ElevenLabs Scribe v2, and a unified resolution system for all video models.\n\nWe bumped our GLM integration to version 5 (Z.ai's 744B MoE model) and wired up ElevenLabs Scribe v2 for high-accuracy speech-to-text. Both are live and drop-in ready via the standard OpenAI-compatible endpoints.\n\nVideo generation parameters are now standardized across Wan, Veo, Grok, and LTX-2. You can pass consistent dimensions regardless of the underlying model, and Grok finally respects the settings. We also migrated Wan to the Airforce API under the hood.\n\nThe dashboard now dynamically matches your tier panel to your actual community rank color instead of defaulting to amber. A small visual fix that makes the UI feel a bit more put together.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 8205,
+      "date": "2026-02-13"
+    },
+    {
+      "number": 8206,
+      "date": "2026-02-13"
+    },
+    {
+      "number": 8208,
+      "date": "2026-02-13"
+    },
+    {
+      "number": 8210,
+      "date": "2026-02-13"
+    }
+  ],
+  "generated_at": "2026-03-18T21:29:41.035981+00:00"
+}

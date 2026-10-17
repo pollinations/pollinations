@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-05-20",
+  "period_start": "2026-05-20",
+  "period_end": "2026-05-20",
+  "generated_at": "2026-05-21T07:13:01.310566+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-20/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped some fixes today. polly now renders markdown tables cleanly and stopped asking follow-up questions (she is learning boundaries). also mapped upstream text provider rate limits to 502s so you actually know what broke."
+}

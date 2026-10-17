@@ -1,0 +1,15 @@
+{
+  "date": "2025-01-26",
+  "period_start": "2025-01-26",
+  "period_end": "2025-01-26",
+  "title": "A brighter tab in the browser",
+  "summary": "A small visual tune-up: pollinations is now a little easier to spot in a crowded browser tab bar.\n\nThe favicon now uses lime, giving pollinations a small but more recognizable presence among the usual forest of open tabs.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 1087,
+      "date": "2025-01-26"
+    }
+  ],
+  "generated_at": "2026-09-04T14:02:30.871022+00:00"
+}

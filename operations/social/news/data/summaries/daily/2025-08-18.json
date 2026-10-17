@@ -1,0 +1,15 @@
+{
+  "date": "2025-08-18",
+  "period_start": "2025-08-18",
+  "period_end": "2025-08-18",
+  "title": "More models, fresher configs",
+  "summary": "A quiet model garden day: more options arrived, and the existing paths got tidied up.\n\nThe model roster got an update: new AI models were added and existing model configurations were refreshed, giving builders more current options through the same simple endpoints.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 3742,
+      "date": "2025-08-18"
+    }
+  ],
+  "generated_at": "2026-09-04T12:23:43.445359+00:00"
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-05-17",
+  "period_start": "2026-05-17",
+  "period_end": "2026-05-17",
+  "generated_at": "2026-05-18T07:18:06.704074+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-17/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped start+end frames for video generation. pass two images, get the transition. also added speaker diarization for audio (who said what), and merged 40 new community apps into the ecosystem. the greenhouse is getting crowded."
+}

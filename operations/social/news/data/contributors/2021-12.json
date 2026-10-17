@@ -1,0 +1,34 @@
+{
+  "month": "2021-12",
+  "merged_prs": 14,
+  "contributors": [
+    {
+      "id": 5099901,
+      "login": "voodoohop",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5099901?s=80&v=4",
+      "url": "https://github.com/voodoohop",
+      "prs": 13
+    },
+    {
+      "id": 85608868,
+      "login": "ale-rls",
+      "avatar_url": "https://avatars.githubusercontent.com/u/85608868?v=4",
+      "url": "https://github.com/ale-rls",
+      "prs": 12
+    },
+    {
+      "id": 39300569,
+      "login": "eni-lorac",
+      "avatar_url": "https://avatars.githubusercontent.com/u/39300569?v=4",
+      "url": "https://github.com/eni-lorac",
+      "prs": 5
+    },
+    {
+      "id": 378888,
+      "login": "gokaykucuk",
+      "avatar_url": "https://avatars.githubusercontent.com/u/378888?s=80&u=1ddcc38d711ea8fa2add46aa1d55efd3bc3c9230&v=4",
+      "url": "https://github.com/gokaykucuk",
+      "prs": 1
+    }
+  ]
+}

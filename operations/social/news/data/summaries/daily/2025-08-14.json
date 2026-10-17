@@ -1,0 +1,27 @@
+{
+  "date": "2025-08-14",
+  "period_start": "2025-08-14",
+  "period_end": "2025-08-14",
+  "title": "A new Roblox-flavored text model joins the rotation",
+  "summary": "A small garden day: another text model, tidier message plumbing, and a new community project on the map.\n\nThe roblox-rp Bedrock model is now available with random selection, adding another route for playful roleplay-style text generation.\n\nMessage sanitization moved into a dedicated utility, while text event data received a defined source structure. Less duplicated cleanup logic, more predictable foundations for text features.\n\nPollix AI was added to the project list, making another community-built use of the infrastructure easier to discover.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 3656,
+      "date": "2025-08-14"
+    },
+    {
+      "number": 3679,
+      "date": "2025-08-14"
+    },
+    {
+      "number": 3695,
+      "date": "2025-08-14"
+    },
+    {
+      "number": 3696,
+      "date": "2025-08-14"
+    }
+  ],
+  "generated_at": "2026-09-04T12:21:57.747679+00:00"
+}

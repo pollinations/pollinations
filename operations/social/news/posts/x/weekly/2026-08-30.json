@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-08-30",
+  "period_start": "2026-08-23",
+  "period_end": "2026-08-29",
+  "generated_at": "2026-08-30T06:27:26.163568+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-08-30/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped this week: hosted MCP tools for FFmpeg, Exa Search, and transcription; API agent registration; and a model catalog showing capabilities, context windows, and video limits.\n\nSeedance gained reference media. creators got earnings links. 99 PRs. plumbing remains undefeated."
+}

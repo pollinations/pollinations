@@ -1,0 +1,19 @@
+{
+  "date": "2025-02-23",
+  "period_start": "2025-02-23",
+  "period_end": "2025-02-23",
+  "title": "Project links and community tools got a refresh",
+  "summary": "A quiet garden pass: a project moved house and another joined the map.\n\nurSapere AI now points to its new Vercel home, and PrivatePollenAI has been added to the projects list. Small map updates, fewer dead ends.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 1213,
+      "date": "2025-02-23"
+    },
+    {
+      "number": 1222,
+      "date": "2025-02-23"
+    }
+  ],
+  "generated_at": "2026-09-04T13:59:58.155005+00:00"
+}

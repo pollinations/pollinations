@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-04-19",
+  "period_start": "2026-04-12",
+  "period_end": "2026-04-18",
+  "generated_at": "2026-04-19T06:32:36.167679+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-19/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol.42 — CLI releases & CORS fixes\n\n29 PRs merged this week. We shipped a new CLI, fixed browser SDKs, and moved a lot of models around to make them faster. Here is the breakdown.\n\n───\n\n→ THE TERMINAL IS THE FRONTEND\nWe cut v0.1.0 of the polli CLI. It includes a video demo skill and hardened publish CI. Sometimes you just want to generate things without leaving your terminal.\n\n→ BROWSER SDKS & PLUMBING\nFixed CORS request headers so OpenAI SDKs actually work directly from browsers now. We also hid expired API keys from the dashboard and fixed enter usage exports for power users.\n\n→ INFERENCE SPEEDRUNS\nMigrated Kimi, Deepseek, GLM, Qwen-large, and Minimax to Fireworks AI. Sana Sprint 1.6B is now on GH200. We also added a reasoning flag for Gemini image models.\n\n→ THE GREENHOUSE\n14 new apps added to the showcase this week, including Neon Runner, Ciel AI, and Flashlearn. The community continues to build things faster than we can catalog them.\n\n───\n\nEverything is open source. Repo is public at github.com/pollinations/pollinations\n\n#OpenSource #AI #DevTools"
+}

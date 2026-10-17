@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-06-28",
+  "period_start": "2026-06-21",
+  "period_end": "2026-06-27",
+  "generated_at": "2026-06-28T07:18:18.267347+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-28/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol.42 — audio upgrades & quest logs\n\n22 PRs merged this week. We swapped out some audio engines and replaced subscriptions with a quest system.\n\n───\n\n→ THE GREAT AUDIO UPGRADE\nAdded Stable Audio 3 via Stability's official API and Stable Audio 3 Medium via fal. Upgraded elevenmusic to v2 with reference-audio conditioning, plus ElevenLabs SFX and Multilingual v2. Generating decent noise is now significantly easier.\n\n→ QUESTS OVER TIERS\nSubscriptions are gone. We shipped the first iteration of the quest system: a rewards ledger, per-user checks, and a public catalog. You do useful things, you get Pollen credits. We also scrubbed the old subscription tier copy from the docs, which is always a good day.\n\n→ MODELS & ROUTING\nAdded the Inception Mercury model to codex and fixed a routing bug so text modalities actually pass to providers correctly. Also documented that publishable keys are replaced by Bring Your Own Provider (BYOP) in auth.\n\n→ COMMUNITY\nAdded REKTY AI to bots and consolidated a backlog of stale app submission PRs.\n\n───\n\nCode, roadmap, and the new quest catalog are open on GitHub.\n\n#OpenSource #AI #WebAudio #Developers"
+}

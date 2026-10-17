@@ -1,0 +1,167 @@
+{
+  "date": "2026-04-26",
+  "period_start": "2026-04-19",
+  "period_end": "2026-04-25",
+  "title": "The Great Model Migration",
+  "summary": "A massive week for model upgrades, MCP capabilities, and giving developers finer control over their generations.\n\nAdded Claude Opus 4.7, DeepSeek V4, gptimage-2, and Qwen3-TTS, while upgrading MiniMax and Kimi.\n\nOverhauled the MCP server with dynamic registries and 35+ voices, added deterministic audio seeds, and replaced boolean image reasoning with fast/balanced/pro modes.\n\nReplaced rolling usage windows with a precise calendar picker, added hourly data granularity, and improved BYOP attribution.\n\nRedesigned the BYOP consent screen, refreshed the pricing UI, and fixed a slew of mobile layout and scrolling issues.",
+  "pr_count": 39,
+  "prs": [
+    {
+      "number": 10328,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10329,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10331,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10333,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10334,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10335,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10339,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10341,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10345,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10346,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10229,
+      "date": "2026-04-20"
+    },
+    {
+      "number": 10239,
+      "date": "2026-04-20"
+    },
+    {
+      "number": 10255,
+      "date": "2026-04-20"
+    },
+    {
+      "number": 10368,
+      "date": "2026-04-20"
+    },
+    {
+      "number": 10369,
+      "date": "2026-04-20"
+    },
+    {
+      "number": 10371,
+      "date": "2026-04-20"
+    },
+    {
+      "number": 10342,
+      "date": "2026-04-21"
+    },
+    {
+      "number": 10343,
+      "date": "2026-04-21"
+    },
+    {
+      "number": 10372,
+      "date": "2026-04-21"
+    },
+    {
+      "number": 10374,
+      "date": "2026-04-21"
+    },
+    {
+      "number": 10375,
+      "date": "2026-04-21"
+    },
+    {
+      "number": 10393,
+      "date": "2026-04-21"
+    },
+    {
+      "number": 10395,
+      "date": "2026-04-21"
+    },
+    {
+      "number": 10308,
+      "date": "2026-04-22"
+    },
+    {
+      "number": 10402,
+      "date": "2026-04-22"
+    },
+    {
+      "number": 10379,
+      "date": "2026-04-23"
+    },
+    {
+      "number": 10415,
+      "date": "2026-04-23"
+    },
+    {
+      "number": 10416,
+      "date": "2026-04-23"
+    },
+    {
+      "number": 10425,
+      "date": "2026-04-23"
+    },
+    {
+      "number": 10426,
+      "date": "2026-04-23"
+    },
+    {
+      "number": 10427,
+      "date": "2026-04-23"
+    },
+    {
+      "number": 10252,
+      "date": "2026-04-24"
+    },
+    {
+      "number": 10314,
+      "date": "2026-04-24"
+    },
+    {
+      "number": 10435,
+      "date": "2026-04-24"
+    },
+    {
+      "number": 10439,
+      "date": "2026-04-24"
+    },
+    {
+      "number": 10443,
+      "date": "2026-04-24"
+    },
+    {
+      "number": 10446,
+      "date": "2026-04-24"
+    },
+    {
+      "number": 10449,
+      "date": "2026-04-25"
+    },
+    {
+      "number": 10453,
+      "date": "2026-04-25"
+    }
+  ],
+  "generated_at": "2026-04-26T06:36:13.049262+00:00"
+}

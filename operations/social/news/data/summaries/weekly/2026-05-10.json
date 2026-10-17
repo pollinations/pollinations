@@ -1,0 +1,175 @@
+{
+  "date": "2026-05-10",
+  "period_start": "2026-05-03",
+  "period_end": "2026-05-09",
+  "title": "Embeddings, Llama, and Gemma",
+  "summary": "We shipped a dedicated embeddings endpoint, added a slew of new models, and made our error messages actually tell you what went wrong.\n\nWe finally gave embeddings their own `/v1/embeddings` endpoint, defaulting to OpenAI's text-embedding-3-small for the free tier. On the generation side, we upgraded the default Llama to 3.3-70B, added Gemma 4 26B via DeepInfra, and wired up Seedance 2.0 for video. More pixels, more tokens, more vectors.\n\nGeneric 500 errors are the enemy. We rewired our error handling to actually pass through upstream 4xx codes, so you can tell the difference between a rate limit and a content policy rejection. We also added AWS Bedrock Guardrails for optional safety checks, and fixed a bunch of Cloudflare Worker routing issues that were breaking Nova models.\n\nWe overhauled the Bring Your Own Pollen (BYOP) billing system. Creator markups are now explicitly tracked, attribution actually persists across sessions, and the dashboard explains your earnings without requiring a finance degree.\n\nThe showcase exploded this week with 14 new additions. Highlights include PollImage (a CLI for terminal image generation) and a massive upgrade to the Polly Discord bot that finally renders LaTeX and markdown tables properly instead of spitting out raw syntax.",
+  "pr_count": 41,
+  "prs": [
+    {
+      "number": 10627,
+      "date": "2026-05-03"
+    },
+    {
+      "number": 10640,
+      "date": "2026-05-03"
+    },
+    {
+      "number": 10645,
+      "date": "2026-05-03"
+    },
+    {
+      "number": 10646,
+      "date": "2026-05-03"
+    },
+    {
+      "number": 10647,
+      "date": "2026-05-03"
+    },
+    {
+      "number": 10648,
+      "date": "2026-05-03"
+    },
+    {
+      "number": 10651,
+      "date": "2026-05-03"
+    },
+    {
+      "number": 10653,
+      "date": "2026-05-04"
+    },
+    {
+      "number": 10660,
+      "date": "2026-05-04"
+    },
+    {
+      "number": 10663,
+      "date": "2026-05-04"
+    },
+    {
+      "number": 10665,
+      "date": "2026-05-04"
+    },
+    {
+      "number": 10675,
+      "date": "2026-05-04"
+    },
+    {
+      "number": 10676,
+      "date": "2026-05-04"
+    },
+    {
+      "number": 10687,
+      "date": "2026-05-05"
+    },
+    {
+      "number": 10688,
+      "date": "2026-05-05"
+    },
+    {
+      "number": 10689,
+      "date": "2026-05-05"
+    },
+    {
+      "number": 10691,
+      "date": "2026-05-05"
+    },
+    {
+      "number": 10696,
+      "date": "2026-05-05"
+    },
+    {
+      "number": 10708,
+      "date": "2026-05-06"
+    },
+    {
+      "number": 10712,
+      "date": "2026-05-06"
+    },
+    {
+      "number": 10358,
+      "date": "2026-05-07"
+    },
+    {
+      "number": 10422,
+      "date": "2026-05-07"
+    },
+    {
+      "number": 10739,
+      "date": "2026-05-07"
+    },
+    {
+      "number": 10759,
+      "date": "2026-05-07"
+    },
+    {
+      "number": 10760,
+      "date": "2026-05-07"
+    },
+    {
+      "number": 10669,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10707,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10738,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10770,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10772,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10779,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10784,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10791,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10792,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10639,
+      "date": "2026-05-09"
+    },
+    {
+      "number": 10796,
+      "date": "2026-05-09"
+    },
+    {
+      "number": 10797,
+      "date": "2026-05-09"
+    },
+    {
+      "number": 10798,
+      "date": "2026-05-09"
+    },
+    {
+      "number": 10801,
+      "date": "2026-05-09"
+    },
+    {
+      "number": 10802,
+      "date": "2026-05-09"
+    },
+    {
+      "number": 10811,
+      "date": "2026-05-09"
+    }
+  ],
+  "generated_at": "2026-05-10T06:52:29.920629+00:00"
+}

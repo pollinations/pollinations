@@ -1,0 +1,19 @@
+{
+  "date": "2025-11-25",
+  "period_start": "2025-11-25",
+  "period_end": "2025-11-25",
+  "title": "Flux Schnell deployment got simpler",
+  "summary": "A small tuning day: simpler Flux Schnell deployment and sturdier streaming response handling.\n\nThe Flux Schnell (Nunchaku) deployment path was simplified, making the model easier to run and maintain.\n\nIntegration tests were strengthened and streaming-response tracking now handles failures more gracefully. Streams remain streams; their edge cases have been asked to behave.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 5379,
+      "date": "2025-11-25"
+    },
+    {
+      "number": 5412,
+      "date": "2025-11-25"
+    }
+  ],
+  "generated_at": "2026-09-04T12:17:52.522687+00:00"
+}

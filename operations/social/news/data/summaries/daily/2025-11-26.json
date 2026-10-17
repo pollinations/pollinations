@@ -1,0 +1,19 @@
+{
+  "date": "2025-11-26",
+  "period_start": "2025-11-26",
+  "period_end": "2025-11-26",
+  "title": "Vision inputs and text controls now reach the models intact",
+  "summary": "A small compatibility pass: image URLs work with Vertex vision, and OpenAI request settings stop disappearing on the way through.\n\nVertex AI vision can now receive images supplied as HTTP URLs, converting them to the format it expects behind the scenes. OpenAI-compatible requests also pass through max_tokens and other API parameters, so apps get the generation controls they asked for.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 5415,
+      "date": "2025-11-26"
+    },
+    {
+      "number": 5416,
+      "date": "2025-11-26"
+    }
+  ],
+  "generated_at": "2026-09-04T12:18:34.985100+00:00"
+}

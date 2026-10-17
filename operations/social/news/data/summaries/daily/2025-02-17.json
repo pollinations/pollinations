@@ -1,0 +1,23 @@
+{
+  "date": "2025-02-17",
+  "period_start": "2025-02-17",
+  "period_end": "2025-02-17",
+  "title": "Three more projects join the Pollinations garden",
+  "summary": "A small community harvest: a model picker, a Telegram bot, and an image generator added to the growing project list.\n\nThe community project list now includes a model-comparison tool, the One Word Telegram bot, and Zelos AI's image generator—three different ways people are putting the same open infrastructure to work.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 1190,
+      "date": "2025-02-17"
+    },
+    {
+      "number": 1191,
+      "date": "2025-02-17"
+    },
+    {
+      "number": 1193,
+      "date": "2025-02-17"
+    }
+  ],
+  "generated_at": "2026-09-04T13:40:07.599890+00:00"
+}

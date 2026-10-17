@@ -1,0 +1,27 @@
+{
+  "date": "2025-03-13",
+  "period_start": "2025-03-13",
+  "period_end": "2025-03-13",
+  "title": "Text API gets its model plumbing in one place",
+  "summary": "A text-stack maintenance day: cleaner model routing, saner token limits, steadier queues, and a path for supporting models.\n\ntext.pollinations.ai consolidated its models through Portkey, making the growing model lineup easier to route and maintain without every integration becoming its own small weather system.\n\nLlamaGuard now respects model-specific token limits, while the text feed and queue system received fixes to keep requests moving through the right paths.\n\nAdded a feature/model donation wrapper, laying groundwork for people to directly support the models and features they use.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 1336,
+      "date": "2025-03-13"
+    },
+    {
+      "number": 1338,
+      "date": "2025-03-13"
+    },
+    {
+      "number": 1340,
+      "date": "2025-03-13"
+    },
+    {
+      "number": 1341,
+      "date": "2025-03-13"
+    }
+  ],
+  "generated_at": "2026-09-04T12:07:54.076799+00:00"
+}

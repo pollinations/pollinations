@@ -1,0 +1,31 @@
+{
+  "date": "2025-09-23",
+  "period_start": "2025-09-23",
+  "period_end": "2025-09-23",
+  "title": "Seedream 4.0 joins the image garden",
+  "summary": "Seedream 4.0 landed with queue-aware handling, while generation accounting and model telemetry got less mysterious.\n\nByteDance ARK Seedream 4.0 is now available for image generation, with model-specific improvements and queue handling arriving alongside it. New pixels, plus some sensible traffic control before everyone finds the same shiny button.\n\nGeneration requests now verify that the account has enough balance before starting, making paid image runs clearer and avoiding work that cannot be completed.\n\nImage analytics model tracking was repaired through middleware, giving the project a cleaner view of which models are carrying the pixel workload.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 4135,
+      "date": "2025-09-23"
+    },
+    {
+      "number": 4141,
+      "date": "2025-09-23"
+    },
+    {
+      "number": 4142,
+      "date": "2025-09-23"
+    },
+    {
+      "number": 4143,
+      "date": "2025-09-23"
+    },
+    {
+      "number": 4144,
+      "date": "2025-09-23"
+    }
+  ],
+  "generated_at": "2026-09-04T12:35:07.867260+00:00"
+}

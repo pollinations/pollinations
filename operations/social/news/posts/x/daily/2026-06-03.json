@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-06-03",
+  "period_start": "2026-06-03",
+  "period_end": "2026-06-03",
+  "generated_at": "2026-06-04T07:33:48.281024+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-03/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped a few things today:\n\n- nova-fast now uses bedrock cross-region profiles for better uptime\n- reduced tinybird vcpu pressure on dev earnings (smoother scaling under load)\n- fixed the auth modal theme and focus trap\n\nless melting cpus, more typing."
+}

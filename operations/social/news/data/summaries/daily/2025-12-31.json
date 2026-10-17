@@ -1,0 +1,23 @@
+{
+  "date": "2025-12-31",
+  "period_start": "2025-12-31",
+  "period_end": "2025-12-31",
+  "title": "Gemini 3 Flash gets its fast lane back",
+  "summary": "A small New Year's Eve tune-up: clearer balances in the dashboard and Gemini 3 Flash back in fast mode.\n\nGemini 3 Flash fast mode now explicitly runs with a zero thinking budget, restoring the quick-response path for prompts that do not need extra deliberation.\n\nThe dashboard now separates tier and pack balances into two columns, while dropping pending spend from the display. Less arithmetic required to understand what is available.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 6645,
+      "date": "2025-12-31"
+    },
+    {
+      "number": 6663,
+      "date": "2025-12-31"
+    },
+    {
+      "number": 6672,
+      "date": "2025-12-31"
+    }
+  ],
+  "generated_at": "2026-09-04T12:45:16.781076+00:00"
+}

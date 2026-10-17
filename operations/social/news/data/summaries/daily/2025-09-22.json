@@ -1,0 +1,35 @@
+{
+  "date": "2025-09-22",
+  "period_start": "2025-09-22",
+  "period_end": "2025-09-22",
+  "title": "Gemini Search now points at the right Flash model",
+  "summary": "A garden-maintenance day: smoother Gemini Search, more community chat projects, and clearer signals from Pollen and Nano Banana.\n\nThe gemini-search route now uses the Vertex-specific gemini-2.5-flash-vertex model ID, keeping search requests on the intended model rather than relying on a name that sounds close enough for software.\n\nStrapick Chat and LLMS were added to the project listings, giving people two more community-built chat experiments to discover and poke at.\n\nPollen MVP moved to v0.2, while Nano Banana gained fuller logging and user-stat tracking. Telemetry now also records requested and actually used models correctly, making the system's account of itself a little less fictional.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 4039,
+      "date": "2025-09-22"
+    },
+    {
+      "number": 4121,
+      "date": "2025-09-22"
+    },
+    {
+      "number": 4122,
+      "date": "2025-09-22"
+    },
+    {
+      "number": 4126,
+      "date": "2025-09-22"
+    },
+    {
+      "number": 4132,
+      "date": "2025-09-22"
+    },
+    {
+      "number": 4133,
+      "date": "2025-09-22"
+    }
+  ],
+  "generated_at": "2026-09-04T12:34:31.352978+00:00"
+}

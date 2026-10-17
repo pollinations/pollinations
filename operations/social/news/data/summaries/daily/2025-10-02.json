@@ -1,0 +1,47 @@
+{
+  "date": "2025-10-02",
+  "period_start": "2025-10-02",
+  "period_end": "2025-10-02",
+  "title": "Creative experiments get a larger stage",
+  "summary": "A community-gallery day: 21 new projects surfaced, plus cleaner model-provider metadata behind the API.\n\nThe project showcase now includes Imagine Draw AI alongside Anime Comic Movie and MultiAgent—more examples of people using the API to make weird, visual, and collaborative things.\n\nThree new projects plus PrisimAI, Quilix, YooAI, Petfuse, iTouch, Hythme AI, Gainzr AI, and Dreamator-AI were added to the gallery. The directory continues its gradual transformation into evidence that people will build anything if you give them an HTTP endpoint.\n\nTwo additional batches added eight more projects to the showcase, giving visitors more real-world starting points than another generic prompt box.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 4277,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4286,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4287,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4289,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4291,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4292,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4294,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4295,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4302,
+      "date": "2025-10-02"
+    }
+  ],
+  "generated_at": "2026-09-04T12:40:48.125104+00:00"
+}

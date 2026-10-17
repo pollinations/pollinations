@@ -1,0 +1,39 @@
+{
+  "date": "2025-02-07",
+  "period_start": "2025-02-07",
+  "period_end": "2025-02-07",
+  "title": "More projects found their way into the garden",
+  "summary": "A garden-tending day: more community projects, clearer API request IDs, private feed controls, and Hormoz 8B.\n\nPolliSonic Generator and urSapere AI were added to the community projects list, while project entries now include submission dates. The directory is becoming a slightly more useful record of what people are building.\n\nOpenAI-style API responses now receive unique IDs prefixed with pllns_, making individual requests easier to identify and trace in apps built on the endpoint.\n\nClients can now mark requests private to skip feed broadcasting, and Hormoz 8B was enabled for people who want another text-model option.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 1155,
+      "date": "2025-02-07"
+    },
+    {
+      "number": 1162,
+      "date": "2025-02-07"
+    },
+    {
+      "number": 1163,
+      "date": "2025-02-07"
+    },
+    {
+      "number": 1165,
+      "date": "2025-02-07"
+    },
+    {
+      "number": 1171,
+      "date": "2025-02-07"
+    },
+    {
+      "number": 1172,
+      "date": "2025-02-07"
+    },
+    {
+      "number": 1174,
+      "date": "2025-02-07"
+    }
+  ],
+  "generated_at": "2026-09-04T13:37:09.283839+00:00"
+}

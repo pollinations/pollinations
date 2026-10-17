@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-09-20",
+  "period_start": "2026-09-13",
+  "period_end": "2026-09-19",
+  "generated_at": "2026-09-20T06:28:27.583723+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-20/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped this week: agents can remember, share collective memory, and declare what they take in and return. /v1/models now includes model health; discovery can filter by source and reliability. 109 merged PRs. the garden has a clipboard now."
+}

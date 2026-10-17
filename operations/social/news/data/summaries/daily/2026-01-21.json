@@ -1,0 +1,51 @@
+{
+  "date": "2026-01-21",
+  "period_start": "2026-01-21",
+  "period_end": "2026-01-21",
+  "title": "More models for words and moving pictures",
+  "summary": "A model-heavy day: new text and video options, clearer Flux validation, and better visibility across the app garden.\n\nAdded Alibaba Wan 2.6 for image-to-video, klein-large (9B) for text, and gemini-legacy backed by Gemini 2.5 Pro. One endpoint, three more things to try making.\n\nFlux dimension validation now catches unsupported image sizes more reliably, alongside refreshed io.net instance documentation. Less interpretive dance between a request and an error.\n\nAPPS.md now includes issue-tracking columns, making it easier to see where community-built apps stand, while Fable Friend joined the Games collection.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 7484,
+      "date": "2026-01-21"
+    },
+    {
+      "number": 7504,
+      "date": "2026-01-21"
+    },
+    {
+      "number": 7513,
+      "date": "2026-01-21"
+    },
+    {
+      "number": 7517,
+      "date": "2026-01-21"
+    },
+    {
+      "number": 7518,
+      "date": "2026-01-21"
+    },
+    {
+      "number": 7522,
+      "date": "2026-01-21"
+    },
+    {
+      "number": 7523,
+      "date": "2026-01-21"
+    },
+    {
+      "number": 7533,
+      "date": "2026-01-21"
+    },
+    {
+      "number": 7538,
+      "date": "2026-01-21"
+    },
+    {
+      "number": 7541,
+      "date": "2026-01-21"
+    }
+  ],
+  "generated_at": "2026-09-04T11:41:52.309111+00:00"
+}

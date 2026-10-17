@@ -1,0 +1,31 @@
+{
+  "date": "2026-07-07",
+  "period_start": "2026-07-07",
+  "period_end": "2026-07-07",
+  "title": "Polli CLI installation now points developers to the working command",
+  "summary": "A small maintenance day: clearer CLI setup, more accurate client identity at the edge, and freshly updated community maps.\n\nThe Polli skill docs now include the current global npm install command: `npm i -g @pollinations/cli@latest`. Less archaeology required before talking to the CLI.\n\nTwo networking fixes preserve real viewer IPs through CloudFront, Origin Shield, and trusted proxy headers. Internal rate limiting, tracking, and abuse detection can now identify individual clients rather than a shared egress address.\n\nAutomated updates refreshed community app health and usage metrics, plus the README's latest-news section, so the public map of the garden remains current.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 12272,
+      "date": "2026-07-07"
+    },
+    {
+      "number": 12273,
+      "date": "2026-07-07"
+    },
+    {
+      "number": 12282,
+      "date": "2026-07-07"
+    },
+    {
+      "number": 12284,
+      "date": "2026-07-07"
+    },
+    {
+      "number": 12290,
+      "date": "2026-07-07"
+    }
+  ],
+  "generated_at": "2026-09-04T11:43:31.965243+00:00"
+}

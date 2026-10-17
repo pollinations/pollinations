@@ -1,0 +1,59 @@
+{
+  "date": "2025-06-03",
+  "period_start": "2025-06-03",
+  "period_end": "2025-06-03",
+  "title": "More things built with Pollinations, now easier to find",
+  "summary": "A community-harvest day: transparent image outputs, cleaner text chats, and a growing directory of projects people built with Pollinations.\n\nThe project directory gained a Spanish slideshow maker, a memory game, Whizzy AI, Minecraft AI projects, Mindcraft, and a Telegram AI chatbot. The garden is acquiring side paths, games, and at least one block-based civilization.\n\nImage generation can now return transparent-background images through the API, making generated assets less likely to need an emergency trip through a background remover.\n\nText-service ad formatting and styling were refined, duplicate ads in conversations were prevented, and user preferences now control ad behavior. The supporting redirect proxy also adds analytics tracking without making the conversation itself any more repetitive.",
+  "pr_count": 12,
+  "prs": [
+    {
+      "number": 2176,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2223,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2246,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2247,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2248,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2252,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2253,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2261,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2262,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2265,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2266,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2269,
+      "date": "2025-06-03"
+    }
+  ],
+  "generated_at": "2026-09-04T12:56:28.534373+00:00"
+}

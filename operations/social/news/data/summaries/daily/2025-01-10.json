@@ -1,0 +1,23 @@
+{
+  "date": "2025-01-10",
+  "period_start": "2025-01-10",
+  "period_end": "2025-01-10",
+  "title": "Text generation gets more model-aware",
+  "summary": "A small maintenance day for text generation reliability, project discovery, and docs that match reality.\n\nText generation services now support multiple models with improved error handling, making the shared text endpoint a little more resilient when the machinery behind it disagrees.\n\nThe projects list now includes the Polli API Dashboard, while outdated jsonMode documentation was removed so the API reference better reflects the interface people actually use.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 969,
+      "date": "2025-01-10"
+    },
+    {
+      "number": 973,
+      "date": "2025-01-10"
+    },
+    {
+      "number": 976,
+      "date": "2025-01-10"
+    }
+  ],
+  "generated_at": "2026-09-04T13:37:25.070678+00:00"
+}

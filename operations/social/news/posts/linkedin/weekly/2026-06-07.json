@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-06-07",
+  "period_start": "2026-05-31",
+  "period_end": "2026-06-06",
+  "generated_at": "2026-06-07T07:21:06.408137+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-07/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol.42 — React SDKs, audio header repairs, and 50 merged PRs.\n\nHere is what shipped this week.\n\n→ REACT SDK AND UI\nWe added a React auth provider and UI package. You can now drop pollinations into your React apps without writing the same boilerplate we all pretend we enjoy writing.\n\n→ AUDIO AND GROK FIXES\nRepaired WAV RIFF header sizes in TTS responses. Turns out audio players get very confused when the file header lies about the file size. Also stripped reasoning parameters from non-reasoning Grok models, because asking a standard model to show its work just generates 400 errors.\n\n→ ROUTING AND PRICING\nNormalized all pricing multipliers to 1x. Flux is now routing through Fireworks, and Claude Bedrock models are using global inference profiles. Smarter routing, less overhead.\n\n→ POLLY DRAWS\nAdded a render_visual tool. Polly can now output explicit AI-driven tables and charts.\n\n→ COMMUNITY GROWTH\n25 new community apps were added to the showcase this week. Everything from resume builders to flight logs.\n\n───\n\nThe infrastructure is open source. Come build something weird.\ngithub.com/pollinations/pollinations\n\n#OpenSource #AI #WebDev #ReactJS"
+}

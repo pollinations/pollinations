@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-05-24",
+  "period_start": "2026-05-17",
+  "period_end": "2026-05-23",
+  "generated_at": "2026-05-24T07:03:48.326047+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-24/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol.55 — video frames, audio diarization, and 55 merged PRs.\n\n───\n\nWe merged 55 PRs this week. Over 35 were community apps joining the ecosystem. The rest were infrastructure fixes, because things break when that many people use them.\n\n→ VIDEO TRANSITIONS\nAdded start and end frame support via positional image arrays across providers. You can now dictate where a generated video begins and ends, rather than letting the latent space decide your fate.\n\n→ AUDIO DIARIZATION & TIMEOUTS\nAdded support for OpenAI diarized transcriptions. We also bumped the AssemblyAI polling timeout from 120s to 240s. Artificial fetch timeouts are the enemy of completed jobs, so we removed them where it made sense.\n\n→ GEMINI 3.5 FLASH & RELIABILITY\nWired up Gemini 3.5 Flash via Vertex. We also started mapping text provider rate limits to proper 502 errors. Now you know exactly whose API is complaining when things stall.\n\n→ POLLY RENDERING\nImproved table and LaTeX rendering. Fixed markdown formatting in table images and stripped out the weird postambles Polly was appending to responses.\n\n───\n\nAll endpoints are live. Repo is open.\ngithub.com/pollinations/pollinations\n\n#OpenSource #DevTools #AI #Pollinations"
+}

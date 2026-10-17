@@ -1,0 +1,255 @@
+{
+  "date": "2026-03-22",
+  "period_start": "2026-03-15",
+  "period_end": "2026-03-21",
+  "title": "The community went on a shipping bender",
+  "summary": "The community shipped an absurd number of apps this week, so we spent our time making sure the infrastructure, frontend, and billing could keep up.\n\nWe merged over 30 community app submissions this week. The ecosystem is expanding in weird, wonderful, and highly technical directions. People built integrations for ESP32 microcontrollers, PowerShell environments, and the Claude Code CLI. We also saw Twitch chatbots, procedurally generated MUDs, and automated YouTube Shorts pipelines. The API is officially everywhere.\n\nWe overhauled how free tier allowances work. Spore and Seed tiers now get their pollen refilled hourly via a new Cloudflare Cron system, rather than waiting for a daily reset. We also implemented strict balance protections to ensure free tier overages can never spill over and drain your paid credits. Finally, we fixed the auto-upgrade scripts so eligible GitHub contributors get their Seed tier bumps reliably.\n\nThe frontend got a massive performance boost. We implemented lazy-loading, chunk splitting, and SWR caching to drastically cut initial bundle sizes and make return visits near-instant. We also redesigned the homepage, added drag-and-drop file uploads to the Play page, and completely rebuilt the model monitor so it actually tracks the health of audio and video models alongside text and images.\n\nOn the model front, we added the massive Qwen3.5 397B model via Fireworks, giving you access to a 262K context window. We upgraded the Klein image model to support multi-image editing via a new multipart endpoint (up to 4 reference images). We also fixed a nasty bug where the audio API was parsing MP3s as MP4s, resulting in wild duration estimates that triggered false 'Insufficient Balance' errors.",
+  "pr_count": 61,
+  "prs": [
+    {
+      "number": 8901,
+      "date": "2026-03-15"
+    },
+    {
+      "number": 9128,
+      "date": "2026-03-15"
+    },
+    {
+      "number": 9144,
+      "date": "2026-03-15"
+    },
+    {
+      "number": 9147,
+      "date": "2026-03-15"
+    },
+    {
+      "number": 9150,
+      "date": "2026-03-15"
+    },
+    {
+      "number": 9151,
+      "date": "2026-03-15"
+    },
+    {
+      "number": 9153,
+      "date": "2026-03-15"
+    },
+    {
+      "number": 9154,
+      "date": "2026-03-15"
+    },
+    {
+      "number": 9155,
+      "date": "2026-03-15"
+    },
+    {
+      "number": 9145,
+      "date": "2026-03-16"
+    },
+    {
+      "number": 9160,
+      "date": "2026-03-16"
+    },
+    {
+      "number": 9178,
+      "date": "2026-03-16"
+    },
+    {
+      "number": 9182,
+      "date": "2026-03-16"
+    },
+    {
+      "number": 9156,
+      "date": "2026-03-17"
+    },
+    {
+      "number": 9179,
+      "date": "2026-03-17"
+    },
+    {
+      "number": 9187,
+      "date": "2026-03-17"
+    },
+    {
+      "number": 9216,
+      "date": "2026-03-17"
+    },
+    {
+      "number": 9219,
+      "date": "2026-03-17"
+    },
+    {
+      "number": 9220,
+      "date": "2026-03-17"
+    },
+    {
+      "number": 9225,
+      "date": "2026-03-17"
+    },
+    {
+      "number": 9229,
+      "date": "2026-03-17"
+    },
+    {
+      "number": 8114,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9260,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9262,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9269,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9270,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9271,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9272,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9273,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9274,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9275,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9276,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9277,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9278,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9280,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9281,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9284,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9316,
+      "date": "2026-03-19"
+    },
+    {
+      "number": 9323,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9343,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9344,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9345,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9349,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9350,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9352,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9353,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9354,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9367,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9267,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9371,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9373,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9384,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9389,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9391,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9395,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9396,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9397,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9399,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9402,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9403,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9408,
+      "date": "2026-03-21"
+    }
+  ],
+  "generated_at": "2026-03-22T06:16:15.361378+00:00"
+}

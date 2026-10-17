@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-03-08",
+  "period_start": "2026-03-01",
+  "period_end": "2026-03-07",
+  "generated_at": "2026-03-08T06:19:52.781661+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-08/images/discord.jpg"
+    }
+  ],
+  "text": "Hey <@&1424461167883194418>,\n\n## Weekly Update - 2026-03-07\n\n41 PRs merged this week. We swapped some engine parts while the car was running, added some new models, and the showcase continues to grow at an alarming (but welcome) rate.\n\n**🤖 New Models & Capabilities**\n- Added `suno-v5`, `step-3.5-flash`, and `flux-2-dev`.\n- `flux-2-dev` now supports image inputs (img2img) and automatically snaps to supported dimensions so you don't have to guess.\n- Fixed audio routing so Suno properly generates music when you hit `GET /audio/:text`.\n\n**🛠️ Developer QoL & SDK**\n- The `@pollinations_ai/sdk` NPM package leveled up with Speech-to-Text (STT) and Media Upload features.\n- `media.pollinations.ai` is now officially documented.\n- We normalized API responses so `finish_reason` properly matches the OpenAI format. Drop-in replacements should drop in smoother now.\n\n**🌸 The App Avalanche**\n- Over 20 new apps hit the showcase this week.\n- Highlights include the official Pollinations CLI, PromptLab Studio, NovelCraft AI, and Fantasy Story Generator.\n\n**🧹 Housekeeping**\n- Shipped abuse detection cron jobs to keep the free tier safe.\n- Added app URL tracking and Bring-Your-Own-Prompt (BYOP) settings for publishable keys.\n\nKeep building. Let us know what breaks."
+}

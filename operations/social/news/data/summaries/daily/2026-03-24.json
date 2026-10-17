@@ -1,0 +1,56 @@
+{
+  "date": "2026-03-24",
+  "period_start": "2026-03-24",
+  "period_end": "2026-03-24",
+  "title": "The validation bot stands down: app submissions open to all",
+  "summary": "We told the validation bot to stop rejecting free-tier app submissions and welcomed three new community projects to the showcase.\n\nWe updated the validation script so the bot stops auto-rejecting app submissions based on tier. Whether you just showed up or you've been here for years, if you built something on our infrastructure, you can submit it to the showcase.\n\nPeople keep building things. Today's additions to the community showcase include VeroClass AI for Brazilian educators, Metadatagenerator for microstock creators, and TelegramChannelAI for automating channel management.\n\nWe overhauled the internal dashboards for Bring Your Own Prompt (BYOP) requests. The event pipeline now tracks developer user IDs, giving us a clearer picture of who is building what so we can actually support them properly.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 9519,
+      "date": "2026-03-24"
+    },
+    {
+      "number": 9520,
+      "date": "2026-03-24"
+    },
+    {
+      "number": 9526,
+      "date": "2026-03-24"
+    },
+    {
+      "number": 9528,
+      "date": "2026-03-24"
+    },
+    {
+      "number": 9537,
+      "date": "2026-03-24"
+    }
+  ],
+  "generated_at": "2026-03-25T06:20:54.804814+00:00",
+  "highlights": [
+    {
+      "emoji": "🔓",
+      "title": "Open App Submissions",
+      "text": "The gates are open—developers on the free tier can now submit their projects to the [Community App Showcase](https://hello.pollinations.ai) without being auto-rejected by the validation bot."
+    },
+    {
+      "emoji": "🍎",
+      "title": "VeroClass AI Teacher Hub",
+      "text": "AI-powered tools for educators to streamline lesson planning and classroom management. [Try it](https://teachers.veroclass.org)",
+      "kind": "app"
+    },
+    {
+      "emoji": "🏷️",
+      "title": "Metadatagenerator",
+      "text": "A new community tool for generating metadata and prompts for microstock marketplaces. [Try it](https://metadatagenerator.online/)",
+      "kind": "app"
+    },
+    {
+      "emoji": "✈️",
+      "title": "TelegramChannelAI",
+      "text": "Automate your Telegram channel management with this new community-built content generation pipeline. [View repo](https://github.com/rrs1979/TelegramChannelAI)",
+      "kind": "app"
+    }
+  ]
+}

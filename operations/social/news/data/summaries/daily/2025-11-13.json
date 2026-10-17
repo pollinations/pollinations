@@ -1,0 +1,59 @@
+{
+  "date": "2025-11-13",
+  "period_start": "2025-11-13",
+  "period_end": "2025-11-13",
+  "title": "API responses keep the useful bits attached",
+  "summary": "A plumbing-heavy day: citations and usage tracking got clearer while production, staging, and proxy routes were put back in sensible order.\n\nPerplexity citations now survive API responses, and a new model-usage tracking endpoint gives builders a clearer view of which models their apps are calling. Answers should arrive with their receipts.\n\nThe React app was synced with Hacktoberfest Chat, keeping the community interface aligned across the relevant app updates.\n\nSandbox-to-production migration work, deployment configuration fixes, restored staging routing, and the missing edge limiter binding were brought into line. Event batching was also moved earlier in processing, where it can cause fewer surprises.",
+  "pr_count": 12,
+  "prs": [
+    {
+      "number": 5152,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5232,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5235,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5239,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5240,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5241,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5242,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5245,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5251,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5252,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5255,
+      "date": "2025-11-13"
+    },
+    {
+      "number": 5257,
+      "date": "2025-11-13"
+    }
+  ],
+  "generated_at": "2026-09-04T12:12:00.226997+00:00"
+}

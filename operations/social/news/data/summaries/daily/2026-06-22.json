@@ -1,0 +1,54 @@
+{
+  "date": "2026-06-22",
+  "period_start": "2026-06-22",
+  "period_end": "2026-06-22",
+  "title": "ElevenLabs integration gets SFX, Music v2, and 40% cheaper TTS",
+  "summary": "A massive day for audio generation: Stable Audio 2.5, ElevenLabs SFX, reference-audio conditioning, and 40% cheaper TTS.\n\nA massive expansion of our ElevenLabs audio capabilities. You can now generate sound effects via the `eleven-sfx` model, use 29 languages with Multilingual v2, and guide music generation with reference audio on `music_v2`. We also bumped the TTS input cap to 10,000 characters and dropped pricing by ~40% to pass at-cost savings directly to users.\n\nAdded support for Stable Audio 2.5 via fal.ai. Developers can now generate custom WAV music tracks up to 190 seconds long by passing prompts, duration, and steps to the new endpoint. The frontend directory has also been updated with the official Stability AI branding to match.\n\nCleaned up the showcase backlog to welcome RoleChar and SpiritPet World to the community directory, while pruning a dead link.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 11931,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11946,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11948,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11949,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11950,
+      "date": "2026-06-22"
+    }
+  ],
+  "generated_at": "2026-06-23T07:10:38.665458+00:00",
+  "highlights": [
+    {
+      "emoji": "🎵",
+      "title": "ElevenLabs Music v2",
+      "text": "Upgraded the music integration to v2 and added reference-audio conditioning. You can now pass an audio track to guide the output style instead of just hoping for the best."
+    },
+    {
+      "emoji": "🎶",
+      "title": "Stable Audio 2.5",
+      "text": "Added text-to-music generation via fal.ai. Hit the `stable-audio-2.5` endpoint with your prompt to get up to 190 seconds of WAV output. Check the [API Docs](https://gen.pollinations.ai/docs)."
+    },
+    {
+      "emoji": "🔊",
+      "title": "Sound Effects & Polyglots",
+      "text": "Added `eleven-sfx` for generating sound effects and `eleven-multilingual-v2` for 29 languages. We also bumped the TTS input cap to 10,000 characters for those really long monologues."
+    },
+    {
+      "emoji": "🌸",
+      "title": "Community Showcase Updates",
+      "text": "RoleChar and SpiritPet World have been added to the ecosystem. [View repos](https://pollinations.ai)",
+      "kind": "app"
+    }
+  ]
+}

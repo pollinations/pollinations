@@ -1,0 +1,19 @@
+{
+  "date": "2025-02-20",
+  "period_start": "2025-02-20",
+  "period_end": "2025-02-20",
+  "title": "Sharing Pollinations looks more like Pollinations",
+  "summary": "A small polish day: cleaner social sharing and refreshed usage signals across the site.\n\nSocial share assets were updated and repaired, so links have a more reliable, current presentation when they leave the garden.\n\nGA4 events were refreshed across the product, giving maintainers cleaner signals about what people actually do after arriving. Analytics: the part where software admits it has been guessing.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 1209,
+      "date": "2025-02-20"
+    },
+    {
+      "number": 1211,
+      "date": "2025-02-20"
+    }
+  ],
+  "generated_at": "2026-09-04T13:58:46.383181+00:00"
+}

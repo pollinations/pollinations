@@ -1,0 +1,15 @@
+{
+  "date": "2025-03-08",
+  "period_start": "2025-03-08",
+  "period_end": "2025-03-08",
+  "title": "A small way to support the garden",
+  "summary": "One small site update: a clearer path for people who want to support the project.\n\nThe Latest News section now points people to the Ko-Fi tip button, making it easier for anyone who wants to toss a little support toward the open infrastructure.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 1287,
+      "date": "2025-03-08"
+    }
+  ],
+  "generated_at": "2026-09-04T12:05:05.232068+00:00"
+}

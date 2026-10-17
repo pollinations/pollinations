@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-04-21",
+  "period_start": "2026-04-21",
+  "period_end": "2026-04-21",
+  "generated_at": "2026-04-22T06:35:12.500271+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-21/images/twitter.jpg"
+    }
+  ],
+  "text": "claude-xlarge (opus 4.7) and qwen3-tts are now wired up and live. also had to teach our windows mcp processes that when their parent dies, they don't need to busy-loop in grief. it's okay to just exit. 7 PRs merged today."
+}

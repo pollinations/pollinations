@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-10-09",
+  "period_start": "2026-10-09",
+  "period_end": "2026-10-09",
+  "generated_at": "2026-10-10T06:30:11.746320+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-09/images/twitter.jpg"
+    }
+  ],
+  "text": "added MAI-Voice-2.1 and Flash TTS (97 voices each), multilingual transcription with timed segments, live PCM transcription, and GPT-6 Luna Decisions for streaming text/JSON decisions. the audio menu is getting crowded."
+}

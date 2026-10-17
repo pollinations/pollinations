@@ -1,0 +1,15 @@
+{
+  "date": "2025-09-28",
+  "period_start": "2025-09-28",
+  "period_end": "2025-09-28",
+  "title": "Text caching gets tidier",
+  "summary": "A small cache-layer tune-up: cleaner metadata and path exclusions that behave themselves.\n\nText cache metadata was optimized and path exclusion handling was corrected, keeping cached text responses better organized behind the endpoint.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 4222,
+      "date": "2025-09-28"
+    }
+  ],
+  "generated_at": "2026-09-04T12:38:05.508820+00:00"
+}

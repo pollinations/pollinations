@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-02",
+  "period_start": "2026-09-02",
+  "period_end": "2026-09-02",
+  "generated_at": "2026-09-03T06:29:37.175699+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-02/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: a stateless Responses API, Composio MCP connectors, Gemini 3.8 Flash, and fallbacks for official models. We also sped up PR checks and improved model routing visibility. 17 merged PRs. the garden declined a quiet day."
+}

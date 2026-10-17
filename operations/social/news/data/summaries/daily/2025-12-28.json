@@ -1,0 +1,23 @@
+{
+  "date": "2025-12-28",
+  "period_start": "2025-12-28",
+  "period_end": "2025-12-28",
+  "title": "Streaming is live again",
+  "summary": "A small but useful day: real-time streaming returns, reasoning controls fill out, and IDPhotoGen lands in creative.\n\nStreaming responses now arrive in real time rather than waiting in a buffer. Chat apps can go back to feeling like conversations instead of unusually suspenseful loading screens.\n\nAdded the missing reasoning_effort settings: none, minimal, and xhigh. Builders can now select the full range of thinking budgets through the API.\n\nAdded IDPhotoGen to the creative ecosystem, giving people another tool for generating practical identity-photo-style images.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 6511,
+      "date": "2025-12-28"
+    },
+    {
+      "number": 6520,
+      "date": "2025-12-28"
+    },
+    {
+      "number": 6522,
+      "date": "2025-12-28"
+    }
+  ],
+  "generated_at": "2026-09-04T12:43:03.285817+00:00"
+}

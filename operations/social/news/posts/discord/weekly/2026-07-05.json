@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-07-05",
+  "period_start": "2026-06-28",
+  "period_end": "2026-07-04",
+  "generated_at": "2026-07-05T07:04:10.038266+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-07-05/images/discord.jpg"
+    }
+  ],
+  "text": "Hey <@&1424461167883194418>. We merged 50 PRs this week. Added a Z-axis, fired up some 5090s, and opened up the community models alpha.\n\n## Weekly Update - 2026-07-05\n\n**✨ Models & 3D**\n- We do 3D now. Generate models via Trellis 2 and Rodin 2.5. Prices and icons are live in the dashboard.\n- Added `nanobanana-2-lite` and `claude-sonnet-5` (via Bedrock). `claude-fable-5` is back.\n- `gpt-image-2` now supports arbitrary resolutions and passes the quality parameter correctly.\n- Audio fix: repaired WAV header size fields in the chat completions audio path.\n\n**🤝 Community Models (Alpha)**\n- Community text endpoints are live and documented. We've started allowlisting creators.\n- Added auto-deactivation for unstable community models so they return a clean 400 instead of throwing 500s when they fall over.\n\n**⚙️ Infrastructure & Auth**\n- `flux` is now routing to our self-hosted Vast.ai RTX 5090 pool (with Fireworks fallback).\n- Shipped OAuth 2.1 authorization-code grant with PKCE + RFC 8414 discovery.\n- Added a new `/v1/models/status` endpoint backed by a Tinybird proxy with caching.\n\n**🪙 Ecosystem & Quests**\n- Search fees for Perplexity/Gemini are now itemized billing adjustments.\n- The \"App Listed\" quest is enabled. Get your app in the ecosystem, get Pollen.\n- The Greenhouse is booming: 14 new apps added this week (shoutout to Elfy AI, Imagipedia, PolliCross, and the rest).\n\nGo build something weird."
+}

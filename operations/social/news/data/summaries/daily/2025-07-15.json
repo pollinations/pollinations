@@ -1,0 +1,19 @@
+{
+  "date": "2025-07-15",
+  "period_start": "2025-07-15",
+  "period_end": "2025-07-15",
+  "title": "Chat projects get a DeepSeek starting point",
+  "summary": "A small project-directory tune-up: a DeepSeek chat prompt and fresh Mindcraft links.\n\nAdded a DeepSeek prompt to chat projects, giving builders another ready-made route into the model without beginning from a blank text box.\n\nUpdated the Mindcraft project entry with its current URL and repository, so the project directory leads somewhere useful rather than historical.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 3101,
+      "date": "2025-07-15"
+    },
+    {
+      "number": 3124,
+      "date": "2025-07-15"
+    }
+  ],
+  "generated_at": "2026-09-04T12:10:00.734282+00:00"
+}

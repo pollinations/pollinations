@@ -1,0 +1,23 @@
+{
+  "date": "2025-01-02",
+  "period_start": "2025-01-02",
+  "period_end": "2025-01-02",
+  "title": "Image prompt enhancement gets a clearer path through text",
+  "summary": "A small builder-friendly day: smoother image prompt enhancement and a clearer map to the SDKs.\n\nPrompt-enhancement requests coming from image.pollinations.ai are no longer caught by the usual text endpoint rate limiting, keeping image generations moving when they need text help behind the scenes. A follow-up fixed the syntax issue in that change, because software enjoys making simple routing rules ceremonial.\n\nThe project now has a dedicated SDKs and libraries section, giving builders a more direct route from an idea to code that talks to Pollinations.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 949,
+      "date": "2025-01-02"
+    },
+    {
+      "number": 950,
+      "date": "2025-01-02"
+    },
+    {
+      "number": 951,
+      "date": "2025-01-02"
+    }
+  ],
+  "generated_at": "2026-09-04T13:33:17.605708+00:00"
+}

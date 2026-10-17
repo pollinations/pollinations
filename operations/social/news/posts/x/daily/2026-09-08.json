@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-08",
+  "period_start": "2026-09-08",
+  "period_end": "2026-09-08",
+  "generated_at": "2026-09-09T06:30:18.567186+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-08/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: account activity now has independent navigation and selectable charts; generated media gets durable storage + on-demand cache recovery. Added model fallbacks, GPT Image 2.5, and stream usage that survives provider end-of-stream improvisation."
+}

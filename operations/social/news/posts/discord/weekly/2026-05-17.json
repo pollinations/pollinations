@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-05-17",
+  "period_start": "2026-05-10",
+  "period_end": "2026-05-16",
+  "generated_at": "2026-05-17T06:55:42.330783+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-17/images/discord.jpg"
+    }
+  ],
+  "text": "Hey <@&1424461167883194418>, 60 PRs merged this week. Here's what actually matters.\n\n## Weekly Update - 2026-05-17\n\n**💰 The Dashboard & The Money**\n- The developer earnings dashboard is live.\n- Added Stripe Portal auto top-up so your apps stop running out of credits while you sleep.\n- Quest payouts are now automated and linked directly to your GitHub ID.\n\n**🤖 Model Musical Chairs**\n- Added `gpt-5.4-mini` and `elevenlabs flash v2.5` TTS.\n- Unhid `seedream` and `seedream-pro`.\n- `deepseek-v4-flash` is now routed via OpenRouter and is no longer paid-only.\n- Added `mistral-4`, bumped mistral to small 3.2, and routed `qwen-vision` to the instruct variant.\n\n**🐛 Honest Error Codes**\n- We stopped taking the blame for your bad inputs. Upstream user-input errors are now properly classified as 4xx instead of 500 server errors.\n- Image URL fetch failures and upstream 400s will now surface the actual error message instead of a cryptic `{}`.\n\n**🌱 Greenhouse Explosion**\n- 22 new apps added to the ecosystem this week, including MageAI, Opticode, Navaro, and Pollenforge-CLI."
+}

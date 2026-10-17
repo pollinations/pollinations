@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-10-05",
+  "period_start": "2026-10-05",
+  "period_end": "2026-10-05",
+  "generated_at": "2026-10-06T06:31:33.817802+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-05/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped FLUX.3 and Seedream 5.0 Flash for image generation and editing. Veo now defaults to landscape and requests audio explicitly. model search and filters landed too, so finding the new stuff takes fewer tabs."
+}

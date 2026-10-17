@@ -1,0 +1,71 @@
+{
+  "date": "2026-02-08",
+  "period_start": "2026-02-01",
+  "period_end": "2026-02-07",
+  "title": "The Generative Media Explosion",
+  "summary": "We plugged in a ridiculous number of new models and finally gave the reasoning engines enough time to think.\n\nWe wired up a massive batch of new image and video models. LTX-2 via Modal gives us 1024x1024 video with audio. We also integrated api.airforce to bring in Imagen 3, Imagen 4, Flux 2 Dev, and Grok Video (which gets a shiny new 'Alpha' tag in the UI).\n\nUpgraded Claude to Opus 4.6 on Bedrock. More importantly, we moved the Portkey gateway to a custom domain to bump the proxy read timeout from 100s to 600s. Reasoning models can now actually finish their thoughts without the connection dropping. We also migrated Mistral to OVHcloud and ironed out the resulting config quirks.\n\nExpanded our Vast.ai GPU fleet and switched z-image to safetensors to eliminate image generation queues. Added some internal Grafana panels to keep an eye on the economics of it all.\n\nAdded a new `/v1/audio/speech` endpoint backed by ElevenLabs. It includes voice mapping for OpenAI compatibility, meaning you can just swap the base URL and get high-quality TTS.",
+  "pr_count": 15,
+  "prs": [
+    {
+      "number": 7877,
+      "date": "2026-02-05"
+    },
+    {
+      "number": 7959,
+      "date": "2026-02-05"
+    },
+    {
+      "number": 7903,
+      "date": "2026-02-06"
+    },
+    {
+      "number": 7922,
+      "date": "2026-02-06"
+    },
+    {
+      "number": 7994,
+      "date": "2026-02-06"
+    },
+    {
+      "number": 8000,
+      "date": "2026-02-06"
+    },
+    {
+      "number": 8001,
+      "date": "2026-02-06"
+    },
+    {
+      "number": 8004,
+      "date": "2026-02-06"
+    },
+    {
+      "number": 8015,
+      "date": "2026-02-06"
+    },
+    {
+      "number": 8016,
+      "date": "2026-02-06"
+    },
+    {
+      "number": 8023,
+      "date": "2026-02-06"
+    },
+    {
+      "number": 7281,
+      "date": "2026-02-07"
+    },
+    {
+      "number": 8026,
+      "date": "2026-02-07"
+    },
+    {
+      "number": 8053,
+      "date": "2026-02-07"
+    },
+    {
+      "number": 8063,
+      "date": "2026-02-07"
+    }
+  ],
+  "generated_at": "2026-03-18T22:22:09.582030+00:00"
+}

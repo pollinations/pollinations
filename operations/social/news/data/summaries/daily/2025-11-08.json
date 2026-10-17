@@ -1,0 +1,49 @@
+{
+  "date": "2025-11-08",
+  "period_start": "2025-11-08",
+  "period_end": "2025-11-08",
+  "title": "A tidier image-editor workflow",
+  "summary": "A garden-maintenance day: cleaner editor controls, a quieter text experience, and a simpler setup for multi-service contributors.\n\nThe image editor's Reference Images interface got a cleanup, while button styling was made more consistent across the site. Small interface work, but fewer different ways for a button to behave is generally good news.\n\nThe ad system was disabled globally on text.pollinations.ai, keeping the text endpoint focused on producing text rather than additional scenery.\n\nA root package.json now gives contributors a clearer entry point for working across Pollinations' multiple services.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 5113,
+      "date": "2025-11-08"
+    },
+    {
+      "number": 5116,
+      "date": "2025-11-08"
+    },
+    {
+      "number": 5118,
+      "date": "2025-11-08"
+    },
+    {
+      "number": 5120,
+      "date": "2025-11-08"
+    }
+  ],
+  "generated_at": "2026-09-04T12:09:15.524677+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "New Models",
+      "text": "Added `perplexity-fast`, `perplexity-reasoning`, and `naughty` (Mistral Nemo) to the [Text API](https://enter.pollinations.ai)."
+    },
+    {
+      "emoji": "🔗",
+      "title": "OpenAI Compatibility",
+      "text": "New standard `/v1/chat/completions` endpoints allow seamless integration with existing OpenAI SDKs. Check [API Docs](https://enter.pollinations.ai/api/docs)."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Exact Dimensions",
+      "text": "Removed auto-scaling limits—generate images in specific resolutions (e.g., 1536x1024) without modification via the [Image API](https://enter.pollinations.ai)."
+    },
+    {
+      "emoji": "🎵",
+      "title": "Raw Output API",
+      "text": "GET requests to text and audio endpoints now return raw text strings or MP3 files instead of JSON for easier browser usage."
+    }
+  ]
+}

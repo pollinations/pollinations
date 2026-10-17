@@ -1,0 +1,27 @@
+{
+  "date": "2025-03-28",
+  "period_start": "2025-03-28",
+  "period_end": "2025-03-28",
+  "title": "qwen-reasoning and phi-mini are visible in the OpenAI-compatible API again",
+  "summary": "A garden-maintenance day: restored model discovery, clearer API docs, and a freshly curated creative-app showcase.\n\nThe OpenAI API model list now includes qwen-reasoning and phi-mini, so applications discovering available models through the endpoint can find and use them without guessing names or maintaining their own workaround list.\n\nThe API docs were reorganized into a more unified reference, making the route from simple HTTP call to generated text, images, audio, or video a little less archaeological.\n\nRiffle joined the Creative Apps section while the project gallery received a small curation pass. The showcase remains a useful map of what people are actually building with the infrastructure.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 1460,
+      "date": "2025-03-28"
+    },
+    {
+      "number": 1470,
+      "date": "2025-03-28"
+    },
+    {
+      "number": 1471,
+      "date": "2025-03-28"
+    },
+    {
+      "number": 1474,
+      "date": "2025-03-28"
+    }
+  ],
+  "generated_at": "2026-09-04T12:18:21.586907+00:00"
+}

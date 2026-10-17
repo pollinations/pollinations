@@ -1,0 +1,208 @@
+{
+  "date": "2026-10-04",
+  "period_start": "2026-10-04",
+  "period_end": "2026-10-04",
+  "title": "The community made games out of mysteries, impostors, and postcards",
+  "summary": "A community-heavy day brought eleven new apps, new model Quests, sturdier generation requests, and fewer ways for CLI configuration to go sideways.\n\nEleven apps joined the games and learning collections. Players can question voiced suspects in Alibi and Whodunnit, try three real-or-AI guessing games, or pass one device around for Mole Party, Whisperwick, and Liar’s Supper. Postcard Worlds turns generated scenes into places to explore; Tunemory and Chorus turn study notes into songs.\n\nNew Quests reward trying video and community models, and community-model publishers can earn Pollen when others use their models. Model rates now show dollar amounts directly, x402 prepaid-key buyers can choose an exact amount, and CLI and MCP earnings reports can cover up to 365 days. Key edits preserve an unchanged expiry, key permissions print readably in the CLI, and the Quests page puts categories before bonus rewards.\n\nNew chats default to gpt-5.4-nano, with four ready-to-pick model pins, a Pollen-balance link, and third-party chat sharing off by default. Existing installations can apply the settings without losing their own pins or chats. Production also moved to a larger instance after health checks began timing out.",
+  "pr_count": 37,
+  "prs": [
+    {
+      "number": 15732,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 15998,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16217,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16249,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16276,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16279,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16289,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16292,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16311,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16319,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16347,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16348,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16352,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16353,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16354,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16358,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16360,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16362,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16376,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16377,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16383,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16386,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16387,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16397,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16398,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16400,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16408,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16409,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16411,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16412,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16417,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16418,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16425,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16426,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16436,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16438,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16444,
+      "date": "2026-10-04"
+    }
+  ],
+  "generated_at": "2026-10-05T06:45:05.004316+00:00",
+  "highlights": [
+    {
+      "emoji": "🎯",
+      "title": "Quests for curious model users",
+      "text": "Try a video model or a community model to earn 0.25 Pollen for each Setup Quest. Community-model publishers can earn 2 Pollen when others spend more than 0.5 Paid Pollen across their models.",
+      "prs": [
+        15732
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Walk through generated postcards",
+      "text": "Enter a place in [Postcard Worlds](https://tomdacatto.github.io/pollinations-postcard-worlds), then click doors, paths, or windows to generate the next matching view. [Try it](https://tomdacatto.github.io/pollinations-postcard-worlds).",
+      "prs": [
+        16425
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Turn notes into songs",
+      "text": "Paste facts into [Tunemory](https://tomdacatto.github.io/pollinations-tunemory) for a short song that checks its lyrics against your notes, or choose a style for your study song in [Chorus](https://xiaotian1171.github.io/chorus). [Try Tunemory](https://tomdacatto.github.io/pollinations-tunemory) or [try Chorus](https://xiaotian1171.github.io/chorus).",
+      "prs": [
+        16417,
+        16418
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Question the suspects",
+      "text": "Interrogate four voiced AI suspects and track contradictions in [Alibi](https://tomdacatto.github.io/pollinations-alibi), or investigate a 3D mansion by speaking to five suspects in [Whodunnit](https://guest453.github.io/whodunnit). [Try Alibi](https://tomdacatto.github.io/pollinations-alibi) or [try Whodunnit](https://guest453.github.io/whodunnit).",
+      "prs": [
+        16376,
+        16377
+      ],
+      "kind": "app"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Claude Code connects directly",
+      "text": "Polli’s Claude Code setup now connects directly to Gen’s `/v1/messages` instead of using Claude Code Router. See the [Polli CLI package](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        16311
+      ],
+      "kind": "product"
+    }
+  ]
+}

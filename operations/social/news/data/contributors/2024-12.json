@@ -1,0 +1,20 @@
+{
+  "month": "2024-12",
+  "merged_prs": 15,
+  "contributors": [
+    {
+      "id": 5099901,
+      "login": "voodoohop",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5099901?s=80&v=4",
+      "url": "https://github.com/voodoohop",
+      "prs": 14
+    },
+    {
+      "id": 74301576,
+      "login": "Circuit-Overtime",
+      "avatar_url": "https://avatars.githubusercontent.com/u/74301576?s=80&u=fe05794e65d22cd313e710ed7266b42627d30586&v=4",
+      "url": "https://github.com/Circuit-Overtime",
+      "prs": 1
+    }
+  ]
+}

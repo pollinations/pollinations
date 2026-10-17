@@ -1,0 +1,155 @@
+{
+  "date": "2026-05-10",
+  "period_start": "2026-05-10",
+  "period_end": "2026-05-10",
+  "title": "Chat got less fussy, more usable",
+  "summary": "A community harvest: smoother chat and generation, automated contributor rewards, and twenty new things growing in the Greenhouse.\n\nchat.pollinations received a broad UI and UX pass: a Bring Your Own Pollen modal for custom API keys, clearer errors, and mobile layout repairs. An additional AI Chat entry was added to the chat lineup.\n\nThe xAI image-to-video integration now sends the payload it actually expects, restoring image-to-video generation. CatGPT avatar comics also have a durable selfie reference again, while new Spore accounts now correctly fast-track to Seed within eight hours.\n\nContributors can now claim bountied issues through Community Quests and receive automated Pollen payouts when selected work merges. The surrounding GitHub workflows gained backfills, cleaner status and type assignment, safer maintainer handling, and GitHub-ID-based payouts that survive username changes. Bureaucracy, but the kind that pays people.",
+  "pr_count": 36,
+  "prs": [
+    {
+      "number": 10715,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10787,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10803,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10812,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10815,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10816,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10818,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10819,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10820,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10822,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10823,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10826,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10830,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10833,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10834,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10837,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10838,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10840,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10841,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10843,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10844,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10846,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10847,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10848,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10849,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10850,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10851,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10852,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10853,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10854,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10855,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10856,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10857,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10858,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10859,
+      "date": "2026-05-10"
+    },
+    {
+      "number": 10860,
+      "date": "2026-05-10"
+    }
+  ],
+  "generated_at": "2026-09-04T11:49:17.979751+00:00"
+}

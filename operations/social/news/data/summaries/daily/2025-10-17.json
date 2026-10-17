@@ -1,0 +1,19 @@
+{
+  "date": "2025-10-17",
+  "period_start": "2025-10-17",
+  "period_end": "2025-10-17",
+  "title": "Image services now keep their footprint under control",
+  "summary": "A small maintenance pass keeps image generation from quietly filling memory and disk.\n\nThe image cache was reduced from 500k entries to 5k to prevent runaway memory use, while progress-bar logging was disabled so routine generation work does not gradually consume disk space. Less hoarding, fewer mysterious outages.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 4591,
+      "date": "2025-10-17"
+    },
+    {
+      "number": 4596,
+      "date": "2025-10-17"
+    }
+  ],
+  "generated_at": "2026-09-04T12:48:53.162005+00:00"
+}

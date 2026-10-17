@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-05-03",
+  "period_start": "2026-04-26",
+  "period_end": "2026-05-02",
+  "generated_at": "2026-05-03T06:49:51.643514+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-03/images/twitter.jpg"
+    }
+  ],
+  "text": "41 PRs merged this week. we moved text and image generation to a new gen worker (added 308s so your old urls still work). added gpt-5.5, llama 3.3 70b, and assemblyai for stt. grok imagine now does img2img. and 5 new apps hit the showcase. back to work."
+}

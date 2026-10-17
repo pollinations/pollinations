@@ -1,0 +1,19 @@
+{
+  "date": "2025-01-31",
+  "period_start": "2025-01-31",
+  "period_end": "2025-01-31",
+  "title": "A more tailored text experience",
+  "summary": "A small text-stack tune-up: better feed filtering and a refreshed prompt enhancer backend.\n\nThe text feed gained filtering by referrer and content type, making it easier to shape what appears where. Prompt enhancement also moved to Azure OpenAI, keeping the prompt-polishing path maintained.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 1122,
+      "date": "2025-01-31"
+    },
+    {
+      "number": 1124,
+      "date": "2025-01-31"
+    }
+  ],
+  "generated_at": "2026-09-04T14:05:29.416508+00:00"
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-03-26",
+  "period_start": "2026-03-26",
+  "period_end": "2026-03-26",
+  "generated_at": "2026-03-27T06:24:30.576814+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-26/images/twitter.jpg"
+    }
+  ],
+  "text": "10 PRs merged today. 7 new community apps added to the showcase. fixed a race condition where stale requests haunted the UI during category switches. audio models now actually route to the audio endpoint. dashboard got some polish. the ecosystem grows."
+}

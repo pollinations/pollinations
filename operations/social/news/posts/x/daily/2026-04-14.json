@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-04-14",
+  "period_start": "2026-04-14",
+  "period_end": "2026-04-14",
+  "generated_at": "2026-04-15T06:34:15.194090+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-14/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped a reasoning flag for gemini image models. you can now ask it to think before it paints. \n\nalso fixed usage exports for the power users who were generating enough data to break our csvs. back to work."
+}

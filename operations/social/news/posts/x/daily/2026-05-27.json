@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-05-27",
+  "period_start": "2026-05-27",
+  "period_end": "2026-05-27",
+  "generated_at": "2026-05-28T07:15:38.850527+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-27/images/twitter.jpg"
+    }
+  ],
+  "text": "5 new models hit the free tier today. routed deepseek to fireworks, dropped embedding costs. also rewrote the api docs generator from scratch, fixed some claude opus params, and exposed exact baseline usd costs in developer earnings exports."
+}

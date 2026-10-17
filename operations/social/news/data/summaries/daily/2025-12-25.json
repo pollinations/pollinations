@@ -1,0 +1,99 @@
+{
+  "date": "2025-12-25",
+  "period_start": "2025-12-25",
+  "period_end": "2025-12-25",
+  "title": "The app garden got a dozen new sprouts",
+  "summary": "A community harvest: new apps in the directory, better image editing, smoother Enter UX, and more automation around the edges.\n\nThe community directory added new chat tools including DOPPYai, IA Bob Goods Coloring Book Generator, Nuvole AI Lite, and nusanexus; creative additions PromptPi!, AI Logo Generator, and Business Name Generator; plus BCA Nepal, Word Wagon, and AquaMind in Learn. More things people built with the same open infrastructure, now easier to find.\n\nImage generation can now take a reference image by URL, and gptimage-large was updated to the API version that supports image editing. Bring an image, ask for a variation, receive the usual amount of pixels.\n\nThe text cache moved to enter.pollinations.ai, docs components gained retries for rate limits, and the beta banner and mobile footer received layout fixes. Small interface repairs, which are often the whole difference between a tool and a tiny obstacle course.",
+  "pr_count": 22,
+  "prs": [
+    {
+      "number": 5682,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6397,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6403,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6406,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6408,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6412,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6414,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6420,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6422,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6432,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6439,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6440,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6443,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6445,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6446,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6457,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6458,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6459,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6460,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6461,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6462,
+      "date": "2025-12-25"
+    },
+    {
+      "number": 6463,
+      "date": "2025-12-25"
+    }
+  ],
+  "generated_at": "2026-09-04T12:41:06.893885+00:00"
+}

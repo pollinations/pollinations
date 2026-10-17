@@ -1,0 +1,695 @@
+{
+  "date": "2025-10-31",
+  "period_start": "2025-10-01",
+  "period_end": "2025-10-31",
+  "title": "The API became easier to actually use",
+  "summary": "October made Pollinations easier to reach from real apps, broadened its model and image tooling, and gave Hacktoberfest contributors more places to plant things.\n\nRewritten docs, Bearer tokens, browser CORS, simpler GET text generation, and copyable frontend keys reduced the distance between an idea and a working HTTP call.\n\nGPT-5-mini, Claude 4.5 Haiku, Azure Flux Kontext, Azure OpenAI Nano 5, and nanobanana expanded the lineup while clearer refusals, image sizing, queue tuning, and safety timeouts made generation more legible and reliable.\n\nNew project ideas, contributor guidance, automated subdomain deployments, and tools like the opposite-prompt generator gave community work a clearer path from issue to something people can visit.\n\nThe Creative Projects directory added a steady run of community apps, from virtual makeup and AI dungeon masters to image transformation and dream decoding. An HTTP endpoint remains a remarkably effective seed packet.",
+  "pr_count": 171,
+  "prs": [
+    {
+      "number": 4246,
+      "date": "2025-10-01"
+    },
+    {
+      "number": 4247,
+      "date": "2025-10-01"
+    },
+    {
+      "number": 4277,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4286,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4287,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4289,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4291,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4292,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4294,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4295,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4302,
+      "date": "2025-10-02"
+    },
+    {
+      "number": 4283,
+      "date": "2025-10-04"
+    },
+    {
+      "number": 4305,
+      "date": "2025-10-04"
+    },
+    {
+      "number": 4306,
+      "date": "2025-10-04"
+    },
+    {
+      "number": 4326,
+      "date": "2025-10-04"
+    },
+    {
+      "number": 4327,
+      "date": "2025-10-04"
+    },
+    {
+      "number": 2666,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4276,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4307,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4313,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4315,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4333,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4344,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4346,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4347,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4348,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4353,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4354,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4356,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4383,
+      "date": "2025-10-06"
+    },
+    {
+      "number": 4250,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4384,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4389,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4391,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4392,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4394,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4395,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4396,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4397,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4398,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4405,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4408,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4411,
+      "date": "2025-10-07"
+    },
+    {
+      "number": 4413,
+      "date": "2025-10-08"
+    },
+    {
+      "number": 4420,
+      "date": "2025-10-08"
+    },
+    {
+      "number": 4438,
+      "date": "2025-10-08"
+    },
+    {
+      "number": 4441,
+      "date": "2025-10-08"
+    },
+    {
+      "number": 4282,
+      "date": "2025-10-09"
+    },
+    {
+      "number": 4414,
+      "date": "2025-10-09"
+    },
+    {
+      "number": 4442,
+      "date": "2025-10-09"
+    },
+    {
+      "number": 4443,
+      "date": "2025-10-09"
+    },
+    {
+      "number": 4451,
+      "date": "2025-10-09"
+    },
+    {
+      "number": 4186,
+      "date": "2025-10-10"
+    },
+    {
+      "number": 4400,
+      "date": "2025-10-10"
+    },
+    {
+      "number": 4463,
+      "date": "2025-10-10"
+    },
+    {
+      "number": 4466,
+      "date": "2025-10-10"
+    },
+    {
+      "number": 4470,
+      "date": "2025-10-10"
+    },
+    {
+      "number": 4471,
+      "date": "2025-10-10"
+    },
+    {
+      "number": 4475,
+      "date": "2025-10-10"
+    },
+    {
+      "number": 4181,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4458,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4481,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4483,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4484,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4486,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4487,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4488,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4489,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4490,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4496,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4498,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4499,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4501,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4503,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4504,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4536,
+      "date": "2025-10-14"
+    },
+    {
+      "number": 4537,
+      "date": "2025-10-14"
+    },
+    {
+      "number": 4541,
+      "date": "2025-10-14"
+    },
+    {
+      "number": 4546,
+      "date": "2025-10-14"
+    },
+    {
+      "number": 4549,
+      "date": "2025-10-14"
+    },
+    {
+      "number": 4553,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4554,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4563,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4564,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4565,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4566,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4572,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4573,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4591,
+      "date": "2025-10-17"
+    },
+    {
+      "number": 4596,
+      "date": "2025-10-17"
+    },
+    {
+      "number": 4512,
+      "date": "2025-10-18"
+    },
+    {
+      "number": 4588,
+      "date": "2025-10-18"
+    },
+    {
+      "number": 4468,
+      "date": "2025-10-19"
+    },
+    {
+      "number": 4506,
+      "date": "2025-10-19"
+    },
+    {
+      "number": 4612,
+      "date": "2025-10-19"
+    },
+    {
+      "number": 4615,
+      "date": "2025-10-19"
+    },
+    {
+      "number": 4616,
+      "date": "2025-10-19"
+    },
+    {
+      "number": 4626,
+      "date": "2025-10-20"
+    },
+    {
+      "number": 4659,
+      "date": "2025-10-21"
+    },
+    {
+      "number": 4676,
+      "date": "2025-10-21"
+    },
+    {
+      "number": 4664,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4671,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4675,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4682,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4683,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4684,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4687,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4690,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4691,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4695,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4709,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4712,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4656,
+      "date": "2025-10-23"
+    },
+    {
+      "number": 4708,
+      "date": "2025-10-23"
+    },
+    {
+      "number": 4720,
+      "date": "2025-10-23"
+    },
+    {
+      "number": 4721,
+      "date": "2025-10-23"
+    },
+    {
+      "number": 4729,
+      "date": "2025-10-23"
+    },
+    {
+      "number": 4730,
+      "date": "2025-10-23"
+    },
+    {
+      "number": 4733,
+      "date": "2025-10-23"
+    },
+    {
+      "number": 4716,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4735,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4749,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4751,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4753,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4756,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4757,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4759,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4351,
+      "date": "2025-10-25"
+    },
+    {
+      "number": 4784,
+      "date": "2025-10-25"
+    },
+    {
+      "number": 4785,
+      "date": "2025-10-25"
+    },
+    {
+      "number": 4786,
+      "date": "2025-10-25"
+    },
+    {
+      "number": 4633,
+      "date": "2025-10-26"
+    },
+    {
+      "number": 4734,
+      "date": "2025-10-26"
+    },
+    {
+      "number": 4783,
+      "date": "2025-10-26"
+    },
+    {
+      "number": 4793,
+      "date": "2025-10-26"
+    },
+    {
+      "number": 4796,
+      "date": "2025-10-26"
+    },
+    {
+      "number": 4805,
+      "date": "2025-10-26"
+    },
+    {
+      "number": 4806,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4808,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4814,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4818,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4819,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4821,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4824,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4828,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4829,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4830,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4822,
+      "date": "2025-10-28"
+    },
+    {
+      "number": 4835,
+      "date": "2025-10-28"
+    },
+    {
+      "number": 4838,
+      "date": "2025-10-28"
+    },
+    {
+      "number": 4843,
+      "date": "2025-10-28"
+    },
+    {
+      "number": 4846,
+      "date": "2025-10-29"
+    },
+    {
+      "number": 4848,
+      "date": "2025-10-29"
+    },
+    {
+      "number": 4851,
+      "date": "2025-10-29"
+    },
+    {
+      "number": 4852,
+      "date": "2025-10-29"
+    },
+    {
+      "number": 4853,
+      "date": "2025-10-29"
+    },
+    {
+      "number": 4855,
+      "date": "2025-10-29"
+    },
+    {
+      "number": 4857,
+      "date": "2025-10-29"
+    },
+    {
+      "number": 4863,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4875,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4876,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4886,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4887,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4889,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4891,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4892,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4894,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4895,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4896,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4899,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4903,
+      "date": "2025-10-31"
+    }
+  ],
+  "generated_at": "2026-09-04T15:27:32.133633+00:00"
+}

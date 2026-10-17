@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-03-08",
+  "period_start": "2026-03-01",
+  "period_end": "2026-03-07",
+  "generated_at": "2026-03-08T06:19:52.781661+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-08/images/twitter.jpg"
+    }
+  ],
+  "text": "merged 41 PRs this week.\n\n- added suno-v5, step-3.5-flash, and flux-2-dev (now with img2img)\n- @pollinations_ai/sdk gets STT & media uploads\n- normalized openai finish_reasons so your wrappers stop breaking\n- 22 new community apps\n\ninfra is holding."
+}

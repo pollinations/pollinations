@@ -1,0 +1,35 @@
+{
+  "date": "2025-07-13",
+  "period_start": "2025-07-13",
+  "period_end": "2025-07-13",
+  "title": "More things built with pollinations, now easier to find",
+  "summary": "A community-directory day: five more projects surfaced across the garden, with links and star counts tidied up behind them.\n\nThe community projects directory grew across Vibe Coding, Hack-&-Build, creative tools, and chat. SocialScribe, Querynator5000, EzPromptla, and UltimaX Intelligence now have somewhere to live besides a forgotten tab.\n\n云渺仙途：凡尘篇 was added to the games category, adding another example of people using the stack for things other than dashboards, as nature intended.\n\nBroken GitHub repository links were repaired and star counts refreshed, so browsing community projects involves fewer archaeological expeditions.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 3018,
+      "date": "2025-07-13"
+    },
+    {
+      "number": 3040,
+      "date": "2025-07-13"
+    },
+    {
+      "number": 3053,
+      "date": "2025-07-13"
+    },
+    {
+      "number": 3055,
+      "date": "2025-07-13"
+    },
+    {
+      "number": 3061,
+      "date": "2025-07-13"
+    },
+    {
+      "number": 3064,
+      "date": "2025-07-13"
+    }
+  ],
+  "generated_at": "2026-09-04T12:08:45.009945+00:00"
+}

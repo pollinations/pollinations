@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-10-11",
+  "period_start": "2026-10-11",
+  "period_end": "2026-10-11",
+  "generated_at": "2026-10-12T06:45:57.410600+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-11/images/twitter.jpg"
+    }
+  ],
+  "text": "added sandbox renewals past E2B's 24-hour limit (subject to key budget), a polli CLI timeout option, and an opt-in 4-vCPU/8-GB template. also stopped legacy text caches from storing full prompts. longer jobs; shorter memory."
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-29",
+  "period_start": "2026-09-29",
+  "period_end": "2026-09-29",
+  "generated_at": "2026-09-30T06:31:48.436160+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-29/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped Lightning Image Turbo with reference-image guidance, ElevenLabs stem separation, and Gemini 3.5 transcription with timestamps and speaker labels. also added /v1/messages for Anthropic clients. inputs and outputs had a day."
+}

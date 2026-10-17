@@ -1,0 +1,255 @@
+{
+  "date": "2025-01-31",
+  "period_start": "2025-01-01",
+  "period_end": "2025-01-31",
+  "title": "More brains behind the text endpoint",
+  "summary": "January widened the models builders can reach through one API while steadily making generation, documentation, and community pathways less archaeological.\n\nDeepSeek Coder V3, GPT-4o as openai-large, Claude Hybridspace, and DeepSeek-R1 joined the text API, alongside a realistic persona and better Persian text handling. One endpoint acquired a more varied cabinet of minds.\n\nImage generation received profiling, worker coordination, monitoring, and a Cloudflare AI Workers route for 1024px Flux Schnell images. Text requests gained model-aware handling, queue intervals, prompt-enhancer maintenance, and priority queue bypasses.\n\nSDK and npm-module pointers, current endpoint diagrams, vision API documentation, a status dashboard, and the Artistic Styles Book made it easier to find the route from idea to a working call.\n\nOpenHands and community projects became more visible, with restored project listings, new submission templates and guidelines, and additions including Kushai, Pollinations Chat, and the Polli API Dashboard. Unity and the Gmail agent also received practical upkeep.",
+  "pr_count": 61,
+  "prs": [
+    {
+      "number": 949,
+      "date": "2025-01-02"
+    },
+    {
+      "number": 950,
+      "date": "2025-01-02"
+    },
+    {
+      "number": 951,
+      "date": "2025-01-02"
+    },
+    {
+      "number": 953,
+      "date": "2025-01-03"
+    },
+    {
+      "number": 955,
+      "date": "2025-01-03"
+    },
+    {
+      "number": 957,
+      "date": "2025-01-03"
+    },
+    {
+      "number": 959,
+      "date": "2025-01-03"
+    },
+    {
+      "number": 960,
+      "date": "2025-01-03"
+    },
+    {
+      "number": 962,
+      "date": "2025-01-06"
+    },
+    {
+      "number": 965,
+      "date": "2025-01-08"
+    },
+    {
+      "number": 967,
+      "date": "2025-01-08"
+    },
+    {
+      "number": 969,
+      "date": "2025-01-10"
+    },
+    {
+      "number": 973,
+      "date": "2025-01-10"
+    },
+    {
+      "number": 976,
+      "date": "2025-01-10"
+    },
+    {
+      "number": 981,
+      "date": "2025-01-12"
+    },
+    {
+      "number": 983,
+      "date": "2025-01-12"
+    },
+    {
+      "number": 986,
+      "date": "2025-01-13"
+    },
+    {
+      "number": 988,
+      "date": "2025-01-13"
+    },
+    {
+      "number": 994,
+      "date": "2025-01-13"
+    },
+    {
+      "number": 997,
+      "date": "2025-01-14"
+    },
+    {
+      "number": 1000,
+      "date": "2025-01-14"
+    },
+    {
+      "number": 1001,
+      "date": "2025-01-14"
+    },
+    {
+      "number": 1003,
+      "date": "2025-01-14"
+    },
+    {
+      "number": 1004,
+      "date": "2025-01-14"
+    },
+    {
+      "number": 1008,
+      "date": "2025-01-15"
+    },
+    {
+      "number": 1009,
+      "date": "2025-01-15"
+    },
+    {
+      "number": 1012,
+      "date": "2025-01-15"
+    },
+    {
+      "number": 1016,
+      "date": "2025-01-16"
+    },
+    {
+      "number": 1017,
+      "date": "2025-01-16"
+    },
+    {
+      "number": 1019,
+      "date": "2025-01-16"
+    },
+    {
+      "number": 1022,
+      "date": "2025-01-16"
+    },
+    {
+      "number": 1023,
+      "date": "2025-01-16"
+    },
+    {
+      "number": 1026,
+      "date": "2025-01-17"
+    },
+    {
+      "number": 1027,
+      "date": "2025-01-17"
+    },
+    {
+      "number": 1034,
+      "date": "2025-01-17"
+    },
+    {
+      "number": 1042,
+      "date": "2025-01-20"
+    },
+    {
+      "number": 1046,
+      "date": "2025-01-20"
+    },
+    {
+      "number": 1048,
+      "date": "2025-01-20"
+    },
+    {
+      "number": 1056,
+      "date": "2025-01-21"
+    },
+    {
+      "number": 1063,
+      "date": "2025-01-23"
+    },
+    {
+      "number": 1064,
+      "date": "2025-01-23"
+    },
+    {
+      "number": 1067,
+      "date": "2025-01-23"
+    },
+    {
+      "number": 1076,
+      "date": "2025-01-24"
+    },
+    {
+      "number": 1036,
+      "date": "2025-01-25"
+    },
+    {
+      "number": 1085,
+      "date": "2025-01-25"
+    },
+    {
+      "number": 1087,
+      "date": "2025-01-26"
+    },
+    {
+      "number": 1094,
+      "date": "2025-01-27"
+    },
+    {
+      "number": 1096,
+      "date": "2025-01-27"
+    },
+    {
+      "number": 1101,
+      "date": "2025-01-28"
+    },
+    {
+      "number": 1102,
+      "date": "2025-01-28"
+    },
+    {
+      "number": 1105,
+      "date": "2025-01-28"
+    },
+    {
+      "number": 1106,
+      "date": "2025-01-28"
+    },
+    {
+      "number": 1107,
+      "date": "2025-01-28"
+    },
+    {
+      "number": 1108,
+      "date": "2025-01-28"
+    },
+    {
+      "number": 1109,
+      "date": "2025-01-28"
+    },
+    {
+      "number": 1112,
+      "date": "2025-01-29"
+    },
+    {
+      "number": 1117,
+      "date": "2025-01-29"
+    },
+    {
+      "number": 1118,
+      "date": "2025-01-29"
+    },
+    {
+      "number": 1120,
+      "date": "2025-01-30"
+    },
+    {
+      "number": 1122,
+      "date": "2025-01-31"
+    },
+    {
+      "number": 1124,
+      "date": "2025-01-31"
+    }
+  ],
+  "generated_at": "2026-09-04T15:14:01.375271+00:00"
+}

@@ -1,0 +1,19 @@
+{
+  "date": "2025-08-21",
+  "period_start": "2025-08-21",
+  "period_end": "2025-08-21",
+  "title": "Clearer visibility into usage and request behavior",
+  "summary": "A small observability pass: hourly token usage and better context around moderation and caching.\n\nNew event-tracking fields capture moderation and cache activity, while an hourly token-usage endpoint makes it easier to inspect usage over time. More observability, fewer guesses.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 3799,
+      "date": "2025-08-21"
+    },
+    {
+      "number": 3804,
+      "date": "2025-08-21"
+    }
+  ],
+  "generated_at": "2026-09-04T12:24:22.417320+00:00"
+}

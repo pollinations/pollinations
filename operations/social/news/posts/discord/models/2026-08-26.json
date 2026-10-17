@@ -1,0 +1,8 @@
+{
+  "platform": "discord",
+  "scope": "models_weekly",
+  "date": "2026-08-26",
+  "previous_date": "2026-08-19",
+  "generated_at": "2026-08-26T14:18:21.659900+00:00",
+  "text": "<@&1424461167883194418> Model updates — 2026-08-26\n\n### 🆕 New\n- 🧠 **GLM-5.3** (Z.ai) — tool calling + reasoning\n- 🧠 **Nemotron 3.5 Lightning** (NVIDIA) — tool calling + reasoning\n- 🧠 **Qwen3.8 27B** (Qwen) — image/video input, tools + reasoning\n- 🎬 **Wan 3.0** (Alibaba) — text/image video generation with audio output\n- 🔊 **Fish Audio S2.1 Pro** (Fish Audio) — text-to-speech\n- 🔊 **GPT Transcribe** (OpenAI) — speech-to-text\n- 🔊 **Grok TTS** (xAI) — text-to-speech\n\n### ⬇️ Price cuts\n- 🧠 Text: Laguna (10%) · GPT-5.6 Luna (25%) · GPT-5.6 Sol (35%) · Grok 4.3 (25%) · GPT-5.5 (25%) · GPT-5.4 (25%) · GLM 5.2 – JankRouter (50%)\n- 🎨 Image: GPT Image 1.5 (25%) · FLUX.1 Kontext Pro (25%)\n\n### ⬆️ Price increases\n- 🧠 Text: Gemma 4 31B (10%) · GPT-5.6 Terra (20%) · Qwen3 VL 235B A22B Thinking (55%) · DeepSeek V4 Flash 0731 (135%)\n\n### 🔒 Going paid-only\n- chigwell/claude-haiku-4-5\n- chigwell/gpt-5.4-mini\n- chigwell/gemini-3.7-flash\n- chigwell/llm7-pro\n- chigwell/claude-opus-5\n- chigwell/grok-4.6\n- chigwell/firefly-image-5\n- chigwell/gpt-image-2\n\n### ✨ Capability updates\n- `JustScriptzz/agnes-2.5-flash` — tools and reasoning added\n- `solarnode-developement/hy3` — tools and reasoning added\n- `sharktide/inferenceport-ai-minimax-m3` — added image input, tools, and reasoning\n- `MarcosFRG/minimax-m3` — added video input, tools, and reasoning\n\nExplore at https://gen.pollinations.ai/docs"
+}

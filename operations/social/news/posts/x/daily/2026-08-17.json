@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-08-17",
+  "period_start": "2026-08-17",
+  "period_end": "2026-08-17",
+  "generated_at": "2026-08-18T06:14:31.289997+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-17/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 19 PRs: clearer API-key 401s, a rebuilt model catalog, upstream probes + endpoint tests for every account, and visible quest progress/balance breakdowns. community model builders got more of the workbench. software remains committed to having edges."
+}

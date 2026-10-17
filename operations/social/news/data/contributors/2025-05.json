@@ -1,0 +1,97 @@
+{
+  "month": "2025-05",
+  "merged_prs": 107,
+  "contributors": [
+    {
+      "id": 5099901,
+      "login": "voodoohop",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5099901?s=80&v=4",
+      "url": "https://github.com/voodoohop",
+      "prs": 56
+    },
+    {
+      "id": 160964065,
+      "login": "mentatbot[bot]",
+      "avatar_url": "https://avatars.githubusercontent.com/in/837875?s=80&v=4",
+      "url": "https://github.com/apps/mentatbot",
+      "prs": 50
+    },
+    {
+      "id": 69885286,
+      "login": "withthatway",
+      "avatar_url": "https://avatars.githubusercontent.com/u/69885286?s=80&u=53e02be3370f3ab58e14ad45efa500dd91cebdb0&v=4",
+      "url": "https://github.com/withthatway",
+      "prs": 3
+    },
+    {
+      "id": 96740937,
+      "login": "andreaspaps",
+      "avatar_url": "https://avatars.githubusercontent.com/u/96740937?v=4",
+      "url": "https://github.com/andreaspaps",
+      "prs": 1
+    },
+    {
+      "id": 72049678,
+      "login": "CiaranMcAleer",
+      "avatar_url": "https://avatars.githubusercontent.com/u/72049678?v=4",
+      "url": "https://github.com/CiaranMcAleer",
+      "prs": 1
+    },
+    {
+      "id": 18619528,
+      "login": "Cohee1207",
+      "avatar_url": "https://avatars.githubusercontent.com/u/18619528?s=80&u=82f5959c2729b60429a6294e2f592c3b7c7e6953&v=4",
+      "url": "https://github.com/Cohee1207",
+      "prs": 1
+    },
+    {
+      "id": 145918331,
+      "login": "creation22",
+      "avatar_url": "https://avatars.githubusercontent.com/u/145918331?v=4",
+      "url": "https://github.com/creation22",
+      "prs": 1
+    },
+    {
+      "id": 147928812,
+      "login": "iotserver24",
+      "avatar_url": "https://avatars.githubusercontent.com/u/147928812?v=4",
+      "url": "https://github.com/iotserver24",
+      "prs": 1
+    },
+    {
+      "id": 2829939,
+      "login": "lwsinclair",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2829939?s=80&u=94c0b19f1d7207d5a31d3ae3b9f507315ba844aa&v=4",
+      "url": "https://github.com/lwsinclair",
+      "prs": 1
+    },
+    {
+      "id": 148573993,
+      "login": "mkantwala",
+      "avatar_url": "https://avatars.githubusercontent.com/u/148573993?v=4",
+      "url": "https://github.com/mkantwala",
+      "prs": 1
+    },
+    {
+      "id": 207506018,
+      "login": "ray23-bit",
+      "avatar_url": "https://avatars.githubusercontent.com/u/207506018?v=4",
+      "url": "https://github.com/ray23-bit",
+      "prs": 1
+    },
+    {
+      "id": 109086253,
+      "login": "SuperShivam5000",
+      "avatar_url": "https://avatars.githubusercontent.com/u/109086253?v=4",
+      "url": "https://github.com/SuperShivam5000",
+      "prs": 1
+    },
+    {
+      "id": 90786270,
+      "login": "TechyCSR",
+      "avatar_url": "https://avatars.githubusercontent.com/u/90786270?v=4",
+      "url": "https://github.com/TechyCSR",
+      "prs": 1
+    }
+  ]
+}

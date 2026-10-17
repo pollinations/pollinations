@@ -1,0 +1,23 @@
+{
+  "date": "2025-01-15",
+  "period_start": "2025-01-15",
+  "period_end": "2025-01-15",
+  "title": "Text requests get steadier pacing",
+  "summary": "A small text-platform tuning day: smoother request handling and better visibility into token usage.\n\nThe text API now uses queue intervals to space requests more consistently, making bursts of generation traffic less likely to turn into a tiny stampede.\n\nToken usage tracking was added to analytics and the feed, giving people a clearer view of how text generation is being used.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 1008,
+      "date": "2025-01-15"
+    },
+    {
+      "number": 1009,
+      "date": "2025-01-15"
+    },
+    {
+      "number": 1012,
+      "date": "2025-01-15"
+    }
+  ],
+  "generated_at": "2026-09-04T13:40:24.638519+00:00"
+}

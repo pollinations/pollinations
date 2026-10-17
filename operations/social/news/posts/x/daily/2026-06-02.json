@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-06-02",
+  "period_start": "2026-06-02",
+  "period_end": "2026-06-02",
+  "generated_at": "2026-06-03T07:37:11.683117+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-02/images/twitter.jpg"
+    }
+  ],
+  "text": "normalized all pricing multipliers to 1x today. also routed flux through fireworks, added minimax m3, and optimized claude bedrock inference. plus 9 new community apps hit the greenhouse. good day for the infra."
+}

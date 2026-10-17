@@ -1,0 +1,15 @@
+{
+  "date": "2025-07-23",
+  "period_start": "2025-07-23",
+  "period_end": "2025-07-23",
+  "title": "Mimir project details got easier to find",
+  "summary": "A small garden pass: Mimir now points more clearly to its code and project details.\n\nThe Mimir project listing now includes its GitHub link and refreshed project details, giving people a clearer path from discovery to source code.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 3234,
+      "date": "2025-07-23"
+    }
+  ],
+  "generated_at": "2026-09-04T12:12:33.396048+00:00"
+}

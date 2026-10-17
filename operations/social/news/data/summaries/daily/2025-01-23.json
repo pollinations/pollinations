@@ -1,0 +1,23 @@
+{
+  "date": "2025-01-23",
+  "period_start": "2025-01-23",
+  "period_end": "2025-01-23",
+  "title": "1024px Flux Schnell images get a new worker route",
+  "summary": "A compact tuning pass: larger Flux Schnell images get a new route, docs become easier to navigate, and text gains a more grounded persona.\n\nFlux Schnell generation at 1024×1024 now uses Cloudflare AI Workers, improving the path for larger image requests while the surrounding image plumbing gets a few small fixes.\n\nThe documentation now points developers to a pollinations npm module and a server-status dashboard. Less archaeology before the first API call.\n\nA new realistic persona with deliberately balanced personality traits is available for more grounded character-driven text interactions.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 1063,
+      "date": "2025-01-23"
+    },
+    {
+      "number": 1064,
+      "date": "2025-01-23"
+    },
+    {
+      "number": 1067,
+      "date": "2025-01-23"
+    }
+  ],
+  "generated_at": "2026-09-04T14:00:26.110547+00:00"
+}

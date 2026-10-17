@@ -1,0 +1,19 @@
+{
+  "date": "2025-01-25",
+  "period_start": "2025-01-25",
+  "period_end": "2025-01-25",
+  "title": "The frontend got a practical refresh",
+  "summary": "A small frontend maintenance day: smoother UI work and the public files to back it up.\n\nThe web experience received a UI/UX and performance pass, while missing public assets were restored so the frontend has the files it expects. Less drama from the browser, which is generally the goal.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 1036,
+      "date": "2025-01-25"
+    },
+    {
+      "number": 1085,
+      "date": "2025-01-25"
+    }
+  ],
+  "generated_at": "2026-09-04T14:01:51.160498+00:00"
+}

@@ -1,0 +1,23 @@
+{
+  "date": "2025-07-22",
+  "period_start": "2025-07-22",
+  "period_end": "2025-07-22",
+  "title": "Auth gets out of its own way",
+  "summary": "A small tuning pass: smoother auth, correctly routed site signals, and one less adventurous spelling.\n\nauth.pollinations.ai stopped updating user metrics during requests, removing database contention from the authentication path. Less bookkeeping, more getting in.\n\nCloudflare text events now reach GA4 correctly, while a stray experimental spelling of “Registered” has been returned to civilization.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 3219,
+      "date": "2025-07-22"
+    },
+    {
+      "number": 3229,
+      "date": "2025-07-22"
+    },
+    {
+      "number": 3260,
+      "date": "2025-07-22"
+    }
+  ],
+  "generated_at": "2026-09-04T12:11:50.933906+00:00"
+}

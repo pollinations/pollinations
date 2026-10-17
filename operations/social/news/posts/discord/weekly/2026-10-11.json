@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-10-11",
+  "period_start": "2026-10-04",
+  "period_end": "2026-10-10",
+  "generated_at": "2026-10-11T06:31:24.709063+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-10-11/images/discord.jpg"
+    }
+  ],
+  "text": "## Weekly Update - 2026-10-11\nHey <@&1424461167883194418> — a lot got added this week. Here’s the useful part.\n\n🌱 **Models & catalog**\nFLUX.3 Image, Seedream 5.0 Flash, Nano Banana 2.1, Grok Imagine Video 1.5 Lite, Eleven v4 and v4 Turbo, Claude Haiku 5.5, Mistral Large 4, Step 5 Preview, GPT-6 Luna Decisions, and MAI voice and transcription models were added. Model search, capability filters, dollar prices, clearer billing units, and explicit `paid_only` labels should make the catalog less of a guessing game.\n\n🛠️ **APIs & agents**\nChat text models were added to [`/v1/responses`](https://github.com/pollinations/pollinations/pull/16811). Gemini’s parallel tool calls and streamed arguments got better handling; document blocks and PDF support expanded across Claude and GPT routes. Growing agent sessions also got better prompt-cache reuse.\n\n🎨 **Media**\nThe rebuilt [Play page](https://github.com/pollinations/pollinations/pull/16213) puts image, video, and audio generation together, with uploads, previews, downloads, and request-matching API URLs. The SDK gained video reference-media options, and large generation request bodies can pass the former 32 MiB limit.\n\n🐝 **Pollen & Quests**\nKeys gained model-category permissions and a Quest-Pollen-only option. x402 prepaid keys gained flexible amounts; video and community-model Quests were added. CLI output now separates wallet Pollen from key budgets — two numbers that really ought to look different.\n\n🧰 **Builders & community**\nCommunity text endpoints no longer need upstream streaming to serve streaming clients. Polli CLI follow-ups retain context, uploads retain filenames, and Agent Skills and MCP discovery were added. Pi Workbench, voice mysteries, party games, and study-song apps joined the listings. News also gained a dated model and API changelog."
+}

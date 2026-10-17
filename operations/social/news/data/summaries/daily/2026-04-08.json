@@ -1,0 +1,31 @@
+{
+  "date": "2026-04-08",
+  "period_start": "2026-04-08",
+  "period_end": "2026-04-08",
+  "title": "Gemini Flash-lite kept reliably available",
+  "summary": "A garden-maintenance day: reliable Gemini access, refreshed community signals, and one carefully standardized audio-model separator.\n\nGemini 2.5 Flash-lite routing was adjusted and then restored after quota limits appeared, keeping access to the model uninterrupted while the multi-project GCP setup evolves.\n\nThe daily automation updated app health and greenhouse metrics alongside the README's latest news and recent-app highlights, so the public map of the ecosystem stays current.\n\nACE-Step's description now uses the same separator style as the rest of the audio registry. Software remains extremely particular about commas.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 10036,
+      "date": "2026-04-08"
+    },
+    {
+      "number": 10040,
+      "date": "2026-04-08"
+    },
+    {
+      "number": 10047,
+      "date": "2026-04-08"
+    },
+    {
+      "number": 10048,
+      "date": "2026-04-08"
+    },
+    {
+      "number": 10052,
+      "date": "2026-04-08"
+    }
+  ],
+  "generated_at": "2026-09-04T11:43:59.827372+00:00"
+}

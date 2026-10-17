@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-09-27",
+  "period_start": "2026-09-20",
+  "period_end": "2026-09-26",
+  "generated_at": "2026-09-27T06:31:15.384563+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-27/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol. 01 — models, routes & useful chores\n\n97 PRs merged this week. Here’s what changed.\n\n→ MODELS\nGrok 4.7, GLM-5.3 FlashX, Claude Opus 5.5, GPT-6 Sol/Luna, and GPT-5.3 Codex on Azure landed. Ling 3.0 Flash VL gained video input.\n\n→ MEDIA\nQwen Image 2.1 supports generation and reference edits. MAI Image 2.6, Recraft V4.1 Flash, MiniMax H3 Max video, and Gemini 3.8 Flash TTS joined the catalog. Lyria 3.5 music integration is in; live checks are pending.\n\n→ ROUTES & TOOLS\nGemini got Vertex-first routes back. Sonar moved to Perplexity’s Agent API without changing caller endpoints. polli mcp now handles discovery and installation for 13 coding clients. polli whoami answers the perennial “which account am I using?” question.\n\n→ COMMUNITY\nNew apps and agents include Bilingual Atelier, GATEKEEPER, and Show-your-work. Newly qualifying issue reports earn 4 Pollen through the Issue Quest. Enter’s catalog and account screens got less labyrinthine.\n\nThe work is in the open: https://github.com/pollinations/pollinations\n\n#OpenSource #AI #DevTools #BuildInPublic"
+}

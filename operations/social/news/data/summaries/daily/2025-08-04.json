@@ -1,0 +1,19 @@
+{
+  "date": "2025-08-04",
+  "period_start": "2025-08-04",
+  "period_end": "2025-08-04",
+  "title": "Model discovery and usage visibility got sharper",
+  "summary": "A quiet infrastructure pass: clearer model discovery, more precise pricing resolution, and better visibility into LLM traffic.\n\nModel pricing resolution now has better discovery tooling, while LLM observability records referrers so it is easier to understand where requests come from. Small plumbing work, fewer mysteries later.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 3449,
+      "date": "2025-08-04"
+    },
+    {
+      "number": 3452,
+      "date": "2025-08-04"
+    }
+  ],
+  "generated_at": "2026-09-04T12:16:48.083351+00:00"
+}

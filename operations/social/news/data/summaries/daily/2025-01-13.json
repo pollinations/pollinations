@@ -1,0 +1,23 @@
+{
+  "date": "2025-01-13",
+  "period_start": "2025-01-13",
+  "period_end": "2025-01-13",
+  "title": "OpenHands coding assistant gets a proper welcome",
+  "summary": "A small public-facing day: OpenHands became easier to spot, and text.pollinations.ai planning joined the open repository.\n\nOpenHands coding assistant announcements were added and then given clearer styling and more visibility, so visitors are more likely to find the new coding help without spelunking through the site.\n\nA strategy document for text.pollinations.ai was added to the repository, keeping the service’s future direction visible alongside the code.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 986,
+      "date": "2025-01-13"
+    },
+    {
+      "number": 988,
+      "date": "2025-01-13"
+    },
+    {
+      "number": 994,
+      "date": "2025-01-13"
+    }
+  ],
+  "generated_at": "2026-09-04T13:38:40.175500+00:00"
+}

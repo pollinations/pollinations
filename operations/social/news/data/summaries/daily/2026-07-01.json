@@ -1,0 +1,79 @@
+{
+  "date": "2026-07-01",
+  "period_start": "2026-07-01",
+  "period_end": "2026-07-01",
+  "title": "GPT Image gets custom canvases and faithful quality controls",
+  "summary": "A garden-maintenance day with bigger image canvases, sturdier community-model controls, and APIs behaving more like APIs.\n\ngpt-image-2 can now generate arbitrary resolutions up to 3840px, rounded cleanly to multiples of 16. Quality settings now reach the provider intact across GPT Image routes: low stays low, high stays high, and hd maps to high instead of disappearing into the machinery.\n\nUnstable community models can now be automatically hidden from discovery, return predictable API errors, and show owners a dashboard explanation plus a deliberate reactivation control. Endpoint edits no longer quietly revive disabled models. Four more contributors were also cleared to publish models, because a garden with one flower would be a very strange API.\n\nChat completions now tolerate upstream responses without a model field, produce valid WAV files with the right content type, and safely handle Claude requests that include both temperature and top_p. The video model-list route also returns its model list now, rather than wandering off and making a video.",
+  "pr_count": 17,
+  "prs": [
+    {
+      "number": 12060,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12061,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12092,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12138,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12139,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12140,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12141,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12143,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12150,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12151,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12154,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12155,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12156,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12161,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12162,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12163,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12164,
+      "date": "2026-07-01"
+    }
+  ],
+  "generated_at": "2026-09-04T11:42:21.227240+00:00"
+}

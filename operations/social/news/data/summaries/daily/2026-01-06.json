@@ -1,0 +1,47 @@
+{
+  "date": "2026-01-06",
+  "period_start": "2026-01-06",
+  "period_end": "2026-01-06",
+  "title": "More text models, with fewer API surprises",
+  "summary": "A garden-tending day: new text models, sturdier generation controls, a clearer Play page, and a little workflow archaeology.\n\nFireworks AI's GLM-4.7 and MiniMax-M2.1 joined the model roster. Gemini JSON requests now avoid incompatible tool configuration, Vertex AI seeds stay within its accepted range, and GPT Image respects the seed parameter for reproducible results.\n\nVideos now render correctly in Play, model tooltips provide more context before choosing one, audio capability icons were refreshed, and video usage labels now describe what they measure.\n\nAdded Player or AI [Roblox] to the games lineup, giving visitors another small thing to poke at instead of doing whatever they were supposed to be doing.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 6828,
+      "date": "2026-01-06"
+    },
+    {
+      "number": 6867,
+      "date": "2026-01-06"
+    },
+    {
+      "number": 6870,
+      "date": "2026-01-06"
+    },
+    {
+      "number": 6875,
+      "date": "2026-01-06"
+    },
+    {
+      "number": 6879,
+      "date": "2026-01-06"
+    },
+    {
+      "number": 6880,
+      "date": "2026-01-06"
+    },
+    {
+      "number": 6886,
+      "date": "2026-01-06"
+    },
+    {
+      "number": 6889,
+      "date": "2026-01-06"
+    },
+    {
+      "number": 6893,
+      "date": "2026-01-06"
+    }
+  ],
+  "generated_at": "2026-09-04T11:27:58.761996+00:00"
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-07-20",
+  "period_start": "2026-07-20",
+  "period_end": "2026-07-20",
+  "generated_at": "2026-07-21T07:01:05.159806+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-20/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: role-aware, multimodal embeddings; a cleaner model catalog; better Replicate/WAN failure classification; and API docs regenerated from production. retired models no longer show up in key permissions. 9 PRs. the weeds remain vigilant."
+}

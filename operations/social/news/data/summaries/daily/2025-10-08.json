@@ -1,0 +1,27 @@
+{
+  "date": "2025-10-08",
+  "period_start": "2025-10-08",
+  "period_end": "2025-10-08",
+  "title": "FAQ gets readable markdown and keeps its bullet points",
+  "summary": "A small garden day: clearer docs, sturdier API key metadata, and Azure model plumbing moved to Myceli.\n\nThe FAQ was moved toward a cleaner markdown-based format with more approachable language, and a rendering fix makes sure its bullet points actually appear. Documentation: briefly defeated by a list.\n\nAzure-backed models now run through Myceli endpoints, and gptimage is enabled in the migration. More image-generation plumbing, exposed through the same simple interface.\n\nDescriptions added to API keys now persist correctly in metadata, so keys can keep the context humans gave them.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 4413,
+      "date": "2025-10-08"
+    },
+    {
+      "number": 4420,
+      "date": "2025-10-08"
+    },
+    {
+      "number": 4438,
+      "date": "2025-10-08"
+    },
+    {
+      "number": 4441,
+      "date": "2025-10-08"
+    }
+  ],
+  "generated_at": "2026-09-04T12:44:14.854890+00:00"
+}

@@ -1,0 +1,331 @@
+{
+  "date": "2026-01-13",
+  "period_start": "2026-01-13",
+  "period_end": "2026-01-13",
+  "title": "The app garden got a serious expansion",
+  "summary": "A community harvest day: dozens of Pollinations-powered apps joined the directory while its categories, docs, and event plumbing caught up.\n\nThe Apps directory gained a large crop of creative projects: image studios, presentation and flyer makers, thumbnail tools, prompt and world generators, video demos, and assorted strange little machines for making things. There is now considerably more evidence that people will build anything if you give them an image URL.\n\nThe directory added chat apps, AI assistants, social and Telegram bots, automated replies, and Pollinations-powered studios. The chat category continues to demonstrate that every interface eventually becomes a text box with opinions.\n\nNew directory entries cover developer tooling, n8n integration, YouTube automation, editors and converters, language learning, education, games, and a couple of vibe-oriented projects. The ecosystem is broadening in its usual unplanned-but-useful direction.",
+  "pr_count": 80,
+  "prs": [
+    {
+      "number": 7072,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7079,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7084,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7104,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7105,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7107,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7110,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7114,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7115,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7116,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7117,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7118,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7119,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7121,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7124,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7125,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7126,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7127,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7128,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7129,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7130,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7131,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7133,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7134,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7135,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7136,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7137,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7138,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7139,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7140,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7141,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7142,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7143,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7144,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7153,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7154,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7155,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7156,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7157,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7158,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7159,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7160,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7161,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7162,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7163,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7164,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7165,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7166,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7167,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7168,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7169,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7170,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7171,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7172,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7173,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7174,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7175,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7176,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7177,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7179,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7180,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7181,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7182,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7183,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7193,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7196,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7198,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7201,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7202,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7203,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7206,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7209,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7210,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7215,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7217,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7220,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7226,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7229,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7234,
+      "date": "2026-01-13"
+    },
+    {
+      "number": 7237,
+      "date": "2026-01-13"
+    }
+  ],
+  "generated_at": "2026-09-04T11:34:14.571754+00:00"
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-02-08",
+  "period_start": "2026-02-01",
+  "period_end": "2026-02-07",
+  "generated_at": "2026-03-18T22:22:09.582030+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-08/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 15 PRs this week. added ElevenLabs for TTS, LTX-2 and Grok for video, plus Imagen 3 & 4. we also moved our portkey gateway to a custom domain because 524 timeouts are the enemy of joy. mistral is now on ovhcloud."
+}

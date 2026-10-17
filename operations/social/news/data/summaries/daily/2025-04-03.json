@@ -1,0 +1,31 @@
+{
+  "date": "2025-04-03",
+  "period_start": "2025-04-03",
+  "period_end": "2025-04-03",
+  "title": "Text API errors became more useful",
+  "summary": "A small maintenance day: clearer text API failures, tidier affiliate data, and more predictable Turbo image behavior.\n\ntext.pollinations.ai now handles and reports errors more clearly, so failed requests should provide more usable clues instead of making developers perform interpretive debugging.\n\nAffiliate information was consolidated into a combined JSON source, with manual entries and Pollinations donation data included while irrelevant fields were trimmed. The list was then enriched for consumers that need better affiliate metadata.\n\nTurbo image generation can now run without falling back to SDXL, making model behavior more predictable for callers who specifically chose Turbo.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 1540,
+      "date": "2025-04-03"
+    },
+    {
+      "number": 1541,
+      "date": "2025-04-03"
+    },
+    {
+      "number": 1543,
+      "date": "2025-04-03"
+    },
+    {
+      "number": 1545,
+      "date": "2025-04-03"
+    },
+    {
+      "number": 1547,
+      "date": "2025-04-03"
+    }
+  ],
+  "generated_at": "2026-09-04T12:21:27.135171+00:00"
+}

@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-04-26",
+  "period_start": "2026-04-19",
+  "period_end": "2026-04-25",
+  "generated_at": "2026-04-26T06:36:13.049262+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-26/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-26/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-26/images/instagram-3.jpg"
+    }
+  ],
+  "text": "39 PRs merged this week. The codebase is slightly heavier, but the infrastructure is a lot smarter.\n\nWe wired up DeepSeek V4, Claude Opus, and Qwen3-TTS. MCP got a v2.1 overhaul with a dynamic registry (meaning fewer busy-looping orphan processes—you're welcome, Windows users). We also polished the mobile UI and tightened up the analytics dashboard so you can actually read your usage stats without squinting.\n\nOh, and 9 new community apps sprouted in the showcase.\n\nDocs, endpoints, and the new models are live at pollinations.ai.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #deepseek #webdev #llm #buildinpublic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

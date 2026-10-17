@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-08-03",
+  "period_start": "2026-08-03",
+  "period_end": "2026-08-03",
+  "generated_at": "2026-08-04T07:01:47.293796+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-08-03/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: Krea 2 Medium for images, Grok Imagine Video 1.5 for motion, and Qwen3.8 Max on the multimodal text API. Also hardened community publishing, deploy queues, and model access paths. 8 PRs; fewer ways for reality to be creative."
+}

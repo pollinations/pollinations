@@ -1,0 +1,15 @@
+{
+  "date": "2025-03-06",
+  "period_start": "2025-03-06",
+  "period_end": "2025-03-06",
+  "title": "A small way to support the project",
+  "summary": "A small website addition makes it easier for the community to support pollinations.\n\nThe website now includes a Ko-Fi widget, giving people who want to help keep the garden watered a direct route to do so.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 1283,
+      "date": "2025-03-06"
+    }
+  ],
+  "generated_at": "2026-09-04T12:03:59.273555+00:00"
+}

@@ -1,0 +1,83 @@
+{
+  "date": "2026-08-07",
+  "period_start": "2026-08-07",
+  "period_end": "2026-08-07",
+  "title": "3D generation gets a proper JSON API",
+  "summary": "A busy API day: structured 3D requests, stronger transcription support, clearer model routing, and docs that finally match the machinery.\n\nThe 3D endpoint now accepts structured POST payloads, so developers can send model choice, reference images, resolution, and reproducible seeds without trying to express a whole request in a URL. Existing GET requests continue as before.\n\nThe audio registry now clearly declares transcription support and rejects models used on the wrong endpoint with useful guidance. Grok Transcribe also joined /v1/audio/transcriptions, including text, JSON, verbose metadata, and speaker-diarized output.\n\nText responses now consistently expose the canonical resolved model in x-model-used, including aliases, community models, and fallback routes. Long Portkey-backed requests again have enough time to complete, with structured timeout responses instead of Cloudflare-shaped mysteries.",
+  "pr_count": 18,
+  "prs": [
+    {
+      "number": 13059,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13069,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13070,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13156,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13157,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13158,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13159,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13160,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13162,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13163,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13164,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13165,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13168,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13169,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13170,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13172,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13173,
+      "date": "2026-08-07"
+    },
+    {
+      "number": 13175,
+      "date": "2026-08-07"
+    }
+  ],
+  "generated_at": "2026-09-04T11:50:33.754812+00:00"
+}

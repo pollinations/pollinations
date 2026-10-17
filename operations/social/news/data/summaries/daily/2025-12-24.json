@@ -1,0 +1,35 @@
+{
+  "date": "2025-12-24",
+  "period_start": "2025-12-24",
+  "period_end": "2025-12-24",
+  "title": "Image generation gets its Azure wiring",
+  "summary": "A quiet holiday maintenance pass: sturdier model integrations, a new Creative app, and a repaired path for community submissions.\n\nGPT Image 1.5 credentials were added for the gptimage-large model, keeping another image-generation route ready to return pixels instead of configuration errors.\n\nOpenAI-compatible requests can now survive mangled endpoint paths, while Gemini and Vertex AI receive sanitized tool schemas. More clients and agent setups should reach the model without tripping over API dialects.\n\nn8n-grok joined the Creative collection, and the app-submission workflow was patched so community projects have a smoother path into the ecosystem.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 6394,
+      "date": "2025-12-24"
+    },
+    {
+      "number": 6404,
+      "date": "2025-12-24"
+    },
+    {
+      "number": 6425,
+      "date": "2025-12-24"
+    },
+    {
+      "number": 6428,
+      "date": "2025-12-24"
+    },
+    {
+      "number": 6433,
+      "date": "2025-12-24"
+    },
+    {
+      "number": 6434,
+      "date": "2025-12-24"
+    }
+  ],
+  "generated_at": "2026-09-04T12:40:18.262798+00:00"
+}

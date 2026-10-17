@@ -1,0 +1,31 @@
+{
+  "date": "2025-01-16",
+  "period_start": "2025-01-16",
+  "period_end": "2025-01-16",
+  "title": "Text and image services get a sturdier test net",
+  "summary": "A maintenance-forward day: stronger text and image tests, plus generated Mentat Scripts.\n\nThe text and image backends gained dedicated test workflows, expanded seed coverage, and repaired test suites. Less glamorous than a new endpoint, but useful: generated results now have more automated checks standing between a change and a surprise.\n\nAdded generation support for Mentat Scripts, giving the project another way to turn prompts into usable code-shaped output.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 1016,
+      "date": "2025-01-16"
+    },
+    {
+      "number": 1017,
+      "date": "2025-01-16"
+    },
+    {
+      "number": 1019,
+      "date": "2025-01-16"
+    },
+    {
+      "number": 1022,
+      "date": "2025-01-16"
+    },
+    {
+      "number": 1023,
+      "date": "2025-01-16"
+    }
+  ],
+  "generated_at": "2026-09-04T13:40:59.038015+00:00"
+}

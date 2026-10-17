@@ -1,0 +1,27 @@
+{
+  "date": "2025-05-10",
+  "period_start": "2025-05-10",
+  "period_end": "2025-05-10",
+  "title": "The project garden got two new entries",
+  "summary": "A documentation-and-community day: clearer audio and MCP guidance, plus two more projects in the garden.\n\nAiphoto智能绘画 and the SingodiyaTech bot were added to the community project list, making two more things people have built with pollinations easier to find.\n\nThe audio response-format documentation was corrected, while the MCP server docs were trimmed and now point builders toward MCPollinations as an alternative. Documentation: where software admits what it actually does.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 1922,
+      "date": "2025-05-10"
+    },
+    {
+      "number": 1935,
+      "date": "2025-05-10"
+    },
+    {
+      "number": 1937,
+      "date": "2025-05-10"
+    },
+    {
+      "number": 1938,
+      "date": "2025-05-10"
+    }
+  ],
+  "generated_at": "2026-09-04T12:39:48.346576+00:00"
+}

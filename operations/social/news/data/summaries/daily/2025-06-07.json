@@ -1,0 +1,59 @@
+{
+  "date": "2025-06-07",
+  "period_start": "2025-06-07",
+  "period_end": "2025-06-07",
+  "title": "The creative-project garden got considerably stranger",
+  "summary": "A community-directory day: ten additions spanning creative tools, chat, games, and bots, plus some quiet text-service cleanup.\n\nThe community projects directory added Text2Image_audio, CatGPT Meme Generator, Image Creator, GeoNameBase.com, an X-Files image generator, DeepEx, and MrEgonAI. More things people built with the API are now easier to find, ranging from practical image tools to the inevitable alien-adjacent generator.\n\nA Mita Roblox joined the games category, AI drafterplus was added to chat projects, and GPT_Project landed in Social Bots with corrected details. The directory continues its important work of proving that one API can escape into nearly any corner of the internet.\n\nReferrer handling, auth logic, and the text service were streamlined behind the scenes, keeping the request path tidier while the public project catalog grows.",
+  "pr_count": 12,
+  "prs": [
+    {
+      "number": 2285,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2347,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2349,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2350,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2351,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2352,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2353,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2354,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2355,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2359,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2360,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2361,
+      "date": "2025-06-07"
+    }
+  ],
+  "generated_at": "2026-09-04T12:59:01.127059+00:00"
+}

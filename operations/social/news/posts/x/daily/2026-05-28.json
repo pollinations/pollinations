@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-05-28",
+  "period_start": "2026-05-28",
+  "period_end": "2026-05-28",
+  "generated_at": "2026-05-29T07:15:38.289709+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-28/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped phase 1 of country-routed checkout. pollen packs now show up in your local currency. no more doing mental forex math just to generate some pixels."
+}

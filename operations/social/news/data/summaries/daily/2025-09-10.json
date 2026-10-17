@@ -1,0 +1,31 @@
+{
+  "date": "2025-09-10",
+  "period_start": "2025-09-10",
+  "period_end": "2025-09-10",
+  "title": "CapyIMG joins the creative projects",
+  "summary": "A garden-maintenance day: a new creative project, stricter text limits, and fewer model settings hiding in the walls.\n\nCapyUniverse's CapyIMG was added to the creative-project lineup, giving people another open experiment to explore and build around.\n\nThe API now treats max_tokens as an actual hard ceiling rather than a polite suggestion users could override. Predictable output limits: a small but civilized improvement.\n\nProvider data moved into one shared model-cost source, the transform pipeline was split into modular pieces, and the model catalog was streamlined around GPT-4.1 Nano. Less scattered configuration means a saner base for future model work.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 3977,
+      "date": "2025-09-10"
+    },
+    {
+      "number": 4008,
+      "date": "2025-09-10"
+    },
+    {
+      "number": 4012,
+      "date": "2025-09-10"
+    },
+    {
+      "number": 4015,
+      "date": "2025-09-10"
+    },
+    {
+      "number": 4018,
+      "date": "2025-09-10"
+    }
+  ],
+  "generated_at": "2026-09-04T12:30:27.712922+00:00"
+}

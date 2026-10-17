@@ -1,0 +1,135 @@
+{
+  "date": "2026-03-15",
+  "period_start": "2026-03-08",
+  "period_end": "2026-03-14",
+  "title": "POLLINATIONS WEEKLY vol.42 — speedruns & drop-in endpoints → INFRASTRUCTURE SPEEDRUNS\nWe optimized the Seed tier auto-upgrade workflow",
+  "summary": "Previously, calculating GitHub activity to upgrade contributors took about 25 hours to complete. It now takes a few seconds. Turns out you don't actually need to bend the space-time continuum to parse a list of commits. Speaking of time, Pollen credit refills are now hourly instead of daily. If you burn through your local allocation, just go get a coffee and come back. → OPENAI DROP-IN & NEW MODELS\nYou can now use our image generation endpoints as a drop-in replacement for OpenAI's API. Change the base URL, keep your existing code, get pixels back. We also routed a mountain of new models into the infrastructure:\n1. Pruna p-image, p-image-edit, and p-video\n2. dirtberry and dirtberry-pro\n3. claude-airforce via api.airforce\n4. qwen3-tts via our new community provider Seraphyn → BYOP & THE ECOSYSTEM\nBring Your Own Provider (BYOP) auth is becoming the standard. We wired it up for the AI Dungeon Master and Product Packaging apps, alongside a new media upload service. We also fixed a CORS-adjacent blocker that was preventing browser extensions from generating App Keys. Finally, Polly v2 is live with native-speed internals, and the frontend got a cozy redesign with a new scene background and palette system",
+  "pr_count": 31,
+  "prs": [
+    {
+      "number": 8902,
+      "date": "2026-03-08"
+    },
+    {
+      "number": 8899,
+      "date": "2026-03-09"
+    },
+    {
+      "number": 8949,
+      "date": "2026-03-09"
+    },
+    {
+      "number": 8969,
+      "date": "2026-03-09"
+    },
+    {
+      "number": 8973,
+      "date": "2026-03-09"
+    },
+    {
+      "number": 8974,
+      "date": "2026-03-09"
+    },
+    {
+      "number": 8982,
+      "date": "2026-03-09"
+    },
+    {
+      "number": 8987,
+      "date": "2026-03-09"
+    },
+    {
+      "number": 8971,
+      "date": "2026-03-10"
+    },
+    {
+      "number": 8998,
+      "date": "2026-03-10"
+    },
+    {
+      "number": 9007,
+      "date": "2026-03-10"
+    },
+    {
+      "number": 9017,
+      "date": "2026-03-10"
+    },
+    {
+      "number": 9026,
+      "date": "2026-03-10"
+    },
+    {
+      "number": 9032,
+      "date": "2026-03-11"
+    },
+    {
+      "number": 8985,
+      "date": "2026-03-13"
+    },
+    {
+      "number": 9035,
+      "date": "2026-03-13"
+    },
+    {
+      "number": 9073,
+      "date": "2026-03-13"
+    },
+    {
+      "number": 9076,
+      "date": "2026-03-13"
+    },
+    {
+      "number": 9078,
+      "date": "2026-03-13"
+    },
+    {
+      "number": 9080,
+      "date": "2026-03-13"
+    },
+    {
+      "number": 9082,
+      "date": "2026-03-13"
+    },
+    {
+      "number": 9088,
+      "date": "2026-03-13"
+    },
+    {
+      "number": 9001,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9044,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9065,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9077,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9087,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9091,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9105,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9113,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9117,
+      "date": "2026-03-14"
+    }
+  ],
+  "generated_at": "2026-03-15T06:25:52.957902+00:00"
+}

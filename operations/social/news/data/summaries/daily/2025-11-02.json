@@ -1,0 +1,31 @@
+{
+  "date": "2025-11-02",
+  "period_start": "2025-11-02",
+  "period_end": "2025-11-02",
+  "title": "Flux workers got steadier, with a live view of the machinery",
+  "summary": "A tuning day: steadier Flux workers, properly labeled audio responses, and a few cleaner edges.\n\nIO.NET Flux workers received stability and monitoring work, alongside a real-time server monitor. Image generation infrastructure now has a better chance to behave itself—and a way to see when it does not.\n\nThe OpenAI-audio response schema now includes its audio field, making audio output easier for API clients to identify and consume without inference by archaeology.\n\nThe site footer was finalized, while image token tracking was consolidated under completionImageTokens for a more consistent accounting path.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 4868,
+      "date": "2025-11-02"
+    },
+    {
+      "number": 4919,
+      "date": "2025-11-02"
+    },
+    {
+      "number": 4920,
+      "date": "2025-11-02"
+    },
+    {
+      "number": 4921,
+      "date": "2025-11-02"
+    },
+    {
+      "number": 4923,
+      "date": "2025-11-02"
+    }
+  ],
+  "generated_at": "2026-09-04T12:03:06.802362+00:00"
+}

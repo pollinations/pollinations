@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-08-14",
+  "period_start": "2026-08-14",
+  "period_end": "2026-08-14",
+  "generated_at": "2026-08-15T06:12:59.108969+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-14/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 37 PRs: bigger model shelf (Grok 4.6, Gemini 3.7 Flash, Seedance 2.0); speech now works via the simple audio route and OpenAI realtime; duplicate generations share work without storage tantrums. Community-model controls got safer, too."
+}

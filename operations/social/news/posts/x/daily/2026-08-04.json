@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-08-04",
+  "period_start": "2026-08-04",
+  "period_end": "2026-08-04",
+  "generated_at": "2026-08-05T07:03:30.409425+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-08-04/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: model selection now uses a cleaner catalog while old links keep working. Command A Plus requests pass through more faithfully, invalid image URLs return 400, and the README/model titles got a polish pass. 5 PRs; fewer interpretive dances for APIs."
+}

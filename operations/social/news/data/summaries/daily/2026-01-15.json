@@ -1,0 +1,35 @@
+{
+  "date": "2026-01-15",
+  "period_start": "2026-01-15",
+  "period_end": "2026-01-15",
+  "title": "Account balances and authorization got a more coherent shape",
+  "summary": "A small account-and-community maintenance day: smoother authorization, crypto balance support, and workflows that mind their own files.\n\nKey permissions were refactored alongside account profiles and smarter authorization preselection, while the balance API was aligned with its expected response structure. Less ceremony when connecting an account; fewer surprises for anything reading its balance.\n\nNOWPayments integration added crypto payment support and a cryptoBalance path, giving people who prefer on-chain rails another route into the ecosystem.\n\nThe Reddit workflow was updated for the current Devvit patch, the daily Instagram post landed, and Biome CI now checks the files a PR actually changes instead of getting distracted by merge commits. Software briefly remembers what it was asked to inspect.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 6733,
+      "date": "2026-01-15"
+    },
+    {
+      "number": 7303,
+      "date": "2026-01-15"
+    },
+    {
+      "number": 7308,
+      "date": "2026-01-15"
+    },
+    {
+      "number": 7309,
+      "date": "2026-01-15"
+    },
+    {
+      "number": 7320,
+      "date": "2026-01-15"
+    },
+    {
+      "number": 7324,
+      "date": "2026-01-15"
+    }
+  ],
+  "generated_at": "2026-09-04T11:35:41.914109+00:00"
+}

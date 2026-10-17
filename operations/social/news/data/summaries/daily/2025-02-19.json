@@ -1,0 +1,15 @@
+{
+  "date": "2025-02-19",
+  "period_start": "2025-02-19",
+  "period_end": "2025-02-19",
+  "title": "Private by default for the OpenAI-compatible endpoint",
+  "summary": "A small privacy-default adjustment: OpenAI-compatible API requests now start private.\n\nRequests to the OpenAI API endpoint now default to private mode, making the safer sharing setting the path of least resistance.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 1206,
+      "date": "2025-02-19"
+    }
+  ],
+  "generated_at": "2026-09-04T13:58:10.672502+00:00"
+}

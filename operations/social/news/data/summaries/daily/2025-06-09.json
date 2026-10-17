@@ -1,0 +1,15 @@
+{
+  "date": "2025-06-09",
+  "period_start": "2025-06-09",
+  "period_end": "2025-06-09",
+  "title": "Models and queues get a tune-up",
+  "summary": "A small engine-room update: refreshed models and queue configuration.\n\nUpdated model configuration alongside queue changes, keeping generation requests moving through the system with a little less mystery.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 2381,
+      "date": "2025-06-09"
+    }
+  ],
+  "generated_at": "2026-09-04T12:59:36.809004+00:00"
+}

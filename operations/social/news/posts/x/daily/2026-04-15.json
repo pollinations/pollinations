@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-04-15",
+  "period_start": "2026-04-15",
+  "period_end": "2026-04-15",
+  "generated_at": "2026-04-16T06:34:45.585891+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-15/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped some updates. veo 3.1 fast video generation is back online (switched to the GA model id). added 'neon runner' to the games section. also hid expired api keys from the dashboard because nobody needs to see their past mistakes."
+}

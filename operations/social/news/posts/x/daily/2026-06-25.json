@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-06-25",
+  "period_start": "2026-06-25",
+  "period_end": "2026-06-25",
+  "generated_at": "2026-06-26T07:14:20.118306+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-25/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 5 updates today. the big one: quests. you can now earn pollen credits for doing things (stored properly in unix seconds, naturally). also fixed the dashboard's auth amnesia and added social metadata to the docs."
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-07-24",
+  "period_start": "2026-07-24",
+  "period_end": "2026-07-24",
+  "generated_at": "2026-07-25T06:55:31.040074+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-24/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: SVG generation via Recraft, 30-second music clips via Lyria 3, and verified OpenRouter routes for NanoBanana and Seedream. Klein now recovers when VRAM disappears. 13 PRs; the API has acquired more hobbies."
+}

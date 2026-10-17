@@ -1,0 +1,23 @@
+{
+  "date": "2026-01-25",
+  "period_start": "2026-01-25",
+  "period_end": "2026-01-25",
+  "title": "Bedrock models get a more direct route",
+  "summary": "A reliability pass for Bedrock routing, Nova fallbacks, and the database work that should not have been blocking the garden path.\n\nBedrock model configuration moved off the Lambda proxy and onto native Portkey config, simplifying the path between requests and model responses.\n\nnova-fast can now fall back to Nova Lite, helping text requests keep moving when the preferred route is unavailable.\n\nDeferred updates and background tasks reduce D1 contention, keeping request handling smoother while follow-up work happens out of band.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 7649,
+      "date": "2026-01-25"
+    },
+    {
+      "number": 7650,
+      "date": "2026-01-25"
+    },
+    {
+      "number": 7652,
+      "date": "2026-01-25"
+    }
+  ],
+  "generated_at": "2026-09-04T11:44:33.810164+00:00"
+}

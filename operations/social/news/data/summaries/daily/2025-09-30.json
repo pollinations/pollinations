@@ -1,0 +1,39 @@
+{
+  "date": "2025-09-30",
+  "period_start": "2025-09-30",
+  "period_end": "2025-09-30",
+  "title": "Chat projects gain J.A.R.V.I.S., with clearer model guidance",
+  "summary": "A garden-maintenance day: a new chat project, friendlier signup and UI details, plus caching that remembers a little more.\n\nJ.A.R.V.I.S. joined the available chat projects, while the LLM guide now documents seed-tier image models so builders can find the lighter-weight image options without spelunking through configuration.\n\nSignup now handles people who already have a Polar customer record, and the UI received font and visual cleanup. A special Bee Request review session also moved community requests through the garden.\n\nCache metadata was streamlined, path exclusions were corrected, and POST requests to the root path can now be cached. The cache continues its long campaign to make repeated work someone else's problem.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 2589,
+      "date": "2025-09-30"
+    },
+    {
+      "number": 4207,
+      "date": "2025-09-30"
+    },
+    {
+      "number": 4208,
+      "date": "2025-09-30"
+    },
+    {
+      "number": 4221,
+      "date": "2025-09-30"
+    },
+    {
+      "number": 4253,
+      "date": "2025-09-30"
+    },
+    {
+      "number": 4255,
+      "date": "2025-09-30"
+    },
+    {
+      "number": 4257,
+      "date": "2025-09-30"
+    }
+  ],
+  "generated_at": "2026-09-04T12:39:17.261393+00:00"
+}

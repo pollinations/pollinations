@@ -1,0 +1,23 @@
+{
+  "date": "2025-05-28",
+  "period_start": "2025-05-28",
+  "period_end": "2025-05-28",
+  "title": "GPT image requests get smarter routing",
+  "summary": "A small garden-maintenance day: smarter GPT image routing, a newly listed community app, and account foundations taking root.\n\nThe GPT image endpoint now uses stage-based routing, laying out a clearer path for requests to reach the right generation setup instead of wandering through the plumbing.\n\nThe project directory now includes AI Content Describer, making one more community-built tool easier to find.\n\nA user tier system landed, establishing the account structure needed to tailor access and experiences as the platform grows.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 2151,
+      "date": "2025-05-28"
+    },
+    {
+      "number": 2155,
+      "date": "2025-05-28"
+    },
+    {
+      "number": 2159,
+      "date": "2025-05-28"
+    }
+  ],
+  "generated_at": "2026-09-04T12:52:20.755716+00:00"
+}

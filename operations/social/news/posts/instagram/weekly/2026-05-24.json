@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-05-24",
+  "period_start": "2026-05-17",
+  "period_end": "2026-05-23",
+  "generated_at": "2026-05-24T07:03:48.326047+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-24/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-24/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-24/images/instagram-3.jpg"
+    }
+  ],
+  "text": "55 PRs merged this week. mostly, it was a massive community harvest — you all added an absurd number of apps and bots to the ecosystem. we also shipped positional video frames (transitions!), bumped video to 720p standard, and added audio diarization so transcripts actually know who is talking. wired up gemini-3.5-flash, fixed some annoying timeout hangs, and polished up how tables render. the infrastructure grows. go build something weird. link in bio for the full changelog. 🌻\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #techupdates #generativeai",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

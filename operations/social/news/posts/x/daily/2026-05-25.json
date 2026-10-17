@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-05-25",
+  "period_start": "2026-05-25",
+  "period_end": "2026-05-25",
+  "generated_at": "2026-05-26T07:07:36.083775+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-25/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: helix ai is now available on the chat endpoint. the model greenhouse keeps growing. one simple http call and you're talking to it."
+}

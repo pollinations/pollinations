@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-02-15",
+  "period_start": "2026-02-08",
+  "period_end": "2026-02-14",
+  "generated_at": "2026-02-16T10:04:13.429831+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-15/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-15/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-15/images/instagram-3.jpg"
+    }
+  ],
+  "text": "Level Up! 🍄✨ We merged 27 PRs this week and the hive is buzzing with upgrades. \n\nHere’s the loot drop:\n🗺️ OpenClaw Agents are live (one-command web search!)\n🧠 Polly API got a massive brain boost\n🎬 Grok Image-to-Video + ElevenLabs Scribe v2 = creative power\n\nIt’s giving main character energy. Which feature are you trying first? Tell us below! 👇\n\n#pollinations #opensource #pixelart #indiedev #aiart #generativeai #cozyvibes #8bit #buildinpublic #weeklyupdate #techforgood\n\n#pollinations #opensource #pixelart #indiedev #aiart #generativeai #cozyvibes #8bit #buildinpublic #weeklyupdate #techforgood",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "date": "2025-05-26",
+  "period_start": "2025-05-26",
+  "period_end": "2025-05-26",
+  "title": "More control over how text models think out loud",
+  "summary": "A small reliability pass: better text-generation controls, a clearer SillyTavern connection, and auth that handles bad tokens without drama.\n\nText generation now accepts the full set of common sampling controls: temperature, top_p, presence_penalty, and frequency_penalty. More knobs for people who have opinions about repetition.\n\nSillyTavern was added to the project list and documented in the README, making the connection easier to find for roleplay and character-chat builders.\n\nAuthentication and queue handling were standardized, token validation gained a straightforward REST GET endpoint, and invalid tokens no longer have the power to crash a server.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 2103,
+      "date": "2025-05-26"
+    },
+    {
+      "number": 2104,
+      "date": "2025-05-26"
+    },
+    {
+      "number": 2106,
+      "date": "2025-05-26"
+    },
+    {
+      "number": 2108,
+      "date": "2025-05-26"
+    },
+    {
+      "number": 2119,
+      "date": "2025-05-26"
+    },
+    {
+      "number": 2122,
+      "date": "2025-05-26"
+    }
+  ],
+  "generated_at": "2026-09-04T12:51:02.470013+00:00"
+}

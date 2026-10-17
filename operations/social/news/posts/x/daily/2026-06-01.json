@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-06-01",
+  "period_start": "2026-06-01",
+  "period_end": "2026-06-01",
+  "generated_at": "2026-06-02T07:34:33.015388+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-01/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 26 PRs today. polly can now draw explicit tables and charts. fixed WAV RIFF header sizes so TTS actually plays. also spent the morning stripping rogue reasoning params from grok requests. 15 new community apps added to the greenhouse."
+}

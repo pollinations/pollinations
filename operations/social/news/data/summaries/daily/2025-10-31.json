@@ -1,0 +1,63 @@
+{
+  "date": "2025-10-31",
+  "period_start": "2025-10-31",
+  "period_end": "2025-10-31",
+  "title": "A new mobile app joins the image garden",
+  "summary": "A garden-maintenance day: a new image app, smoother Gemini access, reliable daily tiers, and fewer mysterious notifications.\n\nReImagine, a mobile app for AI image transformation, was added to the ecosystem. Another small surface for turning prompts and existing images into something else entirely.\n\nenter.pollinations.ai now has IOnet deployment infrastructure and nanobanana (Gemini) activated, while requests bypass unnecessary IP queueing. Gemini text responses are also preserved through error handling, and Flux requests report the actual Flux model name in tracking headers rather than an implementation detail.\n\nThe tier system was updated so daily refills work with V2 products, with a script added to check tier status. Discord PR notifications were simplified and now only mention the update role when a PR explicitly asks for it: fewer unsolicited pings, an ancient engineering goal.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 4863,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4875,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4876,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4886,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4887,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4889,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4891,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4892,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4894,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4895,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4896,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4899,
+      "date": "2025-10-31"
+    },
+    {
+      "number": 4903,
+      "date": "2025-10-31"
+    }
+  ],
+  "generated_at": "2026-09-04T12:57:56.212121+00:00"
+}

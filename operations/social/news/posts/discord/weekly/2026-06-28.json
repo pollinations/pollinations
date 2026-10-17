@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-06-28",
+  "period_start": "2026-06-21",
+  "period_end": "2026-06-27",
+  "generated_at": "2026-06-28T07:18:18.267347+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-28/images/discord.jpg"
+    }
+  ],
+  "text": "Hey <@&1424461167883194418>, here's what shipped this week.\n\n## Weekly Update - 2026-06-28\n\n🎵 **Audio Infrastructure**\nWe did a lot of audio plumbing.\n- **Stable Audio 3**: Added via Stability's official API, plus Stable Audio 3 Medium via fal. Model cards now reflect flat-rate per-gen pricing.\n- **ElevenLabs**: Upgraded to `music_v2` (now supporting reference-audio conditioning). We also added SFX and Multilingual v2 support, and corrected the TTS pricing.\n\n🪙 **Quests > Tiers**\nSubscriptions are out. Quests are in.\n- The quest system is officially live with a public catalog, rewards ledger, and dashboard worker.\n- All tier and drip copy has been scrubbed from the docs. You earn Pollen by doing things now. We've added specific checks for Polar top-ups and split the legacy/launch top-up quests.\n\n🧠 **Models & Docs**\n- **New Model**: Added `inception-mercury`.\n- **Multimodal**: Fixed an issue passing text modalities to providers, so multimodal inputs are fully unblocked.\n- **Community**: Added REKTY AI to the bot list.\n- **Auth Docs**: Publishable keys are dead. We've updated the authentication docs to fully document the BYOP (Bring Your Own Pollen) replacement.\n\nGo build something noisy."
+}

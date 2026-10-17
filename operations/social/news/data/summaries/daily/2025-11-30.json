@@ -1,0 +1,83 @@
+{
+  "date": "2025-11-30",
+  "period_start": "2025-11-30",
+  "period_end": "2025-11-30",
+  "title": "The community showcase got a much better map",
+  "summary": "A garden-maintenance day: a larger community showcase, clearer account status, and a few less dramatic ways for APIs and databases to behave.\n\nAdded 13 community projects plus ViralFlow AI to the showcase, then refreshed descriptions for xibe-chat-cli, Prompt Vision, Fikiri Chat AI, Samaritan AI, ReThink AI, GPTAI.host, LINE Blessing Images Bot, Pollinations Gallery, AI Stickers Generator, and PDF-to-Speech. More things people built with the API are now easier to find and understand.\n\nFixed tier panels that could show \"Unknown Tier\" and zero daily Pollen, while caching Polar API calls so account checks are less likely to run into rate limits. The account page has been persuaded to report what it actually knows.\n\nfinish_reason values can now pass through even when providers invent a new string, and Llama 3.1 8B on mistral-fast has an explicit max-token limit. Fewer schema arguments with the outside world; more predictable generations.",
+  "pr_count": 18,
+  "prs": [
+    {
+      "number": 5457,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5477,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5479,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5480,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5483,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5491,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5492,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5493,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5494,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5495,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5496,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5497,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5498,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5499,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5500,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5501,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5502,
+      "date": "2025-11-30"
+    },
+    {
+      "number": 5503,
+      "date": "2025-11-30"
+    }
+  ],
+  "generated_at": "2026-09-04T12:21:13.754624+00:00"
+}

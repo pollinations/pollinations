@@ -1,0 +1,35 @@
+{
+  "date": "2025-03-12",
+  "period_start": "2025-03-12",
+  "period_end": "2025-03-12",
+  "title": "Text API gets another model and smoother message handling",
+  "summary": "A small, useful day for text.pollinations.ai: a new Mistral model, better compatibility, and two more projects growing in public.\n\nMistral Small 24B from Scaleway joined text.pollinations.ai, while system messages are now translated into user messages for models that do not support them. One endpoint, more model quirks quietly handled.\n\nAll text.pollinations.ai requests now register with the text feed, alongside Google service-account authentication work for the service.\n\nPromptPix, an Android app, was added to the project list. MiReXa AI also arrived under its new name with audio generation in the mix.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 1324,
+      "date": "2025-03-12"
+    },
+    {
+      "number": 1325,
+      "date": "2025-03-12"
+    },
+    {
+      "number": 1328,
+      "date": "2025-03-12"
+    },
+    {
+      "number": 1330,
+      "date": "2025-03-12"
+    },
+    {
+      "number": 1332,
+      "date": "2025-03-12"
+    },
+    {
+      "number": 1334,
+      "date": "2025-03-12"
+    }
+  ],
+  "generated_at": "2026-09-04T12:07:15.593594+00:00"
+}

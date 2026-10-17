@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-10-02",
+  "period_start": "2026-10-02",
+  "period_end": "2026-10-02",
+  "generated_at": "2026-10-03T06:30:38.168168+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-02/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped E2B-compatible hosted sandboxes in gen + Polli CLI. chat now accepts 100 MiB requests and reuses uploaded media. weekly model evals pace around rate limits and publish scores. x402 checkout returns a budgeted API key."
+}

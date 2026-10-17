@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-05-01",
+  "period_start": "2026-05-01",
+  "period_end": "2026-05-01",
+  "generated_at": "2026-05-02T06:36:47.323637+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-01/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 6 updates. elevenlabs and gpt image 2 now use pollen credits, but scribe stays strictly free. qwen tts audio routing is smarter, nova reel input errors are handled, and the dashboard sidebar is less chaotic."
+}

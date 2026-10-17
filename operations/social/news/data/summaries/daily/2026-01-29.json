@@ -1,0 +1,27 @@
+{
+  "date": "2026-01-29",
+  "period_start": "2026-01-29",
+  "period_end": "2026-01-29",
+  "title": "Instagram image-to-image prompts stop getting mangled",
+  "summary": "A small maintenance day: cleaner Instagram I2I inputs, better cost visibility, and fresher model-status communications.\n\nInstagram I2I generation no longer double-encodes URLs, so image inputs arrive at the generator in the form they were meant to.\n\nA new Tier Costs dashboard makes cost analysis easier, alongside refreshed deployment instructions and a seven-day default for the economics workflow.\n\nThe model announcement was added to the project news channels, keeping people pointed at the current set of available options rather than old assumptions.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 7759,
+      "date": "2026-01-29"
+    },
+    {
+      "number": 7763,
+      "date": "2026-01-29"
+    },
+    {
+      "number": 7764,
+      "date": "2026-01-29"
+    },
+    {
+      "number": 7765,
+      "date": "2026-01-29"
+    }
+  ],
+  "generated_at": "2026-09-04T11:47:27.052580+00:00"
+}

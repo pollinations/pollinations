@@ -1,0 +1,51 @@
+{
+  "date": "2025-12-19",
+  "period_start": "2025-12-19",
+  "period_end": "2025-12-19",
+  "title": "Instagram workflows got harder to confuse",
+  "summary": "A garden-maintenance day: sturdier Instagram workflows, working Gemini tools, clearer video errors, and fewer stray branches.\n\nInstagram prompts now carry Pollinations' identity, while the workflow gained authentication fixes, stricter image validation, and safer handling for nested image URLs. URLs remain a surprisingly ambitious data format.\n\nThe API now accepts video_url content, Gemini Fast's code execution, search, and URL-context tools are working again, and the Text API no longer advertises an unused n parameter.\n\nVeo content moderation failures now return a clear 400 response instead of looking like a server-side crash, giving callers an actionable answer.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 6066,
+      "date": "2025-12-19"
+    },
+    {
+      "number": 6173,
+      "date": "2025-12-19"
+    },
+    {
+      "number": 6178,
+      "date": "2025-12-19"
+    },
+    {
+      "number": 6186,
+      "date": "2025-12-19"
+    },
+    {
+      "number": 6190,
+      "date": "2025-12-19"
+    },
+    {
+      "number": 6195,
+      "date": "2025-12-19"
+    },
+    {
+      "number": 6196,
+      "date": "2025-12-19"
+    },
+    {
+      "number": 6210,
+      "date": "2025-12-19"
+    },
+    {
+      "number": 6211,
+      "date": "2025-12-19"
+    },
+    {
+      "number": 6213,
+      "date": "2025-12-19"
+    }
+  ],
+  "generated_at": "2026-09-04T12:36:39.506994+00:00"
+}

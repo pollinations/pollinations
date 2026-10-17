@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-05-31",
+  "period_start": "2026-05-24",
+  "period_end": "2026-05-30",
+  "generated_at": "2026-05-31T07:15:39.740007+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-31/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 18 PRs. real-time voice api (gpt-realtime-2) is live. added claude opus 4.8, perplexity sonar, and a pile of step-flash models. rewrote the docs generator because the old one was annoying. 6 new community apps in the greenhouse."
+}

@@ -1,0 +1,27 @@
+{
+  "date": "2025-10-28",
+  "period_start": "2025-10-28",
+  "period_end": "2025-10-28",
+  "title": "Subscription controls now show the right tier and next step",
+  "summary": "A day for sturdier account controls, clearer service boundaries, and one GitHub Action that can finally finish its sentence.\n\nThe subscription management view now treats Polar as the source of truth for tier information and presents smarter action buttons, so account controls better reflect what people actually have.\n\nTerms of Service and Privacy Policy pages are now available, alongside a D1 operations guide covering the Enter staging and Auth production setup. The less glamorous parts of running a service are becoming less archaeological.\n\nThe GitHub Action now has the permission it needs to complete its debounce step, restoring a small but useful piece of repository automation.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 4822,
+      "date": "2025-10-28"
+    },
+    {
+      "number": 4835,
+      "date": "2025-10-28"
+    },
+    {
+      "number": 4838,
+      "date": "2025-10-28"
+    },
+    {
+      "number": 4843,
+      "date": "2025-10-28"
+    }
+  ],
+  "generated_at": "2026-09-04T12:56:30.607003+00:00"
+}

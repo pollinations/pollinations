@@ -1,0 +1,51 @@
+{
+  "date": "2025-11-16",
+  "period_start": "2025-11-16",
+  "period_end": "2025-11-16",
+  "title": "Audio joins the OpenAI API toolkit",
+  "summary": "A tuning day: OpenAI audio support arrived while model routing, keys, and text infrastructure got considerably less haunted.\n\nOpenAI audio API support landed, giving builders another route for audio workloads alongside the existing text, image, and model endpoints.\n\nThe fast OpenAI route now points at GPT-5 Nano, the default-model parameter was fixed, and a voting button lets people signal which models they want to see supported next.\n\nPublishable-key creation now clearly marks its beta status, while service and cost metadata were consolidated behind the scenes. Less mystery machinery, which is the preferred kind of machinery.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 5247,
+      "date": "2025-11-16"
+    },
+    {
+      "number": 5316,
+      "date": "2025-11-16"
+    },
+    {
+      "number": 5318,
+      "date": "2025-11-16"
+    },
+    {
+      "number": 5324,
+      "date": "2025-11-16"
+    },
+    {
+      "number": 5327,
+      "date": "2025-11-16"
+    },
+    {
+      "number": 5333,
+      "date": "2025-11-16"
+    },
+    {
+      "number": 5335,
+      "date": "2025-11-16"
+    },
+    {
+      "number": 5339,
+      "date": "2025-11-16"
+    },
+    {
+      "number": 5340,
+      "date": "2025-11-16"
+    },
+    {
+      "number": 5343,
+      "date": "2025-11-16"
+    }
+  ],
+  "generated_at": "2026-09-04T12:14:06.976779+00:00"
+}

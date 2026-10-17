@@ -1,0 +1,15 @@
+{
+  "date": "2025-10-20",
+  "period_start": "2025-10-20",
+  "period_end": "2025-10-20",
+  "title": "Discarded issues now close themselves",
+  "summary": "A small bit of issue-tracker gardening: discarded work now clears itself away.\n\nIssues marked as discarded are now automatically closed, keeping the tracker focused on work that still needs doing.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 4626,
+      "date": "2025-10-20"
+    }
+  ],
+  "generated_at": "2026-09-04T12:50:52.679956+00:00"
+}

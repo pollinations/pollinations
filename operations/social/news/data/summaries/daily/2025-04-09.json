@@ -1,0 +1,19 @@
+{
+  "date": "2025-04-09",
+  "period_start": "2025-04-09",
+  "period_end": "2025-04-09",
+  "title": "A new fitness coach joins the project garden",
+  "summary": "A small garden day: a new AI fitness project surfaced, and the link-click telemetry learned its proper name.\n\nGoalani, an AI fitness coach built with pollinations, was added to the community project list—one more practical experiment growing in public.\n\nAffiliate-link click tracking now uses the correct GA4 event name, making activity measurements less mysterious and more useful.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 1588,
+      "date": "2025-04-09"
+    },
+    {
+      "number": 1614,
+      "date": "2025-04-09"
+    }
+  ],
+  "generated_at": "2026-09-04T12:24:01.501320+00:00"
+}

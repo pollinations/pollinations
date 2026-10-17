@@ -1,0 +1,439 @@
+{
+  "date": "2025-05-31",
+  "period_start": "2025-05-01",
+  "period_end": "2025-05-31",
+  "title": "Images learned to work from references",
+  "summary": "May expanded Pollinations from generation into image editing and more capable model workflows, while giving the growing community ecosystem a much better map.\n\nImage generation gained editing support, first through Azure GPT Image and then across Pollinations, with multi-reference edits, dynamic delivery, and stage-aware routing making the image stack more useful for real creative workflows.\n\nNew routes and models arrived alongside universal tool parameters, reliable JSON Schema output, full sampling controls, and fixes across streaming and provider integrations. Builders could ask more from one endpoint without learning each provider's private dialect.\n\nDozens of community builds were added or refreshed, while featured sorting, categories, Vibe Coding, Special Bee tracking, and clearer project links made the directory more useful as a record of what people are actually building.\n\nMCP-ready OAuth, a dedicated GitHub sign-in home, user tiers and preferences, steadier queue and cache behavior, and clearer request controls laid practical foundations for people and tools using the service at scale.",
+  "pr_count": 107,
+  "prs": [
+    {
+      "number": 1861,
+      "date": "2025-05-01"
+    },
+    {
+      "number": 1745,
+      "date": "2025-05-02"
+    },
+    {
+      "number": 1865,
+      "date": "2025-05-02"
+    },
+    {
+      "number": 1868,
+      "date": "2025-05-02"
+    },
+    {
+      "number": 1869,
+      "date": "2025-05-02"
+    },
+    {
+      "number": 1883,
+      "date": "2025-05-02"
+    },
+    {
+      "number": 1884,
+      "date": "2025-05-02"
+    },
+    {
+      "number": 1890,
+      "date": "2025-05-04"
+    },
+    {
+      "number": 1891,
+      "date": "2025-05-04"
+    },
+    {
+      "number": 1892,
+      "date": "2025-05-04"
+    },
+    {
+      "number": 1894,
+      "date": "2025-05-04"
+    },
+    {
+      "number": 1896,
+      "date": "2025-05-04"
+    },
+    {
+      "number": 1904,
+      "date": "2025-05-05"
+    },
+    {
+      "number": 1893,
+      "date": "2025-05-06"
+    },
+    {
+      "number": 1898,
+      "date": "2025-05-06"
+    },
+    {
+      "number": 1903,
+      "date": "2025-05-06"
+    },
+    {
+      "number": 1909,
+      "date": "2025-05-06"
+    },
+    {
+      "number": 1911,
+      "date": "2025-05-06"
+    },
+    {
+      "number": 1916,
+      "date": "2025-05-08"
+    },
+    {
+      "number": 1924,
+      "date": "2025-05-08"
+    },
+    {
+      "number": 1925,
+      "date": "2025-05-08"
+    },
+    {
+      "number": 1920,
+      "date": "2025-05-09"
+    },
+    {
+      "number": 1926,
+      "date": "2025-05-09"
+    },
+    {
+      "number": 1927,
+      "date": "2025-05-09"
+    },
+    {
+      "number": 1930,
+      "date": "2025-05-09"
+    },
+    {
+      "number": 1922,
+      "date": "2025-05-10"
+    },
+    {
+      "number": 1935,
+      "date": "2025-05-10"
+    },
+    {
+      "number": 1937,
+      "date": "2025-05-10"
+    },
+    {
+      "number": 1938,
+      "date": "2025-05-10"
+    },
+    {
+      "number": 1945,
+      "date": "2025-05-11"
+    },
+    {
+      "number": 1951,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1952,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1954,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1955,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1956,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1959,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1962,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1964,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1965,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1966,
+      "date": "2025-05-13"
+    },
+    {
+      "number": 1968,
+      "date": "2025-05-13"
+    },
+    {
+      "number": 1970,
+      "date": "2025-05-13"
+    },
+    {
+      "number": 1973,
+      "date": "2025-05-13"
+    },
+    {
+      "number": 1974,
+      "date": "2025-05-13"
+    },
+    {
+      "number": 1975,
+      "date": "2025-05-14"
+    },
+    {
+      "number": 1976,
+      "date": "2025-05-14"
+    },
+    {
+      "number": 1978,
+      "date": "2025-05-15"
+    },
+    {
+      "number": 1981,
+      "date": "2025-05-15"
+    },
+    {
+      "number": 1986,
+      "date": "2025-05-16"
+    },
+    {
+      "number": 1987,
+      "date": "2025-05-17"
+    },
+    {
+      "number": 1992,
+      "date": "2025-05-18"
+    },
+    {
+      "number": 1988,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2001,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2006,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2007,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2009,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2011,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2013,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2016,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2018,
+      "date": "2025-05-20"
+    },
+    {
+      "number": 2021,
+      "date": "2025-05-20"
+    },
+    {
+      "number": 2023,
+      "date": "2025-05-20"
+    },
+    {
+      "number": 2024,
+      "date": "2025-05-20"
+    },
+    {
+      "number": 2028,
+      "date": "2025-05-20"
+    },
+    {
+      "number": 2033,
+      "date": "2025-05-20"
+    },
+    {
+      "number": 2035,
+      "date": "2025-05-21"
+    },
+    {
+      "number": 2051,
+      "date": "2025-05-22"
+    },
+    {
+      "number": 2057,
+      "date": "2025-05-23"
+    },
+    {
+      "number": 2059,
+      "date": "2025-05-24"
+    },
+    {
+      "number": 2070,
+      "date": "2025-05-24"
+    },
+    {
+      "number": 2073,
+      "date": "2025-05-24"
+    },
+    {
+      "number": 2077,
+      "date": "2025-05-24"
+    },
+    {
+      "number": 2079,
+      "date": "2025-05-25"
+    },
+    {
+      "number": 2086,
+      "date": "2025-05-25"
+    },
+    {
+      "number": 2087,
+      "date": "2025-05-25"
+    },
+    {
+      "number": 2089,
+      "date": "2025-05-25"
+    },
+    {
+      "number": 2090,
+      "date": "2025-05-25"
+    },
+    {
+      "number": 2103,
+      "date": "2025-05-26"
+    },
+    {
+      "number": 2104,
+      "date": "2025-05-26"
+    },
+    {
+      "number": 2106,
+      "date": "2025-05-26"
+    },
+    {
+      "number": 2108,
+      "date": "2025-05-26"
+    },
+    {
+      "number": 2119,
+      "date": "2025-05-26"
+    },
+    {
+      "number": 2122,
+      "date": "2025-05-26"
+    },
+    {
+      "number": 2126,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2127,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2128,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2129,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2131,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2138,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2140,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2143,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2144,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2151,
+      "date": "2025-05-28"
+    },
+    {
+      "number": 2155,
+      "date": "2025-05-28"
+    },
+    {
+      "number": 2159,
+      "date": "2025-05-28"
+    },
+    {
+      "number": 2162,
+      "date": "2025-05-29"
+    },
+    {
+      "number": 2166,
+      "date": "2025-05-29"
+    },
+    {
+      "number": 2167,
+      "date": "2025-05-29"
+    },
+    {
+      "number": 2171,
+      "date": "2025-05-29"
+    },
+    {
+      "number": 2172,
+      "date": "2025-05-30"
+    },
+    {
+      "number": 2174,
+      "date": "2025-05-30"
+    },
+    {
+      "number": 2178,
+      "date": "2025-05-30"
+    },
+    {
+      "number": 2184,
+      "date": "2025-05-30"
+    },
+    {
+      "number": 2187,
+      "date": "2025-05-31"
+    },
+    {
+      "number": 2188,
+      "date": "2025-05-31"
+    },
+    {
+      "number": 2192,
+      "date": "2025-05-31"
+    },
+    {
+      "number": 2198,
+      "date": "2025-05-31"
+    }
+  ],
+  "generated_at": "2026-09-04T15:23:34.303640+00:00"
+}

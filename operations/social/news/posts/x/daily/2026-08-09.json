@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-08-09",
+  "period_start": "2026-08-09",
+  "period_end": "2026-08-09",
+  "generated_at": "2026-08-10T06:37:58.810843+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-08-09/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: image generation now retries 503s and spills DreamShaper work across Vast workers instead of waiting politely. the model monitor separates official from community infra, and provider payment failures now surface as upstream failures. Stoicky joined video/audio."
+}

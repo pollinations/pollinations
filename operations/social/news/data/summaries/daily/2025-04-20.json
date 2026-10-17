@@ -1,0 +1,23 @@
+{
+  "date": "2025-04-20",
+  "period_start": "2025-04-20",
+  "period_end": "2025-04-20",
+  "title": "Cleaner model metadata and a fresher project garden",
+  "summary": "A small garden-maintenance day: fresher model records, another community project, and sharper bad-traffic detection.\n\nLLM metadata now carries current versions and dates, while RuangRiung AI Image Generator joins the growing list of projects built with pollinations.\n\nReferrer and origin headers can now identify known bad domains with a 100% ad probability, giving traffic handling a clearer signal when the robots arrive wearing fake moustaches.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 1729,
+      "date": "2025-04-20"
+    },
+    {
+      "number": 1731,
+      "date": "2025-04-20"
+    },
+    {
+      "number": 1735,
+      "date": "2025-04-20"
+    }
+  ],
+  "generated_at": "2026-09-04T12:29:57.889487+00:00"
+}

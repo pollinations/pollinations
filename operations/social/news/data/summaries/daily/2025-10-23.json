@@ -1,0 +1,39 @@
+{
+  "date": "2025-10-23",
+  "period_start": "2025-10-23",
+  "period_end": "2025-10-23",
+  "title": "More community projects, clearer paths into the API",
+  "summary": "A garden-maintenance day: new community apps, cleaner docs and model access, plus safer service packaging.\n\nFour new community apps joined the directory, while the web-search API example now points at the right model. The documentation also got a tighter Claude workflow guide, with MCP details moved somewhere they can be found without excavating a giant file.\n\nNectar-tier benefits now cover the gptimage model, and Claude Haiku's global usage display was corrected to use the proper per-million-unit format. Numbers: still annoyingly important when computers are involved.\n\nDocker images are now built for the text and image services, while service secrets moved under SOPS encryption. More reproducible deployments, fewer plaintext surprises.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 4656,
+      "date": "2025-10-23"
+    },
+    {
+      "number": 4708,
+      "date": "2025-10-23"
+    },
+    {
+      "number": 4720,
+      "date": "2025-10-23"
+    },
+    {
+      "number": 4721,
+      "date": "2025-10-23"
+    },
+    {
+      "number": 4729,
+      "date": "2025-10-23"
+    },
+    {
+      "number": 4730,
+      "date": "2025-10-23"
+    },
+    {
+      "number": 4733,
+      "date": "2025-10-23"
+    }
+  ],
+  "generated_at": "2026-09-04T12:52:40.956805+00:00"
+}

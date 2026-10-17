@@ -1,0 +1,43 @@
+{
+  "date": "2025-05-19",
+  "period_start": "2025-05-19",
+  "period_end": "2025-05-19",
+  "title": "Six more things built with pollinations found their way into the garden",
+  "summary": "A community harvest: six new projects joined the list, with quieter improvements to image errors and cache metadata underneath.\n\nThe community project list now includes an AI YouTube Shorts Generator, Favorite Puzzles, FoldaScan, Pollin-Coder, PolliBot, and The Promised Pen. A small catalog update, but a useful reminder that the API keeps escaping into increasingly specific corners of the internet.\n\nThe Azure GPT Image integration gained improved error handling, while the Cloudflare cache worker now handles metadata more reliably. Less mystery when an image request goes sideways; fewer cache details wandering off into the woods.",
+  "pr_count": 8,
+  "prs": [
+    {
+      "number": 1988,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2001,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2006,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2007,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2009,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2011,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2013,
+      "date": "2025-05-19"
+    },
+    {
+      "number": 2016,
+      "date": "2025-05-19"
+    }
+  ],
+  "generated_at": "2026-09-04T12:45:29.825391+00:00"
+}

@@ -1,0 +1,19 @@
+{
+  "date": "2025-02-26",
+  "period_start": "2025-02-26",
+  "period_end": "2025-02-26",
+  "title": "Text API plays more nicely with OpenAI-compatible clients",
+  "summary": "A small but useful text API tune-up: cleaner OpenAI compatibility and less surprising streaming output.\n\ntext.pollinations.ai received compatibility and streaming-formatting fixes: Cloudflare/OpenAI integrations should connect more cleanly, while SSE responses are formatted more consistently for clients consuming streamed text.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 1236,
+      "date": "2025-02-26"
+    },
+    {
+      "number": 1237,
+      "date": "2025-02-26"
+    }
+  ],
+  "generated_at": "2026-09-04T14:02:05.320834+00:00"
+}

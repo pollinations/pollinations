@@ -1,0 +1,43 @@
+{
+  "date": "2025-12-17",
+  "period_start": "2025-12-17",
+  "period_end": "2025-12-17",
+  "title": "Veo can turn images into video again",
+  "summary": "A garden-maintenance day: Veo image-to-video is back, the hello API path is taking form, and the project became easier to join and operate.\n\nImage-to-video support was restored for the Veo model, so a starting image can once again make the jump into motion instead of stopping at a very cinematic still frame.\n\nhello.pollinations.ai gained an API proxy Worker and its required Worker entry point, putting a cleaner front door in place for API requests.\n\nNullVector joined the social bots, and Discord invite links were unified so people following the project have fewer chances to land at competing doors to the same room.",
+  "pr_count": 8,
+  "prs": [
+    {
+      "number": 6046,
+      "date": "2025-12-17"
+    },
+    {
+      "number": 6068,
+      "date": "2025-12-17"
+    },
+    {
+      "number": 6096,
+      "date": "2025-12-17"
+    },
+    {
+      "number": 6101,
+      "date": "2025-12-17"
+    },
+    {
+      "number": 6116,
+      "date": "2025-12-17"
+    },
+    {
+      "number": 6121,
+      "date": "2025-12-17"
+    },
+    {
+      "number": 6122,
+      "date": "2025-12-17"
+    },
+    {
+      "number": 6123,
+      "date": "2025-12-17"
+    }
+  ],
+  "generated_at": "2026-09-04T12:34:54.009382+00:00"
+}

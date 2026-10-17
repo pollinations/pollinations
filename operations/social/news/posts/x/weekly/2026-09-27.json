@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-09-27",
+  "period_start": "2026-09-20",
+  "period_end": "2026-09-26",
+  "generated_at": "2026-09-27T06:31:15.384563+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-27/images/twitter.jpg"
+    }
+  ],
+  "text": "this week: 97 merged PRs. added GPT-6 Sol/Luna, Claude Opus 5.5, Qwen Image 2.1 and Gemini 3.8 Flash TTS. `polli mcp` now discovers and installs into 13 coding clients. provider fallbacks improved without changing callers' model IDs. the changelog needed a changelog."
+}

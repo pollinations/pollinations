@@ -1,0 +1,105 @@
+{
+  "date": "2026-04-19",
+  "period_start": "2026-04-19",
+  "period_end": "2026-04-19",
+  "title": "Bigger brains, larger context windows",
+  "summary": "A massive influx of community apps, a much-needed SDK update for device auth, and a 262K context window for Qwen Vision.\n\nWe bumped MiniMax to version 2.7 and migrated Qwen Vision to a new Fireworks endpoint. The latter now lets you stuff up to 262K tokens into the context window, which is probably more than you need but exactly what you want. Existing API calls won't break.\n\nThe NPM package got a solid upgrade. You can now handle device login flows and CRUD operations for account keys directly through the SDK. We also wired up image reasoning flags. Less boilerplate, more building.\n\nSeven new community apps dropped into the showcase today. Highlights include PollenHours running AI video pipelines in Termux on Android, Akhbaar parsing PDFs into JSON news feeds, and Aureon hooking into Flux and LTX-2.3. We also welcomed ManhwaGen, G-Pai, What If?, and Deals King. You all are busy.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 10328,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10329,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10331,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10333,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10334,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10335,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10339,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10341,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10345,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10346,
+      "date": "2026-04-19"
+    }
+  ],
+  "generated_at": "2026-04-20T06:41:37.001187+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Upgraded Vision Models",
+      "text": "MiniMax is now on version 2.7, and Qwen Vision got migrated to a new Fireworks model with a massive 262K context window. Stuff more pixels into the prompt. Check the [available models](https://gen.pollinations.ai/v1/models)."
+    },
+    {
+      "emoji": "🔐",
+      "title": "SDK 4.3.0",
+      "text": "Added device login flow and key management CRUD operations to the [NPM SDK](https://www.npmjs.com/package/@pollinations_ai/sdk). Manage your account keys without leaving the terminal."
+    },
+    {
+      "emoji": "📱",
+      "title": "PollenHours",
+      "text": "A mobile-first AI video pipeline built for Termux on Android. Generate video directly from your pocket. [Try it](https://aghartavault-ship-it.github.io/PollenHours/)",
+      "kind": "app"
+    },
+    {
+      "emoji": "📰",
+      "title": "Akhbaar",
+      "text": "Converts dense daily tech report PDFs into structured JSON insights for live news feeds. [Try it](https://akhbaar.hoxlabs.com/)",
+      "kind": "app"
+    },
+    {
+      "emoji": "🎨",
+      "title": "ManhwaGen",
+      "text": "A community-built tool for generating Manhwa-style comic content. [Try it](https://manhwagen.vercel.app/)",
+      "kind": "app"
+    },
+    {
+      "emoji": "✍️",
+      "title": "What If? Scenario Explorer",
+      "text": "An interactive tool for speculative storytelling and narrative exploration. [Try it](https://whatif.pythonanywhere.com)",
+      "kind": "app"
+    },
+    {
+      "emoji": "✨",
+      "title": "Aureon",
+      "text": "A new media generation platform leveraging our Flux and LTX-2.3 models. [Try it](https://aureon.gold)",
+      "kind": "app"
+    },
+    {
+      "emoji": "🎓",
+      "title": "G-Pai",
+      "text": "A new student-focused educational tool built by the community. [Try it](https://g-pai.vercel.app/)",
+      "kind": "app"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Deals King & Radar Ai",
+      "text": "A new business tool added to the community greenhouse. [Try it](https://deal.pm/en/extension)",
+      "kind": "app"
+    }
+  ]
+}

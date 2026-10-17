@@ -1,0 +1,19 @@
+{
+  "date": "2025-01-27",
+  "period_start": "2025-01-27",
+  "period_end": "2025-01-27",
+  "title": "A clearer path to community projects and support",
+  "summary": "A small garden-maintenance day: fixed supporter links and added a PowerPoint generator to the project list.\n\nThe project list now includes Kushai, a PowerPoint generator built with pollinations, while supporter links have been repaired so people can find the places they meant to go. Small navigation work, which is usually how the useful stuff stays discoverable.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 1094,
+      "date": "2025-01-27"
+    },
+    {
+      "number": 1096,
+      "date": "2025-01-27"
+    }
+  ],
+  "generated_at": "2026-09-04T14:03:08.910274+00:00"
+}

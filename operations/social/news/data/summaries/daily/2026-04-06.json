@@ -1,0 +1,31 @@
+{
+  "date": "2026-04-06",
+  "period_start": "2026-04-06",
+  "period_end": "2026-04-06",
+  "title": "DeepSeek and Kimi routed for steadier text generation",
+  "summary": "Text-model routing was tuned for reliability while the community showcase and README received their daily pruning.\n\nProvider routing for DeepSeek V3.2 and Kimi K2.5 was tested, then settled back on Fireworks for high stability and near-perfect request success. Kontext remains on the new Azure resource.\n\nDaily health metrics refreshed the Greenhouse showcase while two unreachable apps were removed, keeping the directory pointed at projects people can actually open.\n\nThe repository landing page was updated with current news and recent community apps, so the front door tracks what is growing in the garden.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 9988,
+      "date": "2026-04-06"
+    },
+    {
+      "number": 9992,
+      "date": "2026-04-06"
+    },
+    {
+      "number": 9993,
+      "date": "2026-04-06"
+    },
+    {
+      "number": 9996,
+      "date": "2026-04-06"
+    },
+    {
+      "number": 10003,
+      "date": "2026-04-06"
+    }
+  ],
+  "generated_at": "2026-09-04T11:42:45.261208+00:00"
+}

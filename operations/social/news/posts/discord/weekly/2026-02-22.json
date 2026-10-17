@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-02-22",
+  "period_start": "2026-02-15",
+  "period_end": "2026-02-21",
+  "generated_at": "2026-02-22T06:21:53.563202+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-22/images/discord.jpg"
+    }
+  ],
+  "text": "Hey <@&1424461167883194418>,\n\n## Weekly Update - 2026-02-21\n\n48 PRs merged this week. The hive has been busy renovating the foundations and planting new seeds. Here is what happened:\n\n**🎨 App Showcase & Community**\n- **Showcase Renovation:** The App Showcase now supports proper Markdown descriptions, better metrics, and a cleaner UI. Your apps look better than ever.\n- **Badge System:** Introduced a proper badge system. BYOP is officially rebranded to **Pollen**.\n- **Build Diary:** Added an interactive diary to the Community page so you can visualize the history of what we are building.\n\n**🤖 Polly & Infrastructure**\n- **OpenAI Compatibility:** Added `polly-api`, an OpenAI-compatible interface for Polly. Drop it into your existing workflows.\n- **Auto Polly:** Deployed a self-healing repo agent. It fixes itself so we don't have to.\n- **NPM Update:** Moved packages to the `@pollinations_ai` scope. Please update your imports.\n\n**✨ Models & New Apps**\n- **Safety:** Added Qwen3Guard 8B.\n- **New Apps:** A massive harvest including **SlidePainter**, **Nova Defense**, and **BrainrotMaker** (we don't judge, we just host).\n\nInfrastructure is open, code is fresh. Go build something weird."
+}

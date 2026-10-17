@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-05-10",
+  "period_start": "2026-05-03",
+  "period_end": "2026-05-09",
+  "generated_at": "2026-05-10T06:52:29.920629+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-10/images/discord.jpg"
+    }
+  ],
+  "text": "## Weekly Update - 2026-05-10\n\nHey <@&1424461167883194418>, we merged 41 PRs this week. Lots of new models, fewer mystery errors, and a massive wave of community apps.\n\n🧠 **Models & Embeddings**\n- Meta Llama models and Gemma (via DeepInfra) are now wired up for text.\n- Added the Seedance 2.0 video model via Replicate.\n- Restacked the embeddings modality for better stability.\n\n🐛 **Making Errors Less Terrible**\n- Generic 500s are useless. We now surface actual upstream error codes so you know exactly what broke when a request fails.\n- Replicate content-filter rejections now properly map to 4xx errors instead of blowing up.\n- Image gen now properly respects user-provided width/height by dropping aggressive pre-scaling.\n\n💸 **BYOP & Infrastructure**\n- Simplified BYOP (Bring Your Own Provider) margin billing and clarified the developer earnings copy.\n- Better cloud-provider key rotation under the hood for OpenRouter, DeepInfra, and AWS.\n\n🌸 **Community App Harvest**\n- 13 new apps joined the ecosystem this week. Everything from `PolliGPT` and `ZenWall AI` to a toddler QR card generator. You all have been busy.\n\nOh, and Discord messages now properly handle media handlers for tables, LaTeX, and code blocks. Finally.\n\nCheck the [repo](https://github.com/pollinations/pollinations) for the full commit log. Happy building."
+}

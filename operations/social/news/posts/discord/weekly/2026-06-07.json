@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-06-07",
+  "period_start": "2026-05-31",
+  "period_end": "2026-06-06",
+  "generated_at": "2026-06-07T07:21:06.408137+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-07/images/discord.jpg"
+    }
+  ],
+  "text": "Hey <@&1424461167883194418>, 50 PRs merged. Here is what shipped this week.\n\n## Weekly Update - 2026-06-07\n\n📦 **React SDK & UI Ecosystem**\n- The React SDK is officially live, including a new auth provider and UI package.\n- Shipped a design-system upgrade and spun out a standalone playground app.\n\n💸 **At-Cost Pricing & Routing**\n- Normalized all pricing multipliers to 1×. At-cost pricing is fully rolled out (paid-only gates remain where applicable).\n- Added `minimax m3` and moved `gemma 4 26b` to OpenRouter.\n- Rerouted Flux through Fireworks and shifted Claude/Nova to Bedrock global/cross-region profiles for better reliability.\n\n🛠️ **Polly, Audio & Context Fixes**\n- Polly learned to draw: added a `render_visual` tool for explicit AI-driven tables and charts.\n- Repaired WAV RIFF header sizes in TTS responses and fixed Whisper STT handling for `text/srt/vtt` formats.\n- Stripped `reasoning_effort` and `stream_options` payloads that were tripping up Grok and non-OpenAI Azure models.\n\n🌸 **Community Apps**\n- 25 new community apps hit the registry this week, including Jarvis AI, WorkFlow, PixelDream, and PromptForge. The ecosystem is growing fast."
+}

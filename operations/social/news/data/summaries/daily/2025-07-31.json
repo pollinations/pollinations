@@ -1,0 +1,15 @@
+{
+  "date": "2025-07-31",
+  "period_start": "2025-07-31",
+  "period_end": "2025-07-31",
+  "title": "More precise Pollen accounting",
+  "summary": "A small accounting tune-up: Pollen calculations now run on more precise cost data.\n\nPollen cost calculations now use newer, more precise usage data, making the credit system better aligned with the infrastructure it supports.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 3384,
+      "date": "2025-07-31"
+    }
+  ],
+  "generated_at": "2026-09-04T12:14:43.336864+00:00"
+}

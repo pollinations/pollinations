@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-06-07",
+  "period_start": "2026-05-31",
+  "period_end": "2026-06-06",
+  "generated_at": "2026-06-07T07:21:06.408137+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-07/images/twitter.jpg"
+    }
+  ],
+  "text": "50 PRs merged.\n\n- react sdk + ui packages are live\n- polly learned to draw actual charts\n- fixed wav headers (sorry audio devs)\n- normalized all pricing to 1x at-cost\n- 25 new community apps added\n\nwe route the models, you build the things."
+}

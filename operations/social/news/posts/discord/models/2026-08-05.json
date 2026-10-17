@@ -1,0 +1,8 @@
+{
+  "platform": "discord",
+  "scope": "models_weekly",
+  "date": "2026-08-05",
+  "previous_date": "2026-07-29",
+  "generated_at": "2026-08-05T14:50:58.248471+00:00",
+  "text": "<@&1424461167883194418> Model updates — 2026-08-05\n\n### 🆕 New\n- 🧠 **Cohere Command A+** (Cohere), **Inkling Small** (Thinking Machines), **Qwen3.8 Max** and **Qwen3.7 Flash** (Qwen) — multimodal text models with tool calling and reasoning\n- 🎨 **Krea 2 Medium** (Krea) and **DreamShaper 8 LCM** (Lykon) — text-to-image\n- 🎬 **Grok Imagine Video 1.5** (xAI) and **Pruna p-video** (Pruna) — text/image-to-video\n- 🔊 **AssemblyAI Universal-3.5 Pro** (AssemblyAI) — transcription; **Kokoro 82M** (Hexgrad) — TTS\n\n### 🗑️ Removed\n- `grok-4-20-reasoning`, `gemini-search-fast`, `gemini-search-large`, `perplexity-high` (text)\n- `sana` (image), `veo-1080p`, `wan-pro-1080p`, `p-video-720p`, `p-video-1080p` (video), `universal-3-pro` (audio)\n\n### ⬇️ Price cuts\n- 🎨 Image: Qwen Image (~15%)\n- 🔢 Embeddings: Text Embedding 3 Small · Text Embedding 3 Large (~25%)\n\n### 🔒 Going paid-only\n- Mistral Small 3.2 · Mistral Small 4 · Gemma 4 26B A4B · Gemma 4 31B\n- MiMo V2.5 · MiMo V2.5 Pro · Meta Llama 4 Scout · Qwen3.7 Plus\n- Qwen3 VL 30B A3B Instruct · Qwen3 VL 235B A22B Thinking · StepFun Step 3.7 Flash · StepFun Step 3.5 Flash\n\n### 🔓 Now free\n- Kimi K3\n\n### ✨ Capability updates\n- `grok` — reasoning now supported\n- `MarcosFRG/gemini-2.5-flash-lite`, `MarcosFRG/gemini-3-flash-preview`, `MarcosFRG/mimo-v2.5` — added image, audio, and video input\n- `veo`, `seedance-pro`, `wan-pro` — added 1080p resolution options\n\nExplore at https://gen.pollinations.ai/docs"
+}

@@ -1,0 +1,19 @@
+{
+  "date": "2026-06-24",
+  "period_start": "2026-06-24",
+  "period_end": "2026-06-24",
+  "title": "The community map and front page got their daily refresh",
+  "summary": "A quiet maintenance pass kept the app directory, health checks, and repository news current.\n\nAutomated updates refreshed app health and usage metrics in APPS and GREENHOUSE, while the README's Latest News section caught up with current community activity. The garden labels remain legible.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 11974,
+      "date": "2026-06-24"
+    },
+    {
+      "number": 11975,
+      "date": "2026-06-24"
+    }
+  ],
+  "generated_at": "2026-09-04T11:57:17.844540+00:00"
+}

@@ -1,0 +1,103 @@
+{
+  "date": "2025-12-21",
+  "period_start": "2025-12-21",
+  "period_end": "2025-12-21",
+  "title": "Chat got a studio, and model tools got their bearings",
+  "summary": "A busy winter day: sharper chat tooling, more controllable video, smoother app submissions, and plenty of community signposts.\n\nAI Chat Studio was added to chat, while the MCP server received a v2 overhaul. Gemini tool support, Gemini Large code execution and URL context, and Perplexity Reasoning were also repaired so capable models can get back to doing the useful weird stuff.\n\nVeo can now interpolate from a supplied last frame, giving video builders a better handle on where a generation lands. Image-input examples were added to the API docs, alongside updates to the z-image generation path.\n\nhello.pollinations.ai now uses the gen.pollinations.ai API, with build fixes and a cleaner component-based layout. The app-submission flow also moved to gen with retries, more forgiving optional fields, URL validation, and sensible defaults.",
+  "pr_count": 23,
+  "prs": [
+    {
+      "number": 5941,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6175,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6232,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6256,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6259,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6273,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6278,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6279,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6280,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6282,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6285,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6289,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6294,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6295,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6300,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6303,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6306,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6309,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6311,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6313,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6314,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6317,
+      "date": "2025-12-21"
+    },
+    {
+      "number": 6318,
+      "date": "2025-12-21"
+    }
+  ],
+  "generated_at": "2026-09-04T12:38:09.649453+00:00"
+}

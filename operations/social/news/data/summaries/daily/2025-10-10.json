@@ -1,0 +1,39 @@
+{
+  "date": "2025-10-10",
+  "period_start": "2025-10-10",
+  "period_end": "2025-10-10",
+  "title": "The model registry got smaller, stricter, and harder to misconfigure",
+  "summary": "A maintenance-minded day: stricter model configuration, clearer API docs, and more signals from the machinery underneath.\n\nRegistry internals were simplified by removing an old factory pattern and unused metadata, while new type-safe checks verify model configurations against the registry. Less abstraction, more direct tests, fewer places for model definitions to drift apart.\n\nAPI documentation gained clearer guidance, contributor instructions, and explicit notes on model parameter limitations and reasoning behavior. The API remains simple; the footnotes are now easier to find before they become debugging sessions.\n\nA proposal adds cache-hit telemetry through Tinybird, giving the project a clearer view of whether cached responses are doing their job. User records also gained a tier field to support more structured account handling.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 4186,
+      "date": "2025-10-10"
+    },
+    {
+      "number": 4400,
+      "date": "2025-10-10"
+    },
+    {
+      "number": 4463,
+      "date": "2025-10-10"
+    },
+    {
+      "number": 4466,
+      "date": "2025-10-10"
+    },
+    {
+      "number": 4470,
+      "date": "2025-10-10"
+    },
+    {
+      "number": 4471,
+      "date": "2025-10-10"
+    },
+    {
+      "number": 4475,
+      "date": "2025-10-10"
+    }
+  ],
+  "generated_at": "2026-09-04T12:45:42.211829+00:00"
+}

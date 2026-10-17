@@ -1,0 +1,27 @@
+{
+  "date": "2025-05-09",
+  "period_start": "2025-05-09",
+  "period_end": "2025-05-09",
+  "title": "The project garden gets two new entries",
+  "summary": "A quiet garden day: two community projects added, with some text-model plumbing kept current behind the hedge.\n\nRizqi O Chatbot and KoboldAI were added to the community project list, making two more things built with Pollinations easier to find.\n\nThe available-models registry and Portkey text-generation path were updated, keeping the text API's model map and routing machinery in step.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 1920,
+      "date": "2025-05-09"
+    },
+    {
+      "number": 1926,
+      "date": "2025-05-09"
+    },
+    {
+      "number": 1927,
+      "date": "2025-05-09"
+    },
+    {
+      "number": 1930,
+      "date": "2025-05-09"
+    }
+  ],
+  "generated_at": "2026-09-04T12:39:05.505097+00:00"
+}

@@ -1,0 +1,8 @@
+{
+  "platform": "discord",
+  "scope": "models_weekly",
+  "date": "2026-05-27",
+  "previous_date": "2026-05-20",
+  "generated_at": "2026-05-27T15:09:35.787555+00:00",
+  "text": "<@&1424461167883194418> New models live on Pollinations this week. 🚀\n\n**Text**\n- `grok-4.3` (Grok) — added with multimodal and reasoning support\n- `gemini-search-fast` (Gemini) — added as paid-only\n- `gemini-search-large` (Gemini) — added as paid-only\n- `gpt-5.5` — no longer paid-only\n- `gemma` — no longer paid-only\n- `deepseek-pro` — no longer paid-only\n- `grok-large` (Grok) — no longer paid-only\n- `midijourney-large` — no longer paid-only\n\n**Image**\n- `wan-pro` (Alibaba) — added as paid-only with video and audio output 🎥\n- `nova-canvas` (Amazon) — no longer paid-only\n\n**Audio**\n- `universal-3-pro` (AssemblyAI) — no longer paid-only\n\n**Embeddings**\n- `cohere-embed-v4` (Cohere) — added with 128K context\n- `qwen3-embedding-8b` (Qwen3) — added with 32K context\n\nTry them via /v1/models or read the docs at https://gen.pollinations.ai/docs"
+}

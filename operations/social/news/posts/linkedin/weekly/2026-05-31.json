@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-05-31",
+  "period_start": "2026-05-24",
+  "period_end": "2026-05-30",
+  "generated_at": "2026-05-31T07:15:39.740007+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-31/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol.28 — voice api & model avalanches\n\n18 PRs merged this week. We shipped real-time voice, rewrote the docs generator, and plugged in enough new models to heat a small apartment.\n\n───\n\n→ MODELS & VOICE\nReal-time voice and audio API is live. We also added Claude Opus 4.8, Perplexity Sonar, Helix AI, and StepFun. Phase 1 of our model shuffle is done: 6 new models added, 5 opened to the free tier. \n\n→ INFRASTRUCTURE\nRewrote the API docs generator with a custom markdown builder because off-the-shelf tools never quite do what you want. R2 storage now refreshes TTL on access, keeping active cached items alive longer. \n\n→ ECONOMICS\nPhase 1 of country-routed checkout is in. Developer earnings exports now expose baseline prices and USD costs so you can actually see the margins.\n\n→ THE GREENHOUSE\nSix new apps built by the community hit the showcase, including RagmyAI, SceneWeave, and PetalGen. The ecosystem is getting crowded in a good way.\n\nAll code is open. Start building at pollinations.ai\n\n#OpenSource #AI #WebDev #APIs"
+}

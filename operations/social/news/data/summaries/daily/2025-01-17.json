@@ -1,0 +1,23 @@
+{
+  "date": "2025-01-17",
+  "period_start": "2025-01-17",
+  "period_end": "2025-01-17",
+  "title": "GPT-4o joins the text endpoint as openai-large",
+  "summary": "GPT-4o arrived on the text endpoint, and the vision API got documentation for people who prefer maps to archaeology.\n\nThe text API now exposes GPT-4o through Azure under the openai-large model name, with the endpoint work landing alongside the integration. One model label, a larger brain behind it.\n\nDocumentation was added for the vision API, giving builders a clearer path from image input to useful model output.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 1026,
+      "date": "2025-01-17"
+    },
+    {
+      "number": 1027,
+      "date": "2025-01-17"
+    },
+    {
+      "number": 1034,
+      "date": "2025-01-17"
+    }
+  ],
+  "generated_at": "2026-09-04T13:58:33.350204+00:00"
+}

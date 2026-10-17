@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-03-29",
+  "period_start": "2026-03-22",
+  "period_end": "2026-03-28",
+  "generated_at": "2026-03-29T06:22:53.391278+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-29/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol.42 — frontier models & headless auth\n\n86 PRs merged this week. The infrastructure grew, the UI got less corporate, and we added enough models to make your terminal heavy.\n\n───\n\n→ THE MODEL AVALANCHE\nAdded Alibaba Qwen (text/vision/image), Amazon Nova, xAI Grok (text/image/video), and Wan2.2. Qwen and Wan2.2 are on the free tier.\n\n→ HEADLESS AUTH\nShipped Device Authorization Grant (RFC 8628). You can now authenticate from the CLI without pasting tokens around like it's 2014.\n\n→ HOURLY DRIPS\nMoved all tiers to hourly pollen refills. We also fixed the Spore-to-Seed GitHub upgrade scoring.\n\n→ DE-CORPORATIZING\nReplaced 3 confusing dashboards with a clean App Ecosystem and Leaderboard. Toned down the business language. Less marketing, more hackerspace.\n\n→ COMMUNITY APPS\nOver 30 new community apps added to the ecosystem this week. Changed the rules so all tiers can submit apps.\n\n───\n\nEverything is open source. Come build something weird.\ngithub.com/pollinations/pollinations\n\n#OpenSource #AI #DevTools"
+}

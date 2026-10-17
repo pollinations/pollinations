@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-05-19",
+  "period_start": "2026-05-19",
+  "period_end": "2026-05-19",
+  "generated_at": "2026-05-20T07:08:55.095654+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-19/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped some updates today. gemini 3.5 flash is live on the text endpoint (via vertex). migrated video generation over to replicate so it actually finishes rendering instead of hanging. also welcomed duwit to the greenhouse.\n\nall available via simple http calls."
+}

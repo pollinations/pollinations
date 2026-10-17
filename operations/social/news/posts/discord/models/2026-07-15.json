@@ -1,0 +1,8 @@
+{
+  "platform": "discord",
+  "scope": "models_weekly",
+  "date": "2026-07-15",
+  "previous_date": "2026-07-01",
+  "generated_at": "2026-07-15T14:37:50.550565+00:00",
+  "text": "<@&1424461167883194418> Model updates — 2026-07-15\n\n### 🆕 New\n- 🧠 **ChatGPT 5.6 Sol**, **Terra**, and **Luna** (OpenAI) — image input, tool calling, and reasoning\n- 🧠 **Claude Fable 5** (Anthropic) — image input and tool calling\n- 🧠 **Muse Spark 1.1** (Meta) — image input, tool calling, and reasoning\n- 🎨 **Seedream 5.0 Pro** (ByteDance) — text/image input and image output\n- 🧠 44 Community alpha text models added\n\n### 🗑️ Removed\n- 16 Community alpha text models removed\n\n### ⬇️ Price cuts\n- 🎨 Image: Grok Imagine Pro (~30%)\n- 🧠 Text: Claude Sonnet 5 (~35%) · CloudCompile/gemma-4-e2b (~90%) · MarcosFRG/mimo-v2.5 (~30%)\n- 🔊 Audio: ElevenLabs Sound Effects (50%) · Qwen3-TTS Flash (~25%) · Qwen3-TTS Instruct (~10%)\n\n### ⬆️ Price increases\n- 🎬 Video: Grok Video Pro (~40%)\n- 🧠 Text: tomdacatto/ezra (100%) · MarcosFRG/gemma-4-31b (~190%) · MarcosFRG/deepseek-v4-flash (~180%) · MarcosFRG/minimax-m3 (200%)\n\n### 🔓 Now free\n- GPT Image 2\n\nExplore at https://gen.pollinations.ai/docs"
+}

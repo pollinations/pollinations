@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-09-06",
+  "period_start": "2026-08-30",
+  "period_end": "2026-09-05",
+  "generated_at": "2026-09-08T22:07:03.474422+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-06/images/discord.jpg"
+    }
+  ],
+  "text": "## Weekly Update - 2026-09-06\n\nHey <@&1424461167883194418> — 140 merges this week. The garden got noticeably larger.\n\n🤖 **Responses, agents, and tools**\n- The stateless `Responses API` is now a first-class route across text models, with streaming and structured managed-agent output.\n- Managed agents can use MCP tools; Composio connectors landed, plus hosted MCP docs and Pollinations MCP for Open WebUI.\n- `polli` gained Pi, OpenCode, Prime Agent, and OpenClaw harness profiles.\n\n🌻 **Community models became a media shelf**\n- Community publishing now supports `/embeddings`, video, and speech/TTS modalities.\n- Play shows community-model uptime, categories are fully visible, and queued changes are easier to follow.\n- Wan routes inputs across T2V, I2V, and R2V. Media has opinions now.\n\n🧰 **More things to plug in**\n- Open WebUI can run with Pollinations login, and there’s an OpenAI-compatible streaming path for Polli.\n- Model lists sort by popularity; filters moved into search; MCP servers and pricing sit beside models.\n\n✨ **Fresh catalog pollen**\n`GPT-6 Astra`, `Mercury 2.5 Preview`, `Gemini 3.8 Flash`, `DeepSeek V4 Flash Vision`, `Claude Fable 5.1`, `Qwen3.8 Max/Flash`, `MAI Image 2.5 Flash`, Azure `FLUX.2 Pro/Flex`, and MiniMax H3 Max Turbo all joined.\n\nReliability work also tightened fallbacks, timeouts, streaming errors, and rate-limit handling — the unglamorous load-bearing kind.\n\nDocs: https://docs.pollinations.ai • Code: https://github.com/pollinations/pollinations"
+}

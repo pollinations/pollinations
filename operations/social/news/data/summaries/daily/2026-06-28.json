@@ -1,0 +1,115 @@
+{
+  "date": "2026-06-28",
+  "period_start": "2026-06-28",
+  "period_end": "2026-06-28",
+  "title": "The Greenhouse is overflowing, and now it pays",
+  "summary": "A massive influx of community apps, a new endpoint for programmatic model health checks, and a fix for Azure's overzealous content filters.\n\nThirteen new community apps just dropped into the directory. Highlights include PolliCross (dynamically generating playable Picross puzzles from AI images), Storiva (inpainting kids' faces into storybooks), and Generative Soundscape (endless text-to-music). More importantly, the `app_listed` quest is now live. Ship an app, list it in the public directory, and the system automatically drops Pollen into your wallet.\n\nWe added a `GET /v1/models/status` endpoint. It proxies our Tinybird telemetry with a 60-second cache, letting you query uptime and health data (configurable from 1 to 1440 minutes) directly. You can now programmatically check if a model is having a bad day before routing requests to it.\n\nAzure's eastus2 endpoint started throwing false-positive content policy errors for perfectly innocent `gptimage` prompts, so we repointed the models to westus3 to bypass the filters. We also added a middleware filter to silently strip the `reasoning_effort` parameter when you hit non-reasoning models (like mistral-small-3.2 or qwen-vision), preventing 400 errors when you're reusing global request configs across different endpoints.",
+  "pr_count": 17,
+  "prs": [
+    {
+      "number": 12063,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12064,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12065,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12068,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12069,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12071,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12072,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12073,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12074,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12075,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12077,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12078,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12079,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12080,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12083,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12085,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12088,
+      "date": "2026-06-28"
+    }
+  ],
+  "generated_at": "2026-06-29T07:36:42.854712+00:00",
+  "highlights": [
+    {
+      "emoji": "🩺",
+      "title": "Real-time Model Health",
+      "text": "Added `GET /v1/models/status` so you can programmatically check if a model is awake before throwing requests at it. Cached for 60 seconds. Check the [API Docs](https://gen.pollinations.ai/docs)."
+    },
+    {
+      "emoji": "🪙",
+      "title": "Get Paid to Ship",
+      "text": "The 'App Listed' quest is live. Build something, get it listed in the public directory, and earn Pollen directly to your wallet."
+    },
+    {
+      "emoji": "🧩",
+      "title": "Prompt Your Own Puzzles",
+      "text": "PolliCross uses our image API to generate playable Picross/Nonogram levels from whatever text prompt you can think of. [Try it](https://zqigolden.github.io/pollicross/)",
+      "kind": "app"
+    },
+    {
+      "emoji": "📖",
+      "title": "Inpainted Storybooks",
+      "text": "Storiva is a clever Android app that uses AI inpainting to seamlessly put a child's face into custom-generated story illustrations. [Try it](https://play.google.com/store/apps/details?id=com.ismafly.storiva)",
+      "kind": "app"
+    },
+    {
+      "emoji": "🌍",
+      "title": "World Weaver",
+      "text": "A tool that orchestrates text, image, and video models through our unified API to generate entire environments at once. [View repo](https://github.com/MrMegnis/world-generator)",
+      "kind": "app"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Endless Audio",
+      "text": "Generative Soundscape turns text prompts into continuous, never-ending music streams. [Try it](https://generative-soundscape.vercel.app/)",
+      "kind": "app"
+    }
+  ]
+}

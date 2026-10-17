@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-06-28",
+  "period_start": "2026-06-28",
+  "period_end": "2026-06-28",
+  "generated_at": "2026-06-29T07:36:42.854712+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-28/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped /v1/models/status for programmatic model health checks. enabled the 'app listed' quest, so getting your app in the directory now pays pollen (13 new ones today). also stripped reasoning_effort from non-reasoning models because APIs are getting pedantic."
+}

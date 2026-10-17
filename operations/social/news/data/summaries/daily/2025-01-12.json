@@ -1,0 +1,19 @@
+{
+  "date": "2025-01-12",
+  "period_start": "2025-01-12",
+  "period_end": "2025-01-12",
+  "title": "More deliberate traffic controls at the edge",
+  "summary": "A small edge-controls day: sharper rate limiting, targeted blocking, and a trusted integration routed around the queue.\n\nIP blocking and rate-limit handling were updated, with a bypass added for ai-ministries.com. The API gets a little better at distinguishing normal use from traffic that needs a different path.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 981,
+      "date": "2025-01-12"
+    },
+    {
+      "number": 983,
+      "date": "2025-01-12"
+    }
+  ],
+  "generated_at": "2026-09-04T13:38:00.777472+00:00"
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-10-13",
+  "period_start": "2026-10-13",
+  "period_end": "2026-10-13",
+  "generated_at": "2026-10-14T06:08:24.356236+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-13/images/twitter.jpg"
+    }
+  ],
+  "text": "added a sandbox page in Enter: create, manage, and connect from the dashboard. both templates now include ffmpeg, uv, cron, and rclone; the large one gets more disk. a toolbox is better when it contains tools."
+}

@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-06-14",
+  "period_start": "2026-06-07",
+  "period_end": "2026-06-13",
+  "generated_at": "2026-06-14T07:32:39.772782+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-14/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-14/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-14/images/instagram-3.jpg"
+    }
+  ],
+  "text": "13 PRs merged this week. mostly we played musical chairs with model providers (Wan, Qwen, Kimi, Claude Fable) so things stay fast and reliable. the dashboard got a much-needed glow-up — borderless UI, live model catalog, and a single-accent theme. we also added some API sanity: content policy rejections now correctly return 422s instead of 500s, and boolean query params parse properly. plus, websim BYOP compliance and a @pollinations/ui browser bundle so you don't even have to build to build. code is open, link in bio. 🌿🐝\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #webdev #buildinpublic #uiux #api",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

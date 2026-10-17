@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-13",
+  "period_start": "2026-09-13",
+  "period_end": "2026-09-13",
+  "generated_at": "2026-09-14T06:39:02.992318+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-13/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: endpoint agents now declare input/output modalities, so callers know what they can consume and produce. added switchable agent/MCP KPIs, tighter community-model monitoring, and fixed Floret's name tag."
+}

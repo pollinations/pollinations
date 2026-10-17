@@ -1,0 +1,20 @@
+{
+  "month": "2024-04",
+  "merged_prs": 3,
+  "contributors": [
+    {
+      "id": 36901823,
+      "login": "ElliotEtag",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36901823?s=80&u=e05f74107a59dc476c73a6757ba999582c3ae952&v=4",
+      "url": "https://github.com/ElliotEtag",
+      "prs": 2
+    },
+    {
+      "id": 54149835,
+      "login": "gbechtel12",
+      "avatar_url": "https://avatars.githubusercontent.com/u/54149835?s=80&u=a543336375088f73e235fcfe01fd1bd4d4d41468&v=4",
+      "url": "https://github.com/gbechtel12",
+      "prs": 1
+    }
+  ]
+}

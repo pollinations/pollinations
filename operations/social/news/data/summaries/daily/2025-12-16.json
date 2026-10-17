@@ -1,0 +1,75 @@
+{
+  "date": "2025-12-16",
+  "period_start": "2025-12-16",
+  "period_end": "2025-12-16",
+  "title": "API keys became a little less ceremonial",
+  "summary": "A tuning day: smoother API key handling, more predictable model controls, fresh community projects, and a bot that learned not to interrupt.\n\nThe playground now has a single unified API key path, the dashboard displays and copies keys correctly, and API key and usage endpoints are grouped more clearly in the docs. Small interface fixes also make tooltips behave sensibly across desktop and mobile, while the hello API key code got a cleanup pass.\n\nText requests can now use repetition_penalty, Seedream receives seed values for reproducible image generations, and Gemini Large reports cached prompt tokens correctly. A new public model stats endpoint also makes it easier to see what the model garden is doing.\n\nIA-Books, an AI ebook generator, Yerty AI chat, and TuffMeter were added to the growing list of things people have built with pollinations. The news workflow also got an update to help keep that ecosystem legible.",
+  "pr_count": 16,
+  "prs": [
+    {
+      "number": 6049,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6050,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6056,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6060,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6061,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6064,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6072,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6075,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6076,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6078,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6079,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6090,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6091,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6092,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6093,
+      "date": "2025-12-16"
+    },
+    {
+      "number": 6094,
+      "date": "2025-12-16"
+    }
+  ],
+  "generated_at": "2026-09-04T12:34:16.968285+00:00"
+}

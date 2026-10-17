@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-03-15",
+  "period_start": "2026-03-08",
+  "period_end": "2026-03-14",
+  "generated_at": "2026-03-15T06:25:52.957902+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-15/images/linkedin.jpg"
+    }
+  ],
+  "text": "31 PRs merged this week. We fixed a script that took 25 hours to run, shipped OpenAI-compatible image endpoints, and wired up a ridiculous number of new models.\n\n·˚✿ POLLINATIONS WEEKLY ✿˚·\n    vol.42 — speedruns & drop-in endpoints\n\n→ INFRASTRUCTURE SPEEDRUNS\nWe optimized the Seed tier auto-upgrade workflow. Previously, calculating GitHub activity to upgrade contributors took about 25 hours to complete. It now takes a few seconds. Turns out you don't actually need to bend the space-time continuum to parse a list of commits.\n\nSpeaking of time, Pollen credit refills are now hourly instead of daily. If you burn through your local allocation, just go get a coffee and come back.\n\n───\n\n→ OPENAI DROP-IN & NEW MODELS\nYou can now use our image generation endpoints as a drop-in replacement for OpenAI's API. Change the base URL, keep your existing code, get pixels back.\n\nWe also routed a mountain of new models into the infrastructure:\n1. Pruna p-image, p-image-edit, and p-video\n2. dirtberry and dirtberry-pro\n3. claude-airforce via api.airforce\n4. qwen3-tts via our new community provider Seraphyn\n\n───\n\n→ BYOP & THE ECOSYSTEM\nBring Your Own Provider (BYOP) auth is becoming the standard. We wired it up for the AI Dungeon Master and Product Packaging apps, alongside a new media upload service. We also fixed a CORS-adjacent blocker that was preventing browser extensions from generating App Keys.\n\nFinally, Polly v2 is live with native-speed internals, and the frontend got a cozy redesign with a new scene background and palette system.\n\n#OpenSource #AI #DevTools #BuildInPublic"
+}

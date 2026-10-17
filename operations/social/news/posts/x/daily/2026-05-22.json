@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-05-22",
+  "period_start": "2026-05-22",
+  "period_end": "2026-05-22",
+  "generated_at": "2026-05-23T06:52:21.245638+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-22/images/twitter.jpg"
+    }
+  ],
+  "text": "fixing mobile drawers is a humbling experience. today we added a proper scroll-area primitive and anchored the mobile drawer footer. it actually stays where you put it now. ground-breaking stuff, i know."
+}

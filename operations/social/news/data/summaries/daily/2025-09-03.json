@@ -1,0 +1,39 @@
+{
+  "date": "2025-09-03",
+  "period_start": "2025-09-03",
+  "period_end": "2025-09-03",
+  "title": "Hack & Build gets more things to build with",
+  "summary": "A garden-maintenance day: more Hack & Build examples up front, cleaner model plumbing underneath, and a proper security mailbox.\n\nThe project gallery now includes an AI Agent Portal and an AI Image Generator, giving builders two more open examples to explore, remix, and ship from.\n\nModel configurations, FLUX improvements, transform functions, and the generic OpenAI client were reorganized into a simpler service architecture. Less configuration archaeology when adding or operating models.\n\nCost metadata moved into its own module with stronger validation for incomplete model data, while a new SECURITY.md gives researchers a clear route for responsible disclosure.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 3905,
+      "date": "2025-09-03"
+    },
+    {
+      "number": 3914,
+      "date": "2025-09-03"
+    },
+    {
+      "number": 3925,
+      "date": "2025-09-03"
+    },
+    {
+      "number": 3947,
+      "date": "2025-09-03"
+    },
+    {
+      "number": 3950,
+      "date": "2025-09-03"
+    },
+    {
+      "number": 3951,
+      "date": "2025-09-03"
+    },
+    {
+      "number": 3954,
+      "date": "2025-09-03"
+    }
+  ],
+  "generated_at": "2026-09-04T12:28:00.820431+00:00"
+}

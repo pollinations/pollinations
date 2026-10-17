@@ -1,0 +1,123 @@
+{
+  "date": "2026-07-18",
+  "period_start": "2026-07-18",
+  "period_end": "2026-07-18",
+  "title": "More models, more modalities, one endpoint",
+  "summary": "A gallery-heavy shipping day: frontier models landed, community creations became discoverable, and the API got better at reporting what happened.\n\nThe model shelf grew in several directions: GPT-OSS 20B arrived with reasoning and tool calling, OpenRouter added Kimi K3, Grok 4.5, Gemma 4 31B, MiMo, and Qwen3.7 variants, and HappyHorse 1.1 brought another video option. Stable Audio 3 gained a shorter alias and correctly advertised reference-audio support, while gemini-fast now reports audio input too. timemachine-studio can also publish community models through the shared endpoint.\n\nCatGPT, AI Dungeon Master, Product Packaging Designer, Virtual Makeup, SlidePainter, Opposite Prompt Bot, and the CatGPT Discord bot now publish generated images with source tags. Results become discoverable in public galleries with durable URLs and clear provenance; reference uploads stay unlisted, and gallery hiccups do not interrupt generation or bot replies. A fairly sensible arrangement for a machine that makes an alarming number of images.\n\nThe Enter dashboard now keeps its tap-friendly model cards on mobile and landscape touch devices, rather than trying to squeeze a desktop table into a small screen. Expanded cards also show a copyable API model slug. Image referrals now land directly in Enter while attribution is recorded in the background, removing an unnecessary stop along the way.",
+  "pr_count": 28,
+  "prs": [
+    {
+      "number": 12418,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12531,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12532,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12533,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12534,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12536,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12537,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12538,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12547,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12549,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12551,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12553,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12554,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12555,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12556,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12557,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12558,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12560,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12566,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12567,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12568,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12569,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12571,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12573,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12574,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12575,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12577,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12580,
+      "date": "2026-07-18"
+    }
+  ],
+  "generated_at": "2026-09-04T11:47:09.414182+00:00"
+}

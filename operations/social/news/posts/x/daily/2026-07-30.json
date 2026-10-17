@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-07-30",
+  "period_start": "2026-07-30",
+  "period_end": "2026-07-30",
+  "generated_at": "2026-07-31T07:08:56.250456+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-30/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: Mistral OCR 4, Universal-3.5 Pro transcription, Command A+, and Qwen3.7 Flash. Kimi K3, Step, and Pruna moved providers with the same handles. polli-agent became Weaver; stable user IDs now outlive username changes. 11 PRs. modest gardening."
+}

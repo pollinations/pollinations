@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-06-15",
+  "period_start": "2026-06-15",
+  "period_end": "2026-06-15",
+  "generated_at": "2026-06-16T07:52:46.854159+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-15/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped three things today:\n- ideogram 4.0 is live on the image endpoint (turbo/balanced/quality)\n- new embed bridge for host-shared auth, making app embedding significantly less painful\n- stopped the mobile menu from text-wrapping. css remains undefeated."
+}

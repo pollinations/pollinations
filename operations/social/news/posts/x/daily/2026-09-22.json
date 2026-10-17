@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-22",
+  "period_start": "2026-09-22",
+  "period_end": "2026-09-22",
+  "generated_at": "2026-09-23T06:30:56.766681+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-22/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: GLM-5.3-FlashX, Claude Opus 5.5, GPT-6 Sol, and GPT-6 Luna are now on the text API.\n\nWe also hardened Wan, Qwen, and Mistral routing, and put Enter's keys, permissions, and model controls back under one roof. 9 PRs; fewer scavenger hunts."
+}

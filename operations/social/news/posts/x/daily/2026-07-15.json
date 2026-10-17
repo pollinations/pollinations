@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-07-15",
+  "period_start": "2026-07-15",
+  "period_end": "2026-07-15",
+  "generated_at": "2026-07-16T06:58:36.544614+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-15/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: community models can stay private while they grow, 3D generation is now in the model monitor, and billing records distinguish image/video details more precisely. also taught the dashboard about URL routes. 17 PRs; the docs have been informed."
+}

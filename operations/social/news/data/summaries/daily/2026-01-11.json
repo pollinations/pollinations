@@ -1,0 +1,39 @@
+{
+  "date": "2026-01-11",
+  "period_start": "2026-01-11",
+  "period_end": "2026-01-11",
+  "title": "App reviews got a smaller, sturdier Claude-powered workflow",
+  "summary": "A garden-maintenance day: cleaner app reviews, a new learning resource, and community updates wired back into place.\n\nThe app-review automation was simplified and its Claude Code action inputs and label trigger were corrected, making reviews easier to route and less dependent on workflow archaeology.\n\nStudy Buzz joined the learning materials, while a new Spore-to-Seed auto-upgrade workflow gives growing community projects a clearer path forward.\n\nThe Discord weekly-news trigger was repaired, so the community update pipeline has one fewer tiny automation gremlin in it.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 6878,
+      "date": "2026-01-11"
+    },
+    {
+      "number": 6983,
+      "date": "2026-01-11"
+    },
+    {
+      "number": 7018,
+      "date": "2026-01-11"
+    },
+    {
+      "number": 7036,
+      "date": "2026-01-11"
+    },
+    {
+      "number": 7039,
+      "date": "2026-01-11"
+    },
+    {
+      "number": 7040,
+      "date": "2026-01-11"
+    },
+    {
+      "number": 7047,
+      "date": "2026-01-11"
+    }
+  ],
+  "generated_at": "2026-09-04T11:32:05.368936+00:00"
+}

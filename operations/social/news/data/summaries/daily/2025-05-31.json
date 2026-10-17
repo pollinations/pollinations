@@ -1,0 +1,27 @@
+{
+  "date": "2025-05-31",
+  "period_start": "2025-05-31",
+  "period_end": "2025-05-31",
+  "title": "Prompt enhancement speaks Chinese again",
+  "summary": "A garden-maintenance day: multilingual prompts fixed, audio docs clarified, and two community projects added to the map.\n\nThe Chinese translation path in the prompt enhancer now sends its authentication token correctly, restoring a small but important piece of multilingual prompt polish.\n\nThe speech-to-text documentation was corrected to describe the formats the service really supports. Fewer mystery uploads, fewer arguments with file extensions.\n\nLLM7.io joined the LLM integrations listing and Comeback AI was added to the project list, making the growing collection of things built around pollinations a little easier to find.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 2187,
+      "date": "2025-05-31"
+    },
+    {
+      "number": 2188,
+      "date": "2025-05-31"
+    },
+    {
+      "number": 2192,
+      "date": "2025-05-31"
+    },
+    {
+      "number": 2198,
+      "date": "2025-05-31"
+    }
+  ],
+  "generated_at": "2026-09-04T12:54:22.994137+00:00"
+}

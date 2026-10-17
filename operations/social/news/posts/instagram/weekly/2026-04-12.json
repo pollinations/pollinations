@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-04-12",
+  "period_start": "2026-04-05",
+  "period_end": "2026-04-11",
+  "generated_at": "2026-04-12T06:31:06.535848+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-12/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-12/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-12/images/instagram-3.jpg"
+    }
+  ],
+  "text": "36 PRs merged this week. We made the free tier heavier (gptimage-large and FLUX.1 Kontext are now free), compressed our API docs from 94KB to 37KB because nobody likes scrolling forever, and played backend musical chairs to keep DeepSeek and Gemini stable.\n\nThe community showcase is overflowing with 20+ new apps. Also, Polly is now officially managing repo triage. She decides your issue's fate now.\n\nCode is open. Link in bio.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #github #webdev #generativeai",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

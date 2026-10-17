@@ -1,0 +1,27 @@
+{
+  "date": "2025-05-24",
+  "period_start": "2025-05-24",
+  "period_end": "2025-05-24",
+  "title": "MCP-ready authorization arrives",
+  "summary": "A small garden day: MCP authentication, tidier domain controls, and two community projects getting their signposts refreshed.\n\nJWT-based OAuth 2.1 authorization was added for MCP compliance, giving tools and integrations a more standard way to authenticate. Protocols: now with fewer handwritten secrets in config files.\n\nThe referrer and domain management UI was updated alongside model configuration changes, making it easier to manage where requests come from and how models are configured.\n\nThe project directory gained AdvanceChatGptBot and an updated Mirexa AI Chat entry, keeping the growing list of things people build with pollinations current.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 2059,
+      "date": "2025-05-24"
+    },
+    {
+      "number": 2070,
+      "date": "2025-05-24"
+    },
+    {
+      "number": 2073,
+      "date": "2025-05-24"
+    },
+    {
+      "number": 2077,
+      "date": "2025-05-24"
+    }
+  ],
+  "generated_at": "2026-09-04T12:49:34.495540+00:00"
+}

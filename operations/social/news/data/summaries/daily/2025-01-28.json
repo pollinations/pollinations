@@ -1,0 +1,39 @@
+{
+  "date": "2025-01-28",
+  "period_start": "2025-01-28",
+  "period_end": "2025-01-28",
+  "title": "DeepSeek-R1 joins the text model roster",
+  "summary": "A community-facing day: DeepSeek-R1 arrived, lost projects returned, and sharing your own project got a proper submission path.\n\nDeepSeek-R1 was added to the available models, giving builders another reasoning model behind the same simple text endpoint. Model plumbing: mostly invisible until it gives your app a new brain.\n\nThe projects section lost in the previous UI update was restored. A GitHub issue template now gives community projects a consistent path into the showcase instead of relying on archaeology and good intentions.\n\nThe site footer now identifies pollinations as Berlin-based and open source. Small metadata, useful signal: the garden has coordinates and its gates are not locked.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 1101,
+      "date": "2025-01-28"
+    },
+    {
+      "number": 1102,
+      "date": "2025-01-28"
+    },
+    {
+      "number": 1105,
+      "date": "2025-01-28"
+    },
+    {
+      "number": 1106,
+      "date": "2025-01-28"
+    },
+    {
+      "number": 1107,
+      "date": "2025-01-28"
+    },
+    {
+      "number": 1108,
+      "date": "2025-01-28"
+    },
+    {
+      "number": 1109,
+      "date": "2025-01-28"
+    }
+  ],
+  "generated_at": "2026-09-04T14:03:42.573751+00:00"
+}

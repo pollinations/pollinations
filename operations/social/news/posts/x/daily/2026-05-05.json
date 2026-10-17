@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-05-05",
+  "period_start": "2026-05-05",
+  "period_end": "2026-05-05",
+  "generated_at": "2026-05-06T06:52:11.050581+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-05/images/twitter.jpg"
+    }
+  ],
+  "text": "four new apps added to the showcase today (worl tools, app forge, pyanchor, zenwall ai). also fixed a quirk where anthropic's cache_control tags were breaking cross-model routing. text endpoint just quietly handles it now. 🌸"
+}

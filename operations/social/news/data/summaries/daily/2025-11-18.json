@@ -1,0 +1,27 @@
+{
+  "date": "2025-11-18",
+  "period_start": "2025-11-18",
+  "period_end": "2025-11-18",
+  "title": "Kimi K2 Thinking and Gemini 3 Pro join the model garden",
+  "summary": "New reasoning and pro models arrived while the model catalog and usage calculations got a needed alignment pass.\n\nTwo more text models are now available through the unified endpoint: Kimi K2 Thinking for deliberate reasoning and Gemini 3 Pro for another capable general-purpose option. More choices, same HTTP call.\n\nModel endpoints now expose their modelId directly, while model IDs and tests were updated to keep the catalog aligned with what actually runs. A small cleanup for anyone building model pickers or routing requests.\n\nCost and price calculations now resolve against the actual selected model rather than a mismatched reference. The accounting machinery has been reminded to read the label on the jar.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 5293,
+      "date": "2025-11-18"
+    },
+    {
+      "number": 5342,
+      "date": "2025-11-18"
+    },
+    {
+      "number": 5345,
+      "date": "2025-11-18"
+    },
+    {
+      "number": 5367,
+      "date": "2025-11-18"
+    }
+  ],
+  "generated_at": "2026-09-04T12:14:43.754268+00:00"
+}

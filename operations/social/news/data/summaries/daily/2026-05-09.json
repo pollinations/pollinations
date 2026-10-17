@@ -1,0 +1,51 @@
+{
+  "date": "2026-05-09",
+  "period_start": "2026-05-09",
+  "period_end": "2026-05-09",
+  "title": "Polly on Discord can finally render the things people actually paste",
+  "summary": "Discord got readable math and code, APIs got honest error codes, and the community garden added four more projects.\n\nThe Polly Discord bot now renders Markdown tables, LaTeX equations, and code blocks as native formatted media instead of leaving users to interpret raw markup. Math, tabular output, and code-heavy conversations are substantially less cursed.\n\nVideo generation handlers preserve useful upstream HTTP statuses, so clients can distinguish policy rejections, rate limits, invalid requests, and provider failures. Seedance 2.0 content-filter and bad-input cases now return clear 400-level responses rather than generic 500s.\n\nThe app showcase gained idol-interaction, a character scouting and chat game; Hyggshi OS Web Edition, an AI-chat-equipped OS simulator; PolliGPT; and Viatosis, which uses generated illustrations to make medical education more legible. The directory and README also received their daily health and news refresh.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 10549,
+      "date": "2026-05-09"
+    },
+    {
+      "number": 10639,
+      "date": "2026-05-09"
+    },
+    {
+      "number": 10795,
+      "date": "2026-05-09"
+    },
+    {
+      "number": 10796,
+      "date": "2026-05-09"
+    },
+    {
+      "number": 10797,
+      "date": "2026-05-09"
+    },
+    {
+      "number": 10798,
+      "date": "2026-05-09"
+    },
+    {
+      "number": 10799,
+      "date": "2026-05-09"
+    },
+    {
+      "number": 10801,
+      "date": "2026-05-09"
+    },
+    {
+      "number": 10802,
+      "date": "2026-05-09"
+    },
+    {
+      "number": 10811,
+      "date": "2026-05-09"
+    }
+  ],
+  "generated_at": "2026-09-04T11:48:17.533426+00:00"
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-03-25",
+  "period_start": "2026-03-25",
+  "period_end": "2026-03-25",
+  "generated_at": "2026-03-26T06:23:31.861505+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-25/images/twitter.jpg"
+    }
+  ],
+  "text": "merged 17 prs. pollen credits now refill hourly. grok image-to-video works again (api wanted 'image' not 'image_url', classic). added 9 new apps to the ecosystem and made the tier upgrade script smart enough to ignore deleted github accounts."
+}

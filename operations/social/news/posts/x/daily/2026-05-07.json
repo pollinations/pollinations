@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-05-07",
+  "period_start": "2026-05-07",
+  "period_end": "2026-05-07",
+  "generated_at": "2026-05-08T06:33:44.368779+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-07/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 5 PRs today. seedance 2.0 video model is live. vector embeddings hit the api. also fixed the dashboard so your api keys actually stay in the api section instead of wandering off. nature is healing."
+}

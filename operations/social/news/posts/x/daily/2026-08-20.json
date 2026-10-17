@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-08-20",
+  "period_start": "2026-08-20",
+  "period_end": "2026-08-20",
+  "generated_at": "2026-08-21T06:15:50.710568+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-20/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 17 PRs: community models can publish metadata and set access requirements; failing/offline entries now disappear without being disabled. Added Azure GPT transcription, one typed model/agent listing, and steadier generations. catalogs: slightly less haunted."
+}

@@ -1,0 +1,35 @@
+{
+  "date": "2025-04-13",
+  "period_start": "2025-04-13",
+  "period_end": "2025-04-13",
+  "title": "Three more projects join the Pollinations map",
+  "summary": "A garden-maintenance day: more community projects listed, smarter ad localization, and one file sent to its new home.\n\nThe project list now points people toward MCPollinations MCP Server, Pollinations.ai Image Generation for Frame, and Imagen—more examples of people wiring open AI infrastructure into useful places.\n\nAd translation now detects language correctly before acting, avoiding unnecessary translation passes. The ad integration also moves to the newer Impact API endpoint and can carry trigger words with ad data.\n\nThe old affiliates.js was removed after moving elsewhere. Software occasionally needs help accepting that it has relocated.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 1642,
+      "date": "2025-04-13"
+    },
+    {
+      "number": 1644,
+      "date": "2025-04-13"
+    },
+    {
+      "number": 1648,
+      "date": "2025-04-13"
+    },
+    {
+      "number": 1649,
+      "date": "2025-04-13"
+    },
+    {
+      "number": 1650,
+      "date": "2025-04-13"
+    },
+    {
+      "number": 1651,
+      "date": "2025-04-13"
+    }
+  ],
+  "generated_at": "2026-09-04T12:26:39.963433+00:00"
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-07-13",
+  "period_start": "2026-07-13",
+  "period_end": "2026-07-13",
+  "generated_at": "2026-07-14T06:53:54.115890+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-13/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 35 PRs today: 27 new community apps across image, chat, writing, learning, games and video; app-use quests now earn Pollen; and Pollinations AI Night has an RSVP page. Also hardened Flux canaries, because gardens have plumbing."
+}

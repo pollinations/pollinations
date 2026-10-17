@@ -1,0 +1,23 @@
+{
+  "date": "2025-03-04",
+  "period_start": "2025-03-04",
+  "period_end": "2025-03-04",
+  "title": "Phi-4 joins the text model lineup",
+  "summary": "A small garden day: Phi-4 arrived in text, and two community projects got easier to find.\n\ntext.pollinations.ai now includes Microsoft's Phi-4, while Cloudflare-backed models have moved behind the Portkey router. More model choice, with the routing plumbing kept out of the way where it belongs.\n\nThe projects list now points to ComfyUI-Pollinations and a Chinese DeepSeek tutorial, making it easier to find both node-based image workflows and Chinese-language guidance for building with AI.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 1264,
+      "date": "2025-03-04"
+    },
+    {
+      "number": 1267,
+      "date": "2025-03-04"
+    },
+    {
+      "number": 1268,
+      "date": "2025-03-04"
+    }
+  ],
+  "generated_at": "2026-09-04T12:02:41.361587+00:00"
+}

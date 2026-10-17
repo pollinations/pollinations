@@ -1,0 +1,51 @@
+{
+  "date": "2025-12-18",
+  "period_start": "2025-12-18",
+  "period_end": "2025-12-18",
+  "title": "Gemini 3 Flash and GPT-5 behave more predictably",
+  "summary": "A model-tuning day: Gemini 3 Flash became the default, audio unlocked its full voice set, and the builder tools got clearer.\n\nGemini 3 Flash is now the default Gemini model, with its preview route pointed at the global region for broader availability. Azure-hosted GPT-5 models also stop having their temperature setting forcibly overridden. Model routing: still mostly plumbing, until it is your plumbing.\n\nThe OpenAI Audio model now exposes all supported voices, giving text-to-speech builders the complete set instead of a mysteriously smaller shelf.\n\nAPI keys now include last-used tracking and lifecycle controls, production-log scripts are easier for humans to read, and learn.js gained a Discord bot tutorial for people who would like their bot to leave the terminal occasionally.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 6115,
+      "date": "2025-12-18"
+    },
+    {
+      "number": 6139,
+      "date": "2025-12-18"
+    },
+    {
+      "number": 6144,
+      "date": "2025-12-18"
+    },
+    {
+      "number": 6154,
+      "date": "2025-12-18"
+    },
+    {
+      "number": 6155,
+      "date": "2025-12-18"
+    },
+    {
+      "number": 6157,
+      "date": "2025-12-18"
+    },
+    {
+      "number": 6159,
+      "date": "2025-12-18"
+    },
+    {
+      "number": 6161,
+      "date": "2025-12-18"
+    },
+    {
+      "number": 6171,
+      "date": "2025-12-18"
+    },
+    {
+      "number": 6174,
+      "date": "2025-12-18"
+    }
+  ],
+  "generated_at": "2026-09-04T12:35:36.300614+00:00"
+}

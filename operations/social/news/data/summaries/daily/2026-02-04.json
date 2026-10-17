@@ -1,0 +1,39 @@
+{
+  "date": "2026-02-04",
+  "period_start": "2026-02-04",
+  "period_end": "2026-02-04",
+  "title": "More control in the Enter dashboard",
+  "summary": "A dashboard-focused day: tighter API-key and model controls, cleaner infrastructure, and metrics that now count the right things.\n\nEnter gained an API-key management dialog with enable controls and budgets, plus category-level select-all toggles for model permissions. The dashboard UI was also reorganized and its Linux import casing fixed, because files can apparently have opinions about capitalization.\n\nAzure configuration was cleaned up: Midijourney now points to GPT-5.2, while GPT Image moved to East US 2. Mostly plumbing, but useful plumbing is what keeps the pixels arriving.\n\nThe D7 activation-rate calculation was corrected, and the February 4 Instagram post was prepared. Better numbers, plus the regular proof that the garden is still alive.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 7537,
+      "date": "2026-02-04"
+    },
+    {
+      "number": 7917,
+      "date": "2026-02-04"
+    },
+    {
+      "number": 7926,
+      "date": "2026-02-04"
+    },
+    {
+      "number": 7930,
+      "date": "2026-02-04"
+    },
+    {
+      "number": 7943,
+      "date": "2026-02-04"
+    },
+    {
+      "number": 7947,
+      "date": "2026-02-04"
+    },
+    {
+      "number": 7949,
+      "date": "2026-02-04"
+    }
+  ],
+  "generated_at": "2026-09-04T11:50:34.523518+00:00"
+}

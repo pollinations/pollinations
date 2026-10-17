@@ -1,0 +1,47 @@
+{
+  "date": "2025-12-05",
+  "period_start": "2025-12-05",
+  "period_end": "2025-12-05",
+  "title": "More models and creative tools in the mix",
+  "summary": "A garden-maintenance day: new text and creative options, repaired image editing, cleaner routing, and workflows put back in their labeled drawers.\n\nAmazon Nova Micro joined the text services lineup, while TeleChars AI and Flowgen were added to the social and creative surfaces. More things to try without needing a new integration ritual.\n\nGPT Image's image-to-image flow was repaired, and gen.pollinations.ai gained an API gateway backed by service bindings for cleaner generation traffic routing.\n\nUsage tracking events now correctly capture the model provider used and the requested path, making the telemetry somewhat less fictional.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 5672,
+      "date": "2025-12-05"
+    },
+    {
+      "number": 5674,
+      "date": "2025-12-05"
+    },
+    {
+      "number": 5676,
+      "date": "2025-12-05"
+    },
+    {
+      "number": 5677,
+      "date": "2025-12-05"
+    },
+    {
+      "number": 5683,
+      "date": "2025-12-05"
+    },
+    {
+      "number": 5688,
+      "date": "2025-12-05"
+    },
+    {
+      "number": 5713,
+      "date": "2025-12-05"
+    },
+    {
+      "number": 5717,
+      "date": "2025-12-05"
+    },
+    {
+      "number": 5720,
+      "date": "2025-12-05"
+    }
+  ],
+  "generated_at": "2026-09-04T12:24:44.456960+00:00"
+}

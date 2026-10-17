@@ -1,0 +1,27 @@
+{
+  "date": "2025-07-18",
+  "period_start": "2025-07-18",
+  "period_end": "2025-07-18",
+  "title": "A new AI Dream Girl Studio project joins chat",
+  "summary": "A small tuning day: a new chat project for creators, queue migration work, and a caching experiment returned to the workbench.\n\nChat projects gained AI Dream Girl Studio, giving people another ready-to-use creative space to build with.\n\nThe backend queue received migration and handling updates for Nebius, alongside formatting cleanup. Mostly plumbing, which is where software keeps its surprises.\n\nModel-specific semantic caching with Vectorize was introduced and then reverted in the same stretch, keeping the production path clean while the approach gets another look.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 2888,
+      "date": "2025-07-18"
+    },
+    {
+      "number": 3197,
+      "date": "2025-07-18"
+    },
+    {
+      "number": 3205,
+      "date": "2025-07-18"
+    },
+    {
+      "number": 3207,
+      "date": "2025-07-18"
+    }
+  ],
+  "generated_at": "2026-09-04T12:11:14.908444+00:00"
+}

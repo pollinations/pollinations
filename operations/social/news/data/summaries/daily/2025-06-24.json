@@ -1,0 +1,39 @@
+{
+  "date": "2025-06-24",
+  "period_start": "2025-06-24",
+  "period_end": "2025-06-24",
+  "title": "Default text requests now take the fast lane",
+  "summary": "A tuning day: faster default text, leaner auth, personalized model routing, and an early semantic cache for images.\n\nThe default text model now points to openai-fast, while authentication token validation was optimized by 83%. Less time spent checking credentials; more time spent getting a response.\n\nA user-specific model mapping system landed, creating the groundwork for accounts to resolve model choices according to their own configuration rather than one universal mapping.\n\nA proof of concept adds caching for vectorized images using text embeddings, exploring a semantic memory layer for repeated or closely related image work.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 2600,
+      "date": "2025-06-24"
+    },
+    {
+      "number": 2605,
+      "date": "2025-06-24"
+    },
+    {
+      "number": 2613,
+      "date": "2025-06-24"
+    },
+    {
+      "number": 2615,
+      "date": "2025-06-24"
+    },
+    {
+      "number": 2619,
+      "date": "2025-06-24"
+    },
+    {
+      "number": 2622,
+      "date": "2025-06-24"
+    },
+    {
+      "number": 2630,
+      "date": "2025-06-24"
+    }
+  ],
+  "generated_at": "2026-09-04T13:04:19.100116+00:00"
+}

@@ -1,0 +1,59 @@
+{
+  "date": "2025-12-14",
+  "period_start": "2025-12-14",
+  "period_end": "2025-12-14",
+  "title": "More things to explore in Creative and Chat",
+  "summary": "A garden-maintenance day: more community creations, cleaner image output, steadier model compatibility, and less mysterious contribution plumbing.\n\nPolliVision and Northpolelibrary joined the Creative collection, while SaturnAI was added to Chat. A few more doors into the ecosystem, because one model catalog was apparently not enough.\n\nImage handling now better respects requested aspect ratios, updates facial upscaling, and addresses face distortion in Zimage alongside its safety filtering.\n\nThe OpenAI Large model ID now matches Azure's response, while o1, reasoning, and GPT-5 series requests consistently use the temperature setting those models require. Less parameter archaeology for people just trying to get an answer.",
+  "pr_count": 12,
+  "prs": [
+    {
+      "number": 5899,
+      "date": "2025-12-14"
+    },
+    {
+      "number": 5901,
+      "date": "2025-12-14"
+    },
+    {
+      "number": 5986,
+      "date": "2025-12-14"
+    },
+    {
+      "number": 5989,
+      "date": "2025-12-14"
+    },
+    {
+      "number": 5992,
+      "date": "2025-12-14"
+    },
+    {
+      "number": 5996,
+      "date": "2025-12-14"
+    },
+    {
+      "number": 6003,
+      "date": "2025-12-14"
+    },
+    {
+      "number": 6006,
+      "date": "2025-12-14"
+    },
+    {
+      "number": 6008,
+      "date": "2025-12-14"
+    },
+    {
+      "number": 6009,
+      "date": "2025-12-14"
+    },
+    {
+      "number": 6011,
+      "date": "2025-12-14"
+    },
+    {
+      "number": 6013,
+      "date": "2025-12-14"
+    }
+  ],
+  "generated_at": "2026-09-04T12:32:46.655579+00:00"
+}

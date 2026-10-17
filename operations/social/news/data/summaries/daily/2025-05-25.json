@@ -1,0 +1,31 @@
+{
+  "date": "2025-05-25",
+  "period_start": "2025-05-25",
+  "period_end": "2025-05-25",
+  "title": "GitHub sign-in got a proper home",
+  "summary": "A garden-maintenance day: cleaner GitHub auth, sturdier error handling, and a clearer map of what pollinations can grow.\n\nGitHub authentication was fixed and moved to auth.pollinations.ai, with an admin endpoint added alongside it. Login plumbing is rarely glamorous, which is fortunate: it should mostly disappear.\n\nNull-message handling was tightened up, while affiliate configuration received an update. Fewer strange empty-message failures; software continues its long campaign against missing values.\n\nThe AI Code Generator joined the project list, and the 1900 pitch deck was added to help tell the broader pollinations story.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 2079,
+      "date": "2025-05-25"
+    },
+    {
+      "number": 2086,
+      "date": "2025-05-25"
+    },
+    {
+      "number": 2087,
+      "date": "2025-05-25"
+    },
+    {
+      "number": 2089,
+      "date": "2025-05-25"
+    },
+    {
+      "number": 2090,
+      "date": "2025-05-25"
+    }
+  ],
+  "generated_at": "2026-09-04T12:50:14.161256+00:00"
+}

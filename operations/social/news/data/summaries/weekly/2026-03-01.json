@@ -1,0 +1,431 @@
+{
+  "date": "2026-03-01",
+  "period_start": "2026-02-22",
+  "period_end": "2026-02-28",
+  "title": "The Great Showcase Reorganization",
+  "summary": "The community built so many apps we had to redesign the showcase, rewrite the text backend, and finally ship media storage.\n\nWe merged over 50 community app submissions this week. To prevent the registry from turning into a junk drawer, we recategorized all 542 ecosystem apps into 15 specific domains and added platform badges (Web, Discord, CLI). We also deployed an automated health checker that unlists apps if they stay broken for 7 consecutive days.\n\nYou can now upload files. `media.pollinations.ai` is a new content-addressed storage service backed by Cloudflare Workers and R2. Send us up to 10MB of images, audio, or video, and get a SHA-256 hash back for persistent media support in your apps. We also added a secure DELETE endpoint, because mistakes happen.\n\nThe models got smarter and faster. Claude was upgraded to Sonnet 4.6 and migrated to the direct Anthropic API for prompt caching. We also wired up Grok-Imagine (alpha), Seedream 5.0 Lite, Gemini 3.1 Flash/Pro, and Minimax 2.5. On the audio side, you can now pass custom ElevenLabs voice UUIDs to use your own voice clones.\n\nThe text generation service was entirely rewritten in Hono and TypeScript for better performance and type safety. We also fixed a rate limiter bug so you actually get your burst capacity back after idling, and updated Wan video generation to automatically fall back to DashScope when upstream providers rate-limit us.",
+  "pr_count": 105,
+  "prs": [
+    {
+      "number": 7224,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7232,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7244,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7248,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7250,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7257,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7627,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7636,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7658,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7662,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7664,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7682,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7695,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7699,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7811,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7849,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7885,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7909,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7919,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7937,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7988,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8047,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8050,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8146,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8297,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8374,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8396,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8416,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8442,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8445,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8469,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8471,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8481,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8482,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 8486,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7912,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8135,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8152,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8313,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8461,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8484,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8494,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8496,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8502,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8515,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8517,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 8520,
+      "date": "2026-02-23"
+    },
+    {
+      "number": 7242,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7259,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7262,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7272,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7274,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7293,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7299,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7301,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7305,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7307,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7319,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7326,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7331,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7336,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7347,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7374,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7376,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 7532,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 8476,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 8527,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 8532,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 8537,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 8538,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 8543,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 5684,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8329,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8438,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8488,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8551,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8565,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8566,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8568,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8569,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8571,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8575,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8577,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8579,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8598,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8546,
+      "date": "2026-02-26"
+    },
+    {
+      "number": 8597,
+      "date": "2026-02-26"
+    },
+    {
+      "number": 8599,
+      "date": "2026-02-26"
+    },
+    {
+      "number": 8607,
+      "date": "2026-02-26"
+    },
+    {
+      "number": 8635,
+      "date": "2026-02-26"
+    },
+    {
+      "number": 8636,
+      "date": "2026-02-26"
+    },
+    {
+      "number": 8622,
+      "date": "2026-02-27"
+    },
+    {
+      "number": 8634,
+      "date": "2026-02-27"
+    },
+    {
+      "number": 8648,
+      "date": "2026-02-27"
+    },
+    {
+      "number": 8651,
+      "date": "2026-02-27"
+    },
+    {
+      "number": 8658,
+      "date": "2026-02-27"
+    },
+    {
+      "number": 7493,
+      "date": "2026-02-28"
+    },
+    {
+      "number": 8526,
+      "date": "2026-02-28"
+    },
+    {
+      "number": 8580,
+      "date": "2026-02-28"
+    },
+    {
+      "number": 8594,
+      "date": "2026-02-28"
+    },
+    {
+      "number": 8617,
+      "date": "2026-02-28"
+    },
+    {
+      "number": 8654,
+      "date": "2026-02-28"
+    },
+    {
+      "number": 8655,
+      "date": "2026-02-28"
+    },
+    {
+      "number": 8684,
+      "date": "2026-02-28"
+    },
+    {
+      "number": 8688,
+      "date": "2026-02-28"
+    }
+  ],
+  "generated_at": "2026-03-18T22:36:47.246410+00:00"
+}

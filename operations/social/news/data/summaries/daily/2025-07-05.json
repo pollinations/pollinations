@@ -1,0 +1,19 @@
+{
+  "date": "2025-07-05",
+  "period_start": "2025-07-05",
+  "period_end": "2025-07-05",
+  "title": "Websim gets a cleaner home and Bearer authentication",
+  "summary": "A small infrastructure day: cleaner Websim auth and shared concurrency plumbing.\n\nwebsim.pollinations.ai was moved into the root directory and now uses Bearer auth, making the service layout and access path more consistent.\n\nTier-based concurrency logic was extracted into a shared ipQueue module, giving services one reusable way to manage request capacity instead of growing their own queue ecosystems.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 2800,
+      "date": "2025-07-05"
+    },
+    {
+      "number": 2806,
+      "date": "2025-07-05"
+    }
+  ],
+  "generated_at": "2026-09-04T12:04:44.904953+00:00"
+}

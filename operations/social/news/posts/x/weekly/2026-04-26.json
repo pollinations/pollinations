@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-04-26",
+  "period_start": "2026-04-19",
+  "period_end": "2026-04-25",
+  "generated_at": "2026-04-26T06:36:13.049262+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-26/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 39 PRs. added deepseek v4, claude opus 4.7, and qwen3-tts. completely overhauled mcp (v2.1.0) with a dynamic registry. also stopped auto-banning users just because they deleted their github accounts. it seemed like a good idea at the time."
+}

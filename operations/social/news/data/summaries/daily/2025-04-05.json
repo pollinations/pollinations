@@ -1,0 +1,51 @@
+{
+  "date": "2025-04-05",
+  "period_start": "2025-04-05",
+  "period_end": "2025-04-05",
+  "title": "Model choices now stay in sync",
+  "summary": "A garden-maintenance day: fresher model menus, steadier text requests, working redirects, and safer image feeds.\n\nThe available-model list now fetches from the API instead of relying on a static list, and the duplicate DeepSeek Reasoning entry has been removed. Fewer stale menus, fewer identical models pretending to be two models.\n\nPOST parameters are now passed correctly, text prompts were consolidated to reduce duplication, a conversational Llama 4 prompt was added, and an initial text filter landed. The endpoint should be more predictable both for callers and for the prompts behind it.\n\nAffiliate links can be mapped back after a click, analytics parameters were corrected, and /redirect/* routes now have an explicit redirect rule. Small plumbing work, which is usually where the missing plumbing turns out to be.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 1552,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1555,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1556,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1558,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1559,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1563,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1564,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1567,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1568,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1569,
+      "date": "2025-04-05"
+    }
+  ],
+  "generated_at": "2026-09-04T12:22:07.575186+00:00"
+}

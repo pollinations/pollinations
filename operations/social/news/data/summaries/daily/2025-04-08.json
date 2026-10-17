@@ -1,0 +1,19 @@
+{
+  "date": "2025-04-08",
+  "period_start": "2025-04-08",
+  "period_end": "2025-04-08",
+  "title": "Site functions are back on speaking terms with Netlify",
+  "summary": "A small maintenance day: Netlify exports fixed and text.pollinations.ai’s support-link logic made more precise.\n\nFixed a Netlify function export issue on pollinations.ai, keeping the site’s server-side plumbing deployable instead of mysteriously absent.\n\nUpdated the probability system controlling Ko-fi support-link displays, replacing a blunt switch with percentage-based behavior.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 1584,
+      "date": "2025-04-08"
+    },
+    {
+      "number": 1586,
+      "date": "2025-04-08"
+    }
+  ],
+  "generated_at": "2026-09-04T12:23:25.437388+00:00"
+}

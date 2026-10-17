@@ -1,0 +1,47 @@
+{
+  "date": "2026-05-30",
+  "period_start": "2026-05-30",
+  "period_end": "2026-05-30",
+  "title": "PetalGen makes image prompts less monolithic",
+  "summary": "A community harvest: prompt tooling, five new apps, and slightly less manual GitHub gardening.\n\nPetalGen joined the Greenhouse with a tool for breaking dense image prompts into structured, remixable parts. Useful for creators who want to inspect what a prompt is doing before asking the model to interpret their entire stream of consciousness.\n\nThe app directory picked up RagmyAI for chat-based image creation, SceneWeave for text and URL-driven story experiments, AI Web Translator for BYOK browser translation, GrowthKit Studio for automated business reports, and The Mork Stack for agentic social and trading workflows.\n\nProject automation now routes new development issues into the right tracking epics and sends Quest work to the Dev board, while daily app health metrics and the README's news and app listings continue refreshing automatically.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 11402,
+      "date": "2026-05-30"
+    },
+    {
+      "number": 11404,
+      "date": "2026-05-30"
+    },
+    {
+      "number": 11408,
+      "date": "2026-05-30"
+    },
+    {
+      "number": 11414,
+      "date": "2026-05-30"
+    },
+    {
+      "number": 11416,
+      "date": "2026-05-30"
+    },
+    {
+      "number": 11417,
+      "date": "2026-05-30"
+    },
+    {
+      "number": 11418,
+      "date": "2026-05-30"
+    },
+    {
+      "number": 11419,
+      "date": "2026-05-30"
+    },
+    {
+      "number": 11423,
+      "date": "2026-05-30"
+    }
+  ],
+  "generated_at": "2026-09-04T11:51:53.070314+00:00"
+}

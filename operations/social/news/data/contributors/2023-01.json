@@ -1,0 +1,20 @@
+{
+  "month": "2023-01",
+  "merged_prs": 2,
+  "contributors": [
+    {
+      "id": 85608868,
+      "login": "ale-rls",
+      "avatar_url": "https://avatars.githubusercontent.com/u/85608868?s=80&u=ae941ccc2bba897c1bb005b9d8bb819785d35a60&v=4",
+      "url": "https://github.com/ale-rls",
+      "prs": 1
+    },
+    {
+      "id": 5099901,
+      "login": "voodoohop",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5099901?s=80&v=4",
+      "url": "https://github.com/voodoohop",
+      "prs": 1
+    }
+  ]
+}

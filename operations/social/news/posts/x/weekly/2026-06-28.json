@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-06-28",
+  "period_start": "2026-06-21",
+  "period_end": "2026-06-27",
+  "generated_at": "2026-06-28T07:18:18.267347+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-28/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 22 PRs. ripped out subscription tiers, replaced them with quests. build things, earn pollen, generate more. also wired up stable audio 3 and elevenlabs sfx. making noise is highly encouraged."
+}

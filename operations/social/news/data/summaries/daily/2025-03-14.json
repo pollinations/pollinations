@@ -1,0 +1,51 @@
+{
+  "date": "2025-03-14",
+  "period_start": "2025-03-14",
+  "period_end": "2025-03-14",
+  "title": "The project garden picked up six more things to try",
+  "summary": "A community-garden day: more projects to explore, Pixtral on the text API, and fewer broken voices pretending to be choices.\n\nThe community project list now includes StoryMagic, Pollinations Feed Showcase, Elixpo Art for Chrome, RoastMaster AI, roastmyselfie.app, and broader project updates. The submission template was simplified too, because discovering weird little AI apps should require less paperwork.\n\nPixtral is now available through text.pollinations.ai, adding another model option behind the same straightforward text endpoint.\n\ntext.pollinations.ai added Google Vertex service-account authentication, improving the backend plumbing used to connect model access without asking humans to perform credential rituals by hand.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 1342,
+      "date": "2025-03-14"
+    },
+    {
+      "number": 1343,
+      "date": "2025-03-14"
+    },
+    {
+      "number": 1347,
+      "date": "2025-03-14"
+    },
+    {
+      "number": 1348,
+      "date": "2025-03-14"
+    },
+    {
+      "number": 1351,
+      "date": "2025-03-14"
+    },
+    {
+      "number": 1352,
+      "date": "2025-03-14"
+    },
+    {
+      "number": 1353,
+      "date": "2025-03-14"
+    },
+    {
+      "number": 1355,
+      "date": "2025-03-14"
+    },
+    {
+      "number": 1357,
+      "date": "2025-03-14"
+    },
+    {
+      "number": 1359,
+      "date": "2025-03-14"
+    }
+  ],
+  "generated_at": "2026-09-04T12:08:39.014262+00:00"
+}

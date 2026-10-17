@@ -1,0 +1,8 @@
+{
+  "platform": "discord",
+  "scope": "models_weekly",
+  "date": "2026-10-07",
+  "previous_date": "2026-09-30",
+  "generated_at": "2026-10-07T14:16:35.570109+00:00",
+  "text": "<@&1424461167883194418> Model updates — 2026-10-07\n\n### 🆕 New\n- 🧠 **GPT-6.1 Sol** (OpenAI) — image input, reasoning, and tool calling\n- 🧠 **Ling 3.1 Flash** (inclusionAI) — reasoning and tool calling\n- 🧠 **Liquid D1** (Liquid AI) — typed decisions\n- 🎨 **FLUX.3 Image** (Black Forest Labs) — generation and multi-reference editing\n- 🎨 **Seedream 5.0 Flash** (ByteDance) — generation and editing at 1K or 2K\n- 🎬 **Grok Imagine Video 1.5 Lite** (xAI) — video from text or a start image\n- 🎬 **HeyGen Video 1** (HeyGen) — video with synchronized audio\n- 🔊 **ElevenLabs v4 · v4 Turbo** (ElevenLabs) — text-to-speech with character timestamps\n\n### 🗑️ Removed\n- `microsoft/mai-image-2.5-flash` (image)\n- `community/sharktide/inferenceport-ai-lightning-text-v2` (text)\n- `community/vendouple/claude-sonnet-5.5:stable` (text)\n- `community/vendouple/claude-opus-5.5:stable` (text)\n- Additional community text and image models; see the changelog.\n\n### ⬇️ Price cuts\n- 🧠 Text: GPT 6 Sol stable (~25%) · Gemini 2.5 Flash Lite (~5%) · community GLM 5.3 Flash, supercharge, MetraxAI & Qwen3.8 27B Paid (~10%)\n- 🔢 Embeddings: Qwen3 Embedding 8B (prompt-text rate −90%)\n\n### ⬆️ Price increases\n- 🧠 Text: Nemotron 3 Ultra (~10% output) · Qwen3 Coder 30B & Code Pair (~130% output) · Gemini 2.5 Flash Lite Search (~5%) · community DeepSeek V4 Flash 0731 (400%) · community Gemma 4 31B (~10%)\n\nExplore at https://gen.pollinations.ai/docs"
+}

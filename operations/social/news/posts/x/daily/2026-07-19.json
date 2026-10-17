@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-07-19",
+  "period_start": "2026-07-19",
+  "period_end": "2026-07-19",
+  "generated_at": "2026-07-20T07:16:55.571287+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-19/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: Z-Image now runs on a sturdier Vast deployment, and the provider is correctly labeled Vast. Fewer mysteries in routing, fewer surprises when asking for pixels. Two small PRs; one less wobbly chair."
+}

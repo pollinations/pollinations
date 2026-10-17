@@ -1,0 +1,31 @@
+{
+  "date": "2026-07-21",
+  "period_start": "2026-07-21",
+  "period_end": "2026-07-21",
+  "title": "Model search now keeps up with your typing",
+  "summary": "Model search stopped losing its place, while production access got more deliberate and the community map received its daily refresh.\n\nThe model picker at enter.pollinations.ai now filters immediately from local input, with URL updates debounced separately. Fast typing, clearing, blurring, deep links, and browser-driven URL changes no longer let delayed router state overwrite a newer query. Search results now focus on the model names and brands people actually see.\n\nAzure production hosts now have an operations-owned inventory with encrypted, host-specific SSH access records. SOPS access was also rekeyed so developers can independently use the development and staging environments they need, while production, bot, observability, and operations secrets remain compartmentalized.\n\nRepository news, app metrics, greenhouse listings, and health-check records were refreshed for the day, keeping the public project overview and maintainer snapshot current.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 12605,
+      "date": "2026-07-21"
+    },
+    {
+      "number": 12617,
+      "date": "2026-07-21"
+    },
+    {
+      "number": 12618,
+      "date": "2026-07-21"
+    },
+    {
+      "number": 12622,
+      "date": "2026-07-21"
+    },
+    {
+      "number": 12623,
+      "date": "2026-07-21"
+    }
+  ],
+  "generated_at": "2026-09-04T11:47:49.015844+00:00"
+}

@@ -1,0 +1,23 @@
+{
+  "date": "2025-02-05",
+  "period_start": "2025-02-05",
+  "period_end": "2025-02-05",
+  "title": "Gemini Flash 2.0 and thinking modes join the text lineup",
+  "summary": "A small discovery-day update: new Gemini text capabilities, clearer project news, and Titan-GPT in the social bot garden.\n\nText Pollinations now highlights Gemini Flash 2.0 and its thinking capabilities, with the news and README updated so the growing model menu is easier to find.\n\nTitan-GPT has been added to the Social Bots section, giving visitors one more example of what people are building on the infrastructure.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 1152,
+      "date": "2025-02-05"
+    },
+    {
+      "number": 1154,
+      "date": "2025-02-05"
+    },
+    {
+      "number": 1160,
+      "date": "2025-02-05"
+    }
+  ],
+  "generated_at": "2026-09-04T13:36:30.030765+00:00"
+}

@@ -1,0 +1,15 @@
+{
+  "date": "2025-05-05",
+  "period_start": "2025-05-05",
+  "period_end": "2025-05-05",
+  "title": "Streaming cache gets less forgetful",
+  "summary": "A small streaming reliability pass: fewer cache surprises, cleaner code underneath.\n\nStreaming cache issues were fixed, making repeat streamed responses more reliable while cleaning up related code.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 1904,
+      "date": "2025-05-05"
+    }
+  ],
+  "generated_at": "2026-09-04T12:37:11.545851+00:00"
+}

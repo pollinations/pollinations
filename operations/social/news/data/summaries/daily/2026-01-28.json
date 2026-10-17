@@ -1,0 +1,39 @@
+{
+  "date": "2026-01-28",
+  "period_start": "2026-01-28",
+  "period_end": "2026-01-28",
+  "title": "Kimi moves up to K2.5",
+  "summary": "Kimi got a K2.5 upgrade, error handling became more honest, and the secret-rotation machinery got a needed tune-up.\n\nThe Kimi text model was upgraded to K2.5 through Fireworks AI, bringing the newer model into the unified text endpoint.\n\nBad image fetches now return a clear 400 response rather than a generic server error, while klein-large concurrency was tuned down to avoid memory crashes under load.\n\nEnter tokens were rotated and a hardcoded-token exposure was cleaned up; the rotation script now updates the corresponding Modal secret too. Security maintenance: unglamorous, effective, ideally boring.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 7710,
+      "date": "2026-01-28"
+    },
+    {
+      "number": 7721,
+      "date": "2026-01-28"
+    },
+    {
+      "number": 7722,
+      "date": "2026-01-28"
+    },
+    {
+      "number": 7728,
+      "date": "2026-01-28"
+    },
+    {
+      "number": 7729,
+      "date": "2026-01-28"
+    },
+    {
+      "number": 7746,
+      "date": "2026-01-28"
+    },
+    {
+      "number": 7754,
+      "date": "2026-01-28"
+    }
+  ],
+  "generated_at": "2026-09-04T11:46:49.140500+00:00"
+}

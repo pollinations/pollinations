@@ -1,0 +1,99 @@
+{
+  "date": "2026-06-28",
+  "period_start": "2026-06-21",
+  "period_end": "2026-06-27",
+  "title": "The Great Audio Upgrade",
+  "summary": "We completely overhauled our audio generation stack and officially launched the Quest system to replace passive tiers.\n\nA massive week for making noise. We wired up Stable Audio 3 (and 3 Medium via fal for audio-to-audio style transfer), ElevenLabs SFX, Multilingual v2, and music_v2 with reference-audio conditioning. To top it off, we dropped ElevenLabs TTS pricing to at-cost.\n\nThe old passive tier system is dead. We replaced it with an active Quest ledger where you earn Pollen for doing useful things like contributing code or setting up your account. We also shipped a live Cloudflare Worker dashboard to track real-time quest completions and wired up Polar top-ups.\n\nAdded Inception's Mercury 2 as a paid-only text model. More importantly, we removed premature image validation on our gateway, meaning multimodal requests actually pass through to supported text providers now instead of bouncing.\n\nWelcomed RoleChar, SpiritPet World, and REKTY AI to the community showcase. On the docs side, we officially documented the shift from Publishable Keys to Bring Your Own Pollen (BYOP), added social metadata, and cleaned up the dashboard auth navigation so you don't lose your place when logging in.",
+  "pr_count": 22,
+  "prs": [
+    {
+      "number": 11931,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11946,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11948,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11949,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11950,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11912,
+      "date": "2026-06-23"
+    },
+    {
+      "number": 11961,
+      "date": "2026-06-23"
+    },
+    {
+      "number": 11964,
+      "date": "2026-06-23"
+    },
+    {
+      "number": 11967,
+      "date": "2026-06-23"
+    },
+    {
+      "number": 11856,
+      "date": "2026-06-25"
+    },
+    {
+      "number": 11991,
+      "date": "2026-06-25"
+    },
+    {
+      "number": 11993,
+      "date": "2026-06-25"
+    },
+    {
+      "number": 11994,
+      "date": "2026-06-25"
+    },
+    {
+      "number": 11998,
+      "date": "2026-06-25"
+    },
+    {
+      "number": 12005,
+      "date": "2026-06-26"
+    },
+    {
+      "number": 12006,
+      "date": "2026-06-26"
+    },
+    {
+      "number": 12008,
+      "date": "2026-06-26"
+    },
+    {
+      "number": 12010,
+      "date": "2026-06-26"
+    },
+    {
+      "number": 12012,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12037,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12044,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12046,
+      "date": "2026-06-27"
+    }
+  ],
+  "generated_at": "2026-06-28T07:18:18.267347+00:00"
+}

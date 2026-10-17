@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-05-10",
+  "period_start": "2026-05-03",
+  "period_end": "2026-05-09",
+  "generated_at": "2026-05-10T06:52:29.920629+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-10/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol.41 — 41 pull requests merged this week.\n\nHere is what shipped across the infrastructure:\n\n1. MODELS AND EMBEDDINGS\nAdded Llama and Gemma text models. Restacked the embeddings modality. Gemini embedding 2 moved to paid tiers.\n\n2. MAKING ERRORS LESS TERRIBLE\nWe stopped hiding upstream provider failures behind generic 500 errors. You now get the actual error code and upstream URL instead of a mystery box. Replicate content-filter blocks now correctly map to 4xx so your app actually knows what happened.\n\n3. BYOP AND BILLING\nCloud-provider billing and key rotation (OpenRouter, DeepInfra, AWS) are wired up. Clarified the developer earnings explainer and simplified Bring Your Own Provider margin billing.\n\n4. COMMUNITY HARVEST\nMerged 13 new community apps built on the API, ranging from a toddler QR card generator to a web OS.\n\nEverything is open source. Read the code or build something at pollinations.ai\n\n#OpenSource #AI #DevTools"
+}

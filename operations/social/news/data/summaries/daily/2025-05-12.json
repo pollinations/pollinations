@@ -1,0 +1,47 @@
+{
+  "date": "2025-05-12",
+  "period_start": "2025-05-12",
+  "period_end": "2025-05-12",
+  "title": "The project directory got a more useful map",
+  "summary": "A directory-gardening day: better project discovery, clearer Special Bee tracking, and a little more order around the edges.\n\nKoboldAI is now featured prominently with current links and correct attribution, while MVKProject Nexus API and new Special Bee projects joined the directory. Featured-project sorting was also tightened up, because a showcase should not behave like a junk drawer.\n\nDocumentation and token tracking were added for Special Bee requests, giving contributors and project users a clearer view of how those requests work and what they consume.\n\nFeed listener access gained authentication, making the connection point more deliberate while preserving the project’s growing ecosystem of shared tools.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 1951,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1952,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1954,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1955,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1956,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1959,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1962,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1964,
+      "date": "2025-05-12"
+    },
+    {
+      "number": 1965,
+      "date": "2025-05-12"
+    }
+  ],
+  "generated_at": "2026-09-04T12:41:06.444484+00:00"
+}

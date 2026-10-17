@@ -1,0 +1,23 @@
+{
+  "date": "2025-03-21",
+  "period_start": "2025-03-21",
+  "period_end": "2025-03-21",
+  "title": "MCP can generate images, with docs to prove it",
+  "summary": "A small but useful day: MCP learned to make images, its docs got clearer, and o3-mini gained a thinking dial.\n\nMCP gained image generation support, and the documentation now includes a screenshot so people can see the setup before asking their agent to make pixels.\n\no3-mini now accepts a reasoning_effort parameter, giving builders a direct knob for how much thinking they want from the model.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 1407,
+      "date": "2025-03-21"
+    },
+    {
+      "number": 1409,
+      "date": "2025-03-21"
+    },
+    {
+      "number": 1412,
+      "date": "2025-03-21"
+    }
+  ],
+  "generated_at": "2026-09-04T12:13:15.501100+00:00"
+}

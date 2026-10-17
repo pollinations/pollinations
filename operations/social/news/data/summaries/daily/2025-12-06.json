@@ -1,0 +1,19 @@
+{
+  "date": "2025-12-06",
+  "period_start": "2025-12-06",
+  "period_end": "2025-12-06",
+  "title": "Flux joins the creative toolkit",
+  "summary": "A small garden day: Flux arrived in Creative while the workflow plumbing got clearer names.\n\nFlux AI has been added to Creative, giving people another image model to experiment with through the same simple Pollinations interface.\n\nInternal workflow naming was standardized for clearer logic and easier maintenance. The software now has slightly fewer opportunities to confuse its future caretakers.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 5725,
+      "date": "2025-12-06"
+    },
+    {
+      "number": 5751,
+      "date": "2025-12-06"
+    }
+  ],
+  "generated_at": "2026-09-04T12:25:26.208243+00:00"
+}

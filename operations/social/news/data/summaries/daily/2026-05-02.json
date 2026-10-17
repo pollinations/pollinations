@@ -1,0 +1,75 @@
+{
+  "date": "2026-05-02",
+  "period_start": "2026-05-02",
+  "period_end": "2026-05-02",
+  "title": "More control over images, with fewer generation hiccups",
+  "summary": "A broad shipping day: reference-guided Grok images, GPT-5.5 and AssemblyAI, plus a generation stack that should trip over itself less often.\n\nGrok Imagine and Grok Imagine Pro now accept up to five reference images through the API and Play UI. Image and video generation also moved into the main gen worker with Cloudflare-powered transforms, while registry timing fixes reduce dropped requests and 500s during rapid image runs. Media uploads on Play now correctly accept valid API keys again.\n\nThe text endpoint gained GPT-5.5, including reasoning, vision, and tool calling. Audio transcription now supports AssemblyAI universal-2 and universal-3-pro through the API, SDK, and CLI, with the dashboard giving the new transcription provider its proper logo.\n\nText requests with the same parameters now share cache entries even when tools shuffle URL parameter order. Polli CLI authentication can accept a token over stdin for scripts and CI, and the mobile model table now keeps scores visible while taming long names and badge clutter.",
+  "pr_count": 16,
+  "prs": [
+    {
+      "number": 10567,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10597,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10598,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10604,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10611,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10612,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10614,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10615,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10616,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10617,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10619,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10620,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10623,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10624,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10625,
+      "date": "2026-05-02"
+    },
+    {
+      "number": 10626,
+      "date": "2026-05-02"
+    }
+  ],
+  "generated_at": "2026-09-04T11:47:36.689670+00:00"
+}

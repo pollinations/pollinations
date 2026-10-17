@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-04-23",
+  "period_start": "2026-04-23",
+  "period_end": "2026-04-23",
+  "generated_at": "2026-04-24T06:36:55.491346+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-23/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped mcp v2.1.0. dynamic registries, account tools, and a single-gateway cleanup so things actually route where they should. also fixed mobile modals so you can finally scroll without the background fighting you. generation now requires login."
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-09-06",
+  "period_start": "2026-08-30",
+  "period_end": "2026-09-05",
+  "generated_at": "2026-09-08T22:07:03.474422+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-06/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped this week: a first-class Responses API, community embeddings + audio/video, managed agents with MCP tools, and 140 merged PRs across the catalog and routing. also added model fallbacks, because upstreams occasionally develop weather."
+}

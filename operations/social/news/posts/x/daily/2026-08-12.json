@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-08-12",
+  "period_start": "2026-08-12",
+  "period_end": "2026-08-12",
+  "generated_at": "2026-08-13T06:38:28.132923+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-12/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: the SDK now returns available model arrays and rejects image jobs that fail to produce an image. MCP no longer has a global request timeout, so slow work can finish at its own pace. IMADreamer joined the image directory. README watered. 🐝"
+}

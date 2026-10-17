@@ -1,0 +1,43 @@
+{
+  "date": "2026-01-14",
+  "period_start": "2026-01-14",
+  "period_end": "2026-01-14",
+  "title": "A cleaner path through authorization",
+  "summary": "A tuning day: smoother authorization, refreshed DeepSeek serving, cleaner developer tooling, and fewer unnecessary pipes.\n\nThe authorize page got a UI pass, while publishable-key protections were corrected to keep access predictable and shared resources healthy.\n\nDeepSeek V3.2 was migrated to Fireworks AI, keeping the model available through Pollinations' single text endpoint while refreshing its serving path.\n\nPolliDev joined the developer-tools lineup, and a gradual Biome adoption plan landed to modernize formatting and linting without detonating the codebase in one go.",
+  "pr_count": 8,
+  "prs": [
+    {
+      "number": 7078,
+      "date": "2026-01-14"
+    },
+    {
+      "number": 7230,
+      "date": "2026-01-14"
+    },
+    {
+      "number": 7239,
+      "date": "2026-01-14"
+    },
+    {
+      "number": 7270,
+      "date": "2026-01-14"
+    },
+    {
+      "number": 7275,
+      "date": "2026-01-14"
+    },
+    {
+      "number": 7283,
+      "date": "2026-01-14"
+    },
+    {
+      "number": 7284,
+      "date": "2026-01-14"
+    },
+    {
+      "number": 7287,
+      "date": "2026-01-14"
+    }
+  ],
+  "generated_at": "2026-09-04T11:35:01.258618+00:00"
+}

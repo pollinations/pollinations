@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-04-26",
+  "period_start": "2026-04-19",
+  "period_end": "2026-04-25",
+  "generated_at": "2026-04-26T06:36:13.049262+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-04-26/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol.42 — 39 PRs merged. New models, MCP overhaul, and stopping orphan processes from screaming into the void.\n\n───\n\n→ THE GREAT MODEL MIGRATION\nAdded DeepSeek V4 via DeepInfra, Claude Opus 4.7 via Bedrock, and Qwen3-TTS. For images, we replaced boolean reasoning with fast/balanced/pro modes. Also added a seed parameter to audio for deterministic caching.\n\n→ MCP v2.1.0 & ARCHITECTURE\nMassive MCP overhaul with a dynamic registry and single-gateway cleanup. Also fixed a bug where Windows orphan processes would busy-loop endlessly when the parent exited. They can rest now.\n\n→ PLATFORM & DASHBOARD\nGeneration is now gated on login. We added usage period pickers and better dashboard buckets. Also fixed a highly specific issue where we were auto-banning users just because they deleted their GitHub accounts. Oops.\n\n→ COMMUNITY GREENHOUSE\n11 new community apps added to the ecosystem, spanning chat, writing, image, and business tools. Also gave the mobile UI some much-needed layout polish.\n\nEverything is open source. Come build something weird: pollinations.ai\n\n#OpenSource #AI #DevTools #WebDev"
+}

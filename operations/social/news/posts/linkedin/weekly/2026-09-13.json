@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-09-13",
+  "period_start": "2026-09-06",
+  "period_end": "2026-09-12",
+  "generated_at": "2026-09-13T06:32:41.130676+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-13/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\n    vol. 42 — agents & routes\n\n96 PRs merged. Agents got a workspace and shell; media routes started acting like one route.\n\n───\n\n1. MANAGED CODE AGENTS\nComputer MCP now has a persistent per-user filesystem and bash. Step and tool-call limits tripled, with more CPU and subrequest headroom. Agents needed a slightly larger shed.\n\n2. MEDIA, ONE WAY\nMedia models now work through Chat and Responses, including image parts. Generated files use media storage, old cached media can be recovered, and MCP reuses generated URLs.\n\n3. CATALOG, FEWER DIALECTS\nCanonical names, scoped community IDs, fallback chains, DeepSeek V4.1 Flash, GPT Image 2.5, 1080p Minimax, and tighter parameter compatibility.\n\n4. EDGE-CASE MAINTENANCE\nStream billing validation, preserved diagnostics, provider fallbacks, Perplexity framing repair, and dashboards that load when billing exists. Software remains edge cases in a trench coat.\n\nAlso: GIMP 3 generation/editing, Polli Visual Studio, SDK embeddings, and more community apps.\n\nCode, roadmap, and the 96-PR paper trail:\nhttps://github.com/pollinations/pollinations\n\nContributions welcome.\n\n#OpenSource #AI #DevTools #MCP"
+}

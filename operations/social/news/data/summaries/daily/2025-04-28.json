@@ -1,0 +1,31 @@
+{
+  "date": "2025-04-28",
+  "period_start": "2025-04-28",
+  "period_end": "2025-04-28",
+  "title": "Imagine’s generated-text controls stopped freelancing",
+  "summary": "A small garden-maintenance day: steadier Imagine controls, cleaner streaming behavior, and another community project in the directory.\n\nThe Imagine interface got a fix for the text-generated button behaving unpredictably, making the creation flow less adventurous than intended.\n\nThe response delivery path was updated so streaming output and p-ads markers are handled consistently instead of taking separate, slightly mysterious routes.\n\nEcho AI joined the community project list, while the Mistral model backend moved from Cloudflare to Scaleway.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 1803,
+      "date": "2025-04-28"
+    },
+    {
+      "number": 1807,
+      "date": "2025-04-28"
+    },
+    {
+      "number": 1817,
+      "date": "2025-04-28"
+    },
+    {
+      "number": 1819,
+      "date": "2025-04-28"
+    },
+    {
+      "number": 1820,
+      "date": "2025-04-28"
+    }
+  ],
+  "generated_at": "2026-09-04T12:32:42.849720+00:00"
+}

@@ -1,0 +1,27 @@
+{
+  "date": "2025-07-04",
+  "period_start": "2025-07-04",
+  "period_end": "2025-07-04",
+  "title": "API docs got a clearer map",
+  "summary": "A garden-maintenance day: clearer API docs, sharper creative tooling, and better visibility into model use.\n\nThe API documentation was revamped for more clarity and detail, making the HTTP-shaped parts of pollinations easier to navigate without archaeological work.\n\nCreative projects now include Argent Script, while R2 image download and exploration scripts make it easier to inspect and work with stored image collections.\n\nFlux Kontext support and model configurations were updated alongside a user logging system, giving the platform a better record of what its models are doing out in the wild.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 2721,
+      "date": "2025-07-04"
+    },
+    {
+      "number": 2766,
+      "date": "2025-07-04"
+    },
+    {
+      "number": 2791,
+      "date": "2025-07-04"
+    },
+    {
+      "number": 2795,
+      "date": "2025-07-04"
+    }
+  ],
+  "generated_at": "2026-09-04T12:04:08.775973+00:00"
+}

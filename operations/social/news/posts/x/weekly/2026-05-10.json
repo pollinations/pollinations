@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-05-10",
+  "period_start": "2026-05-03",
+  "period_end": "2026-05-09",
+  "generated_at": "2026-05-10T06:52:29.920629+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-10/images/twitter.jpg"
+    }
+  ],
+  "text": "41 PRs shipped. added llama, gemma, and restacked embeddings. we also stopped swallowing upstream errors into generic 500s so you can actually debug things now. plus 12 new community apps built this week. back to the code. 🐝"
+}

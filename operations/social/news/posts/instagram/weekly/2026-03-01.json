@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-03-01",
+  "period_start": "2026-02-22",
+  "period_end": "2026-02-28",
+  "generated_at": "2026-03-18T22:36:47.246410+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-01/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-01/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-01/images/instagram-3.jpg"
+    }
+  ],
+  "text": "105 PRs merged this week. We finally shipped persistent media storage (Cloudflare R2) so your generated files actually stay put. The app showcase got a massive reorg with automated health checks—if an app breaks, it gets removed. Plus: the text service was rewritten in Hono/TS, and we wired up Claude 3.7 Sonnet, Gemini 3.1, and Grok-imagine. 50+ new community apps added to the ecosystem. The garden is growing. 🌱 Link in bio to build something.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #aiapi #typescript",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

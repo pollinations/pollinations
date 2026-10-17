@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-05-10",
+  "period_start": "2026-05-03",
+  "period_end": "2026-05-09",
+  "generated_at": "2026-05-10T06:52:29.920629+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-10/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-10/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-10/images/instagram-3.jpg"
+    }
+  ],
+  "text": "41 pull requests merged this week. The general theme: making things less annoying and adding more models.\n\nWe added Meta's Llama and Google's Gemma to the text endpoints, and restacked embeddings so they're easier to work with. Also, we finally stopped masking upstream API errors with generic 500s. Now when something breaks, the API tells you exactly *why* it broke. Nomnom ate all the unhelpful error logs.\n\nHuge shoutout to the community—we saw a ton of new apps hit the ecosystem this week (Storyframe Studio, ZenWall, PolliGPT, and more). The garden is growing.\n\nFull changelog is in the repo. Keep building. 🌱\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #llamas #webdev #gemma",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

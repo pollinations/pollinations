@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-02-08",
+  "period_start": "2026-02-01",
+  "period_end": "2026-02-07",
+  "generated_at": "2026-03-18T22:22:09.582030+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-08/images/discord.jpg"
+    }
+  ],
+  "text": "Hey <@&1424461167883194418>, here's what we merged this week.\n\n## Weekly Update - 2026-02-08\n\n🎥 **The Generative Media Explosion**\n- Added a whole suite of new visual models via api.airforce: `Imagen 3`, `Imagen-4`, and `flux-2-dev`. \n- Video generation is getting crowded: `LTX-2`, `grok-video` (alpha), and Grok Imagine Video are now live with SSE support. \n\n🗣️ **ElevenLabs Text-to-Speech**\n- We finally wired up an ElevenLabs TTS endpoint. Your apps can now talk back with much better voices.\n\n🧠 **Text API: Bigger Brains, Longer Thoughts**\n- `claude-large` got a bump from Opus 4.5 to 4.6 on Bedrock.\n- Migrated Mistral to OVHcloud (and fixed the config case mismatch that briefly took it offline).\n- *Note:* To keep the servers from melting, 5 specific heavy-compute models have been shifted to paid-only tiers.\n\n🛠️ **Queue Busting & Infrastructure**\n- Moved the Portkey gateway to a custom domain to finally kill those 524 timeouts.\n- Added model usage by tier panels to the dashboard so we can actually see what's happening under the hood.\n- Cleaned up the GSoC (Google Summer of Code) READMEs and contributing docs for the incoming wave of students.\n\n15 PRs merged. Build something cool this weekend."
+}

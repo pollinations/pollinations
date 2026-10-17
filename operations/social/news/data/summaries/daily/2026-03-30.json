@@ -1,0 +1,67 @@
+{
+  "date": "2026-03-30",
+  "period_start": "2026-03-30",
+  "period_end": "2026-03-30",
+  "title": "Unity games can now translate themselves",
+  "summary": "A community-heavy day: real-time Unity translation, nine new apps in the garden, and a smoother Pollen checkout.\n\nXUnity.AutoPollinationTranslator joined the showcase, bringing real-time Pollinations-powered translation to Unity games. Modders and players can translate games on the fly, which is a fairly direct use of text generation and also a good excuse to revisit old JRPGs.\n\nThe directory gained Onyx Sign for vector-ready AI signatures, a 3D Icon Generator, Persona AI for character prompts, and Website Studio for evaluating website builders. New learning and writing tools also arrived: Zairok AI Discovery, WishCraft, Learnty, Noyaku for comics and webtoon translation, and YoutubeToBlog.\n\nThe Pollen checkout now uses an updated pack catalog with clear bonus tiers, while the purchase grid wraps properly on mobile. Buying credits should now involve less horizontal scrolling, one of the internet's less beloved traditions.",
+  "pr_count": 14,
+  "prs": [
+    {
+      "number": 9650,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9737,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9738,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9739,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9740,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9741,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9742,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9743,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9744,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9745,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9746,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9751,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9752,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9753,
+      "date": "2026-03-30"
+    }
+  ],
+  "generated_at": "2026-09-04T11:54:59.370703+00:00"
+}

@@ -1,0 +1,207 @@
+{
+  "date": "2025-08-31",
+  "period_start": "2025-08-01",
+  "period_end": "2025-08-31",
+  "title": "Text models and Claude workflows grew up",
+  "summary": "August expanded the text and Claude toolkit while making the growing ecosystem, usage patterns, and maintenance paths easier to see.\n\nQwen3-Coder, roblox-rp, and further model roster updates broadened text generation, while Claude workflows gained web search and Sequa AI access through MCP.\n\nThe Creative Projects and chatProjects gardens became clearer and larger, adding apps including Imagine Draw AI, Aimpress, Evolve AI, Island AI, Botzy AI, EasyGen, and Pollix AI.\n\nCost, token, referrer, moderation, cache, and user-tier signals were added or refined, making it easier to understand how requests move through the platform.\n\nContributor guidance, issue intake automation, safer text-service configuration, message utilities, and public documentation all received practical cleanup for steadier day-to-day work.",
+  "pr_count": 49,
+  "prs": [
+    {
+      "number": 3359,
+      "date": "2025-08-01"
+    },
+    {
+      "number": 3397,
+      "date": "2025-08-01"
+    },
+    {
+      "number": 3408,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3409,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3410,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3411,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3412,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3413,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3414,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3424,
+      "date": "2025-08-03"
+    },
+    {
+      "number": 3449,
+      "date": "2025-08-04"
+    },
+    {
+      "number": 3452,
+      "date": "2025-08-04"
+    },
+    {
+      "number": 3474,
+      "date": "2025-08-05"
+    },
+    {
+      "number": 3488,
+      "date": "2025-08-05"
+    },
+    {
+      "number": 3489,
+      "date": "2025-08-05"
+    },
+    {
+      "number": 3490,
+      "date": "2025-08-05"
+    },
+    {
+      "number": 3491,
+      "date": "2025-08-05"
+    },
+    {
+      "number": 3493,
+      "date": "2025-08-05"
+    },
+    {
+      "number": 3360,
+      "date": "2025-08-06"
+    },
+    {
+      "number": 3496,
+      "date": "2025-08-06"
+    },
+    {
+      "number": 3525,
+      "date": "2025-08-06"
+    },
+    {
+      "number": 3526,
+      "date": "2025-08-06"
+    },
+    {
+      "number": 3527,
+      "date": "2025-08-06"
+    },
+    {
+      "number": 3450,
+      "date": "2025-08-07"
+    },
+    {
+      "number": 3536,
+      "date": "2025-08-07"
+    },
+    {
+      "number": 3540,
+      "date": "2025-08-07"
+    },
+    {
+      "number": 3581,
+      "date": "2025-08-10"
+    },
+    {
+      "number": 3557,
+      "date": "2025-08-11"
+    },
+    {
+      "number": 3590,
+      "date": "2025-08-12"
+    },
+    {
+      "number": 3661,
+      "date": "2025-08-13"
+    },
+    {
+      "number": 3656,
+      "date": "2025-08-14"
+    },
+    {
+      "number": 3679,
+      "date": "2025-08-14"
+    },
+    {
+      "number": 3695,
+      "date": "2025-08-14"
+    },
+    {
+      "number": 3696,
+      "date": "2025-08-14"
+    },
+    {
+      "number": 3715,
+      "date": "2025-08-15"
+    },
+    {
+      "number": 3697,
+      "date": "2025-08-16"
+    },
+    {
+      "number": 3725,
+      "date": "2025-08-16"
+    },
+    {
+      "number": 3742,
+      "date": "2025-08-18"
+    },
+    {
+      "number": 3799,
+      "date": "2025-08-21"
+    },
+    {
+      "number": 3804,
+      "date": "2025-08-21"
+    },
+    {
+      "number": 3820,
+      "date": "2025-08-22"
+    },
+    {
+      "number": 3836,
+      "date": "2025-08-24"
+    },
+    {
+      "number": 3841,
+      "date": "2025-08-24"
+    },
+    {
+      "number": 3853,
+      "date": "2025-08-25"
+    },
+    {
+      "number": 3856,
+      "date": "2025-08-25"
+    },
+    {
+      "number": 3859,
+      "date": "2025-08-25"
+    },
+    {
+      "number": 3861,
+      "date": "2025-08-25"
+    },
+    {
+      "number": 3863,
+      "date": "2025-08-25"
+    },
+    {
+      "number": 3876,
+      "date": "2025-08-27"
+    }
+  ],
+  "generated_at": "2026-09-04T15:25:40.837045+00:00"
+}

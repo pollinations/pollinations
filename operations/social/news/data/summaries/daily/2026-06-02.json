@@ -1,0 +1,124 @@
+{
+  "date": "2026-06-02",
+  "period_start": "2026-06-02",
+  "period_end": "2026-06-02",
+  "title": "At-cost pricing and cheaper Claude inference",
+  "summary": "A massive influx of community apps, at-cost pricing for 39 models, and new multimodal capabilities with MiniMax M3.\n\nWe dropped the 1.5x markup on 39 models across text, image, audio, and embeddings, meaning your Pollen credits now stretch exactly as far as the underlying provider costs. We also switched Claude models on AWS Bedrock to global cross-region profiles, shaving about 10% off the price for Haiku, Sonnet, and Opus.\n\nAdded MiniMax M3 to the roster, bringing a 1M context window, vision, and tool use. We also re-routed the `flux` image model through Fireworks FLUX.1 schnell for better performance, and migrated Gemma 4 26B to OpenRouter to keep underlying costs down.\n\nThe community showcase had a massive day. We merged nine new projects, including an iOS photo app, a Telegram bot for anime fans, an identity orchestration studio for 2D mascots, and—because the internet is wonderful—an AI generator specifically for amigurumi crochet patterns.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 11502,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11548,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11549,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11550,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11551,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11552,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11553,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11554,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11555,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11556,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11561,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11562,
+      "date": "2026-06-02"
+    },
+    {
+      "number": 11579,
+      "date": "2026-06-02"
+    }
+  ],
+  "generated_at": "2026-06-03T07:37:11.683117+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "MiniMax M3 arrives",
+      "text": "Added `minimax-m3` with support for vision, tools, reasoning, and a massive 1M context window. Check the [Available Text Models](https://gen.pollinations.ai/v1/models)."
+    },
+    {
+      "emoji": "✨",
+      "title": "Lunar AI",
+      "text": "A new conversational interface with a sleek design joins the community greenhouse. [Try it](https://luquinhasamc.github.io/My-Hub-AI-Projects/prs/LunarAI.html)",
+      "kind": "app"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Anura Hub AI",
+      "text": "A community-built platform integrating image generation, text processing, and automation tools. [Try it](https://meow-script.vercel.all)",
+      "kind": "app"
+    },
+    {
+      "emoji": "🎨",
+      "title": "NebulaCraft",
+      "text": "Generate custom amigurumi crochet patterns using Pollinations AI. [Try it](https://nebulacraft-1c723.web.app)",
+      "kind": "app"
+    },
+    {
+      "emoji": "📱",
+      "title": "Photo AI",
+      "text": "A new iOS application leveraging the Pollinations image API for mobile generation. [Try it](https://apps.apple.com/pk/app/photo-ai-image-generator/id6759615194)",
+      "kind": "app"
+    },
+    {
+      "emoji": "💡",
+      "title": "Ather Mini",
+      "text": "An educational chat interface designed to teach people about AI. [Try it](http://minitejas.in)",
+      "kind": "app"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Imagio AI",
+      "text": "A fast, community-built text-to-image generator. [Try it](https://imagio-ai.vercel.app/)",
+      "kind": "app"
+    },
+    {
+      "emoji": "🤖",
+      "title": "OtakuBox Bot",
+      "text": "Generate anime content directly in Telegram with this new community bot. [Try it](https://badamchuk.github.io/otakubox/)",
+      "kind": "app"
+    },
+    {
+      "emoji": "✨",
+      "title": "Multi-Model Chat UI",
+      "text": "A ready-to-use community chat app supporting multiple models, vision, and TTS. [Try it](https://farl.github.io/pollinations-ai-text-generation/)",
+      "kind": "app"
+    },
+    {
+      "emoji": "🎨",
+      "title": "AuraForge",
+      "text": "An identity orchestration studio for generating flat 2D vector mascots and avatars. [Try it](https://autoforge-iota.vercel.app/)",
+      "kind": "app"
+    }
+  ]
+}

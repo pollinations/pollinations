@@ -1,0 +1,15 @@
+{
+  "date": "2025-03-07",
+  "period_start": "2025-03-07",
+  "period_end": "2025-03-07",
+  "title": "Text routing gets a cleaner path",
+  "summary": "A small routing cleanup: Scaleway moves to Portkey and an old Cloudflare text-generation path retires.\n\nScaleway text generation now routes through Portkey, while an obsolete Cloudflare-specific generator has been removed. Fewer parallel paths to maintain; the API keeps doing its thing.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 1286,
+      "date": "2025-03-07"
+    }
+  ],
+  "generated_at": "2026-09-04T12:04:35.315743+00:00"
+}

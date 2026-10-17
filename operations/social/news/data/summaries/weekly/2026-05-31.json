@@ -1,0 +1,83 @@
+{
+  "date": "2026-05-31",
+  "period_start": "2026-05-24",
+  "period_end": "2026-05-30",
+  "title": "Real-time voice and a model avalanche",
+  "summary": "We wired up real-time voice, dumped a dozen new models into the router, and rebuilt the docs so your LLM can read them.\n\nWe added the `/v1/realtime` endpoint, giving you an OpenAI-compatible WebSocket connection for low-latency voice using `gpt-realtime-2`. While we were in the router, we added Claude Opus 4.8, StepFun's Flash models, Perplexity's Sonar suite, Grok-4.3, and Wan-pro. To balance the scales, we pushed GPT-5.5, Deepseek-pro, and Grok-large down to the free tier.\n\nWriting docs for humans is fine, but your AI coding assistant is the one actually reading them. We rebuilt the API docs generator with a custom markdown builder that flattens nested schemas and resolves pointers into clean tables. We also added context-aware 'Copy for LLMs' buttons to the dashboard rail so you can just paste the docs directly into your prompt.\n\nR2 storage now resets its 30-day TTL if an object is accessed after 15 days, meaning popular generations won't arbitrarily vanish. On the billing side, checkout now routes through Stripe Adaptive Pricing to show local currencies, and developer earnings exports now expose the raw math (`baseline_price` and `cost_usd`) so you can see exactly how your markup is calculated.\n\nSeven new community apps shipped this week. The showcase now includes everything from PetalGen (a prompt decomposition tool) and The Mork Stack (autonomous Solana trading agents) to Firefox translation extensions and chat-based image generators.",
+  "pr_count": 18,
+  "prs": [
+    {
+      "number": 11291,
+      "date": "2026-05-25"
+    },
+    {
+      "number": 10960,
+      "date": "2026-05-26"
+    },
+    {
+      "number": 11299,
+      "date": "2026-05-27"
+    },
+    {
+      "number": 11302,
+      "date": "2026-05-27"
+    },
+    {
+      "number": 11319,
+      "date": "2026-05-27"
+    },
+    {
+      "number": 11324,
+      "date": "2026-05-27"
+    },
+    {
+      "number": 11172,
+      "date": "2026-05-28"
+    },
+    {
+      "number": 11272,
+      "date": "2026-05-29"
+    },
+    {
+      "number": 11331,
+      "date": "2026-05-29"
+    },
+    {
+      "number": 11358,
+      "date": "2026-05-29"
+    },
+    {
+      "number": 11395,
+      "date": "2026-05-29"
+    },
+    {
+      "number": 11400,
+      "date": "2026-05-29"
+    },
+    {
+      "number": 11414,
+      "date": "2026-05-30"
+    },
+    {
+      "number": 11416,
+      "date": "2026-05-30"
+    },
+    {
+      "number": 11417,
+      "date": "2026-05-30"
+    },
+    {
+      "number": 11418,
+      "date": "2026-05-30"
+    },
+    {
+      "number": 11419,
+      "date": "2026-05-30"
+    },
+    {
+      "number": 11423,
+      "date": "2026-05-30"
+    }
+  ],
+  "generated_at": "2026-05-31T07:15:39.740007+00:00"
+}

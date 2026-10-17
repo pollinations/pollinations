@@ -1,0 +1,155 @@
+{
+  "date": "2026-08-22",
+  "period_start": "2026-08-22",
+  "period_end": "2026-08-22",
+  "title": "Two more image apps joined the garden",
+  "summary": "A tuning day: clearer publishing docs, two new image apps, fresher dashboards, and model routing that behaves less like a haunted switchboard.\n\nPollen Image Studio and Dery Lau AI are now discoverable in the app directory, giving people two more ready-to-use ways to make images with the Pollinations API. The README’s community-app and project snapshot also stayed current.\n\nNew guides explain how to publish Community Models across text, image, audio, and video, or publish an agent through the one-step callable-listing flow. Wallet connection terminology is clearer without breaking old links, agent API docs now include runnable request bodies, and the reference docs and navigation were refreshed. Community catalogs and public-agent publishing also now explain data handling up front.\n\nA broad routing and accounting pass pinned OpenRouter, Mistral, Llama Scout, Laguna, DeepSeek, OVHcloud, AssemblyAI, and MiniMax behavior to verified provider capabilities and current rate sheets. Agent generations now roll up under their parent call with measured cost estimates, upstream finish errors are correctly treated as non-billed failures, and usage anomalies are captured privately for diagnosis rather than becoming software folklore.",
+  "pr_count": 36,
+  "prs": [
+    {
+      "number": 13467,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13589,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13610,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13611,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13624,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13661,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13673,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13674,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13676,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13677,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13679,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13680,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13681,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13682,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13683,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13684,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13685,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13686,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13687,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13688,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13689,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13690,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13691,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13692,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13693,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13694,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13695,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13696,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13697,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13698,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13701,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13702,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13703,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13704,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13710,
+      "date": "2026-08-22"
+    },
+    {
+      "number": 13711,
+      "date": "2026-08-22"
+    }
+  ],
+  "generated_at": "2026-09-04T11:53:02.600970+00:00"
+}

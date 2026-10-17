@@ -1,0 +1,8 @@
+{
+  "platform": "discord",
+  "scope": "models_weekly",
+  "date": "2026-06-03",
+  "previous_date": "2026-05-27",
+  "generated_at": "2026-06-03T15:39:40.031957+00:00",
+  "text": "<@&1424461167883194418> New models live on Pollinations this week. 🚀\n\n**Text**\n- `claude-opus-4.8` (Claude) — added as paid-only\n- `perplexity-deep` (Perplexity)\n- `perplexity` (Perplexity)\n- `minimax-m3` (MiniMax) — includes reasoning support\n- `step-flash` (StepFun) — includes reasoning support\n- `step-3.5-flash` (StepFun) — includes reasoning support\n- `mistral-4` — added reasoning support\n- `claude-fast` — now paid-only\n- `perplexity-fast` — removed vision support\n- `perplexity-reasoning` — removed vision support\n- `qwen-coder-large` — now paid-only\n\n**Image**\n- `wan-image` — now paid-only\n- `qwen-image` — now paid-only\n\n**Audio**\n- `qwen-tts` — now paid-only\n\nTry them via /v1/models or read the docs at https://gen.pollinations.ai/docs"
+}

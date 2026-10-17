@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-05-15",
+  "period_start": "2026-05-15",
+  "period_end": "2026-05-15",
+  "generated_at": "2026-05-16T06:45:30.298497+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-15/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 15 PRs today. added gpt-5.4-mini and mistral-4, and took deepseek-v4-flash off the paid-only list.\n\nalso finally stopped classifying upstream user-input errors as 500s. they are accurately labeled as 4xx now. the server is fine."
+}

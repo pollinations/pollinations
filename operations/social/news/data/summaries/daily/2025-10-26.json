@@ -1,0 +1,35 @@
+{
+  "date": "2025-10-26",
+  "period_start": "2025-10-26",
+  "period_end": "2025-10-26",
+  "title": "An opposite-prompt generator is now live",
+  "summary": "A community-shaped day: a new prompt toy shipped, auth got sturdier, and account flows received some necessary reality checks.\n\nA Hacktoberfest contribution added an opposite-prompt generator, then deployment wiring brought it into the running app. Useful for turning a prompt on its head without having to argue with your own imagination.\n\nAuthorization and x-api-key handling were repaired, covered with tests, and given better logging. A broken auth.pollinations.ai link was also fixed, so both the sign-in path and the diagnostics around it should behave more like software.\n\nTier activation gained its first Polar-backed phases, while wallet controls were tidied to avoid showing misleading account timing or actions.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 4633,
+      "date": "2025-10-26"
+    },
+    {
+      "number": 4734,
+      "date": "2025-10-26"
+    },
+    {
+      "number": 4783,
+      "date": "2025-10-26"
+    },
+    {
+      "number": 4793,
+      "date": "2025-10-26"
+    },
+    {
+      "number": 4796,
+      "date": "2025-10-26"
+    },
+    {
+      "number": 4805,
+      "date": "2025-10-26"
+    }
+  ],
+  "generated_at": "2026-09-04T12:54:57.572252+00:00"
+}

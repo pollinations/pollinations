@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-03-24",
+  "period_start": "2026-03-24",
+  "period_end": "2026-03-24",
+  "generated_at": "2026-03-25T06:20:54.804814+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-24/images/twitter.jpg"
+    }
+  ],
+  "text": "we relieved the validation bot of its gatekeeping duties. all tiers can now submit apps to the showcase. also shipped a BYOP dashboard overhaul so you can actually track your app's usage, plus a few new telegram and education bots. 5 PRs merged."
+}

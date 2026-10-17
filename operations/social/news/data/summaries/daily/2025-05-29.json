@@ -1,0 +1,27 @@
+{
+  "date": "2025-05-29",
+  "period_start": "2025-05-29",
+  "period_end": "2025-05-29",
+  "title": "Queue access now recognizes Nectar users consistently",
+  "summary": "A small engine-room day: smoother queue access, saner cache behavior, and stage-aware GPT image routing.\n\nQueue handling was tightened so Nectar users can bypass the line regardless of how they authenticate. The queue now has fewer opinions about which login path brought you there.\n\nCloudflare cache keys now exclude authentication parameters, preventing auth details from creating needless cache variants and making cached image requests behave more consistently.\n\nThe GPT image integration now selects its endpoint based on deployment stage, giving the image stack a cleaner path through its different environments.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 2162,
+      "date": "2025-05-29"
+    },
+    {
+      "number": 2166,
+      "date": "2025-05-29"
+    },
+    {
+      "number": 2167,
+      "date": "2025-05-29"
+    },
+    {
+      "number": 2171,
+      "date": "2025-05-29"
+    }
+  ],
+  "generated_at": "2026-09-04T12:53:03.827752+00:00"
+}

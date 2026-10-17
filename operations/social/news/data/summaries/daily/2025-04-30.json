@@ -1,0 +1,43 @@
+{
+  "date": "2025-04-30",
+  "period_start": "2025-04-30",
+  "period_end": "2025-04-30",
+  "title": "More things built with pollinations found their way onto the project list",
+  "summary": "A community-directory day: more pollinations-powered projects, tidier model descriptions, and a few better signals about how people find things.\n\nNailsGen, imggen.top, and WebGeniusAI joined the showcase, while the broader project list got a cleanup and DesmondBot's link was brought up to date. The garden has more paths now.\n\nMistral's model copy was standardized, making the available text models a little easier to compare without translating between descriptions first.\n\nProject interactions can now carry an ad-clicked event parameter, and Draft Alpha was added to the affiliate system.",
+  "pr_count": 8,
+  "prs": [
+    {
+      "number": 1835,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1841,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1845,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1848,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1850,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1851,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1854,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1856,
+      "date": "2025-04-30"
+    }
+  ],
+  "generated_at": "2026-09-04T12:34:01.222502+00:00"
+}

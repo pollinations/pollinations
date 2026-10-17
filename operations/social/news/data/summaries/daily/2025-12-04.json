@@ -1,0 +1,111 @@
+{
+  "date": "2025-12-04",
+  "period_start": "2025-12-04",
+  "period_end": "2025-12-04",
+  "title": "The app garden added 13 new projects",
+  "summary": "A community-heavy day: 13 new apps in the directory, broader model coverage, sturdier media routes, and a cleaner contributor workflow.\n\nThe community directory picked up a substantial batch of things people built: creative tools including ViralFlow AI, SAGE, LineSketch AI, Thelas.ia, Ecoverse AI, Cinepoca, and a Gemini Telegram bot; chat projects including Debootai, HelpChatGPT, MindFlow, and SimplifyMind AI; plus Godville Heroic Moment, TeleChars AI, and more. The ecosystem continues to be a surprisingly effective index of what people do with a URL and insufficient sleep.\n\nBoth Seedream and Seedance model variants are now available, while fixes improved Bedrock token handling, audio-model detection, and image prompts containing newlines. Audio users also get clearer migration guidance as model support evolves.\n\nGitHub issue handling was tidied up: COMMUNITY became INBOX, app submissions are kept out of the general flow, external issues receive the correct inbox label, and submission templates point to the right place. Polly, an issue-creation helper bot, joined the maintenance crew.",
+  "pr_count": 25,
+  "prs": [
+    {
+      "number": 5566,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5604,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5605,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5613,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5616,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5622,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5625,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5627,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5629,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5631,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5637,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5639,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5641,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5642,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5644,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5648,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5652,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5654,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5656,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5661,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5665,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5666,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5668,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5670,
+      "date": "2025-12-04"
+    },
+    {
+      "number": 5671,
+      "date": "2025-12-04"
+    }
+  ],
+  "generated_at": "2026-09-04T12:24:06.004469+00:00"
+}

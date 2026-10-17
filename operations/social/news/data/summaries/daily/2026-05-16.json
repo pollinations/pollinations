@@ -1,0 +1,83 @@
+{
+  "date": "2026-05-16",
+  "period_start": "2026-05-16",
+  "period_end": "2026-05-16",
+  "title": "LTX-2 can now turn a starting image into video",
+  "summary": "LTX-2 learned image-to-video, API errors became readable, and four more community apps sprouted in the directory.\n\nLTX-2 gained image-to-video support: pass an image URL to the API and the gateway fetches it before handing a base64 copy to the ComfyUI backend. A still image now has somewhere to go.\n\nImage endpoints now return the actual URL-fetch status and upstream 400 error details instead of generic provider errors or empty JSON. Gemini responses from Vertex also preserve every returned text part, so outputs and refusals no longer begin halfway through their own sentence.\n\nThe community showcase added Navaro for AI trip itineraries, MoodCanvas AI for concept-driven mood boards, KelasWeb for AI-guided web development learning, and TubeBoost AI for translating YouTube metadata.",
+  "pr_count": 18,
+  "prs": [
+    {
+      "number": 10971,
+      "date": "2026-05-16"
+    },
+    {
+      "number": 10992,
+      "date": "2026-05-16"
+    },
+    {
+      "number": 10995,
+      "date": "2026-05-16"
+    },
+    {
+      "number": 10997,
+      "date": "2026-05-16"
+    },
+    {
+      "number": 10998,
+      "date": "2026-05-16"
+    },
+    {
+      "number": 10999,
+      "date": "2026-05-16"
+    },
+    {
+      "number": 11001,
+      "date": "2026-05-16"
+    },
+    {
+      "number": 11004,
+      "date": "2026-05-16"
+    },
+    {
+      "number": 11005,
+      "date": "2026-05-16"
+    },
+    {
+      "number": 11006,
+      "date": "2026-05-16"
+    },
+    {
+      "number": 11007,
+      "date": "2026-05-16"
+    },
+    {
+      "number": 11011,
+      "date": "2026-05-16"
+    },
+    {
+      "number": 11012,
+      "date": "2026-05-16"
+    },
+    {
+      "number": 11015,
+      "date": "2026-05-16"
+    },
+    {
+      "number": 11019,
+      "date": "2026-05-16"
+    },
+    {
+      "number": 11020,
+      "date": "2026-05-16"
+    },
+    {
+      "number": 11021,
+      "date": "2026-05-16"
+    },
+    {
+      "number": 11023,
+      "date": "2026-05-16"
+    }
+  ],
+  "generated_at": "2026-09-04T11:49:59.032575+00:00"
+}

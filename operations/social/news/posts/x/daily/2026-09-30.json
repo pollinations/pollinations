@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-30",
+  "period_start": "2026-09-30",
+  "period_end": "2026-09-30",
+  "generated_at": "2026-10-01T06:32:47.090824+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-30/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped a rebuilt Apps page: filter projects, sort by weekly usage, and keep your place after searching. SDKs now accept speech inputs and audioTransform uploads; Polli CLI gets a separate staging login. 28 PRs; the docs redirect works now too."
+}

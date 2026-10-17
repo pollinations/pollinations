@@ -1,0 +1,59 @@
+{
+  "date": "2025-11-06",
+  "period_start": "2025-11-06",
+  "period_end": "2025-11-06",
+  "title": "Text API gets a quieter default",
+  "summary": "A garden-maintenance day: quieter text generation, clearer Pollen usage plumbing, contributor credit, and freshly aligned infrastructure.\n\nAds are now disabled by default on text.pollinations.ai, making the text endpoint a little more like infrastructure and a little less like a billboard.\n\nThe first pollen-based rate limiter for frontend keys landed with its staging migration, while balance accounting was split between tier and pack and the frontend learned the new meter IDs. The result is a clearer foundation for tracking and managing app usage.\n\nDiscord PR notifications now identify both the person who opened a pull request and the person who merged it, with follow-up patches making sure usernames arrive intact. The Hacktoberfest report also made it into the README.",
+  "pr_count": 12,
+  "prs": [
+    {
+      "number": 5001,
+      "date": "2025-11-06"
+    },
+    {
+      "number": 5045,
+      "date": "2025-11-06"
+    },
+    {
+      "number": 5055,
+      "date": "2025-11-06"
+    },
+    {
+      "number": 5057,
+      "date": "2025-11-06"
+    },
+    {
+      "number": 5065,
+      "date": "2025-11-06"
+    },
+    {
+      "number": 5067,
+      "date": "2025-11-06"
+    },
+    {
+      "number": 5075,
+      "date": "2025-11-06"
+    },
+    {
+      "number": 5076,
+      "date": "2025-11-06"
+    },
+    {
+      "number": 5077,
+      "date": "2025-11-06"
+    },
+    {
+      "number": 5078,
+      "date": "2025-11-06"
+    },
+    {
+      "number": 5079,
+      "date": "2025-11-06"
+    },
+    {
+      "number": 5080,
+      "date": "2025-11-06"
+    }
+  ],
+  "generated_at": "2026-09-04T12:06:06.978631+00:00"
+}

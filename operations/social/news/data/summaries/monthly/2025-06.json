@@ -1,0 +1,303 @@
+{
+  "date": "2025-06-30",
+  "period_start": "2025-06-01",
+  "period_end": "2025-06-30",
+  "title": "The community project garden grew",
+  "summary": "June made Pollinations easier to discover and more capable to build with, expanding the community project garden while sharpening image and text infrastructure.\n\nThe directory gained a broad crop of community-built tools, games, bots, creative experiments, and Vibe Coding projects, with clearer documentation and listings that make the ecosystem easier to explore.\n\nDeepSeek R1-0528, ElixpoSearch, o3, and gpt-4o-mini-search-preview expanded the text lineup; o3 gained image input, while cleaner availability data and tier metadata made the growing catalog easier for apps to navigate.\n\nGPT Image gained transparent-background output for assets that can go straight into compositions, alongside better repeat-request caching, safer image handling, overlay branding, and an early semantic cache experiment.\n\nDefault text traffic moved to openai-fast, streaming and routing were cleaned up, account-specific model mapping laid groundwork for personalized choices, and performance tracking made the text stack easier to inspect in the wild.",
+  "pr_count": 73,
+  "prs": [
+    {
+      "number": 2208,
+      "date": "2025-06-01"
+    },
+    {
+      "number": 2213,
+      "date": "2025-06-01"
+    },
+    {
+      "number": 2216,
+      "date": "2025-06-01"
+    },
+    {
+      "number": 2217,
+      "date": "2025-06-01"
+    },
+    {
+      "number": 2219,
+      "date": "2025-06-01"
+    },
+    {
+      "number": 2240,
+      "date": "2025-06-02"
+    },
+    {
+      "number": 2242,
+      "date": "2025-06-02"
+    },
+    {
+      "number": 2244,
+      "date": "2025-06-02"
+    },
+    {
+      "number": 2245,
+      "date": "2025-06-02"
+    },
+    {
+      "number": 2176,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2223,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2246,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2247,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2248,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2252,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2253,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2261,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2262,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2265,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2266,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2269,
+      "date": "2025-06-03"
+    },
+    {
+      "number": 2272,
+      "date": "2025-06-04"
+    },
+    {
+      "number": 2282,
+      "date": "2025-06-05"
+    },
+    {
+      "number": 2283,
+      "date": "2025-06-05"
+    },
+    {
+      "number": 2296,
+      "date": "2025-06-05"
+    },
+    {
+      "number": 2320,
+      "date": "2025-06-05"
+    },
+    {
+      "number": 2319,
+      "date": "2025-06-06"
+    },
+    {
+      "number": 2323,
+      "date": "2025-06-06"
+    },
+    {
+      "number": 2325,
+      "date": "2025-06-06"
+    },
+    {
+      "number": 2328,
+      "date": "2025-06-06"
+    },
+    {
+      "number": 2341,
+      "date": "2025-06-06"
+    },
+    {
+      "number": 2346,
+      "date": "2025-06-06"
+    },
+    {
+      "number": 2285,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2347,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2349,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2350,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2351,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2352,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2353,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2354,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2355,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2359,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2360,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2361,
+      "date": "2025-06-07"
+    },
+    {
+      "number": 2381,
+      "date": "2025-06-09"
+    },
+    {
+      "number": 2393,
+      "date": "2025-06-12"
+    },
+    {
+      "number": 2415,
+      "date": "2025-06-12"
+    },
+    {
+      "number": 2417,
+      "date": "2025-06-12"
+    },
+    {
+      "number": 2421,
+      "date": "2025-06-12"
+    },
+    {
+      "number": 2433,
+      "date": "2025-06-12"
+    },
+    {
+      "number": 2449,
+      "date": "2025-06-13"
+    },
+    {
+      "number": 2451,
+      "date": "2025-06-13"
+    },
+    {
+      "number": 2452,
+      "date": "2025-06-13"
+    },
+    {
+      "number": 2453,
+      "date": "2025-06-13"
+    },
+    {
+      "number": 2425,
+      "date": "2025-06-15"
+    },
+    {
+      "number": 2501,
+      "date": "2025-06-15"
+    },
+    {
+      "number": 2502,
+      "date": "2025-06-16"
+    },
+    {
+      "number": 2512,
+      "date": "2025-06-16"
+    },
+    {
+      "number": 2517,
+      "date": "2025-06-18"
+    },
+    {
+      "number": 2544,
+      "date": "2025-06-18"
+    },
+    {
+      "number": 2560,
+      "date": "2025-06-22"
+    },
+    {
+      "number": 2600,
+      "date": "2025-06-24"
+    },
+    {
+      "number": 2605,
+      "date": "2025-06-24"
+    },
+    {
+      "number": 2613,
+      "date": "2025-06-24"
+    },
+    {
+      "number": 2615,
+      "date": "2025-06-24"
+    },
+    {
+      "number": 2619,
+      "date": "2025-06-24"
+    },
+    {
+      "number": 2622,
+      "date": "2025-06-24"
+    },
+    {
+      "number": 2630,
+      "date": "2025-06-24"
+    },
+    {
+      "number": 2638,
+      "date": "2025-06-25"
+    },
+    {
+      "number": 2680,
+      "date": "2025-06-28"
+    },
+    {
+      "number": 2681,
+      "date": "2025-06-28"
+    },
+    {
+      "number": 2684,
+      "date": "2025-06-28"
+    },
+    {
+      "number": 2699,
+      "date": "2025-06-30"
+    }
+  ],
+  "generated_at": "2026-09-04T15:24:21.102735+00:00"
+}

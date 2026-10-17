@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-11",
+  "period_start": "2026-09-11",
+  "period_end": "2026-09-11",
+  "generated_at": "2026-09-12T06:26:29.349394+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-11/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: managed code agents can go straight from GitHub to a running agent; chat now exposes the knobs each model supports. Plus Pollen top-up links, clearer catalog signals, Visual Studio, and 3 new community agents. 11 PRs. Garden maintenance, apparently."
+}

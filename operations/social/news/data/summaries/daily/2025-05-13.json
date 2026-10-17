@@ -1,0 +1,31 @@
+{
+  "date": "2025-05-13",
+  "period_start": "2025-05-13",
+  "period_end": "2025-05-13",
+  "title": "Vibe Coding gets its own corner of the project garden",
+  "summary": "A community-directory day: more Vibe Coding projects, two new app listings, and ads that can finally bring their own pixels.\n\nThe project directory now has a dedicated Vibe Coding category, a cleaner organization, and more examples of people building things with AI. Browsing what the community has made should require slightly less archaeological work.\n\nMoneyPrinterTurbo and Imagemate AI were added to the project list, giving builders two more concrete examples of Pollinations-powered work in the wild.\n\nAd placements marked with p-ads can now use generated imagery, with improved contextualization to make the result fit the surrounding page rather than arrive as a small unrelated billboard.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 1966,
+      "date": "2025-05-13"
+    },
+    {
+      "number": 1968,
+      "date": "2025-05-13"
+    },
+    {
+      "number": 1970,
+      "date": "2025-05-13"
+    },
+    {
+      "number": 1973,
+      "date": "2025-05-13"
+    },
+    {
+      "number": 1974,
+      "date": "2025-05-13"
+    }
+  ],
+  "generated_at": "2026-09-04T12:41:43.052008+00:00"
+}

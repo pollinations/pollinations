@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-06-29",
+  "period_start": "2026-06-29",
+  "period_end": "2026-06-29",
+  "generated_at": "2026-06-30T07:14:06.870568+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-29/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped community text endpoints today. you can now bring your own models. also taught nanobanana to stop clobbering your reference images, and made the tinybird syncs atomic. code is open."
+}

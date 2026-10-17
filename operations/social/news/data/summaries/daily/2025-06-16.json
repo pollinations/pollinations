@@ -1,0 +1,19 @@
+{
+  "date": "2025-06-16",
+  "period_start": "2025-06-16",
+  "period_end": "2025-06-16",
+  "title": "Model availability gets a cleaner public shape",
+  "summary": "A small garden day: cleaner model discovery and another community image project on the map.\n\nThe models list endpoint was tidied up to focus on available model data, with Pollen-native language replacing dollar-centric references where applicable.\n\nCelebrity AI Image Generator was added to the community project list, making one more built-with-pollinations experiment easier to find.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 2502,
+      "date": "2025-06-16"
+    },
+    {
+      "number": 2512,
+      "date": "2025-06-16"
+    }
+  ],
+  "generated_at": "2026-09-04T13:02:15.583548+00:00"
+}

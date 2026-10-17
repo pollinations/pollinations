@@ -1,0 +1,15 @@
+{
+  "date": "2025-10-06",
+  "period_start": "2025-10-06",
+  "period_end": "2025-10-06",
+  "title": "Issue-making workflow brought up to date",
+  "summary": "A small bit of documentation gardening: issue-making guidance now matches how the project actually works.\n\nThe contributor guidelines for creating issues now reflect the current workflow, making it easier to turn useful observations into actionable work without consulting archaeological documentation.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 4383,
+      "date": "2025-10-06"
+    }
+  ],
+  "generated_at": "2026-09-04T12:42:55.108074+00:00"
+}

@@ -1,0 +1,71 @@
+{
+  "date": "2025-11-10",
+  "period_start": "2025-11-10",
+  "period_end": "2025-11-10",
+  "title": "Two new fast paths for text generation",
+  "summary": "A garden-maintenance day: more text models, sturdier image requests, and a much tidier path through Enter.\n\nClaude Sonnet 4.5 is now available as claude-large, and Grok 4 Fast joined the model roster. DeepSeek V3.1 also moved to its OpenAI-compatible endpoint, because model APIs apparently enjoy changing shape.\n\nImage requests now retry after service-side 500s, Seedream can fetch and convert reference images correctly, and enter.pollinations.ai received image caching. Fewer mysterious failures; less waiting for pixels.\n\nAuthentication is being consolidated under enter.pollinations.ai, registry changes now trigger Enter deployments, and auth-tier synchronization got its own script. Kontext requests are also routed through Enter, keeping the account and model-access path in one place.",
+  "pr_count": 15,
+  "prs": [
+    {
+      "number": 5103,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5123,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5126,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5127,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5128,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5129,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5130,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5131,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5136,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5141,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5143,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5145,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5146,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5147,
+      "date": "2025-11-10"
+    },
+    {
+      "number": 5148,
+      "date": "2025-11-10"
+    }
+  ],
+  "generated_at": "2026-09-04T12:09:58.205414+00:00"
+}

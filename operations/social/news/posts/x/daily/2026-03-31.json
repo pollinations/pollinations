@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-03-31",
+  "period_start": "2026-03-31",
+  "period_end": "2026-03-31",
+  "generated_at": "2026-04-01T06:32:18.354401+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-31/images/twitter.jpg"
+    }
+  ],
+  "text": "merged 9 PRs today. shipped a CatGPT discord bot, fixed the sirius elevator's responsive backgrounds (now itch.io compatible), and added 6 new community projects to the greenhouse, including an AI RPG engine. the ecosystem grows."
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-09-20",
+  "period_start": "2026-09-13",
+  "period_end": "2026-09-19",
+  "generated_at": "2026-09-20T06:28:27.583723+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-20/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol.109 — agents, gardens, and fewer mysterious 502s\n\n109 PRs merged. The bees were, apparently, busy.\n\n───\n→ AGENTS, NOW WITH MEMORY\nCollective memory, caller-authored GitHub commits, usage Quests, partial-update retention, and declared input/output modalities landed. Polli also has a Gen brain override. Configurable thoughts: a normal software feature.\n\n→ MODEL HEALTH, VISIBLE\nCatalogs filter by source and reliability; route health is exposed, healthy models lead the dashboard, and /v1/models includes health by default. GPT Image 2.5 now routes through Azure with OpenAI fallback. Scout, Z-Image, Gemini Fast, and others got redundancy repairs.\n\n→ FEWER MYSTERIES\nCLI usage filters by key, model, and date. Inline media and copyable code blocks arrived. Stream errors now retain their real status and message instead of becoming an abstract 502.\n\n→ GARDEN EXPANDED\nElevenLabs Music v2.5, new models, and catalog additions including SQLCraft, TestMine, ApiScribe, Codeverter, and Regexly.\n\nhttps://github.com/pollinations/pollinations\n\nCode, roadmap, and conversations are public. Contributions welcome.\n\n#OpenSource #AI #DevTools #MCP #BuildInPublic"
+}

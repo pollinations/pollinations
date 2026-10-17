@@ -1,0 +1,15 @@
+{
+  "date": "2025-05-01",
+  "period_start": "2025-05-01",
+  "period_end": "2025-05-01",
+  "title": "Model access and API guardrails refreshed",
+  "summary": "A small round of configuration gardening: models, limits, and request guardrails got a refresh.\n\nThe platform's model configuration, usage limits, affiliate handling, and bad-domain logic were updated together—small maintenance work that keeps requests landing in the right place.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 1861,
+      "date": "2025-05-01"
+    }
+  ],
+  "generated_at": "2026-09-04T12:34:35.945340+00:00"
+}

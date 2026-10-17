@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-02-22",
+  "period_start": "2026-02-15",
+  "period_end": "2026-02-21",
+  "generated_at": "2026-02-22T06:21:53.563202+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-22/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-22/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-22/images/instagram-3.jpg"
+    }
+  ],
+  "text": "48 PRs merged this week. The garden is growing.\n\nWe renovated the App Showcase (it actually looks good now), taught Polly to speak OpenAI, and deployed a self-healing agent to fix our own messy code. Also moved our NPM packages to a proper home and added a visual Build Diary because text logs are boring.\n\nNew community apps include SlidePainter and... BrainrotMaker. You're welcome.\n\nCode is open. Go build something.\n\n#pollinations #opensource #generativeai #pixelart #weeklyupdate #indiedev #buildinpublic #creativecoding\n\n#pollinations #opensource #generativeai #pixelart #weeklyupdate #indiedev #buildinpublic #creativecoding",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

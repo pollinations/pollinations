@@ -1,0 +1,211 @@
+{
+  "date": "2026-07-05",
+  "period_start": "2026-06-28",
+  "period_end": "2026-07-04",
+  "title": "Community Models Alpha is live",
+  "summary": "We shipped 3D generation, opened the gates for community-hosted models, and wired up OAuth 2.1.\n\nYou can now plug your own models into our infrastructure and charge for them. We shipped the Community Models Alpha, complete with a `/account/my-models` API, CLI tools, and auto-deactivation for unstable endpoints. The first batch of community creators has been allowlisted and is already serving traffic.\n\nPixels are great, but sometimes you need depth. We added a `/3d/{prompt}` endpoint powered by Trellis 2 and Rodin 2.5 for instant GLB generation. On the 2D front, we added Claude Sonnet 5, restored Claude Fable 5, and introduced a half-price Nano Banana 2 Lite model.\n\nWe shipped OAuth 2.1 with PKCE, meaning you can now build apps with secure, delegated API access without passing raw keys around. We also routed Flux to a self-hosted Vast.ai RTX 5090 pool, dropping median generation times to 2.25s, and added a real-time `/v1/models/status` endpoint.\n\nThe 'App listed on Pollinations' quest is now live and claimable. We added CLI commands (`polli quests mine`) to track your earned Pollen, and wired up declarative billing adjustments so Perplexity search fees and Gemini grounding costs are transparently itemized.",
+  "pr_count": 50,
+  "prs": [
+    {
+      "number": 12063,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12064,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12065,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12068,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12069,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12071,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12072,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12073,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12074,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12075,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12077,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12078,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12079,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12080,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12083,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12085,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 12088,
+      "date": "2026-06-28"
+    },
+    {
+      "number": 11567,
+      "date": "2026-06-29"
+    },
+    {
+      "number": 12103,
+      "date": "2026-06-29"
+    },
+    {
+      "number": 12104,
+      "date": "2026-06-29"
+    },
+    {
+      "number": 12107,
+      "date": "2026-06-30"
+    },
+    {
+      "number": 12113,
+      "date": "2026-06-30"
+    },
+    {
+      "number": 12127,
+      "date": "2026-06-30"
+    },
+    {
+      "number": 12132,
+      "date": "2026-06-30"
+    },
+    {
+      "number": 12133,
+      "date": "2026-06-30"
+    },
+    {
+      "number": 12060,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12061,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12092,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12143,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12150,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12151,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12154,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12155,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12156,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12161,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12162,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12164,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12048,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12159,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12165,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12171,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12177,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12178,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12180,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12188,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12192,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 11956,
+      "date": "2026-07-03"
+    },
+    {
+      "number": 12070,
+      "date": "2026-07-03"
+    },
+    {
+      "number": 12210,
+      "date": "2026-07-03"
+    },
+    {
+      "number": 12222,
+      "date": "2026-07-04"
+    }
+  ],
+  "generated_at": "2026-07-05T07:04:10.038266+00:00"
+}

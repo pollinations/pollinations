@@ -1,0 +1,47 @@
+{
+  "date": "2026-01-10",
+  "period_start": "2026-01-10",
+  "period_end": "2026-01-10",
+  "title": "Model calls got more forgiving",
+  "summary": "A maintenance-minded day: more reliable model requests, a cleaner SDK, and a repository that is slightly less haunted by old folders.\n\nModel names are now sanitized and aliased before reaching gen.pollinations.ai, preventing avoidable 4xx responses. The Portkey gateway also picked up Gemini's negative-token fix, while model statistics now come from one cache instead of competing sources.\n\nThe SDK moved into a clearer packages/ layout and retired deprecated features, making the codebase easier to navigate and maintain without carrying historical luggage forever.\n\nAssets and tools were reorganized, and the news and Reddit workflow moved into a dedicated social/ folder. Dead ad-system code was also removed, because software does not improve when its fossils are carefully preserved.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 6993,
+      "date": "2026-01-10"
+    },
+    {
+      "number": 6996,
+      "date": "2026-01-10"
+    },
+    {
+      "number": 6998,
+      "date": "2026-01-10"
+    },
+    {
+      "number": 7002,
+      "date": "2026-01-10"
+    },
+    {
+      "number": 7005,
+      "date": "2026-01-10"
+    },
+    {
+      "number": 7009,
+      "date": "2026-01-10"
+    },
+    {
+      "number": 7010,
+      "date": "2026-01-10"
+    },
+    {
+      "number": 7016,
+      "date": "2026-01-10"
+    },
+    {
+      "number": 7020,
+      "date": "2026-01-10"
+    }
+  ],
+  "generated_at": "2026-09-04T11:30:56.733870+00:00"
+}

@@ -1,0 +1,20 @@
+{
+  "month": "2024-11",
+  "merged_prs": 24,
+  "contributors": [
+    {
+      "id": 5099901,
+      "login": "voodoohop",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5099901?s=80&v=4",
+      "url": "https://github.com/voodoohop",
+      "prs": 23
+    },
+    {
+      "id": 2303210,
+      "login": "Tolerable",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2303210?s=80&u=b4015861c2dc5982bf278fd4ea5a0333a2e2fa32&v=4",
+      "url": "https://github.com/Tolerable",
+      "prs": 1
+    }
+  ]
+}

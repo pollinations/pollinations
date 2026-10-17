@@ -1,0 +1,19 @@
+{
+  "date": "2025-06-15",
+  "period_start": "2025-06-15",
+  "period_end": "2025-06-15",
+  "title": "Image overlays get their proper mark",
+  "summary": "A small tuning day: clearer image attribution and better visibility into LLM performance.\n\nThe shared pollinations logo is now available for image overlays, giving generated visuals a consistent project signature.\n\nTinybird tracking was added for LLM performance, making it easier to observe how the text stack behaves once it meets actual humans.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 2425,
+      "date": "2025-06-15"
+    },
+    {
+      "number": 2501,
+      "date": "2025-06-15"
+    }
+  ],
+  "generated_at": "2026-09-04T13:01:39.757087+00:00"
+}

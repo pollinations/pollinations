@@ -1,0 +1,19 @@
+{
+  "date": "2025-02-03",
+  "period_start": "2025-02-03",
+  "period_end": "2025-02-03",
+  "title": "The showcase gets a new descent",
+  "summary": "A small garden day: one new project in the showcase, and some unnecessary space-lab scenery shown the airlock.\n\nAbyss Ascending joined the project showcase, giving another community-built experiment a place in the garden.\n\nHybrid space lab background images were removed, simplifying the visual layer where they appeared.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 1136,
+      "date": "2025-02-03"
+    },
+    {
+      "number": 1138,
+      "date": "2025-02-03"
+    }
+  ],
+  "generated_at": "2026-09-04T13:33:49.163019+00:00"
+}

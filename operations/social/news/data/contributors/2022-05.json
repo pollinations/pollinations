@@ -1,0 +1,27 @@
+{
+  "month": "2022-05",
+  "merged_prs": 17,
+  "contributors": [
+    {
+      "id": 5099901,
+      "login": "voodoohop",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5099901?s=80&v=4",
+      "url": "https://github.com/voodoohop",
+      "prs": 11
+    },
+    {
+      "id": 85608868,
+      "login": "ale-rls",
+      "avatar_url": "https://avatars.githubusercontent.com/u/85608868?s=80&u=ae941ccc2bba897c1bb005b9d8bb819785d35a60&v=4",
+      "url": "https://github.com/ale-rls",
+      "prs": 9
+    },
+    {
+      "id": 9352422,
+      "login": "alexreiling",
+      "avatar_url": "https://avatars.githubusercontent.com/u/9352422?s=80&u=bac50e08f59b5a3eda5b20547e9877ffcfb63b67&v=4",
+      "url": "https://github.com/alexreiling",
+      "prs": 1
+    }
+  ]
+}

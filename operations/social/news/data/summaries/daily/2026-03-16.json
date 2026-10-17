@@ -1,0 +1,44 @@
+{
+  "date": "2026-03-16",
+  "period_start": "2026-03-16",
+  "period_end": "2026-03-16",
+  "title": "shipped some infrastructure today",
+  "summary": "- spores & seeds now get hourly pollen drips via cloudflare cron\n- fixed nanobanana generation (vertex ai had invalid image sizes)\n- bumped tinybird limits so the models page stopped jumping around",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 9145,
+      "date": "2026-03-16"
+    },
+    {
+      "number": 9160,
+      "date": "2026-03-16"
+    },
+    {
+      "number": 9178,
+      "date": "2026-03-16"
+    },
+    {
+      "number": 9182,
+      "date": "2026-03-16"
+    }
+  ],
+  "generated_at": "2026-03-17T06:24:31.300128+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "Hourly Pollen Refills",
+      "text": "Spore and Seed tier balances now regenerate every hour. Your free tier credits grow back naturally while you figure out why your code isn't working."
+    },
+    {
+      "emoji": "📱",
+      "title": "Full Model Roster",
+      "text": "The [models table](https://hello.pollinations.ai) now correctly fetches stats for all 200+ available models instead of giving up at 50. We also cleaned up the UI so you can easily spot new and alpha models."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Nanobanana Image Sizes",
+      "text": "Requesting smaller images from nanobanana models now returns actual pixels instead of Vertex AI errors."
+    }
+  ]
+}

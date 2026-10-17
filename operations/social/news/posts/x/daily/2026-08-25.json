@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-08-25",
+  "period_start": "2026-08-25",
+  "period_end": "2026-08-25",
+  "generated_at": "2026-08-26T06:16:48.530054+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-25/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: Wan 3.0 video via Fal Prime, frame limits from the registry, and hosted FFmpeg MCP. SDK + CLI now expose earnings and quests. Models now advertise tool calling and support GET /v1/models/:model. 19 PRs; the garden acquired plumbing."
+}

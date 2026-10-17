@@ -1,0 +1,15 @@
+{
+  "date": "2025-09-18",
+  "period_start": "2025-09-18",
+  "period_end": "2025-09-18",
+  "title": "Prompt2Image joins the creative project shelf",
+  "summary": "A small garden update: Prompt2Image for VS Code is now easier for creative coders to discover.\n\nThe Prompt2Image VS Code extension is now listed among Pollinations creative projects, making one more way to turn prompts into pixels easier to find.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 4087,
+      "date": "2025-09-18"
+    }
+  ],
+  "generated_at": "2026-09-04T12:32:41.154108+00:00"
+}

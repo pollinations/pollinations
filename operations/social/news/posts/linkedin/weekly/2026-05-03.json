@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-05-03",
+  "period_start": "2026-04-26",
+  "period_end": "2026-05-02",
+  "generated_at": "2026-05-03T06:49:51.643514+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-03/images/linkedin.jpg"
+    }
+  ],
+  "text": "41 PRs merged this week. We moved the generation gateway, added GPT-5.5, and decided 400 is the correct response for a bad image URL, not 500.\n\n·˚✿ POLLINATIONS WEEKLY ✿˚·\n\n→ ROUTING & INFRASTRUCTURE\nWe moved the generation gateway to gen.pollinations.ai and shifted text and image generation into the gen worker. 308 redirects are in place so your existing HTTP calls won't notice the renovation.\n\n→ NEW MODELS\n1. GPT-5.5 is live via Azure Sweden\n2. Llama 3.3 70b added via Fireworks\n3. AssemblyAI integrated for speech-to-text\n4. Image-to-image (reference images) enabled for Grok Imagine and Grok Imagine Pro\n\n→ STABILITY & BYOP\nWe dropped the Azure round-robin for gpt-image-2 and went direct to OpenAI. Turns out straight lines are faster. We also fixed an issue where empty Scribe transcriptions triggered a panic, and added a per-key redirect allowlist for BYOP configurations.\n\n→ SHOWCASE\nFour new community apps added to the directory: StoryForge, Frieze, YSOAI, and LAHgen.\n\nEverything runs through simple HTTP calls. Repo is open.\n\n#OpenSource #AI #DevTools #APIs"
+}

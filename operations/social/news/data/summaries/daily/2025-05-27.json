@@ -1,0 +1,47 @@
+{
+  "date": "2025-05-27",
+  "period_start": "2025-05-27",
+  "period_end": "2025-05-27",
+  "title": "Image editing can now work from more than one reference",
+  "summary": "A practical image day: multi-reference edits landed while auth, caching, queues, and request metadata got less surprising.\n\nImage requests now accept multiple URLs as a comma-separated list, and Azure GPT Image edit mode can use multiple reference images. More source material, fewer awkward one-image compromises.\n\nThe Cloudflare cache worker gained request-body caching utilities and dashboard improvements, while authentication handling was tightened across cached requests and GPT Image token access. Image-service requests are now consistently routed through the queue, with queue behavior cleaned up along the way.\n\nReferrer extraction now gives explicit query and body parameters priority over headers, making request metadata more predictable. DreamHer also joined the community project list.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 2126,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2127,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2128,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2129,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2131,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2138,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2140,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2143,
+      "date": "2025-05-27"
+    },
+    {
+      "number": 2144,
+      "date": "2025-05-27"
+    }
+  ],
+  "generated_at": "2026-09-04T12:51:43.283374+00:00"
+}

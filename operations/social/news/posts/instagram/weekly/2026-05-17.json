@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-05-17",
+  "period_start": "2026-05-10",
+  "period_end": "2026-05-16",
+  "generated_at": "2026-05-17T06:55:42.330783+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-17/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-17/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-17/images/instagram-3.jpg"
+    }
+  ],
+  "text": "60 PRs merged this week. The infrastructure continues to grow.\n\nWe automated the community quest payouts so you get your pollen faster. The dev dashboard got a unified design, and we stopped blaming ourselves for your bad inputs (upstream user errors are now 4xx instead of 500, finally).\n\nAlso played musical chairs with the models—DeepSeek, Mistral, and Qwen have new routing. Oh, and 20+ new community apps sprouted in the showcase this week alone. \n\nCode is open. Build something weird: pollinations.ai\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #developerupdate #retroaesthetic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

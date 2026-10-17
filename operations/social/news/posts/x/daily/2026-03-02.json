@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-03-02",
+  "period_start": "2026-03-02",
+  "period_end": "2026-03-02",
+  "generated_at": "2026-03-18T22:02:15.687943+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-02/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 17 prs today. fixed vision models confidently returning [object Object] instead of seeing the image. removed default system prompts so general models can just be themselves. plus 11 new community apps in the showcase."
+}

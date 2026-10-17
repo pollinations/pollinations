@@ -1,0 +1,34 @@
+{
+  "month": "2025-01",
+  "merged_prs": 61,
+  "contributors": [
+    {
+      "id": 5099901,
+      "login": "voodoohop",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5099901?s=80&v=4",
+      "url": "https://github.com/voodoohop",
+      "prs": 30
+    },
+    {
+      "id": 160964065,
+      "login": "mentatbot[bot]",
+      "avatar_url": "https://avatars.githubusercontent.com/in/837875?s=80&v=4",
+      "url": "https://github.com/apps/mentatbot",
+      "prs": 26
+    },
+    {
+      "id": 36901823,
+      "login": "ElliotEtag",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36901823?s=80&u=e05f74107a59dc476c73a6757ba999582c3ae952&v=4",
+      "url": "https://github.com/ElliotEtag",
+      "prs": 4
+    },
+    {
+      "id": 36754621,
+      "login": "hackall360",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36754621?s=80&v=4",
+      "url": "https://github.com/hackall360",
+      "prs": 1
+    }
+  ]
+}

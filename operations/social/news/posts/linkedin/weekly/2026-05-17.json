@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-05-17",
+  "period_start": "2026-05-10",
+  "period_end": "2026-05-16",
+  "generated_at": "2026-05-17T06:55:42.330783+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-05-17/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol.42 — honest errors, dev earnings, and automated payouts.\n\n60 PRs merged this week.\n\n→ HONEST ERRORS\nwe finally stopped blaming our servers for your bad requests. upstream user-input errors are now properly classified as 4xx instead of a panic 500. we also surface actual fetch errors when your image URL fails, rather than just returning a helpful empty bracket.\n\n→ THE DASHBOARD\nshipped a developer earnings dashboard so you can track what your apps are generating. we also added auto top-up because manual billing is a solved problem we were ignoring.\n\n→ AUTOMATED BOUNTIES\nadded community quest workflows. quest payouts now run automatically based on github IDs. you merge code, you get paid. no humans required.\n\n→ MODEL MUSICAL CHAIRS\nadded gpt-5.4-mini and elevenlabs flash v2.5. routed deepseek-v4-flash and qwen-vision via openrouter. added tooltips to the models list so you actually know what endpoint you are hitting.\n\n→ GREENHOUSE EXPLOSION\n24 new community apps merged into the ecosystem this week.\n\nrepo is public. docs at pollinations.ai\n\n#OpenSource #AI #DevTools #BuildInPublic"
+}

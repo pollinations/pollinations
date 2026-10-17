@@ -1,0 +1,15 @@
+{
+  "date": "2026-06-20",
+  "period_start": "2026-06-20",
+  "period_end": "2026-06-20",
+  "title": "App metrics brought up to date",
+  "summary": "A quiet bit of garden maintenance: the app metrics are current again.\n\nThe public app metrics received their daily refresh, keeping the project’s shared view of the ecosystem current.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 11927,
+      "date": "2026-06-20"
+    }
+  ],
+  "generated_at": "2026-09-04T11:55:56.058336+00:00"
+}

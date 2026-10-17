@@ -1,0 +1,327 @@
+{
+  "date": "2026-03-08",
+  "period_start": "2026-03-01",
+  "period_end": "2026-03-07",
+  "title": "→ THE MODEL ROSTER EXPANDS\nWe wired up suno-v5, step-3.5-flash, and flux-2-dev via api.airforce",
+  "summary": "We also added image input support for flux-2-dev and put in a fix to snap its dimensions to supported sizes. Turns out sending arbitrary pixel dimensions to an API that expects very specific boxes ends exactly how you'd expect. → SDK & INFRASTRUCTURE\nThe NPM package (@pollinations_ai/sdk) just got a major update with STT (Speech-to-Text), Media Upload, and Account Endpoints. On the backend, we normalized the finish_reason output to match the OpenAI format because everyone expects that schema now. We also added abuse detection crons, started banning deleted GitHub accounts, and tweaked the media service to add Content-Disposition headers. → THE COMMUNITY APP AVALANCHE\nOver 15 new apps hit the showcase this week, including Pollinations CLI, PromptLab Studio, and an AI Image Gallery. To handle the volume, we added a step to approve apps before PR creation so the repo doesn't turn into the wild west",
+  "pr_count": 79,
+  "prs": [
+    {
+      "number": 8100,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8157,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8194,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8219,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8286,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8319,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8322,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8349,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8414,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8448,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8522,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8558,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8587,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8632,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8646,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8664,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8666,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8686,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8702,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8710,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8720,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 7501,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 7577,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 7643,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 7745,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 7757,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8028,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8450,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8504,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8536,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8621,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8638,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8643,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8660,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8669,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8672,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8729,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8733,
+      "date": "2026-03-02"
+    },
+    {
+      "number": 8774,
+      "date": "2026-03-03"
+    },
+    {
+      "number": 8775,
+      "date": "2026-03-03"
+    },
+    {
+      "number": 8787,
+      "date": "2026-03-03"
+    },
+    {
+      "number": 8564,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8760,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8769,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8781,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8800,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8802,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8803,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8808,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8819,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8824,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8827,
+      "date": "2026-03-04"
+    },
+    {
+      "number": 8491,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8531,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8545,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8548,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8573,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8591,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8616,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8631,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8642,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8714,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8753,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8762,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8771,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8785,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8793,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8859,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8865,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8869,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8856,
+      "date": "2026-03-06"
+    },
+    {
+      "number": 8871,
+      "date": "2026-03-06"
+    },
+    {
+      "number": 8886,
+      "date": "2026-03-06"
+    },
+    {
+      "number": 8908,
+      "date": "2026-03-07"
+    },
+    {
+      "number": 8909,
+      "date": "2026-03-07"
+    },
+    {
+      "number": 8918,
+      "date": "2026-03-07"
+    },
+    {
+      "number": 8921,
+      "date": "2026-03-07"
+    },
+    {
+      "number": 8923,
+      "date": "2026-03-07"
+    },
+    {
+      "number": 8928,
+      "date": "2026-03-07"
+    }
+  ],
+  "generated_at": "2026-03-08T06:19:52.781661+00:00"
+}

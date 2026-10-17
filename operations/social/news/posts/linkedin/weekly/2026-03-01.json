@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-03-01",
+  "period_start": "2026-02-22",
+  "period_end": "2026-02-28",
+  "generated_at": "2026-03-18T22:36:47.246410+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-01/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol. 24 — persistent storage, hono rewrites, and 105 PRs\n\nA heavy shipping week. We merged 105 PRs. Here is the signal in the noise:\n\n→ PERSISTENT MEDIA\nWe added a Cloudflare R2 upload service (media.pollinations.ai). You can now securely store generated images instead of watching them instantly vanish into the ether.\n\n→ THE CIRCLE OF LIFE\nThe community built 50+ new apps this week. To prevent the showcase from becoming a graveyard of abandoned weekend projects, we added daily health checks. Stale apps get automatically pruned. We also added a 15-category economics dashboard to track it all.\n\n→ MODEL UPGRADES\nClaude 4.6, Gemini 3.1, Grok-imagine, and Seedream 5.0 Lite are live. We migrated Claude to the direct Anthropic API so prompt caching actually works. Text models now report their context window sizes in the API.\n\n→ BACKEND REWRITES\nThe text service was ported to Hono and TypeScript. Polly's API is now fully OpenAI-compatible. Wan video generation now gracefully falls back to DashScope when rate limits hit.\n\nDocs and endpoints are updated.\ngithub.com/pollinations/pollinations\n\n#OpenSource #AI #DevTools #TypeScript"
+}

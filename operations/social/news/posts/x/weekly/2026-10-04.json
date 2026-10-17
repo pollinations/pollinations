@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-10-04",
+  "period_start": "2026-09-27",
+  "period_end": "2026-10-03",
+  "generated_at": "2026-10-04T08:11:07.320495+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-10-04/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: Polli now has Codex, Claude Code, and Hermes harnesses, plus E2B-compatible sandboxes. chat accepts 100 MiB inline images and larger PDFs/audio. 165 PRs merged this week. file uploads remain a surprisingly large field of study."
+}

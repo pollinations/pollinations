@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-07-05",
+  "period_start": "2026-06-28",
+  "period_end": "2026-07-04",
+  "generated_at": "2026-07-05T07:04:10.038266+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-07-05/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-07-05/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-07-05/images/instagram-3.jpg"
+    }
+  ],
+  "text": "50 PRs merged this week. We finally added a Z-axis—3D model generation is live via Trellis 2 and Rodin 2.5. The Community Models Alpha is officially rolling out, meaning more models hosted by more people. We also routed Flux to a self-hosted Vast.ai 5090 pool, shipped OAuth 2.1, and turned on app listing Quests so you can earn Pollen for building things. The Greenhouse is packed with 15+ new community apps. Code is open, as always. Check the repo to see what's new. 🐝✨\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #3dgeneration #openmodels #webdev",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

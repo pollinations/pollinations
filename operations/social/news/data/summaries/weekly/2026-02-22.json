@@ -1,0 +1,203 @@
+{
+  "date": "2026-02-22",
+  "period_start": "2026-02-15",
+  "period_end": "2026-02-21",
+  "title": "POLLINATIONS WEEKLY vol.48 — agents & brainrot → POLLY API & OPENAI COMPATIBILITY\nPolly now speaks fluent OpenAI",
+  "summary": "If you have existing tooling, you can point it at our endpoint and it should just work. We did this because learning new API specs is nobody's hobby. → SHOWCASE RENOVATION\nThe apps page got a facelift. Markdown descriptions, proper metrics, and a new badge system. It looks less like a directory and more like a gallery now. → AUTO POLLY\nWe shipped a self-healing repo agent. It finds issues and fixes them. Ideally, it puts us out of a job, but for now, it just saves us time. → NEW IN THE GARDEN\nCommunity submissions included SlidePainter, Nova Defense, and something called BrainrotMaker. We provide the infrastructure; you provide the chaos. → HOUSEKEEPING\nNPM packages moved to the @pollinations_ai scope. Please update your package.json before it yells at you",
+  "pr_count": 48,
+  "prs": [
+    {
+      "number": 7978,
+      "date": "2026-02-15"
+    },
+    {
+      "number": 8234,
+      "date": "2026-02-15"
+    },
+    {
+      "number": 8248,
+      "date": "2026-02-15"
+    },
+    {
+      "number": 8258,
+      "date": "2026-02-15"
+    },
+    {
+      "number": 8279,
+      "date": "2026-02-15"
+    },
+    {
+      "number": 8288,
+      "date": "2026-02-15"
+    },
+    {
+      "number": 7358,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 7370,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 7381,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 7442,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 7482,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 7612,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 7727,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 7883,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 7892,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8094,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8192,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8284,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8291,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8292,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8293,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8324,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8325,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8327,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8328,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8330,
+      "date": "2026-02-16"
+    },
+    {
+      "number": 8334,
+      "date": "2026-02-17"
+    },
+    {
+      "number": 8341,
+      "date": "2026-02-17"
+    },
+    {
+      "number": 8343,
+      "date": "2026-02-17"
+    },
+    {
+      "number": 8360,
+      "date": "2026-02-17"
+    },
+    {
+      "number": 8362,
+      "date": "2026-02-17"
+    },
+    {
+      "number": 8366,
+      "date": "2026-02-18"
+    },
+    {
+      "number": 8378,
+      "date": "2026-02-18"
+    },
+    {
+      "number": 8379,
+      "date": "2026-02-18"
+    },
+    {
+      "number": 8385,
+      "date": "2026-02-18"
+    },
+    {
+      "number": 8404,
+      "date": "2026-02-18"
+    },
+    {
+      "number": 7920,
+      "date": "2026-02-19"
+    },
+    {
+      "number": 7939,
+      "date": "2026-02-19"
+    },
+    {
+      "number": 7942,
+      "date": "2026-02-19"
+    },
+    {
+      "number": 8364,
+      "date": "2026-02-19"
+    },
+    {
+      "number": 8398,
+      "date": "2026-02-19"
+    },
+    {
+      "number": 8421,
+      "date": "2026-02-19"
+    },
+    {
+      "number": 7236,
+      "date": "2026-02-20"
+    },
+    {
+      "number": 7328,
+      "date": "2026-02-21"
+    },
+    {
+      "number": 8432,
+      "date": "2026-02-21"
+    },
+    {
+      "number": 8467,
+      "date": "2026-02-21"
+    },
+    {
+      "number": 8473,
+      "date": "2026-02-21"
+    },
+    {
+      "number": 8474,
+      "date": "2026-02-21"
+    }
+  ],
+  "generated_at": "2026-02-22T06:21:53.563202+00:00"
+}

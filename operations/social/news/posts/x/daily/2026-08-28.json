@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-08-28",
+  "period_start": "2026-08-28",
+  "period_end": "2026-08-28",
+  "generated_at": "2026-08-29T06:25:52.816079+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-28/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: open any model in Play with /play?model=<id>, Gemini Omni 1.1 Flash video, and a Quest leaderboard that counts correctly. Community apps now retain screenshots; Qwen Vision Pro goes straight to Alibaba. 13 PRs. The garden received plumbing."
+}

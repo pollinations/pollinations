@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-04",
+  "period_start": "2026-09-04",
+  "period_end": "2026-09-04",
+  "generated_at": "2026-09-05T06:28:12.926631+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-04/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 22 PRs: stateless Responses across text models, MCP in Open WebUI on your own key, GPT-6 Astra + MiniMax H3, and Polli now streams, searches, draws diagrams, and deploys. also, errors explain themselves more often. rare software behavior."
+}

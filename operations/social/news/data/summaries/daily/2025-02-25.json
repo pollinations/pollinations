@@ -1,0 +1,23 @@
+{
+  "date": "2025-02-25",
+  "period_start": "2025-02-25",
+  "period_end": "2025-02-25",
+  "title": "Text API learns to stream and call tools",
+  "summary": "Text generation got streaming, function calling, and a quieter way to share Bing rate limits.\n\nThe text API now supports streaming responses alongside function calling, with model handling refactored underneath to make tool-enabled requests behave more consistently. Less waiting for a full answer; more useful ways for apps to let models do actual work.\n\nBing API keys now rotate across requests, distributing rate limits instead of having one key absorb the entire stampede. Small infrastructure change, fewer avoidable bottlenecks.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 1232,
+      "date": "2025-02-25"
+    },
+    {
+      "number": 1233,
+      "date": "2025-02-25"
+    },
+    {
+      "number": 1234,
+      "date": "2025-02-25"
+    }
+  ],
+  "generated_at": "2026-09-04T14:01:27.468905+00:00"
+}

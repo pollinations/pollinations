@@ -1,0 +1,35 @@
+{
+  "date": "2026-03-07",
+  "period_start": "2026-03-07",
+  "period_end": "2026-03-07",
+  "title": "The ecosystem expands: CLI agents, local novelists, and media editors",
+  "summary": "A day of fixing API quirks, teaching flux-2-dev about rectangles, and welcoming three new community apps to the showcase.\n\nThe community showcase is buzzing. We merged three new apps: a terminal CLI complete with an autonomous coding agent, a Spanish-language media editor, and NovelCraft AI for writing books locally in your browser. The garden is growing.\n\nWe normalized text API responses to ensure strict OpenAI SDK compliance. Then we realized strict compliance was eating Gemini 3's tool calls, so we walked it back just enough. Standard SDKs drop in seamlessly, and Gemini gets to keep its tools. A classic software compromise.\n\nThe flux-2-dev model was stubbornly ignoring width and height parameters, insisting everything must be a 1024x1024 square. We implemented dimension snapping to supported aspect ratios. Rectangles are back on the menu.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 8908,
+      "date": "2026-03-07"
+    },
+    {
+      "number": 8909,
+      "date": "2026-03-07"
+    },
+    {
+      "number": 8918,
+      "date": "2026-03-07"
+    },
+    {
+      "number": 8921,
+      "date": "2026-03-07"
+    },
+    {
+      "number": 8923,
+      "date": "2026-03-07"
+    },
+    {
+      "number": 8928,
+      "date": "2026-03-07"
+    }
+  ],
+  "generated_at": "2026-03-18T22:08:12.640749+00:00"
+}

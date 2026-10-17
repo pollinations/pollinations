@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-07-23",
+  "period_start": "2026-07-23",
+  "period_end": "2026-07-23",
+  "generated_at": "2026-07-24T07:00:22.839538+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-23/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: Gemini Flash Lite 3.5, LongCat 2.0, and CSM 1B speech. Grok Imagine now defaults to 2K; Grok image/video routes moved through OpenRouter. Azure chat is answering again. Polli’s tool bugs were politely removed. 12 PRs."
+}

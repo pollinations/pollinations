@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-05",
+  "period_start": "2026-09-05",
+  "period_end": "2026-09-05",
+  "generated_at": "2026-09-06T06:26:32.155060+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-05/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: managed agents now return structured Responses. Added community TTS, Qwen3.8 Flash, and MAI Image 2.5 Flash. Streaming errors keep their semantics; timeouts, policy blocks, and billing failures now identify themselves. 16 PRs, fewer mysteries."
+}

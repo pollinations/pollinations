@@ -1,0 +1,15 @@
+{
+  "date": "2025-01-24",
+  "period_start": "2025-01-24",
+  "period_end": "2025-01-24",
+  "title": "Unity integration gets a refresh",
+  "summary": "A quiet maintenance day: the Unity integration got a fresh coat of JavaScript.\n\nunity.js was updated, keeping the Unity-side connection to Pollinations current and ready for builders making things in game engines.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 1076,
+      "date": "2025-01-24"
+    }
+  ],
+  "generated_at": "2026-09-04T14:01:01.748186+00:00"
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-07-26",
+  "period_start": "2026-07-19",
+  "period_end": "2026-07-25",
+  "generated_at": "2026-07-26T07:03:30.237957+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-07-26/images/linkedin.jpg"
+    }
+  ],
+  "text": "58 PRs merged this week. Community models became a publishing surface, and the image stack received the usual amount of plumbing required to make pixels behave.\n\n·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol.30 — publishing & plumbing\n\n───\n\n1. COMMUNITY MODELS\nImage endpoints, publisher allowlists, activation toggles, separate titles/descriptions, price caps, and a simpler app submission flow. The model catalogue is slowly becoming more useful than a pile of IDs.\n\n2. IMAGE + MEDIA\nHardened Z-Image and Flux on Vast, capped queues, moved NanoBanana models through OpenRouter, and added Recraft vectors, Lyria 3 Clip, CSM 1B speech, Laguna S 2.1, and LongCat 2.0.\n\n3. FAILURE MODES\nReplicate capacity errors now return 503, timed-out predictions are cancelled, reference-image downloads are validated, and Klein has more protection from GPU OOMs. Errors now have names, limits, and exits.\n\n4. CATALOG WORK\nGoogle text models route through OpenRouter, Gemini Flash Lite moved to 3.5, claude-large moved to Opus 5, and free models rank by Pollen value.\n\nThe repo is public: https://github.com/pollinations/pollinations\nDocs: https://pollinations.ai/docs\n\n#OpenSource #AI #DevTools #GenerativeAI"
+}

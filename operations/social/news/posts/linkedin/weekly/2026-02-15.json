@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-02-15",
+  "period_start": "2026-02-08",
+  "period_end": "2026-02-14",
+  "generated_at": "2026-02-16T10:04:13.429831+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-15/images/linkedin.jpg"
+    }
+  ],
+  "text": "AI agents just got a whole lot easier to build. We shipped 27 updates this week, but one stands out.\n\nThe gap between 'generating content' and 'taking action' is closing fast.\n\nThis week, we focused on giving developers the tools to cross that bridge. With 27 PRs merged, here is what is new on the platform:\n\n1. ONE-COMMAND AGENTS\nWe integrated OpenClaw to bring autonomous web search and action capabilities directly into the workflow. This is not just chat — it is AI that can do things.\n\n2. VIDEO & AUDIO UPGRADES\nMultimedia generation got a major boost with Grok Image-to-Video and ElevenLabs Scribe v2 integration. We also unified video resolutions, making it easier to chain different models together in a single pipeline.\n\n3. NEW MODEL FLAVORS\nWe added GLM-5 and the Qwen-character model. Whether you need raw reasoning power or specialized roleplay capabilities, the menu just got bigger.\n\n4. BETTER DEVELOPER EXPERIENCE\nWe overhauled the App Showcase UI and merged documentation directly into the Play page. Less context switching means faster building.\n\nVelocity is the only strategy that matters in open source. We are building the most accessible infrastructure for AI creativity, one commit at a time.\n\nCheck out the new agent capabilities and let us know what you build.\n\n#OpenSource #AI #DevTools #ShipIt #ArtificialIntelligence"
+}

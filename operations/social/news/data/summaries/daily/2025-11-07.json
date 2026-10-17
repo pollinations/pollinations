@@ -1,0 +1,63 @@
+{
+  "date": "2025-11-07",
+  "period_start": "2025-11-07",
+  "period_end": "2025-11-07",
+  "title": "Image and vision requests got less fragile",
+  "summary": "A reliability-heavy day: image and vision fixes, steadier rate limits, and more automation around getting projects and updates into the garden.\n\nFlux Kontext calls now load their missing handler, Nanobanana Vertex AI requests can finish without an arbitrary 25-second cutoff, and vision models correctly accept image_url content instead of falling over on validation.\n\nThreshold handling was made consistent, while the Pollen rate limiter gained persistent storage so its state survives long enough to be useful. Predictable infrastructure: an underrated feature.\n\nProduct IDs were refreshed, the credit-card payment path was enabled for testing, and the Terms of Service and Privacy Policies were updated so the surrounding paperwork better matches the machinery.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 4950,
+      "date": "2025-11-07"
+    },
+    {
+      "number": 5054,
+      "date": "2025-11-07"
+    },
+    {
+      "number": 5083,
+      "date": "2025-11-07"
+    },
+    {
+      "number": 5084,
+      "date": "2025-11-07"
+    },
+    {
+      "number": 5085,
+      "date": "2025-11-07"
+    },
+    {
+      "number": 5087,
+      "date": "2025-11-07"
+    },
+    {
+      "number": 5089,
+      "date": "2025-11-07"
+    },
+    {
+      "number": 5091,
+      "date": "2025-11-07"
+    },
+    {
+      "number": 5096,
+      "date": "2025-11-07"
+    },
+    {
+      "number": 5098,
+      "date": "2025-11-07"
+    },
+    {
+      "number": 5101,
+      "date": "2025-11-07"
+    },
+    {
+      "number": 5102,
+      "date": "2025-11-07"
+    },
+    {
+      "number": 5105,
+      "date": "2025-11-07"
+    }
+  ],
+  "generated_at": "2026-09-04T12:08:31.323688+00:00"
+}

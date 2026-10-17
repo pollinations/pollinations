@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-03-29",
+  "period_start": "2026-03-22",
+  "period_end": "2026-03-28",
+  "generated_at": "2026-03-29T06:22:53.391278+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-29/images/twitter.jpg"
+    }
+  ],
+  "text": "merged 86 PRs this week.\n\n- wired up qwen, amazon nova & xAI grok\n- headless CLI auth so you don't need a browser\n- hourly pollen refills for all tiers\n- deleted marketing copy from the UI because we're a hackerspace, not a startup\n\nplus 30+ community apps added. 🐝"
+}

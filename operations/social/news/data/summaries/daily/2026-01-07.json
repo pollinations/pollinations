@@ -1,0 +1,39 @@
+{
+  "date": "2026-01-07",
+  "period_start": "2026-01-07",
+  "period_end": "2026-01-07",
+  "title": "Claude models moved to Vertex without changing the API contract",
+  "summary": "A compatibility-focused day: Claude moved to Vertex, builder workflows gained visibility, and chat picked up another resident.\n\nClaude and claude-large now run through Google Vertex AI, with strict OpenAI-compatible behavior and a sensible max_tokens default added alongside the move. Same models, fewer provider-shaped surprises.\n\nThe project-manager workflow got an upgrade, while Myceli.AI gained a KPI dashboard for seeing what its work is doing instead of consulting the vibes.\n\nChatPUA was added to chat, and the latest Instagram post landed to keep the public garden watered.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 6786,
+      "date": "2026-01-07"
+    },
+    {
+      "number": 6874,
+      "date": "2026-01-07"
+    },
+    {
+      "number": 6885,
+      "date": "2026-01-07"
+    },
+    {
+      "number": 6895,
+      "date": "2026-01-07"
+    },
+    {
+      "number": 6897,
+      "date": "2026-01-07"
+    },
+    {
+      "number": 6901,
+      "date": "2026-01-07"
+    },
+    {
+      "number": 6921,
+      "date": "2026-01-07"
+    }
+  ],
+  "generated_at": "2026-09-04T11:28:40.097771+00:00"
+}

@@ -1,0 +1,455 @@
+{
+  "date": "2025-03-31",
+  "period_start": "2025-03-01",
+  "period_end": "2025-03-31",
+  "title": "One text endpoint, a larger model zoo",
+  "summary": "March widened the shared API into a more capable multimodal workbench while making its growing model roster, documentation, and community garden easier to navigate.\n\nPhi-4, Gemini, Pixtral, Mistral Small, Groq Qwen, qwen-reasoning, and phi-mini expanded the text lineup, while OpenAI-compatible chat, model discovery, reasoning controls, and Portkey routing made the variety easier for existing clients to use.\n\nAudio generation and PCM16 streaming arrived through the text API, then reached MCP alongside speech-to-text examples and clearer audio documentation. Words can now become sound through more than one route, as interfaces inevitably demand.\n\nThe MCP server gained image and audio generation, sturdier installation, and more practical setup documentation, giving agent-connected tools a clearer path to making pixels and sound.\n\nThe showcase grew steadily across creative apps, bots, SDKs, tutorials, mobile tools, WordPress, and audio projects. Featured projects, language indicators, simpler submissions, and gallery curation made the work people are building easier to find.",
+  "pr_count": 111,
+  "prs": [
+    {
+      "number": 1264,
+      "date": "2025-03-04"
+    },
+    {
+      "number": 1267,
+      "date": "2025-03-04"
+    },
+    {
+      "number": 1268,
+      "date": "2025-03-04"
+    },
+    {
+      "number": 1269,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1271,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1272,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1273,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1274,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1275,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1276,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1277,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1281,
+      "date": "2025-03-05"
+    },
+    {
+      "number": 1283,
+      "date": "2025-03-06"
+    },
+    {
+      "number": 1286,
+      "date": "2025-03-07"
+    },
+    {
+      "number": 1287,
+      "date": "2025-03-08"
+    },
+    {
+      "number": 1144,
+      "date": "2025-03-10"
+    },
+    {
+      "number": 1297,
+      "date": "2025-03-10"
+    },
+    {
+      "number": 1298,
+      "date": "2025-03-10"
+    },
+    {
+      "number": 1300,
+      "date": "2025-03-10"
+    },
+    {
+      "number": 1301,
+      "date": "2025-03-10"
+    },
+    {
+      "number": 1302,
+      "date": "2025-03-10"
+    },
+    {
+      "number": 1303,
+      "date": "2025-03-10"
+    },
+    {
+      "number": 1305,
+      "date": "2025-03-10"
+    },
+    {
+      "number": 1312,
+      "date": "2025-03-10"
+    },
+    {
+      "number": 1289,
+      "date": "2025-03-11"
+    },
+    {
+      "number": 1310,
+      "date": "2025-03-11"
+    },
+    {
+      "number": 1317,
+      "date": "2025-03-11"
+    },
+    {
+      "number": 1318,
+      "date": "2025-03-11"
+    },
+    {
+      "number": 1319,
+      "date": "2025-03-11"
+    },
+    {
+      "number": 1321,
+      "date": "2025-03-11"
+    },
+    {
+      "number": 1324,
+      "date": "2025-03-12"
+    },
+    {
+      "number": 1325,
+      "date": "2025-03-12"
+    },
+    {
+      "number": 1328,
+      "date": "2025-03-12"
+    },
+    {
+      "number": 1330,
+      "date": "2025-03-12"
+    },
+    {
+      "number": 1332,
+      "date": "2025-03-12"
+    },
+    {
+      "number": 1334,
+      "date": "2025-03-12"
+    },
+    {
+      "number": 1336,
+      "date": "2025-03-13"
+    },
+    {
+      "number": 1338,
+      "date": "2025-03-13"
+    },
+    {
+      "number": 1340,
+      "date": "2025-03-13"
+    },
+    {
+      "number": 1341,
+      "date": "2025-03-13"
+    },
+    {
+      "number": 1342,
+      "date": "2025-03-14"
+    },
+    {
+      "number": 1343,
+      "date": "2025-03-14"
+    },
+    {
+      "number": 1347,
+      "date": "2025-03-14"
+    },
+    {
+      "number": 1348,
+      "date": "2025-03-14"
+    },
+    {
+      "number": 1351,
+      "date": "2025-03-14"
+    },
+    {
+      "number": 1352,
+      "date": "2025-03-14"
+    },
+    {
+      "number": 1353,
+      "date": "2025-03-14"
+    },
+    {
+      "number": 1355,
+      "date": "2025-03-14"
+    },
+    {
+      "number": 1357,
+      "date": "2025-03-14"
+    },
+    {
+      "number": 1359,
+      "date": "2025-03-14"
+    },
+    {
+      "number": 1202,
+      "date": "2025-03-15"
+    },
+    {
+      "number": 1361,
+      "date": "2025-03-15"
+    },
+    {
+      "number": 1363,
+      "date": "2025-03-15"
+    },
+    {
+      "number": 1364,
+      "date": "2025-03-15"
+    },
+    {
+      "number": 1365,
+      "date": "2025-03-16"
+    },
+    {
+      "number": 1372,
+      "date": "2025-03-16"
+    },
+    {
+      "number": 1369,
+      "date": "2025-03-17"
+    },
+    {
+      "number": 1378,
+      "date": "2025-03-17"
+    },
+    {
+      "number": 1379,
+      "date": "2025-03-17"
+    },
+    {
+      "number": 1380,
+      "date": "2025-03-17"
+    },
+    {
+      "number": 1382,
+      "date": "2025-03-17"
+    },
+    {
+      "number": 1391,
+      "date": "2025-03-18"
+    },
+    {
+      "number": 1393,
+      "date": "2025-03-18"
+    },
+    {
+      "number": 1395,
+      "date": "2025-03-18"
+    },
+    {
+      "number": 1396,
+      "date": "2025-03-18"
+    },
+    {
+      "number": 1399,
+      "date": "2025-03-19"
+    },
+    {
+      "number": 1383,
+      "date": "2025-03-20"
+    },
+    {
+      "number": 1400,
+      "date": "2025-03-20"
+    },
+    {
+      "number": 1401,
+      "date": "2025-03-20"
+    },
+    {
+      "number": 1407,
+      "date": "2025-03-21"
+    },
+    {
+      "number": 1409,
+      "date": "2025-03-21"
+    },
+    {
+      "number": 1412,
+      "date": "2025-03-21"
+    },
+    {
+      "number": 1415,
+      "date": "2025-03-22"
+    },
+    {
+      "number": 1417,
+      "date": "2025-03-22"
+    },
+    {
+      "number": 1406,
+      "date": "2025-03-23"
+    },
+    {
+      "number": 1420,
+      "date": "2025-03-23"
+    },
+    {
+      "number": 1422,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1426,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1427,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1429,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1430,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1431,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1432,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1434,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1221,
+      "date": "2025-03-25"
+    },
+    {
+      "number": 1387,
+      "date": "2025-03-25"
+    },
+    {
+      "number": 1437,
+      "date": "2025-03-25"
+    },
+    {
+      "number": 1439,
+      "date": "2025-03-25"
+    },
+    {
+      "number": 1442,
+      "date": "2025-03-26"
+    },
+    {
+      "number": 1443,
+      "date": "2025-03-26"
+    },
+    {
+      "number": 1452,
+      "date": "2025-03-27"
+    },
+    {
+      "number": 1453,
+      "date": "2025-03-27"
+    },
+    {
+      "number": 1454,
+      "date": "2025-03-27"
+    },
+    {
+      "number": 1456,
+      "date": "2025-03-27"
+    },
+    {
+      "number": 1457,
+      "date": "2025-03-27"
+    },
+    {
+      "number": 1458,
+      "date": "2025-03-27"
+    },
+    {
+      "number": 1461,
+      "date": "2025-03-27"
+    },
+    {
+      "number": 1460,
+      "date": "2025-03-28"
+    },
+    {
+      "number": 1470,
+      "date": "2025-03-28"
+    },
+    {
+      "number": 1471,
+      "date": "2025-03-28"
+    },
+    {
+      "number": 1474,
+      "date": "2025-03-28"
+    },
+    {
+      "number": 1481,
+      "date": "2025-03-29"
+    },
+    {
+      "number": 1483,
+      "date": "2025-03-29"
+    },
+    {
+      "number": 1485,
+      "date": "2025-03-29"
+    },
+    {
+      "number": 1487,
+      "date": "2025-03-29"
+    },
+    {
+      "number": 1492,
+      "date": "2025-03-31"
+    },
+    {
+      "number": 1493,
+      "date": "2025-03-31"
+    },
+    {
+      "number": 1496,
+      "date": "2025-03-31"
+    },
+    {
+      "number": 1497,
+      "date": "2025-03-31"
+    },
+    {
+      "number": 1498,
+      "date": "2025-03-31"
+    },
+    {
+      "number": 1501,
+      "date": "2025-03-31"
+    }
+  ],
+  "generated_at": "2026-09-04T15:15:51.539987+00:00"
+}

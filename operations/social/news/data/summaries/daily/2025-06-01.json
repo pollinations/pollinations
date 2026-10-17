@@ -1,0 +1,31 @@
+{
+  "date": "2025-06-01",
+  "period_start": "2025-06-01",
+  "period_end": "2025-06-01",
+  "title": "GPT Image learned to leave the background out",
+  "summary": "A small image-stack tune-up: transparent GPT Image outputs, smarter repeat-request caching, safer handling, and some retired UI swept away.\n\nGPT Image now supports transparency, so generated assets can arrive ready for compositing instead of carrying an obligatory rectangle. Consecutive requests also cache more effectively, with prompt logging added to make the image pipeline easier to inspect when software develops opinions.\n\nAzure content safety was added to the image flow, while user preference defaults were refreshed and utility scripts were reorganized. The visible result is a cleaner starting point; the invisible result is fewer loose wires behind it.\n\nUnused Events UI and stale YouTube links were removed, making the surface a little less haunted by things that no longer happen.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 2208,
+      "date": "2025-06-01"
+    },
+    {
+      "number": 2213,
+      "date": "2025-06-01"
+    },
+    {
+      "number": 2216,
+      "date": "2025-06-01"
+    },
+    {
+      "number": 2217,
+      "date": "2025-06-01"
+    },
+    {
+      "number": 2219,
+      "date": "2025-06-01"
+    }
+  ],
+  "generated_at": "2026-09-04T12:55:00.021222+00:00"
+}

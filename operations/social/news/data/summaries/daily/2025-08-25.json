@@ -1,0 +1,31 @@
+{
+  "date": "2025-08-25",
+  "period_start": "2025-08-25",
+  "period_end": "2025-08-25",
+  "title": "Issue intake automation got a careful tune-up",
+  "summary": "A quiet maintenance day: issue automation and labeling got the attention usually reserved for production systems after they catch fire.\n\nProject automation was fixed so external issues can enter the workflow correctly, followed by several labeler configuration updates. The bug tracker is now slightly less dependent on humans remembering where things go.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 3853,
+      "date": "2025-08-25"
+    },
+    {
+      "number": 3856,
+      "date": "2025-08-25"
+    },
+    {
+      "number": 3859,
+      "date": "2025-08-25"
+    },
+    {
+      "number": 3861,
+      "date": "2025-08-25"
+    },
+    {
+      "number": 3863,
+      "date": "2025-08-25"
+    }
+  ],
+  "generated_at": "2026-09-04T12:26:12.460250+00:00"
+}

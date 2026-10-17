@@ -1,0 +1,39 @@
+{
+  "date": "2026-01-08",
+  "period_start": "2026-01-08",
+  "period_end": "2026-01-08",
+  "title": "Docs got easier to navigate",
+  "summary": "A garden-maintenance day: clearer docs, cleaner contribution paths, and telemetry put back on its rails.\n\nAuthentication guidance and the main project README were expanded, while API docs now show the canonical model names without breaking existing alias-based requests. Less scavenger hunting; old integrations keep working.\n\nDeveloper project labels and automation were broadened, and the app submission workflow received a syntax update to keep contributions moving through the pipeline.\n\nAnalytics meter tracking was restored so internal usage signals remain correctly separated and observable. The pipes continue doing pipe things.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 6899,
+      "date": "2026-01-08"
+    },
+    {
+      "number": 6909,
+      "date": "2026-01-08"
+    },
+    {
+      "number": 6916,
+      "date": "2026-01-08"
+    },
+    {
+      "number": 6918,
+      "date": "2026-01-08"
+    },
+    {
+      "number": 6923,
+      "date": "2026-01-08"
+    },
+    {
+      "number": 6941,
+      "date": "2026-01-08"
+    },
+    {
+      "number": 6942,
+      "date": "2026-01-08"
+    }
+  ],
+  "generated_at": "2026-09-04T11:29:31.286758+00:00"
+}

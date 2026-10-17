@@ -1,0 +1,59 @@
+{
+  "date": "2025-10-22",
+  "period_start": "2025-10-22",
+  "period_end": "2025-10-22",
+  "title": "The API docs got a proper rewrite",
+  "summary": "A garden-maintenance day: clearer API docs, more contributor paths, automated repo chores, and steadier image-model handling.\n\nPollinations' API documentation was rewritten for a clearer path from first HTTP call to a working app, while the Pollen FAQ gained clearer answers and launch-timeline details. Less archaeological digging through markdown.\n\nHacktoberfest guidance landed in the README and project index, alongside a new AI Blog Title Generator project idea and support for submitting projects in batches. The community garden has more seed packets now.\n\nNew GitHub Actions can regenerate project documentation and condense PR or issue descriptions automatically. Claude Code automation was also upgraded to v1 with Sonnet 4.5 and fork-PR support, making outside contributions easier to work with.",
+  "pr_count": 12,
+  "prs": [
+    {
+      "number": 4664,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4671,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4675,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4682,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4683,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4684,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4687,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4690,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4691,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4695,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4709,
+      "date": "2025-10-22"
+    },
+    {
+      "number": 4712,
+      "date": "2025-10-22"
+    }
+  ],
+  "generated_at": "2026-09-04T12:52:01.652412+00:00"
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-06-14",
+  "period_start": "2026-06-14",
+  "period_end": "2026-06-14",
+  "generated_at": "2026-06-15T07:52:14.393578+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-14/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped a few things. moved model routes to fireworks — qwen3.7 plus and a 512k context window are now live. also taught polly how to read currency without latex colliding, and made playground embeds actually feel native instead of like clunky iframes."
+}

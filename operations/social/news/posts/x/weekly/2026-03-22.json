@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-03-22",
+  "period_start": "2026-03-15",
+  "period_end": "2026-03-21",
+  "generated_at": "2026-03-22T06:16:15.361378+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-22/images/twitter.jpg"
+    }
+  ],
+  "text": "61 PRs merged this week. We added Qwen3.5 397B, set up hourly pollen refills, and shipped multi-image editing. The frontend is faster, the model monitor actually monitors, and the community shipped another 30+ apps. Good week."
+}

@@ -1,0 +1,71 @@
+{
+  "date": "2026-03-21",
+  "period_start": "2026-03-21",
+  "period_end": "2026-03-21",
+  "title": "Pollinations generation arrives in Claude Code",
+  "summary": "A community-heavy day: terminal-native generation, new creative and learning apps, plus sturdier image and music APIs.\n\nA community-built Claude Code CLI plugin now brings image, text, audio, and video generation directly into the terminal. The shell has gained another suspiciously capable command.\n\nThe community showcase added InfiniteMud, a persistent procedurally generated world; HyperRush AI for turning scripts and media into polished short-form clips; and a Gemini-powered Twitch chatbot for interactive livestream chats.\n\nNew showcase entries include Benchside for biomedical research, Physics study with AI for worked explanations, two image generators, JournalGen, and an all-in-one interface for Pollinations image, audio, and text generation.",
+  "pr_count": 15,
+  "prs": [
+    {
+      "number": 9267,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9371,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9373,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9376,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9381,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9384,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9389,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9391,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9395,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9396,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9397,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9399,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9402,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9403,
+      "date": "2026-03-21"
+    },
+    {
+      "number": 9408,
+      "date": "2026-03-21"
+    }
+  ],
+  "generated_at": "2026-09-04T11:51:46.875104+00:00"
+}

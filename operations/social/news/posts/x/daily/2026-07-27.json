@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-07-27",
+  "period_start": "2026-07-27",
+  "period_end": "2026-07-27",
+  "generated_at": "2026-07-28T07:05:54.394133+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-27/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: image APIs now support community edits, with Replicate replacing a broken Flux fallback. Added NVIDIA Nemotron 3 Ultra for long-context reasoning; community publishers can add models. Text errors now name their upstream. 11 PRs. The logo is aligned again."
+}

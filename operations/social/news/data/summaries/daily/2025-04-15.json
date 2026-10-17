@@ -1,0 +1,55 @@
+{
+  "date": "2025-04-15",
+  "period_start": "2025-04-15",
+  "period_end": "2025-04-15",
+  "title": "Azure GPT-4.1 joins the text API",
+  "summary": "GPT-4.1 landed on the text API while nine more community-built things appeared in the project garden.\n\nGPT-4.1 is now available through the openai-large route on text.pollinations.ai, adding another capable option behind the same simple text endpoint.\n\nThe community project list now includes Generator AI Image, MalaysiaPrompt, Strain Navigator, B&W SVG Generator, DreamBig, NetSim, the Raftar.xyz Discord bot, Smpldev, and an AI/Teens talk. Image tools, playgrounds, bots, network simulators: apparently the API has been wandering around.",
+  "pr_count": 11,
+  "prs": [
+    {
+      "number": 1671,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1672,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1674,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1675,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1678,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1679,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1681,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1683,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1686,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1687,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1689,
+      "date": "2025-04-15"
+    }
+  ],
+  "generated_at": "2026-09-04T12:27:55.277718+00:00"
+}

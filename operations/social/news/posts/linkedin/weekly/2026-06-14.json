@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-06-14",
+  "period_start": "2026-06-07",
+  "period_end": "2026-06-13",
+  "generated_at": "2026-06-14T07:32:39.772782+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-14/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol. 42 — model musical chairs and API sanity.\n\n13 PRs merged this week. mostly playing musical chairs with model providers and fixing things that should have been obvious.\n\n───\n\n→ MUSICAL CHAIRS\nmoved Wan and Qwen image/video generation off Alibaba to Replicate and OpenRouter. added claude fable 5 on bedrock and kimi k2.7 code. we keep the endpoints stable while the backend providers shuffle.\n\n→ API SANITY\ncontent policy rejections now return a 422 instead of a 500. because you asking for something blocked shouldn't look like the server caught fire. also fixed boolean query params parsing on text routes.\n\n→ UI & NO-BUILD\nshipped a single-accent theme with canonical tokens. the dashboard now uses the live model catalog. plus, we added a @pollinations/ui browser bundle for no-build setups.\n\n→ COMMUNITY\nmade Websim BYOP compliant and added Wikimind to the learn section.\n\neverything is open source. build something weird at pollinations.ai\n\n#OpenSource #AI #WebDev #APIs"
+}

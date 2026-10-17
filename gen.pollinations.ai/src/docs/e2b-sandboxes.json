@@ -1,0 +1,1731 @@
+{
+    "source": "https://raw.githubusercontent.com/e2b-dev/E2B/b52cd30c14bf7038ba5bfbd15456b1dabe567082/spec/openapi.yml",
+    "paths": {
+        "/alpha/e2b/sandboxes": {
+            "post": {
+                "summary": "Create sandbox",
+                "description": "Create a sandbox from the template. Use POST /v2/sandboxes instead.\n\nRequires a Pollinations secret key with `account:machines` permission. Only your own sandboxes are accessible.\n\nRuntime is prepaid in credits, with no refund of unused time. Timeouts above 600 seconds renew in 10-minute windows until the requested deadline, subject to credits and key validity.\n\nAuto-pause defaults to true and secured access is enforced. Enabled auto-resume, IAM configuration and nonempty volume mounts are unsupported.",
+                "deprecated": true,
+                "tags": [
+                    "Sandboxes API"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/E2B_NewSandbox"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "The sandbox was created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/E2B_Sandbox"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/E2B_400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/E2B_401"
+                    },
+                    "402": {
+                        "description": "Insufficient credits or key budget for prepaid runtime."
+                    },
+                    "403": {
+                        "description": "Missing account:machines permission or access denied."
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/E2B_429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/E2B_500"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/E2B_503"
+                    },
+                    "504": {
+                        "$ref": "#/components/responses/E2B_504"
+                    }
+                }
+            }
+        },
+        "/alpha/e2b/v2/sandboxes": {
+            "post": {
+                "summary": "Create sandbox (v2)",
+                "description": "Create a sandbox from the template. All system communication with the sandbox is secured.\n\nRequires a Pollinations secret key with `account:machines` permission. Only your own sandboxes are accessible.\n\nRuntime is prepaid in credits, with no refund of unused time. Timeouts above 600 seconds renew in 10-minute windows until the requested deadline, subject to credits and key validity.\n\nAuto-pause defaults to true and secured access is enforced. Enabled auto-resume, IAM configuration and nonempty volume mounts are unsupported.",
+                "tags": [
+                    "Sandboxes API"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/E2B_NewSandboxV2"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "The sandbox was created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/E2B_Sandbox"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/E2B_400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/E2B_401"
+                    },
+                    "402": {
+                        "description": "Insufficient credits or key budget for prepaid runtime."
+                    },
+                    "403": {
+                        "description": "Missing account:machines permission or access denied."
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/E2B_429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/E2B_500"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/E2B_503"
+                    },
+                    "504": {
+                        "$ref": "#/components/responses/E2B_504"
+                    }
+                }
+            },
+            "get": {
+                "summary": "List sandboxes (v2)",
+                "x-api-group": "list",
+                "description": "List all sandboxes\n\nRequires a Pollinations secret key with `account:machines` permission. Only your own sandboxes are accessible.",
+                "tags": [
+                    "Sandboxes API"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "metadata",
+                        "in": "query",
+                        "description": "Metadata query used to filter the sandboxes (e.g. \"user=abc&app=prod\"). Each key and values must be URL encoded.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "state",
+                        "in": "query",
+                        "description": "Filter sandboxes by one or more states",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/components/schemas/E2B_SandboxState"
+                            }
+                        },
+                        "style": "form",
+                        "explode": false
+                    },
+                    {
+                        "name": "order",
+                        "in": "query",
+                        "description": "Sort direction by sandbox start time. Defaults to desc (newest first).",
+                        "required": false,
+                        "schema": {
+                            "$ref": "#/components/schemas/E2B_OrderDirection"
+                        }
+                    },
+                    {
+                        "name": "startedAfter",
+                        "in": "query",
+                        "description": "Return sandboxes started at or after this timestamp.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "template",
+                        "in": "query",
+                        "description": "Filter sandboxes by a template ID or alias.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/E2B_paginationNextToken"
+                    },
+                    {
+                        "$ref": "#/components/parameters/E2B_paginationLimit"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully returned all running sandboxes",
+                        "headers": {
+                            "X-Next-Token": {
+                                "$ref": "#/components/headers/E2B_XNextToken"
+                            },
+                            "X-Total-Running": {
+                                "$ref": "#/components/headers/E2B_XTotalRunning"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/E2B_ListedSandbox"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/E2B_400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/E2B_401"
+                    },
+                    "402": {
+                        "description": "Insufficient credits or key budget for prepaid runtime."
+                    },
+                    "403": {
+                        "description": "Missing account:machines permission or access denied."
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/E2B_429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/E2B_500"
+                    }
+                }
+            }
+        },
+        "/alpha/e2b/sandboxes/{sandboxID}": {
+            "get": {
+                "summary": "Sandbox",
+                "description": "Get a sandbox by id\n\nRequires a Pollinations secret key with `account:machines` permission. Only your own sandboxes are accessible.",
+                "tags": [
+                    "Sandboxes API"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/E2B_sandboxID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully returned the sandbox",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/E2B_SandboxDetail"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/E2B_401"
+                    },
+                    "402": {
+                        "description": "Insufficient credits or key budget for prepaid runtime."
+                    },
+                    "403": {
+                        "description": "Missing account:machines permission or access denied."
+                    },
+                    "404": {
+                        "description": "Sandbox not found or owned by another user."
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/E2B_429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/E2B_500"
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Kill sandbox",
+                "description": "Kill a sandbox\n\nRequires a Pollinations secret key with `account:machines` permission. Only your own sandboxes are accessible.\n\nEnds ongoing renewal. Unused prepaid credits are not refunded.\n\nA dedicated API key created for a Pollinations template remains until separately revoked.",
+                "tags": [
+                    "Sandboxes API"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/E2B_sandboxID"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "The sandbox was killed successfully"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/E2B_401"
+                    },
+                    "402": {
+                        "description": "Insufficient credits or key budget for prepaid runtime."
+                    },
+                    "403": {
+                        "description": "Missing account:machines permission or access denied."
+                    },
+                    "404": {
+                        "description": "Sandbox not found or owned by another user."
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/E2B_429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/E2B_500"
+                    }
+                }
+            }
+        },
+        "/alpha/e2b/sandboxes/{sandboxID}/connect": {
+            "post": {
+                "summary": "Connect sandbox",
+                "description": "Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use POST /v2/sandboxes/{sandboxID}/connect instead.\n\nRequires a Pollinations secret key with `account:machines` permission. Only your own sandboxes are accessible.\n\nRuntime is prepaid in credits, with no refund of unused time. Timeouts above 600 seconds renew in 10-minute windows until the requested deadline, subject to credits and key validity.\n\nOnly timeout is forwarded (default: 300 seconds). Connect never shortens a lease.",
+                "deprecated": true,
+                "tags": [
+                    "Sandboxes API"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/E2B_sandboxID"
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/E2B_ConnectSandbox"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The sandbox was already running",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/E2B_Sandbox"
+                                }
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "The sandbox was resumed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/E2B_Sandbox"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/E2B_400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/E2B_401"
+                    },
+                    "402": {
+                        "description": "Insufficient credits or key budget for prepaid runtime."
+                    },
+                    "403": {
+                        "description": "Missing account:machines permission or access denied."
+                    },
+                    "404": {
+                        "description": "Sandbox not found or owned by another user."
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/E2B_409"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/E2B_429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/E2B_500"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/E2B_503"
+                    },
+                    "504": {
+                        "$ref": "#/components/responses/E2B_504"
+                    }
+                }
+            }
+        },
+        "/alpha/e2b/v2/sandboxes/{sandboxID}/connect": {
+            "post": {
+                "summary": "Connect sandbox (v2)",
+                "description": "Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. The request body is optional; an omitted timeout defaults to 300 seconds.\n\nRequires a Pollinations secret key with `account:machines` permission. Only your own sandboxes are accessible.\n\nRuntime is prepaid in credits, with no refund of unused time. Timeouts above 600 seconds renew in 10-minute windows until the requested deadline, subject to credits and key validity.\n\nOnly timeout is forwarded (default: 300 seconds). Connect never shortens a lease.",
+                "tags": [
+                    "Sandboxes API"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/E2B_sandboxID"
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/E2B_ConnectSandboxV2"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The sandbox was already running",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/E2B_Sandbox"
+                                }
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "The sandbox was resumed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/E2B_Sandbox"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/E2B_400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/E2B_401"
+                    },
+                    "402": {
+                        "description": "Insufficient credits or key budget for prepaid runtime."
+                    },
+                    "403": {
+                        "description": "Missing account:machines permission or access denied."
+                    },
+                    "404": {
+                        "description": "Sandbox not found or owned by another user."
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/E2B_409"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/E2B_429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/E2B_500"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/E2B_503"
+                    },
+                    "504": {
+                        "$ref": "#/components/responses/E2B_504"
+                    }
+                }
+            }
+        },
+        "/alpha/e2b/sandboxes/{sandboxID}/pause": {
+            "post": {
+                "summary": "Pause sandbox",
+                "description": "Pause the sandbox\n\nRequires a Pollinations secret key with `account:machines` permission. Only your own sandboxes are accessible.\n\nEnds ongoing renewal. Unused prepaid credits are not refunded.",
+                "tags": [
+                    "Sandboxes API"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/E2B_sandboxID"
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/E2B_SandboxPauseRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "204": {
+                        "description": "The sandbox was paused successfully and can be resumed"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/E2B_401"
+                    },
+                    "402": {
+                        "description": "Insufficient credits or key budget for prepaid runtime."
+                    },
+                    "403": {
+                        "description": "Missing account:machines permission or access denied."
+                    },
+                    "404": {
+                        "description": "Sandbox not found or owned by another user."
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/E2B_409"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/E2B_429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/E2B_500"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/E2B_503"
+                    }
+                }
+            }
+        },
+        "/alpha/e2b/sandboxes/{sandboxID}/timeout": {
+            "post": {
+                "summary": "Set sandbox timeout",
+                "description": "Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request. Calling this method multiple times overwrites the TTL, each time using the current timestamp as the starting point to measure the timeout duration.\n\nRequires a Pollinations secret key with `account:machines` permission. Only your own sandboxes are accessible.\n\nRuntime is prepaid in credits, with no refund of unused time. Timeouts above 600 seconds renew in 10-minute windows until the requested deadline, subject to credits and key validity.\n\nTimeouts of 600 seconds or less end ongoing renewal. Use connect to resume a paused sandbox.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Sandboxes API"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/E2B_SandboxTimeoutRequest"
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/E2B_sandboxID"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Successfully set the sandbox timeout"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/E2B_401"
+                    },
+                    "402": {
+                        "description": "Insufficient credits or key budget for prepaid runtime."
+                    },
+                    "403": {
+                        "description": "Missing account:machines permission or access denied."
+                    },
+                    "404": {
+                        "description": "Sandbox not found or owned by another user."
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/E2B_429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/E2B_500"
+                    }
+                }
+            }
+        },
+        "/alpha/e2b/sandboxes/{sandboxID}/metrics": {
+            "get": {
+                "summary": "Sandbox metrics",
+                "description": "Get sandbox metrics\n\nRequires a Pollinations secret key with `account:machines` permission. Only your own sandboxes are accessible.",
+                "tags": [
+                    "Sandboxes API"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/E2B_sandboxID"
+                    },
+                    {
+                        "in": "query",
+                        "name": "start",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64",
+                            "minimum": 0
+                        },
+                        "description": "Unix timestamp for the start of the interval, in seconds, for which the metrics"
+                    },
+                    {
+                        "in": "query",
+                        "name": "end",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64",
+                            "minimum": 0,
+                            "description": "Unix timestamp for the end of the interval, in seconds, for which the metrics"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully returned the sandbox metrics",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/E2B_SandboxMetric"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/E2B_400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/E2B_401"
+                    },
+                    "402": {
+                        "description": "Insufficient credits or key budget for prepaid runtime."
+                    },
+                    "403": {
+                        "description": "Missing account:machines permission or access denied."
+                    },
+                    "404": {
+                        "description": "Sandbox not found or owned by another user."
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/E2B_429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/E2B_500"
+                    }
+                }
+            }
+        },
+        "/alpha/e2b/sandboxes/{sandboxID}/logs": {
+            "get": {
+                "summary": "Sandbox logs",
+                "description": "Read sandbox system logs. Pollinations supports this legacy logs endpoint; v2 logs are unavailable.\n\nRequires a Pollinations secret key with `account:machines` permission. Only your own sandboxes are accessible.",
+                "deprecated": true,
+                "tags": [
+                    "Sandboxes API"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/E2B_sandboxID"
+                    },
+                    {
+                        "in": "query",
+                        "name": "start",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64",
+                            "minimum": 0
+                        },
+                        "description": "Starting timestamp of the logs that should be returned in milliseconds"
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "default": 1000,
+                            "format": "int32",
+                            "minimum": 0,
+                            "type": "integer"
+                        },
+                        "description": "Maximum number of logs that should be returned"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully returned the sandbox logs",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/E2B_SandboxLogs"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/E2B_401"
+                    },
+                    "402": {
+                        "description": "Insufficient credits or key budget for prepaid runtime."
+                    },
+                    "403": {
+                        "description": "Missing account:machines permission or access denied."
+                    },
+                    "404": {
+                        "description": "Sandbox not found or owned by another user."
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/E2B_429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/E2B_500"
+                    }
+                }
+            }
+        },
+        "/alpha/e2b/sandboxes/{sandboxID}/network": {
+            "put": {
+                "summary": "Update sandbox network",
+                "description": "Update the network configuration for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting field clears it.\n\nRequires a Pollinations secret key with `account:machines` permission. Only your own sandboxes are accessible.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Sandboxes API"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/E2B_SandboxNetworkUpdateConfig"
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/E2B_sandboxID"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Successfully updated the sandbox network configuration"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/E2B_401"
+                    },
+                    "402": {
+                        "description": "Insufficient credits or key budget for prepaid runtime."
+                    },
+                    "403": {
+                        "description": "Missing account:machines permission or access denied."
+                    },
+                    "404": {
+                        "description": "Sandbox not found or owned by another user."
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/E2B_409"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/E2B_429"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/E2B_500"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "E2B_NewSandbox": {
+                "required": [
+                    "templateID"
+                ],
+                "properties": {
+                    "templateID": {
+                        "type": "string",
+                        "description": "Identifier of the required template"
+                    },
+                    "timeout": {
+                        "type": "integer",
+                        "format": "int32",
+                        "minimum": 0,
+                        "default": 15,
+                        "description": "Time to live for the sandbox in seconds."
+                    },
+                    "autoPause": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Automatically pauses the sandbox after the timeout"
+                    },
+                    "autoPauseMemory": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Controls the snapshot kind taken when the sandbox auto-pauses on timeout (only relevant when autoPause is true). When false, the auto-pause drops the in-memory state and persists only the filesystem (a filesystem-only snapshot); resuming it cold-boots (reboots) the sandbox from disk. Such a snapshot cannot be auto-resumed by traffic and must be resumed explicitly, so it cannot be combined with autoResume. Defaults to true (full memory snapshot)."
+                    },
+                    "allow_internet_access": {
+                        "type": "boolean",
+                        "description": "Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config."
+                    },
+                    "network": {
+                        "$ref": "#/components/schemas/E2B_SandboxNetworkConfig"
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/E2B_SandboxMetadata"
+                    },
+                    "envVars": {
+                        "$ref": "#/components/schemas/E2B_EnvVars"
+                    },
+                    "mcp": {
+                        "$ref": "#/components/schemas/E2B_Mcp"
+                    }
+                },
+                "example": {
+                    "templateID": "pollinations",
+                    "timeout": 600
+                }
+            },
+            "E2B_SandboxNetworkConfig": {
+                "type": "object",
+                "properties": {
+                    "allowPublicTraffic": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Specify if the sandbox URLs should be accessible only with authentication."
+                    },
+                    "allowOut": {
+                        "type": "array",
+                        "description": "List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. \"8.8.8.8/32\"), a bare IP address (e.g. \"8.8.8.8\"), or a domain name (e.g. \"example.com\", \"*.example.com\"). Allowed entries always take precedence over denied entries.",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "denyOut": {
+                        "type": "array",
+                        "description": "List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules.",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "egressProxy": {
+                        "$ref": "#/components/schemas/E2B_SandboxEgressProxyConfig"
+                    },
+                    "maskRequestHost": {
+                        "type": "string",
+                        "description": "Specify host mask which will be used for all sandbox requests"
+                    },
+                    "httpsPorts": {
+                        "type": "array",
+                        "description": "Sandbox ports that serve HTTPS rather than plaintext HTTP. Affects how the proxy reaches the service inside the sandbox; the public URL is HTTPS either way. Certificates are not verified, so self-signed ones work. The envd port (49983) cannot be listed.",
+                        "maxItems": 128,
+                        "uniqueItems": true,
+                        "items": {
+                            "type": "integer",
+                            "format": "uint32",
+                            "minimum": 1,
+                            "maximum": 65535
+                        }
+                    },
+                    "rules": {
+                        "type": "object",
+                        "description": "Per-domain transform rules applied to matching outbound HTTPS requests. Keys may be exact DNS names (for example, \"api.example.com\") or a leading wildcard (for example, \"*.example.com\"), and are normalized to lowercase on write. Wildcards match subdomains at any depth but not the apex domain; a bare \"*\" is invalid. Exact rules take precedence, followed by the longest matching wildcard suffix, and matching rule sets are not merged. Broad wildcards such as \"*.com\" are allowed and may expose transformed credentials to every matching destination the sandbox contacts. Rules do not grant network access; configure allowOut separately to permit the destination.\n",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/components/schemas/E2B_SandboxNetworkRule"
+                            }
+                        }
+                    }
+                }
+            },
+            "E2B_SandboxEgressProxyConfig": {
+                "anyOf": [
+                    {
+                        "type": "object",
+                        "description": "SOCKS5 proxy for sandbox egress. Outbound TCP is tunneled through the proxy after allow/deny filtering; the sandbox is unaware. Domain-matched flows use remote DNS (ATYP=domain).",
+                        "required": [
+                            "address"
+                        ],
+                        "properties": {
+                            "address": {
+                                "type": "string",
+                                "description": "SOCKS5 proxy address in host:port format (e.g. \"proxy.example.com:1080\")."
+                            },
+                            "username": {
+                                "type": "string",
+                                "maxLength": 255,
+                                "description": "Optional SOCKS5 username (RFC 1929), max 255 bytes."
+                            },
+                            "password": {
+                                "type": "string",
+                                "maxLength": 255,
+                                "description": "Optional SOCKS5 password (RFC 1929), max 255 bytes."
+                            }
+                        }
+                    },
+                    {
+                        "type": "null"
+                    }
+                ]
+            },
+            "E2B_SandboxNetworkRule": {
+                "type": "object",
+                "description": "Transform rule applied to egress requests matching a domain pattern.",
+                "properties": {
+                    "transform": {
+                        "$ref": "#/components/schemas/E2B_SandboxNetworkTransform"
+                    }
+                }
+            },
+            "E2B_SandboxNetworkTransform": {
+                "type": "object",
+                "description": "Transformations applied to matching egress requests before forwarding.",
+                "properties": {
+                    "headers": {
+                        "type": "object",
+                        "description": "HTTP headers to inject or override in matching requests. An existing header with the same name is replaced. Values are plain strings; secret resolution happens client-side before sending to the API.\n",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "E2B_SandboxMetadata": {
+                "additionalProperties": {
+                    "type": "string",
+                    "description": "Metadata of the sandbox"
+                }
+            },
+            "E2B_EnvVars": {
+                "additionalProperties": {
+                    "type": "string",
+                    "description": "Environment variables for the sandbox"
+                }
+            },
+            "E2B_Mcp": {
+                "anyOf": [
+                    {
+                        "type": "object",
+                        "description": "MCP configuration for the sandbox",
+                        "additionalProperties": {}
+                    },
+                    {
+                        "type": "null"
+                    }
+                ]
+            },
+            "E2B_Sandbox": {
+                "required": [
+                    "templateID",
+                    "sandboxID",
+                    "clientID",
+                    "envdVersion"
+                ],
+                "properties": {
+                    "templateID": {
+                        "type": "string",
+                        "description": "Identifier of the template from which is the sandbox created"
+                    },
+                    "sandboxID": {
+                        "type": "string",
+                        "description": "Identifier of the sandbox"
+                    },
+                    "alias": {
+                        "type": "string",
+                        "description": "Alias of the template"
+                    },
+                    "clientID": {
+                        "type": "string",
+                        "deprecated": true,
+                        "description": "Identifier of the client"
+                    },
+                    "envdVersion": {
+                        "$ref": "#/components/schemas/E2B_EnvdVersion"
+                    },
+                    "envdAccessToken": {
+                        "type": "string",
+                        "description": "Access token used for envd communication"
+                    },
+                    "trafficAccessToken": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "description": "Token required for accessing sandbox via proxy."
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "domain": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "description": "Base domain where the sandbox traffic is accessible"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                }
+            },
+            "E2B_EnvdVersion": {
+                "type": "string",
+                "description": "Version of the envd running in the sandbox"
+            },
+            "E2B_Error": {
+                "required": [
+                    "code",
+                    "message"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Error code"
+                    },
+                    "error_code": {
+                        "type": "string",
+                        "description": "Machine-readable semantic error code. Not a closed set; initial values: sandbox_capacity_unavailable, sandbox_placement_timeout, sandbox_no_compatible_node, sandbox_create_failed, internal_server_error, secret_limit_reached."
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "Error"
+                    }
+                }
+            },
+            "E2B_NewSandboxV2": {
+                "description": "Sandbox creation request. All system communication with the sandbox is always secured; the template's envd version must support secured access.",
+                "required": [
+                    "templateID"
+                ],
+                "properties": {
+                    "templateID": {
+                        "type": "string",
+                        "description": "Identifier of the required template"
+                    },
+                    "timeout": {
+                        "type": "integer",
+                        "format": "int32",
+                        "minimum": 1,
+                        "default": 300,
+                        "description": "Time to live for the sandbox in seconds."
+                    },
+                    "autoPause": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Automatically pauses the sandbox after the timeout"
+                    },
+                    "autoPauseMemory": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Controls the snapshot kind taken when the sandbox auto-pauses on timeout (only relevant when autoPause is true). When false, the auto-pause drops the in-memory state and persists only the filesystem (a filesystem-only snapshot); resuming it cold-boots (reboots) the sandbox from disk. Such a snapshot cannot be auto-resumed by traffic and must be resumed explicitly, so it cannot be combined with autoResume. Defaults to true (full memory snapshot)."
+                    },
+                    "allow_internet_access": {
+                        "type": "boolean",
+                        "description": "Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config."
+                    },
+                    "network": {
+                        "$ref": "#/components/schemas/E2B_SandboxNetworkConfig"
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/E2B_SandboxMetadata"
+                    },
+                    "envVars": {
+                        "$ref": "#/components/schemas/E2B_EnvVars"
+                    },
+                    "mcp": {
+                        "$ref": "#/components/schemas/E2B_Mcp"
+                    }
+                },
+                "example": {
+                    "templateID": "pollinations",
+                    "timeout": 600
+                }
+            },
+            "E2B_SandboxState": {
+                "type": "string",
+                "description": "State of the sandbox",
+                "enum": [
+                    "running",
+                    "paused"
+                ]
+            },
+            "E2B_OrderDirection": {
+                "type": "string",
+                "description": "Sort direction",
+                "default": "desc",
+                "enum": [
+                    "asc",
+                    "desc"
+                ]
+            },
+            "E2B_ListedSandbox": {
+                "required": [
+                    "templateID",
+                    "sandboxID",
+                    "clientID",
+                    "startedAt",
+                    "cpuCount",
+                    "memoryMB",
+                    "diskSizeMB",
+                    "endAt",
+                    "state",
+                    "envdVersion"
+                ],
+                "properties": {
+                    "templateID": {
+                        "type": "string",
+                        "description": "Identifier of the template from which is the sandbox created"
+                    },
+                    "alias": {
+                        "type": "string",
+                        "description": "Alias of the template"
+                    },
+                    "sandboxID": {
+                        "type": "string",
+                        "description": "Identifier of the sandbox"
+                    },
+                    "clientID": {
+                        "type": "string",
+                        "deprecated": true,
+                        "description": "Identifier of the client"
+                    },
+                    "startedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Time when the sandbox was started"
+                    },
+                    "endAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Requested deadline when ongoing renewal is enabled; otherwise the current lease end."
+                    },
+                    "cpuCount": {
+                        "$ref": "#/components/schemas/E2B_CPUCount"
+                    },
+                    "memoryMB": {
+                        "$ref": "#/components/schemas/E2B_MemoryMB"
+                    },
+                    "diskSizeMB": {
+                        "$ref": "#/components/schemas/E2B_DiskSizeMB"
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/E2B_SandboxMetadata"
+                    },
+                    "state": {
+                        "$ref": "#/components/schemas/E2B_SandboxState"
+                    },
+                    "envdVersion": {
+                        "$ref": "#/components/schemas/E2B_EnvdVersion"
+                    },
+                    "volumeMounts": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/E2B_SandboxVolumeMount"
+                        }
+                    }
+                }
+            },
+            "E2B_CPUCount": {
+                "type": "integer",
+                "format": "int32",
+                "minimum": 1,
+                "description": "CPU cores for the sandbox"
+            },
+            "E2B_MemoryMB": {
+                "type": "integer",
+                "format": "int32",
+                "minimum": 128,
+                "description": "Memory for the sandbox in MiB"
+            },
+            "E2B_DiskSizeMB": {
+                "type": "integer",
+                "format": "int32",
+                "minimum": 0,
+                "description": "Disk size for the sandbox in MiB"
+            },
+            "E2B_SandboxVolumeMount": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the volume"
+                    },
+                    "path": {
+                        "type": "string",
+                        "description": "Path of the volume"
+                    }
+                },
+                "required": [
+                    "name",
+                    "path"
+                ]
+            },
+            "E2B_SandboxDetail": {
+                "required": [
+                    "templateID",
+                    "sandboxID",
+                    "clientID",
+                    "startedAt",
+                    "cpuCount",
+                    "memoryMB",
+                    "diskSizeMB",
+                    "endAt",
+                    "state",
+                    "envdVersion"
+                ],
+                "properties": {
+                    "templateID": {
+                        "type": "string",
+                        "description": "Identifier of the template from which is the sandbox created"
+                    },
+                    "alias": {
+                        "type": "string",
+                        "description": "Alias of the template"
+                    },
+                    "sandboxID": {
+                        "type": "string",
+                        "description": "Identifier of the sandbox"
+                    },
+                    "clientID": {
+                        "type": "string",
+                        "deprecated": true,
+                        "description": "Identifier of the client"
+                    },
+                    "startedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Time when the sandbox was started"
+                    },
+                    "endAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Requested deadline when ongoing renewal is enabled; otherwise the current lease end."
+                    },
+                    "envdVersion": {
+                        "$ref": "#/components/schemas/E2B_EnvdVersion"
+                    },
+                    "envdAccessToken": {
+                        "type": "string",
+                        "description": "Access token used for envd communication"
+                    },
+                    "allowInternetAccess": {
+                        "anyOf": [
+                            {
+                                "type": "boolean",
+                                "description": "Whether internet access was explicitly enabled or disabled for the sandbox. Null means it was not explicitly set."
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "domain": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "description": "Base domain where the sandbox traffic is accessible"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "cpuCount": {
+                        "$ref": "#/components/schemas/E2B_CPUCount"
+                    },
+                    "memoryMB": {
+                        "$ref": "#/components/schemas/E2B_MemoryMB"
+                    },
+                    "diskSizeMB": {
+                        "$ref": "#/components/schemas/E2B_DiskSizeMB"
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/E2B_SandboxMetadata"
+                    },
+                    "state": {
+                        "$ref": "#/components/schemas/E2B_SandboxState"
+                    },
+                    "network": {
+                        "$ref": "#/components/schemas/E2B_SandboxNetworkConfig"
+                    },
+                    "lifecycle": {
+                        "$ref": "#/components/schemas/E2B_SandboxLifecycle"
+                    },
+                    "volumeMounts": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/E2B_SandboxVolumeMount"
+                        }
+                    }
+                }
+            },
+            "E2B_SandboxLifecycle": {
+                "type": "object",
+                "description": "Sandbox lifecycle policy returned by sandbox info.",
+                "required": [
+                    "autoResume",
+                    "onTimeout"
+                ],
+                "properties": {
+                    "autoResume": {
+                        "type": "boolean",
+                        "description": "Whether the sandbox can auto-resume."
+                    },
+                    "onTimeout": {
+                        "$ref": "#/components/schemas/E2B_SandboxOnTimeout"
+                    }
+                }
+            },
+            "E2B_SandboxOnTimeout": {
+                "type": "string",
+                "description": "Action taken when the sandbox times out.",
+                "enum": [
+                    "kill",
+                    "pause"
+                ]
+            },
+            "E2B_ConnectSandbox": {
+                "type": "object",
+                "properties": {
+                    "timeout": {
+                        "description": "Timeout in seconds from the current time after which the sandbox should expire",
+                        "type": "integer",
+                        "format": "int32",
+                        "minimum": 0,
+                        "default": 300
+                    }
+                },
+                "example": {
+                    "timeout": 600
+                }
+            },
+            "E2B_ConnectSandboxV2": {
+                "type": "object",
+                "properties": {
+                    "timeout": {
+                        "description": "Timeout in seconds from the current time after which the sandbox should expire",
+                        "type": "integer",
+                        "format": "int32",
+                        "minimum": 1,
+                        "default": 300
+                    }
+                },
+                "example": {
+                    "timeout": 600
+                }
+            },
+            "E2B_SandboxPauseRequest": {
+                "type": "object",
+                "properties": {
+                    "memory": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Whether to capture a full memory snapshot. When false, only the filesystem is persisted and resuming the sandbox cold-boots (reboots) it from disk, losing in-memory state, running processes, and open connections. Resume it with an explicit request (connect or resume); auto-resume, which can be triggered by arbitrary traffic, refuses such a sandbox. Defaults to true."
+                    }
+                },
+                "example": {
+                    "memory": true
+                }
+            },
+            "E2B_SandboxTimeoutRequest": {
+                "type": "object",
+                "required": [
+                    "timeout"
+                ],
+                "properties": {
+                    "timeout": {
+                        "description": "Timeout in seconds from the current time after which the sandbox should expire",
+                        "type": "integer",
+                        "format": "int32",
+                        "minimum": 0
+                    }
+                },
+                "example": {
+                    "timeout": 600
+                }
+            },
+            "E2B_SandboxMetric": {
+                "description": "Metric entry with timestamp and line",
+                "required": [
+                    "timestamp",
+                    "timestampUnix",
+                    "cpuCount",
+                    "cpuUsedPct",
+                    "memUsed",
+                    "memTotal",
+                    "memCache",
+                    "diskUsed",
+                    "diskTotal"
+                ],
+                "properties": {
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time",
+                        "deprecated": true,
+                        "description": "Timestamp of the metric entry"
+                    },
+                    "timestampUnix": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Timestamp of the metric entry in Unix time (seconds since epoch)"
+                    },
+                    "cpuCount": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Number of CPU cores"
+                    },
+                    "cpuUsedPct": {
+                        "type": "number",
+                        "format": "float",
+                        "description": "CPU usage percentage"
+                    },
+                    "memUsed": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Memory used in bytes"
+                    },
+                    "memTotal": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Total memory in bytes"
+                    },
+                    "memCache": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Cached memory (page cache) in bytes"
+                    },
+                    "diskUsed": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Disk used in bytes"
+                    },
+                    "diskTotal": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Total disk space in bytes"
+                    }
+                }
+            },
+            "E2B_SandboxLogs": {
+                "required": [
+                    "logs",
+                    "logEntries"
+                ],
+                "properties": {
+                    "logs": {
+                        "description": "Logs of the sandbox",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/E2B_SandboxLog"
+                        }
+                    },
+                    "logEntries": {
+                        "description": "Structured logs of the sandbox",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/E2B_SandboxLogEntry"
+                        }
+                    }
+                }
+            },
+            "E2B_SandboxLog": {
+                "description": "Log entry with timestamp and line",
+                "required": [
+                    "timestamp",
+                    "line"
+                ],
+                "properties": {
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Timestamp of the log entry"
+                    },
+                    "line": {
+                        "type": "string",
+                        "description": "Log line content"
+                    }
+                }
+            },
+            "E2B_SandboxLogEntry": {
+                "required": [
+                    "timestamp",
+                    "level",
+                    "message",
+                    "fields"
+                ],
+                "properties": {
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Timestamp of the log entry"
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "Log message content"
+                    },
+                    "level": {
+                        "$ref": "#/components/schemas/E2B_LogLevel"
+                    },
+                    "fields": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "E2B_LogLevel": {
+                "type": "string",
+                "description": "State of the sandbox",
+                "enum": [
+                    "debug",
+                    "info",
+                    "warn",
+                    "error"
+                ]
+            },
+            "E2B_SandboxNetworkUpdateConfig": {
+                "type": "object",
+                "description": "Network configuration update for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting a field clears it.",
+                "properties": {
+                    "allowOut": {
+                        "type": "array",
+                        "description": "List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. \"8.8.8.8/32\"), a bare IP address (e.g. \"8.8.8.8\"), or a domain name (e.g. \"example.com\", \"*.example.com\"). Allowed entries always take precedence over denied entries.",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "denyOut": {
+                        "type": "array",
+                        "description": "List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules.",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "egressProxy": {
+                        "$ref": "#/components/schemas/E2B_SandboxEgressProxyConfig"
+                    },
+                    "rules": {
+                        "type": "object",
+                        "description": "Per-domain transform rules applied to matching outbound HTTPS requests. Replaces all existing rules when provided. Keys may be exact DNS names or a single leading wildcard (for example, \"*.example.com\"), and are normalized to lowercase on write. Wildcards match subdomains at any depth but not the apex domain; a bare \"*\" is invalid. Exact rules take precedence, followed by the longest matching wildcard suffix, and matching rule sets are not merged. Broad wildcards such as \"*.com\" are allowed and may expose transformed credentials to every matching destination the sandbox contacts. Rules do not grant network access; configure allowOut separately to permit the destination.\n",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/components/schemas/E2B_SandboxNetworkRule"
+                            }
+                        }
+                    },
+                    "allow_internet_access": {
+                        "type": "boolean",
+                        "description": "Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config."
+                    }
+                },
+                "example": {
+                    "denyOut": [
+                        "0.0.0.0/0"
+                    ],
+                    "allowOut": [
+                        "gen.pollinations.ai"
+                    ]
+                }
+            }
+        },
+        "responses": {
+            "E2B_400": {
+                "description": "Bad request",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/E2B_Error"
+                        }
+                    }
+                }
+            },
+            "E2B_401": {
+                "description": "Authentication error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/E2B_Error"
+                        }
+                    }
+                }
+            },
+            "E2B_429": {
+                "description": "Too many requests",
+                "headers": {
+                    "Retry-After": {
+                        "description": "When present, the number of seconds to wait before retrying the request.",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 0
+                        },
+                        "example": 30
+                    }
+                },
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/E2B_Error"
+                        }
+                    }
+                }
+            },
+            "E2B_500": {
+                "description": "Server error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/E2B_Error"
+                        }
+                    }
+                }
+            },
+            "E2B_503": {
+                "description": "Service unavailable",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/E2B_Error"
+                        }
+                    }
+                }
+            },
+            "E2B_504": {
+                "description": "Backend timeout",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/E2B_Error"
+                        }
+                    }
+                }
+            },
+            "E2B_409": {
+                "description": "Conflict",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/E2B_Error"
+                        }
+                    }
+                }
+            }
+        },
+        "parameters": {
+            "E2B_paginationNextToken": {
+                "name": "nextToken",
+                "in": "query",
+                "description": "Cursor to start the list from",
+                "required": false,
+                "schema": {
+                    "type": "string"
+                }
+            },
+            "E2B_paginationLimit": {
+                "name": "limit",
+                "in": "query",
+                "description": "Maximum number of items to return per page",
+                "required": false,
+                "schema": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 1,
+                    "default": 100,
+                    "maximum": 100
+                }
+            },
+            "E2B_sandboxID": {
+                "name": "sandboxID",
+                "in": "path",
+                "required": true,
+                "schema": {
+                    "type": "string",
+                    "example": "example-sandbox"
+                }
+            }
+        },
+        "headers": {
+            "E2B_XNextToken": {
+                "description": "Cursor to fetch the next page of results, if more exist",
+                "schema": {
+                    "type": "string"
+                }
+            },
+            "E2B_XTotalRunning": {
+                "description": "Number of running sandboxes matching the filters, before pagination is applied. Only present when running sandboxes were requested.\n",
+                "schema": {
+                    "type": "integer",
+                    "format": "int32"
+                }
+            }
+        }
+    }
+}

@@ -68,7 +68,6 @@ describe("docs routes", () => {
             gen: true,
             enter: false,
             media: false,
-            e2b: false,
         });
         const text = schema.paths["/text/{prompt}"]?.get;
         expect(text).toBeDefined();
@@ -205,7 +204,6 @@ describe("docs routes", () => {
             gen: true,
             enter: true,
             media: true,
-            e2b: false,
         });
 
         expect(schema.servers).toEqual([
@@ -471,7 +469,7 @@ describe("docs routes", () => {
         vi.mocked(fetch).mockResolvedValue(Response.json(schema));
         await expect(
             fetchOpenApiSpec("https://gen.pollinations.ai/openapi.json"),
-        ).rejects.toThrow("from: e2b");
+        ).resolves.toEqual(schema);
     });
 
     it.each(["http failure", "network failure", "no operations"])(
@@ -515,14 +513,13 @@ describe("docs routes", () => {
         ).rejects.toThrow("HTTP 503");
     });
 
-    it.each(["gen", "enter", "media", "e2b"])(
+    it.each(["gen", "enter", "media"])(
         "requires positive completeness metadata for %s",
         async (source) => {
             const sources: Record<string, boolean> = {
                 gen: true,
                 enter: true,
                 media: true,
-                e2b: true,
             };
             delete sources[source];
             vi.spyOn(globalThis, "fetch").mockResolvedValue(

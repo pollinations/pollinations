@@ -1,10 +1,15 @@
+// Refreshes the Sandboxes API reference from E2B's spec: keeps the
+// operations e2b.ts serves, applies Pollinations' differences, and writes a
+// snapshot the docs read. Run it and review the diff when E2B changes:
+//   npx tsx scripts/sync-e2b-schema.ts
+import { writeFileSync } from "node:fs";
 import { parse } from "yaml";
 
 type ObjectValue = Record<string, unknown>;
 const object = (value: unknown) => value as ObjectValue;
-export const E2B_SCHEMA_URL =
-    "https://raw.githubusercontent.com/e2b-dev/E2B/main/spec/openapi.yml";
-const CACHE_KEY = "https://gen.pollinations.ai/__docs/e2b-upstream";
+const E2B_REPO = "e2b-dev/E2B";
+const E2B_SPEC = "spec/openapi.yml";
+const SNAPSHOT = new URL("../src/docs/e2b-sandboxes.json", import.meta.url);
 
 // Only operations served by e2b.ts. New upstream endpoints stay private.
 const OPERATIONS: Record<string, string[]> = {
@@ -168,37 +173,25 @@ export function filterE2bSchema(input: unknown) {
     return { paths: object(copy(paths)), components };
 }
 
-export async function fetchE2bSchema() {
-    // Cache the source, not our transformed output, so code updates always apply.
-    const cache = await caches.open("e2b-docs");
-    const cached = await cache.match(CACHE_KEY);
-    const cachedEtag = cached?.headers.get("etag");
-    const cachedText = await cached?.text();
-    try {
-        const response = await fetch(E2B_SCHEMA_URL, {
-            headers: cachedEtag ? { "If-None-Match": cachedEtag } : {},
-            signal: AbortSignal.timeout(5000),
-        });
-        if (response.status !== 304 && !response.ok)
-            throw new Error(`E2B schema: ${response.status}`);
-        const text =
-            response.status === 304 ? cachedText : await response.text();
-        if (!text) throw new Error("E2B returned an empty schema");
-        const schema = filterE2bSchema(parse(text));
-        const headers = new Headers({
-            "Cache-Control": "public, max-age=86400",
-        });
-        const etag =
-            response.status === 304 ? cachedEtag : response.headers.get("etag");
-        if (etag) headers.set("etag", etag);
-        await cache.put(CACHE_KEY, new Response(text, { headers }));
-        return { schema, fresh: true };
-    } catch {
-        // A cold-cache failure omits just this reference; publication still fails.
-        if (!cachedText) return { schema: undefined, fresh: false };
-        return {
-            schema: filterE2bSchema(parse(cachedText)),
-            fresh: false,
-        };
-    }
+async function main() {
+    // Pin the snapshot to the commit it came from, so a refresh diff shows
+    // exactly which upstream version it reflects.
+    const commits = await fetch(
+        `https://api.github.com/repos/${E2B_REPO}/commits?path=${E2B_SPEC}&per_page=1`,
+    );
+    if (!commits.ok) throw new Error(`GitHub commits: ${commits.status}`);
+    const [{ sha }] = (await commits.json()) as { sha: string }[];
+    const source = `https://raw.githubusercontent.com/${E2B_REPO}/${sha}/${E2B_SPEC}`;
+    const response = await fetch(source);
+    if (!response.ok) throw new Error(`E2B spec: ${response.status}`);
+    const schema = filterE2bSchema(parse(await response.text()));
+    writeFileSync(
+        SNAPSHOT,
+        `${JSON.stringify({ source, ...schema }, null, 4)}\n`,
+    );
+    console.log(
+        `Wrote ${Object.keys(schema.paths).length} paths from ${source}`,
+    );
 }
+
+if (import.meta.main) await main();

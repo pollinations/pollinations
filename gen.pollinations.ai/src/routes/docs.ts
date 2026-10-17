@@ -30,7 +30,6 @@ import {
     API_REFERENCE_CUSTOM_CSS,
     POLLINATIONS_DOCS_CSS,
 } from "./docs-styles.ts";
-import { fetchE2bSchema } from "./e2b-schema.ts";
 import { injectDocsSocialHead, SEO_TITLE } from "./seo.ts";
 
 // Same amber favicon as gen.pollinations.ai/public/favicon-32x32.png. Scalar
@@ -51,6 +50,7 @@ import ACCOUNT_MD from "../docs/account.md?raw";
 import ASYNC_JOBS_MD from "../docs/async-jobs.md?raw";
 import AUDIO_GENERATION_MD from "../docs/audio-generation.md?raw";
 import AUTHENTICATION_MD from "../docs/authentication.md?raw";
+import E2B_SANDBOXES from "../docs/e2b-sandboxes.json";
 import EMBEDDINGS_MD from "../docs/embeddings.md?raw";
 import ERRORS_MD from "../docs/errors.md?raw";
 import IMAGE_GENERATION_MD from "../docs/image-generation.md?raw";
@@ -659,7 +659,7 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.sandboxesApi,
                 description:
-                    "E2B API reference, filtered to operations supported by Pollinations and refreshed from upstream when the docs load. See the [Sandboxes guide](#tag/sandboxes) for setup, credits and restrictions, and [current pricing](https://gen.pollinations.ai/alpha/e2b/pricing). If the reference is temporarily unavailable, consult [E2B](https://docs.e2b.dev/api-reference/sandboxes/create-sandbox-v2) alongside the guide.",
+                    "Sandbox management endpoints from E2B's API, limited to what Pollinations supports. Setup, credits and restrictions: [Sandboxes guide](#tag/sandboxes). Rates: [pricing](https://gen.pollinations.ai/alpha/e2b/pricing).",
             },
             {
                 name: DOC_TAGS.errors,
@@ -1044,28 +1044,18 @@ export async function buildMergedOpenApiSpec(
     c: Context<Env>,
     genApp: Hono<Env>,
 ): Promise<OpenApiSchema> {
-    const e2bRequest = fetchE2bSchema().catch(() => ({
-        schema: undefined,
-        fresh: false,
-    }));
-    // Finish cache work even if a required schema fails first.
-    c.executionCtx.waitUntil(e2bRequest);
-    const [generationSchema, enterSchema, mediaSchema, e2b] = await Promise.all(
-        [
-            getGenerationSchema(genApp),
-            fetchEnterSchema(c),
-            fetchMediaSchema(c).catch(() => undefined),
-            e2bRequest,
-        ],
-    );
+    const [generationSchema, enterSchema, mediaSchema] = await Promise.all([
+        getGenerationSchema(genApp),
+        fetchEnterSchema(c),
+        fetchMediaSchema(c).catch(() => undefined),
+    ]);
     const merged = mergeSchemas(generationSchema, enterSchema, mediaSchema);
-    if (e2b.schema) {
-        merged.paths = { ...asRecord(merged.paths), ...e2b.schema.paths };
-        merged.components = mergeComponents(
-            asRecord(merged.components),
-            e2b.schema.components,
-        );
-    }
+    // E2B's sandbox operations, from the reviewed snapshot (scripts/sync-e2b-schema.ts).
+    merged.paths = { ...asRecord(merged.paths), ...E2B_SANDBOXES.paths };
+    merged.components = mergeComponents(
+        asRecord(merged.components),
+        E2B_SANDBOXES.components,
+    );
     return {
         ...injectSamples(merged),
         // Keep contributor identity after merging so publication can reject a
@@ -1074,7 +1064,6 @@ export async function buildMergedOpenApiSpec(
             gen: hasPublicOperations(generationSchema),
             enter: hasPublicOperations(enterSchema),
             media: hasPublicOperations(mediaSchema),
-            e2b: e2b.fresh,
         },
     };
 }

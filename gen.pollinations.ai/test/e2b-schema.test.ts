@@ -3,15 +3,12 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { afterEach, expect, it, vi } from "vitest";
-import { fetchOpenApiSpec, type Spec } from "../scripts/generate-apidocs.ts";
+import type { Spec } from "../scripts/generate-apidocs.ts";
+import { filterE2bSchema } from "../scripts/sync-e2b-schema.ts";
 import { requestExampleErrors } from "../scripts/validate-request-examples.ts";
+import snapshot from "../src/docs/e2b-sandboxes.json";
 import worker from "../src/index.ts";
 import { e2bRoutes } from "../src/routes/e2b.ts";
-import {
-    E2B_SCHEMA_URL,
-    fetchE2bSchema,
-    filterE2bSchema,
-} from "../src/routes/e2b-schema.ts";
 
 // A small upstream-shaped document, including routes we must not expose.
 // Use the real router to catch drift between its operations and the docs filter.
@@ -164,10 +161,8 @@ const upstream = {
     },
 };
 
-afterEach(async () => {
+afterEach(() => {
     vi.restoreAllMocks();
-    const cache = await caches.open("e2b-docs");
-    await cache.delete("https://gen.pollinations.ai/__docs/e2b-upstream");
 });
 
 it("imports only live routes and referenced schemas, with Pollinations overrides", () => {
@@ -209,110 +204,59 @@ it("imports only live routes and referenced schemas, with Pollinations overrides
     );
 });
 
-it("revalidates upstream, adopts changes, and keeps the last good reference on failure", async () => {
-    const remote = vi
-        .spyOn(globalThis, "fetch")
-        .mockResolvedValueOnce(
-            Response.json(upstream, { headers: { etag: '"one"' } }),
-        );
-    const first = await fetchE2bSchema();
-    expect(first.fresh).toBe(true);
-    remote.mockResolvedValueOnce(new Response(null, { status: 304 }));
-    expect(await fetchE2bSchema()).toEqual(first);
-    expect(remote).toHaveBeenLastCalledWith(
-        E2B_SCHEMA_URL,
-        expect.objectContaining({ headers: { "If-None-Match": '"one"' } }),
+it("keeps the committed snapshot in step with the sandbox routes", () => {
+    // A new or removed route in e2b.ts needs a refresh: npx tsx scripts/sync-e2b-schema.ts
+    expect(Object.keys(snapshot.paths).sort()).toEqual(
+        Object.keys(paths)
+            .map((p) => `/alpha/e2b${p}`)
+            .sort(),
     );
-    const updated = structuredClone(upstream);
-    updated.components.schemas.NewSandbox.properties.timeout.default = 42;
-    remote.mockResolvedValueOnce(
-        Response.json(updated, { headers: { etag: '"two"' } }),
-    );
-    const next = await fetchE2bSchema();
-    expect(next.schema?.components.schemas.E2B_NewSandbox).toMatchObject({
-        properties: { timeout: { default: 42 } },
-    });
-    for (const response of [
-        new Response("down", { status: 503 }),
-        Response.json({ ...upstream, paths: {} }),
-    ]) {
-        remote.mockResolvedValueOnce(response);
-        expect(await fetchE2bSchema()).toEqual({
-            schema: next.schema,
-            fresh: false,
-        });
+    for (const item of Object.values(snapshot.paths)) {
+        for (const [method, op] of Object.entries(item)) {
+            if (method === "parameters") continue;
+            expect(op).toMatchObject({
+                tags: ["Sandboxes API"],
+                security: [{ bearerAuth: [] }],
+            });
+        }
     }
-    remote.mockRejectedValueOnce(new Error("offline"));
-    expect(await fetchE2bSchema()).toEqual({
-        schema: next.schema,
-        fresh: false,
-    });
+    expect(snapshot.source).toMatch(
+        /^https:\/\/raw\.githubusercontent\.com\/e2b-dev\/E2B\/[0-9a-f]{40}\//,
+    );
 });
 
-it("merges E2B into live docs and blocks regeneration when upstream cannot be refreshed", async () => {
-    const remote = vi
-        .spyOn(globalThis, "fetch")
-        .mockImplementation(async (input) =>
-            input === E2B_SCHEMA_URL
-                ? Response.json(upstream)
-                : Response.json({
-                      paths: { "/media": { get: { tags: ["Media Storage"] } } },
-                  }),
-        );
+it("serves the snapshot in the docs without contacting E2B", async () => {
+    const remote = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        Response.json({
+            paths: { "/media": { get: { tags: ["Media Storage"] } } },
+        }),
+    );
     const ctx = createExecutionContext();
-    const env = {
-        ENTER: {
-            fetch: async () =>
-                Response.json({ paths: { "/account/key": { get: {} } } }),
-        },
-        ENVIRONMENT: "test",
-        LOG_LEVEL: "error",
-        LOG_FORMAT: "text",
-    } as unknown as CloudflareBindings;
     const response = await worker.fetch(
         new Request("https://gen.pollinations.ai/openapi.json"),
-        env,
+        {
+            ENTER: {
+                fetch: async () =>
+                    Response.json({ paths: { "/account/key": { get: {} } } }),
+            },
+            ENVIRONMENT: "test",
+            LOG_LEVEL: "error",
+            LOG_FORMAT: "text",
+        } as unknown as CloudflareBindings,
         ctx,
     );
     await waitOnExecutionContext(ctx);
     const schema = await response.json<Record<string, unknown>>();
     expect(response.status).toBe(200);
-    expect(schema["x-schema-sources"]).toEqual({
-        gen: true,
-        enter: true,
-        media: true,
-        e2b: true,
-    });
+    expect(schema.paths).toHaveProperty("/alpha/e2b/v2/sandboxes");
     expect(schema["x-tagGroups"]).toContainEqual(
         expect.objectContaining({
             name: "Resources",
             tags: expect.arrayContaining(["Sandboxes API"]),
         }),
     );
-    expect(schema.paths).toHaveProperty("/alpha/e2b/v2/sandboxes");
     expect(requestExampleErrors(schema as Spec)).toEqual([]);
-    remote.mockImplementation(async () => Response.json(schema));
-    await expect(
-        fetchOpenApiSpec("https://gen.pollinations.ai/openapi.json"),
-    ).resolves.toEqual(schema);
-    remote.mockRejectedValue(new Error("upstream offline"));
-    const coldCtx = createExecutionContext();
-    const staleResponse = await worker.fetch(
-        new Request("https://gen.pollinations.ai/openapi.json"),
-        env,
-        coldCtx,
-    );
-    await waitOnExecutionContext(coldCtx);
-    const stale = await staleResponse.json<Record<string, unknown>>();
-    expect(staleResponse.status).toBe(200);
-    expect(stale.paths).toHaveProperty("/alpha/e2b/v2/sandboxes");
-    remote.mockImplementation(async () => Response.json(stale));
-    await expect(
-        fetchOpenApiSpec("https://gen.pollinations.ai/openapi.json"),
-    ).rejects.toThrow("e2b");
-});
-
-it("keeps the rest of the docs available on a cold-cache upstream failure", async () => {
-    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("offline"));
-    expect(await fetchE2bSchema()).toEqual({ schema: undefined, fresh: false });
+    expect(
+        remote.mock.calls.some(([input]) => String(input).includes("e2b-dev")),
+    ).toBe(false);
 });

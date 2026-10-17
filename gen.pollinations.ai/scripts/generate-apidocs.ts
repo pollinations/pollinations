@@ -1194,7 +1194,7 @@ export async function fetchOpenApiSpec(url: string): Promise<Spec> {
     }
     const spec = (await response.json()) as Spec;
     const sources = asObj(spec?.["x-schema-sources"]);
-    const missing = ["gen", "enter", "media", "e2b"].filter(
+    const missing = ["gen", "enter", "media"].filter(
         (source) => sources[source] !== true,
     );
     if (missing.length > 0) {

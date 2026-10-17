@@ -1,4 +1,25 @@
 {
-  "held": {},
-  "production": "ef8f5d31138bb33a97a1174ea75689529ace182c"
+  "held": {
+    "17808": {
+      "merge_sha": "563c6aec693daa937759aef071f2863d56c84015",
+      "merged_at": "2026-10-17T22:20:11Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
+    },
+    "17830": {
+      "merge_sha": "293ec71c614f5679a9657d3055ad837759f1e1a6",
+      "merged_at": "2026-10-17T22:15:07Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
+    },
+    "17831": {
+      "merge_sha": "c38e0fb9fe894cd8f5af469c6ed2037f0b879e65",
+      "merged_at": "2026-10-17T22:24:54Z",
+      "required": []
+    }
+  },
+  "production": "a8c45efabcf5264a173399306d3871a5981101ac",
+  "master": "02b0575f1ae6daad402bb2782119d7752403ad01"
 }

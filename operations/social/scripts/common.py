@@ -88,21 +88,6 @@ def github_api_request(
     return requests.request(method, url, headers=headers, timeout=timeout or DEFAULT_TIMEOUT, **kwargs)
 
 
-def post_discord_webhook(
-    webhook_url: str,
-    *,
-    json_body: Optional[Dict] = None,
-    files: Optional[Dict] = None,
-) -> requests.Response:
-    """One Discord webhook post, waiting for the message so its status is known."""
-    url = webhook_url
-    if "wait=" not in url:
-        url += ("&" if "?" in url else "?") + "wait=true"
-    if files is not None:
-        return requests.post(url, files=files, timeout=30)
-    return requests.post(url, json=json_body or {}, timeout=30)
-
-
 def chunk_message(message: str, max_length: int = DISCORD_CHUNK_SIZE):
     """Split message into chunks at paragraph breaks."""
     if len(message) <= max_length:
@@ -411,51 +396,6 @@ def _github_headers(token: str) -> Dict:
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {token}",
     }
-
-
-def commit_image_to_branch(
-    image_bytes: bytes,
-    file_path: str,
-    branch: str,
-    github_token: str,
-    owner: str,
-    repo: str,
-) -> Optional[str]:
-    """Commit an image file to a GitHub branch and return a raw URL.
-
-    Returns the raw.githubusercontent.com URL on success, None on failure.
-    """
-    import base64 as _b64
-
-    headers = _github_headers(github_token)
-
-    encoded = _b64.b64encode(image_bytes).decode()
-
-    # Check if file already exists on this branch
-    sha = get_file_sha(github_token, owner, repo, file_path, branch)
-
-    payload = {
-        "message": f"add image {file_path.split('/')[-1]}",
-        "content": encoded,
-        "branch": branch,
-    }
-    if sha:
-        payload["sha"] = sha
-
-    resp = github_api_request(
-        "PUT",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
-        headers=headers,
-        json=payload,
-    )
-
-    if resp.status_code in [200, 201]:
-        raw_url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{file_path}"
-        print(f"  Committed image to {file_path}")
-        return raw_url
-
-    print(f"  Failed to commit image: {resp.status_code} {resp.text[:200]}")
-    return None
 
 
 def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branch: str = "main") -> str:

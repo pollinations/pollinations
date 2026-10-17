@@ -19,7 +19,7 @@ function formatNumber(value: number) {
     return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
 }
 
-/** Global Quest totals and the top earners, with loading and failure states. */
+/** Global Quest totals and the top contributors, with loading and failure states. */
 export function QuestLeaderboard() {
     const { data, loading } = useQuestLeaderboard();
 
@@ -31,7 +31,7 @@ export function QuestLeaderboard() {
             <ContentHeader
                 eyebrow={null}
                 title="Quest leaderboard"
-                subtitle="pollen earned by completing Quests and contributing to Pollinations."
+                subtitle="People completing Quests and contributing to Pollinations."
                 action={
                     <ExternalLinkButton
                         href={QUESTS_PAGE_URL}
@@ -44,12 +44,14 @@ export function QuestLeaderboard() {
             />
             {data ? (
                 <>
-                    <div className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-2">
                         {(
                             [
                                 ["Participants", data.totals.contributors],
-                                ["Rewards earned", data.totals.completedQuests],
-                                ["pollen earned", data.totals.totalPollen],
+                                [
+                                    "Quests completed",
+                                    data.totals.completedQuests,
+                                ],
                             ] as const
                         ).map(([label, value]) => (
                             <Surface key={label} as="div" variant="card">
@@ -114,10 +116,10 @@ export function QuestLeaderboard() {
                                                         entry.completedQuests,
                                                     )}{" "}
                                                     {entry.completedQuests === 1
-                                                        ? "reward"
-                                                        : "rewards"}
+                                                        ? "Quest"
+                                                        : "Quests"}
                                                 </Text>
-                                                {/* Quest payouts, in the wallet's Quest green. */}
+                                                {/* Quest pollen, in the wallet's Quest green. */}
                                                 <Text
                                                     as="strong"
                                                     size="xs"
@@ -127,7 +129,7 @@ export function QuestLeaderboard() {
                                                     {formatNumber(
                                                         entry.totalPollen,
                                                     )}{" "}
-                                                    pollen earned
+                                                    pollen
                                                 </Text>
                                             </span>
                                         </span>
@@ -140,8 +142,8 @@ export function QuestLeaderboard() {
                 // The totals and rows at their real sizes, so nothing below
                 // moves when the board arrives.
                 <>
-                    <div className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-3">
-                        {[0, 1, 2].map((i) => (
+                    <div className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-2">
+                        {[0, 1].map((i) => (
                             <Skeleton key={i} className="h-23.5 sm:h-24.5" />
                         ))}
                     </div>

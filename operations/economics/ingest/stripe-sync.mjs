@@ -175,7 +175,7 @@ export function totals(rows) {
 async function request(url, token, options = {}, preview = true) {
     if (
         preview &&
-        url.startsWith(HOST) &&
+        new URL(url).origin === HOST &&
         process.env.TINYBIRD_DEPLOYMENT === "staging"
     ) {
         const target = new URL(url);

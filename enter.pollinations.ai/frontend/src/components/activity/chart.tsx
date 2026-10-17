@@ -292,7 +292,7 @@ export const Chart: FC<ChartProps> = ({
                         activityBucketKey(bar.timestamp, period);
                     const dimmed = Boolean(period.bucket) && !selected;
                     return (
-                        <g key={bar.label}>
+                        <g key={bar.timestamp.toISOString()}>
                             {/* Quest segment (bottom) */}
                             {bar.tierHeight > 0 && (
                                 <rect

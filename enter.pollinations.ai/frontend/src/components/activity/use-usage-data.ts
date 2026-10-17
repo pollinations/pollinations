@@ -1,8 +1,12 @@
-import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { accountClient } from "../../api.ts";
-import { formatActivityChartDate } from "./activity-helpers";
-import { isInActivityBucket } from "./activity-period";
+import {
+    activityBucketKeyToDate,
+    activityTimezone,
+    getActivityBucketKeys,
+    isInActivityBucket,
+} from "./activity-period";
+import { formatActivityChartDate } from "./format-activity-date";
 import type {
     DailyUsageRecord,
     DataPoint,
@@ -49,7 +53,8 @@ export function useUsageData(
     groupBy: UsageGroupBy,
 ): UsageDataResult {
     const { granularity, period } = filters.period;
-    const requestKey = `${granularity}:${period}`;
+    const timezone = activityTimezone();
+    const requestKey = `${timezone}:${granularity}:${period}`;
     const [result, setResult] = useState<{
         key: string;
         rows: DailyUsageRecord[];
@@ -74,7 +79,7 @@ export function useUsageData(
         setStatus({ key: requestKey, pending: true, error: null });
         return accountClient.usage.daily
             .$get(
-                { query: { granularity, period } },
+                { query: { granularity, period, timezone } },
                 { init: { signal: controller.signal } },
             )
             .then((r) => {
@@ -94,7 +99,7 @@ export function useUsageData(
                         error: err.message || "Couldn’t load usage.",
                     });
             });
-    }, [granularity, period, requestKey]);
+    }, [granularity, period, timezone, requestKey]);
 
     useEffect(() => {
         fetchUsage();
@@ -186,10 +191,10 @@ export function useUsageData(
         });
 
         const isHourly = filters.period.granularity === "day";
-        const bucketKeys = getPeriodBucketKeys(filters.period);
+        const bucketKeys = getActivityBucketKeys(filters.period);
 
         const sorted = bucketKeys.map((bucketKey) => {
-            const date = periodBucketKeyToDate(
+            const date = activityBucketKeyToDate(
                 bucketKey,
                 filters.period.granularity,
             );

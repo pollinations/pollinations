@@ -7,7 +7,7 @@ import {
 } from "@pollinations/ui";
 import type { FC } from "react";
 import {
-    ACTIVITY_MIN_DATE,
+    ACTIVITY_MIN_CALENDAR_DATE,
     type ActivityPeriod,
     activityDate,
     changeActivityPeriod,
@@ -18,7 +18,6 @@ import {
 
 function dateLabel(value: ActivityPeriod, compact = false): string {
     return activityDate(value).toLocaleDateString("en-US", {
-        timeZone: "UTC",
         month: "short",
         ...(value.granularity === "day" ? { day: "numeric" } : {}),
         ...(compact ? {} : { year: "numeric" as const }),
@@ -50,7 +49,16 @@ export const ActivityPeriodNavigation: FC<{
                 </IconButton>
                 <PeriodPicker
                     value={value}
-                    minDate={ACTIVITY_MIN_DATE}
+                    minDate={ACTIVITY_MIN_CALENDAR_DATE}
+                    maxDate={
+                        new Date(
+                            Date.UTC(
+                                now.getFullYear(),
+                                now.getMonth(),
+                                now.getDate(),
+                            ),
+                        )
+                    }
                     header={
                         <div className="mb-3 grid w-full grid-cols-2 items-center gap-2">
                             {(["day", "month"] as const).map((granularity) => (

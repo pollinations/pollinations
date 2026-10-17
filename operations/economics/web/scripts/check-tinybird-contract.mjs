@@ -5,6 +5,26 @@ import { REQUIRED_PIPES, validatePipeRows } from "../src/lib/pipeContracts.ts";
 
 export { REQUIRED_PIPES } from "../src/lib/pipeContracts.ts";
 
+// Deployment configuration check only: CI never authenticates to Google.
+export function checkDriveBinding(secrets) {
+    try {
+        const credentials = JSON.parse(
+            secrets.ECONOMICS_GOOGLE_DRIVE_CREDENTIALS,
+        );
+        if (
+            typeof credentials.client_email !== "string" ||
+            !credentials.client_email ||
+            typeof credentials.private_key !== "string" ||
+            !credentials.private_key
+        )
+            throw new Error();
+    } catch {
+        throw new Error(
+            "ECONOMICS_GOOGLE_DRIVE_CREDENTIALS must be configured before deployment; verify Drive access separately in the private environment.",
+        );
+    }
+}
+
 export async function checkTinybirdContract({
     api,
     token,
@@ -71,10 +91,12 @@ async function main() {
         options: {
             "secrets-file": { type: "string" },
             "pollen-pipe": { type: "string" },
+            "require-drive-binding": { type: "boolean", default: false },
         },
     });
     if (!values["secrets-file"]) throw new Error("--secrets-file is required");
     const secrets = JSON.parse(await readFile(values["secrets-file"], "utf8"));
+    if (values["require-drive-binding"]) checkDriveBinding(secrets);
     const token = secrets.TINYBIRD_ECONOMICS_READ_TOKEN;
     if (!token) throw new Error("Tinybird read token unavailable");
     await checkTinybirdContract({

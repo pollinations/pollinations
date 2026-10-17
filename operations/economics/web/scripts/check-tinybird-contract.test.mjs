@@ -1,6 +1,7 @@
 import { expect, test } from "vitest";
 import { FIXTURES } from "../src/fixtures";
 import {
+    checkDriveBinding,
     checkTinybirdContract,
     REQUIRED_PIPES,
 } from "./check-tinybird-contract.mjs";
@@ -142,4 +143,25 @@ test("validates the configured staging Pollen snapshot using the same Pollen con
     });
     expect(requested).toContain("economics_pollen_usage_snapshot_api");
     expect(requested).not.toContain("economics_pollen_usage_api");
+});
+
+test("requires a runtime Drive binding without contacting Google or leaking its value", () => {
+    for (const value of [
+        undefined,
+        "invalid-test-value",
+        "{}",
+        '{"client_email":"test@example.invalid"}',
+    ]) {
+        expect(() =>
+            checkDriveBinding({ ECONOMICS_GOOGLE_DRIVE_CREDENTIALS: value }),
+        ).toThrow("must be configured before deployment");
+    }
+    expect(() =>
+        checkDriveBinding({
+            ECONOMICS_GOOGLE_DRIVE_CREDENTIALS: JSON.stringify({
+                client_email: "test@example.invalid",
+                private_key: "artificial-test-value",
+            }),
+        }),
+    ).not.toThrow();
 });

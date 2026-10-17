@@ -16,16 +16,6 @@
         "deploy-cloudflare-production.yml:deploy-gen",
         "deploy-cloudflare-production.yml:deploy-media"
       ]
-    },
-    "17819": {
-      "merge_sha": "cc24a45c4e30589d52e9be2606d3bddc1e65f549",
-      "merged_at": "2026-10-17T17:46:01Z",
-      "required": []
-    },
-    "17820": {
-      "merge_sha": "d0ba92a2c06427967a5dc01afba65979e0a4e945",
-      "merged_at": "2026-10-17T17:44:09Z",
-      "required": []
     }
   },
   "production": "ef8f5d31138bb33a97a1174ea75689529ace182c"

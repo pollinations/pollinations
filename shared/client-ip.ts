@@ -1,6 +1,26 @@
 import type { Context } from "hono";
 import { hasTrustedProxyHeaders } from "./public-origin.ts";
 
+// Origin-fetch egress spaces of the trusted edge that we can verify from
+// inside the worker. Cloudflare sets CF-Connecting-IP to the actual TCP peer
+// and clients cannot forge it, so when it does not fall inside one of these
+// spaces the request did not traverse the edge, and any X-Original-Client-IP
+// it carries is client-supplied spoofing rather than edge-injected truth.
+//   - 64.252.64.0/18 — CloudFront Origin Shield (the egress the edge stack
+//     documents; see infra/cloudfront/README.md).
+//   - 130.176.0.0/17 — CloudFront edge egress modeled by the proxy tests.
+const TRUSTED_EDGE_EGRESS_PREFIXES = ["64.252.", "130.176."] as const;
+
+function cameThroughEdgeEgress(c: Context): boolean {
+    const connectingIp = c.req.header("cf-connecting-ip");
+    return (
+        !!connectingIp &&
+        TRUSTED_EDGE_EGRESS_PREFIXES.some((prefix) =>
+            connectingIp.startsWith(prefix),
+        )
+    );
+}
+
 /**
  * Resolve the real visitor IP. When the worker is reached through a trusted
  * edge hop, CF-Connecting-IP can be the edge's egress IP — useless for rate
@@ -13,11 +33,17 @@ import { hasTrustedProxyHeaders } from "./public-origin.ts";
  *     spoofed X-Original-Client-IP cannot survive the CloudFront hop.
  *     See infra/cloudfront/README.md for the full stack.
  *
- * For direct hits (e.g. *.myceli.ai), only CF-Connecting-IP is present and
- * already correct.
+ * Both trust signals above are client-controllable on a direct hit (e.g.
+ * *.myceli.ai), so a caller could otherwise present a trusted X-Forwarded-Host
+ * together with a rotating X-Original-Client-IP and pick an arbitrary "client
+ * IP" — bypassing every per-IP rate limit and poisoning abuse telemetry. We
+ * therefore honor the forwarded original IP only when the connection itself
+ * arrived from the edge's egress space, which CF-Connecting-IP proves and the
+ * caller cannot fake. Direct hits keep CF-Connecting-IP, which is already
+ * correct there.
  */
 export function getRealClientIp(c: Context): string {
-    if (hasTrustedProxyHeaders(c)) {
+    if (hasTrustedProxyHeaders(c) && cameThroughEdgeEgress(c)) {
         const originalIp = c.req.header("x-original-client-ip");
         if (originalIp) return originalIp;
     }

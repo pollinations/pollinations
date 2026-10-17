@@ -24,7 +24,8 @@ Once signed in, they review the requested access and confirm:
 
 ## 🧩 Drop-in Button (No Build Step)
 
-One script tag adds a Connect button that runs the OAuth code flow below for you:
+One script tag adds a Connect button that runs the OAuth code flow below for you.
+Use one `<polli-connect>` per page; additional elements show an error instead of a sign-in button.
 
 ```html
 <script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.19/dist/connect.js"></script>

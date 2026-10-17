@@ -22,6 +22,9 @@ if (
     document.head.prepend(link, style);
 }
 
+// ponytail: one auth root per page; shared auth can follow a concrete consumer.
+let activeConnect: PolliConnect | undefined;
+
 class PolliConnect extends HTMLElement {
     static observedAttributes = CONNECT_ATTRIBUTES;
 
@@ -31,6 +34,15 @@ class PolliConnect extends HTMLElement {
     #root: Root | undefined;
 
     connectedCallback() {
+        if (activeConnect && activeConnect !== this) {
+            const error = document.createElement("span");
+            error.setAttribute("role", "alert");
+            error.textContent =
+                "Only one <polli-connect> is supported per page.";
+            this.replaceChildren(error);
+            return;
+        }
+        activeConnect = this;
         this.#root ??= createRoot(this);
         this.#render();
     }
@@ -38,6 +50,8 @@ class PolliConnect extends HTMLElement {
     disconnectedCallback() {
         this.#root?.unmount();
         this.#root = undefined;
+        if (activeConnect === this) activeConnect = undefined;
+        this.#setKey(null);
     }
 
     attributeChangedCallback(

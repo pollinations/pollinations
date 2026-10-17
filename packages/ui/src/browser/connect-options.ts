@@ -13,7 +13,7 @@ export const CONNECT_ATTRIBUTES = [
 
 /**
  * Maps the element's attributes to the SDK's sign-in options. The key stays in
- * sessionStorage, as the Connect User Wallets guide requires for browser apps.
+ * sessionStorage, as allowed by the Connect User Wallets guide for browser apps.
  */
 export function connectOptions(
     element: Pick<Element, "getAttribute">,

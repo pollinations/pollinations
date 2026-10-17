@@ -28,6 +28,7 @@ import {
 } from "@pollinations/ui";
 import {
     type ComponentType,
+    Fragment,
     type ReactNode,
     type RefObject,
     useEffect,
@@ -174,7 +175,7 @@ const INSIGHT_TABS = [
     },
     {
         id: "balances",
-        label: "Balances",
+        label: "Vendor balances",
         note: "Checked prepaid and promotional-credit snapshots, one row per account, with access and collection status.",
         icon: WalletIcon,
         source: "vendorLedger",
@@ -453,7 +454,14 @@ function EconomicsNav({
                 <div className="flex flex-col gap-1">
                     {INSIGHT_TABS.filter(
                         (item) => !isReconcileView(item.id),
-                    ).map(insightItem)}
+                    ).map((item) => (
+                        <Fragment key={item.id}>
+                            {item.id === "vendors" && (
+                                <hr className="mx-3 my-3 border-theme-text-strong/10" />
+                            )}
+                            {insightItem(item)}
+                        </Fragment>
+                    ))}
                 </div>
             )}
         </nav>

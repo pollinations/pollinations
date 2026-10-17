@@ -199,7 +199,7 @@ Announce a decided retirement with a row in the PR description. Registry comment
 | `job` | `morning` (what the 06:00 run does on that day), `afternoon` (its Sunday 18:00 run), `wednesday` (the 14:00 model and community posts), `daily`, `weekly`, `monthly`, `models`, `community`, `catalog` (record `/models`) |
 | `date` | the day, the Sunday, the month (`YYYY-MM`) or the Wednesday |
 | `run` | `preview` (default): writes and saves into a throwaway checkout, shows the diff and keeps the texts and pictures with the run; sends nothing. `all`, `write + save`, `deliver` |
-| `overwrite` | write and save a date that is already saved again; `delivery.json` is kept, and a saved model or community post is never replaced |
+| `overwrite` | write and save a date that is already saved again; a summary or post the rewrite no longer writes is removed, `delivery.json` is kept, and a saved model or community post is never replaced |
 
 A preview is the before/after check for any change to a prompt or a script: run it for a date already on `news` and compare. A daily preview reads that day's PRs from GitHub again.
 
@@ -222,7 +222,7 @@ A preview is the before/after check for any change to a prompt or a script: run 
 
 1. **One run at a time.** `news-posts.yml` and `news-deploy-posts.yml` runs queue; none is cancelled.
 2. **Writing and delivering are separate jobs.** Rerunning a delivery never writes new posts; a failed post never stops the others' delivery.
-3. **Save once.** Each post is one commit to `news`; a saved date (its summary in `data/summaries/`) is skipped unless `overwrite` is set.
+3. **Save once.** Each post is one commit to `news`; a saved date (its summary in `data/summaries/`) is skipped unless `overwrite` is set. A rewrite removes the date's summary and posts it no longer writes (a day that turned quiet), so neither Enter nor `deliver.py` reads stale ones.
 4. **Never twice.** `delivery.json` is written before each send, with the file's sha, so two runs can't both claim a post. Buffer and Discord confirm a send. An unclear result (`attempt`) fails the run until a person checks the channel and runs `deliver.py mark JOB DATE PLATFORM done|failed` (for a deploy post: `deliver.py mark prs MONTH PR done|failed`).
 5. **Buffer only gets posts scheduled at today's slots;** nothing is posted right away.
 6. **The posts only read the model record:** the 06:00 run saves it, so a failed or repeated post never moves what the next one compares.

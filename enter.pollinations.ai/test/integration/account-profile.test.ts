@@ -17,6 +17,7 @@ describe("GET /api/account/profile", () => {
 
         expect(response.status).toBe(200);
         const data = (await response.json()) as Record<string, unknown>;
+        expect(data.githubId).toBe("12345");
         expect(data).toHaveProperty("githubUsername");
         expect(data).toHaveProperty("image");
         expect(data).not.toHaveProperty("tier");
@@ -37,6 +38,7 @@ describe("GET /api/account/profile", () => {
 
         expect(response.status).toBe(200);
         const data = (await response.json()) as Record<string, unknown>;
+        expect(data.githubId).toBe("12345");
         expect(data).toHaveProperty("githubUsername");
         expect(data).toHaveProperty("image");
         expect(data).not.toHaveProperty("tier");
@@ -82,6 +84,7 @@ describe("GET /api/account/profile", () => {
 
         expect(response.status).toBe(200);
         const data = (await response.json()) as Record<string, unknown>;
+        expect(data.githubId).toBe("12345");
         expect(data).toHaveProperty("githubUsername");
         expect(data).toHaveProperty("image");
         expect(data).not.toHaveProperty("tier");

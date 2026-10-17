@@ -317,23 +317,26 @@ for (const [app, clientId] of [
     ["economics", "pk_LBL0KnkHI6AZopCc"],
     ["observability", CLIENT_ID],
 ]) {
-    for (const domain of ["myceli.ai", "pollinations.ai"]) {
-        test(`accepts the registered ${app}.${domain} callback`, async ({
+    test(`accepts the registered ${app}.pollinations.ai callback`, async ({
+        sessionToken,
+    }) => {
+        const redirectUri = `https://${app}.pollinations.ai/auth/callback`;
+        const response = await authorize(sessionToken, redirectUri, clientId);
+        const callback = new URL(response.headers.get("Location") || "", BASE);
+        expect(callback.origin + callback.pathname).toBe(redirectUri);
+        expect(callback.searchParams.get("code")).toBeTruthy();
+        expect(callback.searchParams.has("error")).toBe(false);
+    });
+
+    test(`rejects the retired ${app}.myceli.ai callback`, async ({
+        sessionToken,
+    }) => {
+        const response = await authorize(
             sessionToken,
-        }) => {
-            const redirectUri = `https://${app}.${domain}/auth/callback`;
-            const response = await authorize(
-                sessionToken,
-                redirectUri,
-                clientId,
-            );
-            const callback = new URL(
-                response.headers.get("Location") || "",
-                BASE,
-            );
-            expect(callback.origin + callback.pathname).toBe(redirectUri);
-            expect(callback.searchParams.get("code")).toBeTruthy();
-            expect(callback.searchParams.has("error")).toBe(false);
-        });
-    }
+            `https://${app}.myceli.ai/auth/callback`,
+            clientId,
+        );
+        const location = new URL(response.headers.get("Location") || "", BASE);
+        expect(location.searchParams.get("error")).toBe("invalid_redirect");
+    });
 }

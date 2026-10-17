@@ -39,8 +39,8 @@ npm run build
 
 Production is deployed through the operations GitHub Actions workflow to the
 existing `apps-model-monitor` Cloudflare Pages project. The project name and
-its `model-monitor.myceli.ai` and `model-monitor.pollinations.ai` domains are
-kept stable even though the repository folder now lives under `operations/`.
+its `model-monitor.pollinations.ai` domain are kept stable even though the
+repository folder now lives under `operations/`.
 
 ## Tech Stack
 

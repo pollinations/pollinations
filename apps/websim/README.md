@@ -30,4 +30,4 @@ Generation requires the incoming `Authorization: Bearer ...` header from the BYO
 npm run deploy
 ```
 
-The Worker deploy target is `websim.myceli.ai` in `wrangler.toml`.
+The Worker deploy target is `websim.pollinations.ai` in `wrangler.toml`.

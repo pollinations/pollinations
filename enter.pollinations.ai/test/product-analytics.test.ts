@@ -136,14 +136,8 @@ test("website views come only from the sibling site and keep their own event", a
         const ctx = createExecutionContext();
         const response = await productAnalyticsRoutes.fetch(
             new Request(
-                `http://localhost:3000/website-page-view?${new URLSearchParams({ page, utm_source: "reddit" })}`,
-                {
-                    method: "POST",
-                    headers: {
-                        Origin: origin,
-                        "X-Forwarded-Host": "enter.pollinations.ai",
-                    },
-                },
+                `https://enter.pollinations.ai/website-page-view?${new URLSearchParams({ page, utm_source: "reddit" })}`,
+                { method: "POST", headers: { Origin: origin } },
             ),
             env,
             ctx,

@@ -104,20 +104,17 @@ case "$TARGET" in
     pages)
         OUTPUT=${OUTPUT:-dist}
         SUBDOMAIN=${SUBDOMAIN:-$APP_NAME}
-        node "$SCRIPT_DIR/cloudflare-pages.cjs" "$APP_PATH" --phase=origin
+        node "$SCRIPT_DIR/cloudflare-pages.cjs" "$APP_PATH"
         npx wrangler pages deploy "$APP_DIR/$OUTPUT" \
             --project-name="apps-$SUBDOMAIN" \
             --branch=production \
             --commit-dirty=true
-        verify_url "https://$SUBDOMAIN.myceli.ai"
-        node "$SCRIPT_DIR/cloudflare-pages.cjs" "$APP_PATH" --phase=cutover
         verify_url "https://$SUBDOMAIN.pollinations.ai"
         ;;
     worker)
         [[ -n "$DEPLOY" ]] || { echo "worker target requires deploy" >&2; exit 1; }
         run_command "$DEPLOY"
         if [[ -n "$SUBDOMAIN" ]]; then
-            verify_url "https://$SUBDOMAIN.myceli.ai"
             verify_url "https://$SUBDOMAIN.pollinations.ai"
         fi
         ;;

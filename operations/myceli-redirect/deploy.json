@@ -1,0 +1,7 @@
+{
+  "target": "worker",
+  "credentials": "myceli",
+  "install": "npm ci --prefix ../..",
+  "build": "node --test worker.test.js",
+  "deploy": "npx wrangler deploy"
+}

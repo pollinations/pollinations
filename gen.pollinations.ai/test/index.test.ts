@@ -294,24 +294,6 @@ describe("gen worker routing", () => {
             "https://staging.gen.pollinations.ai/",
             "https://staging.gen.pollinations.ai/docs",
         ]);
-
-        // A trusted forwarded host is reflected in both discovery files.
-        const forwarded = {
-            "x-forwarded-host": "gen.pollinations.ai",
-            "x-forwarded-proto": "https",
-        };
-        const prodSitemap = await fetchWorker("/sitemap.xml", envWithEnter(), {
-            headers: forwarded,
-        });
-        expect(await prodSitemap.text()).toContain(
-            "<loc>https://gen.pollinations.ai/docs</loc>",
-        );
-        const prodRobots = await fetchWorker("/robots.txt", envWithEnter(), {
-            headers: forwarded,
-        });
-        expect(await prodRobots.text()).toContain(
-            "Sitemap: https://gen.pollinations.ai/sitemap.xml",
-        );
     });
 
     it("serves llms-full.txt with the full guide and CLI skill in one file", async () => {

@@ -1,14 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * Provision Cloudflare routing for an app in two phases:
+ * Provision Cloudflare routing for a Pages app: create the Pages project, add
+ * <sub>.pollinations.ai to it, and upsert the pollinations.ai DNS CNAME.
  *
- *   --phase=origin   Create the Myceli Pages project, add <sub>.myceli.ai,
- *                    and upsert the myceli.ai DNS CNAME.
- *   --phase=cutover  After upload and origin verification, add
- *                    <sub>.pollinations.ai directly to the Myceli Pages project.
- *
- * Usage: node cloudflare-pages.cjs <app-path> --phase=origin|cutover
+ * Usage: node cloudflare-pages.cjs <app-path>
  */
 
 const fs = require("node:fs");
@@ -16,7 +12,6 @@ const path = require("node:path");
 
 const CF_API = "https://api.cloudflare.com/client/v4";
 const PUBLIC_ZONE = "pollinations.ai";
-const UPSTREAM_ZONE = "myceli.ai";
 
 function loadCredentials() {
     return {
@@ -278,49 +273,22 @@ function appContext(appPath) {
         appConfig,
         subdomain,
         project: `apps-${subdomain}`,
-        originDomain: `${subdomain}.${UPSTREAM_ZONE}`,
         publicDomain: `${subdomain}.${PUBLIC_ZONE}`,
     };
 }
 
-async function runOrigin(appName) {
-    const { appConfig, project, originDomain } = appContext(appName);
-    console.log(`Myceli origin: ${originDomain}`);
+async function provision(appPath) {
+    const { appConfig, project, publicDomain } = appContext(appPath);
+    console.log(`Pages routing: ${publicDomain}`);
 
-    const myceliHeaders = headersFor(MYC_TOKEN);
-    const myceliZoneId = await resolveZoneId(UPSTREAM_ZONE, myceliHeaders);
-    await createPagesProject(MYC_ACCOUNT, myceliHeaders, project, appConfig);
-    const pagesProject = await getPagesProject(
-        MYC_ACCOUNT,
-        myceliHeaders,
-        project,
-    );
-    await addPagesDomain(MYC_ACCOUNT, myceliHeaders, project, originDomain);
+    const headers = headersFor(MYC_TOKEN);
+    const zoneId = await resolveZoneId(PUBLIC_ZONE, headers);
+    await createPagesProject(MYC_ACCOUNT, headers, project, appConfig);
+    const pagesProject = await getPagesProject(MYC_ACCOUNT, headers, project);
+    await addPagesDomain(MYC_ACCOUNT, headers, project, publicDomain);
     await upsertCname(
-        myceliZoneId,
-        myceliHeaders,
-        originDomain,
-        pagesProject.subdomain || `${project}.pages.dev`,
-    );
-
-    console.log(`Origin provisioned: https://${originDomain}`);
-}
-
-async function runCutover(appName) {
-    const { project, publicDomain, originDomain } = appContext(appName);
-    console.log(`Public cutover: ${publicDomain} -> ${originDomain}`);
-
-    const myceliHeaders = headersFor(MYC_TOKEN);
-    const publicZoneId = await resolveZoneId(PUBLIC_ZONE, myceliHeaders);
-    const pagesProject = await getPagesProject(
-        MYC_ACCOUNT,
-        myceliHeaders,
-        project,
-    );
-    await addPagesDomain(MYC_ACCOUNT, myceliHeaders, project, publicDomain);
-    await upsertCname(
-        publicZoneId,
-        myceliHeaders,
+        zoneId,
+        headers,
         publicDomain,
         pagesProject.subdomain || `${project}.pages.dev`,
     );
@@ -331,13 +299,9 @@ async function runCutover(appName) {
 const { mycToken: MYC_TOKEN, mycAccount: MYC_ACCOUNT } = loadCredentials();
 
 const appPath = process.argv[2];
-const phaseArg = process.argv.find((arg) => arg.startsWith("--phase="));
-const phase = phaseArg ? phaseArg.split("=")[1] : "";
 
-if (!appPath || (phase !== "origin" && phase !== "cutover")) {
-    console.error(
-        "Usage: node cloudflare-pages.cjs <app-path> --phase=origin|cutover",
-    );
+if (!appPath) {
+    console.error("Usage: node cloudflare-pages.cjs <app-path>");
     process.exit(1);
 }
 
@@ -348,8 +312,7 @@ if (!MYC_TOKEN || !MYC_ACCOUNT) {
     process.exit(1);
 }
 
-const run = phase === "origin" ? runOrigin : runCutover;
-run(appPath).catch((error) => {
-    console.error(`${phase} failed:`, error.message);
+provision(appPath).catch((error) => {
+    console.error("Pages provisioning failed:", error.message);
     process.exit(1);
 });

@@ -23,13 +23,7 @@
     "bindings": [{ "name": "OPENWEBUI", "class_name": "OpenWebUIContainer" }]
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["OpenWebUIContainer"] }],
-  // Same shape as floret/observability: myceli origin first, public alias second.
   "routes": [
-    {
-      "pattern": "openwebui.myceli.ai",
-      "zone_name": "myceli.ai",
-      "custom_domain": true
-    },
     {
       "pattern": "openwebui.pollinations.ai",
       "zone_name": "pollinations.ai",

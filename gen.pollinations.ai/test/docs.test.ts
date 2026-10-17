@@ -11,6 +11,7 @@ import {
     type Spec,
 } from "../scripts/generate-apidocs.ts";
 import { requestExampleErrors } from "../scripts/validate-request-examples.ts";
+import { authenticateDocsRequest } from "../src/docs-client/request-auth.ts";
 import worker from "../src/index.ts";
 
 function envWithEnterSchema(schema: unknown): CloudflareBindings {
@@ -42,6 +43,61 @@ function envWithFailedEnterSchema(): CloudflareBindings {
 }
 
 describe("docs routes", () => {
+    it("adds the connected key only to outbound Pollinations requests", () => {
+        for (const host of ["gen", "enter", "media"]) {
+            const request = new Request(
+                `https://${host}.pollinations.ai/account/key`,
+                {
+                    headers: { Authorization: "Bearer YOUR_API_KEY" },
+                },
+            );
+            authenticateDocsRequest(request, "test-connected-credential");
+            expect(request.headers.get("Authorization")).toBe(
+                "Bearer test-connected-credential",
+            );
+        }
+        const foreignRequest = new Request(
+            "https://gen.pollinations.ai.example.com/account/key",
+            {
+                headers: { Authorization: "Bearer YOUR_API_KEY" },
+            },
+        );
+        expect(() =>
+            authenticateDocsRequest(
+                foreignRequest,
+                "test-connected-credential",
+            ),
+        ).toThrow();
+        expect(foreignRequest.headers.get("Authorization")).toBe(
+            "Bearer YOUR_API_KEY",
+        );
+    });
+
+    it("preserves manual authentication and unauthenticated requests", () => {
+        for (const authorization of [null, "Bearer manually-entered-key"]) {
+            const request = new Request(
+                "https://gen.pollinations.ai/account/key",
+                {
+                    headers: authorization
+                        ? { Authorization: authorization }
+                        : {},
+                },
+            );
+            authenticateDocsRequest(request, "test-connected-credential");
+            expect(request.headers.get("Authorization")).toBe(authorization);
+        }
+        const disconnectedRequest = new Request(
+            "https://gen.pollinations.ai/account/key",
+            {
+                headers: { Authorization: "Bearer YOUR_API_KEY" },
+            },
+        );
+        authenticateDocsRequest(disconnectedRequest, null);
+        expect(disconnectedRequest.headers.get("Authorization")).toBe(
+            "Bearer YOUR_API_KEY",
+        );
+    });
+
     afterEach(() => {
         vi.restoreAllMocks();
     });
@@ -620,8 +676,10 @@ describe("docs routes", () => {
             expect(html).toContain(`data-enter-url="${enterUrl}"`);
             expect(html).toContain('src="/docs-assets/connect.js"');
             expect(html).toContain('href="/docs-assets/connect.css"');
-            expect(html).toContain("window.pollinationsDocsConfiguration = (");
-            expect(html).not.toContain("Scalar.createApiReference(");
+            expect(html).toContain("window.pollinationsDocsConfiguration =");
+            expect(html).toContain(
+                "window.pollinationsDocsReference = Scalar.createApiReference(",
+            );
             expect(html).not.toContain("example-private-credential");
         },
     );

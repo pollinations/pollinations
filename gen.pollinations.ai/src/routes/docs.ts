@@ -478,14 +478,13 @@ function pollinationsDocsHtml(appKey: string, enterUrl: string): string {
   // Scalar 1.74 folds the drawer's groups (Get Started, Guides, ...). Open
   // each once on load so every page is listed, as before; readers can still
   // fold them.
-  var openedGroups = {};
+  var openedGroups = new WeakSet();
   function openDrawerGroups() {
     var groups = document.querySelectorAll('.scalar-app [data-sidebar-id^="api/tag-group/"]');
     for (var g = 0; g < groups.length; g++) {
-      var id = groups[g].getAttribute('data-sidebar-id');
-      if (openedGroups[id]) continue;
+      if (openedGroups.has(groups[g])) continue;
       var toggle = groups[g].firstElementChild && groups[g].firstElementChild.querySelector('button[aria-expanded="false"]');
-      openedGroups[id] = true;
+      openedGroups.add(groups[g]);
       if (toggle) toggle.click();
     }
   }
@@ -1107,10 +1106,10 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 },
             })(c, next);
             if (!response) return;
-            // The SDK consumes the OAuth callback before Scalar reads the URL.
+            // Render the reference independently of React and OAuth hydration.
             const html = (await response.text()).replace(
                 "Scalar.createApiReference('#app',",
-                "window.pollinationsDocsConfiguration = (",
+                "window.pollinationsDocsReference = Scalar.createApiReference('#app', window.pollinationsDocsConfiguration =",
             );
             const htmlWithMeta = withHtmlClass(
                 injectDocsSocialHead(html, c),

@@ -46,6 +46,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
+                id: "osv",
+                name: "OSV",
+                description:
+                    "Check package versions for known vulnerabilities and read advisories from OSV.",
+                url: "https://gen.pollinations.ai/mcp/osv",
+                pricing: {
+                    description:
+                        "Free vulnerability lookups. No additional MCP fee.",
+                    rates: [],
+                },
+            },
+            {
                 id: "ffmpeg",
                 name: "FFmpeg",
                 description:
@@ -215,7 +227,40 @@ test("routes Ask Jev with caller authorization without an extra MCP debit", asyn
     });
 });
 
-test.for(["pollinations", "ask-jev"])(
+test("routes OSV with caller authorization and keeps an empty wallet unchanged", async () => {
+    const { key, userId } = await createTestApiKey();
+    const payload = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+            name: "osv_query",
+            arguments: { ecosystem: "npm", name: "lodash", version: "4.17.20" },
+        },
+    };
+    const response = await SELF.fetch("https://gen.pollinations.ai/mcp/osv", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${key}`,
+            Cookie: "session=private",
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        pathname: "/",
+        authorization: `Bearer ${key}`,
+        cookie: null,
+        payload,
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 0,
+        packBalance: 0,
+    });
+});
+
+test.for(["pollinations", "ask-jev", "osv"])(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(

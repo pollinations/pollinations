@@ -46,7 +46,8 @@ export type McpBindingName =
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
-    | "COMPUTER_MCP";
+    | "COMPUTER_MCP"
+    | "SITE_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -211,6 +212,18 @@ export const MCP_SERVERS = [
         provider: "cloudflare",
         userScoped: true,
         pricing: COMPUTER_MCP_PRICING,
+    },
+    {
+        id: "site",
+        name: "Site",
+        description:
+            "Inspect a site's crawler and agent discoverability: robots.txt, llms.txt, well-known documents.",
+        binding: "SITE_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Free. Inspection uses no paid providers.",
+            rates: [],
+        },
     },
 ] as const satisfies readonly McpServerDefinition[];
 

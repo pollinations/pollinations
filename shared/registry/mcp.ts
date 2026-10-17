@@ -45,6 +45,7 @@ export type McpBindingName =
     | "ASK_JEV_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
+    | "COUNCIL_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
     | "MACHINES_MCP";
@@ -60,6 +61,33 @@ export type McpServerDefinition = McpServerDefinitionBase &
 
 export const FFMPEG_MCP_PRICE_PER_SECOND =
     0.25 * 0.00002 + 1 * 0.0000025 + 4 * 0.00000007;
+
+// InferencePort's flat fee per council run (models.json surcharge_credits),
+// charged on top of the model calls' own credits.
+export const COUNCIL_MCP_TIER_FEES = {
+    basic: 0.1,
+    standard: 0.15,
+    advanced: 0.5,
+    ultra: 2,
+    elite: 5,
+} as const;
+const COUNCIL_MCP_PRICING = {
+    description:
+        "Model calls are billed at InferencePort rates, plus a flat fee per run by tier.",
+    rates: Object.entries(COUNCIL_MCP_TIER_FEES).map(([tier, fee]) => ({
+        id: `inferenceport.council.${tier}.v1`,
+        description: `InferencePort ${tier} council run fee`,
+        kind: "tool_call",
+        unit: "run",
+        unitCost: fee,
+        publicPricing: {
+            label: `${tier[0].toUpperCase()}${tier.slice(1)} council`,
+            quantity: 1,
+            unit: "run",
+            suffix: "plus model usage",
+        },
+    })),
+} as const satisfies McpPricingDefinition;
 
 const EXA_SEARCH_PRICE_PER_REQUEST = 0.007;
 const EXA_CONTENTS_PRICE_PER_PAGE = 0.001;
@@ -189,6 +217,16 @@ export const MCP_SERVERS = [
                 },
             ],
         },
+    },
+    {
+        id: "council",
+        name: "Council of LLMs",
+        description:
+            "Ask several models in parallel, then have a judge model synthesize one answer.",
+        binding: "COUNCIL_MCP",
+        billing: "usage_receipt",
+        provider: "inferenceport",
+        pricing: COUNCIL_MCP_PRICING,
     },
     {
         id: "composio",

@@ -5,6 +5,45 @@ import { AppUserMenu } from "../modules/app-user-menu/AppUserMenu.tsx";
 import { ConnectAuth } from "./connect-auth.tsx";
 import { CONNECT_ATTRIBUTES, connectOptions } from "./connect-options.ts";
 
+// Our React apps load Tailwind's preflight; host pages don't. This scoped copy
+// keeps browser defaults and the page's inherited text styles out of the
+// button and its menu (portalled to <body>). It sits in the base layer, so the
+// package's utility classes still win.
+const RESET = `
+polli-connect { display: inline-block; }
+@layer base {
+    :where(polli-connect, [data-scope="popover"][data-part="content"]) {
+        font: 400 1rem/1.5 var(--polli-font-body);
+        letter-spacing: normal;
+        text-transform: none;
+        text-align: start;
+        color: var(--polli-color-text-strong);
+    }
+    :where(polli-connect) *,
+    :where([data-scope="popover"][data-part="content"]),
+    :where([data-scope="popover"][data-part="content"]) * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        border: 0 solid;
+    }
+    :where(polli-connect, [data-scope="popover"][data-part="content"]) :where(button) {
+        font: inherit;
+        letter-spacing: inherit;
+        color: inherit;
+        border-radius: 0;
+        background-color: transparent;
+    }
+    :where(polli-connect, [data-scope="popover"][data-part="content"]) :where(a) {
+        color: inherit;
+        text-decoration: inherit;
+    }
+    :where(polli-connect, [data-scope="popover"][data-part="content"]) :where(img, svg) {
+        display: block;
+        vertical-align: middle;
+    }
+}`;
+
 // The element uses the package stylesheet published next to this script and
 // sizes to its button. Both go first in <head>, so the page's own rules win.
 const script = document.currentScript;
@@ -18,7 +57,7 @@ if (
     link.href = new URL("styles.css", script.src).href;
     link.dataset.polliConnect = "";
     const style = document.createElement("style");
-    style.textContent = "polli-connect{display:inline-block}";
+    style.textContent = RESET;
     document.head.prepend(link, style);
 }
 

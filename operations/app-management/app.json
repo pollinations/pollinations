@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🖼️",
+    "name": "CastSheet",
+    "url": "https://fi8vni13.github.io/castsheet",
+    "description": "Character reference boards for AI production. Describe a character, pick a style, and CastSheet generates a three-view sheet (front · side · back) and a 2×2 expression grid with the free Pollinations ",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "fi8vni13",
+    "githubUserId": "112548324",
+    "repositoryUrl": "https://github.com/fi8vni13/castsheet",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-17",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17772",
+    "approvedDate": "2026-10-17",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/4c9547f9-fdb5-48c1-8b11-6f03a5b44348"
+  },
+  {
+    "emoji": "🖼️",
     "name": "Pollen Art Lab",
     "url": "https://ovalprint1-sketch.github.io/pollen-app",
     "description": "Pollen Art Lab turns a text idea into artwork using the Pollinations image API. Choose a style and aspect ratio, sign in with your Pollinations account (BYOP) and generate an image; each visitor spend",

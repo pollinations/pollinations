@@ -47,6 +47,7 @@ function extractText(html) {
         .replace(/<!--[\s\S]*?-->/g, " ")
         .replace(/<(script|style|noscript|svg)\b[\s\S]*?<\/\1>/gi, " ")
         .replace(/<\/?[a-zA-Z!][^>]*>/g, " ")
+        .replace(/\s+([,.;:!?])/g, "$1")
         .replace(/\s+/g, " ")
         .trim();
 }

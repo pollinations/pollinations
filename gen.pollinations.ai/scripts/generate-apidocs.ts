@@ -391,7 +391,10 @@ export function buildCurl(
     op: Operation,
 ): string {
     const upperMethod = method.toUpperCase();
-    const params = visibleParams(path, asArr(op.parameters) as Schema[]);
+    const params = visibleParams(
+        path,
+        asArr(op.parameters).map((p) => deref(spec, asObj(p))),
+    );
     const queryParams = params.filter((p) => asObj(p).in === "query");
     const pathParams = params.filter((p) => asObj(p).in === "path");
     let url = `${operationBaseUrl(spec, path, op)}${path}`;
@@ -543,7 +546,10 @@ export function renderEndpoint(
     }
 
     // Parameters
-    const params = visibleParams(path, asArr(op.parameters) as Schema[]);
+    const params = visibleParams(
+        path,
+        asArr(op.parameters).map((p) => deref(spec, asObj(p))),
+    );
     if (params.length) {
         out.push(CALLOUT.params);
         out.push("");
@@ -1177,6 +1183,7 @@ const TAG_ORDER = [
     "Community Models",
     "Community Agents",
     "Media Storage",
+    "Sandboxes API",
     "Account",
 ];
 
@@ -1187,7 +1194,7 @@ export async function fetchOpenApiSpec(url: string): Promise<Spec> {
     }
     const spec = (await response.json()) as Spec;
     const sources = asObj(spec?.["x-schema-sources"]);
-    const missing = ["gen", "enter", "media"].filter(
+    const missing = ["gen", "enter", "media", "e2b"].filter(
         (source) => sources[source] !== true,
     );
     if (missing.length > 0) {

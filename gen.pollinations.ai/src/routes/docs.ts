@@ -30,6 +30,7 @@ import {
     API_REFERENCE_CUSTOM_CSS,
     POLLINATIONS_DOCS_CSS,
 } from "./docs-styles.ts";
+import { fetchE2bSchema } from "./e2b-schema.ts";
 import { injectDocsSocialHead, SEO_TITLE } from "./seo.ts";
 
 // Same amber favicon as gen.pollinations.ai/public/favicon-32x32.png. Scalar
@@ -80,6 +81,7 @@ const DOC_TAGS = {
     codingHarnesses: "Coding Harnesses",
     mcpServers: "MCP Servers",
     sandboxes: "Sandboxes",
+    sandboxesApi: "Sandboxes API",
     errors: "Errors",
     safety: "Safety",
     text: "Text",
@@ -594,6 +596,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.communityAgents,
                     DOC_TAGS.quests,
                     DOC_TAGS.mediaStorage,
+                    DOC_TAGS.sandboxesApi,
                     DOC_TAGS.account,
                     DOC_TAGS.safety,
                     DOC_TAGS.errors,
@@ -651,6 +654,11 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.sandboxes,
                 description: SANDBOXES_DOCS,
+            },
+            {
+                name: DOC_TAGS.sandboxesApi,
+                description:
+                    "E2B API reference, filtered to operations supported by Pollinations and refreshed from upstream when the docs load. See the [Sandboxes guide](#tag/sandboxes) for setup, credits and restrictions, and [current pricing](https://gen.pollinations.ai/alpha/e2b/pricing). If the reference is temporarily unavailable, consult [E2B](https://docs.e2b.dev/api-reference/sandboxes/create-sandbox-v2) alongside the guide.",
             },
             {
                 name: DOC_TAGS.errors,
@@ -1035,21 +1043,37 @@ export async function buildMergedOpenApiSpec(
     c: Context<Env>,
     genApp: Hono<Env>,
 ): Promise<OpenApiSchema> {
-    const [generationSchema, enterSchema, mediaSchema] = await Promise.all([
-        getGenerationSchema(genApp),
-        fetchEnterSchema(c),
-        fetchMediaSchema(c).catch(() => undefined),
-    ]);
+    const e2bRequest = fetchE2bSchema().catch(() => ({
+        schema: undefined,
+        fresh: false,
+    }));
+    // Finish cache work even if a required schema fails first.
+    c.executionCtx.waitUntil(e2bRequest);
+    const [generationSchema, enterSchema, mediaSchema, e2b] = await Promise.all(
+        [
+            getGenerationSchema(genApp),
+            fetchEnterSchema(c),
+            fetchMediaSchema(c).catch(() => undefined),
+            e2bRequest,
+        ],
+    );
+    const merged = mergeSchemas(generationSchema, enterSchema, mediaSchema);
+    if (e2b.schema) {
+        merged.paths = { ...asRecord(merged.paths), ...e2b.schema.paths };
+        merged.components = mergeComponents(
+            asRecord(merged.components),
+            e2b.schema.components,
+        );
+    }
     return {
-        ...injectSamples(
-            mergeSchemas(generationSchema, enterSchema, mediaSchema),
-        ),
+        ...injectSamples(merged),
         // Keep contributor identity after merging so publication can reject a
         // partial reference without changing the live endpoint's availability.
         "x-schema-sources": {
             gen: hasPublicOperations(generationSchema),
             enter: hasPublicOperations(enterSchema),
             media: hasPublicOperations(mediaSchema),
+            e2b: e2b.fresh,
         },
     };
 }

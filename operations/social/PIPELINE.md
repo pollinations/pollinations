@@ -170,7 +170,7 @@ Every PR merged into `main` or `master` that month, counted per GitHub account (
 
 | Section | Source | Dated |
 |---|---|---|
-| `models` | The `/models` record: a model added, removed, or its price, Quest/Paid access or capabilities changed between two recorded days. Official models only | the day the record first saw it |
+| `models` | The `/models` record: a model added, removed, or its price, Quest/Paid access or capabilities changed between two recorded days. Official models only | the day before the morning record that first shows it (the day it went live) |
 | `models` (retiring) | A `RETIRE` row in a PR description (below), from the dailies' `changelog` | its `Effective` date |
 | `api` | The dailies' `changelog` (the docs PR's `api_changes`) | the docs PR's merge day |
 | `highlights` | Each daily summary's `highlights` | the day |

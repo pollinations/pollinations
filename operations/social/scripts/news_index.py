@@ -2,8 +2,9 @@
 """Build operations/social/news/data/index.json — the news feed Enter's News page reads.
 
 Reads the news branch checkout and keeps:
-- `models`: official model changes, from the daily /models record (dated when first seen
-  live), and the retirements PR descriptions schedule, from each daily's `changelog`
+- `models`: official model changes, from the daily /models record (dated the day before the
+  morning record that first shows them), and the retirements PR descriptions schedule, from
+  each daily's `changelog`
 - `api`: API changes from the post-deploy docs PRs, from each daily's `changelog`
 - `highlights`: the items each daily summary picked for users
 
@@ -79,10 +80,12 @@ def model_changes(before, after, prefix):
 
 
 def record_changes(snapshots: List[tuple]) -> List[tuple]:
-    """(day, event) for each change between consecutive recorded catalogs. Only categories
-    both snapshots hold are compared, so a newly recorded category announces nothing."""
+    """(day, event) for each change between consecutive recorded catalogs, dated the day before
+    the morning record that first shows it: the day it went live. Only categories both
+    snapshots hold are compared, so a newly recorded category announces nothing."""
     changes = []
-    for (_, previous), (day, current) in zip(snapshots, snapshots[1:]):
+    for (_, previous), (recorded, current) in zip(snapshots, snapshots[1:]):
+        day = (datetime.strptime(recorded, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
         shared = previous.keys() & current.keys()
         before = [model for category in shared for model in previous[category]]
         after = [model for category in shared for model in current[category]]

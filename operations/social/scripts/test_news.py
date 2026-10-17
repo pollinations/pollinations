@@ -151,7 +151,7 @@ class NotesAndIndexTest(unittest.TestCase):
         quiet = build_daily_summary_artifact({"arcs": []}, [{"pr_number": 2}], "2026-10-07", "now")
         self.assertEqual(quiet["highlights"], [])
 
-    def test_index_model_news_comes_from_the_record_dated_when_seen(self):
+    def test_index_model_news_comes_from_the_record_dated_the_day_before(self):
         def snapshot(*models, **categories):
             return {"text": list(models), "image": [], **categories}
         priced = {"name": "priced", "title": "Priced", "pricing": {"a": "1"}, "supported_endpoints": []}
@@ -169,8 +169,10 @@ class NotesAndIndexTest(unittest.TestCase):
                                     **{"3d": [{"name": "trellis"}]})),
         ]
         entries = model_entries(snapshots, [], "2026-09-08", "2026-10-08")
+        # The morning record shows what went live the day before: a card keeps the date it had
+        # when it came from the PR merged that day.
         self.assertEqual([(e["model_id"], e["action"], e["date"]) for e in entries],
-                         [("priced", "UPDATE", "2026-10-01"), ("gone", "RETIRE", "2026-10-02")])
+                         [("priced", "UPDATE", "2026-09-30"), ("gone", "RETIRE", "2026-10-01")])
         self.assertEqual(entries[0]["changes"], {"pricing": {"before": {"a": "1"}, "after": {"a": "2"}}})
         self.assertNotIn("pr", entries[0])  # a record change has no PR
 

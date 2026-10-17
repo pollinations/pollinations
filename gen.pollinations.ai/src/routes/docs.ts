@@ -432,19 +432,22 @@ const GUIDE_REDIRECT_TAGS: Record<string, string> = {
     mcp: "mcp-servers",
 };
 
-function pollinationsDocsHtml(): string {
+function pollinationsDocsHtml(appKey: string, enterUrl: string): string {
     const navIcons = JSON.stringify(DOC_TAG_NAV_ICON_HTML);
     const sidebarBrand = JSON.stringify(
         `<a href="/docs" class="ph-docs-brand" aria-label="Pollinations Docs"><span class="ph-docs-lockup" aria-hidden="true">${BRAND_LOCKUP_SVG}</span><span class="ph-docs-divider" aria-hidden="true"></span><span class="ph-docs-label">Docs</span></a>`,
     );
     const sidebarLinks = JSON.stringify(DOCS_SIDEBAR_LINKS_HTML);
     return `<style>${POLLINATIONS_DOCS_CSS}</style>
+<link rel="stylesheet" href="/docs-assets/connect.css">
 <div class="ph-fab-cluster">
-  <button class="ph-fab ph-fab-copy" type="button" title="Copy the full docs as Markdown, ready to paste into an AI assistant">
+  <button class="ph-fab ph-fab-copy" type="button" aria-label="Copy full docs as Markdown" title="Copy the full docs as Markdown, ready to paste into an AI assistant">
     <span class="ph-fab-face ph-fab-idle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy for LLMs</span>
     <span class="ph-fab-face ph-fab-done" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Copied</span>
   </button>
+  <div id="ph-docs-account" data-theme="amber" data-app-key="${appKey}" data-enter-url="${enterUrl}"></div>
 </div>
+<script type="module" src="/docs-assets/connect.js"></script>
 <script>
 (function () {
   function normalizeLegacyHash() {
@@ -1079,6 +1082,8 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 customCss: API_REFERENCE_CUSTOM_CSS,
                 hideModels: true,
                 hideClientButton: true,
+                persistAuth: false,
+                telemetry: false,
                 onSidebarClick: () => {
                     // Let Scalar finish navigation before closing a guide's drawer.
                     requestAnimationFrame(() => {
@@ -1102,7 +1107,11 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 },
             })(c, next);
             if (!response) return;
-            const html = await response.text();
+            // The SDK consumes the OAuth callback before Scalar reads the URL.
+            const html = (await response.text()).replace(
+                "Scalar.createApiReference('#app',",
+                "window.pollinationsDocsConfiguration = (",
+            );
             const htmlWithMeta = withHtmlClass(
                 injectDocsSocialHead(html, c),
                 "dark",
@@ -1114,7 +1123,14 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             const insertAt = bodyOpenMatch.index + bodyOpenMatch[0].length;
             return c.html(
                 htmlWithMeta.slice(0, insertAt) +
-                    pollinationsDocsHtml() +
+                    pollinationsDocsHtml(
+                        c.env.DOCS_APP_KEY ?? "",
+                        c.env.ENVIRONMENT === "production"
+                            ? "https://enter.pollinations.ai"
+                            : c.env.ENVIRONMENT === "staging"
+                              ? "https://staging.enter.myceli.ai"
+                              : "http://localhost:3000",
+                    ) +
                     htmlWithMeta.slice(insertAt),
             );
         })

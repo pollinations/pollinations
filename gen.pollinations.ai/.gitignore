@@ -3,3 +3,4 @@ node_modules/
 dist/
 .dev.vars
 .replicate-test-output/
+public/docs-assets/

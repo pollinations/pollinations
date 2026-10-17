@@ -1,5 +1,9 @@
 ## Authentication
 
+In the [interactive docs](https://gen.pollinations.ai/docs), select **Connect Pollinations** to authorize a docs key using your account. The consent screen defaults to a 5-Pollen spending cap and a 7-day expiry; both are editable. The approved key authenticates the request tester, and the account menu shows your profile and its remaining budget. Requests spend real Pollen from your wallet; the key's budget is a spending limit, not a separate balance.
+
+The connection stays in the current browser tab. Select **Disconnect** before entering a different key in the request tester. Sandbox and account-management endpoints require their respective permissions; the default docs connection does not grant them.
+
 Use a secret key from [enter.pollinations.ai](https://enter.pollinations.ai/keys) for generation requests. Model listing endpoints work without authentication.
 
 <p align="left"><img src="https://media.pollinations.ai/dab7992b-9bf7-471d-8660-c30ab844f45e" alt="Create secret key dialog with budget, expiry and permissions" width="560"></p>

@@ -382,10 +382,13 @@ def note(number, merged_at, tier="daily"):
 
 
 class ReadmeTest(unittest.TestCase):
-    def test_the_readme_lists_the_12_newest_highlights_as_one_liners(self):
-        highlights = [{"date": "2026-10-16", "emoji": "🎵", "title": f"Item {n}",
-                       "text": f"Try it. [Open it](https://example.com/{n})."} for n in range(13)]
-        highlights[1] = {"date": "2026-10-16", "title": "No link", "text": "Plain."}
+    def test_the_readme_lists_the_10_newest_highlights_but_apps_with_badge_date_and_text(self):
+        highlights = [{"date": "2026-10-06", "emoji": "🎵", "title": f"Item {n}", "kind": "model",
+                       "text": f"Try it. [Open it](https://example.com/{n})."} for n in range(14)]
+        highlights[1] = {"date": "2026-10-16", "title": "No link", "text": "Plain.", "kind": "product"}
+        highlights[2] = {**highlights[2], "kind": "api", "text": "Use [the store](https://example.com/s) now."}
+        highlights[3] = {**highlights[3], "kind": "app"}
+        del highlights[4]["kind"]
         with tempfile.TemporaryDirectory() as directory:
             index, readme_file = Path(directory, "index.json"), Path(directory, "README.md")
             index.write_text(json.dumps({"highlights": highlights}))
@@ -394,8 +397,14 @@ class ReadmeTest(unittest.TestCase):
                 readme.main()
             text = readme_file.read_text()
         lines = text.split("<!-- news:start -->\n")[1].split("<!-- news:end -->")[0].splitlines()
-        self.assertEqual(len(lines), 12)
-        self.assertEqual(lines[:2], ["- 🎵 [Item 0](https://example.com/0)", "- No link"])
+        badge = '<img src="https://img.shields.io/badge/{}?style=flat-square" alt="{}" align="top">'.format
+        self.assertEqual(len(lines), 10)
+        self.assertEqual(lines[:4], [
+            f"- [{badge('Model-8b5cf6', 'Model')} **Item 0**](https://example.com/0) <sub>Oct 6</sub><br>Try it.",
+            f"- {badge('Feature-f59e0b', 'Feature')} **No link** <sub>Oct 16</sub><br>Plain.",
+            f"- [{badge('API-0ea5e9', 'API')} **Item 2**](https://example.com/s) <sub>Oct 6</sub>"
+            "<br>Use [the store](https://example.com/s) now.",
+            f"- [{badge('Model-8b5cf6', 'Model')} **Item 5**](https://example.com/5) <sub>Oct 6</sub><br>Try it."])
         self.assertTrue(text.startswith("intro\n") and text.endswith("outro\n") and "- old" not in text)
 
 

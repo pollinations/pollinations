@@ -46,6 +46,28 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
+                id: "unicode",
+                name: "Unicode Inspector",
+                description:
+                    "Inspect text for common Unicode lookalikes and invisible control characters.",
+                url: "https://gen.pollinations.ai/mcp/unicode",
+                pricing: {
+                    description: "No external API or additional MCP fee.",
+                    rates: [],
+                },
+            },
+            {
+                id: "unicode",
+                name: "Unicode Inspector",
+                description:
+                    "Inspect text for common Unicode lookalikes and invisible control characters.",
+                url: "https://gen.pollinations.ai/mcp/unicode",
+                pricing: {
+                    description: "No external API or additional MCP fee.",
+                    rates: [],
+                },
+            },
+            {
                 id: "ffmpeg",
                 name: "FFmpeg",
                 description:
@@ -176,6 +198,45 @@ test("routes Pollinations MCP with caller authorization for downstream billing",
         id: 1,
         result: {
             content: [{ type: "text", text: "pollinations proxied" }],
+        },
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
+});
+
+test("routes Unicode Inspector with caller authorization and no extra debit", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/unicode",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                id: 1,
+                method: "tools/list",
+                params: {},
+            }),
+        },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        pathname: "/",
+        authorization: `Bearer ${key}`,
+        cookie: null,
+        payload: {
+            jsonrpc: "2.0",
+            id: 1,
+            method: "tools/list",
+            params: {},
         },
     });
     expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({

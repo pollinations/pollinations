@@ -619,6 +619,20 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "meta/muse-spark-open": {
+        "meta/muse-spark-open:openrouter:baseten": {
+            supportedParameters: CHAT_PARAMETERS.openRouterMuseSparkOpen,
+            provider: "openrouter",
+            addedDate: new Date("2026-10-15").getTime(),
+            cost: {
+                // OpenRouter BaseTen FP4 rates (2026-10-15), including the
+                // account's 5.5% credit-purchase fee. Covers Fireworks failures.
+                promptTextTokens: perMillion(1.25) * 1.055,
+                promptCachedTokens: perMillion(0.15) * 1.055,
+                completionTextTokens: perMillion(4.25) * 1.055,
+            },
+        },
+    },
     "meta/muse-wonder-1.0": {
         "meta/muse-wonder-1.0:vercel": {
             supportedParameters: CHAT_PARAMETERS.vercelMuseWonder,

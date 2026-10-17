@@ -649,6 +649,28 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("routes Muse Spark Open directly to Fireworks with a BaseTen fallback", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "meta/muse-spark-open",
+        });
+        const fallback = resolveModelConfig(messages, {
+            model: "meta/muse-spark-open:openrouter:baseten",
+        });
+
+        expect(primary.options.model).toBe(
+            "accounts/fireworks/models/muse-spark-open",
+        );
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(primary.options.provider).toBeUndefined();
+        expect(fallback.options.provider).toEqual({
+            only: ["baseten/fp4"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("routes Muse Glimmer directly to DeepInfra", () => {
         const result = resolveModelConfig(messages, { model: "muse-glimmer" });
 

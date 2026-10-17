@@ -3242,18 +3242,18 @@ const TEXT_BASE_SERVICES = {
     "meta/muse-spark-open": {
         supportedParameters: CHAT_PARAMETERS.openRouterMuseSparkOpen,
         aliases: [],
-        provider: "openrouter",
+        provider: "fireworks",
         publisher: "Meta",
         category: "text",
         addedDate: new Date("2026-10-15").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter BaseTen FP4 rates (2026-10-15), including the account's
-            // 5.5% credit-purchase fee.
-            promptTextTokens: perMillion(1.25) * 1.055,
-            promptCachedTokens: perMillion(0.15) * 1.055,
-            completionTextTokens: perMillion(4.25) * 1.055,
+            // Fireworks serverless rates (2026-10-17). Limited preview through
+            // 2026-10-29 on US-only capacity; the price after it is unconfirmed.
+            promptTextTokens: perMillion(1.25),
+            promptCachedTokens: perMillion(0.15),
+            completionTextTokens: perMillion(4.25),
         },
         title: "Meta Muse Spark Open",
         description:

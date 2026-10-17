@@ -68,11 +68,10 @@ const OPENROUTER_ROUTES = [
         "nvidia/nemotron-3.5-lightning",
         "coreweave/bf16",
     ],
-    ["meta/muse-spark-open", "meta/muse-spark-open", "baseten/fp4"],
     [
-        "meta/muse-spark-open:openrouter:together",
+        "meta/muse-spark-open:openrouter:baseten",
         "meta/muse-spark-open",
-        "together",
+        "baseten/fp4",
     ],
     [
         "google/gemini-3-flash-preview:openrouter:vertex-global",
@@ -1096,12 +1095,12 @@ describe("static provider fallbacks", () => {
             completionTextTokens: (0.2 / 1_000_000) * 1.055,
         });
         expect(TEXT_SERVICES["meta/muse-spark-open"].cost).toMatchObject({
-            promptTextTokens: (1.25 / 1_000_000) * 1.055,
-            promptCachedTokens: (0.15 / 1_000_000) * 1.055,
-            completionTextTokens: (4.25 / 1_000_000) * 1.055,
+            promptTextTokens: 1.25 / 1_000_000,
+            promptCachedTokens: 0.15 / 1_000_000,
+            completionTextTokens: 4.25 / 1_000_000,
         });
         expect(
-            TEXT_SERVICES["meta/muse-spark-open:openrouter:together"].cost,
+            TEXT_SERVICES["meta/muse-spark-open:openrouter:baseten"].cost,
         ).toMatchObject({
             promptTextTokens: (1.25 / 1_000_000) * 1.055,
             promptCachedTokens: (0.15 / 1_000_000) * 1.055,

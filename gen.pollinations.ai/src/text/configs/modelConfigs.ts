@@ -725,10 +725,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "meta/muse-spark-open",
         "baseten/fp4",
     ),
-    "muse-spark-open-openrouter-together": createPinnedOpenRouterConfig(
-        "meta/muse-spark-open",
-        "together",
-    ),
     "meta/muse-wonder-1.0": createPinnedOpenRouterConfig(
         "meta/muse-wonder",
         "meta",
@@ -877,6 +873,12 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/deepseek-v4p1-flash": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v4p1-flash",
+        }),
+
+    // -- Fireworks AI (Muse Spark Open) --------------------------------------
+    "accounts/fireworks/models/muse-spark-open": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/muse-spark-open",
         }),
 
     // -- Fireworks AI (Kimi, GLM, Qwen) --------------------------------------

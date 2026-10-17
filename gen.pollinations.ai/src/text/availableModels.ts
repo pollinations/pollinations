@@ -1119,12 +1119,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "meta/muse-spark-open",
-        config: portkeyConfig["muse-spark-open-openrouter-baseten"],
+        config: portkeyConfig["accounts/fireworks/models/muse-spark-open"],
         transform: fireworksThinking,
     },
     {
-        name: "meta/muse-spark-open:openrouter:together",
-        config: portkeyConfig["muse-spark-open-openrouter-together"],
+        name: "meta/muse-spark-open:openrouter:baseten",
+        config: portkeyConfig["muse-spark-open-openrouter-baseten"],
         transform: fireworksThinking,
     },
     {

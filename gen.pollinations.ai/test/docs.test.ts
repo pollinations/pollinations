@@ -331,7 +331,9 @@ describe("docs routes", () => {
         const resources = schema["x-tagGroups"].find(
             (group) => group.name === "Resources",
         );
-        expect(getStarted?.tags).toContain("x402 Prepaid Keys");
+        expect(getStarted?.tags).not.toContain("x402 Prepaid Keys");
+        expect(guides?.tags).not.toContain("x402 Prepaid Keys");
+        expect(resources?.tags).toContain("x402 Prepaid Keys");
         expect(guides?.tags).toContain("Publish a Model");
         expect(guides?.tags).not.toContain("Community Models");
         expect(resources?.tags).toContain("Community Models");

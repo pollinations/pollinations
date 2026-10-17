@@ -382,7 +382,7 @@ def note(number, merged_at, tier="daily"):
 
 
 class ReadmeTest(unittest.TestCase):
-    def test_the_readme_lists_the_12_newest_highlights_with_badge_date_and_text(self):
+    def test_the_readme_lists_the_10_newest_highlights_with_badge_date_and_text(self):
         highlights = [{"date": "2026-10-06", "emoji": "🎵", "title": f"Item {n}", "kind": "model",
                        "text": f"Try it. [Open it](https://example.com/{n})."} for n in range(14)]
         highlights[1] = {"date": "2026-10-16", "title": "No link", "text": "Plain.", "kind": "product"}
@@ -397,7 +397,7 @@ class ReadmeTest(unittest.TestCase):
             text = readme_file.read_text()
         lines = text.split("<!-- news:start -->\n")[1].split("<!-- news:end -->")[0].splitlines()
         badge = '<img src="https://img.shields.io/badge/{}?style=flat-square" alt="{}" align="top">'.format
-        self.assertEqual(len(lines), 12)
+        self.assertEqual(len(lines), 10)
         self.assertEqual(lines[:4], [
             f"- [{badge('Model-8b5cf6', 'Model')} **Item 0**](https://example.com/0) <sub>Oct 6</sub><br>Try it.",
             f"- {badge('Feature-f59e0b', 'Feature')} **No link** <sub>Oct 16</sub><br>Plain.",

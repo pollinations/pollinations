@@ -3,7 +3,7 @@
 
     python readme.py INDEX README
 
-INDEX is the news branch's data/index.json. The list is the 12 newest highlights, each with a
+INDEX is the news branch's data/index.json. The list is the 10 newest highlights, each with a
 category badge, its title linked where the highlight links, its date, and its text below without
 the closing link the title already carries.
 """
@@ -14,7 +14,7 @@ import sys
 from datetime import date
 from pathlib import Path
 
-ITEMS = 12
+ITEMS = 10
 LINK = re.compile(r"\[[^\]]+\]\(([^)\s]+)\)")
 CLOSING_LINK = re.compile(r"\s*\[[^\]]+\]\([^)\s]+\)\.?$")
 START, END = "<!-- news:start -->", "<!-- news:end -->"

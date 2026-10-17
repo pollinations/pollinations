@@ -1,5 +1,6 @@
 import { bytesToHex } from "@shared/client-ip.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { getPublicOrigin } from "@shared/public-origin.ts";
 import { mediaResponseHeaders } from "@shared/utils/api-docs.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -969,6 +970,46 @@ api.get(
     },
 );
 
+// RFC 8288 Web Linking: the machine entry points, advertised on the discovery
+// responses so an agent that lands on the service root learns where the schema
+// and the plain-text guide are. Registered relations only: service-desc and
+// service-doc (RFC 8631) plus api-catalog (RFC 9727) — the same set
+// gen.pollinations.ai advertises for its own API.
+const AGENT_LINKS = [
+    '</openapi.json>; rel="service-desc"',
+    '</llms.txt>; rel="service-doc"',
+    '</.well-known/api-catalog>; rel="api-catalog"',
+].join(", ");
+
+// One fetch tells an agent what this host does and where each endpoint is,
+// without it having to guess paths or parse the OpenAPI schema first.
+function llmsTxt(origin: string): string {
+    return `# media.pollinations.ai
+
+> Media storage for Pollinations. Upload an image, audio, video, or 3D file with a Pollinations API key and get back an id and a public URL. Retrieval needs no key.
+
+## Start here
+
+- [OpenAPI schema](${origin}/openapi.json): Every endpoint with its request and response schema.
+- [API catalog](${origin}/.well-known/api-catalog): RFC 9727 linkset pointing at the schema and this file.
+- [Pollinations API and keys](https://gen.pollinations.ai/llms.txt): Get an API key (\`pk_\` or \`sk_\`) and use the generation APIs whose output you store here.
+
+## Endpoints
+
+- \`POST /upload\` — upload a file as \`multipart/form-data\` (field \`file\`), \`application/json\` (base64 \`data\`), or a raw body with the file's media type and a \`Content-Length\` header. Returns \`{ id, url }\`. Requires an API key: \`Authorization: Bearer <key>\` with a \`pk_\` or \`sk_\` Pollinations key.
+- \`GET /{id}\` — fetch a stored file. Public. Fetching the body refreshes the 30-day retention once the file is at least 15 days old.
+- \`GET /{id}/metadata\` — file metadata as JSON. Public, and it does not refresh retention.
+- \`GET /media?tag={tag}\` — list a public tag gallery, newest first. Public.
+- \`DELETE /media/{id}\` — delete a media item you own. Requires your secret \`sk_\` key.
+
+## Notes
+
+- Files are stored for 30 days from upload or the latest body fetch. Tagged and custom-id uploads are served \`no-store\`; untagged uploads are immutable.
+- Multipart and raw uploads reach 400 MiB. Base64 JSON uploads stop at 100 MiB.
+- A \`tags\` field publishes the upload to that tag's public gallery. Untagged uploads stay unlisted, but every retrieval URL is public.
+`;
+}
+
 const app = new Hono<{ Bindings: Env }>();
 
 app.use(
@@ -987,6 +1028,7 @@ app.use(
 );
 
 app.get("/", (c) => {
+    c.header("Link", AGENT_LINKS);
     return c.json({
         service: DOMAIN,
         version: "1.0.0",
@@ -998,11 +1040,59 @@ app.get("/", (c) => {
             deleteMedia:
                 "DELETE /media/:id (owner's secret sk_ API key required)",
             docs: "GET /openapi.json",
+            agentEntryPoint: "GET /llms.txt (endpoints and links for agents)",
         },
         limits: {
             maxFileSize: "400 MiB (multipart or raw upload); 100 MiB (JSON)",
         },
     });
+});
+
+app.on(["GET", "HEAD"], "/llms.txt", (c) => {
+    c.header("Link", AGENT_LINKS);
+    c.header("Content-Type", "text/plain; charset=utf-8");
+    c.header("Cache-Control", "public, max-age=3600");
+    return c.body(llmsTxt(getPublicOrigin(c)));
+});
+
+app.on(["GET", "HEAD"], "/.well-known/api-catalog", (c) => {
+    // RFC 9727 API catalog (linkset): lets an agent discover the OpenAPI
+    // schema and the plain-text guide without prior URL knowledge. The origin
+    // follows the serving host, so staging and the media.myceli.ai route
+    // never send an agent to production.
+    const origin = getPublicOrigin(c);
+    c.header(
+        "Content-Type",
+        'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"',
+    );
+    c.header("Cache-Control", "public, max-age=3600");
+    // RFC 9727 section 2: HEAD must answer with an api-catalog Link.
+    c.header("Link", `<${origin}/.well-known/api-catalog>; rel="api-catalog"`);
+    return c.body(
+        JSON.stringify(
+            {
+                linkset: [
+                    {
+                        anchor: origin,
+                        "service-desc": [
+                            {
+                                href: `${origin}/openapi.json`,
+                                type: "application/json",
+                            },
+                        ],
+                        "service-doc": [
+                            {
+                                href: `${origin}/llms.txt`,
+                                type: "text/plain",
+                            },
+                        ],
+                    },
+                ],
+            },
+            null,
+            2,
+        ),
+    );
 });
 
 app.get("/openapi.json", async (c, next) => {

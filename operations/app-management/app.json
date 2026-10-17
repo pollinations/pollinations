@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Pollen Art Lab",
+    "url": "https://ovalprint1-sketch.github.io/pollen-app",
+    "description": "Pollen Art Lab turns a text idea into artwork using the Pollinations image API. Choose a style and aspect ratio, sign in with your Pollinations account (BYOP) and generate an image; each visitor spend",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "ovalprint1-sketch",
+    "githubUserId": "340587991",
+    "repositoryUrl": "https://github.com/ovalprint1-sketch/pollen-app",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-16",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17721",
+    "approvedDate": "2026-10-17",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/8d8cde70-b273-4fbf-8ee5-9d2fce0b0cf3"
+  },
+  {
     "emoji": "💬",
     "name": "point-zero",
     "url": "https://point-zero.pages.dev",

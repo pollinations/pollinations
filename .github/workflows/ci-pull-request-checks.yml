@@ -32,7 +32,7 @@ jobs:
           python-version: '3.11'
       - name: Install dependencies
         if: steps.changes.outputs.changed == 'true'
-        run: pip install requests
+        run: pip install requests pyyaml
       - name: Test PR classification and gist enrichment
         if: steps.changes.outputs.changed == 'true'
         run: python3 -m unittest operations/github/test_project_manager.py operations/social/scripts/test_news.py operations/app-management/ingestion/test_review_agent.py

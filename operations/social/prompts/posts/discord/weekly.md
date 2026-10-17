@@ -1,29 +1,25 @@
 ---
 job: weekly
-tone: twitter
-file: twitter.json
-temperature: 0.8
-pictures: ["twitter.jpg"]
-required: ["tweet"]
+tone: discord
+temperature: 0.7
+pictures: ["discord.jpg"]
+required: ["message"]
 ---
-Write a tweet about this week's shipped work.
+Write a Discord message about the latest updates.
 
 {recap}
 
-- Lead with what shipped, not a hook
-- Be specific — what does it DO, not just what it IS
-- Dry, observational tone. humor through understatement
-- MUST be under 280 characters. Count carefully.
+- Greet <@&1424461167883194418> naturally — don't overthink it
+- Use ## Weekly Update - {date_str} as the header
+- Group changes into logical sections with emojis
+- Total length: 150-300 words — brief but complete
+- Include links to relevant repos, PRs, or docs
 
 Output Format (JSON only):
 {
-    "tweet_type": "shipped|field_notes|observation|useful",
-    "tweet": "The actual tweet text (MUST be under 280 chars).",
-    "alt_tweet": "Alternative version with a different angle",
-    "hashtags": ["#OpenSource", "#AI"],
-    "image_prompt": "Vivid, clean scene description. Follow the shared visual style.",
-    "reasoning": "Why this works — be brief",
-    "char_count": 123
+    "message": "The Discord message text. Brief, scannable, genuine.",
+    "image_prompt": "Pixel art update scene. Follow the shared visual style.",
+    "reasoning": "Why this resonates — be brief"
 }
 
 Return ONLY the JSON object. No markdown fences, no explanation.

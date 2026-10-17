@@ -417,7 +417,7 @@ export const LLMS_FULL_TEXT = [
     "# Pollinations",
     "> Full Pollinations docs for agents in one file: the API guide, the polli CLI skill, and the CLI task recipes. Index: /llms.txt",
     LLM_DOC_TEXT,
-    `## Polli CLI Skill\n\n${stripLeadingHeading(CLI_SKILL.replace(/^---\n[\s\S]*?\n---\n+/, ""))}`,
+    `## Polli CLI Skill\n\n${stripLeadingHeading(CLI_SKILL.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n+/, ""))}`,
     `## Polli CLI Tasks\n\n${stripLeadingHeading(CLI_TASKS)}`,
 ].join("\n\n");
 

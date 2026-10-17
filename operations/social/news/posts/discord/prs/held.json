@@ -1,11 +1,5 @@
 {
-  "held": {
-    "17614": {
-      "merge_sha": "2289815f7fc4ddb024a8dac8e43ea6ff4449e431",
-      "merged_at": "2026-10-17T23:02:41Z",
-      "required": []
-    }
-  },
+  "held": {},
   "production": "58203fd986797344926103e90a52a80636a1a47e",
   "master": "02b0575f1ae6daad402bb2782119d7752403ad01"
 }

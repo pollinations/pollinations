@@ -239,6 +239,75 @@ describe("seedreamReplicateModel - seedream 4.0 custom-size mode", () => {
         expect(input.height).toBe(1024);
     });
 
+    it("falls back to preset when explicit dimensions are below the custom range", async () => {
+        const requests: ReplicateRequest[] = [];
+        mockReplicateFetch(requests);
+
+        // 512x512 is explicit but outside Replicate's 1024-4096 custom-mode
+        // range — the preset path serves 1K instead of an upstream 422.
+        const params: ImageParams = {
+            ...baseParams,
+            width: 512,
+            height: 512,
+            dimensionsExplicit: true,
+        };
+        await callSeedreamAPI("test", params);
+
+        const post = requests.find((r) =>
+            r.url.includes("api.replicate.com/v1/models/bytedance/seedream-4/"),
+        );
+        if (!post) throw new Error("Replicate POST not captured");
+        const input = (post.body as { input: Record<string, unknown> }).input;
+        expect(input.size).toBe("1K");
+        expect(input.width).toBeUndefined();
+        expect(input.height).toBeUndefined();
+        expect(input.aspect_ratio).toBe("1:1");
+    });
+
+    it("falls back to preset when explicit dimensions exceed the custom range", async () => {
+        const requests: ReplicateRequest[] = [];
+        mockReplicateFetch(requests);
+
+        const params: ImageParams = {
+            ...baseParams,
+            width: 8192,
+            height: 8192,
+            dimensionsExplicit: true,
+        };
+        await callSeedreamAPI("test", params);
+
+        const post = requests.find((r) =>
+            r.url.includes("api.replicate.com/v1/models/bytedance/seedream-4/"),
+        );
+        if (!post) throw new Error("Replicate POST not captured");
+        const input = (post.body as { input: Record<string, unknown> }).input;
+        expect(input.size).toBe("4K");
+        expect(input.width).toBeUndefined();
+    });
+
+    it("falls back to preset for one-sided dimensions below the custom range", async () => {
+        const requests: ReplicateRequest[] = [];
+        mockReplicateFetch(requests);
+
+        // `?width=512` — schema fills height with the 1024 default, but the
+        // 512 side still takes custom mode out of range.
+        const params: ImageParams = {
+            ...baseParams,
+            width: 512,
+            height: 1024,
+            dimensionsExplicit: true,
+        };
+        await callSeedreamAPI("test", params);
+
+        const post = requests.find((r) =>
+            r.url.includes("api.replicate.com/v1/models/bytedance/seedream-4/"),
+        );
+        if (!post) throw new Error("Replicate POST not captured");
+        const input = (post.body as { input: Record<string, unknown> }).input;
+        expect(input.size).toBe("1K");
+        expect(input.width).toBeUndefined();
+    });
+
     it("falls back to match_input_image for I2I without explicit dimensions", async () => {
         const requests: ReplicateRequest[] = [];
         mockReplicateFetch(requests);

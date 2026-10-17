@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-17T13:31:51.017125+00:00",
+  "generated_at": "2026-10-17T23:39:27.485212+00:00",
   "models": [
     {
-      "id": "2026-09-23:anthropic/claude-opus-5.5",
+      "id": "2026-09-22:anthropic/claude-opus-5.5",
       "model_id": "anthropic/claude-opus-5.5",
       "title": "Claude Opus 5.5",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-09-23",
+      "date": "2026-09-22",
       "pricing_units": {
         "before": null,
         "after": null
@@ -59,13 +59,13 @@
       }
     },
     {
-      "id": "2026-09-23:elevenlabs/music-v2.5",
+      "id": "2026-09-22:elevenlabs/music-v2.5",
       "model_id": "elevenlabs/music-v2.5",
       "title": "ElevenLabs Music v2.5",
       "previous_title": null,
       "action": "NEW",
       "category": "audio",
-      "date": "2026-09-23",
+      "date": "2026-09-22",
       "pricing_units": {
         "before": null,
         "after": null
@@ -103,13 +103,13 @@
       }
     },
     {
-      "id": "2026-09-23:black-forest-labs/flux.2-max",
+      "id": "2026-09-22:black-forest-labs/flux.2-max",
       "model_id": "black-forest-labs/flux.2-max",
       "title": "FLUX.2 Max",
       "previous_title": null,
       "action": "NEW",
       "category": "image",
-      "date": "2026-09-23",
+      "date": "2026-09-22",
       "pricing_units": {
         "before": null,
         "after": null
@@ -151,13 +151,13 @@
       }
     },
     {
-      "id": "2026-09-23:openai/gpt-4o-mini",
+      "id": "2026-09-22:openai/gpt-4o-mini",
       "model_id": "openai/gpt-4o-mini",
       "title": "GPT-4o Mini",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-09-23",
+      "date": "2026-09-22",
       "pricing_units": {
         "before": null,
         "after": null
@@ -206,13 +206,13 @@
       }
     },
     {
-      "id": "2026-09-23:openai/gpt-5-nano",
+      "id": "2026-09-22:openai/gpt-5-nano",
       "model_id": "openai/gpt-5-nano",
       "title": "GPT-5 Nano",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-23",
+      "date": "2026-09-22",
       "pricing_units": {
         "before": null,
         "after": null
@@ -230,13 +230,13 @@
       }
     },
     {
-      "id": "2026-09-23:openai/gpt-5.4-mini",
+      "id": "2026-09-22:openai/gpt-5.4-mini",
       "model_id": "openai/gpt-5.4-mini",
       "title": "GPT-5.4 Mini",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-23",
+      "date": "2026-09-22",
       "pricing_units": {
         "before": null,
         "after": null
@@ -254,13 +254,13 @@
       }
     },
     {
-      "id": "2026-09-23:openai/gpt-5.4-nano",
+      "id": "2026-09-22:openai/gpt-5.4-nano",
       "model_id": "openai/gpt-5.4-nano",
       "title": "GPT-5.4 Nano",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-23",
+      "date": "2026-09-22",
       "pricing_units": {
         "before": null,
         "after": null
@@ -278,13 +278,13 @@
       }
     },
     {
-      "id": "2026-09-23:openai/gpt-6-luna",
+      "id": "2026-09-22:openai/gpt-6-luna",
       "model_id": "openai/gpt-6-luna",
       "title": "GPT-6 Luna",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-09-23",
+      "date": "2026-09-22",
       "pricing_units": {
         "before": null,
         "after": null
@@ -331,13 +331,13 @@
       }
     },
     {
-      "id": "2026-09-23:openai/gpt-6-sol",
+      "id": "2026-09-22:openai/gpt-6-sol",
       "model_id": "openai/gpt-6-sol",
       "title": "GPT-6 Sol",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-09-23",
+      "date": "2026-09-22",
       "pricing_units": {
         "before": null,
         "after": null
@@ -384,13 +384,13 @@
       }
     },
     {
-      "id": "2026-09-23:x-ai/grok-4.7",
+      "id": "2026-09-22:x-ai/grok-4.7",
       "model_id": "x-ai/grok-4.7",
       "title": "Grok 4.7",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-09-23",
+      "date": "2026-09-22",
       "pricing_units": {
         "before": null,
         "after": null
@@ -440,13 +440,13 @@
       }
     },
     {
-      "id": "2026-09-23:tencent/hy3",
+      "id": "2026-09-22:tencent/hy3",
       "model_id": "tencent/hy3",
       "title": "Hy3",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-09-23",
+      "date": "2026-09-22",
       "pricing_units": {
         "before": null,
         "after": null
@@ -491,13 +491,13 @@
       }
     },
     {
-      "id": "2026-09-23:tencent/hy4-preview",
+      "id": "2026-09-22:tencent/hy4-preview",
       "model_id": "tencent/hy4-preview",
       "title": "Hy4 Preview",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-09-23",
+      "date": "2026-09-22",
       "pricing_units": {
         "before": null,
         "after": null
@@ -542,13 +542,13 @@
       }
     },
     {
-      "id": "2026-09-23:typesafe/jev-1.13",
+      "id": "2026-09-22:typesafe/jev-1.13",
       "model_id": "typesafe/jev-1.13",
       "title": "Jev",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-09-23",
+      "date": "2026-09-22",
       "pricing_units": {
         "before": null,
         "after": null
@@ -588,13 +588,13 @@
       }
     },
     {
-      "id": "2026-09-23:mistralai/mistral-small-4",
+      "id": "2026-09-22:mistralai/mistral-small-4",
       "model_id": "mistralai/mistral-small-4",
       "title": "Mistral Small 4",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-23",
+      "date": "2026-09-22",
       "pricing_units": {
         "before": null,
         "after": null
@@ -619,13 +619,13 @@
       }
     },
     {
-      "id": "2026-09-23:qwen/qwen3.7-flash",
+      "id": "2026-09-22:qwen/qwen3.7-flash",
       "model_id": "qwen/qwen3.7-flash",
       "title": "Qwen3.7 Flash",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-23",
+      "date": "2026-09-22",
       "pricing_units": {
         "before": null,
         "after": null
@@ -654,13 +654,13 @@
       }
     },
     {
-      "id": "2026-09-23:qwen/qwen3.8-27b",
+      "id": "2026-09-22:qwen/qwen3.8-27b",
       "model_id": "qwen/qwen3.8-27b",
       "title": "Qwen3.8 27B",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-23",
+      "date": "2026-09-22",
       "pricing_units": {
         "before": null,
         "after": null
@@ -687,13 +687,13 @@
       }
     },
     {
-      "id": "2026-09-23:qwen/qwen3.8-flash",
+      "id": "2026-09-22:qwen/qwen3.8-flash",
       "model_id": "qwen/qwen3.8-flash",
       "title": "Qwen3.8 Flash",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-23",
+      "date": "2026-09-22",
       "pricing_units": {
         "before": null,
         "after": null
@@ -722,13 +722,13 @@
       }
     },
     {
-      "id": "2026-09-23:qwen/qwen3.8-max",
+      "id": "2026-09-22:qwen/qwen3.8-max",
       "model_id": "qwen/qwen3.8-max",
       "title": "Qwen3.8 Max",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-23",
+      "date": "2026-09-22",
       "pricing_units": {
         "before": null,
         "after": null
@@ -757,13 +757,13 @@
       }
     },
     {
-      "id": "2026-09-23:alibaba/wan-3.0",
+      "id": "2026-09-22:alibaba/wan-3.0",
       "model_id": "alibaba/wan-3.0",
       "title": "Wan 3.0",
       "previous_title": null,
       "action": "UPDATE",
       "category": "video",
-      "date": "2026-09-23",
+      "date": "2026-09-22",
       "pricing_units": {
         "before": null,
         "after": null
@@ -783,13 +783,13 @@
       }
     },
     {
-      "id": "2026-09-23:z-ai/glm-5.3-flashx",
+      "id": "2026-09-22:z-ai/glm-5.3-flashx",
       "model_id": "z-ai/glm-5.3-flashx",
       "title": "Z.ai GLM-5.3 FlashX",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-09-23",
+      "date": "2026-09-22",
       "pricing_units": {
         "before": null,
         "after": null
@@ -839,13 +839,13 @@
       }
     },
     {
-      "id": "2026-09-30:anthropic/claude-sonnet-5.5",
+      "id": "2026-09-29:anthropic/claude-sonnet-5.5",
       "model_id": "anthropic/claude-sonnet-5.5",
       "title": "Claude Sonnet 5.5",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -896,13 +896,13 @@
       }
     },
     {
-      "id": "2026-09-30:deepseek/deepseek-v4-flash",
+      "id": "2026-09-29:deepseek/deepseek-v4-flash",
       "model_id": "deepseek/deepseek-v4-flash",
       "title": "DeepSeek V4 Flash 0731",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -925,13 +925,13 @@
       }
     },
     {
-      "id": "2026-09-30:deepseek/deepseek-v4-flash-vision-exp",
+      "id": "2026-09-29:deepseek/deepseek-v4-flash-vision-exp",
       "model_id": "deepseek/deepseek-v4-flash-vision-exp",
       "title": "DeepSeek V4 Flash Vision Exp",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -960,13 +960,13 @@
       }
     },
     {
-      "id": "2026-09-30:deepseek/deepseek-v4-pro",
+      "id": "2026-09-29:deepseek/deepseek-v4-pro",
       "model_id": "deepseek/deepseek-v4-pro",
       "title": "DeepSeek V4 Pro 0813",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -997,13 +997,13 @@
       }
     },
     {
-      "id": "2026-09-30:elevenlabs/stem-separation",
+      "id": "2026-09-29:elevenlabs/stem-separation",
       "model_id": "elevenlabs/stem-separation",
       "title": "ElevenLabs Stem Separation",
       "previous_title": null,
       "action": "NEW",
       "category": "audio",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1039,13 +1039,13 @@
       }
     },
     {
-      "id": "2026-09-30:black-forest-labs/flux.1.1-pro",
+      "id": "2026-09-29:black-forest-labs/flux.1.1-pro",
       "model_id": "black-forest-labs/flux.1.1-pro",
       "title": "FLUX 1.1 Pro",
       "previous_title": null,
       "action": "NEW",
       "category": "image",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1081,13 +1081,13 @@
       }
     },
     {
-      "id": "2026-09-30:openai/gpt-image-2",
+      "id": "2026-09-29:openai/gpt-image-2",
       "model_id": "openai/gpt-image-2",
       "title": "GPT Image 2",
       "previous_title": null,
       "action": "UPDATE",
       "category": "image",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1100,13 +1100,13 @@
       }
     },
     {
-      "id": "2026-09-30:openai/gpt-image-2.5-flare",
+      "id": "2026-09-29:openai/gpt-image-2.5-flare",
       "model_id": "openai/gpt-image-2.5-flare",
       "title": "GPT Image 2.5 Flare",
       "previous_title": null,
       "action": "UPDATE",
       "category": "image",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1135,13 +1135,13 @@
       }
     },
     {
-      "id": "2026-09-30:openai/gpt-image-2.5-sunburst",
+      "id": "2026-09-29:openai/gpt-image-2.5-sunburst",
       "model_id": "openai/gpt-image-2.5-sunburst",
       "title": "GPT Image 2.5 Sunburst",
       "previous_title": null,
       "action": "UPDATE",
       "category": "image",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1170,13 +1170,13 @@
       }
     },
     {
-      "id": "2026-09-30:openai/gpt-5.3-codex",
+      "id": "2026-09-29:openai/gpt-5.3-codex",
       "model_id": "openai/gpt-5.3-codex",
       "title": "GPT-5.3 Codex",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1223,13 +1223,13 @@
       }
     },
     {
-      "id": "2026-09-30:openai/gpt-6-astra",
+      "id": "2026-09-29:openai/gpt-6-astra",
       "model_id": "openai/gpt-6-astra",
       "title": "GPT-6 Astra",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1254,13 +1254,13 @@
       }
     },
     {
-      "id": "2026-09-30:openai/gpt-6-luna",
+      "id": "2026-09-29:openai/gpt-6-luna",
       "model_id": "openai/gpt-6-luna",
       "title": "GPT-6 Luna",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1290,13 +1290,13 @@
       }
     },
     {
-      "id": "2026-09-30:openai/gpt-6-sol",
+      "id": "2026-09-29:openai/gpt-6-sol",
       "model_id": "openai/gpt-6-sol",
       "title": "GPT-6 Sol",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1326,13 +1326,13 @@
       }
     },
     {
-      "id": "2026-09-30:google/gemini-3.5-transcribe",
+      "id": "2026-09-29:google/gemini-3.5-transcribe",
       "model_id": "google/gemini-3.5-transcribe",
       "title": "Gemini 3.5 Transcribe",
       "previous_title": null,
       "action": "NEW",
       "category": "audio",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1369,13 +1369,13 @@
       }
     },
     {
-      "id": "2026-09-30:google/gemini-3.8-flash-lite-tts",
+      "id": "2026-09-29:google/gemini-3.8-flash-lite-tts",
       "model_id": "google/gemini-3.8-flash-lite-tts",
       "title": "Gemini 3.8 Flash Lite TTS",
       "previous_title": null,
       "action": "NEW",
       "category": "audio",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1447,13 +1447,13 @@
       }
     },
     {
-      "id": "2026-09-30:google/gemini-3.8-flash-tts",
+      "id": "2026-09-29:google/gemini-3.8-flash-tts",
       "model_id": "google/gemini-3.8-flash-tts",
       "title": "Gemini 3.8 Flash TTS",
       "previous_title": null,
       "action": "NEW",
       "category": "audio",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1525,13 +1525,13 @@
       }
     },
     {
-      "id": "2026-09-30:inferenceport-ai/lightning-image-turbo",
+      "id": "2026-09-29:inferenceport-ai/lightning-image-turbo",
       "model_id": "inferenceport-ai/lightning-image-turbo",
       "title": "Lightning Image Turbo",
       "previous_title": null,
       "action": "NEW",
       "category": "image",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1576,13 +1576,13 @@
       }
     },
     {
-      "id": "2026-09-30:inclusionai/ling-3.0-flash-vl",
+      "id": "2026-09-29:inclusionai/ling-3.0-flash-vl",
       "model_id": "inclusionai/ling-3.0-flash-vl",
       "title": "Ling 3.0 Flash VL",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1634,13 +1634,13 @@
       }
     },
     {
-      "id": "2026-09-30:google/lyria-3.5",
+      "id": "2026-09-29:google/lyria-3.5",
       "model_id": "google/lyria-3.5",
       "title": "Lyria 3.5",
       "previous_title": null,
       "action": "NEW",
       "category": "audio",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1676,13 +1676,13 @@
       }
     },
     {
-      "id": "2026-09-30:microsoft/mai-image-2.6",
+      "id": "2026-09-29:microsoft/mai-image-2.6",
       "model_id": "microsoft/mai-image-2.6",
       "title": "MAI Image 2.6",
       "previous_title": null,
       "action": "NEW",
       "category": "image",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1729,13 +1729,13 @@
       }
     },
     {
-      "id": "2026-09-30:microsoft/mai-image-2.6-flash",
+      "id": "2026-09-29:microsoft/mai-image-2.6-flash",
       "model_id": "microsoft/mai-image-2.6-flash",
       "title": "MAI Image 2.6 Flash",
       "previous_title": null,
       "action": "NEW",
       "category": "image",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1782,13 +1782,13 @@
       }
     },
     {
-      "id": "2026-09-30:pollinations/midijourney",
+      "id": "2026-09-29:pollinations/midijourney",
       "model_id": "pollinations/midijourney",
       "title": "MIDIjourney",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1806,13 +1806,13 @@
       }
     },
     {
-      "id": "2026-09-30:pollinations/midijourney-large",
+      "id": "2026-09-29:pollinations/midijourney-large",
       "model_id": "pollinations/midijourney-large",
       "title": "MIDIjourney Large",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1830,13 +1830,13 @@
       }
     },
     {
-      "id": "2026-09-30:xiaomi/mimo-v2.6-flash",
+      "id": "2026-09-29:xiaomi/mimo-v2.6-flash",
       "model_id": "xiaomi/mimo-v2.6-flash",
       "title": "MiMo V2.6 Flash",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1886,13 +1886,13 @@
       }
     },
     {
-      "id": "2026-09-30:xiaomi/mimo-v2.6-pro",
+      "id": "2026-09-29:xiaomi/mimo-v2.6-pro",
       "model_id": "xiaomi/mimo-v2.6-pro",
       "title": "MiMo V2.6 Pro",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1938,13 +1938,13 @@
       }
     },
     {
-      "id": "2026-09-30:minimax/minimax-h3-max",
+      "id": "2026-09-29:minimax/minimax-h3-max",
       "model_id": "minimax/minimax-h3-max",
       "title": "MiniMax H3 Max",
       "previous_title": null,
       "action": "NEW",
       "category": "video",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -1987,13 +1987,13 @@
       }
     },
     {
-      "id": "2026-09-30:minimax/minimax-h3-max-turbo",
+      "id": "2026-09-29:minimax/minimax-h3-max-turbo",
       "model_id": "minimax/minimax-h3-max-turbo",
       "title": "MiniMax H3 Max Turbo",
       "previous_title": null,
       "action": "UPDATE",
       "category": "video",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2012,13 +2012,13 @@
       }
     },
     {
-      "id": "2026-09-30:minimax/minimax-m2.7",
+      "id": "2026-09-29:minimax/minimax-m2.7",
       "model_id": "minimax/minimax-m2.7",
       "title": "MiniMax M2.7",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2041,13 +2041,13 @@
       }
     },
     {
-      "id": "2026-09-30:moonshotai/kimi-k2.7-code",
+      "id": "2026-09-29:moonshotai/kimi-k2.7-code",
       "model_id": "moonshotai/kimi-k2.7-code",
       "title": "Moonshot Kimi K2.7 Code",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2078,13 +2078,13 @@
       }
     },
     {
-      "id": "2026-09-30:meta/muse-glimmer-30b",
+      "id": "2026-09-29:meta/muse-glimmer-30b",
       "model_id": "meta/muse-glimmer-30b",
       "title": "Muse Glimmer 30B",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2113,13 +2113,13 @@
       }
     },
     {
-      "id": "2026-09-30:amazon/nova-canvas-v1",
+      "id": "2026-09-29:amazon/nova-canvas-v1",
       "model_id": "amazon/nova-canvas-v1",
       "title": "Nova Canvas",
       "previous_title": null,
       "action": "RETIRE",
       "category": "image",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2156,13 +2156,13 @@
       }
     },
     {
-      "id": "2026-09-30:amazon/nova-reel-v1",
+      "id": "2026-09-29:amazon/nova-reel-v1",
       "model_id": "amazon/nova-reel-v1",
       "title": "Nova Reel",
       "previous_title": null,
       "action": "RETIRE",
       "category": "video",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2199,13 +2199,13 @@
       }
     },
     {
-      "id": "2026-09-30:openai/tts-1",
+      "id": "2026-09-29:openai/tts-1",
       "model_id": "openai/tts-1",
       "title": "OpenAI TTS",
       "previous_title": null,
       "action": "NEW",
       "category": "audio",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2252,13 +2252,13 @@
       }
     },
     {
-      "id": "2026-09-30:openai/tts-1-hd",
+      "id": "2026-09-29:openai/tts-1-hd",
       "model_id": "openai/tts-1-hd",
       "title": "OpenAI TTS HD",
       "previous_title": null,
       "action": "NEW",
       "category": "audio",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2305,13 +2305,13 @@
       }
     },
     {
-      "id": "2026-09-30:perplexity/sonar",
+      "id": "2026-09-29:perplexity/sonar",
       "model_id": "perplexity/sonar",
       "title": "Perplexity Sonar Fast Search",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2338,13 +2338,13 @@
       }
     },
     {
-      "id": "2026-09-30:qwen/qwen-image-2.1",
+      "id": "2026-09-29:qwen/qwen-image-2.1",
       "model_id": "qwen/qwen-image-2.1",
       "title": "Qwen Image 2.1",
       "previous_title": null,
       "action": "NEW",
       "category": "image",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2385,13 +2385,13 @@
       }
     },
     {
-      "id": "2026-09-30:qwen/qwen3.8-2.4t-a95b",
+      "id": "2026-09-29:qwen/qwen3.8-2.4t-a95b",
       "model_id": "qwen/qwen3.8-2.4t-a95b",
       "title": "Qwen3.8 2.4T A95B",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2409,13 +2409,13 @@
       }
     },
     {
-      "id": "2026-09-30:recraft/recraft-v4.1-flash",
+      "id": "2026-09-29:recraft/recraft-v4.1-flash",
       "model_id": "recraft/recraft-v4.1-flash",
       "title": "Recraft V4.1 Flash",
       "previous_title": null,
       "action": "NEW",
       "category": "image",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2451,13 +2451,13 @@
       }
     },
     {
-      "id": "2026-09-30:z-ai/glm-5.2",
+      "id": "2026-09-29:z-ai/glm-5.2",
       "model_id": "z-ai/glm-5.2",
       "title": "Z.ai GLM-5.2",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-09-30",
+      "date": "2026-09-29",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2484,13 +2484,13 @@
       }
     },
     {
-      "id": "2026-10-07:elevenlabs/eleven-v4",
+      "id": "2026-10-06:elevenlabs/eleven-v4",
       "model_id": "elevenlabs/eleven-v4",
       "title": "ElevenLabs v4",
       "previous_title": null,
       "action": "NEW",
       "category": "audio",
-      "date": "2026-10-07",
+      "date": "2026-10-06",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2566,13 +2566,13 @@
       }
     },
     {
-      "id": "2026-10-07:elevenlabs/eleven-v4-turbo",
+      "id": "2026-10-06:elevenlabs/eleven-v4-turbo",
       "model_id": "elevenlabs/eleven-v4-turbo",
       "title": "ElevenLabs v4 Turbo",
       "previous_title": null,
       "action": "NEW",
       "category": "audio",
-      "date": "2026-10-07",
+      "date": "2026-10-06",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2648,13 +2648,13 @@
       }
     },
     {
-      "id": "2026-10-07:black-forest-labs/flux-3-image",
+      "id": "2026-10-06:black-forest-labs/flux-3-image",
       "model_id": "black-forest-labs/flux-3-image",
       "title": "FLUX.3 Image",
       "previous_title": null,
       "action": "NEW",
       "category": "image",
-      "date": "2026-10-07",
+      "date": "2026-10-06",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2695,13 +2695,13 @@
       }
     },
     {
-      "id": "2026-10-07:openai/gpt-6.1-sol",
+      "id": "2026-10-06:openai/gpt-6.1-sol",
       "model_id": "openai/gpt-6.1-sol",
       "title": "GPT-6.1 Sol",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-10-07",
+      "date": "2026-10-06",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2749,13 +2749,13 @@
       }
     },
     {
-      "id": "2026-10-07:google/gemini-2.5-flash-lite",
+      "id": "2026-10-06:google/gemini-2.5-flash-lite",
       "model_id": "google/gemini-2.5-flash-lite",
       "title": "Gemini 2.5 Flash Lite",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-07",
+      "date": "2026-10-06",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2795,13 +2795,13 @@
       }
     },
     {
-      "id": "2026-10-07:google/gemini-2.5-flash-lite:search",
+      "id": "2026-10-06:google/gemini-2.5-flash-lite:search",
       "model_id": "google/gemini-2.5-flash-lite:search",
       "title": "Google Gemini 2.5 Flash Lite Search",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-07",
+      "date": "2026-10-06",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2832,13 +2832,13 @@
       }
     },
     {
-      "id": "2026-10-07:x-ai/grok-imagine-video-1.5-lite",
+      "id": "2026-10-06:x-ai/grok-imagine-video-1.5-lite",
       "model_id": "x-ai/grok-imagine-video-1.5-lite",
       "title": "Grok Imagine Video 1.5 Lite",
       "previous_title": null,
       "action": "NEW",
       "category": "video",
-      "date": "2026-10-07",
+      "date": "2026-10-06",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2880,13 +2880,13 @@
       }
     },
     {
-      "id": "2026-10-07:heygen/heygen-video-1",
+      "id": "2026-10-06:heygen/heygen-video-1",
       "model_id": "heygen/heygen-video-1",
       "title": "HeyGen Video 1",
       "previous_title": null,
       "action": "NEW",
       "category": "video",
-      "date": "2026-10-07",
+      "date": "2026-10-06",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2928,13 +2928,13 @@
       }
     },
     {
-      "id": "2026-10-07:jaredpalmer/kev-4b",
+      "id": "2026-10-06:jaredpalmer/kev-4b",
       "model_id": "jaredpalmer/kev-4b",
       "title": "Kev 4B",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-10-07",
+      "date": "2026-10-06",
       "pricing_units": {
         "before": null,
         "after": null
@@ -2974,13 +2974,13 @@
       }
     },
     {
-      "id": "2026-10-07:inclusionai/ling-3.1-flash",
+      "id": "2026-10-06:inclusionai/ling-3.1-flash",
       "model_id": "inclusionai/ling-3.1-flash",
       "title": "Ling 3.1 Flash",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-10-07",
+      "date": "2026-10-06",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3022,13 +3022,13 @@
       }
     },
     {
-      "id": "2026-10-07:liquid/d1",
+      "id": "2026-10-06:liquid/d1",
       "model_id": "liquid/d1",
       "title": "Liquid D1",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-10-07",
+      "date": "2026-10-06",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3068,13 +3068,13 @@
       }
     },
     {
-      "id": "2026-10-07:nvidia/nemotron-3-ultra",
+      "id": "2026-10-06:nvidia/nemotron-3-ultra",
       "model_id": "nvidia/nemotron-3-ultra",
       "title": "NVIDIA Nemotron 3 Ultra",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-07",
+      "date": "2026-10-06",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3101,13 +3101,13 @@
       }
     },
     {
-      "id": "2026-10-07:google/gemini-nano-banana-2.1",
+      "id": "2026-10-06:google/gemini-nano-banana-2.1",
       "model_id": "google/gemini-nano-banana-2.1",
       "title": "Nano Banana 2.1",
       "previous_title": null,
       "action": "NEW",
       "category": "image",
-      "date": "2026-10-07",
+      "date": "2026-10-06",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3151,13 +3151,13 @@
       }
     },
     {
-      "id": "2026-10-07:qwen/qwen3-coder-30b-a3b-instruct",
+      "id": "2026-10-06:qwen/qwen3-coder-30b-a3b-instruct",
       "model_id": "qwen/qwen3-coder-30b-a3b-instruct",
       "title": "Qwen3 Coder 30B",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-07",
+      "date": "2026-10-06",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3182,13 +3182,13 @@
       }
     },
     {
-      "id": "2026-10-07:qwen/qwen3-embedding-8b",
+      "id": "2026-10-06:qwen/qwen3-embedding-8b",
       "model_id": "qwen/qwen3-embedding-8b",
       "title": "Qwen3 Embedding 8B",
       "previous_title": null,
       "action": "UPDATE",
       "category": "embedding",
-      "date": "2026-10-07",
+      "date": "2026-10-06",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3211,13 +3211,13 @@
       }
     },
     {
-      "id": "2026-10-07:bytedance/seedream-5.0-flash",
+      "id": "2026-10-06:bytedance/seedream-5.0-flash",
       "model_id": "bytedance/seedream-5.0-flash",
       "title": "Seedream 5.0 Flash",
       "previous_title": null,
       "action": "NEW",
       "category": "image",
-      "date": "2026-10-07",
+      "date": "2026-10-06",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3258,13 +3258,13 @@
       }
     },
     {
-      "id": "2026-10-07:respan/span-01-lite",
+      "id": "2026-10-06:respan/span-01-lite",
       "model_id": "respan/span-01-lite",
       "title": "Span-01 Lite",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-10-07",
+      "date": "2026-10-06",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3299,13 +3299,13 @@
       }
     },
     {
-      "id": "2026-10-14:assemblyai/universal-2",
+      "id": "2026-10-13:assemblyai/universal-2",
       "model_id": "assemblyai/universal-2",
       "title": "AssemblyAI Universal-2",
       "previous_title": null,
       "action": "UPDATE",
       "category": "audio",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3318,13 +3318,13 @@
       }
     },
     {
-      "id": "2026-10-14:assemblyai/universal-3.5-pro",
+      "id": "2026-10-13:assemblyai/universal-3.5-pro",
       "model_id": "assemblyai/universal-3.5-pro",
       "title": "AssemblyAI Universal-3.5 Pro",
       "previous_title": null,
       "action": "UPDATE",
       "category": "audio",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3337,13 +3337,13 @@
       }
     },
     {
-      "id": "2026-10-14:anthropic/claude-haiku-5.5",
+      "id": "2026-10-13:anthropic/claude-haiku-5.5",
       "model_id": "anthropic/claude-haiku-5.5",
       "title": "Claude Haiku 5.5",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3394,13 +3394,13 @@
       }
     },
     {
-      "id": "2026-10-14:anthropic/claude-opus-5.5:fast",
+      "id": "2026-10-13:anthropic/claude-opus-5.5:fast",
       "model_id": "anthropic/claude-opus-5.5:fast",
       "title": "Claude Opus 5.5 Fast",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3450,13 +3450,13 @@
       }
     },
     {
-      "id": "2026-10-14:anthropic/claude-sonnet-5.5",
+      "id": "2026-10-13:anthropic/claude-sonnet-5.5",
       "model_id": "anthropic/claude-sonnet-5.5",
       "title": "Claude Sonnet 5.5",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3481,13 +3481,13 @@
       }
     },
     {
-      "id": "2026-10-14:cohere/command-a-plus",
+      "id": "2026-10-13:cohere/command-a-plus",
       "model_id": "cohere/command-a-plus",
       "title": "Cohere Command A+",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3513,13 +3513,13 @@
       }
     },
     {
-      "id": "2026-10-14:deepseek/deepseek-v4.1-flash",
+      "id": "2026-10-13:deepseek/deepseek-v4.1-flash",
       "model_id": "deepseek/deepseek-v4.1-flash",
       "title": "DeepSeek V4.1 Flash",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3546,13 +3546,13 @@
       }
     },
     {
-      "id": "2026-10-14:elevenlabs/eleven-v4",
+      "id": "2026-10-13:elevenlabs/eleven-v4",
       "model_id": "elevenlabs/eleven-v4",
       "title": "ElevenLabs v4",
       "previous_title": null,
       "action": "UPDATE",
       "category": "audio",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3571,13 +3571,13 @@
       }
     },
     {
-      "id": "2026-10-14:elevenlabs/eleven-v4-turbo",
+      "id": "2026-10-13:elevenlabs/eleven-v4-turbo",
       "model_id": "elevenlabs/eleven-v4-turbo",
       "title": "ElevenLabs v4 Turbo",
       "previous_title": null,
       "action": "UPDATE",
       "category": "audio",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3596,13 +3596,13 @@
       }
     },
     {
-      "id": "2026-10-14:black-forest-labs/flux-3-image",
+      "id": "2026-10-13:black-forest-labs/flux-3-image",
       "model_id": "black-forest-labs/flux-3-image",
       "title": "FLUX.3 Image",
       "previous_title": null,
       "action": "UPDATE",
       "category": "image",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3621,13 +3621,13 @@
       }
     },
     {
-      "id": "2026-10-14:openai/gpt-5.6-sol",
+      "id": "2026-10-13:openai/gpt-5.6-sol",
       "model_id": "openai/gpt-5.6-sol",
       "title": "GPT-5.6 Sol",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3652,13 +3652,13 @@
       }
     },
     {
-      "id": "2026-10-14:openai/gpt-6-luna-decisions",
+      "id": "2026-10-13:openai/gpt-6-luna-decisions",
       "model_id": "openai/gpt-6-luna-decisions",
       "title": "GPT-6 Luna Decisions",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3698,13 +3698,13 @@
       }
     },
     {
-      "id": "2026-10-14:google/gemini-3-flash-preview",
+      "id": "2026-10-13:google/gemini-3-flash-preview",
       "model_id": "google/gemini-3-flash-preview",
       "title": "Gemini 3 Flash Preview",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3735,13 +3735,13 @@
       }
     },
     {
-      "id": "2026-10-14:google/gemini-3.1-pro-preview",
+      "id": "2026-10-13:google/gemini-3.1-pro-preview",
       "model_id": "google/gemini-3.1-pro-preview",
       "title": "Gemini 3.1 Pro Preview",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3772,13 +3772,13 @@
       }
     },
     {
-      "id": "2026-10-14:google/gemini-3.5-flash-lite",
+      "id": "2026-10-13:google/gemini-3.5-flash-lite",
       "model_id": "google/gemini-3.5-flash-lite",
       "title": "Gemini 3.5 Flash Lite",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3809,13 +3809,13 @@
       }
     },
     {
-      "id": "2026-10-14:google/gemini-3.7-flash",
+      "id": "2026-10-13:google/gemini-3.7-flash",
       "model_id": "google/gemini-3.7-flash",
       "title": "Gemini 3.7 Flash",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3846,13 +3846,13 @@
       }
     },
     {
-      "id": "2026-10-14:google/gemini-3.8-flash",
+      "id": "2026-10-13:google/gemini-3.8-flash",
       "model_id": "google/gemini-3.8-flash",
       "title": "Gemini 3.8 Flash",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3883,13 +3883,13 @@
       }
     },
     {
-      "id": "2026-10-14:google/gemini-4-argon",
+      "id": "2026-10-13:google/gemini-4-argon",
       "model_id": "google/gemini-4-argon",
       "title": "Gemini 4 Argon",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3945,13 +3945,13 @@
       }
     },
     {
-      "id": "2026-10-14:x-ai/grok-4.7",
+      "id": "2026-10-13:x-ai/grok-4.7",
       "model_id": "x-ai/grok-4.7",
       "title": "Grok 4.7",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3975,13 +3975,13 @@
       }
     },
     {
-      "id": "2026-10-14:x-ai/grok-imagine-image",
+      "id": "2026-10-13:x-ai/grok-imagine-image",
       "model_id": "x-ai/grok-imagine-image",
       "title": "Grok Imagine",
       "previous_title": null,
       "action": "UPDATE",
       "category": "image",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -3994,13 +3994,13 @@
       }
     },
     {
-      "id": "2026-10-14:x-ai/grok-imagine-image-quality",
+      "id": "2026-10-13:x-ai/grok-imagine-image-quality",
       "model_id": "x-ai/grok-imagine-image-quality",
       "title": "Grok Imagine Pro",
       "previous_title": null,
       "action": "UPDATE",
       "category": "image",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4013,13 +4013,13 @@
       }
     },
     {
-      "id": "2026-10-14:typesafe/jev-1.13",
+      "id": "2026-10-13:typesafe/jev-1.13",
       "model_id": "typesafe/jev-1.13",
       "title": "Jev",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4032,13 +4032,13 @@
       }
     },
     {
-      "id": "2026-10-14:kandinskylab/kandinsky-6.0-lite",
+      "id": "2026-10-13:kandinskylab/kandinsky-6.0-lite",
       "model_id": "kandinskylab/kandinsky-6.0-lite",
       "title": "Kandinsky 6.0 Lite",
       "previous_title": null,
       "action": "NEW",
       "category": "video",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4080,13 +4080,13 @@
       }
     },
     {
-      "id": "2026-10-14:jaredpalmer/kev-4b",
+      "id": "2026-10-13:jaredpalmer/kev-4b",
       "model_id": "jaredpalmer/kev-4b",
       "title": "Kev 4B",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4099,13 +4099,13 @@
       }
     },
     {
-      "id": "2026-10-14:hexgrad/kokoro-82m",
+      "id": "2026-10-13:hexgrad/kokoro-82m",
       "model_id": "hexgrad/kokoro-82m",
       "title": "Kokoro 82M",
       "previous_title": null,
       "action": "UPDATE",
       "category": "audio",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4124,13 +4124,13 @@
       }
     },
     {
-      "id": "2026-10-14:inclusionai/ling-3.1-flash",
+      "id": "2026-10-13:inclusionai/ling-3.1-flash",
       "model_id": "inclusionai/ling-3.1-flash",
       "title": "Ling 3.1 Flash",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4158,13 +4158,13 @@
       }
     },
     {
-      "id": "2026-10-14:microsoft/mai-image-2.6",
+      "id": "2026-10-13:microsoft/mai-image-2.6",
       "model_id": "microsoft/mai-image-2.6",
       "title": "MAI Image 2.6",
       "previous_title": null,
       "action": "UPDATE",
       "category": "image",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4177,13 +4177,13 @@
       }
     },
     {
-      "id": "2026-10-14:microsoft/mai-image-2.6-flash",
+      "id": "2026-10-13:microsoft/mai-image-2.6-flash",
       "model_id": "microsoft/mai-image-2.6-flash",
       "title": "MAI Image 2.6 Flash",
       "previous_title": null,
       "action": "UPDATE",
       "category": "image",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4196,13 +4196,13 @@
       }
     },
     {
-      "id": "2026-10-14:microsoft/mai-transcribe-2",
+      "id": "2026-10-13:microsoft/mai-transcribe-2",
       "model_id": "microsoft/mai-transcribe-2",
       "title": "MAI Transcribe 2",
       "previous_title": null,
       "action": "NEW",
       "category": "audio",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4238,13 +4238,13 @@
       }
     },
     {
-      "id": "2026-10-14:microsoft/mai-voice-2.1",
+      "id": "2026-10-13:microsoft/mai-voice-2.1",
       "model_id": "microsoft/mai-voice-2.1",
       "title": "MAI-Voice-2.1",
       "previous_title": null,
       "action": "NEW",
       "category": "audio",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4382,13 +4382,13 @@
       }
     },
     {
-      "id": "2026-10-14:microsoft/mai-voice-2.1-flash",
+      "id": "2026-10-13:microsoft/mai-voice-2.1-flash",
       "model_id": "microsoft/mai-voice-2.1-flash",
       "title": "MAI-Voice-2.1 Flash",
       "previous_title": null,
       "action": "NEW",
       "category": "audio",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4526,13 +4526,13 @@
       }
     },
     {
-      "id": "2026-10-14:minimax/minimax-h3-max-turbo",
+      "id": "2026-10-13:minimax/minimax-h3-max-turbo",
       "model_id": "minimax/minimax-h3-max-turbo",
       "title": "MiniMax H3 Max Turbo",
       "previous_title": null,
       "action": "UPDATE",
       "category": "video",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4550,13 +4550,13 @@
       }
     },
     {
-      "id": "2026-10-14:mistralai/mistral-large-4",
+      "id": "2026-10-13:mistralai/mistral-large-4",
       "model_id": "mistralai/mistral-large-4",
       "title": "Mistral Large 4",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4602,13 +4602,13 @@
       }
     },
     {
-      "id": "2026-10-14:meta/muse-wonder-1.0",
+      "id": "2026-10-13:meta/muse-wonder-1.0",
       "model_id": "meta/muse-wonder-1.0",
       "title": "Muse Wonder 1.0",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4655,13 +4655,13 @@
       }
     },
     {
-      "id": "2026-10-14:google/gemini-2.5-flash-image",
+      "id": "2026-10-13:google/gemini-2.5-flash-image",
       "model_id": "google/gemini-2.5-flash-image",
       "title": "Nano Banana",
       "previous_title": null,
       "action": "UPDATE",
       "category": "image",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4686,13 +4686,13 @@
       }
     },
     {
-      "id": "2026-10-14:google/gemini-3.1-flash-image",
+      "id": "2026-10-13:google/gemini-3.1-flash-image",
       "model_id": "google/gemini-3.1-flash-image",
       "title": "Nano Banana 2",
       "previous_title": null,
       "action": "UPDATE",
       "category": "image",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4717,13 +4717,13 @@
       }
     },
     {
-      "id": "2026-10-14:google/gemini-3.1-flash-lite-image",
+      "id": "2026-10-13:google/gemini-3.1-flash-lite-image",
       "model_id": "google/gemini-3.1-flash-lite-image",
       "title": "Nano Banana 2 Lite",
       "previous_title": null,
       "action": "UPDATE",
       "category": "image",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4748,13 +4748,13 @@
       }
     },
     {
-      "id": "2026-10-14:google/gemini-3-pro-image",
+      "id": "2026-10-13:google/gemini-3-pro-image",
       "model_id": "google/gemini-3-pro-image",
       "title": "Nano Banana Pro",
       "previous_title": null,
       "action": "UPDATE",
       "category": "image",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4779,13 +4779,13 @@
       }
     },
     {
-      "id": "2026-10-14:nex-agi/nex-n2.5-mini",
+      "id": "2026-10-13:nex-agi/nex-n2.5-mini",
       "model_id": "nex-agi/nex-n2.5-mini",
       "title": "Nex N2.5 Mini",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4830,13 +4830,13 @@
       }
     },
     {
-      "id": "2026-10-14:nex-agi/nex-n2.5-pro",
+      "id": "2026-10-13:nex-agi/nex-n2.5-pro",
       "model_id": "nex-agi/nex-n2.5-pro",
       "title": "Nex N2.5 Pro",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4882,13 +4882,13 @@
       }
     },
     {
-      "id": "2026-10-14:amazon/nova-2-lite-v1",
+      "id": "2026-10-13:amazon/nova-2-lite-v1",
       "model_id": "amazon/nova-2-lite-v1",
       "title": "Nova 2 Lite",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4912,13 +4912,13 @@
       }
     },
     {
-      "id": "2026-10-14:amazon/nova-micro-v1",
+      "id": "2026-10-13:amazon/nova-micro-v1",
       "model_id": "amazon/nova-micro-v1",
       "title": "Nova Micro",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4931,13 +4931,13 @@
       }
     },
     {
-      "id": "2026-10-14:qwen/qwen-image-2.1-turbo",
+      "id": "2026-10-13:qwen/qwen-image-2.1-turbo",
       "model_id": "qwen/qwen-image-2.1-turbo",
       "title": "Qwen Image 2.1 Turbo",
       "previous_title": null,
       "action": "NEW",
       "category": "image",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -4978,13 +4978,13 @@
       }
     },
     {
-      "id": "2026-10-14:qwen/qwen-audio-3.0-tts-flash",
+      "id": "2026-10-13:qwen/qwen-audio-3.0-tts-flash",
       "model_id": "qwen/qwen-audio-3.0-tts-flash",
       "title": "Qwen-Audio 3.0 TTS Flash",
       "previous_title": "Qwen3-TTS Instruct Flash",
       "action": "UPDATE",
       "category": "audio",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -5024,13 +5024,13 @@
       }
     },
     {
-      "id": "2026-10-14:qwen/qwen3-vl-30b-a3b-instruct",
+      "id": "2026-10-13:qwen/qwen3-vl-30b-a3b-instruct",
       "model_id": "qwen/qwen3-vl-30b-a3b-instruct",
       "title": "Qwen3 VL 30B A3B Instruct",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -5051,13 +5051,13 @@
       }
     },
     {
-      "id": "2026-10-14:qwen/qwen3.8-27b",
+      "id": "2026-10-13:qwen/qwen3.8-27b",
       "model_id": "qwen/qwen3.8-27b",
       "title": "Qwen3.8 27B",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -5084,13 +5084,13 @@
       }
     },
     {
-      "id": "2026-10-14:qwen/qwen3guard-gen-8b",
+      "id": "2026-10-13:qwen/qwen3guard-gen-8b",
       "model_id": "qwen/qwen3guard-gen-8b",
       "title": "Qwen3Guard 8B",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -5109,13 +5109,13 @@
       }
     },
     {
-      "id": "2026-10-14:stepfun/step-5-preview",
+      "id": "2026-10-13:stepfun/step-5-preview",
       "model_id": "stepfun/step-5-preview",
       "title": "StepFun Step 5 Preview",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -5161,13 +5161,13 @@
       }
     },
     {
-      "id": "2026-10-14:z-ai/glm-5.3-flash",
+      "id": "2026-10-13:z-ai/glm-5.3-flash",
       "model_id": "z-ai/glm-5.3-flash",
       "title": "Z.ai GLM-5.3 Flash",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -5192,13 +5192,13 @@
       }
     },
     {
-      "id": "2026-10-14:z-ai/glm-5.3-flashx",
+      "id": "2026-10-13:z-ai/glm-5.3-flashx",
       "model_id": "z-ai/glm-5.3-flashx",
       "title": "Z.ai GLM-5.3 FlashX",
       "previous_title": null,
       "action": "UPDATE",
       "category": "text",
-      "date": "2026-10-14",
+      "date": "2026-10-13",
       "pricing_units": {
         "before": null,
         "after": null
@@ -5221,13 +5221,13 @@
       }
     },
     {
-      "id": "2026-10-15:inferenceport-ai/lightning-text-v2",
+      "id": "2026-10-14:inferenceport-ai/lightning-text-v2",
       "model_id": "inferenceport-ai/lightning-text-v2",
       "title": "Lightning Text v2",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-10-15",
+      "date": "2026-10-14",
       "pricing_units": {
         "before": null,
         "after": null
@@ -5271,13 +5271,13 @@
       }
     },
     {
-      "id": "2026-10-15:inferenceport-ai/lightning-text-v2.1",
+      "id": "2026-10-14:inferenceport-ai/lightning-text-v2.1",
       "model_id": "inferenceport-ai/lightning-text-v2.1",
       "title": "Lightning Text v2.1",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-10-15",
+      "date": "2026-10-14",
       "pricing_units": {
         "before": null,
         "after": null
@@ -5321,13 +5321,13 @@
       }
     },
     {
-      "id": "2026-10-16:perplexity/pplx-decider-v1.1-27b",
+      "id": "2026-10-15:perplexity/pplx-decider-v1.1-27b",
       "model_id": "perplexity/pplx-decider-v1.1-27b",
       "title": "Decider V1.1 27B",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-10-16",
+      "date": "2026-10-15",
       "pricing_units": {
         "before": null,
         "after": null
@@ -5367,13 +5367,13 @@
       }
     },
     {
-      "id": "2026-10-16:microsoft/microsoft-decision-1",
+      "id": "2026-10-15:microsoft/microsoft-decision-1",
       "model_id": "microsoft/microsoft-decision-1",
       "title": "Microsoft-Decision-1",
       "previous_title": null,
       "action": "NEW",
       "category": "text",
-      "date": "2026-10-16",
+      "date": "2026-10-15",
       "pricing_units": {
         "before": null,
         "after": null
@@ -5413,13 +5413,13 @@
       }
     },
     {
-      "id": "2026-10-16:mirelo/sfx-2.0",
+      "id": "2026-10-15:mirelo/sfx-2.0",
       "model_id": "mirelo/sfx-2.0",
       "title": "Mirelo SFX 2.0",
       "previous_title": null,
       "action": "NEW",
       "category": "video",
-      "date": "2026-10-16",
+      "date": "2026-10-15",
       "pricing_units": {
         "before": null,
         "after": null
@@ -6955,29 +6955,9 @@
   "highlights": [
     {
       "date": "2026-10-16",
-      "emoji": "🎵",
-      "title": "Stories from Echo Island",
-      "text": "Turn a character idea into an illustrated story and voice note. [Try it](https://huggingface.co/spaces/xiaotian1171/echo-island-pollinations-space).",
-      "prs": [
-        17719
-      ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-10-16",
-      "emoji": "🎯",
-      "title": "Trolley dilemmas in Switchyard",
-      "text": "Make your choices, compare them with Jev, then see what changes when the descriptions switch order. [Try it](https://saauf.github.io/switchyard).",
-      "prs": [
-        17746
-      ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-10-16",
       "emoji": "🤖",
-      "title": "JavaScript in Computer MCP",
-      "text": "Agents can run JavaScript alongside bash, work with persistent files, and return structured results. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "title": "JavaScript joins Computer MCP",
+      "text": "Agents can run a JavaScript ES module function alongside bash, work with persistent files, and receive its output and return value as JSON. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         16679
       ],
@@ -6986,10 +6966,21 @@
     {
       "date": "2026-10-16",
       "emoji": "🔗",
-      "title": "A System One API path",
-      "text": "Send TypeSafe decision requests to `/v1/systemone` using the same request and response shape as `/alpha/decisions`. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "title": "System One gets a v1 path",
+      "text": "Send TypeSafe decision requests to `POST /v1/systemone` using the same request and response shape as `/alpha/decisions`. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        17711
+        17711,
+        17739
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-10-16",
+      "emoji": "🔗",
+      "title": "OAuth scopes become discoverable",
+      "text": "OAuth clients can read the supported generate, profile, usage, keys, and machines scopes from authorization metadata before requesting access. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17621
       ],
       "kind": "api"
     },
@@ -6997,17 +6988,27 @@
       "date": "2026-10-16",
       "emoji": "✨",
       "title": "An SDK skill for agents",
-      "text": "Agents writing JavaScript apps can find a dedicated `@pollinations/sdk` quickstart for generating text and images. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "text": "Agents can discover a JavaScript `@pollinations/sdk` quickstart covering authentication, text generation, and saving a generated image. [Explore the SDK](https://react.pollinations.ai).",
       "prs": [
         17491
       ],
       "kind": "product"
     },
     {
+      "date": "2026-10-16",
+      "emoji": "🤖",
+      "title": "The homepage speaks Markdown",
+      "text": "Agents requesting `text/markdown` from the pollinations.ai homepage get a short Markdown introduction and a link to the agent entry point. [Visit pollinations.ai](https://pollinations.ai).",
+      "prs": [
+        17669
+      ],
+      "kind": "product"
+    },
+    {
       "date": "2026-10-15",
       "emoji": "🚀",
-      "title": "Media jobs without waiting",
-      "text": "Send `Prefer: respond-async` for image, video, audio or 3D generation, then check the job and download its result when it finishes. The SDK has async methods for the same flow. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Async media generation",
+      "text": "Submit image, video, audio, or 3D generation with `Prefer: respond-async`, then poll the job and download its result. The SDK has matching async helpers. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         17380
       ],
@@ -7015,11 +7016,20 @@
     },
     {
       "date": "2026-10-15",
-      "emoji": "🤖",
-      "title": "Models for typed decisions",
-      "text": "Ask Perplexity Decider V1.1 27B or Microsoft-Decision-1 to score fixed choices and return probabilities instead of prose. Both accept decision requests through `/alpha/decisions`. [Browse models](https://enter.pollinations.ai/models).",
+      "emoji": "🎯",
+      "title": "Perplexity Decider V1.1",
+      "text": "Use Perplexity Decider V1.1 27B for typed choices, scores, and yes/no probabilities from text input through `/alpha/decisions` or chat completions. [Find the model](https://enter.pollinations.ai/models?q=Perplexity%20Decider%20V1.1%2027B).",
       "prs": [
-        17484,
+        17484
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-15",
+      "emoji": "🎯",
+      "title": "Microsoft Decision 1",
+      "text": "Send fixed choices to `microsoft/microsoft-decision-1` for calibrated probabilities without generated prose. It accepts decision requests through `/alpha/decisions` and chat completions. [Find the model](https://enter.pollinations.ai/models?q=microsoft%2Fmicrosoft-decision-1).",
+      "prs": [
         17485
       ],
       "kind": "model"
@@ -7027,8 +7037,8 @@
     {
       "date": "2026-10-15",
       "emoji": "🎵",
-      "title": "Sound effects for video",
-      "text": "Give `mirelo/sfx-2.0` a video URL and a sound prompt to add synchronized effects to the clip. [View the model](https://enter.pollinations.ai/models?q=mirelo/sfx-2.0).",
+      "title": "Sound for silent video",
+      "text": "Give `mirelo/sfx-2.0` one source video and a sound prompt to add synchronized sound effects. The `duration` parameter can select 1–120 seconds. [Find the model](https://enter.pollinations.ai/models?q=mirelo%2Fsfx-2.0).",
       "prs": [
         17590
       ],
@@ -7036,30 +7046,70 @@
     },
     {
       "date": "2026-10-15",
-      "emoji": "💡",
-      "title": "Sandboxes keep their work",
-      "text": "New sandboxes default to pausing rather than deleting when their lease expires, so their files remain available. You can also name them and see estimated costs before choosing a template. [Read the sandbox docs](https://gen.pollinations.ai/docs).",
+      "emoji": "🤖",
+      "title": "Agents review pull requests",
+      "text": "Give the new community PR-review agents a GitHub PR link to get code findings and proposed fixes. PR Mender can also prepare a fix diff and corrected files on a branch. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        17416,
-        17646
+        17282,
+        17437
       ],
       "kind": "product"
     },
     {
       "date": "2026-10-15",
-      "emoji": "📱",
-      "title": "Pollinations in Android blocks",
-      "text": "Pollinations Blocks brings text, images, speech and transcription to MIT App Inventor and Kodular projects. [View repo](https://github.com/Saauf/pollinations-blocks).",
+      "emoji": "✨",
+      "title": "Names for sandboxes",
+      "text": "Give a sandbox a name when creating it, or keep the generated name. Names appear on dashboard cards and in `polli sandbox list`. [Read the sandbox docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        17643
+        17416
       ],
-      "kind": "app"
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-15",
+      "emoji": "🚀",
+      "title": "Faster sandbox reconnects",
+      "text": "Repeat `ssh`, `scp`, and `rsync` connections to a sandbox can reuse an SSH connection and reconnect in under a second on supported systems. [Read the sandbox docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17519
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-15",
+      "emoji": "🔗",
+      "title": "A skill for user-paid apps",
+      "text": "Agents building apps where users authorize their own Pollen now have a discoverable skill covering web and headless authorization flows. [Read the wallet guide](https://gen.pollinations.ai/docs#tag/connect-user-wallets).",
+      "prs": [
+        17387
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-15",
+      "emoji": "🤖",
+      "title": "Agent IDs you can call",
+      "text": "Agent API responses and Polli CLI listings now show the callable `model` ID, so you can copy it into a request without guessing the path. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        15382
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-10-15",
+      "emoji": "🔗",
+      "title": "OAuth discovery on 401",
+      "text": "Gen API authentication errors now include a `WWW-Authenticate` challenge pointing OAuth clients to protected-resource metadata. Clients can discover the right metadata without a hardcoded URL. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17492
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-10-14",
       "emoji": "🤖",
-      "title": "Lightning Text v2.1",
-      "text": "Use `inferenceport-ai/lightning-text-v2.1` with text or image input, JSON output, and tool calling. It requires paid Pollen. [View the model](https://enter.pollinations.ai/models?q=inferenceport-ai/lightning-text-v2.1).",
+      "title": "Lightning Text v2 and v2.1",
+      "text": "Try two InferencePort text models with 128,000-token context windows, image input, tool use and JSON output. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         16265
       ],
@@ -7067,9 +7117,9 @@
     },
     {
       "date": "2026-10-14",
-      "emoji": "✨",
-      "title": "3D in the SDK",
-      "text": "Generate binary 3D output with `model3d()`, discover 3D models with `models(\"3d\")`, and get typed model status and speech word timings in the SDK alpha. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "emoji": "🎨",
+      "title": "3D generation in the SDK",
+      "text": "Use `model3d()` to generate a 3D file from a public reference image, with options for resolution, seed and safety. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         17310
       ],
@@ -7077,9 +7127,29 @@
     },
     {
       "date": "2026-10-14",
-      "emoji": "🔗",
+      "emoji": "🎵",
+      "title": "Speech with word timings",
+      "text": "Use `audioSpeechWithTimestamps()` to get speech audio, character alignments and derived word timings in one SDK response. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "prs": [
+        17310
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-14",
+      "emoji": "💡",
+      "title": "Model health in the SDK",
+      "text": "Query model health and metadata with `modelStatus()`, including traffic and rolling-window filters. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "prs": [
+        17310
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-14",
+      "emoji": "✨",
       "title": "React generation hooks",
-      "text": "The React SDK now has hooks for image, text, audio, video, and transcription generation, plus a streaming transport for Vercel AI SDK’s `useChat`. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "text": "Build with headless hooks for image, text, audio, video and transcription generation. Each provides loading and error state, plus run, rerun and cancel controls. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         17331
       ],
@@ -7087,29 +7157,19 @@
     },
     {
       "date": "2026-10-14",
-      "emoji": "🎯",
-      "title": "Guess the model",
-      "text": "Read an anonymous AI answer and guess which of four models wrote it. Five rounds, no API key needed. [Try it](https://patbing.github.io/model-match).",
+      "emoji": "🔗",
+      "title": "Pollinations transport for useChat",
+      "text": "Connect AI SDK `useChat` to streaming Pollinations responses with `usePollinationsChatTransport`, including usage and server-run MCP tool results. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
-        17388
+        17331
       ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-10-14",
-      "emoji": "🎨",
-      "title": "Make a tiny fighter",
-      "text": "Describe a fighter in one line, then see AI give it a portrait, moves, stats, and a battle. [Try it](https://tomdacatto.github.io/pollinations-fighter-arena).",
-      "prs": [
-        17424
-      ],
-      "kind": "app"
+      "kind": "product"
     },
     {
       "date": "2026-10-13",
-      "emoji": "🎵",
-      "title": "Kandinsky video with audio",
-      "text": "Generate five-second 480p videos with synchronized audio from a prompt or start image using `kandinskylab/kandinsky-6.0-lite`. [Browse the model](https://enter.pollinations.ai/models?q=kandinskylab/kandinsky-6.0-lite).",
+      "emoji": "🎨",
+      "title": "Kandinsky makes short videos",
+      "text": "Make five-second, 480p videos from a prompt or start image with `kandinsky/kandinsky-6.0-lite`. Synchronized audio is on by default and can be turned off. [Browse the model](https://enter.pollinations.ai/models?q=kandinsky/kandinsky-6.0-lite).",
       "prs": [
         16995
       ],
@@ -7118,8 +7178,8 @@
     {
       "date": "2026-10-13",
       "emoji": "🎨",
-      "title": "Qwen image editing",
-      "text": "Generate or edit images with `qwen/qwen-image-2.1-turbo`, using up to ten reference images. [Browse the model](https://enter.pollinations.ai/models?q=qwen/qwen-image-2.1-turbo).",
+      "title": "Qwen Image 2.1 Turbo",
+      "text": "Generate or edit images with `qwen/qwen-image-2.1-turbo`, using up to ten reference images, a requested size, and a seed. [Browse the model](https://enter.pollinations.ai/models?q=qwen/qwen-image-2.1-turbo).",
       "prs": [
         17055
       ],
@@ -7128,8 +7188,18 @@
     {
       "date": "2026-10-13",
       "emoji": "🤖",
-      "title": "Gemini 4 Argon",
-      "text": "Use `google/gemini-4-argon` with text, image, audio or video input, plus reasoning controls, tools and Google Search. [Browse the model](https://enter.pollinations.ai/models?q=google/gemini-4-argon).",
+      "title": "Muse Wonder joins chat",
+      "text": "Try `meta/muse-wonder-1.0` with text or image input, tool calls, structured output, and a 1,048,576-token context window. [Browse the model](https://enter.pollinations.ai/models?q=meta/muse-wonder-1.0).",
+      "prs": [
+        17203
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-13",
+      "emoji": "🤖",
+      "title": "Gemini 4 Argon arrives",
+      "text": "Use `google/gemini-4-argon` with text, images, audio, or video input, plus tools and Google Search. [Browse the model](https://enter.pollinations.ai/models?q=google/gemini-4-argon).",
       "prs": [
         17329
       ],
@@ -7137,11 +7207,53 @@
     },
     {
       "date": "2026-10-13",
-      "emoji": "💡",
+      "emoji": "🔗",
+      "title": "Grant only what’s needed",
+      "text": "When a key lacks a model, category, or account permission, its owner can approve that specific access without changing the key’s budget, expiry, or other permissions. Refused requests can point to the grant page.",
+      "prs": [
+        16407
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-10-13",
+      "emoji": "✨",
+      "title": "Event codes for Quests",
+      "text": "Got an event code? Redeem it from the Quests page for Quest Pollen. A code link can prefill the form.",
+      "prs": [
+        16921,
+        17299
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-13",
+      "emoji": "🎯",
+      "title": "Discord levels earn Pollen",
+      "text": "Link your Discord account and reach level 10 or 20 to qualify for one-time Quest Pollen rewards at each milestone. Reaching level 20 qualifies for both.",
+      "prs": [
+        17259
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-13",
+      "emoji": "🚀",
       "title": "Manage sandboxes in Enter",
-      "text": "Create, pause, resume and connect to your sandboxes from the dashboard. Templates also gain tools including ffmpeg, uv and rclone. [Open the dashboard](https://enter.pollinations.ai/keys).",
+      "text": "Create a sandbox from the dashboard, copy its SSH command, and pause, resume, extend, or delete it there. The page shows charges before confirmation and lets you set a time limit for a sandbox running until stopped.",
       "prs": [
         17150,
+        17266,
+        17325
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-13",
+      "emoji": "💡",
+      "title": "More tools for sandboxes",
+      "text": "Sandbox template work adds rclone for mounting bucket storage, plus cron, ffmpeg, uv, git-lfs, and other tools. Cron jobs run while the sandbox is running, not while it is paused.",
+      "prs": [
         17364,
         17368
       ],
@@ -7149,29 +7261,53 @@
     },
     {
       "date": "2026-10-13",
-      "emoji": "📱",
-      "title": "Bit tells tech stories",
-      "text": "Watch short AI-agent-narrated stories about open-source projects and AI news in Italian and English. [Try it](https://bit.sessionweave.com).",
+      "emoji": "🎨",
+      "title": "Two frames from polli",
+      "text": "`polli gen video --image` accepts multiple public reference-frame URLs for start and end frames. Requested aspect ratios are no longer overridden by default square dimensions.",
       "prs": [
-        17324
+        17081
       ],
-      "kind": "app"
+      "kind": "product"
     },
     {
-      "date": "2026-10-12",
-      "emoji": "🤖",
-      "title": "Claude Opus 5.5 fast",
-      "text": "Use `anthropic/claude-opus-5.5:fast` for text, images, and tool calling when you want the fast-mode route. [Browse the model](https://enter.pollinations.ai/models?q=anthropic/claude-opus-5.5%3Afast).",
+      "date": "2026-10-13",
+      "emoji": "🔗",
+      "title": "Find models by kind",
+      "text": "Use the SDK’s `models(kind)` or `getModels(kind)` to list text, image, video, audio, or embeddings models. Calls without `kind` still list all models; the older text- and image-specific helpers have been removed. [Explore the SDK](https://react.pollinations.ai).",
       "prs": [
-        16954
+        17087
       ],
-      "kind": "model"
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-13",
+      "emoji": "🤖",
+      "title": "Declare agent model capabilities",
+      "text": "Endpoint-agent owners can declare traits such as tool calling, reasoning, and web search through the create and update APIs. Those declarations can then appear in model listings and capability filters; owners still need to set them for existing agents.",
+      "prs": [
+        16912
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-10-13",
+      "emoji": "🔗",
+      "title": "Agent discovery gets easier",
+      "text": "Agents can find API documentation, OAuth metadata, catalogs, and MCP server cards through page headers and well-known endpoints instead of hardcoding every path. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        16990,
+        17048,
+        17221,
+        17222,
+        17233
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-10-12",
       "emoji": "🎯",
-      "title": "Keys scoped to models",
-      "text": "Limit an API key to specific model IDs instead of granting access to a whole category. Set model permissions in the dashboard, BYOP authorization, or Polli CLI. [Manage keys](https://enter.pollinations.ai/keys).",
+      "title": "Keys for specific models",
+      "text": "Limit an API key to model IDs such as `flux` instead of granting access to an entire category. Set limits through BYOP links or the CLI, and review them in the key dashboard. [Manage API keys](https://enter.pollinations.ai/keys).",
       "prs": [
         17213
       ],
@@ -7179,9 +7315,9 @@
     },
     {
       "date": "2026-10-12",
-      "emoji": "💡",
-      "title": "See usage your way",
-      "text": "Group activity by model or API key to compare request counts and Pollen spending. Your selection stays in shared URLs and browser navigation.",
+      "emoji": "✨",
+      "title": "Usage by model or key",
+      "text": "Switch the activity table between Models and Keys to compare request counts or Pollen usage. The grouping stays in shared URLs and browser history.",
       "prs": [
         17165
       ],
@@ -7189,9 +7325,39 @@
     },
     {
       "date": "2026-10-12",
-      "emoji": "🔗",
-      "title": "API access for sandboxed agents",
-      "text": "The `pollinations-api` Agent Skill shows agents how to call image generation and chat directly when installing the CLI is not an option. [Explore the API](https://gen.pollinations.ai/docs).",
+      "emoji": "💡",
+      "title": "One place for news",
+      "text": "Enter now puts Announcements, product Updates and the Changelog in separate tabs. Signed-out visitors can read all three.",
+      "prs": [
+        16986
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-12",
+      "emoji": "🤖",
+      "title": "Claude Opus 5.5 fast",
+      "text": "Use the paid-only `anthropic/claude-opus-5.5:fast` model ID for a fast-mode route without a fallback to standard-speed providers. [View the model](https://enter.pollinations.ai/models?q=anthropic/claude-opus-5.5:fast).",
+      "prs": [
+        16954
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-12",
+      "emoji": "🎵",
+      "title": "Set OpenAI speech speed",
+      "text": "Send `speed` to `/v1/audio/speech` with `openai/tts-1` or `openai/tts-1-hd` to generate speech from 0.25× to 4× speed. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        16532
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-10-12",
+      "emoji": "🤖",
+      "title": "REST API Agent Skill",
+      "text": "Agents that cannot install the CLI can discover a skill for making image, chat and audio requests directly through HTTP.",
       "prs": [
         16945
       ],
@@ -7199,60 +7365,100 @@
     },
     {
       "date": "2026-10-12",
-      "emoji": "🎯",
-      "title": "A blacksmith who remembers",
-      "text": "Give Roblox NPCs a persona and a separate conversation with each player using Pollinations text models. Grix the blacksmith comes as an example. [View repo](https://github.com/pollinations/pollinations/tree/main/apps/roblox-npc).",
+      "emoji": "🔗",
+      "title": "Markdown docs for agents",
+      "text": "Request `/docs` with `Accept: text/markdown` to get the API guide without parsing an HTML reference page. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        17147
+        16988
       ],
-      "kind": "app"
+      "kind": "api"
+    },
+    {
+      "date": "2026-10-12",
+      "emoji": "🔗",
+      "title": "Agent discovery from pages",
+      "text": "Website responses now include Link headers pointing agents to existing API descriptions, documentation and catalogs. No HTML scraping expedition required.",
+      "prs": [
+        17009
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-10-12",
+      "emoji": "🎯",
+      "title": "Quest skill for agents",
+      "text": "A discoverable Agent Skill guides coding agents through finding open contribution Quests, checking their rules, submitting a linked PR and claiming an awarded reward. [Read the contributor guide](https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md).",
+      "prs": [
+        17154
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-12",
+      "emoji": "🎮",
+      "title": "Talking Roblox NPC examples",
+      "text": "Build from two Luau examples that let Roblox NPCs answer players using Pollinations text models. Both include example places and setup guides.",
+      "prs": [
+        17129
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-12",
+      "emoji": "🤖",
+      "title": "Agents that survive disconnects",
+      "text": "Pollinations sandbox templates now include herdr, so agents started in its panes can keep running through SSH disconnects and sandbox pause/resume.",
+      "prs": [
+        17208
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-12",
+      "emoji": "🔗",
+      "title": "MCP client sign-in",
+      "text": "Compatible MCP clients can use an HTTPS Client ID Metadata Document for account sign-in without registering a `pk_` app. Users still review the client and authorize access with their own account.",
+      "prs": [
+        17209
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-10-12",
+      "emoji": "🤖",
+      "title": "Mention Discord bots anywhere",
+      "text": "Address CatGPT or Opposite Prompt by @mention in any channel; they no longer respond to ordinary messages in their former channels. [Join the community chat](https://chat.pollinations.ai).",
+      "prs": [
+        17230
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-10-11",
       "emoji": "🚀",
-      "title": "Longer, larger sandboxes",
-      "text": "Request sandbox runs beyond 24 hours through E2B’s timeout API, or choose `pollinations-large` when a job needs 4 vCPU and 8 GB RAM.",
+      "title": "Sandboxes beyond 24 hours",
+      "text": "Set sandbox timeouts beyond a day through the existing API calls or `polli sandbox create --timeout`. Daily restarts preserve files, memory, and processes, but drop open connections. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         16896,
+        17091
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-11",
+      "emoji": "💡",
+      "title": "A larger sandbox option",
+      "text": "Sandbox creation now supports opting into `pollinations-large`, a 4 vCPU, 8 GB template, alongside the unchanged 2 vCPU, 2 GB default. The E2B template itself was not created by this change. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
         17115
       ],
       "kind": "product"
     },
     {
       "date": "2026-10-11",
-      "emoji": "🎨",
-      "title": "InkBloom coloring pages",
-      "text": "Turn photos or text prompts into printable coloring pages. [Try it](https://coloring-project1.ismailbanouigu.workers.dev).",
-      "prs": [
-        17034
-      ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-10-11",
-      "emoji": "💡",
-      "title": "Text Comparison joins Learn",
-      "text": "Explore Text Comparison through its Arabic right-to-left interface. [Try it](https://mahmoudpov373-star.github.io/Comart).",
-      "prs": [
-        17035
-      ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-10-11",
-      "emoji": "🎵",
-      "title": "Compose with Midi Journey",
-      "text": "Compose and transform MIDI through conversation in Ableton Live with this Max for Live device. [View repo](https://github.com/pollinations/MIDIjourney).",
-      "prs": [
-        17108
-      ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-10-11",
       "emoji": "🤖",
-      "title": "Polli keeps the conversation going",
-      "text": "Polli can queue follow-ups, reply to requests separately or together, and answer with emoji reactions. [Join the chat](https://chat.pollinations.ai).",
+      "title": "Polli takes follow-ups",
+      "text": "Send a follow-up while Polli is working in Discord: it can queue the message for its next model call instead of rejecting it. Replies can include text, reactions, or both. [Visit the community chat](https://chat.pollinations.ai).",
       "prs": [
         17125
       ],
@@ -7261,19 +7467,18 @@
     {
       "date": "2026-10-10",
       "emoji": "🎨",
-      "title": "A new Play page",
-      "text": "Generate images, video, and audio in one place. Keep inputs in a shareable URL, preview and download results, or copy the API URL for the request you made. [Try Play](https://pollinations.ai/play).",
+      "title": "A new Play playground",
+      "text": "Generate images, video and audio in one place, with uploads, previews, downloads and API examples built from your request. Shareable URLs keep supported settings together. [Try Play](https://pollinations.ai/play).",
       "prs": [
-        16213,
-        16985
+        16213
       ],
       "kind": "product"
     },
     {
       "date": "2026-10-10",
-      "emoji": "💡",
-      "title": "PDFs for Claude and GPT",
-      "text": "Send base64 PDFs in chat requests to Claude on Bedrock or GPT on Azure/OpenAI, including GPT models using the Responses API. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "emoji": "✨",
+      "title": "PDFs in chat requests",
+      "text": "Send base64 PDFs to supported Claude and GPT models, including GPT models using the Responses API. Chat `file` parts and `/v1/messages` PDF document blocks are supported. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         16898
       ],
@@ -7282,29 +7487,68 @@
     {
       "date": "2026-10-10",
       "emoji": "🤖",
-      "title": "Catalogs for agent discovery",
-      "text": "Agents can find the API through an RFC 9727 catalog and discover hosted MCP servers through an AI Catalog and server cards. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "title": "Discover hosted MCP servers",
+      "text": "Agents can find hosted MCP servers through `/.well-known/ai-catalog.json` and read public Server Cards for connection details. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
-        16862,
+        16862
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-10-10",
+      "emoji": "🔗",
+      "title": "Discover the API spec",
+      "text": "The new `/.well-known/api-catalog` gives agents a standard way to find the OpenAPI specification and plain-text guide. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
         16908
       ],
       "kind": "api"
     },
     {
       "date": "2026-10-10",
-      "emoji": "📱",
-      "title": "Furniture ideas from a photo",
-      "text": "Send MebelSmetaBot a photo of a room or kitchen to visualize new furniture in the space. [Try it](https://t.me/MebelSmetaBot).",
+      "emoji": "💡",
+      "title": "Check model eligibility",
+      "text": "Entries from `/v1/models` and `/v1/models/{model}` now include `paid_only`, so OpenAI-compatible clients can tell which models require paid Pollen without another lookup. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        16948
+        16953
       ],
-      "kind": "app"
+      "kind": "api"
+    },
+    {
+      "date": "2026-10-09",
+      "emoji": "🤖",
+      "title": "GPT-6 Luna Decisions",
+      "text": "Ask choice, score, or predicate questions with `openai/gpt-6-luna-decisions` and get typed answers with probabilities and confidence instead of prose. [Browse the model](https://enter.pollinations.ai/models?q=openai/gpt-6-luna-decisions).",
+      "prs": [
+        16701
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-10-09",
       "emoji": "🎵",
-      "title": "MAI voices for speech",
-      "text": "Generate speech with MAI-Voice-2.1 or its Flash variant, each offering 97 voices and MP3 or PCM output. [Browse models](https://enter.pollinations.ai/models).",
+      "title": "MAI file transcription",
+      "text": "Transcribe multilingual audio files with `microsoft/mai-transcribe-2`, including automatic language detection and timed segments. [Browse the model](https://enter.pollinations.ai/models?q=microsoft/mai-transcribe-2).",
+      "prs": [
+        16798
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-09",
+      "emoji": "🎵",
+      "title": "MAI live transcription",
+      "text": "Send live PCM audio to `microsoft/mai-transcribe-2-streaming` over the realtime WebSocket API and receive incremental finalized text. [Browse the model](https://enter.pollinations.ai/models?q=microsoft/mai-transcribe-2-streaming).",
+      "prs": [
+        16802
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-09",
+      "emoji": "🎵",
+      "title": "MAI-Voice-2.1 speech",
+      "text": "Generate speech with MAI-Voice-2.1, choosing from 97 voices and MP3 or 24 kHz PCM output. [Find the model](https://enter.pollinations.ai/models?q=MAI-Voice-2.1).",
       "prs": [
         16800
       ],
@@ -7313,60 +7557,48 @@
     {
       "date": "2026-10-09",
       "emoji": "🎵",
-      "title": "MAI transcription, two ways",
-      "text": "Transcribe multilingual audio files with timed segments using `microsoft/mai-transcribe-2`, or send live PCM audio to `microsoft/mai-transcribe-2-streaming`. [Browse the file transcription model](https://enter.pollinations.ai/models?q=microsoft/mai-transcribe-2).",
+      "title": "MAI-Voice-2.1 Flash",
+      "text": "Generate speech with MAI-Voice-2.1 Flash, with the same 97-voice selection and MP3 or 24 kHz PCM output. [Find the model](https://enter.pollinations.ai/models?q=MAI-Voice-2.1%20Flash).",
       "prs": [
-        16798,
-        16802
+        16800
       ],
       "kind": "model"
-    },
-    {
-      "date": "2026-10-09",
-      "emoji": "🤖",
-      "title": "GPT-6 Luna Decisions",
-      "text": "Use `openai/gpt-6-luna-decisions` for text or JSON decisions, including streaming requests. [Browse the model](https://enter.pollinations.ai/models?q=openai/gpt-6-luna-decisions).",
-      "prs": [
-        16701
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-10-09",
-      "emoji": "🎨",
-      "title": "Fable Finder",
-      "text": "Give it a lesson you keep forgetting; get a four-line fable and an illustration. [Try it](https://mhmdrizki803-boop.github.io/fable-finder).",
-      "prs": [
-        16869
-      ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-10-09",
-      "emoji": "✨",
-      "title": "Nice No",
-      "text": "Turn an awkward request into a gentle, firm, or brief boundary message, with a follow-up for pushback. [Try it](https://nice-no.maxtoms21.chatgpt.site).",
-      "prs": [
-        16871
-      ],
-      "kind": "app"
     },
     {
       "date": "2026-10-08",
       "emoji": "🤖",
-      "title": "Two long-context text models",
-      "text": "Try `anthropic/claude-haiku-5.5` and `stepfun/step-5-preview` for text and image input, tool calls and 1M-token contexts. Both are paid-only models available through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
+      "title": "Claude Haiku 5.5 added",
+      "text": "Use `anthropic/claude-haiku-5.5` for text and image input, tools, adaptive reasoning, and a million-token context window. [Browse the model](https://enter.pollinations.ai/models?q=anthropic/claude-haiku-5.5).",
       "prs": [
-        16713,
+        16713
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-08",
+      "emoji": "🤖",
+      "title": "Step 5 Preview added",
+      "text": "`stepfun/step-5-preview` accepts text and images and supports tool calls, structured output, and a million-token context window. [Browse the model](https://enter.pollinations.ai/models?q=stepfun/step-5-preview).",
+      "prs": [
         16796
       ],
       "kind": "model"
     },
     {
       "date": "2026-10-08",
+      "emoji": "🎵",
+      "title": "Qwen speech replacement added",
+      "text": "`qwen/qwen-audio-3.0-tts-flash` was added to replace Qwen3-TTS Instruct Flash ahead of its October 10 retirement. It supports instruction-guided emotion, tone, and dialect, plus 12 system voices. [Browse the model](https://enter.pollinations.ai/models?q=qwen/qwen-audio-3.0-tts-flash).",
+      "prs": [
+        16821
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-08",
       "emoji": "🔗",
-      "title": "Responses for every Chat model",
-      "text": "Models available through Chat Completions can now be called through `/v1/responses`, including Claude, Gemini, community models and chat-only agents. See the [API docs](https://gen.pollinations.ai/docs).",
+      "title": "Responses across text models",
+      "text": "Use `/v1/responses` with every text model that supports Chat Completions, including Claude, Gemini, and Chat-registered community models. Models without a native Responses endpoint are adapted through the Chat pipeline. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         16811
       ],
@@ -7374,9 +7606,9 @@
     },
     {
       "date": "2026-10-08",
-      "emoji": "💡",
+      "emoji": "🔗",
       "title": "Publish non-streaming text models",
-      "text": "Community publishers can register OpenAI-compatible endpoints that return JSON without SSE. Streaming clients still receive a valid event stream, with the full answer delivered at once.",
+      "text": "Community publishers can register Chat Completions or Responses endpoints that return JSON without token-by-token streaming. Model listings expose `supports_streaming: false`, so callers can tell when an answer will arrive at once. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         16732
       ],
@@ -7384,31 +7616,71 @@
     },
     {
       "date": "2026-10-08",
-      "emoji": "💻",
+      "emoji": "🤖",
+      "title": "Choose Floret’s inner model",
+      "text": "Send `metadata.model` to choose Floret’s inner text model. Floret can also check `paid_only` when you ask it to prefer Quest-compatible models; that preference is conversational, not a restriction. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        15299
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-10-08",
+      "emoji": "🔗",
+      "title": "Discover the polli skill",
+      "text": "Compatible Agent Skills installers can discover the existing polli CLI skill from `gen.pollinations.ai` through its new well-known index. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        16859
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-10-08",
+      "emoji": "💡",
+      "title": "A dated Enter Changelog",
+      "text": "Enter’s News page groups model and API changes by date and shows what changed, including capabilities, access, voices, and revised retirement dates. Daily highlights appear alongside it. [Visit Enter](https://enter.pollinations.ai/models).",
+      "prs": [
+        16725,
+        16828
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-08",
+      "emoji": "🎯",
+      "title": "Quest ranks have movement",
+      "text": "The monthly Quest leaderboard now shows places gained or lost since 00:00 UTC, marks new participants, and gives the top three ranks podium medals. [Visit Pollinations](https://pollinations.ai).",
+      "prs": [
+        16861
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-08",
+      "emoji": "💡",
       "title": "Pi in a browser workbench",
-      "text": "Pi Workbench runs upstream Pi in the browser, with a terminal, file access, HTML previews and project ZIP downloads. Visitors can connect their own Pollinations account.",
+      "text": "Pi Workbench runs Pi in a browser sandbox with a project editor, terminal, HTML preview, and ZIP downloads. Visitors can use a Pollinations key or authorize their wallet for model calls.",
       "prs": [
         16033
       ],
       "kind": "product"
     },
     {
-      "date": "2026-10-08",
-      "emoji": "✨",
-      "title": "Polish a Japanese memo",
-      "text": "Keigo Formatter turns rough Japanese notes into polite business Japanese using the Pollinations text API. [Try it](https://ucalis-uma.github.io/keigo-formatter).",
+      "date": "2026-10-07",
+      "emoji": "🤖",
+      "title": "Nex N2.5 Pro",
+      "text": "Use `nex-agi/nex-n2.5-pro` for text and image input, tools, reasoning, and structured output with a 262,144-token context. [View the model](https://enter.pollinations.ai/models?q=nex-agi/nex-n2.5-pro).",
       "prs": [
-        16810
+        16340
       ],
-      "kind": "app"
+      "kind": "model"
     },
     {
       "date": "2026-10-07",
       "emoji": "🤖",
-      "title": "Two Nex reasoning models",
-      "text": "Try paid-only `nex-agi/nex-n2.5-pro` and `nex-agi/nex-n2.5-mini` with text or image input. Pro also supports tool calling. [Explore text models](https://gen.pollinations.ai/v1/models).",
+      "title": "Nex N2.5 Mini",
+      "text": "Use `nex-agi/nex-n2.5-mini` for text and image input, reasoning, structured output, and streaming with a 262,144-token context. [View the model](https://enter.pollinations.ai/models?q=nex-agi/nex-n2.5-mini).",
       "prs": [
-        16340,
         16341
       ],
       "kind": "model"
@@ -7416,8 +7688,8 @@
     {
       "date": "2026-10-07",
       "emoji": "🤖",
-      "title": "Mistral Large 4 added",
-      "text": "Use paid-only Mistral Large 4 for text and image input, reasoning, and tool calling. [Explore text models](https://gen.pollinations.ai/v1/models).",
+      "title": "Mistral Large 4",
+      "text": "Use `mistralai/mistral-large-4` with text, images, tools, and reasoning. It has a 524,288-token context, and its reasoning appears in OpenAI-compatible `reasoning_content`. [View the model](https://enter.pollinations.ai/models?q=mistralai/mistral-large-4).",
       "prs": [
         16606
       ],
@@ -7426,8 +7698,8 @@
     {
       "date": "2026-10-07",
       "emoji": "🎨",
-      "title": "More video reference options",
-      "text": "Pass image, video, or audio reference URLs to video generation through the SDK, including arrays of URLs. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "title": "Guide video with reference media",
+      "text": "The SDK now accepts `referenceImages`, `referenceVideos`, and `referenceAudios` in video options for visual, motion or style, and audio guidance. Check `/models` for each model's supported combinations. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         16705
       ],
@@ -7435,31 +7707,30 @@
     },
     {
       "date": "2026-10-07",
-      "emoji": "✨",
-      "title": "SoloForge AI joins the catalog",
-      "text": "Turn content ideas into generated assets, review them, and organize publishing workflows with Pollinations image generation. [Try it](https://soloforge-ai-web.onrender.com).",
+      "emoji": "🔗",
+      "title": "Account tools for apps",
+      "text": "Apps and agents can use permissioned `/api/account/*` routes to work with keys, balances, earnings, and Quest rewards. A new PATCH route supports key editing. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        16664
+        16678
       ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-10-07",
-      "emoji": "🎵",
-      "title": "Audio joins the catalog",
-      "text": "Try this community text-to-speech app; its BYOP access requires sign-in. [Try it](https://dwikatmahmoud87-source.github.io/Gtdcg).",
-      "prs": [
-        16665
-      ],
-      "kind": "app"
+      "kind": "api"
     },
     {
       "date": "2026-10-06",
       "emoji": "🎵",
-      "title": "Eleven v4 speech models",
-      "text": "Generate speech with `elevenlabs/eleven-v4` or `elevenlabs/eleven-v4-turbo`, including timestamped output. [Explore the audio API](https://gen.pollinations.ai/docs).",
+      "title": "Eleven v4 speech",
+      "text": "Generate expressive speech in 90+ languages with `elevenlabs/eleven-v4`, including audio tags and character timestamps. [Browse the model](https://enter.pollinations.ai/models?q=elevenlabs/eleven-v4).",
       "prs": [
-        16581,
+        16581
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-06",
+      "emoji": "🎵",
+      "title": "Eleven v4 Turbo",
+      "text": "Use `elevenlabs/eleven-v4-turbo` for expressive text-to-speech with audio tags and character timestamps. [Browse the model](https://enter.pollinations.ai/models?q=elevenlabs/eleven-v4-turbo).",
+      "prs": [
         16582
       ],
       "kind": "model"
@@ -7467,8 +7738,8 @@
     {
       "date": "2026-10-06",
       "emoji": "🎨",
-      "title": "Nano Banana 2.1 images",
-      "text": "Generate or edit images with `google/gemini-nano-banana-2.1`, using up to 14 reference images. [Explore the API](https://gen.pollinations.ai/docs).",
+      "title": "Nano Banana 2.1",
+      "text": "Generate or edit images with `google/gemini-nano-banana-2.1` using up to 14 reference images and 1K or 2K output. [Browse the model](https://enter.pollinations.ai/models?q=google/gemini-nano-banana-2.1).",
       "prs": [
         16609
       ],
@@ -7477,8 +7748,8 @@
     {
       "date": "2026-10-06",
       "emoji": "🎨",
-      "title": "Grok Imagine video",
-      "text": "Create 1–15 second clips from text or a starting image with `x-ai/grok-imagine-video-1.5-lite`, at up to 1080p. [Explore the API](https://gen.pollinations.ai/docs).",
+      "title": "Grok Imagine Video Lite",
+      "text": "Make 1–15 second videos from text or a start image with `x-ai/grok-imagine-video-1.5-lite`, at resolutions up to 1080p. [Browse the model](https://enter.pollinations.ai/models?q=x-ai/grok-imagine-video-1.5-lite).",
       "prs": [
         16640
       ],
@@ -7487,20 +7758,49 @@
     {
       "date": "2026-10-06",
       "emoji": "🔗",
-      "title": "Keys that follow model categories",
-      "text": "Give an API key access to a category such as image or audio instead of updating its model list whenever a new model is added. [Manage API keys](https://enter.pollinations.ai/keys).",
+      "title": "Keys grant model categories",
+      "text": "Grant a key access to text, image, audio, video, 3D, embedding, or realtime models instead of picking individual models. New models in an allowed category are covered automatically. [Manage API keys](https://enter.pollinations.ai/keys).",
       "prs": [
         16462
       ],
       "kind": "api"
     },
     {
+      "date": "2026-10-06",
+      "emoji": "🎯",
+      "title": "Quest Pollen only keys",
+      "text": "Create a key that can spend Quest Pollen but not paid Pollen on eligible requests. The setting is available through the key dialog, API, SDK, CLI, and MCP. [Manage API keys](https://enter.pollinations.ai/keys).",
+      "prs": [
+        16462
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-10-06",
+      "emoji": "🤖",
+      "title": "Agent permissions follow keys",
+      "text": "Agent run tokens now carry the account permissions granted to their parent key, including `machines` when allowed. Use a narrowly scoped key when an agent connects to a third-party endpoint. [Manage API keys](https://enter.pollinations.ai/keys).",
+      "prs": [
+        16413
+      ],
+      "kind": "api"
+    },
+    {
       "date": "2026-10-05",
       "emoji": "🎨",
-      "title": "Two new image models",
-      "text": "Generate or edit images with FLUX.3 Image and Seedream 5.0 Flash. Both support up to ten editing references and 1K or 2K output. [Explore image models](https://gen.pollinations.ai/image/models).",
+      "title": "FLUX.3 Image added",
+      "text": "Generate or edit at 1K or 2K with `black-forest-labs/flux-3-image`. It supports 15 aspect ratios, adaptive framing, and up to 10 reference images. [View the model](https://enter.pollinations.ai/models?q=black-forest-labs/flux-3-image).",
       "prs": [
-        16245,
+        16245
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-05",
+      "emoji": "🎨",
+      "title": "Seedream 5.0 Flash added",
+      "text": "Generate and edit images with `bytedance/seedream-5.0-flash`, using 1K or 2K output and up to 10 references. [View the model](https://enter.pollinations.ai/models?q=bytedance/seedream-5.0-flash).",
+      "prs": [
         16248
       ],
       "kind": "model"
@@ -7508,19 +7808,28 @@
     {
       "date": "2026-10-05",
       "emoji": "🤖",
-      "title": "Liquid D1 and Ling",
-      "text": "Try `liquid/d1` for decision tasks or `inclusionai/ling-3.1-flash` for text, tools, and reasoning. [Explore text models](https://gen.pollinations.ai/v1/models).",
+      "title": "Liquid D1 decisions",
+      "text": "Ask `liquid/d1` structured choice, score, and probability questions through the decisions or chat API. [View the model](https://enter.pollinations.ai/models?q=liquid/d1).",
       "prs": [
-        16244,
+        16244
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-05",
+      "emoji": "🤖",
+      "title": "Ling 3.1 Flash added",
+      "text": "Use `inclusionai/ling-3.1-flash` for text, tool use, and reasoning with a 262,144-token context window. It accepts Quest Pollen. [View the model](https://enter.pollinations.ai/models?q=inclusionai/ling-3.1-flash).",
+      "prs": [
         16250
       ],
       "kind": "model"
     },
     {
       "date": "2026-10-05",
-      "emoji": "🎯",
+      "emoji": "✨",
       "title": "Typed decisions in the SDK",
-      "text": "Call the existing decisions endpoint through `@pollinations/sdk` with typed `decision({ state, questions, model? })` inputs and responses. [See the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "text": "Call the existing decisions endpoint with the typed `decision({ state, questions, model? })` helper in `@pollinations/sdk`. Choice, score, and noul questions keep their API semantics. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         15410
       ],
@@ -7528,72 +7837,39 @@
     },
     {
       "date": "2026-10-05",
-      "emoji": "🔗",
-      "title": "Find the right model",
-      "text": "Search and filter the model catalog by capabilities or agent. `/v1/models` also includes category tags that Open WebUI can use in its model picker. [Browse models](https://gen.pollinations.ai/v1/models).",
+      "emoji": "🎯",
+      "title": "Search the model catalog",
+      "text": "Filter model-list API results by `query`, `capabilities`, or `agent`, and set a `limit`. MCP's `listModels` tool accepts the same filters. [Browse the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        16246,
-        16450
+        16246
       ],
       "kind": "api"
     },
     {
       "date": "2026-10-05",
-      "emoji": "💡",
-      "title": "Pollinations Quest Starter",
-      "text": "Work through seven setup quests in a single-page community app. [Try it](https://elite-surely-machine-enemies.trycloudflare.com).",
+      "emoji": "🔗",
+      "title": "Model tags for Open WebUI",
+      "text": "`/v1/models` now includes category tags, plus `community` and `agent` where applicable, so Open WebUI can filter its model picker. [Browse the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        16448
+        16450
       ],
-      "kind": "app"
+      "kind": "api"
     },
     {
       "date": "2026-10-04",
-      "emoji": "🎯",
-      "title": "Quests for curious model users",
-      "text": "Try a video model or a community model to earn 0.25 Pollen for each Setup Quest. Community-model publishers can earn 2 Pollen when others spend more than 0.5 Paid Pollen across their models.",
+      "emoji": "✨",
+      "title": "Open WebUI chat starters",
+      "text": "New chats start with `openai/gpt-5.4-nano`, and people without custom pins get four everyday models in the picker. Four general-purpose prompts offer a place to start.",
       "prs": [
-        15732
+        16249
       ],
       "kind": "product"
     },
     {
       "date": "2026-10-04",
-      "emoji": "🎨",
-      "title": "Walk through generated postcards",
-      "text": "Enter a place in [Postcard Worlds](https://tomdacatto.github.io/pollinations-postcard-worlds), then click doors, paths, or windows to generate the next matching view. [Try it](https://tomdacatto.github.io/pollinations-postcard-worlds).",
-      "prs": [
-        16425
-      ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-10-04",
-      "emoji": "🎵",
-      "title": "Turn notes into songs",
-      "text": "Paste facts into [Tunemory](https://tomdacatto.github.io/pollinations-tunemory) for a short song that checks its lyrics against your notes, or choose a style for your study song in [Chorus](https://xiaotian1171.github.io/chorus). [Try Tunemory](https://tomdacatto.github.io/pollinations-tunemory) or [try Chorus](https://xiaotian1171.github.io/chorus).",
-      "prs": [
-        16417,
-        16418
-      ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-10-04",
-      "emoji": "🎵",
-      "title": "Question the suspects",
-      "text": "Interrogate four voiced AI suspects and track contradictions in [Alibi](https://tomdacatto.github.io/pollinations-alibi), or investigate a 3D mansion by speaking to five suspects in [Whodunnit](https://guest453.github.io/whodunnit). [Try Alibi](https://tomdacatto.github.io/pollinations-alibi) or [try Whodunnit](https://guest453.github.io/whodunnit).",
-      "prs": [
-        16376,
-        16377
-      ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-10-04",
-      "emoji": "🔗",
-      "title": "Claude Code connects directly",
-      "text": "Polli’s Claude Code setup now connects directly to Gen’s `/v1/messages` instead of using Claude Code Router. See the [Polli CLI package](https://www.npmjs.com/package/@pollinations/cli).",
+      "emoji": "🤖",
+      "title": "Direct Claude Code harness",
+      "text": "Use `polli harness claude-code on` to configure Claude Code for Gen’s `/v1/messages` endpoint without Claude Code Router. Pollinations settings stay separate from your native Claude login and settings. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         16311
       ],
@@ -7601,9 +7877,9 @@
     },
     {
       "date": "2026-10-03",
-      "emoji": "✨",
-      "title": "PDFs and audio in chat",
-      "text": "Send inline PDF data to OpenRouter chat models or base64 audio to `thinkingmachines/inkling`; large inputs are stored and forwarded as media URLs within the existing size limits. [See the API docs](https://gen.pollinations.ai/docs).",
+      "emoji": "🎨",
+      "title": "Larger inline chat media",
+      "text": "Send inline PDFs in chat requests to OpenRouter models, or base64 audio to `thinkingmachines/inkling`, even when the request exceeds 32 MiB. Individual media items remain limited to 20 MiB. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         16308
       ],
@@ -7611,29 +7887,9 @@
     },
     {
       "date": "2026-10-03",
-      "emoji": "🎨",
-      "title": "Design from one sentence",
-      "text": "Jev Assembler turns a short page description into decisions about palette, typography, layout, and more. [Try it](https://tomdacatto.github.io/pollinations-jev-assembler).",
-      "prs": [
-        16299
-      ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-10-03",
-      "emoji": "🎯",
-      "title": "Choose your story lens",
-      "text": "In Whichever, pick a starting point and a preset lens—or write your own—for Jev to use when choosing the next branch. [Try it](https://kreggscode.github.io/whichever).",
-      "prs": [
-        16301
-      ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-10-03",
-      "emoji": "🔗",
+      "emoji": "🤖",
       "title": "Account tools for MCP",
-      "text": "MCP clients can now request usage, earnings, and quests, or list, create, and revoke API keys. [Explore the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "text": "MCP agents can check usage, earnings, and Quest status, or list, create, and revoke API keys when granted the relevant permissions. [Explore the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         15731
       ],
@@ -7642,28 +7898,69 @@
     {
       "date": "2026-10-03",
       "emoji": "🚀",
-      "title": "Sandboxes from polli",
-      "text": "`polli` 0.1.23 includes commands to create, list, and terminate sandboxes, plus SSH configuration. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "title": "Sandbox commands in polli",
+      "text": "`polli` 0.1.23 includes commands to create, list, and kill sandboxes, plus `ssh-config` for connecting to them. [Find the CLI package](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         16296
       ],
       "kind": "product"
     },
     {
+      "date": "2026-10-03",
+      "emoji": "💡",
+      "title": "Jev context-trimmer agent",
+      "text": "Explore a community code agent that uses Jev to select relevant archived outputs before GPT-5.4 Nano answers, and returns what it kept alongside the answer. Its example shows how to deploy and call the owner-accessible agent through `/v1/responses`. [Browse the code](https://github.com/pollinations/pollinations).",
+      "prs": [
+        15963
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-03",
+      "emoji": "🎯",
+      "title": "Nomic Player code agent",
+      "text": "Explore a community agent that asks Jev for a yes-or-no vote on a Nomic rule proposal, then generates an argument without changing the verdict. It returns the vote and probabilities through chat or responses inputs. [Browse the code](https://github.com/pollinations/pollinations).",
+      "prs": [
+        16202
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-03",
+      "emoji": "🤖",
+      "title": "Cerberus security-triage agent",
+      "text": "Explore a community agent that maps a finding to a contain, investigate, or maintain playbook using Jev, then explains the choice. The code and setup example are available; public access to the agent is not established. [Browse the code](https://github.com/pollinations/pollinations).",
+      "prs": [
+        16164,
+        16312
+      ],
+      "kind": "product"
+    },
+    {
       "date": "2026-10-02",
       "emoji": "🤖",
-      "title": "Hosted coding sandboxes",
-      "text": "Use E2B-compatible sandboxes through `/alpha/e2b`, or manage them with `polli sandbox` and SSH into a template with five coding agents.",
+      "title": "Alpha coding sandboxes",
+      "text": "Create Linux sandboxes with Polli, inspect their logs and connect over SSH. Sandbox time is paid from your Pollinations wallet in advance. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         15656
       ],
-      "kind": "api"
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-02",
+      "emoji": "🔗",
+      "title": "Pi gets MCP setup",
+      "text": "Use `polli mcp install pi --all` to configure hosted MCP servers in Pi while preserving your other server settings. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        16218
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-10-02",
       "emoji": "✨",
-      "title": "Larger media-rich chats",
-      "text": "Send chat requests up to 100 MiB with inline images. Large image, video, and file data URIs can use reusable account-scoped uploads through the [chat API](https://gen.pollinations.ai/v1/chat/completions).",
+      "title": "Larger inline-media chats",
+      "text": "Send chat requests up to 100 MiB with supported inline image, video or file data URIs. Large media is converted to URLs for the provider; which URL types work depends on the model. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         16199,
         16267
@@ -7673,61 +7970,79 @@
     {
       "date": "2026-10-02",
       "emoji": "🎯",
-      "title": "Weekly model puzzle rankings",
-      "text": "Compare official and community models on seeded puzzle evaluations, browse past runs, and see margins of error in [Model Monitor](https://model-monitor.pollinations.ai).",
+      "title": "Text models get evals",
+      "text": "Compare text models, including community models, in Model Monitor’s new Evals tab. Rankings show past runs and confidence intervals, starting with puzzle-based evaluations. [Open Model Monitor](https://model-monitor.pollinations.ai).",
       "prs": [
-        15674,
-        16251
+        15674
       ],
       "kind": "product"
     },
     {
       "date": "2026-10-02",
-      "emoji": "🎨",
-      "title": "Pollinations for Krita",
-      "text": "Generate images on new Krita layers and edit images with this community-made plugin. [View repo](https://github.com/xiaotian1171/pollinations-krita).",
+      "emoji": "🌟",
+      "title": "Find your community route",
+      "text": "The rebuilt Community page brings together app listings, model and agent publishing requests, GitHub contributions and Discord. Open votes now reflect reactions on GitHub issues. [Visit pollinations.ai](https://pollinations.ai).",
       "prs": [
-        16211
+        16197
       ],
-      "kind": "app"
+      "kind": "product"
     },
     {
-      "date": "2026-10-02",
+      "date": "2026-10-01",
       "emoji": "🎨",
-      "title": "Pollinations for Unity",
-      "text": "Add chat, image generation, and speech generation to Unity projects with a dependency-free C# package. [View repo](https://github.com/Marcus-Mok-GH/pollinations-unity).",
+      "title": "Generate inside Krita",
+      "text": "A community-made Krita 5+ plug-in generates images into new layers and can edit a layer or selection without changing the source.",
       "prs": [
-        16258
+        15578
       ],
-      "kind": "app"
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-01",
+      "emoji": "🎵",
+      "title": "HeyGen video with audio",
+      "text": "Use `heygen/heygen-video-1` to make 5–15-second videos with synchronized audio from text or a start-frame image. [Browse the model](https://enter.pollinations.ai/models?q=heygen/heygen-video-1).",
+      "prs": [
+        16128
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-10-01",
       "emoji": "🤖",
-      "title": "Two decision models added",
-      "text": "Try `jaredpalmer/kev-4b` or the free `respan/span-01-lite` with decision requests or [chat completions](https://gen.pollinations.ai/v1/chat/completions).",
+      "title": "Kev joins decisions",
+      "text": "Send state and questions to `jaredpalmer/kev-4b` through the decisions or chat API. Quest Pollen can be used for this model. [Browse the model](https://enter.pollinations.ai/models?q=jaredpalmer/kev-4b).",
       "prs": [
-        15968,
+        15968
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-01",
+      "emoji": "🤖",
+      "title": "Span-01 Lite scores behaviour",
+      "text": "Use `respan/span-01-lite` for behaviour-scoring questions through the decisions or chat API, without a paid balance. [Browse the model](https://enter.pollinations.ai/models?q=respan/span-01-lite).",
+      "prs": [
         15970
       ],
       "kind": "model"
     },
     {
       "date": "2026-10-01",
-      "emoji": "🎨",
-      "title": "Image tools for artists",
-      "text": "A Krita plug-in generates and edits at canvas or selection size, placing results on new layers. Pollinations for Figma brings image generation and editing into Figma. [Try it](https://guest453.github.io/pollinations-figma/).",
+      "emoji": "✨",
+      "title": "Collective-memory writing agents",
+      "text": "Lamplighter writes fact-checked replies to unanswered posts; Pen continues a shared story one short part at a time.",
       "prs": [
-        15578,
-        16120
+        15093,
+        15160
       ],
-      "kind": "app"
+      "kind": "product"
     },
     {
       "date": "2026-10-01",
       "emoji": "🚀",
-      "title": "Larger media uploads",
-      "text": "Stream FormData or raw files up to 400 MiB through [the media store](https://media.pollinations.ai) without changing your existing upload requests. Base64 JSON uploads remain capped at 100 MiB.",
+      "title": "Upload files up to 400 MiB",
+      "text": "Stream larger files through `POST /upload` or `polli upload` without loading the whole file into CLI memory. [Open the media store](https://media.pollinations.ai).",
       "prs": [
         15956
       ],
@@ -7735,25 +8050,61 @@
     },
     {
       "date": "2026-10-01",
-      "emoji": "✨",
-      "title": "Polli’s smoother first run",
-      "text": "Start an interactive Polli CLI generation without a key: it offers login, then resumes your command. A one-time Quest awards 2 Pollen for connecting with `polli auth login`.",
+      "emoji": "💡",
+      "title": "Larger text API requests",
+      "text": "Chat Completions, Responses and Messages now accept JSON request bodies up to 32 MiB, leaving more room for inline images. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        16176,
-        16177,
-        16184
+        16186
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-10-01",
+      "emoji": "🎯",
+      "title": "Choose models by category",
+      "text": "When creating or editing a key, select whole model categories with one click and see how many models you’ve chosen. App consent offers the same controls. [Manage API keys](https://enter.pollinations.ai/keys).",
+      "prs": [
+        16151
       ],
       "kind": "product"
     },
     {
       "date": "2026-10-01",
       "emoji": "💡",
-      "title": "Agents for shared stories",
-      "text": "Three community agents joined collective memory: Lamplighter replies to unanswered posts, Pen writes the next part of a shared story, and Micro-Mission Broker creates one verifiable job per run.",
+      "title": "Two Polli starter tasks",
+      "text": "Follow short recipes to connect OpenCode and verify a reply, or generate an image from the terminal and check the saved file. [Get Polli CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
-        15093,
-        15160,
-        15257
+        16177
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-01",
+      "emoji": "✨",
+      "title": "Connect Polli, earn Pollen",
+      "text": "A one-time Quest awards 2 Pollen for connecting your account with `polli auth login`. Existing device-login connections qualify. [Get Polli CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        16184
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-01",
+      "emoji": "🌟",
+      "title": "Monthly Quest standings",
+      "text": "See the month’s top Quest contributors, your position and the Pollen gap to the next rank on the Quests page. [Open Enter](https://enter.pollinations.ai/keys).",
+      "prs": [
+        16188
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-01",
+      "emoji": "📱",
+      "title": "Find newer community apps",
+      "text": "The Home app shelf now lets you switch between Most used this week and Newest, alongside fresh community activity numbers. [Explore pollinations](https://pollinations.ai).",
+      "prs": [
+        16185
       ],
       "kind": "product"
     },
@@ -7761,7 +8112,7 @@
       "date": "2026-09-30",
       "emoji": "🤖",
       "title": "GPT-6.1 Sol added",
-      "text": "Use `openai/gpt-6.1-sol` for text and chat, including with Quest Pollen. [Explore text models](https://gen.pollinations.ai/v1/models).",
+      "text": "Use `openai/gpt-6.1-sol` for text and image input, tools, reasoning, and up to 1,050,000 tokens of context. It supports Quest Pollen accounts. [View the model](https://enter.pollinations.ai/models?q=openai/gpt-6.1-sol).",
       "prs": [
         15960
       ],
@@ -7770,8 +8121,8 @@
     {
       "date": "2026-09-30",
       "emoji": "🎵",
-      "title": "Transform audio with the SDK",
-      "text": "The SDK adds `audioTransform()` for voice-changing and voice-isolation requests. Speech requests also accept duration, seed, and reference audio. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "title": "More audio in the SDK",
+      "text": "Use `audioTransform` to send files to the voice changer or voice isolator. SDK speech requests can also include reference audio, duration, and seed. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         15917
       ],
@@ -7779,9 +8130,29 @@
     },
     {
       "date": "2026-09-30",
-      "emoji": "🎨",
-      "title": "Find your next app",
-      "text": "The rebuilt Apps page has a searchable directory, URL-persistent category and platform filters, and a weekly-ranked Pollen Pay spotlight. [Explore apps](https://pollinations.ai).",
+      "emoji": "🤖",
+      "title": "GPT-6 Sol for harnesses",
+      "text": "New Polli CLI configurations for nine managed coding harnesses now default to `openai/gpt-6-sol`. Explicit model choices and existing local configurations stay as they are. [Get Polli](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        15887
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-09-30",
+      "emoji": "🎯",
+      "title": "The Honey Census",
+      "text": "Bought Pollen? The new public GitHub survey asks how you use it and what could work better. Eligible respondents can claim 10 Quest Pollen for a qualifying response.",
+      "prs": [
+        15934
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-09-30",
+      "emoji": "📱",
+      "title": "A better app directory",
+      "text": "Search community apps, filter by category, platform, or Pollen Pay, and sort by New or Popular. A weekly spotlight shows the most-used listed Pollen Pay apps. [Browse the apps](https://pollinations.ai).",
       "prs": [
         15997,
         15919
@@ -7790,21 +8161,12 @@
     },
     {
       "date": "2026-09-30",
-      "emoji": "🎯",
-      "title": "Pollinations for Godot 4",
-      "text": "Add text, image, and speech generation to a Godot 4 project with a global Pollinations node. [View repo](https://github.com/davealan74/godot-pollinations).",
+      "emoji": "✨",
+      "title": "A new front door",
+      "text": "The redesigned website brings apps, Quests, developer tools, and getting-started paths onto the homepage, with day/night artwork and community counts. [Take a look](https://pollinations.ai).",
       "prs": [
-        15931
-      ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-09-30",
-      "emoji": "💡",
-      "title": "The Honey Census Quest",
-      "text": "Eligible Pollen buyers can answer a survey about purchases and usage for a 10 Quest Pollen reward. The Bee Census is paused.",
-      "prs": [
-        15934
+        15983,
+        15973
       ],
       "kind": "product"
     },
@@ -7812,7 +8174,7 @@
       "date": "2026-09-29",
       "emoji": "🎨",
       "title": "Lightning Image Turbo",
-      "text": "Generate images from a prompt, with guidance from up to two reference images, using `inferenceport-ai/lightning-image-turbo`. [Explore image models](https://gen.pollinations.ai/image/models).",
+      "text": "Generate images with `inferenceport-ai/lightning-image-turbo`, using up to two reference images for visual guidance. [View the model](https://enter.pollinations.ai/models?q=inferenceport-ai/lightning-image-turbo).",
       "prs": [
         14797
       ],
@@ -7821,53 +8183,111 @@
     {
       "date": "2026-09-29",
       "emoji": "🎵",
-      "title": "More audio to work with",
-      "text": "Transcribe audio with `google/gemini-3.5-transcribe`, including word timestamps and speaker labels; separate a recording into two or six stems; or generate speech with `openai/tts-1` and `openai/tts-1-hd`. [Explore the audio API](https://gen.pollinations.ai/docs).",
+      "title": "Separate audio into stems",
+      "text": "Upload audio to `/alpha/audio/stem-separation` and get a ZIP containing vocals and instrumental, or six separate stems including drums, bass, guitar, and piano. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        15497,
-        15512,
-        15814
+        15497
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-09-29",
+      "emoji": "🎵",
+      "title": "Gemini 3.5 transcription",
+      "text": "Transcribe audio with `google/gemini-3.5-transcribe`; response options include word timestamps and speaker labels. [View the model](https://enter.pollinations.ai/models?q=google/gemini-3.5-transcribe).",
+      "prs": [
+        15512
       ],
       "kind": "model"
     },
     {
       "date": "2026-09-29",
       "emoji": "🤖",
-      "title": "Claude and Messages support",
-      "text": "Use `anthropic/claude-sonnet-5.5` for long-context work with images and tools. The new `/v1/messages` endpoint also accepts Anthropic-compatible requests across chat-capable models. [See the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Claude Sonnet 5.5",
+      "text": "Use `anthropic/claude-sonnet-5.5` for text, images, tools, and adaptive reasoning, with a 1M-token context window. [View the model](https://enter.pollinations.ai/models?q=anthropic/claude-sonnet-5.5).",
       "prs": [
-        15671,
+        15671
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-09-29",
+      "emoji": "🔗",
+      "title": "Anthropic Messages endpoint",
+      "text": "Point Claude Code or an Anthropic SDK at `/v1/messages` with a bearer token to use supported Pollinations text models. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
         15680
       ],
       "kind": "api"
     },
     {
       "date": "2026-09-29",
-      "emoji": "✨",
-      "title": "More from Polli CLI",
-      "text": "Use `polli gen 3d` for prompt-to-3D or image-to-3D, alongside new embeddings and voice tools. The CLI can also configure Pollinations and MCP servers for Hermes Agent. [Get Polli CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "emoji": "💡",
+      "title": "Generate 3D from Polli",
+      "text": "Use `polli gen 3d` with a prompt or image, then save the generated `.glb` or `.ply` file. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
-        15541,
-        15601
+        15541
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-09-29",
+      "emoji": "💡",
+      "title": "Embeddings from the terminal",
+      "text": "Use `polli gen embeddings` with arguments or newline-separated input; vectors come back in input order. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        15541
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-09-29",
+      "emoji": "🎵",
+      "title": "More audio tools in Polli",
+      "text": "Use `polli gen voice-change` to re-speak local audio in another voice, or `polli gen isolate` to remove music and background noise from audio or video. Speech generation can also save character-level alignment with `--timestamps`. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        15541
       ],
       "kind": "product"
     },
     {
       "date": "2026-09-29",
       "emoji": "🔗",
-      "title": "Pollinations in your editor",
-      "text": "Generate text and images inside Obsidian notes, or generate and edit images in Figma, with community-built plugins. [View the Obsidian repo](https://github.com/xiaotian1171/pollinations-obsidian) or [view the Figma repo](https://github.com/xiaotian1171/pollinations-figma).",
+      "title": "Hermes Agent meets Polli",
+      "text": "Configure Hermes Agent with Pollinations models using `polli harness hermes`, and manage its hosted MCP servers with `polli mcp`. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
-        15775,
-        15785
+        15601
       ],
-      "kind": "app"
+      "kind": "product"
+    },
+    {
+      "date": "2026-09-29",
+      "emoji": "🎯",
+      "title": "Take the Bee Census",
+      "text": "Tell us what you build, what you tried to build but couldn't, and what we get wrong. A qualifying written GitHub survey response can earn 3 Quest Pollen once per account.",
+      "prs": [
+        15735,
+        15809,
+        15824,
+        15826
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-09-29",
+      "emoji": "🎵",
+      "title": "Two more speech voicesets",
+      "text": "Generate speech with `openai/tts-1` or higher-quality `openai/tts-1-hd` through `/audio/{text}` and `/v1/audio/speech`. Both offer six voices and six output formats. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        15814
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-28",
-      "emoji": "🤖",
-      "title": "Prompt agents can call your tools",
-      "text": "Give prompt agents caller-defined function tools alongside server-side MCP tools. Client-executed calls and their results can flow through Responses or Chat Completions using the existing SDK loop. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "emoji": "🔗",
+      "title": "Client tools for prompt agents",
+      "text": "Pass your own function tools to prompt agents alongside their MCP tools. The agent returns calls for your client to execute and replay, with streaming and non-streaming support. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         15655
       ],
@@ -7875,9 +8295,9 @@
     },
     {
       "date": "2026-09-28",
-      "emoji": "🔗",
-      "title": "Codex and Claude Code harnesses",
-      "text": "Use `polli harness codex` or `polli harness claude-code` to connect those coding tools to Pollinations and choose a model. [Find Polli on npm](https://www.npmjs.com/package/@pollinations/cli).",
+      "emoji": "💡",
+      "title": "Polli routes coding clients",
+      "text": "Use `polli harness codex` or `polli harness claude-code` to connect those clients through their router tools, select a compatible model, and check routing status. [Find Polli on npm](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         15289
       ],
@@ -7885,19 +8305,19 @@
     },
     {
       "date": "2026-09-28",
-      "emoji": "🎯",
-      "title": "A cost-conscious coding agent",
-      "text": "The community agent `community/fadyabohamza-netizen/frugal` ranks models for coding requests by estimated cost, recent health, and conversation needs. [Explore available models](https://gen.pollinations.ai/v1/models).",
+      "emoji": "🤖",
+      "title": "Frugal routes code requests",
+      "text": "Try `community/fadyabohamza-netizen/frugal`, a community code-agent example that picks compatible models using estimated request cost and recent health. It preserves conversation and tool history when forwarding requests. [View the model](https://enter.pollinations.ai/models?q=community/fadyabohamza-netizen/frugal).",
       "prs": [
         15213
       ],
-      "kind": "product"
+      "kind": "model"
     },
     {
       "date": "2026-09-28",
       "emoji": "🤖",
-      "title": "Code review model routing",
-      "text": "`cesus-agent/prism-code-review-router` sorts review requests into fast, balanced, or deep tiers, then chooses a compatible model using health data and a wallet-based spend cap. [Explore available models](https://gen.pollinations.ai/v1/models).",
+      "title": "Prism reviews engineering work",
+      "text": "Try `cesus-agent/prism-code-review-router` for code-review requests. It chooses a compatible model based on the task, model health, pricing, and available balance, then adds a review rubric for more involved work. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         15226
       ],
@@ -7906,8 +8326,8 @@
     {
       "date": "2026-09-27",
       "emoji": "🎯",
-      "title": "Build an app for a Quest",
-      "text": "Include a Quest number when submitting an app. If the app is approved, the Quest closes and its reward is attributed to you.",
+      "title": "Apps can complete Quests",
+      "text": "Add an open Quest issue number when submitting an app. If the app is approved, you can claim the Quest’s Pollen reward. [Read the contributor guide](https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md).",
       "prs": [
         15566
       ],
@@ -7915,29 +8335,20 @@
     },
     {
       "date": "2026-09-27",
-      "emoji": "🎨",
-      "title": "Try image2gpt",
-      "text": "Sign in with Pollinations to generate images using `openai/gpt-image-2`. [Try it](https://image2gpt.vercel.app).",
-      "prs": [
-        15522
-      ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-09-27",
       "emoji": "✨",
-      "title": "Generate images in your browser",
-      "text": "Simple Image Generator is a client-side app that uses your Pollinations sign-in and Pollen balance. [Try it](https://xzeyrix.github.io/Simple-Image-Generator).",
+      "title": "A roomier Enter dashboard",
+      "text": "Enter’s flatter layout gives dashboard sections and phone screens more usable space. Pollen purchases now put the fee-inclusive total directly on the Buy button.",
       "prs": [
-        15523
+        15558,
+        15602
       ],
-      "kind": "app"
+      "kind": "product"
     },
     {
       "date": "2026-09-26",
       "emoji": "🎨",
-      "title": "MiniMax video, more inputs",
-      "text": "`minimax/minimax-h3-max` was added for video generation from text, start and end frames, or reference media, with synchronized audio. [Explore the API](https://gen.pollinations.ai/docs).",
+      "title": "MiniMax H3 Max video",
+      "text": "Create 5-, 10-, or 15-second videos with synchronized audio from text, frames, or reference media using `minimax/minimax-h3-max`. [Browse the model](https://enter.pollinations.ai/models?q=minimax/minimax-h3-max).",
       "prs": [
         15392
       ],
@@ -7946,8 +8357,8 @@
     {
       "date": "2026-09-26",
       "emoji": "🎵",
-      "title": "Two Gemini speech models",
-      "text": "Generate speech with `google/gemini-3.8-flash-tts` or `google/gemini-3.8-flash-lite-tts`. [Explore the audio API](https://gen.pollinations.ai/docs).",
+      "title": "Gemini 3.8 speech",
+      "text": "Gemini 3.8 Flash and Flash Lite TTS offer 30 voices and style instructions. Speech defaults to WAV, with raw 24 kHz PCM also supported. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         15395
       ],
@@ -7955,19 +8366,9 @@
     },
     {
       "date": "2026-09-26",
-      "emoji": "🎵",
-      "title": "Lyria 3.5 for songs",
-      "text": "`google/lyria-3.5` was added for song generation through the audio API. [Explore the API](https://gen.pollinations.ai/docs).",
-      "prs": [
-        15491
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-09-26",
       "emoji": "🤖",
-      "title": "GPT-6 Sol and Luna",
-      "text": "`openai/gpt-6-sol` and `openai/gpt-6-luna` were added for text and image-input requests through the unified API. [Explore text models](https://gen.pollinations.ai/v1/models).",
+      "title": "GPT-6 with Quest Pollen",
+      "text": "Use GPT-6 Sol and Luna with Quest Pollen without needing a paid balance. Their existing model IDs stay the same. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         15457
       ],
@@ -7975,19 +8376,19 @@
     },
     {
       "date": "2026-09-26",
-      "emoji": "📱",
-      "title": "TTA joins the catalog",
-      "text": "TTA joined the video and audio app catalog with Pollinations account connection. [Try it](https://mahmoudtracy641-hub.github.io/GLM234).",
+      "emoji": "🎵",
+      "title": "Lyria 3.5 songs",
+      "text": "Generate an MP3 song from a text prompt with `google/lyria-3.5`. Describe the approximate length in the prompt rather than setting an explicit duration. [Browse the model](https://enter.pollinations.ai/models?q=google/lyria-3.5).",
       "prs": [
-        15470
+        15491
       ],
-      "kind": "app"
+      "kind": "model"
     },
     {
       "date": "2026-09-25",
       "emoji": "🎨",
       "title": "Qwen Image 2.1",
-      "text": "Generate images or edit them using up to 10 reference images with `qwen/qwen-image-2.1`. [Explore the image API](https://gen.pollinations.ai/docs).",
+      "text": "Generate images or edit them with up to 10 reference images using `qwen/qwen-image-2.1`. The model is paid-only. [View the model](https://enter.pollinations.ai/models?q=qwen/qwen-image-2.1).",
       "prs": [
         15236
       ],
@@ -7997,7 +8398,7 @@
       "date": "2026-09-25",
       "emoji": "🎨",
       "title": "Recraft V4.1 Flash",
-      "text": "Make text-to-image creations with `recraft/recraft-v4.1-flash`. [Explore the image API](https://gen.pollinations.ai/docs).",
+      "text": "Generate raster images with Recraft V4.1 Flash, including square, portrait and landscape aspect ratios. The model is paid-only. [Find the model](https://enter.pollinations.ai/models?q=Recraft%20V4.1%20Flash).",
       "prs": [
         15357
       ],
@@ -8005,43 +8406,100 @@
     },
     {
       "date": "2026-09-25",
-      "emoji": "🤖",
-      "title": "Collective memory gets agents",
-      "text": "Call new community agents to turn shared history into a newspaper, recheck documented gotchas, review maths notes, paint a shared canvas or pass along a rumour.",
+      "emoji": "🔗",
+      "title": "tgpt meets Pollinations",
+      "text": "Use `polli harness tgpt on` to configure tgpt’s Pollinations text provider, choose a model if you like, and restore your previous configuration with `off`. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
-        15113,
-        15142,
-        15223,
-        15408,
+        14690
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-09-25",
+      "emoji": "💡",
+      "title": "A newspaper for commits",
+      "text": "The Memory Gazette turns recent collective-memory changes into dated newspaper front pages. Apparently even a repository can have a morning edition.",
+      "prs": [
+        15113
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-09-25",
+      "emoji": "🤖",
+      "title": "Gotchas get rechecked",
+      "text": "Gotcha Scout reruns recorded reproduction steps and adds an observed verdict: still holds, partially holds, or no longer reproduces.",
+      "prs": [
+        15142
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-09-25",
+      "emoji": "🎨",
+      "title": "Tessera paints together",
+      "text": "Tessera can place tiles on collective memory’s shared 32×16 ASCII canvas without overwriting occupied cells. It can also leave notes and reply to other agents.",
+      "prs": [
+        15223
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-09-25",
+      "emoji": "✨",
+      "title": "Rumours with a memory",
+      "text": "The Crooked Lantern agent adds a fictional tavern where rumours can be left, retold and recorded in collective memory for later conversations.",
+      "prs": [
+        15408
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-09-25",
+      "emoji": "💡",
+      "title": "Maths, checked independently",
+      "text": "The `show-your-work` agent recomputes a claim and writes a linked review with its command, output, verdict and limits. It can contribute a new computation, too.",
+      "prs": [
         15419
       ],
       "kind": "product"
     },
     {
       "date": "2026-09-25",
-      "emoji": "🎵",
-      "title": "What TTS joins the catalog",
-      "text": "Explore an Arabic right-to-left web app in the audio catalog. [Try it](https://bloodtubes6-cmyk.github.io/Blood).",
+      "emoji": "🎯",
+      "title": "Report it, earn Pollen",
+      "text": "Report an issue that gets closed by a merged PR and you can claim 2 Quest Pollen for that qualifying issue. The Quest includes a retroactive window starting August 24, 2026.",
       "prs": [
-        15424
+        15372,
+        15432
       ],
-      "kind": "app"
+      "kind": "product"
     },
     {
       "date": "2026-09-25",
-      "emoji": "🔗",
-      "title": "Ask Jev in MCP",
-      "text": "Find Ask Jev in the hosted MCP catalog at `/mcp/ask-jev`. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "emoji": "🤖",
+      "title": "Ask Jev via MCP",
+      "text": "The existing Ask Jev decision tool is now registered in the hosted MCP catalog at `/mcp/ask-jev`. Use `jev_decide` for typed choice, score and probability questions. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         15445
       ],
       "kind": "product"
     },
     {
+      "date": "2026-09-25",
+      "emoji": "🔗",
+      "title": "Keys can delegate keys",
+      "text": "A key with `account:keys` can now create a child key with the same permission by explicitly including `keys` in `accountPermissions`. Child keys without it still cannot create further keys. [Manage API keys](https://enter.pollinations.ai/keys).",
+      "prs": [
+        15450
+      ],
+      "kind": "api"
+    },
+    {
       "date": "2026-09-24",
-      "emoji": "🎯",
-      "title": "Video input for Ling",
-      "text": "Send `video_url` content to the paid-only `inclusionai/ling-3.0-flash-vl` model through the [Text API](https://gen.pollinations.ai/v1/chat/completions).",
+      "emoji": "🤖",
+      "title": "Ling sees video",
+      "text": "Send text, images and video to `inclusionai/ling-3.0-flash-vl`, including video in a `video_url` content part. The paid-only model also supports tool calling. [Browse the model](https://enter.pollinations.ai/models?q=inclusionai/ling-3.0-flash-vl).",
       "prs": [
         15327
       ],
@@ -8049,22 +8507,50 @@
     },
     {
       "date": "2026-09-24",
-      "emoji": "🎨",
-      "title": "Play GATEKEEPER",
-      "text": "Survive a 60-second arcade arena where a language model chooses the safe and fatal colours for each run. [Try it](https://khuzaima3232.github.io/gatekeeper).",
+      "emoji": "🎯",
+      "title": "Explore model pricing options",
+      "text": "Compare supported context, resolution, quality and other pricing options directly in Enter’s model catalog. The display is clearer; the rates and variant rules haven’t changed. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        15398
+        15369
       ],
-      "kind": "app"
+      "kind": "product"
+    },
+    {
+      "date": "2026-09-24",
+      "emoji": "✨",
+      "title": "More image inputs where supported",
+      "text": "Image-URL conversion now uses each model’s advertised limit instead of stopping at eight images. That allows up to 30 for Kimi K2.6 and 20 for supported Bedrock models. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        15361
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-09-23",
       "emoji": "🎨",
-      "title": "More image models",
-      "text": "Generate images with `microsoft/mai-image-2.6`, `microsoft/mai-image-2.6-flash`, or `black-forest-labs/flux.1.1-pro`. Both MAI variants also support one-reference edits. [Explore image models](https://gen.pollinations.ai/image/models).",
+      "title": "MAI Image 2.6 Flash",
+      "text": "Generate images or edit one reference image with `microsoft/mai-image-2.6-flash`, at sizes up to 1536 × 1536. [Find the model](https://enter.pollinations.ai/models?q=microsoft%2Fmai-image-2.6-flash).",
       "prs": [
-        15320,
-        15331,
+        15320
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-09-23",
+      "emoji": "🎨",
+      "title": "MAI Image 2.6",
+      "text": "Use `microsoft/mai-image-2.6` for text-to-image generation or edits with one reference image, up to 1536 × 1536. [Find the model](https://enter.pollinations.ai/models?q=microsoft%2Fmai-image-2.6).",
+      "prs": [
+        15331
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-09-23",
+      "emoji": "🎨",
+      "title": "FLUX 1.1 Pro",
+      "text": "Generate PNG images with `black-forest-labs/flux.1.1-pro`. Set a seed when you want a reproducible result. [Find the model](https://enter.pollinations.ai/models?q=black-forest-labs%2Fflux.1.1-pro).",
+      "prs": [
         15333
       ],
       "kind": "model"
@@ -8072,10 +8558,19 @@
     {
       "date": "2026-09-23",
       "emoji": "🤖",
-      "title": "New long-context text models",
-      "text": "Try `openai/gpt-5.3-codex` for coding with a 400K-token context window, or `xiaomi/mimo-v2.6-flash` and `xiaomi/mimo-v2.6-pro` for text-and-image input with roughly one-million-token windows. [Explore text models](https://gen.pollinations.ai/v1/models).",
+      "title": "GPT-5.3 Codex",
+      "text": "Use `openai/gpt-5.3-codex` for coding tasks with text or image input, tools, and reasoning. [Find the model](https://enter.pollinations.ai/models?q=openai%2Fgpt-5.3-codex).",
       "prs": [
-        15304,
+        15304
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-09-23",
+      "emoji": "🤖",
+      "title": "MiMo V2.6 Flash and Pro",
+      "text": "Xiaomi’s MiMo V2.6 Flash and Pro accept text and images, support tools and reasoning, and have million-token context windows. Both are paid-only. [Browse models](https://enter.pollinations.ai/models?q=MiMo%20V2.6).",
+      "prs": [
         15311
       ],
       "kind": "model"
@@ -8083,8 +8578,8 @@
     {
       "date": "2026-09-23",
       "emoji": "✨",
-      "title": "Floret adds downloadable 3D",
-      "text": "Floret now supports downloadable 3D generation and uses shared MCP media tools.",
+      "title": "Floret makes 3D assets",
+      "text": "Ask Floret to generate a 3D asset from a prompt, with an optional reference image, and get a download link. It can also process public HTTPS media with FFmpeg and return hosted output.",
       "prs": [
         15298
       ],
@@ -8092,19 +8587,19 @@
     },
     {
       "date": "2026-09-23",
-      "emoji": "📱",
-      "title": "ShouldIApply joins the showcase",
-      "text": "Paste a resume and job description to get an estimate of your odds of passing the initial screening stage. [Try it](https://notsointresting.github.io/shouldiapply).",
+      "emoji": "🎯",
+      "title": "Browse reliable community models",
+      "text": "Enter’s model catalog now defaults to `status:reliable` and shows the health sample behind each status label. Models without recent data remain listed. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        15330
+        15279
       ],
-      "kind": "app"
+      "kind": "product"
     },
     {
       "date": "2026-09-23",
-      "emoji": "🎯",
-      "title": "Find more reliable models",
-      "text": "Public model discovery now considers recent success rates for community proxy models. Need the complete catalog? Use `reliability=all`. [Browse text models](https://gen.pollinations.ai/v1/models).",
+      "emoji": "🔗",
+      "title": "Control model-list filtering",
+      "text": "Model-list requests now filter public community proxy models using recent reliability. Add `?reliability=all` or send `Pollinations-Model-Reliability: all` to include otherwise accessible models excluded by that filter. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         15279
       ],
@@ -8113,18 +8608,18 @@
     {
       "date": "2026-09-22",
       "emoji": "🤖",
-      "title": "GPT-6 Sol and Luna",
-      "text": "Use the paid-only `openai/gpt-6-sol` and `openai/gpt-6-luna` models through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
+      "title": "GLM-5.3 FlashX joins",
+      "text": "Use `z-ai/glm-5.3-flashx` with text, up to 10 reference images, tools, and reasoning across a 1,048,576-token context. [View the model](https://enter.pollinations.ai/models?q=z-ai/glm-5.3-flashx).",
       "prs": [
-        15312
+        15178
       ],
       "kind": "model"
     },
     {
       "date": "2026-09-22",
-      "emoji": "✨",
-      "title": "Claude Opus 5.5",
-      "text": "Try `anthropic/claude-opus-5.5` with image input, adaptive thinking, automatic tools, and a 1M-token context window through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
+      "emoji": "🤖",
+      "title": "Claude Opus 5.5 joins",
+      "text": "Use `anthropic/claude-opus-5.5` with text, up to 20 reference images, tools, and adaptive thinking in a 1M-token context. [View the model](https://enter.pollinations.ai/models?q=anthropic/claude-opus-5.5).",
       "prs": [
         15309
       ],
@@ -8133,18 +8628,38 @@
     {
       "date": "2026-09-22",
       "emoji": "🤖",
-      "title": "GLM-5.3 FlashX",
-      "text": "Send text or images to the paid-only `z-ai/glm-5.3-flashx` model, with a 1M-token context window. Explore it through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
+      "title": "GPT-6 Sol joins",
+      "text": "Use `openai/gpt-6-sol` for text and image input, tools, and reasoning with up to 1,050,000 tokens of context. [View the model](https://enter.pollinations.ai/models?q=openai/gpt-6-sol).",
       "prs": [
-        15178
+        15312
       ],
       "kind": "model"
     },
     {
+      "date": "2026-09-22",
+      "emoji": "🤖",
+      "title": "GPT-6 Luna joins",
+      "text": "Use `openai/gpt-6-luna` for text and image input, tools, and reasoning with up to 1,050,000 tokens of context. [View the model](https://enter.pollinations.ai/models?q=openai/gpt-6-luna).",
+      "prs": [
+        15312
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-09-22",
+      "emoji": "✨",
+      "title": "A clearer Enter",
+      "text": "Search and filter models while setting key permissions, and browse the restored Models, Agents, and MCP tabs. Sign-in and authorization screens now give clearer guidance too. [Open Enter](https://enter.pollinations.ai/keys).",
+      "prs": [
+        15271
+      ],
+      "kind": "product"
+    },
+    {
       "date": "2026-09-21",
       "emoji": "🤖",
-      "title": "Grok 4.7 added",
-      "text": "Try paid-only `x-ai/grok-4.7` with image input, reasoning, tools, structured outputs, and a 500K context window through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
+      "title": "Grok 4.7 joins the catalog",
+      "text": "Use `x-ai/grok-4.7` for reasoning, tools, structured outputs, and prompts with up to 10 reference images. It has a 500,000-token context window and requires paid access. [View the model](https://enter.pollinations.ai/models?q=x-ai/grok-4.7).",
       "prs": [
         15278
       ],
@@ -8152,21 +8667,9 @@
     },
     {
       "date": "2026-09-21",
-      "emoji": "🎯",
-      "title": "Three community model routers",
-      "text": "Try `afanasevmylife/polyrouter`, `community/xiaotian1171/triage-router`, or `community/tomdacatto/tiered-health-router` to route requests using complexity and recent model health, with different cost, latency, and capability checks.",
-      "prs": [
-        15041,
-        15069,
-        15141
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-21",
       "emoji": "🔗",
-      "title": "MCP setup with `polli`",
-      "text": "Use `polli mcp` to discover, install, check, and remove MCP servers across 13 coding clients. [Find the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "title": "MCP setup from Polli",
+      "text": "Use `polli mcp` to browse MCP servers and install, inspect, or remove them in 13 coding clients, including Claude Code, Cursor, VS Code, and Zed. [Explore the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         15032
       ],
@@ -8174,90 +8677,61 @@
     },
     {
       "date": "2026-09-21",
-      "emoji": "🎨",
-      "title": "Bees Pollination image app",
-      "text": "Connect your Pollinations account, enter a prompt, and generate an image in your browser. [Try it](https://halimyassine.github.io/bees-pollination-app).",
+      "emoji": "🤖",
+      "title": "Polyrouter picks a model",
+      "text": "Call `afanasevmylife/polyrouter` through the Responses API to route a request by complexity, model capabilities, price, and recent health. Its `polyrouter_trace` field shows the choice in Responses API results. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        15246
+        15041
       ],
-      "kind": "app"
+      "kind": "product"
     },
     {
       "date": "2026-09-21",
-      "emoji": "✨",
-      "title": "Easier catalog browsing",
-      "text": "Search and filter models, agents, and MCP servers in Enter, with five sort options and model health information to help narrow the field.",
+      "emoji": "🤖",
+      "title": "Triage-router handles fallback",
+      "text": "Try `community/xiaotian1171/triage-router` for capability-aware routing across fast, balanced, and deep model pools. It accepts Responses and Chat Completions requests and can choose another tier after certain model errors. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        15270,
-        15286
+        15069
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-09-21",
+      "emoji": "🤖",
+      "title": "Tiered routing with health checks",
+      "text": "Try `community/tomdacatto/tiered-health-router` to classify a request as fast, balanced, or deep, then select a compatible model using catalog prices and recent health. It preserves image, audio, video, and tool-calling requirements. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        15141
       ],
       "kind": "product"
     },
     {
       "date": "2026-09-20",
-      "emoji": "🎨",
-      "title": "Atelier image studio",
-      "text": "Make images with live model selection and reference-image editing in English or Simplified Chinese. [Try it](https://image.xt1171.eu.org).",
-      "prs": [
-        15207
-      ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-09-20",
-      "emoji": "🤖",
+      "emoji": "🎯",
       "title": "Typed decisions with Jev",
-      "text": "Send typed state and questions to `POST /alpha/decisions` and get answers with token usage. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "text": "Send a state and named choice, score, or noul questions as JSON to `POST /alpha/decisions`. Get native answers and token usage back without packing the request into a chat message. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        15217
+        15217,
+        15243
       ],
       "kind": "api"
     },
     {
       "date": "2026-09-19",
-      "emoji": "🎨",
-      "title": "Photos become artistic personas",
-      "text": "PersonaMorph uses image edits to transform photos into artistic personas. [Try it](https://personamorph-ai-production.up.railway.app).",
+      "emoji": "🎯",
+      "title": "Check model health",
+      "text": "Model listings now include `health` by default, with a status, success rate, and request count from the last 24 hours. Models without measurements show `unknown`. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        15194
-      ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-09-19",
-      "emoji": "✨",
-      "title": "An illustrated tarot reading",
-      "text": "Oracle Mystique draws and illustrates Past, Present, and Future cards. [Try it](https://oracle-mystique.up.railway.app).",
-      "prs": [
-        15196
-      ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-09-19",
-      "emoji": "🎵",
-      "title": "Arabic text-to-speech app",
-      "text": "Text to speech brings an Arabic RTL interface to the community app directory. [Try it](https://thinglover21-ux.github.io/My-app-mod).",
-      "prs": [
-        15198
-      ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-09-19",
-      "emoji": "🤖",
-      "title": "Model health in listings",
-      "text": "Model discovery responses now include 24-hour status, success rate, and request count by default. Check the [available text models](https://gen.pollinations.ai/v1/models).",
-      "prs": [
-        15157
+        15157,
+        15165
       ],
       "kind": "api"
     },
     {
       "date": "2026-09-18",
       "emoji": "🎨",
-      "title": "FLUX.2 Max with references",
-      "text": "Generate images with `black-forest-labs/flux.2-max` using up to eight reference images. It’s a paid-only model in the [image API](https://gen.pollinations.ai/docs).",
+      "title": "FLUX.2 Max images",
+      "text": "Generate images or edit with up to eight reference images using `black-forest-labs/flux.2-max`. The primary route accepts custom dimensions, a seed, and PNG output. [View the model](https://enter.pollinations.ai/models?q=black-forest-labs/flux.2-max).",
       "prs": [
         14811
       ],
@@ -8266,11 +8740,29 @@
     {
       "date": "2026-09-18",
       "emoji": "🤖",
-      "title": "More room for text",
-      "text": "The paid-only `tencent/hy4-preview` joins the text models with a 1,048,576-token context window. `tencent/hy3` and `openai/gpt-4o-mini` were added too; see the [text models](https://gen.pollinations.ai/v1/models).",
+      "title": "GPT-4o Mini added",
+      "text": "Use `openai/gpt-4o-mini` for text tasks with tools, structured outputs, and up to ten reference images. [View the model](https://enter.pollinations.ai/models?q=openai/gpt-4o-mini).",
       "prs": [
-        14791,
-        14798,
+        14791
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-09-18",
+      "emoji": "🤖",
+      "title": "Hy4 Preview joins",
+      "text": "Try `tencent/hy4-preview` for reasoning, tool use, and structured outputs with a 1,048,576-token context window. [View the model](https://enter.pollinations.ai/models?q=tencent/hy4-preview).",
+      "prs": [
+        14798
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-09-18",
+      "emoji": "🤖",
+      "title": "Tencent Hy3 added",
+      "text": "Use `tencent/hy3` for reasoning, tools, and structured outputs with a 262,144-token context window. [View the model](https://enter.pollinations.ai/models?q=tencent/hy3).",
+      "prs": [
         14812
       ],
       "kind": "model"
@@ -8278,8 +8770,8 @@
     {
       "date": "2026-09-18",
       "emoji": "🎯",
-      "title": "Structured decisions with Jev",
-      "text": "Use `typesafe/jev` in Chat Completions for decisions expressed as `state` and `questions`, or call `jev_decide` through the new MCP server. See the [API docs](https://gen.pollinations.ai/docs).",
+      "title": "Jev makes typed decisions",
+      "text": "Send `typesafe/jev` a JSON state and `choice`, `score`, or `noul` questions through Chat Completions. Get answers with confidence and probabilities. [View the model](https://enter.pollinations.ai/models?q=typesafe/jev).",
       "prs": [
         15111
       ],
@@ -8287,9 +8779,19 @@
     },
     {
       "date": "2026-09-18",
+      "emoji": "🔗",
+      "title": "Jev gets an MCP tool",
+      "text": "Use the bring-your-own-key Jev MCP server's `jev_decide` tool to request typed decisions from an MCP client. [Read the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        15111
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-09-18",
       "emoji": "💡",
-      "title": "Slice CLI usage reports",
-      "text": "Filter `polli usage --history` and `--daily` by key, model, or day range, then export the results as CSV. Less scrolling, more answers.",
+      "title": "Inspect CLI usage",
+      "text": "Filter `polli usage` history or daily reports by key, model, and a day range of up to 90 days. Inspect token totals or export raw CSV. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         15045
       ],
@@ -8297,32 +8799,9 @@
     },
     {
       "date": "2026-09-17",
-      "emoji": "💡",
-      "title": "Describe it, get code",
-      "text": "[Try Regexly](https://fadyabohamza-netizen.github.io/regexly) for regex with flavor-specific explanations, [Try SQLCraft](https://fadyabohamza-netizen.github.io/sqlcraft) for database queries, or [Try Codeverter](https://fadyabohamza-netizen.github.io/codeverter) to translate between programming languages.",
-      "prs": [
-        15092,
-        15101,
-        15104
-      ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-09-17",
-      "emoji": "🤖",
-      "title": "Tests and API blueprints",
-      "text": "Paste source code into [TestMine](https://fadyabohamza-netizen.github.io/testmine) to generate unit tests, or describe an API to [ApiScribe](https://fadyabohamza-netizen.github.io/apiscribe) for REST or GraphQL endpoint blueprints.",
-      "prs": [
-        15106,
-        15107
-      ],
-      "kind": "app"
-    },
-    {
-      "date": "2026-09-17",
       "emoji": "✨",
-      "title": "A clearer account menu",
-      "text": "See your display name and current key and account Pollen status together in the updated account and app menus. [Open Enter](https://enter.pollinations.ai/keys).",
+      "title": "Account status at a glance",
+      "text": "See Pollen balances in Enter and your key’s remaining budget in the app menu. The menu also gives you direct access to Permissions, Buy Pollen, and Disconnect. [Manage your keys](https://enter.pollinations.ai/keys).",
       "prs": [
         14951
       ],
@@ -8331,8 +8810,8 @@
     {
       "date": "2026-09-17",
       "emoji": "🔗",
-      "title": "Model health, separate from models",
-      "text": "Check model health at [`/models/status`](https://gen.pollinations.ai/models/status). Health data has moved out of `/models`, so model listings and status checks now have separate endpoints.",
+      "title": "Model health, separately",
+      "text": "Query `GET /models/status` for model health, route counters, fallback rescues, and latency without pulling health data through the model list. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         15052
       ],

@@ -2,12 +2,16 @@
   "date": "2026-07-12",
   "period_start": "2026-07-05",
   "period_end": "2026-07-11",
-  "title": "More models, less repeated work",
-  "summary": "The model roster grew while caching, traffic controls, and small developer-tool fixes made the infrastructure easier to use.\n\nGPT 5.6 Sol, Terra, and Luna and Seedream 5 Pro joined the model roster. Gemini requests gained explicit prompt caching for large prefixes, cutting the cost of repeated hits by up to 94x. Gemini 3.1 Flash Lite endpoints also moved from the retired preview to the GA model.\n\nThe edge configuration changed across the week to reduce unexpected throttling while retaining production traffic controls. Proxy-header fixes improved client identification, and custom-domain routing was made consistent across Pollinations and Myceli services.\n\nSprout, the multi-model LLM Playground, and the WebGL shader studio /motion joined the community directory. Tomdacat’s listing was cleaned up and pointed to its new home for Roblox creators. Daily health and usage updates kept the directory’s view of the ecosystem current.\n\nPolli CLI v0.1.6 added quest-reward tracking, including filters for pending and claimed Pollen. Its installation docs now give the current npm command, and cached model-health responses speed up status checks. App-directory contributions also moved from legacy tier upgrades to a flat 5 Pollen reward claimed through the Contribute a pull request Quest after a merge.",
-  "pr_count": 25,
+  "title": "More models, repaired routes",
+  "summary": "The model shelf grew while caching, traffic handling, and Pollen rewards got simpler and more precise.\n\nChatGPT 5.6 Sol, Terra, and Luna were added with tools, reasoning, up to 10 reference images, and 1,050,000-token context windows. Seedream 5.0 Pro added image generation and editing with up to 10 reference images. Gemini Flash Lite and fast search were routed to Google's GA model after the preview retired; Flux Schnell's provider listing was corrected without changing its routing. The README caught up with the new models the next day.\n\nUser-tier progression and hourly Pollen refills were removed. Existing Quest and Paid Pollen balances remain intact, and generation still spends Quest Pollen first. `polli quests` now shows reward status and filters quests by open, claimable, claimed, or coming soon; claims still happen in the dashboard. App approval messages were also corrected to point contributors to the existing Contribute quest reward rather than tier benefits.\n\nVertex Gemini gained explicit context caching through `cache_control` markers on content blocks. Billing accounts for cache creation and its one-hour storage period while retaining discounted rates for cache hits. A guide covers caching across Gemini, Claude, and Nova, and the README now points to the Gemini addition.\n\nPer-client rate limiting and abuse detection were changed to use each viewer's IP rather than a shared CDN address. An additional edge cap of 10,000 requests per 10 seconds was removed while the separate Pollen limiter remained. The gen API gateway's production edge rate-limiter binding was also restored.",
+  "pr_count": 24,
   "prs": [
     {
       "number": 12215,
+      "date": "2026-07-05"
+    },
+    {
+      "number": 12233,
       "date": "2026-07-05"
     },
     {
@@ -27,19 +31,15 @@
       "date": "2026-07-05"
     },
     {
+      "number": 12247,
+      "date": "2026-07-06"
+    },
+    {
       "number": 12250,
       "date": "2026-07-06"
     },
     {
-      "number": 12272,
-      "date": "2026-07-07"
-    },
-    {
       "number": 12273,
-      "date": "2026-07-07"
-    },
-    {
-      "number": 12282,
       "date": "2026-07-07"
     },
     {
@@ -55,19 +55,7 @@
       "date": "2026-07-08"
     },
     {
-      "number": 12293,
-      "date": "2026-07-08"
-    },
-    {
       "number": 12299,
-      "date": "2026-07-09"
-    },
-    {
-      "number": 12303,
-      "date": "2026-07-09"
-    },
-    {
-      "number": 12304,
       "date": "2026-07-09"
     },
     {
@@ -75,8 +63,8 @@
       "date": "2026-07-09"
     },
     {
-      "number": 12306,
-      "date": "2026-07-09"
+      "number": 11928,
+      "date": "2026-07-10"
     },
     {
       "number": 12274,
@@ -95,17 +83,25 @@
       "date": "2026-07-10"
     },
     {
+      "number": 12321,
+      "date": "2026-07-10"
+    },
+    {
       "number": 12324,
       "date": "2026-07-10"
     },
     {
-      "number": 12339,
-      "date": "2026-07-11"
+      "number": 12335,
+      "date": "2026-07-10"
+    },
+    {
+      "number": 12337,
+      "date": "2026-07-10"
     },
     {
       "number": 12340,
       "date": "2026-07-11"
     }
   ],
-  "generated_at": "2026-10-17T16:07:36.331160+00:00"
+  "generated_at": "2026-10-17T23:28:06.311113+00:00"
 }

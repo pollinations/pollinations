@@ -2,16 +2,20 @@
   "date": "2026-05-21",
   "period_start": "2026-05-21",
   "period_end": "2026-05-21",
-  "title": "Gemini Search is now half the price",
-  "summary": "A solid day of tuning: Gemini Search gets a 50% price cut, GitHub logins are fixed, and MCP docs are now in the main API reference.\n\nWe removed the token markup on `gemini-search`, dropping text input to $0.15/M and completions to $0.60/M. We are absorbing the underlying grounding fees so you get base flash-lite rates.\n\nRestored the correct production credentials for GitHub OAuth. The redirect URI mismatch is gone, and logging into enter.pollinations.ai actually works again.\n\nWired the MCP server documentation directly into the main gen.pollinations.ai/docs endpoint and Scalar UI. Also cleaned up the README and fixed the local test script.",
-  "pr_count": 3,
+  "title": "GitHub sign-in fixed for Enter",
+  "summary": "GitHub sign-in got a callback fix, MCP guidance reached the API docs, and proxy work keeps public URLs pointed at public hosts.\n\nA callback mismatch that blocked GitHub sign-in on enter.pollinations.ai was fixed.\n\nThe MCP server README was added to the API docs and their llm.txt index. A smoke-test client now checks the server connection and, when configured, text, image URL, and account tools. The main README also recapped May 20’s Polly and rendering updates; that recap does not represent another product change today.\n\nProxy and deployment configuration was added for Enter, Gen, Media, and Portkey. Enter and Gen now construct redirects, links, and generated image URLs from public-facing hosts rather than upstream hostnames, with related authentication and client-IP handling updates.",
+  "pr_count": 4,
   "prs": [
+    {
+      "number": 10991,
+      "date": "2026-05-21"
+    },
     {
       "number": 11201,
       "date": "2026-05-21"
     },
     {
-      "number": 11226,
+      "number": 11214,
       "date": "2026-05-21"
     },
     {
@@ -19,17 +23,7 @@
       "date": "2026-05-21"
     }
   ],
-  "generated_at": "2026-05-22T07:08:59.727647+00:00",
-  "highlights": [
-    {
-      "emoji": "🔌",
-      "title": "MCP Server",
-      "text": "The Model Context Protocol (MCP) server is now officially wired into the main [API Docs](https://gen.pollinations.ai/docs). Connect your local AI agents directly to the hive.",
-      "prs": [
-        11201
-      ],
-      "kind": "product"
-    }
-  ],
+  "generated_at": "2026-10-17T22:54:20.577836+00:00",
+  "highlights": [],
   "changelog": []
 }

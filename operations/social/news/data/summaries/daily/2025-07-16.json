@@ -2,8 +2,8 @@
   "date": "2025-07-16",
   "period_start": "2025-07-16",
   "period_end": "2025-07-16",
-  "title": "Berrry Computer joins the Vibe Coding project list",
-  "summary": "A community project joined the Vibe Coding list: tweet an app idea, get a small AI-powered web app.\n\nAdded @vgrichina’s Berrry Computer to the project list. It turns app ideas sent in tweet replies into small web apps that use pollinations.ai for dynamic AI experiences.",
+  "title": "Berrry Computer joins the Vibe Coding list",
+  "summary": "A community project joins the Vibe Coding list: tweet an app idea, get a little web app.\n\nThe project list now includes @vgrichina’s Berrry Computer. Reply to a tweet with an app idea and mention @BerrryComputer to get a small web app on its own subdomain; the generated apps use pollinations.ai for dynamic AI experiences.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,17 @@
       "date": "2025-07-16"
     }
   ],
-  "generated_at": "2026-10-17T15:44:07.087330+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:32:50.658709+00:00",
+  "highlights": [
+    {
+      "emoji": "💡",
+      "title": "Tweet an app idea",
+      "text": "Berrry Computer is on the Vibe Coding project list. Reply to a tweet with an app idea and mention @BerrryComputer to get a small web app on its own subdomain.",
+      "prs": [
+        3150
+      ],
+      "kind": "product"
+    }
+  ],
   "changelog": []
 }

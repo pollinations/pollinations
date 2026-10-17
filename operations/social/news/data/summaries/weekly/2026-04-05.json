@@ -2,12 +2,40 @@
   "date": "2026-04-05",
   "period_start": "2026-03-29",
   "period_end": "2026-04-04",
-  "title": "The audio and video engines got a V8 swap",
-  "summary": "A massive week for multimedia generation, SDK overhauls, and an absolute explosion of community apps.\n\nVideo generation got significantly faster with LTX-2.3 running on GH200 instances, dropping generation times to ~12 seconds. On the audio side, we shipped ACE-Step 1.5 for music, upgraded to OpenAI's latest TTS models, added caching for instant audio responses, and enabled speaker diarization for transcriptions.\n\nThe TypeScript SDK got a massive update with dedicated endpoints for text-to-speech, music generation, and image editing. We also shipped programmatic API key management (create, list, revoke) and fixed caching issues so key updates apply instantly.\n\nWe rolled out Wan 2.7 Image and Pro models for 4K generation, migrated Klein 4B to a custom RunPod backend (now supporting 10 reference images), and squashed a bug that was forcing Wan outputs into squares.\n\nThe greenhouse is overflowing. We merged dozens of community apps—from Unity game translators to sci-fi visualizers. We also shipped a multi-model Discord bot framework, gave CatGPT vision capabilities, and added an 'opposite prompt' bot.",
-  "pr_count": 66,
+  "title": "More ways to make images, music, video, and text",
+  "summary": "The garden grew in two directions: more models and tools to build with, and more community-made things to try.\n\nACE-Step 1.5 Turbo added lyrics-to-MP3 generation, Wan 2.7 added image generation and editing, and FLUX.2 Klein 4B edits gained room for 10 reference images. LTX-2 was updated and identified as LTX-2.3, while Gemini 3.1 Flash Lite Preview joined the text lineup. OpenAI audio options and Nova Reel request handling also changed; Enter still caps Nova Reel requests at 30 seconds.\n\nThe SDK added image editing from source images and dedicated speech and music calls. Audio helpers now return binary data rather than the old chat-based response, so existing callers may need to adjust. Repeated GET audio requests can also use a cached response; `seed=-1` asks for a fresh generation.\n\nCommunity submissions ranged from Japanese character chat and 3D icons to learning games, translation tools, science visualization, and writing apps. Link repairs made existing listings more useful, too. The Greenhouse reached 680 listed apps in the April 1 metrics refresh.\n\nSix stepped Pollen packs replaced the blanket 2× bonus for new purchases, and checkout buttons were adjusted for narrow screens. New API endpoints let users create, list, and revoke keys with optional model restrictions, Pollen budgets, and expiry dates. Key verification was updated to read current permissions and metadata.",
+  "pr_count": 84,
   "prs": [
     {
+      "number": 9690,
+      "date": "2026-03-29"
+    },
+    {
+      "number": 9716,
+      "date": "2026-03-29"
+    },
+    {
+      "number": 9717,
+      "date": "2026-03-29"
+    },
+    {
+      "number": 9722,
+      "date": "2026-03-29"
+    },
+    {
+      "number": 9723,
+      "date": "2026-03-29"
+    },
+    {
+      "number": 9724,
+      "date": "2026-03-29"
+    },
+    {
       "number": 9650,
+      "date": "2026-03-30"
+    },
+    {
+      "number": 9737,
       "date": "2026-03-30"
     },
     {
@@ -59,6 +87,10 @@
       "date": "2026-03-31"
     },
     {
+      "number": 9747,
+      "date": "2026-03-31"
+    },
+    {
       "number": 9765,
       "date": "2026-03-31"
     },
@@ -68,6 +100,14 @@
     },
     {
       "number": 9772,
+      "date": "2026-03-31"
+    },
+    {
+      "number": 9773,
+      "date": "2026-03-31"
+    },
+    {
+      "number": 9774,
       "date": "2026-03-31"
     },
     {
@@ -95,6 +135,10 @@
       "date": "2026-04-01"
     },
     {
+      "number": 9792,
+      "date": "2026-04-01"
+    },
+    {
       "number": 9795,
       "date": "2026-04-01"
     },
@@ -108,6 +152,10 @@
     },
     {
       "number": 9798,
+      "date": "2026-04-01"
+    },
+    {
+      "number": 9799,
       "date": "2026-04-01"
     },
     {
@@ -132,6 +180,10 @@
     },
     {
       "number": 9828,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9833,
       "date": "2026-04-02"
     },
     {
@@ -167,6 +219,14 @@
       "date": "2026-04-03"
     },
     {
+      "number": 9818,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9861,
+      "date": "2026-04-03"
+    },
+    {
       "number": 9862,
       "date": "2026-04-03"
     },
@@ -179,11 +239,19 @@
       "date": "2026-04-03"
     },
     {
+      "number": 9874,
+      "date": "2026-04-03"
+    },
+    {
       "number": 9879,
       "date": "2026-04-03"
     },
     {
       "number": 9880,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9882,
       "date": "2026-04-03"
     },
     {
@@ -243,6 +311,10 @@
       "date": "2026-04-04"
     },
     {
+      "number": 9920,
+      "date": "2026-04-04"
+    },
+    {
       "number": 9925,
       "date": "2026-04-04"
     },
@@ -271,5 +343,5 @@
       "date": "2026-04-04"
     }
   ],
-  "generated_at": "2026-04-05T06:25:00.901187+00:00"
+  "generated_at": "2026-10-17T23:27:08.801064+00:00"
 }

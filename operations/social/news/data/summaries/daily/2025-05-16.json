@@ -3,7 +3,7 @@
   "period_start": "2025-05-16",
   "period_end": "2025-05-16",
   "title": "Anisurge joins the project list",
-  "summary": "One community addition: Anisurge brings AI character chat to the project list.\n\nAnisurge, built by @iotserver24, was added to the website’s LLM integrations list and the README project table. The anime streaming app has a public chat with AI characters powered by Pollinations AI.",
+  "summary": "A community project joined the list: Anisurge uses Pollinations to power AI characters in its public chat.\n\nAnisurge, an anime streaming app with a public chat featuring Pollinations-powered AI characters, was added to the website’s LLM integrations list and the README project table.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-05-16"
     }
   ],
-  "generated_at": "2026-10-17T15:39:49.918167+00:00",
+  "generated_at": "2026-10-17T22:31:12.572766+00:00",
   "highlights": [],
   "changelog": []
 }

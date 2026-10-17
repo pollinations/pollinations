@@ -2,8 +2,8 @@
   "date": "2026-09-18",
   "period_start": "2026-09-18",
   "period_end": "2026-09-18",
-  "title": "Five more ways to ask the API difficult questions",
-  "summary": "A model-heavy day: bigger-context text, structured decisions, FLUX.2 Max, and CLI usage tools that can finally answer narrower questions.\n\nThe text-model roster picked up GPT-4o Mini, Tencent HY4 Preview, Tencent HY3, and TypeSafe Jev. HY4 brings a million-token context window; HY3 adds high-reasoning defaults with cross-provider fallback; and Jev makes confidence-calibrated, typed decisions available through Chat Completions or an MCP server. One endpoint, increasingly strange and useful inhabitants.\n\nDevelopers can now call black-forest-labs/flux.2-max for high-end image generation and editing, including workflows with up to eight reference images. Replicate handles the primary route, with an OpenRouter deployment waiting in the wings.\n\nThe polli CLI can now filter usage history and daily totals by API key, model, and day range, with key-name lookup, useful near-match errors, richer token columns, and CSV export. Usage parsing also now preserves fractional units such as audio seconds and image megapixels instead of rounding them into fiction.",
+  "title": "FLUX.2 Max joins image generation",
+  "summary": "New image, text, and decision models landed alongside sharper CLI usage reports and changes to dashboard measurement.\n\nA Quest contribution added paid-only `black-forest-labs/flux.2-max` for text-to-image generation and editing with up to eight reference images. Its primary route supports custom dimensions, a seed, and PNG output.\n\nA community contribution added `openai/gpt-4o-mini` with image input, tools, and structured outputs. Quest contributions added reasoning models `tencent/hy4-preview` with a million-token context window and `tencent/hy3` with a 262,144-token window. All three are paid-only; regenerated API docs update the model lists.\n\nThe team added `typesafe/jev` to Chat Completions. Give it a JSON state and `choice`, `score`, or `noul` questions, and it returns answers with confidence and probabilities. A bring-your-own-key MCP server adds the `jev_decide` tool.",
   "pr_count": 10,
   "prs": [
     {
@@ -35,11 +35,11 @@
       "date": "2026-09-18"
     },
     {
-      "number": 15131,
+      "number": 15144,
       "date": "2026-09-18"
     },
     {
-      "number": 15144,
+      "number": 15149,
       "date": "2026-09-18"
     },
     {
@@ -47,12 +47,12 @@
       "date": "2026-09-18"
     }
   ],
-  "generated_at": "2026-09-19T06:26:50.531194+00:00",
+  "generated_at": "2026-10-17T23:13:26.608030+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "FLUX.2 Max with references",
-      "text": "Generate images with `black-forest-labs/flux.2-max` using up to eight reference images. It’s a paid-only model in the [image API](https://gen.pollinations.ai/docs).",
+      "title": "FLUX.2 Max images",
+      "text": "Generate images or edit with up to eight reference images using `black-forest-labs/flux.2-max`. The primary route accepts custom dimensions, a seed, and PNG output. [View the model](https://enter.pollinations.ai/models?q=black-forest-labs/flux.2-max).",
       "prs": [
         14811
       ],
@@ -60,28 +60,53 @@
     },
     {
       "emoji": "🤖",
-      "title": "More room for text",
-      "text": "The paid-only `tencent/hy4-preview` joins the text models with a 1,048,576-token context window. `tencent/hy3` and `openai/gpt-4o-mini` were added too; see the [text models](https://gen.pollinations.ai/v1/models).",
+      "title": "GPT-4o Mini added",
+      "text": "Use `openai/gpt-4o-mini` for text tasks with tools, structured outputs, and up to ten reference images. [View the model](https://enter.pollinations.ai/models?q=openai/gpt-4o-mini).",
       "prs": [
-        14791,
-        14798,
+        14791
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Hy4 Preview joins",
+      "text": "Try `tencent/hy4-preview` for reasoning, tool use, and structured outputs with a 1,048,576-token context window. [View the model](https://enter.pollinations.ai/models?q=tencent/hy4-preview).",
+      "prs": [
+        14798
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Tencent Hy3 added",
+      "text": "Use `tencent/hy3` for reasoning, tools, and structured outputs with a 262,144-token context window. [View the model](https://enter.pollinations.ai/models?q=tencent/hy3).",
+      "prs": [
         14812
       ],
       "kind": "model"
     },
     {
       "emoji": "🎯",
-      "title": "Structured decisions with Jev",
-      "text": "Use `typesafe/jev` in Chat Completions for decisions expressed as `state` and `questions`, or call `jev_decide` through the new MCP server. See the [API docs](https://gen.pollinations.ai/docs).",
+      "title": "Jev makes typed decisions",
+      "text": "Send `typesafe/jev` a JSON state and `choice`, `score`, or `noul` questions through Chat Completions. Get answers with confidence and probabilities. [View the model](https://enter.pollinations.ai/models?q=typesafe/jev).",
       "prs": [
         15111
       ],
       "kind": "model"
     },
     {
+      "emoji": "🔗",
+      "title": "Jev gets an MCP tool",
+      "text": "Use the bring-your-own-key Jev MCP server's `jev_decide` tool to request typed decisions from an MCP client. [Read the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        15111
+      ],
+      "kind": "product"
+    },
+    {
       "emoji": "💡",
-      "title": "Slice CLI usage reports",
-      "text": "Filter `polli usage --history` and `--daily` by key, model, or day range, then export the results as CSV. Less scrolling, more answers.",
+      "title": "Inspect CLI usage",
+      "text": "Filter `polli usage` history or daily reports by key, model, and a day range of up to 90 days. Inspect token totals or export raw CSV. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         15045
       ],

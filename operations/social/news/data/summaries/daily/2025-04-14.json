@@ -2,8 +2,8 @@
   "date": "2025-04-14",
   "period_start": "2025-04-14",
   "period_end": "2025-04-14",
-  "title": "MCPollinations gets the right credit",
-  "summary": "A housekeeping day: correct project credit, tidier text model routing, and changes to referral matching.\n\nCorrected the MCPollinations author credit to Pink Pixel in the project list and README. Its description and links stayed the same.\n\nRefactored DeepSeek and Portkey handling in the text API, including model mappings and endpoint selection for DeepSeek-V3.\n\nAdded three affiliates to referral matching. Text responses no longer need Markdown formatting to be eligible for referral links, while the chance of showing Ko-fi when nothing matches was reduced.",
+  "title": "Referral links got a wider net",
+  "summary": "A maintenance day for text routing, referral-link handling, and a project credit that needed correcting.\n\nText responses can now be considered for referral links without Markdown formatting. Three affiliate matches were added, referral-link processing became more frequent, and the fallback Ko-fi prompt became less frequent. Legacy ad and referral code was removed.\n\nThe website project list and README now credit Pink Pixel as the author of MCPollinations. Its description and links did not change.\n\nDeepSeek and Portkey handling was refactored in the text API, including model mappings and endpoint selection for DeepSeek-V3.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2025-04-14"
     }
   ],
-  "generated_at": "2026-10-17T15:37:40.794756+00:00",
+  "generated_at": "2026-10-17T22:30:18.857865+00:00",
   "highlights": [],
   "changelog": []
 }

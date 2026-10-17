@@ -3,7 +3,7 @@
   "period_start": "2025-12-25",
   "period_end": "2025-12-25",
   "title": "Reference images come to Play",
-  "summary": "Reference images reached Play, nine community apps joined the directory, and text caching moved into Enter.\n\nPlay now accepts up to four reference-image URLs for models that support image input, with thumbnails for reviewing and removing them. API errors are also shown more clearly. A separate update addressed reference-image editing support for `gptimage-large`.\n\nThe app directory gained tools for aquarium care, vocabulary study, Indonesian-language chat, coursework, image-to-prompt workflows, logo and name generation, coloring books, and Persian-language image generation. PromptPi! stands out for turning images into prompts in batches.\n\nThe Flower-tier flow now applies subscription changes after qualifying PR merges or registration rechecks, and app submissions enter the same review path. Earlier dry runs are not corrected retroactively.",
+  "summary": "Reference-image editing got easier, nine community apps joined the directory, and caching and Flower-tier workflows got attention behind the scenes.\n\nPlay now accepts up to four reference-image URLs for models that support image input, with thumbnails and controls to remove them. It also shows API error messages instead of generic status text. An updated gptimage-large API version supports reference-image edit requests; the generator's nologo option was removed.\n\nThe community listings added aquarium care, vocabulary and study tools; Indonesian and lightweight chat apps; a Persian image generator; and creative tools for prompts, logos, business names, and coloring books. These PRs add listings, not changes to the apps themselves.\n\nThe beta banner no longer overlaps the navigation, and the mobile footer gives its social icons more room. Text and image generation cards in the docs now retry after a 429 response, using the API's suggested wait when available.",
   "pr_count": 17,
   "prs": [
     {
@@ -75,12 +75,12 @@
       "date": "2025-12-25"
     }
   ],
-  "generated_at": "2026-10-17T15:57:19.538657+00:00",
+  "generated_at": "2026-10-17T22:37:25.224407+00:00",
   "highlights": [
     {
       "emoji": "🎨",
       "title": "Reference images in Play",
-      "text": "Add up to four image URLs when generating with a model that supports image input. Review the thumbnails, remove what you don't need, and generate. [Try Play](https://pollinations.ai/play).",
+      "text": "Add up to four image URLs as references when generating with models that support image input. Preview and remove them before you generate. [Try Play](https://pollinations.ai/play).",
       "prs": [
         6443
       ],

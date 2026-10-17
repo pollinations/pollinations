@@ -2,8 +2,8 @@
   "date": "2025-03-02",
   "period_start": "2025-02-23",
   "period_end": "2025-03-01",
-  "title": "Text requests can call tools and stream replies",
-  "summary": "The text API gained tools and streaming, then spent the rest of the week making those responses more predictable, while community-built apps kept arriving.\n\nCompletion requests gained `tools` and `tool_choice`, with tool calls preserved in OpenAI-compatible responses and function results accepted in follow-up messages. Requests using `stream: true` gained provider-backed server-sent events. Subsequent changes made chunks consistently readable as SSE and checked that streams end with one `[DONE]` event. Software found several ways to finish a stream; the API is aiming for one.\n\nThe OpenAI text request limit doubled to 512,000 message characters. The model list gained `openai-reasoning`, backed by o1-mini, and the `hypnosis-tracy` persona. SearchGPT also gained support for an explicitly selected model.\n\nThe text API moved several generators to a shared client and updated its Cloudflare chat completions integration. OpenAI-style responses retain existing IDs and timestamps; request fields and stream chunks are handled more consistently. Error handling was tightened so streaming API errors return HTTP errors, while the later overhaul preserved provider error details. OpenAI-backed routes also moved through a gateway client.\n\nPrivatePollenAI joined the directory with local chat storage and Pollinations-powered text and images. Gacha joined the social bots list with chat, web search, and character-aware image generation; Musify joined the creative apps list with an AI music assistant, voice commands, and playlists. Directory links and creator attribution also got some maintenance.",
+  "title": "Text clients got more to work with",
+  "summary": "The text API gained more ways to work with models while its streaming and provider plumbing became less surprising.\n\nThe API added function calling, provider-backed streaming, an o1-mini option, and a larger 512,000-character limit for OpenAI text requests. SearchGPT can also use an explicitly supplied model. These changes give clients more control over both what they ask for and how they receive it.\n\nThe first pass at streaming was followed by fixes for SSE formatting, error responses, and cached-stream replay. Response handling was then simplified to emit a single SSE [DONE] event. Streaming is useful; making clients guess whether a chunk is an event is less useful.\n\nOpenAI-backed requests moved to a gateway client, while Cloudflare text generation switched to its OpenAI-compatible chat completions endpoint. Shared-client changes remove null fields from requests, avoid an unsupported Cloudflare seed parameter, and add a default system prompt only when one is configured. Existing OpenAI aliases still map to their Azure deployments.\n\nPrivatePollenAI, Gacha, and Musify joined the listings, spanning local-first chat, a social bot, and music tools. Project links and author profiles also got more flexible, and urSapere AI’s listing was updated.",
   "pr_count": 17,
   "prs": [
     {
@@ -75,5 +75,5 @@
       "date": "2025-02-28"
     }
   ],
-  "generated_at": "2026-10-17T16:03:32.691685+00:00"
+  "generated_at": "2026-10-17T23:29:30.803755+00:00"
 }

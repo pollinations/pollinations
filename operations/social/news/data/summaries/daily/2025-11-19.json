@@ -2,8 +2,8 @@
   "date": "2025-11-19",
   "period_start": "2025-11-19",
   "period_end": "2025-11-19",
-  "title": "Gemini gets a clearer name",
-  "summary": "Gemini’s listed model name changed to `gemini-large`, while existing model IDs keep working.\n\nThe listed Gemini text model is now `gemini-large`. Requests using `gemini-3-pro`, `gemini-3`, or `gemini-3-pro-preview` still resolve through aliases; the underlying model has not changed.",
+  "title": "Gemini gets a shorter name",
+  "summary": "Gemini got a new name in the model list; existing requests still work.\n\nThe text model list now shows `gemini-large` instead of `gemini-3-pro`. Existing requests using `gemini-3-pro`, `gemini-3`, or `gemini-3-pro-preview` still resolve through aliases; the underlying model has not changed.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-11-19"
     }
   ],
-  "generated_at": "2026-10-17T15:52:48.795141+00:00",
+  "generated_at": "2026-10-17T22:35:50.100590+00:00",
   "highlights": [],
   "changelog": []
 }

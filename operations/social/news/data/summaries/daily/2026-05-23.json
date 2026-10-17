@@ -2,20 +2,16 @@
   "date": "2026-05-23",
   "period_start": "2026-05-23",
   "period_end": "2026-05-23",
-  "title": "Community showcase stays current",
-  "summary": "A quiet maintenance day: the community garden got its daily labels, measurements, and front-page refresh.\n\nThe daily documentation bots refreshed the README, app metrics, health checks, and greenhouse listings so the repository reflects the latest community projects and activity.",
-  "pr_count": 2,
+  "title": "README news gets a refresh",
+  "summary": "A quiet docs day: the README caught up with recent Dashboard polish.\n\nThe README’s Latest News now points to the May 22 Dashboard update: a mobile sign-in button that stays visible on shorter screens and theme-aware scrollbars. The older GPT-5.4-Mini news entry was removed.",
+  "pr_count": 1,
   "prs": [
-    {
-      "number": 11244,
-      "date": "2026-05-23"
-    },
     {
       "number": 11246,
       "date": "2026-05-23"
     }
   ],
-  "generated_at": "2026-09-04T11:50:36.741818+00:00",
+  "generated_at": "2026-10-17T22:54:37.491095+00:00",
   "highlights": [],
   "changelog": []
 }

@@ -2,20 +2,20 @@
   "date": "2026-03-09",
   "period_start": "2026-03-09",
   "period_end": "2026-03-09",
-  "title": "shipped polly v2",
-  "summary": "rewrote internals in rust for speed, and dropped the sycophancy so she stops agreeing with your bad code. nanobanana now actually respects `safe=false`, and we hardened the tier system to stop bots farming pollen. 7 PRs merged today",
+  "title": "Nanobanana respects the safety setting",
+  "summary": "A garden-tending day: fewer blocked image prompts and duplicate apps, a new look, a more direct Polly, and clearer Seed-tier criteria.\n\nNanobanana no longer adds safety instructions to image prompts. The extra prompt pre-check runs only with `safe=true`, while Vertex AI uses stricter filtering for those requests. Creative prompts without that setting should encounter less unnecessary blocking.\n\nA catalog cleanup reduced roughly 2,300 rows to 619 while retaining newer submissions. The app parser also deduplicates names case-insensitively, and generated descriptions get a more consistent format.\n\nPollinations and Enter gained new logos, icons, social previews, and theme colors. Pages now set more accurate canonical URLs and search metadata, while community diary summaries no longer repeat their headlines.",
   "pr_count": 7,
   "prs": [
-    {
-      "number": 8899,
-      "date": "2026-03-09"
-    },
     {
       "number": 8949,
       "date": "2026-03-09"
     },
     {
       "number": 8969,
+      "date": "2026-03-09"
+    },
+    {
+      "number": 8970,
       "date": "2026-03-09"
     },
     {
@@ -35,25 +35,25 @@
       "date": "2026-03-09"
     }
   ],
-  "generated_at": "2026-03-10T06:14:28.126870+00:00",
+  "generated_at": "2026-10-17T22:43:20.908596+00:00",
   "highlights": [
     {
-      "emoji": "🤖",
-      "title": "Polly V2",
-      "text": "Our [Discord](https://discord.gg/pollinations-ai-885844321461485618) bot got a brain transplant. Rebuilt with native internals for speed, she now features an adaptive personality that matches your tone, skips the sycophancy, and points you to the docs instead of dumping massive code blocks.",
+      "emoji": "🎨",
+      "title": "A new Pollinations look",
+      "text": "Pollinations and Enter have refreshed logos, icons, colors, and social preview images. [Visit Pollinations](https://pollinations.ai).",
       "prs": [
-        8987
+        8974
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎨",
-      "title": "Unfiltered nanobanana",
-      "text": "We took the training wheels off the nanobanana image model. Passing `safe=false` to the [API](https://gen.pollinations.ai) now properly bypasses native safety settings instead of relying on clunky prompt injections, resulting in fewer false-positive blocks on your creative prompts.",
+      "emoji": "🤖",
+      "title": "Polly gets to the point",
+      "text": "Polly’s updated Discord guidance favors short, direct answers and covers more questions about Pollinations models, authentication, the SDK, images, and TTS. [Join the community chat](https://chat.pollinations.ai).",
       "prs": [
-        8949
+        8987
       ],
-      "kind": "api"
+      "kind": "product"
     }
   ],
   "changelog": []

@@ -2,9 +2,9 @@
   "date": "2026-05-13",
   "period_start": "2026-05-13",
   "period_end": "2026-05-13",
-  "title": "Rewriting the map: clearer docs and a cleaner homepage",
-  "summary": "A day of spring cleaning: we stripped the marketing fluff from our docs, clarified the homepage, and made ElevenLabs text-to-speech cheaper.\n\nWe stripped the marketing fluff out of the FAQ and reworked the homepage copy. The focus is now squarely on what matters: how the platform works, developer earnings, and a clear split between what just shipped and what is coming next.\n\nWe aligned our ElevenLabs integration with their Scale plan, which means generating high-quality text-to-speech just got noticeably cheaper for everyone.",
-  "pr_count": 3,
+  "title": "Pollen packs have smaller bonuses",
+  "summary": "A day of clearer explanations: smaller Pollen pack bonuses, a rebuilt app-focused homepage, and tidier community docs.\n\nPollen pack grants were reduced: the $2 pack now gives 2 Pollen instead of 2.5, and the $100 pack gives 160 instead of 200, with reductions across the packs in between. Checkout now records the grant offered at purchase so a later catalog change cannot alter what the buyer receives.\n\nThe Hello homepage now explains the one-API approach to building AI apps, user-funded wallets, and optional developer earnings. A Dev kit replaces the old free-compute and tier sections; Latest and Next separate updates from plans. The Community page was also rewritten around builders and given a shorter subtitle.\n\nThe Pollen FAQ now explains app payments, free grants, wallet balances, and developer earnings more plainly, including that paid Pollen expires after 12 months of account inactivity. The README’s Recent Apps table now links several contributors to their GitHub profiles and drops an invalid app link.",
+  "pr_count": 5,
   "prs": [
     {
       "number": 10729,
@@ -15,57 +15,19 @@
       "date": "2026-05-13"
     },
     {
-      "number": 10935,
+      "number": 10868,
+      "date": "2026-05-13"
+    },
+    {
+      "number": 10914,
+      "date": "2026-05-13"
+    },
+    {
+      "number": 10937,
       "date": "2026-05-13"
     }
   ],
-  "generated_at": "2026-05-14T06:57:38.267738+00:00",
-  "highlights": [
-    {
-      "emoji": "🗺️",
-      "title": "Public Roadmap",
-      "text": "The homepage now clearly splits what just shipped from what's coming next, plus better visibility for developer earnings. [View site](https://hello.pollinations.ai)",
-      "prs": [
-        10729
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "📖",
-      "title": "Docs Cleanup",
-      "text": "We stripped the marketing fluff out of the Pollen FAQ. Just straight answers about wallets and tiers now.",
-      "prs": [
-        10821
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "💳",
-      "title": "Pollen Packs",
-      "text": "Updated the Pollen pack tier structures and fixed some Stripe checkout metadata. Buying credits is now slightly more robust.",
-      "prs": [
-        10868
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🎵",
-      "title": "Cheaper Audio",
-      "text": "ElevenLabs text-to-speech is now cheaper to generate. Scribe has moved to the paid tier because servers aren't free. [View API](https://gen.pollinations.ai/docs)",
-      "prs": [
-        10935
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🧹",
-      "title": "Community Polish",
-      "text": "Trimmed the copy on the community page and unstyled some links. Less reading, more building. [Join Discord](https://chat.pollinations.ai)",
-      "prs": [
-        10937
-      ],
-      "kind": "product"
-    }
-  ],
+  "generated_at": "2026-10-17T22:50:59.494653+00:00",
+  "highlights": [],
   "changelog": []
 }

@@ -3,7 +3,7 @@
   "period_start": "2025-03-23",
   "period_end": "2025-03-29",
   "title": "MCP grew beyond images",
-  "summary": "Assistants gained more ways to use Pollinations, while the APIs, docs, and community showcase became easier to navigate.\n\nThe MCP server gained tools for generating text and speech, reading supplied text aloud, and discovering models and voices. The package also got a clearer installation path, a shorter quick start, and support for Node.js 14 and 15.\n\nAdded `mistral-roblox`, `phi-mini`, and the Roblox-focused `roblox-rp` chat model. Model-list requests now bypass caching, so changes to the lineup need not wait behind a stale response.\n\nStreaming and non-streaming SearchGPT requests now have separate cache entries. OpenAI-compatible chat requests are private by default, malformed image options resolve to false, and Cloudflare SDXL is again the fallback if Cloudflare Flux fails.\n\nDocumentation added local JPEG data-URL examples, audio transcription guidance, and clearer audio, vision, and request-body examples. It also clarifies that the OpenAI-compatible text API currently supports only the completion endpoint; installation guidance and site links received a pass too.",
+  "summary": "Assistants gained more ways to use Pollinations while model discovery, API behavior, and examples became easier to work with.\n\nThe MCP server gained tools for generating text, producing speech, speaking supplied text, and listing models and voices. Its package name and executable were corrected for npx installation, followed by Node.js 14 compatibility work in version 1.0.6.\n\nThe text API added mistral-roblox, phi-mini, and the Roblox-focused roblox-rp model. Qwen Coder gained an 8,000-token maximum, Gemini 2.0 Flash Lite moved to its non-preview model ID, and /openai/models stopped serving cached responses so model changes can appear without waiting for cache expiry.\n\nSearchGPT cache entries now distinguish streaming from non-streaming requests. Malformed image flag values resolve to false, chat requests on OpenAI-compatible routes are marked private by default, and Cloudflare SDXL was restored as a fallback when Cloudflare Flux image generation fails.\n\nNew examples show JavaScript speech-to-text and Python and JavaScript Vision requests using local JPEGs. Audio, vision, and request-body examples were clarified; the docs also specify that the OpenAI-compatible text API currently supports only the completion endpoint. MCP installation and several documentation links received follow-up fixes.",
   "pr_count": 28,
   "prs": [
     {
@@ -119,5 +119,5 @@
       "date": "2025-03-29"
     }
   ],
-  "generated_at": "2026-10-17T16:03:51.819586+00:00"
+  "generated_at": "2026-10-17T23:24:07.821115+00:00"
 }

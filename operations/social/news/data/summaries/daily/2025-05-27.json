@@ -3,7 +3,7 @@
   "period_start": "2025-05-27",
   "period_end": "2025-05-27",
   "title": "Image edits can use multiple references",
-  "summary": "Multiple-reference image edits, a clearer auth dashboard, and more predictable request queues led the day.\n\nThe image API accepts comma-separated URLs in the `image` parameter, and Azure GPT Image edit mode now uses every supplied reference image rather than just the first. Generated images also get a prompt-derived download filename.\n\nThe auth dashboard gained a guide to tokens and trusted domains, with examples for web and backend apps. Accepted token formats were narrowed, and authentication and cache handling were updated together.\n\nDreamHer was added to the community app listings. It turns answers to 10 questions into an AI-generated visual of an imagined character.",
+  "summary": "Image edits gained multiple references, authentication setup got clearer, and request queues became more consistent.\n\nThe image API accepts comma-separated URLs in the `image` parameter, and Azure GPT Image edit mode now uses every supplied reference image rather than only the first.\n\nThe auth dashboard gained a collapsible guide and clearer examples for web and backend apps. Token input formats were narrowed to the documented URL, header and body fields; older API-key aliases are no longer accepted.\n\nDreamHer was added to the site's Creative & Interactive Applications list and the README. It turns answers to ten questions into a generated image.",
   "pr_count": 8,
   "prs": [
     {
@@ -39,12 +39,12 @@
       "date": "2025-05-27"
     }
   ],
-  "generated_at": "2026-10-17T15:41:09.407379+00:00",
+  "generated_at": "2026-10-17T22:31:35.746567+00:00",
   "highlights": [
     {
       "emoji": "🎨",
       "title": "Edit with multiple images",
-      "text": "Pass comma-separated URLs in the `image` parameter to use multiple reference images in Azure GPT Image edits. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "text": "Pass comma-separated URLs in the `image` parameter to use multiple reference images with Azure GPT Image edit mode. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         2140,
         2144
@@ -53,8 +53,8 @@
     },
     {
       "emoji": "💡",
-      "title": "Auth setup, explained",
-      "text": "The auth dashboard now has a quick guide to tokens and trusted domains, with examples for web and backend apps. [Open the dashboard](https://enter.pollinations.ai/keys).",
+      "title": "A clearer auth guide",
+      "text": "The auth dashboard now has a collapsible guide to tokens and trusted domains, with examples for web and backend apps. [Open the dashboard](https://enter.pollinations.ai/keys).",
       "prs": [
         2128,
         2129

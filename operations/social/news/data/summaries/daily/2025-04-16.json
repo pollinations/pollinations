@@ -2,8 +2,8 @@
   "date": "2025-04-16",
   "period_start": "2025-04-16",
   "period_end": "2025-04-16",
-  "title": "A smaller text model catalog",
-  "summary": "A catalog cleanup, a new community listing, and a Python example that matches the SDK.\n\nRemoved llamalight, llama-vision, llama-scaleway, and pixtral from the text model list. Mistral remains listed for text-and-image input.\n\nAdded @ayick13’s Indonesian-language Generator Text AI to the project directory and moved @Aashir__Shaikh’s VibeCoder into Tools & Interfaces. VibeCoder itself and its links are unchanged.\n\nUpdated the website example to create a `pollinations.Image` with the selected model and image settings, then call `Generate(prompt=..., save=True)`.",
+  "title": "A leaner text model catalog",
+  "summary": "A catalog trim, a corrected Python example, and some tidying in the community project directory.\n\nThe text model list dropped llamalight, llama-vision, llama-scaleway, and pixtral. Mistral remains an option for text-and-image input, while Sur and Unity remain in the catalog.\n\nThe website’s image-generation example now creates a `pollinations.Image` with the chosen model, dimensions, and seed, then calls `Generate(prompt=..., save=True)`.\n\nVibeCoder moved into Tools & Interfaces, and the Indonesian-language Generator Text AI joined the creative applications list.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,7 +23,7 @@
       "date": "2025-04-16"
     }
   ],
-  "generated_at": "2026-10-17T15:37:54.544992+00:00",
+  "generated_at": "2026-10-17T22:30:25.386430+00:00",
   "highlights": [],
   "changelog": []
 }

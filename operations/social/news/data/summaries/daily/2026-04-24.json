@@ -2,9 +2,9 @@
   "date": "2026-04-24",
   "period_start": "2026-04-24",
   "period_end": "2026-04-24",
-  "title": "DeepSeek V4 and granular image reasoning",
-  "summary": "More control over your generations with audio seeds and image reasoning modes, plus DeepSeek V4 and better usage tracking.\n\nWe wired up DeepSeek V4 (Flash and Pro) via DeepInfra for your text generation needs. On the visual side, we ripped out the binary reasoning toggle for images and replaced it with fast, balanced, and pro modes. You now have actual control over how hard the model thinks before it paints, and it fixes some budget capping edge cases in the process.\n\nAudio endpoints now accept a seed parameter. If you've ever generated the perfect voice clip or music track and then lost it to the ether of non-deterministic caching, you can now lock it in. Pass a seed, get the exact same audio back.\n\nThe dashboard now has a proper calendar picker for filtering and exporting usage data, replacing the old rolling windows. We also restored the tier and nextResetAt fields to the profile endpoint, so your integrations can once again see exactly when your pollen credits will refill without needing extra permissions.",
-  "pr_count": 6,
+  "title": "DeepSeek V4 replaces the old DeepSeek route",
+  "summary": "DeepSeek V4 joined the model lineup, image and audio gained finer controls, and usage reports got a calendar instead of three rolling-window buttons.\n\nThe `deepseek` model now points to DeepSeek V4 Flash, and `deepseek-pro` adds V4 Pro. Both are paid text models with reasoning and tool support; Flash offers a 1,048,576-token context window. The older V3 and V3.2 aliases were removed.\n\nImage generation gained `fast`, `balanced`, and `pro` reasoning modes, with `balanced` as the default and existing boolean requests still accepted. ElevenLabs speech and music gained an optional seed for best-effort repeatable variants; the audio CLI accepts `--seed` too.\n\nA calendar picker replaces rolling usage buttons with exact UTC days, ISO weeks, and months. Charts and detailed CSV exports follow the selected period, while the account usage API accepts matching `granularity` and `period` parameters. The profile API also again returns tier and next-refill timing for apps displaying quota information.",
+  "pr_count": 11,
   "prs": [
     {
       "number": 10252,
@@ -12,6 +12,22 @@
     },
     {
       "number": 10314,
+      "date": "2026-04-24"
+    },
+    {
+      "number": 10400,
+      "date": "2026-04-24"
+    },
+    {
+      "number": 10417,
+      "date": "2026-04-24"
+    },
+    {
+      "number": 10430,
+      "date": "2026-04-24"
+    },
+    {
+      "number": 10432,
       "date": "2026-04-24"
     },
     {
@@ -29,54 +45,67 @@
     {
       "number": 10446,
       "date": "2026-04-24"
-    }
-  ],
-  "generated_at": "2026-04-25T06:28:37.144356+00:00",
-  "highlights": [
-    {
-      "emoji": "🎨",
-      "title": "Thinking in three speeds",
-      "text": "Image generation reasoning is no longer just on or off. You can now pass `fast`, `balanced`, or `pro` modes to the [Image API](https://gen.pollinations.ai/image/{prompt}) to dial in exactly how hard you want the models to think.",
-      "prs": [
-        10252
-      ],
-      "kind": "api"
     },
     {
-      "emoji": "🧠",
-      "title": "DeepSeek V4 arrives",
-      "text": "DeepSeek V4 Flash and Pro are now live on the [Text API](https://gen.pollinations.ai/v1/chat/completions). Point your requests at the new models for heavy-duty reasoning and coding tasks.",
+      "number": 10450,
+      "date": "2026-04-24"
+    }
+  ],
+  "generated_at": "2026-10-17T22:49:06.231798+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "DeepSeek V4 Flash",
+      "text": "Use `deepseek` for V4 Flash, a paid text model with reasoning, tools, and a 1,048,576-token context window. It replaces the previous DeepSeek V3.2 route. [View the model](https://enter.pollinations.ai/models?q=deepseek).",
       "prs": [
         10439
       ],
       "kind": "model"
     },
     {
+      "emoji": "🤖",
+      "title": "DeepSeek V4 Pro",
+      "text": "Use `deepseek-pro` for V4 Pro, a paid text model with reasoning, tools, and a 65,536-token context window. [View the model](https://enter.pollinations.ai/models?q=deepseek-pro).",
+      "prs": [
+        10439
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Choose image reasoning",
+      "text": "Set image reasoning to `fast`, `balanced`, or `pro`; `balanced` is the default. Existing `reasoning=true` and `reasoning=false` requests still work. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        10252
+      ],
+      "kind": "api"
+    },
+    {
       "emoji": "🎵",
-      "title": "Planting audio seeds",
-      "text": "The [Audio API](https://gen.pollinations.ai/audio/{text}) now accepts a `seed` parameter. Lock in that perfect voice inflection or music track instead of rolling the dice on every request.",
+      "title": "Seed audio variations",
+      "text": "Pass a seed to ElevenLabs speech or music generation for distinct, best-effort repeatable variants. GET audio requests use the seed in their cache key, and `polli gen audio` accepts `--seed`. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         10314
       ],
       "kind": "api"
     },
     {
-      "emoji": "📊",
-      "title": "Precise usage tracking",
-      "text": "The [Dashboard](https://enter.pollinations.ai) now features a proper calendar picker. Filter your API usage and export CSVs by exact days, weeks, or months instead of vague rolling windows.",
+      "emoji": "📱",
+      "title": "Pick exact usage periods",
+      "text": "Choose a UTC day, ISO week, or month for usage charts and detailed CSV downloads instead of choosing from rolling windows. [Open the dashboard](https://enter.pollinations.ai/keys).",
       "prs": [
         10435
       ],
       "kind": "product"
     },
     {
-      "emoji": "🌟",
-      "title": "Time travel in the Greenhouse",
-      "text": "TimeMachine Chat just landed in the community showcase, bringing a unified and secure chat interface for your tech essentials. [Try it](https://timemachinechat.com/)",
+      "emoji": "🔗",
+      "title": "Query exact usage windows",
+      "text": "The account usage API accepts `granularity` and `period` for exact day, week, or month windows; the existing `days` parameter still works. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        10443
+        10435
       ],
-      "kind": "app"
+      "kind": "api"
     }
   ],
   "changelog": []

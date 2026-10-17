@@ -2,16 +2,12 @@
   "date": "2026-08-09",
   "period_start": "2026-08-02",
   "period_end": "2026-08-08",
-  "title": "The app garden got proper roots",
-  "summary": "The app garden grew, while the catalogs and APIs underneath it became easier to browse, build with, and debug.\n\nThe community directory moved its 859 entries from Markdown into a validated, newest-first catalog with support for verified screenshots. New additions spanned study tools, visual agent workflows, jewelry rendering, music, GIMP plugins, games, and terminal-based assistants. A strange and increasingly useful collection now has sturdier infrastructure beneath it.\n\nThe dashboard now separates Official and Community models, preserves search across scopes, uses clearer filters and ordering, and progressively loads the official catalog. It also says when the catalog cannot load instead of presenting an empty table. Canonical model entries keep older IDs working as aliases, while responses identify the model actually used.\n\nKrea 2 Medium joined image generation, Grok Imagine Video 1.5 added video with synchronized audio, and qwen3.8-max added text, image, and video input support. Grok Transcribe expanded the transcription endpoint with speaker-diarized output. Cohere Command A Plus requests also gained more faithful handling of messages, tools, streaming, reasoning effort, and supported images.\n\nThe 3D endpoint gained structured JSON POST requests for model choice, reference images, resolution, and seeds, while existing GET requests remain supported. Longer text requests received improved routing and timeout handling; image generation gained a shared-registry FLUX fallback. Invalid image inputs now produce useful client errors rather than looking like model failures.",
-  "pr_count": 97,
+  "title": "Model choices moved into request parameters",
+  "summary": "Model behavior became more explicit, the catalog became easier to use, and the community kept adding things worth finding.\n\nResolution, search context, and reasoning behavior are increasingly choices you make in a request rather than properties hidden in a model alias. Video callers can select supported resolutions explicitly, Trellis 2 takes a resolution parameter, Perplexity Sonar takes a search-context setting, and Grok uses reasoning_effort. Unsupported video resolutions return a 400 instead of silently falling back. A new JSON POST route also makes 3D reference images, resolution, and seed easier to specify.\n\nEnter now separates Official and Community models, preserves searches between them, and loads rows as you scroll. The initial Official view went from about 17,400 DOM elements to about 2,500. Listings gained clearer generation estimates and more detailed pricing, including conditional rates and itemized adjustments. Catalog failures also produce a visible error instead of leaving people waiting indefinitely.\n\nGrok Imagine Video 1.5 added text- or start-image-to-video generation with synchronized audio. Krea 2 Medium joined image generation, Qwen3.8 Max added multimodal text work with a 1-million-token context window, and paid-only Grok Transcribe added timestamped and speaker-labeled transcription options. Command A+ also gained image input in its listing.\n\nModel-registry reads no longer share one in-flight request, text responses identify the canonical model used, and mismatched speech or transcription requests fail with a 400 before reaching a provider. Routing changes avoid some duplicate-generation risks. SDK listings now expose raw registry fields in server order, while convenience helpers make one request and return one result.",
+  "pr_count": 80,
   "prs": [
     {
       "number": 12631,
-      "date": "2026-08-02"
-    },
-    {
-      "number": 13016,
       "date": "2026-08-02"
     },
     {
@@ -23,15 +19,7 @@
       "date": "2026-08-02"
     },
     {
-      "number": 13024,
-      "date": "2026-08-02"
-    },
-    {
       "number": 13028,
-      "date": "2026-08-02"
-    },
-    {
-      "number": 13029,
       "date": "2026-08-02"
     },
     {
@@ -39,7 +27,7 @@
       "date": "2026-08-03"
     },
     {
-      "number": 13025,
+      "number": 13031,
       "date": "2026-08-03"
     },
     {
@@ -47,15 +35,7 @@
       "date": "2026-08-03"
     },
     {
-      "number": 13035,
-      "date": "2026-08-03"
-    },
-    {
       "number": 13041,
-      "date": "2026-08-03"
-    },
-    {
-      "number": 13046,
       "date": "2026-08-03"
     },
     {
@@ -75,6 +55,10 @@
       "date": "2026-08-04"
     },
     {
+      "number": 13036,
+      "date": "2026-08-04"
+    },
+    {
       "number": 13043,
       "date": "2026-08-04"
     },
@@ -91,7 +75,11 @@
       "date": "2026-08-05"
     },
     {
-      "number": 12924,
+      "number": 12956,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 12958,
       "date": "2026-08-05"
     },
     {
@@ -171,10 +159,6 @@
       "date": "2026-08-05"
     },
     {
-      "number": 13113,
-      "date": "2026-08-05"
-    },
-    {
       "number": 13123,
       "date": "2026-08-05"
     },
@@ -203,10 +187,6 @@
       "date": "2026-08-06"
     },
     {
-      "number": 13141,
-      "date": "2026-08-06"
-    },
-    {
       "number": 13142,
       "date": "2026-08-06"
     },
@@ -220,10 +200,6 @@
     },
     {
       "number": 13152,
-      "date": "2026-08-06"
-    },
-    {
-      "number": 13155,
       "date": "2026-08-06"
     },
     {
@@ -243,14 +219,6 @@
       "date": "2026-08-07"
     },
     {
-      "number": 13157,
-      "date": "2026-08-07"
-    },
-    {
-      "number": 13158,
-      "date": "2026-08-07"
-    },
-    {
       "number": 13159,
       "date": "2026-08-07"
     },
@@ -263,23 +231,7 @@
       "date": "2026-08-07"
     },
     {
-      "number": 13163,
-      "date": "2026-08-07"
-    },
-    {
       "number": 13164,
-      "date": "2026-08-07"
-    },
-    {
-      "number": 13165,
-      "date": "2026-08-07"
-    },
-    {
-      "number": 13168,
-      "date": "2026-08-07"
-    },
-    {
-      "number": 13169,
       "date": "2026-08-07"
     },
     {
@@ -287,27 +239,11 @@
       "date": "2026-08-07"
     },
     {
-      "number": 13172,
-      "date": "2026-08-07"
-    },
-    {
       "number": 13173,
       "date": "2026-08-07"
     },
     {
-      "number": 13175,
-      "date": "2026-08-07"
-    },
-    {
       "number": 12882,
-      "date": "2026-08-08"
-    },
-    {
-      "number": 13171,
-      "date": "2026-08-08"
-    },
-    {
-      "number": 13177,
       "date": "2026-08-08"
     },
     {
@@ -328,10 +264,6 @@
     },
     {
       "number": 13190,
-      "date": "2026-08-08"
-    },
-    {
-      "number": 13191,
       "date": "2026-08-08"
     },
     {
@@ -395,5 +327,5 @@
       "date": "2026-08-08"
     }
   ],
-  "generated_at": "2026-10-17T16:07:53.925903+00:00"
+  "generated_at": "2026-10-17T23:28:23.454703+00:00"
 }

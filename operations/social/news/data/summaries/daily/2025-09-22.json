@@ -2,8 +2,8 @@
   "date": "2025-09-22",
   "period_start": "2025-09-22",
   "period_end": "2025-09-22",
-  "title": "Free generation gets a clearer path",
-  "summary": "Free generation got a clearer entry point, two chat projects joined the list, and image and search requests got less mysterious.\n\nEnter added a registry for text and image generation services. Free services can be called without an API key, while generation requests now record model use, timing and response status.\n\nThe Chat Projects list added @mmojocoder’s minimal Strapick Chat and @yassineAbou’s LLMS, a cross-platform app for text chat and image generation.\n\nNano Banana now times out slow image requests and treats responses without image data as errors instead of passing them through. The image model registry also dropped its Azure-backed gptimage entry.",
+  "title": "Free generation services without an API key",
+  "summary": "Free generation services need no API key, model routing and image-response handling got attention, and two community chat apps joined the project list.\n\nEnter added a registry for text and image generation services. Registered free services can now be called without an API key; generation requests also get usage-based price calculation and more consistent tracking.\n\nGemini Search requests now use the Vertex model ID needed to route correctly. Nano Banana gained a request timeout and clearer handling when a response is safety-blocked or contains no image data, alongside moderation tracking. The Azure-backed gptimage registry entry was removed.\n\nThe Chat Projects list added Strapick Chat, a minimal chat UI, and LLMS, a Kotlin Multiplatform app for text chat and image generation across Android, iOS, desktop, and WebAssembly.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,12 +27,12 @@
       "date": "2025-09-22"
     }
   ],
-  "generated_at": "2026-10-17T15:46:54.919029+00:00",
+  "generated_at": "2026-10-17T22:33:53.290562+00:00",
   "highlights": [
     {
-      "emoji": "✨",
-      "title": "Keyless free generation",
-      "text": "Call free registered generation services without an API key. [Explore the API](https://gen.pollinations.ai/docs).",
+      "emoji": "🔗",
+      "title": "Free services, no key",
+      "text": "Call registered free text and image generation services without an API key. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         4039
       ],

@@ -2,20 +2,26 @@
   "date": "2026-03-27",
   "period_start": "2026-03-27",
   "period_end": "2026-03-27",
-  "title": "Frontend text defaults refreshed",
-  "summary": "A quiet maintenance day: fresher frontend text defaults and an updated read on the community app garden.\n\nThe frontend now points at updated default credentials and a current text model, keeping text generation configuration aligned without anyone needing to hunt through settings.\n\nAutomated community app metrics, health checks, and greenhouse statistics were refreshed so the showcase reflects the latest state of the ecosystem.",
-  "pr_count": 2,
+  "title": "A new default for text on the main site",
+  "summary": "The main site now uses `nova-fast` by default for text.\n\nThe main site's default text model changed from `gemini-fast` to `nova-fast`.",
+  "pr_count": 1,
   "prs": [
-    {
-      "number": 9638,
-      "date": "2026-03-27"
-    },
     {
       "number": 9643,
       "date": "2026-03-27"
     }
   ],
-  "generated_at": "2026-09-04T11:52:34.472222+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:45:11.448965+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Nova-fast by default",
+      "text": "Text on the main site now defaults to `nova-fast` instead of `gemini-fast`. [Try it on pollinations.ai](https://pollinations.ai).",
+      "prs": [
+        9643
+      ],
+      "kind": "product"
+    }
+  ],
   "changelog": []
 }

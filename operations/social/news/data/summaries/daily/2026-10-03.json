@@ -2,8 +2,8 @@
   "date": "2026-10-03",
   "period_start": "2026-10-03",
   "period_end": "2026-10-03",
-  "title": "Chat accepts large inline PDFs and Inkling audio",
-  "summary": "Large media works in chat, Polli can manage sandboxes and search code, MCP gains account tools, and community builders keep finding things for Jev to decide.\n\nGen now stores large inline PDFs for OpenRouter models and base64 audio for Inkling, then forwards a URL to the model. Developers can keep sending those requests in the same format, and account-scoped content hashes let uploaded media be reused.\n\nPolli 0.1.23 adds commands to create, list, and kill sandboxes and configure SSH. Its runtime now includes ripgrep, so exact-match and combined code searches can run.\n\nThe MCP server now exposes usage, earnings, quests, and API-key listing, creation, and revocation through account tools. The API enforces the relevant account permissions.",
+  "title": "Larger PDFs and audio fit into chat requests",
+  "summary": "Larger inline media, more capable account tools, and a crop of Jev-powered community projects.\n\nChat requests over 32 MiB can now carry inline PDF data for OpenRouter models and base64 audio for `thinkingmachines/inkling`. The gateway handles the large media without requiring callers to change their requests, and the API docs now spell out the per-item and post-replacement limits.\n\nSix MCP tools add usage history, earnings, Quest status, and API-key management for agents with the relevant permissions. The polli 0.1.23 release also includes the previously merged sandbox create, list, kill, and SSH-config commands.\n\nQuest contributors added three reviewable code agents: a context trimmer that selects archived outputs before answering, a Nomic rule voter that explains its verdict, and Cerberus, which chooses a security-triage playbook. Publishing access expanded for five community contributors; the merged agent code does not establish that each agent is publicly callable.",
   "pr_count": 12,
   "prs": [
     {
@@ -51,43 +51,25 @@
       "date": "2026-10-03"
     },
     {
-      "number": 16321,
+      "number": 16339,
       "date": "2026-10-03"
     }
   ],
-  "generated_at": "2026-10-04T08:09:39.264830+00:00",
+  "generated_at": "2026-10-17T23:16:43.865143+00:00",
   "highlights": [
     {
-      "emoji": "✨",
-      "title": "PDFs and audio in chat",
-      "text": "Send inline PDF data to OpenRouter chat models or base64 audio to `thinkingmachines/inkling`; large inputs are stored and forwarded as media URLs within the existing size limits. [See the API docs](https://gen.pollinations.ai/docs).",
+      "emoji": "🎨",
+      "title": "Larger inline chat media",
+      "text": "Send inline PDFs in chat requests to OpenRouter models, or base64 audio to `thinkingmachines/inkling`, even when the request exceeds 32 MiB. Individual media items remain limited to 20 MiB. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         16308
       ],
       "kind": "api"
     },
     {
-      "emoji": "🎨",
-      "title": "Design from one sentence",
-      "text": "Jev Assembler turns a short page description into decisions about palette, typography, layout, and more. [Try it](https://tomdacatto.github.io/pollinations-jev-assembler).",
-      "prs": [
-        16299
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎯",
-      "title": "Choose your story lens",
-      "text": "In Whichever, pick a starting point and a preset lens—or write your own—for Jev to use when choosing the next branch. [Try it](https://kreggscode.github.io/whichever).",
-      "prs": [
-        16301
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🔗",
+      "emoji": "🤖",
       "title": "Account tools for MCP",
-      "text": "MCP clients can now request usage, earnings, and quests, or list, create, and revoke API keys. [Explore the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "text": "MCP agents can check usage, earnings, and Quest status, or list, create, and revoke API keys when granted the relevant permissions. [Explore the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         15731
       ],
@@ -95,10 +77,38 @@
     },
     {
       "emoji": "🚀",
-      "title": "Sandboxes from polli",
-      "text": "`polli` 0.1.23 includes commands to create, list, and terminate sandboxes, plus SSH configuration. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "title": "Sandbox commands in polli",
+      "text": "`polli` 0.1.23 includes commands to create, list, and kill sandboxes, plus `ssh-config` for connecting to them. [Find the CLI package](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         16296
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Jev context-trimmer agent",
+      "text": "Explore a community code agent that uses Jev to select relevant archived outputs before GPT-5.4 Nano answers, and returns what it kept alongside the answer. Its example shows how to deploy and call the owner-accessible agent through `/v1/responses`. [Browse the code](https://github.com/pollinations/pollinations).",
+      "prs": [
+        15963
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Nomic Player code agent",
+      "text": "Explore a community agent that asks Jev for a yes-or-no vote on a Nomic rule proposal, then generates an argument without changing the verdict. It returns the vote and probabilities through chat or responses inputs. [Browse the code](https://github.com/pollinations/pollinations).",
+      "prs": [
+        16202
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Cerberus security-triage agent",
+      "text": "Explore a community agent that maps a finding to a contain, investigate, or maintain playbook using Jev, then explains the choice. The code and setup example are available; public access to the agent is not established. [Browse the code](https://github.com/pollinations/pollinations).",
+      "prs": [
+        16164,
+        16312
       ],
       "kind": "product"
     }

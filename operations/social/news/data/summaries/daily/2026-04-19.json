@@ -2,10 +2,18 @@
   "date": "2026-04-19",
   "period_start": "2026-04-19",
   "period_end": "2026-04-19",
-  "title": "Bigger brains, larger context windows",
-  "summary": "A massive influx of community apps, a much-needed SDK update for device auth, and a 262K context window for Qwen Vision.\n\nWe bumped MiniMax to version 2.7 and migrated Qwen Vision to a new Fireworks endpoint. The latter now lets you stuff up to 262K tokens into the context window, which is probably more than you need but exactly what you want. Existing API calls won't break.\n\nThe NPM package got a solid upgrade. You can now handle device login flows and CRUD operations for account keys directly through the SDK. We also wired up image reasoning flags. Less boilerplate, more building.\n\nSeven new community apps dropped into the showcase today. Highlights include PollenHours running AI video pipelines in Termux on Android, Akhbaar parsing PDFs into JSON news feeds, and Aureon hooking into Flux and LTX-2.3. We also welcomed ManhwaGen, G-Pai, What If?, and Deals King. You all are busy.",
-  "pr_count": 10,
+  "title": "The SDK gains more ways to connect and create",
+  "summary": "New SDK workflows and upgraded models landed alongside eight community app listings and a safer account check.\n\nSDK 4.3.0 adds device-code authorization for CLI and headless apps, helpers for account keys, and an image-generation helper supporting multiple images and URL or base64 responses. The existing image generator also gains a reasoning option for supported models. OMPC updates its model display names.\n\nThe minimax route moves from M2.5 to M2.7. qwen-vision moves to Qwen3 VL 30B A3B Thinking and doubles its listed context length to 262,144 tokens. Both gain new aliases while retaining their existing ones.\n\nThe catalog adds DREAMMELD, PollenHours, G-Pai, Akhbaar, What If? Scenario Explorer, Aureon, ManhwaGen, and Deals King & Radar Ai. The README showcase rotates featured apps and updates contributor credits.",
+  "pr_count": 12,
   "prs": [
+    {
+      "number": 10324,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10327,
+      "date": "2026-04-19"
+    },
     {
       "number": 10328,
       "date": "2026-04-19"
@@ -47,88 +55,52 @@
       "date": "2026-04-19"
     }
   ],
-  "generated_at": "2026-04-20T06:41:37.001187+00:00",
+  "generated_at": "2026-10-17T22:48:32.994686+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "Upgraded Vision Models",
-      "text": "MiniMax is now on version 2.7, and Qwen Vision got migrated to a new Fireworks model with a massive 262K context window. Stuff more pixels into the prompt. Check the [available models](https://gen.pollinations.ai/v1/models).",
-      "prs": [
-        10341
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🔐",
-      "title": "SDK 4.3.0",
-      "text": "Added device login flow and key management CRUD operations to the [NPM SDK](https://www.npmjs.com/package/@pollinations_ai/sdk). Manage your account keys without leaving the terminal.",
+      "emoji": "🔗",
+      "title": "SDK device authorization",
+      "text": "CLI and headless apps can use a device code to ask users for access, then poll for a token without starting with an API key. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         10328
       ],
       "kind": "product"
     },
     {
-      "emoji": "📱",
-      "title": "PollenHours",
-      "text": "A mobile-first AI video pipeline built for Termux on Android. Generate video directly from your pocket. [Try it](https://aghartavault-ship-it.github.io/PollenHours/)",
+      "emoji": "🎯",
+      "title": "Manage keys from the SDK",
+      "text": "SDK helpers can list, create, and revoke account keys, with options for expiry, model restrictions, a Pollen budget, and account permissions. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
-        10329
+        10328
       ],
-      "kind": "app"
-    },
-    {
-      "emoji": "📰",
-      "title": "Akhbaar",
-      "text": "Converts dense daily tech report PDFs into structured JSON insights for live news feeds. [Try it](https://akhbaar.hoxlabs.com/)",
-      "prs": [
-        10333
-      ],
-      "kind": "app"
+      "kind": "product"
     },
     {
       "emoji": "🎨",
-      "title": "ManhwaGen",
-      "text": "A community-built tool for generating Manhwa-style comic content. [Try it](https://manhwagen.vercel.app/)",
+      "title": "More image options in SDK",
+      "text": "The new `imageGenerate` helper supports OpenAI-style sizes, multiple images per request, and URL or base64 responses. The existing image generator also accepts a reasoning option for supported models. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
-        10339
+        10328
       ],
-      "kind": "app"
+      "kind": "product"
     },
     {
-      "emoji": "✍️",
-      "title": "What If? Scenario Explorer",
-      "text": "An interactive tool for speculative storytelling and narrative exploration. [Try it](https://whatif.pythonanywhere.com)",
+      "emoji": "🤖",
+      "title": "MiniMax moves to M2.7",
+      "text": "The `minimax` route now uses MiniMax M2.7, with `minimax-m2.7` and `minimax-m2p7` added as aliases. [Browse MiniMax](https://enter.pollinations.ai/models?q=minimax-m2.7).",
       "prs": [
-        10334
+        10341
       ],
-      "kind": "app"
+      "kind": "model"
     },
     {
-      "emoji": "✨",
-      "title": "Aureon",
-      "text": "A new media generation platform leveraging our Flux and LTX-2.3 models. [Try it](https://aureon.gold)",
+      "emoji": "🤖",
+      "title": "Qwen vision gets more context",
+      "text": "`qwen-vision` now routes to Qwen3 VL 30B A3B Thinking, with a listed context length of 262,144 tokens and new aliases. [Browse Qwen vision](https://enter.pollinations.ai/models?q=qwen3-vl-30b-a3b-thinking).",
       "prs": [
-        10335
+        10341
       ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎓",
-      "title": "G-Pai",
-      "text": "A new student-focused educational tool built by the community. [Try it](https://g-pai.vercel.app/)",
-      "prs": [
-        10331
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎯",
-      "title": "Deals King & Radar Ai",
-      "text": "A new business tool added to the community greenhouse. [Try it](https://deal.pm/en/extension)",
-      "prs": [
-        10345
-      ],
-      "kind": "app"
+      "kind": "model"
     }
   ],
   "changelog": []

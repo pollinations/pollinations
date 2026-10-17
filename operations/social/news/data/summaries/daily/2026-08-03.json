@@ -2,16 +2,16 @@
   "date": "2026-08-03",
   "period_start": "2026-08-03",
   "period_end": "2026-08-03",
-  "title": "New image and video models, ready for creative mischief",
-  "summary": "A creative-model day: new Krea, Grok video, and Qwen capabilities, backed by sturdier deployments and community publishing.\n\nKrea 2 Medium joined the image API with text-to-image generation, aspect-ratio support, and reproducible seeds. Grok Imagine Video 1.5 also landed, bringing video generation with synchronized audio and 480p through 1080p output.\n\nqwen3.8-max is now available for text, image, and video inputs, routed directly through Alibaba on OpenRouter. Explicit routing means builders get the intended model rather than a mysterious substitute from the model cupboard.\n\npollinations-router can now publish community models using its immutable GitHub account ID instead of relying on a username that may someday wander off and reinvent itself.",
-  "pr_count": 8,
+  "title": "Grok Imagine Video 1.5 joins the video models",
+  "summary": "Three models landed for video, images, and multimodal text work, while catalog and permission housekeeping kept the garden in order.\n\nAdded `grok-imagine-video-1.5` for video generation from text or a start image, with synchronized audio and a choice of 480p, 720p, or 1080p. The existing `grok-video-pro` route is unchanged.\n\nAdded Krea 2 Medium under `krea`, with `krea-2` as an alias. The text-to-image model accepts seeds and supported aspect ratios; it does not accept image references.\n\nAdded `qwen3.8-max` alongside the unchanged `qwen3.7-max`. It accepts text, images, and video, supports tools and reasoning, and has a 1-million-token context window.",
+  "pr_count": 6,
   "prs": [
     {
       "number": 13012,
       "date": "2026-08-03"
     },
     {
-      "number": 13025,
+      "number": 13031,
       "date": "2026-08-03"
     },
     {
@@ -19,15 +19,7 @@
       "date": "2026-08-03"
     },
     {
-      "number": 13035,
-      "date": "2026-08-03"
-    },
-    {
       "number": 13041,
-      "date": "2026-08-03"
-    },
-    {
-      "number": 13046,
       "date": "2026-08-03"
     },
     {
@@ -39,21 +31,21 @@
       "date": "2026-08-03"
     }
   ],
-  "generated_at": "2026-08-04T07:01:47.293796+00:00",
+  "generated_at": "2026-10-17T23:05:08.442613+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Krea 2 Medium",
-      "text": "Krea joins the image API: generate square, wide, or tall images with `krea-2`, aspect-ratio mapping, and seed support. [Try it](https://pollinations.ai/play)",
+      "title": "Krea 2 Medium images",
+      "text": "Generate images with `krea` from text prompts, with seed and aspect-ratio options. [Browse the model](https://enter.pollinations.ai/models?q=krea).",
       "prs": [
         13012
       ],
       "kind": "model"
     },
     {
-      "emoji": "🎥",
+      "emoji": "🎵",
       "title": "Grok Imagine Video 1.5",
-      "text": "Generate 480p, 720p, or 1080p video clips with synchronized audio through the unified API. [API Docs](https://gen.pollinations.ai/docs)",
+      "text": "Make video with `grok-imagine-video-1.5` from text or a start image, with synchronized audio and 480p, 720p, or 1080p output. [Browse the model](https://enter.pollinations.ai/models?q=grok-imagine-video-1.5).",
       "prs": [
         13047
       ],
@@ -61,8 +53,8 @@
     },
     {
       "emoji": "🤖",
-      "title": "Qwen3.8 Max",
-      "text": "A new Alibaba-routed multimodal model for text, image, and video inputs—available as `qwen3.8-max`. [Available models](https://gen.pollinations.ai/v1/models)",
+      "title": "Qwen3.8 Max joins",
+      "text": "Use `qwen3.8-max` with text, image, and video inputs, tools, reasoning, and a 1-million-token context window. [Browse the model](https://enter.pollinations.ai/models?q=qwen3.8-max).",
       "prs": [
         13048
       ],

@@ -2,8 +2,8 @@
   "date": "2026-01-18",
   "period_start": "2026-01-11",
   "period_end": "2026-01-17",
-  "title": "The app catalog had a growth spurt",
-  "summary": "The app catalog grew rapidly while scoped keys, account APIs, and new models gave those apps more ways to work with Pollinations.\n\nCommunity listings arrived across creative tools, chat clients, classroom projects, games, bots, and developer workflows. The catalog and README showcase were updated to make more of them discoverable. These are listings of community projects, not newly added Pollinations API features.\n\nKey creation and authorization now share controls for allowed models, Pollen budgets, expiry, and account permissions. Apps can preselect those options, and permitted keys can request profile, balance, and usage data. The authorization page and API docs now explain what access a key grants.\n\nFLUX.2 [klein] 4B was added for image generation and reference-based editing, and the community-built `nomnom` joined in Alpha for web search, scraping, and crawling. Claude and Claude Large gained a fallback from Bedrock to Vertex AI, while DeepSeek V3.2 moved to Fireworks AI. Existing aliases were retained.\n\nPlay added audio generation, model-specific voice choices, and playback. Its output stays visible when switching models. Community contributor CloudCompile added Bring Your Own Pollen to chat.pollinations.ai, so people can connect their own key for model listings and chat, image, and video requests, then disconnect to return to the default key.",
+  "title": "The app catalog grew, then got easier to navigate",
+  "summary": "A growing community app catalog met more ways to use Pollen, authorize apps, and make things with the API.\n\nDozens of community apps joined the catalog on January 12, followed by 66 listings on January 13. They span creative tools, learning apps, games, bots, and developer workflows. Catalog work also recovered submitted links, removed invalid repository URLs, fixed category placement, and made app submission less fussy. Study Buzz and PolliDev were among the week's additions.\n\nThe path from Spore to Seed became clearer, with daily eligibility checks and an explanation of Dev Points. Authorization now shows requested capabilities and lets apps preselect models, a Pollen budget, expiry, and account permissions. Authorized keys can request profile, balance, and usage data; documentation and login defaults were updated to make those routes easier to use.\n\nNOWPayments crypto checkout was added alongside fiat checkout. Crypto purchases keep a separate balance, while Enter shows fiat and crypto Pollen together in its paid-balance display. Key guidance also became more consistent about how publishable keys and account Pollen work; the wording update did not change rate-limit behavior.\n\nPlay added audio generation with model-specific voice choices and a player, while fixing a balance display crash. Community chat can now connect through Enter to use your own API key for model listings, chat, images, and video, show your Pollen balance, and disconnect back to its default key.",
   "pr_count": 140,
   "prs": [
     {
@@ -567,5 +567,5 @@
       "date": "2026-01-17"
     }
   ],
-  "generated_at": "2026-10-17T16:07:18.267688+00:00"
+  "generated_at": "2026-10-17T23:26:26.916292+00:00"
 }

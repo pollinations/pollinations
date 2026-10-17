@@ -2,9 +2,9 @@
   "date": "2026-08-23",
   "period_start": "2026-08-16",
   "period_end": "2026-08-22",
-  "title": "Community models became easier to build and trust",
-  "summary": "This week made it easier to publish, find, and use community-built models and apps, while tightening the plumbing underneath them.\n\nBuilders gained endpoint probes, image-model support in polli CLI, and OpenAI-compatible transcription for community speech models. Text-model listings now show capabilities and access requirements; unhealthy endpoints stay callable by exact ID but leave catalogs and fallback routing until they recover. Publishing guides now cover text, image, audio, video, and agents. Managed agents gained inspectable tool-call records and can discover tools advertised by enabled MCP servers.\n\nQwen3.8 27B, GLM-5.3, and Quest-accessible Nemotron 3.5 Lightning expanded the reasoning and tool-use roster. Grok TTS and Fish Audio S2.1 Pro added speech options, while GPT transcription joined uploaded-audio and live-session APIs. Video model metadata now exposes supported durations so apps can build pickers that match each model.\n\nNew directory entries ranged from Android image generation and browser playgrounds to anime art, Roblox character chat, cursor design, and collaborative image-making. Shareable search URLs and reorganized browsing controls make the growing directory easier to explore. The model catalog also gained clearer pricing, capabilities, publisher details, and mobile layouts.\n\nImage edits without a specified size now derive an output shape from the source instead of defaulting to a square. Community image endpoints gained consistent URL and base64 handling with a bounded streamed download path, and Kontext generation and editing were pointed at a working deployment. Fewer surprises between sending a picture and getting one back.",
-  "pr_count": 127,
+  "title": "Speech got more ways in and out",
+  "summary": "More ways to build with audio, models, and agents came with clearer discovery, Quest progress, and Pollen costs.\n\nCommunity contributors added OpenAI-compatible transcription models, followed by GPT batch and live transcription. On the output side, `grok-tts` and `fish-audio-s2.1-pro` joined the existing speech endpoints. Unsupported subtitle formats now return a clear error instead of an empty response.\n\nAuthenticated accounts can test an upstream endpoint before registering a private model; requests to publish public models or agents have a clearer path. Owners can declare text-model capabilities, while listings distinguish community proxies and agents more consistently. Publishing guides now cover the dashboard, CLI, and API.\n\nModel cards became easier to compare across desktop and mobile, with clearer pricing, capabilities, access labels, and sorting. Model listings and the SDK now expose video duration options. The app catalog gained search across names, descriptions, and GitHub fields, shareable search and filter URLs, and nine community apps.\n\nManaged-agent responses now show tool names, arguments, and results or failures in both streaming and non-streaming output. Agents can use every tool advertised by an enabled Pollinations MCP server. Cost estimates, balance checks, and price sorting now account for the model steps and tool calls inside an agent run—not just its wrapper.",
+  "pr_count": 103,
   "prs": [
     {
       "number": 13442,
@@ -44,6 +44,10 @@
     },
     {
       "number": 13460,
+      "date": "2026-08-16"
+    },
+    {
+      "number": 13461,
       "date": "2026-08-16"
     },
     {
@@ -91,15 +95,15 @@
       "date": "2026-08-17"
     },
     {
+      "number": 13478,
+      "date": "2026-08-17"
+    },
+    {
       "number": 13482,
       "date": "2026-08-17"
     },
     {
       "number": 13484,
-      "date": "2026-08-17"
-    },
-    {
-      "number": 13491,
       "date": "2026-08-17"
     },
     {
@@ -115,7 +119,7 @@
       "date": "2026-08-17"
     },
     {
-      "number": 13503,
+      "number": 13500,
       "date": "2026-08-17"
     },
     {
@@ -127,11 +131,11 @@
       "date": "2026-08-17"
     },
     {
-      "number": 13508,
+      "number": 13506,
       "date": "2026-08-17"
     },
     {
-      "number": 13509,
+      "number": 13508,
       "date": "2026-08-17"
     },
     {
@@ -147,15 +151,11 @@
       "date": "2026-08-18"
     },
     {
-      "number": 13501,
-      "date": "2026-08-18"
-    },
-    {
-      "number": 13502,
-      "date": "2026-08-18"
-    },
-    {
       "number": 13518,
+      "date": "2026-08-18"
+    },
+    {
+      "number": 13526,
       "date": "2026-08-18"
     },
     {
@@ -168,6 +168,10 @@
     },
     {
       "number": 13535,
+      "date": "2026-08-18"
+    },
+    {
+      "number": 13541,
       "date": "2026-08-18"
     },
     {
@@ -195,6 +199,10 @@
       "date": "2026-08-19"
     },
     {
+      "number": 13441,
+      "date": "2026-08-19"
+    },
+    {
       "number": 13471,
       "date": "2026-08-19"
     },
@@ -203,23 +211,11 @@
       "date": "2026-08-19"
     },
     {
-      "number": 13522,
-      "date": "2026-08-19"
-    },
-    {
-      "number": 13523,
-      "date": "2026-08-19"
-    },
-    {
       "number": 13531,
       "date": "2026-08-19"
     },
     {
       "number": 13540,
-      "date": "2026-08-19"
-    },
-    {
-      "number": 13562,
       "date": "2026-08-19"
     },
     {
@@ -263,10 +259,6 @@
       "date": "2026-08-19"
     },
     {
-      "number": 13514,
-      "date": "2026-08-20"
-    },
-    {
       "number": 13524,
       "date": "2026-08-20"
     },
@@ -307,10 +299,6 @@
       "date": "2026-08-20"
     },
     {
-      "number": 13629,
-      "date": "2026-08-20"
-    },
-    {
       "number": 13630,
       "date": "2026-08-20"
     },
@@ -323,7 +311,7 @@
       "date": "2026-08-20"
     },
     {
-      "number": 13637,
+      "number": 13641,
       "date": "2026-08-20"
     },
     {
@@ -355,10 +343,6 @@
       "date": "2026-08-21"
     },
     {
-      "number": 13650,
-      "date": "2026-08-21"
-    },
-    {
       "number": 13652,
       "date": "2026-08-21"
     },
@@ -372,10 +356,6 @@
     },
     {
       "number": 13467,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13589,
       "date": "2026-08-22"
     },
     {
@@ -399,15 +379,7 @@
       "date": "2026-08-22"
     },
     {
-      "number": 13674,
-      "date": "2026-08-22"
-    },
-    {
       "number": 13676,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13677,
       "date": "2026-08-22"
     },
     {
@@ -423,10 +395,6 @@
       "date": "2026-08-22"
     },
     {
-      "number": 13682,
-      "date": "2026-08-22"
-    },
-    {
       "number": 13683,
       "date": "2026-08-22"
     },
@@ -435,19 +403,7 @@
       "date": "2026-08-22"
     },
     {
-      "number": 13685,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13686,
-      "date": "2026-08-22"
-    },
-    {
       "number": 13687,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13688,
       "date": "2026-08-22"
     },
     {
@@ -455,59 +411,7 @@
       "date": "2026-08-22"
     },
     {
-      "number": 13690,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13691,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13692,
-      "date": "2026-08-22"
-    },
-    {
       "number": 13693,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13694,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13695,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13696,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13697,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13698,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13701,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13702,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13703,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13704,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13710,
       "date": "2026-08-22"
     },
     {
@@ -515,5 +419,5 @@
       "date": "2026-08-22"
     }
   ],
-  "generated_at": "2026-10-17T16:08:09.365035+00:00"
+  "generated_at": "2026-10-17T23:28:26.267013+00:00"
 }

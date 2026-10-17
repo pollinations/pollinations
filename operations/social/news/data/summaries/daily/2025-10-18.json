@@ -2,8 +2,8 @@
   "date": "2025-10-18",
   "period_start": "2025-10-18",
   "period_end": "2025-10-18",
-  "title": "Green Hope AI joins the creative projects list",
-  "summary": "Two community contributions: an editable thumbnail project for the showcase and a standalone email utility.\n\nGreen Hope AI was added to the creative projects list. It generates thumbnails and lets people adjust text, placement, styles, and effects without starting over.\n\nJay-1409 added a separate Next.js utility for sending custom and welcome emails through Brevo or Resend, with reusable templates for other messages. It is not connected to existing Pollinations services.",
+  "title": "Thumbnail editing joins the creative projects list",
+  "summary": "Community contributions brought an editable AI thumbnail project to the creative list and added a standalone email utility.\n\nMustafiz82 added Green Hope AI to the creative projects list. It generates AI thumbnails and lets people adjust text, placement, styles, and effects without starting over.\n\nJay-1409 added a separate Next.js utility with endpoints for custom and welcome emails, reusable message templates, and a service health check. It is not connected to existing Pollinations services.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,17 @@
       "date": "2025-10-18"
     }
   ],
-  "generated_at": "2026-10-17T15:49:01.444718+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:34:41.992838+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Editable AI thumbnails",
+      "text": "Green Hope AI joins the creative projects list. Generate a thumbnail, then adjust its text, placement, styles, and effects without starting over.",
+      "prs": [
+        4588
+      ],
+      "kind": "product"
+    }
+  ],
   "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2026-01-26",
   "period_start": "2026-01-26",
   "period_end": "2026-01-26",
-  "title": "Image generation and supporter logos get reliability fixes",
-  "summary": "A maintenance day for image generation, supporter logos, Myceli materials, and Spore-to-Seed checks.\n\nFlux GPU workers can register through a configurable endpoint, addressing blocked registrations that could leave image generation without available workers. Supporter logos now use Z-Image instead of a model that could fail with the default publishable key.\n\nMyceli’s website, docs, dashboards, pitch, and one-pager were consolidated in the codebase. DataRoom material moved out of the main website and into the docs, alongside the new pitch and one-pager sites.\n\nUpgrade validation now checks recent users first and rotates through older users over the week to reduce GitHub rate-limit pressure. Repository scoring now examines each user’s five most-starred eligible repositories rather than up to 100.",
+  "title": "Image generation and supporter logos get steadier",
+  "summary": "A maintenance day for image generation, supporter logos, Myceli materials, and Spore-to-Seed checks.\n\nFlux GPU workers gained a configurable registration address to avoid a route that blocked some workers. Supporter logos switched to Z-Image after the previous model could reject requests made with a default publishable key.\n\nThe Myceli website, docs, pitch, one-pager, and dashboards were consolidated in the repository. DataRoom material moved out of the main site and into the docs, alongside separate pitch and one-pager sites.\n\nUpgrade validation now checks recent users first and rotates through older users across the week. It also fetches fewer repositories per user, reducing GitHub API pressure.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,7 +23,7 @@
       "date": "2026-01-26"
     }
   ],
-  "generated_at": "2026-10-17T16:01:22.339376+00:00",
+  "generated_at": "2026-10-17T22:38:42.421025+00:00",
   "highlights": [],
   "changelog": []
 }

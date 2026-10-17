@@ -2,8 +2,8 @@
   "date": "2025-09-24",
   "period_start": "2025-09-24",
   "period_end": "2025-09-24",
-  "title": "Reference images in the image editor",
-  "summary": "Reference images reached the editor, Nanobanana got better non-square guidance, and image request pacing got less ambiguous.\n\nThe image editor added up to four reference images for Nanobanana, Seedream, and Kontext. Generated URLs include references only for supported models, and the image API accepts image URLs separated by pipes or commas.\n\nNon-square width and height requests now send Nanobanana an aspect-ratio guide alongside any user reference images. Square requests skip the extra guide.\n\n`geminisearch` was added as an alias for `searchgpt`, and Gemini 2.5 Flash’s Vertex model ID was corrected. Referral-link insertion probability changed from 3% to 5%.",
+  "title": "Reference images reach the image editor",
+  "summary": "Reference images and better aspect-ratio guidance expanded image generation, while text model routing got a tidy-up.\n\nThe image editor now accepts up to four reference images for nanobanana, seedream, and kontext, adding them to generated URLs only for supported models. The image API also accepts reference-image URLs separated by pipes or commas. Image request spacing was corrected for nanobanana and seedream.\n\nNon-square width and height requests now give nanobanana aspect-ratio guidance alongside any user reference images. Square requests skip the extra guidance.\n\n`geminisearch` was added as an alias for `searchgpt`, and Gemini 2.5 Flash’s Vertex model ID was corrected for routing. The probability of adding referral links also changed from 3% to 5%.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,12 +23,12 @@
       "date": "2025-09-24"
     }
   ],
-  "generated_at": "2026-10-17T15:47:00.610111+00:00",
+  "generated_at": "2026-10-17T22:33:58.993512+00:00",
   "highlights": [
     {
       "emoji": "🎨",
       "title": "Reference images in the editor",
-      "text": "Add up to four reference images when generating with Nanobanana, Seedream, or Kontext. The image API also accepts reference-image URLs separated by pipes or commas. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "text": "Add up to four reference images when generating with nanobanana, seedream, or kontext in the image editor. [Try the playground](https://pollinations.ai/play).",
       "prs": [
         4156,
         4158
@@ -36,13 +36,32 @@
       "kind": "product"
     },
     {
-      "emoji": "✨",
-      "title": "Non-square Nanobanana images",
-      "text": "Request a non-square width and height with Nanobanana; the model now receives aspect-ratio guidance alongside any reference images you provide. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "emoji": "🔗",
+      "title": "Flexible reference image URLs",
+      "text": "Pass multiple reference-image URLs to supported image models using pipes or commas as separators. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        4156,
+        4158
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Nanobanana follows non-square dimensions",
+      "text": "Set a non-square width and height to give nanobanana aspect-ratio guidance, even when you also supply reference images. [Browse nanobanana](https://enter.pollinations.ai/models?q=nanobanana).",
       "prs": [
         4162
       ],
-      "kind": "api"
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Search with `geminisearch`",
+      "text": "Use `geminisearch` as another name for the `searchgpt` model in text requests. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        4164
+      ],
+      "kind": "model"
     }
   ],
   "changelog": []

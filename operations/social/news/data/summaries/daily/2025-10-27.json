@@ -2,8 +2,8 @@
   "date": "2025-10-27",
   "period_start": "2025-10-27",
   "period_end": "2025-10-27",
-  "title": "Shorter paths to text generation",
-  "summary": "Text generation got a simpler URL, publishable keys became easier to use, and Seedream 4.0 joined the image lineup.\n\nA new GET text endpoint accepts a prompt in the URL and an optional model parameter, defaulting to openai. Enter also added copyable publishable API keys and support for using them in GET text and image URLs; secret keys remain masked and use the Authorization header.\n\nByteDance ARK Seedream 4.0 was added for Nectar-tier image generation, with a configured maximum side length of 2048 pixels. The same change fixed authentication for publishable keys; a smaller update corrected provider labels for kontext and turbo.\n\nThe tier panel now displays updated daily Pollen amounts and explains refill timing and non-carryover. It also adds guidance for people whose tier differs between the older auth site and Enter. The Pollen FAQ now links to a vote on payment methods. The tier change updated displayed amounts, not the code that grants Pollen.",
+  "title": "Seedream joins the image models",
+  "summary": "Seedream, simpler text URLs, and copyable publishable keys led the day, with clearer tier information and four community projects added to the list.\n\nByteDance ARK Seedream 4.0 was added for Nectar-tier image generation, with a configured maximum side length of 2048 pixels. Image model metadata was also corrected for kontext and turbo, alongside an image-service start-script fix.\n\nA new GET text-generation endpoint accepts a prompt in the URL and an optional model parameter. Enter also added copyable publishable API keys, fixed their authentication, and added support for using them in GET text and image URLs via the `key` query parameter.\n\nThe tier panel now displays revised daily Pollen amounts for Seed, Flower, and Nectar and explains refill timing and carryover. It also adds guidance for users seeing different tiers across accounts. The balance area and FAQ gained a link to vote on payment methods.",
   "pr_count": 9,
   "prs": [
     {
@@ -43,12 +43,21 @@
       "date": "2025-10-27"
     }
   ],
-  "generated_at": "2026-10-17T15:50:23.118893+00:00",
+  "generated_at": "2026-10-17T22:35:10.590798+00:00",
   "highlights": [
     {
+      "emoji": "🎨",
+      "title": "Seedream 4.0 added",
+      "text": "Generate images with ByteDance ARK Seedream 4.0 on the Nectar tier, with a configured maximum side length of 2048 pixels. [Find Seedream](https://enter.pollinations.ai/models?q=seedream).",
+      "prs": [
+        4819
+      ],
+      "kind": "model"
+    },
+    {
       "emoji": "✨",
-      "title": "Text from a GET request",
-      "text": "Generate text by putting a prompt in a GET URL. An optional model parameter defaults to openai. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Text generation by URL",
+      "text": "Send a prompt to the new GET text-generation endpoint, with an optional `model` parameter when you want something other than the default. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         4806
       ],
@@ -56,23 +65,23 @@
     },
     {
       "emoji": "🔗",
-      "title": "Copyable publishable API keys",
-      "text": "Create a publishable key in Enter, copy it later, and use it in the `key` parameter of GET text and image requests. [Manage API keys](https://enter.pollinations.ai/keys).",
+      "title": "Copyable publishable keys",
+      "text": "Create a publishable API key in Enter, then return to the dashboard to view and copy it. [Manage API keys](https://enter.pollinations.ai/keys).",
       "prs": [
         4808,
-        4819,
-        4821
+        4819
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎨",
-      "title": "Seedream 4.0 image generation",
-      "text": "Generate images with ByteDance ARK Seedream 4.0 on the Nectar tier, with a configured maximum side length of 2048 pixels. [Find Seedream on Enter](https://enter.pollinations.ai/models?q=seedream).",
+      "emoji": "🔗",
+      "title": "Keys in GET URLs",
+      "text": "Authenticate GET text and image generation URLs with a publishable key in the `key` query parameter. Secret keys still require the Authorization header. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        4819
+        4821,
+        4829
       ],
-      "kind": "model"
+      "kind": "api"
     }
   ],
   "changelog": []

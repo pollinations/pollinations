@@ -2,9 +2,9 @@
   "date": "2026-02-27",
   "period_start": "2026-02-27",
   "period_end": "2026-02-27",
-  "title": "shipped seedream 5.0 lite and gemini 3.1 flash",
-  "summary": "models are faster today. also moved our pitch deck to slidev. if we have to explain the business, it's happening in markdown and getting committed to git",
-  "pr_count": 5,
+  "title": "Seedream 5 joins image generation",
+  "summary": "New image models from Seedream and Gemini, a Gemini Pro upgrade, and a bit of housekeeping for the project showcase.\n\nAdded the paid `seedream5` model for text-to-image and image-to-image generation, with support for up to 14 input images. The older Seedream names remain callable but no longer appear in the model list.\n\nAdded the paid `nanobanana-2` image model for text and image inputs, and moved `gemini-large` to Gemini 3.1 Pro Preview. The older Gemini 3 Pro names still point to their original model rather than quietly changing underneath existing requests.\n\nThe pitch page now contains a seven-slide Pollinations presentation instead of a coming-soon screen. A community catalog entry was also updated to reflect BotForgeX Laboratories’ web app, chatbot templates, and multimodal options.",
+  "pr_count": 4,
   "prs": [
     {
       "number": 8622,
@@ -12,10 +12,6 @@
     },
     {
       "number": 8634,
-      "date": "2026-02-27"
-    },
-    {
-      "number": 8648,
       "date": "2026-02-27"
     },
     {
@@ -27,21 +23,30 @@
       "date": "2026-02-27"
     }
   ],
-  "generated_at": "2026-02-28T06:07:32.604075+00:00",
+  "generated_at": "2026-10-17T22:41:57.153195+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Seedream 5.0",
-      "text": "New `seedream5` model added for image generation. It's lighter, newer, and available on the [Unified API](https://gen.pollinations.ai).",
+      "title": "Seedream 5 image generation",
+      "text": "Use `seedream5` for text-to-image or image-to-image generation with up to 14 input images. It’s a paid model. [Browse seedream5](https://enter.pollinations.ai/models?q=seedream5).",
       "prs": [
         8622
       ],
       "kind": "model"
     },
     {
-      "emoji": "🚀",
-      "title": "Gemini 3.1 Arrives",
-      "text": "Upgraded `gemini-large` to 3.1 Pro and added `nanobanana-2` (Gemini 3.1 Flash) for high-speed image generation.",
+      "emoji": "🎨",
+      "title": "Nano Banana 2",
+      "text": "Generate images from text or image inputs with `nanobanana-2`, backed by Gemini 3.1 Flash Image. It’s a paid model and also accepts the name `nanobanana2`. [Browse nanobanana-2](https://enter.pollinations.ai/models?q=nanobanana-2).",
+      "prs": [
+        8634
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Gemini Large gets 3.1 Pro",
+      "text": "`gemini-large` now routes to Gemini 3.1 Pro Preview, also available as `gemini-3.1-pro`. Existing Gemini 3 Pro model names still route to the older version. [Browse gemini-large](https://enter.pollinations.ai/models?q=gemini-large).",
       "prs": [
         8634
       ],

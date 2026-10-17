@@ -2,8 +2,8 @@
   "date": "2025-12-13",
   "period_start": "2025-12-13",
   "period_end": "2025-12-13",
-  "title": "Gemini chat gains built-in tools",
-  "summary": "Gemini gained built-in tools, while the community added a small ecosystem of storytelling, creative, learning, and coding projects.\n\nThe chat API now accepts Gemini tool types for code execution, Google Search, Maps, URL context, computer use, and file search alongside OpenAI-style function tools. The `gemini` model defaults to code execution, Search, and URL context when a request supplies no tools; explicitly supplied tools take precedence.\n\nThe community project listings added NIKKE roleplay with responsive Live2D characters, a no-code builder for choice-based games, D&D character sheets, illustrated and narrated story tools, a historical scene generator, and a Gorilla Tag mod menu with a Pollinations-powered assistant. Several PRs listed the same projects more than once; they represent distinct apps, not extra launches.\n\nNew community listings cover browser-based image studios, a Telegram art bot, a multi-style image generator, and a video editor for shorts and documentaries. Two WordPress plugins use Pollinations text and images for content workflows, including turning RSS items into posts.",
+  "title": "Gemini gained built-in tools",
+  "summary": "Gemini picked up built-in tools while the community catalog grew across stories, art, video, coding, and everyday utilities.\n\nThe chat API added support for Gemini’s code execution, Google Search, Google Maps, URL context, computer use, and file search tools alongside OpenAI-style function tools. Requests to `gemini` get code execution, Google Search, and URL context by default when no tools are supplied; explicit tool choices take precedence.\n\nThe community project listings added NIKKE roleplay with animated characters, illustrated story makers, a historical time-travel experience, and tools for building choice-based games and D&D characters. Two PRs each listed NIKKE and Kinexus; those are two projects, not four. A Gorilla Tag mod menu with a Pollinations-powered assistant also joined the games listings.\n\nNew community listings span browser-based image studios, a Telegram art bot, a multi-style image generator, and Viral Flow, which uses generated visuals in browser-based video production.",
   "pr_count": 24,
   "prs": [
     {
@@ -103,12 +103,12 @@
       "date": "2025-12-13"
     }
   ],
-  "generated_at": "2026-10-17T15:55:23.799135+00:00",
+  "generated_at": "2026-10-17T22:36:48.487067+00:00",
   "highlights": [
     {
       "emoji": "🤖",
       "title": "Gemini gets built-in tools",
-      "text": "Send Gemini built-in tools such as `code_execution`, `google_search`, and `url_context` through the chat API. With no tools specified, `gemini` uses those three by default. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "text": "Pass Gemini built-in tools such as `google_search`, `code_execution`, and `url_context` alongside function tools. Requests to `gemini` use those three by default when you supply no tools; explicit choices take precedence. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         5976
       ],

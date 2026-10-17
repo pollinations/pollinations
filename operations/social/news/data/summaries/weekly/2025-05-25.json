@@ -2,8 +2,8 @@
   "date": "2025-05-25",
   "period_start": "2025-05-18",
   "period_end": "2025-05-24",
-  "title": "GPT Image grew from generation to editing",
-  "summary": "Image generation grew into editing, MCP gained a proper authorization flow, and the model and community directories kept expanding.\n\nThe week’s biggest addition was `gptimage`: JPEG generation at up to 1024 pixels per side, followed by editing when a request includes an image. Requests gained low, medium, high and hd quality options, clearer failures, and consistent queue handling. Later fixes narrowed editing inputs: string inputs are fetched as URLs; data URIs, local file paths and direct Buffer inputs are not accepted.\n\nMCP authorization moved from session polling to OAuth 2.1, with PKCE, client registration and refresh tokens. The MCP package also fixed an ES module error when launched with `npx`.\n\nWebSim’s HTML generator gained a `model` query parameter, defaulting to `openai-large`, and now favors single-file output. By week’s end, `openai-large` routed to GPT-4.1 rather than GPT-4.1 Mini, and the `grok` listing pointed to Azure-hosted Grok-3 Mini with tool support. Text-stream changes also improved DeepSeek v3 reasoning output and OpenAI-compatible formatting.\n\nCommunity additions ranged from match-cut video and AI-generated shorts to codebase Q&A, website building, recipes, writing, puzzles, drawing and Telegram bots. Windows Walker brought voice and text commands to Windows actions. The Mirexa AI Chat listing was also clarified and deduplicated.",
+  "title": "GPT Image grew from a model into an editing workflow",
+  "summary": "Image generation grew into editing, while MCP authentication, text responses, and community tools got more capable.\n\n`gptimage` joined the image model list with JPEG output and a 1024-pixel maximum side length. It then gained editing when an image is supplied, plus low, medium, high, and hd quality settings. Follow-up changes made string editing inputs work as fetched URLs and made Azure errors easier to diagnose.\n\nMCP authentication moved from session polling to OAuth 2.1, with authorization-code exchange, refresh tokens, and dynamic client registration. The package’s `npx` entry was also corrected so its ES-module CLI starts the server directly.\n\nDeepSeek v3 can return reasoning content when its usual answer field is empty. OpenAI-compatible streams now format each SSE delta, including DeepSeek reasoning in `<think>` tags when an answer follows. Image authorization and generation errors became explicit rather than silently falling back, and the text server’s in-memory response cache was removed.\n\nAzure-hosted Grok-3 Mini joined as `grok` with tool support, and `openai-large` changed from GPT-4.1 Mini to GPT-4.1. WebSim’s HTML generator also gained a `model` query parameter and now favors single-file pages.",
   "pr_count": 22,
   "prs": [
     {
@@ -95,5 +95,5 @@
       "date": "2025-05-24"
     }
   ],
-  "generated_at": "2026-10-17T16:04:27.966518+00:00"
+  "generated_at": "2026-10-17T23:24:32.758295+00:00"
 }

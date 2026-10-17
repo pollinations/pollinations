@@ -3,7 +3,7 @@
   "period_start": "2026-01-28",
   "period_end": "2026-01-28",
   "title": "Kimi moves to K2.5",
-  "summary": "Kimi gained image input and a larger context window; vision errors got clearer, and klein-large got a steadier footing.\n\nThe `kimi` endpoint now routes to Kimi K2.5, adding image input and a 256,000-token context window. New aliases include `kimi-k2.5`, `kimi-k2p5`, and `kimi-large`.\n\nFailed image URLs in Claude and Gemini vision requests now return client errors instead of generic 500s, with clearer messages for missing images, access restrictions, oversized files, and other fetch failures.\n\nPurchase options and payment methods are clearer, the beta-Pollen explanation includes examples, and API-key delete controls stay visible while the table scrolls.",
+  "summary": "Kimi moves to K2.5, vision errors become easier to diagnose, and `klein-large` gets a guardrail against GPU memory trouble.\n\nThe `kimi` route was upgraded to Kimi K2.5, with text and image input, text output, and a 256,000-token context window. New aliases include `kimi-k2.5`, `kimi-k2p5`, and `kimi-large`; the older `kimi-k2` and `kimi-k2-thinking` aliases were removed.\n\nClaude and Gemini vision requests now return actionable client errors when an image URL cannot be fetched, rather than a generic 500. Separately, `klein-large` concurrency was reduced per container to avoid GPU out-of-memory errors, while the container limit was raised to preserve capacity.\n\nPurchase options gained clearer labels and payment-method cues. The balance explanation now includes purchase examples, and API-key delete controls remain visible while the table scrolls.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,12 +23,12 @@
       "date": "2026-01-28"
     }
   ],
-  "generated_at": "2026-10-17T16:01:26.721950+00:00",
+  "generated_at": "2026-10-17T22:38:47.332858+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Kimi gets image input",
-      "text": "Send text and images to `kimi`, now backed by Kimi K2.5 with a 256,000-token context window. [Browse the model](https://enter.pollinations.ai/models?q=kimi).",
+      "title": "Kimi moves to K2.5",
+      "text": "Use `kimi` with text or image inputs and a 256,000-token context window. The route now uses Kimi K2.5. [Browse the model](https://enter.pollinations.ai/models?q=kimi).",
       "prs": [
         7728
       ],

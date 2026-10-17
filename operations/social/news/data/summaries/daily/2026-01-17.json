@@ -2,8 +2,8 @@
   "date": "2026-01-17",
   "period_start": "2026-01-17",
   "period_end": "2026-01-17",
-  "title": "Klein adds image generation and editing",
-  "summary": "Two models joined the garden, chat gained Bring Your Own Pollen, and the model monitor stopped mistaking slow for broken.\n\nFLUX.2 [klein] 4B was added for text-to-image generation and editing with reference images. Its primary model ID is `klein`, with `flux-klein` retained as an alias.\n\nThe community-built `nomnom` model was added for search, scraping, and crawling in Alpha. `gemini-scrape` and `web-research` remain aliases, and configured token-limit overrides were removed across several models.\n\nCommunity contributor CloudCompile added Bring Your Own Pollen to chat.pollinations.ai. People can connect their own key for model listings and chat, image, and video requests, see their Pollen balance, then disconnect to return to the default key. Bloom Studio’s catalog listing was also updated to point to its current site.",
+  "title": "Chat can use your own Pollen",
+  "summary": "Bring your own Pollen to chat, make or edit images with `klein`, and try Alpha web research with `nomnom`.\n\nCommunity contributor CloudCompile added Bring Your Own Pollen to chat.pollinations.ai. Connect through Enter to use your own API key for model listings, chat, images, and video; the sidebar shows your Pollen balance, and you can disconnect to return to the default key.\n\nFLUX.2 [klein] 4B was added for text-to-image generation and editing with reference images. Its primary ID is `klein`, with `flux-klein` retained as an alias.\n\nThe community model `nomnom` was added for web search, scraping, and crawling, with its capabilities marked Alpha. `gemini-scrape` and `web-research` remain aliases; the same work removed configured token-limit defaults and overrides across several models.",
   "pr_count": 8,
   "prs": [
     {
@@ -39,12 +39,21 @@
       "date": "2026-01-17"
     }
   ],
-  "generated_at": "2026-10-17T15:59:48.433220+00:00",
+  "generated_at": "2026-10-17T22:38:22.129664+00:00",
   "highlights": [
     {
+      "emoji": "🔗",
+      "title": "Bring Pollen to chat",
+      "text": "Connect your Enter account to use your own API key for chat, images, and video, and check your Pollen balance in the sidebar. Disconnect to return to the default key. [Open community chat](https://chat.pollinations.ai).",
+      "prs": [
+        7311
+      ],
+      "kind": "product"
+    },
+    {
       "emoji": "🎨",
-      "title": "Generate and edit with Klein",
-      "text": "Use `klein` to generate images from text or edit images with references. `flux-klein` remains an alias. [Browse Klein](https://enter.pollinations.ai/models?q=klein).",
+      "title": "Meet FLUX Klein",
+      "text": "Generate images or edit them with reference images using `klein`. The `flux-klein` alias works too. [Explore the model](https://enter.pollinations.ai/models?q=klein).",
       "prs": [
         7399,
         7402
@@ -54,21 +63,12 @@
     {
       "emoji": "🤖",
       "title": "NomNom researches the web",
-      "text": "Use the Alpha `nomnom` text model for web search, scraping, and crawling. [Browse NomNom](https://enter.pollinations.ai/models?q=nomnom).",
+      "text": "Try the Alpha `nomnom` text model for web search, scraping, and crawling. [Explore the model](https://enter.pollinations.ai/models?q=nomnom).",
       "prs": [
         7360,
         7403
       ],
       "kind": "model"
-    },
-    {
-      "emoji": "💡",
-      "title": "Bring your Pollen to chat",
-      "text": "Connect your own API key in chat.pollinations.ai for model listings, chat, image, and video requests. See your Pollen balance in the sidebar, and disconnect whenever you want to return to the default key. [Try community chat](https://chat.pollinations.ai).",
-      "prs": [
-        7311
-      ],
-      "kind": "product"
     }
   ],
   "changelog": []

@@ -2,8 +2,8 @@
   "date": "2025-10-28",
   "period_start": "2025-10-28",
   "period_end": "2025-10-28",
-  "title": "Subscription panel shows what’s actually active",
-  "summary": "Enter got a clearer subscription panel and a home for its terms and privacy documents, with some quieter web plumbing alongside.\n\nEnter now separates an assigned tier from an active Polar subscription. The panel shows the active product and daily Pollen, offers activation when a tier is assigned but no subscription is active, and counts down to refills in 24-hour cycles from subscription start.\n\nEnter gained a /terms page with separate Terms of Service and Privacy Policy documents. The dashboard links to it, and the main site’s footer now points there too.\n\nEnter’s Pollen FAQ now renders from Markdown. Image and text upstream URLs were updated to their origin hosts, image proxy error logging was added, and a missing comma in the main site’s creative projects list was fixed.",
+  "title": "Subscription status is clearer in Enter",
+  "summary": "A maintenance-minded day: clearer subscription details, a home for terms and privacy, and some quieter plumbing fixes.\n\nEnter’s tier panel now shows the active Polar subscription’s product name and daily Pollen, or says when no subscription is active. Users with an assigned tier but no active subscription get an activation button, and the refill countdown follows 24-hour cycles from the subscription start.\n\nEnter now has a /terms page with Terms of Service and Privacy Policy documents. The dashboard links to it, the main site’s footer points there, and Enter’s Pollen FAQ renders directly from Markdown.\n\nEnter’s image and text upstream URLs now use their origin hosts, and the image proxy logs error responses. The tier panel’s badges were restyled, and a missing comma in the main site’s creative projects list was fixed.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-10-28"
     }
   ],
-  "generated_at": "2026-10-17T15:50:12.294226+00:00",
+  "generated_at": "2026-10-17T22:35:01.720016+00:00",
   "highlights": [],
   "changelog": []
 }

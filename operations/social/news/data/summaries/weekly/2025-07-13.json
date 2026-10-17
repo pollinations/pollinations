@@ -2,8 +2,8 @@
   "date": "2025-07-13",
   "period_start": "2025-07-06",
   "period_end": "2025-07-12",
-  "title": "More things to make, play, and learn from",
-  "summary": "The community showcase grew while its links, credits, and documentation got a careful trim.\n\nVOID.AI joined the Chat list; PairFusion and CraftUI appeared in the refreshed project tables; and AIStorium, AI Word Search, and Prompt Explorer joined the showcase. The additions range from coding help to generated stories, printable puzzles, and prompt exploration.\n\nProject listings received corrected credits and repository links, working demo links replaced some dead ends, and outdated entries were removed. The toai.chat listing now credits @Veallym0n and points to the right repository; the README and PROJECTS.md tables were refreshed alongside the cleanup.\n\nThe README gained an example for launching the Pollinations MCP package from an MCP client, and the Open Web UI tutorial now points to the intended guide. The README’s existing CLI example still has a Markdown code-fence error to fix.",
+  "title": "The project showcase got a thorough cleanup",
+  "summary": "The community project garden grew a few new apps and got its paths cleared: better listings, fewer dead links, and more useful setup docs.\n\nAcross the week, project listings were corrected, outdated entries and dead links were removed, and the README and project tables were refreshed. toai.chat now has the right author credit, repository, and description without an invalid website link; Anime Character Generator points to its working app page. Link-checking scripts were organized to make the next round of gardening easier.\n\nVOID.AI joined the chat projects list as an AI mentor for coding, writing, and everyday questions. AIStorium and AI Word Search joined Games, while Prompt Explorer joined Learn. Refreshed tables also surfaced PairFusion and CraftUI.\n\nThe README gained an example for launching the Pollinations MCP server from a client with npx, and the Open Web UI tutorial link was updated to the current guide. The MCP section still has a Markdown fence to fix.",
   "pr_count": 12,
   "prs": [
     {
@@ -55,5 +55,5 @@
       "date": "2025-07-12"
     }
   ],
-  "generated_at": "2026-10-17T16:05:15.903842+00:00"
+  "generated_at": "2026-10-17T23:24:55.257548+00:00"
 }

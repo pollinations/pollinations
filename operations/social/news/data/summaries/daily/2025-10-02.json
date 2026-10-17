@@ -2,8 +2,8 @@
   "date": "2025-10-02",
   "period_start": "2025-10-02",
   "period_end": "2025-10-02",
-  "title": "Community projects stretch beyond image generators",
-  "summary": "A community harvest brought image tools, agents, comics, diagrams, and travel helpers to the showcase, plus a clearer image-model response header.\n\nFour additions to the showcase take different routes through Pollinations: Chaos Canvas turns players’ words into surreal images, EasyGen makes exportable diagrams, ExodusAI brings chat and visual tools to WhatsApp, and Ai Studio adds model and dimension controls for image creation.\n\nThe showcase gained browser, mobile-friendly, and desktop image tools alongside chat apps including PrisimAI and Petfuse. The additions include an Arabic coding and IT education platform, Hythme AI. Imagine Draw AI was listed in two batches; it is one project, not two.\n\nAnime Comic Movie assembles generated scenes from character and location images, while MultiAgent coordinates specialized agents for research and other tasks. Other additions use Pollinations for travel insights, prompt organization, and chat with document and image understanding.",
+  "title": "More ways to make images",
+  "summary": "A community-heavy day brought more creative tools to the showcase and clearer model names in image responses.\n\nThe community showcase added browser and desktop image generators, including tools with model, seed, dimension, and style controls. It also added an Arabic coding-education platform and more apps combining chat with image generation.\n\nOther additions range from an agent toolkit and an installable chat app to a collaborative image game, a diagram maker, a WhatsApp assistant, and tools for travel insights and organizing prompts. Apparently there are quite a few things to build besides another image prompt box.\n\nThe `x-model-used` response header now reports registry model names instead of internal provider paths for ComfyUI, Cloudflare, and Kontext results. Azure GPT Image responses can now report `gptimage` too.",
   "pr_count": 8,
   "prs": [
     {
@@ -39,7 +39,7 @@
       "date": "2025-10-02"
     }
   ],
-  "generated_at": "2026-10-17T15:47:51.053787+00:00",
+  "generated_at": "2026-10-17T22:34:17.015641+00:00",
   "highlights": [],
   "changelog": []
 }

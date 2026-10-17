@@ -2,8 +2,8 @@
   "date": "2025-07-30",
   "period_start": "2025-07-30",
   "period_end": "2025-07-30",
-  "title": "Kontext gets a second image engine",
-  "summary": "One PR gave `kontext` a BPAIGen-first fallback path, added image guidance control, and changed where two text aliases point.\n\nThe existing `kontext` model now tries BPAIGen first and falls back to Kontext if that fails. Its configured maximum side length increased from 640 to 1216 pixels; the `?model=kontext` name and Seed tier requirement stay the same.\n\nImage requests now accept an optional `guidance_scale` parameter and report which service is generating the image. The same PR removed `gptimage` from the image model list and made invalid seeds fall back to 42.\n\nThe `openai` alias now maps to `gpt-4.1-nano-roblox`, while `openai-large` maps to `azure-gpt-4.1`. Both previously mapped to `gpt-4o-mini`.",
+  "title": "Kontext gets a new route to larger images",
+  "summary": "Kontext gained a BPAIGen-first image route, larger output settings and a new guidance control, while two text aliases changed backends.\n\nThe existing `kontext` model now tries BPAIGen first and falls back to Kontext if that fails. Its configured maximum side length increased from 640 to 1216 pixels, while the `?model=kontext` name and Seed tier requirement stay the same.\n\nImage requests gained an optional `guidance_scale` parameter and report which service is generating the image. Invalid seeds now fall back to 42; `gptimage` was removed from the image model list.\n\nThe `openai` alias now maps to `gpt-4.1-nano-roblox`, and `openai-large` maps to `azure-gpt-4.1`. Both previously mapped to `gpt-4o-mini`.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,12 +11,12 @@
       "date": "2025-07-30"
     }
   ],
-  "generated_at": "2026-10-17T15:44:33.300329+00:00",
+  "generated_at": "2026-10-17T22:33:02.360198+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "More room for Kontext",
-      "text": "`kontext` now tries BPAIGen first, with Kontext as a fallback, and its configured maximum side length has increased to 1216 pixels. [Browse the model](https://enter.pollinations.ai/models?q=kontext).",
+      "title": "Kontext tries a new route",
+      "text": "Generate images with `kontext` using a BPAIGen-first route that falls back to Kontext. Its configured maximum side length is now 1216 pixels. [Explore Kontext](https://enter.pollinations.ai/models?q=kontext).",
       "prs": [
         3364
       ],
@@ -25,11 +25,20 @@
     {
       "emoji": "🎯",
       "title": "Adjust image guidance",
-      "text": "Image requests now accept an optional `guidance_scale` parameter. [See the API docs](https://gen.pollinations.ai/docs).",
+      "text": "Image requests now accept an optional `guidance_scale` parameter for more control over generation. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         3364
       ],
       "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Text aliases change models",
+      "text": "`openai` now maps to `gpt-4.1-nano-roblox`, while `openai-large` maps to `azure-gpt-4.1`. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        3364
+      ],
+      "kind": "model"
     }
   ],
   "changelog": []

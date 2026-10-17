@@ -2,8 +2,8 @@
   "date": "2025-06-15",
   "period_start": "2025-06-08",
   "period_end": "2025-06-14",
-  "title": "Model names got a tune-up",
-  "summary": "The text API gained clearer model routes and more ways to use them, while the community directory filled out with new things people built.\n\nThe `llama` alias now selects Llama 4 Scout 17B instead of Llama 3.3 70B, `openai-fast` points to GPT-4.1 nano, and `searchgpt` received a routing fix for GPT-4o mini search preview. Model definitions also gained tier and community metadata and provider-model aliases; `openai-roblox` was removed from the text-model list.\n\nThe text API added `openai-reasoning` for o3, then added image input alongside text. Visual reasoning can now use the same model listing.\n\nThe queue cap for token-authenticated requests rose from 3 to 20 outside the seed tier. Seed remains capped at 3, and Nectar bypasses the queue only when token-authenticated.\n\nFive community projects joined the lists: DynaSpark for Python-based text, image, and audio generation; StoryBolt for illustrated stories; Coloring AI for sketches and coloring pages; Time Travel Selfie Portal for historical portraits and biographies; and JSON Pollinations API, a Deno Deploy wrapper for JSON responses.",
+  "title": "More ways to choose a text model",
+  "summary": "This week sharpened the text model lineup, gave eligible requests more queue room, and brought more community-built tools into the directory.\n\nThe `llama` name now points to Llama 4 Scout 17B instead of Llama 3.3 70B. `openai-reasoning` added O3 with image input, while `searchgpt` added GPT-4o mini search preview and received a routing correction. GPT-4.1 and Qwen 2.5 Coder aliases were added, `openai-fast` moved to a GPT-4.1-nano alias, and `openai-roblox` was removed.\n\nText model definitions gained tier and community metadata to help clients choose a model. The queue cap for token-authenticated, non-seed tiers rose from 3 to 20; Seed remains at 3, and Nectar bypasses the queue only for token-authenticated requests.\n\nFive community projects were added across Hack & Build and Creative Projects: DynaSpark API, a Deno Deploy JSON wrapper, StoryBolt’s illustrated stories, Time Travel Selfie Portal, and Coloring AI. They put the same building blocks to work in rather different directions.",
   "pr_count": 10,
   "prs": [
     {
@@ -47,5 +47,5 @@
       "date": "2025-06-13"
     }
   ],
-  "generated_at": "2026-10-17T16:04:47.794023+00:00"
+  "generated_at": "2026-10-17T23:24:36.274034+00:00"
 }

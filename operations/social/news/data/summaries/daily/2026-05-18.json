@@ -2,10 +2,30 @@
   "date": "2026-05-18",
   "period_start": "2026-05-18",
   "period_end": "2026-05-18",
-  "title": "Letting long-running jobs actually finish",
-  "summary": "A day of tuning the engine: removing artificial timeouts for long-running jobs and adding better validation for vision models.\n\nWe stripped out some artificial timeouts that were killing heavy requests prematurely. OpenAI and Portkey endpoints no longer have arbitrary 90s or 300s caps, and AssemblyAI audio transcriptions now get 240 seconds to finish instead of timing out at the 2-minute mark.\n\nIf you send an image to a text-only model, the API now immediately rejects it with a clear validation error. Better to fail fast locally than pass it upstream and let it fail in mysterious ways.",
-  "pr_count": 3,
+  "title": "Image inputs now match model capabilities",
+  "summary": "A reliability-heavy day: clearer image-input rules, more room for slow requests, sturdier usage tracking, and error handlers that do not become the error.\n\nChat requests with images now get a clear 400 error when the selected model cannot accept them. Registry corrections also mark Perplexity Fast, Perplexity Reasoning, and Nova as image-capable, while removing image support claims from the OpenAI audio models.\n\nThe gateway no longer cuts off generic OpenAI and Portkey requests, image fetching for text requests, or Azure Flux Kontext safety checks at its former fixed time limits. AssemblyAI transcription polling now allows up to four minutes instead of two.\n\nModel pricing now derives Pollen charges from one cost rate per model, preserving existing rates through overrides while changing Gemini Fast input-audio and Scribe hourly charges. Enter rounds displayed per-million prices to the nearest cent. Usage reports containing an unconfigured rate no longer stop the remaining rated usage from being tracked and charged.",
+  "pr_count": 12,
   "prs": [
+    {
+      "number": 10984,
+      "date": "2026-05-18"
+    },
+    {
+      "number": 11096,
+      "date": "2026-05-18"
+    },
+    {
+      "number": 11097,
+      "date": "2026-05-18"
+    },
+    {
+      "number": 11108,
+      "date": "2026-05-18"
+    },
+    {
+      "number": 11111,
+      "date": "2026-05-18"
+    },
     {
       "number": 11113,
       "date": "2026-05-18"
@@ -17,20 +37,25 @@
     {
       "number": 11139,
       "date": "2026-05-18"
-    }
-  ],
-  "generated_at": "2026-05-19T07:08:41.874282+00:00",
-  "highlights": [
+    },
     {
-      "emoji": "✨",
-      "title": "Uncapped Generations",
-      "text": "We removed the artificial timeouts on our text and image endpoints, and doubled the timeout for audio transcriptions. Your massive, long-running requests will actually finish now instead of dying at the 90-second mark. Let the models cook via the [Unified API](https://gen.pollinations.ai).",
-      "prs": [
-        11113,
-        11132
-      ],
-      "kind": "api"
+      "number": 11141,
+      "date": "2026-05-18"
+    },
+    {
+      "number": 11147,
+      "date": "2026-05-18"
+    },
+    {
+      "number": 11150,
+      "date": "2026-05-18"
+    },
+    {
+      "number": 11152,
+      "date": "2026-05-18"
     }
   ],
+  "generated_at": "2026-10-17T22:52:02.061759+00:00",
+  "highlights": [],
   "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2026-01-20",
   "period_start": "2026-01-20",
   "period_end": "2026-01-20",
-  "title": "Clearer limits for z-image output",
-  "summary": "z-image got explicit output limits, billing errors got their own status code, and support links got tidied up.\n\nUpdated z-image’s resolution math for 2× SPAN upscaling. Requests can specify outputs up to 2,359,296 pixels in total, with each dimension between 256 and 4096 pixels. Oversized requests are rejected instead of silently scaled down.\n\nInsufficient Pollen balance now returns HTTP 402, alongside exhausted API key budgets; HTTP 403 is reserved for access denied. Model Monitor also separates billing and access-denied counts and excludes 402 responses from health calculations.\n\nRemoved donation links from the README and funding configuration. The support section now directs readers to Enter for an API key, and a legacy text-model wrapper no longer turns model errors into donation requests.",
+  "title": "z-image requests keep their intended dimensions",
+  "summary": "Image dimensions and API errors got less surprising, while old donation paths were cleared out.\n\nUpdated z-image’s resolution math for 2× SPAN upscaling. Requests can specify dimensions from 256 to 4096 pixels, up to 2,359,296 pixels total. Oversized requests are now rejected instead of silently scaled down; outputs above the native generation limit are upscaled.\n\nInsufficient Pollen and exhausted API key budgets now return HTTP 402, while 403 is reserved for access denied, including model permissions. Enter’s error definitions and API docs clarify the distinction, and Model Monitor reports billing responses separately without counting them against gateway health.\n\nThe README’s support section now directs readers to get an API key instead of using donation links. The related funding files and a legacy text-model wrapper that turned errors into donation requests were also removed.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2026-01-20"
     }
   ],
-  "generated_at": "2026-10-17T16:00:10.084350+00:00",
+  "generated_at": "2026-10-17T22:38:30.516130+00:00",
   "highlights": [],
   "changelog": []
 }

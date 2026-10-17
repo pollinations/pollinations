@@ -2,8 +2,8 @@
   "date": "2026-03-12",
   "period_start": "2026-03-12",
   "period_end": "2026-03-12",
-  "title": "The front page caught up with the community",
-  "summary": "A quiet garden day: the README is freshly stocked with community news and apps.\n\nThe README received its daily automated refresh, keeping recent news and community apps visible where new visitors land first.",
+  "title": "README news refreshed",
+  "summary": "A quiet documentation day: the README caught up with GPT image model news.\n\nThe README now includes a March 11 news item about a region change for `gpt-image-1-mini` and `gpt-image-1.5` intended to avoid content-filter blocks on the Unified API. An older `pollinations-ui` news item was removed from the list. This PR updated documentation, not the models themselves.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2026-03-12"
     }
   ],
-  "generated_at": "2026-09-04T11:51:11.456747+00:00",
+  "generated_at": "2026-10-17T22:43:26.338214+00:00",
   "highlights": [],
   "changelog": []
 }

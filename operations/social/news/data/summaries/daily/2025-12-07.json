@@ -3,7 +3,7 @@
   "period_start": "2025-12-07",
   "period_end": "2025-12-07",
   "title": "Model health gets a dashboard",
-  "summary": "A model-health dashboard joined the garden, Flux stopped trading steps for concurrency, and G4F projects got clearer signposts.\n\nElliotEtag added Model Monitor for image and text models, with health states, sortable request and error metrics, latency trends, and recent-error filtering.\n\nFlux generation now uses four steps for every request instead of reducing the step count as concurrency rises.\n\nThe project lists now include gpt4free and its Python and JavaScript SDKs. Chat-project listings point to G4F Chat UI and note its image and video generation capabilities.",
+  "summary": "A model-health dashboard joined the community projects, while Flux stopped trading image quality for concurrency.\n\nModel Monitor was added for image and text models, with health states, sortable metrics, sparklines, recent errors, and five-minute views of request counts, success rates, and P50/P95 latency. It refreshes every 15 seconds.\n\nFlux generation now uses four steps for every request instead of cutting steps as concurrency rises, keeping output quality consistent when traffic picks up.\n\nProject listings now include gpt4free and its Python and JavaScript SDKs. The chat-project listing points to G4F Chat UI and notes its image and video generation capabilities.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,12 +19,12 @@
       "date": "2025-12-07"
     }
   ],
-  "generated_at": "2026-10-17T15:54:22.456428+00:00",
+  "generated_at": "2026-10-17T22:36:26.490352+00:00",
   "highlights": [
     {
       "emoji": "📱",
       "title": "Watch model health",
-      "text": "Check image and text model health, request success rates, errors, and latency trends in Model Monitor. [Open Model Monitor](https://model-monitor.pollinations.ai).",
+      "text": "Explore image and text model health, request trends, success rates, latency, and recent errors in Model Monitor. [Open Model Monitor](https://model-monitor.pollinations.ai).",
       "prs": [
         5718
       ],

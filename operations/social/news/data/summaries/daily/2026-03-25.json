@@ -2,16 +2,12 @@
   "date": "2026-03-25",
   "period_start": "2026-03-25",
   "period_end": "2026-03-25",
-  "title": "Pollen credits now refill hourly",
-  "summary": "Hourly Pollen refills, Grok image-to-video support, and a massive wave of nine new community apps hitting the showcase.\n\nWe moved all tiers from a single daily drop to hourly Pollen refills. If you burn through your allocation experimenting, you no longer have to wait until tomorrow to keep building. The backend just quietly tops you up every hour.\n\nThe grok-video-pro model integration now properly supports image inputs. We wired it up and fixed a parameter naming mismatch with xAI's docs, so you can now pass a starting image URL alongside your text prompt to guide the video generation.\n\nA massive day for the community showcase. We merged nine new projects built on the infrastructure, including a PowerShell AI integration, voice-driven Unity NPCs, an Apple Shortcut agent, an AI dream journal, and tools for Excel formulas, Anki flashcards, and interior design.",
+  "title": "Image-to-video input corrected for grok-video-pro",
+  "summary": "Image-to-video input got corrected, nine community projects joined the catalog, and account upgrades stopped depending on GitHub usernames.\n\nTwo fixes updated `grok-video-pro` to accept image input and send the first supplied image using the `image` parameter expected by xAI.\n\nNew listings range from an Anki deck builder and a room-design preview tool to a PowerShell interface for image, text, and audio generation. The catalog also lost 473 duplicate old-format rows, retained five apps found only in that format, and regained its table headers.\n\nSpore-to-Seed upgrade checks now use GitHub IDs, so a username change no longer interrupts them. Public-commit scoring now looks back 90 days rather than a year, and the dashboard tooltip reflects the new window. The Keys panel also gained an explanation of App Keys and bringing your own Pollinations account.",
   "pr_count": 17,
   "prs": [
     {
       "number": 9538,
-      "date": "2026-03-25"
-    },
-    {
-      "number": 9540,
       "date": "2026-03-25"
     },
     {
@@ -27,7 +23,15 @@
       "date": "2026-03-25"
     },
     {
-      "number": 9562,
+      "number": 9550,
+      "date": "2026-03-25"
+    },
+    {
+      "number": 9554,
+      "date": "2026-03-25"
+    },
+    {
+      "number": 9555,
       "date": "2026-03-25"
     },
     {
@@ -69,51 +73,9 @@
     {
       "number": 9585,
       "date": "2026-03-25"
-    },
-    {
-      "number": 9587,
-      "date": "2026-03-25"
     }
   ],
-  "generated_at": "2026-03-26T06:23:31.861505+00:00",
-  "highlights": [
-    {
-      "emoji": "🎬",
-      "title": "Grok gets the picture",
-      "text": "You can now pass an initial image URL to `grok-video-pro` to guide video generation. Image-to-video via xAI is officially live.",
-      "prs": [
-        9544,
-        9545
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "💻",
-      "title": "PowerShell gets pollinated",
-      "text": "Generate AI content directly from your Windows command line with the new PollinationsAiPS module. [View repo](https://github.com/BananaAcid/PollinationsAiPS/)",
-      "prs": [
-        9572
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎮",
-      "title": "Game engines can talk",
-      "text": "'Talking with Unity' brings our voice AI, speech recognition, and text-to-speech directly into Unity projects. [Try it](https://www.ai-ministries.com/apps/talking-unity/)",
-      "prs": [
-        9567
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "📱",
-      "title": "Native iOS multitasking",
-      "text": "Vector AI Agent is a free Apple Shortcut that routes requests across multiple models directly from your Mac or iPhone. [Try it](https://routinehub.co/shortcut/24957/)",
-      "prs": [
-        9575
-      ],
-      "kind": "app"
-    }
-  ],
+  "generated_at": "2026-10-17T22:45:17.837809+00:00",
+  "highlights": [],
   "changelog": []
 }

@@ -3,7 +3,7 @@
   "period_start": "2025-12-31",
   "period_end": "2025-12-31",
   "title": "Pollen balances now separate tier grants from packs",
-  "summary": "Two precise fixes: Pollen balances account for tier resets, and Gemini 3 Flash fast mode uses a zero-token thinking budget.\n\nTier grants and purchased packs now have separate balances, so daily tier resets do not distort the displayed total. Billable requests use the tier balance first, and Enter’s dashboard reads both balances from the new authenticated balance endpoint.\n\nRequests to disable thinking for Gemini 3 Flash now send a zero-token thinking budget instead of selecting minimal thinking. Gemini 2.5 and Gemini 3 Pro keep their existing model-specific settings.",
+  "summary": "Two fixes closed the year: Pollen balances now distinguish tier grants from packs, and Gemini 3 Flash fast mode uses a zero-token thinking budget.\n\nBalance tracking now keeps tier grants and purchased packs separate, so daily tier resets do not throw off the total. Billable requests draw from the tier balance before the pack balance.\n\nAn authenticated balance endpoint returns both balances, their total, and the last tier-grant time. Enter’s dashboard now uses it for the balance display.\n\nRequests to disable thinking now send a zero-token thinking budget instead of a setting that only selected minimal thinking. Gemini 2.5 and 3 Pro keep their existing model-specific behavior.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-12-31"
     }
   ],
-  "generated_at": "2026-10-17T15:57:20.183110+00:00",
+  "generated_at": "2026-10-17T22:37:33.564001+00:00",
   "highlights": [],
   "changelog": []
 }

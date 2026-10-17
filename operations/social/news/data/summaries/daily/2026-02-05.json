@@ -2,8 +2,8 @@
   "date": "2026-02-05",
   "period_start": "2026-02-05",
   "period_end": "2026-02-05",
-  "title": "open source is built by people, not just code",
-  "summary": "🌸 prepping for Google Summer of Code to welcome the next wave of builders. docs updated, mentorship ready. come ship real AI tools with us. 🐝💻",
+  "title": "A clearer path for GSoC contributors",
+  "summary": "A little GSoC housekeeping: clearer application guidance, corrected mentor details and a chatbot adjustment.\n\nThe GSoC 2026 README and contributor guide now point applicants to project ideas, mentors, proposal guidance and the official application website. The guide also lists the March 16 application opening and May 25 coding start.\n\nThe GSoC timeline now points to the February 19 accepted-organizations announcement, and a mentor’s contact address was corrected in the public listing.\n\nThe GSoC site’s chatbot now requests `gemini-fast` instead of `openai` and shows a processing message while it responds.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,17 +15,7 @@
       "date": "2026-02-05"
     }
   ],
-  "generated_at": "2026-03-18T19:58:13.604901+00:00",
-  "highlights": [
-    {
-      "emoji": "💎",
-      "title": "Paid Models Update",
-      "text": "`claude`, `grok`, `kontext`, `seedream`, and `seedance-pro` are moving to paid-only.",
-      "prs": [
-        7986
-      ],
-      "kind": "model"
-    }
-  ],
+  "generated_at": "2026-10-17T22:39:19.345123+00:00",
+  "highlights": [],
   "changelog": []
 }

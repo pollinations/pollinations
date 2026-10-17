@@ -2,9 +2,9 @@
   "date": "2026-02-15",
   "period_start": "2026-02-15",
   "period_end": "2026-02-15",
-  "title": "polly-api is live",
-  "summary": "🚀 drop-in OpenAI compatibility means you can run our open models with your existing stack. zero friction—just change the base URL. also shipped: Qwen3Guard 8B safety + fixed grok video ratios. open source moves fast. 🐝✨",
-  "pr_count": 6,
+  "title": "A more useful app showcase",
+  "summary": "The app garden got easier to browse, Polly gained an API interface, and a new moderation model joined the lineup.\n\nThe showcase gained fuller descriptions, BYOP and New filters, and badges for BYOP and Trending apps. Daily request counts now help sort the catalog. Two community additions show the range: a Discord anti-raid bot and a voice-driven Roblox game.\n\nA standalone service now exposes Polly through `POST /v1/chat/completions`, accepting text and image messages and running its tool-calling loop before returning a final response. It also provides model and health endpoints; streaming is not supported.\n\nThe team added `qwen-safety`, based on Qwen3Guard-Gen-8B, with the alias `qwen3guard-gen-8b`. The model table also shows available price badges when other price fields are missing.",
+  "pr_count": 7,
   "prs": [
     {
       "number": 7978,
@@ -16,6 +16,10 @@
     },
     {
       "number": 8248,
+      "date": "2026-02-15"
+    },
+    {
+      "number": 8257,
       "date": "2026-02-15"
     },
     {
@@ -31,12 +35,21 @@
       "date": "2026-02-15"
     }
   ],
-  "generated_at": "2026-02-16T06:23:03.082727+00:00",
+  "generated_at": "2026-10-17T22:40:22.056923+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "Polly API",
-      "text": "Access Polly's web research and coding skills via a new OpenAI-compatible endpoint. Check the [API Docs](https://enter.pollinations.ai/api/docs).",
+      "emoji": "✨",
+      "title": "Find your next app",
+      "text": "Browse fuller app descriptions, filter for New or Bring Your Own Pollen apps, and spot Trending apps by badge. [Explore the showcase](https://pollinations.ai).",
+      "prs": [
+        8248
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Polly gets an API",
+      "text": "A standalone OpenAI-compatible service lets clients send text or image messages to Polly through `POST /v1/chat/completions` and receive a final answer after its tool calls. Streaming is not supported.",
       "prs": [
         8234
       ],
@@ -44,31 +57,12 @@
     },
     {
       "emoji": "🛡️",
-      "title": "New Safety Model",
-      "text": "Qwen3Guard-8B is now available via the API for fast content moderation and safety classification.",
+      "title": "Qwen3Guard text moderation",
+      "text": "Use `qwen-safety`, based on Qwen3Guard-Gen-8B, for text moderation. It also accepts the alias `qwen3guard-gen-8b`. [Browse the model](https://enter.pollinations.ai/models?q=qwen-safety).",
       "prs": [
         8279
       ],
       "kind": "model"
-    },
-    {
-      "emoji": "✨",
-      "title": "Showcase Upgrade",
-      "text": "Explore the redesigned [App Showcase](https://hello.pollinations.ai) with AI-enhanced descriptions and real-time usage metrics.",
-      "prs": [
-        8248
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🎮",
-      "title": "Community Apps",
-      "text": "New additions include the \"Nova Defense\" Discord bot and the AI-powered Roblox game \"Convince the CRAZY Idol\".",
-      "prs": [
-        7978,
-        8288
-      ],
-      "kind": "app"
     }
   ],
   "changelog": []

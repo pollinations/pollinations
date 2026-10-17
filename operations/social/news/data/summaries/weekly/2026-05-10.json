@@ -2,12 +2,20 @@
   "date": "2026-05-10",
   "period_start": "2026-05-03",
   "period_end": "2026-05-09",
-  "title": "Embeddings, Llama, and Gemma",
-  "summary": "We shipped a dedicated embeddings endpoint, added a slew of new models, and made our error messages actually tell you what went wrong.\n\nWe finally gave embeddings their own `/v1/embeddings` endpoint, defaulting to OpenAI's text-embedding-3-small for the free tier. On the generation side, we upgraded the default Llama to 3.3-70B, added Gemma 4 26B via DeepInfra, and wired up Seedance 2.0 for video. More pixels, more tokens, more vectors.\n\nGeneric 500 errors are the enemy. We rewired our error handling to actually pass through upstream 4xx codes, so you can tell the difference between a rate limit and a content policy rejection. We also added AWS Bedrock Guardrails for optional safety checks, and fixed a bunch of Cloudflare Worker routing issues that were breaking Nova models.\n\nWe overhauled the Bring Your Own Pollen (BYOP) billing system. Creator markups are now explicitly tracked, attribution actually persists across sessions, and the dashboard explains your earnings without requiring a finance degree.\n\nThe showcase exploded this week with 14 new additions. Highlights include PollImage (a CLI for terminal image generation) and a massive upgrade to the Polly Discord bot that finally renders LaTeX and markdown tables properly instead of spitting out raw syntax.",
-  "pr_count": 41,
+  "title": "Embeddings joined the API",
+  "summary": "The API grew new capabilities while a week of compatibility fixes made the existing ones less surprising to use.\n\nAn OpenAI-compatible `/v1/embeddings` endpoint added a new way to turn content into vectors. It accepts batches of up to 32 text inputs and offers two OpenAI text models, with `openai-3-small` as the default. Paid-balance model `gemini-2` also accepts image, audio, and video content parts.\n\nLlama 4 Maverick and Scout added text-and-vision options with very large context windows; Maverick supports tools, while Scout does not. Paid-access Gemma 4 brought image input, tools, and reasoning. The `mistral` route moved to Mistral Small 3.1 after timeouts on its previous route, and existing 3.2 aliases now resolve to 3.1.\n\nPaid-only `seedance-2.0` added 4–15-second, 720p video from text, images, or reference frames, with optional native audio. Across the week, fixes addressed LTX-2 retrieval, Nova Reel generation, Nova Canvas requests, and self-hosted image dimensions. Video errors also became more specific, and Seedance 2.0 now validates aspect ratios before sending requests.\n\nPublishable App Keys no longer require a redirect URI. BYOP generation events can resolve an app’s name and owner from its key, and App Key owners can enable developer earnings with the share shown on consent screens. The dashboard separates App Keys from ordinary publishable keys, while app identification and redirect matching received fixes.",
+  "pr_count": 56,
   "prs": [
     {
       "number": 10627,
+      "date": "2026-05-03"
+    },
+    {
+      "number": 10631,
+      "date": "2026-05-03"
+    },
+    {
+      "number": 10634,
       "date": "2026-05-03"
     },
     {
@@ -39,7 +47,15 @@
       "date": "2026-05-04"
     },
     {
+      "number": 10658,
+      "date": "2026-05-04"
+    },
+    {
       "number": 10660,
+      "date": "2026-05-04"
+    },
+    {
+      "number": 10662,
       "date": "2026-05-04"
     },
     {
@@ -59,6 +75,10 @@
       "date": "2026-05-04"
     },
     {
+      "number": 10677,
+      "date": "2026-05-04"
+    },
+    {
       "number": 10687,
       "date": "2026-05-05"
     },
@@ -71,7 +91,15 @@
       "date": "2026-05-05"
     },
     {
+      "number": 10690,
+      "date": "2026-05-05"
+    },
+    {
       "number": 10691,
+      "date": "2026-05-05"
+    },
+    {
+      "number": 10693,
       "date": "2026-05-05"
     },
     {
@@ -79,11 +107,19 @@
       "date": "2026-05-05"
     },
     {
+      "number": 10705,
+      "date": "2026-05-06"
+    },
+    {
+      "number": 10706,
+      "date": "2026-05-06"
+    },
+    {
       "number": 10708,
       "date": "2026-05-06"
     },
     {
-      "number": 10712,
+      "number": 10721,
       "date": "2026-05-06"
     },
     {
@@ -92,6 +128,10 @@
     },
     {
       "number": 10422,
+      "date": "2026-05-07"
+    },
+    {
+      "number": 10732,
       "date": "2026-05-07"
     },
     {
@@ -119,11 +159,23 @@
       "date": "2026-05-08"
     },
     {
+      "number": 10765,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10766,
+      "date": "2026-05-08"
+    },
+    {
       "number": 10770,
       "date": "2026-05-08"
     },
     {
       "number": 10772,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10778,
       "date": "2026-05-08"
     },
     {
@@ -143,6 +195,10 @@
       "date": "2026-05-08"
     },
     {
+      "number": 10549,
+      "date": "2026-05-09"
+    },
+    {
       "number": 10639,
       "date": "2026-05-09"
     },
@@ -159,6 +215,10 @@
       "date": "2026-05-09"
     },
     {
+      "number": 10799,
+      "date": "2026-05-09"
+    },
+    {
       "number": 10801,
       "date": "2026-05-09"
     },
@@ -171,5 +231,5 @@
       "date": "2026-05-09"
     }
   ],
-  "generated_at": "2026-05-10T06:52:29.920629+00:00"
+  "generated_at": "2026-10-17T23:27:30.644638+00:00"
 }

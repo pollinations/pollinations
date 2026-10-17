@@ -2,8 +2,8 @@
   "date": "2025-07-31",
   "period_start": "2025-07-01",
   "period_end": "2025-07-31",
-  "title": "The community directory grew",
-  "summary": "July brought more community-built apps into view while image generation, text models, and API access kept changing underneath them.\n\nNew games, chat tools, prompt builders, and coding projects joined the showcase. Broken links, credits, and project tables also got a cleanup.\n\nGemma, GLM-4 9B Chat, and new Llama and Mistral routes joined the roster. OpenAI aliases changed providers and models several times; by month’s end, `openai` routed to GPT-4.1 Nano.\n\n`model=kontext` added Seed-tier text-to-image and image-to-image generation, then gained a BPAIGen-first fallback path and a larger configured size limit. Image requests also gained `guidance_scale`; an OpenAPI spec documented the image API’s existing options.\n\nAnonymous model access was corrected, and text and image requests moved to a shared tier-aware queue. API examples, MCP setup instructions, and authentication lookup work made the system easier to use and less wasteful behind the scenes.",
+  "title": "More to build with",
+  "summary": "July brought more model and image options, a busier community project directory, and quieter work on access, routing, and documentation.\n\nThe text lineup gained Llama, Mistral, Gemma, and GLM options, while OpenAI aliases changed backends. Anonymous access expanded for some models, and model availability and tier rules were adjusted.\n\nKontext joined image generation with reference-image support, then gained a route to larger outputs and a guidance control. An OpenAPI spec now documents the image endpoint without changing the API itself.\n\nGames, coding tools, chat interfaces, and prompt helpers joined the project lists. Link repairs, corrected credits, and refreshed tables made the existing work easier to find.\n\nToken-based image requests gained parallel capacity, shared queues brought text and image limits together, and authentication lookups received caching and indexing work. API examples and MCP setup documentation also improved.",
   "pr_count": 48,
   "prs": [
     {
@@ -199,5 +199,5 @@
       "date": "2025-07-31"
     }
   ],
-  "generated_at": "2026-10-17T16:08:55.275858+00:00"
+  "generated_at": "2026-10-17T23:30:42.083173+00:00"
 }

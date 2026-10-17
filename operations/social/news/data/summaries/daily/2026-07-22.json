@@ -2,12 +2,16 @@
   "date": "2026-07-22",
   "period_start": "2026-07-22",
   "period_end": "2026-07-22",
-  "title": "More image models can plug into the standard API, with sturdier Flux requests",
-  "summary": "A community-heavy day: image APIs opened up, text models expanded, app reviews got calmer, and the catalog became more useful.\n\nCommunity model providers can now serve image generation through both `/image/{prompt}` and the OpenAI-compatible `/v1/images/generations` endpoint, returning standard `b64_json` results. Meanwhile, the Vast Flux deployment now restores its tunnel after restarts, keeps its queue deliberately short, and sends overflow to Fireworks instead of growing an infinite waiting room. Malformed or unavailable reference images now produce useful input errors, and timed-out Replicate jobs are cancelled rather than wandering the provider plains indefinitely.\n\nAll Google text services now use exact Google Vertex routes through OpenRouter, bringing Gemini 3.6 Flash to the existing aliases along with streaming, reasoning, tools, multimodal inputs, and native Google Search support. Poolside Laguna S 2.1 also joined the text API for tool workflows, optional reasoning, and conversations with a million-token context window.\n\nThe app-submission flow now uses a clearer set of `APP-*` states, checks live apps and optional repositories against evidence, and publishes approved snapshots into the catalog safely. Review runs no longer get cancelled just because a workflow applied a state label, which is software briefly discovering that labels can be events.",
-  "pr_count": 14,
+  "title": "Community models branch into images",
+  "summary": "Community image providers, refreshed Gemini models, Laguna S 2.1, and simpler app submissions led a day of image API repairs.\n\nProviders can register and test OpenAI-compatible image generation endpoints. Community image models support text-to-image requests through `/image/{prompt}` and `/v1/images/generations`, and the catalog separates them from community text models. Owners also gained Deactivate and Reactivate controls in My Models; the API documentation covers those controls and the image models’ text-to-image limits.\n\n`gemini` and `gemini-search-large` moved to Gemini 3.6 Flash as Google text services were routed through OpenRouter, with Google Search tool support retained. Poolside’s Laguna S 2.1 joined the catalog as `laguna`, offering tools, optional reasoning, and a 1,048,576-token context. The dashboard also corrected its generations-per-Pollen ranking so free models appear first.\n\nApp submissions moved to an issue form, with automated pre-review and a maintainer publication decision; Enter registration is no longer required to submit. The community catalog also added Ai Anime Legends Generator and Arika.",
+  "pr_count": 15,
   "prs": [
     {
       "number": 12206,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12612,
       "date": "2026-07-22"
     },
     {
@@ -31,6 +35,10 @@
       "date": "2026-07-22"
     },
     {
+      "number": 12654,
+      "date": "2026-07-22"
+    },
+    {
       "number": 12655,
       "date": "2026-07-22"
     },
@@ -40,10 +48,6 @@
     },
     {
       "number": 12659,
-      "date": "2026-07-22"
-    },
-    {
-      "number": 12662,
       "date": "2026-07-22"
     },
     {
@@ -63,21 +67,30 @@
       "date": "2026-07-22"
     }
   ],
-  "generated_at": "2026-07-23T07:00:03.935510+00:00",
+  "generated_at": "2026-10-17T23:03:05.541226+00:00",
   "highlights": [
     {
       "emoji": "🎨",
       "title": "Community image endpoints",
-      "text": "Community providers can now serve images through the standard `/image/{prompt}` and OpenAI-compatible `/v1/images/generations` APIs. [Try image generation](https://gen.pollinations.ai/image/{prompt})",
+      "text": "Register an OpenAI-compatible image provider and use its text-to-image models through `/image/{prompt}` or `/v1/images/generations`. Community image generation responses use `b64_json`. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         12206
       ],
       "kind": "api"
     },
     {
-      "emoji": "🚀",
+      "emoji": "🎯",
+      "title": "Pause your community model",
+      "text": "Model owners can deactivate or reactivate a community model from My Models without changing its configuration. [Open the dashboard](https://enter.pollinations.ai/keys).",
+      "prs": [
+        12643
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
       "title": "Gemini 3.6 Flash",
-      "text": "Google text models now run through Vertex endpoints with streaming, reasoning, tools, multimodal inputs, and native Google Search intact. [Browse models](https://gen.pollinations.ai/v1/models)",
+      "text": "`gemini` and `gemini-search-large` now use Gemini 3.6 Flash, with Google Search tools supported through their updated routing. [Explore `gemini`](https://enter.pollinations.ai/models?q=gemini).",
       "prs": [
         12651
       ],
@@ -86,30 +99,135 @@
     {
       "emoji": "🤖",
       "title": "Laguna S 2.1",
-      "text": "`laguna` brings tool use, optional reasoning, and a mildly excessive 1,048,576-token context window to the text API. [Check the API docs](https://gen.pollinations.ai/docs)",
+      "text": "Try `laguna` for text tasks with tools, optional reasoning, and a 1,048,576-token context. [Explore `laguna`](https://enter.pollinations.ai/models?q=laguna).",
       "prs": [
         12663
       ],
       "kind": "model"
     },
     {
-      "emoji": "🎨",
-      "title": "Anime Legends Generator",
-      "text": "Make anime-inspired legendary characters from a prompt. [Try it](https://anime.caasexpresss.com)",
+      "emoji": "📱",
+      "title": "Simpler app submissions",
+      "text": "Submit a community app with an issue form; Enter registration is no longer a prerequisite. Automated checks help prepare it for maintainer review. [Visit the repository](https://github.com/pollinations/pollinations).",
       "prs": [
-        12664
+        12642
       ],
-      "kind": "app"
-    },
-    {
-      "emoji": "✨",
-      "title": "Arika",
-      "text": "A community-built conversational AI for chats with slightly less robot energy. [Try it](https://arika.hizumi.in)",
-      "prs": [
-        12666
-      ],
-      "kind": "app"
+      "kind": "product"
     }
   ],
-  "changelog": []
+  "changelog": [
+    {
+      "pr_number": 12646,
+      "url": "https://github.com/pollinations/pollinations/pull/12646",
+      "merged_at": "2026-07-22T15:49:17Z",
+      "api_changes": [
+        {
+          "id": "pr-12646:POST /account/my-models/{id}/update",
+          "endpoint": "POST /account/my-models/{id}/update",
+          "summary": "Update My Model",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:active",
+              "before": null,
+              "after": {
+                "type": "boolean",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pr_number": 12659,
+      "url": "https://github.com/pollinations/pollinations/pull/12659",
+      "merged_at": "2026-07-22T19:43:47Z",
+      "api_changes": [
+        {
+          "id": "pr-12659:POST /account/my-models",
+          "endpoint": "POST /account/my-models",
+          "summary": "Create My Model",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:completionImagePrice",
+              "before": null,
+              "after": {
+                "type": "number",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:imagePricing",
+              "before": null,
+              "after": {
+                "type": "\"request\"|\"tokens\"",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:modality",
+              "before": null,
+              "after": {
+                "type": "\"text\"|\"image\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-12659:POST /account/my-models/test",
+          "endpoint": "POST /account/my-models/test",
+          "summary": "Test My Model Endpoint",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:modality",
+              "before": null,
+              "after": {
+                "type": "\"text\"|\"image\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-12659:POST /account/my-models/{id}/update",
+          "endpoint": "POST /account/my-models/{id}/update",
+          "summary": "Update My Model",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:completionImagePrice",
+              "before": null,
+              "after": {
+                "type": "number",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:imagePricing",
+              "before": null,
+              "after": {
+                "type": "\"request\"|\"tokens\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

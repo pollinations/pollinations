@@ -2,9 +2,9 @@
   "date": "2026-02-22",
   "period_start": "2026-02-15",
   "period_end": "2026-02-21",
-  "title": "POLLINATIONS WEEKLY vol.48 — agents & brainrot → POLLY API & OPENAI COMPATIBILITY\nPolly now speaks fluent OpenAI",
-  "summary": "If you have existing tooling, you can point it at our endpoint and it should just work. We did this because learning new API specs is nobody's hobby. → SHOWCASE RENOVATION\nThe apps page got a facelift. Markdown descriptions, proper metrics, and a new badge system. It looks less like a directory and more like a gallery now. → AUTO POLLY\nWe shipped a self-healing repo agent. It finds issues and fixes them. Ideally, it puts us out of a job, but for now, it just saves us time. → NEW IN THE GARDEN\nCommunity submissions included SlidePainter, Nova Defense, and something called BrainrotMaker. We provide the infrastructure; you provide the chaos. → HOUSEKEEPING\nNPM packages moved to the @pollinations_ai scope. Please update your package.json before it yells at you",
-  "pr_count": 48,
+  "title": "The app garden got better signposts",
+  "summary": "The app garden grew quickly, and the paths through it—from discovery to documentation—got easier to follow.\n\nThe catalog gained fuller, markdown-formatted descriptions, shareable category filters, request-based sorting, and badges for new, active, and Bring Your Own Pollen apps. A fix restored the apps page after its app-list source returned a 404. Community additions ranged from storybooks and music tools to benchmarking, chat assistants, and image generators. Finding something useful among all those apps is now less of an archaeological exercise.\n\nA standalone OpenAI-compatible endpoint accepts text and image messages, runs Polly’s tool calls, and returns a final answer; streaming is not supported. Later changes made code and documentation indexing more resilient to input limits, markdown quirks, and restarts. Polly also skips unrelated Discord messages before doing reply checks or API work.\n\nSlidePainter joined the community apps with generated-image slides, shared style prompts, reference images, Markdown configuration import and export, and PDF export. It arrived alongside a broad crop of creative tools for presentations, storyboards, filmmaking, stickers, image editing, and more.\n\nThe lineup added `qwen-safety` for text moderation. Proxied upstream 429 responses now return as 502, leaving 429 for Enter’s own limits, and chat completion errors surface readable upstream messages. During a provider outage, Imagen 4, Grok Video, and Qwen Character were removed from the registries; Wan 2.6 was routed directly through Alibaba DashScope and marked paid-only.",
+  "pr_count": 49,
   "prs": [
     {
       "number": 7978,
@@ -16,6 +16,10 @@
     },
     {
       "number": 8248,
+      "date": "2026-02-15"
+    },
+    {
+      "number": 8257,
       "date": "2026-02-15"
     },
     {
@@ -91,6 +95,10 @@
       "date": "2026-02-16"
     },
     {
+      "number": 8301,
+      "date": "2026-02-16"
+    },
+    {
       "number": 8324,
       "date": "2026-02-16"
     },
@@ -147,14 +155,6 @@
       "date": "2026-02-18"
     },
     {
-      "number": 8404,
-      "date": "2026-02-18"
-    },
-    {
-      "number": 7920,
-      "date": "2026-02-19"
-    },
-    {
       "number": 7939,
       "date": "2026-02-19"
     },
@@ -167,15 +167,19 @@
       "date": "2026-02-19"
     },
     {
-      "number": 8398,
-      "date": "2026-02-19"
-    },
-    {
       "number": 8421,
       "date": "2026-02-19"
     },
     {
       "number": 7236,
+      "date": "2026-02-20"
+    },
+    {
+      "number": 8437,
+      "date": "2026-02-20"
+    },
+    {
+      "number": 8439,
       "date": "2026-02-20"
     },
     {
@@ -187,7 +191,7 @@
       "date": "2026-02-21"
     },
     {
-      "number": 8467,
+      "number": 8457,
       "date": "2026-02-21"
     },
     {
@@ -199,5 +203,5 @@
       "date": "2026-02-21"
     }
   ],
-  "generated_at": "2026-02-22T06:21:53.563202+00:00"
+  "generated_at": "2026-10-17T23:26:48.887441+00:00"
 }

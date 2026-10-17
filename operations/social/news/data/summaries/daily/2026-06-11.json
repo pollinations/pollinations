@@ -2,10 +2,18 @@
   "date": "2026-06-11",
   "period_start": "2026-06-11",
   "period_end": "2026-06-11",
-  "title": "Claude Fable 5 joins the text endpoint",
-  "summary": "A heavy-hitting new Claude model drops into the text API, and a new community learning app joins the showcase.\n\nAnthropic's new Mythos-class model, Claude Fable 5, is now wired up via AWS Bedrock. It brings a massive 1M token context window, vision capabilities, and tool support directly to the standard text generation API.\n\nThe apps directory grows by one with the addition of Wikimind, a community-built learning tool that integrates translation for interactive messaging.",
-  "pr_count": 2,
+  "title": "Claude Fable 5 joins the model lineup",
+  "summary": "Claude Fable 5 was added, Wikimind joined the app catalog, and the README caught up with recent API changes.\n\nAdded paid-only `claude-fable-5` with text and image input, tool support, a 1M-token context, and support for up to 20 reference images.\n\nAdded the French-language learning app Wikimind to the catalog and featured lists. A separate daily update refreshed app metrics and health-check records; it did not change the apps themselves.\n\nThe README now documents June 10 changes to content-moderation error responses and the removal of three legacy image parameters from the API and SDKs.",
+  "pr_count": 4,
   "prs": [
+    {
+      "number": 11737,
+      "date": "2026-06-11"
+    },
+    {
+      "number": 11738,
+      "date": "2026-06-11"
+    },
     {
       "number": 11743,
       "date": "2026-06-11"
@@ -15,21 +23,12 @@
       "date": "2026-06-11"
     }
   ],
-  "generated_at": "2026-06-12T07:33:12.808105+00:00",
+  "generated_at": "2026-10-17T22:58:15.131342+00:00",
   "highlights": [
     {
-      "emoji": "🌱",
-      "title": "Wikimind Joins the Showcase",
-      "text": "A new community-built learning tool that wires up translation for interactive messaging. [Try it](https://chpalitom09-bot.github.io/Wikimind-5/)",
-      "prs": [
-        11743
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🚀",
-      "title": "Claude Fable 5 is Live",
-      "text": "Anthropic's Mythos-class model is now wired up via AWS Bedrock. 1M context window, vision, and tool support ready to go on the [text endpoint](https://gen.pollinations.ai/v1/chat/completions).",
+      "emoji": "🤖",
+      "title": "Claude Fable 5 added",
+      "text": "Use `claude-fable-5` for text and image input, with tools, a 1M-token context, and up to 20 reference images. It is a paid-only model. [Browse the model](https://enter.pollinations.ai/models?q=claude-fable-5).",
       "prs": [
         11744
       ],

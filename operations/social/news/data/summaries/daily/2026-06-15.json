@@ -2,12 +2,28 @@
   "date": "2026-06-15",
   "period_start": "2026-06-15",
   "period_end": "2026-06-15",
-  "title": "Ideogram 4.0 joins the image roster",
-  "summary": "Ideogram 4.0 models hit the API, plus a new SDK bridge for painless iframe embedding.\n\nWe wired up Ideogram 4.0, bringing turbo, balanced, and quality variants to the image generation endpoint. The API automatically handles mapping your requested aspect ratios to the nearest supported resolution preset so you don't have to think about it.\n\nAdded an EmbedBridge to the SDK. If you're embedding apps in trusted hosts (like our upcoming /play hub), it automatically handles the iframe handshakes, API key sharing, and theme syncing. No more writing custom glue code for frame-local auth.\n\nStandardized the account menu label to 'Connect' across standalone apps and stopped the text from awkwardly wrapping on narrow screens.",
-  "pr_count": 3,
+  "title": "Three Ideogram 4.0 image models added",
+  "summary": "Three Ideogram image options and a bridge for embedded apps arrived, while image-policy errors got clearer and the catalogs got a tidy-up.\n\nAdded paid text-to-image options `ideogram-v4-turbo`, `ideogram-v4-balanced`, and `ideogram-v4-quality`, and listed them in the image API docs. Requests map dimensions or aspect ratios to supported resolution presets; these models do not accept reference images or seeds.\n\nThe SDK can now coordinate with a trusted host for API access, top-level login, content height, and theme changes. Embedded sessions stay separate from standalone sessions. The shared account menu also defaults to “Connect” and holds its label on one line in narrow headers.\n\nSafety-filter rejections from `qwen-image` and `qwen-image-plus` now return a 422 `content_policy_violation` with guidance to adjust the prompt, rather than appearing as server errors.",
+  "pr_count": 8,
   "prs": [
     {
+      "number": 11803,
+      "date": "2026-06-15"
+    },
+    {
+      "number": 11805,
+      "date": "2026-06-15"
+    },
+    {
       "number": 11807,
+      "date": "2026-06-15"
+    },
+    {
+      "number": 11808,
+      "date": "2026-06-15"
+    },
+    {
+      "number": 11809,
       "date": "2026-06-15"
     },
     {
@@ -15,16 +31,38 @@
       "date": "2026-06-15"
     },
     {
+      "number": 11811,
+      "date": "2026-06-15"
+    },
+    {
       "number": 11816,
       "date": "2026-06-15"
     }
   ],
-  "generated_at": "2026-06-16T07:52:46.854159+00:00",
+  "generated_at": "2026-10-17T22:58:40.724972+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Ideogram 4.0 Models",
-      "text": "Three new Ideogram 4.0 image models (`ideogram-v4-turbo`, `ideogram-v4-balanced`, `ideogram-v4-quality`) are now available via the [Unified API](https://gen.pollinations.ai).",
+      "title": "Ideogram 4.0 Turbo",
+      "text": "Generate images from text with `ideogram-v4-turbo`, including square, landscape, and portrait resolution presets. [View the model](https://enter.pollinations.ai/models?q=ideogram-v4-turbo).",
+      "prs": [
+        11810
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Ideogram 4.0 Balanced",
+      "text": "Generate images from text with `ideogram-v4-balanced` and choose an aspect ratio or dimensions that map to a supported preset. [View the model](https://enter.pollinations.ai/models?q=ideogram-v4-balanced).",
+      "prs": [
+        11810
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Ideogram 4.0 Quality",
+      "text": "Generate images from text with `ideogram-v4-quality`, with square requests defaulting to 2048×2048. [View the model](https://enter.pollinations.ai/models?q=ideogram-v4-quality).",
       "prs": [
         11810
       ],
@@ -32,8 +70,8 @@
     },
     {
       "emoji": "🔗",
-      "title": "Seamless App Embedding",
-      "text": "The [React SDK](https://react.pollinations.ai) now includes an `EmbedBridge` to automatically handle host handshakes, API key sharing, and theme syncing for apps embedded in trusted hosts.",
+      "title": "A bridge for embedded apps",
+      "text": "Apps using the SDK can accept API access from a trusted host, send login requests to it, report their height, and follow its light or dark theme. Embedded sessions remain separate from standalone app sessions. [Explore the React SDK & UI](https://react.pollinations.ai).",
       "prs": [
         11807
       ],

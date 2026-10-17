@@ -3,7 +3,7 @@
   "period_start": "2025-11-02",
   "period_end": "2025-11-02",
   "title": "Audio responses keep their audio",
-  "summary": "Audio responses keep their data, the homepage gets a tidier footer, and image generation gets sturdier workers and clearer usage tracking.\n\nThe chat completion response schema now includes an optional audio object, so `openai-audio` responses can retain their transcript and base64-encoded audio data.\n\nThe homepage footer gained a responsive black-and-white layout with contact details and link columns. The X link was restored, and the News section can now be linked to directly.\n\nFlux workers now scale oversized requests toward a 768×768 pixel budget to reduce GPU out-of-memory failures. Image models also share a token-tracking field, so Nano Banana usage headers can reflect the token count reported by Vertex AI instead of defaulting to one.",
+  "summary": "Audio responses retain their payloads, the homepage gets a cleaner footer, and image generation handles GPU and usage limits more carefully.\n\nThe chat completion response schema now accepts the audio object returned by `openai-audio`, preserving its transcript and base64-encoded audio data instead of dropping them.\n\nThe homepage footer gained a responsive black-and-white layout, clearer link columns, and an X link. The News section also has an anchor for direct links.\n\nFlux workers now scale oversized requests toward a 768×768 pixel budget to reduce out-of-memory failures, though large requests may produce smaller images. Image-model usage tracking was also unified, so Nano Banana headers can report its token count rather than defaulting to one.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,7 +23,7 @@
       "date": "2025-11-02"
     }
   ],
-  "generated_at": "2026-10-17T15:50:45.934146+00:00",
+  "generated_at": "2026-10-17T22:35:13.488233+00:00",
   "highlights": [],
   "changelog": []
 }

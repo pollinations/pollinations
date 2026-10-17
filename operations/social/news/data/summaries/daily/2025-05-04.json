@@ -2,8 +2,8 @@
   "date": "2025-05-04",
   "period_start": "2025-05-04",
   "period_end": "2025-05-04",
-  "title": "More ways to use text models",
-  "summary": "New text model options, prompt-generated HTML, and two community tools joined the garden.\n\nAdded `openai-fast` for text and image input and `mirexa` for in-character responses. The `openai` model now maps to GPT-4.1-mini, while `deepseek-reasoning` uses MAI-DS-R1. The same PR added Cloudflare Workers AI adapters for chat, text and embeddings.\n\nAdded a Websim Worker that generates self-contained HTML from a prompt in the URL path. The text cache was also reworked to distinguish requests more reliably and preserve streaming response types.\n\nThe project listings now include Polynate, a text-and-audio interface, and Pollinations Task Master, a Task Master fork with CLI and MCP interfaces. Two PRs added Polynate to the listings.",
+  "title": "More ways to generate text",
+  "summary": "New text models and a prompt-to-HTML Worker arrived, while community tools joined the directory and the text cache got more precise.\n\nAdded `openai-fast` with text and image input, plus `mirexa`, an in-character persona that can produce image prompts. The `openai` alias now points to GPT-4.1-mini, and `deepseek-reasoning` uses MAI-DS-R1 with a conversational default prompt.\n\nAdded a websim Worker that takes a prompt from a URL and returns generated, self-contained HTML directly rather than an event stream.\n\nThe project listings now include Polynate, a text-and-audio generation interface, and Pollinations Task Master, a Task Master fork with CLI and MCP interfaces. Two PRs updated Polynate’s listing.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,21 +27,12 @@
       "date": "2025-05-04"
     }
   ],
-  "generated_at": "2026-10-17T15:39:01.719886+00:00",
+  "generated_at": "2026-10-17T22:30:49.873185+00:00",
   "highlights": [
     {
       "emoji": "🤖",
       "title": "A faster OpenAI option",
-      "text": "Use `openai-fast` for text or image input, backed by GPT-4.1-nano. `openai-small` works as an alias. [Browse the model](https://enter.pollinations.ai/models?q=openai-fast).",
-      "prs": [
-        1890
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "✨",
-      "title": "Meet Mirexa",
-      "text": "`mirexa` answers in character and can mark image prompts with `<t2i>` tags. [Browse the model](https://enter.pollinations.ai/models?q=mirexa).",
+      "text": "Use `openai-fast` for GPT-4.1-nano with text and image input; `openai-small` is an alias. The existing `openai` model now maps to GPT-4.1-mini. [Browse the model](https://enter.pollinations.ai/models?q=openai-fast).",
       "prs": [
         1890
       ],
@@ -49,8 +40,17 @@
     },
     {
       "emoji": "🎨",
-      "title": "Pages from prompts",
-      "text": "A new Websim Worker turns a prompt in the URL path into self-contained HTML, with support for Pollinations images and linked subpages.",
+      "title": "Meet Mirexa",
+      "text": "Chat with `mirexa`, an in-character persona that can write image prompts using `<t2i>` tags. [Browse the model](https://enter.pollinations.ai/models?q=mirexa).",
+      "prs": [
+        1890
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "Prompts into HTML pages",
+      "text": "A new websim Worker takes a prompt from the URL and returns a self-contained HTML page directly.",
       "prs": [
         1896
       ],

@@ -2,8 +2,8 @@
   "date": "2025-10-26",
   "period_start": "2025-10-26",
   "period_end": "2025-10-26",
-  "title": "A prompt generator that takes the opposite route",
-  "summary": "A community app made image prompts do the opposite, while Enter gained a tier checkout entry point and clearer generation authentication.\n\nAnkit Anand added the Opposite Prompt Generator, and its Hacktoberfest showcase entry was merged. The React app turns an image prompt into a short semantic opposite, generates an image from it, and lets users copy the prompt or image URL, download the image, and retry a failed load.\n\nEnter added a panel showing a signed-in user's assigned tier and a checkout button for Seed, Flower, or Nectar. The change starts a Polar checkout; it does not establish that completing checkout activates a tier. A follow-up removed the inaccurate refill countdown and disabled the $10, $25, and $50 Pollen top-up buttons.\n\nEnter's generation routes now accept either a session cookie or an API key in an `Authorization: Bearer` header, while tier and Polar routes remain session-only. The work also tightened anonymous-access rules, adjusted chat request validation, and removed the `/openai/chat/completions` alias in favor of `/api/generate/openai`.",
+  "title": "A community app makes the opposite image",
+  "summary": "A community app flips image prompts on their heads, while Enter's tier controls and generation authentication get a closer look.\n\nAnkit Anand added the Opposite Prompt Generator, and a follow-up added it to the Hacktoberfest showcase. It turns an image prompt into a short semantic opposite, generates an image from that prompt, and lets users copy the prompt or image URL and download the result.\n\nEnter added a dashboard panel showing assigned tiers and a checkout path for users assigned Seed, Flower or Nectar. A follow-up removed an inaccurate refill countdown and disabled Pollen top-up buttons that would otherwise lead to checkout.\n\nEnter's generation routes now accept either a session cookie or a Bearer API key, while tier and Polar routes remain session-only. Chat completions can omit `model` or use an empty `messages` array; `/api/generate/openai` is the generation route, replacing the removed `/openai/chat/completions` alias.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,17 +31,17 @@
       "date": "2025-10-26"
     }
   ],
-  "generated_at": "2026-10-17T15:49:59.347741+00:00",
+  "generated_at": "2026-10-17T22:35:00.240848+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Opposite Prompt Generator",
-      "text": "Turn an image prompt into its semantic opposite, then generate an image from the result. Copy the new prompt or image URL, or download the image.",
+      "title": "Generate the opposite image",
+      "text": "Give the Opposite Prompt Generator an image idea and it turns the prompt into a semantic opposite, then generates an image. Copy the new prompt or image URL, or download the result.",
       "prs": [
         4633,
         4796
       ],
-      "kind": "app"
+      "kind": "product"
     }
   ],
   "changelog": []

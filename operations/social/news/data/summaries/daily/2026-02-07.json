@@ -2,8 +2,8 @@
   "date": "2026-02-07",
   "period_start": "2026-02-07",
   "period_end": "2026-02-07",
-  "title": "massive model drop",
-  "summary": "just shipped support for elevenlabs tts, grok-video, imagen-4, and flux-2-dev. one unified api for the best open & closed models. go build something wild",
+  "title": "Text-to-speech gets two ways in",
+  "summary": "Speech endpoints, three experimental creative models, and a better gateway path for long text requests.\n\nElevenLabs text-to-speech was added through an OpenAI-compatible speech endpoint and a simpler GET endpoint. Both support voice selection and multiple output formats; the POST endpoint also accepts a speed setting.\n\nImagen 4 and FLUX.2 Dev were added for image generation, alongside Grok Imagine Video for clips up to 10 seconds. All three are marked alpha, with that experimental status visible in Enter’s model list.\n\nThe text service’s gateway was moved off a workers.dev address, removing the proxy timeout from its request path. The change addresses Cloudflare 524 errors on long-running requests, including high-effort reasoning and large-context prompts.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,43 +23,43 @@
       "date": "2026-02-07"
     }
   ],
-  "generated_at": "2026-03-18T19:58:13.610048+00:00",
+  "generated_at": "2026-10-17T22:39:24.376757+00:00",
   "highlights": [
     {
-      "emoji": "🎨",
-      "title": "Imagen 4 added",
-      "text": "Generate images with `imagen-4`. [View the model](https://enter.pollinations.ai/models?q=imagen-4).",
-      "prs": [
-        8063
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Flux 2 Dev added",
-      "text": "Generate images with `flux-2-dev`. [View the model](https://enter.pollinations.ai/models?q=flux-2-dev).",
-      "prs": [
-        8063
-      ],
-      "kind": "model"
-    },
-    {
       "emoji": "🎵",
-      "title": "Grok Video added",
-      "text": "Try video generation with `grok-video`, marked Alpha. [View the model](https://enter.pollinations.ai/models?q=grok-video).",
-      "prs": [
-        8063
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎵",
-      "title": "ElevenLabs speech endpoint",
-      "text": "Turn text into speech through `/v1/audio/speech`, with voice mapping for OpenAI-compatible requests. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Speech from text",
+      "text": "Generate ElevenLabs speech with `POST /v1/audio/speech` or the simpler `GET /audio/{text}`. Choose a voice and output format, and set playback speed on POST requests. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         7281
       ],
       "kind": "api"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Imagen 4 joins images",
+      "text": "Generate images with `imagen-4`, now available as an alpha model. [View the model](https://enter.pollinations.ai/models?q=imagen-4).",
+      "prs": [
+        8063
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "FLUX.2 Dev joins images",
+      "text": "Try `flux-2-dev` for image generation. It’s marked alpha, so expect some rough edges. [View the model](https://enter.pollinations.ai/models?q=flux-2-dev).",
+      "prs": [
+        8063
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Grok Imagine Video added",
+      "text": "Generate clips with `grok-video`, an alpha model with a 10-second maximum duration. [View the model](https://enter.pollinations.ai/models?q=grok-video).",
+      "prs": [
+        8063
+      ],
+      "kind": "model"
     }
   ],
   "changelog": []

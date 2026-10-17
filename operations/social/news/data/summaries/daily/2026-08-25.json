@@ -2,8 +2,8 @@
   "date": "2026-08-25",
   "period_start": "2026-08-25",
   "period_end": "2026-08-25",
-  "title": "Video generation got a new model and stricter frame handling",
-  "summary": "A busy day for media builders and model users: Wan 3.0 arrived, retries got friendlier, catalog details got clearer, and Pollen earnings became easier to inspect.\n\nWan 3.0 joined the video lineup for text-to-video and image-to-video work, including optional audio and multiple output resolutions. Video requests now enforce each model's declared reference-frame limits before dispatch, so accepted start/end frames reach the provider and unsupported extras get a useful 400. Cached image-generation retries can also return completed work after a disconnect without requiring the original key.\n\nCommunity-model term and visibility changes now show their pending state and effective time for 12 hours, giving consumers a clear runway while owners update public models. OpenAI-compatible clients can fetch a single model with GET /v1/models/:model, model browsing again searches the full catalog, and cards now show tool-calling support. Routing for Mistral stays pinned to its canonical endpoint, while mobile pricing cards no longer let their token labels wander offscreen.\n\nDevelopers can retrieve earnings from the JavaScript SDK or run polli earnings for totals, per-entity breakdowns, rolling windows, and scriptable JSON. The SDK also gained accountQuests(), so quest-aware apps can read completion and reward state without rebuilding account endpoint plumbing. Contributor docs now make the open-quest process explicit: several people can ship solutions, maintainers select the best merged one, and the reward follows it.",
+  "title": "Wan 3.0 joins video generation",
+  "summary": "Wan 3.0 and an FFmpeg agent tool arrived alongside better Pollen earnings tools and more precise model information.\n\nAdded paid-only `wan-3.0` for five-second text-to-video and image-to-video clips, with optional audio and 480p, 720p, or 1080p output. Video requests now reject frames beyond a model’s registered limit instead of silently ignoring them. Identical image-generation requests can also retrieve completed cached media without an API key.\n\nA hosted FFmpeg MCP gives prompt agents a `runFfmpeg` tool for processing media from public HTTPS URLs and returning hosted outputs. It supports common video, audio, and image formats, with 100 MB input and output limits and a 110-second run limit.\n\nQuest contributions added typed SDK access to developer earnings and account Quests, plus a `polli earnings` command with per-entity totals and JSON output. The SDK also preserves request IDs from error headers when a response body omits them. Contributor guidance now clarifies that multiple approaches to an open Quest can be submitted before one is selected.",
   "pr_count": 19,
   "prs": [
     {
@@ -16,6 +16,10 @@
     },
     {
       "number": 13822,
+      "date": "2026-08-25"
+    },
+    {
+      "number": 13841,
       "date": "2026-08-25"
     },
     {
@@ -40,10 +44,6 @@
     },
     {
       "number": 13880,
-      "date": "2026-08-25"
-    },
-    {
-      "number": 13885,
       "date": "2026-08-25"
     },
     {
@@ -83,21 +83,21 @@
       "date": "2026-08-25"
     }
   ],
-  "generated_at": "2026-08-26T06:16:48.530054+00:00",
+  "generated_at": "2026-10-17T23:09:25.362725+00:00",
   "highlights": [
     {
-      "emoji": "🎬",
-      "title": "Wan 3.0 video generation",
-      "text": "`wan-3.0` now makes 5-second text-to-video and image-to-video clips with optional audio, start frames, and 480p through 1080p output. [API Docs](https://gen.pollinations.ai/docs)",
+      "emoji": "🎨",
+      "title": "Wan 3.0 video",
+      "text": "Generate five-second videos from a prompt or a start image with `wan-3.0`. Choose 480p, 720p, or 1080p, with optional audio. [Browse the model](https://enter.pollinations.ai/models?q=wan-3.0).",
       "prs": [
         13910
       ],
       "kind": "model"
     },
     {
-      "emoji": "✨",
-      "title": "Hosted FFmpeg for prompt agents",
-      "text": "Agents can now select a managed FFmpeg tool to process media and receive stored outputs—no server maintenance, a small mercy. [MCP Server Docs](https://gen.pollinations.ai/docs#tag/mcp-server)",
+      "emoji": "🎵",
+      "title": "FFmpeg tools for agents",
+      "text": "Prompt agents can use `runFfmpeg` to process media from public HTTPS URLs and receive hosted video, audio, or image output. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         13915
       ],
@@ -105,17 +105,8 @@
     },
     {
       "emoji": "💡",
-      "title": "Model lookup, OpenAI-style",
-      "text": "OpenAI-compatible clients can inspect a single accessible model with `GET /v1/models/:model`, including aliases and registry metadata. [API Docs](https://gen.pollinations.ai/docs)",
-      "prs": [
-        13875
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🌟",
-      "title": "Pollen earnings in code and CLI",
-      "text": "Check developer earnings from TypeScript with `accountEarnings()` or run `polli earnings --days 30 --json` for scriptable totals and per-entity detail.",
+      "title": "Check your Pollen earnings",
+      "text": "Use SDK `accountEarnings()` or `polli earnings` to inspect Pollen earned by BYOP apps and community models, including per-entity request counts. The CLI also offers JSON output for scripts. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         13822,
         13855
@@ -123,13 +114,22 @@
       "kind": "product"
     },
     {
-      "emoji": "🎨",
-      "title": "EAS AI STUDIO joins the garden",
-      "text": "A collaborative image-making app built on the Pollinations image API is now in the community showcase. [Try it](https://www.ekin-ai-studio.my.id)",
+      "emoji": "🎯",
+      "title": "Quests in the SDK",
+      "text": "Use `accountQuests()` to fetch the Quest catalog with your account’s status, reward details, and claim timestamps. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
-        13863
+        13866
       ],
-      "kind": "app"
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Look up one model",
+      "text": "Fetch a model by canonical ID or alias with the OpenAI-compatible `GET /v1/models/:model` endpoint. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        13875
+      ],
+      "kind": "api"
     }
   ],
   "changelog": []

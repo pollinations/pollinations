@@ -2,8 +2,8 @@
   "date": "2025-09-06",
   "period_start": "2025-09-06",
   "period_end": "2025-09-06",
-  "title": "More controls for community image-making",
-  "summary": "Two community image generators joined Creative Projects, and the text API’s root now points to its documentation.\n\nRishabh Mishra’s React-based image generator was added to Creative Projects, with style, quality and resolution controls and a history of generated images.\n\nCVRON AI, an image generator built with the Pollinations API, was added to Creative Projects with a Turkish-language tag and an English description.\n\nThe root of text.pollinations.ai now redirects to the API documentation instead of the community UI.",
+  "title": "A prompt-to-image project joins Creative Projects",
+  "summary": "Two image generators joined Creative Projects, and the text API root now points to documentation.\n\nRishabh Mishra’s React-based image generator was added to the Creative Projects listing, with style, quality and resolution controls plus image history.\n\nCVRON AI was added to Creative Projects with a Turkish language tag and an English translation of its description.\n\nThe root of text.pollinations.ai now redirects to API documentation instead of the community UI.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2025-09-06"
     }
   ],
-  "generated_at": "2026-10-17T15:46:04.085439+00:00",
+  "generated_at": "2026-10-17T22:33:35.779126+00:00",
   "highlights": [],
   "changelog": []
 }

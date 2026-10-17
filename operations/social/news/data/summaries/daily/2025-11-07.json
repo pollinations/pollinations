@@ -2,8 +2,8 @@
   "date": "2025-11-07",
   "period_start": "2025-11-07",
   "period_end": "2025-11-07",
-  "title": "Image generation gets past two avoidable failures",
-  "summary": "A debugging-heavy day for image and vision requests, with steadier Pollen rate limits and clearer terms.\n\nTwo PRs addressed the same missing import that broke Kontext generation and editing. A separate fix removed Nanobanana’s hardcoded 25-second request timeout, so slower generations—especially those using reference images—no longer fail solely because they cross that mark.\n\nVision request validation now accepts image_url content without a detail field. Prompt filter results can also omit content_filter_results without triggering a schema error.\n\nThe +$5 Pollen button now opens checkout; the other bundle buttons remain disabled. Publishable-key rate limits now retain bucket state across restarts, calculate refill waits consistently, and distinguish exhausted buckets from concurrent-request limits in their 429 responses.",
+  "title": "A checkout path for $5 Pollen",
+  "summary": "A day of untangling image and vision failures, making rate limits more consistent, and clarifying checkout and service terms.\n\nThe +$5 Pollen button was connected to checkout. The other bundle buttons remain disabled.\n\nTwo PRs addressed the same missing import that broke Kontext generation and editing. Nanobanana requests also lost a hardcoded 25-second timeout that could cut off slower generations, especially those using reference images.\n\nVision requests with image_url content no longer fail validation when the optional detail field is omitted. Prompt-filter responses can also omit content_filter_results.",
   "pr_count": 8,
   "prs": [
     {
@@ -39,7 +39,7 @@
       "date": "2025-11-07"
     }
   ],
-  "generated_at": "2026-10-17T15:51:28.795551+00:00",
+  "generated_at": "2026-10-17T22:35:25.369664+00:00",
   "highlights": [],
   "changelog": []
 }

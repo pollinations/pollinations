@@ -2,9 +2,9 @@
   "date": "2026-05-09",
   "period_start": "2026-05-09",
   "period_end": "2026-05-09",
-  "title": "Polly on Discord can finally render the things people actually paste",
-  "summary": "Discord got readable math and code, APIs got honest error codes, and the community garden added four more projects.\n\nThe Polly Discord bot now renders Markdown tables, LaTeX equations, and code blocks as native formatted media instead of leaving users to interpret raw markup. Math, tabular output, and code-heavy conversations are substantially less cursed.\n\nVideo generation handlers preserve useful upstream HTTP statuses, so clients can distinguish policy rejections, rate limits, invalid requests, and provider failures. Seedance 2.0 content-filter and bad-input cases now return clear 400-level responses rather than generic 500s.\n\nThe app showcase gained idol-interaction, a character scouting and chat game; Hyggshi OS Web Edition, an AI-chat-equipped OS simulator; PolliGPT; and Viatosis, which uses generated illustrations to make medical education more legible. The directory and README also received their daily health and news refresh.",
-  "pr_count": 10,
+  "title": "Polly gets better at Discord formatting",
+  "summary": "Polly learned to handle tables and equations, four community apps joined the showcase, and video generation got clearer errors.\n\nCommunity contributor YoannDev90 added support for rendering Markdown tables and LaTeX as images in Polly’s Discord replies. Long fenced code blocks can also be split without breaking lines. Tables and LaTeX fall back to text when the optional rendering dependencies are unavailable.\n\nThe catalog added idol-interaction, PolliGPT, Hyggshi OS Web Edition, and Viatosis, spanning games, chat, a web-based OS, and medical learning. The README showcase and Recent Apps section were also refreshed, including corrected attribution for PolliGPT.\n\nSeedance, Wan, and xAI video generation now distinguish more input, content-policy, rate-limit, and upstream failures instead of returning generic server errors. Seedance 2.0 also checks supported aspect ratios before sending a request and stops polling predictions that have aborted or timed out.",
+  "pr_count": 9,
   "prs": [
     {
       "number": 10549,
@@ -12,10 +12,6 @@
     },
     {
       "number": 10639,
-      "date": "2026-05-09"
-    },
-    {
-      "number": 10795,
       "date": "2026-05-09"
     },
     {
@@ -47,34 +43,16 @@
       "date": "2026-05-09"
     }
   ],
-  "generated_at": "2026-09-04T11:48:17.533426+00:00",
+  "generated_at": "2026-10-17T22:50:36.930618+00:00",
   "highlights": [
     {
       "emoji": "💡",
-      "title": "Readable math in Polly",
-      "text": "Polly can render Markdown tables, LaTeX equations, and code blocks in Discord messages. [Join the community chat](https://discord.gg/k9F7SyTgqn).",
+      "title": "Polly handles richer replies",
+      "text": "Polly’s Discord replies can render Markdown tables and LaTeX as images, and split long code blocks without breaking lines. Tables and equations fall back to text if rendering dependencies are unavailable. [Join the community chat](https://discord.gg/k9F7SyTgqn).",
       "prs": [
         10639
       ],
       "kind": "product"
-    },
-    {
-      "emoji": "🎯",
-      "title": "Meet idol-interaction",
-      "text": "Try a community game built with Pollinations-powered character generation and chat. [Try it](https://spritenguyen.github.io/idol-interaction-game-2/).",
-      "prs": [
-        10796
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Explore Viatosis",
-      "text": "Explore a medical e-learning platform that uses Pollinations for AI-generated illustrations. [Try it](https://www.viatosis.tech).",
-      "prs": [
-        10802
-      ],
-      "kind": "app"
     }
   ],
   "changelog": []

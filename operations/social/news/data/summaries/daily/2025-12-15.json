@@ -2,8 +2,8 @@
   "date": "2025-12-15",
   "period_start": "2025-12-15",
   "period_end": "2025-12-15",
-  "title": "More ways to see where Pollen goes",
-  "summary": "Usage exports and model-restricted keys landed alongside clearer Pollen balances, a Seedance video fix, and some care for community apps.\n\nAdded `/api/usage` with JSON and CSV exports, timestamp pagination, and a dashboard CSV download. The dashboard now shows recent spend pending against the Pollen balance, while balance checks account for that spend before allowing more requests. Image-pricing labels also make flat per-image costs easier to distinguish from prompt-dependent token costs. The usage work also added a separate frontend for generation, model discovery, API docs, and app browsing.\n\nKey settings now let users choose which text, image, and video models a key may access. Generation checks those permissions after resolving model aliases; unrestricted keys keep access to all models.\n\nSeedance Pro now passes `aspectRatio` through to video generation instead of ignoring it, including portrait requests such as 9:16. Requests without a ratio default to 16:9.",
+  "title": "Usage is easier to inspect",
+  "summary": "Usage exports, model-restricted keys, and an apps refresh led the day; Seedance finally listened to the requested aspect ratio.\n\nAdded `/api/usage` with JSON and CSV output, timestamp-based pagination, and a dashboard CSV download. The dashboard also shows recent Pollen spend beside the balance, while balance checks account for that spend before allowing more requests. Pricing tooltips now distinguish flat per-image costs from token-based pricing.\n\nKeys can now be restricted to selected text, image, and video models. Enter has a model selector for keys, and generation requests check permissions after resolving model aliases. Keys without restrictions retain access to all models.\n\nSeedance Pro now passes `aspectRatio` through to video generation instead of ignoring it. Requests without a ratio default to 16:9.",
   "pr_count": 13,
   "prs": [
     {
@@ -59,21 +59,30 @@
       "date": "2025-12-15"
     }
   ],
-  "generated_at": "2026-10-17T15:55:36.632866+00:00",
+  "generated_at": "2026-10-17T22:36:58.285944+00:00",
   "highlights": [
     {
-      "emoji": "🎯",
+      "emoji": "💡",
       "title": "Export your usage",
-      "text": "Inspect usage through `/api/usage`, paginate by timestamp, or export JSON or CSV. The dashboard has a CSV download too. [API docs](https://gen.pollinations.ai/docs).",
+      "text": "Inspect usage through `/api/usage` as JSON or CSV, with timestamp-based pagination for longer histories.",
       "prs": [
         5869
       ],
       "kind": "api"
     },
     {
-      "emoji": "🔗",
-      "title": "Choose models per API key",
-      "text": "Set which text, image, and video models an API key can use. Requests for models outside its allowed list are rejected, even when they use an alias. [Manage keys](https://enter.pollinations.ai/keys).",
+      "emoji": "📱",
+      "title": "Download usage from Enter",
+      "text": "Download your usage records as a CSV from the dashboard.",
+      "prs": [
+        5869
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Choose models per key",
+      "text": "Restrict an API key to the text, image, and video models you select. Requests for other models return a 403. [Manage API keys](https://enter.pollinations.ai/keys).",
       "prs": [
         5978
       ],
@@ -81,10 +90,19 @@
     },
     {
       "emoji": "✨",
-      "title": "A new place to explore",
-      "text": "A separate frontend brings a generation playground, model discovery, API documentation, an app directory, and a theme editor together.",
+      "title": "Another place to explore",
+      "text": "A separate frontend was added with a generation playground, model discovery, API documentation, an app directory, and a theme editor.",
       "prs": [
         5869
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Leave an app idea",
+      "text": "The reorganized community apps collection includes a place to propose ideas for other people to build, alongside clearer app submission guidance.",
+      "prs": [
+        5740
       ],
       "kind": "product"
     }

@@ -2,8 +2,8 @@
   "date": "2026-01-08",
   "period_start": "2026-01-08",
   "period_end": "2026-01-08",
-  "title": "Clearer guidance for API keys",
-  "summary": "A documentation cleanup made API keys, first requests, and model names easier to navigate.\n\nAuthentication guides now explain publishable and secret keys, per-model restrictions, and several ways to pass a key in a request. The website docs also have separate examples for each key type.\n\nThe new GitHub organization profile includes image, text, and chat quick starts. The main README now has clearer navigation and explains how contributors can earn Pollen.\n\nAPI docs now show primary model names instead of aliases and list available text models in the chat schema. AWS Nova Micro appears as `nova-fast`; the old `nova-micro` name remains an alias.",
+  "title": "Clearer API key guidance",
+  "summary": "A documentation cleanup made API keys, model names, and first requests easier to navigate.\n\nThe README and website now explain publishable and secret keys with request examples and guidance on restricting keys to specific models.\n\nAPI docs now show primary model names instead of aliases, and the chat completions schema lists available text models. AWS Nova Micro is listed as `nova-fast`; `nova-micro` still works as an alias.\n\nThe new organization profile includes quick starts for image, text, and chat requests. The main README now has clearer navigation and explains how contributors can earn Pollen.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2026-01-08"
     }
   ],
-  "generated_at": "2026-10-17T15:58:30.165210+00:00",
+  "generated_at": "2026-10-17T22:37:53.337970+00:00",
   "highlights": [],
   "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2025-12-28",
   "period_start": "2025-12-21",
   "period_end": "2025-12-27",
-  "title": "A bigger home for the community",
-  "summary": "The site became a better home for community apps, while creation tools, model access, and API accounting grew more predictable.\n\nA themeable replacement frontend brought the playground, app directory, community page, and docs together. The directory consolidated 318 listings, added new community projects throughout the week, and made submissions easier to find and review. Hello also gave recent contributors more space.\n\nVeo gained first-to-last-frame video inputs, and Play added up to four reference-image URLs for supported models. GPT Image 1.5 joined as `gptimage-large` for generation and editing; subsequent fixes addressed its configuration, reference-image editing, and large input handling. Z-Image Turbo also began generating at the requested resolution instead of upscaling a smaller image.\n\nThird-party apps gained a redirect flow for requesting access to selected models. The playground added sign-in and uses the current key for generation, while model-list endpoints show restricted keys only the models they can use. `/v1/models` also gained an OpenAI-compatible list response.\n\nMCP server v2 moved to the unified API and added tools spanning video, parallel images, analysis, transcription, search, and tool-calling chat. OpenAI-compatible chat paths, Gemini tool schemas and thinking settings, case-insensitive model lookups, and DeepSeek V3.2 routing received compatibility work.",
+  "title": "The playground and community got one home",
+  "summary": "Pollinations brought its playground and community into one home while giving builders more control over images, app access, and the API details that make integrations work.\n\nThe themeable site brought Play, the theme creator, app directory, community page, and docs together at pollinations.ai. Play gained login controls, permission-aware model choices, up to four reference-image URLs, and clearer API errors. A grayscale preset, layout fixes, and browser-language translation made the new home more usable.\n\nVeo can generate between supplied first and last frames, while Z-Image Turbo generates at the requested resolution up to its dimension cap. `gptimage-large` joined the image API for generation and editing, then received fixes for reference-image edits, oversized inputs, and output aspect ratios. Fewer surprises between the prompt and the pixels.\n\nThird-party apps gained an authorization flow where users can review the app hostname and choose which models it may use. Model-list endpoints now reflect model-restricted keys, and `/v1/models` returns an OpenAI-compatible list response. Play also uses the signed-in user’s model access, so its selector matches what they can generate.\n\nMCP v2 moved to the unified API and added tools for video, parallel images, media analysis, transcription, search, tool-calling chat, and pricing lookup. The gateway now tolerates extra path segments from OpenAI-compatible clients; Gemini tool schemas and thinking settings received compatibility fixes. DeepSeek moved to V3.2, model lookups became case-insensitive, and failed image-URL conversion now stops a text request rather than sending partial input.",
   "pr_count": 65,
   "prs": [
     {
@@ -267,5 +267,5 @@
       "date": "2025-12-27"
     }
   ],
-  "generated_at": "2026-10-17T16:07:04.367557+00:00"
+  "generated_at": "2026-10-17T23:26:14.717174+00:00"
 }

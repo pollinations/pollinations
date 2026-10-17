@@ -2,8 +2,8 @@
   "date": "2026-01-23",
   "period_start": "2026-01-23",
   "period_end": "2026-01-23",
-  "title": "Pollen packs move to Stripe checkout",
-  "summary": "Pollen packs gained Stripe checkout, while image, Claude, and API-key fixes removed some avoidable request failures.\n\nStripe checkout was added for $5, $10, $20, and $50 Pollen packs, replacing Polar on the pack buttons. It supports promotion codes, automatic tax, VAT IDs, and invoices. The beta multiplier doubles credits calculated from the amount paid before tax and after discounts.\n\nImage requests without a `model` parameter now use the default instead of returning 400. Claude Sonnet 4.5 and Opus 4.5 fallback configurations now supply the `max_tokens` value required by Vertex AI, while preserving values set by callers.\n\nThe API-key verification limit rose from 5 to 10,000 requests per second, reducing erroneous 401 responses during concurrent, high-volume traffic.",
+  "title": "Pollen pack checkout moves to Stripe",
+  "summary": "Stripe checkout was added for Pollen packs, while image defaults, Claude fallbacks, and high-volume API-key verification got fixes.\n\nAdded Stripe checkout for $5, $10, $20, and $50 Pollen packs, with promotion codes, automatic tax, and optional business VAT details. The beta multiplier doubles credits calculated from the discounted, pre-tax payment amount.\n\nImage requests that omit `model` now use the default instead of returning 400. Claude Sonnet 4.5 and Opus 4.5 fallback configurations now supply a default `max_tokens` value when the caller has not set one.\n\nRaised the API-key verification limit from 5 to 10,000 requests per second to prevent concurrent requests, including game traffic, from receiving erroneous 401 responses.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,7 +23,7 @@
       "date": "2026-01-23"
     }
   ],
-  "generated_at": "2026-10-17T16:00:52.078956+00:00",
+  "generated_at": "2026-10-17T22:38:40.363020+00:00",
   "highlights": [],
   "changelog": []
 }

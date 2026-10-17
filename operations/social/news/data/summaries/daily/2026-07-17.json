@@ -2,20 +2,12 @@
   "date": "2026-07-17",
   "period_start": "2026-07-17",
   "period_end": "2026-07-17",
-  "title": "Sana Sprint joins the image-model lineup",
-  "summary": "Sana Sprint arrived on a tested image-generation path, 3D routing got cleaner, and the docs and garden received their daily care.\n\nSana Sprint 1.6B is now available through the standard image API, model registry, and authenticated GPU path. Its requests were also moved onto a tested fixed media tunnel, so generation and accounting follow a reliable route while the existing Flux and Z-Image paths stay untouched.\n\nThe 3D integration now calls InferencePort's official API endpoint instead of a Hugging Face Space URL. Less scenic routing for requests that would rather become meshes.\n\nThe model list received a mobile layout fix, while the README news and generated API reference were refreshed to match the current project and production API.",
-  "pr_count": 9,
+  "title": "Sana joins the image models",
+  "summary": "Sana joined the image API, mobile model browsing got less cramped, and Trellis 2 took a new route.\n\nAdded NVIDIA Sana Sprint 1.6B as `sana` for text-to-image generation through the image API. A follow-up changed how Sana requests reach its generation backend.\n\nMobile model cards now put capabilities, status, access, and generation details beneath the title instead of squeezing them into table-style columns. README and API docs were also refreshed to cover Sana and clarify the documented `gpt-realtime-2.1` default.\n\nRequests for all three Trellis 2 3D generation variants were routed to InferencePort, with routing tests updated to match.",
+  "pr_count": 6,
   "prs": [
     {
       "number": 12317,
-      "date": "2026-07-17"
-    },
-    {
-      "number": 12510,
-      "date": "2026-07-17"
-    },
-    {
-      "number": 12515,
       "date": "2026-07-17"
     },
     {
@@ -35,20 +27,16 @@
       "date": "2026-07-17"
     },
     {
-      "number": 12523,
-      "date": "2026-07-17"
-    },
-    {
       "number": 12524,
       "date": "2026-07-17"
     }
   ],
-  "generated_at": "2026-09-04T11:46:05.355659+00:00",
+  "generated_at": "2026-10-17T23:02:21.906015+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Sana Sprint joins images",
-      "text": "Generate images with Sana Sprint 1.6B, newly added to the image model lineup. [Browse models](https://enter.pollinations.ai/models).",
+      "title": "Sana image generation",
+      "text": "Generate images from text prompts with NVIDIA Sana Sprint 1.6B using `model=sana` on the image API. [Explore Sana](https://enter.pollinations.ai/models?q=sana).",
       "prs": [
         12521,
         12524
@@ -56,5 +44,34 @@
       "kind": "model"
     }
   ],
-  "changelog": []
+  "changelog": [
+    {
+      "pr_number": 12522,
+      "url": "https://github.com/pollinations/pollinations/pull/12522",
+      "merged_at": "2026-07-17T22:10:37Z",
+      "api_changes": [
+        {
+          "id": "pr-12522:GET /v1/realtime",
+          "endpoint": "GET /v1/realtime",
+          "summary": "Realtime WebSocket",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:model",
+              "before": {
+                "type": "\"gpt-realtime-2\"",
+                "required": false
+              },
+              "after": {
+                "type": "\"gpt-realtime-2.1\"|\"gpt-realtime-2\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

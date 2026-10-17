@@ -3,7 +3,7 @@
   "period_start": "2025-04-03",
   "period_end": "2025-04-03",
   "title": "Text model aliases take new routes",
-  "summary": "A routing-and-errors day: two text model aliases changed destinations, API errors got clearer, and image requests gained a token fallback.\n\n`openai-large` now maps to `gpt-4o-mini` instead of `gpt-4o`, while `openai-reasoning` maps to `o1-mini` instead of `o3-mini`.\n\nErrors now include upstream HTTP status and parsed details when available. Streaming content-filter failures return a simpler message and a `content_policy` flag.\n\nWhen no token is supplied, image token extraction now checks the `Referer` or `Referrer` header.",
+  "summary": "Text model aliases changed routes, text errors got easier to read, and image requests gained a token fallback.\n\n`openai-large` now routes to `gpt-4o-mini` instead of `gpt-4o`, while `openai-reasoning` routes to `o1-mini` instead of `o3-mini`.\n\nErrors now preserve upstream HTTP statuses when available and return simpler messages with parsed details. Streaming content-filter failures return \"Content policy violation detected\" with a `content_policy` flag.\n\nWhen an image request supplies no token directly, token extraction can check the `Referer` or `Referrer` header.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-04-03"
     }
   ],
-  "generated_at": "2026-10-17T15:37:03.581754+00:00",
+  "generated_at": "2026-10-17T22:30:04.027498+00:00",
   "highlights": [],
   "changelog": []
 }

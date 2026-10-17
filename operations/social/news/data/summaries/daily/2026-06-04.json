@@ -2,10 +2,14 @@
   "date": "2026-06-04",
   "period_start": "2026-06-04",
   "period_end": "2026-06-04",
-  "title": "Fresh alpha releases for the SDK and UI libraries",
-  "summary": "New alpha releases for the SDK and UI libraries, plus a quick migration to get the Klein image model back online.\n\nWe pushed new alpha versions for the React ecosystem. The SDK now includes a fetchModelCatalog() helper to programmatically pull model metadata, alongside a new client subpath. The UI library gets a design system bump with fresh primitives for file uploads, markdown, and a unified model selector.\n\nA host outage knocked the FLUX.2-klein-4B model offline. We migrated it to a fresh A5000 instance on RunPod and updated the routing. The 5xx errors are gone and generation is stable again.",
-  "pr_count": 3,
+  "title": "More building blocks for React apps",
+  "summary": "New alpha building blocks for app developers, a replacement backend for Klein images, and a README news refresh.\n\nThe team added `fetchModelCatalog()` and a client import path to the SDK, alongside a token-based theme system, new UI primitives, a category-filtered ModelSelector, and an AppUserMenu. Both package updates are alpha releases; their READMEs recommend pinning exact versions.\n\nFLUX.2 Klein 4B was pointed at a replacement image-generation backend to address 5xx errors after its previous host became unreachable.\n\nAn agent updated Latest News with June 3 notes on `nova-fast` routing and faster Dashboard balance checks, replacing older entries.",
+  "pr_count": 4,
   "prs": [
+    {
+      "number": 11604,
+      "date": "2026-06-04"
+    },
     {
       "number": 11610,
       "date": "2026-06-04"
@@ -19,21 +23,21 @@
       "date": "2026-06-04"
     }
   ],
-  "generated_at": "2026-06-05T07:25:14.248122+00:00",
+  "generated_at": "2026-10-17T22:55:39.073517+00:00",
   "highlights": [
     {
-      "emoji": "📦",
-      "title": "SDK Model Catalog",
-      "text": "Added `fetchModelCatalog()` to the [NPM SDK](https://www.npmjs.com/package/@pollinations/sdk) so you can programmatically fetch and filter metadata across all model types without guessing.",
+      "emoji": "🔗",
+      "title": "Model catalog in the SDK",
+      "text": "The SDK alpha adds `fetchModelCatalog()` for normalized image, video, text, and audio model metadata, plus allowed-model ID sets. It also adds the `@pollinations/sdk/client` import path. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         11610
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎨",
-      "title": "UI Component Upgrades",
-      "text": "The [React UI library](https://www.npmjs.com/package/@pollinations/ui) just got a fresh coat of pixels, adding a new model selector, `FileUpload`, and `Markdown` primitives for your frontend builds.",
+      "emoji": "✨",
+      "title": "More React UI building blocks",
+      "text": "The UI alpha adds themed primitives, a category-filtered ModelSelector, and an AppUserMenu for authorization, balance, top-up, and logout. [Explore the React UI](https://react.pollinations.ai).",
       "prs": [
         11611
       ],

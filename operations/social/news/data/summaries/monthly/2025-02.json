@@ -2,8 +2,8 @@
   "date": "2025-02-28",
   "period_start": "2025-02-01",
   "period_end": "2025-02-28",
-  "title": "More capable text requests",
-  "summary": "February broadened what people could build with the text API while making requests more private and bringing more community projects into view.\n\nGemini, reasoning, and other model options joined the text API. Function calling and OpenAI-style streaming gave clients more ways to work with responses; follow-up changes tightened stream formatting and errors.\n\nText requests gained a private option, and OpenAI-compatible requests became private by default. Image prompts gained LlamaGuard checks, feed events gained maturity data, and the turbo image model gained prompt enhancement.\n\nNew listings ranged from text adventures and chat apps to coding tools, image generators, bots, a model comparison tool, and Musify. The showcase increasingly reflected what people were already building with the API.\n\nVision and feed documentation became more specific, project submission copy got simpler, and share previews gained a banner that link previews can resolve. Smaller website cleanups removed unused imagery and improved project links.",
+  "title": "The project directory kept growing",
+  "summary": "February brought more community-built ways to use Pollinations, broader model choices, and a text API better suited to interactive clients.\n\nCommunity additions ranged from text adventures and image generators to chat apps, bots, a model comparison tool, and Musify. pollinations.diy also joined the monorepo as a browser-based coding assistant.\n\nThe text API added Gemini 2.0 Flash and Flash Thinking, Hormoz 8B, and an o1-mini reasoning option. Image generation gained a turbo option, while OpenAI text requests gained a larger message limit.\n\nFunction calling and provider-backed streaming let clients handle tools and responses as they arrive. Follow-up work improved SSE formatting, cached-stream replay, Cloudflare compatibility, and routing through a shared gateway client.\n\nText requests gained a `private=true` option, and `/openai` requests became private by default. Image prompts gained LlamaGuard checks, with maturity metadata improved for feed listeners.",
   "pr_count": 44,
   "prs": [
     {
@@ -183,5 +183,5 @@
       "date": "2025-02-28"
     }
   ],
-  "generated_at": "2026-10-17T16:08:42.787861+00:00"
+  "generated_at": "2026-10-17T23:30:25.217592+00:00"
 }

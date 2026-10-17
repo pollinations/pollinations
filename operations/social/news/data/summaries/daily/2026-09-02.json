@@ -2,9 +2,9 @@
   "date": "2026-09-02",
   "period_start": "2026-09-02",
   "period_end": "2026-09-02",
-  "title": "A broader API surface, with a new Gemini route",
-  "summary": "A busy day for builders: a new Responses API, agents that can use real app accounts, sturdier model routing, and faster contributor feedback.\n\nDevelopers can now use a stateless OpenAI-compatible `/v1/responses` endpoint across 56 supported direct-provider models, including JSON and SSE streaming. Gemini 3.8 Flash joined the catalog with multimodal input, tools, structured output, reasoning, search, streaming, and caching support. Capped canonical text, image, and audio models now also share a consistent 60 RPM minimum.\n\nComposio MCP connectors now let agents work through caller-owned accounts for Gmail, Slack, GitHub, Drive, and a rather large pile of other apps. The production worker now actually loads those tools, while the catalog gained clearer Models, Agents, and MCP sections, persistent Community filtering, focused search, and more legible MCP cards. Hosted MCP documentation now links back to source, because mysteries are better reserved for agent behavior.\n\nForty-two official text, image, video, audio, and 3D models can now move to verified fallback providers when an upstream returns a 5xx, without changing the model callers selected. Response headers separately report the requested model and the route that served it, embedded upstream 429s can enter existing retry handling, and streamed prompt-cache writes are tracked accurately in usage records.",
-  "pr_count": 17,
+  "title": "Agents gain connected-app tools",
+  "summary": "Agents gained connected-app tools, text gained a direct Responses API, Gemini 3.8 Flash joined the catalog, and more models gained fallback routes.\n\nAgents gained a Composio MCP server for discovering and using connected apps such as Gmail, Slack, GitHub, and Drive. Enter added controls to connect and manage apps; tool calls use the caller’s own connections. Hosted MCP documentation gained source links, and supporting configuration was merged.\n\nPOST /v1/responses adds stateless text generation with JSON and SSE output for 56 configured model targets. Model discovery identifies eligible models, while unsupported models and hosted tools are rejected rather than silently rerouted. Related fixes distinguish requested from used model IDs, retry certain upstream rate limits, and account for cache-write tokens in streamed usage.\n\nThe separate, paid-only `google/gemini-3.8-flash` model accepts text, image, audio, and video input and returns text, with tools, search, and a 1,048,576-token context window. The existing `gemini` service is unchanged. Generated API documentation also refreshed its chat model list.",
+  "pr_count": 15,
   "prs": [
     {
       "number": 14239,
@@ -20,14 +20,6 @@
     },
     {
       "number": 14318,
-      "date": "2026-09-02"
-    },
-    {
-      "number": 14324,
-      "date": "2026-09-02"
-    },
-    {
-      "number": 14328,
       "date": "2026-09-02"
     },
     {
@@ -75,12 +67,21 @@
       "date": "2026-09-02"
     }
   ],
-  "generated_at": "2026-09-03T06:29:37.175699+00:00",
+  "generated_at": "2026-10-17T23:10:27.894056+00:00",
   "highlights": [
     {
+      "emoji": "🔗",
+      "title": "Connect apps to agents",
+      "text": "Connect apps such as Gmail, Slack, GitHub, and Drive in Enter, then make their tools available to agents through the Composio MCP server. Tool calls use the caller’s own connections. [Read the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        14249
+      ],
+      "kind": "product"
+    },
+    {
       "emoji": "🚀",
-      "title": "Stateless Responses API",
-      "text": "Use `/v1/responses` with 56 supported models, including JSON and streaming responses. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Direct Responses API",
+      "text": "Use `POST /v1/responses` for stateless text generation with JSON or SSE output across eligible models. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         14239
       ],
@@ -89,39 +90,119 @@
     {
       "emoji": "🤖",
       "title": "Gemini 3.8 Flash",
-      "text": "Try `google/gemini-3.8-flash` for chat, streaming, structured output, tools, reasoning, and multimodal input. [Explore available models](https://gen.pollinations.ai/v1/models).",
+      "text": "Send text, images, audio, or video to `google/gemini-3.8-flash` and get text back, with tools, search, and a 1,048,576-token context window. This is a separate paid-only model; the existing `gemini` service is unchanged. [View the model](https://enter.pollinations.ai/models?q=google/gemini-3.8-flash).",
       "prs": [
         14362
       ],
       "kind": "model"
     },
     {
-      "emoji": "🔗",
-      "title": "More apps for agents",
-      "text": "Connect agents to Gmail, Slack, GitHub, Drive, and other apps through the new Composio MCP connector. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "emoji": "✨",
+      "title": "One catalog, three tabs",
+      "text": "Browse Models, Agents, and MCP in separate tabs on Enter. Search stays within your current tab, and the Community toggle keeps its setting as you move between them. [Browse the catalog](https://enter.pollinations.ai/models).",
       "prs": [
-        14249
+        14318
       ],
       "kind": "product"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Alternate history, illustrated",
-      "text": "¿Y si…? turns Spanish-language historical “what if” prompts into generated scenes with four visual presets. [Try it](https://jecxolab.github.io/y-si-historia).",
-      "prs": [
-        14331
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "📱",
-      "title": "Meet Genie AI Companion",
-      "text": "Genie AI Companion brings multimodal chat, web answers, document analysis, and summarization to the app directory. [Try it](https://play.google.com/store/apps/details?id=com.genie.aiassistant).",
-      "prs": [
-        14330
-      ],
-      "kind": "app"
     }
   ],
-  "changelog": []
+  "changelog": [
+    {
+      "pr_number": 14335,
+      "url": "https://github.com/pollinations/pollinations/pull/14335",
+      "merged_at": "2026-09-02T07:24:41Z",
+      "api_changes": [
+        {
+          "id": "pr-14335:PATCH /account/agents/{id}",
+          "endpoint": "PATCH /account/agents/{id}",
+          "summary": "Update Agent",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:requiredSafetyFeatures",
+              "before": null,
+              "after": {
+                "type": "\"privacy\"|\"secrets\"|\"sexual\"|\"violence\"|\"shield\"[]",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-14335:POST /account/agents",
+          "endpoint": "POST /account/agents",
+          "summary": "Create Agent",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:requiredSafetyFeatures",
+              "before": null,
+              "after": {
+                "type": "\"privacy\"|\"secrets\"|\"sexual\"|\"violence\"|\"shield\"[]",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-14335:POST /account/my-models",
+          "endpoint": "POST /account/my-models",
+          "summary": "Create My Model",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:requiredSafetyFeatures",
+              "before": null,
+              "after": {
+                "type": "\"privacy\"|\"secrets\"|\"sexual\"|\"violence\"|\"shield\"[]",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-14335:POST /account/my-models/endpoint-agents",
+          "endpoint": "POST /account/my-models/endpoint-agents",
+          "summary": "Create Endpoint Agent",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:requiredSafetyFeatures",
+              "before": null,
+              "after": {
+                "type": "\"privacy\"|\"secrets\"|\"sexual\"|\"violence\"|\"shield\"[]",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-14335:POST /account/my-models/{id}/update",
+          "endpoint": "POST /account/my-models/{id}/update",
+          "summary": "Update My Model",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:requiredSafetyFeatures",
+              "before": null,
+              "after": {
+                "type": "\"privacy\"|\"secrets\"|\"sexual\"|\"violence\"|\"shield\"[]",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

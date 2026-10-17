@@ -2,8 +2,8 @@
   "date": "2025-12-30",
   "period_start": "2025-12-30",
   "period_end": "2025-12-30",
-  "title": "Seedream gets a year-end promotion",
-  "summary": "A year-end Seedream promotion, a longer view of model health, and local Pollen balance tracking led a day of practical fixes.\n\nEnter added 99%-off promotion badges for `seedream` and `seedream-pro`, alongside updated model descriptions and a Dec 31, 2025 end date in the announcement.\n\nModel Monitor now defaults to a 60-minute health view, with a switch back to the existing 5-minute view. The longer window shows per-model request counts, status codes, and latency without making every brief wobble look like the whole story.\n\nDonjon.studio joined the games directory with AI-generated interactive adventures, evolving stories, and images. App submission checks were also updated to handle special characters in names and fields.",
+  "title": "Seedream promotion and clearer Pollen estimates",
+  "summary": "Seedream got a year-end promotion, Model Monitor gained an hour-long view, and Pollen balance checks stopped calling Polar on every request.\n\nEnter added 99%-off promotion messaging for `seedream` and `seedream-pro`, with an announced end of December 31, 2025. The Pollen FAQ now calculates generation examples from model pricing data instead of relying on fixed estimates; the pricing page also received small layout updates.\n\nModel Monitor now defaults to a 60-minute view of request counts, status codes, and latency. A segmented control keeps the existing 5-minute view available when the last hour is too much history.\n\nDonjon.studio joined the games directory with AI-generated interactive adventures. App submission checks now handle names with special characters and give rejected submissions a reason. React hook docs also correct the default seed to `42` and explain reproducible generation.",
   "pr_count": 9,
   "prs": [
     {
@@ -43,12 +43,12 @@
       "date": "2025-12-30"
     }
   ],
-  "generated_at": "2026-10-17T15:57:30.424932+00:00",
+  "generated_at": "2026-10-17T22:37:35.550778+00:00",
   "highlights": [
     {
-      "emoji": "🎯",
-      "title": "A wider model-health view",
-      "text": "Check model health over 60 minutes, or switch to the 5-minute view when you need a closer look. [Open Model Monitor](https://model-monitor.pollinations.ai).",
+      "emoji": "📱",
+      "title": "An hour of model health",
+      "text": "View model request counts, status codes, and latency over the past 60 minutes, or switch back to the 5-minute view. [Open Model Monitor](https://model-monitor.pollinations.ai).",
       "prs": [
         6637
       ],

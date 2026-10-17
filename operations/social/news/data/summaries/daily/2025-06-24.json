@@ -3,7 +3,7 @@
   "period_start": "2025-06-24",
   "period_end": "2025-06-24",
   "title": "Text requests get a faster default",
-  "summary": "Text requests got a faster default, authentication shed redundant queries, and Unfoldtech joined the creative projects.\n\nText requests that omit a model now default to `openai-fast`; explicitly selected models are unchanged. Configurable routing was also added for specified authenticated users, alongside the `openai-roblox` model and changes to several model tier labels.\n\nToken validation now gets user details in one query instead of three. A test response fell from roughly 12 seconds to 2.1 seconds, and image generation now reuses one authentication result throughout a request.\n\nUnfoldtech, created by kengkreingkrai, was added to Creative Projects. It turns Pexels image inspiration into prompts and generated images, with IPTC metadata embedded in downloads.",
+  "summary": "Text requests got a faster default, token checks got shorter, and model routing got more specific.\n\nText requests that omit a model now default to `openai-fast` instead of `openai`. Explicit model choices are unchanged.\n\nToken validation now retrieves account details in one query instead of three; a test response fell from roughly 12 seconds to 2.1 seconds. Image generation also authenticates once per request rather than repeating the check.\n\nUnfoldtech was added to Creative Projects. It turns Pexels images into prompt inspiration and embeds title, description, and keywords in downloaded images.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,14 +23,32 @@
       "date": "2025-06-24"
     }
   ],
-  "generated_at": "2026-10-17T15:43:01.777310+00:00",
+  "generated_at": "2026-10-17T22:32:24.289919+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Faster default text model",
-      "text": "Text requests without a `model` now use `openai-fast`. Explicitly selected models are unchanged. [Browse the model](https://enter.pollinations.ai/models?q=openai-fast).",
+      "title": "A faster text default",
+      "text": "Omit `model` from a text request to use `openai-fast` by default. Explicit model selections still work as before. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         2615
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🚀",
+      "title": "Quicker token checks",
+      "text": "Token validation now uses one database query instead of three; a test response dropped from roughly 12 seconds to 2.1 seconds. Image requests also authenticate once rather than repeating the check.",
+      "prs": [
+        2605
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Model routing for configured accounts",
+      "text": "The new `openai-roblox` route supports text and image input plus tools for accounts configured to use it. Routing happens without a client change. [View the model](https://enter.pollinations.ai/models?q=openai-roblox).",
+      "prs": [
+        2619
       ],
       "kind": "model"
     }

@@ -2,8 +2,8 @@
   "date": "2025-02-10",
   "period_start": "2025-02-10",
   "period_end": "2025-02-10",
-  "title": "Referral links in a small share of text responses",
-  "summary": "Referral links were added to a small share of Markdown responses, alongside visit tracking and changes to chat response metadata.\n\nReferral-link processing was added for roughly 1% of eligible Markdown text responses. It can turn up to three existing product or concept mentions into links; plain-text responses stay unchanged, and processing errors leave the original content intact.\n\nA /referral route was added to record the topic attached to a visit, then redirect visitors to the pollinations.ai homepage after three seconds.\n\nOpenAI-format responses now get a newly generated ID and creation timestamp rather than preserving provider metadata. The response helper also stopped filling in missing choice indexes and adding its previous cache header.",
+  "title": "Referral links in some Markdown text responses",
+  "summary": "A referral experiment touched Markdown replies, visit routing, and chat-response metadata.\n\nAbout 1% of eligible Markdown text responses can have existing product or concept mentions turned into up to three referral links. Plain-text responses are left unchanged, and processing errors return the original content.\n\nThe new /referral route records the topic from a link, then sends visitors to the pollinations.ai homepage after three seconds.\n\nOpenAI-format responses now receive a newly generated ID and creation timestamp rather than retaining provider values. The response helper also stops filling in missing choice indexes and adding its previous cache header.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2025-02-10"
     }
   ],
-  "generated_at": "2026-10-17T15:33:40.681887+00:00",
+  "generated_at": "2026-10-17T22:28:55.196607+00:00",
   "highlights": [],
   "changelog": []
 }

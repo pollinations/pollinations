@@ -3,7 +3,7 @@
   "period_start": "2025-11-01",
   "period_end": "2025-11-01",
   "title": "Enter image requests get a clearer path",
-  "summary": "Enter image requests got a clearer path, Flux stopped quietly changing models on failure, and the sites tidied up their icons.\n\nImage requests from Enter now bypass the per-IP queue, and its nanobanana requests skip the per-IP hourly check. Other image requests have tighter queue and concurrency limits.\n\nWhen Flux generation fails, the request now returns the original error rather than silently producing an image with a different model.\n\nThe main site and Enter received refreshed icons and sharing metadata generated from shared logo files. Enter also gained a web manifest for standalone display.",
+  "summary": "Image requests got more predictable, Flux stopped quietly switching models, and the sites tidied up their logos.\n\nEnter image requests now bypass the image service’s per-IP queue, and its nanobanana requests skip the hourly per-IP check. Other nanobanana requests remain limited to 10 images per hour; unauthenticated image requests have a longer queue interval and lower concurrency caps.\n\nIf Flux generation fails, the API now returns the original error rather than silently producing an image with a different model.\n\nThe sites now draw favicons, app icons and social previews from consolidated logo assets. Pollinations.ai and Enter also received refreshed icons and sharing metadata.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2025-11-01"
     }
   ],
-  "generated_at": "2026-10-17T15:50:40.710476+00:00",
+  "generated_at": "2026-10-17T22:35:07.941272+00:00",
   "highlights": [],
   "changelog": []
 }

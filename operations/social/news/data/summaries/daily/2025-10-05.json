@@ -2,8 +2,8 @@
   "date": "2025-10-05",
   "period_start": "2025-10-05",
   "period_end": "2025-10-05",
-  "title": "Image models get a metadata endpoint",
-  "summary": "Image model details and wildcard referrers joined the API, while Hacktoberfest gained app starters and the community showcase got a tidy-up.\n\nThe image API gained `/about`, which returns each model’s name, tier, enhance flag, and maximum side length as JSON. `/models` still returns names only.\n\nRegistered wildcard domains can now authenticate requests from their subdomains without a separate registration for each one. Exact matches take priority, and a wildcard does not cover its parent domain. A separate change added configurable concurrency caps for selected nanobanana and seedream users; other users keep their tier-based caps.\n\nA new Hacktoberfest 2025 folder sets out how to submit frontend apps, with an HTML image-generation starter, a React/Vite placeholder starter, and two examples: CatGPT and the Sirius Cybernetics Elevator Challenge. Contributors can optionally propose an idea for feedback before building.",
+  "title": "Hacktoberfest has a place to start",
+  "summary": "Hacktoberfest app starters arrived, image models gained a metadata endpoint, and wildcard referrers made subdomain setup less repetitive.\n\nA Hacktoberfest 2025 submission area added frontend app starters and two examples: CatGPT makes cat comics with image generation, while the Elevator Challenge asks players to persuade an uncooperative elevator. Contributors can optionally propose an app for feedback before building it. The React starter currently uses sample content, not Pollinations calls.\n\nThe image API gained an `/about` endpoint with each model’s name, tier, enhance flag, and maximum side length. Text model naming also took a round trip: short IDs remain the primary names, and longer model-specific IDs remain available as aliases.\n\nReferrer authentication now accepts registered wildcard domains such as `*.example.com`, including nested subdomains but not the parent domain. Exact matches take precedence. A separate change added configurable concurrency caps for selected users of nanobanana and seedream; other users keep their tier-based caps.",
   "pr_count": 11,
   "prs": [
     {
@@ -51,12 +51,21 @@
       "date": "2025-10-05"
     }
   ],
-  "generated_at": "2026-10-17T15:48:13.941591+00:00",
+  "generated_at": "2026-10-17T22:34:24.060755+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Image model details via API",
-      "text": "Call the image API’s `/about` endpoint to get model names, tiers, enhance flags, and maximum side lengths as JSON. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Hacktoberfest app starters",
+      "text": "Build a frontend-only Pollinations app from a single-file image-generation starter, or explore CatGPT’s cat-comic generator and an elevator-persuasion game for ideas. [Read the contributor guide](https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md).",
+      "prs": [
+        4344
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Image model details",
+      "text": "The image API’s `/about` endpoint returns model names, tiers, enhance flags, and maximum side lengths as JSON. `/models` still returns names.",
       "prs": [
         4276
       ],
@@ -65,21 +74,11 @@
     {
       "emoji": "🔗",
       "title": "Wildcard referrer domains",
-      "text": "A registered domain such as `*.example.com` can authenticate requests from its subdomains, including nested ones. The parent domain still needs its own match. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "text": "A registered referrer pattern like `*.example.com` can authenticate requests from its subdomains, including nested ones. The parent domain still needs its own match.",
       "prs": [
         4347
       ],
       "kind": "api"
-    },
-    {
-      "emoji": "✨",
-      "title": "Hacktoberfest app starters",
-      "text": "Build a frontend Pollinations app using the new HTML starter, or browse CatGPT and the elevator game for ideas. You can propose an idea for feedback before submitting an app. [Read the contributor guide](https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md).",
-      "prs": [
-        4344,
-        4353
-      ],
-      "kind": "product"
     }
   ],
   "changelog": []

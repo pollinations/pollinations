@@ -2,8 +2,8 @@
   "date": "2025-03-25",
   "period_start": "2025-03-25",
   "period_end": "2025-03-25",
-  "title": "VibeCoder joins the creative app listings",
-  "summary": "A community coding app joined the showcase, while the API docs got clearer about local images and text completions.\n\nVibeCoder, a community web app for coding without writing syntax, was added to the README and website app lists.\n\nThe API docs now show how to send a local JPEG as a base64 data URL in Python and JavaScript, alongside the existing image-URL approach.\n\nThe docs clarify that the OpenAI-compatible text API currently supports only the completion endpoint.",
+  "title": "Vision examples now cover local images",
+  "summary": "A documentation-and-community day: clearer Vision examples, a sharper text API description, and VibeCoder in the creative app listings.\n\nThe API docs added Python and JavaScript examples for sending local JPEGs as base64 data URLs to the Vision API, alongside the existing image URL approach.\n\nThe docs now specify that the OpenAI-compatible text API currently supports only the completion endpoint.\n\nVibeCoder, a Pollinations-powered web app for coding without writing syntax, was added to the README and website creative app lists.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2025-03-25"
     }
   ],
-  "generated_at": "2026-10-17T15:36:26.319563+00:00",
+  "generated_at": "2026-10-17T22:29:46.520891+00:00",
   "highlights": [],
   "changelog": []
 }

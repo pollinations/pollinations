@@ -2,12 +2,24 @@
   "date": "2026-07-31",
   "period_start": "2026-07-31",
   "period_end": "2026-07-31",
-  "title": "Image generation gets faster under load",
-  "summary": "A reliability-and-throughput day: community models can fall back gracefully, while DreamShaper moves more images through the GPU pool.\n\nThe DreamShaper sana deployment now supports three independent worker pipelines per GPU, lifting measured concurrent throughput from roughly 4.3 to 8 images per second per card. The deployment notes also document the production setup, so reproducing the faster pool should involve fewer sacred rituals.\n\nModel owners can configure up to three compatible public fallback models for their community models. Text requests use Portkey fallback entries, image requests retry safely in the worker, and scoped API keys only see targets they are allowed to use.\n\nThe root README's Latest News section was refreshed so visitors and contributors get a current snapshot of what the garden has been doing.",
-  "pr_count": 3,
+  "title": "DreamShaper replaces Sana Sprint",
+  "summary": "DreamShaper replaced Sana Sprint, community models gained fallback routes, and image-input errors became easier to handle.\n\nDreamShaper 8 LCM replaced Sana Sprint in the image model listing, with `sana` retained as an alias for existing callers. The worker uses a fixed three-step configuration. A separate worker update added a concurrency setting; testing measured about 8 images per second per card with three processes, up from about 4.3 with one.\n\nCommunity model owners can set up to three ordered fallback models in the model dialog or Polli CLI. Text and image requests can try eligible backups after upstream or network failures, but not after caller errors or content-policy refusals. Callers pay only for the model that completes the request, at no more than the requested model’s price.\n\nImage generation, vision, 3D and embeddings now share image-download handling, including a 20MB per-image limit. Invalid URLs, failed downloads, oversized images and unsupported media return HTTP 400 with stable error codes instead of passing through an image host’s response status.",
+  "pr_count": 6,
   "prs": [
     {
       "number": 12819,
+      "date": "2026-07-31"
+    },
+    {
+      "number": 12900,
+      "date": "2026-07-31"
+    },
+    {
+      "number": 12901,
+      "date": "2026-07-31"
+    },
+    {
+      "number": 12928,
       "date": "2026-07-31"
     },
     {
@@ -19,23 +31,23 @@
       "date": "2026-07-31"
     }
   ],
-  "generated_at": "2026-08-01T06:58:21.390602+00:00",
+  "generated_at": "2026-10-17T23:04:16.349830+00:00",
   "highlights": [
     {
-      "emoji": "✨",
-      "title": "Fallback routing for community models",
-      "text": "Model owners can nominate up to three compatible backups, so text and image generations can keep moving when an upstream model goes sideways. [API Docs](https://gen.pollinations.ai/docs)",
+      "emoji": "🎨",
+      "title": "DreamShaper 8 LCM images",
+      "text": "Generate images with `dreamshaper`, which replaces Sana Sprint in the model listing. Existing `sana` requests keep working as an alias. [Browse DreamShaper](https://enter.pollinations.ai/models?q=dreamshaper).",
       "prs": [
-        12819
+        12900
       ],
-      "kind": "product"
+      "kind": "model"
     },
     {
-      "emoji": "⚡",
-      "title": "Faster DreamShaper image generation",
-      "text": "The Sana pool now runs parallel workers per GPU, roughly doubling concurrent throughput. More pixels, less queue. [Try it](https://pollinations.ai/play)",
+      "emoji": "🔗",
+      "title": "Fallbacks for community models",
+      "text": "Set up to three ordered backup models in the model dialog or Polli CLI. Eligible backups can take over when a text or image model hits an upstream or network failure, without charging for failed attempts.",
       "prs": [
-        12985
+        12819
       ],
       "kind": "product"
     }

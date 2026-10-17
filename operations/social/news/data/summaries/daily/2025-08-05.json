@@ -3,7 +3,7 @@
   "period_start": "2025-08-05",
   "period_end": "2025-08-05",
   "title": "Two more ways to chat",
-  "summary": "Four community projects joined the lists: two chat tools, an image generator, and an open-source creative toolbox.\n\nThe Chat Projects list now includes Island AI, with multimodal chat, web search, and a mode that asks clarifying questions, and Botzy AI, a chatbot supporting Urdu, English, and Roman Urdu.\n\nVisiora was added to the Vibe Coding project list. It turns text prompts into images with Flux, Turbo, and Kontext options, plus dimension and seed controls.\n\naitoolbox.software was added to the Creative Projects list, bringing a collection of AI-powered productivity and creativity tools to the showcase.",
+  "summary": "Four community projects joined the lists, spanning multilingual chat, image generation, and creative tools.\n\nIsland AI and Botzy AI joined the Chat Projects list. Island AI combines multimodal chat, web search, and clarifying questions; Botzy AI offers chat in Urdu, English, and Roman Urdu.\n\nVisiora joined the Vibe Coding project list with text-to-image generation, Flux, Turbo, and Kontext options, plus dimension and seed controls.\n\nThe open-source aitoolbox.software collection joined Creative Projects, bringing together AI-powered productivity and creativity tools.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,7 +23,7 @@
       "date": "2025-08-05"
     }
   ],
-  "generated_at": "2026-10-17T15:44:53.739908+00:00",
+  "generated_at": "2026-10-17T22:33:09.203657+00:00",
   "highlights": [],
   "changelog": []
 }

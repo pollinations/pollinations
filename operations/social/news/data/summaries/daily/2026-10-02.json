@@ -2,9 +2,9 @@
   "date": "2026-10-02",
   "period_start": "2026-10-02",
   "period_end": "2026-10-02",
-  "title": "Hosted sandboxes and a new way to get an API key",
-  "summary": "Sandboxes, larger media chats, visible model evals, and community-built tools all got a little easier to use.\n\nDevelopers can run E2B-compatible sandboxes through gen with existing E2B tools, or manage them with `polli sandbox` and connect over SSH. A completed x402 Pollen-pack purchase now returns a budgeted API key; the checkout page shows payment-method examples relevant to the buyer’s country, and the Machines permission label says plainly what it grants.\n\nThe chat API now accepts requests up to 100 MiB with large inline images. It also offloads large data URIs in image, video, and file URL fields, reusing account-scoped uploads across turns instead of sending the same bytes again. Which media types work still depends on the model.\n\nModel Monitor has an Evals tab with weekly Alice and Bowls puzzle scores, past runs, official-versus-community comparisons, and margins of error. Eval runs now pace requests to each model’s advertised rate limit and publish the other scores when one model runs out of retries.",
-  "pr_count": 19,
+  "title": "Coding sandboxes and Pi tools",
+  "summary": "Coding sandboxes, Pi MCP setup, larger inline-media chats and model evals joined a rebuilt community page.\n\nAlpha E2B Linux sandboxes were added through the API and Polli CLI. They can be created, inspected and reached over SSH, with sandbox time paid from a Pollinations wallet in advance. Polli also gained native setup for hosted MCP servers in Pi. Smaller follow-ups clarified the Machines permission, fixed chat-session exits and improved a harness request example.\n\nChat completions now accept JSON requests up to 100 MiB when they contain supported inline media. Large image, video and file data URIs are stored as media and replaced with URLs before reaching a provider; each offloaded URI is capped at 20 MiB, and model support for URL inputs still varies. API documentation was regenerated as the media support expanded.\n\nA Quest contribution added text-model rankings and past runs to Model Monitor, including community models. The first evaluation runner uses fresh versions of the Alice in Wonderland, AIW+ and Bowls puzzles; scores include confidence intervals so close results are not presented as clear wins. Weekly runs are configured for Mondays, with an on-demand option.",
+  "pr_count": 17,
   "prs": [
     {
       "number": 15656,
@@ -51,10 +51,6 @@
       "date": "2026-10-02"
     },
     {
-      "number": 16251,
-      "date": "2026-10-02"
-    },
-    {
       "number": 16258,
       "date": "2026-10-02"
     },
@@ -75,29 +71,34 @@
       "date": "2026-10-02"
     },
     {
-      "number": 16269,
-      "date": "2026-10-02"
-    },
-    {
       "number": 16270,
       "date": "2026-10-02"
     }
   ],
-  "generated_at": "2026-10-03T06:30:38.168168+00:00",
+  "generated_at": "2026-10-17T23:16:13.858355+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Hosted coding sandboxes",
-      "text": "Use E2B-compatible sandboxes through `/alpha/e2b`, or manage them with `polli sandbox` and SSH into a template with five coding agents.",
+      "title": "Alpha coding sandboxes",
+      "text": "Create Linux sandboxes with Polli, inspect their logs and connect over SSH. Sandbox time is paid from your Pollinations wallet in advance. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         15656
       ],
-      "kind": "api"
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Pi gets MCP setup",
+      "text": "Use `polli mcp install pi --all` to configure hosted MCP servers in Pi while preserving your other server settings. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        16218
+      ],
+      "kind": "product"
     },
     {
       "emoji": "✨",
-      "title": "Larger media-rich chats",
-      "text": "Send chat requests up to 100 MiB with inline images. Large image, video, and file data URIs can use reusable account-scoped uploads through the [chat API](https://gen.pollinations.ai/v1/chat/completions).",
+      "title": "Larger inline-media chats",
+      "text": "Send chat requests up to 100 MiB with supported inline image, video or file data URIs. Large media is converted to URLs for the provider; which URL types work depends on the model. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         16199,
         16267
@@ -106,31 +107,21 @@
     },
     {
       "emoji": "🎯",
-      "title": "Weekly model puzzle rankings",
-      "text": "Compare official and community models on seeded puzzle evaluations, browse past runs, and see margins of error in [Model Monitor](https://model-monitor.pollinations.ai).",
+      "title": "Text models get evals",
+      "text": "Compare text models, including community models, in Model Monitor’s new Evals tab. Rankings show past runs and confidence intervals, starting with puzzle-based evaluations. [Open Model Monitor](https://model-monitor.pollinations.ai).",
       "prs": [
-        15674,
-        16251
+        15674
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎨",
-      "title": "Pollinations for Krita",
-      "text": "Generate images on new Krita layers and edit images with this community-made plugin. [View repo](https://github.com/xiaotian1171/pollinations-krita).",
+      "emoji": "🌟",
+      "title": "Find your community route",
+      "text": "The rebuilt Community page brings together app listings, model and agent publishing requests, GitHub contributions and Discord. Open votes now reflect reactions on GitHub issues. [Visit pollinations.ai](https://pollinations.ai).",
       "prs": [
-        16211
+        16197
       ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Pollinations for Unity",
-      "text": "Add chat, image generation, and speech generation to Unity projects with a dependency-free C# package. [View repo](https://github.com/Marcus-Mok-GH/pollinations-unity).",
-      "prs": [
-        16258
-      ],
-      "kind": "app"
+      "kind": "product"
     }
   ],
   "changelog": [

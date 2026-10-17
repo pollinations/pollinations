@@ -2,20 +2,12 @@
   "date": "2026-07-07",
   "period_start": "2026-07-07",
   "period_end": "2026-07-07",
-  "title": "Polli CLI installation now points developers to the working command",
-  "summary": "A small maintenance day: clearer CLI setup, more accurate client identity at the edge, and freshly updated community maps.\n\nThe Polli skill docs now include the current global npm install command: `npm i -g @pollinations/cli@latest`. Less archaeology required before talking to the CLI.\n\nTwo networking fixes preserve real viewer IPs through CloudFront, Origin Shield, and trusted proxy headers. Internal rate limiting, tracking, and abuse detection can now identify individual clients rather than a shared egress address.\n\nAutomated updates refreshed community app health and usage metrics, plus the README's latest-news section, so the public map of the garden remains current.",
-  "pr_count": 5,
+  "title": "Fairer per-client traffic handling",
+  "summary": "A CDN IP fix improves per-client traffic handling, while the README and polli skill get clearer pointers.\n\nAn API reliability fix makes per-client rate limiting and abuse detection use the viewer’s IP rather than a shared CDN address. The change was added without altering the Worker’s IP-resolution behavior.\n\nThe README’s Latest News now points to Tomdacat’s Roblox integration and its OpenAI-compatible API with more than 40 models. An older Model Health news entry left the list; the endpoint was not removed.\n\nThe polli skill now includes the CLI install command and identifies the `polli` binary, so readers know what to install before following its instructions.",
+  "pr_count": 3,
   "prs": [
     {
-      "number": 12272,
-      "date": "2026-07-07"
-    },
-    {
       "number": 12273,
-      "date": "2026-07-07"
-    },
-    {
-      "number": 12282,
       "date": "2026-07-07"
     },
     {
@@ -27,7 +19,7 @@
       "date": "2026-07-07"
     }
   ],
-  "generated_at": "2026-09-04T11:43:31.965243+00:00",
+  "generated_at": "2026-10-17T23:00:55.968541+00:00",
   "highlights": [],
   "changelog": []
 }

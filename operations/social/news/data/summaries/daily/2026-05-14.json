@@ -2,12 +2,16 @@
   "date": "2026-05-14",
   "period_start": "2026-05-14",
   "period_end": "2026-05-14",
-  "title": "Faster speech and stabler ears for the Audio API",
-  "summary": "A unified dashboard UI, ultra-low latency text-to-speech, and solid fixes for audio transcription.\n\nWe wired up the ElevenLabs Flash v2.5 model (`elevenflash`) for ultra-low latency text-to-speech at half the usual credit cost. On the listening side, we patched OVH Whisper transcription so it stops throwing 500 errors over file extensions and duration metadata.\n\nThe enter.pollinations.ai dashboard got a structural refactor. We replaced fragmented styles with a unified design system and shared UI primitives. Managing your API keys and models is now a visually consistent, much cleaner experience.",
-  "pr_count": 3,
+  "title": "Faster speech option, sturdier transcription",
+  "summary": "A new low-latency speech option leads a day of dashboard cleanup, more reliable Quest tracking, and repaired app listings.\n\nElevenLabs Flash v2.5 was added as `elevenflash`, an alpha text-to-speech model that uses the existing ElevenLabs voices and supports 32 languages. Speech requests now pass the selected model through to generation. OVH Whisper transcription also preserves uploaded filenames for format detection and accepts the provider’s `usage.seconds` response field.\n\nShared styling and controls now bring the Models, Keys, authorization, and device screens into line. Models has a pricing-units footer, while pinned news shows dates. Fewer one-off controls to keep track of.\n\nQuest instructions now appear in the issue body. The payout workflow can find quests through GitHub’s PR-to-issue links, including sidebar links, and flags missing links for review instead of silently skipping them.",
+  "pr_count": 8,
   "prs": [
     {
       "number": 10912,
+      "date": "2026-05-14"
+    },
+    {
+      "number": 10927,
       "date": "2026-05-14"
     },
     {
@@ -17,14 +21,30 @@
     {
       "number": 10936,
       "date": "2026-05-14"
+    },
+    {
+      "number": 10940,
+      "date": "2026-05-14"
+    },
+    {
+      "number": 10941,
+      "date": "2026-05-14"
+    },
+    {
+      "number": 10943,
+      "date": "2026-05-14"
+    },
+    {
+      "number": 10948,
+      "date": "2026-05-14"
     }
   ],
-  "generated_at": "2026-05-15T07:02:51.343772+00:00",
+  "generated_at": "2026-10-17T22:54:24.942462+00:00",
   "highlights": [
     {
-      "emoji": "⚡",
-      "title": "ElevenLabs Flash v2.5",
-      "text": "Ultra-low latency speech generation is here. Pass `elevenflash` to the [Audio API](https://gen.pollinations.ai/audio/{text}) for faster text-to-speech at half the credit cost.",
+      "emoji": "🎵",
+      "title": "ElevenLabs Flash speech",
+      "text": "Generate speech with `elevenflash`, an alpha ElevenLabs Flash v2.5 option supporting 32 languages and the existing ElevenLabs voices. It’s paid-only. [View the model](https://enter.pollinations.ai/models?q=elevenflash).",
       "prs": [
         10936
       ],

@@ -3,7 +3,7 @@
   "period_start": "2025-08-22",
   "period_end": "2025-08-22",
   "title": "Image docs and news tidied up",
-  "summary": "A quiet docs cleanup removed outdated image and tier announcements without changing the API.\n\nThe README and website news no longer include GPT Image or tier announcements. Image API docs now describe image-to-image input for Kontext only, without GPT Image examples or the documented `transparent` parameter. This was a documentation change, not a change to model access or API behavior.",
+  "summary": "A documentation cleanup brought image API guidance and website news into line with what they currently describe.\n\nThe image API docs now describe image-to-image input for Flux Kontext without the GPT Image examples or documented `transparent` parameter. Outdated GPT Image and tier announcements were also removed from the README and website news. No model access or API behavior changed.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-08-22"
     }
   ],
-  "generated_at": "2026-10-17T15:45:35.924621+00:00",
+  "generated_at": "2026-10-17T22:33:20.603087+00:00",
   "highlights": [],
   "changelog": []
 }

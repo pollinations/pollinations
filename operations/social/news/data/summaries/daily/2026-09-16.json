@@ -2,12 +2,16 @@
   "date": "2026-09-16",
   "period_start": "2026-09-16",
   "period_end": "2026-09-16",
-  "title": "A small forest of community agents, games, comics, and tools",
-  "summary": "A buzzing day for community agents and Computer MCP, with sturdier model routing, faster WebUI chat, and fewer mysterious agent failures.\n\nThe catalog and chat ecosystem gained CatGPT Comic, Barnaby the Crow, Moko the Remembering Fox, the Sirius Elevator game, ComicStyles, Pollen Craft, Cogitor, and GitMuse. CatGPT also got a sturdier reference image and a newer caricature model, because apparently the cat has production requirements now.\n\nComputer MCP can now maintain a shared Git-backed collective memory, attribute default commits to linked GitHub accounts, and use a broader git implementation without exposing push credentials. It also gained CSV, file, and HTML-to-Markdown commands, plus a default User-Agent so ordinary API calls such as GitHub work without ceremonial header-writing.\n\nPrompt agents now preserve omitted fields during partial updates, accept richer descriptions, return normal length-limited empty responses instead of 502s, and keep actionable 4xx permission errors intact. Production deploys also redeploy code agents with the current runtime, while the agent guide now documents the full MCP set and the peculiar physics of temporary files.",
+  "title": "Music v2.5 joins a healthier model catalog",
+  "summary": "New music and community agents arrived alongside a healthier model catalog, a more capable computer shell, and a substantial round of reliability work.\n\nAdded `elevenlabs/music-v2.5` for 3–300-second music generation, with instrumental mode, reference audio, and composition-plan inpainting. Enter’s model catalog now shows healthy official models by default, displays health indicators, and lets users include other models with `status:all`. Model-list APIs use `status=all|healthy` and a renamed status header; the API docs were updated to match.\n\nCommunity contributors added CatGPT Comic, a crow shopkeeper that remembers requested facts across chats, and a chat game about persuading a reluctant elevator to descend. CatGPT’s existing selfie feature got a repaired image reference and a new preferred image model. The app catalog gained Pollen Craft, Moko, Comicstyles, Cogitor AI, and GitMuse; two more contributors gained community-model access.\n\nComputer MCP agents can work with a public collective-memory repository, and their commits default to the caller’s linked GitHub identity. The shell gained CSV processing, HTML-to-Markdown conversion, file identification, and more Git operations, including rebase and cherry-pick. A curl fix helps requests reach APIs that require a User-Agent, while the agent guide now explains the available MCP servers and computer-shell behavior.",
   "pr_count": 37,
   "prs": [
     {
       "number": 14406,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14681,
       "date": "2026-09-16"
     },
     {
@@ -24,10 +28,6 @@
     },
     {
       "number": 14940,
-      "date": "2026-09-16"
-    },
-    {
-      "number": 14944,
       "date": "2026-09-16"
     },
     {
@@ -59,10 +59,6 @@
       "date": "2026-09-16"
     },
     {
-      "number": 14958,
-      "date": "2026-09-16"
-    },
-    {
       "number": 14960,
       "date": "2026-09-16"
     },
@@ -72,6 +68,10 @@
     },
     {
       "number": 14972,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14975,
       "date": "2026-09-16"
     },
     {
@@ -95,11 +95,11 @@
       "date": "2026-09-16"
     },
     {
-      "number": 14999,
+      "number": 15000,
       "date": "2026-09-16"
     },
     {
-      "number": 15000,
+      "number": 15004,
       "date": "2026-09-16"
     },
     {
@@ -155,53 +155,106 @@
       "date": "2026-09-16"
     }
   ],
-  "generated_at": "2026-09-17T06:30:59.952384+00:00",
+  "generated_at": "2026-10-17T23:14:08.001648+00:00",
   "highlights": [
     {
       "emoji": "🎵",
       "title": "ElevenLabs Music v2.5",
-      "text": "Generate music with `elevenlabs/music-v2.5`, including reference-plan extraction and inpainting. [Explore the audio API](https://gen.pollinations.ai/docs).",
+      "text": "Generate 3–300 seconds of music with `elevenlabs/music-v2.5`. It supports instrumental tracks, reference audio, and composition-plan inpainting. [View the model](https://enter.pollinations.ai/models?q=elevenlabs%2Fmusic-v2.5).",
       "prs": [
         15042
       ],
       "kind": "model"
     },
     {
-      "emoji": "🎨",
-      "title": "CatGPT draws the punchline",
-      "text": "The `community/Creatneworld/catgpt-comic` agent turns a chat message into a sarcastic reply and an inline single-panel comic.",
+      "emoji": "🎯",
+      "title": "Find healthy models first",
+      "text": "Enter’s model catalog now starts with healthy official models and shows health indicators beside them. Edit the filters or use `status:all` to see the rest. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        14869,
-        14957
+        14940
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Filter models by health",
+      "text": "Model-list requests can use `status=healthy` to return models with fresh healthy results, or `status=all` to include health data without excluding models. The header is now `Pollinations-Model-Status`. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14940
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎨",
+      "title": "CatGPT draws comics",
+      "text": "CatGPT Comic pairs a short, sarcastic cat reply with a single-panel comic in the same chat request. [Read the agent docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14869
       ],
       "kind": "product"
     },
     {
       "emoji": "🤖",
-      "title": "Meet Moko the fox",
-      "text": "Chat with a desert fox NPC that can remember facts you ask it to keep across conversations. [Try it](https://heard-was-lessons-altered.trycloudflare.com).",
+      "title": "A crow with memory",
+      "text": "Barnaby the Crow is a shopkeeper agent that can save facts you ask it to remember, recall them in a fresh chat, and remove them on request. [Read the agent docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        14945
+        14907
       ],
-      "kind": "app"
+      "kind": "product"
     },
     {
-      "emoji": "🎨",
-      "title": "Stories, split into panels",
-      "text": "Give ComicStyles a one-line premise and get a written comic story divided into panels. [Try it](https://comicstyles.com).",
+      "emoji": "🎯",
+      "title": "Persuade an elevator",
+      "text": "Sirius Elevator: The Descent turns an ordinary chat into a game about talking a reluctant elevator down two floors. Mentioning a towel helps, for reasons the elevator presumably understands. [Read the agent docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        14947
+        14960
       ],
-      "kind": "app"
+      "kind": "product"
     },
     {
       "emoji": "💡",
-      "title": "GitMuse helps with git",
-      "text": "Turn diffs into Conventional Commit messages, unpack stack traces, and draft pull request descriptions. [Try it](https://fadyabohamza-netizen.github.io/gitmuse).",
+      "title": "Shared memory for agents",
+      "text": "Computer MCP agents can use the public `pollinations/collective-memory` repository to read and contribute shared memory. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
-        14972
+        15026
       ],
-      "kind": "app"
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Your name on commits",
+      "text": "Computer MCP commits now default to your linked GitHub identity, so GitHub can attribute an agent’s work to your account. Repository-specific Git settings still take precedence. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        15028
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "More computer shell tools",
+      "text": "Computer MCP agents can use `xan` for CSV, `html-to-markdown` for HTML conversion, and `file` to identify files. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        15038
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "More Git for agents",
+      "text": "Computer MCP’s `git` command now supports operations including `git mv`, rebase, cherry-pick, commit ranges, and formatted logs. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        15039
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Roomier agent descriptions",
+      "text": "Agent and community-endpoint descriptions can now be up to 1,000 characters, up from 160. There is finally room to explain what the thing does. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        15012
+      ],
+      "kind": "api"
     }
   ],
   "changelog": [

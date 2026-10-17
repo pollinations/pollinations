@@ -2,8 +2,8 @@
   "date": "2025-03-04",
   "period_start": "2025-03-04",
   "period_end": "2025-03-04",
-  "title": "Phi-4 joins the chat models",
-  "summary": "Phi-4 joined the chat models, while community contributions made ComfyUI integration and a Chinese-language DeepSeek tutorial easier to find.\n\nAdded Phi-4 Multimodal Instruct as the `phi` chat model. The same PR moved `llama` to Portkey routing and added routing configurations for several existing models.\n\nAdded 1038lab’s ComfyUI-Pollinations node to the README and website SDK and library lists. The node uses the Pollinations API to generate images and text from prompts across multiple models.\n\nAdded isinry’s tutorial on giving a DeepSeek chat UI image generation through the Pollinations API to the README and website tutorial lists.",
+  "title": "Phi joins the chat models",
+  "summary": "Phi joined the chat models, while community additions brought a ComfyUI node and a Chinese-language DeepSeek tutorial into the project lists.\n\nAdded Phi-4 Multimodal Instruct as the `phi` chat model. Llama and several other chat models also gained Portkey routing and default prompts.\n\nAdded 1038lab’s ComfyUI-Pollinations node to the SDK and libraries lists. It connects ComfyUI to Pollinations for prompt-based image and text generation across multiple models.\n\nAdded isinry’s Chinese-language tutorial on giving a DeepSeek chat UI image generation through the Pollinations API to the tutorial list.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,16 +19,25 @@
       "date": "2025-03-04"
     }
   ],
-  "generated_at": "2026-10-17T15:34:45.508052+00:00",
+  "generated_at": "2026-10-17T22:28:56.311100+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Phi-4 joins chat",
-      "text": "Use `phi` to chat with Phi-4 Multimodal Instruct. [Browse the model](https://enter.pollinations.ai/models?q=phi).",
+      "title": "Phi joins chat",
+      "text": "Use Phi-4 Multimodal Instruct as the `phi` chat model. [View the model](https://enter.pollinations.ai/models?q=phi).",
       "prs": [
         1268
       ],
       "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Pollinations in ComfyUI",
+      "text": "Use the community-built ComfyUI-Pollinations node to generate images and text from prompts with multiple models. It’s now listed among the SDKs and libraries.",
+      "prs": [
+        1264
+      ],
+      "kind": "product"
     }
   ],
   "changelog": []

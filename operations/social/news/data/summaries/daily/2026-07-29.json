@@ -2,9 +2,9 @@
   "date": "2026-07-29",
   "period_start": "2026-07-29",
   "period_end": "2026-07-29",
-  "title": "Polli-agent is now a public multimodal router",
-  "summary": "A new public multimodal agent, safer agent delegation, a sharper Polli, and Gemini Search back on its native path.\n\npolli-agent landed as an OpenAI-compatible streaming chat endpoint that can coordinate text, images, audio, video, web search, and sandboxed media tools through a tool-calling loop. It is now wired into the app deployment pipeline and reachable at its public Polli hostnames, rather than existing as a very capable folder.\n\nApproved community endpoints can now receive short-lived agent run tokens for generation requests. The delegated tokens let an agent work within the caller's existing controls and attribution without exposing the original API key.\n\nPolli now handles Discord GIFV embeds by sending vision models a usable preview image instead of repeatedly feeding them undecodable video URLs. Its responses and search behavior were also tightened up: shorter independent answers, explicit result limits, and fewer enormous transcript-shaped objects.",
-  "pr_count": 8,
+  "title": "A multimodal agent, with delegated generation",
+  "summary": "A multimodal agent and delegated generation joined the codebase while Gemini Search routing and Polli’s media handling got attention.\n\nTeam work added polli-agent, an OpenAI-compatible router that can stream responses and combine model calls with image, video, audio, search, and media tools. It was also registered as an app. Separately, admin-enabled community agent endpoints gained short-lived run tokens so they can generate against a caller’s model access and budget without receiving the caller’s API key.\n\nGemini Search models were restored to direct Vertex routing, with native Google Search grounding and usage accounting for streamed responses. Text-provider 429 errors are also reported as upstream failures rather than as rate limits imposed on the caller.\n\nThe Discord assistant now uses static thumbnails for GIFV vision input instead of unsupported video inputs. It also gives shorter answers, retrieves less unnecessary context, and uses display names while keeping usernames available for tool calls.",
+  "pr_count": 9,
   "prs": [
     {
       "number": 12702,
@@ -12,6 +12,10 @@
     },
     {
       "number": 12814,
+      "date": "2026-07-29"
+    },
+    {
+      "number": 12815,
       "date": "2026-07-29"
     },
     {
@@ -39,12 +43,12 @@
       "date": "2026-07-29"
     }
   ],
-  "generated_at": "2026-07-30T07:02:29.361217+00:00",
+  "generated_at": "2026-10-17T23:03:56.086773+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "Polli Agent",
-      "text": "Send one OpenAI-compatible streaming request and get coordinated text, images, audio, video, web search, and media stitching back. One prompt, many petals. [Try it](https://polli.pollinations.ai)",
+      "emoji": "🤖",
+      "title": "Polli-agent combines media tools",
+      "text": "Polli-agent adds an OpenAI-compatible chat endpoint that can stream responses and coordinate text, image, video, audio, web search, and media-processing tools in one request.",
       "prs": [
         12702,
         12857
@@ -52,9 +56,9 @@
       "kind": "product"
     },
     {
-      "emoji": "✨",
-      "title": "Agent Run Tokens",
-      "text": "Community agents can now use short-lived delegated tokens to generate on a caller’s Pollen budget without ever handling their API key. Tiny keys, fewer ways to spill honey. [API Docs](https://gen.pollinations.ai/docs)",
+      "emoji": "🔗",
+      "title": "Delegated agent generation",
+      "text": "Enabled community agent endpoints can make generation requests using a short-lived run token tied to the caller’s model access and budget, without receiving the caller’s API key.",
       "prs": [
         12844
       ],

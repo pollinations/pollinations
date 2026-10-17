@@ -2,12 +2,20 @@
   "date": "2026-04-28",
   "period_start": "2026-04-28",
   "period_end": "2026-04-28",
-  "title": "The gpt-image-2 infrastructure dance",
-  "summary": "A solid day of infrastructure tuning, bringing massive capacity upgrades to gpt-image-2 and a slick new integration for OpenClaw coding agents.\n\nWe did a little routing shuffle with `gpt-image-2` today to handle load. First, we spread traffic across five Azure regions. Shortly after, we decided to drop the round-robin entirely and route directly to OpenAI. The end result is what matters: significantly higher generation capacity and fewer rate limits for your image requests.\n\nPollinations is now a built-in provider for OpenClaw. We spun up a dedicated `openclaw` model alias backed by Qwen3-Coder-30B and added a CLI installer. Hooking up automated coding agents with built-in tool-call sequencing just got a lot faster.\n\nFixed two API quirks that were causing unnecessary server panics. Sending dead silence to the Scribe audio transcription endpoint now returns an empty string instead of a 500 error. Also, requesting a text model on an image endpoint now politely returns a 400 instead of a confusing 502, which keeps our analytics cleaner and your debugging faster.",
-  "pr_count": 6,
+  "title": "OpenClaw gets a Pollinations Connect flow",
+  "summary": "OpenClaw setup got simpler, API errors got more useful, and image generation received some route maintenance.\n\nThe community-maintained OpenClaw setup page now guides users through Pollinations authorization and fills the returned API key into setup examples. Its provider configuration adds Kimi K2.6 and a DeepSeek fallback, while Kimi K2.5 remains the default.\n\nUsing a text, image, or audio model on the wrong endpoint now returns a 400 that points to the right one, rather than an upstream 502. Malformed audio URLs also return a 400 with encoding guidance, and silent Scribe v2 clips can return an empty transcription instead of a 500.\n\nKlein 4B was pointed at a replacement host after an outage. The gpt-image-2 route was first configured across Azure regions, then changed to a direct OpenAI endpoint for generation and edits; the older gptimage routes remain on Azure.",
+  "pr_count": 10,
   "prs": [
     {
       "number": 9942,
+      "date": "2026-04-28"
+    },
+    {
+      "number": 10512,
+      "date": "2026-04-28"
+    },
+    {
+      "number": 10514,
       "date": "2026-04-28"
     },
     {
@@ -15,7 +23,15 @@
       "date": "2026-04-28"
     },
     {
+      "number": 10519,
+      "date": "2026-04-28"
+    },
+    {
       "number": 10520,
+      "date": "2026-04-28"
+    },
+    {
+      "number": 10523,
       "date": "2026-04-28"
     },
     {
@@ -31,25 +47,16 @@
       "date": "2026-04-28"
     }
   ],
-  "generated_at": "2026-04-29T06:47:56.134419+00:00",
+  "generated_at": "2026-10-17T22:49:27.371025+00:00",
   "highlights": [
     {
-      "emoji": "🤖",
-      "title": "OpenClaw Integration",
-      "text": "Added an `openclaw` model alias backed by Qwen3-Coder-30B. You can now wire up the OpenClaw CLI to use Pollinations for automated coding workflows. Check the [Available Text Models](https://gen.pollinations.ai/v1/models).",
+      "emoji": "🔗",
+      "title": "Connect Pollinations to OpenClaw",
+      "text": "Set up Pollinations as an OpenClaw provider through a Connect flow that fills your returned API key into the setup instructions. The provider configuration now includes Kimi K2.6 and a DeepSeek fallback.",
       "prs": [
         9942
       ],
       "kind": "product"
-    },
-    {
-      "emoji": "⚡",
-      "title": "Unbottlenecking gpt-image-2",
-      "text": "Ripped out the old Azure routing for `gpt-image-2` and wired it directly to OpenAI. Expect significantly higher capacity and fewer rate limits when generating pixels.",
-      "prs": [
-        10531
-      ],
-      "kind": "model"
     }
   ],
   "changelog": []

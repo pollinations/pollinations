@@ -2,8 +2,8 @@
   "date": "2025-09-03",
   "period_start": "2025-09-03",
   "period_end": "2025-09-03",
-  "title": "Text models reshuffled, FLUX routing adjusted",
-  "summary": "GPT-5 Nano became the default `openai` model, FLUX routing got fallbacks, and two community projects joined the listings.\n\nThe default `openai` model was changed to GPT-5 Nano, while `openai-fast` remains on GPT-4.1 Nano. Public model listings exclude hidden models and provider identifiers, several older model entries were removed, and `openai-large` moved to the seed tier. For `flux` image requests, registered ComfyUI servers became the first choice, with Cloudflare fallbacks and progress updates for each fallback.\n\nThe Creative Projects list gained a bilingual AI Image Generator with prompt optimization and progress display. Hack & Build gained AI Agent Portal, where Architect, Coder, and QA agents collaborate on development tasks from a single prompt.\n\nA SECURITY.md policy was added to explain how to report vulnerabilities privately, what information to include, and how maintainers handle responses and reporter credit.",
+  "title": "A new default for text, and a new route for FLUX",
+  "summary": "GPT-5 Nano became the default text model, FLUX gained a fallback route, and two community projects joined the listings.\n\nThe `openai` text model now maps to GPT-5 Nano, while `openai-fast` stays on GPT-4.1 Nano. FLUX image requests now try registered ComfyUI servers first, then Cloudflare Flux and Dreamshaper as fallbacks, with progress reporting each fallback. The same model-configuration work added a `mistral-romance` mapping and adjusted other provider mappings.\n\nPublic model listings now exclude hidden models and provider-specific original names, with non-community models sorted first. Several older model entries were removed, and `openai-large` moved from the flower tier to the seed tier.\n\nThe project listings added a bilingual AI Image Generator with prompt optimization and progress display, plus AI Agent Portal, a multi-agent development environment with coding, content, and canvas modes.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,12 +27,12 @@
       "date": "2025-09-03"
     }
   ],
-  "generated_at": "2026-10-17T15:46:13.831522+00:00",
+  "generated_at": "2026-10-17T22:33:33.129037+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "GPT-5 Nano becomes the default",
-      "text": "The `openai` text model is updated to GPT-5 Nano; `openai-fast` keeps GPT-4.1 Nano. [Browse models](https://enter.pollinations.ai/models?q=openai).",
+      "title": "GPT-5 Nano becomes default",
+      "text": "Requests using the `openai` model now select GPT-5 Nano. Use `openai-fast` if you want to keep using GPT-4.1 Nano. [Browse models](https://enter.pollinations.ai/models?q=openai).",
       "prs": [
         3947
       ],

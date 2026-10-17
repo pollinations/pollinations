@@ -2,8 +2,8 @@
   "date": "2025-09-28",
   "period_start": "2025-09-21",
   "period_end": "2025-09-27",
-  "title": "The image workflow grew beyond prompts",
-  "summary": "New image and text models arrived while reference images, request pacing, and Pollen usage became easier to work with.\n\nNanobanana and Seedream 4.0 joined the image API with reference-image generation. The editor now accepts up to four references for Nanobanana, Seedream, and Kontext, and the API accepts reference URLs separated by pipes or commas. Nanobanana also gained guidance for non-square requests and clearer handling of slow or empty responses.\n\nThe text lineup added DeepSeek V3.1 and search-grounded Gemini. By the end of the week, `openai` mapped to GPT-5 Mini, `openai-fast` to GPT-5 Nano, and seed-tier `openai-large` to GPT-5 Chat. The smaller GPT-5 models support image input and tools; `openai-audio` also raised its input limit from 2,000 to 5,000 characters.\n\nEnter added a registry for text and image generation services, allowing free registered services to be called without an API key. Paid requests gained session and positive-balance checks, while cached responses are not charged. Generation tracking now includes timing, response status, cache hits, and failures; image responses expose the model, tier, and completion image tokens in headers.\n\nA per-IP bottleneck was fixed so authenticated requests can use their configured concurrency allowance. Nanobanana and Seedream queue intervals fell from 45 to 30 seconds, with up to three requests per interval for Flower users and six for Nectar users, rather than one for everyone. Nectar-tier concurrency also rose from 50 to 100 requests.",
+  "title": "Images got more ways to start",
+  "summary": "Image generation gained new models and reference-image workflows, while model routes, queues, and usage reporting became easier to work with.\n\nNanobanana and Seedream 4.0 joined image generation with prompt and reference-image support. The image editor now accepts up to four references for supported models, the API accepts multiple reference URLs separated by pipes or commas, and non-square requests give Nanobanana aspect-ratio guidance. Both new models were also added to Enter’s image listings.\n\nBy week’s end, `openai` used GPT-5 Mini, `openai-fast` used GPT-5 Nano, and seed-tier users could reach GPT-5 Chat through `openai-large` or `gpt-5-chat`. DeepSeek V3.1, Gemini with built-in search, and the `geminisearch` alias expanded the other options. Several Gemini and Vertex routing fixes accompanied those additions.\n\nRegistered free text and image services became callable without an API key. Paid requests gained session and positive-Pollen-balance checks, while cached responses are not charged. Enter added usage-based price calculation, and image responses gained headers identifying the model, user tier, and reported image-token usage.\n\nA per-IP queue fix lets token-authenticated requests use their tier-based concurrency rather than starting only one request per interval. Nanobanana and Seedream queue intervals dropped from 45 to 30 seconds, with higher per-interval caps for Flower and Nectar users. Image-response handling also gained clearer outcomes for blocked or empty results.",
   "pr_count": 35,
   "prs": [
     {
@@ -147,5 +147,5 @@
       "date": "2025-09-26"
     }
   ],
-  "generated_at": "2026-10-17T16:06:01.243970+00:00"
+  "generated_at": "2026-10-17T23:25:30.517878+00:00"
 }

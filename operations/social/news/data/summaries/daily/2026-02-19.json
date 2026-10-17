@@ -2,14 +2,10 @@
   "date": "2026-02-19",
   "period_start": "2026-02-19",
   "period_end": "2026-02-19",
-  "title": "shipped auto-polly: the platform now tries to fix its own bugs before bothering us",
-  "summary": "also cleaned up the sdk packages and wrote actual docs for api errors. guessing stack traces is only fun for the first hour. 6 prs merged today",
-  "pr_count": 6,
+  "title": "New names for the npm tools",
+  "summary": "The npm tools got new names, and the docs got a clearer first request, video options, and API error examples.\n\nThe SDK, MCP package, and oh-my-pollicode were renamed to `@pollinations_ai/sdk`, `@pollinations_ai/model-context-protocol`, and `@pollinations_ai/oh-my-pollicode`. Installation examples and the MCP installer were updated to match; the SDK’s functionality did not change.\n\nA community contribution added a three-step README quick start: get an API key, choose image, text, audio, or video generation, then follow an existing example.\n\nCommunity docs now specify video duration ranges and defaults for `seedance` and `veo`, along with their supported input types. Examples for four common API errors were also added, though a formatting issue leaves some of those entries inside a code block.",
+  "pr_count": 4,
   "prs": [
-    {
-      "number": 7920,
-      "date": "2026-02-19"
-    },
     {
       "number": 7939,
       "date": "2026-02-19"
@@ -23,34 +19,11 @@
       "date": "2026-02-19"
     },
     {
-      "number": 8398,
-      "date": "2026-02-19"
-    },
-    {
       "number": 8421,
       "date": "2026-02-19"
     }
   ],
-  "generated_at": "2026-02-20T06:17:59.715281+00:00",
-  "highlights": [
-    {
-      "emoji": "📦",
-      "title": "Package Migration",
-      "text": "The SDK and MCP packages have moved to the `@pollinations_ai` scope on NPM. We dropped the React dependencies, so they're lighter and framework-agnostic now.",
-      "prs": [
-        8421
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🎥",
-      "title": "Video Duration",
-      "text": "The `seedance` video model now accepts a `duration` parameter. Control your clip length via the [API](https://gen.pollinations.ai).",
-      "prs": [
-        8364
-      ],
-      "kind": "api"
-    }
-  ],
+  "generated_at": "2026-10-17T22:40:45.235215+00:00",
+  "highlights": [],
   "changelog": []
 }

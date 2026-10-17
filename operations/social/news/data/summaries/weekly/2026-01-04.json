@@ -2,8 +2,8 @@
   "date": "2026-01-04",
   "period_start": "2025-12-28",
   "period_end": "2026-01-03",
-  "title": "Z-Image became the default",
-  "summary": "Image generation got a new default and better ways to explore it, while Pollen accounting and request handling received a thorough tune-up.\n\n`zimage` became the default image model, and `flux` requests now resolve to it. Larger Z-Image requests gained 2× SPAN upscaling with pixel limits that preserve the requested aspect ratio. The year-end Seedream promotion was added with a December 31 end date, then its expired labels were removed.\n\nTier grants and purchased packs now have separate balances, so daily tier resets do not distort the displayed total. Billable requests use tier Pollen first; balance lookup and subscription-tier updates were also adjusted to keep purchases, grants, and the dashboard in sync.\n\nStreaming text POSTs now bypass deduplication so SSE chunks can arrive as they are generated. Across text and image generation, `seed=-1` bypasses gateway caches and produces a fresh seed instead of repeat results. Chat gained more `reasoning_effort` options, Gemini 3 Flash fast mode sends a zero-token thinking budget, and GPT-5.2 routing was updated to address blocked text responses.\n\nPlay gained a Watch Feed for completed community images, with grid and single-image views plus prompt and model labels. Model Monitor gained a default 60-minute health view alongside its 5-minute view, and its table became easier to navigate on smaller screens.",
+  "title": "Z-Image took the default slot",
+  "summary": "The year turned over with a new default image model, more reliable Pollen accounting, and fixes that make API responses behave the way their parameters suggest.\n\nZ-Image replaced flux as the default image model, and requests naming `flux` now resolve to Z-Image too. It also gained SPAN 2× upscaling for requests above its native pixel budget, with aspect ratios preserved within output limits.\n\nBalance tracking now separates daily tier grants from purchased packs, spends tier Pollen first, and gives the dashboard a breakdown of both balances. Follow-up changes keep tier grants in sync after subscription changes and refresh a stored zero balance when a higher balance is available. The FAQ also draws generation estimates from model pricing data rather than fixed examples.\n\nStreaming text can arrive in SSE chunks instead of waiting behind deduplication. `seed=-1` now produces fresh text and images, while explicit image seeds retain their intended behavior. Chat completions accept three more reasoning-effort values; Gemini 3 Flash fast mode sends a zero-token thinking budget; and an endpoint change addressed response blocks for `openai-large` GPT-5.2.\n\nPlay gained a Watch Feed for completed community images, and Model Monitor gained a 60-minute view alongside its 5-minute view. Mobile table fixes make model health, API keys, and pricing easier to inspect on narrow screens. Browser-based Usage CSV downloads received a header fix.",
   "pr_count": 52,
   "prs": [
     {
@@ -215,5 +215,5 @@
       "date": "2026-01-03"
     }
   ],
-  "generated_at": "2026-10-17T16:07:18.041114+00:00"
+  "generated_at": "2026-10-17T23:26:18.399286+00:00"
 }

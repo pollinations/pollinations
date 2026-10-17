@@ -2,8 +2,8 @@
   "date": "2025-01-15",
   "period_start": "2025-01-15",
   "period_end": "2025-01-15",
-  "title": "Requested temperature reaches text generation",
-  "summary": "Text requests got more predictable pacing, shared queues for nearby IPs, and correct temperature forwarding.\n\nThe OpenAI generation path now forwards the requested temperature, so that setting reaches the model.\n\nText requests are queued one at a time, with starts spaced at least three seconds apart per IP group. The separate 40-requests-per-minute limit is unchanged.\n\nQueue grouping now uses the first three segments of an IPv4 address, so addresses with the same /24-style prefix are paced together.",
+  "title": "Text requests get a steadier pace",
+  "summary": "Text requests now queue by IP group at a steadier pace, and OpenAI generation forwards the requested temperature.\n\nText requests now run one at a time, with at least three seconds between starts for each IP group. The separate 40-requests-per-minute limit is unchanged.\n\nIPv4 addresses sharing their first three segments now share a text-request queue rather than being queued individually.\n\nThe OpenAI generation path now forwards the requested temperature, so that setting reaches the model.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-01-15"
     }
   ],
-  "generated_at": "2026-10-17T15:32:52.378338+00:00",
+  "generated_at": "2026-10-17T22:28:53.108249+00:00",
   "highlights": [],
   "changelog": []
 }

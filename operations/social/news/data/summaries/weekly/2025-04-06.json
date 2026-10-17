@@ -2,8 +2,8 @@
   "date": "2025-04-06",
   "period_start": "2025-03-30",
   "period_end": "2025-04-05",
-  "title": "Model names became more useful",
-  "summary": "Model choices became easier to discover and use, while text requests and image feeds got less surprising.\n\nThe `gemini` name now points to Gemini 2.5 Pro Experimental, text requests accept defined aliases, and two OpenAI aliases changed destinations. Mistral listings now identify five configurations that accept image input, while a DeepSeek entry was renamed to distinguish the distilled model from full DeepSeek R1.\n\nPOST cache keys now include the entire request body, so parameters such as seeds no longer risk sharing a cached response. Most text models gained a Llama 4-derived conversational prompt, while specialized prompts remain in place. Model records became smaller, and upstream errors now carry more useful detail.\n\nThe image feed editor now fetches model choices from the API, with a loading state and fallback list. Image token extraction gained a header fallback when no token is supplied. Feed filtering also became stricter: listeners exclude events flagged for mature prompt terms and no longer accept `nsfw=true` as a bypass.\n\nThe text server stopped adding NSFW referral links to responses, and streaming content-filter failures now return a simpler message with a `content_policy` flag.",
+  "title": "Model names got more useful",
+  "summary": "This week made model choices clearer and text responses more predictable, while community builders found more ways to put image generation to work.\n\nThe `gemini` name now points to Gemini 2.5 Pro Experimental, and text requests can use defined aliases. Other routes changed too: `openai-large` now maps to `gpt-4o-mini`, while `openai-reasoning` maps to `o1-mini`. Five Mistral configurations now advertise their existing image-input capability, and the Cloudflare-hosted DeepSeek distill model has its own name instead of sharing one with full DeepSeek R1. Names and metadata matter when they decide what an API client actually sends.\n\nMost text models gained a Llama 4-derived conversational prompt, while specialized models kept their own instructions. POST cache keys now account for the entire request body, so changing a parameter such as `seed` does not retrieve a response cached for different parameters. Errors also preserve upstream HTTP statuses where available and present simpler details; model listings now return smaller OpenAI-style records.\n\nThe image feed editor now gets its model choices from the image API, with a loading state and a fallback list if the request fails. Six community additions showed what people are building around these tools: image-making apps, a WordPress image block, a Flutter/Dart SDK, a Discord bot with image and voice features, and an LLM podcast.\n\nThe text server stopped appending NSFW referral links to generated responses. Image feed events now mark prompts matching mature terms, and feed listeners filter mature and other restricted content from both replayed and new results. Streaming content-filter errors also have a clearer message and a `content_policy` flag.",
   "pr_count": 21,
   "prs": [
     {
@@ -91,5 +91,5 @@
       "date": "2025-04-05"
     }
   ],
-  "generated_at": "2026-10-17T16:03:49.466344+00:00"
+  "generated_at": "2026-10-17T23:24:10.263994+00:00"
 }

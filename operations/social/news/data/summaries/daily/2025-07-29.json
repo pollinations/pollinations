@@ -3,7 +3,7 @@
   "period_start": "2025-07-29",
   "period_end": "2025-07-29",
   "title": "Image API gets an OpenAPI spec",
-  "summary": "A quiet day for the image API: its existing options are now described in an OpenAPI spec.\n\nAn OpenAPI 3.0.3 spec now documents image generation models and parameters, alongside authentication and rate limits. This adds a spec file, not a new docs route or a change to API behavior.",
+  "summary": "The image API got an OpenAPI spec; the API itself stayed the same.\n\nAn OpenAPI 3.0.3 spec now documents the image prompt endpoint, model options, generation parameters, authentication, and rate limits. This adds a spec file, not an interactive docs route or a change to API behavior.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-07-29"
     }
   ],
-  "generated_at": "2026-10-17T15:44:26.086334+00:00",
+  "generated_at": "2026-10-17T22:32:55.527376+00:00",
   "highlights": [],
   "changelog": []
 }

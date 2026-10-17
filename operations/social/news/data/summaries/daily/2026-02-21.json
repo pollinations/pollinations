@@ -2,8 +2,8 @@
   "date": "2026-02-21",
   "period_start": "2026-02-21",
   "period_end": "2026-02-21",
-  "title": "Polly bot gets a massive brain upgrade",
-  "summary": "A massive brain upgrade for our Discord bot, Polly, plus new AI assistants and meme generators hitting the community showcase.\n\nWe completely overhauled the embedding system for our Discord bot, Polly. By implementing token-aware request batching and optimizing message handling, we've drastically reduced latency and improved context retrieval. We also migrated the bot's source into the monorepo with an automated deployment workflow, ensuring faster and more reliable updates. Expect much faster, highly accurate answers when asking about documentation or code.\n\nThe community showcase continues to expand with two new additions. We've added 'ppo', a powerful new AI assistant, to the Chat directory, alongside 'BrainrotMaker' in the Creative section for all your rapid-fire internet-culture image generation needs.",
+  "title": "Polly gets a sturdier search index",
+  "summary": "Polly’s search got more resilient, two community apps joined the catalog, and the README caught up with recent changes.\n\nTwo PRs from Itachi-1824 improved Polly’s code and documentation search: smaller, token-aware embedding batches avoid input limits, documentation indexing handles markdown and missing titles, and both indexes check for updates on restart. Polly also skips unrelated Discord messages before doing reply checks or API work.\n\nThe catalog added ppo, a Pollinations-powered chat assistant by @AnesNT-DZ, and BrainrotMaker, an image generator by @lualearnings. Both were added to the README showcase, and the App Greenhouse listing was refreshed.\n\nThe README’s Latest News was updated to cover GENEXUS AI developer tools, the SDK and MCP package move, and `seedance` duration support. Older entries made way for the update; this PR changed the news, not those features.",
   "pr_count": 5,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2026-02-21"
     },
     {
-      "number": 8467,
+      "number": 8457,
       "date": "2026-02-21"
     },
     {
@@ -27,7 +27,7 @@
       "date": "2026-02-21"
     }
   ],
-  "generated_at": "2026-03-18T21:42:43.883190+00:00",
+  "generated_at": "2026-10-17T22:41:06.650929+00:00",
   "highlights": [],
   "changelog": []
 }

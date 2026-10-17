@@ -2,9 +2,9 @@
   "date": "2026-08-31",
   "period_start": "2026-08-01",
   "period_end": "2026-08-31",
-  "title": "A much larger media toolbox",
-  "summary": "August widened the creative toolkit while making models, agents, community apps, and the infrastructure beneath them much easier to discover and trust.\n\nNew image, video, text, speech, transcription, and embedding options arrived throughout the month, including Krea 2 Medium, Qwen Image 3, Wan 3.0, Gemini Omni 1.1 Flash, FLUX.2, GLM-5.3, Kokoro TTS, Grok TTS, Scribe realtime, and community embeddings. Builders kept the same simple endpoints while gaining more peculiar machines behind them.\n\nThe model catalog was rebuilt into a faster, clearer browser with official and community scopes, persistent search and sorting, capability metadata, model-detail limits, advanced query filters, direct Play links, and compatibility aliases that keep old integrations working while the shelf gets rearranged.\n\nManaged prompt agents gained publishing, Polli CLI management, MCP server attachments, inspectable tool calls, agent discovery and delegation, transcription, and a hosted MCP registry and proxy. Browser builders also got a clearer App Key and PKCE path for bringing their own projects safely into the mix.\n\nThe community directory moved to a validated shared catalog, gained screenshots across hundreds of active apps, shareable search, and steadier publishing workflows. New projects kept arriving across study tools, creative studios, games, accessibility, and self-hosted workflows—the usual result of leaving an open API near people with weekends.",
-  "pr_count": 492,
+  "title": "More ways to make media",
+  "summary": "August widened what people can generate and publish, while making the growing catalog easier to navigate and its costs easier to understand.\n\nNew image and video choices included Qwen Image 3, Seedance 2.5, Wan 3.0, Gemini Omni and FLUX.2. Speech expanded too, with new voices and batch and live transcription. Resolution, duration and reference-media controls became more explicit.\n\nMy Models gained publishing paths for transcription, embeddings and video, plus clearer capability metadata, testing and monitoring. Community providers can now describe more of what their endpoints actually do.\n\nEditable prompt agents joined My Models, then gained visible tool calls, delegation and a hosted MCP tool directory. Hosted tools added generation, transcription, web search and FFmpeg media processing; Floret gained more audio and video work.\n\nEnter added faster model browsing, capability and access filters, clearer prices and limits, and links from catalog rows into Play. The community app directory gained searchable listings and screenshots across all active apps.",
+  "pr_count": 418,
   "prs": [
     {
       "number": 12741,
@@ -23,26 +23,6 @@
       "date": "2026-08-01"
     },
     {
-      "number": 12908,
-      "date": "2026-08-01"
-    },
-    {
-      "number": 12920,
-      "date": "2026-08-01"
-    },
-    {
-      "number": 12927,
-      "date": "2026-08-01"
-    },
-    {
-      "number": 12930,
-      "date": "2026-08-01"
-    },
-    {
-      "number": 12936,
-      "date": "2026-08-01"
-    },
-    {
       "number": 12982,
       "date": "2026-08-01"
     },
@@ -52,14 +32,6 @@
     },
     {
       "number": 12990,
-      "date": "2026-08-01"
-    },
-    {
-      "number": 12991,
-      "date": "2026-08-01"
-    },
-    {
-      "number": 12994,
       "date": "2026-08-01"
     },
     {
@@ -75,10 +47,6 @@
       "date": "2026-08-01"
     },
     {
-      "number": 13005,
-      "date": "2026-08-01"
-    },
-    {
       "number": 13007,
       "date": "2026-08-01"
     },
@@ -91,19 +59,11 @@
       "date": "2026-08-01"
     },
     {
-      "number": 13010,
-      "date": "2026-08-01"
-    },
-    {
       "number": 13011,
       "date": "2026-08-01"
     },
     {
       "number": 12631,
-      "date": "2026-08-02"
-    },
-    {
-      "number": 13016,
       "date": "2026-08-02"
     },
     {
@@ -115,15 +75,7 @@
       "date": "2026-08-02"
     },
     {
-      "number": 13024,
-      "date": "2026-08-02"
-    },
-    {
       "number": 13028,
-      "date": "2026-08-02"
-    },
-    {
-      "number": 13029,
       "date": "2026-08-02"
     },
     {
@@ -131,7 +83,7 @@
       "date": "2026-08-03"
     },
     {
-      "number": 13025,
+      "number": 13031,
       "date": "2026-08-03"
     },
     {
@@ -139,15 +91,7 @@
       "date": "2026-08-03"
     },
     {
-      "number": 13035,
-      "date": "2026-08-03"
-    },
-    {
       "number": 13041,
-      "date": "2026-08-03"
-    },
-    {
-      "number": 13046,
       "date": "2026-08-03"
     },
     {
@@ -167,6 +111,10 @@
       "date": "2026-08-04"
     },
     {
+      "number": 13036,
+      "date": "2026-08-04"
+    },
+    {
       "number": 13043,
       "date": "2026-08-04"
     },
@@ -183,7 +131,11 @@
       "date": "2026-08-05"
     },
     {
-      "number": 12924,
+      "number": 12956,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 12958,
       "date": "2026-08-05"
     },
     {
@@ -263,10 +215,6 @@
       "date": "2026-08-05"
     },
     {
-      "number": 13113,
-      "date": "2026-08-05"
-    },
-    {
       "number": 13123,
       "date": "2026-08-05"
     },
@@ -295,10 +243,6 @@
       "date": "2026-08-06"
     },
     {
-      "number": 13141,
-      "date": "2026-08-06"
-    },
-    {
       "number": 13142,
       "date": "2026-08-06"
     },
@@ -312,10 +256,6 @@
     },
     {
       "number": 13152,
-      "date": "2026-08-06"
-    },
-    {
-      "number": 13155,
       "date": "2026-08-06"
     },
     {
@@ -335,14 +275,6 @@
       "date": "2026-08-07"
     },
     {
-      "number": 13157,
-      "date": "2026-08-07"
-    },
-    {
-      "number": 13158,
-      "date": "2026-08-07"
-    },
-    {
       "number": 13159,
       "date": "2026-08-07"
     },
@@ -355,23 +287,7 @@
       "date": "2026-08-07"
     },
     {
-      "number": 13163,
-      "date": "2026-08-07"
-    },
-    {
       "number": 13164,
-      "date": "2026-08-07"
-    },
-    {
-      "number": 13165,
-      "date": "2026-08-07"
-    },
-    {
-      "number": 13168,
-      "date": "2026-08-07"
-    },
-    {
-      "number": 13169,
       "date": "2026-08-07"
     },
     {
@@ -379,27 +295,11 @@
       "date": "2026-08-07"
     },
     {
-      "number": 13172,
-      "date": "2026-08-07"
-    },
-    {
       "number": 13173,
       "date": "2026-08-07"
     },
     {
-      "number": 13175,
-      "date": "2026-08-07"
-    },
-    {
       "number": 12882,
-      "date": "2026-08-08"
-    },
-    {
-      "number": 13171,
-      "date": "2026-08-08"
-    },
-    {
-      "number": 13177,
       "date": "2026-08-08"
     },
     {
@@ -420,10 +320,6 @@
     },
     {
       "number": 13190,
-      "date": "2026-08-08"
-    },
-    {
-      "number": 13191,
       "date": "2026-08-08"
     },
     {
@@ -511,6 +407,10 @@
       "date": "2026-08-09"
     },
     {
+      "number": 12497,
+      "date": "2026-08-10"
+    },
+    {
       "number": 12621,
       "date": "2026-08-10"
     },
@@ -535,6 +435,14 @@
       "date": "2026-08-10"
     },
     {
+      "number": 13250,
+      "date": "2026-08-10"
+    },
+    {
+      "number": 13251,
+      "date": "2026-08-10"
+    },
+    {
       "number": 13256,
       "date": "2026-08-10"
     },
@@ -547,10 +455,6 @@
       "date": "2026-08-10"
     },
     {
-      "number": 13265,
-      "date": "2026-08-10"
-    },
-    {
       "number": 13272,
       "date": "2026-08-10"
     },
@@ -559,7 +463,15 @@
       "date": "2026-08-11"
     },
     {
+      "number": 13277,
+      "date": "2026-08-11"
+    },
+    {
       "number": 13279,
+      "date": "2026-08-11"
+    },
+    {
+      "number": 13280,
       "date": "2026-08-11"
     },
     {
@@ -569,6 +481,10 @@
     {
       "number": 13292,
       "date": "2026-08-11"
+    },
+    {
+      "number": 13258,
+      "date": "2026-08-12"
     },
     {
       "number": 13298,
@@ -632,6 +548,10 @@
     },
     {
       "number": 12644,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 12847,
       "date": "2026-08-14"
     },
     {
@@ -795,23 +715,11 @@
       "date": "2026-08-15"
     },
     {
-      "number": 13399,
-      "date": "2026-08-15"
-    },
-    {
-      "number": 13401,
-      "date": "2026-08-15"
-    },
-    {
       "number": 13402,
       "date": "2026-08-15"
     },
     {
       "number": 13404,
-      "date": "2026-08-15"
-    },
-    {
-      "number": 13405,
       "date": "2026-08-15"
     },
     {
@@ -823,31 +731,11 @@
       "date": "2026-08-15"
     },
     {
-      "number": 13410,
-      "date": "2026-08-15"
-    },
-    {
-      "number": 13412,
-      "date": "2026-08-15"
-    },
-    {
-      "number": 13415,
-      "date": "2026-08-15"
-    },
-    {
       "number": 13419,
       "date": "2026-08-15"
     },
     {
       "number": 13420,
-      "date": "2026-08-15"
-    },
-    {
-      "number": 13425,
-      "date": "2026-08-15"
-    },
-    {
-      "number": 13426,
       "date": "2026-08-15"
     },
     {
@@ -859,35 +747,11 @@
       "date": "2026-08-15"
     },
     {
-      "number": 13430,
-      "date": "2026-08-15"
-    },
-    {
       "number": 13432,
       "date": "2026-08-15"
     },
     {
-      "number": 13433,
-      "date": "2026-08-15"
-    },
-    {
-      "number": 13435,
-      "date": "2026-08-15"
-    },
-    {
       "number": 13436,
-      "date": "2026-08-15"
-    },
-    {
-      "number": 13437,
-      "date": "2026-08-15"
-    },
-    {
-      "number": 13438,
-      "date": "2026-08-15"
-    },
-    {
-      "number": 13439,
       "date": "2026-08-15"
     },
     {
@@ -928,6 +792,10 @@
     },
     {
       "number": 13460,
+      "date": "2026-08-16"
+    },
+    {
+      "number": 13461,
       "date": "2026-08-16"
     },
     {
@@ -975,15 +843,15 @@
       "date": "2026-08-17"
     },
     {
+      "number": 13478,
+      "date": "2026-08-17"
+    },
+    {
       "number": 13482,
       "date": "2026-08-17"
     },
     {
       "number": 13484,
-      "date": "2026-08-17"
-    },
-    {
-      "number": 13491,
       "date": "2026-08-17"
     },
     {
@@ -999,7 +867,7 @@
       "date": "2026-08-17"
     },
     {
-      "number": 13503,
+      "number": 13500,
       "date": "2026-08-17"
     },
     {
@@ -1011,11 +879,11 @@
       "date": "2026-08-17"
     },
     {
-      "number": 13508,
+      "number": 13506,
       "date": "2026-08-17"
     },
     {
-      "number": 13509,
+      "number": 13508,
       "date": "2026-08-17"
     },
     {
@@ -1031,15 +899,11 @@
       "date": "2026-08-18"
     },
     {
-      "number": 13501,
-      "date": "2026-08-18"
-    },
-    {
-      "number": 13502,
-      "date": "2026-08-18"
-    },
-    {
       "number": 13518,
+      "date": "2026-08-18"
+    },
+    {
+      "number": 13526,
       "date": "2026-08-18"
     },
     {
@@ -1052,6 +916,10 @@
     },
     {
       "number": 13535,
+      "date": "2026-08-18"
+    },
+    {
+      "number": 13541,
       "date": "2026-08-18"
     },
     {
@@ -1079,6 +947,10 @@
       "date": "2026-08-19"
     },
     {
+      "number": 13441,
+      "date": "2026-08-19"
+    },
+    {
       "number": 13471,
       "date": "2026-08-19"
     },
@@ -1087,23 +959,11 @@
       "date": "2026-08-19"
     },
     {
-      "number": 13522,
-      "date": "2026-08-19"
-    },
-    {
-      "number": 13523,
-      "date": "2026-08-19"
-    },
-    {
       "number": 13531,
       "date": "2026-08-19"
     },
     {
       "number": 13540,
-      "date": "2026-08-19"
-    },
-    {
-      "number": 13562,
       "date": "2026-08-19"
     },
     {
@@ -1147,10 +1007,6 @@
       "date": "2026-08-19"
     },
     {
-      "number": 13514,
-      "date": "2026-08-20"
-    },
-    {
       "number": 13524,
       "date": "2026-08-20"
     },
@@ -1191,10 +1047,6 @@
       "date": "2026-08-20"
     },
     {
-      "number": 13629,
-      "date": "2026-08-20"
-    },
-    {
       "number": 13630,
       "date": "2026-08-20"
     },
@@ -1207,7 +1059,7 @@
       "date": "2026-08-20"
     },
     {
-      "number": 13637,
+      "number": 13641,
       "date": "2026-08-20"
     },
     {
@@ -1239,10 +1091,6 @@
       "date": "2026-08-21"
     },
     {
-      "number": 13650,
-      "date": "2026-08-21"
-    },
-    {
       "number": 13652,
       "date": "2026-08-21"
     },
@@ -1256,10 +1104,6 @@
     },
     {
       "number": 13467,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13589,
       "date": "2026-08-22"
     },
     {
@@ -1283,15 +1127,7 @@
       "date": "2026-08-22"
     },
     {
-      "number": 13674,
-      "date": "2026-08-22"
-    },
-    {
       "number": 13676,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13677,
       "date": "2026-08-22"
     },
     {
@@ -1307,10 +1143,6 @@
       "date": "2026-08-22"
     },
     {
-      "number": 13682,
-      "date": "2026-08-22"
-    },
-    {
       "number": 13683,
       "date": "2026-08-22"
     },
@@ -1319,19 +1151,7 @@
       "date": "2026-08-22"
     },
     {
-      "number": 13685,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13686,
-      "date": "2026-08-22"
-    },
-    {
       "number": 13687,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13688,
       "date": "2026-08-22"
     },
     {
@@ -1339,59 +1159,7 @@
       "date": "2026-08-22"
     },
     {
-      "number": 13690,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13691,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13692,
-      "date": "2026-08-22"
-    },
-    {
       "number": 13693,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13694,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13695,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13696,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13697,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13698,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13701,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13702,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13703,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13704,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13710,
       "date": "2026-08-22"
     },
     {
@@ -1423,7 +1191,7 @@
       "date": "2026-08-23"
     },
     {
-      "number": 13738,
+      "number": 13739,
       "date": "2026-08-23"
     },
     {
@@ -1435,19 +1203,7 @@
       "date": "2026-08-23"
     },
     {
-      "number": 13751,
-      "date": "2026-08-23"
-    },
-    {
       "number": 13755,
-      "date": "2026-08-23"
-    },
-    {
-      "number": 13757,
-      "date": "2026-08-23"
-    },
-    {
-      "number": 13758,
       "date": "2026-08-23"
     },
     {
@@ -1456,6 +1212,10 @@
     },
     {
       "number": 13762,
+      "date": "2026-08-23"
+    },
+    {
+      "number": 13766,
       "date": "2026-08-23"
     },
     {
@@ -1491,10 +1251,6 @@
       "date": "2026-08-24"
     },
     {
-      "number": 13803,
-      "date": "2026-08-24"
-    },
-    {
       "number": 13804,
       "date": "2026-08-24"
     },
@@ -1508,14 +1264,6 @@
     },
     {
       "number": 13816,
-      "date": "2026-08-24"
-    },
-    {
-      "number": 13831,
-      "date": "2026-08-24"
-    },
-    {
-      "number": 13834,
       "date": "2026-08-24"
     },
     {
@@ -1547,6 +1295,10 @@
       "date": "2026-08-25"
     },
     {
+      "number": 13841,
+      "date": "2026-08-25"
+    },
+    {
       "number": 13852,
       "date": "2026-08-25"
     },
@@ -1568,10 +1320,6 @@
     },
     {
       "number": 13880,
-      "date": "2026-08-25"
-    },
-    {
-      "number": 13885,
       "date": "2026-08-25"
     },
     {
@@ -1612,10 +1360,6 @@
     },
     {
       "number": 13741,
-      "date": "2026-08-26"
-    },
-    {
-      "number": 13941,
       "date": "2026-08-26"
     },
     {
@@ -1767,23 +1511,7 @@
       "date": "2026-08-29"
     },
     {
-      "number": 14090,
-      "date": "2026-08-29"
-    },
-    {
-      "number": 14092,
-      "date": "2026-08-29"
-    },
-    {
       "number": 14094,
-      "date": "2026-08-29"
-    },
-    {
-      "number": 14098,
-      "date": "2026-08-29"
-    },
-    {
-      "number": 14099,
       "date": "2026-08-29"
     },
     {
@@ -1795,10 +1523,6 @@
       "date": "2026-08-29"
     },
     {
-      "number": 14104,
-      "date": "2026-08-29"
-    },
-    {
       "number": 14107,
       "date": "2026-08-29"
     },
@@ -1807,15 +1531,7 @@
       "date": "2026-08-29"
     },
     {
-      "number": 14111,
-      "date": "2026-08-29"
-    },
-    {
       "number": 14115,
-      "date": "2026-08-29"
-    },
-    {
-      "number": 14117,
       "date": "2026-08-29"
     },
     {
@@ -1843,6 +1559,10 @@
       "date": "2026-08-31"
     },
     {
+      "number": 13981,
+      "date": "2026-08-31"
+    },
+    {
       "number": 14008,
       "date": "2026-08-31"
     },
@@ -1852,6 +1572,10 @@
     },
     {
       "number": 14097,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14110,
       "date": "2026-08-31"
     },
     {
@@ -1875,15 +1599,7 @@
       "date": "2026-08-31"
     },
     {
-      "number": 14178,
-      "date": "2026-08-31"
-    },
-    {
       "number": 14179,
-      "date": "2026-08-31"
-    },
-    {
-      "number": 14180,
       "date": "2026-08-31"
     },
     {
@@ -1931,10 +1647,6 @@
       "date": "2026-08-31"
     },
     {
-      "number": 14202,
-      "date": "2026-08-31"
-    },
-    {
       "number": 14204,
       "date": "2026-08-31"
     },
@@ -1955,15 +1667,7 @@
       "date": "2026-08-31"
     },
     {
-      "number": 14213,
-      "date": "2026-08-31"
-    },
-    {
       "number": 14215,
-      "date": "2026-08-31"
-    },
-    {
-      "number": 14220,
       "date": "2026-08-31"
     },
     {
@@ -1975,5 +1679,5 @@
       "date": "2026-08-31"
     }
   ],
-  "generated_at": "2026-09-04T15:21:20.412583+00:00"
+  "generated_at": "2026-10-17T23:32:48.929291+00:00"
 }

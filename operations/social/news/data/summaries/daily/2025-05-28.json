@@ -2,8 +2,8 @@
   "date": "2025-05-28",
   "period_start": "2025-05-28",
   "period_end": "2025-05-28",
-  "title": "User tiers get a place in the dashboard",
-  "summary": "User tiers reached the dashboard and GPT Image routing, while an AI accessibility tool joined the community project list.\n\nAdded seed, flower, and nectar user tiers, with seed as the default. The auth dashboard displays a user's tier, and the Special Bee form explains how to request flower tier. This does not add tier-based limits or automatic upgrades.\n\nAuthenticated GPT Image requests now route by user tier instead of random endpoint selection. Requests without tier information use seed routing; GPT Image still requires authentication.\n\nThe README and website project list added AI Content Describer, an NVDA extension by @cartertemm that uses multimodal AI to describe images, UI controls, and diagrams for blind and visually impaired Windows users.",
+  "title": "User tiers appear in the dashboard",
+  "summary": "User tiers reached the dashboard and GPT Image routing, while an NVDA accessibility tool joined the community project list.\n\nAdded seed, flower, and nectar tiers. The dashboard now shows a user's tier, and the Special Bee form accepts flower-tier requests. Users without an assigned tier default to seed; this change does not add automatic upgrades or tier-based limits.\n\nAuthenticated GPT Image requests now route by tier rather than choosing an endpoint at random: seed users take one route, while flower and nectar users take another. Requests without tier information use seed routing.\n\nThe README and website now list AI Content Describer, an NVDA extension that uses multimodal AI to describe pictures, UI controls, and complex diagrams for blind and visually impaired Windows users.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,12 +19,12 @@
       "date": "2025-05-28"
     }
   ],
-  "generated_at": "2026-10-17T15:40:58.046656+00:00",
+  "generated_at": "2026-10-17T22:31:40.270763+00:00",
   "highlights": [
     {
       "emoji": "✨",
       "title": "See your user tier",
-      "text": "The auth dashboard shows whether your account is seed, flower, or nectar. The Special Bee form explains how to request flower tier.",
+      "text": "The dashboard now shows your seed, flower, or nectar tier. You can request flower tier through the Special Bee form.",
       "prs": [
         2155
       ],

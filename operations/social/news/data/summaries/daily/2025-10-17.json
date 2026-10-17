@@ -2,8 +2,8 @@
   "date": "2025-10-17",
   "period_start": "2025-10-17",
   "period_end": "2025-10-17",
-  "title": "Image cache growth gets a ceiling",
-  "summary": "Image generation got two practical guardrails: a bounded memory cache and quieter logs.\n\nThe generated-image cache now holds up to 1,000 entries instead of 500,000, evicting the oldest entry at the limit. That bounds memory use that could degrade image generation.\n\nThe image service no longer writes progress-bar updates to non-TTY logs, reducing log growth and the risk of running out of disk space.\n\nProgress bars now use a default color when an ID is missing.",
+  "title": "Image cache growth is bounded",
+  "summary": "Image generation got two practical guardrails: a bounded memory cache and quieter progress logs.\n\nThe generated-image cache limit dropped from 500,000 to 1,000 entries, with the oldest entry evicted when the limit is reached. That puts a ceiling on memory growth that could degrade image generation.\n\nThe image service no longer writes progress-bar updates to non-TTY logs, reducing log growth and the risk of disk exhaustion. Progress bars also use a default color when an ID is missing.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-10-17"
     }
   ],
-  "generated_at": "2026-10-17T15:49:01.801810+00:00",
+  "generated_at": "2026-10-17T22:34:39.752159+00:00",
   "highlights": [],
   "changelog": []
 }

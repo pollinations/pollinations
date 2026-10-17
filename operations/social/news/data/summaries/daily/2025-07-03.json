@@ -2,8 +2,8 @@
   "date": "2025-07-03",
   "period_start": "2025-07-03",
   "period_end": "2025-07-03",
-  "title": "A Weird Al-themed language joins Hack-&-Build",
-  "summary": "Two community coding projects joined the lists, while model names and pricing metadata got a correction.\n\nYankoviC was added to the project list. Its Accordion IDE uses Pollinations for tab autocomplete and chat assistance while people learn the language.\n\nPairFusion was added to the Vibe Coding project list, with links to its demo and repository. It offers an AI-assisted collaborative IDE for real-time pair programming and feedback.\n\nThe model list now identifies `openai` as GPT-4o Mini and `openai-audio` as GPT-4o Mini Audio Preview. Pricing metadata was also revised across several listed models.",
+  "title": "A Weird Al-themed IDE joins Hack-&-Build",
+  "summary": "Two community coding projects joined the lists, while model labels and pricing metadata got a tidy-up.\n\nYankoviC was added to the Hack-&-Build project list. Its Accordion IDE uses Pollinations for tab autocomplete and chat assistance while people learn the language.\n\nPairFusion was added to the Vibe Coding project list, with links to its demo and repository. It pairs a collaborative IDE with AI-assisted feedback.\n\nThe model list now labels `openai` as GPT-4o Mini and `openai-audio` as GPT-4o Mini Audio Preview. Pricing metadata was also revised across several models.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2025-07-03"
     }
   ],
-  "generated_at": "2026-10-17T15:43:08.328969+00:00",
+  "generated_at": "2026-10-17T22:32:31.494684+00:00",
   "highlights": [],
   "changelog": []
 }

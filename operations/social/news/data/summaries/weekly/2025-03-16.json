@@ -2,8 +2,8 @@
   "date": "2025-03-16",
   "period_start": "2025-03-09",
   "period_end": "2025-03-15",
-  "title": "A familiar way into chat",
-  "summary": "One chat endpoint gained more models and fewer rough edges, while the projects built on Pollinations became easier to find.\n\nPOST `/v1/chat/completions` was added for streaming and non-streaming requests in OpenAI-compatible formats. Cross-domain policies also gave Flash widgets on devices such as Chumby and Sony Dash a way to request text and images. Apparently old hardware still has plans.\n\nThe text and chat lineup grew with Gemini Flash Lite, Gemini Thinking, DeepSeek, Mistral Small 24B, Pixtral 12B, `llama-vision`, and Phi-4 Instruct. `openai-reasoning` moved to o3-mini, with vision support listed, and DeepSeek's response limit rose from 4,096 to 8,192 tokens.\n\nProjects moved higher on the homepage, and a new “For Teens 🚀” tab highlights featured projects. New and updated listings ranged from story-making and image apps to a realtime art feed, a food-photo nutrition app, and a community Node.js and TypeScript client for images, text, and speech.\n\nThe text client now adapts system prompts for reasoning models that do not accept the system role. Model-specific token defaults help avoid Llamaguard context-window errors when callers omit `max_tokens`, while spacing between requests from the same IP fell from 12 to 6 seconds. Explicit token limits remain unchanged.",
+  "title": "A familiar route into chat",
+  "summary": "Chat became easier to plug into, the model menu grew, and community projects moved closer to the front door.\n\nThe text API added OpenAI-compatible POST `/v1/chat/completions` with streaming and non-streaming responses. Text requests from the same IP are now spaced 6 seconds apart instead of 12, reducing time spent waiting between requests.\n\nGemini Flash Lite, Gemini Thinking, DeepSeek, Mistral Small 24B, Pixtral 12B, and Llama Vision expanded the text and image-chat options. `openai-reasoning` moved to o3-mini, `phi` moved to Phi-4 Instruct, and DeepSeek’s response limit doubled to 8,192 tokens. System instructions and token defaults also got more careful handling for models with different requirements.\n\nShort image prompts are no longer automatically enhanced. Image generation gained a fallback when Cloudflare Flux fails; after an initial SDXL fallback, the route was changed to ComfyUI. Image requests with `private=true` are now mapped to `nofeed` for feed handling, and Unity’s image guidance now points to flux.\n\nThe project directory gained apps, tools, a Discord bot, and a TypeScript Node.js client, spanning image generation, stories, chat, speech, and food-photo analysis. Projects moved ahead of Integrations on the homepage, with a new “For Teens 🚀” tab drawn from featured projects. The submission form now requires a project URL.",
   "pr_count": 38,
   "prs": [
     {
@@ -159,5 +159,5 @@
       "date": "2025-03-15"
     }
   ],
-  "generated_at": "2026-10-17T16:03:34.425010+00:00"
+  "generated_at": "2026-10-17T23:23:56.424595+00:00"
 }

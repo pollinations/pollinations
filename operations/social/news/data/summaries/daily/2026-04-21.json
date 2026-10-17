@@ -2,9 +2,9 @@
   "date": "2026-04-21",
   "period_start": "2026-04-21",
   "period_end": "2026-04-21",
-  "title": "Heavyweight model drops across text and audio",
-  "summary": "A heavy day for the model registry with Claude Opus 4.7 and Qwen3-TTS, plus a critical CPU fix for Windows MCP users.\n\nA dense day for the model registry. We wired up Anthropic's Claude Opus 4.7 (aliased as `claude-xlarge`) via Bedrock, bumped the default Kimi text model to 2.6, and added Qwen3-TTS for audio generation. The Qwen integration includes the instruct variant, which accepts custom emotion and style parameters. More brains, better voices, same endpoints.\n\nIf you were running the Pollinations MCP server on Windows, you might have noticed orphaned background processes quietly eating your CPU after you closed the client. We fixed the exit logic so child processes actually die when the parent exits. Your laptop fans can spin down now.\n\nTwo new community builds landed in the app showcase: AI Models Laboratory (a Three.js and Next.js generative sandbox for high-res digital artifacts) and Scene2Text. The ecosystem keeps expanding.",
-  "pr_count": 7,
+  "title": "More room to shape generated speech",
+  "summary": "New speech controls and two text models landed alongside community apps, updated permission examples, and a Windows MCP process fix.\n\nAdded `qwen-tts` and paid-only `qwen-tts-instruct` to the speech API. The instruct model accepts an `instruct` field for emotion and style control, while both models support voice selection.\n\nAdded paid-only `claude-opus-4.7` and `kimi-k2.6`. Kimi K2.6 accepts text and images and supports tools and reasoning; the existing `kimi` entry still points to K2.5. Older Claude and Gemini versioned aliases now resolve to their respective large-model entries.\n\nAI Models Laboratory joined the image-app catalog, and Scene2Text joined writing. The README’s Recent Apps section also now credits named contributors for these and other featured apps.",
+  "pr_count": 9,
   "prs": [
     {
       "number": 10342,
@@ -27,6 +27,14 @@
       "date": "2026-04-21"
     },
     {
+      "number": 10377,
+      "date": "2026-04-21"
+    },
+    {
+      "number": 10391,
+      "date": "2026-04-21"
+    },
+    {
       "number": 10393,
       "date": "2026-04-21"
     },
@@ -35,52 +43,34 @@
       "date": "2026-04-21"
     }
   ],
-  "generated_at": "2026-04-22T06:35:12.500271+00:00",
+  "generated_at": "2026-10-17T22:48:36.437122+00:00",
   "highlights": [
     {
       "emoji": "🎵",
-      "title": "Qwen3-TTS Audio Models",
-      "text": "The hive learns to speak Qwen. Hit the [Audio API](https://gen.pollinations.ai/audio/{text}) with the new instruct variant to control emotion and style parameters.",
+      "title": "Qwen speech with direction",
+      "text": "Generate speech with `qwen-tts`, or use paid-only `qwen-tts-instruct` and its `instruct` field to guide emotion and style. [Browse Qwen TTS models](https://enter.pollinations.ai/models?q=qwen-tts).",
       "prs": [
         10342
       ],
       "kind": "model"
     },
     {
-      "emoji": "🧠",
-      "title": "Claude Opus 4.7",
-      "text": "Anthropic's heavy hitter is now wired up via Bedrock. Pass `claude-xlarge` or `claude-opus-4.7` to the [Text API](https://gen.pollinations.ai/v1/chat/completions) for state-of-the-art reasoning.",
+      "emoji": "🤖",
+      "title": "Claude Opus 4.7 added",
+      "text": "Use paid-only `claude-opus-4.7` for text generation. [Browse the model](https://enter.pollinations.ai/models?q=claude-opus-4.7).",
       "prs": [
         10343
       ],
       "kind": "model"
     },
     {
-      "emoji": "🚀",
-      "title": "Kimi 2.6 Upgrade",
-      "text": "The default Kimi text model just got smarter. We bumped it to v2.6 under the hood, keeping your old aliases intact.",
+      "emoji": "🤖",
+      "title": "Kimi K2.6 added",
+      "text": "Use `kimi-k2.6` with text or image input, tools, reasoning, and a 262,000-token context window. The `kimi` entry still points to K2.5. [Browse the model](https://enter.pollinations.ai/models?q=kimi-k2.6).",
       "prs": [
         10393
       ],
       "kind": "model"
-    },
-    {
-      "emoji": "🧪",
-      "title": "AI Models Laboratory",
-      "text": "A new Next.js/Three.js playground for real-time generative creation just dropped in the community showcase. [Try it](https://iamge-lab-website.vercel.app/)",
-      "prs": [
-        10374
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "✍️",
-      "title": "Scene2Text",
-      "text": "A picture is worth a thousand tokens. Turn scenes into text with this new community-built app. [Try it](https://scene2text.static.jp/)",
-      "prs": [
-        10375
-      ],
-      "kind": "app"
     }
   ],
   "changelog": []

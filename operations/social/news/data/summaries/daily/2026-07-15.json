@@ -2,9 +2,9 @@
   "date": "2026-07-15",
   "period_start": "2026-07-15",
   "period_end": "2026-07-15",
-  "title": "Community models can now grow in private before going public",
-  "summary": "A busy garden: private community models, documented 3D generation, linkable dashboard routes, and more exact generation tracking.\n\nModel builders can register owner-only community models, test them with their own API key, then publish globally when ready. The dashboard and API now share validation for free and paid model settings, My Models explains access states more clearly, and contributor identity sync keeps renamed GitHub accounts current.\n\n3D generation now has an end-to-end documentation guide, quick-start requests, and model reference material. The community-built Model Monitor also lists and tracks 3D-capable models alongside text, image, audio, and video.\n\nEnter moved from hash navigation to proper path-based routes for Models, Activity, Keys, News, Pollen, and Quests. Shared links, sign-in returns, Stripe returns, page anchors, and view state now land people where they meant to go. GPT-5.6 Sol, Terra, and Luna are also surfaced with the current promotional model settings.",
-  "pr_count": 17,
+  "title": "Community models can stay private",
+  "summary": "Private community models, a 1080p Veo option, 3D monitoring, and URLs you can actually share.\n\nOwners can register and call private community models, which appear in model catalogs only when using their API key. New models default to Private; existing models remain Public. Eligible publishers can make models Public, while dashboard and Polli CLI controls handle visibility and pricing. My Models now explains each owner's publishing options, and the API docs describe how private models appear in authenticated model lists.\n\nGoogle Veo 3.1 Fast now has fixed-resolution choices: `veo` generates 720p video, while the new `veo-1080p` generates 1080p. Width and height still set the aspect ratio, not the resolution tier. Model descriptions and API docs now spell out the distinction.\n\nThe community-added Model Monitor category tracks 3D models alongside other model types. A new guide shows how to request a GLB from an image URL, and the API reference now includes `GET /3d/models`. Trellis 2 uses the image, not a text prompt—an easy detail to miss.",
+  "pr_count": 13,
   "prs": [
     {
       "number": 12333,
@@ -27,7 +27,7 @@
       "date": "2026-07-15"
     },
     {
-      "number": 12473,
+      "number": 12475,
       "date": "2026-07-15"
     },
     {
@@ -43,23 +43,11 @@
       "date": "2026-07-15"
     },
     {
-      "number": 12481,
-      "date": "2026-07-15"
-    },
-    {
-      "number": 12482,
-      "date": "2026-07-15"
-    },
-    {
       "number": 12484,
       "date": "2026-07-15"
     },
     {
       "number": 12491,
-      "date": "2026-07-15"
-    },
-    {
-      "number": 12492,
       "date": "2026-07-15"
     },
     {
@@ -69,51 +57,90 @@
     {
       "number": 12494,
       "date": "2026-07-15"
-    },
-    {
-      "number": 12499,
-      "date": "2026-07-15"
     }
   ],
-  "generated_at": "2026-07-16T06:58:36.544614+00:00",
+  "generated_at": "2026-10-17T23:02:21.468026+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
+      "emoji": "🤖",
       "title": "Private community models",
-      "text": "Register a model, test it with your own key, then publish it when it is ready to meet the outdoors. Public models can be free or priced by their owner.",
+      "text": "Register and call a community model without listing it for everyone. New models default to Private, and visibility can be managed in the dashboard or Polli CLI. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         12333
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "✨",
-      "title": "3D generation, now easier to find",
-      "text": "3D-capable models have joined the [Model Monitor](https://model-monitor.pollinations.ai), with quick-start requests and model details in the [API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        12438,
-        12441
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "📱",
-      "title": "Shareable dashboard routes",
-      "text": "Links to Models, Activity, Keys, Pollen, Quests, and News now open exactly where they should, retaining useful view state instead of dumping everyone at the lobby.",
-      "prs": [
-        12458
       ],
       "kind": "product"
     },
     {
       "emoji": "🎨",
-      "title": "Veo in 720p or 1080p",
-      "text": "Video generation now has dedicated Veo 3.1 Fast tiers for 720p and 1080p output, so resolution is explicit rather than a small upstream mystery.",
+      "title": "Veo at 1080p",
+      "text": "Choose `veo-1080p` for 1080p Veo 3.1 Fast video, or `veo` for 720p. Width and height set the aspect ratio; the model sets the resolution. [View the model](https://enter.pollinations.ai/models?q=veo-1080p).",
       "prs": [
         12491
       ],
       "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Monitor 3D models",
+      "text": "Check 3D generation models in the Model Monitor alongside the existing model categories. [Open the Model Monitor](https://model-monitor.pollinations.ai).",
+      "prs": [
+        12441
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Dashboard links worth sharing",
+      "text": "Enter pages now have direct URLs, and links can retain model searches, activity filters, and Pollen view settings. [Explore models](https://enter.pollinations.ai/models).",
+      "prs": [
+        12458
+      ],
+      "kind": "product"
     }
   ],
-  "changelog": []
+  "changelog": [
+    {
+      "pr_number": 12479,
+      "url": "https://github.com/pollinations/pollinations/pull/12479",
+      "merged_at": "2026-07-15T08:20:49Z",
+      "api_changes": [
+        {
+          "id": "pr-12479:POST /account/my-models",
+          "endpoint": "POST /account/my-models",
+          "summary": "Create My Model",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:visibility",
+              "before": null,
+              "after": {
+                "type": "\"private\"|\"public\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-12479:POST /account/my-models/{id}/update",
+          "endpoint": "POST /account/my-models/{id}/update",
+          "summary": "Update My Model",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:visibility",
+              "before": null,
+              "after": {
+                "type": "\"private\"|\"public\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

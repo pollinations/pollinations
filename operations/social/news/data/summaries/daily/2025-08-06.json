@@ -2,8 +2,8 @@
   "date": "2025-08-06",
   "period_start": "2025-08-06",
   "period_end": "2025-08-06",
-  "title": "Image cache gets a more modular foundation",
-  "summary": "A small maintenance day: a more modular image cache and a corrected Island AI link.\n\nThe image cache Worker was ported to TypeScript and Hono, with exact and semantic caching split into replaceable components. Cache bypass and hit-or-miss response headers make its behavior easier to inspect.\n\nThe project directory link for Island AI was updated to islandai.app.",
+  "title": "Image cache gets a cleaner foundation",
+  "summary": "A maintenance day for the image cache, plus a corrected Island AI link.\n\nThe image cache Worker was ported to TypeScript and Hono. Exact and semantic caching now sit in separate middleware, with interfaces that make the components easier to test and replace.\n\nThe project directory link for Island AI was updated to islandai.app.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-08-06"
     }
   ],
-  "generated_at": "2026-10-17T15:44:58.203359+00:00",
+  "generated_at": "2026-10-17T22:33:08.182000+00:00",
   "highlights": [],
   "changelog": []
 }

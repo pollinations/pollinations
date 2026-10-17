@@ -2,8 +2,8 @@
   "date": "2026-09-17",
   "period_start": "2026-09-17",
   "period_end": "2026-09-17",
-  "title": "Five new builder tools landed in the app catalog",
-  "summary": "A community-heavy day: five new BYOP developer tools, clearer account views, and a leaner way to check whether models are awake.\n\nThe build gained a small developer-tool shelf: Regexly turns plain English into explainable regexes, Codeverter translates code across 9+ languages, SQLCraft writes dialect-specific SQL, TestMine drafts unit tests, and ApiScribe sketches REST or GraphQL contracts. The blank page remains undefeated, but it now has more opponents.\n\nAccount identity and wallet status are now shared across Enter and app menus, with dashboard-linked avatars, display-name-first labels, live key and account Pollen details, and refreshes after permissions or wallet actions. Activity pages also handle quiet periods more cleanly with stable empty charts, fewer irrelevant filters, and simpler day-based navigation.\n\nModel uptime moved out of the catalog and into a raw, edge-cached `/models/status` endpoint. Built-in clients, the website, and Enter now share the same health logic, while `/models` no longer repeatedly drags a 24-hour status query through the garden.",
+  "title": "Account details are easier to find",
+  "summary": "Account menus got more useful, model health found its own endpoint, and the community filled the app catalog with developer tools.\n\nEnter and the app user menu gained shared account identity and Pollen displays. App users can see a key’s remaining budget or limit status, open Permissions, buy Pollen, and disconnect. The Usage and Earnings cards also have steadier empty states when a selected period has no data.\n\nCommunity additions include DCORE, a Discord–Telegram image bot, and five Build apps for generating regexes, converting code, writing SQL, drafting unit tests, and sketching API endpoints. Pollen Craft also joined the README showcase.\n\nCheckout now requests optional 3D Secure authentication for first purchases and packs under $10, without requiring cards to support it. Scheduled fraud scans remain read-only, with actions left to manual review.",
   "pr_count": 13,
   "prs": [
     {
@@ -59,33 +59,12 @@
       "date": "2026-09-17"
     }
   ],
-  "generated_at": "2026-09-18T06:29:30.834688+00:00",
+  "generated_at": "2026-10-17T23:13:22.523160+00:00",
   "highlights": [
     {
-      "emoji": "💡",
-      "title": "Describe it, get code",
-      "text": "[Try Regexly](https://fadyabohamza-netizen.github.io/regexly) for regex with flavor-specific explanations, [Try SQLCraft](https://fadyabohamza-netizen.github.io/sqlcraft) for database queries, or [Try Codeverter](https://fadyabohamza-netizen.github.io/codeverter) to translate between programming languages.",
-      "prs": [
-        15092,
-        15101,
-        15104
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Tests and API blueprints",
-      "text": "Paste source code into [TestMine](https://fadyabohamza-netizen.github.io/testmine) to generate unit tests, or describe an API to [ApiScribe](https://fadyabohamza-netizen.github.io/apiscribe) for REST or GraphQL endpoint blueprints.",
-      "prs": [
-        15106,
-        15107
-      ],
-      "kind": "app"
-    },
-    {
       "emoji": "✨",
-      "title": "A clearer account menu",
-      "text": "See your display name and current key and account Pollen status together in the updated account and app menus. [Open Enter](https://enter.pollinations.ai/keys).",
+      "title": "Account status at a glance",
+      "text": "See Pollen balances in Enter and your key’s remaining budget in the app menu. The menu also gives you direct access to Permissions, Buy Pollen, and Disconnect. [Manage your keys](https://enter.pollinations.ai/keys).",
       "prs": [
         14951
       ],
@@ -93,8 +72,8 @@
     },
     {
       "emoji": "🔗",
-      "title": "Model health, separate from models",
-      "text": "Check model health at [`/models/status`](https://gen.pollinations.ai/models/status). Health data has moved out of `/models`, so model listings and status checks now have separate endpoints.",
+      "title": "Model health, separately",
+      "text": "Query `GET /models/status` for model health, route counters, fallback rescues, and latency without pulling health data through the model list. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         15052
       ],

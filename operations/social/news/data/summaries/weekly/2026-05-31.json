@@ -2,16 +2,32 @@
   "date": "2026-05-31",
   "period_start": "2026-05-24",
   "period_end": "2026-05-30",
-  "title": "Real-time voice and a model avalanche",
-  "summary": "We wired up real-time voice, dumped a dozen new models into the router, and rebuilt the docs so your LLM can read them.\n\nWe added the `/v1/realtime` endpoint, giving you an OpenAI-compatible WebSocket connection for low-latency voice using `gpt-realtime-2`. While we were in the router, we added Claude Opus 4.8, StepFun's Flash models, Perplexity's Sonar suite, Grok-4.3, and Wan-pro. To balance the scales, we pushed GPT-5.5, Deepseek-pro, and Grok-large down to the free tier.\n\nWriting docs for humans is fine, but your AI coding assistant is the one actually reading them. We rebuilt the API docs generator with a custom markdown builder that flattens nested schemas and resolves pointers into clean tables. We also added context-aware 'Copy for LLMs' buttons to the dashboard rail so you can just paste the docs directly into your prompt.\n\nR2 storage now resets its 30-day TTL if an object is accessed after 15 days, meaning popular generations won't arbitrarily vanish. On the billing side, checkout now routes through Stripe Adaptive Pricing to show local currencies, and developer earnings exports now expose the raw math (`baseline_price` and `cost_usd`) so you can see exactly how your markup is calculated.\n\nSeven new community apps shipped this week. The showcase now includes everything from PetalGen (a prompt decomposition tool) and The Mork Stack (autonomous Solana trading agents) to Firefox translation extensions and chat-based image generators.",
-  "pr_count": 18,
+  "title": "The model shelf got crowded",
+  "summary": "More models and a realtime voice API widened what people can build, while clearer docs, pricing details, and community apps made the growing toolkit easier to use.\n\nNew options covered grounded search, reasoning, vision, video, and embeddings. The additions included Grok 4.3, two Gemini Search models, Wan Pro video with audio, Cohere and Qwen embeddings, two StepFun models, Perplexity search options, and paid-only Claude Opus 4.8 with a 1M-token context window. Embedding requests now support up to 4096 dimensions, and six existing models became available with free Pollen.\n\nAn OpenAI-compatible `/v1/realtime` WebSocket endpoint was added for live text and audio input and output with `gpt-realtime-2`. Input transcription sessions are not supported yet.\n\nCommunity additions ranged from image generation and remixable prompts to writing, web translation, chat, and Discord-based workflows. The catalog also received recurring metrics and listing cleanups; after six additions on May 30, the App Greenhouse count reached 791.\n\nThe API reference gained shared per-concept Markdown, BYOP, CLI, and MCP Server guides, page-aware copy controls, focused documentation slices, and JSON or YAML OpenAPI downloads. Model, video, embeddings, earnings, and Claude usage references were also updated alongside the corresponding changes.",
+  "pr_count": 39,
   "prs": [
+    {
+      "number": 11285,
+      "date": "2026-05-25"
+    },
     {
       "number": 11291,
       "date": "2026-05-25"
     },
     {
       "number": 10960,
+      "date": "2026-05-26"
+    },
+    {
+      "number": 11294,
+      "date": "2026-05-26"
+    },
+    {
+      "number": 11295,
+      "date": "2026-05-26"
+    },
+    {
+      "number": 11300,
       "date": "2026-05-26"
     },
     {
@@ -23,6 +39,22 @@
       "date": "2026-05-27"
     },
     {
+      "number": 11314,
+      "date": "2026-05-27"
+    },
+    {
+      "number": 11316,
+      "date": "2026-05-27"
+    },
+    {
+      "number": 11317,
+      "date": "2026-05-27"
+    },
+    {
+      "number": 11318,
+      "date": "2026-05-27"
+    },
+    {
       "number": 11319,
       "date": "2026-05-27"
     },
@@ -31,7 +63,39 @@
       "date": "2026-05-27"
     },
     {
+      "number": 11325,
+      "date": "2026-05-27"
+    },
+    {
+      "number": 11336,
+      "date": "2026-05-27"
+    },
+    {
+      "number": 11169,
+      "date": "2026-05-28"
+    },
+    {
       "number": 11172,
+      "date": "2026-05-28"
+    },
+    {
+      "number": 11187,
+      "date": "2026-05-28"
+    },
+    {
+      "number": 11339,
+      "date": "2026-05-28"
+    },
+    {
+      "number": 11340,
+      "date": "2026-05-28"
+    },
+    {
+      "number": 11344,
+      "date": "2026-05-28"
+    },
+    {
+      "number": 11347,
       "date": "2026-05-28"
     },
     {
@@ -43,6 +107,14 @@
       "date": "2026-05-29"
     },
     {
+      "number": 11352,
+      "date": "2026-05-29"
+    },
+    {
+      "number": 11353,
+      "date": "2026-05-29"
+    },
+    {
       "number": 11358,
       "date": "2026-05-29"
     },
@@ -51,8 +123,20 @@
       "date": "2026-05-29"
     },
     {
+      "number": 11399,
+      "date": "2026-05-29"
+    },
+    {
       "number": 11400,
       "date": "2026-05-29"
+    },
+    {
+      "number": 11401,
+      "date": "2026-05-29"
+    },
+    {
+      "number": 11408,
+      "date": "2026-05-30"
     },
     {
       "number": 11414,
@@ -79,5 +163,5 @@
       "date": "2026-05-30"
     }
   ],
-  "generated_at": "2026-05-31T07:15:39.740007+00:00"
+  "generated_at": "2026-10-17T23:27:37.617723+00:00"
 }

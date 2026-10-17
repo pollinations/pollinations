@@ -2,16 +2,16 @@
   "date": "2026-10-11",
   "period_start": "2026-10-04",
   "period_end": "2026-10-10",
-  "title": "More models, fewer dead ends",
-  "summary": "The model catalog grew in every direction while the APIs, tools, and pages around it got better at making that variety usable.\n\nText, image, video, speech, and transcription all gained options. Additions included Claude Haiku 5.5, Mistral Large 4, FLUX.3 Image, Seedream 5.0 Flash, Grok Imagine Video 1.5 Lite, Eleven v4, and Microsoft's MAI voice and transcription models. Provider fallbacks and routing fixes gave several existing models another path when their primary provider fails. The catalog also gained search, capability filters, clearer billing units, and paid-only labels, so finding a model need not involve guessing from its name.\n\nEvery text model listed for Chat Completions was added to /v1/responses, with an adapter for chat-backed models and agents. Follow-up work preserved parallel Gemini tool calls, streamed tool arguments incrementally, and improved prompt-cache behavior for growing agent conversations. Document and PDF handling expanded across Messages, Chat, Claude, and GPT routes. The practical effect: fewer model-specific detours for clients using tools, files, or the Responses format.\n\nA rebuilt Play page brings image, video, and audio generation into one place, with uploads, previews, downloads, shareable inputs, and API URLs reflecting the request. The SDK gained video reference-media options. Behind the interface, fixes covered video aspect ratios, audio defaults, filenames and MIME types, and uploads larger than the generation coordinator's former 32 MiB request limit. Old /p/* and /prompt/* image links also received redirects back to the image API.\n\nKeys gained permissions by model category and an optional Quest-Pollen-only setting. x402 prepaid keys gained buyer-selected amounts and a GET purchase route; a separate crypto checkout was added for Pollen packs. Usage and earnings work corrected paid breakdowns, cache-write reporting, wallet-versus-key-budget labels, and several slower queries. New video and community-model Quests joined the reward catalog, while leaderboard changes culminated in broader Quest reward coverage with admins excluded.",
-  "pr_count": 227,
+  "title": "Play became a media playground",
+  "summary": "A week of new ways to make media, more models to choose from, and fewer steps between finding a capability and using it.\n\nPlay now brings image, video, and audio generation into one place, with uploads, previews, downloads, shareable settings, and API examples built from each request. Earlier changes stopped it from sending reference images to models that cannot use them, while the SDK added reference image, video, and audio options for supported video models. The interface and the API are getting closer to describing the same thing.\n\nFLUX.3 Image, Seedream 5.0 Flash, and Nano Banana 2.1 expanded image generation and editing. Grok Imagine Video 1.5 Lite joined video; Eleven v4, Eleven v4 Turbo, Qwen Audio 3.0 TTS Flash, and two MAI Voice models expanded speech. MAI Transcribe 2 added file and live transcription options. Output fixes also kept vertical video vertical and unseeded image requests random.\n\nLing 3.1 Flash, Nex N2.5 Pro and Mini, Mistral Large 4, Claude Haiku 5.5, and Step 5 Preview joined the text lineup. Liquid D1 and GPT-6 Luna Decisions added typed answers for structured questions, alongside an SDK decision helper. Every Chat text model gained a path through `/v1/responses`, and supported Claude and GPT models gained base64 PDF input. That is more choice without making every choice require a different API shape.\n\nModel-list APIs and MCP search gained query, capability, agent, and limit filters. Listings added tags, streaming support, and `paid_only` information; Enter gained a dated changelog for model and API changes. New discovery catalogs point agents toward hosted MCP servers, the API specification, and guides without requiring the URLs to be memorized first.",
+  "pr_count": 231,
   "prs": [
     {
-      "number": 15732,
+      "number": 15998,
       "date": "2026-10-04"
     },
     {
-      "number": 15998,
+      "number": 16127,
       "date": "2026-10-04"
     },
     {
@@ -231,10 +231,6 @@
       "date": "2026-10-05"
     },
     {
-      "number": 16461,
-      "date": "2026-10-05"
-    },
-    {
       "number": 16482,
       "date": "2026-10-05"
     },
@@ -303,6 +299,10 @@
       "date": "2026-10-06"
     },
     {
+      "number": 16342,
+      "date": "2026-10-06"
+    },
+    {
       "number": 16395,
       "date": "2026-10-06"
     },
@@ -360,6 +360,10 @@
     },
     {
       "number": 16557,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16559,
       "date": "2026-10-06"
     },
     {
@@ -435,10 +439,6 @@
       "date": "2026-10-06"
     },
     {
-      "number": 16614,
-      "date": "2026-10-06"
-    },
-    {
       "number": 16616,
       "date": "2026-10-06"
     },
@@ -499,11 +499,19 @@
       "date": "2026-10-07"
     },
     {
+      "number": 16654,
+      "date": "2026-10-07"
+    },
+    {
       "number": 16664,
       "date": "2026-10-07"
     },
     {
       "number": 16665,
+      "date": "2026-10-07"
+    },
+    {
+      "number": 16669,
       "date": "2026-10-07"
     },
     {
@@ -516,6 +524,10 @@
     },
     {
       "number": 16688,
+      "date": "2026-10-07"
+    },
+    {
+      "number": 16691,
       "date": "2026-10-07"
     },
     {
@@ -559,6 +571,10 @@
       "date": "2026-10-08"
     },
     {
+      "number": 16663,
+      "date": "2026-10-08"
+    },
+    {
       "number": 16693,
       "date": "2026-10-08"
     },
@@ -592,6 +608,10 @@
     },
     {
       "number": 16739,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16746,
       "date": "2026-10-08"
     },
     {
@@ -671,10 +691,6 @@
       "date": "2026-10-08"
     },
     {
-      "number": 15192,
-      "date": "2026-10-09"
-    },
-    {
       "number": 16599,
       "date": "2026-10-09"
     },
@@ -727,10 +743,6 @@
       "date": "2026-10-09"
     },
     {
-      "number": 16788,
-      "date": "2026-10-09"
-    },
-    {
       "number": 16790,
       "date": "2026-10-09"
     },
@@ -772,6 +784,10 @@
     },
     {
       "number": 16875,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16880,
       "date": "2026-10-09"
     },
     {
@@ -859,6 +875,10 @@
       "date": "2026-10-10"
     },
     {
+      "number": 16949,
+      "date": "2026-10-10"
+    },
+    {
       "number": 16950,
       "date": "2026-10-10"
     },
@@ -872,10 +892,6 @@
     },
     {
       "number": 16958,
-      "date": "2026-10-10"
-    },
-    {
-      "number": 16961,
       "date": "2026-10-10"
     },
     {
@@ -915,5 +931,5 @@
       "date": "2026-10-10"
     }
   ],
-  "generated_at": "2026-10-11T06:31:24.709063+00:00"
+  "generated_at": "2026-10-17T23:28:59.464323+00:00"
 }

@@ -2,8 +2,8 @@
   "date": "2025-06-12",
   "period_start": "2025-06-12",
   "period_end": "2025-06-12",
-  "title": "More ways to use the text API",
-  "summary": "O3 gained image input, searchgpt got its route straightened out, and the model list and community directory grew.\n\nAdded `openai-reasoning` for o3, then added image input alongside text. The new `searchgpt` listing for GPT-4o mini search preview also received a routing fix so the listed name maps to the intended model.\n\nText model definitions gained tier and community metadata, plus provider-model aliases for GPT-4.1 variants and Qwen 2.5 Coder 32B. The listed `openai-fast` alias changed to `gpt-4.1-nano`.\n\nThe project directory now lists DynaSpark, a Pollinations-based Python package for text, image, and audio generation in web and desktop projects.",
+  "title": "O3 gets image input; search gets its route",
+  "summary": "O3 gained image input, searchgpt got its routing straightened out, and the model list gained tier metadata.\n\nAdded `openai-reasoning` for O3 with text and image input, plus `searchgpt` for GPT-4o mini search preview. Follow-up changes corrected the `searchgpt` routing so the listed model maps to the intended search model.\n\nText model definitions now include tier and community metadata. GPT-4.1 and Qwen 2.5 Coder provider-model aliases were also added, and `openai-fast` now uses a GPT-4.1-nano alias.\n\nAdded @Th3-C0der’s DynaSpark API to Hack & Build. Its documented Python package uses Pollinations for text, images, and audio in web and desktop projects.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,12 +27,12 @@
       "date": "2025-06-12"
     }
   ],
-  "generated_at": "2026-10-17T15:42:20.013790+00:00",
+  "generated_at": "2026-10-17T22:32:06.794960+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "O3 can take images",
-      "text": "Send images alongside text to `openai-reasoning` for visual reasoning. [Browse the model](https://enter.pollinations.ai/models?q=openai-reasoning).",
+      "title": "O3 can inspect images",
+      "text": "Send text and image inputs to `openai-reasoning`, the O3 model. [Browse the model](https://enter.pollinations.ai/models?q=openai-reasoning).",
       "prs": [
         2415,
         2421
@@ -41,14 +41,23 @@
     },
     {
       "emoji": "🔗",
-      "title": "GPT-4o mini search preview",
-      "text": "Use `searchgpt` to access GPT-4o mini search preview through the text API. [Browse the model](https://enter.pollinations.ai/models?q=searchgpt).",
+      "title": "Search model added",
+      "text": "Use `searchgpt` for GPT-4o mini search preview through the text API. [Browse the model](https://enter.pollinations.ai/models?q=searchgpt).",
       "prs": [
         2415,
         2417,
         2421
       ],
       "kind": "model"
+    },
+    {
+      "emoji": "💡",
+      "title": "Model tiers in listings",
+      "text": "Text model definitions now include tier and community metadata, giving clients more information when choosing a model. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        2393
+      ],
+      "kind": "api"
     }
   ],
   "changelog": []

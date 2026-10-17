@@ -2,8 +2,8 @@
   "date": "2026-01-30",
   "period_start": "2026-01-30",
   "period_end": "2026-01-30",
-  "title": "More reliable image-worker registration",
-  "summary": "A behind-the-scenes image infrastructure update focused on reliable worker registration.\n\nImage workers can now use a configurable registration address, helping Z-Image and Sana workers avoid network filtering that interfered with registration. The io.net runbook was also updated to reflect an 8× L40 instance for Z-Image and Flux.",
+  "title": "Image worker registration gets more flexible",
+  "summary": "A maintenance day for image generation: more flexible worker registration and an updated infrastructure runbook.\n\nZ-Image and Sana worker heartbeats can now use a configurable registration URL, making backend registration less dependent on a single public endpoint. The io.net runbook was also updated to reflect the documented L40 image-worker setup.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2026-01-30"
     }
   ],
-  "generated_at": "2026-10-17T16:01:39.251945+00:00",
+  "generated_at": "2026-10-17T22:38:47.500519+00:00",
   "highlights": [],
   "changelog": []
 }

@@ -2,16 +2,24 @@
   "date": "2026-10-04",
   "period_start": "2026-09-27",
   "period_end": "2026-10-03",
-  "title": "Coding agents got more ways in—and somewhere to run",
-  "summary": "The week made Pollinations easier to build with: more models and media fit through the API, coding agents gained new tools, and community projects became easier to find.\n\nAn Anthropic-compatible /v1/messages endpoint opened Pollinations models to Anthropic SDK clients and Claude Code. Polli added Codex, Claude Code and Hermes harnesses, native Pi MCP setup, and smoother first-run login; prompt agents gained caller-defined tools. By Friday, E2B-compatible sandboxes and polli 0.1.23 gave developers a place to run code and connect over SSH. MCP account tools followed on Saturday.\n\nClaude Sonnet 5.5 and GPT-6.1 Sol joined the text lineup; Lightning Image Turbo added reference-guided image generation. Audio gained Gemini 3.5 Transcribe, ElevenLabs stem separation and Azure-backed speech models. Kev 4B and Span-01 Lite broadened the decisions API. The CLI and SDK gained more ways to use 3D, embeddings and audio tools, while image and video routing fixes made model behavior more predictable.\n\nThe existing upload flow can now stream files up to 400 MiB. Chat grew from a 32 MiB text-request limit to 100 MiB requests with large inline media moved into account-scoped storage and reused across turns. That path expanded from images to URL-shaped video and files, then large PDFs and supported audio input. The client can keep sending familiar requests; the plumbing handles the heavy lifting.\n\nWebsite v2 brought a new home and shell, a searchable Apps page with shareable filters and weekly-ranked listings, and refreshed Play and Community pages with live activity and contribution paths. The directory also gained tools for Figma, Obsidian, Krita, Godot and Unity, alongside games, music apps and decision-making experiments. Community agents started doing everything from code routing to collaborative writing.",
-  "pr_count": 165,
+  "title": "Existing tools got better routes into Pollinations",
+  "summary": "Pollinations grew into more of a working environment this week: existing clients got easier to connect, larger media fit through chat, and community work became easier to find and reward.\n\nPrompt agents can now return caller-defined function calls for clients to execute and replay, alongside server-run MCP tools. An Anthropic-compatible `/v1/messages` endpoint gives Claude Code and Anthropic SDKs another route to supported text models. Polli added setup for Codex, Claude Code, Hermes Agent and Pi, while new MCP account tools can handle usage, earnings, Quest status and API keys when permitted.\n\nThe text APIs first gained 32 MiB JSON requests; chat completions then expanded to 100 MiB for supported inline media. The gateway replaces large image, video and file data URIs with media URLs before sending them to providers, and later added handling for inline PDFs on OpenRouter models and base64 audio on Inkling. Individual offloaded items remain capped at 20 MiB, and provider URL support still varies. Uploads also grew to 400 MiB with streaming support in Polli.\n\nLightning Image Turbo added reference-guided images; HeyGen added short video with synchronized audio; and new transcription, stem-separation, speech, voice-changing and isolation options broadened the audio toolkit. Claude Sonnet 5.5, GPT-6.1 Sol and two decision models joined the catalog. The SDK and Polli gained more of these media operations, while video resolution declarations and fallback fixes made existing routes more predictable. Amazon Nova Canvas and Reel were retired on September 30; requests using their IDs return 400.\n\nThe API and Polli gained E2B Linux sandboxes that can be created, inspected and reached over SSH, with time paid from a Pollinations wallet in advance. Polli 0.1.23 includes create, list, kill and SSH-config commands. It is a new place to run code, not just another model to ask about running code.",
+  "pr_count": 152,
   "prs": [
     {
       "number": 14650,
       "date": "2026-09-27"
     },
     {
+      "number": 15247,
+      "date": "2026-09-27"
+    },
+    {
       "number": 15485,
+      "date": "2026-09-27"
+    },
+    {
+      "number": 15503,
       "date": "2026-09-27"
     },
     {
@@ -24,6 +32,10 @@
     },
     {
       "number": 15523,
+      "date": "2026-09-27"
+    },
+    {
+      "number": 15525,
       "date": "2026-09-27"
     },
     {
@@ -47,10 +59,6 @@
       "date": "2026-09-27"
     },
     {
-      "number": 15563,
-      "date": "2026-09-27"
-    },
-    {
       "number": 15566,
       "date": "2026-09-27"
     },
@@ -67,20 +75,8 @@
       "date": "2026-09-27"
     },
     {
-      "number": 15588,
-      "date": "2026-09-27"
-    },
-    {
-      "number": 15597,
-      "date": "2026-09-27"
-    },
-    {
       "number": 15602,
       "date": "2026-09-27"
-    },
-    {
-      "number": 15191,
-      "date": "2026-09-28"
     },
     {
       "number": 15213,
@@ -127,10 +123,6 @@
       "date": "2026-09-28"
     },
     {
-      "number": 15673,
-      "date": "2026-09-28"
-    },
-    {
       "number": 15694,
       "date": "2026-09-28"
     },
@@ -139,11 +131,11 @@
       "date": "2026-09-28"
     },
     {
-      "number": 14797,
-      "date": "2026-09-29"
+      "number": 15699,
+      "date": "2026-09-28"
     },
     {
-      "number": 15097,
+      "number": 14797,
       "date": "2026-09-29"
     },
     {
@@ -171,22 +163,6 @@
       "date": "2026-09-29"
     },
     {
-      "number": 15610,
-      "date": "2026-09-29"
-    },
-    {
-      "number": 15637,
-      "date": "2026-09-29"
-    },
-    {
-      "number": 15650,
-      "date": "2026-09-29"
-    },
-    {
-      "number": 15654,
-      "date": "2026-09-29"
-    },
-    {
       "number": 15671,
       "date": "2026-09-29"
     },
@@ -207,6 +183,10 @@
       "date": "2026-09-29"
     },
     {
+      "number": 15720,
+      "date": "2026-09-29"
+    },
+    {
       "number": 15735,
       "date": "2026-09-29"
     },
@@ -216,10 +196,6 @@
     },
     {
       "number": 15739,
-      "date": "2026-09-29"
-    },
-    {
-      "number": 15746,
       "date": "2026-09-29"
     },
     {
@@ -236,10 +212,6 @@
     },
     {
       "number": 15756,
-      "date": "2026-09-29"
-    },
-    {
-      "number": 15761,
       "date": "2026-09-29"
     },
     {
@@ -267,19 +239,11 @@
       "date": "2026-09-29"
     },
     {
-      "number": 15778,
-      "date": "2026-09-29"
-    },
-    {
       "number": 15779,
       "date": "2026-09-29"
     },
     {
       "number": 15785,
-      "date": "2026-09-29"
-    },
-    {
-      "number": 15800,
       "date": "2026-09-29"
     },
     {
@@ -301,6 +265,10 @@
     {
       "number": 15842,
       "date": "2026-09-29"
+    },
+    {
+      "number": 15486,
+      "date": "2026-09-30"
     },
     {
       "number": 15546,
@@ -331,19 +299,11 @@
       "date": "2026-09-30"
     },
     {
-      "number": 15877,
-      "date": "2026-09-30"
-    },
-    {
       "number": 15879,
       "date": "2026-09-30"
     },
     {
       "number": 15887,
-      "date": "2026-09-30"
-    },
-    {
-      "number": 15895,
       "date": "2026-09-30"
     },
     {
@@ -459,10 +419,6 @@
       "date": "2026-10-01"
     },
     {
-      "number": 16107,
-      "date": "2026-10-01"
-    },
-    {
       "number": 16115,
       "date": "2026-10-01"
     },
@@ -479,6 +435,10 @@
       "date": "2026-10-01"
     },
     {
+      "number": 16128,
+      "date": "2026-10-01"
+    },
+    {
       "number": 16130,
       "date": "2026-10-01"
     },
@@ -488,10 +448,6 @@
     },
     {
       "number": 16139,
-      "date": "2026-10-01"
-    },
-    {
-      "number": 16143,
       "date": "2026-10-01"
     },
     {
@@ -587,10 +543,6 @@
       "date": "2026-10-02"
     },
     {
-      "number": 16251,
-      "date": "2026-10-02"
-    },
-    {
       "number": 16258,
       "date": "2026-10-02"
     },
@@ -608,10 +560,6 @@
     },
     {
       "number": 16268,
-      "date": "2026-10-02"
-    },
-    {
-      "number": 16269,
       "date": "2026-10-02"
     },
     {
@@ -663,9 +611,9 @@
       "date": "2026-10-03"
     },
     {
-      "number": 16321,
+      "number": 16339,
       "date": "2026-10-03"
     }
   ],
-  "generated_at": "2026-10-04T08:11:07.320495+00:00"
+  "generated_at": "2026-10-17T23:28:58.569268+00:00"
 }

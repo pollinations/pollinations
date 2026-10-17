@@ -2,8 +2,8 @@
   "date": "2025-10-19",
   "period_start": "2025-10-12",
   "period_end": "2025-10-18",
-  "title": "Image generation got better guardrails",
-  "summary": "Image generation got firmer limits and fewer unnecessary waits, while the model catalog and community projects list got some attention too.\n\nFlux Kontext safety checks now return a timeout error after 30 seconds rather than leaving requests waiting indefinitely. After several cache-limit changes, the generated-image cache ended the week capped at 1,000 entries with oldest-entry eviction. Progress bars also stopped filling non-TTY logs.\n\nTelemetry moved into the background, and cached-image requests stopped making a provider lookup for every hit. The anonymous queue-limit change was reverted, leaving anonymous and registered requests with up to five slots each.\n\nEnter’s model-list proxy was corrected to request the upstream model-list endpoint. Unused text services, orphaned IDs, and the Mistral Nemo aliases were removed; image provider lookups also moved to the shared registry.\n\nGreen Hope AI joined the creative projects list with editable generated thumbnails. Jay-1409 also contributed a standalone Next.js email utility with reusable templates; it is separate from Pollinations services.",
+  "title": "Image requests stopped waiting on the wrong things",
+  "summary": "Image generation got tighter limits and fewer unnecessary waits, while model listings became a better reflection of what the services actually offer.\n\nImage responses no longer wait for telemetry, and cache hits skip an unnecessary provider lookup. The generated-image cache was ultimately capped at 1,000 entries, evicting the oldest when full, while progress bars stopped filling non-TTY logs. Less waiting, less unbounded growth.\n\nAzure Flux Kontext prompt and input-image safety checks now time out after 30 seconds. A stalled check returns a timeout error instead of holding a queue slot indefinitely. An interim tighter anonymous queue limit was also reverted; anonymous and registered requests can each use up to five slots.\n\nEnter’s OpenAI-compatible model-list proxy now requests the upstream model-list path rather than its root, so it returns models instead of a redirect. Unused services and orphaned model IDs were removed, leaving the shared registry aligned with 18 available services. The image registry now lists flux, kontext, turbo, and gptimage, with corrected provider metadata for the first three.\n\nGreen Hope AI joined the creative projects list with AI thumbnail generation and editable text, placement, styles, and effects. A separate Next.js email utility was also added, with reusable templates and endpoints for custom and welcome emails; it is not connected to existing Pollinations services.",
   "pr_count": 14,
   "prs": [
     {
@@ -63,5 +63,5 @@
       "date": "2025-10-18"
     }
   ],
-  "generated_at": "2026-10-17T16:06:09.699124+00:00"
+  "generated_at": "2026-10-17T23:25:34.171093+00:00"
 }

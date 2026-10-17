@@ -2,8 +2,8 @@
   "date": "2025-06-25",
   "period_start": "2025-06-25",
   "period_end": "2025-06-25",
-  "title": "Image caching gets less literal",
-  "summary": "Image caching learned to recognize similar prompts—and stopped treating three dots as a new idea.\n\nImage requests now use BGE-based semantic caching, so similar prompts can match cached results instead of requiring an exact match. Prompt normalization also removes punctuation and collapses repeated whitespace, making variants like `test.`, `test...`, and `test` equivalent for matching.",
+  "title": "Image requests get a semantic cache",
+  "summary": "Image caching learned that a few extra dots do not make a new prompt.\n\nImage requests can now match cached results for similar prompts, not just exact repeats. Removing punctuation and collapsing repeated spaces before embedding means prompts like “test.” and “test...” normalize the same way.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,17 @@
       "date": "2025-06-25"
     }
   ],
-  "generated_at": "2026-10-17T15:42:48.932650+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:32:19.310156+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Smarter image caching",
+      "text": "Similar image prompts can now match cached results, even when punctuation or repeated spaces differ. [Try image generation](https://gen.pollinations.ai/image/{prompt}).",
+      "prs": [
+        2638
+      ],
+      "kind": "api"
+    }
+  ],
   "changelog": []
 }

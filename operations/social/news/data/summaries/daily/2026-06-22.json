@@ -2,12 +2,36 @@
   "date": "2026-06-22",
   "period_start": "2026-06-22",
   "period_end": "2026-06-22",
-  "title": "ElevenLabs integration gets SFX, Music v2, and 40% cheaper TTS",
-  "summary": "A massive day for audio generation: Stable Audio 2.5, ElevenLabs SFX, reference-audio conditioning, and 40% cheaper TTS.\n\nA massive expansion of our ElevenLabs audio capabilities. You can now generate sound effects via the `eleven-sfx` model, use 29 languages with Multilingual v2, and guide music generation with reference audio on `music_v2`. We also bumped the TTS input cap to 10,000 characters and dropped pricing by ~40% to pass at-cost savings directly to users.\n\nAdded support for Stable Audio 2.5 via fal.ai. Developers can now generate custom WAV music tracks up to 190 seconds long by passing prompts, duration, and steps to the new endpoint. The frontend directory has also been updated with the official Stability AI branding to match.\n\nCleaned up the showcase backlog to welcome RoleChar and SpiritPet World to the community directory, while pruning a dead link.",
-  "pr_count": 5,
+  "title": "More ways to make and reshape music",
+  "summary": "Audio had the loudest day: reference-guided music, Stable Audio 2.5, sound effects, and multilingual speech joined quieter catalog and account fixes.\n\nA Quest contribution upgraded `elevenmusic` to music_v2, adding reference-audio conditioning, composition plans, and tracks that can be saved for later inpainting. Another added Stable Audio 2.5 for WAV music generation with duration, step, and seed controls. Enter’s model table gained a Stability AI icon.\n\nElevenLabs Sound Effects v2 adds text-to-sound-effect generation with duration, looping, and prompt-influence controls. Multilingual v2 adds text-to-speech in 29 languages, and the TTS input limit rose from 4,096 to 10,000 characters.\n\nCatalog updates added RoleChar and a SpiritPet World feature overview, refreshed the Greenhouse listings and metrics, and removed a dead app link. The regenerated Greenhouse count reached 812 apps.",
+  "pr_count": 11,
   "prs": [
     {
+      "number": 11641,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11642,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11914,
+      "date": "2026-06-22"
+    },
+    {
       "number": 11931,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11940,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11943,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11944,
       "date": "2026-06-22"
     },
     {
@@ -27,43 +51,52 @@
       "date": "2026-06-22"
     }
   ],
-  "generated_at": "2026-06-23T07:10:38.665458+00:00",
+  "generated_at": "2026-10-17T22:59:41.933109+00:00",
   "highlights": [
     {
       "emoji": "🎵",
-      "title": "ElevenLabs Music v2",
-      "text": "Upgraded the music integration to v2 and added reference-audio conditioning. You can now pass an audio track to guide the output style instead of just hoping for the best.",
+      "title": "Reference-guided music",
+      "text": "`elevenmusic` now uses music_v2. Use reference audio for style conditioning, work with composition plans, or save a generated track for later inpainting. [Browse the model](https://enter.pollinations.ai/models?q=elevenmusic).",
       "prs": [
         11931
       ],
       "kind": "model"
     },
     {
-      "emoji": "🎶",
+      "emoji": "🎵",
       "title": "Stable Audio 2.5",
-      "text": "Added text-to-music generation via fal.ai. Hit the `stable-audio-2.5` endpoint with your prompt to get up to 190 seconds of WAV output. Check the [API Docs](https://gen.pollinations.ai/docs).",
+      "text": "Generate WAV music with `stable-audio-2.5`, with controls for duration, steps, and seed. [Browse the model](https://enter.pollinations.ai/models?q=stable-audio-2.5).",
       "prs": [
         11949
       ],
       "kind": "model"
     },
     {
-      "emoji": "🔊",
-      "title": "Sound Effects & Polyglots",
-      "text": "Added `eleven-sfx` for generating sound effects and `eleven-multilingual-v2` for 29 languages. We also bumped the TTS input cap to 10,000 characters for those really long monologues.",
+      "emoji": "🎨",
+      "title": "Text-to-sound effects",
+      "text": "Generate MP3 sound effects with `eleven-sfx`. Set a duration from 0.5 to 30 seconds, enable looping, or adjust `prompt_influence`. [Browse the model](https://enter.pollinations.ai/models?q=eleven-sfx).",
       "prs": [
         11948
       ],
       "kind": "model"
     },
     {
-      "emoji": "🌸",
-      "title": "Community Showcase Updates",
-      "text": "RoleChar and SpiritPet World have been added to the ecosystem. [View repos](https://pollinations.ai)",
+      "emoji": "🎵",
+      "title": "Speech in 29 languages",
+      "text": "Use `eleven-multilingual-v2` for text-to-speech in 29 languages through the existing speech API. [Browse the model](https://enter.pollinations.ai/models?q=eleven-multilingual-v2).",
       "prs": [
-        11946
+        11948
       ],
-      "kind": "product"
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "Longer text-to-speech input",
+      "text": "TTS requests now accept up to 10,000 characters, up from 4,096. Fewer splits for longer passages. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        11948
+      ],
+      "kind": "api"
     }
   ],
   "changelog": []

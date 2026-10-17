@@ -2,8 +2,8 @@
   "date": "2025-01-27",
   "period_start": "2025-01-27",
   "period_end": "2025-01-27",
-  "title": "A slide-making project joins the list",
-  "summary": "A little garden maintenance: a community slide generator joined the project list, supporter links were fixed, and the logo gained a few colors.\n\nKushai’s AI PowerPoint Generator was added to the community project list. It turns text input into PowerPoint slides.\n\nHomepage supporter URLs without a protocol now open as HTTPS destinations rather than resolving inside pollinations.ai.\n\nThe black logo icon was updated, with red, rose, and turquoise variants added.",
+  "title": "Supporter links now go where they should",
+  "summary": "A little homepage tending: supporter links point outward, and a community slide generator joins the project list.\n\nHomepage supporter URLs without a protocol now open as HTTPS links rather than resolving within pollinations.ai. The change also updated the black logo icon and added three color variants.\n\nKushai’s AI PowerPoint Generator was added to the community project list, giving visitors a way to find a tool that turns text into slides.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-01-27"
     }
   ],
-  "generated_at": "2026-10-17T15:32:53.357649+00:00",
+  "generated_at": "2026-10-17T22:28:54.403683+00:00",
   "highlights": [],
   "changelog": []
 }

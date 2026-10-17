@@ -2,12 +2,16 @@
   "date": "2026-02-15",
   "period_start": "2026-02-08",
   "period_end": "2026-02-14",
-  "title": "The gap between 'generating content' and 'taking action' is closing fast",
-  "summary": "This week, we focused on giving developers the tools to cross that bridge. With 27 PRs merged, here is what is new on the platform: 1. ONE-COMMAND AGENTS\nWe integrated OpenClaw to bring autonomous web search and action capabilities directly into the workflow. This is not just chat — it is AI that can do things. 2. VIDEO & AUDIO UPGRADES\nMultimedia generation got a major boost with Grok Image-to-Video and ElevenLabs Scribe v2 integration. We also unified video resolutions, making it easier to chain different models together in a single pipeline. 3. NEW MODEL FLAVORS\nWe added GLM-5 and the Qwen-character model. Whether you need raw reasoning power or specialized roleplay capabilities, the menu just got bigger. 4. BETTER DEVELOPER EXPERIENCE\nWe overhauled the App Showcase UI and merged documentation directly into the Play page. Less context switching means faster building. Velocity is the only strategy that matters in open source. We are building the most accessible infrastructure for AI creativity, one commit at a time",
-  "pr_count": 35,
+  "title": "Audio grew into a fuller toolkit",
+  "summary": "This week made more kinds of media possible through the API, while making models easier to find, connect, and use.\n\nWhisper Large V3 and Scribe v2 added transcription choices, ElevenLabs music generation joined the audio API, and Eleven v3 became the default speech model. A new `/audio/models` endpoint exposes capabilities and pricing, while Play and API-key permissions now account for audio models.\n\nSupplied dimensions now guide video sizing across Veo, Seedance, Wan, and Grok Video. Wan 2.6 gained text-to-video, image-to-video, and a backup provider route; Grok Video now passes reference images through. An API update also fixed reference-image editing and inpainting for GPT Image.\n\nA setup guide and script added Pollinations as an OpenAI-compatible provider for OpenClaw. The guide gained separate paths for new and existing agents, web-search options, and a broader explanation of using 25+ Pollinations models. The integration joined the app catalog too.\n\nGLM moved to version 5, `qwen-character` joined as an alpha roleplay model, and a paid-only `claude-legacy` ID added API access to Claude Opus 4.5. Claude routing became more explicit; hidden models stopped appearing in lists, while unstable or retired model routes were removed. Image-model defaults were adjusted for speed, quality, and aspect-ratio handling.",
+  "pr_count": 43,
   "prs": [
     {
       "number": 8029,
+      "date": "2026-02-08"
+    },
+    {
+      "number": 8040,
       "date": "2026-02-08"
     },
     {
@@ -55,15 +59,19 @@
       "date": "2026-02-08"
     },
     {
-      "number": 8103,
-      "date": "2026-02-08"
-    },
-    {
       "number": 8104,
       "date": "2026-02-08"
     },
     {
       "number": 8101,
+      "date": "2026-02-09"
+    },
+    {
+      "number": 8107,
+      "date": "2026-02-09"
+    },
+    {
+      "number": 8109,
       "date": "2026-02-09"
     },
     {
@@ -77,6 +85,14 @@
     {
       "number": 8123,
       "date": "2026-02-09"
+    },
+    {
+      "number": 7291,
+      "date": "2026-02-10"
+    },
+    {
+      "number": 7640,
+      "date": "2026-02-10"
     },
     {
       "number": 8124,
@@ -95,6 +111,10 @@
       "date": "2026-02-10"
     },
     {
+      "number": 7893,
+      "date": "2026-02-11"
+    },
+    {
       "number": 8165,
       "date": "2026-02-11"
     },
@@ -107,12 +127,24 @@
       "date": "2026-02-11"
     },
     {
+      "number": 7933,
+      "date": "2026-02-12"
+    },
+    {
       "number": 8179,
       "date": "2026-02-12"
     },
     {
       "number": 8187,
       "date": "2026-02-12"
+    },
+    {
+      "number": 8189,
+      "date": "2026-02-12"
+    },
+    {
+      "number": 7735,
+      "date": "2026-02-13"
     },
     {
       "number": 8205,
@@ -147,5 +179,5 @@
       "date": "2026-02-14"
     }
   ],
-  "generated_at": "2026-02-16T10:04:13.429831+00:00"
+  "generated_at": "2026-10-17T23:26:41.681006+00:00"
 }

@@ -2,9 +2,9 @@
   "date": "2026-08-19",
   "period_start": "2026-08-19",
   "period_end": "2026-08-19",
-  "title": "Five more models, spanning reasoning and speech",
-  "summary": "A busy day of new reasoning and speech models, sturdier image routes, better account controls, and fewer places for metadata or float residue to hide.\n\nThe model roster grew in several useful directions: Qwen3.8 27B and GLM-5.3 bring multimodal, reasoning, tool-use, streaming, and structured-output options; Nemotron 3.5 Lightning adds a Quest-accessible reasoning model; and Grok TTS plus Fish Audio S2.1 Pro add new voices through the existing audio endpoints. Same calls, more strange machines behind them.\n\nEnter now has self-service account settings, including profile details, a copyable Pollinations ID, sign-out, and a fresh-session-protected account deletion flow. Quest rewards are now durably tied to GitHub identities, while the model catalog makes capabilities, publishers, sorting, and estimated Pollen usage easier to compare on desktop and mobile. Checkout received a small responsive cleanup too.\n\nKontext image generation and editing now point at the working Azure East US deployment, while DreamShaper's production deployment gained a cleaner restart path and passed sustained-load validation. Image preflight estimates are also less likely to reject ordinary flat-rate community-model requests because one stale analytics number had developed ambitious opinions.",
-  "pr_count": 19,
+  "title": "Three more text models, with different reasons to pick each",
+  "summary": "Five new models, self-service account controls, and a round of fixes for model discovery and Pollen accounting.\n\nAdded `qwen3.8-27b` for multimodal input and structured output, `glm-5.3` for long-context reasoning, and Quest-accessible `nemotron-3.5-lightning` with tools and optional reasoning. The new models keep separate IDs from existing offerings.\n\nAdded `grok-tts` with 28 voices and MP3, WAV, or PCM output, plus `fish-audio-s2.1-pro` with MP3 and PCM output. Both use the existing speech endpoints. Regenerated audio docs also make additional voice presets easier to find.\n\nEnter gained an Account page with profile details, a copyable Pollinations ID, and self-service deletion. The account-key response now identifies the app behind a BYOP-minted key. Quest rewards are keyed to GitHub identity so recreating an account cannot claim the same reward twice, and two community members gained community-model access.",
+  "pr_count": 17,
   "prs": [
     {
       "number": 13297,
@@ -12,6 +12,10 @@
     },
     {
       "number": 13418,
+      "date": "2026-08-19"
+    },
+    {
+      "number": 13441,
       "date": "2026-08-19"
     },
     {
@@ -23,23 +27,11 @@
       "date": "2026-08-19"
     },
     {
-      "number": 13522,
-      "date": "2026-08-19"
-    },
-    {
-      "number": 13523,
-      "date": "2026-08-19"
-    },
-    {
       "number": 13531,
       "date": "2026-08-19"
     },
     {
       "number": 13540,
-      "date": "2026-08-19"
-    },
-    {
-      "number": 13562,
       "date": "2026-08-19"
     },
     {
@@ -83,12 +75,12 @@
       "date": "2026-08-19"
     }
   ],
-  "generated_at": "2026-08-20T06:15:29.917144+00:00",
+  "generated_at": "2026-10-17T23:07:53.864228+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "Qwen3.8 27B",
-      "text": "`qwen3.8-27b` is now available for multimodal chat, reasoning, tool calls, structured output, and streaming. [See available models](https://gen.pollinations.ai/v1/models)",
+      "emoji": "🤖",
+      "title": "Qwen3.8 27B joins",
+      "text": "Use `qwen3.8-27b` with text, image, or video input, plus tools, reasoning controls, and structured output. It has a 262,144-token context window and is paid-only. [Browse the model](https://enter.pollinations.ai/models?q=qwen3.8-27b).",
       "prs": [
         13540
       ],
@@ -96,28 +88,62 @@
     },
     {
       "emoji": "🤖",
-      "title": "GLM-5.3 and Nemotron 3.5 Lightning",
-      "text": "Two new reasoning-capable text models landed: paid `glm-5.3`, plus Quest-accessible `nemotron-3.5-lightning` for tools, JSON schema, streaming, and cached prompts. [Try the text API](https://gen.pollinations.ai/v1/chat/completions)",
+      "title": "GLM-5.3 joins",
+      "text": "Use `glm-5.3` for text tasks with tools, reasoning, and a 1,048,576-token context window. It is paid-only and separate from the existing `glm` service. [Browse the model](https://enter.pollinations.ai/models?q=glm-5.3).",
       "prs": [
-        13572,
+        13572
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Nemotron 3.5 Lightning joins",
+      "text": "Try Quest-accessible `nemotron-3.5-lightning` with tools, optional reasoning, and a 262,144-token context window. It is separate from the existing `nemotron` model. [Browse the model](https://enter.pollinations.ai/models?q=nemotron-3.5-lightning).",
+      "prs": [
         13574
       ],
       "kind": "model"
     },
     {
       "emoji": "🎵",
-      "title": "Grok TTS and Fish Audio S2.1 Pro",
-      "text": "Two new speech engines join `/audio` and `/v1/audio/speech`: choose from 28 Grok voices or generate with Fish Audio S2.1 Pro in MP3, WAV, or PCM. [Check the API docs](https://gen.pollinations.ai/docs)",
+      "title": "Grok text-to-speech",
+      "text": "Generate speech with `grok-tts` using 28 built-in voices and MP3, WAV, or PCM output through the existing speech endpoints. The model is paid-only. [Browse the model](https://enter.pollinations.ai/models?q=grok-tts).",
       "prs": [
-        13569,
+        13569
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Fish Audio S2.1 Pro",
+      "text": "Generate speech with paid-only `fish-audio-s2.1-pro` through the existing speech endpoints, with MP3 or PCM output. [Browse the model](https://enter.pollinations.ai/models?q=fish-audio-s2.1-pro).",
+      "prs": [
         13571
       ],
       "kind": "model"
     },
     {
       "emoji": "✨",
-      "title": "Model pricing, made legible",
-      "text": "The Enter model catalog now makes pricing, Pollen estimates, capabilities, publishers, and recency much easier to compare—because choosing a model should not require archaeology. [Browse models](https://enter.pollinations.ai/keys)",
+      "title": "Account settings arrive",
+      "text": "View your GitHub profile details, copy your Pollinations ID, or delete your account from the new Account page. Deletion requires a recently created session.",
+      "prs": [
+        13471
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "BYOP keys identify apps",
+      "text": "`GET /account/key` now returns a `byopApp` object for BYOP-minted keys, including the app’s display name when available and its `clientKeyId`. It replaces the flat `byopClientKeyId` field.",
+      "prs": [
+        13520
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎯",
+      "title": "More ways to sort models",
+      "text": "Sort Enter’s model catalog by Oldest, Name Z–A, or Publisher Z–A. Pricing is also easier to compare across mobile and desktop layouts. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         13581
       ],

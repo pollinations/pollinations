@@ -2,8 +2,8 @@
   "date": "2025-12-21",
   "period_start": "2025-12-21",
   "period_end": "2025-12-21",
-  "title": "Hello makes more room for the community",
-  "summary": "Veo gained first-to-last-frame video, the MCP server picked up a toolbox, and Hello gave community projects and contributors more room.\n\nHello now sends generation requests directly to the unified API, retries rate-limited requests, and adds a dreams theme. Its Community page highlights contributors from the past year, while refreshed tier and app pages make submissions easier to find. The submission workflow now checks Enter registration, accepts fewer required fields, and grants Flower tier when an eligible, labeled contribution is merged. AI Chat Studio also joined the project directory.\n\nVeo video requests can take first and last frame URLs, giving creators control over both ends of a generated clip. Z-Image Turbo now generates at the requested resolution rather than generating smaller images and upscaling them, with dimensions still capped at 2048.\n\nMCP server v2 routes generation through the unified API and adds tools for video, parallel image generation, image description, video analysis, transcription, web search, tool-calling chat, and model pricing. It now uses API keys, fetches model lists from the API, and requires Node.js 18 or newer.",
+  "title": "More control over generated media",
+  "summary": "Veo gained two-frame interpolation, MCP picked up a toolbox, and the app-submission path got easier to follow.\n\nVeo can interpolate between a supplied first and last frame. Z-Image Turbo now generates at the requested resolution, up to its 2048-pixel dimension cap, instead of generating smaller images and upscaling them.\n\nMCP v2 routes generation through the unified API and uses API keys in place of OAuth. Its new tools cover video, parallel image generation, image description, video analysis, transcription, web search, tool-calling chat, and model pricing.\n\nHello now sends generation and model requests directly to the unified API, retries rate-limited generations, and has a refreshed Pollen and tier layout. Community gained a tribute to active GitHub contributors; app submission links, a Reddit link, and API examples were updated. Two community-made apps joined the project listings, and the README news list was refreshed.",
   "pr_count": 16,
   "prs": [
     {
@@ -71,12 +71,12 @@
       "date": "2025-12-21"
     }
   ],
-  "generated_at": "2026-10-17T15:56:48.091855+00:00",
+  "generated_at": "2026-10-17T22:37:17.015322+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Steer both ends of a video",
-      "text": "Give Veo a first frame and a last frame by passing two URLs in `image`, separated by a pipe or comma. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Choose Veo's last frame",
+      "text": "Give Veo a first and last frame by passing two image URLs in `image`, separated by a pipe or comma. It generates video between them. [Explore the video API](https://gen.pollinations.ai/docs).",
       "prs": [
         6317
       ],
@@ -85,18 +85,37 @@
     {
       "emoji": "🤖",
       "title": "More tools for MCP",
-      "text": "The MCP server now supports video generation, parallel images, image description, video analysis, transcription, web search, and tool-calling chat. [Explore the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "text": "The MCP server now supports video generation, parallel image generation, image and video analysis, transcription, web search, tool-calling chat, and model pricing lookup. It connects with a Pollinations API key. [See the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         6232
       ],
       "kind": "product"
     },
     {
-      "emoji": "🌟",
+      "emoji": "🎨",
+      "title": "Z-Image at requested resolution",
+      "text": "Z-Image Turbo now generates directly at your requested resolution instead of making a smaller image and upscaling it, with dimensions capped at 2048. [Browse models](https://enter.pollinations.ai/models?q=z-image).",
+      "prs": [
+        6285
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
       "title": "Meet the contributors",
-      "text": "Hello's Community page now features a tribute to GitHub contributors from the past year, with links to their profiles. [Visit the community](https://pollinations.ai).",
+      "text": "Hello's Community page now shows a tribute to active GitHub contributors, with profile links and commits from the past year. [Visit Pollinations](https://pollinations.ai).",
       "prs": [
         6278
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🌟",
+      "title": "Submit an app for Flower",
+      "text": "The app-submission flow now checks for an Enter account, asks for fewer required fields, and can grant Flower tier when an eligible submission PR is marked for Flower and merged. [Explore the community](https://pollinations.ai).",
+      "prs": [
+        5941,
+        6314
       ],
       "kind": "product"
     }

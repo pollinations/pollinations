@@ -2,8 +2,8 @@
   "date": "2025-12-16",
   "period_start": "2025-12-16",
   "period_end": "2025-12-16",
-  "title": "Playgrounds get clearer errors and less waiting",
-  "summary": "Chat gained a repetition control, playgrounds got less cryptic, and three community projects joined the directories.\n\nText and image playgrounds now distinguish denied requests, rate limits and other failures. Image generation retries rate-limited requests when a retry delay is available. Hello also makes unavailable models easier to identify, labels video output separately, and runs theme design, copy and background requests in parallel instead of spacing them 75 seconds apart.\n\nChat completions gained a `repetition_penalty` parameter with values from 0 to 2. Seedream 4.5 Pro now passes the requested seed to its provider, while a cached-token usage fix prevents some `gemini-large` requests from failing.\n\nThe dashboard can once again retrieve and copy full publishable keys. New keys use `pk_` and `sk_` prefixes, and key previews show their beginning rather than their suffix. Pricing and key tooltips now respond to hover on desktop and taps on touch devices, without appearing above key dialogs.",
+  "title": "Playgrounds give clearer answers",
+  "summary": "Playgrounds got clearer, text gained a repetition control, model stats got an endpoint, and three community apps joined the listings.\n\nThe text and image playgrounds now show more specific generation errors, and image generation retries rate-limited requests when the API supplies a wait time. Hello shows unavailable models as disabled, distinguishes video output in model badges, and runs theme design, copy, and background requests in parallel. Its plants-and-trees preset replaces creatures.\n\nChat completions now accept `repetition_penalty` values from 0 to 2. A new public model-stats endpoint aggregates seven days of request counts, average response times, and success and error counts by model.\n\nSeedream 4.5 Pro now passes requested seeds through to image generation. Gemini-large now handles reported cached-token usage without failing on a conversion-rate error.",
   "pr_count": 12,
   "prs": [
     {
@@ -55,21 +55,30 @@
       "date": "2025-12-16"
     }
   ],
-  "generated_at": "2026-10-17T15:55:51.272542+00:00",
+  "generated_at": "2026-10-17T22:36:55.572849+00:00",
   "highlights": [
     {
       "emoji": "🎯",
       "title": "Tune text repetition",
-      "text": "Use `repetition_penalty` in chat completion requests to adjust repetition, with values from 0 to 2. [See the API docs](https://gen.pollinations.ai/docs).",
+      "text": "Set `repetition_penalty` from 0 to 2 in chat completion requests for another way to steer generated text. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         6060
       ],
       "kind": "api"
     },
     {
-      "emoji": "✨",
-      "title": "Theme generation skips the queue",
-      "text": "Hello now generates theme design, copy and backgrounds in parallel instead of spacing publishable-key requests 75 seconds apart.",
+      "emoji": "📱",
+      "title": "Seven days of model stats",
+      "text": "A new public model-stats endpoint reports request counts, average response times, and success and error counts by model over the past seven days.",
+      "prs": [
+        6090
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎨",
+      "title": "A greener theme preset",
+      "text": "Hello’s theme generator has a plants-and-trees preset in place of creatures. It also runs design, copy, and background requests in parallel instead of spacing them out.",
       "prs": [
         6079
       ],

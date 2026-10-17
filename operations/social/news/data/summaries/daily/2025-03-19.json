@@ -3,7 +3,7 @@
   "period_start": "2025-03-19",
   "period_end": "2025-03-19",
   "title": "A Brazilian project joins the showcase",
-  "summary": "The community showcase gained Case Me, a Brazilian project for customized phone cases.\n\nCase Me was added to the README and Creative & Interactive Applications showcase. The project describes a vending machine for phone cases customized with photos, other images, and chosen colors; its listing includes Portuguese and English descriptions.",
+  "summary": "A quiet community day: Case Me joined the creative applications showcase.\n\nCase Me was added to the creative applications showcase. The project describes a vending machine for phone cases customized with customers’ photos, other images, and chosen colors; its listing includes Portuguese and English descriptions.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-03-19"
     }
   ],
-  "generated_at": "2026-10-17T15:35:52.501286+00:00",
+  "generated_at": "2026-10-17T22:29:29.995693+00:00",
   "highlights": [],
   "changelog": []
 }

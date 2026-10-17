@@ -2,12 +2,20 @@
   "date": "2026-08-02",
   "period_start": "2026-07-26",
   "period_end": "2026-08-01",
-  "title": "Weaver became a public multimodal agent",
-  "summary": "Pollinations grew a public multimodal agent while making the models, media tools, and fallback routes behind it more capable and resilient.\n\nPolli-agent arrived as an OpenAI-compatible streaming endpoint that coordinates text, images, audio, video, web search, and media tools. It was then named Weaver, added to the model catalog, and made callable as `voodoohop/weaver`. Approved community agents also gained short-lived delegated tokens, so they can generate within a caller’s existing Pollen controls without handling the caller’s API key.\n\nCommunity model owners can nominate compatible public backups. A shared fallback executor extended that approach across text, images, video, audio, embeddings, and 3D, with routing records showing which model served a request. Image capacity improved too: FLUX.1 Schnell gained a backup route, Z-Image workers now pass a health check before joining capacity, and DreamShaper’s parallel GPU pipelines raised measured concurrent throughput from about 4.3 to 8 images per second per card.\n\nElevenLabs gained multi-speaker dialogue, voice isolation from uploaded media, and character-aligned TTS timestamps. Transcription moved to AssemblyAI Universal-3.5 Pro at the same base rate, while Kokoro added 54 voices and five output formats to the existing speech endpoints. That covers more of the path from raw recording to captioned, generated speech.\n\nGPT Realtime 2.1 Mini, Nemotron 3 Ultra, Mistral OCR 4, Cohere Command A+, Qwen3.7 Flash, and Inkling Small joined existing routes for realtime sessions, long-context chat, document extraction, and multimodal work. DeepSeek moved to its V4 Flash 0731 checkpoint; several other models changed providers while keeping their public interfaces.",
-  "pr_count": 73,
+  "title": "Fallbacks became a cross-modal feature",
+  "summary": "The API got better at combining media tools, describing what models accept, and recovering when a provider does not cooperate.\n\nCommunity model owners can configure ordered backups for retryable upstream failures. The routing work grew from text and image to video, model-selecting audio, embeddings, and 3D; no registry fallback pairs were added by default. FLUX.1 Schnell also gained a Replicate fallback, while image-input failures now return stable HTTP 400 errors. Failed attempts are not charged, and a successful backup costs no more than the requested model.\n\nThe multimodal agent introduced as polli-agent became Weaver. Its OpenAI-compatible chat endpoint can stream responses and coordinate text, image, video, audio, search, and media tools. Enabled community agents can also generate within a caller’s model access and budget without receiving the caller’s API key. Clients using the earlier `polli` model ID need to switch to `weaver`.\n\nElevenLabs additions cover multi-speaker dialogue, voice changing, speech isolation, and speech with character-level timestamps. Kokoro 82M added 54 voices across eight languages, AssemblyAI transcription moved to Universal-3.5 Pro while retaining older IDs as aliases, and `gpt-realtime-2.1-mini` joined the realtime route.\n\nCommunity image models that support reference-image editing can advertise `/v1/images/edits`; generation-only models keep their existing behavior. Owners can now declare accepted input modalities in the model dialog, API, or CLI, so the catalog gives callers a better idea of what to send before they send it.",
+  "pr_count": 70,
   "prs": [
     {
+      "number": 12769,
+      "date": "2026-07-26"
+    },
+    {
       "number": 12778,
+      "date": "2026-07-26"
+    },
+    {
+      "number": 12779,
       "date": "2026-07-26"
     },
     {
@@ -23,10 +31,6 @@
       "date": "2026-07-26"
     },
     {
-      "number": 12785,
-      "date": "2026-07-26"
-    },
-    {
       "number": 12715,
       "date": "2026-07-27"
     },
@@ -35,19 +39,19 @@
       "date": "2026-07-27"
     },
     {
+      "number": 12791,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12792,
+      "date": "2026-07-27"
+    },
+    {
       "number": 12793,
       "date": "2026-07-27"
     },
     {
-      "number": 12795,
-      "date": "2026-07-27"
-    },
-    {
       "number": 12797,
-      "date": "2026-07-27"
-    },
-    {
-      "number": 12798,
       "date": "2026-07-27"
     },
     {
@@ -76,6 +80,10 @@
     },
     {
       "number": 12787,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12812,
       "date": "2026-07-28"
     },
     {
@@ -127,6 +135,10 @@
       "date": "2026-07-29"
     },
     {
+      "number": 12815,
+      "date": "2026-07-29"
+    },
+    {
       "number": 12838,
       "date": "2026-07-29"
     },
@@ -171,10 +183,6 @@
       "date": "2026-07-30"
     },
     {
-      "number": 12876,
-      "date": "2026-07-30"
-    },
-    {
       "number": 12879,
       "date": "2026-07-30"
     },
@@ -187,6 +195,10 @@
       "date": "2026-07-30"
     },
     {
+      "number": 12893,
+      "date": "2026-07-30"
+    },
+    {
       "number": 12896,
       "date": "2026-07-30"
     },
@@ -196,6 +208,18 @@
     },
     {
       "number": 12819,
+      "date": "2026-07-31"
+    },
+    {
+      "number": 12900,
+      "date": "2026-07-31"
+    },
+    {
+      "number": 12901,
+      "date": "2026-07-31"
+    },
+    {
+      "number": 12928,
       "date": "2026-07-31"
     },
     {
@@ -223,26 +247,6 @@
       "date": "2026-08-01"
     },
     {
-      "number": 12908,
-      "date": "2026-08-01"
-    },
-    {
-      "number": 12920,
-      "date": "2026-08-01"
-    },
-    {
-      "number": 12927,
-      "date": "2026-08-01"
-    },
-    {
-      "number": 12930,
-      "date": "2026-08-01"
-    },
-    {
-      "number": 12936,
-      "date": "2026-08-01"
-    },
-    {
       "number": 12982,
       "date": "2026-08-01"
     },
@@ -252,14 +256,6 @@
     },
     {
       "number": 12990,
-      "date": "2026-08-01"
-    },
-    {
-      "number": 12991,
-      "date": "2026-08-01"
-    },
-    {
-      "number": 12994,
       "date": "2026-08-01"
     },
     {
@@ -275,10 +271,6 @@
       "date": "2026-08-01"
     },
     {
-      "number": 13005,
-      "date": "2026-08-01"
-    },
-    {
       "number": 13007,
       "date": "2026-08-01"
     },
@@ -291,13 +283,9 @@
       "date": "2026-08-01"
     },
     {
-      "number": 13010,
-      "date": "2026-08-01"
-    },
-    {
       "number": 13011,
       "date": "2026-08-01"
     }
   ],
-  "generated_at": "2026-10-17T16:07:57.068093+00:00"
+  "generated_at": "2026-10-17T23:28:18.974054+00:00"
 }

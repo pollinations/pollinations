@@ -2,8 +2,8 @@
   "date": "2025-11-11",
   "period_start": "2025-11-11",
   "period_end": "2025-11-11",
-  "title": "A community-built chat interface",
-  "summary": "A community-built chat interface joined the repo while image prompts, API errors, and Pollen tracking got less surprising.\n\nCloudCompile’s chat interface was added to the main repo with text and image modes, model selection, locally saved conversations, speech input, and markdown rendering. Follow-up work corrected its build path and sidebar logo references.\n\nThe image route now handles prompts containing slashes and preserves URL encoding when forwarding prompts with UTF-8 characters. CatGPT moved to Enter’s image API, and its examples section was restored.\n\nThe creative-projects directory gained ImaGenz, AI Image-to-Prompt Generator, and SpecAI, covering image generation, image-to-prompt conversion, and custom resolution and seed controls.",
+  "title": "A community-built chat interface joins the repo",
+  "summary": "A community chat interface joined the repo while image prompts, API errors, and publishable-key tracking got less surprising.\n\nCloudCompile’s chat interface was added with selectable text and image models, saved conversations, themes, speech input, and markdown rendering. Follow-up changes corrected its build path and sidebar logo references. The drawing-to-code panel is still a placeholder, not an API-backed feature.\n\nEnter’s image route now accepts prompts containing slashes, while the proxy preserves URL encoding when forwarding prompts with UTF-8 characters. CatGPT also moved to Enter’s image API, and its examples section was restored.\n\nText and chat errors now retain upstream HTTP status codes and bodies instead of becoming generic 500s. Image errors return more specific statuses, and removing a stale debug call prevents an error handler from throwing while handling an error.",
   "pr_count": 9,
   "prs": [
     {
@@ -43,17 +43,17 @@
       "date": "2025-11-11"
     }
   ],
-  "generated_at": "2026-10-17T15:52:00.473932+00:00",
+  "generated_at": "2026-10-17T22:35:37.120845+00:00",
   "highlights": [
     {
       "emoji": "💬",
       "title": "Community chat interface",
-      "text": "A community-built interface combines text chat, image generation, model selection, saved conversations, and speech input. [Community chat](https://chat.pollinations.ai).",
+      "text": "CloudCompile’s chat interface was added to the repo with selectable text and image models, saved conversations, themes, and speech input.",
       "prs": [
         5144,
         5174
       ],
-      "kind": "app"
+      "kind": "product"
     }
   ],
   "changelog": []

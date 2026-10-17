@@ -3,7 +3,7 @@
   "period_start": "2025-01-06",
   "period_end": "2025-01-06",
   "title": "DeepSeek-V3 joins the text models",
-  "summary": "DeepSeek-V3 joined the text API, two personas changed providers, and OpenAI search got more room to answer.\n\nDeepSeek-V3 was added to the text model list as `deepseek`, with generation handlers for DeepSeek’s API and OpenRouter. `mistral-large` and `command-r` were removed from the listed models.\n\nThe Midijourney persona switched from Claude to OpenAI, while the Evil persona switched from Command-R to Mistral.\n\nThe OpenAI search response limit rose from 1,024 to 4,096 tokens. The delay after both successful and failed text responses changed to three seconds.",
+  "summary": "DeepSeek-V3 joined the text model list, alongside persona and response-handling changes.\n\nAdded DeepSeek-V3 as `deepseek`, with generation routed through DeepSeek’s API or OpenRouter. `mistral-large` and `command-r` were removed from the listed models.\n\nThe Midijourney persona now uses OpenAI instead of Claude, while the Evil persona uses Mistral instead of Command-R.\n\nThe OpenAI search response limit rose from 1,024 to 4,096 tokens, and the delay after both successful and failed text responses changed to three seconds.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,11 +11,11 @@
       "date": "2025-01-06"
     }
   ],
-  "generated_at": "2026-10-17T15:32:52.076913+00:00",
+  "generated_at": "2026-10-17T22:28:52.645579+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "DeepSeek-V3 joins text",
+      "title": "DeepSeek-V3 for text",
       "text": "Generate text with DeepSeek-V3 using the `deepseek` model ID. [Browse the model](https://enter.pollinations.ai/models?q=deepseek).",
       "prs": [
         962

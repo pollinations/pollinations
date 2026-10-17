@@ -2,12 +2,16 @@
   "date": "2026-07-05",
   "period_start": "2026-07-05",
   "period_end": "2026-07-05",
-  "title": "Gemini prompt caching drops repeated hit costs by 94x",
-  "summary": "A big day for the Greenhouse with three new community apps, plus massive efficiency gains for Gemini users via prompt caching.\n\nAdded explicit prompt caching support for five Vertex Gemini chat models. Developers can now use cache_control markers to cache large prefixes, bypassing redundant processing and dropping the cost of repeated hits by up to 94x.\n\nThe community directory is growing. We merged Sprout, LLM Playground (a multi-model chat workspace with LaTeX rendering and team quotas), and /motion (an open-source WebGL shader studio for looping visuals).\n\nWe ripped out the legacy tier upgrade logic from the app-approval GitHub workflows. Now, when you submit an app to the directory and it gets merged, you claim a flat 5 Pollen reward via the 'Contribute a pull request' Quest. Cleaner code, clearer rewards.",
-  "pr_count": 5,
+  "title": "Explicit context caching for Vertex Gemini",
+  "summary": "Vertex Gemini gained explicit context caching, three community apps joined the Greenhouse, and app approval messaging got its rewards straight.\n\nA team gateway update added support for content-block `cache_control` markers, so repeated Vertex Gemini requests can reuse marked context. The related billing change accounts for cache creation and its one-hour storage period while keeping discounted rates for cache hits. A new guide covers caching across Gemini, Claude, and Nova.\n\nAgent-added catalog listings bring in @murderszn’s Sprout and /motion, plus @voodoohop’s LLM Playground. /motion offers visual controls for looping WebGL backgrounds; LLM Playground brings multiple chat models, AI Characters, and team channels. The Greenhouse now lists 830 apps.\n\nApp approval messages now direct contributors to claim the existing 5 Pollen Contribute-a-pull-request Quest reward from Enter, rather than promising a Flower tier upgrade or hourly Pollen.",
+  "pr_count": 6,
   "prs": [
     {
       "number": 12215,
+      "date": "2026-07-05"
+    },
+    {
+      "number": 12233,
       "date": "2026-07-05"
     },
     {
@@ -27,44 +31,17 @@
       "date": "2026-07-05"
     }
   ],
-  "generated_at": "2026-07-06T07:28:23.221492+00:00",
+  "generated_at": "2026-10-17T23:01:03.146669+00:00",
   "highlights": [
     {
-      "emoji": "⚡",
-      "title": "Gemini Prompt Caching",
-      "text": "Send `cache_control` markers with your Gemini requests to cache large contexts. Deterministic hits, faster responses, and significantly cheaper repeated queries via the [Unified API](https://gen.pollinations.ai).",
+      "emoji": "🤖",
+      "title": "Reuse Gemini context",
+      "text": "Mark content blocks with `cache_control` so repeated Vertex Gemini requests can reuse cached context. Cache hits retain the discounted cached-token rate. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        12215,
-        12233
+        12233,
+        12215
       ],
       "kind": "api"
-    },
-    {
-      "emoji": "🌟",
-      "title": "Sprout",
-      "text": "A new community creation has landed in the Greenhouse directory. [Try it](https://murderszn.github.io/sprout/)",
-      "prs": [
-        12237
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎨",
-      "title": "/motion",
-      "text": "An open-source generative graphics studio for designing WebGL shader visuals and looping motion backgrounds. [Try it](https://motion-e93d3.web.app/)",
-      "prs": [
-        12238
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🤖",
-      "title": "LLM Playground",
-      "text": "A new chat workspace supporting multiple models, custom AI characters, and team servers with per-member quotas. [Try it](https://llmplayground.net)",
-      "prs": [
-        12241
-      ],
-      "kind": "app"
     }
   ],
   "changelog": []

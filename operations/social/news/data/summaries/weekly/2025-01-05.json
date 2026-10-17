@@ -2,8 +2,8 @@
   "date": "2025-01-05",
   "period_start": "2024-12-29",
   "period_end": "2025-01-04",
-  "title": "Image requests got more predictable",
-  "summary": "The week focused on making image requests more predictable, queues easier to understand, and community integrations easier to find.\n\nRequested dimensions now map to the closest supported aspect ratio, and short prompts respect an explicit `enhance=false`. Prompt-enhancement requests identify themselves to the text API and bypass its normal per-IP queue. Image safe-mode flag handling also changed. Non-ASCII characters are now removed before prompts reach the image backend—a request-handling change worth knowing if your prompts use them.\n\nQueueing events reach feed listeners again, and new timing and queue statistics help locate generation bottlenecks. The image cache is bounded, file operations use asynchronous I/O, and queue counts come from Flux jobs. Worker registration and routing now distinguish Flux, Turbo and translation services, with follow-up fixes for empty server pools and unknown registration types.\n\nThe README and website showcase gained an SDKs & Libraries section for React and Python integrations. AI-Bloom joined the project list, and Pollinations Gallery was marked as new.\n\nJSON mode now accepts the boolean `json: true`. Other text traffic is limited to one concurrent request per IP, with a longer delay after generation errors, and Sur moved to an OpenAI-backed variant.",
+  "title": "Image prompts and dimensions got more predictable",
+  "summary": "The week was about making image requests take the right path, use predictable settings, and leave clearer signals when work queued up.\n\nImage prompt enhancement now has its own route through the text API. Requested dimensions map to the closest supported aspect ratio, and short prompts honor an explicit `enhance=false`. Prompt sanitization also now strips non-ASCII characters before text reaches the image backend, which changes how accented prompts are handled.\n\nPrompt-enhancement requests bypass the ordinary text per-IP queue, while ordinary text requests now have a concurrency limit of one per IP and a longer pause after generation errors. On the image side, queue counts now come from Flux workers, queueing events reach feed listeners again, and worker tracking and routing were extended across Flux, Turbo and translation services. Flux also retains more generation steps under moderate load.\n\nImage operations moved to asynchronous file I/O, the cache gained a 500,000-entry limit, and debug logs and progress tracking replaced much of the previous console output. Tests now cover generation, processing, caching, prompts and queues. JSON mode also accepts boolean `json: true`, and image safe-mode checks were refined.\n\nA new SDK & Libraries section in the README and website showcase points to React and Python integrations. AI-Bloom joined the project list, Pollinations Gallery was marked as new, and Sur switched from Claude to OpenAI.",
   "pr_count": 8,
   "prs": [
     {
@@ -39,5 +39,5 @@
       "date": "2025-01-03"
     }
   ],
-  "generated_at": "2026-10-17T16:02:59.929143+00:00"
+  "generated_at": "2026-10-17T23:23:31.417150+00:00"
 }

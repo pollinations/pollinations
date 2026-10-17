@@ -2,16 +2,28 @@
   "date": "2026-04-05",
   "period_start": "2026-04-05",
   "period_end": "2026-04-05",
-  "title": "Sana Sprint 1.6B and CUDA hang fixes",
-  "summary": "Swapped in Sana Sprint 1.6B for image generation, fixed CUDA hangs, and put our API docs on a diet.\n\nWe swapped out SDXL Turbo for Sana Sprint 1.6B on our Lambda workers. While we were in the image server, we tracked down and fixed a CUDA hang issue in nunchaku that was causing timeouts, and patched an API edge case where empty model strings would fail instead of falling back gracefully.\n\nAPIDOCS.md went on a diet, dropping from 94KB to 37KB by consolidating redundant JSON examples. We also updated llm.txt so AI agents can actually find all 22 of our account and media endpoints, and regenerated the broken example images in the README.\n\nThe community directory grows. URV AI Chat is now live in the showcase, bringing another flavor of LLM access and character creation to the ecosystem.",
-  "pr_count": 6,
+  "title": "Image requests got less fragile",
+  "summary": "Image generation got sturdier while the app showcase and documentation had their shelves rearranged.\n\nNunchaku now serializes GPU work to prevent concurrent CUDA hangs, detects out-of-memory errors, and caps requests at 810,000 pixels. An empty `model` parameter now falls back to `zimage`, so `polli gen image` works without an explicit `--model` flag.\n\nURV AI Chat joined the catalog with multi-model chat, character creation, and image generation. The community also removed the Argent Script and Mirexa AI Chat listings; those catalog changes do not affect the apps or Pollinations APIs.\n\nAPIDOCS.md shrank from 94 KB to 37 KB by cutting repeated errors and empty examples. The generated `llm.txt` reference now covers account and media endpoints, including usage, API key management, uploads, and retrieval. These are documentation changes, not new endpoints.",
+  "pr_count": 9,
   "prs": [
+    {
+      "number": 9960,
+      "date": "2026-04-05"
+    },
     {
       "number": 9965,
       "date": "2026-04-05"
     },
     {
       "number": 9967,
+      "date": "2026-04-05"
+    },
+    {
+      "number": 9969,
+      "date": "2026-04-05"
+    },
+    {
+      "number": 9970,
       "date": "2026-04-05"
     },
     {
@@ -31,35 +43,7 @@
       "date": "2026-04-05"
     }
   ],
-  "generated_at": "2026-04-06T06:34:20.028480+00:00",
-  "highlights": [
-    {
-      "emoji": "🚀",
-      "title": "Sana Sprint 1.6B",
-      "text": "We've swapped out SDXL Turbo for Sana Sprint 1.6B on our workers, bringing you faster and more reliable [image generation](https://gen.pollinations.ai/image/models).",
-      "prs": [
-        9965
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "✨",
-      "title": "URV AI Chat",
-      "text": "A new community app just dropped in the showcase, featuring diverse LLM access, character creation, and image generation. [Try it](https://urv-ai.vercel.app)",
-      "prs": [
-        9973
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Smarter llm.txt",
-      "text": "We've expanded our `llm.txt` endpoint so your AI agents can now automatically discover and use our complete set of account management and media storage APIs.",
-      "prs": [
-        9980
-      ],
-      "kind": "api"
-    }
-  ],
+  "generated_at": "2026-10-17T22:46:36.200109+00:00",
+  "highlights": [],
   "changelog": []
 }

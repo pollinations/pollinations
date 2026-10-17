@@ -2,8 +2,8 @@
   "date": "2025-05-11",
   "period_start": "2025-05-04",
   "period_end": "2025-05-10",
-  "title": "The text-model garden grew",
-  "summary": "More ways to build with text models arrived alongside quieter work to make their responses, capabilities, and documentation more predictable.\n\nThe catalog gained `openai-fast` for text and image input, `openai-roblox` with tool support, and two guided personas: the in-character `mirexa` and biomimicry-focused `bidara`. The `openai` and `deepseek-reasoning` mappings were also updated. More choices are useful; knowing what each choice does is better.\n\nText-cache changes made completed streaming responses reusable, let equivalent requests across hosts share a cache key, and normalized headers to avoid double compression. The earlier cache rework also made requests easier to distinguish without losing streaming response types.\n\nThe `/models` endpoint gained a `tools` capability flag, and the OpenAI-compatible endpoint now forwards complete `response_format` objects, including supplied JSON schemas. `llama-vision` was removed from the available text-model list, while the Portkey mapping stopped selecting upstream models for eleven aliases, including `claude`, `gemini`, and `command-r`; that change added no replacement routing.\n\nA Websim Worker was added to turn a prompt in a URL path into self-contained HTML, with Pollinations images and linked subpages. The MCP guides now include the community-maintained MCPollinations server, and text-to-speech POST examples show how to decode the base64 audio returned in JSON.",
+  "title": "The model menu grew—and got clearer",
+  "summary": "More ways to use the text API arrived alongside repairs to caching, model discovery, documentation, and the community directory.\n\nThe text API added `openai-fast` for GPT-4.1-nano, `openai-roblox` for GPT-4.1-mini, and two rather different personas: Mirexa for in-character chat and image prompts, and Bidara for biomimicry design. The `openai` alias now points to GPT-4.1-mini; model metadata gained a tool-support flag, while several listings and routing mappings were tidied up. More choice is useful when the menu tells you what you’re choosing.\n\nCompleted streaming responses can be cached for reuse, with equivalent requests sharing keys across hosts and header handling avoiding double compression. The OpenAI-compatible endpoint also preserves supplied JSON Schemas by forwarding the full `response_format` object. A new websim Worker takes a URL prompt and returns a self-contained HTML page directly.\n\nPolynate, Pollinations Task Master, Define, Rizqi O Chatbot, KoboldAI, Aiphoto智能绘画, and SingodiyaTech joined the project listings. They span audio, definitions, writing, image generation, and developer tooling—a useful reminder that one API rarely stays one kind of app.\n\nThe model list stopped advertising `llama-vision`, and listings for Phi-4 Instruct and Mirexa were clarified. MCP guides now distinguish the official server from the community-maintained MCPollinations server. Text-to-speech POST examples now show how to decode the base64 audio returned in JSON.",
   "pr_count": 21,
   "prs": [
     {
@@ -91,5 +91,5 @@
       "date": "2025-05-10"
     }
   ],
-  "generated_at": "2026-10-17T16:08:15.593243+00:00"
+  "generated_at": "2026-10-17T23:24:23.656522+00:00"
 }

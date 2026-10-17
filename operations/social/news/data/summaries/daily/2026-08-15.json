@@ -2,9 +2,9 @@
   "date": "2026-08-15",
   "period_start": "2026-08-15",
   "period_end": "2026-08-15",
-  "title": "Managed agents became something you can actually publish and operate",
-  "summary": "A busy agent day: publishable prompt agents, a modern MCP endpoint, quests for real app growth, and the usual garden maintenance.\n\nEditable prompt agents landed in My Models and the Polli CLI: pick a base model, write a system prompt, attach public MCP servers, and opt into Pollinations tools without deploying a Worker or keeping long-lived keys around. Agent management was added to Polli, encrypted MCP agent headers were introduced, and the runtime now keeps answering when one configured MCP server is unavailable.\n\nmcp.pollinations.ai now supports the MCP SDK v2 Streamable HTTP flow with request-scoped bearer auth and hosted tools for chat, images, video, audio, model discovery, and balance. The endpoint and deployment checks were consolidated around the live service and its public health route, so clients and agents have a clearer path to current models and authenticated tools.\n\nBYOP builders can earn Pollen when external users make successful paid requests and when an app reaches ten distinct outside users; owner self-spend does not count, because software needs at least one grown-up in the room. A one-time quest also rewards GitHub accounts established for two years, with GitHub App authentication fixing eligibility checks and username sync.",
-  "pr_count": 28,
+  "title": "Editable agents join My Models",
+  "summary": "Editable agents, a hosted MCP tool server and new ways to earn Pollen led a day of community additions and documentation cleanup.\n\nAdded prompt agents that combine a system prompt, a Pollinations text model, and optional MCP tools. Agents can be created and edited in the dashboard or polli CLI, with private or public My Models listings. Follow-up fixes keep an agent responding when one tool server fails and adjust its built-in tool connection.\n\nAdded two app-growth quests worth 15 Pollen each: one for the first paid request made by someone else through an owner's BYOP app, and one for reaching ten distinct external users. The Senior dev quest awards 3 Pollen to eligible GitHub accounts at least 730 days old; a follow-up fixed the GitHub reads used to evaluate it.\n\nAdded a hosted Streamable HTTP MCP server with nine tools covering text, image, video, audio and 3D generation, embeddings, model discovery, model status and balance. Its tool interface was consolidated, image generation can return a resource link, and follow-up work improved model discovery guidance and endpoint routing.",
+  "pr_count": 14,
   "prs": [
     {
       "number": 12336,
@@ -23,23 +23,11 @@
       "date": "2026-08-15"
     },
     {
-      "number": 13399,
-      "date": "2026-08-15"
-    },
-    {
-      "number": 13401,
-      "date": "2026-08-15"
-    },
-    {
       "number": 13402,
       "date": "2026-08-15"
     },
     {
       "number": 13404,
-      "date": "2026-08-15"
-    },
-    {
-      "number": 13405,
       "date": "2026-08-15"
     },
     {
@@ -51,31 +39,11 @@
       "date": "2026-08-15"
     },
     {
-      "number": 13410,
-      "date": "2026-08-15"
-    },
-    {
-      "number": 13412,
-      "date": "2026-08-15"
-    },
-    {
-      "number": 13415,
-      "date": "2026-08-15"
-    },
-    {
       "number": 13419,
       "date": "2026-08-15"
     },
     {
       "number": 13420,
-      "date": "2026-08-15"
-    },
-    {
-      "number": 13425,
-      "date": "2026-08-15"
-    },
-    {
-      "number": 13426,
       "date": "2026-08-15"
     },
     {
@@ -87,44 +55,20 @@
       "date": "2026-08-15"
     },
     {
-      "number": 13430,
-      "date": "2026-08-15"
-    },
-    {
       "number": 13432,
-      "date": "2026-08-15"
-    },
-    {
-      "number": 13433,
-      "date": "2026-08-15"
-    },
-    {
-      "number": 13435,
       "date": "2026-08-15"
     },
     {
       "number": 13436,
       "date": "2026-08-15"
-    },
-    {
-      "number": 13437,
-      "date": "2026-08-15"
-    },
-    {
-      "number": 13438,
-      "date": "2026-08-15"
-    },
-    {
-      "number": 13439,
-      "date": "2026-08-15"
     }
   ],
-  "generated_at": "2026-09-04T11:52:08.899931+00:00",
+  "generated_at": "2026-10-17T23:07:01.120304+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Make your own prompt agents",
-      "text": "Create an editable agent in My Models or the Polli CLI with a system prompt, a Pollinations base model, public MCP servers, and optional Pollinations tools.",
+      "title": "Build your own agents",
+      "text": "Create and edit prompt agents with a Pollinations text model and optional MCP tools, then list them privately or publicly in My Models. Use the dashboard or polli CLI. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         12336
       ],
@@ -132,8 +76,8 @@
     },
     {
       "emoji": "🔗",
-      "title": "Pollinations tools for MCP",
-      "text": "Connect an MCP client to hosted tools for chat, image, video, audio, model discovery, and balance. [See MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "title": "Nine hosted MCP tools",
+      "text": "Connect an MCP client to tools for generating text, images, video, audio and 3D, creating embeddings, and checking models and balance. [Explore MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         13111
       ],
@@ -141,22 +85,199 @@
     },
     {
       "emoji": "🌟",
-      "title": "Pollen for growing apps",
-      "text": "New quests award Pollen for an external user's successful paid request and for reaching 10 distinct external users.",
+      "title": "App growth earns Pollen",
+      "text": "App owners can earn 15 Pollen when someone else makes the first paid request through their BYOP app, and another 15 when their apps reach ten distinct external users.",
       "prs": [
         13303
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎵",
-      "title": "A voice agent for businesses",
-      "text": "Indish Marketer's Voice Agent answers from your business knowledge base and captures leads through spoken conversations. [Try it](https://voice.prototools.in).",
+      "emoji": "🎯",
+      "title": "A Quest for senior devs",
+      "text": "The Senior dev Quest awards 3 Pollen to eligible GitHub accounts at least 730 days old, once per GitHub identity.",
       "prs": [
-        13396
+        13303,
+        13429
       ],
-      "kind": "app"
+      "kind": "product"
     }
   ],
-  "changelog": []
+  "changelog": [
+    {
+      "pr_number": 13427,
+      "url": "https://github.com/pollinations/pollinations/pull/13427",
+      "merged_at": "2026-08-15T20:50:00Z",
+      "api_changes": [
+        {
+          "id": "pr-13427:DELETE /account/keys/{id}",
+          "endpoint": "DELETE /account/keys/{id}",
+          "summary": "Revoke API Key",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13427:DELETE /account/my-models/{id}",
+          "endpoint": "DELETE /account/my-models/{id}",
+          "summary": "Delete My Model",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13427:GET /account/balance",
+          "endpoint": "GET /account/balance",
+          "summary": "Get Balance",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13427:GET /account/earnings",
+          "endpoint": "GET /account/earnings",
+          "summary": "Get Developer Earnings",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13427:GET /account/earnings/transactions",
+          "endpoint": "GET /account/earnings/transactions",
+          "summary": "Get Earnings Transactions",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13427:GET /account/key",
+          "endpoint": "GET /account/key",
+          "summary": "Get API Key Info",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13427:GET /account/key/usage",
+          "endpoint": "GET /account/key/usage",
+          "summary": "Get API Key Usage",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13427:GET /account/keys",
+          "endpoint": "GET /account/keys",
+          "summary": "List API Keys",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13427:GET /account/my-models",
+          "endpoint": "GET /account/my-models",
+          "summary": "List My Models",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13427:GET /account/my-models/{id}/fallback-candidates",
+          "endpoint": "GET /account/my-models/{id}/fallback-candidates",
+          "summary": "List Fallback Candidates",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13427:GET /account/profile",
+          "endpoint": "GET /account/profile",
+          "summary": "Get Profile",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13427:GET /account/quests",
+          "endpoint": "GET /account/quests",
+          "summary": "Get Quest Status",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13427:GET /account/usage",
+          "endpoint": "GET /account/usage",
+          "summary": "Get Usage History",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13427:GET /account/usage/daily",
+          "endpoint": "GET /account/usage/daily",
+          "summary": "Get Daily Usage",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13427:GET /quests/catalog",
+          "endpoint": "GET /quests/catalog",
+          "summary": "Get Quest Catalog",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13427:POST /account/keys",
+          "endpoint": "POST /account/keys",
+          "summary": "Create API Key",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13427:POST /account/my-models",
+          "endpoint": "POST /account/my-models",
+          "summary": "Create My Model",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13427:POST /account/my-models/models",
+          "endpoint": "POST /account/my-models/models",
+          "summary": "List Upstream Models",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13427:POST /account/my-models/provider",
+          "endpoint": "POST /account/my-models/provider",
+          "summary": "Update Community Provider Profile",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13427:POST /account/my-models/test",
+          "endpoint": "POST /account/my-models/test",
+          "summary": "Test My Model Endpoint",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13427:POST /account/my-models/{id}/update",
+          "endpoint": "POST /account/my-models/{id}/update",
+          "summary": "Update My Model",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        }
+      ]
+    }
+  ]
 }

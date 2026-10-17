@@ -2,8 +2,8 @@
   "date": "2025-07-20",
   "period_start": "2025-07-13",
   "period_end": "2025-07-19",
-  "title": "Chat projects became a wider world",
-  "summary": "Ten community projects widened the ways people use Pollinations, while the text API gained new models and changed how some requests are routed.\n\nCommunity additions ranged from EvilChat and the multi-model UltimaX Intelligence interface to the Chinese-language cultivation sandbox 云渺仙途：凡尘篇. AI Dream Girl Studio brought generated character visuals into animation, voiceovers, and storytelling. The directory increasingly looks less like a list of demos and more like a collection of places to spend time.\n\nEzPromptla, Promptgenerator.art, and DeepSeek Prompt joined the directory with different approaches to building, previewing, and improving prompts. SocialScribe added browser-based writing controls; Querynator5000 offers a natural-language database interface; and Berrry Computer turns tweeted app ideas into small AI-powered web apps.\n\nThe model roster gained `llama-fast-roblox`, `mistral-roblox`, and `mistral-nemo-roblox`. Several existing models changed providers or routes, including `openai-large` moving from GPT-4.1 to GPT-4o Mini. Queue concurrency changed by tier, and `gptimage` requests below Nectar tier now use flux. A model-specific semantic-cache change was merged, then reverted the same day; the proposed response-reuse path is not in use.\n\nProject links, credits, and star counts were tidied up, and Mindcraft’s listing now points to its maintained website and repository. Small fixes, but useful when a directory is supposed to lead somewhere.",
+  "title": "Nine projects joined the directory",
+  "summary": "Nine community projects broadened what people can build and explore, while text models and request routing got a round of changes.\n\nAcross four days, the directory grew beyond any one kind of AI app: chat interfaces, a text-cultivation sandbox, a database tool, and Berrry Computer’s tweet-to-web-app experiment all joined. Existing listings also got link and credit repairs, making the growing collection easier to explore.\n\nSocialScribe, EzPromptla, Promptgenerator.art, and DeepSeek Prompt added different ways to rewrite text, develop image ideas, preview prompts, and organize templates. Apparently the prompt now has tools of its own.\n\n`llama-fast-roblox`, `mistral-roblox`, and `mistral-nemo-roblox` joined the model lineup. Routing also changed for several existing text models, including `openai-large`.\n\nNectar-tier queue concurrency rose from 30 to 50, Flower-tier concurrency fell from 10 to 7, and `gptimage` requests below Nectar tier were switched to `flux`. A model-specific semantic cache was merged and then reverted, so that new semantic-match path does not reuse text responses.",
   "pr_count": 15,
   "prs": [
     {
@@ -67,5 +67,5 @@
       "date": "2025-07-18"
     }
   ],
-  "generated_at": "2026-10-17T16:05:24.774426+00:00"
+  "generated_at": "2026-10-17T23:25:00.266084+00:00"
 }

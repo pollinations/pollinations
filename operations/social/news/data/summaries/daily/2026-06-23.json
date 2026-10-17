@@ -2,12 +2,16 @@
   "date": "2026-06-23",
   "period_start": "2026-06-23",
   "period_end": "2026-06-23",
-  "title": "Stable Audio 3 takes over the soundboard",
-  "summary": "A heavy model day: Stable Audio 3 takes over the soundboard, Inception Mercury 2 joins the text lineup, and the mobile catalog gets some polish.\n\nA massive upgrade to the audio endpoints. We wired up Stable Audio 3 via Stability's official API and swapped out 2.5 for 3 Medium on fal.ai. You can now generate up to 380 seconds of 44.1 kHz stereo audio, and we added support for audio-to-audio style transfer. If your code is still calling 2.5, don't worry—we're automatically routing those requests to the new model.\n\nAdded Inception's Mercury 2 to the text generation lineup. We also wired up the usage parsing to properly handle its advanced token tracking, including cached inputs and reasoning tokens.\n\nUpdated the model pricing cards to show accurate flat-rate '/gen' badges for the new Stable Audio models instead of per-second estimates. While in there, we smoothed out tooltips and status chips for anyone browsing the catalog on mobile.",
-  "pr_count": 4,
+  "title": "Stable Audio 3 gets two routes",
+  "summary": "Two Stable Audio 3 options and Mercury 2 joined the models, while the catalog got clearer about what a music generation costs.\n\nStable Audio 3 Medium replaced 2.5 for paid music generation via fal, while Stable Audio 3 Large was added through Stability AI’s official API in alpha. Both accept text prompts or reference audio and support generations up to 380 seconds. Medium keeps the older Stable Audio names as aliases, though its output changes from WAV to MP3.\n\nInception Labs’ paid-only Mercury 2 was added as `mercury`, with tool support and a 128,000-token context window. Usage tracking also accounts for its cached-input and reasoning tokens.\n\nStable Audio Medium and Large now show flat per-generation prices instead of estimated per-second rates. The pricing panel is clearer on mobile, and the README’s Latest News section was refreshed with June 22 updates.",
+  "pr_count": 5,
   "prs": [
     {
       "number": 11912,
+      "date": "2026-06-23"
+    },
+    {
+      "number": 11954,
       "date": "2026-06-23"
     },
     {
@@ -23,22 +27,30 @@
       "date": "2026-06-23"
     }
   ],
-  "generated_at": "2026-06-24T07:07:47.585940+00:00",
+  "generated_at": "2026-10-17T22:59:40.970417+00:00",
   "highlights": [
     {
       "emoji": "🎵",
-      "title": "Stable Audio 3",
-      "text": "We've wired up Stable Audio 3 to the [audio API](https://gen.pollinations.ai/audio/{text}). Generate up to 380 seconds of 44.1 kHz stereo, or use the newly added audio-to-audio style transfer.",
+      "title": "Stable Audio 3 Large",
+      "text": "Generate music from a prompt or supply reference audio for audio-to-audio generation, with durations up to 380 seconds. The model is paid-only and in alpha. [Browse the model](https://enter.pollinations.ai/models?q=Stable%20Audio%203%20Large).",
       "prs": [
-        11912,
+        11912
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Stable Audio 3 Medium",
+      "text": "Generate music from text or use `reference_audio` for style transfer, with up to 380 seconds of MP3 output. Existing Stable Audio names remain aliases. [Browse the model](https://enter.pollinations.ai/models?q=Stable%20Audio%203%20Medium).",
+      "prs": [
         11961
       ],
       "kind": "model"
     },
     {
       "emoji": "🤖",
-      "title": "Mercury 2",
-      "text": "Inception's Mercury 2 model is now live on the [text API](https://gen.pollinations.ai/v1/chat/completions). Full support for cached input and reasoning tokens included.",
+      "title": "Mercury 2 joins text",
+      "text": "Use `mercury` for text generation with tool support and a 128,000-token context window. The model is paid-only. [Browse the model](https://enter.pollinations.ai/models?q=mercury).",
       "prs": [
         11964
       ],

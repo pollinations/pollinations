@@ -2,8 +2,8 @@
   "date": "2025-12-20",
   "period_start": "2025-12-20",
   "period_end": "2025-12-20",
-  "title": "Matching generation requests share the work",
-  "summary": "Concurrent generation requests can share a result, three community projects joined the listings, and the unified API got clearer documentation.\n\nEnter’s generation proxy now deduplicates concurrent matching requests, returning one generation result to each caller. Later responses carry `X-Cache: HIT` and `X-Cache-Type: DEDUP` headers; sequential requests still run separately.\n\nThe community project lists gained Nosde Space, which brings several creative tools together; TeleChars AI, for building Telegram characters; and Imgoo, for generating and editing images. Three quite different answers to “what can I build?”\n\nA generated Markdown reference now covers the unified API with quick-start requests and endpoint schemas. The README points developers toward that API, while the OpenAPI spec is 13.5% smaller after repeated schemas were consolidated. The older image and text endpoints are documented as slated for future deprecation.",
+  "title": "Matching requests share a generation",
+  "summary": "Concurrent generation requests can share a result, three community projects joined the listings, and the API docs got easier to navigate.\n\nConcurrent matching requests to Enter’s generation proxy now share one result instead of starting separate generations. Responses that reuse the result include `X-Cache: HIT` and `X-Cache-Type: DEDUP`; requests made later still run normally.\n\nThe project listings added Nosde Space for multimedia creation and remixing, TeleChars AI for configurable Telegram characters, and Imgoo for image generation and editing.\n\nA generated Markdown reference now covers gateway quick starts and endpoint schemas. The README and API docs point developers toward the unified API and mark the older image and text endpoints for future deprecation. Reused OpenAPI schemas were also consolidated, shrinking the spec by 13.5%.",
   "pr_count": 8,
   "prs": [
     {
@@ -39,12 +39,12 @@
       "date": "2025-12-20"
     }
   ],
-  "generated_at": "2026-10-17T15:56:13.334721+00:00",
+  "generated_at": "2026-10-17T22:37:06.839379+00:00",
   "highlights": [
     {
-      "emoji": "✨",
-      "title": "Shared concurrent generations",
-      "text": "Send matching generation requests concurrently and Enter’s proxy shares one result between them. Later responses include `X-Cache: HIT` and `X-Cache-Type: DEDUP` headers. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "emoji": "🚀",
+      "title": "Concurrent requests share results",
+      "text": "Send matching generation requests at the same time and they can share one result. Reused responses carry `X-Cache: HIT` and `X-Cache-Type: DEDUP`; sequential requests still run separately. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         6248
       ],

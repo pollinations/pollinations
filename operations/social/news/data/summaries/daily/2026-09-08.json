@@ -2,9 +2,9 @@
   "date": "2026-09-08",
   "period_start": "2026-09-08",
   "period_end": "2026-09-08",
-  "title": "Account activity became something you can actually inspect",
-  "summary": "A solid infrastructure day: clearer account activity, durable media links, tougher model routing, and fewer ways for provider metadata to become folklore.\n\nUsage and Earnings now have independent date navigation, filters, metrics, CSV exports, and chart-bar selection. New sortable breakdown tables show Paid and Quest Pollen, request counts, totals, and the apps or models behind activity, without making the mobile view perform interpretive dance.\n\nImages, edits, video, audio, speech, and 3D output now flow through the Media service with stable public links, shared storage, immutable caching, and consistent URL or base64 responses. Older cached files can also be recovered on demand and promoted into the current cache without regenerating them.\n\nAdded GPT Image 2.5 Flare and Sunburst for generation and editing, including native quality settings, custom dimensions, and transparent PNG output. Routing and health checks also got sturdier: more fallbacks for text, embeddings, Veo, and Grok video; smarter provider-failure detection; canonical provider labels; and clearer image-edit test results in the model dashboard.",
-  "pr_count": 15,
+  "title": "Activity gets a closer look",
+  "summary": "A busy day for things you can inspect and reuse: clearer Pollen activity, retrievable generated files, two image models, and sturdier routing.\n\nA community contribution replaced Pollen summary cards with breakdown tables for usage by model and earnings by source. Follow-up work gave Usage and Earnings independent date navigation, filters, and metrics; chart bars can now filter the tables by click or keyboard. CSV exports keep each section’s date range, and recent events are easier to scan.\n\nGenerated image, video, audio, and 3D files now use Media storage, with stored-file responses pointing to a URL that can be fetched without generating again. Image generation and editing also accept `response_format: \"url\"`, including for community image models. Read-through recovery can bring matching files from the old cache into Media instead of regenerating or charging again. The docs now spell out these response options and existing Media upload-ID behavior.\n\nAdded paid-only `openai/gpt-image-2.5-flare` and `openai/gpt-image-2.5-sunburst` for generation and reference-image edits with up to 16 input images. Multipart edits now pass through the requested size and output format, and transparent output keeps its PNG alpha. The model IDs were added to the image API docs.",
+  "pr_count": 14,
   "prs": [
     {
       "number": 12790,
@@ -12,6 +12,10 @@
     },
     {
       "number": 13998,
+      "date": "2026-09-08"
+    },
+    {
+      "number": 14255,
       "date": "2026-09-08"
     },
     {
@@ -24,10 +28,6 @@
     },
     {
       "number": 14566,
-      "date": "2026-09-08"
-    },
-    {
-      "number": 14577,
       "date": "2026-09-08"
     },
     {
@@ -47,10 +47,6 @@
       "date": "2026-09-08"
     },
     {
-      "number": 14597,
-      "date": "2026-09-08"
-    },
-    {
       "number": 14601,
       "date": "2026-09-08"
     },
@@ -67,21 +63,12 @@
       "date": "2026-09-08"
     }
   ],
-  "generated_at": "2026-09-09T06:30:18.567186+00:00",
+  "generated_at": "2026-10-17T23:12:14.036121+00:00",
   "highlights": [
     {
-      "emoji": "🎨",
-      "title": "Two GPT Image 2.5 models",
-      "text": "Generate or edit images with the paid-only `openai/gpt-image-2.5-flare` and `openai/gpt-image-2.5-sunburst` models. They support quality options, custom edit dimensions, and PNG transparency. [Explore image models](https://gen.pollinations.ai/image/models).",
-      "prs": [
-        14589
-      ],
-      "kind": "model"
-    },
-    {
       "emoji": "📱",
-      "title": "Explore your account activity",
-      "text": "Inspect usage and earnings in separate, filterable views with breakdown tables, selectable chart bars, and CSV exports. Chart selections update the matching table, totals, and shares.",
+      "title": "Explore Pollen activity",
+      "text": "See usage by model and earnings by source, with Paid and Quest Pollen shown separately. Navigate Usage and Earnings independently, then select a chart bar to filter its table.",
       "prs": [
         12790,
         14584
@@ -90,13 +77,31 @@
     },
     {
       "emoji": "🔗",
-      "title": "Generated media, one home",
-      "text": "Generated images, video, audio, and 3D files now share Media storage and consistent URL or base64 responses. Matching files in the older cache can be retrieved without generating them again. [Explore the API](https://gen.pollinations.ai/docs).",
+      "title": "Get generated image URLs",
+      "text": "Use `response_format: \"url\"` for image generation or editing, including community image models. The returned Media URL retrieves the stored file without generating it again. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         14587,
         14601
       ],
-      "kind": "product"
+      "kind": "api"
+    },
+    {
+      "emoji": "🎨",
+      "title": "GPT Image 2.5 Flare",
+      "text": "Generate images or make reference-image edits with `openai/gpt-image-2.5-flare`, using up to 16 input images. This model uses paid Pollen. [View the model](https://enter.pollinations.ai/models?q=openai/gpt-image-2.5-flare).",
+      "prs": [
+        14589
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "GPT Image 2.5 Sunburst",
+      "text": "Generate images or make reference-image edits with `openai/gpt-image-2.5-sunburst`, using up to 16 input images. This model uses paid Pollen. [View the model](https://enter.pollinations.ai/models?q=openai/gpt-image-2.5-sunburst).",
+      "prs": [
+        14589
+      ],
+      "kind": "model"
     }
   ],
   "changelog": [

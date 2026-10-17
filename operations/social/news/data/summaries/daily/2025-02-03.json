@@ -3,7 +3,7 @@
   "period_start": "2025-02-03",
   "period_end": "2025-02-03",
   "title": "An underwater adventure joins the showcase",
-  "summary": "A new underwater text adventure joined the showcase, while three website sections traded background images for solid colors.\n\nAbyss Ascending, @brain.diver’s web-based generative text adventure set in a sci-fi underwater world, was added to the README and creative-app showcase.\n\nThe community, team, and supporter sections now use solid-color backgrounds in place of images. Their gradients remain unchanged, and eight unused image assets were removed.",
+  "summary": "An underwater text adventure joined the showcase, while the website shed some background images.\n\nAbyss Ascending, @brain.diver’s web-based generative text adventure set in a sci-fi underwater world, was added to the README and creative-app showcase.\n\nThe community, team, and supporter sections now use solid-color backgrounds instead of images. Their gradients remain, and eight unused image assets were removed.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-02-03"
     }
   ],
-  "generated_at": "2026-10-17T15:33:07.233459+00:00",
+  "generated_at": "2026-10-17T22:28:54.683311+00:00",
   "highlights": [],
   "changelog": []
 }

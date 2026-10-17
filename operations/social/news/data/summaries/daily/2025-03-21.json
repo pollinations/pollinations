@@ -2,8 +2,8 @@
   "date": "2025-03-21",
   "period_start": "2025-03-21",
   "period_end": "2025-03-21",
-  "title": "Image generation gets an MCP server",
-  "summary": "Assistants gained image-generation tools, while the text API learned to parse a reasoning-effort setting.\n\nAdded an MCP server for assistants such as Claude. Its tools create image URLs, fetch images as base64, and list available image models. Generation accepts a prompt with optional model, seed, width, and height.\n\nThe text API parser now extracts `reasoning_effort` from requests. Documentation describes `low`, `medium`, and `high` for `openai-reasoning` (o3-mini); the supplied change does not establish that the value reaches the model provider.\n\nRenamed the MCP package and command to `pollinations-model-context-protocol`, updated setup instructions, and added interface screenshots. The audio documentation also gained a link for exploring voices.",
+  "title": "Image generation gets MCP tools",
+  "summary": "Assistants got image-generation tools, MCP setup got clearer, and the text API began parsing reasoning effort.\n\nAn MCP server was added for assistants such as Claude. Its tools can create image URLs, fetch images as base64 data, and list available image models. Image requests accept a prompt and optional model, seed, width, and height.\n\nThe MCP package and command were renamed to `pollinations-model-context-protocol`, with setup guides and documentation updated to match. Interface screenshots were added, and the audio docs gained a link for exploring voices.\n\nThe text API now parses `reasoning_effort` from requests. Documentation lists `low`, `medium`, and `high` for `openai-reasoning` (o3-mini), though the supplied change does not establish that the value reaches the model provider.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,17 +19,26 @@
       "date": "2025-03-21"
     }
   ],
-  "generated_at": "2026-10-17T15:36:07.067124+00:00",
+  "generated_at": "2026-10-17T22:29:38.538350+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Images through MCP",
-      "text": "Assistants such as Claude can use MCP tools to create image URLs, fetch images, and list image models. Generation supports optional model, seed, and size settings. [Explore the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "title": "Image tools for assistants",
+      "text": "An MCP server gives assistants tools to create image URLs, fetch images as base64 data, and list image models. Set a prompt, model, seed, or dimensions when generating. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         1407,
         1409
       ],
       "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Reasoning effort request field",
+      "text": "The text API now parses `reasoning_effort` in requests. The docs list `low`, `medium`, and `high` for `openai-reasoning`; this change does not establish that the setting is forwarded to the model. [API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        1412
+      ],
+      "kind": "api"
     }
   ],
   "changelog": []

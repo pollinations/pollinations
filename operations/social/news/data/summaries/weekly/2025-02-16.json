@@ -2,8 +2,8 @@
   "date": "2025-02-16",
   "period_start": "2025-02-09",
   "period_end": "2025-02-15",
-  "title": "Referral links, on a small scale",
-  "summary": "A small referral-link experiment was added to text responses, while two community-made image tools joined the project directory.\n\nReferral-link processing was added for roughly 1% of eligible Markdown text responses. It can link up to three existing product or concept mentions, leaves plain text alone, and preserves the original response if processing fails. A new referral route records the visit topic before redirecting to pollinations.ai after three seconds.\n\nThe community directory gained Anime AI Generation, an anime character creator, and @hrisjeui’s AI Image Generator, which offers model choices, adjustable parameters, and a real-time preview. Both were added to the README and website listings.\n\nOpenAI-format responses now receive newly generated IDs and creation timestamps instead of retaining provider metadata. The response helper also stopped filling in missing choice indexes and adding its previous cache header.",
+  "title": "Referral links entered a small Markdown experiment",
+  "summary": "A small referral experiment changed how some Markdown replies point people to Pollinations, while two community-made image tools joined the directory.\n\nUp to 1% of eligible Markdown text responses can turn existing product or concept mentions into as many as three referral links. Plain text stays untouched, and processing errors leave the original response intact. A new /referral route records the linked topic before sending visitors to pollinations.ai after three seconds.\n\nThe community project listings gained Anime AI Generation, an anime character maker, and @hrisjeui’s AI Image Generator, which offers multiple models, adjustable settings, and a real-time preview.\n\nOpenAI-format responses now get a newly generated ID and creation timestamp. The response helper also no longer fills in missing choice indexes or adds its previous cache header.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,5 +27,5 @@
       "date": "2025-02-15"
     }
   ],
-  "generated_at": "2026-10-17T16:03:16.047449+00:00"
+  "generated_at": "2026-10-17T23:23:42.785279+00:00"
 }

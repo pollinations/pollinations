@@ -3,7 +3,7 @@
   "period_start": "2025-12-28",
   "period_end": "2025-12-28",
   "title": "Streaming text arrives chunk by chunk",
-  "summary": "Text streams stop arriving all at once, chat accepts more reasoning settings, and IDPhotoGen joins the creative directory.\n\nStreaming POST requests now bypass request deduplication, which had buffered responses before returning them. SSE chunks can arrive as they are generated; non-streaming requests still use deduplication.\n\nChat completions now accept `none`, `minimal`, and `xhigh` for `reasoning_effort`, alongside `low`, `medium`, and `high`.\n\nThe creative app directory now includes @thangoffer91’s IDPhotoGen, an AI app for making professional ID photos.",
+  "summary": "Streaming text stopped arriving all at once, three supported reasoning settings pass validation, and IDPhotoGen joined the creative directory.\n\nText API requests with `stream: true` now bypass the deduplication step that buffered responses. SSE chunks can arrive as they are generated, while non-streaming requests keep deduplication.\n\nChat completions now accept `none`, `minimal`, and `xhigh` for `reasoning_effort`, alongside the existing values.\n\nIDPhotoGen, a community app for generating professional ID photos, was added to the creative app directory.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2025-12-28"
     }
   ],
-  "generated_at": "2026-10-17T15:57:03.832814+00:00",
+  "generated_at": "2026-10-17T22:37:23.130578+00:00",
   "highlights": [],
   "changelog": []
 }

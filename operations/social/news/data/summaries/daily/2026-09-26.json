@@ -2,9 +2,9 @@
   "date": "2026-09-26",
   "period_start": "2026-09-26",
   "period_end": "2026-09-26",
-  "title": "More models for video, speech, music, and text",
-  "summary": "New models across video, audio, and text; a less surprising CLI; and fewer ways for long-running jobs or fresh dashboards to fail.\n\nMiniMax H3 Max adds video generation with synchronized audio, Gemini 3.8 adds speech in 30 voices, and Azure routing brings GPT-6 Sol and Luna alongside Astra. Lyria 3.5 was also added for MP3 music generation, with deployment and live billing checks still open.\n\nText streaming now respects explicit flags and reports available model and token metadata. Invalid options fail before network requests, audio filenames match their selected formats, and Windows playback failures return an error instead of hanging.\n\nTTA is registered with Pollinations’ BYOP authorization flow. Contributors whose newly reported issues lead to merged fixes can now claim 4 Pollen through the GitHub quest.",
-  "pr_count": 14,
+  "title": "More ways to make video, speech, and music",
+  "summary": "New video, speech, and music models led the day, alongside wider GPT-6 access and less surprising CLI and generation behavior.\n\nMiniMax H3 Max adds video generation from text, frames, and reference media, with synchronized audio. Gemini 3.8 Flash and Flash Lite add speech generation with 30 voices and style instructions, while Lyria 3.5 adds text-to-MP3 song generation. All four models are paid-only.\n\nGPT-6 Sol and Luna now accept Quest Pollen accounts without requiring a paid balance. A pinned Enter notice sets out planned changes: Nova Canvas and Nova Reel are scheduled for removal on September 30; on October 1, the existing MAI Image 2.5 Flash ID is scheduled to route to 2.6 Flash. The available-model documentation was also refreshed.\n\n`polli gen text` now honors explicit streaming choices when output is piped and reports model, token, and saved-file details consistently in JSON. The CLI also catches invalid options before making requests, names audio files according to their format, and exits with an error when playback fails.",
+  "pr_count": 13,
   "prs": [
     {
       "number": 15392,
@@ -31,10 +31,6 @@
       "date": "2026-09-26"
     },
     {
-      "number": 15473,
-      "date": "2026-09-26"
-    },
-    {
       "number": 15475,
       "date": "2026-09-26"
     },
@@ -51,7 +47,7 @@
       "date": "2026-09-26"
     },
     {
-      "number": 15484,
+      "number": 15483,
       "date": "2026-09-26"
     },
     {
@@ -63,12 +59,12 @@
       "date": "2026-09-26"
     }
   ],
-  "generated_at": "2026-09-27T06:29:23.006194+00:00",
+  "generated_at": "2026-10-17T23:14:50.923449+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "MiniMax video, more inputs",
-      "text": "`minimax/minimax-h3-max` was added for video generation from text, start and end frames, or reference media, with synchronized audio. [Explore the API](https://gen.pollinations.ai/docs).",
+      "title": "MiniMax H3 Max video",
+      "text": "Create 5-, 10-, or 15-second videos with synchronized audio from text, frames, or reference media using `minimax/minimax-h3-max`. [Browse the model](https://enter.pollinations.ai/models?q=minimax/minimax-h3-max).",
       "prs": [
         15392
       ],
@@ -76,39 +72,30 @@
     },
     {
       "emoji": "🎵",
-      "title": "Two Gemini speech models",
-      "text": "Generate speech with `google/gemini-3.8-flash-tts` or `google/gemini-3.8-flash-lite-tts`. [Explore the audio API](https://gen.pollinations.ai/docs).",
+      "title": "Gemini 3.8 speech",
+      "text": "Gemini 3.8 Flash and Flash Lite TTS offer 30 voices and style instructions. Speech defaults to WAV, with raw 24 kHz PCM also supported. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         15395
       ],
       "kind": "model"
     },
     {
-      "emoji": "🎵",
-      "title": "Lyria 3.5 for songs",
-      "text": "`google/lyria-3.5` was added for song generation through the audio API. [Explore the API](https://gen.pollinations.ai/docs).",
-      "prs": [
-        15491
-      ],
-      "kind": "model"
-    },
-    {
       "emoji": "🤖",
-      "title": "GPT-6 Sol and Luna",
-      "text": "`openai/gpt-6-sol` and `openai/gpt-6-luna` were added for text and image-input requests through the unified API. [Explore text models](https://gen.pollinations.ai/v1/models).",
+      "title": "GPT-6 with Quest Pollen",
+      "text": "Use GPT-6 Sol and Luna with Quest Pollen without needing a paid balance. Their existing model IDs stay the same. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         15457
       ],
       "kind": "model"
     },
     {
-      "emoji": "📱",
-      "title": "TTA joins the catalog",
-      "text": "TTA joined the video and audio app catalog with Pollinations account connection. [Try it](https://mahmoudtracy641-hub.github.io/GLM234).",
+      "emoji": "🎵",
+      "title": "Lyria 3.5 songs",
+      "text": "Generate an MP3 song from a text prompt with `google/lyria-3.5`. Describe the approximate length in the prompt rather than setting an explicit duration. [Browse the model](https://enter.pollinations.ai/models?q=google/lyria-3.5).",
       "prs": [
-        15470
+        15491
       ],
-      "kind": "app"
+      "kind": "model"
     }
   ],
   "changelog": []

@@ -2,36 +2,35 @@
   "date": "2026-05-06",
   "period_start": "2026-05-06",
   "period_end": "2026-05-06",
-  "title": "Accurate attribution for BYOP developers",
-  "summary": "A quiet day of backend tuning, featuring accurate BYOP attribution and a more resilient text generation gateway.\n\nFixed a tracking bug so developers using Bring-Your-Own-Prompt (BYOP) now get persistent, accurate app attribution for all generation events tied to their publishable keys. Existing metadata was backfilled to keep historical data intact.\n\nAdded OpenRouter to the text generation gateway, making the backend more resilient. Under the hood, we automated internal key rotation and cloud credit tracking to keep the infrastructure humming without manual intervention.",
-  "pr_count": 2,
+  "title": "App keys get clearer attribution and fewer setup requirements",
+  "summary": "App keys got simpler to set up, BYOP attribution got more reliable, and the community app listings got a tidy-up.\n\nBYOP generation events can now resolve the app name and owner from the associated publishable key. Publishable app keys can also be created and edited without a redirect URI, while the key list shows when an app has multiple redirect URIs.\n\nAn automated catalog refresh raised the App Greenhouse count from 707 to 709 and updated health-check results. A separate correction credited the Obsidian chat app to its submitter and removed a listing whose URL no longer hosts the app.\n\nThe README’s Latest News and Recent Apps sections were refreshed. Recent Apps now shows contributors’ GitHub handles instead of generic attribution.",
+  "pr_count": 4,
   "prs": [
+    {
+      "number": 10705,
+      "date": "2026-05-06"
+    },
+    {
+      "number": 10706,
+      "date": "2026-05-06"
+    },
     {
       "number": 10708,
       "date": "2026-05-06"
     },
     {
-      "number": 10712,
+      "number": 10721,
       "date": "2026-05-06"
     }
   ],
-  "generated_at": "2026-05-07T06:56:34.210839+00:00",
+  "generated_at": "2026-10-17T22:50:23.464176+00:00",
   "highlights": [
     {
-      "emoji": "🔑",
-      "title": "BYOP Attribution",
-      "text": "Bring-your-own-keys tracking is now persistent. Your app actually gets credit for the generations it drives, which is helpful if you like accurate stats. [Check your dashboard](https://enter.pollinations.ai).",
+      "emoji": "🔗",
+      "title": "App keys without redirects",
+      "text": "Create and edit publishable app keys without adding a redirect URI. [Manage API keys](https://enter.pollinations.ai/keys).",
       "prs": [
         10708
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🌸",
-      "title": "Showcase Pruning",
-      "text": "We swept through the [community showcase](https://hello.pollinations.ai) to remove dead links and fix ownership credits. The garden is slightly more organized now.",
-      "prs": [
-        10721
       ],
       "kind": "product"
     }

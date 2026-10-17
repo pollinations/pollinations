@@ -2,20 +2,12 @@
   "date": "2026-08-08",
   "period_start": "2026-08-08",
   "period_end": "2026-08-08",
-  "title": "The app garden grew into a proper study and planning shelf",
-  "summary": "A community harvest: new learning, creative, gaming, and companion apps landed alongside a more self-hosting-friendly MCP server.\n\nLearn gained Pollen Scope, Pollination EduCard AI, and Studdy for study cards, guides, flashcards, and quizzes. The catalog also picked up AI Blog Articles for quick no-signup drafts, Briefly for turning notes into plans, Promptzy for keeping prompts findable, and Valdy for putting startup ideas through a reality check before they consume a month of weekends.\n\nCreative tooling expanded with Silenos Música for song and sound generation, two video tools for translation and creation, and new image apps including a French-language generator plus GIMP bridges for generating skies and images inside familiar art workflows. FluxFlow CLI and AIOPE Headless also bring Pollinations-powered generation into terminal and self-hosted assistant setups.\n\nBots now include HSCAura and Lucia, while 7visions offers structured dream exploration through seven perspectives. On the games side, Archetype lets small groups build stories with nova-fast and NEON SHADOWS adds an AI-driven RPG. This is what happens when an API gets left near creative people.",
-  "pr_count": 24,
+  "title": "Community apps spread across art, video, and audio",
+  "summary": "Twenty community apps joined the catalog, while MCP gained a configurable endpoint for compatible gateways.\n\nSix catalog additions cover video translation, short-video generation, music creation, French-language image generation, and two GIMP-related image projects. The recent-app lists rotated as new entries arrived; earlier apps were not necessarily removed from the catalog.\n\nEight community listings range from study guides, educational visuals, and collaborative storytelling to a German-language cyberpunk RPG. A horoscope app, dream-analysis app, and Telegram companion round out the mix.\n\nSix more catalog entries cover blog drafting, turning rough notes into plans, prompt organization, a coding CLI, startup-idea analysis, and a self-hosted assistant. These PRs added listings, not changes to the apps themselves.",
+  "pr_count": 21,
   "prs": [
     {
       "number": 12882,
-      "date": "2026-08-08"
-    },
-    {
-      "number": 13171,
-      "date": "2026-08-08"
-    },
-    {
-      "number": 13177,
       "date": "2026-08-08"
     },
     {
@@ -36,10 +28,6 @@
     },
     {
       "number": 13190,
-      "date": "2026-08-08"
-    },
-    {
-      "number": 13191,
       "date": "2026-08-08"
     },
     {
@@ -103,52 +91,16 @@
       "date": "2026-08-08"
     }
   ],
-  "generated_at": "2026-09-04T11:51:19.602702+00:00",
+  "generated_at": "2026-10-17T23:06:13.573584+00:00",
   "highlights": [
     {
-      "emoji": "🎵",
-      "title": "Make songs with Silenos",
-      "text": "Silenos Música connects Acestep and ElevenLabs to help you create songs and sounds. [Try it](https://www.silenos.es/musica).",
+      "emoji": "🔗",
+      "title": "Point MCP at your gateway",
+      "text": "Set `POLLINATIONS_BASE_URL` to use the MCP server with a local or self-hosted compatible gateway, including one under a path prefix. Generation, account, and model requests all use that endpoint. [MCP server docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
-        13190
+        12882
       ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Paint cityscapes in GIMP",
-      "text": "Orange City is a GIMP 3.2 plugin for stylized oil-painted cityscapes with AI-generated skies. [View repo](https://github.com/GermanIllan/orange_city).",
-      "prs": [
-        13199
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "💡",
-      "title": "Study with Studdy",
-      "text": "Generate personalized study guides, interactive flashcards, and quizzes for any topic. [Try it](https://bharkodat-ux.github.io/studdy).",
-      "prs": [
-        13207
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎯",
-      "title": "Build stories together",
-      "text": "Archetype is an Android storytelling game for 2–4 players, with AI-generated story sparks powered by the Pollinations text API. [View repo](https://github.com/xnet-admin-1/archetype-game).",
-      "prs": [
-        13195
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Try FluxFlow CLI",
-      "text": "Use a CLI-based AI agent for coding, documentation, creative work, and Pollinations-powered image generation. [Try it](https://www.npmjs.com/package/fluxflow-cli).",
-      "prs": [
-        13202
-      ],
-      "kind": "app"
+      "kind": "product"
     }
   ],
   "changelog": []

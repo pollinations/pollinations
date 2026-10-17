@@ -2,20 +2,16 @@
   "date": "2026-07-08",
   "period_start": "2026-07-08",
   "period_end": "2026-07-08",
-  "title": "Text generation gets a clearer path through the edge",
-  "summary": "A quiet maintenance day: smoother high-volume text traffic and fresh ecosystem health data.\n\nThe gen.pollinations.ai production configuration no longer applies Cloudflare's native edge rate limiter, reducing unexpected throttling for high-volume text API traffic.\n\nAutomated metrics, health checks, and greenhouse status were refreshed so developers browsing the community ecosystem see current app data rather than yesterday's garden labels.",
-  "pr_count": 2,
+  "title": "An extra API request cap removed",
+  "summary": "The API shed an extra edge request cap while keeping Pollen rate limiting.\n\nA merged change removes the additional Cloudflare edge limit of 10,000 requests per 10 seconds from gen.pollinations.ai. The separate Pollen rate limiter remains in place.",
+  "pr_count": 1,
   "prs": [
     {
       "number": 12292,
       "date": "2026-07-08"
-    },
-    {
-      "number": 12293,
-      "date": "2026-07-08"
     }
   ],
-  "generated_at": "2026-09-04T11:44:12.325101+00:00",
+  "generated_at": "2026-10-17T23:01:07.609760+00:00",
   "highlights": [],
   "changelog": []
 }

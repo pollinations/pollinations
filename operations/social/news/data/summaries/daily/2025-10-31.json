@@ -2,8 +2,8 @@
   "date": "2025-10-31",
   "period_start": "2025-10-31",
   "period_end": "2025-10-31",
-  "title": "ReImagine brings image transformations to mobile",
-  "summary": "A mobile image app and Gemini image editing joined a round of fixes for tiers, Flux responses, and Enter request handling.\n\nCommunity contributor ismailazdad added ReImagine, a React Native app for transforming one image with kontext or combining two to four with gptimage. It keeps local version history and lets users save or share results.\n\nThe image model registry gained nanobanana for image-to-image generation through Enter, with a 2048-pixel maximum side length. Gemini refusals now retain their specific feedback instead of becoming generic errors.\n\nSeed, Flower, and Nectar tier detection now uses the updated subscription products. The tier panel reads the product name and daily Pollen amount from Polar rather than showing hardcoded values.",
+  "title": "More ways to rework an image",
+  "summary": "New ways to transform images, plus less queueing and clearer model feedback in Enter.\n\nReImagine adds a mobile workflow for transforming one image with kontext or combining up to four with gptimage, with local history and sharing. The image model registry also gained nanobanana for image-to-image generation through Enter.\n\nSeed, Flower, and Nectar detection now uses the updated subscription products. The tier panel reads the product name and daily Pollen amount from Polar rather than hardcoded values.\n\nEnter requests now bypass the IP queue and its one-second interval. Flux image responses also report `flux` consistently in their tracking header, fixing an unrecognized-model error in Enter.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,12 +31,21 @@
       "date": "2025-10-31"
     }
   ],
-  "generated_at": "2026-10-17T15:50:45.297455+00:00",
+  "generated_at": "2026-10-17T22:35:11.492740+00:00",
   "highlights": [
     {
+      "emoji": "📱",
+      "title": "ReImagine on mobile",
+      "text": "Transform an image with kontext or combine two to four images with gptimage. ReImagine keeps versions locally and lets you save or share the results.",
+      "prs": [
+        4863
+      ],
+      "kind": "product"
+    },
+    {
       "emoji": "🎨",
-      "title": "Gemini image transformations",
-      "text": "Use `nanobanana` for image-to-image generation through Enter, with output up to 2048 pixels on a side. [Browse the model](https://enter.pollinations.ai/models?q=nanobanana).",
+      "title": "Nanobanana image transformations",
+      "text": "`nanobanana` was added for image-to-image generation through Enter, with a maximum side length of 2048 pixels. [View the model](https://enter.pollinations.ai/models?q=nanobanana).",
       "prs": [
         4886
       ],

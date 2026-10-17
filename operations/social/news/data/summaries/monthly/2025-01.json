@@ -2,8 +2,8 @@
   "date": "2025-01-31",
   "period_start": "2025-01-01",
   "period_end": "2025-01-31",
-  "title": "A clearer front door for community projects",
-  "summary": "January made Pollinations easier to explore while expanding text and image options and tightening the APIs behind them.\n\nThe rebuilt homepage made examples, integrations, and community work easier to find. The project directory gained categories, restored missing entries, and added a GitHub form for submitting apps.\n\nDeepSeek-V3, DeepSeek reasoning models, GPT-4o vision, Claude 3.5 Haiku, and Qwen Coder broadened the model choices. JSON mode, temperature forwarding, web-search defaults, and vision examples made those choices more usable.\n\nRequests began mapping to supported aspect ratios and defaulting to 1024×1024. Prompt handling was corrected to preserve Persian and other non-Latin text, while authorized requests gained a priority path around the regular queue.\n\nText and image request pacing, routing, and error handling were revised, with clearer JSON errors and more tests and instrumentation. Text feed events also stopped including requester IP addresses.",
+  "title": "More ways to generate text",
+  "summary": "January broadened the text and image APIs while rebuilding the homepage around the tools and community projects people make with them.\n\nDeepSeek-V3 and reasoning models, GPT-4o, and Scaleway-backed options expanded the text API. JSON mode, vision examples, model routing, and requested temperature received practical fixes.\n\nThe API added structured errors and steadier per-IP queueing, repaired generation tracking, and raised its request limit to 200 per minute. Feed events also stopped including requester IP addresses.\n\nImages now default to 1024×1024, requested dimensions map to supported aspect ratios, and explicit prompt-enhancement settings are respected. Prompt handling was corrected to preserve non-Latin text, while valid priority tokens gained a path around the per-IP queue.\n\nThe homepage rebuild refreshed the image tools, examples, and project directory. Restored listings, a GitHub issue form for project submissions, and links to new community apps made the surrounding ecosystem easier to explore.",
   "pr_count": 49,
   "prs": [
     {
@@ -203,5 +203,5 @@
       "date": "2025-01-31"
     }
   ],
-  "generated_at": "2026-10-17T16:08:30.093425+00:00"
+  "generated_at": "2026-10-17T23:30:20.237915+00:00"
 }

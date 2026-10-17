@@ -2,10 +2,22 @@
   "date": "2026-05-01",
   "period_start": "2026-05-01",
   "period_end": "2026-05-01",
-  "title": "Longer videos, smarter routing, and free Scribe",
-  "summary": "A solid day of model routing fixes, dashboard UI polish, and expanding the Pollen ecosystem with premium audio and image models.\n\nNova Reel now supports 120-second video generations and actually tells you what went wrong (helpful 400s instead of generic 500s) if you feed it bad inputs. On the audio side, we fixed a routing bug where Qwen TTS requests were getting lost and falling back to ElevenLabs, and we've officially moved the Scribe audio model back to the free tier.\n\nPower users can now tap into ElevenLabs audio and GPT Image 2 directly through their Pollen credits. We've wired them up to ensure consistent, high-performance access for heavy workloads.\n\nA quick pass over the dashboard UI to make things slightly less confusing. Static informational labels are now rectangular so you stop trying to click them, the sidebar got a visual cleanup, and we stripped development tools out of the production bundle so it runs a bit leaner.",
-  "pr_count": 6,
+  "title": "Qwen speech takes the right route",
+  "summary": "Qwen speech routing and Nova Reel inputs got attention, while the dashboard and app credits received a quieter tidy-up.\n\nThe simple audio endpoint now routes `qwen-tts` and `qwen-tts-instruct` to the Qwen handler instead of ElevenLabs. It also accepts an `instruct` query parameter for `qwen-tts-instruct`; Qwen TTS responses are WAV regardless of `response_format`.\n\nNova Reel requests support durations up to 120 seconds in multiples of six. The gateway now prepares reference images for the model and returns more useful errors for invalid prompts, unsupported image-and-duration combinations, and provider capacity limits. ElevenLabs speech and elevenmusic metadata was also marked alpha.\n\nNon-actionable labels across keys, models, pricing, tiers, and usage now use rectangular tags. The sidebar also gained Terms, Privacy, and Refunds links, alongside a smaller logo.",
+  "pr_count": 7,
   "prs": [
+    {
+      "number": 10591,
+      "date": "2026-05-01"
+    },
+    {
+      "number": 10592,
+      "date": "2026-05-01"
+    },
+    {
+      "number": 10595,
+      "date": "2026-05-01"
+    },
     {
       "number": 10596,
       "date": "2026-05-01"
@@ -19,26 +31,27 @@
       "date": "2026-05-01"
     },
     {
-      "number": 10601,
-      "date": "2026-05-01"
-    },
-    {
       "number": 10602,
-      "date": "2026-05-01"
-    },
-    {
-      "number": 10603,
       "date": "2026-05-01"
     }
   ],
-  "generated_at": "2026-05-02T06:36:47.323637+00:00",
+  "generated_at": "2026-10-17T22:49:49.664379+00:00",
   "highlights": [
     {
-      "emoji": "🎥",
-      "title": "120-Second Nova Reel Videos",
-      "text": "The Nova Reel video model now supports generations up to two minutes long. Pass the updated duration parameters to the [Unified API](https://gen.pollinations.ai).",
+      "emoji": "🎨",
+      "title": "Longer Nova Reel clips",
+      "text": "Request Nova Reel videos up to 120 seconds long, in multiples of six seconds. [Browse models](https://enter.pollinations.ai/models?q=nova-reel).",
       "prs": [
         10596
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Instruct Qwen speech",
+      "text": "Use the `instruct` query parameter with `qwen-tts-instruct` on `/audio/{text}` to guide speech generation. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        10600
       ],
       "kind": "api"
     }

@@ -2,12 +2,20 @@
   "date": "2026-02-09",
   "period_start": "2026-02-09",
   "period_end": "2026-02-09",
-  "title": "Polly just got a major IQ upgrade",
-  "summary": "🧠 Merged OpenAI embeddings + a tighter system prompt. Context retrieval is sharper, responses are cleaner. Also refactored credit logic—single bucket balance, no more splitting headaches. Shipping daily. 🌸🐝",
-  "pr_count": 4,
+  "title": "Claude model routing gets more explicit",
+  "summary": "Claude routing got less surprising, Polly got more concise, and Pollen balances got easier to read.\n\nAdded the paid-only `claude-legacy` API model for Claude Opus 4.5, with two aliases. Hidden models remain callable but no longer appear in model lists or the dashboard. Sonnet 4.5 and Opus 4.6 now use Bedrock-only configurations, and Opus 4.6 requests no longer fall back to Opus 4.5.\n\nPolly's documentation search now uses OpenAI embeddings, while indexing skips unchanged content. Its replies to simple questions are shorter, with less unsolicited code; brief general coding help remains in scope.\n\nRequests now draw their full cost from one eligible balance bucket rather than splitting it across buckets. A negative bucket no longer prevents use of another positive bucket or obscures available Pollen in the displayed total and gauge.",
+  "pr_count": 6,
   "prs": [
     {
       "number": 8101,
+      "date": "2026-02-09"
+    },
+    {
+      "number": 8107,
+      "date": "2026-02-09"
+    },
+    {
+      "number": 8109,
       "date": "2026-02-09"
     },
     {
@@ -23,27 +31,15 @@
       "date": "2026-02-09"
     }
   ],
-  "generated_at": "2026-03-18T19:58:13.615251+00:00",
+  "generated_at": "2026-10-17T22:39:48.500720+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "Massive Model Drop",
-      "text": "Added `imagen-4`, `flux-2-dev`, `grok-video`, and `LTX-2` for next-level image and video generation.",
-      "prs": [],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎵",
-      "title": "Audio Studio",
-      "text": "Generate music with `elevenmusic`, transcribe with `whisper`, and use emotive TTS with `eleven_v3`.",
-      "prs": [],
-      "kind": "model"
-    },
-    {
-      "emoji": "🧠",
-      "title": "Smarter Claude",
-      "text": "Upgraded `claude-large` to the latest Claude 3 Opus 4.6 for enhanced reasoning.",
-      "prs": [],
+      "emoji": "🤖",
+      "title": "Claude Opus 4.5 via API",
+      "text": "Call Claude Opus 4.5 with the paid-only `claude-legacy` model ID, or use its `claude-opus-4.5` and `claude-large-legacy` aliases. The model is API-callable but hidden from model lists and the dashboard. [View the model](https://enter.pollinations.ai/models?q=claude-legacy).",
+      "prs": [
+        8101
+      ],
       "kind": "model"
     }
   ],

@@ -2,8 +2,8 @@
   "date": "2026-02-17",
   "period_start": "2026-02-17",
   "period_end": "2026-02-17",
-  "title": "shipped SlidePainter and markdown support for app descriptions",
-  "summary": "the markdown feature uses an llm to format text. had to patch it because it started hallucinating creative new names for user apps. it is now strictly forbidden from renaming things",
+  "title": "SlidePainter turns generated images into slide decks",
+  "summary": "A new way to make image-backed slides, a more readable app catalog, and themes you can explore by clicking the logo.\n\nSlidePainter was added for building and reordering slides with generated images. It supports a shared style prompt, reference image, model and render-size choices, Markdown configuration import/export, and PDF export.\n\nThe app catalog now formats descriptions as short markdown, showing the original text first and falling back to it if rewriting fails. A follow-up keeps app names, model names and URLs from being rewritten into something else.\n\nClicking the logo now cycles through theme presets and reveals the AI theme creator. A Pixelart preset was added, while header, tooltip and menu styling was adjusted for readability.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,31 +27,33 @@
       "date": "2026-02-17"
     }
   ],
-  "generated_at": "2026-02-18T06:22:11.715445+00:00",
+  "generated_at": "2026-10-17T22:40:30.114327+00:00",
   "highlights": [
     {
-      "emoji": "📊",
-      "title": "SlidePainter",
-      "text": "Generate illustrated slide decks and export to PDF with this new community app.",
+      "emoji": "🎨",
+      "title": "Build slides with SlidePainter",
+      "text": "Build and reorder slides with generated images, choose a model and render size, then export the deck as a PDF. Markdown import and export lets you keep the slide configuration, too.",
       "prs": [
         8341
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "👾",
-      "title": "Pixel Art & Markdown",
-      "text": "A cozy new retro theme is available, plus app descriptions are now auto-formatted via the [Text API](https://gen.pollinations.ai).",
-      "prs": [
-        8334
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎨",
-      "title": "UI Theme Cycling",
-      "text": "Click the [pollinations.ai](https://hello.pollinations.ai) logo to instantly cycle through visual themes.",
+      "emoji": "✨",
+      "title": "App descriptions get markdown",
+      "text": "Browse app descriptions formatted with lists, links and inline code. The catalog shows the original description first and keeps names and URLs intact when rewriting it.",
       "prs": [
+        8334,
+        8362
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🌟",
+      "title": "Click through the themes",
+      "text": "Click the logo to cycle through theme presets and open the AI theme creator. There’s a new Pixelart preset to try.",
+      "prs": [
+        8334,
         8360
       ],
       "kind": "product"

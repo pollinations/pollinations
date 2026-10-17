@@ -2,8 +2,8 @@
   "date": "2025-07-02",
   "period_start": "2025-07-02",
   "period_end": "2025-07-02",
-  "title": "Flux Kontext adds voxel-art generation",
-  "summary": "Flux Kontext brought voxel-art generation, while sign-in got a clearer layout and the community games list gained a time-bending adventure.\n\nTwo PRs added `model=kontext` for seed-tier users, supporting text-to-image generation and image-to-image generation from a supplied image URL. Outputs are capped at 640 pixels on the longest side. GPT Image was also marked as requiring the flower tier.\n\nThe auth page gained a responsive layout, a redesigned login button, and a GitHub profile badge for signed-in users. Token-validation caching was added to reduce repeated database lookups.\n\nRETIME - FABRIC OF REALITY joined the community games list. The Pollinations-powered text adventure has screen-reader accessibility, story-shaping choices, and time-based mechanics.",
+  "title": "Flux Kontext joins image generation",
+  "summary": "Flux Kontext adds voxel-art generation, sign-in gets a clearer face, and a community text adventure joins the games list.\n\nAdded `kontext` for voxel-art images at seed tier and above. It supports text prompts or an input image, with a 640-pixel maximum side length. GPT Image is now marked as requiring the flower tier.\n\nReworked the auth page for smaller screens, added a GitHub profile badge for signed-in users, and made its introduction respond to sign-in and sign-out. Token-validation caching was also added to reduce repeated database lookups.\n\nAdded RETIME – FABRIC OF REALITY, a screen-reader-accessible text adventure with branching choices and time-based mechanics, to the Games project list.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,12 +27,12 @@
       "date": "2025-07-02"
     }
   ],
-  "generated_at": "2026-10-17T15:43:10.217199+00:00",
+  "generated_at": "2026-10-17T22:32:27.129612+00:00",
   "highlights": [
     {
       "emoji": "🎨",
       "title": "Flux Kontext voxel art",
-      "text": "Generate voxel art with `model=kontext` from a prompt or a supplied image URL. Available from the seed tier. [Browse the model](https://enter.pollinations.ai/models?q=kontext).",
+      "text": "Generate voxel-art images with `model=kontext` from a text prompt or an input image. Available at seed tier and above, with a 640-pixel maximum side length. [Explore Kontext](https://enter.pollinations.ai/models?q=kontext).",
       "prs": [
         2730,
         2737

@@ -2,16 +2,12 @@
   "date": "2026-09-27",
   "period_start": "2026-09-20",
   "period_end": "2026-09-26",
-  "title": "The model catalog grew in several directions",
-  "summary": "More models and media tools arrived, while community agents, developer tooling, and reliability work made the growing catalog easier to use.\n\nGPT-6 Sol and Luna, Claude Opus 5.5, Grok 4.7, GPT-5.3 Codex, GLM-5.3 FlashX, and MiMo V2.6 joined the text API. Ling 3.0 Flash VL gained video input, and the registry now advertises reasoning support for three Azure GPT models. It was a week for larger contexts and more kinds of input, not just more names in a dropdown.\n\nMAI Image 2.6 and Flash, FLUX 1.1 Pro, Qwen Image 2.1, and Recraft V4.1 Flash expanded image generation and editing. MiniMax H3 Max added video with synchronized audio; Gemini 3.8 TTS added speech voices; Lyria 3.5 music integration landed with live deployment and billing checks still pending. Longer-running fal jobs now have time to finish through the queue.\n\nDirect Mistral and Alibaba paths, restored Vertex-first Gemini routing, new Grok fallback coverage, and provider transitions for MiniMax, Sonar, DeepSeek, and Kimi kept existing integrations on the intended models. Community model discovery also began favoring options with recent successful requests, while leaving the full catalog available.\n\n`polli mcp` can install and manage MCP servers across 13 coding clients. Jev gained a typed decisions endpoint, and Ask Jev became discoverable in the hosted MCP catalog. Floret moved its file and media work onto shared authenticated tools; the CLI added a tgpt harness and received a round of output, validation, and audio fixes.",
-  "pr_count": 97,
+  "title": "A much wider model shelf",
+  "summary": "The model catalog expanded across text, images, video, speech, and music while the routes and tools around it got easier to trust and use.\n\nGrok 4.7, GLM-5.3 FlashX, Claude Opus 5.5, GPT-6 Sol and Luna, GPT-5.3 Codex, and MiMo V2.6 Flash and Pro joined the text catalog. Several support roughly million-token contexts. Ling 3.0 Flash VL added video input, and GPT-6 Sol and Luna gained access for Quest Pollen accounts without requiring a paid balance. More choices are useful when you can actually find the one that fits.\n\nMAI Image 2.6 and 2.6 Flash, FLUX 1.1 Pro, Qwen Image 2.1, and Recraft V4.1 Flash expanded image generation and editing. MiniMax H3 Max added video generation with synchronized audio; Gemini 3.8 Flash and Flash Lite added speech with 30 voices; and Lyria 3.5 added text-to-MP3 songs. Floret can also turn a prompt, optionally paired with an image, into a downloadable 3D asset.\n\nMistral Small 4 gained a direct route, direct Vertex routes returned as the primary path for Gemini models, and seven model routes were replaced ahead of Fireworks’ serverless shutdown. MiniMax M2.7 now reaches M2.7 rather than M3, while Sonar moved to Perplexity’s Agent API with citations and its existing Pollinations endpoints intact. Three community routers offer different ways to choose models by task, capabilities, price, and recent health. Model-list filtering now uses recent reliability for public community proxies, with an option to include otherwise accessible models excluded by that filter.\n\nEnter’s Models, Agents, and MCP tabs returned with clearer navigation. Model cards now show access, pricing options, usage rates, and supported variants more distinctly; the catalog also shows the sample behind reliability labels. Key setup gained model search and filtering, while sign-in, authorization, and account screens got clearer guidance. The price display changed, not the rates.",
+  "pr_count": 86,
   "prs": [
     {
       "number": 15207,
-      "date": "2026-09-20"
-    },
-    {
-      "number": 15208,
       "date": "2026-09-20"
     },
     {
@@ -43,23 +39,11 @@
       "date": "2026-09-21"
     },
     {
-      "number": 15190,
-      "date": "2026-09-21"
-    },
-    {
       "number": 15246,
       "date": "2026-09-21"
     },
     {
-      "number": 15250,
-      "date": "2026-09-21"
-    },
-    {
       "number": 15252,
-      "date": "2026-09-21"
-    },
-    {
-      "number": 15254,
       "date": "2026-09-21"
     },
     {
@@ -68,10 +52,6 @@
     },
     {
       "number": 15264,
-      "date": "2026-09-21"
-    },
-    {
-      "number": 15267,
       "date": "2026-09-21"
     },
     {
@@ -103,6 +83,10 @@
       "date": "2026-09-22"
     },
     {
+      "number": 15283,
+      "date": "2026-09-22"
+    },
+    {
       "number": 15284,
       "date": "2026-09-22"
     },
@@ -115,7 +99,7 @@
       "date": "2026-09-22"
     },
     {
-      "number": 15302,
+      "number": 15307,
       "date": "2026-09-22"
     },
     {
@@ -148,10 +132,6 @@
     },
     {
       "number": 15311,
-      "date": "2026-09-23"
-    },
-    {
-      "number": 15319,
       "date": "2026-09-23"
     },
     {
@@ -195,20 +175,8 @@
       "date": "2026-09-23"
     },
     {
-      "number": 15367,
-      "date": "2026-09-23"
-    },
-    {
       "number": 15375,
       "date": "2026-09-23"
-    },
-    {
-      "number": 15086,
-      "date": "2026-09-24"
-    },
-    {
-      "number": 15095,
-      "date": "2026-09-24"
     },
     {
       "number": 15273,
@@ -248,10 +216,6 @@
     },
     {
       "number": 14690,
-      "date": "2026-09-25"
-    },
-    {
-      "number": 14865,
       "date": "2026-09-25"
     },
     {
@@ -323,10 +287,6 @@
       "date": "2026-09-25"
     },
     {
-      "number": 15446,
-      "date": "2026-09-25"
-    },
-    {
       "number": 15450,
       "date": "2026-09-25"
     },
@@ -363,10 +323,6 @@
       "date": "2026-09-26"
     },
     {
-      "number": 15473,
-      "date": "2026-09-26"
-    },
-    {
       "number": 15475,
       "date": "2026-09-26"
     },
@@ -383,7 +339,7 @@
       "date": "2026-09-26"
     },
     {
-      "number": 15484,
+      "number": 15483,
       "date": "2026-09-26"
     },
     {
@@ -395,5 +351,5 @@
       "date": "2026-09-26"
     }
   ],
-  "generated_at": "2026-09-27T06:31:15.384563+00:00"
+  "generated_at": "2026-10-17T23:28:55.595033+00:00"
 }

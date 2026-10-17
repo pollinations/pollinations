@@ -2,8 +2,8 @@
   "date": "2025-12-17",
   "period_start": "2025-12-17",
   "period_end": "2025-12-17",
-  "title": "Veo can use an image as its first frame",
-  "summary": "Veo gained image-guided video generation, Enter shed a manual tier step, and Hello’s API calls got a single route.\n\nVeo image-to-video requests now pass the supplied `image` to the model as a reference first frame. If a request includes multiple images, it uses the first.\n\nNew accounts are assigned the SPORE subscription automatically, replacing Enter’s manual Activate Tier button. The tier panel now explains pending setup, subscription syncing handles cancellations and revocations, and pending usage is counted across meter balances. A smaller pricing-page update clarifies that its Pollen estimate uses a seven-day community average.\n\nNullVector, a Discord assistant that picks models based on the task, joined the socialBots listings. Community and documentation links were also aligned around one Discord invite.",
+  "title": "Veo image-to-video accepts a starting frame",
+  "summary": "Veo gained a usable starting frame, subscriptions lost a manual step, and Hello's playground got a single API route.\n\nVeo image-to-video requests now pass the supplied image as the video's reference first frame. When a request includes multiple images, it uses the first.\n\nNew accounts are assigned the SPORE subscription automatically, replacing Enter's manual activation button. Tier syncing also handles canceled subscriptions, while the pricing page clarifies that its Pollen estimate uses a seven-day community average.\n\nHello's playground, examples, generation requests, and model lists now use a same-origin `/api` route. A follow-up moved that proxy to a Cloudflare Worker while leaving other requests to the static site.",
   "pr_count": 7,
   "prs": [
     {
@@ -35,7 +35,7 @@
       "date": "2025-12-17"
     }
   ],
-  "generated_at": "2026-10-17T15:55:42.599676+00:00",
+  "generated_at": "2026-10-17T22:37:00.671398+00:00",
   "highlights": [],
   "changelog": []
 }

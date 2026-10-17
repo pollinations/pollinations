@@ -2,12 +2,20 @@
   "date": "2026-04-16",
   "period_start": "2026-04-16",
   "period_end": "2026-04-16",
-  "title": "Terminal velocity: the official Pollinations CLI is live",
-  "summary": "We brought the entire Pollinations stack to your terminal with a new CLI, and welcomed a prompt-to-video generator to the community showcase.\n\nWe shipped @pollinations_ai/cli, bringing image, text, audio, and video generation straight to your terminal. It outputs colored tables if you're human, and clean JSON if you're an AI agent wiring up your own workflows.\n\nThe community directory keeps growing. We just added kre8.info, a tool built on our infrastructure that turns a single prompt into end-to-end shorts and faceless videos.",
-  "pr_count": 2,
+  "title": "Pollinations gets a command line",
+  "summary": "A terminal-friendly alpha CLI arrived alongside two additions to the community app showcase.\n\nThe new alpha `polli` CLI brings text, chat, image, audio, and video generation to terminals and AI agents. It also handles transcription, file uploads, model discovery, and account usage, with JSON output for scripts.\n\nThe approved IntraMind / AlessiaBot listing was added to the catalog and Recent Apps section. The README refresh also corrected attribution for an AI video generator entry.\n\nkre8.info, which creates short-form and faceless videos from a prompt, was added to the business app catalog, README showcase, and App Greenhouse.",
+  "pr_count": 4,
   "prs": [
     {
       "number": 10225,
+      "date": "2026-04-16"
+    },
+    {
+      "number": 10231,
+      "date": "2026-04-16"
+    },
+    {
+      "number": 10260,
       "date": "2026-04-16"
     },
     {
@@ -15,25 +23,16 @@
       "date": "2026-04-16"
     }
   ],
-  "generated_at": "2026-04-17T06:34:45.483020+00:00",
+  "generated_at": "2026-10-17T22:47:59.770885+00:00",
   "highlights": [
     {
       "emoji": "🚀",
-      "title": "The hive mind in your terminal",
-      "text": "We shipped an official CLI (`@pollinations_ai/cli`). Generate images, text, audio, and video directly from the command line. Includes colored tables for humans and JSON output for your agentic workflows.",
+      "title": "Pollinations from your terminal",
+      "text": "Use the alpha `polli` CLI to generate text, images, audio, and video, transcribe audio, or upload local files. It works interactively or in scripts with `--json` output. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         10225
       ],
       "kind": "product"
-    },
-    {
-      "emoji": "✨",
-      "title": "Shorts in a snap",
-      "text": "Generate end-to-end shorts and faceless videos from a single prompt with kre8.info, the latest addition to the community showcase. [Try it](https://kre8.info)",
-      "prs": [
-        10270
-      ],
-      "kind": "app"
     }
   ],
   "changelog": []

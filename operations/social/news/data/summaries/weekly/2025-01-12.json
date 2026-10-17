@@ -2,8 +2,8 @@
   "date": "2025-01-12",
   "period_start": "2025-01-05",
   "period_end": "2025-01-11",
-  "title": "The text model lineup shifted",
-  "summary": "The text API gained new model choices while its routing, responses, and queue behavior became more predictable.\n\nDeepSeek-V3 joined as `deepseek`, followed by `qwen-coder`, `mistral`, and `llama`, the latter three with JSON-mode support. `llamalight` was added midweek and removed from the model list two days later. Older Mistral, Command-R, and Llama listings were also removed, while two personas changed providers.\n\nOpenRouter requests now use the model specified by the caller instead of defaulting to DeepSeek Chat. Requests beyond the existing per-IP queue limit return a structured JSON 429; OpenAI search has more room to answer, and text-response handling, streaming, caching, and errors received updates. The image queue wait also changed to a fixed 500 ms.\n\nThe JavaScript text-generation example was simplified without losing its optional `jsonMode` documentation. The community-built Polli API Dashboard, which shows real-time text-feed statistics, joined the homepage and README project lists.",
+  "title": "The text model lineup changed quickly",
+  "summary": "The text API gained new model choices and more consistent JSON responses, while routing and queue behavior got less surprising.\n\nDeepSeek-V3 arrived as `deepseek`, followed by `qwen-coder`, `mistral` and Llama 3.3 70B as `llama`. `llamalight` joined midweek but was removed by Friday; other older model listings were removed too. It was a week of changing the menu, not just adding to it.\n\n`gpt-4o-mini-roblox` gained JSON-mode support, as did the new `qwen-coder`, `mistral` and `llama` integrations. Text generators now return full completion objects, with streaming, caching and response handling updated around that shape.\n\nOpenRouter requests now use the model specified in the request rather than always selecting DeepSeek Chat. Requests exceeding the per-IP queue limit return a structured JSON 429 error, and OpenAI search responses can use up to 4,096 tokens.\n\nThe image queue wait changed from 500 ms per queued item to a fixed 500 ms. A small scheduling change with a practical effect when the queue gets busy.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,5 +27,5 @@
       "date": "2025-01-10"
     }
   ],
-  "generated_at": "2026-10-17T16:03:00.990541+00:00"
+  "generated_at": "2026-10-17T23:23:31.438502+00:00"
 }

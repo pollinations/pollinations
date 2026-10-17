@@ -2,8 +2,8 @@
   "date": "2025-01-19",
   "period_start": "2025-01-12",
   "period_end": "2025-01-18",
-  "title": "GPT-4o joins the text API",
-  "summary": "The text API gained a bigger model, more predictable request handling, and clearer paths for people using and contributing to it.\n\nThe new `openai-large` option adds GPT-4o chat and vision support, while `openai` remains GPT-4o-mini. The docs now show image analysis with URLs or base64 data, and web-search requests get a search-specific default prompt when callers do not supply one.\n\nThe configured text API limit rose from 20 to 40 requests per minute. Separately, text requests now enter a queue that starts them at least three seconds apart per IP group; addresses sharing an IPv4 /24-style prefix share that pacing. Request-delay and rate-limit bypass rules were also tightened.\n\nRequested temperature now reaches the OpenAI generation path. Invalid messages receive JSON errors, empty message arrays receive a 400 response, and handling improved for missing query parameters and omitted generation options. Tracking, backend tests, and pull-request test coverage also improved.\n\nText API feed events no longer include requester IP addresses. It is a small change with a straightforward benefit: the feed needs the event, not the address behind it.",
+  "title": "Text traffic got a steadier pace",
+  "summary": "The text API got steadier traffic handling, clearer responses, and a bigger model lineup, while contributing through GitHub became easier to find.\n\nThe text API limit rose from 20 to 40 requests per minute, while a separate queue now starts requests at least three seconds apart for each IP group. Access rules and request handling were tightened, and feed events stopped including requester IP addresses.\n\n`openai-large` added GPT-4o for chat and image analysis alongside the existing GPT-4o-mini-backed `openai` model. Image-analysis examples cover URLs, base64 images, and Python; requested temperature now reaches the OpenAI generation path.\n\nText generation tracking was brought into line with image analytics. Errors now return structured JSON, empty message arrays get a 400 response, and invalid-message errors no longer echo submitted values. More backend tests and a pull-request test workflow help keep those behaviors checked.\n\nWeb-search requests gained a search-specific default prompt, Poly's prompt clarified its knowledge cutoff, and the architecture diagram was updated to reflect model routing. The text model list also dropped `qwen-coder`.",
   "pr_count": 16,
   "prs": [
     {
@@ -71,5 +71,5 @@
       "date": "2025-01-17"
     }
   ],
-  "generated_at": "2026-10-17T16:03:02.062739+00:00"
+  "generated_at": "2026-10-17T23:23:33.039728+00:00"
 }

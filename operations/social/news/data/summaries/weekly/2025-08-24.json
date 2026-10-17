@@ -2,8 +2,8 @@
   "date": "2025-08-24",
   "period_start": "2025-08-17",
   "period_end": "2025-08-23",
-  "title": "Five more text models",
-  "summary": "The text model list grew while the image documentation shed a few outdated examples.\n\nGPT-5 Nano, Claude 3.5 Haiku, OpenAI o3, DeepSeek R1 0528, and Gemini 2.5 Flash Lite were added to the text model list, widening the choices for different kinds of requests.\n\nGPT-5 Nano accepts images alongside text, and both it and Claude 3.5 Haiku support tools. The model update also added upstream identifiers for nova-fast and roblox-rp and cached-input pricing for nova-fast.\n\nThe README and website news dropped outdated GPT Image and tier announcements. Image API docs now describe image-to-image input for Kontext without GPT Image examples or the documented `transparent` parameter. This was a docs change, not an API change.",
+  "title": "More ways to work with text and images",
+  "summary": "The text model list grew while the image docs got a careful trim.\n\nGPT-5 Nano and Claude 3.5 Haiku were added with tool support; GPT-5 Nano also accepts image input. The same update added OpenAI o3, Gemini 2.5 Flash Lite, and reasoning model DeepSeek R1 0528.\n\nThe image API docs now describe Flux Kontext image-to-image input without GPT Image examples or a documented `transparent` parameter. Outdated GPT Image and tier announcements were removed from the README and website news. This was a documentation change, not an API behavior change.\n\nThe model list also gained upstream identifiers for nova-fast and roblox-rp, plus cached-input pricing for nova-fast. Even gardens need accurate labels.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,5 +15,5 @@
       "date": "2025-08-22"
     }
   ],
-  "generated_at": "2026-10-17T16:05:41.271888+00:00"
+  "generated_at": "2026-10-17T23:25:08.459641+00:00"
 }

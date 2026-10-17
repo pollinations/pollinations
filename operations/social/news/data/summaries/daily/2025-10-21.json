@@ -3,7 +3,7 @@
   "period_start": "2025-10-21",
   "period_end": "2025-10-21",
   "title": "Three community projects join the directory",
-  "summary": "Three community projects joined the directory, spanning image generation, Telegram characters, and dream interpretation.\n\nThe projects directory now includes FoilAI for text-to-image generation, Telegram AI Chars for character chats with memory, and Swapna Shastra Dream Decoder for mythology-inspired dream interpretations and shareable cards.",
+  "summary": "Three community projects joined the directory, spanning image generation, Telegram characters, and dream interpretation.\n\nThe projects directory added FoilAI for text-to-image generation, Telegram AI Chars for characters with memory and chat history, and Swapna Shastra Dream Decoder for mythology-inspired dream interpretations and shareable cards.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-10-21"
     }
   ],
-  "generated_at": "2026-10-17T15:49:15.130015+00:00",
+  "generated_at": "2026-10-17T22:34:44.068098+00:00",
   "highlights": [],
   "changelog": []
 }

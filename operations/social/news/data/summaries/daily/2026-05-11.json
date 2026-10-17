@@ -2,10 +2,14 @@
   "date": "2026-05-11",
   "period_start": "2026-05-11",
   "period_end": "2026-05-11",
-  "title": "Developer earnings dashboard is live",
-  "summary": "Developers get a new dashboard to track their Pollen earnings, and generated media now loads instantly on repeat views thanks to restored cache headers.\n\nAdded an Earnings dashboard to the developer portal. If you have markup enabled on your apps, you can now actually see your daily Pollen earnings, active users, and top-performing apps instead of guessing.\n\nRestored immutable, 1-year cache headers for R2-backed responses. Repeat requests for the same generated media or text will now load instantly from the browser cache, saving everyone unnecessary network trips. Also codified the 30-day storage lifecycle in CI.",
-  "pr_count": 2,
+  "title": "Developers can track app earnings",
+  "summary": "Developers got an earnings view, media uploads grew to 50 MB, and the Pollen rules became easier to find and understand.\n\nEnter gained an Earnings section for developers with publishable BYOP app keys. It shows markup earnings, active users, and top apps, with chart filters and CSV export. An authenticated earnings endpoint provides chart data and app-level rollups.\n\nThe media upload limit increased from 10 MB to 50 MB. The same PR documented the existing 30-day retention period for generated content and uploads; the cache duration did not change.\n\nThe Terms, Refunds policy, and Privacy Policy now cover Pollen wallets, app authorization, and developer earnings. Wallets expire after 12 months of account inactivity starting June 1, 2026; for existing balances, the inactivity clock starts on that date.",
+  "pr_count": 5,
   "prs": [
+    {
+      "number": 10725,
+      "date": "2026-05-11"
+    },
     {
       "number": 10727,
       "date": "2026-05-11"
@@ -13,18 +17,35 @@
     {
       "number": 10748,
       "date": "2026-05-11"
+    },
+    {
+      "number": 10865,
+      "date": "2026-05-11"
+    },
+    {
+      "number": 10866,
+      "date": "2026-05-11"
     }
   ],
-  "generated_at": "2026-05-12T06:54:49.929823+00:00",
+  "generated_at": "2026-10-17T22:50:46.440617+00:00",
   "highlights": [
     {
-      "emoji": "📈",
-      "title": "Developer Earnings Dashboard",
-      "text": "Track the Pollen your apps are generating. Visualize daily earnings, active users, and top-performing apps directly in the [Dashboard](https://enter.pollinations.ai).",
+      "emoji": "📊",
+      "title": "Track app earnings",
+      "text": "Developers with publishable BYOP app keys can view markup earnings, active users, and top apps in Enter, filter the charts, and download a CSV.",
       "prs": [
         10727
       ],
       "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "Upload media up to 50 MB",
+      "text": "The media upload limit increased from 10 MB to 50 MB, giving larger files room to make it through. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        10748
+      ],
+      "kind": "api"
     }
   ],
   "changelog": []

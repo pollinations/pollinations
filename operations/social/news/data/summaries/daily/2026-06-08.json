@@ -2,25 +2,38 @@
   "date": "2026-06-08",
   "period_start": "2026-06-08",
   "period_end": "2026-06-08",
-  "title": "Live model catalog across the ecosystem",
-  "summary": "Hardcoded model lists are dead; dashboards and SDKs now fetch the live catalog dynamically.\n\nHardcoded model lists are a relic. The Enter dashboard, public site, SDK, and MCP server now pull directly from the live `/models` endpoint. When a new model is deployed, it instantly appears in your dashboard tables and API key settings. No more waiting for a frontend bump to see what's new.",
-  "pr_count": 1,
+  "title": "Model browsing follows the live catalog",
+  "summary": "Model pages, activity, and key settings now draw from the live catalog; the app showcase shed four dead links.\n\nEnter’s model tables and Pollen examples now load the live model catalog for names, descriptions, capabilities, categories, badges, and price sorting. The public site and model monitor also use live model endpoints instead of bundled registry data.\n\nActivity labels and modality breakdowns now use catalog metadata, including video, embedding, and realtime models. Key-permission choices and authorization chips use catalog categories, while model-list API responses include category and display metadata.\n\nFour unavailable community apps were removed from the catalog after repeated link checks, so the showcase no longer sends readers to those dead pages.",
+  "pr_count": 2,
   "prs": [
     {
       "number": 11613,
       "date": "2026-06-08"
+    },
+    {
+      "number": 11674,
+      "date": "2026-06-08"
     }
   ],
-  "generated_at": "2026-06-09T07:10:13.245218+00:00",
+  "generated_at": "2026-10-17T22:57:58.062110+00:00",
   "highlights": [
     {
-      "emoji": "🔄",
-      "title": "Live Model Catalog",
-      "text": "The [dashboard](https://enter.pollinations.ai), SDK, and MCP server now fetch models dynamically. New AI models will appear in your API key settings the second they drop.",
+      "emoji": "🤖",
+      "title": "Models from the live catalog",
+      "text": "Browse models in Enter with catalog-backed capabilities, categories, badges, and price sorting. Activity now accounts for video, embedding, and realtime models too. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         11613
       ],
       "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Richer model list responses",
+      "text": "Model list API responses now include category and display metadata, so apps can show model details without keeping a separate registry. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        11613
+      ],
+      "kind": "api"
     }
   ],
   "changelog": []

@@ -2,8 +2,8 @@
   "date": "2026-01-25",
   "period_start": "2026-01-25",
   "period_end": "2026-01-25",
-  "title": "Bedrock models move off the legacy proxy",
-  "summary": "Bedrock routing got a repair and a fallback; API-key authentication got less database work to do under load.\n\nThe team moved `nova-fast` and Claude 3.5 Haiku to native Bedrock routing through Portkey, addressing the proxy’s unsupported-model response for `nova-fast`.\n\n`nova-fast` now uses Nova Micro as its primary model and falls back to Nova Lite if the primary fails, including when it hits a rate limit.\n\nAPI-key usage tracking moved out of the synchronous authentication path to reduce database contention under concurrency. Non-critical tracking errors no longer produce auth logs, and request limits were adjusted while the Pollen limiter remains in place.",
+  "title": "API keys under load",
+  "summary": "Authentication gets less contentious under load, while nova-fast gets a working Bedrock route and a fallback.\n\nAPI-key usage tracking no longer adds synchronous database writes to authentication requests, reducing contention that could cause invalid-key errors under high concurrency. Non-critical tracking failures no longer produce auth error logs.\n\nnova-fast and Claude 3.5 Haiku moved from the legacy Lambda proxy to native Bedrock configuration, addressing the proxy’s unsupported-model response for nova-fast.\n\nNova Micro remains nova-fast’s primary model, with Nova Lite configured as a fallback when the primary fails, including on rate limits.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2026-01-25"
     }
   ],
-  "generated_at": "2026-10-17T16:00:57.237573+00:00",
+  "generated_at": "2026-10-17T22:38:36.348877+00:00",
   "highlights": [],
   "changelog": []
 }

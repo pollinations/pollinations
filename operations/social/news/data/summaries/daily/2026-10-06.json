@@ -2,12 +2,16 @@
   "date": "2026-10-06",
   "period_start": "2026-10-06",
   "period_end": "2026-10-06",
-  "title": "More ways to make images, speech, and video",
-  "summary": "New creative models, more precise key permissions, and a lot of work making generation, usage reports, and provider failover behave as advertised.\n\nEleven v4 and v4 Turbo add speech with word timestamps; Nano Banana 2.1 adds image generation and reference-based editing; and Grok Imagine Video 1.5 Lite adds text-to-video and start-image-to-video. Audio fixes also restore Stable Audio 3 authentication, preserve WAV filenames during transcription, accept Gemini’s voice-prompt usage records, and pass MCP emotion and style instructions through to generation.\n\nAPI keys can now grant access by model category and optionally restrict spending to Quest Pollen. Agent run tokens inherit only their parent key’s account permissions, including sandbox access when authorized. Pollen top-ups gain a separate crypto checkout; paid MCP calls check available funds and key budgets; and MCP text conversations can continue after assistant tool calls with no text content.\n\nFallback routes improve continuity for GLM 5.3 Flash, Kimi K3, MiniMax M3, Gemini 2.5 Flash Lite, Ling 3.1 Flash, and Qwen embeddings. Gemini search also regains structured JSON responses, while disconnected GPU tunnels trigger another-worker retries for image requests. An hourly model-stats snapshot reduces expensive refreshes, and generation now lets providers return their own parameter errors where local checks could become stale.",
-  "pr_count": 43,
+  "title": "New ways to make speech, images, and video",
+  "summary": "New speech, image, and video models landed alongside category-based keys, less legacy tracking, and more resilient model routing.\n\nAdded Eleven v4 and v4 Turbo for expressive speech with timestamps, Nano Banana 2.1 for image generation and editing with up to 14 references, and Grok Imagine Video 1.5 Lite for clips up to 15 seconds. Related fixes preserve WAV filenames during SDK transcription, accept valid Gemini TTS responses, and pass audio style instructions through MCP.\n\nAPI keys now grant model categories rather than individual models, so newly added models in an allowed category are covered automatically. A new Quest Pollen only setting keeps eligible keys from spending paid Pollen, while agent run tokens inherit their parent key’s granted account permissions. Pollen checkout gained a crypto option; separate changes tightened paid MCP tool checks and improved developer earnings queries and fractional image-usage records.\n\nLegacy text and image paths shed ad injection, analytics, and several forms of request logging without changing their endpoints. App search now keeps spaces in multi-word queries, model-filter suggestions retain earlier search terms, and Enter’s news page uses dated announcements. Smaller UI fixes distinguish media files from lookalike domains and show labels instead of function text in copy fields.",
+  "pr_count": 44,
   "prs": [
     {
       "number": 16235,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16342,
       "date": "2026-10-06"
     },
     {
@@ -68,6 +72,10 @@
     },
     {
       "number": 16557,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16559,
       "date": "2026-10-06"
     },
     {
@@ -143,10 +151,6 @@
       "date": "2026-10-06"
     },
     {
-      "number": 16614,
-      "date": "2026-10-06"
-    },
-    {
       "number": 16616,
       "date": "2026-10-06"
     },
@@ -179,22 +183,30 @@
       "date": "2026-10-06"
     }
   ],
-  "generated_at": "2026-10-07T06:31:15.216065+00:00",
+  "generated_at": "2026-10-17T23:17:57.735268+00:00",
   "highlights": [
     {
       "emoji": "🎵",
-      "title": "Eleven v4 speech models",
-      "text": "Generate speech with `elevenlabs/eleven-v4` or `elevenlabs/eleven-v4-turbo`, including timestamped output. [Explore the audio API](https://gen.pollinations.ai/docs).",
+      "title": "Eleven v4 speech",
+      "text": "Generate expressive speech in 90+ languages with `elevenlabs/eleven-v4`, including audio tags and character timestamps. [Browse the model](https://enter.pollinations.ai/models?q=elevenlabs/eleven-v4).",
       "prs": [
-        16581,
+        16581
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Eleven v4 Turbo",
+      "text": "Use `elevenlabs/eleven-v4-turbo` for expressive text-to-speech with audio tags and character timestamps. [Browse the model](https://enter.pollinations.ai/models?q=elevenlabs/eleven-v4-turbo).",
+      "prs": [
         16582
       ],
       "kind": "model"
     },
     {
       "emoji": "🎨",
-      "title": "Nano Banana 2.1 images",
-      "text": "Generate or edit images with `google/gemini-nano-banana-2.1`, using up to 14 reference images. [Explore the API](https://gen.pollinations.ai/docs).",
+      "title": "Nano Banana 2.1",
+      "text": "Generate or edit images with `google/gemini-nano-banana-2.1` using up to 14 reference images and 1K or 2K output. [Browse the model](https://enter.pollinations.ai/models?q=google/gemini-nano-banana-2.1).",
       "prs": [
         16609
       ],
@@ -202,8 +214,8 @@
     },
     {
       "emoji": "🎨",
-      "title": "Grok Imagine video",
-      "text": "Create 1–15 second clips from text or a starting image with `x-ai/grok-imagine-video-1.5-lite`, at up to 1080p. [Explore the API](https://gen.pollinations.ai/docs).",
+      "title": "Grok Imagine Video Lite",
+      "text": "Make 1–15 second videos from text or a start image with `x-ai/grok-imagine-video-1.5-lite`, at resolutions up to 1080p. [Browse the model](https://enter.pollinations.ai/models?q=x-ai/grok-imagine-video-1.5-lite).",
       "prs": [
         16640
       ],
@@ -211,10 +223,28 @@
     },
     {
       "emoji": "🔗",
-      "title": "Keys that follow model categories",
-      "text": "Give an API key access to a category such as image or audio instead of updating its model list whenever a new model is added. [Manage API keys](https://enter.pollinations.ai/keys).",
+      "title": "Keys grant model categories",
+      "text": "Grant a key access to text, image, audio, video, 3D, embedding, or realtime models instead of picking individual models. New models in an allowed category are covered automatically. [Manage API keys](https://enter.pollinations.ai/keys).",
       "prs": [
         16462
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Quest Pollen only keys",
+      "text": "Create a key that can spend Quest Pollen but not paid Pollen on eligible requests. The setting is available through the key dialog, API, SDK, CLI, and MCP. [Manage API keys](https://enter.pollinations.ai/keys).",
+      "prs": [
+        16462
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Agent permissions follow keys",
+      "text": "Agent run tokens now carry the account permissions granted to their parent key, including `machines` when allowed. Use a narrowly scoped key when an agent connects to a third-party endpoint. [Manage API keys](https://enter.pollinations.ai/keys).",
+      "prs": [
+        16413
       ],
       "kind": "api"
     }

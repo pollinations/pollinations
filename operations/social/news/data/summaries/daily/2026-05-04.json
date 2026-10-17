@@ -2,16 +2,24 @@
   "date": "2026-05-04",
   "period_start": "2026-05-04",
   "period_end": "2026-05-04",
-  "title": "Unclogging the model pipes: LTX-2, Nova Canvas, and Mistral",
-  "summary": "A day of fixing pipes and rerouting traffic to get LTX-2, Nova Canvas, and Mistral back to full speed.\n\nSometimes the infrastructure fights back. We fixed a Cloudflare routing issue and added retry logic for LTX-2 video generation, swapped the Bedrock SDK HTTP handler to get Nova Canvas playing nice with Workers, and rerouted Mistral Small to a new Azure Foundry deployment to bypass gateway timeouts. All three are back online and fast.\n\nUpstream providers (especially Grok) are notoriously picky about regex contracts for message names. We added a sanitization layer to catch malformed metadata before it turns into a 500 error.\n\nOn the frontend, API key management modals now match the dashboard's blue palette. Under the hood, we rolled out a new fetchUpstream helper that propagates the exact upstream URL when a backend fails, saving us from guessing which model server is having a bad day.",
-  "pr_count": 6,
+  "title": "Image and video requests get sturdier",
+  "summary": "A debugging day for image, video, and text models, with cleaner chat errors and some account and showcase upkeep.\n\nLTX-2 video requests now use a reachable HTTPS route and retry when a completed job’s file is not ready yet. Nova Canvas image requests avoid a handler unsupported by Cloudflare Workers. Image and video errors also preserve upstream status and response details, making failed requests easier to diagnose.\n\n`mistral` now routes to Azure Foundry’s `mistral-small-2503` after timeouts on its previous route. This changes the underlying model from Mistral Small 3.2 to 3.1; new 3.1 aliases were added, while existing 3.2 aliases still resolve but now point to 3.1.\n\nThe chat API now drops invalid optional names from system, user, and assistant messages before sending requests upstream. Invalid tool and function names receive a local 400 instead, since silently changing those names would change their meaning.",
+  "pr_count": 9,
   "prs": [
     {
       "number": 10653,
       "date": "2026-05-04"
     },
     {
+      "number": 10658,
+      "date": "2026-05-04"
+    },
+    {
       "number": 10660,
+      "date": "2026-05-04"
+    },
+    {
+      "number": 10662,
       "date": "2026-05-04"
     },
     {
@@ -29,27 +37,22 @@
     {
       "number": 10676,
       "date": "2026-05-04"
+    },
+    {
+      "number": 10677,
+      "date": "2026-05-04"
     }
   ],
-  "generated_at": "2026-05-05T06:43:09.207181+00:00",
+  "generated_at": "2026-10-17T22:50:05.301216+00:00",
   "highlights": [
     {
-      "emoji": "⚡",
-      "title": "Mistral Speed Boost",
-      "text": "Rerouted Mistral Small to a new Azure Foundry deployment. Text generation is noticeably faster and gateway timeouts are a thing of the past. Try it via the [Unified API](https://gen.pollinations.ai/v1/chat/completions).",
+      "emoji": "🤖",
+      "title": "Mistral changes route",
+      "text": "`mistral` now uses Mistral Small 3.1 through Azure Foundry instead of the route that was timing out. You can also request it with `mistral-small-3.1` or `mistral-small-2503`; existing 3.2 aliases now resolve to 3.1. [Browse the model](https://enter.pollinations.ai/models?q=mistral).",
       "prs": [
         10676
       ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🚀",
-      "title": "LTX-2 Video Pipeline",
-      "text": "Re-engineered the routing tunnel for LTX-2. Video generation is stable again and properly handles Cloudflare's edge network quirks.",
-      "prs": [
-        10663
-      ],
-      "kind": "product"
+      "kind": "model"
     }
   ],
   "changelog": []

@@ -2,8 +2,8 @@
   "date": "2025-10-15",
   "period_start": "2025-10-15",
   "period_end": "2025-10-15",
-  "title": "Stalled image safety checks now time out",
-  "summary": "Image requests got timeouts for stalled safety checks and stopped waiting on telemetry, while queue and cache limits were adjusted and partly rolled back.\n\nFlux Kontext prompt and input-image safety checks now return a timeout error after 30 seconds instead of leaving requests waiting indefinitely. The input-image timeout was added after an initial 20-second prompt timeout, which was then raised to 30 seconds.\n\nA tighter anonymous image queue limit was added, then reverted: anonymous and registered requests can each use up to five queue slots. The image cache limit was raised to 500,000 entries, replacing the 20,000-entry limit and eviction logic added earlier in the day.\n\nImage telemetry now runs in the background rather than making requests wait for Tinybird. Cached-image requests no longer look up an external provider for each hit; analytics records `cloudflare-cache` instead. Provider lookups elsewhere moved to the shared registry, which now lists flux, kontext, turbo, and gptimage as the configured image models.",
+  "title": "Kontext safety checks stop waiting indefinitely",
+  "summary": "Image requests shed telemetry wait time and stalled safety checks, while interim queue and cache limits were rolled back.\n\nAzure Flux Kontext prompt and input-image safety checks now time out after 30 seconds if they stall. Requests get a timeout error instead of occupying a queue slot indefinitely.\n\nImage requests no longer wait for telemetry to finish before responding. Cache hits also skip an external-provider lookup and record `cloudflare-cache` as the source that served the image.\n\nThe image registry now lists flux, kontext, turbo, and gptimage, with corrected provider metadata for the first three. An interim one-slot anonymous queue limit was reverted, so anonymous and registered requests can each use up to five slots. The cache limit was raised to 500,000 entries, replacing the day's earlier 20,000-entry eviction rule.",
   "pr_count": 7,
   "prs": [
     {
@@ -35,7 +35,7 @@
       "date": "2025-10-15"
     }
   ],
-  "generated_at": "2026-10-17T15:48:48.426224+00:00",
+  "generated_at": "2026-10-17T22:34:35.021457+00:00",
   "highlights": [],
   "changelog": []
 }

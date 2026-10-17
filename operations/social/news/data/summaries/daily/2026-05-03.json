@@ -2,12 +2,20 @@
   "date": "2026-05-03",
   "period_start": "2026-05-03",
   "period_end": "2026-05-03",
-  "title": "Smarter Llamas with vision capabilities",
-  "summary": "Smarter Llama models, opt-in safety guardrails, and a fresh batch of community apps.\n\nThe default Llama endpoint just got a brain upgrade to Llama-3.3-70B-Instruct. We also wired up the Maverick and Scout variants, meaning you can now pass images to Llama directly through the standard text generation endpoint.\n\nAdded an optional moderation layer using AWS Bedrock Guardrails. Pass a `safe` parameter or `Pollinations-Safe` header to keep inputs and outputs clean. We also patched an edge case where massive prompts would crash the safety check—it now gracefully scans the last 50,000 characters instead of throwing a fit.\n\nThe ecosystem is growing. We added Lkalma (an infinite canvas whiteboard), Storyframe Studio (an open-source creative workspace), and the Pollinations AIGC Control Console to the directory. Three more Flowers blooming in the garden.",
-  "pr_count": 7,
+  "title": "Two more Llama models for text and vision",
+  "summary": "Two Llama models joined the API, optional input safety gained a large-request follow-up, and three community apps entered the catalog.\n\nThe team added `llama-maverick` and `llama-scout` for text and image input. Maverick supports tools and a 1,048,576-token context window; Scout has a 10,000,000-token context window without tool support. The existing `llama` route now uses Llama 3.3 70B Instruct.\n\nThe team added opt-in request checks for text, chat, image, video, and audio generation, selectable with `safe` or the `Pollinations-Safe` header. Checks can redact matching private information or block matching input. A follow-up lets large safety-enabled requests scan the latest 50,000 text characters across up to 25 text parts instead of rejecting them solely for size; earlier context remains unchanged.\n\nAgent-maintained catalog updates added Lkalma, an offline-first collaborative whiteboard; Storyframe Studio, a text-and-image creative workspace; and Pollinations AIGC Control Console, a dashboard for generative AI workflows. The README showcase also received attribution, link, and duplicate-entry cleanup.",
+  "pr_count": 9,
   "prs": [
     {
       "number": 10627,
+      "date": "2026-05-03"
+    },
+    {
+      "number": 10631,
+      "date": "2026-05-03"
+    },
+    {
+      "number": 10634,
       "date": "2026-05-03"
     },
     {
@@ -35,52 +43,35 @@
       "date": "2026-05-03"
     }
   ],
-  "generated_at": "2026-05-04T06:58:28.152838+00:00",
+  "generated_at": "2026-10-17T22:49:56.019960+00:00",
   "highlights": [
     {
-      "emoji": "🦙",
-      "title": "Smarter Llamas",
-      "text": "Upgraded the default Llama endpoint to Llama-3.3-70B-Instruct and added new vision-capable Maverick and Scout variants to the [Text API](https://gen.pollinations.ai/v1/chat/completions).",
+      "emoji": "🤖",
+      "title": "Llama 4 Maverick",
+      "text": "Use `llama-maverick` for text and vision requests, with tool support and a 1,048,576-token context window. It is paid-only. [Browse Maverick](https://enter.pollinations.ai/models?q=llama-maverick).",
       "prs": [
         10640
       ],
       "kind": "model"
     },
     {
-      "emoji": "🛡️",
-      "title": "Optional Guardrails",
-      "text": "Keep things PG by passing a `safe` parameter or `Pollinations-Safe` header to the [Unified API](https://gen.pollinations.ai). Powered by AWS Bedrock.",
+      "emoji": "🤖",
+      "title": "Llama 4 Scout",
+      "text": "Use `llama-scout` for text and vision requests with a 10,000,000-token context window. Scout does not support tools. [Browse Scout](https://enter.pollinations.ai/models?q=llama-scout).",
       "prs": [
-        10627
+        10640
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Choose input safety checks",
+      "text": "Add `safe` to a query string or request body, or use the `Pollinations-Safe` header, to opt into input checks across text, chat, image, video, and audio generation. Choose checks for privacy, secrets, sexual content, violence, or prompt shielding. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        10627,
+        10645
       ],
       "kind": "api"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Infinite Canvas",
-      "text": "Lkalma is an AI-powered collaborative whiteboard with offline-first sketching tools. [Try it](https://lkal.ma)",
-      "prs": [
-        10646
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "✍️",
-      "title": "Storyframe Studio",
-      "text": "An open-source AI creative workspace powered by the Pollinations API for your text and image workflows. [Try it](https://storyframe-studio.web.app)",
-      "prs": [
-        10647
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎛️",
-      "title": "AIGC Control Console",
-      "text": "A new web-based dashboard for managing your generative AI workflows. [Try it](https://jfliu3265.github.io/pollinations-aigc-public/)",
-      "prs": [
-        10648
-      ],
-      "kind": "app"
     }
   ],
   "changelog": []

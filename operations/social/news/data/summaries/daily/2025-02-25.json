@@ -2,8 +2,8 @@
   "date": "2025-02-25",
   "period_start": "2025-02-25",
   "period_end": "2025-02-25",
-  "title": "Text API gains function calling",
-  "summary": "The text API added function calls and streaming responses, with some less glamorous web-search plumbing alongside them.\n\nClients can pass `tools` and `tool_choice` in completion requests, receive tool calls, and send function results back in follow-up messages. The OpenAI-compatible response format preserves those calls.\n\nRequests with `stream: true` can receive provider-backed, OpenAI-style server-sent events instead of waiting for a completed response. Streaming errors use a format streaming clients can read.\n\nSearch requests can be distributed across two Bing API keys. Search tool handling was also separated by response mode: non-streaming search handles web search and scraping calls on the server, while streaming search passes the configured tools to the model.",
+  "title": "Text clients can use function calling",
+  "summary": "The text API gained function calling and provider-backed streaming, with search handling tidied up behind them.\n\nThe text API now passes caller-supplied `tools` and `tool_choice` to OpenAI-compatible completions, returns tool calls for clients to execute, and preserves the fields needed to send function results back in a follow-up request.\n\nRequests with `stream: true` can receive provider-backed, OpenAI-style server-sent events instead of waiting for a completed response. Streaming errors use a format clients can handle.\n\nNon-streaming search continues to handle built-in web search and scraping calls on the server, while streaming search passes its configured tools to the model. Web-search requests now alternate between two configured Bing keys.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,12 +19,12 @@
       "date": "2025-02-25"
     }
   ],
-  "generated_at": "2026-10-17T15:34:16.588222+00:00",
+  "generated_at": "2026-10-17T22:28:55.896361+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Function calls in text",
-      "text": "Pass `tools` and `tool_choice` in a completion request, then send tool results back in a follow-up message. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Function calling for text",
+      "text": "Send `tools` and `tool_choice`, receive tool calls, then send function results back in a follow-up request. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         1232,
         1234
@@ -33,8 +33,8 @@
     },
     {
       "emoji": "🚀",
-      "title": "Streaming text responses",
-      "text": "Set `stream: true` to receive OpenAI-style server-sent events as the provider generates a response. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Stream text responses",
+      "text": "Set `stream: true` to receive text responses as OpenAI-style server-sent events instead of waiting for the full completion. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         1234
       ],

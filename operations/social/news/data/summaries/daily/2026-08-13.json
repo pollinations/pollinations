@@ -2,8 +2,8 @@
   "date": "2026-08-13",
   "period_start": "2026-08-13",
   "period_end": "2026-08-13",
-  "title": "New image and video models for more elaborate visual work",
-  "summary": "A busy day for creative tooling: new visual models, live transcription, better audio inputs, a navigable model catalog, and GPT-5.6 tools that behave like tools.\n\nQwen Image 3 joins the image API with high-resolution generation, editing, and up to three reference images. Seedance 2.5 adds short video generation with optional first and last frames plus audio, so image-to-video experiments have a little more room to misbehave productively.\n\nThe catalog now has persistent search and URL-backed sorting by recency, title, provider, or observed generation cost. Community additions include HQ IA for comic strips and Article Illustrator for turning writing into visuals; the README also received its daily news and app refresh.\n\nScribe realtime transcription is now available over WebSockets, with partial and final transcripts, VAD or manual commits, timestamps, language controls, and background filtering. Music and audio workflows can now use validated public reference URLs across providers, while reference handling and transcription accounting were tightened up for reliable full-recording processing.",
+  "title": "More ways to make images and video",
+  "summary": "New image, video, and live transcription models landed alongside easier model browsing and less fiddly audio references.\n\nQwen Image 3 was added as a separate image model for generation and edits with up to three reference images. Seedance 2.5 adds four-second video generation at 480p or 720p, with optional audio and reference images for first- and last-frame control. Existing Qwen Image and Seedance models are unchanged.\n\nThe new `scribe-realtime` model accepts audio over a WebSocket and returns partial and final transcripts, with options for language, voice activity detection, and word timestamps. A separate Scribe fix makes recorded usage reflect the full input duration, including trailing silence.\n\nElevenMusic and Stable Audio now take `media.pollinations.ai` URLs as music references instead of multipart files; ElevenMusic handles the composition plan internally and can reuse a returned song ID. Speech reference audio now accepts publicly accessible HTTP(S) URLs beyond Pollinations media links.",
   "pr_count": 11,
   "prs": [
     {
@@ -51,21 +51,21 @@
       "date": "2026-08-13"
     }
   ],
-  "generated_at": "2026-08-14T06:37:16.537473+00:00",
+  "generated_at": "2026-10-17T23:06:45.480348+00:00",
   "highlights": [
     {
       "emoji": "🎨",
       "title": "Qwen Image 3",
-      "text": "Generate 1K/2K images or edit with up to three reference images using paid `qwen-image-3`. More eyes, fewer tabs. [Image API](https://gen.pollinations.ai/image/{prompt})",
+      "text": "Generate images or edit them with up to three reference images using `qwen-image-3`. [Browse the model](https://enter.pollinations.ai/models?q=qwen-image-3).",
       "prs": [
         12665
       ],
       "kind": "model"
     },
     {
-      "emoji": "🚀",
+      "emoji": "🎨",
       "title": "Seedance 2.5 video",
-      "text": "Generate four-second 480p or 720p clips with optional audio and first/last-frame guidance through `seedance-2.5`. [API Docs](https://gen.pollinations.ai/docs)",
+      "text": "Make four-second videos at 480p or 720p, with optional audio and up to two images to guide the first and last frames. [Browse the model](https://enter.pollinations.ai/models?q=seedance-2.5).",
       "prs": [
         13215
       ],
@@ -73,22 +73,30 @@
     },
     {
       "emoji": "🎵",
-      "title": "Live transcription",
-      "text": "`scribe-realtime` streams partial and final transcripts over WebSockets, with VAD, timestamps, language controls, and seven audio formats. [API Docs](https://gen.pollinations.ai/docs)",
+      "title": "Scribe transcribes live",
+      "text": "Stream audio to `scribe-realtime` over a WebSocket for partial and final transcripts, with optional word timestamps. [Browse the model](https://enter.pollinations.ai/models?q=scribe-realtime).",
       "prs": [
         13321
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Music references by URL",
+      "text": "Give ElevenMusic or Stable Audio a `media.pollinations.ai` URL in `reference_audio` instead of uploading a multipart reference file. ElevenMusic can also reuse a returned song ID through `conditioning_ref`. [Explore the audio API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        13317
       ],
       "kind": "api"
     },
     {
-      "emoji": "✨",
-      "title": "Bring your own audio URL",
-      "text": "Use validated public HTTP(S) URLs as `reference_audio` for supported music generation—reference clips no longer need to live in one particular garden. [API Docs](https://gen.pollinations.ai/docs)",
+      "emoji": "🔗",
+      "title": "Sort the model catalog",
+      "text": "Sort models by newest, price, title, or brand. Search and sort stay in the URL, so you can share a filtered view or use browser back and forward. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        13317,
-        13330
+        13283
       ],
-      "kind": "api"
+      "kind": "product"
     }
   ],
   "changelog": []

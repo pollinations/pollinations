@@ -2,9 +2,9 @@
   "date": "2026-09-01",
   "period_start": "2026-09-01",
   "period_end": "2026-09-01",
-  "title": "More video routes and a larger model shelf",
-  "summary": "A busy day for builders: broader video and text models, sturdier agent tooling, safer OAuth, and community-model health you can actually see.\n\nWan video models now cover text-to-video, image-to-video, reference-to-video, reference audio, and Wan 3.0 end-frame workflows under their existing model IDs. The text API also gained Mercury 2.5 Preview, DeepSeek V4 Flash Vision, and Claude Fable 5.1, while MiniMax M2.7 was moved onto a working route, Grok 4.6 became available with Quest-earned Pollen, and Claude Sonnet 5's published Bedrock rates were restored.\n\nHosted MCP now has clearer setup guides, canonical endpoints, SDK examples, and an architecture document covering agents, delegated billing, security, and tool boundaries. Nested MCP generation calls can reach Gen reliably, and prompt-agent streams now turn malformed upstream events into usable completions or typed SDK errors instead of mysterious chunks.\n\nReact's PolliProvider moved to OAuth authorization-code flow with PKCE and route restoration, while the canonical browser OAuth demo was pared down and account linking received its own encrypted server-backed example. Polli CLI gained a reversible Prime Agent harness, and its npm publishing path now uses GitHub OIDC so the latest release can ship normally again.",
-  "pr_count": 29,
+  "title": "More ways to work with video, vision, and long context",
+  "summary": "New models and reference-to-video options led the day, alongside Prime Agent support, community-model controls, and sturdier fallback routing.\n\nWan Pro and Wan 3.0 gained reference-to-video inputs, and Wan 3.0 can use an ending frame. The model catalog added Mercury 2.5 Preview, DeepSeek V4 Flash Vision, and Claude Fable 5.1. MiniMax M2.7 was rerouted after its previous provider returned deployment errors; per-user RPM limits were also added for several models.\n\nPlay now shows a 24-hour health indicator beside community models, and community model providers can require prompt safety checks that callers cannot disable. Hidden public models gained a 12-hour wait before owners can relist them; monitor recovery guidance and health thresholds were adjusted separately. Play also handles chat responses containing text and linked media, while an app listing that did not use the API was removed.\n\n`polli harness` gained a Prime Agent profile for configuring compatible Pollinations models and the Polli skill. Hosted MCP guidance now covers the Pollinations, FFmpeg, and Exa Search servers and how to connect to them. A routing fix addresses failures in nested prompt-agent MCP calls; the dashboard’s MCP copy and the agents architecture guide were also updated.",
+  "pr_count": 26,
   "prs": [
     {
       "number": 13675,
@@ -27,11 +27,7 @@
       "date": "2026-09-01"
     },
     {
-      "number": 14237,
-      "date": "2026-09-01"
-    },
-    {
-      "number": 14240,
+      "number": 14238,
       "date": "2026-09-01"
     },
     {
@@ -67,10 +63,6 @@
       "date": "2026-09-01"
     },
     {
-      "number": 14282,
-      "date": "2026-09-01"
-    },
-    {
       "number": 14283,
       "date": "2026-09-01"
     },
@@ -80,6 +72,10 @@
     },
     {
       "number": 14291,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14296,
       "date": "2026-09-01"
     },
     {
@@ -99,10 +95,6 @@
       "date": "2026-09-01"
     },
     {
-      "number": 14313,
-      "date": "2026-09-01"
-    },
-    {
       "number": 14317,
       "date": "2026-09-01"
     },
@@ -117,18 +109,14 @@
     {
       "number": 14321,
       "date": "2026-09-01"
-    },
-    {
-      "number": 14323,
-      "date": "2026-09-01"
     }
   ],
-  "generated_at": "2026-09-02T06:35:15.390590+00:00",
+  "generated_at": "2026-10-17T23:10:41.135266+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "More ways into Wan video",
-      "text": "Use `wan-pro` or `wan-3.0` for text-, image-, or reference-to-video requests. `wan-3.0` also accepts a second image as an end frame. [Explore the API](https://gen.pollinations.ai/docs).",
+      "title": "References become video",
+      "text": "Use reference images or videos with `wan-pro`, and reference images, videos, or audio with `wan-3.0`. Wan 3.0 also accepts a second image as an ending frame. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         14229
       ],
@@ -136,30 +124,55 @@
     },
     {
       "emoji": "🤖",
-      "title": "Three models join the roster",
-      "text": "Try `inception/mercury-2.5-preview` for text, `deepseek/deepseek-v4-flash-vision-exp` for text and image input, or `anthropic/claude-fable-5.1` for long-context work. [See available models](https://gen.pollinations.ai/v1/models).",
+      "title": "Mercury 2.5 Preview",
+      "text": "Try `inception/mercury-2.5-preview` for text generation with tools, reasoning, and a 260,000-token context window. [View the model](https://enter.pollinations.ai/models?q=inception/mercury-2.5-preview).",
       "prs": [
-        14312,
-        14319,
+        14312
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "DeepSeek V4 Flash Vision",
+      "text": "Send text and images to `deepseek/deepseek-v4-flash-vision-exp` for text output, with reasoning and tool support. [View the model](https://enter.pollinations.ai/models?q=deepseek/deepseek-v4-flash-vision-exp).",
+      "prs": [
+        14319
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Claude Fable 5.1",
+      "text": "Use `anthropic/claude-fable-5.1` with text or images, adaptive reasoning, tools, and a 1M-token context window. [View the model](https://enter.pollinations.ai/models?q=anthropic/claude-fable-5.1).",
+      "prs": [
         14320
       ],
       "kind": "model"
     },
     {
-      "emoji": "🔗",
-      "title": "Prime Agent meets Polli",
-      "text": "Configure Prime Agent with Pollinations models using `polli harness prime on|off|status`. [Explore the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "emoji": "🌟",
+      "title": "Community model health in Play",
+      "text": "Play’s model selector now shows a 24-hour health indicator for community models. Its tooltip includes request count and success rate, so you can check the signal before choosing a model. [Open Play](https://pollinations.ai/play).",
       "prs": [
-        14176
+        13675
       ],
       "kind": "product"
     },
     {
-      "emoji": "💡",
-      "title": "Model health in Play",
-      "text": "Community models in Play now have a dot showing their 24-hour uptime, so you can check model health before choosing one. [Open Play](https://pollinations.ai/play).",
+      "emoji": "🎯",
+      "title": "Required community model safety",
+      "text": "Community model providers can require prompt checks for privacy, secrets, sexual content, violence, or prompt attacks through the API, dashboard, or CLI. The model catalog exposes those requirements as `required_safety`, and callers cannot disable them with `safe=false`. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        13675
+        14297
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Prime Agent harness",
+      "text": "Configure Prime Agent with Pollinations models and the Polli skill using `polli harness prime on`; use `status` to inspect the setup or `off` to remove it. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        14176
       ],
       "kind": "product"
     }

@@ -2,8 +2,8 @@
   "date": "2025-05-18",
   "period_start": "2025-05-11",
   "period_end": "2025-05-17",
-  "title": "The community showcase grew up",
-  "summary": "The community project directory grew into a better-organized showcase, while image-feed access and conversation-aware ads got more capable.\n\nNew listings ranged from IRINA and Anisurge to Windows multimodel chat, image generators, interactive stories, picture-book tools, and short-video tooling. The directory also gained a Vibe Coding category, tidier project names and links, and more consistent featured-project ordering.\n\nAds triggered by `p-ads` gained optional generated 120×120 images. Their copy now uses recent messages and the current response for context, preserves markdown links, and keeps the ad marker out of messages sent to the text model.\n\nAuthenticated listeners can receive additional image-feed events, including events replayed on connection. Public listeners retain the existing content filters.\n\nText-origin errors gained a CORS header so browser clients can inspect non-OK responses. The week also brought a request-analytics tracking-pixel function, standard logos for images generated with meoow models, and a README assessment badge.",
+  "title": "More ways to build with Pollinations",
+  "summary": "Community projects filled out the directory while the image feed and text API gained more useful context.\n\nThe project list grew across the week with chat interfaces, interactive stories, image tools, social bots, and video-making tools. New listings included IRINA, MoneyPrinterTurbo, Imagemate AI, Anisurge, and AI Chat for Windows.\n\nAI-assisted coding and website-building projects gained a Vibe Coding ✨ category. Featured-project ordering was tidied up, duplicate listings were removed, and missing categories and project names were corrected.\n\nAds triggered by `p-ads` can include a generated 120×120 image. Their short copy now uses the current response and recent conversation for context, rather than translating existing ad text.\n\nAuthenticated image-feed listeners can receive the full event stream, including saved events replayed on connection; other listeners retain the existing filters. Browser clients can also inspect non-OK text-cache responses across origins instead of having the errors hidden by CORS checks.",
   "pr_count": 20,
   "prs": [
     {
@@ -87,5 +87,5 @@
       "date": "2025-05-17"
     }
   ],
-  "generated_at": "2026-10-17T16:04:12.697880+00:00"
+  "generated_at": "2026-10-17T23:24:22.548304+00:00"
 }

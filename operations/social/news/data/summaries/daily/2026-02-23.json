@@ -2,9 +2,9 @@
   "date": "2026-02-23",
   "period_start": "2026-02-23",
   "period_end": "2026-02-23",
-  "title": "12 PRs merged",
-  "summary": "Claude upgraded to Sonnet 4.6. Showcase grew by 5 apps—from legal helpers to Big O explainers. Polly's API and bot logic are finally one process. She thinks faster now. Also fixed tool call validation. Please send valid JSON",
-  "pr_count": 12,
+  "title": "New models for research, code, and chat",
+  "summary": "Two alpha community models and Sonnet 4.6 joined the lineup, while the app catalog grew and Polly learned to draw charts.\n\nTwo alpha community text models were added: `nomnom` for web research and `polly` for work with GitHub, code search, the web, and code execution. The paid `claude` model was upgraded from Sonnet 4.5 to Sonnet 4.6, with `claude-sonnet-4.6` added to the registry.\n\nFive community apps joined the catalog, spanning video editing, chat, an Apple-device assistant, Colombian legal drafting, and Big-O analysis. Submission guidelines now spell out what a useful, reviewable app needs. The README showcase and news were also refreshed; the App Greenhouse count now reads 548.\n\nText message normalization now preserves null content in tool calls, along with function-call, cache-control, reasoning, and audio fields. It also stops clamping `repetition_penalty` to 0–2. Separately, `oh-my-pollicode` received simpler installer messaging, updated key guidance, and a package version bump to 2.0.0.",
+  "pr_count": 13,
   "prs": [
     {
       "number": 7912,
@@ -43,6 +43,10 @@
       "date": "2026-02-23"
     },
     {
+      "number": 8503,
+      "date": "2026-02-23"
+    },
+    {
       "number": 8515,
       "date": "2026-02-23"
     },
@@ -55,49 +59,51 @@
       "date": "2026-02-23"
     }
   ],
-  "generated_at": "2026-02-24T06:21:08.385361+00:00",
+  "generated_at": "2026-10-17T22:41:26.006537+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "Claude Sonnet 4.6",
-      "text": "The default `claude` model alias now points to Sonnet 4.6. Smarter reasoning, better coding, same generous free tier.",
-      "prs": [
-        8520
-      ],
-      "kind": "model"
-    },
-    {
       "emoji": "🤖",
-      "title": "New Agent Models",
-      "text": "Added `nomnom` (web research) and `polly` (coding) to the [text API](https://gen.pollinations.ai). Specialized agents with reasoning capabilities.",
+      "title": "NomNom researches the web",
+      "text": "Use the alpha `nomnom` text model for research with search, scraping, and crawling. [Browse NomNom](https://enter.pollinations.ai/models?q=nomnom).",
       "prs": [
         8517
       ],
       "kind": "model"
     },
     {
-      "emoji": "⚡",
-      "title": "Polly Gets Deep",
-      "text": "The Discord bot now uses GraphQL to read repositories directly. You can now ask it significantly harder questions about the codebase.",
+      "emoji": "🤖",
+      "title": "Polly joins the models",
+      "text": "The alpha `polly` model accepts text and images and can use GitHub, code-search, web, and code-execution tools. [Browse Polly](https://enter.pollinations.ai/models?q=polly).",
       "prs": [
-        8515
+        8517
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "Claude moves to Sonnet 4.6",
+      "text": "The paid `claude` model now uses Sonnet 4.6. The registry also accepts `claude-sonnet-4.6`, while `claude-sonnet` remains an alias. [Browse the model](https://enter.pollinations.ai/models?q=claude-sonnet-4.6).",
+      "prs": [
+        8520
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Polly draws the data",
+      "text": "Ask Polly for a data visualization in Discord and it can render the result as an image in its reply.",
+      "prs": [
+        8484
       ],
       "kind": "product"
     },
     {
-      "emoji": "📱",
-      "title": "ExplainMyBigO",
-      "text": "New dev tool in the showcase. Paste your spaghetti code, get an instant Big-O time and space complexity analysis.",
+      "emoji": "🔗",
+      "title": "Polly explores more GitHub",
+      "text": "Polly can retrieve GitHub data beyond its previous REST path list, including through read-only GraphQL queries.",
       "prs": [
-        8496
+        8515
       ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🪙",
-      "title": "Spore Rebalance",
-      "text": "Starting Feb 24 at 14:00 UTC, the free tier moves from 1 Pollen/day to $1.5/week. Better aligned with rewarding active builders. Points-based dynamic tiers coming later this week.",
-      "prs": [],
       "kind": "product"
     }
   ],

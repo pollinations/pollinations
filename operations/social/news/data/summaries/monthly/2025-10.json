@@ -2,8 +2,8 @@
   "date": "2025-10-31",
   "period_start": "2025-10-01",
   "period_end": "2025-10-31",
-  "title": "The community built more than image generators",
-  "summary": "October made Pollinations easier to build with: more community apps, broader model choices, simpler API access, and clearer Pollen accounting.\n\nHacktoberfest and other submissions filled the project directory with design tools, agents, games, bots, and mobile apps, including AI Packaging Designer and ReImagine. An app registry and deployment workflow added a path for hosting Hacktoberfest projects on Pollinations subdomains.\n\nThe model lineup gained Claude Haiku 4.5 and Seedream 4.0, while gptimage returned for generation and editing and gained a high-quality Nectar option. Seedream’s image budget grew, and Nano Banana gained image-to-image support through Enter.\n\nImage-model listings and metadata became available through dedicated endpoints. Bearer authentication, browser preflight support, a GET text endpoint, and copyable publishable keys made common requests easier to wire up; the API guide gained fuller text, image, and audio examples.\n\nEnter’s dashboard and FAQ made balances, keys, model access, and Pollen rules easier to read. Its subscription panel now distinguishes an assigned tier from an active Polar subscription and reads active product details from Polar.",
+  "title": "The community built beyond the prompt box",
+  "summary": "October brought more community-built things to try, more image-model choices, and clearer paths through the API and Enter.\n\nHacktoberfest starters and a growing project directory brought map-to-city artwork, packaging mockups, an AI dungeon master, opposite-prompt images, and ReImagine’s image-editing workflow. App-hosting groundwork followed later in the month.\n\nGPT Image returned with editing support, Kontext moved to Azure Flux, and Seedream 4.0 joined the image models with a larger canvas. Nectar gained a high-quality gptimage option, while model listings and response headers made it easier to see what a request used.\n\nA new reference, image-model endpoints, and expanded quick-start examples made the API easier to navigate. Enter added Bearer-key support and a GET text endpoint for prompt-in-the-URL requests.\n\nDashboard and FAQ changes clarified keys, wallets, model access, and daily Pollen. The tier panel later added subscription details and read product names and daily amounts from Polar instead of hardcoded values.",
   "pr_count": 129,
   "prs": [
     {
@@ -523,5 +523,5 @@
       "date": "2025-10-31"
     }
   ],
-  "generated_at": "2026-10-17T16:09:26.286067+00:00"
+  "generated_at": "2026-10-17T23:31:08.198701+00:00"
 }

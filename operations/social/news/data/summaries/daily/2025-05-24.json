@@ -2,8 +2,8 @@
   "date": "2025-05-24",
   "period_start": "2025-05-24",
   "period_end": "2025-05-24",
-  "title": "MCP clients get a new authorization flow",
-  "summary": "MCP clients got OAuth 2.1, Grok-3 Mini joined the model list, and two community listings got attention.\n\nMCP authentication moved from session polling to OAuth 2.1, with PKCE, client registration and refresh tokens. The same PR changed Azure GPT Image editing to fetch string image inputs as URLs; data URIs, local file paths and direct Buffer inputs are no longer accepted.\n\nThe `grok` listing now points to Azure-hosted Grok-3 Mini with tool support, while `openai-large` routes to GPT-4.1 instead of GPT-4.1 Mini. The auth UI also labels its settings “Referrer/Domain Management” and removes a misleading API-token notice.\n\nThe directory now lists AdvanceChatGptBot, a Telegram bot using Pollinations through gpt4free. Mirexa AI Chat’s listing gained a fuller description and corrected name, and its duplicate entry was removed.",
+  "title": "MCP clients get an OAuth flow",
+  "summary": "MCP authentication gained an OAuth flow, Grok-3 Mini joined the model list, and the community directory got a little less messy.\n\nMCP authentication moved from session polling to OAuth 2.1, with authorization-code and refresh-token exchange plus dynamic client registration. Azure GPT Image editing also now fetches string image inputs as URLs rather than accepting data URIs or local paths.\n\nAdded `grok` for Azure-hosted Grok-3 Mini with tool support, and changed `openai-large` to route to GPT-4.1 instead of GPT-4.1 Mini. The auth UI also labels its referrer and domain controls more clearly.\n\nThe project directory now describes Mirexa AI Chat’s capabilities under its updated name, without a duplicate entry. It also lists AdvanceChatGptBot, a Telegram bot that uses Pollinations through gpt4free.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,30 +23,30 @@
       "date": "2025-05-24"
     }
   ],
-  "generated_at": "2026-10-17T15:40:36.032520+00:00",
+  "generated_at": "2026-10-17T22:31:31.105664+00:00",
   "highlights": [
     {
       "emoji": "🔗",
       "title": "OAuth for MCP clients",
-      "text": "MCP clients can use OAuth 2.1 authorization with PKCE, client registration and refresh tokens instead of the old session-polling flow. [Read the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "text": "MCP clients can authenticate through an OAuth 2.1 authorization flow with refresh tokens and dynamic client registration. [Read the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         2070
       ],
-      "kind": "product"
+      "kind": "api"
     },
     {
       "emoji": "🤖",
-      "title": "Grok-3 Mini with tools",
-      "text": "The `grok` text model listing adds Azure-hosted Grok-3 Mini with tool support. [View the model](https://enter.pollinations.ai/models?q=grok).",
+      "title": "Grok-3 Mini added",
+      "text": "Use `grok` for Azure-hosted Grok-3 Mini text generation with tool support. [Browse the model](https://enter.pollinations.ai/models?q=grok).",
       "prs": [
         2077
       ],
       "kind": "model"
     },
     {
-      "emoji": "✨",
-      "title": "GPT-4.1 for openai-large",
-      "text": "`openai-large` now routes to GPT-4.1 instead of GPT-4.1 Mini. [View the model](https://enter.pollinations.ai/models?q=openai-large).",
+      "emoji": "🤖",
+      "title": "Larger openai-large model",
+      "text": "`openai-large` now routes to GPT-4.1 instead of GPT-4.1 Mini. [Browse the model](https://enter.pollinations.ai/models?q=openai-large).",
       "prs": [
         2077
       ],

@@ -2,8 +2,8 @@
   "date": "2026-09-07",
   "period_start": "2026-09-07",
   "period_end": "2026-09-07",
-  "title": "The model catalog got canonical names without breaking old code",
-  "summary": "A compatibility-heavy day: cleaner model names, steadier generation recovery, memorable upload URLs, and the docs catching up with reality.\n\nPublic model IDs now use a consistent canonical catalog naming scheme with publisher metadata, while legacy aliases, routing, stored keys, and existing permissions keep working. Scoped-key reads and the Enter migration were updated alongside it, so old and renamed model identifiers resolve consistently through the rollout.\n\nCoordinator failures now check for an already-cached generation before trying again, returning completed work without a duplicate provider call. Production deployments also preserve Klein's intended VPC route, with CI checking that the correct deployment tooling is actually in charge.\n\nPOST /upload accepts optional account-scoped custom IDs for multipart and JSON uploads, making stable media URLs possible without coordinating random identifiers. Create-only writes safely reject collisions from existing files or gallery entries.",
+  "title": "Choose your own media upload ID",
+  "summary": "Custom media IDs and consistent model names arrived alongside a way to recover generations caught between a saved result and a failed coordinator call.\n\nMedia uploads now accept an optional account-scoped custom ID. Uploads remain create-only: reusing an ID returns 409 rather than replacing a file.\n\nPublic model IDs were standardized as lowercase `publisher/model` names across catalogs and generation routes. Existing IDs remain request aliases, and model-restricted keys continue to recognize saved aliases. API examples now use specific current IDs.\n\nEnter and apps now share an account menu with clearer controls for connecting, getting and buying Pollen. App links still point to the appropriate Quests and Pollen pages.",
   "pr_count": 10,
   "prs": [
     {
@@ -47,17 +47,56 @@
       "date": "2026-09-07"
     }
   ],
-  "generated_at": "2026-09-08T21:47:31.987788+00:00",
+  "generated_at": "2026-10-17T23:11:22.632066+00:00",
   "highlights": [
     {
-      "emoji": "✨",
+      "emoji": "🔗",
       "title": "Name your media uploads",
-      "text": "Give multipart or JSON uploads an account-scoped custom ID. An ID that is already reserved returns 409 instead of overwriting existing media. [Explore the API](https://gen.pollinations.ai/docs).",
+      "text": "Set an optional custom ID in `POST /upload` with a user-owned API key. IDs are scoped to your account, and an existing ID returns `409` instead of replacing a file. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         14555
       ],
       "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Consistent model IDs",
+      "text": "Public models now use lowercase `publisher/model` IDs across the catalog and generation routes. Existing IDs still work as request aliases, including with model-restricted keys. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        13076,
+        14545
+      ],
+      "kind": "api"
     }
   ],
-  "changelog": []
+  "changelog": [
+    {
+      "pr_number": 14552,
+      "url": "https://github.com/pollinations/pollinations/pull/14552",
+      "merged_at": "2026-09-07T16:03:49Z",
+      "api_changes": [
+        {
+          "id": "pr-14552:POST /v1/audio/speech/with-timestamps",
+          "endpoint": "POST /v1/audio/speech/with-timestamps",
+          "summary": "Generate Speech with Timestamps",
+          "action": "CHANGE",
+          "breaking": true,
+          "changes": [
+            {
+              "field": "body:model",
+              "before": {
+                "type": "\"elevenlabs\"|\"elevenflash\"|\"eleven-multilingual-v2\"",
+                "required": false
+              },
+              "after": {
+                "type": "\"elevenlabs/eleven-v3\"|\"elevenlabs/eleven-flash-v2.5\"|\"elevenlabs/eleven-multilingual-v2\"",
+                "required": false
+              },
+              "breaking": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

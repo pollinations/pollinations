@@ -2,10 +2,14 @@
   "date": "2026-02-12",
   "period_start": "2026-02-12",
   "period_end": "2026-02-12",
-  "title": "OpenClaw now connects to the real world",
-  "summary": "🌍 just shipped web search models & tool config. agents without internet are just fancy autocompletes. we fixed that. plus a new tabbed UI for smoother onboarding. ship faster. 🌸",
-  "pr_count": 2,
+  "title": "OpenClaw gets web search and a clearer setup path",
+  "summary": "OpenClaw gained web-search options and a simpler setup path, community-built n8n nodes joined the directory, and the alpha NomNom model was removed.\n\nOpenClaw setup now offers `gemini-search` for web-grounded answers and Perplexity search through the Pollinations API, while preserving an existing search provider. Its onboarding page has one shared connection step, then separate instructions for a fresh install or an existing agent. The suggested model list and descriptions were also updated.\n\n@isaacgounton’s community-built n8n package, with image, video, text, and audio nodes, was added to the developer-tools directory. The README also lists @tefa2007h-dev’s CHATTY AI web app.\n\nThe alpha NomNom web-research model was removed from the text model registry and routing, along with its `gemini-scrape` and `web-research` aliases.",
+  "pr_count": 4,
   "prs": [
+    {
+      "number": 7933,
+      "date": "2026-02-12"
+    },
     {
       "number": 8179,
       "date": "2026-02-12"
@@ -13,16 +17,30 @@
     {
       "number": 8187,
       "date": "2026-02-12"
+    },
+    {
+      "number": 8189,
+      "date": "2026-02-12"
     }
   ],
-  "generated_at": "2026-02-13T10:57:38.492088+00:00",
+  "generated_at": "2026-10-17T22:40:07.077846+00:00",
   "highlights": [
     {
-      "emoji": "🤖",
-      "title": "OpenClaw gets web search",
-      "text": "Use Gemini and Perplexity web search capabilities in OpenClaw. Claude Opus and Gemini Pro have also joined its model roster.",
+      "emoji": "🔗",
+      "title": "Web search for OpenClaw",
+      "text": "Set up OpenClaw with `gemini-search` for web-grounded answers or Perplexity search through the Pollinations API. The setup page now has separate paths for a fresh install and an existing agent.",
       "prs": [
+        8179,
         8187
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Pollinations nodes for n8n",
+      "text": "Find community-built n8n nodes for Pollinations image, video, text, and audio generation in the developer-tools directory.",
+      "prs": [
+        7933
       ],
       "kind": "product"
     }

@@ -2,24 +2,12 @@
   "date": "2026-02-24",
   "period_start": "2026-02-24",
   "period_end": "2026-02-24",
-  "title": "restored 18 missing apps and reorganized the registry into 15 categories",
-  "summary": "migrated claude to direct api. also shipped an obsidian plugin and a tattoo designer. 24 prs merged. keeping the garden tidy",
-  "pr_count": 24,
+  "title": "A clearer path through the app garden",
+  "summary": "Nine clearer app filters, restored community apps, weekly Spore grants, and quieter work behind the Claude routes.\n\nThe app directory now has nine described filters, including Play, Learn, Build, and Business. The catalog also restored 18 missing community apps and added Inkverse, a tattoo-design app, and a D&D 3.5e magic-item generator.\n\nSpore's grant changed to 1.5 Pollen per week, with a Monday 00:00 UTC refill; Microbe now has no grant and appears as “Account under review.” Enter and the tier API now distinguish weekly from daily grants, and the FAQ explains timing and non-rollover.\n\nFive existing Claude routes moved to Anthropic's direct API without changing their public names. The MCP and OpenCode setup packages gained shorter names, and new OpenCode configurations default to `pollinations/claude-fast`. The README news section also recapped February 23's updates.",
+  "pr_count": 8,
   "prs": [
     {
       "number": 7242,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7259,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7262,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7272,
       "date": "2026-02-24"
     },
     {
@@ -27,63 +15,11 @@
       "date": "2026-02-24"
     },
     {
-      "number": 7293,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7299,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7301,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7305,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7307,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7319,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7326,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7331,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7336,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7347,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7374,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7376,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7532,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 8476,
-      "date": "2026-02-24"
-    },
-    {
       "number": 8527,
+      "date": "2026-02-24"
+    },
+    {
+      "number": 8529,
       "date": "2026-02-24"
     },
     {
@@ -91,11 +27,11 @@
       "date": "2026-02-24"
     },
     {
-      "number": 8537,
+      "number": 8534,
       "date": "2026-02-24"
     },
     {
-      "number": 8538,
+      "number": 8537,
       "date": "2026-02-24"
     },
     {
@@ -103,43 +39,16 @@
       "date": "2026-02-24"
     }
   ],
-  "generated_at": "2026-02-25T06:24:11.538351+00:00",
+  "generated_at": "2026-10-17T22:41:37.310072+00:00",
   "highlights": [
     {
-      "emoji": "⚡",
-      "title": "Claude Direct & Caching",
-      "text": "Migrated Claude models directly to Anthropic. Prompt caching is now live, making repeated context faster and cheaper. [API Docs](https://enter.pollinations.ai/api/docs)",
-      "prs": [
-        8537
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "📦",
-      "title": "NPM Package Rename",
-      "text": "Packages are now `ompc` and `mcp`. Less typing, plus `claude-fast` is the new default model. [View on NPM](https://www.npmjs.com/package/@pollinations_ai/model-context-protocol)",
-      "prs": [
-        8532
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🗂️",
-      "title": "The Garden Organized",
-      "text": "Sorted 542 ecosystem apps into 15 categories like \"Vibe Coding\" and \"AI Studio\" for better discoverability on the [Main Website](https://hello.pollinations.ai).",
+      "emoji": "🔗",
+      "title": "Find apps by purpose",
+      "text": "Browse community apps with nine described filters, from Image and Chat to Play, Learn, and Build. Less guessing which shelf an app belongs on. [Explore the app showcase](https://pollinations.ai).",
       "prs": [
         8527
       ],
       "kind": "product"
-    },
-    {
-      "emoji": "💻",
-      "title": "Community Tool: fuckits",
-      "text": "A new CLI utility that turns natural language descriptions into executable shell scripts. Yes, that is the real name.",
-      "prs": [
-        7305
-      ],
-      "kind": "app"
     }
   ],
   "changelog": []

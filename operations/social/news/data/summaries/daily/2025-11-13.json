@@ -2,8 +2,8 @@
   "date": "2025-11-13",
   "period_start": "2025-11-13",
   "period_end": "2025-11-13",
-  "title": "Chat gets images and streaming replies",
-  "summary": "Chat gained image attachments and streaming replies, while citations, subscription status, proxy handling, and event retries got attention.\n\nCloudCompile's Hacktoberfest chat app added image paste, drag-and-drop attachments, model search, and replies that appear as text arrives. The updates also improve message formatting and mobile interactions.\n\nChat responses now preserve citation URLs from Perplexity models. The image service also gained a model-request-count endpoint, with counts subsequently made persistent across server restarts.\n\nEnter's tier panel now distinguishes active, canceled, and absent subscriptions, shows end dates when available, and displays activation errors inline. Separate work prepared Pollen pack checkout configuration and updated the amounts shown on disabled top-up buttons; it did not establish that subscriptions or customer data were migrated.",
+  "title": "Hacktoberfest chat gets images and streaming",
+  "summary": "Chat got images and streaming, subscriptions got clearer, and the API’s citations, image stats, and proxy plumbing got attention.\n\nCloudCompile’s React chat app now accepts pasted and dropped images, lets people search models, and shows replies as they stream in. The updates also improve mobile interactions and preserve indentation in responses.\n\nEnter’s tier panel now distinguishes active, canceled, and absent subscriptions, shows cancellation end dates, and displays activation failures inline. Separate work prepared production billing configuration and migration tooling; it does not establish that customer data or subscriptions have moved.\n\nChat responses now preserve citation URLs from Perplexity models. The image service also gained `/model-stats`, which reports request counts by model; subsequent work made those counts persist across server restarts.",
   "pr_count": 10,
   "prs": [
     {
@@ -47,17 +47,35 @@
       "date": "2025-11-13"
     }
   ],
-  "generated_at": "2026-10-17T15:52:14.168954+00:00",
+  "generated_at": "2026-10-17T22:35:42.473462+00:00",
   "highlights": [
     {
-      "emoji": "💡",
-      "title": "Chat as replies arrive",
-      "text": "CloudCompile's Hacktoberfest chat app now shows streamed replies as text arrives. You can also paste or drop images into a conversation and search for models.",
+      "emoji": "🎨",
+      "title": "Images in Hacktoberfest chat",
+      "text": "Paste or drop an image into the React chat app to send it with your message. Model search makes switching models easier, too.",
       "prs": [
-        5240,
+        5240
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "Streaming chat replies",
+      "text": "The Hacktoberfest chat app now displays replies as chunks arrive instead of waiting for the whole response.",
+      "prs": [
         5241
       ],
       "kind": "product"
+    },
+    {
+      "emoji": "📊",
+      "title": "Image model usage counts",
+      "text": "Query `/model-stats` on the image service for request counts by model. Counts now persist across server restarts.",
+      "prs": [
+        5235,
+        5232
+      ],
+      "kind": "api"
     }
   ],
   "changelog": []

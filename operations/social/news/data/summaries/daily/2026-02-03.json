@@ -2,8 +2,8 @@
   "date": "2026-02-03",
   "period_start": "2026-02-03",
   "period_end": "2026-02-03",
-  "title": "GPT-5 Mini gets room for longer responses",
-  "summary": "Longer GPT-5 Mini responses, more reliable daily Pollen refills, and better previews for community apps.\n\nGPT-5 Mini’s maximum completion tokens increased from 1,024 to 16,384. A follow-up corrected its provider routing.\n\nThe bulk refill now tracks whether the job has run separately from individual login refills, so one person’s login no longer causes the job to skip everyone else. The microbe tier was added to the daily refill.\n\nEleven app pages received updated titles, descriptions, sharing metadata or install assets. The app tooling now generates dedicated link previews and uses the app registry to decide what to build.",
+  "title": "More room for GPT-5 Mini responses",
+  "summary": "GPT-5 Mini got room for longer answers, daily Pollen refills got a safer check, and community apps got better link previews.\n\nGPT-5 Mini’s maximum completion tokens increased from 1,024 to 16,384, allowing longer responses. A follow-up corrected its provider routing.\n\nThe bulk refill now tracks whether the job has run independently of individual login refills, so one person’s refill no longer causes the job to skip everyone else. The microbe tier is included too.\n\nEleven app pages received updated descriptions or sharing metadata, with refreshed preview and install assets. The app catalog’s build and deployment layout was reorganized around its registry.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,12 +23,12 @@
       "date": "2026-02-03"
     }
   ],
-  "generated_at": "2026-10-17T16:01:54.826820+00:00",
+  "generated_at": "2026-10-17T22:38:54.763457+00:00",
   "highlights": [
     {
       "emoji": "🤖",
       "title": "Longer GPT-5 Mini responses",
-      "text": "`gpt-5-mini` now allows up to 16,384 completion tokens, up from 1,024. [Browse the model](https://enter.pollinations.ai/models?q=gpt-5-mini).",
+      "text": "`gpt-5-mini` now supports up to 16,384 completion tokens, up from 1,024, for answers that need more room. [Browse GPT-5 Mini](https://enter.pollinations.ai/models?q=gpt-5-mini).",
       "prs": [
         7862,
         7904

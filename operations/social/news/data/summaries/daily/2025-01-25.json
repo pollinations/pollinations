@@ -3,7 +3,7 @@
   "period_start": "2025-01-25",
   "period_end": "2025-01-25",
   "title": "A rebuilt homepage",
-  "summary": "A homepage rebuild made projects, examples, and news easier to find, while a follow-up put useful website redirects back in place.\n\nThe homepage gained responsive layouts, new visuals, community and supporter sections, and expandable news. Project listings and integration examples were also reworked, making it easier to find things people have built and how to build your own.\n\nThe image feed, image editor, and LLM-based text transformations were reworked as part of the frontend overhaul.\n\nPublic files restored redirects from `/prompt/*` and `/p/*` to the image prompt endpoint and added routing for several site paths. The update also added a web-app manifest and crawler and funding files.",
+  "summary": "A homepage rebuild refreshed the image tools and community sections, while a follow-up restored the public routes that point to them.\n\nThe homepage gained responsive layouts, new visuals, community and supporter sections, and expandable news. It also moved to React 18 and MUI 6.\n\nThe image feed and editor, integration examples, project listings, and LLM-based text transformations were reworked as part of the frontend overhaul.\n\nMissing website files restored redirects from /prompt/* and /p/* to the image prompt endpoint, along with site routing, a web-app manifest, and crawler and funding files.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,12 +15,21 @@
       "date": "2025-01-25"
     }
   ],
-  "generated_at": "2026-10-17T15:32:53.076017+00:00",
+  "generated_at": "2026-10-17T22:28:53.739523+00:00",
   "highlights": [
     {
       "emoji": "✨",
       "title": "A new homepage",
-      "text": "Find community projects, integration examples, and expandable news on the rebuilt Pollinations homepage. [Explore the site](https://pollinations.ai).",
+      "text": "Explore a rebuilt, responsive homepage with community and supporter sections and expandable news. [Visit Pollinations](https://pollinations.ai).",
+      "prs": [
+        1036
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Image tools refreshed",
+      "text": "The image feed and editor have been reworked, alongside the site's integration examples and text transformations. [Explore the site](https://pollinations.ai).",
       "prs": [
         1036
       ],

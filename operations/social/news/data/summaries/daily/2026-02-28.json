@@ -2,8 +2,8 @@
   "date": "2026-02-28",
   "period_start": "2026-02-28",
   "period_end": "2026-02-28",
-  "title": "A faster text API and smarter model routing",
-  "summary": "A heavy day for the text API with a Hono rewrite, smarter model endpoints, and two new community apps hitting the showcase.\n\nWe rewrote the text generation backend in Hono and TypeScript, resulting in noticeably faster response times and rock-solid streaming. We also upgraded MiniMax to M2.5, exposed `context_window` limits for all models so you can programmatically avoid token overflow, and made the `/models` endpoint automatically filter out models you don't have access to. Less guessing, more building.\n\nThe community showcase continues to grow. We've added PollenPages, a dedicated tool for generating fully illustrated narratives and children's books. Meanwhile, the beloved CatGPT got a frontend refactor and some deployment polish to keep your feline AI chats running smoothly.\n\nWe fixed a regression in the PollenRateLimiter—if you idle between requests, you actually get your burst capacity back now instead of being immediately throttled. We also hardened the media upload system to handle binary data more reliably and added a secure DELETE endpoint so you can programmatically wipe your files when you're done with them.",
+  "title": "More control over media uploads",
+  "summary": "MiniMax M2.5, clearer model limits, more flexible media uploads, and a storybook app joined a day of API repairs.\n\nMedia uploads now accept arbitrary binary files, and an authenticated uploader can delete their own file by hash. The upload limit is now 10 MB.\n\nThe `minimax` text model switched from M2.1 to M2.5, with `minimax-m2.5` and `minimax-m2p5` aliases. Model listings now expose `context_length` for 21 text models; clients using the old `context_window` field need to update. Authenticated users without a paid balance no longer see paid-only models in model listings.\n\nPollenPages joined the writing app catalog with a way to turn a genre and story concept into illustrated tales. CatGPT’s meme generator also received image-fetching and interface updates.",
   "pr_count": 9,
   "prs": [
     {
@@ -43,34 +43,52 @@
       "date": "2026-02-28"
     }
   ],
-  "generated_at": "2026-03-18T21:49:26.746532+00:00",
+  "generated_at": "2026-10-17T22:42:17.466346+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "MiniMax moves to M2.5",
-      "text": "Generate text with MiniMax M2.5; legacy M2.1 access remains available. [Browse models](https://enter.pollinations.ai/models?q=minimax).",
+      "title": "MiniMax M2.5 replaces M2.1",
+      "text": "Use `minimax` for MiniMax M2.5 text generation, or select it with the `minimax-m2.5` alias. [Browse the model](https://enter.pollinations.ai/models?q=minimax).",
       "prs": [
         8617
       ],
       "kind": "model"
     },
     {
+      "emoji": "🔗",
+      "title": "Upload files, then delete them",
+      "text": "The media API now accepts arbitrary binary files up to 10 MB. Uploaders can delete their own files by hash with authenticated `DELETE /:hash` requests. [Explore the media API](https://media.pollinations.ai).",
+      "prs": [
+        8655
+      ],
+      "kind": "api"
+    },
+    {
       "emoji": "💡",
-      "title": "Check model context windows",
-      "text": "Read `context_window` in `/v1/models` to see the token limit for each text model. [Browse the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Text model context lengths",
+      "text": "Model listings now include `context_length` for 21 text models, so you can check token limits before choosing one. If your client reads `context_window`, update it to the new field. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         8688
       ],
       "kind": "api"
     },
     {
-      "emoji": "🔗",
-      "title": "Delete media uploads",
-      "text": "A DELETE endpoint gives apps a way to remove media uploads through the API. [Browse the API docs](https://gen.pollinations.ai/docs).",
+      "emoji": "🎵",
+      "title": "Error recovery, with meditation",
+      "text": "A new OpenClaw skill generates and plays a short Pollinations TTS meditation after errors. Software still breaks; now it can suggest a breathing exercise.",
       "prs": [
-        8655
+        7493
       ],
-      "kind": "api"
+      "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Illustrated stories with PollenPages",
+      "text": "PollenPages joined the writing app showcase. Give it a genre and story concept to make an illustrated children’s book or fantasy tale. [Explore community apps](https://pollinations.ai).",
+      "prs": [
+        8654
+      ],
+      "kind": "product"
     }
   ],
   "changelog": []

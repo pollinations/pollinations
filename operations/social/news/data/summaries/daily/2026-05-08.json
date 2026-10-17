@@ -2,9 +2,9 @@
   "date": "2026-05-08",
   "period_start": "2026-05-08",
   "period_end": "2026-05-08",
-  "title": "Gemma 4 26B joins the text API",
-  "summary": "Gemma 4 26B joins the text API, image dimensions get strict, and Nova Reel videos are back online.\n\nAdded Gemma 4 26B via DeepInfra. It comes with a massive 262k context window, multimodal support, and tool use. Send it a book, see what happens.\n\nImage generation now strictly respects your requested width and height—we ripped out a legacy pre-scaling step that was silently upscaling small requests. Also, Nova Reel video generation is back online after we resolved a compatibility spat between AWS Bedrock and Cloudflare Workers.\n\nOAuth redirects are now more forgiving of trailing slashes and query states. We also patched deny redirects to stay local on validation failure, and updated the dashboard to explain the developer markup system inline so you don't have to hunt through docs.",
-  "pr_count": 9,
+  "title": "Gemma 4 joins the text models",
+  "summary": "Gemma 4 joined the model list, generation and app authorization got more predictable, and the community catalog grew by three apps.\n\nGoogle’s Gemma 4 26B A4B was added as `gemma`, with text and image input, tool use, reasoning, and a 262,144-token context window. Access is limited to paid users.\n\nSelf-hosted image requests now pass validated dimensions to the backend without silently scaling smaller images up. Nova Reel’s video generation and finished-video retrieval were repaired for Workers, and Replicate-backed request configuration was corrected.\n\nCatGPT’s consent screen now identifies the app. App lookup and key creation share redirect-matching rules that allow query parameters on registered URLs without a query and tolerate one trailing slash. Denying authorization stays on the page when a redirect cannot be verified.",
+  "pr_count": 12,
   "prs": [
     {
       "number": 10669,
@@ -19,11 +19,23 @@
       "date": "2026-05-08"
     },
     {
+      "number": 10765,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10766,
+      "date": "2026-05-08"
+    },
+    {
       "number": 10770,
       "date": "2026-05-08"
     },
     {
       "number": 10772,
+      "date": "2026-05-08"
+    },
+    {
+      "number": 10778,
       "date": "2026-05-08"
     },
     {
@@ -43,43 +55,16 @@
       "date": "2026-05-08"
     }
   ],
-  "generated_at": "2026-05-09T06:41:09.594479+00:00",
+  "generated_at": "2026-10-17T22:50:37.872220+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Gemma 4 26B",
-      "text": "The new 26B parameter Gemma model is now live on the text API. It brings multimodal support, tool use, and a 262k context window for when you really need to paste that entire codebase. [View models](https://gen.pollinations.ai/v1/models)",
+      "title": "Gemma 4 joins the models",
+      "text": "Use `gemma` with text or image input, tool calls, reasoning, and a 262,144-token context window. Available with paid access. [Explore the model](https://enter.pollinations.ai/models?q=gemma).",
       "prs": [
         10707
       ],
       "kind": "model"
-    },
-    {
-      "emoji": "🚀",
-      "title": "Command Line Canvas",
-      "text": "Because leaving the terminal is overrated. Generate AI images directly from your command line with the new PollImage CLI tool. [Try it](https://www.npmjs.com/package/pollimage)",
-      "prs": [
-        10784
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🌟",
-      "title": "Madlisten",
-      "text": "The hive is cooking. A new community-built recipe browsing application joins the showcase. [Try it](https://madlisten.dk/)",
-      "prs": [
-        10791
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "📱",
-      "title": "QR Codes for Tiny Humans",
-      "text": "Generate and print custom QR-enabled learning cards for screen-free toddler interaction. [Try it](https://toddler-read.netlify.app/)",
-      "prs": [
-        10792
-      ],
-      "kind": "app"
     }
   ],
   "changelog": []

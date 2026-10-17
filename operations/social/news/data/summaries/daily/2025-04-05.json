@@ -2,8 +2,8 @@
   "date": "2025-04-05",
   "period_start": "2025-04-05",
   "period_end": "2025-04-05",
-  "title": "Model lists get less brittle",
-  "summary": "Model selection got more adaptable, text requests got more predictable, and image feeds got stricter filtering.\n\nThe image feed editor now fetches model options from the image API, so newly available models can appear without a frontend change. It also has a loading state and a fallback list if the request fails. Separately, the DeepSeek-R1 Distill Qwen 32B entry was renamed to avoid colliding with the full DeepSeek R1 model.\n\nPOST text cache keys now use the entire request body, preventing requests with different parameters, such as seeds, from sharing a cached response. Most text models also gained a Llama 4-derived conversational prompt, while models with specialized prompts keep them.\n\nThe image service now marks feed events whose prompts match mature terms. Feed listeners filter those events alongside flagged content, and no longer accept `nsfw=true` to bypass filtering.",
+  "title": "Image model choices keep up with the API",
+  "summary": "Image models are easier to find, text responses are more predictable, and feeds and redirects got stricter about what they pass along.\n\nThe image feed editor now fetches its model options from the image API, so newly available models can appear without a frontend change. The selector has a loading state and falls back to its previous list if the request fails. The model list also gives the Cloudflare-hosted DeepSeek distill model a distinct name, `deepseek-reasoning-qwen`, instead of colliding with the full DeepSeek R1 entry.\n\nMost text models gained a Llama 4-derived conversational prompt while purpose-specific models retain their own instructions. POST text requests now use the entire body for cache keys, so changing a parameter such as `seed` no longer retrieves a response cached for different parameters.\n\nThe image service now marks feed events whose prompts match mature terms. Feed listeners filter both replayed and new results for mature and other restricted content, regardless of the `nsfw` query parameter.",
   "pr_count": 8,
   "prs": [
     {
@@ -39,14 +39,23 @@
       "date": "2025-04-05"
     }
   ],
-  "generated_at": "2026-10-17T16:02:37.064109+00:00",
+  "generated_at": "2026-10-17T22:30:08.440328+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "An adaptable model picker",
-      "text": "The image feed editor fetches its model choices from the API, so new options can appear without a frontend update.",
+      "title": "Image models, automatically",
+      "text": "The image feed editor now fetches its model choices from the API, so new options can appear without a frontend update. It keeps the previous list as a fallback if the request fails.",
       "prs": [
         1552
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "More conversational text models",
+      "text": "Chat with text models using a new Llama 4-derived conversational prompt. Models with specialized purposes keep their own instructions. [Try the text API](https://gen.pollinations.ai/v1/chat/completions).",
+      "prs": [
+        1564
       ],
       "kind": "product"
     }

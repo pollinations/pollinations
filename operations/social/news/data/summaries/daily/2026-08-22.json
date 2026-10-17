@@ -2,16 +2,12 @@
   "date": "2026-08-22",
   "period_start": "2026-08-22",
   "period_end": "2026-08-22",
-  "title": "Two more image apps joined the garden",
-  "summary": "A tuning day: clearer publishing docs, two new image apps, fresher dashboards, and model routing that behaves less like a haunted switchboard.\n\nPollen Image Studio and Dery Lau AI are now discoverable in the app directory, giving people two more ready-to-use ways to make images with the Pollinations API. The README’s community-app and project snapshot also stayed current.\n\nNew guides explain how to publish Community Models across text, image, audio, and video, or publish an agent through the one-step callable-listing flow. Wallet connection terminology is clearer without breaking old links, agent API docs now include runnable request bodies, and the reference docs and navigation were refreshed. Community catalogs and public-agent publishing also now explain data handling up front.\n\nA broad routing and accounting pass pinned OpenRouter, Mistral, Llama Scout, Laguna, DeepSeek, OVHcloud, AssemblyAI, and MiniMax behavior to verified provider capabilities and current rate sheets. Agent generations now roll up under their parent call with measured cost estimates, upstream finish errors are correctly treated as non-billed failures, and usage anomalies are captured privately for diagnosis rather than becoming software folklore.",
-  "pr_count": 36,
+  "title": "Agent runs get a more honest Pollen estimate",
+  "summary": "A day of making existing things more legible: agent costs, community publishing, model routes, docs, and metrics.\n\nAgent calls are now grouped with their model steps and tool calls when calculating public cost estimates, balance checks, and price sorting. A free-looking wrapper no longer makes a Pollen-consuming run look free. Separately, text generations that end with an upstream error are recorded as failures rather than billed as successful generations.\n\nGuides now explain how to publish an OpenAI-compatible model or configure a hosted agent through the dashboard, CLI, or API. Community-model pages also clarify how independent providers handle requests. Two image-making apps joined the catalog: Pollen Image Studio and Dery Lau AI; two accounts gained community-model access.\n\nOpenRouter routes for Qwen, Gemma, MiMo, Mistral, and Llama Scout were pinned to specific providers rather than left to provider fallback. Gemma 4 26B retains remote image URL support; the pinned `mistral` route has a declared limit of eight reference images instead of ten.",
+  "pr_count": 16,
   "prs": [
     {
       "number": 13467,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13589,
       "date": "2026-08-22"
     },
     {
@@ -35,15 +31,7 @@
       "date": "2026-08-22"
     },
     {
-      "number": 13674,
-      "date": "2026-08-22"
-    },
-    {
       "number": 13676,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13677,
       "date": "2026-08-22"
     },
     {
@@ -59,10 +47,6 @@
       "date": "2026-08-22"
     },
     {
-      "number": 13682,
-      "date": "2026-08-22"
-    },
-    {
       "number": 13683,
       "date": "2026-08-22"
     },
@@ -71,19 +55,7 @@
       "date": "2026-08-22"
     },
     {
-      "number": 13685,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13686,
-      "date": "2026-08-22"
-    },
-    {
       "number": 13687,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13688,
       "date": "2026-08-22"
     },
     {
@@ -91,59 +63,7 @@
       "date": "2026-08-22"
     },
     {
-      "number": 13690,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13691,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13692,
-      "date": "2026-08-22"
-    },
-    {
       "number": 13693,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13694,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13695,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13696,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13697,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13698,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13701,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13702,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13703,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13704,
-      "date": "2026-08-22"
-    },
-    {
-      "number": 13710,
       "date": "2026-08-22"
     },
     {
@@ -151,26 +71,223 @@
       "date": "2026-08-22"
     }
   ],
-  "generated_at": "2026-09-04T11:53:02.600970+00:00",
-  "highlights": [
+  "generated_at": "2026-10-17T23:08:38.437062+00:00",
+  "highlights": [],
+  "changelog": [
     {
-      "emoji": "🎨",
-      "title": "Pollen Image Studio",
-      "text": "Make images in an online studio powered by the Pollinations image API. [Try it](https://image.lanprint.com).",
-      "prs": [
-        13673
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Dery Lau AI",
-      "text": "Make images together in this collaborative app built with the Pollinations image API. [Try it](https://derylau.my.id).",
-      "prs": [
-        13711
-      ],
-      "kind": "app"
+      "pr_number": 13683,
+      "url": "https://github.com/pollinations/pollinations/pull/13683",
+      "merged_at": "2026-08-22T09:42:01Z",
+      "api_changes": [
+        {
+          "id": "pr-13683:DELETE /account/agents/{id}",
+          "endpoint": "DELETE /account/agents/{id}",
+          "summary": "Delete Agent",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:DELETE /account/keys/{id}",
+          "endpoint": "DELETE /account/keys/{id}",
+          "summary": "Revoke API Key",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:DELETE /account/my-models/{id}",
+          "endpoint": "DELETE /account/my-models/{id}",
+          "summary": "Delete My Model",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:GET /account/agents",
+          "endpoint": "GET /account/agents",
+          "summary": "List Agents",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:GET /account/agents/{id}",
+          "endpoint": "GET /account/agents/{id}",
+          "summary": "Get Agent",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:GET /account/balance",
+          "endpoint": "GET /account/balance",
+          "summary": "Get Balance",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:GET /account/earnings",
+          "endpoint": "GET /account/earnings",
+          "summary": "Get Developer Earnings",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:GET /account/earnings/transactions",
+          "endpoint": "GET /account/earnings/transactions",
+          "summary": "Get Earnings Transactions",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:GET /account/key",
+          "endpoint": "GET /account/key",
+          "summary": "Get API Key Info",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:GET /account/key/usage",
+          "endpoint": "GET /account/key/usage",
+          "summary": "Get API Key Usage",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:GET /account/keys",
+          "endpoint": "GET /account/keys",
+          "summary": "List API Keys",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:GET /account/my-models",
+          "endpoint": "GET /account/my-models",
+          "summary": "List My Models",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:GET /account/my-models/{id}/fallback-candidates",
+          "endpoint": "GET /account/my-models/{id}/fallback-candidates",
+          "summary": "List Fallback Candidates",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:GET /account/profile",
+          "endpoint": "GET /account/profile",
+          "summary": "Get Profile",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:GET /account/quests",
+          "endpoint": "GET /account/quests",
+          "summary": "Get Quest Status",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:GET /account/usage",
+          "endpoint": "GET /account/usage",
+          "summary": "Get Usage History",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:GET /account/usage/daily",
+          "endpoint": "GET /account/usage/daily",
+          "summary": "Get Daily Usage",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:GET /quests/catalog",
+          "endpoint": "GET /quests/catalog",
+          "summary": "Get Quest Catalog",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:PATCH /account/agents/{id}",
+          "endpoint": "PATCH /account/agents/{id}",
+          "summary": "Update Agent",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:POST /account/agents",
+          "endpoint": "POST /account/agents",
+          "summary": "Create Agent",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:POST /account/keys",
+          "endpoint": "POST /account/keys",
+          "summary": "Create API Key",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:POST /account/my-models",
+          "endpoint": "POST /account/my-models",
+          "summary": "Create My Model",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:POST /account/my-models/models",
+          "endpoint": "POST /account/my-models/models",
+          "summary": "List Upstream Models",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:POST /account/my-models/provider",
+          "endpoint": "POST /account/my-models/provider",
+          "summary": "Update Community Provider Profile",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:POST /account/my-models/test",
+          "endpoint": "POST /account/my-models/test",
+          "summary": "Test My Model Endpoint",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13683:POST /account/my-models/{id}/update",
+          "endpoint": "POST /account/my-models/{id}/update",
+          "summary": "Update My Model",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        }
+      ]
     }
-  ],
-  "changelog": []
+  ]
 }

@@ -2,8 +2,8 @@
   "date": "2025-10-09",
   "period_start": "2025-10-09",
   "period_end": "2025-10-09",
-  "title": "Community apps turn images into design mockups",
-  "summary": "Three community image apps landed, alongside a small readability pass on the Enter dashboard.\n\nAdityaTel89 added Map to 3D Isometric Buildings, which turns map screenshots and a location description into downloadable isometric city artwork. Prateek Verma added AI Packaging Designer, which turns product photos into box, bottle, bag, or can mockups with preset or custom styling.\n\nanmolsah added Virtual Makeup Studio for trying AI-generated looks on a selfie. It includes four style presets, custom prompts, a before-and-after slider, and downloads.\n\nThe dashboard now labels balances in pollen, renames the API key action to “Create new key,” and adjusts FAQ, table, and button styling for clearer visual hierarchy.",
+  "title": "Maps become isometric city artwork",
+  "summary": "Community contributors added three image-making apps, while Enter got a small readability pass.\n\nMap to 3D Isometric Buildings adds a way to turn uploaded or pasted map screenshots into city artwork. Users can describe the location, edit the style prompt, preview the result, and download it.\n\nAI Packaging Designer turns product photos into box, bottle, bag, or can mockups with preset or custom styles. Virtual Makeup Studio applies makeup looks to selfies, with a before-and-after slider for comparison.\n\nThe dashboard now labels balances in pollen and makes FAQ, API key, and documentation controls easier to scan.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,34 +23,34 @@
       "date": "2025-10-09"
     }
   ],
-  "generated_at": "2026-10-17T15:48:19.785206+00:00",
+  "generated_at": "2026-10-17T22:34:26.349900+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Maps become isometric cities",
-      "text": "Upload or paste a map screenshot, describe the location, and make downloadable isometric city artwork.",
+      "title": "Maps into isometric cities",
+      "text": "Upload or paste a map screenshot, describe the location, and adjust the style prompt to generate downloadable isometric city artwork.",
       "prs": [
         4414
       ],
-      "kind": "app"
+      "kind": "product"
     },
     {
       "emoji": "🎨",
-      "title": "Product photos become packaging",
-      "text": "Turn a product photo into a box, bottle, bag, or can mockup. Choose a style or write your own description.",
+      "title": "Design packaging mockups",
+      "text": "Turn a product photo into a box, bottle, bag, or can mockup. Pick a style or write your own description, add brand details, and download the result.",
       "prs": [
         4443
       ],
-      "kind": "app"
+      "kind": "product"
     },
     {
       "emoji": "✨",
       "title": "Try on AI makeup",
-      "text": "Apply a preset or custom makeup look to a selfie, compare it with the original, and download the result.",
+      "text": "Upload a selfie and try Natural, Dramatic, K-Beauty, or Vintage makeup—or describe your own look. Compare it with the original using a before-and-after slider.",
       "prs": [
         4442
       ],
-      "kind": "app"
+      "kind": "product"
     }
   ],
   "changelog": []

@@ -2,8 +2,8 @@
   "date": "2025-02-26",
   "period_start": "2025-02-26",
   "period_end": "2025-02-26",
-  "title": "Cloudflare chat completions speak OpenAI",
-  "summary": "A text API debugging day: Cloudflare compatibility, consistent SSE output, and less surprising stream errors and replays.\n\nThe text API now uses Cloudflare's OpenAI-compatible chat completions endpoint and omits null or undefined request fields, including nested optional parameters.\n\nText API streams preserve existing SSE events and wrap other chunks as data events. Plain-text chunks become chat completion deltas, so clients receive SSE-formatted output even when an upstream stream does not provide it.\n\nStreaming API errors now return HTTP error responses rather than successful streams. Completed streams are sanitized before caching and marked for replay on repeat requests.",
+  "title": "Cloudflare text requests speak OpenAI",
+  "summary": "A text API repair day: Cloudflare compatibility, cleaner SSE streams, and cacheable completions that can be replayed.\n\nCloudflare text generation now uses its OpenAI-compatible chat completions endpoint. The shared client also removes null and undefined fields, including nested ones, before sending requests.\n\nThe text API now preserves chunks already formatted as SSE and wraps other chunks as events. Plain-text chunks become chat completion deltas, and streaming API errors return HTTP errors rather than successful streams.\n\nStreaming completions are sanitized before caching, and cached streams are marked for replay so repeat requests can receive a completed stream.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-02-26"
     }
   ],
-  "generated_at": "2026-10-17T15:34:25.231358+00:00",
+  "generated_at": "2026-10-17T22:28:55.998317+00:00",
   "highlights": [],
   "changelog": []
 }

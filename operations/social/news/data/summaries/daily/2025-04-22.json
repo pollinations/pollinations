@@ -2,8 +2,8 @@
   "date": "2025-04-22",
   "period_start": "2025-04-22",
   "period_end": "2025-04-22",
-  "title": "Popular projects are easier to find",
-  "summary": "Project stars make the showcase easier to browse, a new image app joins the list, and text conversations stop repeating ads.\n\nProject listings gained GitHub star counts and now put more-starred entries first. Separately, the projects CSV now lists older submissions before newer ones.\n\nImageGen AI Image was added to the website and README project lists. It uses the Pollinations image API to turn descriptions into images, with prompt enhancement, adjustable settings, and downloads.\n\nConversation history and streaming responses now skip additional ads when a Pollinations redirect link is already present. The same changeset adjusted affiliate matching and text-response ad handling, moved Mistral Small 3 to a different provider route, and removed requester IP addresses from image-generation response data.",
+  "title": "Project listings put popularity in view",
+  "summary": "Project discovery gained star counts and a new community image app, while text conversations got less repetitive.\n\nGitHub star counts were added beside repository links, and project listings were reordered to put more-starred projects first. Counts of 1,000 or more appear in abbreviated form.\n\n@narendradwivedi’s ImageGen AI Image was added to the creative-app listings. Separately, the project CSV was changed to put older submissions before newer ones; that ordering is distinct from the star-sorted listings.\n\nText conversations now skip another ad when their history already contains a Pollinations redirect link, including during streaming. The existing Mistral Small 3 model also changed provider routing, and image-generation response data no longer includes the requester’s IP address.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,12 +27,12 @@
       "date": "2025-04-22"
     }
   ],
-  "generated_at": "2026-10-17T15:38:15.006878+00:00",
+  "generated_at": "2026-10-17T22:30:36.425710+00:00",
   "highlights": [
     {
       "emoji": "🌟",
       "title": "Find popular community projects",
-      "text": "Project listings now show GitHub star counts and put more-starred projects first. [Explore the showcase](https://pollinations.ai).",
+      "text": "Project listings now show GitHub star counts and put more-starred projects first, making it easier to find what others are building. [Explore community apps](https://pollinations.ai).",
       "prs": [
         1739
       ],

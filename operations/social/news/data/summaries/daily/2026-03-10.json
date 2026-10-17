@@ -2,8 +2,8 @@
   "date": "2026-03-10",
   "period_start": "2026-03-10",
   "period_end": "2026-03-10",
-  "title": "shipped 5 PRs",
-  "summary": "wired BYOP and media uploads into the ai dungeon master and product packaging apps. added dirtberry & claude to the model roster. changelogs now load dynamically from the news branch, so you can watch us ship in real time",
+  "title": "Community apps connect accounts and keep generated images",
+  "summary": "Two alpha models arrived, community apps got account-connected media uploads, and What’s New stopped being hardcoded.\n\nProduct Packaging Designer and AI Dungeon Master added Pollinations account authorization so people can use their own Pollen. Both added Pollinations media uploads, as did Virtual Makeup. AI Dungeon Master also gained an Adventure Gallery for uploaded images and an option to skip uploads when saving.\n\nDirtberry adds realistic image generation from text prompts. `claude-airforce` adds Claude Sonnet 4.6 to the text API, with image inputs, tool use, and a 200,000-token context window.\n\nWhat’s New now loads up to five highlights from the news branch instead of a hardcoded list, with clickable links in descriptions. The roadmap lists a planned community Scoring System; the authorization screen also gets a logo contrast fix.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,21 +27,39 @@
       "date": "2026-03-10"
     }
   ],
-  "generated_at": "2026-03-11T06:20:15.692471+00:00",
+  "generated_at": "2026-10-17T22:43:22.668829+00:00",
   "highlights": [
     {
-      "emoji": "🧠",
-      "title": "New Models: Claude & Dirtberry",
-      "text": "Claude Sonnet 4.6 is now available via the `claude-airforce` text endpoint, alongside `dirtberry` for quick realistic image generation. Hit the [Unified API](https://gen.pollinations.ai) to try them out.",
+      "emoji": "🎨",
+      "title": "Dirtberry image generation",
+      "text": "Generate realistic images from text prompts with the alpha `dirtberry` model. [Browse the model](https://enter.pollinations.ai/models?q=dirtberry).",
       "prs": [
         8998
       ],
       "kind": "model"
     },
     {
-      "emoji": "🔑",
-      "title": "Bring Your Own Pollen",
-      "text": "The Product Packaging Designer and AI Dungeon Master community apps now support Pollinations SSO. Log in, spend your own Pollen balance, and bypass third-party media hosts with our native upload service. [View repos](https://github.com/pollinations/pollinations/tree/main/apps)",
+      "emoji": "🤖",
+      "title": "Claude Sonnet 4.6 option",
+      "text": "Use `claude-airforce` for text and image inputs, tool use, and a 200,000-token context window. [Browse the model](https://enter.pollinations.ai/models?q=claude-airforce).",
+      "prs": [
+        8998
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "An Adventure Gallery",
+      "text": "AI Dungeon Master can upload generated character, scene, story, and inventory images when you save a game, then show them in an Adventure Gallery. You can also skip the uploads.",
+      "prs": [
+        9017
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Your Pollen in community apps",
+      "text": "Product Packaging Designer and AI Dungeon Master now let you connect a Pollinations account to use your own Pollen. Product Packaging Designer and Virtual Makeup also added Pollinations media uploads.",
       "prs": [
         8971,
         9017

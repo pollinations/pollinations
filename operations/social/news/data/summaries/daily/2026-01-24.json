@@ -2,8 +2,8 @@
   "date": "2026-01-24",
   "period_start": "2026-01-24",
   "period_end": "2026-01-24",
-  "title": "Apps can check API keys without generating anything",
-  "summary": "Apps gained a way to check API keys, while image editing, Claude fallbacks, and authentication errors got less confusing.\n\nA new GET /api/account/key endpoint lets apps validate a key and inspect its expiry, permissions, remaining Pollen budget, and rate-limit status. Authentication errors are clearer too: invalid or missing keys return distinct guidance, while rate-limited requests return 429 instead of looking like bad keys.\n\nKlein 4B’s editing endpoint now takes prompt and settings in query parameters and up to 10 base64 reference images as a JSON array, matching Klein 9B and the existing TypeScript client.\n\nWhen a Claude fallback uses Vertex AI or Bedrock, remote image URLs are converted to base64 before the request, preventing image inputs from failing on those routes.",
+  "title": "Apps can check API keys without generating",
+  "summary": "A new key-status endpoint gives apps a check that doesn’t generate anything, while image-input fixes clear up two model request paths.\n\nA new `GET /api/account/key` endpoint lets apps check a key’s validity, expiry, permissions, remaining Pollen budget, and rate-limit status without making a generation request. Authentication errors now distinguish missing or invalid keys from rate limiting, which returns HTTP 429 instead of 401.\n\nKlein 4B image editing now accepts the same request format as Klein 9B, matching the existing TypeScript client. Claude fallback configurations that use Vertex AI or Bedrock now convert remote image URLs before sending the request.\n\nThe broken React Hooks Examples link was replaced with a link to the monorepo’s packages directory, with a label that matches what’s there.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,12 +31,12 @@
       "date": "2026-01-24"
     }
   ],
-  "generated_at": "2026-10-17T16:01:03.630671+00:00",
+  "generated_at": "2026-10-17T22:38:38.824653+00:00",
   "highlights": [
     {
       "emoji": "🔗",
       "title": "Check API key status",
-      "text": "Apps can use `GET /api/account/key` to validate a key and inspect its expiry and permissions without making a generation request. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "text": "Apps can use `GET /api/account/key` to check a key’s validity, expiry, permissions, remaining Pollen budget, and rate-limit status without making a generation request. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         7624
       ],

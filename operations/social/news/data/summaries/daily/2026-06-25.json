@@ -2,12 +2,16 @@
   "date": "2026-06-25",
   "period_start": "2026-06-25",
   "period_end": "2026-06-25",
-  "title": "Quests: Earn Pollen for doing things",
-  "summary": "We rolled out an active quest system for earning Pollen credits, polished the API docs, and cured dashboard auth amnesia.\n\nWe replaced the passive tier system with an active Quest ledger. You can now earn and claim Pollen credits for specific actions—like setting up your account, contributing on GitHub, or testing cross-modality models—directly from the new dashboard. We also fixed a minor time-travel bug that was briefly sending quest completion dates back to 1970.\n\nThe Gen API documentation is looking a bit more put together. We stripped out the legacy emoji tags in the navigation drawer in favor of clean SVG icons that match the main UI. We also wired up proper Open Graph metadata and favicons, so docs links actually unfurl with preview images when you share them.\n\nFixed an annoying UX quirk where authenticating via GitHub would drop your active URL hash and make you lose your place in the dashboard. The auth flow now remembers exactly which tab you were looking at before you signed in.",
-  "pr_count": 5,
+  "title": "Quests give Pollen rewards a claim button",
+  "summary": "Quests put Pollen rewards behind an explicit claim, while dashboard navigation and Gen docs got tidier.\n\nA Quests dashboard now organizes rewards into Available, Claimable, and Claimed lanes, with a public catalog visitors can preview without signing in. Quests cover onboarding, model use, app growth, and contributions; a per-user check finds completed quests, and Pollen reaches the wallet when a reward is claimed. Public catalog and authenticated check-and-claim endpoints were added too. A follow-up corrected reward timestamps that could otherwise display as dates near 1970 or far in the future.\n\nDashboard sign-in redirects now preserve the current tab, including after GitHub sign-in. Signing out opens the signed-out News & FAQ tab.\n\nThe API docs gained icons and social-preview metadata, while the docs drawer now uses plain section names with separate icons across API and integration guides. Shared colors and a visible keyboard-focus style tidy up navigation.",
+  "pr_count": 6,
   "prs": [
     {
       "number": 11856,
+      "date": "2026-06-25"
+    },
+    {
+      "number": 11984,
       "date": "2026-06-25"
     },
     {
@@ -27,16 +31,25 @@
       "date": "2026-06-25"
     }
   ],
-  "generated_at": "2026-06-26T07:14:20.118306+00:00",
+  "generated_at": "2026-10-17T22:59:39.250288+00:00",
   "highlights": [
     {
       "emoji": "🎯",
-      "title": "Side Quests Unlocked",
-      "text": "The passive tier system is out. You can now track bounties and claim Pollen credits for things like GitHub contributions or cross-modality model usage directly from the new Quest [dashboard](https://enter.pollinations.ai).",
+      "title": "Quests for Pollen",
+      "text": "Browse quests, check which ones you’ve completed, and claim Pollen into your wallet. The dashboard keeps available, claimable, and claimed rewards in separate lanes.",
       "prs": [
         11856
       ],
       "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Quest catalog and API",
+      "text": "Read the public quest catalog or use session or API-key endpoints to check quests, list rewards, and claim them. The public `/quests/*` surface is available through Gen. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        11856
+      ],
+      "kind": "api"
     }
   ],
   "changelog": []

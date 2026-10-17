@@ -2,9 +2,9 @@
   "date": "2026-03-28",
   "period_start": "2026-03-28",
   "period_end": "2026-03-28",
-  "title": "The Greenhouse gained new ways to build, chat, and make things",
-  "summary": "A community harvest: new workflow, chat, media, learning, and bot projects arrived while the app directory got cleaner and BYOP-powered apps became more reliable.\n\nFlowra brings a visual node-based workflow builder; PolliChatter offers one interface for text, image, and audio; and Pollinations Tools Hub adds browser-based translation and voice tools with no sign-up ritual. The showcase also picked up Copilot ++, Alara AI’s multimodal setup, PollenStudio’s image variations, IdeaPulley’s multi-agent brainstorming, SentIQGPT’s file-aware chat, and PezzAI’s indie tool suite.\n\nThe directory expanded across practical and delightfully specific territory: workflow automation, webpage-to-Markdown conversion, image generators, community feeds, fitness planning, habit tracking, school operations, video-prompt ideas, and Cadavre Exquis-style composite art. Telegram gained Qwex, Samina, and Sera AI News, because apparently bots remain an excellent place to put an image generator.\n\nCatGPT now authenticates users, picks an appropriate image model automatically, preserves model links in URLs, and adds clearer artist credit. Websim moved to gen.pollinations.ai with a model-selecting landing page for Claude, Gemini, GLM, and Kimi. The Elevator Challenge adopted Bring Your Own Pollen login, while attribution fixes make sure third-party apps are recognized reliably across device flows and URL casing.",
-  "pr_count": 35,
+  "title": "Websim gets a starting point",
+  "summary": "Community apps filled the catalog while Websim, the Elevator Challenge, and CatGPT got better ways to choose and use models.\n\nWebsim now opens to a prompt form with a model selector instead of an error. People can choose from five models, with `claude-large` as the default, before generating through the unified chat API.\n\nThe Sirius Cybernetics Elevator Challenge added Pollinations Connect and Disconnect, replacing its embedded key with each player’s key. Players can choose DeepSeek, Kimi, Gemini Fast, or Claude Fast; unrelated game updates also stop repeating floor-change messages.\n\nCatGPT now uses a signed-in player’s key and picks an available image model, falling back to `gptimage` when needed. A follow-up preserves models specified in shared URLs and makes uploaded-image prompts pay attention to visible details. Generated memes retain their model, and the app now credits original artist Tanika Godbole.",
+  "pr_count": 33,
   "prs": [
     {
       "number": 9578,
@@ -20,10 +20,6 @@
     },
     {
       "number": 9658,
-      "date": "2026-03-28"
-    },
-    {
-      "number": 9659,
       "date": "2026-03-28"
     },
     {
@@ -127,10 +123,6 @@
       "date": "2026-03-28"
     },
     {
-      "number": 9696,
-      "date": "2026-03-28"
-    },
-    {
       "number": 9697,
       "date": "2026-03-28"
     },
@@ -147,43 +139,25 @@
       "date": "2026-03-28"
     }
   ],
-  "generated_at": "2026-09-04T11:53:26.251794+00:00",
+  "generated_at": "2026-10-17T22:46:10.291503+00:00",
   "highlights": [
     {
       "emoji": "🎯",
-      "title": "Build workflows with Flowra",
-      "text": "Explore a community-built, node-based AI workflow builder. [Try it](https://flowra-8mj.pages.dev/).",
+      "title": "Choose a Websim model",
+      "text": "Start with a prompt and choose `claude-large`, `gemini`, `gemini-fast`, `glm`, or `kimi` before generating.",
       "prs": [
-        9671
+        9692
       ],
-      "kind": "app"
+      "kind": "product"
     },
     {
-      "emoji": "💡",
-      "title": "Explore Pollinations Tools Hub",
-      "text": "Try three browser-based AI tools built with the Pollinations API. [Try it](https://lokiodinson.netlify.app/ai).",
+      "emoji": "🎮",
+      "title": "Pick your elevator copilot",
+      "text": "Connect your Pollinations account to the Sirius Cybernetics Elevator Challenge and play with DeepSeek, Kimi, Gemini Fast, or Claude Fast.",
       "prs": [
-        9687
+        9693
       ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Chat with PolliChatter",
-      "text": "Try a community-built unified chat interface with a dark theme. [Try it](https://pollichatter.netlify.app/).",
-      "prs": [
-        9681
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🌟",
-      "title": "Check Seed Plan eligibility",
-      "text": "A community tool estimates eligibility from your GitHub open-source activity. [Try it](https://app-j.pl/Pollinations/).",
-      "prs": [
-        9685
-      ],
-      "kind": "app"
+      "kind": "product"
     }
   ],
   "changelog": []

@@ -2,8 +2,8 @@
   "date": "2025-11-03",
   "period_start": "2025-11-03",
   "period_end": "2025-11-03",
-  "title": "Image requests keep their intended shape",
-  "summary": "Image sizes stick, failed requests explain themselves, and requests routed through Enter face fewer backend checks.\n\nGPT Image now passes requested dimensions through instead of always asking Azure to choose a size. When Gemini returns no image, its available explanation is included in the error rather than leaving the failure opaque.\n\nImage and text backends removed tier checks and model-specific caps for requests routed through Enter. GPT Image also accepts requested high quality without a backend tier check. Enter’s own access rules and rate limits were not changed.\n\nEnter now returns the actual error message instead of a generic “Oh snap,” making failed requests easier to understand.",
+  "title": "Requested image dimensions reach GPT Image",
+  "summary": "Image sizing and error messages got more useful, while Enter-routed requests shed redundant backend restrictions.\n\nGPT Image requests now pass the requested width and height to Azure instead of always using automatic sizing. When Gemini returns no image, its response now gives a reason when one is available.\n\nEnter now returns the actual error message instead of a generic “Oh snap,” making failed requests easier to understand.\n\nImage and text backends dropped their own tier checks and model-specific caps for requests routed through Enter. GPT Image now honors requested high quality without a backend tier check. Enter’s own access rules and rate limits did not change.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2025-11-03"
     }
   ],
-  "generated_at": "2026-10-17T15:50:58.886995+00:00",
+  "generated_at": "2026-10-17T22:35:16.873557+00:00",
   "highlights": [],
   "changelog": []
 }

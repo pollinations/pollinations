@@ -3,7 +3,7 @@
   "period_start": "2025-04-01",
   "period_end": "2025-04-01",
   "title": "Gemini moves to 2.5 Pro Experimental",
-  "summary": "Gemini got a new model behind its familiar name, text models gained aliases, and responses shed some unwanted links.\n\nThe `gemini` text model now maps to Gemini 2.5 Pro Experimental through Vertex AI, replacing Gemini 2.0 Flash Lite Preview.\n\nText model lookup now accepts defined aliases as well as primary names. DeepSeek reasoning mappings and persona model configurations were also updated.\n\nThe text server no longer adds NSFW referral links to generated responses. `/openai/models` now returns smaller OpenAI-style records that identify each model’s provider; richer error logging should help diagnose provider failures.",
+  "summary": "Gemini got a new model behind its familiar name, text models gained aliases, and responses lost an unwanted extra.\n\nThe `gemini` text model now maps to Gemini 2.5 Pro Experimental via Vertex AI, replacing Gemini 2.0 Flash Lite Preview.\n\nText model lookup now accepts defined aliases as well as primary names. The included demo maps `gpt4` to `openai-large`; DeepSeek reasoning mappings and persona model configurations were also updated.\n\nThe text server no longer adds NSFW referral links to generated responses. `/openai/models` now returns smaller OpenAI-style records with the provider in `owned_by`, while error logging carries more useful diagnostic context.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,12 +15,12 @@
       "date": "2025-04-01"
     }
   ],
-  "generated_at": "2026-10-17T15:36:56.347805+00:00",
+  "generated_at": "2026-10-17T22:30:01.661021+00:00",
   "highlights": [
     {
       "emoji": "🤖",
       "title": "Gemini 2.5 Pro Experimental",
-      "text": "Requests using `gemini` now map to Gemini 2.5 Pro Experimental instead of Gemini 2.0 Flash Lite Preview. [Browse the model](https://enter.pollinations.ai/models?q=gemini).",
+      "text": "The `gemini` text model now points to Gemini 2.5 Pro Experimental instead of Gemini 2.0 Flash Lite Preview. [Browse the model](https://enter.pollinations.ai/models?q=gemini).",
       "prs": [
         1502
       ],
@@ -29,7 +29,7 @@
     {
       "emoji": "🔗",
       "title": "Aliases for text models",
-      "text": "Text model requests can use defined aliases alongside primary model names. An included demo maps `gpt4` to `openai-large`. [Browse models](https://enter.pollinations.ai/models).",
+      "text": "Text requests can use defined model aliases as well as primary names. An included demo maps `gpt4` to `openai-large`. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         1510
       ],

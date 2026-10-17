@@ -2,8 +2,8 @@
   "date": "2025-10-01",
   "period_start": "2025-10-01",
   "period_end": "2025-10-01",
-  "title": "Clearer Nano Banana refusals",
-  "summary": "Nano Banana refusals got more useful, and Hacktoberfest contributors got clearer rules of the road.\n\nWhen Nano Banana returns no image, the image API now reports Gemini’s explanation when available, or the candidate’s refusal reason instead of a generic Vertex AI error.\n\nNew guidelines explain which October PRs count toward the event badge and what qualifies for the Pollinations Contributor badge. A Contributor Covenant Code of Conduct sets out community standards.",
+  "title": "Clearer answers when Nano Banana declines an image",
+  "summary": "Clearer image-generation refusals and clearer ground rules for October contributors.\n\nWhen Nano Banana returns no image, the image API now reports Gemini’s explanation when available, or its refusal reason instead of a generic error. It should be easier to tell why a request produced nothing.\n\nContribution guidelines now spell out the October 1–31 window, which issues count toward the event badge, and the merged-PR requirement for the Pollinations Contributor badge. A Code of Conduct sets out community standards. These are eligibility guidelines, not badge issuance.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-10-01"
     }
   ],
-  "generated_at": "2026-10-17T15:47:34.055215+00:00",
+  "generated_at": "2026-10-17T22:34:08.867525+00:00",
   "highlights": [],
   "changelog": []
 }

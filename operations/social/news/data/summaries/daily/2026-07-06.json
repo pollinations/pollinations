@@ -2,26 +2,20 @@
   "date": "2026-07-06",
   "period_start": "2026-07-06",
   "period_end": "2026-07-06",
-  "title": "Directory maintenance: Tomdacat for Roblox",
-  "summary": "A quiet day tending the community garden, updating the directory for a project bringing our models to Roblox developers.\n\nCleaned up the community app directory by deduplicating the Tomdacat entry and pointing it to their new home at ai.tomdacat.com. They are doing cool work wrapping our infrastructure into an OpenAI-compatible API specifically for Roblox creators. A good reminder of the weird and wonderful places this API ends up.",
-  "pr_count": 1,
+  "title": "Gemini caching gets a README mention",
+  "summary": "A little garden maintenance: July 5 news reached the README, and Tomdacat AI got one accurate catalog listing.\n\nThe README’s Latest News now includes the July 5 entry about Gemini prompt caching with `cache_control` markers.\n\nThe README added July 5 entries for Sprout, the WebGL studio /motion, and the multi-model LLM Playground. Older entries made way for them.\n\nThe app catalog now has a single, updated Tomdacat AI listing describing its tools for Roblox creators. The duplicate was removed from the App Greenhouse.",
+  "pr_count": 2,
   "prs": [
+    {
+      "number": 12247,
+      "date": "2026-07-06"
+    },
     {
       "number": 12250,
       "date": "2026-07-06"
     }
   ],
-  "generated_at": "2026-07-07T07:08:17.247415+00:00",
-  "highlights": [
-    {
-      "emoji": "🎮",
-      "title": "Roblox Integration",
-      "text": "Tomdacat brings Pollinations to Roblox creators with an OpenAI-compatible API powering 40+ models. [Try it](https://ai.tomdacat.com)",
-      "prs": [
-        12250
-      ],
-      "kind": "app"
-    }
-  ],
+  "generated_at": "2026-10-17T23:00:58.267004+00:00",
+  "highlights": [],
   "changelog": []
 }

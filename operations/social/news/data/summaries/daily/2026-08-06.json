@@ -2,9 +2,9 @@
   "date": "2026-08-06",
   "period_start": "2026-08-06",
   "period_end": "2026-08-06",
-  "title": "The community app directory grew up and got screenshots",
-  "summary": "A community-directory overhaul, a much calmer model catalog, and sturdier routing for long text and image generation.\n\nThe 859-entry community app list moved from a markdown file into a validated, newest-first JSON catalog shared by the website, publishing workflows, metrics, Tinybird, and social tooling. The directory can now carry verified WebP screenshots, and Whisper joined the bots listing: an Android overlay for sending screen and audio context to Pollinations models.\n\nThe dashboard now separates Official and Community models, opens on the supported catalog, retains searches across scopes, and keeps modality filters sensible when switching. Catalog order is deterministic across the API and UI, pricing and generation estimates are easier to scan, community-model controls are more consistent, and a much smaller initial DOM plus progressive row loading makes the official catalog substantially lighter to browse.\n\nPortkey-backed text generation now uses Cloudflare service bindings when available, allowing long non-streaming requests to outlive the public proxy timeout while preserving a public-fetch fallback. The second production FLUX worker is also documented with its GPU qualification, request attribution, queue behavior, and fallback route—because image generation is apparently a small distributed systems project now.",
-  "pr_count": 12,
+  "title": "A faster, easier-to-navigate model catalog",
+  "summary": "The model catalog got faster and easier to browse, app entries gained screenshots, and long text requests got a less fragile route.\n\nEnter now separates Official and Community models, keeps search terms when switching between them, and loads catalog rows as you scroll. The initial Official view drops from about 17,400 DOM elements to about 2,500. Model lists also get consistent ordering and clearer generation estimates, while Community model branding and forms get a small cleanup.\n\nThe public model catalog now shows alternate rates and itemized adjustments for things like search, caching, and realtime input. Image prices distinguish per-generation charges from token rates, including separate input and output image charges where applicable.\n\nThe community app catalog moved to validated JSON, giving the website a direct source for new entries. App entries can now include screenshot URLs, which the public directory endpoint returns as `screenshot_url`; seven screenshots were added across eight rows. Whisper, an Android app that uses Pollinations models for screen and audio requests, joined the showcase.",
+  "pr_count": 10,
   "prs": [
     {
       "number": 13110,
@@ -31,10 +31,6 @@
       "date": "2026-08-06"
     },
     {
-      "number": 13141,
-      "date": "2026-08-06"
-    },
-    {
       "number": 13142,
       "date": "2026-08-06"
     },
@@ -49,36 +45,23 @@
     {
       "number": 13152,
       "date": "2026-08-06"
-    },
-    {
-      "number": 13155,
-      "date": "2026-08-06"
     }
   ],
-  "generated_at": "2026-08-07T06:31:31.656338+00:00",
+  "generated_at": "2026-10-17T23:05:40.477580+00:00",
   "highlights": [
     {
-      "emoji": "🌟",
-      "title": "The app garden got roots",
-      "text": "The community directory now runs on a validated, newest-first catalog, so [browse 859 community apps](https://pollinations.ai/apps) without relying on a heroic Markdown file.",
-      "prs": [
-        13110
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "✨",
-      "title": "Two gardens, one search",
-      "text": "The model catalog now separates Official and Community models, with shared search and cleaner modality filters for finding the thing you actually need. [Browse models](https://gen.pollinations.ai/v1/models)",
+      "emoji": "🤖",
+      "title": "Official and Community models",
+      "text": "Browse Official and Community models separately in Enter. Search stays in place when you switch between them. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         13140
       ],
       "kind": "product"
     },
     {
-      "emoji": "⚡",
-      "title": "The catalog stopped hauling furniture",
-      "text": "The Official model catalog now progressively loads rows while you browse, making search, filtering, and opening the list substantially lighter.",
+      "emoji": "🚀",
+      "title": "A lighter model catalog",
+      "text": "The model catalog loads more rows as you scroll instead of rendering the whole list up front, making the initial view lighter. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         13152
       ],
@@ -86,12 +69,12 @@
     },
     {
       "emoji": "📱",
-      "title": "A whisper joins the hive",
-      "text": "Meet Whisper, an Android overlay that sends screen and audio context to Pollinations models without making you leave the app you are using. [Try it](https://play.google.com/store/apps/details?id=com.leiver.whisper_android)",
+      "title": "Screenshots in app directory data",
+      "text": "App directory entries can include screenshots. The public directory endpoint returns their URLs as `screenshot_url`, with entries that have no screenshot still supported.",
       "prs": [
-        13137
+        13142
       ],
-      "kind": "app"
+      "kind": "api"
     }
   ],
   "changelog": []

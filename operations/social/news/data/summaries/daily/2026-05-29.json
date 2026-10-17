@@ -2,9 +2,9 @@
   "date": "2026-05-29",
   "period_start": "2026-05-29",
   "period_end": "2026-05-29",
-  "title": "A massive model drop: Claude Opus 4.8, Perplexity Sonar, and StepFun",
-  "summary": "A massive model expansion including Claude Opus 4.8 and Perplexity Sonar, a new real-time voice API, and rolling retention for popular generated content.\n\nWe wired up a heavy lineup of new models. Claude Opus 4.8 brings a 1M context window and prompt caching. The Perplexity Sonar suite (`perplexity`, `perplexity-deep`) is now available with dynamic web search context sizing. We also added StepFun's Step 3.5 and 3.7 Flash models for multimodal reasoning and tool use.\n\nAdded a `/v1/realtime` endpoint to the generation API. It provides an OpenAI-compatible WebSocket connection for low-latency voice and multimodal sessions using `gpt-realtime-2`. Just point your standard OpenAI realtime SDK at Pollinations and it works.\n\nGenerated media, images, and text backed by R2 storage previously expired after a hard 30 days. We implemented a rolling TTL: if an object is accessed after 15 days, its 30-day lifecycle resets. If people keep requesting it, we keep hosting it.",
-  "pr_count": 5,
+  "title": "Realtime voice gets a WebSocket API",
+  "summary": "Realtime voice, new StepFun and Perplexity options, and Claude Opus 4.8 made this a model-heavy day; frequently accessed media got a longer lease on life.\n\nAdded an OpenAI-compatible `/v1/realtime` endpoint for `gpt-realtime-2`, supporting text and audio input and output in live sessions. The model also appears in the model catalogue. Input transcription sessions are not supported yet.\n\nAdded StepFun Step 3.7 Flash with vision and tools, plus the text-only Step 3.5 Flash with reasoning and tools. The Perplexity lineup gained Sonar Pro and a broader-context search option, with search-context defaults adjusted across the lineup.\n\nAdded paid-only Claude Opus 4.8 with text and image input, tools, and a 1M-token context window. Its Bedrock route and pricing were updated, while Claude usage now distinguishes cache creation from cache reads; the new usage fields were documented.",
+  "pr_count": 9,
   "prs": [
     {
       "number": 11272,
@@ -12,6 +12,14 @@
     },
     {
       "number": 11331,
+      "date": "2026-05-29"
+    },
+    {
+      "number": 11352,
+      "date": "2026-05-29"
+    },
+    {
+      "number": 11353,
       "date": "2026-05-29"
     },
     {
@@ -23,41 +31,91 @@
       "date": "2026-05-29"
     },
     {
+      "number": 11399,
+      "date": "2026-05-29"
+    },
+    {
       "number": 11400,
+      "date": "2026-05-29"
+    },
+    {
+      "number": 11401,
       "date": "2026-05-29"
     }
   ],
-  "generated_at": "2026-05-30T06:58:00.844570+00:00",
+  "generated_at": "2026-10-17T22:55:20.104000+00:00",
   "highlights": [
     {
-      "emoji": "🎙️",
-      "title": "Realtime Voice API",
-      "text": "The `/v1/realtime` endpoint is live. Point any standard OpenAI realtime SDK at us for low-latency voice and multimodal sessions using `gpt-realtime-2`. [View API Docs](https://gen.pollinations.ai/docs)",
+      "emoji": "🎵",
+      "title": "Realtime voice sessions",
+      "text": "Use `/v1/realtime` over WebSocket for live text and audio sessions with `gpt-realtime-2`. Input transcription sessions are not supported yet. [View the model](https://enter.pollinations.ai/models?q=gpt-realtime-2).",
       "prs": [
         11272
       ],
       "kind": "api"
     },
     {
-      "emoji": "🧠",
-      "title": "Model Roster Expansion",
-      "text": "Added `claude-opus-4.8` (1M context), the Perplexity Sonar suite for web-grounded queries, and StepFun's `step-flash` / `step-3.5-flash` for multimodal reasoning. See [Available Text Models](https://gen.pollinations.ai/v1/models).",
+      "emoji": "🤖",
+      "title": "Step 3.7 Flash",
+      "text": "Try `step-flash` with text and vision input, reasoning, and tool use. [View the model](https://enter.pollinations.ai/models?q=step-flash).",
       "prs": [
-        11358,
-        11395,
-        11400
+        11358
       ],
       "kind": "model"
     },
     {
-      "emoji": "💾",
-      "title": "Persistent Cache",
-      "text": "The hive remembers. Generated media and text no longer hard-expire after 30 days—as long as a file is accessed at least once every 15 days, it stays alive.",
+      "emoji": "🔗",
+      "title": "Sonar Pro search",
+      "text": "Use `perplexity` for Sonar Pro search through the text API. [View the model](https://enter.pollinations.ai/models?q=perplexity).",
       "prs": [
-        11331
+        11358
       ],
-      "kind": "product"
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Broader-context Sonar search",
+      "text": "Use `perplexity-deep` when you want Sonar search with broader search context. [View the model](https://enter.pollinations.ai/models?q=perplexity-deep).",
+      "prs": [
+        11358
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Claude Opus 4.8",
+      "text": "Claude Opus 4.8 supports text and image input, tools, and a 1M-token context window. It requires a paid balance. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        11395,
+        11401
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Step 3.5 Flash",
+      "text": "Use `step-3.5-flash` for text tasks with reasoning, tool use, and a 262,144-token context window. [View the model](https://enter.pollinations.ai/models?q=step-3.5-flash).",
+      "prs": [
+        11400
+      ],
+      "kind": "model"
     }
   ],
-  "changelog": []
+  "changelog": [
+    {
+      "pr_number": 11272,
+      "url": "https://github.com/pollinations/pollinations/pull/11272",
+      "merged_at": "2026-05-29T15:19:46Z",
+      "api_changes": [
+        {
+          "id": "pr-11272:GET /v1/realtime",
+          "endpoint": "GET /v1/realtime",
+          "summary": "Realtime WebSocket",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        }
+      ]
+    }
+  ]
 }

@@ -2,8 +2,8 @@
   "date": "2025-09-08",
   "period_start": "2025-09-08",
   "period_end": "2025-09-08",
-  "title": "GitHub sign-in comes to Enter",
-  "summary": "Enter gained GitHub sign-in, API key management and a balance dashboard, with the Pollen plumbing underneath.\n\nA new Enter auth service adds GitHub sign-in and sessions, giving people a signed-in place to manage their API access.\n\nThe dashboard adds a view of the customer meter balance and controls to create, list and delete API keys.\n\nThe same PR adds customer integration, API proxy routes and generation-event handling, with database migrations, observability and tests for the new flows.",
+  "title": "Enter gets accounts and API keys",
+  "summary": "Enter gained GitHub sign-in, self-service API keys and a dashboard balance view, with generation tracking wired up behind them.\n\nAdded GitHub sign-in and a dashboard where signed-in users can create, list and delete API keys.\n\nThe dashboard also shows a signed-in user's Polar customer meter balance.\n\nThe same PR added API proxy routes and generation-event handling, along with the database, observability and tests behind the new flows.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,12 +11,12 @@
       "date": "2025-09-08"
     }
   ],
-  "generated_at": "2026-10-17T15:46:11.759079+00:00",
+  "generated_at": "2026-10-17T22:33:35.228411+00:00",
   "highlights": [
     {
       "emoji": "🔗",
       "title": "Manage keys in Enter",
-      "text": "Sign in with GitHub to create and manage API keys and view your customer meter balance. [Open API keys](https://enter.pollinations.ai/keys).",
+      "text": "Sign in with GitHub to create, view and delete your API keys from the Enter dashboard. [Open API keys](https://enter.pollinations.ai/keys).",
       "prs": [
         3676
       ],

@@ -2,8 +2,8 @@
   "date": "2025-05-13",
   "period_start": "2025-05-13",
   "period_end": "2025-05-13",
-  "title": "Conversation-aware ads gain images",
-  "summary": "Ads gained contextual images and sharper copy, while the project directory made more room for vibe coding and community creations.\n\nAds triggered by `p-ads` can now include a generated 120×120 image. Ad copy draws on the last three messages and the current content, making it more relevant to the conversation while preserving markdown links.\n\nThe project gallery now groups AI-assisted coding and website-building projects under Vibe Coding ✨, removes duplicate listings from other categories, and includes the category in featured-project selection.\n\nThe project lists now include MoneyPrinterTurbo, which uses Pollinations text generation for short-video scripts, and Imagemate AI, an Android app that generates images from text prompts.",
+  "title": "Ads get more context and an image",
+  "summary": "Context-aware ads gained images, coding projects found their own gallery shelf, and two community tools joined the listings.\n\nAds triggered by `p-ads` can now include a generated 120×120 image. Their one-sentence copy draws on the recent conversation and current content, while preserving markdown links.\n\nTwo gallery updates grouped AI-assisted coding and website-building projects under Vibe Coding ✨, removed duplicate listings, and made the category eligible for featured-project selection.\n\nThe project listings added MoneyPrinterTurbo, which uses Pollinations text generation for short-video scripts, and Imagemate AI, an Android app that generates images from prompts.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,16 +27,36 @@
       "date": "2025-05-13"
     }
   ],
-  "generated_at": "2026-10-17T15:39:38.624984+00:00",
+  "generated_at": "2026-10-17T22:31:10.796755+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Generated images for ads",
-      "text": "Ads triggered by `p-ads` can pair a generated 120×120 image with concise copy shaped by the recent conversation. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Images for contextual ads",
+      "text": "Ads triggered by `p-ads` can pair conversation-aware copy with a generated 120×120 image. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         1966
       ],
       "kind": "api"
+    },
+    {
+      "emoji": "💡",
+      "title": "Explore Vibe Coding projects",
+      "text": "Find AI-assisted coding and website-building projects together in the new Vibe Coding ✨ gallery category. [Explore community projects](https://pollinations.ai).",
+      "prs": [
+        1968,
+        1970
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "📱",
+      "title": "Two more creative tools",
+      "text": "Discover MoneyPrinterTurbo for making short videos from a topic, with Pollinations-generated scripts, and Imagemate AI for generating images from prompts on Android. [Explore community projects](https://pollinations.ai).",
+      "prs": [
+        1973,
+        1974
+      ],
+      "kind": "product"
     }
   ],
   "changelog": []

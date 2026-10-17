@@ -3,7 +3,7 @@
   "period_start": "2026-02-04",
   "period_end": "2026-02-04",
   "title": "API keys are easier to manage",
-  "summary": "API keys became easier to edit, midijourney moved to GPT-5.2, and Enter got a mobile-friendly tidy-up.\n\nExisting keys can now be renamed, enabled or disabled, and updated with new Pollen budgets, expiry dates, account permissions, and model restrictions without being deleted. Text, Image, and Video permissions also have category-level Select all and Deselect all controls.\n\nThe `midijourney` text model now routes to GPT-5.2 while keeping its prompt transform. GPT Image routing was updated, and unused model configurations were removed.\n\nDashboard sections have clearer visual treatments, pricing tables scroll on narrow screens, and the API-key editor draws model choices from the shared registry. A follow-up corrected import casing for Linux builds and added targeted TypeScript checks.",
+  "summary": "API keys got editable controls, midijourney moved to GPT-5.2, and Enter’s dashboard became easier to navigate.\n\nExisting keys can now be renamed, enabled or disabled, and edited for Pollen budget, model access, account permissions and expiry without deleting them. Text, Image and Video permissions also gained category-level Select all and Deselect all controls.\n\nThe midijourney text model now routes to GPT-5.2 while retaining its prompt transform. GPT Image was also moved to a different Azure endpoint.\n\nBalance, usage, pricing and key settings received clearer layouts, including horizontally scrollable pricing tables on narrow screens. Dashboard component cleanup came with a fix for case-sensitive Linux builds and targeted TypeScript checks.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,22 +27,30 @@
       "date": "2026-02-04"
     }
   ],
-  "generated_at": "2026-10-17T16:02:07.269460+00:00",
+  "generated_at": "2026-10-17T22:38:58.634780+00:00",
   "highlights": [
     {
       "emoji": "🔗",
       "title": "Edit keys without replacing them",
-      "text": "Rename, disable, or update an existing API key's budget, expiry, and permissions. Select or deselect whole Text, Image, or Video model categories when restricting access. [Manage API keys](https://enter.pollinations.ai/keys).",
+      "text": "Rename an existing API key, enable or disable it, and change its Pollen budget, model access, account permissions or expiry. [Manage API keys](https://enter.pollinations.ai/keys).",
       "prs": [
-        7537,
+        7537
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Select models by category",
+      "text": "When restricting an API key to specific models, select or deselect all Text, Image or Video models at once without changing the other categories. [Manage API keys](https://enter.pollinations.ai/keys).",
+      "prs": [
         7949
       ],
       "kind": "product"
     },
     {
       "emoji": "🤖",
-      "title": "Midijourney now uses GPT-5.2",
-      "text": "The `midijourney` text model now routes to GPT-5.2 while keeping its prompt transform. [View the model](https://enter.pollinations.ai/models?q=midijourney).",
+      "title": "Midijourney moves to GPT-5.2",
+      "text": "The `midijourney` text model now uses GPT-5.2 while keeping its prompt transform. [Explore midijourney](https://enter.pollinations.ai/models?q=midijourney).",
       "prs": [
         7917
       ],

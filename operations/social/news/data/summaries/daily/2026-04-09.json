@@ -2,12 +2,20 @@
   "date": "2026-04-09",
   "period_start": "2026-04-09",
   "period_end": "2026-04-09",
-  "title": "Heavyweight models drop the paywall",
-  "summary": "We moved top-tier models like GPT-5.4 and FLUX.1 to the free tier, stabilized text generation, and merged a massive wave of 20 new community apps.\n\nWe consolidated some backend providers and used the efficiency gains to move a massive chunk of our premium models to the free tier. GPT-5.4, Grok, Qwen Coder, gptimage-large, and FLUX.1 Kontext are now freely accessible. We also wired up Mistral-Large-3 and Grok-4-20, because why not.\n\nThe showcase directory exploded today. The community shipped native clients for Mac (Warden) and Android (PerChamp), a zero-dependency HTML playground (Dreamframe), and a SillyTavern avatar generator. The rest of the haul includes everything from philosophical text analyzers and emoji-to-image generators to botanical quiz games and screenshot deconstructors. The ecosystem is buzzing.\n\nAzure's gateways were buckling under the concurrent load for Kimi and DeepSeek, resulting in failed requests. We rerouted both models through Fireworks to restore stability. Text generation for these models is back to being reliable.",
-  "pr_count": 23,
+  "title": "New text models and OpenAI upgrades",
+  "summary": "Two new text models, three OpenAI upgrades, a crowded community Greenhouse, and some necessary tending of model routes.\n\nAdded `grok-large` for Grok 4.20 Reasoning and `mistral-large` for Mistral Large 3. The `openai` and `openai-large` services moved to GPT-5.4 Nano and GPT-5.4, while `openai-audio-large` moved to GPT-Audio 1.5. Several existing models no longer require paid access.\n\nCommunity additions range from Chroma’s prompt-made wallpapers and Dreamframe’s single-file media playground to polimage’s image workbench and Splash Tool’s screenshot-to-layers workflow. The catalog also gained image generators, an image-analysis app, a SillyTavern avatar extension, and tools for making short videos.\n\nNew community listings cover native AI chat with Warden, translated chat with Heia, character conversations with Neuro Mate, and help phrasing difficult messages with T-Buddy CHAT. Writing, games, a browser sidebar, and a desktop activity tool also joined the catalog.",
+  "pr_count": 26,
   "prs": [
     {
       "number": 10049,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10060,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10061,
       "date": "2026-04-09"
     },
     {
@@ -67,6 +75,10 @@
       "date": "2026-04-09"
     },
     {
+      "number": 10079,
+      "date": "2026-04-09"
+    },
+    {
       "number": 10080,
       "date": "2026-04-09"
     },
@@ -91,7 +103,7 @@
       "date": "2026-04-09"
     },
     {
-      "number": 10094,
+      "number": 10097,
       "date": "2026-04-09"
     },
     {
@@ -99,80 +111,43 @@
       "date": "2026-04-09"
     }
   ],
-  "generated_at": "2026-04-10T06:34:17.589313+00:00",
+  "generated_at": "2026-10-17T22:47:33.992862+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "Heavyweight models hit the free tier",
-      "text": "GPT-5.4, Grok, and Qwen Coder are now free to use. We also wired up Mistral-Large-3 and Grok-4-20 to the [text endpoint](https://gen.pollinations.ai/v1/models).",
+      "emoji": "🤖",
+      "title": "Grok 4.20 Reasoning added",
+      "text": "Use `grok-large` for Grok 4.20 Reasoning. [Browse the model](https://enter.pollinations.ai/models?q=grok-large).",
       "prs": [
         10049
       ],
       "kind": "model"
     },
     {
-      "emoji": "🎨",
-      "title": "Premium pixels, zero cost",
-      "text": "`gptimage-large` and `FLUX.1 Kontext` have been moved off the paid tier. Send a prompt, get high-quality pixels back.",
+      "emoji": "🤖",
+      "title": "Mistral Large 3 added",
+      "text": "Use `mistral-large` for Mistral Large 3. [Browse the model](https://enter.pollinations.ai/models?q=mistral-large).",
       "prs": [
-        10094
+        10049
       ],
       "kind": "model"
     },
     {
-      "emoji": "🛠️",
-      "title": "Dreamframe",
-      "text": "A zero-dependency, single-HTML-file playground for testing image, video, voice, and music generation. View source, learn, steal. [Try it](https://funniman23.github.io/Dreamframe/)",
+      "emoji": "✨",
+      "title": "OpenAI text models upgraded",
+      "text": "`openai` now uses GPT-5.4 Nano, and `openai-large` uses GPT-5.4. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        10075
+        10049
       ],
-      "kind": "app"
+      "kind": "model"
     },
     {
-      "emoji": "🎭",
-      "title": "SillyTavern avatar generation",
-      "text": "A new extension lets you generate and update character avatars via our image API directly inside your local LLM frontend. [View repo](https://github.com/sunjichaocom/pollinations-avatar-gen-reforged)",
+      "emoji": "🎵",
+      "title": "GPT-Audio 1.5 added",
+      "text": "`openai-audio-large` now uses GPT-Audio 1.5. [Browse the model](https://enter.pollinations.ai/models?q=openai-audio-large).",
       "prs": [
-        10087
+        10049
       ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🍏",
-      "title": "Warden App",
-      "text": "A lightweight, privacy-focused native SwiftUI client for Mac users who want to chat with our models without the Electron overhead. [View repo](https://github.com/SidhuK/WardenApp)",
-      "prs": [
-        10064
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🌟",
-      "title": "Community app explosion",
-      "text": "The greenhouse is overflowing with 15+ new submissions this week, including emoji-to-image generators, botanical quizzes, and social video creators. [View apps](https://hello.pollinations.ai)",
-      "prs": [
-        10064,
-        10066,
-        10067,
-        10068,
-        10069,
-        10070,
-        10071,
-        10072,
-        10073,
-        10074,
-        10075,
-        10076,
-        10077,
-        10078,
-        10080,
-        10081,
-        10082,
-        10084,
-        10086,
-        10087
-      ],
-      "kind": "app"
+      "kind": "model"
     }
   ],
   "changelog": []

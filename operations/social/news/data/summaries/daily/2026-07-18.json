@@ -2,9 +2,9 @@
   "date": "2026-07-18",
   "period_start": "2026-07-18",
   "period_end": "2026-07-18",
-  "title": "More models, more modalities, one endpoint",
-  "summary": "A gallery-heavy shipping day: frontier models landed, community creations became discoverable, and the API got better at reporting what happened.\n\nThe model shelf grew in several directions: GPT-OSS 20B arrived with reasoning and tool calling, OpenRouter added Kimi K3, Grok 4.5, Gemma 4 31B, MiMo, and Qwen3.7 variants, and HappyHorse 1.1 brought another video option. Stable Audio 3 gained a shorter alias and correctly advertised reference-audio support, while gemini-fast now reports audio input too. timemachine-studio can also publish community models through the shared endpoint.\n\nCatGPT, AI Dungeon Master, Product Packaging Designer, Virtual Makeup, SlidePainter, Opposite Prompt Bot, and the CatGPT Discord bot now publish generated images with source tags. Results become discoverable in public galleries with durable URLs and clear provenance; reference uploads stay unlisted, and gallery hiccups do not interrupt generation or bot replies. A fairly sensible arrangement for a machine that makes an alarming number of images.\n\nThe Enter dashboard now keeps its tap-friendly model cards on mobile and landscape touch devices, rather than trying to squeeze a desktop table into a small screen. Expanded cards also show a copyable API model slug. Image referrals now land directly in Enter while attribution is recorded in the background, removing an unnecessary stop along the way.",
-  "pr_count": 28,
+  "title": "More text models, plus a new way to make video",
+  "summary": "New text and video models arrived while community apps gave generated images more places to live.\n\nGPT-OSS 20B joined the text lineup as `gpt-oss`, with reasoning and tool calls. Six more text models were added through OpenRouter: Kimi K3, Grok 4.5, Gemma 4 31B, MiMo V2.5, MiMo V2.5 Pro, and Qwen3.7 Max. `qwen-large` moved to OpenRouter with updated context settings and a reasoning toggle. The paid-only `happyhorse-1.1` model adds 720p video generation from text or a first-frame image, with seven aspect ratios and durations from 3 to 15 seconds.\n\nCatGPT added a public meme gallery, including images from its Discord bot. AI Dungeon Master now saves generated images to its public gallery. Product Packaging Designer, Virtual Makeup, SlidePainter, and the opposite-prompt Discord bot also began publishing generated images to tagged media storage; generation and replies still work if publishing fails.\n\nOpenAI-compatible image generation and edit responses now report input, output, and total token usage, with image and text input broken out. The model catalog now correctly describes Stable Audio 3 reference-audio support and `gemini-fast` audio input; `stable-audio-3` also resolves to the Large model. On mobile, the model list keeps its card layout in landscape and expanded cards show copyable model slugs.",
+  "pr_count": 22,
   "prs": [
     {
       "number": 12418,
@@ -19,23 +19,11 @@
       "date": "2026-07-18"
     },
     {
-      "number": 12533,
-      "date": "2026-07-18"
-    },
-    {
       "number": 12534,
       "date": "2026-07-18"
     },
     {
       "number": 12536,
-      "date": "2026-07-18"
-    },
-    {
-      "number": 12537,
-      "date": "2026-07-18"
-    },
-    {
-      "number": 12538,
       "date": "2026-07-18"
     },
     {
@@ -75,10 +63,6 @@
       "date": "2026-07-18"
     },
     {
-      "number": 12560,
-      "date": "2026-07-18"
-    },
-    {
       "number": 12566,
       "date": "2026-07-18"
     },
@@ -87,19 +71,11 @@
       "date": "2026-07-18"
     },
     {
-      "number": 12568,
-      "date": "2026-07-18"
-    },
-    {
       "number": 12569,
       "date": "2026-07-18"
     },
     {
       "number": 12571,
-      "date": "2026-07-18"
-    },
-    {
-      "number": 12573,
       "date": "2026-07-18"
     },
     {
@@ -119,30 +95,30 @@
       "date": "2026-07-18"
     }
   ],
-  "generated_at": "2026-09-04T11:47:09.414182+00:00",
+  "generated_at": "2026-10-17T23:02:06.801317+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "GPT-OSS joins the lineup",
-      "text": "Try `gpt-oss` for reasoning and tool calling with a 131,072-token context window. [Explore GPT-OSS](https://enter.pollinations.ai/models?q=gpt-oss).",
+      "title": "GPT-OSS 20B joins text",
+      "text": "Use `gpt-oss` for text generation with reasoning and tool calls. [View the model](https://enter.pollinations.ai/models?q=gpt-oss).",
       "prs": [
         12566
       ],
       "kind": "model"
     },
     {
-      "emoji": "🎨",
-      "title": "HappyHorse video generation",
-      "text": "HappyHorse 1.1 adds a paid-only video generation option. [Explore HappyHorse](https://enter.pollinations.ai/models?q=HappyHorse%201.1).",
+      "emoji": "🤖",
+      "title": "Six more text models",
+      "text": "Try Kimi K3, Grok 4.5, Gemma 4 31B, MiMo V2.5, MiMo V2.5 Pro, and Qwen3.7 Max. `qwen-large` also has an updated context configuration and a reasoning toggle. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         12577
       ],
       "kind": "model"
     },
     {
-      "emoji": "🤖",
-      "title": "More text models",
-      "text": "Try Kimi K3, Grok 4.5, Gemma 4 31B, MiMo V2.5/Pro, and Qwen3.7 Max through the unified API. [Explore Kimi K3](https://enter.pollinations.ai/models?q=Kimi%20K3).",
+      "emoji": "🎨",
+      "title": "HappyHorse makes video",
+      "text": "Generate 720p video with `happyhorse-1.1` from text or a first-frame image. Choose from seven aspect ratios and durations of 3–15 seconds; this model is paid-only. [View the model](https://enter.pollinations.ai/models?q=happyhorse-1.1).",
       "prs": [
         12577
       ],
@@ -150,14 +126,110 @@
     },
     {
       "emoji": "✨",
-      "title": "CatGPT community gallery",
-      "text": "CatGPT now collects generated memes in a public gallery, including images its Discord bot delivers. Uploaded reference images remain unlisted.",
+      "title": "CatGPT gets a gallery",
+      "text": "Browse generated memes in CatGPT’s public gallery, including creations from its Discord bot.",
       "prs": [
         12549,
         12558
       ],
       "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Dungeon images get saved",
+      "text": "AI Dungeon Master now saves generated images to its public gallery, so an adventure’s artwork has somewhere to go after generation.",
+      "prs": [
+        12555
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "More creations get media links",
+      "text": "Generated results from Product Packaging Designer, Virtual Makeup, and SlidePainter are now published to Pollinations media storage.",
+      "prs": [
+        12553,
+        12554,
+        12556
+      ],
+      "kind": "product"
     }
   ],
-  "changelog": []
+  "changelog": [
+    {
+      "pr_number": 12418,
+      "url": "https://github.com/pollinations/pollinations/pull/12418",
+      "merged_at": "2026-07-18T12:24:46Z",
+      "api_changes": [
+        {
+          "id": "pr-12418:GET /audio/{text}",
+          "endpoint": "GET /audio/{text}",
+          "summary": "Generate Audio",
+          "action": "CHANGE",
+          "breaking": true,
+          "changes": [
+            {
+              "field": "parameters:query:style",
+              "before": {
+                "type": "string",
+                "required": false
+              },
+              "after": null,
+              "breaking": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pr_number": 12574,
+      "url": "https://github.com/pollinations/pollinations/pull/12574",
+      "merged_at": "2026-07-18T12:31:40Z",
+      "api_changes": [
+        {
+          "id": "pr-12574:GET /audio/{text}",
+          "endpoint": "GET /audio/{text}",
+          "summary": "Generate Audio",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:style",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pr_number": 12575,
+      "url": "https://github.com/pollinations/pollinations/pull/12575",
+      "merged_at": "2026-07-18T12:40:40Z",
+      "api_changes": [
+        {
+          "id": "pr-12575:GET /audio/{text}",
+          "endpoint": "GET /audio/{text}",
+          "summary": "Generate Audio",
+          "action": "CHANGE",
+          "breaking": true,
+          "changes": [
+            {
+              "field": "parameters:query:style",
+              "before": {
+                "type": "string",
+                "required": false
+              },
+              "after": null,
+              "breaking": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

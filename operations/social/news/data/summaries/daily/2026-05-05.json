@@ -2,9 +2,9 @@
   "date": "2026-05-05",
   "period_start": "2026-05-05",
   "period_end": "2026-05-05",
-  "title": "Four new apps sprout in the showcase",
-  "summary": "A healthy crop of new community apps hits the showcase, plus a quick fix for Anthropic client compatibility.\n\nThe community directory gets heavier. We merged in Worl Tools (offline desktop utilities), App Forge, Pyanchor (a live-edit sidecar for Next.js/Vite), and ZenWall AI (minimalist vertical wallpapers). More tools, more pixels, more code.\n\nIf you were using Anthropic-shaped clients like Claude Code with strict OpenAI-compatible models, you might have hit a wall of 400 errors. We now strip the cache_control field from message content parts before forwarding the request. Problem solved.",
-  "pr_count": 5,
+  "title": "Text requests work across more providers",
+  "summary": "A text API compatibility fix landed while the community catalog gained five apps for building and making images.\n\nThe text API now removes Anthropic-style `cache_control` annotations from message content parts before forwarding requests to Mistral, Kimi, Kimi K2.6, and GLM. That prevents those providers from rejecting requests from clients such as Claude Code via claude-code-router; other content is unchanged.\n\nThe app catalog added three community projects: Worl Tools, an offline-first desktop toolkit; App forge; and Pyanchor, a live-edit sidecar for Next.js, Vite, and Astro apps.\n\nPhoto Prompt joined the catalog with multi-model image generation and a prompt library, alongside ZenWall AI for minimalist vertical wallpapers. The README’s news and recent-app sections were also refreshed.",
+  "pr_count": 7,
   "prs": [
     {
       "number": 10687,
@@ -19,7 +19,15 @@
       "date": "2026-05-05"
     },
     {
+      "number": 10690,
+      "date": "2026-05-05"
+    },
+    {
       "number": 10691,
+      "date": "2026-05-05"
+    },
+    {
+      "number": 10693,
       "date": "2026-05-05"
     },
     {
@@ -27,44 +35,7 @@
       "date": "2026-05-05"
     }
   ],
-  "generated_at": "2026-05-06T06:52:11.050581+00:00",
-  "highlights": [
-    {
-      "emoji": "🧰",
-      "title": "Worl Tools",
-      "text": "An offline-first desktop app packing over 20 utilities into one Swiss army knife. [Try it](https://worldtools-mu.vercel.app/)",
-      "prs": [
-        10687
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🔨",
-      "title": "App Forge",
-      "text": "A new community-built hub for discovering and exploring applications in the greenhouse. [Try it](http://torrents.signalcity.tv)",
-      "prs": [
-        10688
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "⚓",
-      "title": "Pyanchor",
-      "text": "Live-edit your Next.js, Vite, and Astro apps straight from the browser with this open-source AI sidecar. [Try it](https://pyanchor.pyan.kr)",
-      "prs": [
-        10689
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "📱",
-      "title": "ZenWall AI",
-      "text": "A dedicated generator for clean, minimalist 9:16 vertical wallpapers. [Try it](https://zenwall.netlify.app/)",
-      "prs": [
-        10691
-      ],
-      "kind": "app"
-    }
-  ],
+  "generated_at": "2026-10-17T22:50:09.728525+00:00",
+  "highlights": [],
   "changelog": []
 }

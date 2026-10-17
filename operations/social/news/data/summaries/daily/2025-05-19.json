@@ -3,7 +3,7 @@
   "period_start": "2025-05-19",
   "period_end": "2025-05-19",
   "title": "GPT Image joins the image model list",
-  "summary": "GPT Image joined the model list, six community projects joined the showcase, and the text cache learned to keep better notes.\n\nAdded `gptimage` with JPEG output and a 1024-pixel maximum side length. Failed requests now return clearer errors instead of silently falling back to another model.\n\nThe project list gained an AI YouTube Shorts generator, Favorite Puzzles, and The Promised Pen, a novel-writing app that can draft and rewrite using story context.\n\nThree more projects joined the showcase: FoldaScan for asking questions about a codebase, Pollin-Coder for building website layouts and content from a description, and PolliBot for image and text generation through Telegram.",
+  "summary": "GPT Image joined the model list, six community projects joined the showcase, and the text API cache worker got a closer look.\n\nAdded `gptimage` with a 1024-pixel maximum side length and JPEG output. Requests now return clearer authorization and generation errors instead of silently falling back to another model.\n\nThe project lists gained a YouTube Shorts generator that pairs Pollinations visuals with scripts and voiceovers, a jigsaw game that draws from the Pollinations feed, and a novel-writing app that works from story context.\n\nThree more projects joined the lists: FoldaScan for codebase questions, Pollin-Coder for generating website content and layouts, and PolliBot for using image and text models through Telegram.",
   "pr_count": 8,
   "prs": [
     {
@@ -39,12 +39,12 @@
       "date": "2025-05-19"
     }
   ],
-  "generated_at": "2026-10-17T16:02:31.336354+00:00",
+  "generated_at": "2026-10-17T22:31:19.867197+00:00",
   "highlights": [
     {
       "emoji": "🎨",
       "title": "GPT Image added",
-      "text": "Generate JPEG images with `gptimage`, with a maximum side length of 1024 pixels. [Browse the model](https://enter.pollinations.ai/models?q=gptimage).",
+      "text": "Generate JPEG images with `gptimage`, up to 1024 pixels on the longest side. [Browse the model](https://enter.pollinations.ai/models?q=gptimage).",
       "prs": [
         2016
       ],

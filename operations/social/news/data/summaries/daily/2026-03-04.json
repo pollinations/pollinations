@@ -2,8 +2,8 @@
   "date": "2026-03-04",
   "period_start": "2026-03-04",
   "period_end": "2026-03-04",
-  "title": "shipped image inputs for flux-2-dev and fixed a routing quirk where suno forgot how to make music",
-  "summary": "plus better app attribution and 6 new community apps hitting the showcase. 11 PRs merged today",
+  "title": "App keys can identify the apps behind them",
+  "summary": "App keys gained clearer attribution, Flux learned image-to-image, and six community projects joined the catalog.\n\nPublishable keys gained App URL settings and a simpler App Key creation flow. Registered apps can show their name and developer GitHub link on the authorization screen while keeping the redirect hostname visible for verification. A new app-lookup endpoint resolves attribution from a verified app key or registered redirect URL.\n\n`flux-2-dev` now accepts an image URL through the `image` parameter for image-to-image generation, alongside its existing text-only flow. The audio endpoint also routes `model=suno` to music generation instead of text-to-speech.\n\nThe catalog added a university question bank with AI explanations, PromptLab Studio, AI Image Gallery, AiApps, Fantasy Story Generator, and the Spix fitness companion. The projects span studying, making things, writing, organizing images, and tracking workouts.",
   "pr_count": 11,
   "prs": [
     {
@@ -51,39 +51,34 @@
       "date": "2026-03-04"
     }
   ],
-  "generated_at": "2026-03-05T06:16:31.436274+00:00",
+  "generated_at": "2026-10-17T22:42:51.945992+00:00",
   "highlights": [
     {
-      "emoji": "🎨",
-      "title": "Flux-2-dev gets eyes",
-      "text": "You can now pass an `?image=<url>` parameter to the `flux-2-dev` model for image-to-image generation via our [Unified API](https://gen.pollinations.ai). Pixels in, different pixels out.",
-      "prs": [
-        8819
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🔑",
-      "title": "Name tags for your apps",
-      "text": "Bring Your Own Pollen (BYOP) authorization screens now display your app name and GitHub handle. Users finally know exactly who they are sharing their pollen with.",
+      "emoji": "🔗",
+      "title": "App keys with identity",
+      "text": "Register an App URL for a publishable key so your app name and developer GitHub link can appear on the authorization screen. The redirect hostname stays visible for verification. [Manage API keys](https://enter.pollinations.ai/keys).",
       "prs": [
         8564
       ],
       "kind": "product"
     },
     {
-      "emoji": "🚀",
-      "title": "Six new apps hit the showcase",
-      "text": "The community shipped a massive batch of tools this week, including [AiApps](https://connor.ct.ws/aiapps/), [PromptLab Studio](https://promptlabstudio.vercel.app/), and a dedicated AI image gallery.",
+      "emoji": "🔗",
+      "title": "Look up registered apps",
+      "text": "Use `GET /api/app-lookup` to resolve registered app attribution from a verified `app_key` or a redirect URL matching an App URL.",
       "prs": [
-        8769,
-        8781,
-        8800,
-        8802,
-        8808,
-        8827
+        8564
       ],
-      "kind": "app"
+      "kind": "api"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Flux 2 Dev image input",
+      "text": "Pass an image URL through the `image` parameter to use `flux-2-dev` for image-to-image generation. Text-only prompts still work. [Explore flux-2-dev](https://enter.pollinations.ai/models?q=flux-2-dev).",
+      "prs": [
+        8819
+      ],
+      "kind": "model"
     }
   ],
   "changelog": []

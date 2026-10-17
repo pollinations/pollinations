@@ -2,9 +2,9 @@
   "date": "2026-07-05",
   "period_start": "2026-06-28",
   "period_end": "2026-07-04",
-  "title": "Community Models Alpha is live",
-  "summary": "We shipped 3D generation, opened the gates for community-hosted models, and wired up OAuth 2.1.\n\nYou can now plug your own models into our infrastructure and charge for them. We shipped the Community Models Alpha, complete with a `/account/my-models` API, CLI tools, and auto-deactivation for unstable endpoints. The first batch of community creators has been allowlisted and is already serving traffic.\n\nPixels are great, but sometimes you need depth. We added a `/3d/{prompt}` endpoint powered by Trellis 2 and Rodin 2.5 for instant GLB generation. On the 2D front, we added Claude Sonnet 5, restored Claude Fable 5, and introduced a half-price Nano Banana 2 Lite model.\n\nWe shipped OAuth 2.1 with PKCE, meaning you can now build apps with secure, delegated API access without passing raw keys around. We also routed Flux to a self-hosted Vast.ai RTX 5090 pool, dropping median generation times to 2.25s, and added a real-time `/v1/models/status` endpoint.\n\nThe 'App listed on Pollinations' quest is now live and claimable. We added CLI commands (`polli quests mine`) to track your earned Pollen, and wired up declarative billing adjustments so Perplexity search fees and Gemini grounding costs are transparently itemized.",
-  "pr_count": 50,
+  "title": "The model catalog grew beyond images and text",
+  "summary": "The API grew a third dimension while community models, app authorization, media requests, and billing became more usable.\n\n3D generation joined the API: Trellis 2 turns images into GLB files, while Rodin 2.5 accepts images or text. Requests can return a result directly or run as asynchronous jobs. The catalog also added paid-only NanoBanana 2 Lite and Claude Sonnet 5; Claude Fable 5 returned with image input, tools, and a 1 million-token context.\n\nEligible owners can register and test OpenAI-compatible endpoints in Enter, then manage them through the dashboard, API, or Polli. Published models appear in listings and support chat, text, and streaming requests. Public IDs now use `{username}/{model-id}`, with older IDs kept as aliases; the Earnings view separates community-model rewards from app-markup earnings.\n\nGPT Image 2 now accepts dimensions within its supported bounds instead of snapping to three presets, allows larger input images, and passes through requested quality settings. NanoBanana reference-image requests no longer acquire an unwanted blank image. The week also brought fixes for GPT Image routing, WAV responses, video-model discovery, and several text-provider request errors. A model-health endpoint exposes raw status data with a selectable lookback window.\n\nApps gained an OAuth authorization-code flow with PKCE, so sign-in need not put an API key in the callback. A read-only API and Polli commands now show completed Quests and rewards. The app-directory sync was also changed to avoid a brief empty listing that could interfere with App Listed quest claims.",
+  "pr_count": 62,
   "prs": [
     {
       "number": 12063,
@@ -71,11 +71,11 @@
       "date": "2026-06-28"
     },
     {
-      "number": 12088,
-      "date": "2026-06-28"
+      "number": 11567,
+      "date": "2026-06-29"
     },
     {
-      "number": 11567,
+      "number": 12097,
       "date": "2026-06-29"
     },
     {
@@ -87,6 +87,14 @@
       "date": "2026-06-29"
     },
     {
+      "number": 12110,
+      "date": "2026-06-29"
+    },
+    {
+      "number": 12111,
+      "date": "2026-06-29"
+    },
+    {
       "number": 12107,
       "date": "2026-06-30"
     },
@@ -95,7 +103,27 @@
       "date": "2026-06-30"
     },
     {
+      "number": 12120,
+      "date": "2026-06-30"
+    },
+    {
+      "number": 12121,
+      "date": "2026-06-30"
+    },
+    {
+      "number": 12123,
+      "date": "2026-06-30"
+    },
+    {
+      "number": 12126,
+      "date": "2026-06-30"
+    },
+    {
       "number": 12127,
+      "date": "2026-06-30"
+    },
+    {
+      "number": 12130,
       "date": "2026-06-30"
     },
     {
@@ -119,6 +147,10 @@
       "date": "2026-07-01"
     },
     {
+      "number": 12139,
+      "date": "2026-07-01"
+    },
+    {
       "number": 12143,
       "date": "2026-07-01"
     },
@@ -139,14 +171,6 @@
       "date": "2026-07-01"
     },
     {
-      "number": 12156,
-      "date": "2026-07-01"
-    },
-    {
-      "number": 12161,
-      "date": "2026-07-01"
-    },
-    {
       "number": 12162,
       "date": "2026-07-01"
     },
@@ -159,6 +183,10 @@
       "date": "2026-07-02"
     },
     {
+      "number": 12129,
+      "date": "2026-07-02"
+    },
+    {
       "number": 12159,
       "date": "2026-07-02"
     },
@@ -168,6 +196,10 @@
     },
     {
       "number": 12171,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12174,
       "date": "2026-07-02"
     },
     {
@@ -187,6 +219,10 @@
       "date": "2026-07-02"
     },
     {
+      "number": 12191,
+      "date": "2026-07-02"
+    },
+    {
       "number": 12192,
       "date": "2026-07-02"
     },
@@ -199,13 +235,25 @@
       "date": "2026-07-03"
     },
     {
+      "number": 12181,
+      "date": "2026-07-03"
+    },
+    {
+      "number": 12200,
+      "date": "2026-07-03"
+    },
+    {
       "number": 12210,
       "date": "2026-07-03"
+    },
+    {
+      "number": 12221,
+      "date": "2026-07-04"
     },
     {
       "number": 12222,
       "date": "2026-07-04"
     }
   ],
-  "generated_at": "2026-07-05T07:04:10.038266+00:00"
+  "generated_at": "2026-10-17T23:28:03.225361+00:00"
 }

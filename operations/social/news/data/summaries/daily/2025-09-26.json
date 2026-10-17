@@ -2,8 +2,8 @@
   "date": "2025-09-26",
   "period_start": "2025-09-26",
   "period_end": "2025-09-26",
-  "title": "More room in the image queue",
-  "summary": "Image queues got more room, image responses got clearer usage details, and the community project list grew.\n\nNanobanana and Seedream queues moved from 45-second to 30-second intervals. Flower users can make up to 3 requests per interval and Nectar users up to 6, instead of the previous cap of 1 for everyone. The `gemini` text model also switched to Vertex AI.\n\nImage responses gained headers for the model used, user tier, and completion image tokens, with tracking preserved through conversion and resizing. Enter added Nanobanana and Seedream to its image model registry, while Flux Kontext and Turbo gained explicit per-image prices. Flux remains priced at zero.\n\nEnter corrected its Pollen balance display and checkout return URL, and added GPT-5 Chat to its text usage registry. Text requests that need a signed-in session now give a more specific message. The text API root also gained a permanent redirect to its documentation.",
+  "title": "Image models become easier to find and inspect",
+  "summary": "Nanobanana and Seedream gained Enter listings, image responses got usage headers, and their queues got a little less queue-shaped.\n\nNanobanana and Seedream were added to Enter’s image model and service registries. Image responses also gained headers for the model used, user tier, and completion-image-token count, including when an image is converted or resized.\n\nThe two image models’ queue interval dropped from 45 to 30 seconds, with higher per-interval caps for Flower and Nectar users. The `gemini` text model switched to Vertex AI, and queue-full errors gained more detailed monitoring. Two PRs covered the same queue and routing changes.\n\nFlux Kontext and Turbo gained explicit per-image prices, while Flux remains priced at zero. Enter’s Pollen balance display now uses its configured meter, checkout has an explicit success URL, and GPT-5 Chat was added to its text usage registry.",
   "pr_count": 10,
   "prs": [
     {
@@ -47,12 +47,30 @@
       "date": "2025-09-26"
     }
   ],
-  "generated_at": "2026-10-17T15:47:38.348833+00:00",
+  "generated_at": "2026-10-17T22:34:05.927199+00:00",
   "highlights": [
     {
-      "emoji": "🎯",
-      "title": "See which image model ran",
-      "text": "Image API responses now include `x-model-used`, `x-user-tier`, and `x-completion-image-tokens` headers, so you can inspect the model and usage behind a generated image. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "emoji": "🎨",
+      "title": "Nanobanana in Enter",
+      "text": "Find `nanobanana` in Enter’s image model listings. [View the model](https://enter.pollinations.ai/models?q=nanobanana).",
+      "prs": [
+        4203
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Seedream in Enter",
+      "text": "Find `seedream` in Enter’s image model listings. [View the model](https://enter.pollinations.ai/models?q=seedream).",
+      "prs": [
+        4203
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Inspect image response usage",
+      "text": "Image responses now include `x-model-used`, `x-user-tier`, and `x-completion-image-tokens` headers, so you can inspect which backend handled a generation and its reported image-token usage. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         4183
       ],

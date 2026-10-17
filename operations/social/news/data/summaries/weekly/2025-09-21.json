@@ -2,8 +2,8 @@
   "date": "2025-09-21",
   "period_start": "2025-09-14",
   "period_end": "2025-09-20",
-  "title": "Creative Projects filled out",
-  "summary": "The community directory grew in several directions at once: more ways to make images and stories, more tools for developers, and more projects beyond English.\n\nTwo image generators joined the directory alongside StoryWeaver AI, which uses Pollinations text and image APIs for shared comic-style stories. Prompt2Image also joined: a VS Code extension that generates project-ready images from the Command Palette.\n\nNew listings include Mixbash’s bring-your-own-key model interface, an OpenAI-compatible proxy for Pollinations text, image, and speech services, and unpkg.ai for generating JavaScript ESM modules on demand. The directory also now distinguishes the official Pollinations MCP server from a community-maintained project.\n\nA Japanese-language chat project and EduGen AI, a Brazilian Portuguese tool that creates slide images for teachers, joined with language tags and translated descriptions.",
+  "title": "Creative tools moved into more workflows",
+  "summary": "This week’s nine community-project updates made more ways to create, teach, and build with Pollinations easier to find.\n\nStoryWeaver AI brought collaborative comic-making to Creative Projects, while Pollinations AI Demo and SHΞNΞRATOR added two more image-generation options. Prompt2Image joined the directory the next day, putting prompt-to-image generation in the VS Code Command Palette.\n\nNew listings covered Mixbash’s bring-your-own-key interface, a community OpenAI-compatible proxy for Pollinations text, image, and speech, and unpkg.ai’s on-demand JavaScript modules. The directory also added the official Pollinations MCP server and clarified that MCPollinations is community-maintained.\n\nA Japanese-language chat project and EduGen AI, a Brazilian Portuguese tool that creates slide images for teachers, joined the directories with language tags and English translations.",
   "pr_count": 9,
   "prs": [
     {
@@ -43,5 +43,5 @@
       "date": "2025-09-18"
     }
   ],
-  "generated_at": "2026-10-17T16:05:54.567648+00:00"
+  "generated_at": "2026-10-17T23:25:21.775702+00:00"
 }

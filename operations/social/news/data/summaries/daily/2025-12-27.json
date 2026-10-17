@@ -2,8 +2,8 @@
   "date": "2025-12-27",
   "period_start": "2025-12-27",
   "period_end": "2025-12-27",
-  "title": "Image edits handle large inputs more predictably",
-  "summary": "Image editing and Gemini thinking requests got more predictable, while publishable-key docs and a community app link got tidied up.\n\nGPT Image editing now downscales inputs whose area exceeds 1536 × 1536 pixels while preserving their aspect ratio, and chooses the closest supported output aspect ratio. Image-generation requests also avoid charges when a successful HTTP response contains text or JSON instead of media.\n\nGemini 2.5, 3 Flash, and 3 Pro thinking settings now use Portkey-compatible parameters. Requests can set `thinking_budget` directly or use a `thinking` object; zero-budget requests are translated according to what each model supports.\n\nThe docs now label publishable keys Alpha, show `?key=YOUR_KEY` in the query-parameter example, and describe the limit as 1 Pollen per hour per IP and key. This updates guidance, not rate-limit enforcement.",
+  "title": "Gemini thinking settings speak the right dialect",
+  "summary": "Gemini thinking requests and GPT Image edits got practical fixes, while publishable-key guidance and a community app link got tidied up.\n\nGemini 2.5, 3 Flash, and 3 Pro thinking settings now use Portkey-compatible request formats. Requests can specify `thinking_budget` directly or use a `thinking` object; a zero budget maps to the setting each model supports, including low reasoning for Gemini 3 Pro, which cannot fully disable thinking.\n\nGPT Image editing now scales down oversized inputs without changing their aspect ratio and selects output sizes by the closest supported aspect ratio. Image-generation requests are no longer charged when a successful HTTP response contains text or JSON instead of image or video content.\n\nDocs now label publishable keys as Alpha, clarify their 1 Pollen per hour per IP+key limit, and use a simpler `?key=YOUR_KEY` example. The Word Master app listing now points to wordwagon.cloud rather than an ngrok tunnel.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,7 +23,7 @@
       "date": "2025-12-27"
     }
   ],
-  "generated_at": "2026-10-17T15:56:57.863083+00:00",
+  "generated_at": "2026-10-17T22:37:24.163598+00:00",
   "highlights": [],
   "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2025-12-21",
   "period_start": "2025-12-14",
   "period_end": "2025-12-20",
-  "title": "Pollen became easier to account for",
-  "summary": "This week made the unified API easier to understand and harder to trip over, from Pollen accounting and model routing to image, video, and concurrent requests.\n\nUsage gained a JSON and CSV API, timestamp pagination, and a dashboard download. Enter now shows recent spend pending against balances and includes it in balance checks. New accounts are assigned the SPORE tier automatically, removing a manual activation step. The result is a clearer answer to two practical questions: what did my requests cost, and what can I use next?\n\n`gemini` and `gemini-search` now route to Gemini 3 Flash Preview, while `gemini-fast` routes to Gemini 2.5 Flash Lite. `gemini-large` supplies Search and URL Context by default unless callers provide their own tools. Reasoning-model temperature handling now accounts for resolved aliases, avoiding unsupported-value errors; chat also gained `repetition_penalty`, and `openai-audio` accepts its listed voices.\n\nZ-Image now respects requested proportions and improves backgrounds and detected faces. Seedance Pro passes through aspect ratios, Seedream 4.5 Pro passes through seeds, and Veo can use a supplied image as its first frame. Gemini chat requests can include a video URL alongside text. Reference-image URLs with their own query parameters work too, while Veo prompt and policy failures return a more useful HTTP 400.\n\nAPI keys can be limited to selected text, image, and video models, with permissions checked after aliases resolve. The dashboard restored full publishable-key copying and made key previews clearer. Text and image playgrounds now distinguish denied requests from rate limits and other errors; image generation can retry when a retry delay is supplied. Hello also runs theme design, copy, and background requests in parallel.",
+  "title": "Gemini became a more capable default",
+  "summary": "A week of making generations more predictable: better model routing, media inputs, account controls, and fewer requests doing the same work twice.\n\n`gemini` and `gemini-search` moved to Gemini 3 Flash Preview, while `gemini-fast` offers Gemini 2.5 Flash Lite. Gemini gained video input in chat completions, and fixes across the week made default tools, cached-token usage, and model routing work more reliably.\n\nZ-Image now carries the requested aspect ratio through generation and upscaling, with face-aware restoration when faces are detected. Seedance Pro passes along video aspect ratios, Seedream 4.5 Pro uses requested seeds, and Veo image-to-video uses the supplied image as its first frame. The image API also handles unencoded reference URLs more gracefully.\n\nUsage records are available as paginated JSON or CSV, with a dashboard download and recent Pollen spend beside the balance. API keys can be limited to selected models, and Enter now shows when keys were last used and when they expire. New accounts are assigned the SPORE subscription automatically.\n\nChat completions gained a `repetition_penalty` control, and `openai-audio` accepts all 13 listed voices. Temperature handling now follows the resolved model, avoiding unsupported-temperature errors even when a request uses an alias.",
   "pr_count": 63,
   "prs": [
     {
@@ -259,5 +259,5 @@
       "date": "2025-12-20"
     }
   ],
-  "generated_at": "2026-10-17T16:06:58.236402+00:00"
+  "generated_at": "2026-10-17T23:26:11.488749+00:00"
 }

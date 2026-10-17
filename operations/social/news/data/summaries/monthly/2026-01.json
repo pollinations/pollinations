@@ -2,8 +2,8 @@
   "date": "2026-01-31",
   "period_start": "2026-01-01",
   "period_end": "2026-01-31",
-  "title": "More ways to generate",
-  "summary": "January broadened what people could generate and build, while making Pollen, account access, and model behavior easier to understand.\n\nPlay added audio generation and video playback. Wan 2.6 brought image-to-video with optional dubbing, Klein added image generation and editing, and the text lineup gained new reasoning models and Kimi K2.5 image input.\n\nTier Pollen moved to daily balances, Enter gained usage graphs and exports, and model listings began distinguishing paid-only models from those using daily grants. Stripe checkout was added for Pollen packs.\n\nThe unified @pollinations/sdk covers generation across Node.js and browsers. Apps gained scoped authorization, account and key-check endpoints, and clearer guidance for letting people use their own Pollen.\n\nA large run of submissions brought creative tools, chat clients, classroom apps, bots, games, and developer integrations into the catalog. The spread was wider than any one category could comfortably hold.",
+  "title": "More ways to make things",
+  "summary": "January broadened what people can generate, made community apps easier to build and find, and gave Pollen accounts clearer controls.\n\nPlay added audio generation and video playback. The model lineup gained Wan 2.6 image-to-video, FLUX.2 Klein image generation and editing, Gemini 2.5 Pro, and Kimi K2.5, alongside new reasoning and coding routes.\n\nDozens of community apps joined the catalog, including 66 listings on January 13. Catalog links and categories were repaired, while a new cross-platform SDK and a Vercel AI SDK provider gave developers more ways to build with Pollinations.\n\nApps gained finer key permissions, budgets, and a way to check key status without generating. Enter added usage graphs and daily exports; Stripe pack checkout, daily tier refills, balance breakdowns, and paid-only model labels made spending rules more explicit.\n\nRandom seeds, image dimensions, model defaults, and API error codes got more predictable. Provider fallbacks, image-worker registration, and API-key handling under load received the less visible work needed to keep those paths usable.",
   "pr_count": 245,
   "prs": [
     {
@@ -987,5 +987,5 @@
       "date": "2026-01-31"
     }
   ],
-  "generated_at": "2026-10-17T16:09:51.512950+00:00"
+  "generated_at": "2026-10-17T23:31:32.709631+00:00"
 }

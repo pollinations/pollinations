@@ -2,8 +2,8 @@
   "date": "2025-03-08",
   "period_start": "2025-03-08",
   "period_end": "2025-03-08",
-  "title": "README news points to ways to support the project",
-  "summary": "A small README update made the project’s support options easier to find.\n\nThe Latest News section now mentions the Tip Us button and the optional Ko-Fi–Discord connection for premium Discord roles. An older MentatBot news item was removed.",
+  "title": "README news gets a refresh",
+  "summary": "A quiet day: the README caught up with the Tip Us button and its optional Discord connection.\n\nThe Latest News section now mentions the Tip Us button and the optional Ko-Fi–Discord connection for premium Discord roles. An older MentatBot item was removed.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-03-08"
     }
   ],
-  "generated_at": "2026-10-17T15:35:00.279421+00:00",
+  "generated_at": "2026-10-17T22:29:01.416829+00:00",
   "highlights": [],
   "changelog": []
 }

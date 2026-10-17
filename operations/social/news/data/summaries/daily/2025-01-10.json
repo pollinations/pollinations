@@ -2,8 +2,8 @@
   "date": "2025-01-10",
   "period_start": "2025-01-10",
   "period_end": "2025-01-10",
-  "title": "More choices for text generation",
-  "summary": "Three text models joined the lineup, a community dashboard made the projects list, and the JSON-mode example got tidier.\n\nAdded Scaleway-backed `qwen-coder`, `mistral`, and `llama` text models, with JSON-mode support. Text responses now retain full completion objects, alongside changes to streaming, caching, and error handling. The text model list also gained `llama` and dropped `llamalight`.\n\nAdded @sugamdeol’s Polli API Dashboard to the homepage’s SDK Libraries list and the README project table. It shows real-time statistics from the text feed.\n\nSimplified the JavaScript text-generation example while keeping `jsonMode` documented in the request-body example as an optional way to request valid JSON.",
+  "title": "Three more text models",
+  "summary": "Three text models joined the API, JSON-mode handling got more attention, and a community dashboard found its way into the project list.\n\nAdded Scaleway-backed generation for `qwen-coder` (Qwen 2.5 Coder 32B), `mistral` (Mistral Nemo) and `llama` (Llama 3.3 70B). `llama` joined the text model list, while `llamalight` was removed.\n\nThe new model integrations support JSON mode. Text generators now return full completion objects, with response handling, streaming and caching updated around them. The JavaScript documentation was also adjusted to describe `jsonMode` as optional.\n\nThe Polli API Dashboard was added to the homepage project listings and README. It shows real-time statistics and analytics from the text feed.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,16 +19,43 @@
       "date": "2025-01-10"
     }
   ],
-  "generated_at": "2026-10-17T15:32:52.033799+00:00",
+  "generated_at": "2026-10-17T22:28:52.510634+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Three more text models",
-      "text": "Generate text with `qwen-coder`, `mistral`, or `llama`, with JSON-mode support. [Browse models](https://enter.pollinations.ai/models).",
+      "title": "Qwen Coder joins text",
+      "text": "Generate text with `qwen-coder`, backed by Qwen 2.5 Coder 32B. [Browse the model](https://enter.pollinations.ai/models?q=qwen-coder).",
       "prs": [
         969
       ],
       "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Mistral Nemo joins text",
+      "text": "Use `mistral` for text generation with Mistral Nemo. [Browse the model](https://enter.pollinations.ai/models?q=mistral).",
+      "prs": [
+        969
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Llama 3.3 joins text",
+      "text": "Use `llama` for text generation with Llama 3.3 70B. [Browse the model](https://enter.pollinations.ai/models?q=llama).",
+      "prs": [
+        969
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "JSON mode for new models",
+      "text": "Request JSON responses from the newly added `qwen-coder`, `mistral` and `llama` integrations. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        969
+      ],
+      "kind": "api"
     }
   ],
   "changelog": []

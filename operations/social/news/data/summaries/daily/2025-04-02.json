@@ -2,8 +2,8 @@
   "date": "2025-04-02",
   "period_start": "2025-04-02",
   "period_end": "2025-04-02",
-  "title": "Mistral model listings now show vision support",
-  "summary": "Mistral vision support is reflected in model metadata, while the docs gained a working request link and supporter references got a tidy-up.\n\nFive Scaleway-backed Mistral configurations now accept image input in their model metadata, so clients can use the models’ existing vision capabilities instead of treating them as text-only.\n\nThe API docs now link to a new GitHub issue with the request template, rather than to the template’s YAML file. Projects can start a referrer-verification request directly from the docs.\n\nLLMPlayground.net was removed from the website supporter list and README, including an architecture diagram that showed it hosting custom FLUX models.",
+  "title": "Mistral configurations recognize image input",
+  "summary": "Mistral’s image-input metadata got corrected, the Special Bee request link got useful, and outdated supporter references got pruned.\n\nFive Scaleway-backed Mistral configurations now advertise vision support instead of text-only input, so clients can use the models’ existing image capabilities.\n\nThe API docs’ Special Bee Request link now opens a new GitHub issue with the request template, rather than the template’s YAML file.\n\nLLMPlayground.net was removed from the website supporter list, README references, and architecture diagram. The diagram no longer identifies it as a custom FLUX model host.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2025-04-02"
     }
   ],
-  "generated_at": "2026-10-17T15:37:00.652916+00:00",
+  "generated_at": "2026-10-17T22:30:03.317847+00:00",
   "highlights": [],
   "changelog": []
 }

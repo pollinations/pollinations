@@ -2,26 +2,24 @@
   "date": "2026-02-20",
   "period_start": "2026-02-20",
   "period_end": "2026-02-20",
-  "title": "added Genexus AI to the dev tools",
-  "summary": "just another sharp object for the drawer. go build something weird with it",
-  "pr_count": 1,
+  "title": "Video model routing adjusted during a provider outage",
+  "summary": "A maintenance day: video model routing changed around a provider outage, GSoC guidance was corrected, and the developer tools catalog got a tidy-up.\n\nImagen 4, Grok Video, and Qwen Character were temporarily removed from the model registries because of a provider outage. Wan 2.6 remains listed, now routing directly through Alibaba DashScope with the `wan2.6-t2v` model ID and marked paid-only.\n\nThe README no longer advertises GSoC 2026 applications. The GSoC page now states that Pollinations is not participating this year and points prospective contributors toward regular open-source contributions.\n\nGENEXUS AI, a community-built backend for apps using Pollinations, was added to the Dev_Tools catalog and README app table. InferencePort AI was removed from the README table.",
+  "pr_count": 3,
   "prs": [
     {
       "number": 7236,
       "date": "2026-02-20"
-    }
-  ],
-  "generated_at": "2026-02-21T06:11:43.579784+00:00",
-  "highlights": [
+    },
     {
-      "emoji": "🛠️",
-      "title": "GENEXUS AI",
-      "text": "Added to the developer tools showcase. Another backend integration for the ecosystem.",
-      "prs": [
-        7236
-      ],
-      "kind": "app"
+      "number": 8437,
+      "date": "2026-02-20"
+    },
+    {
+      "number": 8439,
+      "date": "2026-02-20"
     }
   ],
+  "generated_at": "2026-10-17T22:40:46.412289+00:00",
+  "highlights": [],
   "changelog": []
 }

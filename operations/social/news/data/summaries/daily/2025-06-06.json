@@ -2,8 +2,8 @@
   "date": "2025-06-06",
   "period_start": "2025-06-06",
   "period_end": "2025-06-06",
-  "title": "Updated reasoning and search-enhanced text models",
-  "summary": "DeepSeek R1-0528 and a search-enhanced model joined the text lineup, alongside clearer tier docs and new per-user metrics.\n\n`deepseek-reasoning` now uses DeepSeek R1-0528, with `deepseek-r1-0528` replacing its old alias. The new `elixposearch` model adds search-enhanced text generation. Neither model supports tools. The same PR also simplified streaming ad handling, removing the generic Ko-fi fallback when a forced ad cannot be generated.\n\nThe API docs now group authentication guidance around getting started, referrers, tokens, and tiers, including a warning against putting API tokens in frontend code. Tier descriptions were revised, and the Special Bee request form now links to the tier docs and asks for fewer fields.\n\nAdmin-only endpoints now manage per-user metrics separately from editable preferences. Ad redirects can record clicks without waiting on the metrics request, while authentication and queue-bypass handling were also adjusted.",
+  "title": "Two text model options",
+  "summary": "Two text model updates led the day, alongside clearer tier docs and new user-metrics plumbing.\n\n`deepseek-reasoning` now uses DeepSeek R1-0528, and the new `elixposearch` model adds a search-enhanced text option. Neither supports tools. The same PR also simplified ad handling in streamed responses.\n\nAuthentication docs and tier descriptions were reorganized and revised. The Special Bee request form now links to the tier docs and asks for fewer details.\n\nAdmin-only endpoints can now read and update per-user metrics separately from preferences. The change also adds ad-click tracking and revises which authenticated requests can bypass the queue.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,12 +19,12 @@
       "date": "2025-06-06"
     }
   ],
-  "generated_at": "2026-10-17T15:41:56.385390+00:00",
+  "generated_at": "2026-10-17T22:31:58.909072+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "DeepSeek reasoning updated",
-      "text": "`deepseek-reasoning` now uses DeepSeek R1-0528. Its alias is now `deepseek-r1-0528`. [Browse the model](https://enter.pollinations.ai/models?q=deepseek-reasoning).",
+      "title": "DeepSeek R1-0528 reasoning",
+      "text": "`deepseek-reasoning` now uses DeepSeek R1-0528, with an 8,192-token limit. Its alias is now `deepseek-r1-0528`; this model does not support tools. [Browse the model](https://enter.pollinations.ai/models?q=deepseek-reasoning).",
       "prs": [
         2346
       ],
@@ -32,8 +32,8 @@
     },
     {
       "emoji": "🔗",
-      "title": "Search-enhanced text with ElixpoSearch",
-      "text": "Try `elixposearch` for search-enhanced text generation. [Browse the model](https://enter.pollinations.ai/models?q=elixposearch).",
+      "title": "Search-enhanced ElixpoSearch",
+      "text": "Try `elixposearch` for search-enhanced text generation, with a 4,096-token limit. This model does not support tools. [Browse the model](https://enter.pollinations.ai/models?q=elixposearch).",
       "prs": [
         2346
       ],

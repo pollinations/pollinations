@@ -2,8 +2,8 @@
   "date": "2025-12-11",
   "period_start": "2025-12-11",
   "period_end": "2025-12-11",
-  "title": "A rebuilt home for making and exploring",
-  "summary": "A rebuilt playground led the day, with community listings, news updates, and smaller key and dashboard fixes alongside it.\n\nThe hello.pollinations.ai rebuild added a responsive playground for image and text generation, vision-capable model selection, interactive API examples, community creations, and themed visuals. Prompt-driven theme-generation controls remain disabled in production.\n\nRobatika joined the Creative projects directory as a Pollinations-powered chat app. The highlights file and README also caught up with December 7 news; those edits document earlier model and API changes rather than introducing them.\n\nEnter’s header buttons no longer wrap, and its notices have clearer placement and styling. The Hacktoberfest chat app’s fallback key was changed to a publishable key for browser requests.",
+  "title": "A rebuilt place to play",
+  "summary": "A rebuilt Hello site brings generation and interactive docs together, with smaller updates to community apps, news, and Enter.\n\nThe Hello site gained a responsive React rebuild with image and text generation, a vision-capable model selector, a community creations feed, and interactive API examples. Prompt-driven theme controls were added but are disabled in production.\n\nRobatika joined the creative projects directory, while the Hacktoberfest chat app was updated to use the intended key type for browser requests.\n\nThe highlights file and README now recap December 7 video, model, web-search, and Flux updates. These are news updates, not new changes to those models or APIs.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,12 +31,21 @@
       "date": "2025-12-11"
     }
   ],
-  "generated_at": "2026-10-17T15:54:49.605244+00:00",
+  "generated_at": "2026-10-17T22:36:39.949286+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "A new place to play",
-      "text": "The rebuilt site brings image and text generation, vision-capable model selection, interactive API examples, and community creations together.",
+      "title": "A rebuilt place to play",
+      "text": "The rebuilt Hello site's Play page brings image and text generation together with a vision-capable model selector and a feed of community creations.",
+      "prs": [
+        5552
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Interactive API examples",
+      "text": "The rebuilt Docs page adds interactive image and text API examples, plus model discovery and authentication guidance.",
       "prs": [
         5552
       ],

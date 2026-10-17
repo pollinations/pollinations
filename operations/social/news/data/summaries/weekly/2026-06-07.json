@@ -2,12 +2,24 @@
   "date": "2026-06-07",
   "period_start": "2026-05-31",
   "period_end": "2026-06-06",
-  "title": "The React SDK and UI ecosystem is live",
-  "summary": "We shipped a React SDK, normalized 39 models to at-cost pricing, and welcomed 25 new community apps to the Greenhouse.\n\nWe shipped `@pollinations_ai/sdk/react` and `@pollinations_ai/ui`. You get drop-in auth providers, SSR-safe hooks, and a model catalog helper. We immediately dogfooded it to build a brand new standalone Playground app with multimodal inputs and video frame controls.\n\nWe dropped the 1.5x markup on 39 models. You now pay exactly the provider cost. We also moved Claude and Nova to AWS Bedrock global cross-region profiles to dodge throttling and cut prices by another 10%, and routed Flux through Fireworks for better speed.\n\nThe Greenhouse exploded this week. We merged 25 community apps into the showcase, including an n8n automation node, an iOS app, a Javanese calendar tracker, and an amigurumi crochet pattern generator. People are building weird and wonderful things.\n\nFixed a bug where ElevenLabs WAV streams returned placeholder RIFF headers that crashed ffmpeg. We also repaired Whisper STT response formats, and stripped cache controls from Grok requests so multi-turn conversations stop dropping context.",
-  "pr_count": 50,
+  "title": "React apps got a more complete toolkit",
+  "summary": "The path from picking a model to building with it got clearer: React tools, a multimodal Playground, richer catalog data, and steadier backends.\n\nThe React SDK gained login and account hooks, OAuth defaults for permissions and budgets, and catalog tools that show which models a signed-in key allows. The UI alpha grew from ready-made account components into themed primitives, generation controls, a ModelSelector, and an AppUserMenu. There is now considerably less account plumbing for each app to invent.\n\nA standalone Playground was added for image, video, text, and audio generation. It uses the shared model catalog to provide controls such as reference-image limits, video first and last frames, and audio uploads for transcription. Registry and SDK metadata also gained categories, display titles, pricing, context lengths, and capability details, giving apps fewer reasons to guess what a model accepts.\n\nMiniMax M3 joined the API with text and image input, tools, reasoning, and a 1,048,576-token context window. Flux moved to Fireworks FLUX.1 schnell, with seed passthrough and resizing for explicit dimensions; negative_prompt remains a zimage feature. Gemma changed routes, nova-fast gained cross-region routing to reduce peak-load errors, and FLUX.2 Klein 4B received a replacement backend.\n\nLedger rounding now uses one eight-decimal charged amount across BYOP debits, developer credits, and generation tracking. Developer earnings calculations now gather time buckets and totals in one pass, reading roughly a third as many rows for a 90-day request while preserving totals. A short cache and a zero-earnings fallback also make today's balance response more resilient to analytics rate limits.",
+  "pr_count": 77,
   "prs": [
     {
       "number": 11217,
+      "date": "2026-05-31"
+    },
+    {
+      "number": 11337,
+      "date": "2026-05-31"
+    },
+    {
+      "number": 11427,
+      "date": "2026-05-31"
+    },
+    {
+      "number": 11429,
       "date": "2026-05-31"
     },
     {
@@ -15,7 +27,31 @@
       "date": "2026-06-01"
     },
     {
+      "number": 11380,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11426,
+      "date": "2026-06-01"
+    },
+    {
       "number": 11431,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11439,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11450,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11453,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11455,
       "date": "2026-06-01"
     },
     {
@@ -27,7 +63,27 @@
       "date": "2026-06-01"
     },
     {
+      "number": 11459,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11460,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11470,
+      "date": "2026-06-01"
+    },
+    {
       "number": 11476,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11483,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11495,
       "date": "2026-06-01"
     },
     {
@@ -35,7 +91,15 @@
       "date": "2026-06-01"
     },
     {
+      "number": 11504,
+      "date": "2026-06-01"
+    },
+    {
       "number": 11505,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11507,
       "date": "2026-06-01"
     },
     {
@@ -44,6 +108,10 @@
     },
     {
       "number": 11509,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11510,
       "date": "2026-06-01"
     },
     {
@@ -96,6 +164,10 @@
     },
     {
       "number": 11532,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11534,
       "date": "2026-06-01"
     },
     {
@@ -155,7 +227,7 @@
       "date": "2026-06-02"
     },
     {
-      "number": 11561,
+      "number": 11560,
       "date": "2026-06-02"
     },
     {
@@ -163,8 +235,20 @@
       "date": "2026-06-02"
     },
     {
+      "number": 11566,
+      "date": "2026-06-02"
+    },
+    {
       "number": 11579,
       "date": "2026-06-02"
+    },
+    {
+      "number": 11583,
+      "date": "2026-06-03"
+    },
+    {
+      "number": 11586,
+      "date": "2026-06-03"
     },
     {
       "number": 11587,
@@ -177,6 +261,10 @@
     {
       "number": 11597,
       "date": "2026-06-03"
+    },
+    {
+      "number": 11604,
+      "date": "2026-06-04"
     },
     {
       "number": 11610,
@@ -195,6 +283,14 @@
       "date": "2026-06-05"
     },
     {
+      "number": 11626,
+      "date": "2026-06-05"
+    },
+    {
+      "number": 11628,
+      "date": "2026-06-05"
+    },
+    {
       "number": 11630,
       "date": "2026-06-05"
     },
@@ -205,7 +301,19 @@
     {
       "number": 11635,
       "date": "2026-06-05"
+    },
+    {
+      "number": 11645,
+      "date": "2026-06-05"
+    },
+    {
+      "number": 11648,
+      "date": "2026-06-06"
+    },
+    {
+      "number": 11649,
+      "date": "2026-06-06"
     }
   ],
-  "generated_at": "2026-06-07T07:21:06.408137+00:00"
+  "generated_at": "2026-10-17T23:27:46.607053+00:00"
 }

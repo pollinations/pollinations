@@ -2,12 +2,20 @@
   "date": "2026-04-03",
   "period_start": "2026-04-03",
   "period_end": "2026-04-03",
-  "title": "Massive SDK upgrade: audio, image editing, and smarter defaults",
-  "summary": "A heavy shipping day bringing a massive SDK overhaul, programmatic API key management, new Gemini models, and a freshly scrubbed app directory.\n\nSix PRs overhauled the TypeScript/JavaScript SDK. We added dedicated methods for text-to-speech and music generation, wired up the OpenAI-compatible image editing endpoint, and swapped the default image model from flux to zimage. We also relaxed client-side video duration limits so you can actually use newer models like Wan and Grok Video Pro, and stopped the SDK from pointlessly retrying when you hit a 402 Insufficient Balance.\n\nWe added Google's Gemini 3.1 Flash Lite preview to the text API for fast, 1M-token context window processing. Behind the scenes, Claude models were migrated to AWS Bedrock with explicit versioning, though we kept the original naming scheme so your code won't break. On the bug front, Wan image models now actually respect your requested width and height instead of forcing squares, and the default audio transcription endpoint correctly routes to Whisper Large V3.\n\nYou can now automate your own access. We shipped secure, permission-gated endpoints to programmatically create, list, and revoke API keys directly within your applications.",
-  "pr_count": 19,
+  "title": "The SDK gets hands-on with audio and images",
+  "summary": "The SDK gained image editing and dedicated audio calls, API keys gained management endpoints, and new Gemini and Discord projects joined the mix.\n\nThe SDK gained image editing from source images and moved its audio helper to dedicated speech and music endpoints. Audio now returns binary data instead of the previous chat-based response, so existing callers will need to adjust. Image generation without a specified model now defaults to `zimage`; video duration validation accepts the broader range used by newer models. The README covers the new calls, and insufficient-balance errors no longer trigger retries.\n\nNew endpoints let users create, list and revoke API keys, with optional model restrictions, Pollen budgets and expiry dates. The dashboard and device authorization UI gained a Key Management permission option. Account tier review scripts were also reorganized to incorporate usage and request-error data.\n\nGemini 3.1 Flash Lite Preview was added as `gemini-flash-lite-3.1` for paid requests. Wan 2.7 image requests now pass pixel dimensions rather than resolution labels, so requested aspect ratios are preserved. Audio transcription requests without a model now default to Whisper. Claude models moved to Bedrock while keeping `claude-fast`, `claude`, `claude-large` and `claude-legacy` as their primary names; version-based names remain aliases. Service routing was updated after an instance restart, and the API reference was regenerated.",
+  "pr_count": 23,
   "prs": [
     {
       "number": 9636,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9818,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9861,
       "date": "2026-04-03"
     },
     {
@@ -23,11 +31,19 @@
       "date": "2026-04-03"
     },
     {
+      "number": 9874,
+      "date": "2026-04-03"
+    },
+    {
       "number": 9879,
       "date": "2026-04-03"
     },
     {
       "number": 9880,
+      "date": "2026-04-03"
+    },
+    {
+      "number": 9882,
       "date": "2026-04-03"
     },
     {
@@ -83,51 +99,59 @@
       "date": "2026-04-03"
     }
   ],
-  "generated_at": "2026-04-04T06:20:10.893185+00:00",
+  "generated_at": "2026-10-17T22:46:52.524232+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "Gemini 3.1 Flash Lite",
-      "text": "Google's lightweight multimodal model is now live on the [text API](https://gen.pollinations.ai/v1/models). Fast processing and a 1M token context window for when you have entirely too much to say.",
+      "emoji": "🎵",
+      "title": "Dedicated SDK audio calls",
+      "text": "Generate speech or music through the SDK's audio helpers, with a music duration option and binary audio responses you can save or convert. The changed response type may require updates to existing callers. [Explore the React SDK](https://react.pollinations.ai).",
       "prs": [
-        9885
+        9887
       ],
-      "kind": "model"
+      "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Edit images with the SDK",
+      "text": "Pass a prompt and one or more source image URLs to `imageEdit()` or `editImage()`, then save the result or convert it to base64 or a data URL. [Explore the React SDK](https://react.pollinations.ai).",
+      "prs": [
+        9889
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🔗",
-      "title": "Programmatic API Keys",
-      "text": "You can now create, list, and revoke API keys directly via endpoints. Automate your access management instead of clicking around the [dashboard](https://enter.pollinations.ai).",
+      "title": "Manage keys through an API",
+      "text": "Create, list and revoke API keys through `/api/account/keys`, with optional model restrictions, Pollen budgets and expiry dates. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         9904
       ],
       "kind": "api"
     },
     {
-      "emoji": "🎨",
-      "title": "SDK gets a paintbrush and a voice",
-      "text": "The [NPM SDK](https://www.npmjs.com/package/@pollinations_ai/sdk) now features dedicated methods for text-to-speech, music generation, and OpenAI-compatible image editing.",
+      "emoji": "🤖",
+      "title": "Gemini 3.1 Flash Lite",
+      "text": "Use `gemini-flash-lite-3.1` for text responses from text, image or audio input, with support for tools, search and code execution. It is a paid-only model. [View the model](https://enter.pollinations.ai/models?q=gemini-flash-lite-3.1).",
       "prs": [
-        9887,
-        9889
+        9885
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Multi-model Discord bots",
+      "text": "A new Discord bot family can answer mentions and DMs using Kimi, Gemini Search, Perplexity Fast, DeepSeek or MiniMax, with recent channel history for context.",
+      "prs": [
+        9902
       ],
       "kind": "product"
     },
     {
-      "emoji": "📱",
-      "title": "Genie AI",
-      "text": "A massive new community app featuring live web search, document analysis, and multimodal generation just dropped in the showcase. [Try it](https://cantalopapps.com/genie-ai)",
+      "emoji": "🎨",
+      "title": "Opposite Prompt bot",
+      "text": "This Discord bot uses `claude-large` to turn an image prompt into its semantic opposite, then generates that opposite with `zimage`.",
       "prs": [
-        9908
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Discord bot family",
-      "text": "We added a functional multi-model bot framework to the apps directory, complete with per-channel routing. Deploy your own AI staff. [View repos](https://github.com/pollinations/pollinations)",
-      "prs": [
-        9902
+        9903
       ],
       "kind": "product"
     }

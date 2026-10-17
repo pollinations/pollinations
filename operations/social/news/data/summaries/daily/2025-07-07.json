@@ -2,8 +2,8 @@
   "date": "2025-07-07",
   "period_start": "2025-07-07",
   "period_end": "2025-07-07",
-  "title": "MCP client setup added to the README",
-  "summary": "A README update adds an MCP client configuration example, with a Markdown wrinkle in the existing CLI example.\n\nThe README now shows how to configure an MCP client to launch `@pollinations/model-context-protocol` with `npx`. The existing command-line example remains, but a missing code fence leaves its Markdown malformed.",
+  "title": "MCP client setup gets a README example",
+  "summary": "A small documentation day: MCP client setup gained an example, with a Markdown fence still to fix.\n\nThe README now shows how to configure an MCP client to launch `@pollinations/model-context-protocol` with `npx`. The existing command-line example remains, though a missing code fence leaves its Markdown malformed.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-07-07"
     }
   ],
-  "generated_at": "2026-10-17T15:43:23.091231+00:00",
+  "generated_at": "2026-10-17T22:32:32.042341+00:00",
   "highlights": [],
   "changelog": []
 }

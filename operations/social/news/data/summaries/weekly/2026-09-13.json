@@ -2,12 +2,16 @@
   "date": "2026-09-13",
   "period_start": "2026-09-06",
   "period_end": "2026-09-12",
-  "title": "Agents got a workspace, a shell, and considerably more room to think",
-  "summary": "A week of making Pollinations agents more capable, the API more interoperable, and the infrastructure much harder to surprise.\n\nThe biggest story was the agent stack growing from prompt-and-tools into something closer to a small programmable environment. Managed code agents can now ship from commit-pinned GitHub repositories, while the new computer MCP gives each user a persistent workspace, bash, publishing, and authenticated repository pushes. Tool-heavy runs gained higher CPU, subrequest, step, and tool-call limits; Open WebUI replay compatibility and useful runtime errors arrived alongside them. A sensible amount of machinery now exists between an agent and accidentally losing its homework.\n\nImages, video, audio, and 3D moved further into one shared media system this week. Generated files now land in Media with stable public URLs and immutable caching, MCP hands those URLs through directly, and Chat and Responses can invoke native media models or accept image attachments for edits and video start frames. The result is less downloading, re-uploading, and accidentally generating the same thing twice: the traditional software ritual.\n\nCanonical model naming landed across the public catalog, API keys, permissions, CLI harnesses, and community models, with compatibility aliases retained for existing integrations. Community endpoints now have the unambiguous community/owner/model namespace, chat models publish supported parameter metadata, and new DeepSeek V4.1 Flash, GPT Image 2.5, NVIDIA Asset Harvester, and 1080p MiniMax video options expanded the menu. Model routing, provider metadata, monitoring, and fallbacks were also tightened so the catalog is increasingly a map rather than a collection of historical anecdotes.\n\nA broad reliability pass made streaming usage accounting more tolerant of real provider behavior while keeping billing exact, preserved upstream diagnostics, recovered cached results after coordinator hiccups, and expanded provider fallback routes. Image and durable-generation cache identity fixes, lower memory use for large reference images, Perplexity stream repairs, provider-health monitoring, and caller-selected fallback chains all add up to requests finishing through more than one plausible route.",
-  "pr_count": 96,
+  "title": "Media found more routes home",
+  "summary": "Media, agents, and model discovery became easier to connect, inspect, and build on.\n\nGenerated image, video, audio, and 3D files moved to Media storage, so returned URLs can retrieve a stored result without generating it again. Image generation and editing gained a URL response option. Supported media models also became callable through Chat Completions and Responses, returning public media links; supported image and video routes accept image inputs for edits or start frames.\n\nPublic GitHub repositories with a root-level agent.ts can now become callable code agents. Computer MCP gives agents a private filesystem that persists between runs and a bash tool. Polli gained repository search, code tracing, and page rendering, while agent tool failures became easier to see and handle.\n\nPublic model IDs were standardized as lowercase publisher/model names, and community models gained community/owner/model catalog and permission IDs; existing names remain generation aliases. Model discovery now reports supported Chat parameters, and generation requests can provide an ordered fallback chain of up to four models. New options include GPT Image 2.5 Flare and Sunburst, image-to-3D Gaussian splats, DeepSeek V4.1 Flash, and 1080p MiniMax video.\n\nUsage by model and earnings by source now have breakdown tables, independent date controls, filters, chart-to-table navigation, and CSV exports. Wallet balances remain visible while earnings load. Eligible low-balance text requests can return an unbilled notice, and payment links now lead to the wallet top-up or relevant API-key editor.",
+  "pr_count": 100,
   "prs": [
     {
       "number": 13900,
+      "date": "2026-09-06"
+    },
+    {
+      "number": 14354,
       "date": "2026-09-06"
     },
     {
@@ -31,6 +35,14 @@
       "date": "2026-09-06"
     },
     {
+      "number": 14506,
+      "date": "2026-09-06"
+    },
+    {
+      "number": 14510,
+      "date": "2026-09-06"
+    },
+    {
       "number": 14511,
       "date": "2026-09-06"
     },
@@ -44,6 +56,10 @@
     },
     {
       "number": 14523,
+      "date": "2026-09-06"
+    },
+    {
+      "number": 14524,
       "date": "2026-09-06"
     },
     {
@@ -95,6 +111,10 @@
       "date": "2026-09-08"
     },
     {
+      "number": 14255,
+      "date": "2026-09-08"
+    },
+    {
       "number": 14356,
       "date": "2026-09-08"
     },
@@ -104,10 +124,6 @@
     },
     {
       "number": 14566,
-      "date": "2026-09-08"
-    },
-    {
-      "number": 14577,
       "date": "2026-09-08"
     },
     {
@@ -124,10 +140,6 @@
     },
     {
       "number": 14594,
-      "date": "2026-09-08"
-    },
-    {
-      "number": 14597,
       "date": "2026-09-08"
     },
     {
@@ -207,6 +219,10 @@
       "date": "2026-09-09"
     },
     {
+      "number": 14627,
+      "date": "2026-09-09"
+    },
+    {
       "number": 14631,
       "date": "2026-09-09"
     },
@@ -272,10 +288,6 @@
     },
     {
       "number": 14694,
-      "date": "2026-09-10"
-    },
-    {
-      "number": 14697,
       "date": "2026-09-10"
     },
     {
@@ -351,15 +363,15 @@
       "date": "2026-09-12"
     },
     {
+      "number": 14754,
+      "date": "2026-09-12"
+    },
+    {
       "number": 14755,
       "date": "2026-09-12"
     },
     {
       "number": 14761,
-      "date": "2026-09-12"
-    },
-    {
-      "number": 14764,
       "date": "2026-09-12"
     },
     {
@@ -387,9 +399,13 @@
       "date": "2026-09-12"
     },
     {
+      "number": 14790,
+      "date": "2026-09-12"
+    },
+    {
       "number": 14792,
       "date": "2026-09-12"
     }
   ],
-  "generated_at": "2026-09-13T06:32:41.130676+00:00"
+  "generated_at": "2026-10-17T23:28:40.522979+00:00"
 }

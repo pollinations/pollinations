@@ -2,9 +2,9 @@
   "date": "2026-08-23",
   "period_start": "2026-08-23",
   "period_end": "2026-08-23",
-  "title": "Agents can now find, call, and register other agents",
-  "summary": "A busy day for agents, community models, and the small but important work of making the docs match reality.\n\nMCP-connected agents can discover agent-capable models, delegate work through inherited permissions, and return complete text-tool results through the normal terminal response flow. Developers can also register endpoint agents directly through the account API, with the existing publishing rules doing their quiet bureaucratic duty.\n\nThe Models page now has a local Quest Pollen filter for finding usable models quickly, alongside a tidier local filter layout. A production migration also preserves restricted-key access as MIDIjourney moves to its canonical model ID, because renaming a model should not become an access-control adventure.\n\nCommunity model owners can use their own public endpoints without consuming their own budget, while private fallback handling now attributes owner rewards correctly and keeps caller-facing totals predictable. Realtime usage telemetry matches ledger-rounded debits, and shared checkout logic gained regression coverage so the payment plumbing has fewer places to disagree with itself.",
-  "pr_count": 18,
+  "title": "Agents can call agents",
+  "summary": "Agents learned to delegate, models got easier to filter, and text requests gained more knobs while community-model accounting got tidied up.\n\nAgent runs can delegate to managed and community endpoint agents, with inherited model permissions still applying. MCP can filter model listings to agents, and a new API route lets developers register agents hosted on OpenAI-compatible endpoints.\n\nEnter’s model catalog gained a filter for models usable with Quest Pollen, later relabeled “Hide paid.” The Pollen FAQ now explains spending and earning more clearly, and the CLI README uses the supported commands for claimed and claimable Quests.\n\nThe community catalog added vaia-ai-studio.my.id for collaborative images and StoryForge for illustrated micro-stories. Both are community-built apps.",
+  "pr_count": 16,
   "prs": [
     {
       "number": 13496,
@@ -31,7 +31,7 @@
       "date": "2026-08-23"
     },
     {
-      "number": 13738,
+      "number": 13739,
       "date": "2026-08-23"
     },
     {
@@ -43,19 +43,7 @@
       "date": "2026-08-23"
     },
     {
-      "number": 13751,
-      "date": "2026-08-23"
-    },
-    {
       "number": 13755,
-      "date": "2026-08-23"
-    },
-    {
-      "number": 13757,
-      "date": "2026-08-23"
-    },
-    {
-      "number": 13758,
       "date": "2026-08-23"
     },
     {
@@ -64,6 +52,10 @@
     },
     {
       "number": 13762,
+      "date": "2026-08-23"
+    },
+    {
+      "number": 13766,
       "date": "2026-08-23"
     },
     {
@@ -79,21 +71,21 @@
       "date": "2026-08-23"
     }
   ],
-  "generated_at": "2026-08-24T06:21:07.838787+00:00",
+  "generated_at": "2026-10-17T23:08:42.664375+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Agents can delegate to agents",
-      "text": "MCP-connected agents can discover agent models and call them directly, inheriting permissions and billing through the parent key.",
+      "title": "Agents can delegate",
+      "text": "Agent runs can call managed and community endpoint agents. MCP’s `listModels` can filter for agents, making them easier to find by canonical name. [Explore MCP tools](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         13714
       ],
       "kind": "product"
     },
     {
-      "emoji": "🚀",
-      "title": "Register endpoint agents by API",
-      "text": "Create private endpoint agents directly with `POST /account/my-models/endpoint-agents`; public publishing follows the existing allowlist.",
+      "emoji": "🔗",
+      "title": "Register endpoint agents",
+      "text": "Register an agent hosted on an external OpenAI-compatible endpoint with `POST /account/my-models/endpoint-agents`. Registrations default to private. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         13781
       ],
@@ -101,21 +93,22 @@
     },
     {
       "emoji": "🎯",
-      "title": "Find models usable with Quest Pollen",
-      "text": "The Models page now has a local filter for models your Quest-earned Pollen can actually use. Less botanical guesswork.",
+      "title": "Find Quest Pollen models",
+      "text": "Use “Hide paid” in Enter’s model catalog to filter out paid-only models while browsing or searching. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        13755
+        13755,
+        13779
       ],
       "kind": "product"
     },
     {
-      "emoji": "✨",
-      "title": "Turn an idea into an illustrated micro-story",
-      "text": "StoryForge lets you pick a genre and Pollen budget, then make a short illustrated story with BYOP sign-in. [Try it](https://storyforge.wiradifit-makmur-sejahtera.duckdns.org)",
+      "emoji": "💡",
+      "title": "More simple-text controls",
+      "text": "The `/text` endpoint now accepts controls including `top_p`, token limits, reasoning effort, and voice; chat responses also retain upstream choices and public extensions. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        13759
+        13766
       ],
-      "kind": "app"
+      "kind": "api"
     }
   ],
   "changelog": []

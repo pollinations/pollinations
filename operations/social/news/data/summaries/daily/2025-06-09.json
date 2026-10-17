@@ -2,8 +2,8 @@
   "date": "2025-06-09",
   "period_start": "2025-06-09",
   "period_end": "2025-06-09",
-  "title": "The llama alias points to Scout",
-  "summary": "The `llama` alias moved to Scout, while authenticated requests got more queue room outside the seed tier.\n\nThe `llama` text-model name now selects Llama 4 Scout 17B rather than the separate Llama 3.3 70B model.\n\nThe queue cap for token-authenticated requests rose from 3 to 20 outside the seed tier. Seed remains capped at 3.\n\nNectar-tier requests bypass the queue only when token-authenticated. The same model update removed `openai-roblox` from the available text models.",
+  "title": "The llama name points to Llama 4 Scout",
+  "summary": "The `llama` name switched to Llama 4 Scout, while token-authenticated requests got more queue room outside the seed tier.\n\nThe `llama` text-model name now aliases Llama 4 Scout 17B instead of the separate Llama 3.3 70B model. Requests using that name will target a different model.\n\nThe queue cap for token-authenticated, non-seed tiers rose from 3 to 20. Seed stays at 3, and Nectar bypasses the queue only when requests are token-authenticated.\n\n`openai-roblox` was removed from the available text models.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,12 +11,12 @@
       "date": "2025-06-09"
     }
   ],
-  "generated_at": "2026-10-17T15:42:08.093548+00:00",
+  "generated_at": "2026-10-17T22:32:01.061052+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Llama now selects Scout",
-      "text": "Requests using `llama` now select Llama 4 Scout 17B instead of Llama 3.3 70B. [Browse the model](https://enter.pollinations.ai/models?q=llama).",
+      "title": "Llama points to Scout",
+      "text": "Use `llama` to request Llama 4 Scout 17B; the name previously pointed to a separate Llama 3.3 70B model. [Browse the model](https://enter.pollinations.ai/models?q=llama).",
       "prs": [
         2381
       ],

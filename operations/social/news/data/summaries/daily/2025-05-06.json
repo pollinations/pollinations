@@ -2,8 +2,8 @@
   "date": "2025-05-06",
   "period_start": "2025-05-06",
   "period_end": "2025-05-06",
-  "title": "Bidara brings biomimicry into the conversation",
-  "summary": "A biomimicry guide joined the models, tool support became easier to check, and the community project list got a tidy-up.\n\nAdded `bidara`, a text-and-image persona that guides users through a biomimicry design process, pauses for feedback between steps, and asks for peer-reviewed citations. The same PR also made Google Cloud authentication failures return cleanly instead of throwing.\n\nThe `/models` endpoint now includes a `tools` capability flag, so developers can check which listed models support tool calls. This improves capability reporting; it does not change tool-calling behavior.\n\nDefine, a REST API for generating definitions with controls for length, tone, context, and language, was added to the README and website listings. PrivatePollenAI was removed from both at its owner's request.",
+  "title": "A biomimicry guide joins the models",
+  "summary": "A biomimicry persona arrived, model metadata got clearer, and the community project list got some gardening.\n\nAdded `bidara`, a text-and-image persona that guides users through a biomimicry design process, asks for feedback between steps, and requests peer-reviewed citations.\n\nThe `/models` endpoint can now report tool-call support through a `tools` capability flag. This improves model discovery; it does not change how tool calling works.\n\nDefine, a REST API for generating word and phrase definitions with controls for length, tone, context, and language, joined the project list. PrivatePollenAI was removed at its owner's request.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,12 +23,12 @@
       "date": "2025-05-06"
     }
   ],
-  "generated_at": "2026-10-17T15:39:10.700281+00:00",
+  "generated_at": "2026-10-17T22:30:58.842838+00:00",
   "highlights": [
     {
-      "emoji": "🤖",
-      "title": "Meet Bidara",
-      "text": "Work through a biomimicry design problem with `bidara`, a text-and-image persona that asks for feedback between steps and requests peer-reviewed citations. [Explore the model](https://enter.pollinations.ai/models?q=bidara).",
+      "emoji": "🌟",
+      "title": "Biomimicry with Bidara",
+      "text": "Use `bidara` with text or images to work through a biomimicry design process, with feedback between steps and requests for peer-reviewed citations. [Explore the model](https://enter.pollinations.ai/models?q=bidara).",
       "prs": [
         1911
       ],
@@ -36,8 +36,8 @@
     },
     {
       "emoji": "🔗",
-      "title": "Check model tool support",
-      "text": "The `/models` endpoint now reports a `tools` flag, so you can check tool-call support before choosing a model. [Browse models](https://enter.pollinations.ai/models).",
+      "title": "Find models that support tools",
+      "text": "The `/models` endpoint now includes a `tools` capability flag, so you can check tool-call support when choosing a model. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         1903
       ],

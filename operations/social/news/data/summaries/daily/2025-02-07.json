@@ -2,8 +2,8 @@
   "date": "2025-02-07",
   "period_start": "2025-02-07",
   "period_end": "2025-02-07",
-  "title": "More ways to generate text and images",
-  "summary": "New chat and image options, private text requests, and three community projects made for a varied day in the garden.\n\nHormoz 8B was added for chat with temperature and JSON-mode support. The turbo image model was enabled with prompt enhancement and a 768-pixel maximum side length.\n\nText requests gained a `private=true` option that keeps responses off the public feed, and the model list gained `deepseek-reasoner` while retiring `qwen`. OpenAI-style responses also now have consistent `pllns_` IDs, completion objects, and choice indexes.\n\nElliotEtag added the browser-based coding assistant pollinations.diy to the monorepo. The project listings also gained @brain.diver’s MIDI melody maker PolliSonic Generator and withthatway’s multimodel chatbot urSapere AI.",
+  "title": "More options for chat and images",
+  "summary": "New chat and image options, a way to keep text requests off the public feed, and a browser-based coding assistant joined the garden.\n\nHormoz 8B was added for chat with temperature and JSON-mode support. The turbo image model was enabled with prompt enhancement and a maximum side length of 768 pixels.\n\nText requests can now set `private=true` to keep responses out of the public feed, and the model list adds `deepseek-reasoner`. OpenAI-style responses also get consistent `pllns_` IDs and choice indexes.\n\nElliotEtag added the browser-based pollinations.diy coding assistant to the monorepo, with AI chat, an editor, terminal, preview, and project import. The project lists also gained @brain.diver’s MIDI melody generator PolliSonic and withthatway’s multi-model chatbot urSapere AI.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,12 +31,12 @@
       "date": "2025-02-07"
     }
   ],
-  "generated_at": "2026-10-17T15:33:40.450176+00:00",
+  "generated_at": "2026-10-17T22:28:54.982118+00:00",
   "highlights": [
     {
       "emoji": "🤖",
       "title": "Hormoz 8B joins chat",
-      "text": "Chat with Hormoz 8B, with temperature control and JSON-mode support. [View the model](https://enter.pollinations.ai/models?q=hormoz).",
+      "text": "Chat with Hormoz 8B using temperature controls or JSON mode. [Browse Hormoz 8B](https://enter.pollinations.ai/models?q=hormoz).",
       "prs": [
         1155
       ],
@@ -45,16 +45,16 @@
     {
       "emoji": "🎨",
       "title": "Turbo image generation",
-      "text": "Generate images with `turbo`, including prompt enhancement and a maximum side length of 768 pixels. [View the model](https://enter.pollinations.ai/models?q=turbo).",
+      "text": "Generate images with the turbo model, including prompt enhancement and a maximum side length of 768 pixels. [Browse turbo](https://enter.pollinations.ai/models?q=turbo).",
       "prs": [
         1155
       ],
       "kind": "model"
     },
     {
-      "emoji": "✨",
-      "title": "DeepSeek R1 Full",
-      "text": "Use `deepseek-reasoner` for DeepSeek R1 Full text generation. [View the model](https://enter.pollinations.ai/models?q=deepseek-reasoner).",
+      "emoji": "🤖",
+      "title": "DeepSeek R1 Full added",
+      "text": "The text model list now includes `deepseek-reasoner` (DeepSeek R1 - Full). [Browse the model](https://enter.pollinations.ai/models?q=deepseek-reasoner).",
       "prs": [
         1165
       ],
@@ -68,6 +68,15 @@
         1165
       ],
       "kind": "api"
+    },
+    {
+      "emoji": "💡",
+      "title": "Coding in the browser",
+      "text": "The pollinations.diy coding assistant was added to the monorepo, bringing AI chat alongside a code editor, terminal, project preview, and Git or local-folder import.",
+      "prs": [
+        1171
+      ],
+      "kind": "product"
     }
   ],
   "changelog": []

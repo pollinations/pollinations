@@ -3,7 +3,7 @@
   "period_start": "2025-04-13",
   "period_end": "2025-04-13",
   "title": "Two more ways to make images",
-  "summary": "Three community projects joined the directory, while ad translation learned to read more than the last message.\n\nThe project directory now lists CitizenOneX’s voice-prompted image app for the Frame wearable and @altkriz’s Imagen web interface, which uses the flux and turbo models. Both are community projects, not newly added Pollinations features.\n\nThe SDK and Libraries lists now include @voodoohop’s MCPollinations, which lets AI assistants use Pollinations image, text, and audio APIs. This change adds the listing, not the server.\n\nAffiliate ad translation now checks the full content to identify its language, helping preserve original English wording when translation is unnecessary. The affiliate list also gained DreamGF for companion and chat topics.",
+  "summary": "The project directory gained a wearable image app, an image-generation interface, and an MCP server listing, while ad translation got better at leaving English alone.\n\nThe project directory added CitizenOneX’s Frame wearable app, which turns voice prompts into images users can save or share, and @altkriz’s Imagen web interface for generating with flux and turbo. Both are community projects newly listed, not newly built in these PRs.\n\n@voodoohop’s MCPollinations was added to the SDK and Libraries listings. The existing MCP server lets AI assistants use Pollinations for image, text, and audio generation; this change makes it easier to find.\n\nAffiliate ad translation now checks the full content for its language instead of relying on a short sample or the last message. That helps preserve the original wording of English ads. DreamGF was also added as an AI companion affiliate.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,7 +23,17 @@
       "date": "2025-04-13"
     }
   ],
-  "generated_at": "2026-10-17T15:37:39.595054+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:30:22.070074+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "Find MCPollinations",
+      "text": "MCPollinations is now listed among the community libraries. Its MCP server lets AI assistants generate images, text, and audio through Pollinations. [Explore community projects](https://pollinations.ai).",
+      "prs": [
+        1648
+      ],
+      "kind": "product"
+    }
+  ],
   "changelog": []
 }

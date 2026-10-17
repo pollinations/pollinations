@@ -2,9 +2,9 @@
   "date": "2026-03-01",
   "period_start": "2026-03-01",
   "period_end": "2026-03-01",
-  "title": "ComfyUI nodes, terminal agents, and API bridges",
-  "summary": "A massive day for the community showcase, featuring native ComfyUI nodes, a scammer honeypot, 90s homepage generators, and a crucial text API reliability fix.\n\nDevelopers are wiring us into everything. We now have a native ComfyUI integration with dedicated nodes for all four modalities (image, video, text, audio). Someone also shipped Bloom CLI (an open-source terminal coding agent), a bridge that lets you drop Pollinations into any app expecting an OpenAI API format, and two new AI website builders (wwwsim and Plaiyground).\n\nThe community showcase got wonderfully weird today. Additions include DecoyNet (a dual-LLM honeypot designed to waste scammers' time), GeoCitAIes (generating 90s-style personal homepages via AI personas), and Instaclaw (a simulated social network where autonomous agents generate and share art). We also saw an LLM-powered game master for a game called 'Guided Extreme Emotional Mental States'.\n\nThe ecosystem is expanding with highly specific, single-purpose tools. Today's showcase additions include AnimePollen (anime art), StickerForge (messaging stickers), CINESONICS (imaginary movie soundtracks), and Tiny Tales (4-page kids' stories). We also merged a handful of writing assistants, markdown note-taking apps, and Telegram personality bots.",
-  "pr_count": 21,
+  "title": "More ways to build with Pollinations",
+  "summary": "A community-heavy day brought ComfyUI nodes and a varied crop of apps, alongside a fix for failing text requests.\n\nThe app directory added a community-built ComfyUI integration with BYOP nodes for image, video, text, and audio generation, plus model dropdowns that sync from the API. It also added a terminal coding agent, two web-app builders, and a library bridging Pollinations images to OpenAI-compatible APIs.\n\nSeven community additions span agent-generated art, anime illustrations, retro AI-persona homepages, prompt-based galleries, styled image generation, custom stickers, and cinematic soundtrack concepts.\n\nThe catalog added child-friendly story generation, text simplification, markdown notes enriched with AI, and interactive fiction. New bot and agent listings cover fraud-prevention research, legal analysis, Telegram characters, and personality typing.",
+  "pr_count": 24,
   "prs": [
     {
       "number": 8100,
@@ -79,6 +79,10 @@
       "date": "2026-03-01"
     },
     {
+      "number": 8694,
+      "date": "2026-03-01"
+    },
+    {
       "number": 8702,
       "date": "2026-03-01"
     },
@@ -87,38 +91,28 @@
       "date": "2026-03-01"
     },
     {
+      "number": 8715,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8717,
+      "date": "2026-03-01"
+    },
+    {
       "number": 8720,
       "date": "2026-03-01"
     }
   ],
-  "generated_at": "2026-03-18T21:55:46.428517+00:00",
+  "generated_at": "2026-10-17T22:42:32.036865+00:00",
   "highlights": [
     {
-      "emoji": "🎨",
-      "title": "Pollinations in ComfyUI",
-      "text": "A community integration adds dedicated ComfyUI nodes for image, video, text, and audio generation, with native API key management.",
+      "emoji": "🔗",
+      "title": "Pollinations nodes for ComfyUI",
+      "text": "A community-built ComfyUI integration offers BYOP nodes for image, video, text, and audio generation. Its model dropdowns sync from the Pollinations API.",
       "prs": [
         8720
       ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Bloom CLI joins the showcase",
-      "text": "Try a community-built, open-source terminal coding agent powered by the Pollinations API.",
-      "prs": [
-        8322
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Anime art with AnimePollen",
-      "text": "Generate anime art with a free community-built app now in the showcase.",
-      "prs": [
-        8157
-      ],
-      "kind": "app"
+      "kind": "product"
     }
   ],
   "changelog": []

@@ -2,21 +2,34 @@
   "date": "2026-03-08",
   "period_start": "2026-03-08",
   "period_end": "2026-03-08",
-  "title": "shipped a redesign",
-  "summary": "we now have a proper palette system, new scene backgrounds, and updated colors across the board. turns out having an actual color system is easier than guessing hex codes every time",
-  "pr_count": 1,
+  "title": "A new look for pollinations.ai",
+  "summary": "A pixel-art site redesign, API-key image generation in the playground, and steadier routing for legacy image models.\n\nThe site redesign adds responsive pixel-art scenes, a shared color palette, and updated typography across the home, apps, community, and playground pages. The home page now explains how it works, how to start free, and the available compute tiers.\n\nImage generation in the playground can use a supplied API key. Changing keys now clears stale model-access information, while profile and balance requests use retries.\n\nThe legacy image service adds fixed backends for Sana 0.6B and Z-Image and re-registers them regularly, so image requests have targets that do not depend on GPU heartbeat registration.",
+  "pr_count": 2,
   "prs": [
     {
       "number": 8902,
       "date": "2026-03-08"
+    },
+    {
+      "number": 8941,
+      "date": "2026-03-08"
     }
   ],
-  "generated_at": "2026-03-09T06:21:52.145499+00:00",
+  "generated_at": "2026-10-17T22:43:11.222504+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Fresh coat of pixels",
-      "text": "The [main website](https://hello.pollinations.ai) has a new look. We replaced the old theming engine with a cohesive color palette and dynamic retro pixel art backgrounds. Much cozier.",
+      "title": "A pixel-art pollinations.ai",
+      "text": "Explore a redesigned site with responsive sky and ground scenes, a new color palette, and clearer ways to get started. [Visit pollinations.ai](https://pollinations.ai).",
+      "prs": [
+        8902
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "Your key in the playground",
+      "text": "Use a supplied API key for image generation in the playground. [Open the playground](https://pollinations.ai/play).",
       "prs": [
         8902
       ],

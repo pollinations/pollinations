@@ -2,8 +2,8 @@
   "date": "2026-01-19",
   "period_start": "2026-01-19",
   "period_end": "2026-01-19",
-  "title": "Usage gets a closer look",
-  "summary": "Daily usage graphs and exports arrived alongside smoother app authorization, a simpler Pollen checkout, and tidier public pages.\n\nEnter gained a Usage tab with daily graphs for API requests and Pollen spending. You can switch time ranges, filter by API key and model, inspect per-model details, and distinguish tier usage from paid Pollen. A new daily usage endpoint returns JSON or CSV, and detailed exports can include up to 50,000 records.\n\nBYOD authorization now accepts redirect hostnames up to 253 characters as temporary API key names, rather than rejecting names over 32 characters.\n\nThe checkout change removes the crypto purchase option and routes Pollen pack purchases through Polar. Existing crypto balances are preserved.",
+  "title": "Usage gets a graph and a daily API",
+  "summary": "Usage is easier to inspect and export, app authorization accepts longer hostnames, and checkout and site navigation got some housekeeping.\n\nEnter added a Usage tab with daily API request and Pollen graphs, seven-day, 30-day, and all-history views, plus API key and model filters. A new daily usage endpoint groups activity by date, model, and billing source in JSON or CSV; detailed exports now allow up to 50,000 records.\n\nBYOD app authorization now accepts redirect hostnames up to 253 characters as temporary API key names, rather than rejecting names over 32 characters.\n\nA checkout change temporarily disables crypto Pollen purchases and routes pack purchases through Polar. Existing crypto balances are preserved.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,21 +31,21 @@
       "date": "2026-01-19"
     }
   ],
-  "generated_at": "2026-10-17T16:00:35.607666+00:00",
+  "generated_at": "2026-10-17T22:38:28.875612+00:00",
   "highlights": [
     {
       "emoji": "📱",
-      "title": "Explore your API usage",
-      "text": "See daily requests or Pollen usage in Enter, filter by API key and model, and switch between seven-day, 30-day, and all-history views. Download the details as CSV.",
+      "title": "Explore your usage",
+      "text": "See daily API requests or Pollen usage in Enter, filter by API key and model, and switch between seven days, 30 days, or all history. Hover for per-model details or download a CSV.",
       "prs": [
         7062
       ],
       "kind": "product"
     },
     {
-      "emoji": "💡",
-      "title": "Daily usage by API",
-      "text": "Query `/api/account/usage/daily` for usage grouped by date, model, and billing source, returned as JSON or CSV. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "emoji": "🔗",
+      "title": "Daily usage API",
+      "text": "Get usage grouped by date, model, and billing source as JSON or CSV from `/api/account/usage/daily`. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         7062
       ],

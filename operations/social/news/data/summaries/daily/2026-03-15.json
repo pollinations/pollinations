@@ -2,16 +2,24 @@
   "date": "2026-03-15",
   "period_start": "2026-03-15",
   "period_end": "2026-03-15",
-  "title": "shipped 9 prs",
-  "summary": "mostly plumbing and frontend speed runs (lazy-loading markdown, chunk splitting). fixed some streaming edge cases. also three new apps hit the showcase, including an ai city diorama generator and an mcp server. code is open",
-  "pr_count": 9,
+  "title": "A lighter site, faster return visits",
+  "summary": "A lighter site, corrected image editing and chat streaming, clearer model information, and three more community projects in the catalog.\n\nThe main site now loads Markdown rendering only when needed and shows cached model availability, app listings, and highlights immediately on return visits while refreshing stale data in the background. Enter’s page titles and descriptions now describe the full image, text, video, and audio developer console.\n\nPruna p-image-edit now receives image URLs in the form it accepts; base64 and data URI inputs are uploaded first. Streaming chat completions now reject an upstream JSON response instead of treating it as an SSE stream.\n\nEnter’s model pricing averages now exclude successful zero-price requests, correcting per-Pollen estimates without changing request or reliability counts. The API docs’ capabilities table also aligns names, endpoints, and formats across its renderers.",
+  "pr_count": 11,
   "prs": [
     {
       "number": 8901,
       "date": "2026-03-15"
     },
     {
+      "number": 9014,
+      "date": "2026-03-15"
+    },
+    {
       "number": 9128,
+      "date": "2026-03-15"
+    },
+    {
+      "number": 9140,
       "date": "2026-03-15"
     },
     {
@@ -43,43 +51,16 @@
       "date": "2026-03-15"
     }
   ],
-  "generated_at": "2026-03-16T06:30:44.244975+00:00",
+  "generated_at": "2026-10-17T22:43:55.557306+00:00",
   "highlights": [
     {
-      "emoji": "⚡",
-      "title": "Frontend speed boost",
-      "text": "We added lazy-loading and aggressive caching to the [main site](https://hello.pollinations.ai). Return visits now render near-instantly, because waiting for DOM elements is boring.",
+      "emoji": "🚀",
+      "title": "Faster return visits",
+      "text": "Model availability, app listings, and highlights now render from cached data on return visits while stale entries refresh in the background. The site also loads less code up front.",
       "prs": [
         9150
       ],
       "kind": "product"
-    },
-    {
-      "emoji": "🤖",
-      "title": "PromptPilot MCP Server",
-      "text": "You can now generate images, video, and audio directly inside Claude, Cursor, or any other MCP-compatible agent.",
-      "prs": [
-        9153
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎬",
-      "title": "AI City Diorama Generator",
-      "text": "New in the showcase: a fully automated n8n pipeline that hallucinates cinematic miniature cities and publishes them straight to YouTube Shorts. [Try it](https://www.youtube.com/@WhatIF-KA/shorts)",
-      "prs": [
-        9154
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "📚",
-      "title": "LoreLoom Storybooks",
-      "text": "Also new in the community showcase: an interactive, narrated AI storybook generator for kids. [Try it](https://loreloom.sprinthon.com)",
-      "prs": [
-        9155
-      ],
-      "kind": "app"
     }
   ],
   "changelog": []

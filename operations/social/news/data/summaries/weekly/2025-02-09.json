@@ -2,8 +2,8 @@
   "date": "2025-02-09",
   "period_start": "2025-02-02",
   "period_end": "2025-02-08",
-  "title": "More choices for text and images",
-  "summary": "More models and community-built tools arrived, while the APIs got clearer controls for filtering, privacy, and image inputs.\n\nThe text API added `gemini`, `gemini-thinking`, Hormoz 8B, and `deepseek-reasoner`. The `turbo` image model gained prompt enhancement with a 768-pixel maximum side length. Temperature and JSON-mode options are available for the new Gemini and Hormoz chat options; `qwen` was retired from the model list.\n\nImage prompts gained LlamaGuard classification alongside existing checks, and feed filtering now accounts for additional maturity flags. The `end_generating` event gained nested maturity data and dropped `originalPrompt`. Text requests also gained `private=true` to keep responses off the public feed.\n\nThe project listings gained an underwater text adventure, an iOS chat app, a browser coding environment, a Telegram bot, a MIDI melody maker, and a multimodel chatbot. Pollinations.DIY also joined the monorepo. Apparently one API can lead to quite a few different tabs.\n\nOpenAI-style responses gained consistent IDs, completion objects, and choice indexes. The docs added image and text SSE feed examples and clarified which models accept image inputs: `openai`, `openai-large`, and `claude-hybridspace`, but not Gemini models currently. Website sections also switched from background images to solid colors, with unused assets removed.",
+  "title": "More models through the text API",
+  "summary": "More models and image options arrived alongside clearer feed controls, better docs, and a growing collection of community-built apps.\n\nGemini 2.0 Flash and Flash Thinking joined the text API, followed by Hormoz 8B for chat. The model list also gained DeepSeek R1 Full, and LlamaGuard 7B AWQ became available for safety classification.\n\nThe turbo image model was enabled with prompt enhancement and a 768-pixel maximum side length. Image prompts gained LlamaGuard classification, while feed filtering now accounts for additional maturity flags.\n\nText requests gained `private=true` to keep responses off the public feed. Feed event metadata and OpenAI-style response formatting were refined, SSE examples were added, and the vision docs now distinguish models that accept image inputs from those that do not.\n\nThe showcase and project lists gained the underwater adventure Abyss Ascending, Pal Chat, Pollinations.DIY, Titan-GPT, PolliSonic, and urSapere AI. The pollinations.diy browser coding assistant also joined the monorepo, bringing chat, editing, a terminal, and a preview together.",
   "pr_count": 14,
   "prs": [
     {
@@ -63,5 +63,5 @@
       "date": "2025-02-08"
     }
   ],
-  "generated_at": "2026-10-17T16:03:18.990197+00:00"
+  "generated_at": "2026-10-17T23:23:44.748911+00:00"
 }

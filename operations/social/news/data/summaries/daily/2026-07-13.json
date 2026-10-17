@@ -2,12 +2,20 @@
   "date": "2026-07-13",
   "period_start": "2026-07-13",
   "period_end": "2026-07-13",
-  "title": "A larger creative toolbox lands in the Greenhouse",
-  "summary": "A community harvest: dozens of new apps, fresh ways to earn Pollen, a Berlin night out, and quieter infrastructure underneath it all.\n\nThe app directory gained a substantial batch of creator-facing projects: fashion mockups from fabric references with MURI, real-time AI-generated card games with Crestbound TCG, live voice translation via Talkti, thumbnail planning with Thumbsnare, browser subtitle creation with SubCap, affiliate video tools, UGC ad concepts, and several image and illustration studios. A useful reminder that “image generation” has escaped the prompt box and acquired jobs.\n\nThe Greenhouse now includes story and social-writing tools, AI temperature controls, richer chat and Discord integrations, interactive book-to-game conversion, document-to-Markdown tooling, an interior-design generator, local event discovery, FDNY prep materials, a browser IDE, and study help built around personal notes. Also added: worst AI, which is exactly what it says on the label.\n\nPollinations AI Night in Berlin now has a dedicated /night page with RSVP details, channel attribution for organizers, and correctly sized social artwork for Instagram, LinkedIn, Facebook, and X. The landscape banner typo has also been removed from circulation, where it can no longer cause trouble.",
-  "pr_count": 35,
+  "title": "Two more ways to earn Pollen",
+  "summary": "New Pollen Quests, a Berlin AI Night page and a CatGPT upgrade arrived alongside 27 community apps and less misleading stream timings.\n\nTwo BYOP Quests were added: people can earn 0.25 Pollen for logging in through an app, and app owners can earn 7 Pollen when an external user logs in through their app’s authorization flow. Qualifying activity can be credited when quests are checked.\n\nA page was added for the free AI Night on 16 July in Berlin, with a show-and-tell, a real-or-fake game, a robot DJ and an email RSVP. The team also added social artwork in several formats. Software now has a flyer.\n\nThe Discord comic bot now checks recent channel messages on startup and answers up to five unanswered questions. A new `ask` command generates and posts a comic directly; comic generation also uses a durable selfie reference and `nanobanana-2-lite`.",
+  "pr_count": 38,
   "prs": [
     {
-      "number": 12294,
+      "number": 12312,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12338,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12355,
       "date": "2026-07-13"
     },
     {
@@ -19,7 +27,15 @@
       "date": "2026-07-13"
     },
     {
+      "number": 12371,
+      "date": "2026-07-13"
+    },
+    {
       "number": 12377,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12378,
       "date": "2026-07-13"
     },
     {
@@ -131,10 +147,6 @@
       "date": "2026-07-13"
     },
     {
-      "number": 12423,
-      "date": "2026-07-13"
-    },
-    {
       "number": 12424,
       "date": "2026-07-13"
     },
@@ -147,41 +159,32 @@
       "date": "2026-07-13"
     }
   ],
-  "generated_at": "2026-07-14T06:53:54.115890+00:00",
+  "generated_at": "2026-10-17T23:02:33.344177+00:00",
   "highlights": [
     {
       "emoji": "🎯",
-      "title": "New Pollen quests",
-      "text": "Use an app through BYOP to earn `0.25` Pollen, or keep your app active to earn `7` Pollen. The garden now pays rent.",
+      "title": "Two new Pollen Quests",
+      "text": "Earn 0.25 Pollen for logging in through an app. App owners can earn 7 Pollen when an external user logs in through their app’s authorization flow.",
       "prs": [
         12393
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎵",
-      "title": "Talkti: live voice translation",
-      "text": "Speak across languages in real time with a new community-built voice translation app. [Try it](https://talktiweb.web.app)",
-      "prs": [
-        12406
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Turn books into gamebooks",
-      "text": "Feed in `txt`, `mobi`, `epub`, `docx`, or `fb2` files and turn static reading into AI-driven interactive fiction. [Try it](https://gelfer1979.itch.io/book-to-game)",
-      "prs": [
-        12384
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🌟",
-      "title": "Pollinations AI Night in Berlin",
-      "text": "The hive is meeting at Block1 Berlin on July 16: flyer, location, and RSVP are now at [`/night`](https://pollinations.ai/night).",
+      "emoji": "✨",
+      "title": "Pollinations AI Night",
+      "text": "A page was added for the free AI Night on 16 July in Berlin, with a show-and-tell, a real-or-fake game, a robot DJ and an email RSVP.",
       "prs": [
         12389
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "CatGPT catches up",
+      "text": "The Discord comic bot can answer up to five unanswered recent questions when it starts. Its new `ask` command generates a comic and posts it to the channel.",
+      "prs": [
+        12425
       ],
       "kind": "product"
     }

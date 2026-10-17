@@ -2,8 +2,8 @@
   "date": "2025-03-13",
   "period_start": "2025-03-13",
   "period_end": "2025-03-13",
-  "title": "Safer defaults for text generation",
-  "summary": "Text requests got safer token defaults and shorter queue spacing, while image feeds and model routing received a tune-up.\n\nRequests that omit `max_tokens` now get model-specific defaults for Llamaguard and Llama 3.1 8B Instruct, helping prevent Llamaguard context-window errors. Explicit token limits are unchanged.\n\nText requests from the same IP are now spaced 6 seconds apart instead of 12. Image feed handling also filters private events for non-NSFW listeners and treats `private=true` as `nofeed`.\n\nClaude 3.5 Haiku and Hormoz 8B now use the Portkey gateway. Claude handler errors now return a chat completion marked `donation_request: true`, while the web search tool defaults to 3 results and accepts 1–7.",
+  "title": "Less waiting between text requests",
+  "summary": "Text requests get through the per-IP queue sooner, while model defaults and image feed handling get more precise.\n\nText requests from the same IP are now spaced 6 seconds apart instead of 12. Image feed handling also maps `private=true` to `nofeed` and filters private events from non-NSFW listeners.\n\nRequests without `max_tokens` now use defaults of 4,000 for Llamaguard and 7,168 for Llama 3.1 8B Instruct, helping avoid Llamaguard context-window errors. Claude 3.5 Haiku and Hormoz 8B were also moved onto the shared Portkey route.\n\nClaude 3.5 Haiku handler errors now return a chat completion with a donation request and a `donation_request` flag. The web search tool now defaults to 3 results and advertises a range of 1–7.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,7 +23,26 @@
       "date": "2025-03-13"
     }
   ],
-  "generated_at": "2026-10-17T15:35:19.016493+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:29:17.223113+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Shorter text request spacing",
+      "text": "Text requests from the same IP are now spaced 6 seconds apart instead of 12, reducing the wait between queued requests.",
+      "prs": [
+        1341
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Private image feed handling",
+      "text": "Image requests with `private=true` are now treated as `nofeed` for feed handling, and private events are filtered from non-NSFW listeners.",
+      "prs": [
+        1341
+      ],
+      "kind": "api"
+    }
+  ],
   "changelog": []
 }

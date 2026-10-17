@@ -2,8 +2,8 @@
   "date": "2025-07-12",
   "period_start": "2025-07-12",
   "period_end": "2025-07-12",
-  "title": "Two more games join the showcase",
-  "summary": "Three community projects joined the showcase, while outdated project and tutorial links got a tidy-up.\n\nAIStorium joined the Games list with interactive stories, images, and audio generated through Pollinations. AI Word Search joined with personalized puzzles that can be printed or shared.\n\nPrompt Explorer was added to the Learn projects list. Its Android app combines AI art and prompt exploration with Pollinations image generation, history, and favorites.\n\nThe Open Web UI tutorial now points to the intended guide. The project showcase also dropped outdated listings, corrected the Anime Character Generator link, and updated its project tables.",
+  "title": "Two more games in the showcase",
+  "summary": "Three community apps joined the project lists, while outdated listings and a tutorial link got some attention.\n\nAIStorium joined the Games list with interactive stories, images, and audio generated through Pollinations. AI Word Search joined with personalized word puzzles that can be printed or shared.\n\nPrompt Explorer joined the Learn list, combining AI-art prompt discovery with Pollinations image generation. The Open Web UI tutorial link now points to the current guide.\n\nOutdated listings were removed, Anime Character Generator now points to its working app page, and the README and project tables were brought into line.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,7 +27,7 @@
       "date": "2025-07-12"
     }
   ],
-  "generated_at": "2026-10-17T15:43:51.586891+00:00",
+  "generated_at": "2026-10-17T22:32:43.166952+00:00",
   "highlights": [],
   "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2025-06-15",
   "period_start": "2025-06-15",
   "period_end": "2025-06-15",
-  "title": "Text requests get compatibility tweaks and performance tracking",
-  "summary": "A text API tune-up tightened model request compatibility and added content-free performance tracking.\n\nRequests to `gpt-4o-mini-search-preview` now use its supported parameters, and Azure Grok requests handle seed values differently. Optional tracking records timing, token usage and outcomes without sending message content; tracking failures do not interrupt generation.",
+  "title": "Text-generation performance gets measurable",
+  "summary": "Text-generation calls gained content-free performance tracking, alongside tighter model request handling and username propagation.\n\nOptional tracking now records model, provider, timing, token usage and outcome without sending message content. Tracking failures are handled separately from generation.\n\nSearch-preview requests are limited to supported parameters, Azure Grok requests with a seed now send it as null, and telemetry pricing lookups require an exact model-name match.\n\nToken validation now returns a username that is carried through authentication, with the user ID as a fallback.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-06-15"
     }
   ],
-  "generated_at": "2026-10-17T15:42:30.849818+00:00",
+  "generated_at": "2026-10-17T22:32:08.671361+00:00",
   "highlights": [],
   "changelog": []
 }

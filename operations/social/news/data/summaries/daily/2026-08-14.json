@@ -2,12 +2,16 @@
   "date": "2026-08-14",
   "period_start": "2026-08-14",
   "period_end": "2026-08-14",
-  "title": "The model shelf got considerably larger",
-  "summary": "A loud day for the API: a broader model catalog, fuller audio and realtime support, sturdier shared generation, and a better-tended community garden.\n\nNew options landed across text, vision, image, and video: Muse Glimmer 30B, Qwen3.8 2.4T A95B, Grok Imagine Image 2.0, Seedance 2.0 Mini and Fast, and MiniMax H3. Gemini moved to 3.7 Flash, Muse Spark to 1.2, Grok to 4.6, and DeepSeek Pro to its 0813 checkpoint, with compatibility aliases kept in place so existing integrations do not get to discover model renames the hard way.\n\nScribe realtime transcription is now available through the OpenAI Realtime protocol, while Azure realtime sessions got sturdier connection setup, shutdown handling, and settlement behavior. ElevenLabs dialogue now works through the standard speech API, every speech model is available through the short /audio/{text} route, Qwen TTS accepts the documented instructions field, and Azure GPT-5 callers can receive reasoning summaries when they request reasoning effort.\n\nGeneration caching was consolidated across media and text, including OpenAI-compatible image generation. Identical in-flight requests can again coordinate around one completed result across text, images, video, audio, embeddings, and 3D; the first implementation briefly found an unpleasant Durable Object cleanup edge case, then returned with targeted cleanup instead of deleting unrelated state. Software remains a garden, except some of the plants are distributed locks.",
-  "pr_count": 37,
+  "title": "A crowded day in the model catalog",
+  "summary": "New text, image, video, and realtime audio options arrived alongside sharper model discovery and a sturdier path for generation retries.\n\nMuse Glimmer 30B and Qwen3.8 2.4T A95B joined the text lineup. Gemini moved to 3.7 Flash, Muse Spark to 1.2, Grok to 4.6, and DeepSeek Pro to its 0813 checkpoint. A community contribution also made GPT-5 reasoning summaries available through Azure Responses when callers set a supported reasoning effort.\n\nSeedance 2.0 Mini and Fast, MiniMax H3 video, and Grok Imagine Image 2.0 added creative choices. Scribe realtime transcription now uses the OpenAI-compatible WebSocket protocol. Speech work brought ElevenLabs dialogue into `/v1/audio/speech`, made Qwen TTS use `instructions`, and expanded the simple audio URL to support every speech model.\n\nA community contribution added favorites and persistent filters to Model Monitor. Model discovery endpoints gained a `community` filter, while community model owners gained optional per-user request limits and a confirmation step for activation changes. API-key permissions were aligned with canonical model IDs; new publishable keys now have zero direct-spend budget and cannot be created with a non-zero one. The keys dashboard also gives owners clearer status information.",
+  "pr_count": 38,
   "prs": [
     {
       "number": 12644,
+      "date": "2026-08-14"
+    },
+    {
+      "number": 12847,
       "date": "2026-08-14"
     },
     {
@@ -155,74 +159,618 @@
       "date": "2026-08-14"
     }
   ],
-  "generated_at": "2026-08-15T06:12:59.108969+00:00",
+  "generated_at": "2026-10-17T23:07:29.568741+00:00",
   "highlights": [
     {
       "emoji": "🎯",
-      "title": "Starred models stay starred",
-      "text": "The [Model Monitor](https://model-monitor.pollinations.ai) now remembers your favorite models, filters, and category view. Because scrolling the whole garden every time was apparently a feature.",
+      "title": "Star models in Monitor",
+      "text": "Star models to keep them at the top, filter down to favorites, and retain your scope and category selections across reloads. [Open Model Monitor](https://model-monitor.pollinations.ai).",
       "prs": [
         12644
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎵",
-      "title": "Scribe joins the live hive",
-      "text": "Plug ElevenLabs Scribe live transcription into OpenAI Realtime-compatible clients via `/realtime` or `/v1/realtime`, with partial transcripts, VAD, and language controls.",
+      "emoji": "🔗",
+      "title": "Filter models by community",
+      "text": "Add `?community=true` or `?community=false` to model discovery requests to see community or official models only. [Browse the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        13334
+        13322
       ],
       "kind": "api"
     },
     {
+      "emoji": "🔗",
+      "title": "Retry the exact request",
+      "text": "For eligible non-streaming generation requests, an exact retry after a timeout can wait for the work already in progress or read its cached result without another generation charge. Use the same endpoint, body, query parameters, and seed. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        13299,
+        13342,
+        13347
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Scribe realtime transcription",
+      "text": "Use `scribe-realtime` through the OpenAI-compatible `/realtime` or `/v1/realtime` WebSocket for incremental and final transcripts, with manual or voice-activity commits. [View Scribe realtime](https://enter.pollinations.ai/models?q=scribe-realtime).",
+      "prs": [
+        13334
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Gemini 3.7 Flash",
+      "text": "The paid `gemini` model now routes to Gemini 3.7 Flash; existing Flash aliases still resolve to it. [View gemini](https://enter.pollinations.ai/models?q=gemini).",
+      "prs": [
+        13335
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Muse Glimmer 30B",
+      "text": "Try `muse-glimmer` for text, reasoning, and tool use with up to 30 reference images and a 131,072-token context window. [View muse-glimmer](https://enter.pollinations.ai/models?q=muse-glimmer).",
+      "prs": [
+        13357
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Muse Spark 1.2",
+      "text": "Muse Spark 1.2 replaces 1.1 as the canonical paid text model; existing Spark aliases still work. [View Muse Spark](https://enter.pollinations.ai/models?q=muse-spark-1.2).",
+      "prs": [
+        13359
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Grok 4.6",
+      "text": "Grok 4.6 replaces 4.5 as the canonical text model, while the 4.5 names remain aliases. [View Grok 4.6](https://enter.pollinations.ai/models?q=grok-4.6).",
+      "prs": [
+        13361
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "DeepSeek Pro 0813",
+      "text": "`deepseek-pro` now uses the DeepSeek V4 Pro 0813 checkpoint. [View DeepSeek Pro](https://enter.pollinations.ai/models?q=deepseek-pro).",
+      "prs": [
+        13372
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Qwen3.8 2.4T A95B",
+      "text": "Try `qwen3.8-2.4t-a95b` for text with tools, reasoning controls, streaming, and a 262,144-token context window. It accepts Quest Pollen. [View the model](https://enter.pollinations.ai/models?q=qwen3.8-2.4t-a95b).",
+      "prs": [
+        13389
+      ],
+      "kind": "model"
+    },
+    {
       "emoji": "🎨",
-      "title": "Grok gets a new canvas",
-      "text": "`x-ai/grok-imagine-image-2.0` can generate and edit 1K or 2K images with up to three reference images through the usual image routes.",
+      "title": "Seedance 2.0 Mini",
+      "text": "Make paid 4–10 second videos from text or images, with start and end frames and optional audio. Choose 480p or the default 720p. [Find Seedance 2.0 Mini](https://enter.pollinations.ai/models?q=Seedance%202.0%20Mini).",
+      "prs": [
+        13366
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Seedance 2.0 Fast",
+      "text": "Make paid 4–5 second 480p videos from text or images, with start and end frames and optional audio. [Find Seedance 2.0 Fast](https://enter.pollinations.ai/models?q=Seedance%202.0%20Fast).",
+      "prs": [
+        13366
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Grok Imagine Image 2.0",
+      "text": "Generate or edit paid 1K or 2K images at low or medium quality, with up to three reference images. [Find Grok Imagine Image 2.0](https://enter.pollinations.ai/models?q=Grok%20Imagine%20Image%202.0).",
       "prs": [
         13373
       ],
       "kind": "model"
     },
     {
-      "emoji": "🎬",
-      "title": "Two new seeds, faster films",
-      "text": "Generate video with `seedance-2.0-mini` for 4–10 second 480p/720p clips, `seedance-2.0-fast` for quick shots, or `minimax-h3` for five-second videos with synchronized audio.",
+      "emoji": "🎨",
+      "title": "MiniMax H3 video",
+      "text": "Generate paid five-second, 16:9 text-to-video clips with synchronized audio at 480p, 768p, or 2K. [Find MiniMax H3](https://enter.pollinations.ai/models?q=MiniMax%20H3).",
       "prs": [
-        13366,
         13378
       ],
       "kind": "model"
     },
     {
-      "emoji": "🤖",
-      "title": "A glimmer and a very large Qwen arrive",
-      "text": "`muse-glimmer` brings vision, tools, reasoning, and 131K context; `qwen3.8-2.4t-a95b` adds a 262K-context option for long, tool-using work.",
+      "emoji": "🎵",
+      "title": "Dialogue joins speech",
+      "text": "Send ElevenLabs dialogue to `POST /v1/audio/speech` using one `voice: text` line per turn in `input`, rather than the removed dialogue route. [Read the audio API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        13357,
-        13389
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Speech takes the short route",
-      "text": "Every speech model, including multi-voice `eleven-dialogue`, now works through the compact `/audio/{text}` endpoint as well as `/v1/audio/speech`.",
-      "prs": [
-        13370,
-        13377
+        13358,
+        13370
       ],
       "kind": "api"
     },
     {
-      "emoji": "✨",
-      "title": "Words become wireframes",
-      "text": "FSChart turns plain-language prompts into browser-based 3D models and function plots. [Try it](https://fastnow.github.io/fschart_pollinations)",
+      "emoji": "🎵",
+      "title": "More voices by URL",
+      "text": "`GET /audio/{text}` now supports every speech model available through the speech POST endpoint, including `eleven-dialogue`, and accepts custom ElevenLabs voice IDs. [Try the simple audio route](https://gen.pollinations.ai/audio/{text}).",
       "prs": [
-        13365
+        13377
       ],
-      "kind": "app"
+      "kind": "api"
     }
   ],
-  "changelog": []
+  "changelog": [
+    {
+      "pr_number": 13383,
+      "url": "https://github.com/pollinations/pollinations/pull/13383",
+      "merged_at": "2026-08-14T16:17:04Z",
+      "api_changes": [
+        {
+          "id": "pr-13383:GET /3d/{prompt}",
+          "endpoint": "GET /3d/{prompt}",
+          "summary": "Generate 3D Model",
+          "action": "CHANGE",
+          "breaking": true,
+          "changes": [
+            {
+              "field": "parameters:query:model",
+              "before": {
+                "type": "\"trellis-2-low\"|\"trellis-2-medium\"|\"trellis-2-high\"|\"hyper3d-rodin\"|\"rodin\"",
+                "required": true
+              },
+              "after": {
+                "type": "enum",
+                "required": true
+              },
+              "breaking": true
+            },
+            {
+              "field": "parameters:query:resolution",
+              "before": null,
+              "after": {
+                "type": "\"low\"|\"medium\"|\"high\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-13383:GET /account/my-models/{id}/fallback-candidates",
+          "endpoint": "GET /account/my-models/{id}/fallback-candidates",
+          "summary": "List Fallback Candidates",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13383:GET /audio/{text}",
+          "endpoint": "GET /audio/{text}",
+          "summary": "Generate Audio",
+          "action": "CHANGE",
+          "breaking": true,
+          "changes": [
+            {
+              "field": "parameters:query:instruct",
+              "before": {
+                "type": "string",
+                "required": false
+              },
+              "after": null,
+              "breaking": true
+            },
+            {
+              "field": "parameters:query:instructions",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-13383:GET /image/{prompt}",
+          "endpoint": "GET /image/{prompt}",
+          "summary": "Generate Image",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:resolution",
+              "before": null,
+              "after": {
+                "type": "enum",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-13383:GET /realtime",
+          "endpoint": "GET /realtime",
+          "summary": "Realtime WebSocket",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13383:GET /v1/realtime",
+          "endpoint": "GET /v1/realtime",
+          "summary": "Realtime WebSocket",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:model",
+              "before": {
+                "type": "\"gpt-realtime-2.1\"|\"gpt-realtime-2\"",
+                "required": false
+              },
+              "after": {
+                "type": "\"gpt-realtime-2.1\"|\"gpt-realtime-2.1-mini\"|\"gpt-realtime-2\"|\"scribe-realtime\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-13383:GET /video/{prompt}",
+          "endpoint": "GET /video/{prompt}",
+          "summary": "Generate Video",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:resolution",
+              "before": null,
+              "after": {
+                "type": "enum",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-13383:POST /3d/{prompt}",
+          "endpoint": "POST /3d/{prompt}",
+          "summary": "Generate 3D Model With JSON",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13383:POST /account/my-models",
+          "endpoint": "POST /account/my-models",
+          "summary": "Create My Model",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:fallbackModelIds",
+              "before": null,
+              "after": {
+                "type": "string[]",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:inputModalities",
+              "before": null,
+              "after": {
+                "type": "\"text\"|\"image\"|\"audio\"[]",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:perUserRpm",
+              "before": null,
+              "after": {
+                "type": "number|null",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-13383:POST /account/my-models/provider",
+          "endpoint": "POST /account/my-models/provider",
+          "summary": "Update Community Provider Profile",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13383:POST /account/my-models/{id}/update",
+          "endpoint": "POST /account/my-models/{id}/update",
+          "summary": "Update My Model",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:fallbackModelIds",
+              "before": null,
+              "after": {
+                "type": "string[]",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:inputModalities",
+              "before": null,
+              "after": {
+                "type": "\"text\"|\"image\"|\"audio\"[]",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:perUserRpm",
+              "before": null,
+              "after": {
+                "type": "number|null",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-13383:POST /text",
+          "endpoint": "POST /text",
+          "summary": "Text Generation With Messages",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:web_search_options",
+              "before": null,
+              "after": {
+                "type": "object",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-13383:POST /v1/audio/music/upload",
+          "endpoint": "POST /v1/audio/music/upload",
+          "summary": "Upload Music Reference",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-13383:POST /v1/audio/speech/with-timestamps",
+          "endpoint": "POST /v1/audio/speech/with-timestamps",
+          "summary": "Generate Speech with Timestamps",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13383:POST /v1/audio/voice-changer",
+          "endpoint": "POST /v1/audio/voice-changer",
+          "summary": "Transform a Voice",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13383:POST /v1/audio/voice-isolator",
+          "endpoint": "POST /v1/audio/voice-isolator",
+          "summary": "Isolate Speech",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-13383:POST /v1/chat/completions",
+          "endpoint": "POST /v1/chat/completions",
+          "summary": "Chat Completions",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:web_search_options",
+              "before": null,
+              "after": {
+                "type": "object",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-13383:POST /v1/images/generations",
+          "endpoint": "POST /v1/images/generations",
+          "summary": "Generate Image (OpenAI-compatible)",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:resolution",
+              "before": null,
+              "after": {
+                "type": "enum",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pr_number": 13393,
+      "url": "https://github.com/pollinations/pollinations/pull/13393",
+      "merged_at": "2026-08-14T22:15:50Z",
+      "api_changes": [
+        {
+          "id": "pr-13393:GET /3d/models",
+          "endpoint": "GET /3d/models",
+          "summary": "List 3D Models",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:community",
+              "before": null,
+              "after": {
+                "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-13393:GET /audio/models",
+          "endpoint": "GET /audio/models",
+          "summary": "List Audio Models",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:community",
+              "before": null,
+              "after": {
+                "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-13393:GET /embeddings/models",
+          "endpoint": "GET /embeddings/models",
+          "summary": "List Embedding Models",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:community",
+              "before": null,
+              "after": {
+                "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-13393:GET /image/models",
+          "endpoint": "GET /image/models",
+          "summary": "List Image & Video Models",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:community",
+              "before": null,
+              "after": {
+                "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-13393:GET /models",
+          "endpoint": "GET /models",
+          "summary": "List Models",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:community",
+              "before": null,
+              "after": {
+                "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-13393:GET /text/models",
+          "endpoint": "GET /text/models",
+          "summary": "List Text Models (Detailed)",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:community",
+              "before": null,
+              "after": {
+                "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-13393:GET /v1/models",
+          "endpoint": "GET /v1/models",
+          "summary": "List Models (OpenAI-compatible)",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:community",
+              "before": null,
+              "after": {
+                "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-13393:GET /video/models",
+          "endpoint": "GET /video/models",
+          "summary": "List Video Models",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:community",
+              "before": null,
+              "after": {
+                "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

@@ -3,7 +3,7 @@
   "period_start": "2025-05-18",
   "period_end": "2025-05-18",
   "title": "Match-cut video project joins the list",
-  "summary": "A community-made match-cut video project joined the integrations list.\n\nMatch-cut video ai was added to the README and website’s LLM Integrations project list. The listing describes text-to-video generation in a match-cut text style, using a Pollinations LLM to generate nearby text, with API integration support.",
+  "summary": "A community project brought match-cut-style text-to-video work to the integrations list.\n\nMatch-cut video ai was added to the README and website’s LLM Integrations project list. It uses Pollinations LLM to generate nearby text for text-to-video work in a match-cut style.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-05-18"
     }
   ],
-  "generated_at": "2026-10-17T15:39:54.323219+00:00",
+  "generated_at": "2026-10-17T22:31:16.733684+00:00",
   "highlights": [],
   "changelog": []
 }

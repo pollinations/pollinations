@@ -3,7 +3,7 @@
   "period_start": "2025-04-10",
   "period_end": "2025-04-10",
   "title": "DominiSigns joins the project list",
-  "summary": "A community project for translating text and audio into Dominican Sign Language joined the project list.\n\nDominiSigns was added to the README project table and the website’s Tools & Interfaces list. The community project uses AI and a 3D avatar to translate text and audio into Dominican Sign Language.",
+  "summary": "A community project bringing text and audio into Dominican Sign Language joined the project list.\n\nDominiSigns was added to the README and website project lists. The community project uses AI and a 3D avatar to translate text and audio into Dominican Sign Language.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-04-10"
     }
   ],
-  "generated_at": "2026-10-17T15:37:22.041296+00:00",
+  "generated_at": "2026-10-17T22:30:12.610865+00:00",
   "highlights": [],
   "changelog": []
 }

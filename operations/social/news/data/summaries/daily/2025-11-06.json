@@ -3,7 +3,7 @@
   "period_start": "2025-11-06",
   "period_end": "2025-11-06",
   "title": "Pollen balances get a clearer split",
-  "summary": "Pollen balances became easier to read, publishable-key limits began tracking usage costs, and the legacy text API stopped adding referral links by default.\n\nEnter now shows tier and pack Pollen separately alongside their combined balance and a daily allowance indicator. Generation requests draw from tier Pollen first, then pack Pollen; a follow-up updated the frontend meter configuration.\n\nThe legacy text API no longer inserts referral links by default. The explicit p-ads test marker remains available.\n\nPublishable API keys moved from a three-request bucket to a Pollen-based limit per key and IP. The limiter charges the request's actual Pollen cost and reports retry timing in rate-limit headers; secret keys bypass it.",
+  "summary": "Pollen accounting got more legible, legacy text lost default referral links, and Hacktoberfest got its receipts.\n\nEnter added a combined Pollen total with separate tier and pack balances and a daily allowance indicator. Generation requests draw from tier Pollen first, then pack Pollen; a follow-up updated the frontend’s meter configuration.\n\nThe legacy text API no longer inserts referral links by default. The explicit p-ads test marker still works.\n\nPublishable keys moved from a three-request bucket to a limiter that accounts for each request’s Pollen charge per key-and-IP pair. Rate-limit headers report Pollen units and retry timing.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,7 +27,7 @@
       "date": "2025-11-06"
     }
   ],
-  "generated_at": "2026-10-17T15:51:18.304485+00:00",
+  "generated_at": "2026-10-17T22:35:20.670088+00:00",
   "highlights": [],
   "changelog": []
 }

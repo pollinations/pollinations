@@ -3,7 +3,7 @@
   "period_start": "2025-05-26",
   "period_end": "2025-05-26",
   "title": "More control over text generation",
-  "summary": "More control over text sampling, a clearer SillyTavern listing, and sturdier request handling across the APIs.\n\nText requests now pass `temperature`, `top_p`, `presence_penalty`, and `frequency_penalty` through to compatible providers. Values supplied in a request take precedence over model defaults, giving developers more control over the output.\n\nThe project lists now include SillyTavern and describe its existing use of Pollinations for both text and image generation. The integration itself did not change.\n\nShared authentication and queue handling brings more consistent behavior across text and image requests. Invalid tokens now return a 401 error instead of crashing the text server; token validation and queue decisions were also tightened up.",
+  "summary": "Text generation gained sampling controls, SillyTavern’s listing got clearer, and authentication stopped treating a bad token like a server-ending event.\n\nText requests now pass temperature, top_p, presence_penalty, and frequency_penalty through to OpenAI-compatible providers. Supplied values take precedence over model defaults, and the parameters are documented for GET and POST requests.\n\nThe website and README now list SillyTavern as using Pollinations for both text and image generation. The integration itself did not change.\n\nText and image services now share authentication and queue handling. Invalid tokens return a 401 instead of crashing the text server, and token validation has a GET endpoint.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,12 +31,12 @@
       "date": "2025-05-26"
     }
   ],
-  "generated_at": "2026-10-17T15:40:44.030861+00:00",
+  "generated_at": "2026-10-17T22:31:32.486761+00:00",
   "highlights": [
     {
       "emoji": "🎯",
       "title": "Tune text sampling",
-      "text": "Set `temperature`, `top_p`, `presence_penalty`, and `frequency_penalty` in text requests to shape the output. Supplied values take precedence over model defaults. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "text": "Set `temperature`, `top_p`, `presence_penalty`, and `frequency_penalty` in text GET or POST requests. Your values take precedence over model defaults. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         2106
       ],

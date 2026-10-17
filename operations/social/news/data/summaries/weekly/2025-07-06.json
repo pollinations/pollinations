@@ -2,8 +2,8 @@
   "date": "2025-07-06",
   "period_start": "2025-06-29",
   "period_end": "2025-07-05",
-  "title": "Model routes and access tiers got a reset",
-  "summary": "Model access, request queueing, and API guidance got more consistent, while a new image model and community projects gave people more to build with.\n\nAnonymous requests default to the anonymous tier, with access to `openai`, `openai-fast`, MIDIjourney, Elixpo Search, and now Bidara. The week's routing changes settled on GPT-4o mini for `openai`, GPT-4.1 for `openai-large`, and GPT-4.1 nano for `openai-fast` and `openai-roblox`. Unknown text models return 404; insufficient access returns 402.\n\nText and image requests now share per-IP concurrency limits: 1 anonymous, 3 seed, 10 flower, and 30 nectar. Token-backed image requests are no longer limited to one at a time, while nectar requests use the queue too. Token-validation and referrer caching reduce repeated lookups.\n\nSeed-tier users gained `model=kontext` for voxel-art generation from a prompt or supplied image URL, with output capped at 640 pixels on the longest side. The API docs gained Kontext image-to-image examples alongside clearer authentication and tier guidance and broader multimodal examples.\n\nThe listings gained RETIME, an accessible, time-bending text adventure; YankoviC's AI-assisted Accordion IDE; PairFusion's collaborative IDE; and Argent Script, a text-to-speech tool. Four rather different answers to what you can build with an API.",
+  "title": "Model access and routes were clarified",
+  "summary": "Model access, routing, and request queues got a careful tune-up, while Kontext and community projects gave people more to build with.\n\nAnonymous model access was corrected, then text routes and model labels were updated through the week. By July 4, `openai-large` routed to GPT-4.1, `openai` to GPT-4o mini, and `openai-fast` and `openai-roblox` to GPT-4.1 nano. Bidara moved to anonymous access; GPT Image was marked as requiring flower tier. Text requests also gained distinct errors for insufficient access and unknown models.\n\nImage requests made with a token are no longer limited to one at a time. Shared queues now apply concurrency caps across text and image requests: three for seed, ten for flower, and thirty for nectar. Anonymous requests remain capped at one. Token and referrer lookup caching, along with token-validation caching, reduces repeated lookups.\n\nThe new `kontext` model generates voxel art from a text prompt or input image at seed tier and above, with a 640-pixel maximum side length. Site examples now show the reference-image URL format. Image semantic-cache matching was tightened, and tools for examining image-to-image inputs and outputs were added.\n\nAPI docs gained clearer endpoint navigation and examples for vision, speech, function calling, and other multimodal requests. Invalid authentication tokens now produce an error rather than falling through to another method. Authenticated nex.ad requests no longer include the user's IP or fire impression URLs, and the sign-in page was reworked for smaller screens.",
   "pr_count": 16,
   "prs": [
     {
@@ -71,5 +71,5 @@
       "date": "2025-07-05"
     }
   ],
-  "generated_at": "2026-10-17T16:05:18.202419+00:00"
+  "generated_at": "2026-10-17T23:24:51.632756+00:00"
 }

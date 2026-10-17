@@ -2,28 +2,16 @@
   "date": "2026-04-18",
   "period_start": "2026-04-18",
   "period_end": "2026-04-18",
-  "title": "Two more community apps entered the garden",
-  "summary": "A community harvest: two new apps in the showcase, a quicker Polly, and quieter maintenance keeping the garden watered.\n\nThe app showcase now includes Multimodal Image Generator, an open-source CLI and web interface for configurable image generation, plus DREAMMELD for AI dream interpretation and visualization. More things people made with the API, now easier to stumble across.\n\nPolly's update brings faster code indexing, improved prompts, collaborator permissions, and fewer opportunities for tool loops to wander into the woods. AGENTS.md was also compressed by roughly 55% while retaining its actionable rules, so developers and agents spend less context reading instructions.\n\nDaily metrics, health checks, README community highlights, and secure contributor access were refreshed. The directory remains current while development work on Bedrock integrations has another securely configured pair of hands.",
-  "pr_count": 7,
+  "title": "Two more ways to make images and dreams",
+  "summary": "Two community apps joined the showcase, contributor links were tidied up, and Polly got better at searching for support answers.\n\nThe app catalog added @mowenyun’s Multimodal Image Generator, which offers configurable image generation through the Pollinations API, and @newsister’s DREAMMELD, which combines dream interpretation with imagery and ambient soundscapes.\n\nThe README’s Latest News and Recent Apps sections were refreshed, replacing placeholder links for three showcased apps with their contributors’ profiles.\n\nPolly added code and documentation indexing and now prioritizes repository and documentation search for support questions. The update also gives configured Discord collaborators limited GitHub issue-management actions and adds safeguards for longer bot tasks.",
+  "pr_count": 4,
   "prs": [
-    {
-      "number": 10296,
-      "date": "2026-04-18"
-    },
     {
       "number": 10299,
       "date": "2026-04-18"
     },
     {
-      "number": 10304,
-      "date": "2026-04-18"
-    },
-    {
       "number": 10306,
-      "date": "2026-04-18"
-    },
-    {
-      "number": 10310,
       "date": "2026-04-18"
     },
     {
@@ -35,17 +23,7 @@
       "date": "2026-04-18"
     }
   ],
-  "generated_at": "2026-09-04T11:45:19.982924+00:00",
-  "highlights": [
-    {
-      "emoji": "🎨",
-      "title": "Multimodal Image Generator",
-      "text": "Try a community-built web interface for the image API. The project also includes an open-source CLI. [Try it](https://mowenyun.github.io/multimodal-image-generator/).",
-      "prs": [
-        10306
-      ],
-      "kind": "app"
-    }
-  ],
+  "generated_at": "2026-10-17T22:48:16.990169+00:00",
+  "highlights": [],
   "changelog": []
 }

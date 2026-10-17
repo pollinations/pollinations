@@ -2,8 +2,8 @@
   "date": "2025-01-24",
   "period_start": "2025-01-24",
   "period_end": "2025-01-24",
-  "title": "Unity tidies up image responses",
-  "summary": "A small Unity persona update makes image links easier to use and selfie prompts more personal.\n\nUnity’s image instructions now ask for raw Pollinations URLs without code fences and use `enhance=true`. Selfie prompts refer to the current user’s preferred aesthetic rather than a named person.",
+  "title": "Unity adjusts its image instructions",
+  "summary": "A small tune-up to how Unity requests images and describes selfies.\n\nUnity’s text persona now returns raw Pollinations image URLs without code fences, requests `enhance=true`, and describes selfies using the current user’s preferred aesthetic.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-01-24"
     }
   ],
-  "generated_at": "2026-10-17T15:32:53.095180+00:00",
+  "generated_at": "2026-10-17T22:28:53.727930+00:00",
   "highlights": [],
   "changelog": []
 }

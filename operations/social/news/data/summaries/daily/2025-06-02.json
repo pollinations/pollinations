@@ -2,8 +2,8 @@
   "date": "2025-06-02",
   "period_start": "2025-06-02",
   "period_end": "2025-06-02",
-  "title": "Text chat ads stop getting in the answer’s way",
-  "summary": "Text chat ads got less intrusive, DeepSeek responses got a simpler path, and two community bots became easier to find.\n\nText chat ads moved from local affiliate matching to nex.ad, with Ko-fi as a fallback. Ads are appended rather than replacing the assistant’s answer, and JSON-mode responses skip them entirely.\n\nThe DeepSeek-v3 response formatter was disabled, so it no longer moves reasoning content into the answer or wraps it in <think> tags. Streaming responses also bypass the SSE formatter when none is configured.\n\nImageEditer joined the creative apps list with its Telegram image-generation and editing features. Gacha’s listing now points directly to its Discord invite and describes its chat, image, voice, and search features.",
+  "title": "DeepSeek answers keep their reasoning separate",
+  "summary": "Text responses got cleaner formatting and safer ad placement, while two community bots got easier to find.\n\nThe DeepSeek-v3 formatter was disabled, so reasoning content is no longer moved into the answer or wrapped in `<think>` tags. Streaming responses also bypass the SSE formatter when none is configured.\n\nText chat ads moved from local affiliate matching to the nex.ad API, with Ko-fi as a fallback. Ads are appended rather than replacing the assistant’s answer, and JSON-mode responses skip them.\n\nThe project lists added ImageEditer, a Telegram bot for generating and remixing images, and updated Gacha’s listing with a direct Discord invite and a place in the README’s new Social Bots section.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2025-06-02"
     }
   ],
-  "generated_at": "2026-10-17T15:41:35.903543+00:00",
+  "generated_at": "2026-10-17T22:31:49.403077+00:00",
   "highlights": [],
   "changelog": []
 }

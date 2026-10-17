@@ -2,9 +2,9 @@
   "date": "2026-08-07",
   "period_start": "2026-08-07",
   "period_end": "2026-08-07",
-  "title": "3D generation gets a proper JSON API",
-  "summary": "A busy API day: structured 3D requests, stronger transcription support, clearer model routing, and docs that finally match the machinery.\n\nThe 3D endpoint now accepts structured POST payloads, so developers can send model choice, reference images, resolution, and reproducible seeds without trying to express a whole request in a URL. Existing GET requests continue as before.\n\nThe audio registry now clearly declares transcription support and rejects models used on the wrong endpoint with useful guidance. Grok Transcribe also joined /v1/audio/transcriptions, including text, JSON, verbose metadata, and speaker-diarized output.\n\nText responses now consistently expose the canonical resolved model in x-model-used, including aliases, community models, and fallback routes. Long Portkey-backed requests again have enough time to complete, with structured timeout responses instead of Cloudflare-shaped mysteries.",
-  "pr_count": 18,
+  "title": "3D generation gets a JSON request body",
+  "summary": "JSON-based 3D generation and Grok transcription joined a day of more predictable model routing and clearer API guidance.\n\nPOST /3d/{prompt} now accepts a validated JSON body with a model, reference image URL or URL array, resolution, and integer seed. Trellis 2 defaults to low resolution, with medium and high options. Unlike the existing GET route, repeated POST requests regenerate rather than using the URL-based media cache.\n\nThe paid-only `grok-transcribe` model was added with text, JSON, verbose JSON, and diarized JSON output, including word timestamps and speaker-labeled segments. Model listings now identify the transcription endpoint for Whisper, Scribe, and Universal models, while mismatched speech and transcription requests return a 400 before reaching a provider.\n\nText responses now report the canonical model that handled a request in `x-model-used`, including streams and fallback targets. Slow text providers get a longer request allowance and a structured timeout. FLUX no longer switches providers when its worker pool is unavailable, and GPT Image no longer retries generation in another region after an error, avoiding possible duplicate images.",
+  "pr_count": 10,
   "prs": [
     {
       "number": 13059,
@@ -23,14 +23,6 @@
       "date": "2026-08-07"
     },
     {
-      "number": 13157,
-      "date": "2026-08-07"
-    },
-    {
-      "number": 13158,
-      "date": "2026-08-07"
-    },
-    {
       "number": 13159,
       "date": "2026-08-07"
     },
@@ -43,23 +35,7 @@
       "date": "2026-08-07"
     },
     {
-      "number": 13163,
-      "date": "2026-08-07"
-    },
-    {
       "number": 13164,
-      "date": "2026-08-07"
-    },
-    {
-      "number": 13165,
-      "date": "2026-08-07"
-    },
-    {
-      "number": 13168,
-      "date": "2026-08-07"
-    },
-    {
-      "number": 13169,
       "date": "2026-08-07"
     },
     {
@@ -67,37 +43,29 @@
       "date": "2026-08-07"
     },
     {
-      "number": 13172,
-      "date": "2026-08-07"
-    },
-    {
       "number": 13173,
-      "date": "2026-08-07"
-    },
-    {
-      "number": 13175,
       "date": "2026-08-07"
     }
   ],
-  "generated_at": "2026-09-04T11:50:33.754812+00:00",
+  "generated_at": "2026-10-17T23:05:41.824582+00:00",
   "highlights": [
     {
-      "emoji": "🎵",
-      "title": "Grok Transcribe joins audio",
-      "text": "Transcribe speech with `grok-transcribe`, including a speaker-diarized JSON option. [Browse the model](https://enter.pollinations.ai/models?q=grok-transcribe).",
-      "prs": [
-        13170
-      ],
-      "kind": "model"
-    },
-    {
       "emoji": "🎨",
-      "title": "Send 3D prompts as JSON",
-      "text": "POST to `/3d/{prompt}` with model, image, resolution, and seed parameters in a JSON body. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "title": "3D requests in JSON",
+      "text": "Send `POST /3d/{prompt}` with a model, reference image URLs, resolution, and seed in a JSON body. POST requests regenerate rather than using the URL-based media cache. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         13069
       ],
       "kind": "api"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Grok Transcribe joins audio",
+      "text": "Transcribe audio with the paid-only `grok-transcribe` model, with options for word timestamps and speaker-labeled segments. [View the model](https://enter.pollinations.ai/models?q=grok-transcribe).",
+      "prs": [
+        13170
+      ],
+      "kind": "model"
     }
   ],
   "changelog": []

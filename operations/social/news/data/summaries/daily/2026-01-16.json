@@ -2,8 +2,8 @@
   "date": "2026-01-16",
   "period_start": "2026-01-16",
   "period_end": "2026-01-16",
-  "title": "Play adds audio generation",
-  "summary": "Audio arrived in Play, account access got simpler, and image errors stopped disguising rejected requests as server failures.\n\nPlay now generates audio with model-specific voice choices and a player for the result. Output stays visible when switching models, and the login panel shows account and Pollen details when available.\n\nLogin from pollinations.ai now preselects profile and balance permissions on the authorization page. The gen API also forwards account profile, balance, and usage requests, while the frontend clears a stored key when a profile request returns 401. The frontend’s default text model changed to `gemini-fast`.\n\nAccount API docs now spell out profile, balance, and usage responses with curl examples. The Pollen usage CSV link points to the account usage endpoint and requests up to 10,000 records.",
+  "title": "Play can generate audio",
+  "summary": "Play gained audio generation, account access got simpler, and API errors and routes got a cleanup.\n\nPlay added audio generation with a voice selector based on each model’s available voices and a player for the result. Generated output now stays visible when switching models and clears on the next Generate click.\n\nLogin now preselects profile and balance permissions. Account documentation gained response schemas and examples for profile, balance, and usage, while the Pollen balance CSV link now points to the account usage route. The frontend also defaults to `gemini-fast` for text generation.\n\nAzure GPT Image errors now retain the provider’s HTTP status and response body instead of turning rejected requests into 500s. Model Monitor also excludes all 4xx responses from its success-rate calculation.",
   "pr_count": 7,
   "prs": [
     {
@@ -35,12 +35,12 @@
       "date": "2026-01-16"
     }
   ],
-  "generated_at": "2026-10-17T15:59:43.928355+00:00",
+  "generated_at": "2026-10-17T22:38:22.428932+00:00",
   "highlights": [
     {
       "emoji": "🎵",
-      "title": "Make audio in Play",
-      "text": "Generate audio, choose from a model’s available voices, and listen to the result in Play. [Try Play](https://pollinations.ai/play).",
+      "title": "Generate audio in Play",
+      "text": "Choose an available voice, generate audio, and play the result without leaving Play. [Try Play](https://pollinations.ai/play).",
       "prs": [
         7352
       ],
@@ -48,8 +48,8 @@
     },
     {
       "emoji": "🔗",
-      "title": "Account data through gen",
-      "text": "Request your profile, Pollen balance, and usage through `gen.pollinations.ai/account/*`. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Account routes on the API",
+      "text": "Request your profile, balance, and usage through `gen.pollinations.ai/account/*`. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         7351
       ],

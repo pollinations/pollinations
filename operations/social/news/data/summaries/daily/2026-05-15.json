@@ -2,9 +2,9 @@
   "date": "2026-05-15",
   "period_start": "2026-05-15",
   "period_end": "2026-05-15",
-  "title": "GPT-5.4-mini, Mistral 4, and a free DeepSeek V4 Flash",
-  "summary": "A heavy day for the model roster with GPT-5.4-mini and Mistral 4, plus a lot of API error handling cleanup.\n\nA massive update to the model roster. We added OpenAI's new gpt-5.4-mini and mistral-4 to the free tier, upgraded the default Mistral alias to 3.2, and migrated deepseek-v4-flash to OpenRouter, which removes its paid-only restriction. We also fixed the qwen-vision endpoints by re-routing them, switching the standard vision model to a non-thinking instruct variant for much faster responses. Finally, the legacy seedream models are visible again for those who miss the old photoreal aesthetic.\n\nWe cleaned up how the API handles upstream weirdness. User-input errors from providers like Nova Canvas are now correctly passed back as 400 Bad Request instead of throwing a generic 500. We also stopped converting successful empty completions into 502 Bad Gateway errors. For embeddings, we bypassed Azure and routed openai-3 models directly to OpenAI's API to eliminate frequent rate-limit 502s.\n\nThe dashboard got some much-needed quality of life tweaks. We added a dedicated addedDate field to the registry so the \"NEW\" badge actually means new, and added hover tooltips for model descriptions so you don't have to click away. The model monitor now properly tracks embedding models and extracts health status into a sortable column.",
-  "pr_count": 15,
+  "title": "Two Qwen vision models, two ways to think",
+  "summary": "New vision and text models arrived, older image models resurfaced, and API errors became rather more honest.\n\nQwen vision moved off a retired endpoint. `qwen-vision` ultimately landed on the non-reasoning Qwen3 VL 30B Instruct variant, while the new `qwen-vision-pro` uses the 235B Thinking variant. Both accept images and support tools.\n\nGPT-5.4 Mini and Mistral Small 4 were added with image input and tool support. Existing Mistral aliases moved to Small 3.2; Llama 4 Scout gained tool support, and DeepSeek V4 Flash became eligible for free-tier use. Several listed context windows changed with the model routes.\n\nSeedream v4.0 and v4.5 Pro were made discoverable again, alongside the still-recommended seedream5. Enter added model-description tooltips and corrected its NEW labels to reflect a model’s first seven days. The community catalog also added PromptArt, a Telegram image bot with style presets.",
+  "pr_count": 16,
   "prs": [
     {
       "number": 10961,
@@ -20,6 +20,10 @@
     },
     {
       "number": 10969,
+      "date": "2026-05-15"
+    },
+    {
+      "number": 10970,
       "date": "2026-05-15"
     },
     {
@@ -67,39 +71,12 @@
       "date": "2026-05-15"
     }
   ],
-  "generated_at": "2026-05-16T06:45:30.298497+00:00",
+  "generated_at": "2026-10-17T22:51:45.658999+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "GPT-5.4-Mini added",
-      "text": "OpenAI's `gpt-5.4-mini` is now live on the free tier with full support for text, images, tools, and streaming.",
-      "prs": [
-        10981
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🚀",
-      "title": "Mistral 4 arrives",
-      "text": "Added the new `mistral-4` model and bumped the default `mistral` alias to 3.2. Both are available on the free tier.",
-      "prs": [
-        10972
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🔓",
-      "title": "DeepSeek V4 Flash is free",
-      "text": "We moved some infrastructure around and dropped the paid-only restriction on `deepseek-v4-flash`. Have at it.",
-      "prs": [
-        10977
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "⚡",
-      "title": "Faster Qwen Vision",
-      "text": "Swapped the default `qwen-vision` endpoint to the non-thinking instruct variant for much faster visual tasks. If you need it to ponder its existence, `qwen-vision-pro` is still there.",
+      "title": "Two Qwen vision options",
+      "text": "Use `qwen-vision` for non-reasoning image-and-text tasks, or the new `qwen-vision-pro` for the larger thinking model. Both support tools. [Explore qwen-vision-pro](https://enter.pollinations.ai/models?q=qwen-vision-pro).",
       "prs": [
         10969,
         10978
@@ -107,13 +84,49 @@
       "kind": "model"
     },
     {
-      "emoji": "🎨",
-      "title": "PromptArt Telegram Bot",
-      "text": "A new community bot for generating styled images without wrestling with prompts. [Try it](https://t.me/promptart_ai_bot)",
+      "emoji": "🤖",
+      "title": "Mistral Small 4 added",
+      "text": "`mistral-4` accepts text and images, supports tools, and has a 262,144-token context window. The existing `mistral` aliases have also moved to Small 3.2. [Explore mistral-4](https://enter.pollinations.ai/models?q=mistral-4).",
       "prs": [
-        10986
+        10972
       ],
-      "kind": "app"
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "GPT-5.4 Mini added",
+      "text": "`gpt-5.4-mini` accepts text and images, supports tools, and has a 400,000-token context window. `gpt-5-mini` and the new `openai-mini` alias point to it. [Explore GPT-5.4 Mini](https://enter.pollinations.ai/models?q=gpt-5.4-mini).",
+      "prs": [
+        10981
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Llama Scout gains tools",
+      "text": "Llama 4 Scout now supports tool calls. Its listed context window is 327,680 tokens after the route change. [Explore Llama 4 Scout](https://enter.pollinations.ai/models?q=llama-4-scout).",
+      "prs": [
+        10972
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Seedream classics resurface",
+      "text": "Seedream v4.0 and v4.5 Pro are discoverable in the image-model list and dashboard again. Both remain paid-only; seedream5 remains the recommended current version. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        10975
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "💡",
+      "title": "Embedding health in view",
+      "text": "The model monitor adds an Embedding health card and filter, plus a sortable status column for spotting degraded or offline models. [Open the model monitor](https://model-monitor.pollinations.ai).",
+      "prs": [
+        10961
+      ],
+      "kind": "product"
     }
   ],
   "changelog": []

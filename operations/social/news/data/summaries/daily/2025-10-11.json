@@ -2,8 +2,8 @@
   "date": "2025-10-11",
   "period_start": "2025-10-11",
   "period_end": "2025-10-11",
-  "title": "New routes for image generation and editing",
-  "summary": "Image and text models changed routes, Enter got more usable on phones, and an image-enhancement experiment was reverted the same day.\n\n`kontext` moved to Azure Flux Kontext for generation and image editing, with a 1024-pixel maximum side length. Nano Banana was added as a nectar-tier image model. GPT Image now uses `gpt-image-1-mini` for generation and `gpt-image-1` for edits with input images.\n\n`deepseek` now uses DeepSeek V3.1 with hybrid reasoning; the former reasoning model names remain as aliases. `mistral` moved from Small 3.1 to 3.2, and `mistral-naughty` replaced the `mistral-romance` listing while keeping the old name as an alias. A text-service startup fix addressed its TypeScript model imports.\n\nEnter’s sign-in, account and Balance layouts were adjusted for mobile. API key lists remain scrollable on narrow screens. The Pollen FAQ now explains model usage in images per Pollen and clarifies that one wallet works across apps.",
+  "title": "Image models changed under the hood",
+  "summary": "Image and text models changed backends, Enter got easier to use on phones, and a prompt-enhancer experiment was rolled back.\n\n`kontext` now uses Azure Flux Kontext for generation and image editing, with a 1024-pixel maximum side length. Nano Banana was added as a nectar-tier image model. GPT Image now uses `gpt-image-1-mini` for generation and `gpt-image-1` for edits. Image-model authorization errors also return HTTP 403, backed by shared tier definitions.\n\n`deepseek` moved to DeepSeek V3.1 with hybrid reasoning, and the former reasoning model names now alias it. `mistral` moved to Small 3.2; `mistral-naughty`, backed by Mistral Nemo Instruct 2407, replaced the `mistral-romance` listing while keeping the old name as an alias. The same migration removed `nova-fast` and the `nanobanana` and `seedream` image registrations; Nano Banana was added again in a subsequent PR.\n\nEnter’s sign-in, account, balance and API-key pages received responsive layouts, including horizontally scrollable key lists on narrow screens. The Pollen FAQ now explains image output per Pollen and clarifies how daily grants and the shared wallet work.",
   "pr_count": 12,
   "prs": [
     {
@@ -55,21 +55,30 @@
       "date": "2025-10-11"
     }
   ],
-  "generated_at": "2026-10-17T15:48:57.472492+00:00",
+  "generated_at": "2026-10-17T22:34:38.952036+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Kontext for image editing",
-      "text": "Use `kontext` for text-to-image generation or edits based on an input image. [Explore the model](https://enter.pollinations.ai/models?q=kontext).",
+      "title": "Kontext gets a new backend",
+      "text": "Generate and edit images with `kontext`, now backed by Azure Flux Kontext. The maximum side length is 1024 pixels. [Explore Kontext](https://enter.pollinations.ai/models?q=kontext).",
       "prs": [
         4484
       ],
       "kind": "model"
     },
     {
-      "emoji": "✨",
+      "emoji": "🎨",
       "title": "Nano Banana added",
-      "text": "Generate images with `nanobanana`, the Gemini 2.5 Flash Image Preview model, at nectar tier. [Explore the model](https://enter.pollinations.ai/models?q=nanobanana).",
+      "text": "Generate images with `nanobanana`, backed by Gemini 2.5 Flash Image Preview. It requires nectar-tier access. [Explore Nano Banana](https://enter.pollinations.ai/models?q=nanobanana).",
+      "prs": [
+        4489
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "GPT Image splits its jobs",
+      "text": "`gptimage` uses `gpt-image-1-mini` for generation and `gpt-image-1` when you supply an image to edit. [Explore GPT Image](https://enter.pollinations.ai/models?q=gptimage).",
       "prs": [
         4489
       ],
@@ -77,8 +86,8 @@
     },
     {
       "emoji": "🤖",
-      "title": "DeepSeek V3.1 with reasoning",
-      "text": "`deepseek` now uses DeepSeek V3.1 with hybrid reasoning. Existing `deepseek-reasoning` and `deepseek-r1-0528` names remain aliases. [Explore the model](https://enter.pollinations.ai/models?q=deepseek).",
+      "title": "DeepSeek moves to V3.1",
+      "text": "`deepseek` now uses DeepSeek V3.1 with hybrid reasoning. `deepseek-reasoning` and `deepseek-r1-0528` remain available as aliases. [Explore DeepSeek](https://enter.pollinations.ai/models?q=deepseek).",
       "prs": [
         4488
       ],
@@ -86,12 +95,30 @@
     },
     {
       "emoji": "🤖",
-      "title": "Mistral Small 3.2",
-      "text": "`mistral` now uses Mistral Small 3.2. The previous 3.1 aliases still work. [Explore the model](https://enter.pollinations.ai/models?q=mistral).",
+      "title": "Mistral moves to Small 3.2",
+      "text": "`mistral` now uses Mistral Small 3.2, while its 3.1 aliases remain available. [Explore Mistral](https://enter.pollinations.ai/models?q=mistral).",
       "prs": [
         4488
       ],
       "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Mistral Naughty joins the list",
+      "text": "`mistral-naughty`, backed by Mistral Nemo Instruct 2407, replaces the `mistral-romance` listing. The old name still works as an alias. [Explore Mistral Naughty](https://enter.pollinations.ai/models?q=mistral-naughty).",
+      "prs": [
+        4488
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "📱",
+      "title": "Enter fits your phone",
+      "text": "Sign-in, account and balance pages now adapt to smaller screens. API-key lists remain scrollable rather than squeezing their contents into unreadable columns. [Open Enter](https://enter.pollinations.ai/keys).",
+      "prs": [
+        4458
+      ],
+      "kind": "product"
     }
   ],
   "changelog": []

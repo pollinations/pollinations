@@ -2,8 +2,8 @@
   "date": "2025-03-09",
   "period_start": "2025-03-02",
   "period_end": "2025-03-08",
-  "title": "The text API found its voice",
-  "summary": "This week added a voice to the text API while making model routing and chat tools more predictable.\n\n`openai-audio` added speech generation with selectable voices and binary audio responses. Streams default to PCM16, non-streaming responses to MP3, and callers can choose their own audio settings.\n\nPhi-4 Multimodal Instruct joined chat as `phi`. Routing work moved `llama`, Scaleway-backed models, and the former Cloudflare client onto the existing Portkey route while retaining model-specific prompts. `claude-hybridspace` was renamed `claude`, so callers using the old name need to update it.\n\nThe text API now forwards `tools` and `tool_choice`. Search also preserves options such as response format on follow-ups, supplies the current date when needed, and makes sequential tool calls through its default search tool.\n\nThe README and website now list 1038lab’s ComfyUI-Pollinations node and isinry’s Chinese-language tutorial for adding image generation to a DeepSeek chat UI.",
+  "title": "The text API learned to speak",
+  "summary": "The text API learned to speak, model routing got tidier, and community projects made Pollinations easier to use in other tools.\n\nAudio generation joined the text API through `openai-audio`, with selectable voices and audio formats. Streaming defaults to PCM16; non-streaming requests default to MP3. The docs now cover audio generation and list 19 supported voices.\n\nPhi-4 Multimodal Instruct joined chat as `phi`. Several chat models moved to Portkey routing while keeping their model-specific prompts, and the separate Cloudflare text client was removed. Claude 3.5 Haiku also changed from `claude-hybridspace` to `claude`, so callers using the old name need to update it.\n\nChat requests now forward `tools` and `tool_choice` instead of dropping them. Search gained more consistent tool handling: calls run sequentially, follow-up requests preserve options such as response format, and time-sensitive searches can use the current date when no system message is supplied.\n\nThe community-built ComfyUI-Pollinations node joined the SDK and libraries lists, bringing prompt-based image and text generation into ComfyUI. A Chinese-language tutorial on adding Pollinations image generation to a DeepSeek chat UI joined the tutorials.",
   "pr_count": 15,
   "prs": [
     {
@@ -67,5 +67,5 @@
       "date": "2025-03-08"
     }
   ],
-  "generated_at": "2026-10-17T16:03:30.540905+00:00"
+  "generated_at": "2026-10-17T23:23:54.382856+00:00"
 }

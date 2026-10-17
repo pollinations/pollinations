@@ -2,14 +2,10 @@
   "date": "2026-09-28",
   "period_start": "2026-09-28",
   "period_end": "2026-09-28",
-  "title": "Agents gained client tools and two community model routers",
-  "summary": "Agents gained client tools and smarter routing, Polli added coding harnesses, and the dashboard and app catalog got easier to use.\n\nPrompt agents can now call functions defined by the client, then continue after the client returns results. Two new community agents route coding and code-review requests using model health, capabilities, and estimated cost. The hosted MCP audio transcription tool also works again for direct public audio URLs.\n\nNew Polli harness commands connect Codex and Claude Code through their supported routers, with model selection and setup-status checks. Polli also now returns reliable failure exit codes on Windows instead of aborting after certain fetch errors.\n\nDashboard pages keep their frame visible while loading, with one status indicator instead of scattered spinners. Sign-in actions are easier to reach, device-code validation is more precise, and authorization cards are easier to read. Model rows now show descriptions and clearer agent output labels without requiring an extra click.",
-  "pr_count": 15,
+  "title": "Prompt agents can hand function calls back to clients",
+  "summary": "Prompt agents gained client tools, community agents got smarter about model selection, and Polli added routes into Codex and Claude Code.\n\nPrompt agents now accept caller-defined function tools alongside configured MCP tools. The agent executes MCP tools on the server and returns caller function calls for the client to run and replay, in streaming or non-streaming Responses and Chat Completions requests. The API docs now explain how to continue those conversations.\n\nQuest contributions added Frugal, a cost-first code-agent example, and Prism, an engineering-review agent. Both classify requests locally and select compatible models using price and health information. Frugal preserves tool history and adds a best-effort trace to non-streaming responses; Prism adds a review rubric for more involved requests.\n\nNew `polli harness codex` and `polli harness claude-code` commands set up, check, and remove Pollinations routing through the respective router tools, with model selection and a routed smoke test. The hosted MCP transcription tool can now fetch direct public HTTPS audio URLs, and a CLI update fixes error exits that could trigger an abort on Windows with Node 23+.",
+  "pr_count": 14,
   "prs": [
-    {
-      "number": 15191,
-      "date": "2026-09-28"
-    },
     {
       "number": 15213,
       "date": "2026-09-28"
@@ -55,51 +51,51 @@
       "date": "2026-09-28"
     },
     {
-      "number": 15673,
-      "date": "2026-09-28"
-    },
-    {
       "number": 15694,
       "date": "2026-09-28"
     },
     {
       "number": 15695,
       "date": "2026-09-28"
+    },
+    {
+      "number": 15699,
+      "date": "2026-09-28"
     }
   ],
-  "generated_at": "2026-09-29T06:31:44.048001+00:00",
+  "generated_at": "2026-10-17T23:15:19.851801+00:00",
   "highlights": [
     {
-      "emoji": "🤖",
-      "title": "Prompt agents can call your tools",
-      "text": "Give prompt agents caller-defined function tools alongside server-side MCP tools. Client-executed calls and their results can flow through Responses or Chat Completions using the existing SDK loop. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "emoji": "🔗",
+      "title": "Client tools for prompt agents",
+      "text": "Pass your own function tools to prompt agents alongside their MCP tools. The agent returns calls for your client to execute and replay, with streaming and non-streaming support. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         15655
       ],
       "kind": "api"
     },
     {
-      "emoji": "🔗",
-      "title": "Codex and Claude Code harnesses",
-      "text": "Use `polli harness codex` or `polli harness claude-code` to connect those coding tools to Pollinations and choose a model. [Find Polli on npm](https://www.npmjs.com/package/@pollinations/cli).",
+      "emoji": "💡",
+      "title": "Polli routes coding clients",
+      "text": "Use `polli harness codex` or `polli harness claude-code` to connect those clients through their router tools, select a compatible model, and check routing status. [Find Polli on npm](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         15289
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎯",
-      "title": "A cost-conscious coding agent",
-      "text": "The community agent `community/fadyabohamza-netizen/frugal` ranks models for coding requests by estimated cost, recent health, and conversation needs. [Explore available models](https://gen.pollinations.ai/v1/models).",
+      "emoji": "🤖",
+      "title": "Frugal routes code requests",
+      "text": "Try `community/fadyabohamza-netizen/frugal`, a community code-agent example that picks compatible models using estimated request cost and recent health. It preserves conversation and tool history when forwarding requests. [View the model](https://enter.pollinations.ai/models?q=community/fadyabohamza-netizen/frugal).",
       "prs": [
         15213
       ],
-      "kind": "product"
+      "kind": "model"
     },
     {
       "emoji": "🤖",
-      "title": "Code review model routing",
-      "text": "`cesus-agent/prism-code-review-router` sorts review requests into fast, balanced, or deep tiers, then chooses a compatible model using health data and a wallet-based spend cap. [Explore available models](https://gen.pollinations.ai/v1/models).",
+      "title": "Prism reviews engineering work",
+      "text": "Try `cesus-agent/prism-code-review-router` for code-review requests. It chooses a compatible model based on the task, model health, pricing, and available balance, then adds a review rubric for more involved work. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         15226
       ],

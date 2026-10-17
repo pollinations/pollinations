@@ -2,9 +2,9 @@
   "date": "2026-05-10",
   "period_start": "2026-05-10",
   "period_end": "2026-05-10",
-  "title": "Chat got less fussy, more usable",
-  "summary": "A community harvest: smoother chat and generation, automated contributor rewards, and twenty new things growing in the Greenhouse.\n\nchat.pollinations received a broad UI and UX pass: a Bring Your Own Pollen modal for custom API keys, clearer errors, and mobile layout repairs. An additional AI Chat entry was added to the chat lineup.\n\nThe xAI image-to-video integration now sends the payload it actually expects, restoring image-to-video generation. CatGPT avatar comics also have a durable selfie reference again, while new Spore accounts now correctly fast-track to Seed within eight hours.\n\nContributors can now claim bountied issues through Community Quests and receive automated Pollen payouts when selected work merges. The surrounding GitHub workflows gained backfills, cleaner status and type assignment, safer maintainer handling, and GitHub-ID-based payouts that survive username changes. Bureaucracy, but the kind that pays people.",
-  "pr_count": 36,
+  "title": "Chat gets a voice and a simpler key flow",
+  "summary": "Chat gained audio and bring-your-own-key controls, community quests gained a fixed-reward path, and the app catalog grew in several directions at once.\n\nThe community-maintained chat app added Audio mode with model and voice choices, plus a dialog for using your own Pollen key. Clearer error messages make it easier to tell when a key needs attention. CatGPT also restored avatar-comic generation after its selfie reference expired, with sketches better matched to the comic style.\n\nCommunity Quest issues now have a template spelling out the fixed Pollen reward, goal and acceptance criteria. Merged quest PRs can trigger a payout to the quest assignee; a follow-up changed recipient lookup to a stable GitHub ID so username changes do not interrupt rewards.\n\nTwenty-one catalog PRs added community projects spanning image and video creation, coding practice, stories, games and tools in several languages. The additions include Opticode for pair-programming practice, ivLyrics for pronunciation and translation, and anyproject for sharing AI-generated sites. The README also made featured creators easier to find.",
+  "pr_count": 29,
   "prs": [
     {
       "number": 10715,
@@ -15,15 +15,7 @@
       "date": "2026-05-10"
     },
     {
-      "number": 10803,
-      "date": "2026-05-10"
-    },
-    {
       "number": 10812,
-      "date": "2026-05-10"
-    },
-    {
-      "number": 10815,
       "date": "2026-05-10"
     },
     {
@@ -55,27 +47,11 @@
       "date": "2026-05-10"
     },
     {
-      "number": 10830,
-      "date": "2026-05-10"
-    },
-    {
-      "number": 10833,
-      "date": "2026-05-10"
-    },
-    {
       "number": 10834,
       "date": "2026-05-10"
     },
     {
-      "number": 10837,
-      "date": "2026-05-10"
-    },
-    {
       "number": 10838,
-      "date": "2026-05-10"
-    },
-    {
-      "number": 10840,
       "date": "2026-05-10"
     },
     {
@@ -84,10 +60,6 @@
     },
     {
       "number": 10843,
-      "date": "2026-05-10"
-    },
-    {
-      "number": 10844,
       "date": "2026-05-10"
     },
     {
@@ -151,34 +123,35 @@
       "date": "2026-05-10"
     }
   ],
-  "generated_at": "2026-09-04T11:49:17.979751+00:00",
+  "generated_at": "2026-10-17T22:51:24.290968+00:00",
   "highlights": [
     {
-      "emoji": "💡",
-      "title": "Bring your key to chat",
-      "text": "Chat has a Bring Your Own Pollen modal for using a custom API key, alongside clearer errors and a better mobile layout. [Try chat](https://chat.pollinations.ai).",
+      "emoji": "🎵",
+      "title": "Audio mode in chat",
+      "text": "Switch the chat app to Audio mode and choose an audio model and voice. [Open chat](https://chat.pollinations.ai).",
       "prs": [
         10787
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎯",
-      "title": "Community Quest workflows",
-      "text": "Community Quests now have issue templates and status tracking, with a workflow for Pollen payouts.",
+      "emoji": "🔗",
+      "title": "Use your key in chat",
+      "text": "A new dialog lets you use your own Pollen key in the chat app, with clearer messages when authentication or balance needs attention. [Open chat](https://chat.pollinations.ai).",
       "prs": [
-        10715
+        10787
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎨",
-      "title": "EaglePollen Video joins the showcase",
-      "text": "Explore a community app that automates TikTok video generation. [Try it](https://eagle.nomadedark.com.br/).",
+      "emoji": "🌟",
+      "title": "Community Quests take shape",
+      "text": "Community Quest issues now spell out a fixed Pollen reward, goal and acceptance criteria, with a payout path for merged contributions. [Explore the repository](https://github.com/pollinations/pollinations).",
       "prs": [
-        10818
+        10715,
+        10838
       ],
-      "kind": "app"
+      "kind": "product"
     }
   ],
   "changelog": []

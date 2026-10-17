@@ -2,10 +2,14 @@
   "date": "2026-02-11",
   "period_start": "2026-02-11",
   "period_end": "2026-02-11",
-  "title": "one-command AI agents are here",
-  "summary": "just merged the OpenClaw integration. ⚡️ auto-install script handles the environment setup, you handle the logic. docs are live. go build something weird. 🌸🐝",
-  "pr_count": 3,
+  "title": "Pollinations meets OpenClaw",
+  "summary": "OpenClaw got a path to Pollinations models, while the community showcase made room for another gateway.\n\nA team-built OpenClaw integration added a setup page and script for configuring Pollinations as an OpenAI-compatible model provider. The configuration offers eight selectable models, with Kimi K2.5 as the default and DeepSeek V3.2 and GLM-4.7 as fallbacks.\n\nThe setup page now walks through installation, API key connection, and configuration in order. The script prints the appropriate installation or onboarding command rather than running it for you. The Builders Night page also gained clearer branding and a mobile-friendly header.\n\nThe app catalog added @MatheusHMafra’s NebulaAPI, a free Brazilian API gateway for AI and gaming that uses Pollinations as a backend.",
+  "pr_count": 4,
   "prs": [
+    {
+      "number": 7893,
+      "date": "2026-02-11"
+    },
     {
       "number": 8165,
       "date": "2026-02-11"
@@ -19,12 +23,12 @@
       "date": "2026-02-11"
     }
   ],
-  "generated_at": "2026-03-18T19:58:13.618882+00:00",
+  "generated_at": "2026-10-17T22:39:51.360981+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "OpenClaw Integration",
-      "text": "Set up AI coding agents in one command with the new OpenClaw landing page and auto-install script.",
+      "title": "Pollinations for OpenClaw",
+      "text": "Configure Pollinations as an OpenClaw model provider with a setup script and choose from eight models. Kimi K2.5 is the default, with DeepSeek V3.2 and GLM-4.7 as fallbacks.",
       "prs": [
         8165,
         8167

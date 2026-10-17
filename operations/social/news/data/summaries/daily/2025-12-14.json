@@ -2,8 +2,8 @@
   "date": "2025-12-14",
   "period_start": "2025-12-14",
   "period_end": "2025-12-14",
-  "title": "Z-Image gets better proportions and faces",
-  "summary": "Better-shaped Z-Image outputs, steadier reasoning-model requests, clearer Gemini tools, and three new community projects.\n\nZ-Image generation now sizes images around the requested aspect ratio, upscales backgrounds, and restores detected faces. The pipeline also adds a safety check that returns an error for flagged images.\n\nText requests now use the supported temperature of 1 for o1, o3, o4, and GPT-5 series models, including when callers omit the setting. That prevents unsupported-temperature errors across the affected OpenAI routes.\n\nGemini-large now uses Google Search and URL Context when no tools are supplied; a custom tools array overrides the defaults. Model capability listings were also corrected so unsupported tool features are not advertised.",
+  "title": "Z-Image gets better framing and faces",
+  "summary": "Better-framed Z-Image generations, clearer Gemini tools, fewer reasoning-model request errors, and three more community projects.\n\nZ-Image generation now carries the requested aspect ratio through generation and upscaling. Face restoration is blended with background upscaling when faces are detected, and a safety check returns an error for flagged generated images.\n\nGemini-large now defaults to `google_search` and `url_context` when callers provide no tools; a custom tools array overrides those defaults. The model table identifies code-execution support, while registry corrections remove tool capabilities from models that do not support them.\n\nText requests now use the supported temperature of 1 for o1, o3, o4 and GPT-5 series models, including when callers omit the parameter. This avoids unsupported-temperature errors across the affected OpenAI model routes.",
   "pr_count": 9,
   "prs": [
     {
@@ -43,12 +43,12 @@
       "date": "2025-12-14"
     }
   ],
-  "generated_at": "2026-10-17T15:55:17.402386+00:00",
+  "generated_at": "2026-10-17T22:36:45.781655+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Sharper Z-Image portraits",
-      "text": "Generate Z-Image pictures at your requested aspect ratio, with upscaled backgrounds and restoration for detected faces. [Browse models](https://enter.pollinations.ai/models).",
+      "title": "Better Z-Image framing",
+      "text": "Generate images at your requested aspect ratio, with face-aware restoration during upscaling when faces are detected. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         5899,
         5901
@@ -57,8 +57,8 @@
     },
     {
       "emoji": "🤖",
-      "title": "Gemini-large finds context",
-      "text": "`gemini-large` now defaults to Google Search and URL Context when you don't supply tools. Pass your own `tools` array to override those defaults. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Gemini-large searches by default",
+      "text": "`gemini-large` now uses `google_search` and `url_context` when you don't supply tools. Pass a custom `tools` array to override the defaults. [Browse models](https://enter.pollinations.ai/models?q=gemini-large).",
       "prs": [
         5992
       ],

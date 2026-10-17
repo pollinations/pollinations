@@ -3,7 +3,7 @@
   "period_start": "2026-01-11",
   "period_end": "2026-01-11",
   "title": "A path from Spore to Seed",
-  "summary": "Spore-to-Seed eligibility got a daily workflow and clearer rules, while the community showcase picked up new apps.\n\nA daily eligibility workflow was added for automatic Spore-to-Seed upgrades. It scores GitHub account age, commits, public repositories, and stars; accounts reaching 8 Dev Points qualify under the implemented rules.\n\nEnter now explains the Dev Points scoring rules and daily evaluation schedule. Pricing tooltips also gained structured content and better positioning when tapped on mobile.\n\nStudy Buzz joined the learning catalog with quizzes, flashcards, study guides, and AI help. The README showcase also added ChatPUA, Player or AI, and Filmirror.",
+  "summary": "Spore-to-Seed eligibility got a daily check, and the learn catalog gained a study companion.\n\nA daily eligibility check was added for automatic Seed upgrades. Spore users who reach 8 Dev Points through GitHub account age, commits, public repositories, and stars qualify; Enter now explains the scoring rules.\n\nThe learn app catalog added Study Buzz, a community-made app with quizzes, flashcards, study guides, AI help, and a little XP for motivation.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,17 @@
       "date": "2026-01-11"
     }
   ],
-  "generated_at": "2026-10-17T15:58:51.966816+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:38:00.918924+00:00",
+  "highlights": [
+    {
+      "emoji": "🌟",
+      "title": "A path to Seed",
+      "text": "Spore users who reach 8 Dev Points through GitHub activity qualify for automatic Seed upgrades. Enter now shows how the points are counted.",
+      "prs": [
+        6878
+      ],
+      "kind": "product"
+    }
+  ],
   "changelog": []
 }

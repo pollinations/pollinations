@@ -3,7 +3,7 @@
   "period_start": "2025-12-03",
   "period_end": "2025-12-03",
   "title": "Seedream and Seedance get new engines",
-  "summary": "Seedream 4.5 and Seedance Pro-Fast lead a day of sturdier media requests, cleaner chat settings, and new community projects.\n\nSeedream moved to 4.5, with a 2048-pixel default side length and support for up to 14 reference images. Seedance now uses Pro-Fast for both text-to-video and image-to-video. Smaller Seedream requests are scaled to the model’s minimum size, eligible failures fall back to 4.0, and reference images served with generic file types work across Seedream, Seedance, and Vertex AI Gemini.\n\nChat now sends thinking settings only to Claude and omits a default top_p value that could conflict with Bedrock requests. Video generation requests also use the image API base URL.\n\nThe community directories added Noir Ink Tattoo Studio for tattoo designs, Synapse for multi-model chat, and Aqua, a project for learning API development.",
+  "summary": "Seedream and Seedance got model upgrades, chat requests got more selective, and three community projects joined the showcase.\n\n`seedream` moved to 4.5, with a 2048-pixel default side length and support for up to 14 reference images. `seedance` moved from separate Lite models to one Pro-Fast model for text-to-video and image-to-video. Related fixes let reference images work when their host sends an unhelpful file type, scale small Seedream requests to the model’s minimum, and fall back to Seedream 4.0 on rate-limit or server errors.\n\nChat now sends thinking settings only to Claude models and omits the default `top_p` value, avoiding parameter combinations some Bedrock models reject. Its video generation requests also use the image API base URL.\n\nThe sign-in page now shows pricing, while the Pollen balance panel explains that purchases can take 1–2 minutes to appear. Video pricing and model tooltips identify the video API as alpha, and the Featured App tier links to the app-submission form.",
   "pr_count": 9,
   "prs": [
     {
@@ -43,12 +43,12 @@
       "date": "2025-12-03"
     }
   ],
-  "generated_at": "2026-10-17T15:53:59.674386+00:00",
+  "generated_at": "2026-10-17T22:36:16.320847+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Seedream 4.5 images",
-      "text": "Generate with `seedream` at a 2048-pixel default side length, or use up to 14 reference images for image-to-image work. [Browse Seedream](https://enter.pollinations.ai/models?q=seedream).",
+      "title": "Seedream moves to 4.5",
+      "text": "Generate with `seedream` at a 2048-pixel default side length, or use up to 14 reference images for image-to-image work. [Explore Seedream](https://enter.pollinations.ai/models?q=seedream).",
       "prs": [
         5597
       ],
@@ -56,8 +56,8 @@
     },
     {
       "emoji": "🎨",
-      "title": "Seedance Pro-Fast video",
-      "text": "Use `seedance` for text-to-video or image-to-video generation with the Pro-Fast model. [Browse Seedance](https://enter.pollinations.ai/models?q=seedance).",
+      "title": "Seedance gets Pro-Fast",
+      "text": "Use `seedance` for text-to-video or image-to-video generation through the new Pro-Fast model. [Explore Seedance](https://enter.pollinations.ai/models?q=seedance).",
       "prs": [
         5597
       ],

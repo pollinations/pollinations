@@ -2,14 +2,10 @@
   "date": "2026-02-26",
   "period_start": "2026-02-26",
   "period_end": "2026-02-26",
-  "title": "automated the pruning shears",
-  "summary": "the app showcase now runs daily health checks. if an app breaks, it vanishes until fixed. keeping the ecosystem distinct from the graveyard. also: API docs now have actual code samples. you're welcome",
+  "title": "A more useful app catalog",
+  "summary": "A better app catalog, a more approachable API reference with a video route, and model-health numbers that no longer blame models for user errors.\n\nThe catalog now identifies the platform for all 562 listed apps, with platform badges on app cards. Genre filters match the catalog’s categories, including image, build, writing, and bots. Play page prompt hints also change with the selected model type.\n\nThe API reference was reorganized by task, with cURL, Python, and JavaScript examples and a browser-URL quick start. A separate `/video/{prompt}` route was added, and compact API documentation is available for AI agents. The README’s Latest News was refreshed with February 25 updates; that edit did not change the services it describes.\n\nModel Monitor now judges health using successful responses and server errors, rather than counting user errors against a model. It waits for at least three relevant requests before applying its error-rate thresholds. The pricing page also distinguishes per-second audio prices from video prices with the right icon.",
   "pr_count": 6,
   "prs": [
-    {
-      "number": 8546,
-      "date": "2026-02-26"
-    },
     {
       "number": 8597,
       "date": "2026-02-26"
@@ -23,6 +19,10 @@
       "date": "2026-02-26"
     },
     {
+      "number": 8612,
+      "date": "2026-02-26"
+    },
+    {
       "number": 8635,
       "date": "2026-02-26"
     },
@@ -31,23 +31,24 @@
       "date": "2026-02-26"
     }
   ],
-  "generated_at": "2026-02-27T06:17:09.686070+00:00",
+  "generated_at": "2026-10-17T22:41:51.218667+00:00",
   "highlights": [
     {
-      "emoji": "📚",
-      "title": "Docs Overhaul",
-      "text": "Restructured [API Docs](https://enter.pollinations.ai/api/docs) with copy-pasteable code samples in multiple languages. Less reading, more building.",
+      "emoji": "🔗",
+      "title": "A direct video route",
+      "text": "Generate video through the separate `/video/{prompt}` route. The reorganized API reference includes examples and explains video duration and resolution options. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         8597
       ],
-      "kind": "product"
+      "kind": "api"
     },
     {
-      "emoji": "🏷️",
-      "title": "Ecosystem Sorting",
-      "text": "Added platform badges to the app registry. Filter the 500+ apps by Web, Discord, CLI, or Mobile.",
+      "emoji": "📱",
+      "title": "Find apps by platform",
+      "text": "Browse app cards with platform labels such as Web and Android, and use genre filters that match the catalog’s categories. [Explore the community apps](https://pollinations.ai).",
       "prs": [
-        8635
+        8635,
+        8636
       ],
       "kind": "product"
     }

@@ -2,8 +2,8 @@
   "date": "2025-06-13",
   "period_start": "2025-06-13",
   "period_end": "2025-06-13",
-  "title": "More ways to make stories and images",
-  "summary": "Four community projects joined the lists: illustrated stories, sketch coloring, historical selfies, and a JSON wrapper.\n\nThe Creative Projects list added StoryBolt, which turns prompts into illustrated stories, and Coloring AI, which colors sketches and makes coloring pages from images.\n\nThe Games list added Time Travel Selfie Portal. It places portraits in a chosen historical era and generates a humorous biography.\n\nThe Creative Projects list added JSON Pollinations API, a Deno Deploy wrapper that returns JSON-formatted responses for apps integrating Pollinations.",
+  "title": "A community-made JSON wrapper joins the directory",
+  "summary": "Four community projects joined the directory, spanning JSON responses, illustrated stories, time-travel selfies, and AI coloring.\n\nThe Creative Projects list added a Deno Deploy wrapper that returns JSON-formatted Pollinations responses for apps.\n\nStoryBolt joined the Creative Projects list. It turns prompts into illustrated stories with genre and art-style choices, plus ways to read, listen to, and share them.\n\nTwo more community projects joined the directory: Time Travel Selfie Portal places portraits in historical scenes and writes humorous biographies, while Coloring AI colors sketches and turns images into coloring pages.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,7 +23,7 @@
       "date": "2025-06-13"
     }
   ],
-  "generated_at": "2026-10-17T15:42:14.920060+00:00",
+  "generated_at": "2026-10-17T22:32:06.641520+00:00",
   "highlights": [],
   "changelog": []
 }

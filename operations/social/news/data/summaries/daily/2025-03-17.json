@@ -2,8 +2,8 @@
   "date": "2025-03-17",
   "period_start": "2025-03-17",
   "period_end": "2025-03-17",
-  "title": "Two more ways to play with AI",
-  "summary": "Two community projects joined the showcase while image requests gained more selective prompt handling and a cache for repeat URLs.\n\nThe creative apps list added @mangofoxplay’s Roblox game Watch TV with neko, where players can chat with AI characters or each other, and @andreas_11’s PixPax, which can analyze, remix, and create images through chat.\n\nImage requests from configured referrer domains now take a separate path that turns prompts into semantic opposites. The image queue limit dropped from 10 to 8 jobs; text model defaults and availability also changed, including the removal of Claude 3.5 Haiku from the model list.\n\nA Cloudflare Worker was added to cache image responses by URL path and normalized query parameters, so matching requests can reuse a result. Cache misses go to the image origin; requests outside `/prompt` and those marked `no-cache` bypass the cache.",
+  "title": "Two more community projects in the showcase",
+  "summary": "Two community apps joined the showcase while image prompt handling and caching got a closer look.\n\nThe Creative & Interactive Applications list added @mangofoxplay’s Roblox game Watch TV with neko, where players can chat with AI characters and each other, and @andreas_11’s PixPax, a chat-based app for analyzing, remixing, and creating images.\n\nImage requests from configured referrers now take a separate prompt path that generates a semantic opposite. The same PR lowered the image queue’s rejection threshold, removed Claude 3.5 Haiku from the available text models, and adjusted Mistral’s default temperature.\n\nA Cloudflare Worker was added to cache image requests by URL path and normalized query parameters, forwarding cache misses to the image origin. Requests outside the prompt path and requests marked no-cache bypass it. The PR also removed the pollinations.diy app files from the repository.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,7 +23,7 @@
       "date": "2025-03-17"
     }
   ],
-  "generated_at": "2026-10-17T15:35:46.095847+00:00",
+  "generated_at": "2026-10-17T22:29:26.050930+00:00",
   "highlights": [],
   "changelog": []
 }

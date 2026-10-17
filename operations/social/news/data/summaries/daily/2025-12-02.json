@@ -2,8 +2,8 @@
   "date": "2025-12-02",
   "period_start": "2025-12-02",
   "period_end": "2025-12-02",
-  "title": "Video gets easier to make",
-  "summary": "Video generation arrived in chat, Enter made tiers and search-capable models clearer, and app submissions gained a review workflow.\n\nChat added video generation through `/video` or the attachment menu, with model selection and playback in the conversation. The video API now selects Seedance’s image-to-video model when an image is supplied and accepts numeric durations beyond the previous 4, 6, and 8-second restriction, subject to provider limits.\n\nEnter’s tier panel now lays out the Spore → Seed → Flower → Nectar progression, daily Pollen amounts, and tier requirements. The FAQ also explains how daily grants are spent and when they expire.\n\nEnter’s model pricing table now marks Gemini Search and two Perplexity models with a web-search icon.",
+  "title": "Video gets a place in chat",
+  "summary": "Video generation joined community chat, Enter explained its tiers more clearly, and app submissions got a new review path.\n\nThe community chat app added video generation through `/video` or the attachment menu, with model selection and playback in the conversation. A first-visit tutorial now walks through chat, image and video generation. On the API side, Seedance image-to-video requests now select the image-to-video model, and video duration is passed through as a number.\n\nThe TierPanel now explains the Spore-to-Nectar progression, daily Pollen amounts and tier requirements. The model table also marks Gemini Search and Perplexity models with a web-search icon, making that capability easier to spot.\n\nA new showcase submission form makes project language and Discord contact optional. An AI-assisted workflow reviews submissions, asks for more information when needed and can prepare a showcase PR.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,23 +27,23 @@
       "date": "2025-12-02"
     }
   ],
-  "generated_at": "2026-10-17T15:53:48.585550+00:00",
+  "generated_at": "2026-10-17T22:36:15.658017+00:00",
   "highlights": [
     {
       "emoji": "🎨",
       "title": "Make videos in chat",
-      "text": "Use `/video` or the attachment menu to pick a video model, generate a clip, and play it in the conversation. A first-visit tutorial covers the basics. [Try chat](https://chat.pollinations.ai).",
+      "text": "Use `/video` or the attachment menu to choose a video model, generate a clip and play it in the conversation. A first-visit tutorial covers the basics if you want a map before wandering in.",
       "prs": [
         5553
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎯",
-      "title": "See how Pollen tiers work",
-      "text": "Enter’s tier panel now shows the Spore → Seed → Flower → Nectar progression, daily Pollen amounts, and what each tier requires.",
+      "emoji": "✨",
+      "title": "Submit an app for review",
+      "text": "Submit a project to the app showcase with the new form. Project language and Discord contact are optional, and the review can request more information or prepare a showcase PR.",
       "prs": [
-        5573
+        5577
       ],
       "kind": "product"
     }

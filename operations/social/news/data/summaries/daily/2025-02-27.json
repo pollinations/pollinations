@@ -2,8 +2,8 @@
   "date": "2025-02-27",
   "period_start": "2025-02-27",
   "period_end": "2025-02-27",
-  "title": "Musify joins the creative apps list",
-  "summary": "A community music app joined the showcase, while link previews and footer terms got some attention.\n\nMusify was added to the website’s creative apps list and README. The community-built music app uses the Pollinations API for an AI music assistant, voice commands, and playlist creation.\n\nThe default SEO image now uses an absolute URL, so link previews can resolve the Pollinations banner.\n\nA compliance section was added to the Terms & Conditions text in the website footer.",
+  "title": "Link previews can find the banner",
+  "summary": "A small garden-tending day: better link previews, updated footer terms, and a community music app in the project list.\n\nThe website’s default SEO image now uses an absolute URL, so link previews can resolve the banner instead of guessing where a relative path points.\n\nA compliance section was added to the Terms & Conditions text in the website footer.\n\nThe creative apps list and README now include Musify, a community music app that uses the Pollinations API for an AI assistant, voice commands, and playlist creation.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2025-02-27"
     }
   ],
-  "generated_at": "2026-10-17T15:34:24.201471+00:00",
+  "generated_at": "2026-10-17T22:28:56.036722+00:00",
   "highlights": [],
   "changelog": []
 }

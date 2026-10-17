@@ -3,7 +3,7 @@
   "period_start": "2025-09-21",
   "period_end": "2025-09-21",
   "title": "Nano Banana joins the image API",
-  "summary": "A model-heavy day: Nano Banana image generation, search-grounded Gemini, DeepSeek V3.1, and a language tutor.\n\nAdded `nanobanana` for text-to-image generation and image edits using one or more reference image URLs. A follow-up prefixes prompts to steer Gemini toward producing an image. The model requires seed tier or higher.\n\nAdded `gemini-search` so callers can request Google Search-grounded answers without supplying the search tool themselves. Follow-up changes corrected the Vertex AI tool format and model resolution, and adjusted authentication initialization.\n\nAdded `deepseek` as a seed-tier text model with tool support and aliases for DeepSeek V3.1.",
+  "summary": "New ways to make images, ground answers in search, practice a language, and use DeepSeek V3.1.\n\nAdded `nanobanana` for text-to-image generation and image-to-image requests using one or more reference image URLs. A follow-up adjusted its prompt handling to steer Gemini toward producing images.\n\nAdded `gemini-search` on Gemini 2.5 Flash so callers do not have to supply the Google Search tool themselves. Follow-up fixes made the tool format compatible with Vertex AI and corrected Vertex model resolution and authentication initialization.\n\nAdded `chickytutor`, an anonymous-access, text-only language tutor. The same PR improved how model transforms carry options and messages through requests, and switched ad generation to Ko-fi ads.",
   "pr_count": 8,
   "prs": [
     {
@@ -39,12 +39,12 @@
       "date": "2025-09-21"
     }
   ],
-  "generated_at": "2026-10-17T15:47:01.386156+00:00",
+  "generated_at": "2026-10-17T22:33:52.319592+00:00",
   "highlights": [
     {
       "emoji": "🎨",
       "title": "Nano Banana image generation",
-      "text": "Use `nanobanana` to generate an image from a prompt or edit one using reference image URLs. [Browse the model](https://enter.pollinations.ai/models?q=nanobanana).",
+      "text": "Use `nanobanana` to generate an image from text or supply one or more reference image URLs for image-to-image requests. [Explore the model](https://enter.pollinations.ai/models?q=nanobanana).",
       "prs": [
         4114,
         4120
@@ -53,8 +53,8 @@
     },
     {
       "emoji": "🔗",
-      "title": "Gemini with search grounding",
-      "text": "Ask `gemini-search` questions that need current information without adding the Google Search tool yourself. [Browse the model](https://enter.pollinations.ai/models?q=gemini-search).",
+      "title": "Gemini with search built in",
+      "text": "Use `gemini-search` for Gemini 2.5 Flash responses grounded with Google Search, without adding the search tool to your request. [Explore the model](https://enter.pollinations.ai/models?q=gemini-search).",
       "prs": [
         4109,
         4112
@@ -62,20 +62,20 @@
       "kind": "model"
     },
     {
-      "emoji": "🤖",
-      "title": "DeepSeek V3.1 added",
-      "text": "Use the seed-tier `deepseek` text model for conversations and tool-calling requests. [Browse the model](https://enter.pollinations.ai/models?q=deepseek).",
+      "emoji": "💡",
+      "title": "Practice with ChickyTutor",
+      "text": "Try `chickytutor`, a text-only language tutor available with anonymous access. [Explore the model](https://enter.pollinations.ai/models?q=chickytutor).",
       "prs": [
-        4119
+        4110
       ],
       "kind": "model"
     },
     {
-      "emoji": "💡",
-      "title": "A language tutor model",
-      "text": "Practice a language with `chickytutor`, a text-only tutor available without signing in. [Browse the model](https://enter.pollinations.ai/models?q=chickytutor).",
+      "emoji": "🤖",
+      "title": "DeepSeek V3.1 added",
+      "text": "Select `deepseek` for text generation with tool support at the seed tier. [Explore the model](https://enter.pollinations.ai/models?q=deepseek).",
       "prs": [
-        4110
+        4119
       ],
       "kind": "model"
     }

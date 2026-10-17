@@ -2,16 +2,12 @@
   "date": "2026-09-25",
   "period_start": "2026-09-25",
   "period_end": "2026-09-25",
-  "title": "More ways to make pixels and speak Arabic",
-  "summary": "A buzzing day for builders: new image models, a growing collective-memory ecosystem, smoother integrations, and contributor tooling that remembers what people did.\n\nThe image shelf gained Qwen Image 2.1 for generation and reference-guided edits, plus Recraft V4.1 Flash with explicit aspect-ratio support. The community app catalog also picked up What TTS, an Arabic right-to-left app with browser-based Pollinations login.\n\nSix community contributions made the shared repository more alive and less forgetful: a Gazette turns activity into dated front pages; Gotcha Scout reruns old reproductions; Tessera paints cautiously on games/place; the Crooked Lantern passes rumours along; and Show Your Work independently checks maths notes. New agent authors can now publish through the public flow too.\n\nPolli can now configure tgpt's authenticated Pollinations provider in one command and restore prior settings on the way out. Sonar moved to Perplexity's Agent API without changing its familiar endpoints, Ask Jev joined the hosted MCP catalog, and explicitly delegated child keys can create further scoped keys.",
-  "pr_count": 23,
+  "title": "Two image models added; Sonar keeps its citations",
+  "summary": "Two image models, five collective-memory agents, new tool connections and a Quest for issues that get fixed.\n\nQwen Image 2.1 adds text-to-image generation and editing with up to 10 reference images, while Recraft V4.1 Flash adds raster generation with selectable aspect ratios. Both are paid-only. Sonar moved to Perplexity’s Agent API ahead of the September 27 shutdown, retaining web search, citations and its existing Pollinations endpoints.\n\nQuest contributors added five agents: a newspaper for recent changes, a scout that rechecks recorded gotchas, a shared ASCII-canvas painter, a tavern for persistent fictional rumours, and an independent maths reviewer. Publishing access was also added for two of the agent authors.\n\nThe `polli` CLI can configure tgpt’s Pollinations provider and restore its previous configuration. The existing Ask Jev decision tool was registered in the hosted MCP catalog, and keys with `account:keys` can explicitly grant that permission to child keys.",
+  "pr_count": 21,
   "prs": [
     {
       "number": 14690,
-      "date": "2026-09-25"
-    },
-    {
-      "number": 14865,
       "date": "2026-09-25"
     },
     {
@@ -83,10 +79,6 @@
       "date": "2026-09-25"
     },
     {
-      "number": 15446,
-      "date": "2026-09-25"
-    },
-    {
       "number": 15450,
       "date": "2026-09-25"
     },
@@ -99,12 +91,12 @@
       "date": "2026-09-25"
     }
   ],
-  "generated_at": "2026-09-26T06:28:00.970530+00:00",
+  "generated_at": "2026-10-17T23:15:00.958744+00:00",
   "highlights": [
     {
       "emoji": "🎨",
       "title": "Qwen Image 2.1",
-      "text": "Generate images or edit them using up to 10 reference images with `qwen/qwen-image-2.1`. [Explore the image API](https://gen.pollinations.ai/docs).",
+      "text": "Generate images or edit them with up to 10 reference images using `qwen/qwen-image-2.1`. The model is paid-only. [View the model](https://enter.pollinations.ai/models?q=qwen/qwen-image-2.1).",
       "prs": [
         15236
       ],
@@ -113,42 +105,93 @@
     {
       "emoji": "🎨",
       "title": "Recraft V4.1 Flash",
-      "text": "Make text-to-image creations with `recraft/recraft-v4.1-flash`. [Explore the image API](https://gen.pollinations.ai/docs).",
+      "text": "Generate raster images with Recraft V4.1 Flash, including square, portrait and landscape aspect ratios. The model is paid-only. [Find the model](https://enter.pollinations.ai/models?q=Recraft%20V4.1%20Flash).",
       "prs": [
         15357
       ],
       "kind": "model"
     },
     {
-      "emoji": "🤖",
-      "title": "Collective memory gets agents",
-      "text": "Call new community agents to turn shared history into a newspaper, recheck documented gotchas, review maths notes, paint a shared canvas or pass along a rumour.",
+      "emoji": "🔗",
+      "title": "tgpt meets Pollinations",
+      "text": "Use `polli harness tgpt on` to configure tgpt’s Pollinations text provider, choose a model if you like, and restore your previous configuration with `off`. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
-        15113,
-        15142,
-        15223,
-        15408,
+        14690
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "A newspaper for commits",
+      "text": "The Memory Gazette turns recent collective-memory changes into dated newspaper front pages. Apparently even a repository can have a morning edition.",
+      "prs": [
+        15113
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Gotchas get rechecked",
+      "text": "Gotcha Scout reruns recorded reproduction steps and adds an observed verdict: still holds, partially holds, or no longer reproduces.",
+      "prs": [
+        15142
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Tessera paints together",
+      "text": "Tessera can place tiles on collective memory’s shared 32×16 ASCII canvas without overwriting occupied cells. It can also leave notes and reply to other agents.",
+      "prs": [
+        15223
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "Rumours with a memory",
+      "text": "The Crooked Lantern agent adds a fictional tavern where rumours can be left, retold and recorded in collective memory for later conversations.",
+      "prs": [
+        15408
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Maths, checked independently",
+      "text": "The `show-your-work` agent recomputes a claim and writes a linked review with its command, output, verdict and limits. It can contribute a new computation, too.",
+      "prs": [
         15419
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎵",
-      "title": "What TTS joins the catalog",
-      "text": "Explore an Arabic right-to-left web app in the audio catalog. [Try it](https://bloodtubes6-cmyk.github.io/Blood).",
+      "emoji": "🎯",
+      "title": "Report it, earn Pollen",
+      "text": "Report an issue that gets closed by a merged PR and you can claim 2 Quest Pollen for that qualifying issue. The Quest includes a retroactive window starting August 24, 2026.",
       "prs": [
-        15424
+        15372,
+        15432
       ],
-      "kind": "app"
+      "kind": "product"
     },
     {
-      "emoji": "🔗",
-      "title": "Ask Jev in MCP",
-      "text": "Find Ask Jev in the hosted MCP catalog at `/mcp/ask-jev`. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "emoji": "🤖",
+      "title": "Ask Jev via MCP",
+      "text": "The existing Ask Jev decision tool is now registered in the hosted MCP catalog at `/mcp/ask-jev`. Use `jev_decide` for typed choice, score and probability questions. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         15445
       ],
       "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Keys can delegate keys",
+      "text": "A key with `account:keys` can now create a child key with the same permission by explicitly including `keys` in `accountPermissions`. Child keys without it still cannot create further keys. [Manage API keys](https://enter.pollinations.ai/keys).",
+      "prs": [
+        15450
+      ],
+      "kind": "api"
     }
   ],
   "changelog": []

@@ -2,9 +2,9 @@
   "date": "2026-08-01",
   "period_start": "2026-08-01",
   "period_end": "2026-08-01",
-  "title": "More models, more ways to talk to them",
-  "summary": "A broad reliability pass: new text and speech models, fallbacks across modalities, clearer community-model capabilities, and safer image infrastructure.\n\nKokoro TTS landed on the existing audio endpoints with 54 voices and five output formats; Inkling Small joined the text API with reasoning, tools, image understanding, and WAV audio input; and the DeepSeek route now points at the 0731 checkpoint. OpenAI-compatible embeddings also moved onto their Azure deployments without changing model names, aliases, dimensions, or request formats.\n\nA shared fallback executor now routes text, image, video, audio, embeddings, and 3D requests through compatible backup models when a declared upstream is unavailable. Routing telemetry records what actually served the request, while server-minted request IDs keep concurrent video lookups and settlement records from getting their wires crossed.\n\nCommunity endpoint owners can now declare whether their models accept text or images, and that metadata appears in the shared model catalog before callers make a request. AkshayCoder48 also joined the approved publisher list, while the dashboard gained a dismissible admin-controlled status notice for the occasional moment when software needs to speak plainly.",
-  "pr_count": 23,
+  "title": "New speech and multimodal models",
+  "summary": "New speech and multimodal models arrived alongside clearer community-model inputs and broader configurable fallback routing.\n\nKokoro 82M adds text-to-speech with 54 voices across eight languages. Inkling Small adds text output from text, image, or audio input, with tools, reasoning, and a large context window. The `deepseek` route now uses the DeepSeek V4 Flash 0731 checkpoint.\n\nA Quest contribution lets community model owners declare input modalities in the model dialog, API, or CLI. Those declarations appear in the catalog, and image endpoints that accept images advertise the edits route. A separate change added another eligible community-model publisher.\n\nTeam changes unified registry and community fallback routing for text, image, and video, then extended configured fallbacks to model-selecting audio routes, embeddings, and 3D generation. Community developers can designate their own active private models as fallbacks for public models. The registry changes add no fallback pairs.",
+  "pr_count": 14,
   "prs": [
     {
       "number": 12741,
@@ -23,26 +23,6 @@
       "date": "2026-08-01"
     },
     {
-      "number": 12908,
-      "date": "2026-08-01"
-    },
-    {
-      "number": 12920,
-      "date": "2026-08-01"
-    },
-    {
-      "number": 12927,
-      "date": "2026-08-01"
-    },
-    {
-      "number": 12930,
-      "date": "2026-08-01"
-    },
-    {
-      "number": 12936,
-      "date": "2026-08-01"
-    },
-    {
       "number": 12982,
       "date": "2026-08-01"
     },
@@ -52,14 +32,6 @@
     },
     {
       "number": 12990,
-      "date": "2026-08-01"
-    },
-    {
-      "number": 12991,
-      "date": "2026-08-01"
-    },
-    {
-      "number": 12994,
       "date": "2026-08-01"
     },
     {
@@ -75,10 +47,6 @@
       "date": "2026-08-01"
     },
     {
-      "number": 13005,
-      "date": "2026-08-01"
-    },
-    {
       "number": 13007,
       "date": "2026-08-01"
     },
@@ -91,20 +59,16 @@
       "date": "2026-08-01"
     },
     {
-      "number": 13010,
-      "date": "2026-08-01"
-    },
-    {
       "number": 13011,
       "date": "2026-08-01"
     }
   ],
-  "generated_at": "2026-09-04T11:49:13.840256+00:00",
+  "generated_at": "2026-10-17T23:04:56.021074+00:00",
   "highlights": [
     {
       "emoji": "🎵",
-      "title": "Kokoro TTS joins audio",
-      "text": "Generate speech with Kokoro using 54 voices and MP3, Opus, FLAC, WAV, or PCM output on the audio endpoints. [Browse Kokoro](https://enter.pollinations.ai/models?q=kokoro).",
+      "title": "Kokoro speech joins the API",
+      "text": "Generate speech with `kokoro-82m`: 54 voices across eight languages, with MP3, Opus, FLAC, WAV, and PCM output. [Browse Kokoro](https://enter.pollinations.ai/models?q=kokoro-82m).",
       "prs": [
         12982
       ],
@@ -112,30 +76,40 @@
     },
     {
       "emoji": "🤖",
-      "title": "Inkling Small joins text",
-      "text": "Try Inkling Small for text, image and audio understanding, with tools and reasoning support. [Browse Inkling Small](https://enter.pollinations.ai/models?q=inkling-small).",
+      "title": "Inkling Small joins the models",
+      "text": "Use `inkling` for reasoning and tool-capable text responses with text, image, or audio input. Image and audio inputs are supported separately, not in the same request. [Browse Inkling](https://enter.pollinations.ai/models?q=inkling).",
       "prs": [
         13011
       ],
       "kind": "model"
     },
     {
-      "emoji": "✨",
-      "title": "DeepSeek gets a refresh",
-      "text": "The `deepseek` route and its existing aliases now use the DeepSeek V4 Flash 0731 checkpoint. [Browse DeepSeek](https://enter.pollinations.ai/models?q=deepseek).",
+      "emoji": "🤖",
+      "title": "DeepSeek Flash gets 0731",
+      "text": "`deepseek` and its existing aliases now route to the DeepSeek V4 Flash 0731 checkpoint. [Browse DeepSeek](https://enter.pollinations.ai/models?q=deepseek).",
       "prs": [
         13007
       ],
       "kind": "model"
     },
     {
-      "emoji": "🔗",
-      "title": "Declare community endpoint inputs",
-      "text": "Community endpoint owners can specify which input modalities their endpoints accept; the model catalog now carries that information too. [Browse models](https://enter.pollinations.ai/models).",
+      "emoji": "🎯",
+      "title": "Declare community model inputs",
+      "text": "Community model owners can specify accepted input types in the model dialog, API `inputModalities` field, or CLI `--input-modalities` option. Image endpoints that declare image input also advertise `/v1/images/edits`. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         12868
       ],
-      "kind": "product"
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Configure fallbacks across modalities",
+      "text": "Model owners can configure ordered fallback targets for retryable upstream failures across text, image, video, model-selecting audio, embeddings, and 3D requests. Registry support adds no fallback pairs by default. [Explore the API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        12986,
+        12990
+      ],
+      "kind": "api"
     }
   ],
   "changelog": []

@@ -2,8 +2,8 @@
   "date": "2025-02-17",
   "period_start": "2025-02-17",
   "period_end": "2025-02-17",
-  "title": "Model comparison joins the project list",
-  "summary": "Three community projects joined the directory: a model comparison tool, an image-making word game, and a prompt-enhanced image generator.\n\n@dseeker’s model comparison tool was added to the README and website. It lets people test multiple language models in real time with configurable timeouts.\n\n@Dimaq21’s One Word Telegram bot joined the Social Bots list. Players try to write the same word simultaneously, then the bot generates images from their game words.\n\nZelos AI was added to the community project listings. The Websim project uses Pollinations to enhance prompts and generate images.",
+  "title": "A way to compare language models",
+  "summary": "Three community projects joined the directory: a model comparison tool, an image-making word game, and a prompt-enhancing image generator.\n\nThe project directory added @dseeker’s Pollinations.ai Model Comparison tool, which tests multiple language models in real time with configurable timeouts.\n\nThe Social Bots list added @Dimaq21’s One Word Telegram bot. Players try to write the same word at the same time, and the bot generates images from their game words.\n\nThe project directory added Zelos AI, a Websim image generator that uses Pollinations to enhance prompts and generate images.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2025-02-17"
     }
   ],
-  "generated_at": "2026-10-17T15:33:56.707311+00:00",
+  "generated_at": "2026-10-17T22:28:55.404676+00:00",
   "highlights": [],
   "changelog": []
 }

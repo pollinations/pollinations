@@ -3,7 +3,7 @@
   "period_start": "2025-07-14",
   "period_end": "2025-07-14",
   "title": "A new chat project in the directory",
-  "summary": "Two community projects joined the directories: a chat interface and a prompt generator with image previews.\n\n@altkriz’s EvilChat was added to the Chat project directory, with links to its app and source code. It’s a responsive, dark-themed interface built with the Pollinations API.\n\nPromptgenerator.art was added to the creative projects directory. It turns simple ideas into structured prompts for Midjourney, DALL·E, and ChatGPT, with a Pollinations-powered Test Visualization preview.",
+  "summary": "Two community projects joined the directory: a chat interface and a prompt generator with image previews.\n\nEvilChat joined the Chat directory with links to its app and source code. It’s a responsive, dark-themed interface built with the Pollinations API.\n\nPromptgenerator.art joined the creative projects directory. It turns simple ideas into structured prompts for Midjourney, DALL·E, and ChatGPT, with a Pollinations-powered visualization preview.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-07-14"
     }
   ],
-  "generated_at": "2026-10-17T15:43:53.171065+00:00",
+  "generated_at": "2026-10-17T22:32:47.364322+00:00",
   "highlights": [],
   "changelog": []
 }

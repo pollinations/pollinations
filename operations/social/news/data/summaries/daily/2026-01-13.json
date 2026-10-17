@@ -2,8 +2,8 @@
   "date": "2026-01-13",
   "period_start": "2026-01-13",
   "period_end": "2026-01-13",
-  "title": "Creative tools fill the app catalog",
-  "summary": "A community-heavy day added dozens of app listings, then tidied the catalog that has to hold them.\n\nAgent-added listings brought community projects for image generation, photo editing, writing, presentations, flyers, and short videos into the catalog. Examples include PixArt AI for iOS artwork, Whiskautoz for bulk images, Postify for WordPress drafts, and Pimp my Pics for photo effects. These PRs added listings, not new Pollinations API features.\n\nThe catalog gained community chat clients, social bots, and conversational tools across several languages. Listings range from Telegram and Discord bots to Pollinations AI Studio’s dialogue, image, and video client, plus InstAI’s image-sharing platform. The work makes those projects easier to discover; it does not change their underlying behavior.\n\nOther agent-added listings span decision-making games, language-learning quests, transcription, knowledge maps, and developer workflows. Among them are Lapse Game 2075, ScrollQuest, Faster Vox, community-made n8n nodes for Pollinations image and text APIs, and a console editor with LLM tools. The range is a useful reminder that an app catalog rarely stays inside its categories.",
+  "title": "The app catalog grew in several directions at once",
+  "summary": "A community-heavy day: 66 app listings joined the catalog, while its links, categories, and submission flow got some attention.\n\nSixty-six community-app listings were added, spanning image and video tools, chatbots, games, learning apps, writing tools, and developer workflows. Among them are a RimWorld AI mod, an n8n node package for Pollinations image and text APIs, and an Android language-learning RPG. These PRs added catalog entries, not new Pollinations API features.\n\nThe app catalog now separates app names from web URLs, recovers more than 15 URLs from submissions, and drops 34 invalid repository URLs. Dev Tools, Vibes, and Social Bots now use matching category IDs on the Apps page, so their listings appear in the right places. The submission form also no longer requires people to choose an app category.\n\nCatGPT’s image requests and Model Monitor’s model lists were migrated to gen.pollinations.ai. AI Dungeon Master’s story requests now target the chat completions endpoint. The migration also changed its image URL construction, though the merged URL format differs from its README example.",
   "pr_count": 73,
   "prs": [
     {
@@ -299,7 +299,7 @@
       "date": "2026-01-13"
     }
   ],
-  "generated_at": "2026-10-17T16:00:52.915940+00:00",
+  "generated_at": "2026-10-17T22:38:19.571202+00:00",
   "highlights": [],
   "changelog": []
 }

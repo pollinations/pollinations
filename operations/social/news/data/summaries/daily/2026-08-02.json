@@ -2,16 +2,12 @@
   "date": "2026-08-02",
   "period_start": "2026-08-02",
   "period_end": "2026-08-02",
-  "title": "The models dashboard now explains when the catalog is missing",
-  "summary": "A reliability-focused day: clearer model catalog failures, cleaner registry requests, and a few more seeds planted in the community garden.\n\nThe dashboard validates responses from the /models catalog and shows a clear “Could not load models.” message when a regional edge issue, timeout, DNS problem, or malformed response leaves it without usable model entries. Blank tables have been retired from this particular job.\n\nThe model registry stopped reusing one promise across separate requests, and the fix was deployed to production. Each request now gets its own registry lookup path instead of inheriting another request’s unfinished business.\n\nThe model configuration now supports costVariants: request- and usage-conditional variants that let model metadata describe different operating conditions more precisely.",
-  "pr_count": 7,
+  "title": "Video resolution is now an explicit choice",
+  "summary": "Video resolution became an explicit request choice, while model-catalog failures got easier to spot and less likely to hold up other requests.\n\nVeo, Wan Pro, and P-Video default to 720p; callers choose 1080p with `resolution=1080p`, even when using former 1080p aliases. Seedance Pro accepts 480p, 720p, and 1080p. Unsupported resolutions now return a 400 instead of quietly falling back. The same update adds conditional pricing for Qwen Image editing and long-context requests, with tiers visible in `/models` and Enter’s model catalog.\n\nEnter now shows an error when the model catalog returns unusable data or takes more than 15 seconds to respond. The generation API also stops sharing an in-flight model-registry read across requests, so one cancelled request cannot leave other requests waiting on the same stalled read. These changes improve failure handling; they do not resolve underlying network issues.\n\nCommunity-model publishing now recognizes an approved contributor by immutable GitHub ID, so a username change does not interrupt their ability to publish.",
+  "pr_count": 4,
   "prs": [
     {
       "number": 12631,
-      "date": "2026-08-02"
-    },
-    {
-      "number": 13016,
       "date": "2026-08-02"
     },
     {
@@ -23,19 +19,21 @@
       "date": "2026-08-02"
     },
     {
-      "number": 13024,
-      "date": "2026-08-02"
-    },
-    {
       "number": 13028,
-      "date": "2026-08-02"
-    },
-    {
-      "number": 13029,
       "date": "2026-08-02"
     }
   ],
-  "generated_at": "2026-09-04T11:49:52.285732+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T23:04:42.304602+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Choose video resolution",
+      "text": "Use `resolution=1080p` for Veo, Wan Pro, or P-Video; Seedance Pro accepts 480p, 720p, and 1080p. Requests with unsupported resolutions return a 400 rather than silently changing your choice. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        12631
+      ],
+      "kind": "api"
+    }
+  ],
   "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2025-03-29",
   "period_start": "2025-03-29",
   "period_end": "2025-03-29",
-  "title": "News dates put back on the calendar",
-  "summary": "A housekeeping day: corrected news dates, repaired documentation links, and refreshed supporter lists.\n\nCorrected the website news dates for the Special Bee request and API documentation entries to March 28, 2025, and updated README Latest News to point to both.\n\nSpecial Bee request links now point to the GitHub issue form rather than its template file. React Hooks links now point to the README and playground; the README also received a few presentation updates.\n\nUpdated the website and README supporter lists. The README now names Cloudflare, Scaleway, and Modal, with LLMPlayground.net also included in its supporter-logo image.",
+  "title": "News dates put back in order",
+  "summary": "A spring-cleaning day for news dates, documentation links, and supporter credits.\n\nCorrected the Special Bee request and API documentation news entries to March 28, 2025, and refreshed the README’s Latest News links. June 31 has been returned to the realm of fiction.\n\nSpecial Bee request links now open the GitHub issue form rather than its template file. React Hooks links point to the README and playground, alongside a small README tidy-up.\n\nUpdated the website and README supporter lists, with Cloudflare, Scaleway, and Modal named in the README and those three plus LLMPlayground.net shown in its supporter image.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2025-03-29"
     }
   ],
-  "generated_at": "2026-10-17T15:36:42.807594+00:00",
+  "generated_at": "2026-10-17T22:29:53.230311+00:00",
   "highlights": [],
   "changelog": []
 }

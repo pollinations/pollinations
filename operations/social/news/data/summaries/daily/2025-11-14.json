@@ -2,8 +2,8 @@
   "date": "2025-11-14",
   "period_start": "2025-11-14",
   "period_end": "2025-11-14",
-  "title": "Pollen checkout and tier labels",
-  "summary": "Pollen checkout gained working buttons, tier labels got clearer, and API routing got a round of fixes—with two attempted fallbacks rolled back.\n\nPollen pack buttons were connected to checkout for $5, $10, $20, and $50 packs, with a beta double-Pollen message on the balance card. The tier panel now distinguishes the active subscription from the target tier and reports subscription lookup errors separately.\n\nImage and text services gained configurable gateway checks, while model-listing requests now carry the required authorization without presenting it as a generation parameter. A Portkey header correction lets Perplexity citations and other non-OpenAI response fields pass through.\n\nA homepage change briefly replaced generation errors with fallback copy and hid failed decorative art. A later PR reverted that behavior, so the fallback is not part of the day's final merged state.",
+  "title": "Pollen checkout and tier controls got clearer",
+  "summary": "Pollen checkout and tier controls moved forward, Perplexity citations got through, and a homepage fallback was added then reverted.\n\nEnter’s $5, $10, $20 and $50 Pollen pack buttons were connected to checkout, with the balance card describing double Pollen during beta. The tier panel now distinguishes an active subscription from a target tier, shows activation when they differ, and reports subscription lookup errors separately. A proposed shorter balance-cache interval was later changed to 60 seconds, the minimum supported by Cloudflare KV.\n\nA Portkey header correction allows Perplexity citations and other non-OpenAI response fields through. The same change simplified Portkey headers and returned two providers to their default retry behavior.\n\nFallback copy and hidden decorative art were added for homepage text-generation errors, then reverted in a later PR. The day’s merged work did not retain that fallback.",
   "pr_count": 9,
   "prs": [
     {
@@ -43,7 +43,7 @@
       "date": "2025-11-14"
     }
   ],
-  "generated_at": "2026-10-17T15:52:36.455147+00:00",
+  "generated_at": "2026-10-17T22:35:42.881683+00:00",
   "highlights": [],
   "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2025-08-07",
   "period_start": "2025-08-07",
   "period_end": "2025-08-07",
-  "title": "Image caching understands more languages",
-  "summary": "Image caching got multilingual prompt matching, length-aware thresholds, and a clearer account of why a cached image was returned.\n\nThe semantic image cache switched to multilingual `bge-m3` embeddings and now compares original prompt text rather than stripping punctuation and capitalization.\n\nA fixed similarity threshold gave way to prompt-length-dependent thresholds: 0.85 for short prompts and 0.95 for long ones. Tests also check that small but meaningful prompt changes do not become semantic cache hits.\n\nResponses now distinguish exact from semantic hits with `X-Cache-Type` and report similarity scores for semantic hits. Analytics separates the two hit types, and the cache Worker proxies requests outside the prompt route to the image origin.",
+  "title": "Image cache gets better at reading prompts",
+  "summary": "Image caching learned more languages, got more careful about prompt differences, and now says what kind of match it found.\n\nImage semantic caching now uses multilingual embeddings and the original prompt text. Prompt-length-dependent thresholds make cache matching more flexible for short prompts while tests guard against treating small but meaningful differences as the same request. Responses also distinguish exact from semantic cache hits.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,17 @@
       "date": "2025-08-07"
     }
   ],
-  "generated_at": "2026-10-17T15:44:59.306155+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:33:09.562525+00:00",
+  "highlights": [
+    {
+      "emoji": "🎯",
+      "title": "Inspect image cache matches",
+      "text": "Image responses now use `X-Cache-Type` to distinguish exact from semantic cache hits. Semantic hits also report their similarity score.",
+      "prs": [
+        3450
+      ],
+      "kind": "api"
+    }
+  ],
   "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2025-04-15",
   "period_start": "2025-04-15",
   "period_end": "2025-04-15",
-  "title": "GPT-4.1 takes over `openai-large`",
-  "summary": "`openai-large` moved to GPT-4.1 while the community directory filled up with image tools, bots, playgrounds and more.\n\nThe text API’s `openai-large` model now routes to Azure GPT-4.1 instead of GPT-4o mini, with text and image inputs still supported. `openai-reasoning` was removed from the advertised model list, and referral links will appear less often.\n\nThree projects joined the directory: Generator AI Image, an Indonesian image-generation site; MalaysiaPrompt, which also offers text-to-prompt and image-to-text tools; and B&W SVG Generator, which turns Flux-generated images into black-and-white vectors.\n\nThe project listings gained DreamBig for chat, images and voice; NetSim for web simulation; and Raftar.xyz, a Discord bot with AI commands. Apparently a prompt can end up just about anywhere.",
+  "title": "`openai-large` moves to GPT-4.1",
+  "summary": "`openai-large` moved to GPT-4.1 while the community project directory grew across creative apps, tools, and a talk on AI governance.\n\nThe text API's `openai-large` model now routes to Azure GPT-4.1 instead of GPT-4o mini, with text and image inputs still supported. The advertised model list no longer includes `openai-reasoning`, and referral links are inserted less often.\n\nThe project directory added Generator AI Image, MalaysiaPrompt, B&W SVG Generator, and DreamBig. Between them: image generation, prompt conversion, black-and-white vectors, chat, and voice responses.\n\nStrain Navigator, the NetSim web simulator, the Raftar.xyz Discord bot, and the Smpldev app-building platform joined the project listings. Not every Pollinations project needs to look like an image generator.",
   "pr_count": 10,
   "prs": [
     {
@@ -47,12 +47,12 @@
       "date": "2025-04-15"
     }
   ],
-  "generated_at": "2026-10-17T15:37:50.883999+00:00",
+  "generated_at": "2026-10-17T22:30:25.692106+00:00",
   "highlights": [
     {
       "emoji": "🤖",
       "title": "GPT-4.1 for `openai-large`",
-      "text": "Use `openai-large` for GPT-4.1 with text or image inputs. [Browse the model](https://enter.pollinations.ai/models?q=openai-large).",
+      "text": "Use `openai-large` for GPT-4.1 through the text API. It still accepts text and image inputs. [View the model](https://enter.pollinations.ai/models?q=openai-large).",
       "prs": [
         1675
       ],

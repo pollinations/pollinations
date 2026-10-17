@@ -2,9 +2,9 @@
   "date": "2026-03-21",
   "period_start": "2026-03-21",
   "period_end": "2026-03-21",
-  "title": "Pollinations generation arrives in Claude Code",
-  "summary": "A community-heavy day: terminal-native generation, new creative and learning apps, plus sturdier image and music APIs.\n\nA community-built Claude Code CLI plugin now brings image, text, audio, and video generation directly into the terminal. The shell has gained another suspiciously capable command.\n\nThe community showcase added InfiniteMud, a persistent procedurally generated world; HyperRush AI for turning scripts and media into polished short-form clips; and a Gemini-powered Twitch chatbot for interactive livestream chats.\n\nNew showcase entries include Benchside for biomedical research, Physics study with AI for worked explanations, two image generators, JournalGen, and an all-in-one interface for Pollinations image, audio, and text generation.",
-  "pr_count": 15,
+  "title": "Fewer false payment errors for ElevenMusic",
+  "summary": "Ten community apps joined the catalog, while fixes addressed false ElevenMusic 402s, image-edit seeds, and stale account names.\n\nElevenMusic MP3 responses now use a duration estimate suited to MP3 rather than MP4 header parsing. Balance pre-checks also cap anomalous usage estimates, addressing cases where a request could incorrectly receive a 402.\n\nImage requests to Vertex AI now pass along a provided seed. Changing the seed for Nano Banana image edits can therefore reach the model instead of being lost before regeneration.\n\nThe community catalog added a Claude Code plugin for generating text and media, a short-form video editor, three image-generation apps, and a writing app. Pollinations AI All-in-One Generation also brings images, music, and text together in one app.",
+  "pr_count": 14,
   "prs": [
     {
       "number": 9267,
@@ -16,10 +16,6 @@
     },
     {
       "number": 9373,
-      "date": "2026-03-21"
-    },
-    {
-      "number": 9376,
       "date": "2026-03-21"
     },
     {
@@ -67,7 +63,7 @@
       "date": "2026-03-21"
     }
   ],
-  "generated_at": "2026-09-04T11:51:46.875104+00:00",
+  "generated_at": "2026-10-17T22:44:43.711395+00:00",
   "highlights": [],
   "changelog": []
 }

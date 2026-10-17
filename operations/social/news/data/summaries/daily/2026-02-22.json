@@ -2,9 +2,9 @@
   "date": "2026-02-22",
   "period_start": "2026-02-22",
   "period_end": "2026-02-22",
-  "title": "shipped 35 updates today",
-  "summary": "the spectrum ranges from 'langchain integration' and 'transport document OCR' to 'd&d dungeon generator' and 'nail art creator'. open source is a strange, wonderful place. come build weird stuff",
-  "pr_count": 35,
+  "title": "Creative apps filled the catalog",
+  "summary": "A community harvest: 36 catalog and showcase updates spanning creative tools, bots, learning apps, and developer utilities.\n\nCommunity additions covered fashion collections, product listings, thumbnails, image editing, nail art, video hooks, and AI writing. A team update also gathered six submitted apps into the catalog and README, including several already added individually; it was a showcase consolidation, not six more distinct apps.\n\nThe catalog gained a YouTube-comment summarizer, a job-post aggregator, Facebook post automation, two AI chat experiences, and a Khmer-language Telegram bot with image generation.\n\nNew catalog entries turn YouTube playlists into courses, offer AI language exercises, help run Dungeons & Dragons sessions, and create music-reactive Pixoo64 visuals through Home Assistant.",
+  "pr_count": 36,
   "prs": [
     {
       "number": 7224,
@@ -48,6 +48,10 @@
     },
     {
       "number": 7664,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7680,
       "date": "2026-02-22"
     },
     {
@@ -147,79 +151,7 @@
       "date": "2026-02-22"
     }
   ],
-  "generated_at": "2026-02-23T06:23:14.047060+00:00",
-  "highlights": [
-    {
-      "emoji": "🔗",
-      "title": "LangChain Support",
-      "text": "Python developers can now integrate Pollinations models directly into agents and RAG pipelines with the new `langchain-pollinations` package.",
-      "prs": [
-        8445
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "📱",
-      "title": "Pollinations on Android",
-      "text": "A dedicated community-built Android client is now available. Generate images and chat natively on mobile.",
-      "prs": [
-        7937
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Pollenboard",
-      "text": "A self-hostable, all-in-one frontend for those who want to run their own interface on top of our APIs.",
-      "prs": [
-        7257,
-        8481
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🚀",
-      "title": "Showcase Expansion",
-      "text": "Added 30+ new community apps, including D&D tools, IoT pixel art displays, and YouTube summarizers. The [Showcase](https://hello.pollinations.ai) is getting crowded.",
-      "prs": [
-        7224,
-        7232,
-        7244,
-        7248,
-        7250,
-        7257,
-        7627,
-        7636,
-        7658,
-        7662,
-        7664,
-        7682,
-        7695,
-        7699,
-        7811,
-        7849,
-        7885,
-        7909,
-        7919,
-        7937,
-        7988,
-        8047,
-        8050,
-        8146,
-        8297,
-        8374,
-        8396,
-        8416,
-        8442,
-        8445,
-        8469,
-        8471,
-        8481,
-        8482,
-        8486
-      ],
-      "kind": "app"
-    }
-  ],
+  "generated_at": "2026-10-17T22:41:43.987034+00:00",
+  "highlights": [],
   "changelog": []
 }

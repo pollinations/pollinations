@@ -2,8 +2,8 @@
   "date": "2026-04-17",
   "period_start": "2026-04-17",
   "period_end": "2026-04-17",
-  "title": "The CLI hits 0.1.0 and learns to stream",
-  "summary": "The CLI hits stable 0.1.0 with terminal audio playback, two new apps join the community showcase, and the model registry gets an under-the-hood upgrade.\n\nThe polli CLI officially dropped its alpha tag. Version 0.1.0 brings default real-time text streaming, perfectly sized terminal tables, and a new `--play` flag that pipes audio directly to your speakers. We also fixed the npm publish pipeline so you don't get stuck on old releases, and threw in a Claude skill for generating video demos.\n\nTwo new community apps sprouted in the showcase. Flashlearn turns documents into true/false flashcards and AI audio lessons for desktop study sessions. Ciel AI is a mobile-first assistant running entirely on our infrastructure, proving you can build full-featured mobile apps without managing your own backend.\n\nWe decoupled some internal logic in the model registry to ensure top-tier text and image models remain highly available and sustainable for the long haul.",
+  "title": "Polli gets more comfortable in a terminal",
+  "summary": "Polli gained audio playback and default text streaming, model prices got clearer, and two community apps joined the greenhouse.\n\nThe polli CLI adds `gen audio --play` for playing generated speech or music after saving it. Interactive `gen text` now streams by default, while pipes and redirects still receive buffered output. The default voice changes to sage, terminal formatting is tidier, and a new skill helps record video demos.\n\nThe model registry now separates public prices from costs for usage billing and Enter’s pricing table. Gemini Search token prices match Gemini Fast, while Seedream and Wan have explicit image and per-second video and audio prices. Models without an explicit price keep their existing rates.\n\nThe app catalog added @Aavirash’s Flashlearn for document-based flashcards and audio lessons, and @Naruto859’s mobile-first assistant Ciel AI. The README showcase also corrected creator credits for kre8.info and IntraMind / AlessiaBot.",
   "pr_count": 5,
   "prs": [
     {
@@ -11,11 +11,11 @@
       "date": "2026-04-17"
     },
     {
-      "number": 10282,
+      "number": 10279,
       "date": "2026-04-17"
     },
     {
-      "number": 10287,
+      "number": 10282,
       "date": "2026-04-17"
     },
     {
@@ -27,35 +27,25 @@
       "date": "2026-04-17"
     }
   ],
-  "generated_at": "2026-04-18T06:24:06.330017+00:00",
+  "generated_at": "2026-10-17T22:48:05.290231+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "Polli CLI hits v0.1.0",
-      "text": "The terminal client is officially stable. It now streams text by default, formats tables without breaking your terminal, and plays audio directly via the new `--play` flag.",
+      "emoji": "🎵",
+      "title": "Play audio from polli",
+      "text": "Use `polli gen audio --play` to save generated speech or music and play it when generation finishes. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
-        10282,
-        10287
+        10282
       ],
       "kind": "product"
     },
     {
-      "emoji": "🧠",
-      "title": "Flashlearn",
-      "text": "Turn your documents into true/false flashcards and AI audio lessons. Because reading is hard. [Try it](http://flashlearn.asquareportal.com/)",
+      "emoji": "✨",
+      "title": "Text streams in your terminal",
+      "text": "Interactive `polli gen text` now streams by default. Piped output stays buffered, and `--stream` or `--no-stream` lets you choose. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
-        10289
+        10282
       ],
-      "kind": "app"
-    },
-    {
-      "emoji": "📱",
-      "title": "Ciel AI",
-      "text": "A full-featured, mobile-first AI assistant powered entirely by our API. Good inspiration for your own mobile builds. [Try it](https://ciel-ai-v1.netlify.app)",
-      "prs": [
-        10290
-      ],
-      "kind": "app"
+      "kind": "product"
     }
   ],
   "changelog": []

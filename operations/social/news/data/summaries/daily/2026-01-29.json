@@ -2,8 +2,8 @@
   "date": "2026-01-29",
   "period_start": "2026-01-29",
   "period_end": "2026-01-29",
-  "title": "Enter brings back What’s new",
-  "summary": "Enter got a live-updating news banner and clearer announcements about model credits, Kimi K2.5 Thinking, and payment options.\n\nEnter’s home and sign-in pages now show a banner with the three newest entries from the GitHub-hosted highlights file, replacing a disabled hard-coded banner.\n\nThe news copy says that, starting January 30, 2026, `claude-large`, `gemini-large`, `veo`, `seedream-pro`, and `nanobanana-pro` require purchased Pollen. Free daily credits remain available for other models. This PR updates the announcement, not model eligibility.\n\nThe highlights and README also announce Kimi K2.5 Thinking and PayPal, Apple Pay, and Google Pay via Stripe. This PR adds those announcements, not the model or payment implementations.",
+  "title": "Enter gets a current news banner",
+  "summary": "Enter’s news banner now pulls current highlights, with notices about model access, Kimi K2.5 Thinking, and payment options.\n\nA “What’s new” banner was added to Enter’s home and sign-in pages. It pulls the three newest entries from the GitHub-hosted highlights file, replacing a disabled hard-coded banner.\n\nThe highlights and README now say that, starting January 30, `claude-large`, `gemini-large`, `veo`, `seedream-pro`, and `nanobanana-pro` require purchased Pollen. Free daily credits remain available for other models. This PR updated the announcement, not model eligibility.\n\nThe announcements also mention Kimi K2.5 Thinking and PayPal, Apple Pay, and Google Pay via Stripe. This PR changed the news copy, not the model or payment implementations.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2026-01-29"
     }
   ],
-  "generated_at": "2026-10-17T16:01:23.013716+00:00",
+  "generated_at": "2026-10-17T22:38:48.910205+00:00",
   "highlights": [],
   "changelog": []
 }

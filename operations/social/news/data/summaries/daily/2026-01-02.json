@@ -2,8 +2,8 @@
   "date": "2026-01-02",
   "period_start": "2026-01-02",
   "period_end": "2026-01-02",
-  "title": "GPT-5.2 routing addresses blocked responses",
-  "summary": "A day of fixes for GPT-5.2 responses, Usage CSV downloads, and a dashboard table that wanted more room than it had.\n\nThe `openai-large` route for GPT-5.2 was updated to address content-policy blocks that prevented text responses.\n\nEnter’s auth and dashboard endpoints now expose the Content-Disposition header to browser code, addressing a permission error when downloading Usage CSV files.\n\nThe API keys table is more compact, with six single-line column headings and no horizontal scroll container.",
+  "title": "GPT-5.2 responses unblocked",
+  "summary": "Three fixes: GPT-5.2 response blocks, a cramped API keys table, and browser-based Usage CSV downloads.\n\nThe `openai-large` GPT-5.2 endpoint moved to Sweden Central to address content-policy blocks that prevented responses.\n\nThe API keys table is more compact, with single-line headers and no horizontal scrolling. The Last Used column was removed.\n\nEnter’s auth and dashboard endpoints now expose the `Content-Disposition` header to browser code, addressing a permission error when downloading Usage CSV files.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2026-01-02"
     }
   ],
-  "generated_at": "2026-10-17T15:57:36.463155+00:00",
+  "generated_at": "2026-10-17T22:37:41.150323+00:00",
   "highlights": [],
   "changelog": []
 }

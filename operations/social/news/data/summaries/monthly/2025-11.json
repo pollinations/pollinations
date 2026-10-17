@@ -2,8 +2,8 @@
   "date": "2025-11-30",
   "period_start": "2025-11-01",
   "period_end": "2025-11-30",
-  "title": "More models, clearer discovery",
-  "summary": "November made more models and media available through Enter, while tightening the billing, compatibility, and discovery paths around them.\n\nPerplexity Sonar, Grok, Kimi, Gemini 3 Pro, and updated Claude options joined the text lineup. Gateway model listings gained aliases, pricing, and capability metadata, giving apps a better way to find the right model.\n\nChat completions gained audio input and output fields, reasoning controls, and broader support for provider-specific responses. Fixes preserved streams, citations, image URLs, and request parameters that had been getting lost between clients and models.\n\nImage requests became less prone to unwanted resizing, silent model substitution, and avoidable failures. Nano Banana Pro joined the registry and gained 1K, 2K, and 4K output; Enter also gained exact-match image caching and a way to invalidate entries.\n\nEnter split tier and pack balances, connected Pollen pack checkout, and made Spore the starting tier. Generation routes adopted a consistent authentication and positive-balance rule, while cached balance checks and clearer tier status reduced friction around account state.",
+  "title": "More models, more kinds of input",
+  "summary": "November broadened what people can make with Pollinations while making model discovery, Pollen accounting, and API responses more predictable.\n\nPerplexity Sonar, Kimi K2 Thinking, Gemini 3 Pro Preview, Claude Opus 4.5, and other text models joined the lineup. Chat gained reasoning controls and OpenAI-compatible audio input and output; model listings gained capabilities, pricing, and aliases.\n\nRequested dimensions now reach image models more faithfully, Flux reports failures instead of silently switching models, and Nano Banana Pro gained 1K, 2K, and 4K output selection. Enter took on exact-match image caching, with an endpoint to delete cached entries.\n\nEnter added separate tier and pack balances, connected $5–$50 Pollen packs to checkout, and made subscription states easier to read. Spore became the starting tier, while balance caching and tier-lookup fixes reduced avoidable billing round trips and incorrect displays.\n\nOpenAI-compatible paths arrived in Enter, ads left text responses, and streaming, provider-specific fields, upstream errors, image URLs, and request parameters received compatibility fixes. The work makes one API less likely to flatten the differences between the models behind it.",
   "pr_count": 165,
   "prs": [
     {
@@ -667,5 +667,5 @@
       "date": "2025-11-30"
     }
   ],
-  "generated_at": "2026-10-17T16:09:25.231413+00:00"
+  "generated_at": "2026-10-17T23:31:06.372152+00:00"
 }

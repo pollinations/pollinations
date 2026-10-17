@@ -2,8 +2,8 @@
   "date": "2026-01-06",
   "period_start": "2026-01-06",
   "period_end": "2026-01-06",
-  "title": "Two reasoning models join the lineup",
-  "summary": "Two reasoning models joined the lineup, video got a proper player, and several generation edge cases got less weird.\n\nAdded Fireworks AI’s GLM-4.7 as `glm` and MiniMax-M2.1 as `minimax`, both with reasoning and tool support and roughly 200,000-token context windows. Enter’s model list also gained a recent-model indicator and clearer icons for audio input and output.\n\nThe Play page now renders output from video-capable models such as Veo 3.1 in a video player rather than an image element. Model choices gained description tooltips, while Enter’s pricing table now labels its videos-per-Pollen column “videos” instead of “seconds”; Veo’s figures remain seconds per Pollen.\n\nRandom seeds for text and image requests are now capped at Vertex AI’s supported signed 32-bit maximum. `gptimage` requests with different seeds also get separate cache entries instead of sharing one cached image. That fixes cache behavior, not deterministic generation: Azure GPT Image does not support reproducible output by seed.",
+  "title": "Two more reasoning models",
+  "summary": "Two reasoning models joined the lineup while video playback, structured output, and image-request handling got some attention.\n\nAdded Fireworks AI’s GLM-4.7 as `glm` and MiniMax-M2.1 as `minimax`. Both support reasoning and tools, with context windows of roughly 200,000 tokens.\n\nPlay now renders results from video-output models such as Veo 3.1 in a video player instead of an image element. Model descriptions appear on hover; Enter also distinguishes audio input from output and labels Seedance’s pricing figures in videos rather than seconds.\n\nGemini structured-output requests no longer collide with tool settings. Random seeds now stay within Vertex AI’s supported range, and different `gptimage` seeds get distinct cache entries—though Azure GPT Image still does not generate reproducibly from a seed.",
   "pr_count": 8,
   "prs": [
     {
@@ -39,12 +39,12 @@
       "date": "2026-01-06"
     }
   ],
-  "generated_at": "2026-10-17T15:58:27.208412+00:00",
+  "generated_at": "2026-10-17T22:37:52.230488+00:00",
   "highlights": [
     {
       "emoji": "🤖",
       "title": "GLM-4.7 joins the lineup",
-      "text": "Try `glm` for reasoning and tool use, with a 198,000-token context window. [Browse GLM-4.7](https://enter.pollinations.ai/models?q=glm).",
+      "text": "Use `glm` for text generation with reasoning and tool support, plus a 198,000-token context window. [View the model](https://enter.pollinations.ai/models?q=glm).",
       "prs": [
         6880
       ],
@@ -53,7 +53,7 @@
     {
       "emoji": "🤖",
       "title": "MiniMax-M2.1 joins the lineup",
-      "text": "Try `minimax` for reasoning and tool use, with a 200,000-token context window. [Browse MiniMax-M2.1](https://enter.pollinations.ai/models?q=minimax).",
+      "text": "Use `minimax` for text generation with reasoning and tool support, plus a 200,000-token context window. [View the model](https://enter.pollinations.ai/models?q=minimax).",
       "prs": [
         6880
       ],

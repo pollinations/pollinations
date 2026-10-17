@@ -2,8 +2,8 @@
   "date": "2025-09-17",
   "period_start": "2025-09-17",
   "period_end": "2025-09-17",
-  "title": "More ways to make things",
-  "summary": "Eight community directory additions, from collaborative comics to developer tools and projects in Japanese and Portuguese.\n\nThe Creative Projects directory added two image generators, Mixbash’s bring-your-own-key model interface, and StoryWeaver AI, which uses Pollinations text and image APIs to build shared comic-style stories. The listings also now distinguish the official Pollinations MCP server from a community-maintained project.\n\nHack-and-Build added an OpenAI-compatible proxy for Pollinations text, image, and speech services, plus unpkg.ai, which generates JavaScript ESM modules on demand.\n\nThe directory added a Japanese-language chat project and EduGen AI, a Brazilian Portuguese tool that creates slide images for teachers. Both listings include language tags and translated descriptions.",
+  "title": "More ways to make things together",
+  "summary": "Eight community-project updates brought collaborative comics, multilingual tools, and a couple of interesting ways to build.\n\nThe Creative Projects directory added StoryWeaver AI for collaborative comic panels, Mixbash for bringing your own API keys to several model providers, and two image generators: Pollinations AI Demo and SHΞNΞRATOR. The listings also added the official Pollinations MCP server and clarified that MCPollinations is community-maintained.\n\nThe directories added a Japanese-language chat project and EduGen AI, a Brazilian Portuguese tool that creates slide images for teachers. Both listings include language tags and English translations.\n\nHack & Build added a community FastAPI proxy with OpenAI-compatible endpoints for Pollinations text, image, and speech services, plus unpkg.ai, which generates JavaScript ESM modules on demand.",
   "pr_count": 8,
   "prs": [
     {
@@ -39,7 +39,53 @@
       "date": "2025-09-17"
     }
   ],
-  "generated_at": "2026-10-17T15:46:37.583210+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:33:45.562158+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Make comics together",
+      "text": "StoryWeaver AI is now listed in Creative Projects. Its shared story rooms use preceding panels and participants’ prompts to generate connected comic-style panels.",
+      "prs": [
+        4077
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Slides for teachers",
+      "text": "EduGen AI is now listed in Learn. The Brazilian Portuguese tool uses Pollinations to create slide images for teachers.",
+      "prs": [
+        4080
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Bring your own keys",
+      "text": "Mixbash is now listed in Creative Projects, with a bring-your-own-key interface for models hosted on Pollinations, Fal, Replicate, Runpod, and Gemini.",
+      "prs": [
+        4076
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "An OpenAI-compatible community proxy",
+      "text": "Pollinations OpenAI Proxy is now listed in Hack & Build. It provides OpenAI-compatible endpoints for Pollinations text, image, and text-to-speech services.",
+      "prs": [
+        4081
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "JavaScript modules on demand",
+      "text": "unpkg.ai is now listed in Hack & Build. It generates JavaScript ESM modules on demand using LLMs.",
+      "prs": [
+        4084
+      ],
+      "kind": "product"
+    }
+  ],
   "changelog": []
 }

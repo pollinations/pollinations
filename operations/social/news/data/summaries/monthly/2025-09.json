@@ -2,8 +2,8 @@
   "date": "2025-09-30",
   "period_start": "2025-09-01",
   "period_end": "2025-09-30",
-  "title": "Images gained references",
-  "summary": "September brought more ways to generate and edit images, a clearer path to API access through Enter, and a wider range of community-built tools.\n\nNanobanana and Seedream joined the image API, and the editor gained support for up to four reference images on supported models. Queue changes gave Flower and Nectar users more room for image requests.\n\nEnter added GitHub sign-in, API key management, a Pollen balance view, and routes for free and paid generation. Later changes simplified the account page and made balance checks and request tracking more precise.\n\nFamiliar OpenAI model IDs were reassigned as GPT-5 Mini and Nano arrived; DeepSeek V3.1 and search-grounded Gemini were also added. Token caps and routing changes made model behavior more predictable.\n\nThe community directory grew with image generators, chat apps, a collaborative comics tool, developer utilities, and projects in Japanese, Portuguese, Persian, and Turkish.",
+  "title": "Reference images become a workflow",
+  "summary": "September expanded image-making and model choices while giving people clearer ways to use, track, and build on Pollinations.\n\nNano Banana and Seedream 4.0 added image generation from reference URLs. The image editor gained support for up to four references on compatible models, and Enter added listings for both models.\n\nGitHub sign-in, self-service API keys, and a Pollen balance view gave Enter an account workflow. Free registered services can be called without a key; paid requests gained session and balance checks, usage pricing, and tracking.\n\nThe text lineup shifted through several mappings before `openai` settled on GPT-5 Mini and `openai-fast` on GPT-5 Nano. Gemini Search added a search-grounded route, while model definitions took on more of the routing and request behavior.\n\nThe project directories grew with image generators, collaborative comics, multilingual chat and teaching tools, a VS Code extension, and community-built developer tools. The listings also distinguished the official MCP server from a community-maintained one.",
   "pr_count": 67,
   "prs": [
     {
@@ -275,5 +275,5 @@
       "date": "2025-09-30"
     }
   ],
-  "generated_at": "2026-10-17T16:09:15.104541+00:00"
+  "generated_at": "2026-10-17T23:30:59.520030+00:00"
 }

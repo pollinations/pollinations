@@ -2,8 +2,8 @@
   "date": "2025-03-24",
   "period_start": "2025-03-24",
   "period_end": "2025-03-24",
-  "title": "MCP assistants gain text and audio tools",
-  "summary": "Assistants gained text and audio tools, two chat models joined the lineup, and the community gallery picked up new projects.\n\nThe Pollinations MCP server expanded beyond images: assistants can now generate text, produce spoken responses, read supplied text aloud, and discover available models and voices. A new JavaScript documentation example also shows how to transcribe audio.\n\nAdded `mistral-roblox` and `phi-mini` to text chat. OpenAI-compatible chat requests are now private by default; the same update set an 8,000-token maximum for Qwen Coder on Scaleway and switched Gemini 2.0 Flash Lite to its non-preview model ID.\n\nAdded Azad-sl’s Chinese-language text-to-speech project and FreeAI, which combines chat, image generation, and voice synthesis. OkeyAI API Playground was removed from the project listings.",
+  "title": "MCP tools gained text and a voice",
+  "summary": "Assistants gained text and speech tools, the text API gained two models and private-by-default chat requests, and the community gallery grew.\n\nThe Pollinations MCP server expanded beyond image generation. Assistants can now generate text, produce spoken responses, speak supplied text verbatim, and list available models and voices. A new JavaScript speech-to-text example shows how to send audio for transcription.\n\nThe text API added `mistral-roblox` and `phi-mini`. Requests to `/openai*` and `/v1/chat/completions` are now marked private by default. Qwen Coder's configuration gained an 8,000-token maximum, and Gemini 2.0 Flash Lite moved to its non-preview model ID.\n\nThe project listings added Azad-sl’s text-to-speech app and FreeAI, which combines chat, image generation, and voice synthesis. OkeyAI API Playground was removed from the directory.",
   "pr_count": 7,
   "prs": [
     {
@@ -35,12 +35,12 @@
       "date": "2025-03-24"
     }
   ],
-  "generated_at": "2026-10-17T15:36:34.110375+00:00",
+  "generated_at": "2026-10-17T22:29:54.450053+00:00",
   "highlights": [
     {
       "emoji": "🎵",
       "title": "MCP can speak now",
-      "text": "Let an AI assistant generate text, produce a spoken response, or read your text aloud. The MCP server also lists available models and voices. [Explore MCP tools](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "text": "AI assistants can generate text, make spoken responses, speak supplied text verbatim, and discover available models and voices through the Pollinations MCP server. [Explore MCP tools](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         1434
       ],
@@ -49,7 +49,7 @@
     {
       "emoji": "🤖",
       "title": "Mistral Roblox joins chat",
-      "text": "Try `mistral-roblox`, a Mistral chat model routed through Scaleway. [View the model](https://enter.pollinations.ai/models?q=mistral-roblox).",
+      "text": "Use `mistral-roblox`, a Mistral chat model routed through Scaleway. [Browse the model](https://enter.pollinations.ai/models?q=mistral-roblox).",
       "prs": [
         1431
       ],
@@ -58,11 +58,30 @@
     {
       "emoji": "🤖",
       "title": "Phi Mini joins chat",
-      "text": "Try `phi-mini`, powered by Phi-4 Mini Instruct on Azure. [View the model](https://enter.pollinations.ai/models?q=phi-mini).",
+      "text": "Use `phi-mini` for Phi-4 Mini Instruct through the text API. [Browse the model](https://enter.pollinations.ai/models?q=phi-mini).",
       "prs": [
         1431
       ],
       "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Chat requests default private",
+      "text": "Requests to `/openai*` and `/v1/chat/completions` are now marked private by default. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        1431
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🌟",
+      "title": "More Chinese-language creative apps",
+      "text": "The community project gallery added a text-to-speech app with selectable voice styles and FreeAI for chat, images, and voice synthesis. [Explore community apps](https://pollinations.ai).",
+      "prs": [
+        1426,
+        1429
+      ],
+      "kind": "product"
     }
   ],
   "changelog": []

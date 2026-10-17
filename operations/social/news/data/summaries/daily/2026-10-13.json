@@ -2,16 +2,12 @@
   "date": "2026-10-13",
   "period_start": "2026-10-13",
   "period_end": "2026-10-13",
-  "title": "Four new models for video, images and multimodal work",
-  "summary": "Four new models, dashboard-managed sandboxes, easier key grants and Quest rewards made for a crowded day in the garden.\n\nKandinsky 6.0 Lite adds five-second video with synchronized audio from text or a start image. Qwen Image 2.1 Turbo adds image generation and editing with up to ten references. Muse Wonder 1.0 and Gemini 4 Argon expand the text lineup with large context windows and multimodal input; Gemini also supports Google Search. The community app catalog gained Bit, an AI-agent narrator of short tech stories.\n\nThe Enter dashboard now has a page to create, manage and connect to sandboxes. Timeout handling moves to ten-minute paid-ahead leases, with a way to set a limit on a running sandbox. The large template gains more disk; both templates add rclone, cron, ffmpeg, uv and other everyday tools.\n\nModel and sandbox permission refusals can now point to a focused page that grants access on an existing key without changing its other settings. Signed-in users can redeem one-off event codes for Quest Pollen, and Discord level 10 and 20 now have one-time Quest rewards. The Quest page and leaderboards received smaller fixes.",
-  "pr_count": 41,
+  "title": "Four new models for video, images, and chat",
+  "summary": "Four new models, a sandbox dashboard, narrower key approvals, new Quest rewards, and more ways for agents to find the API.\n\nKandinsky 6.0 Lite adds five-second video from text or a start image, with optional synchronized audio. Qwen Image 2.1 Turbo adds image generation and editing with up to ten references. Muse Wonder 1.0 and Gemini 4 Argon expand the chat lineup. GPT Image routing gained more regional capacity and broader failure recovery; model pricing, routing, parameter validation, and video aspect ratios also received fixes.\n\nA Sandboxes page adds creation, SSH instructions, and controls to pause, resume, extend, or delete a sandbox. Longer time limits use ten-minute payment increments, and the dashboard can set an end time for a sandbox previously left running until stopped. Sandbox template work adds rclone for bucket mounts, plus cron, ffmpeg, uv, and other everyday tools. The pollinations-large build instructions now specify 50 GiB of free disk.\n\nA new grant flow lets key owners approve a denied model, model category, or account permission without changing the key’s other settings. Quests adds redeemable event codes and one-time Discord level rewards at levels 10 and 20. The event-code form, leaderboard presentation, and Discord invite also received fixes.",
+  "pr_count": 42,
   "prs": [
     {
       "number": 15504,
-      "date": "2026-10-13"
-    },
-    {
-      "number": 16256,
       "date": "2026-10-13"
     },
     {
@@ -115,6 +111,10 @@
       "date": "2026-10-13"
     },
     {
+      "number": 17273,
+      "date": "2026-10-13"
+    },
+    {
       "number": 17296,
       "date": "2026-10-13"
     },
@@ -159,6 +159,10 @@
       "date": "2026-10-13"
     },
     {
+      "number": 17357,
+      "date": "2026-10-13"
+    },
+    {
       "number": 17364,
       "date": "2026-10-13"
     },
@@ -171,12 +175,12 @@
       "date": "2026-10-13"
     }
   ],
-  "generated_at": "2026-10-14T06:08:24.356236+00:00",
+  "generated_at": "2026-10-17T23:20:06.346102+00:00",
   "highlights": [
     {
-      "emoji": "🎵",
-      "title": "Kandinsky video with audio",
-      "text": "Generate five-second 480p videos with synchronized audio from a prompt or start image using `kandinskylab/kandinsky-6.0-lite`. [Browse the model](https://enter.pollinations.ai/models?q=kandinskylab/kandinsky-6.0-lite).",
+      "emoji": "🎨",
+      "title": "Kandinsky makes short videos",
+      "text": "Make five-second, 480p videos from a prompt or start image with `kandinsky/kandinsky-6.0-lite`. Synchronized audio is on by default and can be turned off. [Browse the model](https://enter.pollinations.ai/models?q=kandinsky/kandinsky-6.0-lite).",
       "prs": [
         16995
       ],
@@ -184,8 +188,8 @@
     },
     {
       "emoji": "🎨",
-      "title": "Qwen image editing",
-      "text": "Generate or edit images with `qwen/qwen-image-2.1-turbo`, using up to ten reference images. [Browse the model](https://enter.pollinations.ai/models?q=qwen/qwen-image-2.1-turbo).",
+      "title": "Qwen Image 2.1 Turbo",
+      "text": "Generate or edit images with `qwen/qwen-image-2.1-turbo`, using up to ten reference images, a requested size, and a seed. [Browse the model](https://enter.pollinations.ai/models?q=qwen/qwen-image-2.1-turbo).",
       "prs": [
         17055
       ],
@@ -193,32 +197,110 @@
     },
     {
       "emoji": "🤖",
-      "title": "Gemini 4 Argon",
-      "text": "Use `google/gemini-4-argon` with text, image, audio or video input, plus reasoning controls, tools and Google Search. [Browse the model](https://enter.pollinations.ai/models?q=google/gemini-4-argon).",
+      "title": "Muse Wonder joins chat",
+      "text": "Try `meta/muse-wonder-1.0` with text or image input, tool calls, structured output, and a 1,048,576-token context window. [Browse the model](https://enter.pollinations.ai/models?q=meta/muse-wonder-1.0).",
+      "prs": [
+        17203
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Gemini 4 Argon arrives",
+      "text": "Use `google/gemini-4-argon` with text, images, audio, or video input, plus tools and Google Search. [Browse the model](https://enter.pollinations.ai/models?q=google/gemini-4-argon).",
       "prs": [
         17329
       ],
       "kind": "model"
     },
     {
-      "emoji": "💡",
+      "emoji": "🔗",
+      "title": "Grant only what’s needed",
+      "text": "When a key lacks a model, category, or account permission, its owner can approve that specific access without changing the key’s budget, expiry, or other permissions. Refused requests can point to the grant page.",
+      "prs": [
+        16407
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "✨",
+      "title": "Event codes for Quests",
+      "text": "Got an event code? Redeem it from the Quests page for Quest Pollen. A code link can prefill the form.",
+      "prs": [
+        16921,
+        17299
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Discord levels earn Pollen",
+      "text": "Link your Discord account and reach level 10 or 20 to qualify for one-time Quest Pollen rewards at each milestone. Reaching level 20 qualifies for both.",
+      "prs": [
+        17259
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🚀",
       "title": "Manage sandboxes in Enter",
-      "text": "Create, pause, resume and connect to your sandboxes from the dashboard. Templates also gain tools including ffmpeg, uv and rclone. [Open the dashboard](https://enter.pollinations.ai/keys).",
+      "text": "Create a sandbox from the dashboard, copy its SSH command, and pause, resume, extend, or delete it there. The page shows charges before confirmation and lets you set a time limit for a sandbox running until stopped.",
       "prs": [
         17150,
+        17266,
+        17325
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "More tools for sandboxes",
+      "text": "Sandbox template work adds rclone for mounting bucket storage, plus cron, ffmpeg, uv, git-lfs, and other tools. Cron jobs run while the sandbox is running, not while it is paused.",
+      "prs": [
         17364,
         17368
       ],
       "kind": "product"
     },
     {
-      "emoji": "📱",
-      "title": "Bit tells tech stories",
-      "text": "Watch short AI-agent-narrated stories about open-source projects and AI news in Italian and English. [Try it](https://bit.sessionweave.com).",
+      "emoji": "🎨",
+      "title": "Two frames from polli",
+      "text": "`polli gen video --image` accepts multiple public reference-frame URLs for start and end frames. Requested aspect ratios are no longer overridden by default square dimensions.",
       "prs": [
-        17324
+        17081
       ],
-      "kind": "app"
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Find models by kind",
+      "text": "Use the SDK’s `models(kind)` or `getModels(kind)` to list text, image, video, audio, or embeddings models. Calls without `kind` still list all models; the older text- and image-specific helpers have been removed. [Explore the SDK](https://react.pollinations.ai).",
+      "prs": [
+        17087
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Declare agent model capabilities",
+      "text": "Endpoint-agent owners can declare traits such as tool calling, reasoning, and web search through the create and update APIs. Those declarations can then appear in model listings and capability filters; owners still need to set them for existing agents.",
+      "prs": [
+        16912
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Agent discovery gets easier",
+      "text": "Agents can find API documentation, OAuth metadata, catalogs, and MCP server cards through page headers and well-known endpoints instead of hardcoding every path. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        16990,
+        17048,
+        17221,
+        17222,
+        17233
+      ],
+      "kind": "api"
     }
   ],
   "changelog": []

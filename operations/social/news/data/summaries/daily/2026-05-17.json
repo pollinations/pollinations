@@ -2,8 +2,8 @@
   "date": "2026-05-17",
   "period_start": "2026-05-17",
   "period_end": "2026-05-17",
-  "title": "Video generation now supports A-to-B transitions",
-  "summary": "Video transitions, audio speaker diarization, and a massive wave of thirty new community apps hitting the greenhouse.\n\nYou can now pass a positional image array to the video endpoints (image[0] for the start frame, image[1] for the end frame) and let models like seedance, veo, and wan-fast hallucinate the in-between. Full support is already rolled out across the API, SDK, CLI, and MCP tools.\n\nThe `/v1/audio/transcriptions` endpoint now accepts `response_format=diarized_json`. It returns OpenAI-compatible segments with speaker labels, powered by AssemblyAI and ElevenLabs Scribe. You can finally stop guessing who is talking in your hour-long meeting recordings.\n\nThe community shipped some serious infrastructure today. AI Clip Finder uses FastAPI and LLMs to automatically extract social-ready clips from long videos. Meanwhile, AI Image Studio and Lunere Image Gen both dropped full-pipeline workbenches for generating and refining images via the REST API.",
+  "title": "Video can start and end on your frames",
+  "summary": "Video gets start and end frames, transcripts get speaker labels, and 40 community additions give the app catalog a growth spurt.\n\nVideo requests now accept two positional images: the first sets the start frame and the second sets the end frame on veo, seedance, seedance-2.0, and wan-fast. A single image still works as before. Model listings now expose video capabilities, and the MCP video tool accepts durations up to 120 seconds for models that support them. Wan-fast's two-frame route produces a fixed five-second video without audio.\n\nThe transcription API added `response_format=diarized_json` for AssemblyAI and ElevenLabs Scribe. It returns speaker-labeled segments with text and timestamps, plus an optional `speakers_expected` hint when the speaker count is known.\n\nThe app catalog gained visual projects spanning comic panels, game assets, image editing, quote posters, and prompt-to-video. Among them, Film ze Snu turns dream descriptions or voice recordings into a four-scene film, while AI Clip Finder finds moments to clip from longer videos. These are community-made apps added to the catalog, not new Pollinations API features.",
   "pr_count": 42,
   "prs": [
     {
@@ -175,43 +175,25 @@
       "date": "2026-05-17"
     }
   ],
-  "generated_at": "2026-05-18T07:18:06.704074+00:00",
+  "generated_at": "2026-10-17T22:52:15.945632+00:00",
   "highlights": [
     {
-      "emoji": "🎬",
-      "title": "Keyframe your videos",
-      "text": "You can now pass an array of images (`image[0]` for start, `image[1]` for end) to generate video transitions across the Seedance, Veo, and Wan-Fast models. Check the [API Docs](https://gen.pollinations.ai/docs).",
+      "emoji": "🎨",
+      "title": "Set both video frames",
+      "text": "Send a start image and an end image to supported video models, including `veo`, `seedance`, `seedance-2.0`, and `wan-fast`. One image still makes a normal image-to-video request. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         11009
       ],
       "kind": "api"
     },
     {
-      "emoji": "🗣️",
-      "title": "Speaker diarization",
-      "text": "The `/v1/audio/transcriptions` endpoint now supports `response_format=diarized_json`. Send audio, get back structured JSON with text, timestamps, and speaker IDs so you know exactly who interrupted whom.",
+      "emoji": "🎵",
+      "title": "Speaker-labeled transcripts",
+      "text": "Use `response_format=diarized_json` with AssemblyAI or ElevenLabs Scribe to get transcript segments labeled by speaker and timestamp. If you know how many speakers to expect, pass `speakers_expected`. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         11047
       ],
       "kind": "api"
-    },
-    {
-      "emoji": "🎲",
-      "title": "Dynamic roleplay backgrounds",
-      "text": "A clever new community integration detects location changes in your SillyTavern chats and automatically generates the environment visuals in the background. [View repo](https://github.com/ZapoVerde/SillyTavern-Localyze)",
-      "prs": [
-        11077
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "✨",
-      "title": "Prompt Evolution Engine",
-      "text": "Stop guessing what the image model wants. This community tool runs your basic ideas through a 5-step interactive refinement process to spit out highly detailed, cinematic prompts. [Try it](https://erbharatmalhotra.github.io/Prompt-Evolution-Engine/)",
-      "prs": [
-        11071
-      ],
-      "kind": "app"
     }
   ],
   "changelog": []

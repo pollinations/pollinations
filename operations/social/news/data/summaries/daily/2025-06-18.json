@@ -2,8 +2,8 @@
   "date": "2025-06-18",
   "period_start": "2025-06-18",
   "period_end": "2025-06-18",
-  "title": "An escape room that listens",
-  "summary": "Two conversation-driven Roblox games joined the community list, which also got some overdue pruning.\n\nAiko AI: With You Til The End joined the Games project list. The Roblox escape room has an autonomous AI character whose emotional state responds to what players say.\n\nConvince the Weird Maid to Let You Leave the House joined the Games list. Players try to persuade an AI-driven maid to let them out before her “freakiness” meter reaches 100%. A fairly specific deadline.\n\nThe project directory also got a working Mindcraft web-game link, an updated Irina link, and fewer duplicate listings.",
+  "title": "Two Roblox games built around talking your way out",
+  "summary": "Two community-made Roblox escape games joined the Games list, which also got some overdue weeding.\n\nThe Games list added Convince the Weird Maid to Let You Leave the House and Aiko AI: With You Til The End. Both turn conversations with AI characters into escape-room mechanics: one has a rising “freakiness” meter; the other has a character whose emotional state responds to what players say.\n\nMindcraft’s listing now points to its web game, and Irina’s listing has a different URL.\n\nThe project list consolidated Mindcraft’s duplicate entry, removed duplicate AI drafterplus and Pollinations MCP Server listings, and removed Favorite Puzzles and Watch TV with Neko from Games.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,18 @@
       "date": "2025-06-18"
     }
   ],
-  "generated_at": "2026-10-17T15:42:34.754197+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:32:17.349825+00:00",
+  "highlights": [
+    {
+      "emoji": "🎯",
+      "title": "Two AI escape games",
+      "text": "Try two community-made Roblox games where what you say to an AI character shapes your attempt to escape. [Explore community projects](https://pollinations.ai).",
+      "prs": [
+        2517,
+        2544
+      ],
+      "kind": "product"
+    }
+  ],
   "changelog": []
 }

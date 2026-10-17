@@ -2,43 +2,59 @@
   "date": "2026-03-22",
   "period_start": "2026-03-22",
   "period_end": "2026-03-22",
-  "title": "Alibaba's Qwen models arrive (and they're free)",
-  "summary": "Alibaba's Qwen models hit the text and vision endpoints for free, and the community showcase gets a new text-to-image app.\n\nWe wired up Alibaba's Qwen models to the text and vision endpoints. You now have access to qwen-coder-large for development, qwen-large with a massive 1M context window, and qwen-vision for image analysis. We also immediately dropped the paywall on qwen-large and qwen-vision, making them fully accessible on the free tier.\n\nThe community showcase keeps expanding. LND Ai, a new text-to-image generation tool built on the API, was just added to the garden.",
-  "pr_count": 3,
+  "title": "Three Qwen models added for code, reasoning, and vision",
+  "summary": "Three Qwen models joined the API, broken model backends left the registry, and the Greenhouse grew by two apps.\n\nAlibaba DashScope support adds three paid-only text API models: `qwen-coder-large` for code generation, `qwen-large` for reasoning with a 1,048,576-token context, and `qwen-vision` for text-and-image input. All three support tools.\n\nModels backed by four broken providers were removed from the shared registry, along with their aliases and generation handlers. The cleanup spans text, image, video, and audio models, so those options are no longer listed or routed for generation.\n\nThe catalog added LND Ai for image generation and Practica un segundo idioma for language-learning exercises, bringing the Greenhouse to 1,129 apps. A README update also credits app creators by name in the Recent Apps table.",
+  "pr_count": 5,
   "prs": [
     {
       "number": 9420,
       "date": "2026-03-22"
     },
     {
-      "number": 9444,
+      "number": 9421,
       "date": "2026-03-22"
     },
     {
-      "number": 9450,
+      "number": 9424,
+      "date": "2026-03-22"
+    },
+    {
+      "number": 9426,
+      "date": "2026-03-22"
+    },
+    {
+      "number": 9444,
       "date": "2026-03-22"
     }
   ],
-  "generated_at": "2026-03-23T06:22:56.237825+00:00",
+  "generated_at": "2026-10-17T22:44:40.026809+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Qwen Models & Vision",
-      "text": "Alibaba's Qwen models (`qwen-coder-large`, `qwen-large`, and `qwen-vision`) are now live on the [Unified API](https://gen.pollinations.ai). 1M context windows and image understanding, completely unlocked for the free tier.",
+      "title": "Qwen for code generation",
+      "text": "Use `qwen-coder-large` for code generation with a 262,144-token context and tool support. This model is paid-only. [Browse the model](https://enter.pollinations.ai/models?q=qwen-coder-large).",
       "prs": [
-        9444,
-        9450
+        9444
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Qwen with longer context",
+      "text": "Use `qwen-large` for reasoning with a 1,048,576-token context and tool support. This model is paid-only. [Browse the model](https://enter.pollinations.ai/models?q=qwen-large).",
+      "prs": [
+        9444
       ],
       "kind": "model"
     },
     {
       "emoji": "🎨",
-      "title": "LND Ai Showcase",
-      "text": "LND Ai has been added to the community showcase. Another solid text-to-image tool built entirely by hitting our API. [Try it](https://www.namansoni.in/text-to-image).",
+      "title": "Qwen reads images",
+      "text": "Send text and images to `qwen-vision`, a reasoning model with a 131,072-token context and tool support. This model is paid-only. [Browse the model](https://enter.pollinations.ai/models?q=qwen-vision).",
       "prs": [
-        9420
+        9444
       ],
-      "kind": "app"
+      "kind": "model"
     }
   ],
   "changelog": []

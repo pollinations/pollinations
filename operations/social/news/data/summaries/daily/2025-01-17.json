@@ -2,8 +2,8 @@
   "date": "2025-01-17",
   "period_start": "2025-01-17",
   "period_end": "2025-01-17",
-  "title": "GPT-4o joins the text API",
-  "summary": "GPT-4o joined the text API, web-search defaults got clearer, and vision requests gained working examples.\n\nAdded `openai-large` as a GPT-4o chat model with vision support. The existing `openai` option remains on GPT-4o-mini, and its model-list description now says so.\n\nText requests using web search now get a search-specific system prompt when the caller does not provide one. The default prompt also no longer suggests adding Pollinations links to responses.\n\nThe API documentation now shows how to send image URLs or base64-encoded images for analysis with GPT-4o and GPT-4o-mini, including a Python example.",
+  "title": "GPT-4o joins the text model list",
+  "summary": "GPT-4o joined the text model list, while web-search defaults and vision examples got clearer.\n\nAdded `openai-large`, backed by GPT-4o, alongside the existing GPT-4o-mini-backed `openai` model. Both are listed as supporting vision.\n\nText requests using web search now get a search-specific default prompt when callers do not provide one. The general default prompt also stops asking for optional Pollinations links.\n\nAdded image-analysis examples for GPT-4o and GPT-4o-mini, covering image URLs, base64-encoded images, and a Python request.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,12 +19,12 @@
       "date": "2025-01-17"
     }
   ],
-  "generated_at": "2026-10-17T15:32:52.769784+00:00",
+  "generated_at": "2026-10-17T22:28:53.375476+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "GPT-4o joins the model list",
-      "text": "Use `openai-large` for GPT-4o chat and vision requests; `openai` remains the GPT-4o-mini option. [Browse the model](https://enter.pollinations.ai/models?q=openai-large).",
+      "title": "GPT-4o as openai-large",
+      "text": "Use `openai-large` for GPT-4o chat and image analysis. The existing `openai` model remains backed by GPT-4o-mini. [Browse the model](https://enter.pollinations.ai/models?q=openai-large).",
       "prs": [
         1026
       ],

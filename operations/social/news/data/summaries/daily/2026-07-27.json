@@ -2,8 +2,8 @@
   "date": "2026-07-27",
   "period_start": "2026-07-27",
   "period_end": "2026-07-27",
-  "title": "Image APIs gained edits and sturdier fallback capacity",
-  "summary": "A reliability-heavy day: editable community images, a new long-context model, sturdier fallbacks, and fewer mysteries in API errors and usage records.\n\nCommunity image models can now expose OpenAI-compatible multipart edits after passing an edit-capability probe, so validated models can accept reference images without confusing generation-only endpoints. FLUX.1 Schnell also has a working Replicate backup route, while Z-Image Vast workers now prove local health before joining production capacity.\n\nNVIDIA Nemotron 3 Ultra joined the text API with a 262k-token context window, tool use, reasoning, and structured JSON. Mercury 2 moved to a pinned OpenRouter route without changing its public interface, and text failures now identify the real upstream while separating rate limits, transport failures, and Pollinations-side errors. Debugging an API should not require divination.\n\nTwo community contributors, meow18838 and Lorodn4x, can now publish models to the shared ecosystem. The README news was refreshed too, because the public garden sign should generally match the garden.",
+  "title": "Community image models can support reference-image edits",
+  "summary": "Community image editing and Nemotron arrived alongside sturdier image fallbacks and clearer API errors.\n\nCommunity image model registration now checks whether a model can edit source images. Models that pass advertise image input and `/v1/images/edits`; generation-only models keep their existing text-to-image behavior.\n\nAdded NVIDIA Nemotron 3 Ultra as `nemotron`, with text, tool calling, reasoning, and a 262,144-token context window. Separate model maintenance moved Mercury 2 through OpenRouter and corrected the provider label for Nova Canvas and Nova Reel without changing their model IDs.\n\nFLUX.1 Schnell now falls back to Replicate when its primary GPU pool has no worker or a request fails, replacing a fallback that returned 404. Z-Image worker startup was also tightened so workers pass a local health check before accepting shared traffic.",
   "pr_count": 11,
   "prs": [
     {
@@ -15,19 +15,19 @@
       "date": "2026-07-27"
     },
     {
+      "number": 12791,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12792,
+      "date": "2026-07-27"
+    },
+    {
       "number": 12793,
       "date": "2026-07-27"
     },
     {
-      "number": 12795,
-      "date": "2026-07-27"
-    },
-    {
       "number": 12797,
-      "date": "2026-07-27"
-    },
-    {
-      "number": 12798,
       "date": "2026-07-27"
     },
     {
@@ -51,12 +51,12 @@
       "date": "2026-07-27"
     }
   ],
-  "generated_at": "2026-07-28T07:05:54.394133+00:00",
+  "generated_at": "2026-10-17T23:03:43.706350+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Community image edits",
-      "text": "Validated community models can now edit reference images through the OpenAI-compatible `/v1/images/edits` endpoint. Send pixels in; receive altered pixels back. [API Docs](https://gen.pollinations.ai/docs)",
+      "title": "Edit with community models",
+      "text": "Community image models that support editing can now take a reference image through `/v1/images/edits`. Generation-only models continue to work as before. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         12715
       ],
@@ -65,20 +65,11 @@
     {
       "emoji": "🤖",
       "title": "NVIDIA Nemotron 3 Ultra",
-      "text": "`nemotron` is now available for 262K-context reasoning, tool use, and structured JSON through the standard text API. [Try it](https://pollinations.ai/play)",
+      "text": "Use `nemotron` for text, tool calling, and reasoning with a 262,144-token context window. [Browse the model](https://enter.pollinations.ai/models?q=nemotron).",
       "prs": [
         12806
       ],
       "kind": "model"
-    },
-    {
-      "emoji": "⚡",
-      "title": "More reliable Z-Image capacity",
-      "text": "New GPU workers now join production only after proving they are healthy; the canary handled 102/102 requests with a 4.69s p50.",
-      "prs": [
-        12802
-      ],
-      "kind": "product"
     }
   ],
   "changelog": []

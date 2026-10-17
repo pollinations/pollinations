@@ -2,8 +2,8 @@
   "date": "2025-09-25",
   "period_start": "2025-09-25",
   "period_end": "2025-09-25",
-  "title": "GPT-5 Mini and Nano take over familiar model IDs",
-  "summary": "GPT-5 Mini and Nano gained familiar model IDs, while a queue fix lets authenticated requests use their concurrency allowance.\n\n`openai` was restored as GPT-5 Mini, while `openai-fast` switched to GPT-5 Nano. Both accept text and images and support tools. The update also set input and completion limits for the GPT-5 models and raised nectar-tier concurrency from 50 to 100 requests.\n\nA per-IP queue bottleneck was fixed so its per-interval request limit matches the configured concurrency cap instead of allowing only one request to start. Text and image queue intervals were also adjusted.\n\nEnter now forwards sign-in context with proxied text and image requests. API-key record defaults and authentication field handling were also updated.",
+  "title": "GPT-5 Mini and Nano take their places",
+  "summary": "GPT-5 Mini and Nano joined the model lineup, while a queue fix let concurrent requests stop waiting in single file.\n\n`openai` was restored as GPT-5 Mini, while `openai-fast` switched from GPT-4.1 Nano to GPT-5 Nano. Both accept text and images and support tools.\n\nThe per-IP queue no longer starts just one request per interval regardless of the configured concurrency cap. Token-authenticated users can use their tier-based concurrency, including the increased nectar-tier cap.\n\nEnter now records GitHub account details at sign-in and passes account context along with proxied text and image generation requests.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,21 +19,21 @@
       "date": "2025-09-25"
     }
   ],
-  "generated_at": "2026-10-17T15:47:19.762055+00:00",
+  "generated_at": "2026-10-17T22:33:59.993942+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "GPT-5 Mini on `openai`",
-      "text": "Use `openai` for GPT-5 Mini with text, image input, and tool support. [View the model](https://enter.pollinations.ai/models?q=openai).",
+      "title": "GPT-5 Mini returns",
+      "text": "Use `openai` for GPT-5 Mini with text, image inputs, and tool support. [Browse the model](https://enter.pollinations.ai/models?q=openai).",
       "prs": [
         4177
       ],
       "kind": "model"
     },
     {
-      "emoji": "🤖",
-      "title": "GPT-5 Nano on `openai-fast`",
-      "text": "Use `openai-fast` for GPT-5 Nano with text, image input, and tool support. It also has the `gpt-5-nano` alias. [View the model](https://enter.pollinations.ai/models?q=openai-fast).",
+      "emoji": "⚡",
+      "title": "GPT-5 Nano goes fast",
+      "text": "`openai-fast` now uses GPT-5 Nano, with text, image inputs, and tool support. [Browse the model](https://enter.pollinations.ai/models?q=openai-fast).",
       "prs": [
         4177
       ],

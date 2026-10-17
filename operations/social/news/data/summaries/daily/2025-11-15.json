@@ -2,8 +2,8 @@
   "date": "2025-11-15",
   "period_start": "2025-11-15",
   "period_end": "2025-11-15",
-  "title": "Spore becomes the registration tier",
-  "summary": "Spore became the starting tier, model defaults got a clearer home, and gateway-to-backend request failures got a fix.\n\nNew accounts now start on Spore rather than Seed. Enter shows the new tier, subscription routes recognize it, and the Pollen FAQ no longer promises Seed’s daily Pollen to new registrants. Subscription status matching was also corrected.\n\nEnter’s chat completions use `openai` when no model is specified. The text and image backends no longer silently substitute their own models; requests that reach them without a valid model are rejected instead.\n\nA configuration mismatch behind 403 responses on gateway-to-backend text and image requests was corrected. Proxy handling and authenticated text and audio tests were also tidied up.",
+  "title": "Spore becomes the starting tier",
+  "summary": "Spore joined the tier lineup, model defaults got one owner, and gateway authentication got a tune-up.\n\nSpore was added ahead of Seed as the default tier for new accounts, with a badge in Enter and updated Pollen guidance. Subscription account matching was also corrected.\n\nChat completions now use the shared `openai` default when no model is specified. The text and image backends no longer silently substitute their own models; direct backend requests must provide a valid model.\n\nGateway-to-backend authentication configuration was aligned to address 403 responses. Proxy cleanup and more isolated text and audio tests accompanied the fix.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,7 +27,7 @@
       "date": "2025-11-15"
     }
   ],
-  "generated_at": "2026-10-17T15:52:34.445919+00:00",
+  "generated_at": "2026-10-17T22:35:48.770420+00:00",
   "highlights": [],
   "changelog": []
 }

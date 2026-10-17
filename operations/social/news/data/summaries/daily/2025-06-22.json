@@ -2,8 +2,8 @@
   "date": "2025-06-22",
   "period_start": "2025-06-22",
   "period_end": "2025-06-22",
-  "title": "CraftUI joins the Vibe Coding projects list",
-  "summary": "The Vibe Coding projects list has its first entry: a community tool for turning prompts and images into editable UI.\n\nCraftUI became the list’s first entry. The community project turns text prompts or images into UI components, with real-time editing, theme switching, Tailwind or Bootstrap options, and sharing and remixing.",
+  "title": "CraftUI joins Vibe Coding projects",
+  "summary": "The Vibe Coding projects list has its first entry: CraftUI, a community tool for turning prompts and images into editable UI components.\n\nCraftUI is the first entry in the Vibe Coding projects list. The community-built tool turns text prompts or images into UI components, with real-time editing, theme switching, Tailwind or Bootstrap options, and sharing and remixing.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,17 @@
       "date": "2025-06-22"
     }
   ],
-  "generated_at": "2026-10-17T15:42:36.304892+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:32:14.176325+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "CraftUI joins Vibe Coding",
+      "text": "Find community-built CraftUI in Vibe Coding projects. Turn text prompts or images into UI components, then edit them in real time, switch themes, or choose Tailwind or Bootstrap.",
+      "prs": [
+        2560
+      ],
+      "kind": "product"
+    }
+  ],
   "changelog": []
 }

@@ -2,12 +2,28 @@
   "date": "2026-04-27",
   "period_start": "2026-04-27",
   "period_end": "2026-04-27",
-  "title": "Text model plumbing: Grok and DeepSeek Pro are stable again",
-  "summary": "Rerouting text models around upstream outages and welcoming two new community apps to the greenhouse.\n\nUpstream providers occasionally trip over their own shoelaces. We rerouted Grok to a working Azure 4.20 non-reasoning deployment to fix a string of 502 errors, and shifted DeepSeek Pro over to Fireworks for better uptime and context handling. Both models are back to generating text instead of stack traces.\n\nTwo new community projects hit the showcase. StoryForge is a client-side app that spins up illustrated, chapter-based short stories. On the terminal side, Frieze is a CLI tool that injects AI-generated banners and slogans straight into your shell. More proof that you can build weird, fun things with simple HTTP calls.",
-  "pr_count": 4,
+  "title": "DeepSeek Pro gets a larger context",
+  "summary": "DeepSeek Pro gained a much larger registered context, Grok’s routing and image accounting were corrected, and the app catalog got a tidy-up.\n\n`deepseek-pro` moved to Fireworks to avoid rate limits on its previous route. Its registered context length increased from 65,536 to 1,048,576 tokens; the regular `deepseek` model remains on DeepInfra.\n\n`grok` was repointed to the Grok 4.20 non-reasoning deployment after its previous route returned upstream 404s. The Grok 4.20 model metadata now lists image input and a 262,144-token context, while usage accounting separates image tokens from text tokens. `grok-large` is marked paid-only.\n\nExisting crypto Pollen was consolidated into pack balances without changing users’ total Pollen. Balance displays and deductions now use the consolidated balance, and the old crypto invoice and webhook routes were removed.",
+  "pr_count": 9,
   "prs": [
     {
+      "number": 10488,
+      "date": "2026-04-27"
+    },
+    {
+      "number": 10490,
+      "date": "2026-04-27"
+    },
+    {
+      "number": 10491,
+      "date": "2026-04-27"
+    },
+    {
       "number": 10493,
+      "date": "2026-04-27"
+    },
+    {
+      "number": 10500,
       "date": "2026-04-27"
     },
     {
@@ -19,29 +35,33 @@
       "date": "2026-04-27"
     },
     {
+      "number": 10506,
+      "date": "2026-04-27"
+    },
+    {
       "number": 10508,
       "date": "2026-04-27"
     }
   ],
-  "generated_at": "2026-04-28T06:51:50.995459+00:00",
+  "generated_at": "2026-10-17T22:49:24.337885+00:00",
   "highlights": [
     {
-      "emoji": "📖",
-      "title": "StoryForge",
-      "text": "A new community app that generates illustrated, chapter-based short stories using the [Unified API](https://gen.pollinations.ai). [Try it](http://pollen-story-forge.vercel.app/)",
+      "emoji": "🤖",
+      "title": "More room for DeepSeek Pro",
+      "text": "`deepseek-pro` now has a registered context length of 1,048,576 tokens, up from 65,536. [View the model](https://enter.pollinations.ai/models?q=deepseek-pro).",
       "prs": [
-        10505
+        10493
       ],
-      "kind": "app"
+      "kind": "api"
     },
     {
-      "emoji": "🖥️",
-      "title": "Frieze",
-      "text": "Because your terminal needs art too. A community-built shell tool for generating AI banners and slogans right in your CLI. [View repo](https://github.com/peterjaric/frieze)",
+      "emoji": "✨",
+      "title": "Grok 4.20 takes images",
+      "text": "Grok 4.20’s reasoning and non-reasoning variants now list text and image input, with a 262,144-token context. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        10508
+        10506
       ],
-      "kind": "app"
+      "kind": "model"
     }
   ],
   "changelog": []

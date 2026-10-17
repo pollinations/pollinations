@@ -2,9 +2,9 @@
   "date": "2026-10-15",
   "period_start": "2026-10-15",
   "period_end": "2026-10-15",
-  "title": "Typed decisions and sound for silent videos",
-  "summary": "Async media jobs, two decision models, video sound effects and sturdier agent workflows shared the day with five community apps.\n\nTwo decision models were added for fixed choices and probabilities: Perplexity’s Decider V1.1 27B and Microsoft-Decision-1. Mirelo SFX 2.0 adds prompted, synchronized sound effects to a supplied video. GLM 5.3 also gained another fallback route.\n\nImage, video, audio and 3D requests can now return an async job ID, with endpoints and SDK methods for checking status and fetching the result. Follow-up fixes keep job status accurate across retries and cache hits. Image requests now reject invalid seeds and undersized dimensions; Gemini transcription accepts browser-style WebM uploads, and the SDK correctly formats multi-image edits.\n\nAgent responses and Polli CLI now show the model name needed to call an agent, while repeated identical agent requests run again so tools can return fresh results. Two Quest contributions added PR-review-and-fix agents. Sandboxes gained names, faster repeat SSH connections and a default pause behavior that keeps files when a lease expires; their dashboard now explains costs and pause behavior. A new agent skill documents how to connect user wallets.",
-  "pr_count": 58,
+  "title": "Typed decisions and sound for silent video",
+  "summary": "Async media jobs, decision models, video sound effects, and sturdier agent and sandbox tools made for a fairly crowded garden.\n\nQuest contributors added Perplexity Decider V1.1 27B and Microsoft-Decision-1 for typed decisions through `/alpha/decisions` and chat completions. The team added `mirelo/sfx-2.0`, which takes one source video and a sound prompt to produce synchronized effects. GLM 5.3 gained another fallback route; image seed and size validation, multi-image SDK edits, WebM transcription, audio filenames, and model-catalog descriptions also got more predictable.\n\nA Quest contribution added `Prefer: respond-async` for image, video, audio, and 3D requests, with job-status and result endpoints plus SDK helpers. Follow-up fixes preserve submitters’ access across failed-job retries, complete jobs when a synchronous request joins a cached result, and give detached generations the longer 300-second request window. Separate API work makes repeated agent requests run again and rejects malformed chat and status inputs clearly. Classic API refusals now explain limits and retry timing; the old public generation feeds were removed.\n\nAgent responses and CLI listings now expose callable model IDs. Quest contributors added two PR-review agents that inspect GitHub changes and prepare proposed fixes, while a new agent skill explains how to build apps where users authorize their own Pollen. Sandboxes gained names, faster repeat SSH connections on supported systems, and a pause-by-default behavior when an SDK or CLI caller omits `autoPause`. OAuth metadata discovery, device-request handling, agent pricing guidance, and MCP usage filtering received supporting work.",
+  "pr_count": 60,
   "prs": [
     {
       "number": 15382,
@@ -87,6 +87,10 @@
       "date": "2026-10-15"
     },
     {
+      "number": 17464,
+      "date": "2026-10-15"
+    },
+    {
       "number": 17478,
       "date": "2026-10-15"
     },
@@ -100,6 +104,10 @@
     },
     {
       "number": 17485,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17487,
       "date": "2026-10-15"
     },
     {
@@ -239,54 +247,98 @@
       "date": "2026-10-15"
     }
   ],
-  "generated_at": "2026-10-16T06:08:10.730704+00:00",
+  "generated_at": "2026-10-17T23:19:42.538249+00:00",
   "highlights": [
     {
       "emoji": "🚀",
-      "title": "Media jobs without waiting",
-      "text": "Send `Prefer: respond-async` for image, video, audio or 3D generation, then check the job and download its result when it finishes. The SDK has async methods for the same flow. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Async media generation",
+      "text": "Submit image, video, audio, or 3D generation with `Prefer: respond-async`, then poll the job and download its result. The SDK has matching async helpers. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         17380
       ],
       "kind": "api"
     },
     {
-      "emoji": "🤖",
-      "title": "Models for typed decisions",
-      "text": "Ask Perplexity Decider V1.1 27B or Microsoft-Decision-1 to score fixed choices and return probabilities instead of prose. Both accept decision requests through `/alpha/decisions`. [Browse models](https://enter.pollinations.ai/models).",
+      "emoji": "🎯",
+      "title": "Perplexity Decider V1.1",
+      "text": "Use Perplexity Decider V1.1 27B for typed choices, scores, and yes/no probabilities from text input through `/alpha/decisions` or chat completions. [Find the model](https://enter.pollinations.ai/models?q=Perplexity%20Decider%20V1.1%2027B).",
       "prs": [
-        17484,
+        17484
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Microsoft Decision 1",
+      "text": "Send fixed choices to `microsoft/microsoft-decision-1` for calibrated probabilities without generated prose. It accepts decision requests through `/alpha/decisions` and chat completions. [Find the model](https://enter.pollinations.ai/models?q=microsoft%2Fmicrosoft-decision-1).",
+      "prs": [
         17485
       ],
       "kind": "model"
     },
     {
       "emoji": "🎵",
-      "title": "Sound effects for video",
-      "text": "Give `mirelo/sfx-2.0` a video URL and a sound prompt to add synchronized effects to the clip. [View the model](https://enter.pollinations.ai/models?q=mirelo/sfx-2.0).",
+      "title": "Sound for silent video",
+      "text": "Give `mirelo/sfx-2.0` one source video and a sound prompt to add synchronized sound effects. The `duration` parameter can select 1–120 seconds. [Find the model](https://enter.pollinations.ai/models?q=mirelo%2Fsfx-2.0).",
       "prs": [
         17590
       ],
       "kind": "model"
     },
     {
-      "emoji": "💡",
-      "title": "Sandboxes keep their work",
-      "text": "New sandboxes default to pausing rather than deleting when their lease expires, so their files remain available. You can also name them and see estimated costs before choosing a template. [Read the sandbox docs](https://gen.pollinations.ai/docs).",
+      "emoji": "🤖",
+      "title": "Agents review pull requests",
+      "text": "Give the new community PR-review agents a GitHub PR link to get code findings and proposed fixes. PR Mender can also prepare a fix diff and corrected files on a branch. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        17416,
-        17646
+        17282,
+        17437
       ],
       "kind": "product"
     },
     {
-      "emoji": "📱",
-      "title": "Pollinations in Android blocks",
-      "text": "Pollinations Blocks brings text, images, speech and transcription to MIT App Inventor and Kodular projects. [View repo](https://github.com/Saauf/pollinations-blocks).",
+      "emoji": "✨",
+      "title": "Names for sandboxes",
+      "text": "Give a sandbox a name when creating it, or keep the generated name. Names appear on dashboard cards and in `polli sandbox list`. [Read the sandbox docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        17643
+        17416
       ],
-      "kind": "app"
+      "kind": "product"
+    },
+    {
+      "emoji": "🚀",
+      "title": "Faster sandbox reconnects",
+      "text": "Repeat `ssh`, `scp`, and `rsync` connections to a sandbox can reuse an SSH connection and reconnect in under a second on supported systems. [Read the sandbox docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17519
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "A skill for user-paid apps",
+      "text": "Agents building apps where users authorize their own Pollen now have a discoverable skill covering web and headless authorization flows. [Read the wallet guide](https://gen.pollinations.ai/docs#tag/connect-user-wallets).",
+      "prs": [
+        17387
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Agent IDs you can call",
+      "text": "Agent API responses and Polli CLI listings now show the callable `model` ID, so you can copy it into a request without guessing the path. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        15382
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "OAuth discovery on 401",
+      "text": "Gen API authentication errors now include a `WWW-Authenticate` challenge pointing OAuth clients to protected-resource metadata. Clients can discover the right metadata without a hardcoded URL. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17492
+      ],
+      "kind": "api"
     }
   ],
   "changelog": [

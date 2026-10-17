@@ -2,8 +2,8 @@
   "date": "2025-12-19",
   "period_start": "2025-12-19",
   "period_end": "2025-12-19",
-  "title": "Gemini chat requests can include video",
-  "summary": "Gemini gained video input, Unity got a darker persona, and several API edge cases became less surprising.\n\nChat completions gained `video_url` content parts for Gemini models, so a message can pair a video URL with text for analysis. Video and image URL objects also accept an optional `mime_type`.\n\nUnity’s persona was rewritten with a darker, mood-aware conversational style. It now directs visual requests to `generate_image` and keeps a consistent appearance for selfies. Its supernatural powers and memory are character fiction, not platform capabilities.\n\nImage requests can handle unencoded reference-image URLs that contain their own query parameters, with guidance for invalid URLs. Veo polling now returns HTTP 400 for prompt or policy errors instead of reporting them as server failures.",
+  "title": "Gemini gets video input and working tools",
+  "summary": "Gemini gained video input, Unity got a darker persona, and image URLs and API errors became less mysterious.\n\nChat completions now accept `video_url` content parts for Gemini video analysis, with optional MIME types for video and image URLs. A separate fix makes `gemini-fast` defaults for code execution, Google Search, and URL context usable by the gateway.\n\nUnity’s revised persona stays in character, adapts to the user’s mood, and uses `generate_image` for visual requests. Short image prompts can get either a literal interpretation or a dark remix; selfie instructions now specify a consistent appearance.\n\nThe image API now handles unencoded HTTP(S) URLs in `image=`, including nested generation URLs with their own query parameters. Invalid reference URLs also get more useful guidance.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,12 +31,12 @@
       "date": "2025-12-19"
     }
   ],
-  "generated_at": "2026-10-17T15:56:05.599474+00:00",
+  "generated_at": "2026-10-17T22:37:05.179613+00:00",
   "highlights": [
     {
       "emoji": "🎯",
-      "title": "Video input for Gemini",
-      "text": "Send a `video_url` alongside text in a Gemini chat-completion request to ask questions about a video. The URL object can also include a `mime_type`. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Analyze video with Gemini",
+      "text": "Add a `video_url` content part alongside text in a Gemini chat-completion request. Video and image URL objects can also include a `mime_type`. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         6186
       ],
@@ -44,8 +44,8 @@
     },
     {
       "emoji": "🎨",
-      "title": "Unity’s darker side",
-      "text": "Unity has a darker, mood-aware conversational style and can use `generate_image` for visual requests, including selfies with a consistent appearance.",
+      "title": "Unity gets a darker persona",
+      "text": "Unity now adapts its emo/goth voice to the conversation and uses `generate_image` for visual requests. Short image prompts may get a literal take or a dark remix.",
       "prs": [
         6066
       ],

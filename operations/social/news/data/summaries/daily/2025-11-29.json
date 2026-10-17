@@ -2,8 +2,8 @@
   "date": "2025-11-29",
   "period_start": "2025-11-29",
   "period_end": "2025-11-29",
-  "title": "Image cache entries can be invalidated",
-  "summary": "Image cache invalidation arrived, an Android community app joined the directory, and model metadata and usage accounting got tidier.\n\nA new DELETE endpoint accepts the original image prompt and query parameters to invalidate a cached result. Its JSON response reports the outcome for each cache store.\n\nThe community-built Android app was added to the Chat projects listing and project directories. It brings Pollinations-powered chat, web search, and image generation to a phone.\n\nText and image model lists now label pricing in Pollen and expose the specialized-model flag as `is_specialized`. Shared registry data also supplies Enter’s model descriptions and modalities, while alias cleanup removes a few misleading entries.",
+  "title": "An endpoint to clear cached images",
+  "summary": "Image caches gained a delete endpoint, an Android project joined the directory, and model metadata and usage accounting got tidier.\n\nAdded `DELETE /delete/prompt/:prompt` to invalidate an image cache entry using the original prompt and query parameters. The JSON response reports the result of each deletion attempt.\n\nThe Chat projects listing now includes @BiG L’s Android app for Pollinations-powered chat, web search, and image generation.\n\nText and image model listings now show prices in Pollen and return `is_specialized` instead of `isSpecialized`. Shared registry metadata also keeps Enter’s model descriptions and modalities aligned.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,12 +27,12 @@
       "date": "2025-11-29"
     }
   ],
-  "generated_at": "2026-10-17T15:53:29.150310+00:00",
+  "generated_at": "2026-10-17T22:36:05.641778+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Invalidate cached images",
-      "text": "Send DELETE to `/delete/prompt/:prompt` with the original prompt and query parameters to invalidate an image cache entry. The JSON response reports the deletion results.",
+      "title": "Clear a cached image",
+      "text": "Invalidate an image cache entry with `DELETE /delete/prompt/:prompt`, using the original prompt and query parameters. The response reports the result of each deletion attempt.",
       "prs": [
         5463
       ],

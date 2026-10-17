@@ -2,12 +2,28 @@
   "date": "2026-04-30",
   "period_start": "2026-04-30",
   "period_end": "2026-04-30",
-  "title": "Faster text generation at the edge and Llama 3.3",
-  "summary": "Text generation gets a major speed boost at the edge, Llama 3.3 joins the roster, and nova-fast stops throwing 500 errors.\n\nWe migrated text generation logic directly into the core edge worker, eliminating a network hop for faster, more reliable chat responses. While we were in the neighborhood, we wired up Meta's Llama 3.3 70B Instruct to the API.\n\nA configuration bug was causing widespread 500 errors for the nova-fast model. We flattened the config to point directly at a single Bedrock target, and it is now fully operational and returning text instead of stack traces.\n\nAdded 308 redirects from the old enter.pollinations.ai endpoints to the new gateway so legacy SDK clients don't drop POST data or throw 404s. We also cleaned up the OpenAPI docs, restoring the missing CLI, Auth, and Errors sections while deleting duplicated BYOP content.",
-  "pr_count": 5,
+  "title": "Enter gets clearer places for everything",
+  "summary": "A new Llama model and a more navigable Enter sit atop a substantial move of text generation into Gen.\n\nEnter’s dashboard was reorganized into News & FAQ, Pollen, Usage, Keys, and Models pages, with mobile navigation and shared UI components. API keys and app keys now have separate lists, and News and FAQ share one Updates page.\n\nMeta Llama 3.3 70B Instruct was added as `llama`, with tool use and a 131,072-token context window. Separate fixes address rejected Claude requests, empty-message errors, Gemini audio token details, and `nova-fast` model resolution.\n\nGen’s Worker now handles chat completions, `/text` requests, streaming, and related text-model behavior previously served separately. Legacy Enter generation URLs gained redirects to their Gen counterparts, preserving query strings and POST requests.",
+  "pr_count": 9,
   "prs": [
     {
+      "number": 10516,
+      "date": "2026-04-30"
+    },
+    {
       "number": 10555,
+      "date": "2026-04-30"
+    },
+    {
+      "number": 10564,
+      "date": "2026-04-30"
+    },
+    {
+      "number": 10565,
+      "date": "2026-04-30"
+    },
+    {
+      "number": 10573,
       "date": "2026-04-30"
     },
     {
@@ -27,25 +43,34 @@
       "date": "2026-04-30"
     }
   ],
-  "generated_at": "2026-05-01T06:52:11.495172+00:00",
+  "generated_at": "2026-10-17T22:49:32.215269+00:00",
   "highlights": [
     {
-      "emoji": "⚡",
-      "title": "Edge Text Generation",
-      "text": "Text generation now runs directly on the edge worker. One less network hop means faster responses when hitting the [text API](https://gen.pollinations.ai/v1/chat/completions).",
-      "prs": [
-        10555
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🚀",
+      "emoji": "🤖",
       "title": "Llama 3.3 70B",
-      "text": "Meta's Llama 3.3 70B Instruct is now live. Just pass `llama` to the [text endpoint](https://gen.pollinations.ai/v1/models) and see what it has to say.",
+      "text": "Use `llama` for text generation with tool use and a 131,072-token context window. [Browse the model](https://enter.pollinations.ai/models?q=llama).",
       "prs": [
         10582
       ],
       "kind": "model"
+    },
+    {
+      "emoji": "📱",
+      "title": "A clearer Enter dashboard",
+      "text": "Find News & FAQ, Pollen, Usage, Keys, and Models in dedicated pages, with mobile navigation and separate lists for API keys and app keys. [Open Enter](https://enter.pollinations.ai/keys).",
+      "prs": [
+        10516
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Text joins the Gen Worker",
+      "text": "Send chat completions and `/text` requests through Gen’s unified API, including streaming responses. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        10555
+      ],
+      "kind": "api"
     }
   ],
   "changelog": []

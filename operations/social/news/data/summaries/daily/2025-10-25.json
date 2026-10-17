@@ -3,7 +3,7 @@
   "period_start": "2025-10-25",
   "period_end": "2025-10-25",
   "title": "A home for Hacktoberfest apps",
-  "summary": "Hacktoberfest apps gained a subdomain hosting path, API requests from app origins gained verification, and an elevator acquired a more specific address.\n\nAdded a deployment workflow and app registry for hosting Hacktoberfest projects on pollinations.ai subdomains. The registry includes six apps, and CatGPT moved into the Hacktoberfest app directory.\n\nAdded Turnstile verification to the text and image API cache workers for requests from localhost and non-API pollinations.ai subdomains.\n\nRenamed the Sirius Cybernetics elevator challenge directory and its configured subdomain without changing the app. Follow-up work kept the deployment workflow from processing the app registry as an app and moved the edit debounce to description processing.",
+  "summary": "Hacktoberfest app hosting got its groundwork, app-origin API requests gained verification, and the workflows got a little tidier.\n\nA new workflow and app registry were added to support hosting Hacktoberfest projects on pollinations.ai subdomains. The Sirius Cybernetics elevator challenge received a more specific subdomain configuration; its app code did not change.\n\nThe text and image API cache workers gained Turnstile verification for requests from local development and non-API pollinations.ai subdomains, with support for browser preflight requests.\n\nA 180-second edit debounce moved to the description-condensing workflow, where it can let rapid edits settle. The app deployment workflow was also adjusted to skip its registry file.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2025-10-25"
     }
   ],
-  "generated_at": "2026-10-17T15:49:54.396750+00:00",
+  "generated_at": "2026-10-17T22:34:54.237936+00:00",
   "highlights": [],
   "changelog": []
 }

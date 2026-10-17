@@ -2,8 +2,8 @@
   "date": "2026-01-27",
   "period_start": "2026-01-27",
   "period_end": "2026-01-27",
-  "title": "Tier Pollen gets a daily balance",
-  "summary": "Tier Pollen moved to daily balances, while Enter and the README caught up on yesterday's model and SDK news.\n\nTier and Pollen balances moved to D1. New accounts start on Spore with 1 Pollen; tier balances reset at 00:00 UTC without rollover, including 500 Pollen for Router. Requests draw from the tier balance first, then crypto, then packs. Enter also gained a clearer tier-balance breakdown. Pack checkout currently returns 503, while the customer portal remains available.\n\nEnter's news highlights now cover Wan 2.6 image-to-video with audio, Klein Large image generation and editing, the Pollinations provider for Vercel AI SDK, and Gemini 2.5 Pro. This was a news update, not a model or SDK change.\n\nThe README's ten-item Latest News list now includes those January 26 highlights, rotating out older entries.",
+  "title": "Pollen tiers move to D1",
+  "summary": "Pollen tiers gained daily D1 refills and clearer balance accounting, while yesterday’s releases made their way into the news.\n\nTeam work moved tier balances out of Polar. New accounts start on Spore with 1 Pollen, and tier balances refill daily at 00:00 UTC without rollover; Router receives 500 Pollen per refill.\n\nRequests now draw from tier balance first, then crypto, then pack balance. Enter adds a tier balance section with hover breakdowns. Tier changes appear after a page refresh, with the new balance applying at the next refill unless updated separately. The changed checkout flow returns 503 for Polar pack purchases; the customer portal remains available.\n\nAgent-maintained highlights and README news now cover Wan 2.6, Klein Large, the Vercel AI SDK provider, and Gemini 2.5 Pro. These are news-list updates, not new model or SDK changes today.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2026-01-27"
     }
   ],
-  "generated_at": "2026-10-17T16:01:17.655790+00:00",
+  "generated_at": "2026-10-17T22:38:45.651300+00:00",
   "highlights": [],
   "changelog": []
 }

@@ -2,13 +2,25 @@
   "date": "2026-06-14",
   "period_start": "2026-06-07",
   "period_end": "2026-06-13",
-  "title": "Musical chairs with model providers",
-  "summary": "We re-routed half our models for better reliability, gave the dashboard a borderless facelift, and shipped a CDN bundle for no-build prototyping.\n\nWe added Claude Fable 5 and Kimi K2.7 Code to the text lineup. Behind the scenes, we migrated Wan, Qwen, and Pruna models to Replicate and OpenRouter. This migration gives us explicit 1080p video support, significantly cheaper Qwen text generation, and ensures failed requests actually return 400s instead of hanging indefinitely.\n\nThe UI got a much-needed aesthetic pass. We dropped the emojis for a custom icon set, rolled out a warmer dark mode with borderless controls, and restored one-click model slug copying. More importantly, the dashboard now fetches the model catalog dynamically—so when we deploy a new model, it appears in the UI instantly without us updating hardcoded lists.\n\nYou can now prototype with `@pollinations/ui` directly in a vanilla HTML file or CodePen via CDN—no React build step required. On the API side, we fixed a classic string-boolean bug where `?stream=false` was evaluating to true, and upstream content policy rejections now correctly return a 422 instead of triggering a 500 server error.\n\nWebsim got a full React rebuild, introducing a cleaner layout and standardizing on Bring-Your-Own-Pollen (BYOP) authentication so you can use your own balance for generations. We also welcomed Wikimind, a translation-based learning tool, to the app showcase.",
-  "pr_count": 13,
+  "title": "One catalog, fewer conflicting model lists",
+  "summary": "The model catalog became the shared source of truth while new models, clearer API behavior, and better places to build took shape around it.\n\nEnter, the public site, activity views, key permissions, and Model Monitor now draw model details from the live catalog. Model-list API responses include category and display metadata, and an SDK alpha preserves unfamiliar categories rather than dropping them. Enter also restored one-click copying of model API IDs.\n\nPruna gained separate `p-video-720p` and `p-video-1080p` models; its existing video aliases select 720p, so 1080p requires the explicit model. Wan gained a separate `wan-pro-1080p` option and end-frame guidance, alongside a repair to Wan Pro image-to-video requests. The API docs caught up with the resolution choices.\n\nPaid-only `claude-fable-5` was added with text and image input, tools, and a 1M-token context. Coding-focused `kimi-k2.7-code` was added with reasoning, tools, image input, and a 262,144-token context window.\n\nImage and video content-policy rejections now return HTTP 422 with a stable `content_policy_violation` code instead of looking like server failures. Inert options were removed from schemas and client tools, while older image requests that send those keys are ignored. MCP audio tools now accept voices returned by `listAudioVoices`.",
+  "pr_count": 31,
   "prs": [
     {
       "number": 11613,
       "date": "2026-06-08"
+    },
+    {
+      "number": 11674,
+      "date": "2026-06-08"
+    },
+    {
+      "number": 11692,
+      "date": "2026-06-09"
+    },
+    {
+      "number": 11693,
+      "date": "2026-06-09"
     },
     {
       "number": 11698,
@@ -19,8 +31,40 @@
       "date": "2026-06-09"
     },
     {
+      "number": 11702,
+      "date": "2026-06-09"
+    },
+    {
+      "number": 11706,
+      "date": "2026-06-09"
+    },
+    {
+      "number": 11712,
+      "date": "2026-06-10"
+    },
+    {
+      "number": 11713,
+      "date": "2026-06-10"
+    },
+    {
+      "number": 11716,
+      "date": "2026-06-10"
+    },
+    {
+      "number": 11719,
+      "date": "2026-06-10"
+    },
+    {
       "number": 11722,
       "date": "2026-06-10"
+    },
+    {
+      "number": 11737,
+      "date": "2026-06-11"
+    },
+    {
+      "number": 11738,
+      "date": "2026-06-11"
     },
     {
       "number": 11743,
@@ -31,11 +75,31 @@
       "date": "2026-06-11"
     },
     {
+      "number": 11746,
+      "date": "2026-06-12"
+    },
+    {
+      "number": 11747,
+      "date": "2026-06-12"
+    },
+    {
       "number": 11753,
       "date": "2026-06-12"
     },
     {
+      "number": 11757,
+      "date": "2026-06-12"
+    },
+    {
       "number": 11758,
+      "date": "2026-06-12"
+    },
+    {
+      "number": 11759,
+      "date": "2026-06-12"
+    },
+    {
+      "number": 11761,
       "date": "2026-06-12"
     },
     {
@@ -44,6 +108,10 @@
     },
     {
       "number": 11697,
+      "date": "2026-06-13"
+    },
+    {
+      "number": 11767,
       "date": "2026-06-13"
     },
     {
@@ -57,7 +125,11 @@
     {
       "number": 11779,
       "date": "2026-06-13"
+    },
+    {
+      "number": 11780,
+      "date": "2026-06-13"
     }
   ],
-  "generated_at": "2026-06-14T07:32:39.772782+00:00"
+  "generated_at": "2026-10-17T23:27:51.284301+00:00"
 }

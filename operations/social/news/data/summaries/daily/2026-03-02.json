@@ -2,9 +2,9 @@
   "date": "2026-03-02",
   "period_start": "2026-03-02",
   "period_end": "2026-03-02",
-  "title": "Letting models be themselves",
-  "summary": "We let text models drop their forced personalities, fixed a vision API blindspot, and welcomed 13 new community apps including a bot running in 40,000 Discord servers.\n\nWe stopped injecting default conversational system prompts into general-purpose text models. They will no longer confidently claim to be an outdated version of themselves or adopt a forced personality unless you explicitly ask them to. Enjoy the purer, native outputs.\n\nA recent TypeScript migration accidentally coerced multimodal image arrays into the dreaded '[object Object]' string, which is surprisingly hard for an AI to look at. That's fixed. We also swapped tool schema sanitization to an allowlist so Gemini and Vertex AI stop choking on unsupported JSON properties during function calling.\n\n13 new apps hit the showcase today. The heavy hitter is Techno Bot, currently running in over 40,000 Discord servers. The rest of the haul includes a Roblox admin script that translates plain text into commands, a Persian-language chat PWA, and a highly specific wave of EdTech tools ranging from calculus tutors to diploma exam prep.",
-  "pr_count": 17,
+  "title": "General-purpose models keep their native behavior",
+  "summary": "Native model behavior and intact vision requests meet a growing community app catalog.\n\nRemoved the default conversational system prompt from more than 20 general-purpose text models. Requests without a user-supplied system message now follow each model’s native behavior; specialized models keep their tailored prompts.\n\nMessage normalization now preserves image-bearing content arrays instead of turning them into \"[object Object]\". Tool schemas sent to Vertex AI also retain supported fields while dropping incompatible schema keywords, reducing tool-call failures.\n\nThirteen apps joined the catalog, including study and math tools, multilingual video dubbing, Persian-language chat, a Discord bot, and a prompt-based media creator. The additions span Learn, chat, games, image, and video/audio categories.",
+  "pr_count": 18,
   "prs": [
     {
       "number": 7501,
@@ -67,6 +67,10 @@
       "date": "2026-03-02"
     },
     {
+      "number": 8673,
+      "date": "2026-03-02"
+    },
+    {
       "number": 8729,
       "date": "2026-03-02"
     },
@@ -75,7 +79,7 @@
       "date": "2026-03-02"
     }
   ],
-  "generated_at": "2026-03-18T22:02:15.687943+00:00",
+  "generated_at": "2026-10-17T22:42:28.253711+00:00",
   "highlights": [],
   "changelog": []
 }

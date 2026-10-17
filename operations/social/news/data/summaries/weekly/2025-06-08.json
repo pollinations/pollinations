@@ -2,8 +2,8 @@
   "date": "2025-06-08",
   "period_start": "2025-06-01",
   "period_end": "2025-06-07",
-  "title": "A bigger, easier-to-browse project garden",
-  "summary": "The community directory grew easier to explore while image generation, text models, and ad controls got more useful.\n\nCommunity projects arrived throughout the week, from Spanish-language creative tools and Minecraft agents to social bots, Roblox conversations, and image-making apps. The directory gained seven categories, clearer project links, and a Vibe Coding landing view. Some listings were later rearranged or removed, so the week's additions are not all part of the final lineup.\n\nGPT Image can preserve transparent PNG output, and generation and editing requests gained an optional `transparent=true` parameter. Identical simultaneous requests share a generation instead of duplicating work, failed generations can be retried, and image safety checks expanded to fetched editing inputs.\n\nAuthenticated users gained a Show Ads setting, and turning it off also excludes text-service ads. For eligible requests, ads are appended rather than replacing answers, JSON-mode responses skip them, and conversations avoid repeated ads. Streaming setup now waits for the eligibility check.\n\n`deepseek-reasoning` moved to DeepSeek R1-0528, and `elixposearch` joined the lineup for search-enhanced generation; neither supports tools. DeepSeek response handling was simplified, queue pacing was adjusted, and two referrers no longer force the llamascout model.",
+  "title": "GPT Image learned to keep the background out",
+  "summary": "This week made image output more useful, text responses more predictable, and a growing collection of community projects easier to explore.\n\nGPT Image now retains PNG output instead of converting it to JPEG, and generation and editing requests can use `transparent=true` for transparent backgrounds. Identical simultaneous requests share one generation, failed generations can be retried, and image safety checks expanded.\n\nThe project directory was reorganized into seven categories, with Vibe Coding as its opening view. Categorized tables and clearer links in the documentation make projects easier to find, while additions across creative tools, study, chat, social bots, and games show why the directory needed room to grow.\n\n`deepseek-reasoning` now uses DeepSeek R1-0528, and `elixposearch` adds a search-enhanced text option; neither supports tools. DeepSeek-v3 responses also stopped moving reasoning into the answer or wrapping it in `<think>` tags.\n\nAuthenticated users gained a Show Ads setting, and text requests with `show_ads=false` now skip ads. Ad insertion checks conversation history, leaves JSON-mode responses alone, and appends messages rather than replacing the assistant’s answer. Streaming ad handling received follow-up fixes throughout the week.",
   "pr_count": 39,
   "prs": [
     {
@@ -163,5 +163,5 @@
       "date": "2025-06-07"
     }
   ],
-  "generated_at": "2026-10-17T16:04:48.367075+00:00"
+  "generated_at": "2026-10-17T23:24:37.606395+00:00"
 }

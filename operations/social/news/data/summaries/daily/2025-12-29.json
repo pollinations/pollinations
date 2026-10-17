@@ -3,7 +3,7 @@
   "period_start": "2025-12-29",
   "period_end": "2025-12-29",
   "title": "A better view of what people are making",
-  "summary": "A new image feed and React audio hook arrived alongside Z-Image upscaling and a tidier path for community app submissions.\n\nThe Play page gained a Watch Feed with single-image and grid views. It shows completed images across models, with prompt and model labels, while model selection stays in the Play view. On smaller screens, the Model Monitor table now scrolls horizontally so its latency and error columns remain reachable.\n\n`@pollinations/react` added `usePollinationsAudio` to build text-to-speech URLs from text, with optional voice, model, and seed settings. A follow-up added its TypeScript definition.\n\nZ-Image work added 2× SPAN upscaling for larger images and pixel-count limits that preserve the requested aspect ratio. Its native and output budgets were subsequently adjusted, generation was set to nine inference steps, and `steps` was removed from the request schema. The default image model changed to `zimage`; requests for `flux` now resolve to it rather than a separate Flux model.",
+  "summary": "A new image feed and React audio hook landed while Z-Image gained upscaling and became the default image model.\n\nThe Play page added a Watch Feed with single-image and grid views, showing completed images across models with prompt and model labels. The Model Monitor table also became horizontally scrollable on mobile, so its latency and error columns are no longer cut off.\n\nZ-Image added SPAN 2× upscaling for requests above its native pixel budget, while preserving aspect ratios when oversized requests are scaled down. Its native resolution budget was subsequently reduced, and generation now uses a fixed nine steps. Z-Image also replaced flux as the default image model; requests using `flux` now resolve to Z-Image.\n\n`@pollinations/react` added `usePollinationsAudio` for building text-to-speech URLs from text, with voice, model, and seed options. A follow-up added its TypeScript definition.",
   "pr_count": 23,
   "prs": [
     {
@@ -99,12 +99,12 @@
       "date": "2025-12-29"
     }
   ],
-  "generated_at": "2026-10-17T15:57:58.225386+00:00",
+  "generated_at": "2026-10-17T22:37:38.010644+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Watch images take shape",
-      "text": "The Play page has a Watch Feed for completed community images, with single-image and grid views plus prompt and model labels. [Open the playground](https://pollinations.ai/play).",
+      "title": "Watch the image feed",
+      "text": "Browse completed community images in a single-image or grid view, with prompts and model labels. The feed follows images across models, regardless of which model you selected in Play. [Open Play](https://pollinations.ai/play).",
       "prs": [
         6417
       ],
@@ -112,8 +112,8 @@
     },
     {
       "emoji": "🎵",
-      "title": "Text-to-speech for React",
-      "text": "Use `usePollinationsAudio` to build a speech URL from text, with optional voice, model, and seed settings. The hook also has a TypeScript definition. [Explore the React SDK](https://react.pollinations.ai).",
+      "title": "Text-to-speech in React",
+      "text": "Use `usePollinationsAudio` to build a speech URL from text, with optional voice, model, and seed settings. The hook also has TypeScript definitions. [Explore React SDK & UI](https://react.pollinations.ai).",
       "prs": [
         6527,
         6569
@@ -122,12 +122,19 @@
     },
     {
       "emoji": "🎨",
-      "title": "Larger Z-Image output",
-      "text": "Larger Z-Image requests can use 2× SPAN upscaling while preserving the requested aspect ratio. `zimage` is now the default image model, and `flux` requests resolve to it. [Browse models](https://enter.pollinations.ai/models).",
+      "title": "Larger Z-Image outputs",
+      "text": "Z-Image can use SPAN 2× upscaling when a requested image exceeds its native pixel budget, giving you a larger output while preserving the requested aspect ratio within output limits. [Browse Z-Image](https://enter.pollinations.ai/models?q=zimage).",
       "prs": [
-        6586,
         6595,
-        6596,
+        6596
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Z-Image becomes the default",
+      "text": "Image requests now default to `zimage`. Requests specifying `flux` resolve to Z-Image too, so existing calls using that name select a different model. [Browse Z-Image](https://enter.pollinations.ai/models?q=zimage).",
+      "prs": [
         6599
       ],
       "kind": "model"

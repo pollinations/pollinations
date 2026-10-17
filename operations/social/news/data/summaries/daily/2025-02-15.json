@@ -2,8 +2,8 @@
   "date": "2025-02-15",
   "period_start": "2025-02-15",
   "period_end": "2025-02-15",
-  "title": "Another image tool joins the project list",
-  "summary": "The community project list grew by one image generator, complete with model choices and a real-time preview.\n\n@hrisjeui’s AI Image Generator was added to the README and website project listings, with links to the app and its source code. It uses Pollinations for image generation and offers multiple models, adjustable parameters, and a real-time preview.",
+  "title": "A community image generator joins the project list",
+  "summary": "A community-built image generator joined the project list, with model choices, adjustable settings, and a real-time preview.\n\nThe README and website project list now include @hrisjeui’s AI Image Generator, a Pollinations-powered web app with multiple models, adjustable parameters, and a real-time preview.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,17 @@
       "date": "2025-02-15"
     }
   ],
-  "generated_at": "2026-10-17T15:33:45.081801+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:28:55.380556+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Community image generator",
+      "text": "Try a community-built image generator with multiple models, adjustable parameters, and a real-time preview. [Explore community apps](https://pollinations.ai).",
+      "prs": [
+        1187
+      ],
+      "kind": "product"
+    }
+  ],
   "changelog": []
 }

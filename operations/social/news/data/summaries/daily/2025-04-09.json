@@ -2,8 +2,8 @@
   "date": "2025-04-09",
   "period_start": "2025-04-09",
   "period_end": "2025-04-09",
-  "title": "Goalani joins the community project list",
-  "summary": "A community project got a spot in the garden: Goalani, a voice-enabled AI fitness coach, joined the integrations list.\n\nGoalani was added to the README and website’s LLM Integrations list. The voice-enabled fitness coach supports exercise and food tracking, AI-generated food images, personalized coaching, and agent customization.",
+  "title": "A fitness coach joins the project list",
+  "summary": "The project list grew by one voice-enabled fitness coach.\n\nGoalani was added to the README and website’s LLM Integrations list. The community-built coach combines voice interaction with exercise and food tracking, AI-generated food images, personalized coaching, and agent customization.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-04-09"
     }
   ],
-  "generated_at": "2026-10-17T15:37:24.659771+00:00",
+  "generated_at": "2026-10-17T22:30:10.409179+00:00",
   "highlights": [],
   "changelog": []
 }

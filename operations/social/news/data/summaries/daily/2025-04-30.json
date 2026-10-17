@@ -2,8 +2,8 @@
   "date": "2025-04-30",
   "period_start": "2025-04-30",
   "period_end": "2025-04-30",
-  "title": "Three more projects in the community directory",
-  "summary": "Three community projects joined the directory, while project sorting, an affiliate listing, and Mistral model descriptions got a tidy-up.\n\nNailsGen brings AI nail-art designs, imggen.top adds a Chinese-language FLUX image generator, and WebGeniusAI generates HTML websites with Pollinations visuals.\n\nThe former “For Teens” category is now “Featured.” Projects sort by priority and GitHub stars, the 🆕 marker applies only to submissions from the past 15 days, and DesmondBot’s listing points to its updated URL.\n\nThe AI UX-writing tool was added with matching terms for brand voice, copywriting, and product content.",
+  "title": "Three more ways to make things",
+  "summary": "Three community projects joined the directory, which also got better sorting, while model labels and affiliate listings received a tidy-up.\n\nThe project directory gained NailsGen for nail-art designs, a Chinese-language FLUX image generator at imggen.top, and WebGeniusAI for generating HTML websites with Pollinations visuals.\n\nThe directory now has a Featured category and sorts projects by priority, then GitHub stars. The new-project marker applies only to submissions from the past 15 days, and DesmondBot’s listing points to its updated URL.\n\nDraft Alpha, an AI-powered UX writing tool, was added to the affiliate list with terms covering brand voice, copywriting, and product content.",
   "pr_count": 7,
   "prs": [
     {
@@ -35,7 +35,35 @@
       "date": "2025-04-30"
     }
   ],
-  "generated_at": "2026-10-17T15:38:40.224992+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:30:49.570707+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Nail art with NailsGen",
+      "text": "Create AI nail-art designs in different styles and colors with the newly listed NailsGen app. [Explore community apps](https://pollinations.ai).",
+      "prs": [
+        1845
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "FLUX images in Chinese",
+      "text": "Try imggen.top, a newly listed Chinese-language FLUX image generator. [Explore community apps](https://pollinations.ai).",
+      "prs": [
+        1851
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "Websites with generated visuals",
+      "text": "WebGeniusAI generates HTML websites with visuals from Pollinations and is now in the creative apps list. [Explore community apps](https://pollinations.ai).",
+      "prs": [
+        1856
+      ],
+      "kind": "product"
+    }
+  ],
   "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2025-02-23",
   "period_start": "2025-02-23",
   "period_end": "2025-02-23",
-  "title": "A new community chat app joins the directory",
-  "summary": "A new community chat app joined the directory, and an existing listing got a better address.\n\nPrivatePollenAI joined the project directory and LLM Integrations list. It stores chat data locally, uses Pollinations for text and image generation, and lets users choose a model and set custom system instructions. The urSapere AI listing also got an updated website link and creator attribution.",
+  "title": "Community project listings got an update",
+  "summary": "A new community chat app joined the project list, and an existing listing found its new address.\n\nPrivatePollenAI joined the project list: a locally storing chat assistant that uses Pollinations for text and images, with model selection and custom system instructions. The urSapere AI listing now points to its new site and credits its creator by handle.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-02-23"
     }
   ],
-  "generated_at": "2026-10-17T15:34:10.180868+00:00",
+  "generated_at": "2026-10-17T22:28:55.782162+00:00",
   "highlights": [],
   "changelog": []
 }

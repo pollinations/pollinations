@@ -2,12 +2,16 @@
   "date": "2026-09-06",
   "period_start": "2026-09-06",
   "period_end": "2026-09-06",
-  "title": "Managed agents got clearer failures and a less ceremonial login",
-  "summary": "A reliability-heavy day: smoother MCP login and errors, sturdier streams, a more resilient Polli, and dashboards that load on their own terms.\n\nLocal stdio MCP clients can now sign in through OAuth device flow and check who they are without handing API keys around. Meanwhile, managed-agent MCP failures now stop before an unnecessary model call, clean up sibling sessions, and return typed, replayable tool-call errors instead of vague strings.\n\nText and managed-agent streams now handle provisional provider usage correctly while still validating final counts at completion. Wallet charges are applied only to valid successful streams, so partial usage metadata does not turn an otherwise good response into an error.\n\nPolli's generation, visual, and repository tools were restored after a model update, alongside stronger Discord search, permissions, links, and rendered charts. Its web handling now keeps scraping work bounded and isolated under load, preserves citations, and recovers clearly from empty model replies.",
-  "pr_count": 10,
+  "title": "Polli gets better at finding things",
+  "summary": "Polli learned sharper repository and code searches while dashboard loading, agent tool errors, and streaming usage got more predictable.\n\nPolli gained repository-scoped issue and PR search with filters and pagination, plus code queries that locate exact symbols and trace callers, callees, and impact. Web research now preserves citations and reports extraction failures more clearly. PR reviews, request handling, conversation-retention controls, and subscription cleanup also improved.\n\nBilling and weekly earnings no longer block other dashboard pages from loading. The Pollen page keeps wallet balances visible while earnings load or are unavailable. App-submission pre-review comments now mention submitters so requests for information are easier to spot.\n\nManaged agents now report selected MCP servers that fail to start or list tools instead of quietly running without them. Tool-call errors have structured details, and provisional token counts no longer fail an otherwise successful stream. A Quest contribution added local MCP device sign-in, but a later PR removed that stdio server and its sign-in tools; the hosted HTTP MCP server remains.",
+  "pr_count": 14,
   "prs": [
     {
       "number": 13900,
+      "date": "2026-09-06"
+    },
+    {
+      "number": 14354,
       "date": "2026-09-06"
     },
     {
@@ -31,6 +35,14 @@
       "date": "2026-09-06"
     },
     {
+      "number": 14506,
+      "date": "2026-09-06"
+    },
+    {
+      "number": 14510,
+      "date": "2026-09-06"
+    },
+    {
       "number": 14511,
       "date": "2026-09-06"
     },
@@ -45,16 +57,38 @@
     {
       "number": 14523,
       "date": "2026-09-06"
+    },
+    {
+      "number": 14524,
+      "date": "2026-09-06"
     }
   ],
-  "generated_at": "2026-09-07T06:38:19.638749+00:00",
+  "generated_at": "2026-10-17T23:11:23.869679+00:00",
   "highlights": [
     {
       "emoji": "🔗",
-      "title": "Device login for MCP",
-      "text": "Sign in through the local stdio MCP with `startDeviceLogin`, `pollDeviceLogin`, and `whoAmI`. [Explore the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "title": "Search repositories with Polli",
+      "text": "Ask Polli to find issues and PRs within a repository, with filters for author, state, and base branch and paginated results.",
       "prs": [
-        14480
+        14523
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Trace code with Polli",
+      "text": "Polli can locate exact code symbols and trace callers, callees, and impact. Ambiguous matches are flagged rather than guessed.",
+      "prs": [
+        14523
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "More control over Polli",
+      "text": "Polli adds conversation-retention controls and an `unsubscribe all` option for subscriptions.",
+      "prs": [
+        14523
       ],
       "kind": "product"
     }

@@ -2,8 +2,8 @@
   "date": "2025-07-05",
   "period_start": "2025-07-05",
   "period_end": "2025-07-05",
-  "title": "Text and image requests share a tier-aware queue",
-  "summary": "Shared tier-aware queueing gives token-backed image requests more room, while Websim gains optional authenticated text API calls.\n\nConcurrency caps moved into a shared IP queue for text and image requests: 1 for anonymous requests, 3 for seed, 10 for flower, and 30 for nectar. Token-backed image requests are no longer restricted to one concurrent request, and nectar requests no longer bypass the queue.\n\nToken-backed text requests retain a one-second queue interval, while image requests keep a zero-second interval. Token and referrer lookups are cached for 30 seconds.\n\nWebsim moved into its own top-level directory, and its worker can send authenticated text API requests when configured. Requests remain token-free otherwise.",
+  "title": "Image token requests can run in parallel",
+  "summary": "Image token requests gained room to run in parallel, while shared queues brought text and image concurrency rules together.\n\nImage requests made with a token are no longer restricted to one at a time. Anonymous requests retain a concurrency cap of one.\n\nConcurrency caps now sit in a shared IP queue: seed allows 3 requests, flower 10, and nectar 30. Nectar requests use the queue rather than bypassing it; text token requests keep their one-second queue interval, while image token requests have no interval. Token and referrer lookups are cached for 30 seconds.\n\nWebsim’s worker now sends a Bearer token to the text API when configured and continues without one otherwise. Its code also moved to a top-level repository directory.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-07-05"
     }
   ],
-  "generated_at": "2026-10-17T15:43:30.178961+00:00",
+  "generated_at": "2026-10-17T22:32:33.245599+00:00",
   "highlights": [],
   "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2025-12-12",
   "period_start": "2025-12-12",
   "period_end": "2025-12-12",
-  "title": "GPT-5.2 takes the large-model slot",
-  "summary": "GPT-5.2 moved into the large-model routes, two creative community projects joined the listings, and the Pollen checkout buttons returned.\n\n`openai-large` moved from GPT-4.1 to GPT-5.2, and `openai-reasoning` became an alias of the same model. The `openai` route was corrected to GPT-5 Mini, while `openai-fast` remains on GPT-5 Nano. GPT-5.2 also gained a 16,384-token completion cap.\n\nThe community listings added @shaqkao1206’s Aqua AI Generator, a Discord bot with reference images, remixing, and configurable generation, and @roni123332’s NextGenTools, which prepares generated and vectorized images for stock submissions.\n\nThe $5, $10, $20, and $50 purchase buttons were temporarily disabled, then reconnected to their checkout packs. The temporary balance-panel warning was removed; these changes do not establish a separate fix to how credits are applied.",
+  "title": "GPT-5.2 takes the large-model route",
+  "summary": "GPT-5.2 took over the large-model route, Pollen checkout buttons were restored after a pause, and two community image tools joined the listings.\n\n`openai-large` moved from GPT-4.1 to GPT-5.2, with a 16,384-token completion cap. `openai-reasoning` and `gpt-5.2-reasoning` now alias that same model. Separately, `openai` maps to GPT-5 Mini instead of Nano; `openai-fast` remains on Nano.\n\nThe $5, $10, $20, and $50 purchase buttons were temporarily disabled during an investigation, then re-enabled with their checkout packs. The temporary balance-panel warning was also removed. These changes did not alter how credits are applied.\n\nThe project listings added Aqua AI Generator, a Discord image bot with model choices, reference images, and remixing, and NextGenTools, which helps prepare generated and vectorized images for stock submission.",
   "pr_count": 8,
   "prs": [
     {
@@ -39,15 +39,24 @@
       "date": "2025-12-12"
     }
   ],
-  "generated_at": "2026-10-17T15:55:09.707693+00:00",
+  "generated_at": "2026-10-17T22:36:40.157350+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "GPT-5.2 for larger tasks",
-      "text": "Use GPT-5.2 through `openai-large` or its `openai-reasoning` alias, with completions up to 16,384 tokens. [Browse the model](https://enter.pollinations.ai/models?q=gpt-5.2).",
+      "title": "GPT-5.2 for large requests",
+      "text": "Use `openai-large` for GPT-5.2, with completions capped at 16,384 tokens. `openai-reasoning` and `gpt-5.2-reasoning` now point to the same model. [Browse the model](https://enter.pollinations.ai/models?q=openai-large).",
       "prs": [
         5921,
         5924
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "GPT-5 Mini on openai",
+      "text": "`openai` now routes to GPT-5 Mini instead of GPT-5 Nano. If you want Nano, `openai-fast` still uses it. [Browse the model](https://enter.pollinations.ai/models?q=openai).",
+      "prs": [
+        5921
       ],
       "kind": "model"
     }

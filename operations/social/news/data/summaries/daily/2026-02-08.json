@@ -2,12 +2,16 @@
   "date": "2026-02-08",
   "period_start": "2026-02-08",
   "period_end": "2026-02-08",
-  "title": "audio stack just leveled up 🔊 shipped Whisper transcription, ElevenMusic generation, and v3 TTS",
-  "summary": "all live. also: just open sourced Polly, our discord agent. grab the code and build your own. 14 PRs merged today. we move. 🐝🌸",
+  "title": "Audio gets transcription, music, and a model list",
+  "summary": "Audio picked up transcription, music, and a model directory; Play and image generation got useful adjustments too.\n\nThe audio API added Whisper Large V3 transcription, ElevenLabs music generation with duration and instrumental options, and Eleven v3 as the default text-to-speech model. A new `/audio/models` endpoint lists capabilities and pricing, while API-key permission selectors now include audio models.\n\nThe site gained a shared account menu showing tier, Pollen balance, and API key. Signed-in users now have an always-visible AI theme prompt with a text-model selector. Play loads audio models alongside image and text models and adapts its Generate button to the selected output.\n\nKlein 9B limits oversized requests to one megapixel without flattening their aspect ratio. Sana uses more inference steps for image quality, while TwinFlow defaults to fewer steps and a lower resolution limit for faster generation. The Gemini Search registry now names its underlying model correctly and includes two Gemini 2.5 Flash search aliases.",
   "pr_count": 14,
   "prs": [
     {
       "number": 8029,
+      "date": "2026-02-08"
+    },
+    {
+      "number": 8040,
       "date": "2026-02-08"
     },
     {
@@ -55,31 +59,81 @@
       "date": "2026-02-08"
     },
     {
-      "number": 8103,
-      "date": "2026-02-08"
-    },
-    {
       "number": 8104,
       "date": "2026-02-08"
     }
   ],
-  "generated_at": "2026-03-18T19:58:13.613508+00:00",
+  "generated_at": "2026-10-17T22:39:48.756107+00:00",
   "highlights": [
     {
-      "emoji": "🐝",
-      "title": "Polly Bot Open Source",
-      "text": "Released the full source code for the Polly Discord bot. Fork it, remix it, build your own AI-powered bot.",
+      "emoji": "🎵",
+      "title": "Transcribe audio with Whisper",
+      "text": "Send an audio file to `/v1/audio/transcriptions` using `whisper-large-v3`. MP3, WAV, WebM, and several other formats are accepted. [Browse the model](https://enter.pollinations.ai/models?q=whisper-large-v3).",
       "prs": [
-        8078
+        8068
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Make music from a prompt",
+      "text": "Generate music with `elevenmusic` through the audio API. Set a duration from 3 to 300 seconds and choose whether it should be instrumental. [Browse the model](https://enter.pollinations.ai/models?q=elevenmusic).",
+      "prs": [
+        8072
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Eleven v3 takes the mic",
+      "text": "`eleven_v3` is now the default ElevenLabs speech model, with emotion tags, multi-speaker dialogue, and support for over 70 languages. Prompts have a 5,000-character limit. [Browse the model](https://enter.pollinations.ai/models?q=eleven_v3).",
+      "prs": [
+        8073
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Discover audio models by API",
+      "text": "Call `GET /audio/models` for audio model metadata, capabilities, and pricing. With a restricted API key, the list includes only permitted models. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        8091
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Pick a model for themes",
+      "text": "Signed-in users can use the site's AI theme prompt bar and choose which text model generates a theme or background. [Visit pollinations.ai](https://pollinations.ai).",
+      "prs": [
+        8087
       ],
       "kind": "product"
     },
     {
-      "emoji": "✨",
-      "title": "Frontend Redesign",
-      "text": "Fresh header authentication flow, theme customization bar, and an overhauled Play page experience.",
+      "emoji": "🎵",
+      "title": "Find audio models in Play",
+      "text": "Play now loads audio models alongside its other model choices and matches the Generate button to the selected output. [Open Play](https://pollinations.ai/play).",
       "prs": [
         8087
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Faster TwinFlow defaults",
+      "text": "TwinFlow now defaults to two inference steps instead of five for faster image generation. Its maximum output is lower, at about 0.6 megapixels. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        8097
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Polly helps with contributions",
+      "text": "Polly's Discord assistant code adds conversational GitHub issue and PR workflows, code and documentation search, and an agent that can prepare branches for PRs.",
+      "prs": [
+        8078
       ],
       "kind": "product"
     }

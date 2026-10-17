@@ -3,7 +3,7 @@
   "period_start": "2025-11-26",
   "period_end": "2025-11-26",
   "title": "Image URLs work in Vertex AI vision requests",
-  "summary": "Two text API fixes: image URLs reach Vertex AI vision models, and OpenAI request parameters survive parsing.\n\nVision requests can now pass HTTP image URLs to Vertex AI models, including `gemini-large`. The text pipeline fetches each image and converts it to a base64 data URL before sending it to the model.\n\nText API parsing no longer drops `max_tokens` and leaves requests at the default 2,048-token cap. It also preserves parameters including `max_completion_tokens`, `stop`, `logprobs`, and `n` for downstream model handling.",
+  "summary": "Two text API fixes make image-URL vision requests work with Vertex AI and stop OpenAI-compatible parameters from disappearing during parsing.\n\nThe text API now fetches HTTP image URLs and passes the images to Vertex AI models, including gemini-large, in a format they accept. The fetch rejects non-images and limits images to 20 MB.\n\nText API parsing now preserves max_tokens and max_completion_tokens instead of dropping them and leaving requests at the default 2,048-token cap.\n\nParsing also preserves stop, stream_options, logprobs, top_logprobs, logit_bias, n, and user for downstream model handling.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-11-26"
     }
   ],
-  "generated_at": "2026-10-17T15:53:06.302014+00:00",
+  "generated_at": "2026-10-17T22:36:01.921978+00:00",
   "highlights": [],
   "changelog": []
 }

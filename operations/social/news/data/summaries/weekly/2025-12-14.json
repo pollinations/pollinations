@@ -2,8 +2,8 @@
   "date": "2025-12-14",
   "period_start": "2025-12-07",
   "period_end": "2025-12-13",
-  "title": "The model menu got wider",
-  "summary": "More models and tools arrived, while Chat and the rebuilt playground made them easier to use.\n\n`openai-large` moved to GPT-5.2, with `openai-reasoning` as an alias and a 16,384-token completion cap. Image generation gained the alpha `zimage` model with 2× upscaling. Flux now keeps four steps even when concurrency rises, and generated images no longer carry a Pollinations logo.\n\nThe chat API added Gemini built-in tools, including code execution, Search, Maps, URL context, computer use, and file search. With no tools specified, `gemini` defaults to code execution, Search, and URL context; supplied tools take precedence. A separate fix lets Claude requests routed through Bedrock accept HTTP image URLs on `/v1/chat/completions`.\n\nChat added controls for image dimensions, seed, and quality, plus video seed, duration, aspect ratio, and audio. The rebuilt hello.pollinations.ai playground brings image and text generation, vision-capable model selection, interactive API examples, and community creations into one responsive site.\n\nListings added G4F projects, Discord companions and image bots, creative studios, storytelling and learning tools, a video editor, and WordPress content plugins. Several December 13 PRs listed the same projects more than once; the listings represent distinct apps, not extra launches.",
+  "title": "Model routes gained new capabilities",
+  "summary": "A week of broader model choices, more useful generation controls, and more places to see what people are building.\n\n`openai-large` moved to GPT-5.2, while `openai` moved to GPT-5 Mini and `openai-fast` stayed on Nano. Gemini requests gained built-in tools alongside function tools, with code execution, Google Search, and URL context used by default when no tools are supplied. Claude requests through Bedrock also gained working HTTP image URL input.\n\nSelf-hosted `zimage` joined image generation with 2× upscaling, and a follow-up corrected requested dimensions before upscaling. Flux now keeps four generation steps even when traffic rises. Generated images no longer carry a Pollinations logo, so the `nologo` flag went away too.\n\nChat gained image and video generation controls that travel with the request. The rebuilt Hello site brings image and text generation, a vision-capable model selector, community creations, and interactive API examples together. Model Monitor adds a view of model health, errors, traffic, success rates, and latency.\n\nNew listings span SDKs, Discord and Telegram bots, image studios, illustrated stories, games, stock-image preparation, and browser-based video production. It was a particularly busy week for examples of what a simple generation API becomes in other people's hands.",
   "pr_count": 56,
   "prs": [
     {
@@ -231,5 +231,5 @@
       "date": "2025-12-13"
     }
   ],
-  "generated_at": "2026-10-17T16:06:52.621373+00:00"
+  "generated_at": "2026-10-17T23:26:10.132458+00:00"
 }

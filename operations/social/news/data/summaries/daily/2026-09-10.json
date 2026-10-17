@@ -2,9 +2,9 @@
   "date": "2026-09-10",
   "period_start": "2026-09-10",
   "period_end": "2026-09-10",
-  "title": "Two new ways to turn ideas and videos into finished stories",
-  "summary": "A community-heavy day: new story and transcript tools, more dependable chat controls, and less drama around large images and deployments.\n\nThe writing collection gained StoryCraft AI for generating multi-chapter illustrated storybooks, plus MrPaloma's YouTube Transcription AI for turning video transcripts into structured notes, translations, and concept-cover ideas. Men's Fashion Pins also joined the image apps, making polished Pinterest artwork a slightly more specialized solved problem.\n\nExplicit token limits, tool-call settings, and supported top_k options now reach the chat gateway without defaults quietly rewriting the request. The gateway update also improves support for Azure parallel tools and Claude effort, JSON-schema, and output settings.\n\nBloom 0.1.3 users can now enable, inspect, or remove a dedicated Pollinations key through `polli harness bloom`, without turning their existing `.env` file into configuration compost.",
-  "pr_count": 10,
+  "title": "Bloom joins the CLI harness",
+  "summary": "Bloom got a CLI connection, large reference images got lighter, and chat requests got better at respecting what you asked for.\n\n`polli harness` gained `bloom on`, `status`, and `off`, giving Bloom users a way to connect and disconnect Pollinations through the CLI.\n\nImage requests now reuse valid base64 reference images instead of decoding and re-encoding them. That reduces memory use for large uploads, including Seedream reference images, while retaining existing size limits.\n\nExplicit token limits and `parallel_tool_calls` settings now take precedence over defaults. A gateway update also adds support for Azure parallel tools, generic `top_k` forwarding, and Claude effort and JSON schema parameters. The API docs no longer claim that parallel tool calls default to `true`.",
+  "pr_count": 9,
   "prs": [
     {
       "number": 14664,
@@ -41,49 +41,27 @@
     {
       "number": 14694,
       "date": "2026-09-10"
-    },
-    {
-      "number": 14697,
-      "date": "2026-09-10"
     }
   ],
-  "generated_at": "2026-09-11T06:29:09.448987+00:00",
+  "generated_at": "2026-10-17T23:11:55.174319+00:00",
   "highlights": [
     {
-      "emoji": "🎨",
-      "title": "Illustrated stories with StoryCraft",
-      "text": "Make multi-chapter stories with generated scene illustrations in StoryCraft AI. [Try it](https://khushalkks.github.io/pollinations).",
-      "prs": [
-        14669
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎯",
-      "title": "YouTube transcripts, reworked",
-      "text": "MrPaloma’s YouTube Transcription AI turns video transcripts into structured summaries, English translations, and generated concept covers. [Try it](https://www.mrpaloma.com/trascrivere-video-youtube-pollinations).",
-      "prs": [
-        14694
-      ],
-      "kind": "app"
-    },
-    {
       "emoji": "🔗",
-      "title": "Pollinations meets Bloom CLI",
-      "text": "Use `polli harness bloom on|status|off` for reversible Pollinations setup in Bloom CLI. [See the CLI package](https://www.npmjs.com/package/@pollinations/cli).",
+      "title": "Connect Bloom with polli",
+      "text": "Use `polli harness bloom on` to connect Bloom to Pollinations, check it with `status`, and disconnect with `off`. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         14670
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎨",
-      "title": "Fashion images for Pinterest",
-      "text": "Men’s Fashion Pins uses `gpt-image-2` to create Pinterest images for men’s fashion. [Try it](https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html).",
+      "emoji": "🤖",
+      "title": "More chat parameter support",
+      "text": "Chat requests can forward `top_k` and use Claude effort and JSON schema parameters. Azure parallel tool calls are supported too. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        14677
+        14664
       ],
-      "kind": "app"
+      "kind": "api"
     }
   ],
   "changelog": []

@@ -2,8 +2,8 @@
   "date": "2025-05-04",
   "period_start": "2025-04-27",
   "period_end": "2025-05-03",
-  "title": "A local path into Pollinations MCP",
-  "summary": "This week made Pollinations easier to connect to local tools, gave text requests more room, and refined the routes behind image generation.\n\nThe MCP server was reorganized around STDIO, with an `npx` setup path and a `pollinations-mcp` CLI entry point for local clients. Its image, text, audio, and resource services were revised alongside the setup instructions.\n\nThe text request limit rose fourfold, from 512,000 to 2,048,000 characters. The `mistral` model moved to `mistral-small-3.1-24b-instruct-2503` while retaining its 8,192-token maximum; model listings were also updated to name the GPT-4.1 variants and remove `openai-reasoning` and `gemini` from the available-model list.\n\nImage generation gained Dreamshaper and Turbo fallbacks between Cloudflare Flux and ComfyUI, and Dreamshaper requests stopped sending a seed parameter that caused errors. A later change simplified the path after a Dreamshaper failure: requests now fall through to the general ComfyUI call rather than trying the dedicated Turbo fallback first.\n\nNine projects joined the listings, spanning chat interfaces, design tools, image generation, browser controls, and AI pipelines. The directory also gained priority-and-star sorting, a 15-day window for the 🆕 marker, and a renamed “Featured” category.",
+  "title": "Image requests got more ways through",
+  "summary": "This week made requests more resilient and larger, local tooling easier to use, and community projects easier to find.\n\nImage generation gained Dreamshaper and Turbo fallback paths, then refined the route after a Dreamshaper failure to use the general ComfyUI call. Dreamshaper also stopped receiving a seed parameter that caused errors. The result is more chances for a request to complete when an earlier backend fails.\n\nThe text request limit rose fourfold, from 512,000 to 2,048,000 characters. The `mistral` identifier got a new backend and later gateway-routing changes; model listings now spell out `openai` as GPT-4.1-mini and `openai-large` as GPT-4.1, while `openai-reasoning` and `gemini` were removed from the available-model list.\n\nThe MCP server was reorganized around STDIO for local clients, with a `pollinations-mcp` CLI entry point, an `npx` setup path, and updated assistant instructions. A separate GitHub sign-in flow was also added.\n\nTen tools and projects joined the listings, spanning a browser enhancer, chat interfaces, nail art, Chinese-language FLUX generation, website creation, browser assistance, AI pipelines, and creative apps. A Featured category and improved sorting make that growing directory easier to browse.",
   "pr_count": 27,
   "prs": [
     {
@@ -115,5 +115,5 @@
       "date": "2025-05-02"
     }
   ],
-  "generated_at": "2026-10-17T16:04:11.853491+00:00"
+  "generated_at": "2026-10-17T23:24:26.283994+00:00"
 }

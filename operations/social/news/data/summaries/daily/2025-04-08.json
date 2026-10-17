@@ -2,8 +2,8 @@
   "date": "2025-04-08",
   "period_start": "2025-04-08",
   "period_end": "2025-04-08",
-  "title": "Redirect function repaired",
-  "summary": "A maintenance day for redirects and the Text API’s ad selection logic.\n\nThe site’s redirect function was converted to ES modules to address an export error. Affiliate redirects now use one consolidated mapping instead of a duplicate file.\n\nAd selection now checks generated text and input messages for affiliate trigger words. A match increases the chance of a relevant ad rather than guaranteeing one.\n\nWhen no relevant affiliate offer is found, Ko-fi appears 30% of the time instead of every time. Referral links also have a 10% selection chance.",
+  "title": "Text ads get less automatic",
+  "summary": "A maintenance day for affiliate links: less automatic text ads and a fix for the redirect function.\n\nAffiliate trigger words in prompts and generated text now raise the chance of a relevant ad rather than guaranteeing one.\n\nWhen no relevant affiliate offer matches, Ko-fi ads are selected some of the time instead of every time. Referral links also have a chance to appear.\n\nThe redirect function was converted to ES modules to address an export error, and duplicate affiliate mappings were consolidated.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-04-08"
     }
   ],
-  "generated_at": "2026-10-17T15:37:18.063053+00:00",
+  "generated_at": "2026-10-17T22:30:11.852856+00:00",
   "highlights": [],
   "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2025-01-21",
   "period_start": "2025-01-21",
   "period_end": "2025-01-21",
-  "title": "DeepSeek reasoning added to the text API",
-  "summary": "One text API PR added DeepSeek reasoning, tightened OpenRouter routing, and removed an OpenAI input check.\n\nThe text API gained a `deepseek-reasoner` handler. DeepSeek requests now use the selected model and record reasoning content when the provider returns it.\n\nSupported model aliases now map to OpenRouter provider IDs, with `deepseek/deepseek-chat` as the fallback for unknown aliases. OpenRouter errors also get structured handling in the text server.\n\nThe text API no longer applies its 56,000-character input check to the `openai` model.",
+  "title": "DeepSeek reasoning joins the text API",
+  "summary": "DeepSeek reasoning was added to the text API, alongside OpenRouter routing changes and the removal of an OpenAI input check.\n\nA `deepseek-reasoner` handler requests DeepSeek's reasoning model. The DeepSeek generator uses the selected model and records reasoning content when the provider returns it.\n\nThe text API no longer applies its 56,000-character input check to the `openai` model.\n\nOpenRouter requests map supported aliases to provider model IDs and fall back to `deepseek/deepseek-chat` for unknown aliases. The text server handles structured OpenRouter errors; a standalone Cloudflare Flux.1 Schnell image-generation test script was also added.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,12 +11,12 @@
       "date": "2025-01-21"
     }
   ],
-  "generated_at": "2026-10-17T15:32:52.768606+00:00",
+  "generated_at": "2026-10-17T22:28:53.496212+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "DeepSeek reasoning support",
-      "text": "Use `deepseek-reasoner` through the text API. Reasoning content is recorded when the model returns it. [Browse the model](https://enter.pollinations.ai/models?q=deepseek-reasoner).",
+      "title": "DeepSeek reasoning model",
+      "text": "Request DeepSeek's reasoning model with `deepseek-reasoner`. [Browse the model](https://enter.pollinations.ai/models?q=deepseek-reasoner).",
       "prs": [
         1056
       ],

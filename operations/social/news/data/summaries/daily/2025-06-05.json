@@ -2,8 +2,8 @@
   "date": "2025-06-05",
   "period_start": "2025-06-05",
   "period_end": "2025-06-05",
-  "title": "Projects are easier to explore",
-  "summary": "The project directory got seven clearer paths, while streaming setup and the README logo got small repairs.\n\nThe project directory now groups apps into seven categories and opens on Vibe Coding. The README and PROJECTS.md also have categorized listings with clearer links to projects, demos, creators, and repositories.\n\nThe text API now waits for its ad eligibility check before setting up OpenAI-compatible response streams, including error responses.\n\nA broken logo image was replaced, and the README now displays it at full available width.",
+  "title": "Projects get a clearer map",
+  "summary": "Projects got easier to browse, while streaming response setup and the README logo got small repairs.\n\nThe website’s project directory was reorganized into seven categories, from Vibe Coding to Learn, with Vibe Coding replacing Featured as the opening view. The README and new PROJECTS.md also gained categorized project tables with clearer links to demos, websites, creators and GitHub repositories.\n\nThe text API now awaits the ad eligibility check before setting up OpenAI-compatible response streams, including on error paths. Async code remains very particular about the order in which things happen.\n\nA broken README logo was replaced with a working image and set to use the available width.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,12 +23,12 @@
       "date": "2025-06-05"
     }
   ],
-  "generated_at": "2026-10-17T15:41:50.685532+00:00",
+  "generated_at": "2026-10-17T22:31:56.802049+00:00",
   "highlights": [
     {
-      "emoji": "🎨",
-      "title": "Explore projects by category",
-      "text": "Browse community projects across Vibe Coding, Creative, Games, Hack-&-Build, Chat, Social Bots, and Learn. The directory now opens on Vibe Coding. [Explore projects](https://pollinations.ai).",
+      "emoji": "🎯",
+      "title": "Find projects by category",
+      "text": "Browse community projects across seven categories, including Vibe Coding, Creative, Games and Learn. The Projects page now opens on Vibe Coding.",
       "prs": [
         2282
       ],

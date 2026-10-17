@@ -2,14 +2,10 @@
   "date": "2026-06-18",
   "period_start": "2026-06-18",
   "period_end": "2026-06-18",
-  "title": "Public platform stats and a standard API map",
-  "summary": "A busy day for developer visibility, Polly's multimodal brain, and a community app garden that keeps producing new specimens.\n\nDevelopers can now query live platform health, top weekly apps, and the community app directory through documented read-only stats endpoints. The API schema is also available at the conventional /openapi.json path, so tools can discover the API without archaeological work.\n\nPolly now accepts image_url parts in OpenAI-style multimodal messages, renders tables as images again, and runs on kimi-code with glm fallback and self-correcting tool loops. Embedding caching speeds restarts when a repository has not changed, while dependency updates keep its scraping stack deployable.\n\nThe community showcase gained Pollen Studio for side-by-side image, text, and TTS model comparisons, plus Lingua Memory Card for multilingual writing practice and Cashflower. Wikimind also received its new Wikimind AI name and an updated description of its 29+ models.",
-  "pr_count": 18,
+  "title": "Public stats and a machine-readable API spec",
+  "summary": "Public stats and an OpenAPI URL were added, while Polly, transaction history, and the community catalog got some practical tending.\n\nA new read-only public stats endpoint exposes the community app directory with category and platform filters. Public stats also cover weekly app rankings and health data, while `/openapi.json` provides a single JSON spec for generation, account, and media storage APIs.\n\nPolly now preserves `image_url` parts in OpenAI-format chat messages and renders Discord tables as images again. Its web fetching has a clearer fallback path, and repeated tool calls get guidance to stop searching and answer. CatGPT Bot also requests static Discord avatars so image requests are not handed an unexpected GIF.\n\nUsage-history pagination now uses event IDs to distinguish records with identical timestamps. Transaction rows show API key names, and the activity page distinguishes UTC chart buckets from locally displayed transaction times.",
+  "pr_count": 13,
   "prs": [
-    {
-      "number": 11643,
-      "date": "2026-06-18"
-    },
     {
       "number": 11872,
       "date": "2026-06-18"
@@ -23,15 +19,7 @@
       "date": "2026-06-18"
     },
     {
-      "number": 11882,
-      "date": "2026-06-18"
-    },
-    {
       "number": 11885,
-      "date": "2026-06-18"
-    },
-    {
-      "number": 11886,
       "date": "2026-06-18"
     },
     {
@@ -67,51 +55,25 @@
       "date": "2026-06-18"
     },
     {
-      "number": 11907,
-      "date": "2026-06-18"
-    },
-    {
       "number": 11909,
-      "date": "2026-06-18"
-    },
-    {
-      "number": 11916,
       "date": "2026-06-18"
     }
   ],
-  "generated_at": "2026-09-04T11:54:34.914447+00:00",
+  "generated_at": "2026-10-17T22:59:18.619901+00:00",
   "highlights": [
     {
-      "emoji": "🎯",
-      "title": "Compare models in Pollen Studio",
-      "text": "Test image, text, and speech models side by side. [Try it](https://pollenstudio.cru2.net).",
-      "prs": [
-        11903
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "📱",
-      "title": "Practice writing across languages",
-      "text": "Lingua Memory Card uses text models to correct your writing sentence by sentence. [Try it](https://lingua-memory-card.vercel.app/).",
-      "prs": [
-        11890
-      ],
-      "kind": "app"
-    },
-    {
       "emoji": "🔗",
-      "title": "Explore public platform stats",
-      "text": "Query five read-only statistics pipes, including an app-directory endpoint. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Explore public app stats",
+      "text": "Query the community app directory with category and platform filters, or inspect weekly app rankings and health stats through read-only public stats endpoints. [See the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         11888
       ],
       "kind": "api"
     },
     {
-      "emoji": "💡",
-      "title": "OpenAPI at a familiar path",
-      "text": "Fetch the API schema from `/openapi.json` for tools that expect the conventional path. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "emoji": "🔗",
+      "title": "Fetch the OpenAPI spec",
+      "text": "Get the JSON spec for generation, public account, and media storage APIs at `/openapi.json`, including code samples. [See the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         11901
       ],

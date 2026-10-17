@@ -3,7 +3,7 @@
   "period_start": "2025-11-08",
   "period_end": "2025-11-08",
   "title": "Text responses without ads",
-  "summary": "Text responses lose the ad wrapper, while the image editor and Enter navigation get a little tidier.\n\nThe ad system was disabled for regular and streaming responses from text.pollinations.ai. Streaming responses now pass through without the ad wrapper changing them.\n\nThe image editor moved Reference Images between the prompt and model selector, enlarged thumbnails, and made the add and remove controls clearer.\n\nEnter standardized its “API Reference” naming and adjusted button order and colors across sign-in, dashboard, and FAQ pages.",
+  "summary": "Ads were removed from text responses, while the image editor and API Reference got a little easier to navigate.\n\nThe text API’s ad system was disabled for regular and streaming responses. Streaming now passes through without the ad wrapper changing it.\n\nThe image editor moved Reference Images next to the prompt controls, enlarged thumbnails, and made the add and remove controls clearer.\n\nDocumentation links and the page title now use “API Reference” consistently. Header and FAQ buttons also got a visual cleanup.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2025-11-08"
     }
   ],
-  "generated_at": "2026-10-17T15:51:32.305521+00:00",
+  "generated_at": "2026-10-17T22:35:27.321339+00:00",
   "highlights": [],
   "changelog": []
 }

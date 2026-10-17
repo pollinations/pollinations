@@ -2,8 +2,8 @@
   "date": "2025-05-12",
   "period_start": "2025-05-12",
   "period_end": "2025-05-12",
-  "title": "More access for image-feed listeners",
-  "summary": "The image feed gained authenticated access, while the community project directory got a larger crop of things to explore.\n\nAuthenticated listeners can now receive additional image-feed events, including events replayed when they connect. The existing content filters remain in place for public listeners.\n\nThe project directory added chat tools, image generators, interactive stories, a picture-book plugin, video-thumbnail tooling, and MVKProject Nexus API. KoboldAI gained a featured spot, corrected links and creator credit, while sorting changes make featured projects appear in the intended order.\n\nImages generated with meoow models now use the standard logo. An affiliate rotation weight was also adjusted.",
+  "title": "Image feed adds authenticated listeners",
+  "summary": "The image feed gained authenticated access, while the community project directory grew and its featured listings got tidier.\n\nAuthenticated image-feed listeners can receive the full event stream, including saved events replayed on connection. Listeners without authentication retain the existing content filters.\n\nThe project list gained chat tools, interactive stories, image generators, a picture-book plugin, social bots, and MVKProject Nexus API, which combines multi-model chat with Pollinations-powered images and image analysis.\n\nKoboldAI moved into the featured projects and to the top of its tools list, with corrected links and creator attribution. Featured-project sorting now respects an explicit first-place position, limits each category to five entries, and marks newly added projects.",
   "pr_count": 8,
   "prs": [
     {
@@ -39,18 +39,16 @@
       "date": "2025-05-12"
     }
   ],
-  "generated_at": "2026-10-17T15:39:48.726586+00:00",
+  "generated_at": "2026-10-17T22:31:09.871059+00:00",
   "highlights": [
     {
-      "emoji": "🌟",
-      "title": "More community projects",
-      "text": "Explore new community builds for interactive stories, picture books, chat, image generation, and video thumbnails. [Browse the showcase](https://pollinations.ai).",
+      "emoji": "🔗",
+      "title": "Authenticated image feed",
+      "text": "Authenticated listeners can receive the full image-feed event stream, including saved events replayed on connection. Other listeners keep the existing content filters.",
       "prs": [
-        1951,
-        1959,
-        1962
+        1952
       ],
-      "kind": "product"
+      "kind": "api"
     }
   ],
   "changelog": []

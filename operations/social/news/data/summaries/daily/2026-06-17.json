@@ -2,12 +2,20 @@
   "date": "2026-06-17",
   "period_start": "2026-06-17",
   "period_end": "2026-06-17",
-  "title": "Clean slugs and a massive GLM upgrade",
-  "summary": "A heavy routing day: smarter image load balancing, auto-updating model slugs, and a massive context bump for GLM.\n\nUnversioned model slugs (`openai-large`, `claude-large`, `gemini`) now automatically resolve to the newest models (GPT-5.5, Opus 4.8, 3.5 Flash) while preserving older versions under specific names. We also bumped the `glm` slug to GLM-5.2, expanding the context window to 1M tokens and slicing the pollen cost in half.\n\nThe image generation load balancer now weights routing based on recent latency rather than a uniform distribution. Faster hardware like 4090s will naturally absorb more traffic. We also isolated the latency tracking in the KV store to stop race conditions from wiping the weights. Net result: fewer timeouts, faster pixels.\n\nClaude Opus 4.7 and 4.8 were throwing 500s on global Bedrock profiles, so we forced them to `us.*` regions. Meanwhile, Gemini was leaking proxy health strings into completions, so we reverted to direct Vertex connections. Responses should be reliable and artifact-free again.",
-  "pr_count": 9,
+  "title": "Pollen receipts and elevator controls",
+  "summary": "Enter got Pollen receipts, familiar model names got newer versions, and image and text routing got a less optimistic view of their backends.\n\nA Quests contribution added transaction history to Enter: the Pollen page shows five recent entries, while Activity offers a paginated history with model, API key, and Pollen deduction details. The Sirius Cybernetics elevator game now defaults to faster-responding Mistral and lets players choose among four models.\n\nThe `glm` slug now selects GLM-5.2 with a listed 1,048,576-token context. Clean slugs across the OpenAI, Claude, Grok, Kimi, MiniMax, Mistral, and Gemini families now select newer versions; displaced models remain available through versioned slugs. Callers using the affected names may see different model behavior and pricing.\n\nZ-Image routing now gives faster backends more requests without sending everything to one server. Separate latency records keep that weighting intact across heartbeats. Klein also returns a useful HTTP 400 error when a reference image is malformed or cannot be opened, rather than a server error.",
+  "pr_count": 13,
   "prs": [
     {
+      "number": 11515,
+      "date": "2026-06-17"
+    },
+    {
       "number": 11711,
+      "date": "2026-06-17"
+    },
+    {
+      "number": 11826,
       "date": "2026-06-17"
     },
     {
@@ -15,7 +23,15 @@
       "date": "2026-06-17"
     },
     {
+      "number": 11847,
+      "date": "2026-06-17"
+    },
+    {
       "number": 11855,
+      "date": "2026-06-17"
+    },
+    {
+      "number": 11863,
       "date": "2026-06-17"
     },
     {
@@ -35,48 +51,29 @@
       "date": "2026-06-17"
     },
     {
-      "number": 11875,
+      "number": 11874,
       "date": "2026-06-17"
     },
     {
-      "number": 11876,
+      "number": 11875,
       "date": "2026-06-17"
     }
   ],
-  "generated_at": "2026-06-18T07:36:13.270166+00:00",
+  "generated_at": "2026-10-17T22:59:17.540729+00:00",
   "highlights": [
     {
-      "emoji": "📊",
-      "title": "Transaction History",
-      "text": "You can now see exactly where your Pollen is going. Check your last 5 requests directly on the Pollen page, or browse the full history on your [Dashboard](https://enter.pollinations.ai).",
+      "emoji": "💡",
+      "title": "Your Pollen transaction history",
+      "text": "See recent deductions on the Pollen page, then open Activity for a paginated history with the model, API key, and amount for each entry. [Open Enter](https://enter.pollinations.ai/keys).",
       "prs": [
         11711
       ],
       "kind": "product"
     },
     {
-      "emoji": "🚀",
-      "title": "Siriusly Fast Elevators",
-      "text": "The Sirius Cybernetics Elevator Challenge app now defaults to Mistral, dropping response times from 10s to 1.2s. Even the API errors are now delivered in-character. [Try it](https://pollinations.ai)",
-      "prs": [
-        11855
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "⚡",
-      "title": "Faster Image Generation",
-      "text": "We rewired the [image generation](https://gen.pollinations.ai/image/models) load balancer to favor GPUs with the lowest recent latency. More traffic goes to the 4090s, meaning fewer timeouts and faster pixels.",
-      "prs": [
-        11869,
-        11871
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🧠",
-      "title": "GLM-5.2 Upgrade",
-      "text": "The `glm` model slug now points to Z.ai's GLM-5.2, expanding the context window from 198k to a massive 1 million tokens.",
+      "emoji": "🤖",
+      "title": "GLM moves to 5.2",
+      "text": "`glm` now selects GLM-5.2, with a listed context of 1,048,576 tokens. [View the model](https://enter.pollinations.ai/models?q=glm).",
       "prs": [
         11873
       ],
@@ -84,10 +81,29 @@
     },
     {
       "emoji": "✨",
-      "title": "Auto-Upgrading Model Slugs",
-      "text": "Clean slugs like `openai-large` and `claude-large` now automatically resolve to the latest versions (like GPT-5.5 and Opus 4.8). If you need the old stuff, versioned slugs still work. Check the [available models](https://gen.pollinations.ai/v1/models).",
+      "title": "Clean slugs, newer models",
+      "text": "Names like `openai-large`, `claude-large`, `kimi`, and `mistral` now select newer models in their families. Earlier versions remain callable by versioned names. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         11875
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Choose your elevator guide",
+      "text": "The Sirius Cybernetics elevator game now offers Mistral, OpenAI, DeepSeek, and Claude Fast in its model picker. Mistral is the faster-responding default.",
+      "prs": [
+        11855
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Z-Image favors faster backends",
+      "text": "Z-Image requests now favor GPUs with lower observed generation latency, while still sharing traffic across servers. [Try image generation](https://gen.pollinations.ai/docs).",
+      "prs": [
+        11869,
+        11871
       ],
       "kind": "model"
     }

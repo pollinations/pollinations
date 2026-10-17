@@ -2,9 +2,9 @@
   "date": "2026-04-20",
   "period_start": "2026-04-20",
   "period_end": "2026-04-20",
-  "title": "A much cleaner BYOP authorization flow",
-  "summary": "A solid day of tuning the engine: a redesigned BYOP auth screen, cleaner analytics pipelines, and fresh apps in the community showcase.\n\nBring Your Own Pollen just got a lot prettier. We completely redesigned the authorization consent screen. It's now mobile-friendly, makes model selection simpler, and puts your spending limits front and center so you know exactly what you're agreeing to when connecting third-party apps.\n\nA cluster of under-the-hood API and analytics tuning. The account profile payload now only returns essential public fields for better privacy. We also refactored the daily usage pipeline, giving you a cleaner single-select API key filter in the dashboard, direct key filtering in the SDK, and more reliable BYOP attribution via stable client IDs.\n\nThe community directory keeps growing. We added Reporay, an AI-powered GitHub repository analyzer that generates architectural insights from repo URLs, and welcomed back Insight Engine, which has been updated to use the latest generation endpoints.",
-  "pr_count": 6,
+  "title": "More deliberate app permissions",
+  "summary": "A day of clearer app permissions, per-key usage views, and more accurate credit for the people building things.\n\nThe BYOP consent screen now fits shorter viewports and puts a spending limit and model access in clearer view. Account permissions are opt-in, and the separate Balance scope has been folded into Usage. API keys can read their own usage without account-wide usage access; the profile response also distinguishes basic identity fields from profile-scoped fields. Polli, the SDK, and key dialogs were updated to match.\n\nDaily usage can now be filtered by selected API keys in the dashboard and through `/account/usage/daily`. The chart refetches when the selection changes, and keys appear as options even before they have usage. Detailed usage records now include `api_key_id`; the Detailed Usage CSV download remains.\n\nBYOP analytics now use registered app `client_id` values to attribute activity, with a fallback for older requests. OpenClaw sends its client ID during authorization so newly issued keys carry that attribution.",
+  "pr_count": 10,
   "prs": [
     {
       "number": 10229,
@@ -19,6 +19,18 @@
       "date": "2026-04-20"
     },
     {
+      "number": 10357,
+      "date": "2026-04-20"
+    },
+    {
+      "number": 10360,
+      "date": "2026-04-20"
+    },
+    {
+      "number": 10361,
+      "date": "2026-04-20"
+    },
+    {
       "number": 10368,
       "date": "2026-04-20"
     },
@@ -29,45 +41,51 @@
     {
       "number": 10371,
       "date": "2026-04-20"
+    },
+    {
+      "number": 10373,
+      "date": "2026-04-20"
     }
   ],
-  "generated_at": "2026-04-21T06:34:59.169341+00:00",
+  "generated_at": "2026-10-17T22:48:31.442785+00:00",
   "highlights": [
     {
-      "emoji": "🔐",
-      "title": "The golden handshake",
-      "text": "The BYOP authorization screen got a complete redesign. Upfront spending limits and a cleaner flow so you actually know what you're agreeing to when handing over your pollen.",
+      "emoji": "🎯",
+      "title": "Clearer app consent",
+      "text": "Set a spending limit and choose which models an app can use on the redesigned consent screen. Account permissions are opt-in, with one Usage permission covering account balance and usage. [Connect user wallets](https://gen.pollinations.ai/docs#tag/connect-user-wallets).",
       "prs": [
-        10229
+        10229,
+        10255,
+        10360
       ],
       "kind": "product"
     },
     {
-      "emoji": "📊",
-      "title": "Dashboard spring cleaning",
-      "text": "We simplified the API key filter in the [Dashboard](https://enter.pollinations.ai) and added direct key filtering to the SDK. Track your usage without fighting the UI.",
+      "emoji": "💡",
+      "title": "Usage by API key",
+      "text": "Filter the dashboard's daily usage chart by API key, including keys that have no usage yet. [Open the dashboard](https://enter.pollinations.ai/keys).",
       "prs": [
         10239
       ],
       "kind": "product"
     },
     {
-      "emoji": "🌟",
-      "title": "Insight Engine blooms again",
-      "text": "Insight Engine has been rewired to use the latest endpoints and is back in the community showcase. [Try it](https://erbharatmalhotra.github.io/Insight_Engine/)",
+      "emoji": "🔗",
+      "title": "Filter daily usage requests",
+      "text": "Pass comma-separated `api_key_ids` to `/account/usage/daily` to get daily usage for selected keys; the SDK accepts an `api_key_ids` array. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        10368
+        10239
       ],
-      "kind": "app"
+      "kind": "api"
     },
     {
-      "emoji": "🔍",
-      "title": "X-Ray vision for repos",
-      "text": "Reporay joins the community showcase. Feed it a GitHub URL, get architectural insights and summaries back. [Try it](https://repo-ray.vercel.app)",
+      "emoji": "🔗",
+      "title": "Read a key’s own usage",
+      "text": "An API key can request its own usage through `GET /account/key/usage` without account-wide usage permission. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        10369
+        10255
       ],
-      "kind": "app"
+      "kind": "api"
     }
   ],
   "changelog": []

@@ -2,8 +2,8 @@
   "date": "2025-04-29",
   "period_start": "2025-04-29",
   "period_end": "2025-04-29",
-  "title": "More chances for image requests to succeed",
-  "summary": "Image generation got more fallback routes, affiliate recommendations became more selective, and a community chatbot joined the directory.\n\nImage generation gained Dreamshaper and Turbo server fallbacks between Cloudflare Flux and ComfyUI. Dreamshaper requests also avoid a seed parameter that caused errors.\n\nAffiliate matching now prefers higher-priority offers when they are equally relevant and filters offers blocked in the request's country when country information is available. The eligible offer list was also updated.\n\nThe LLM Integrations list now includes Aura Chat bot, a community chatbot built with Pollinations text and image generation.",
+  "title": "More ways for image requests to succeed",
+  "summary": "Image requests gained extra fallbacks, section titles stopped wandering, and affiliate matching got more selective.\n\nImage generation gained Dreamshaper and Turbo server fallbacks between Cloudflare Flux and ComfyUI. Requests have more chances to complete when an earlier backend fails, and Dreamshaper no longer receives a seed parameter that caused errors.\n\nThe text manipulator now preserves section titles exactly instead of expanding or rephrasing them.\n\nAura Chat bot by @Py-Phoenix-PJS was added to the LLM Integrations list. It uses the Pollinations API for text and image generation.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,7 +31,7 @@
       "date": "2025-04-29"
     }
   ],
-  "generated_at": "2026-10-17T15:38:38.084434+00:00",
+  "generated_at": "2026-10-17T22:30:39.243569+00:00",
   "highlights": [],
   "changelog": []
 }

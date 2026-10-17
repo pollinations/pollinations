@@ -2,9 +2,9 @@
   "date": "2026-03-14",
   "period_start": "2026-03-14",
   "period_end": "2026-03-14",
-  "title": "Drop-in OpenAI compatibility and new Pruna models",
-  "summary": "OpenAI SDK compatibility for images, new Pruna models, and a massive sweep of API key and generation fixes.\n\nYou can now swap out your OpenAI base URL for ours and keep using standard SDKs for image generation. We also wired up Pruna's image, edit, and video models directly to the core API.\n\nWe fixed a version mismatch causing 404s on gptimage edits, stopped the klein model from throwing 429s, and unlocked custom resolutions for nanobanana-2 (including a new 0.5K tier).\n\nGenerating API keys works smoothly again after expanding trusted origins. We also fixed dashboard permission resets, allowed browser extension URLs for App Keys, and stopped returning pollen costs in scientific notation because nobody wants to parse 1.5e-2 on a Saturday.",
-  "pr_count": 9,
+  "title": "OpenAI SDKs can generate and edit images",
+  "summary": "OpenAI-compatible image endpoints and three Pruna models landed, alongside smaller image sizes and repairs to image routing and API keys.\n\nOpenAI-compatible image generation and edit endpoints were added, accepting prompts, source-image URLs or uploads. Responses can contain base64 data or an image URL. The OpenAI-compatible model list now includes permitted text, image and audio models; separate model-list pricing responses now use fixed-point strings, so clients need to handle those fields as strings.\n\nPruna adds `p-image` for generation, `p-image-edit` for edits and `p-video` for text- or image-to-video. Nanobanana-2 now selects an output-size tier from requested dimensions, and both Nanobanana-2 and Nanobanana Pro gained a 0.5K tier.\n\nGPT Image edits now use the correct Azure endpoint and API version, with endpoint construction fixed for both `gptimage` and `gptimage-large`. Klein 4B provider requests were updated to reduce rejected requests; `klein-large` and its aliases were removed, while `klein` remains available.",
+  "pr_count": 15,
   "prs": [
     {
       "number": 9001,
@@ -27,11 +27,31 @@
       "date": "2026-03-14"
     },
     {
+      "number": 9089,
+      "date": "2026-03-14"
+    },
+    {
       "number": 9091,
       "date": "2026-03-14"
     },
     {
+      "number": 9093,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9094,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9104,
+      "date": "2026-03-14"
+    },
+    {
       "number": 9105,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9107,
       "date": "2026-03-14"
     },
     {
@@ -41,14 +61,27 @@
     {
       "number": 9117,
       "date": "2026-03-14"
+    },
+    {
+      "number": 9121,
+      "date": "2026-03-14"
     }
   ],
-  "generated_at": "2026-03-18T22:13:38.553614+00:00",
+  "generated_at": "2026-10-17T22:44:01.302441+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Generate with Pruna p-image",
-      "text": "Create images with `p-image` through the core API. [Explore the model](https://enter.pollinations.ai/models?q=p-image).",
+      "title": "Pruna image generation",
+      "text": "Generate images with `p-image`. Requested dimensions map to the closest supported size. [Browse the model](https://enter.pollinations.ai/models?q=p-image).",
+      "prs": [
+        9077
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "Pruna image editing",
+      "text": "Edit an input image with `p-image-edit`. [Browse the model](https://enter.pollinations.ai/models?q=p-image-edit).",
       "prs": [
         9077
       ],
@@ -56,37 +89,37 @@
     },
     {
       "emoji": "🎨",
-      "title": "Edit with Pruna p-image-edit",
-      "text": "Modify images with `p-image-edit` through the core API. [Explore the model](https://enter.pollinations.ai/models?q=p-image-edit).",
+      "title": "Pruna video generation",
+      "text": "Make a video from text or an image with `p-video`, with a maximum duration of 10 seconds. [Browse the model](https://enter.pollinations.ai/models?q=p-video).",
       "prs": [
         9077
       ],
       "kind": "model"
     },
     {
-      "emoji": "🎨",
-      "title": "Make video with Pruna",
-      "text": "Generate video with `p-video` through the core API. [Explore the model](https://enter.pollinations.ai/models?q=p-video).",
+      "emoji": "💡",
+      "title": "Smaller Nanobanana images",
+      "text": "Choose the new 0.5K size tier with `nanobanana-2` or `nanobanana-pro` when a smaller image will do. [Browse Nanobanana-2](https://enter.pollinations.ai/models?q=nanobanana-2).",
       "prs": [
-        9077
+        9087
       ],
       "kind": "model"
     },
     {
       "emoji": "🔗",
-      "title": "Images through standard SDKs",
-      "text": "Use OpenAI-compatible image generation and editing endpoints to create or modify images with standard SDKs. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Images through OpenAI SDKs",
+      "text": "Use OpenAI-compatible `/v1/images/generations` and `/v1/images/edits` endpoints to create images or edit source images from URLs or uploads. Get base64 data by default, or request an image URL. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         9105
       ],
       "kind": "api"
     },
     {
-      "emoji": "✨",
-      "title": "More nanobanana-2 size options",
-      "text": "Set `imageSize` on `nanobanana-2`, including the new 0.5K resolution tier. [Explore the model](https://enter.pollinations.ai/models?q=nanobanana-2).",
+      "emoji": "🔗",
+      "title": "Discover more models",
+      "text": "Use `/v1/models` to find text, image and audio models available to your API key, including their modalities and supported endpoints. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        9087
+        9105
       ],
       "kind": "api"
     }

@@ -2,8 +2,8 @@
   "date": "2025-02-18",
   "period_start": "2025-02-18",
   "period_end": "2025-02-18",
-  "title": "A simpler project submission prompt",
-  "summary": "A small tidy-up made the invitation to submit a project more direct.\n\nThe Projects section now asks in one sentence whether visitors have a Pollinations.AI project they’d like featured. The extra invitation and spacing above the submission button were removed.",
+  "title": "A clearer project submission prompt",
+  "summary": "A small tidy-up made the path to submitting a project easier to read.\n\nThe Projects section now asks visitors in one sentence whether they have a Pollinations.AI project they’d like featured. The extra contact line and spacing above the submission button were removed.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-02-18"
     }
   ],
-  "generated_at": "2026-10-17T15:33:53.899197+00:00",
+  "generated_at": "2026-10-17T22:28:55.522161+00:00",
   "highlights": [],
   "changelog": []
 }

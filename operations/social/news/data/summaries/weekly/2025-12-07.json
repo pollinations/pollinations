@@ -2,8 +2,8 @@
   "date": "2025-12-07",
   "period_start": "2025-11-30",
   "period_end": "2025-12-06",
-  "title": "Video found its way into the workflow",
-  "summary": "Video became easier to make, media models gained clearer choices, and the routes into generation got shorter.\n\nPreview MP4 generation arrived for Veo 3.1 Fast and Seedance, then chat added `/video`, model selection, and in-conversation playback. Seedance also gained image-to-video handling and, by week’s end, two explicit choices: `seedance` for Lite and `seedance-pro` for Pro-Fast.\n\nThe final Seedream split makes `seedream` the 4.0 choice and `seedream-pro` the 4.5 choice, with 4K and multi-image support. Media request fixes improved handling of small images and reference images with generic file types. GPT Image edits now keep img2img requests on `gpt-image-1-mini`.\n\nThe new `gen.pollinations.ai` gateway adds shorter image and text routes, OpenAI-compatible requests, and a `/models` shortcut. The docs now use those paths and explain text query parameters. `nova-micro` joined the text models for conversations and tool use.\n\nSession-level system prompts and generation settings, charts in messages, and collapsible streamed reasoning give chat more room for actual work. Request changes also keep model-specific thinking settings from being sent where they do not belong.",
+  "title": "Video moved from API preview into chat",
+  "summary": "Video became part of the everyday workflow while model choices, API paths, and the community directory got easier to navigate.\n\nPreview MP4 generation arrived with Veo 3.1 Fast and Seedance, followed by `/video` in community chat with model selection and in-conversation playback. Seedance image-to-video requests were corrected, and the final model choices distinguish `seedance` Lite from `seedance-pro` Pro-Fast. Pricing displays now use video tokens for Seedance.\n\n`seedream` now selects Seedream 4.0, while `seedream-pro` selects 4.5 with 4K and multi-image support. Reference-image handling and small-request sizing were improved, and GPT Image image-to-image requests were fixed to use the image-editing endpoint.\n\nThirty-three projects joined the listings across the week, from terminal chat and PDF-to-speech to creative tools, games, and Flux AI. A new submission form and AI-assisted review path make it easier to propose an app and supply more information when needed.\n\nThe `gen.pollinations.ai` gateway added `/image/*`, `/text/*`, OpenAI-compatible `/v1/*` paths, and a `/models` shortcut. Documentation now uses those paths and explains text-generation query parameters. Amazon Nova Micro also joined the text lineup as `nova-micro`, with conversation and tool support.",
   "pr_count": 61,
   "prs": [
     {
@@ -251,5 +251,5 @@
       "date": "2025-12-06"
     }
   ],
-  "generated_at": "2026-10-17T16:06:53.099621+00:00"
+  "generated_at": "2026-10-17T23:26:04.349367+00:00"
 }

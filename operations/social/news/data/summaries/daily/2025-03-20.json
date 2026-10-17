@@ -2,8 +2,8 @@
   "date": "2025-03-20",
   "period_start": "2025-03-20",
   "period_end": "2025-03-20",
-  "title": "More options for text and vision",
-  "summary": "Qwen reasoning joined the model list, Mistral gained a vision-capable backend, and the text API got a cache Worker.\n\nAdded `qwen-reasoning` (Qwen QWQ 32B) through Groq and changed `mistral` to vision-capable Mistral Small 3.1 2503. Mistral-based personas use the new handler too.\n\nAdded a Python API example that sends a base64-encoded WAV file to `openai-audio` as `input_audio` and prints the transcription.\n\nAdded a text API Worker that can return cached responses from R2 and send cache misses to the origin. Image-request analytics also moved to the image cache Worker, where cache hits and generation outcomes can be recorded separately.",
+  "title": "Qwen reasoning joins the text models",
+  "summary": "Qwen reasoning and a vision-capable Mistral joined the text lineup, alongside a cache for repeat text requests.\n\nAdded `qwen-reasoning` (Qwen QWQ 32B) through Groq and switched `mistral` to the vision-capable Mistral Small 3.1 2503. Mistral-based personas use the new handler too.\n\nAdded a Cloudflare Worker that checks R2 for cached text responses before sending misses to the origin. It handles GET and JSON POST requests, while `/models`, `/feed`, and `no-cache` requests bypass the cache.\n\nAdded an API docs example that sends a base64-encoded WAV file to `openai-audio` and prints the transcription.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,12 +19,12 @@
       "date": "2025-03-20"
     }
   ],
-  "generated_at": "2026-10-17T15:36:04.699651+00:00",
+  "generated_at": "2026-10-17T22:29:37.680494+00:00",
   "highlights": [
     {
       "emoji": "🤖",
       "title": "Qwen reasoning added",
-      "text": "Use `qwen-reasoning` for Qwen QWQ 32B through the text API. [Browse the model](https://enter.pollinations.ai/models?q=qwen-reasoning).",
+      "text": "Try Qwen QWQ 32B through the `qwen-reasoning` text model. [Browse the model](https://enter.pollinations.ai/models?q=qwen-reasoning).",
       "prs": [
         1400
       ],
@@ -32,8 +32,8 @@
     },
     {
       "emoji": "🎨",
-      "title": "Mistral gets vision",
-      "text": "`mistral` now uses vision-capable Mistral Small 3.1 2503. [Browse the model](https://enter.pollinations.ai/models?q=mistral).",
+      "title": "Mistral gains vision",
+      "text": "The `mistral` model now uses vision-capable Mistral Small 3.1 2503, so you can use it with image inputs. [Browse the model](https://enter.pollinations.ai/models?q=mistral).",
       "prs": [
         1400
       ],

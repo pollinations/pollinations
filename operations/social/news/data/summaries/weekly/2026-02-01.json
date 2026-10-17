@@ -2,8 +2,8 @@
   "date": "2026-02-01",
   "period_start": "2026-01-25",
   "period_end": "2026-01-31",
-  "title": "Pollen balances got clearer boundaries",
-  "summary": "This week made Pollen balances easier to understand while tightening model routing, image-worker registration, and the edges around failed requests.\n\nTier Pollen moved to daily balances that reset at 00:00 UTC without rollover. Requests use the tier balance before crypto and pack Pollen, and Enter now shows the breakdown more clearly. Separately, seven paid-only models were set to use purchased-pack or crypto Pollen rather than daily grants; the model API, Play, and Enter now identify them.\n\n`kimi` now routes to Kimi K2.5, with image input, a 256,000-token context window, and new aliases. `nova-fast` and Claude 3.5 Haiku moved to native Bedrock routing through Portkey, with Nova Lite as a fallback for `nova-fast`. Failed image URLs in Claude and Gemini vision requests now return clearer client errors instead of generic 500s.\n\nConfigurable registration addresses were added for Flux, Z-Image, and Sana workers to help avoid network filtering that could prevent registration. Supporter-logo generation switched to Z-Image, and the retired `turbo` image model was removed from the registry and its dedicated routing.\n\nEnter brought back a banner showing the three newest GitHub-hosted highlights. News and README updates covered recent model, SDK, and payment-option announcements; those copy changes were not themselves implementations. The catalog also added @its3li’s Moltbot, a Telegram and WhatsApp assistant built with Pollinations.",
+  "title": "Pollen balances got clearer rules",
+  "summary": "Pollen accounting became more explicit while model routes, image workers, and the interfaces around them got steadier.\n\nTier balances moved out of Polar and gained daily refills at 00:00 UTC, with no rollover. Requests draw from tier Pollen first, then crypto, then packs. Later changes marked seven models as paid-only, so daily tier grants cannot cover those requests; the model API, Play, and Enter now identify them. Enter also gained a tier-balance breakdown.\n\nThe `kimi` route moved to Kimi K2.5, adding image input and a 256,000-token context window. `nova-fast` and Claude 3.5 Haiku moved to native Bedrock configuration, with Nova Lite as a fallback for `nova-fast`. API-key tracking stopped adding synchronous database writes to authentication requests, and failed Claude or Gemini image fetches now return actionable client errors instead of generic 500s.\n\nFlux, Z-Image, and Sana workers gained configurable registration addresses, reducing dependence on particular endpoints. `klein-large` concurrency was adjusted to avoid GPU memory errors while preserving capacity. Supporter logos switched to Z-Image, and the `turbo` image route was removed; self-hosted routing retains zimage and Flux pools.\n\nA “What’s new” banner on Enter’s home and sign-in pages now reads recent highlights instead of relying on a disabled hard-coded banner. Purchase options and balance explanations gained clearer labels and examples, while API-key delete controls remain visible when the table scrolls.",
   "pr_count": 20,
   "prs": [
     {
@@ -87,5 +87,5 @@
       "date": "2026-01-31"
     }
   ],
-  "generated_at": "2026-10-17T16:07:34.073043+00:00"
+  "generated_at": "2026-10-17T23:26:35.335124+00:00"
 }

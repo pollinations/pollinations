@@ -2,8 +2,8 @@
   "date": "2025-09-11",
   "period_start": "2025-09-11",
   "period_end": "2025-09-11",
-  "title": "Romance Companion joins the visible model catalog",
-  "summary": "Romance Companion became easier to find, image and token settings changed, and queue diagnostics got more useful.\n\nMistral Small 2402 Romance Companion is no longer hidden and moves from the nectar tier to the flower tier. It also has `mistral-nemo-instruct-2407-romance` and `mistral-roblox` aliases.\n\nImage requests without explicit dimensions now use `sideLength` for width and height instead of capping them at 1024. Flux’s maximum side length drops from 1280 to 768, while Azure GPT-4.1’s max-tokens and max-completion-tokens settings drop from 1024 to 512.\n\nQueue-full 429s and text-service error logs now carry more user context for troubleshooting. Error response JSON is unchanged; the text service also corrects the casing of two transform imports.",
+  "title": "Mistral Romance Companion becomes easier to find",
+  "summary": "Mistral Romance Companion moved to the flower tier while image defaults, generation limits, and queue diagnostics were tuned.\n\nMistral Small 2402 Romance Companion was unhidden and moved from the nectar tier to the flower tier. It also has `mistral-nemo-instruct-2407-romance` and `mistral-roblox` aliases.\n\nImage requests without dimensions now use `sideLength` for width and height instead of capping them at 1024. Flux’s maximum side length dropped from 1280 to 768, and Azure GPT-4.1’s two token-limit settings dropped from 1024 to 512.\n\nQueue-full and text-service error logs gained user context, with separate logging for 429s. Error response JSON stayed the same; two text-transform import casing issues were also corrected.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,12 +11,12 @@
       "date": "2025-09-11"
     }
   ],
-  "generated_at": "2026-10-17T15:46:25.202435+00:00",
+  "generated_at": "2026-10-17T22:33:41.292114+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Romance Companion is visible",
-      "text": "Find Mistral Small 2402 Romance Companion in the model catalog. It also has the aliases `mistral-nemo-instruct-2407-romance` and `mistral-roblox`. [Browse the model](https://enter.pollinations.ai/models?q=mistral-nemo-instruct-2407-romance).",
+      "title": "Mistral Romance Companion opens up",
+      "text": "Mistral Small 2402 Romance Companion was unhidden and moved to the flower tier. It supports the `mistral-nemo-instruct-2407-romance` and `mistral-roblox` aliases. [Browse the model](https://enter.pollinations.ai/models?q=mistral-nemo-instruct-2407-romance).",
       "prs": [
         4013
       ],

@@ -2,8 +2,8 @@
   "date": "2025-01-03",
   "period_start": "2025-01-03",
   "period_end": "2025-01-03",
-  "title": "Image requests follow supported aspect ratios",
-  "summary": "Image generation got more predictable request handling and a better-instrumented queue, with worker routing tidied up behind the scenes.\n\nRequested dimensions now map to the closest supported aspect ratio, and short prompts respect an explicit `enhance=false`. Prompt handling also changed: non-ASCII characters are removed before prompts reach the image backend. Tests were added across generation, processing, caching and queues.\n\nQueueing events reach feed listeners again, while timing and queue statistics make image-generation bottlenecks easier to trace. The image cache is now bounded, image file operations use asynchronous I/O, and queue counts come from Flux jobs.\n\nWorker registration and queue tracking now distinguish Flux, Turbo and translation services. Follow-up fixes align translation routing, handle unknown registration types and avoid a self-request when a server pool is empty. Flux also retains more generation steps under moderate load.",
+  "title": "Image requests follow supported shapes and prompt settings",
+  "summary": "A day spent tuning image generation: steadier queues, clearer prompt behavior, and less blocking work behind the scenes.\n\nRequested image dimensions now map to the closest supported aspect ratio, and short prompts respect an explicit `enhance=false` setting. Tests were added across generation, processing, caching, prompts and queues.\n\nQueue counts now come from Flux workers, and queueing events reach feed listeners again. Worker tracking was extended across Flux, Turbo and translation services, with routing fixes to keep requests in the right pool. Flux also retains more generation steps under moderate load.\n\nImage operations switched to asynchronous file I/O, and the cache gained a 500,000-entry limit. Debug logs and progress tracking replace much of the previous console output. Prompt sanitization now strips non-ASCII characters before sending text to the image backend, changing how accented prompts are handled.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,7 +27,7 @@
       "date": "2025-01-03"
     }
   ],
-  "generated_at": "2026-10-17T15:32:51.708859+00:00",
+  "generated_at": "2026-10-17T22:28:52.248648+00:00",
   "highlights": [],
   "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2025-10-23",
   "period_start": "2025-10-23",
   "period_end": "2025-10-23",
-  "title": "High-quality gptimage requests for Nectar",
-  "summary": "Nectar gets a high-quality gptimage option, four community projects join the directory, and two model examples and definitions get corrected.\n\nNectar users can request `quality=high` with `gptimage`; other tiers continue to receive medium quality. The model’s queue limits are also tier-based, giving Nectar a shorter interval and higher concurrency cap.\n\nThe project directory now includes SHICoPIC™ for images, a PR-summarizing GitHub Action, the Blossom-ai Python SDK, and an app that generates quiz questions and images.\n\nThe API docs’ Search the Web example now specifies `gemini-search` instead of relying on a default model without web search capability.",
+  "title": "Higher-quality gptimage for Nectar",
+  "summary": "Nectar gets a higher-quality gptimage option, four community projects join the directory, and two small fixes make the docs and model registry less surprising.\n\nNectar users can request `quality=high` with gptimage. The change also raises their queue concurrency cap from 1 to 3 and shortens the forced interval from 150 to 60 seconds; other tiers retain medium quality and the existing limits.\n\nThe project directory now includes an image-generation app, a PR-summarizing GitHub Action, a Python SDK, and a quiz generator. Contributor instructions for submitting projects were also updated.\n\nThe API docs now use `gemini-search` in the Search the Web example instead of relying on a default model that lacks web search capability.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,12 +23,12 @@
       "date": "2025-10-23"
     }
   ],
-  "generated_at": "2026-10-17T15:49:35.147032+00:00",
+  "generated_at": "2026-10-17T22:34:50.951629+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "High-quality gptimage requests",
-      "text": "Nectar users can request `quality=high` with `gptimage` for higher-quality images. [Browse models](https://enter.pollinations.ai/models?q=gptimage).",
+      "title": "Higher-quality gptimage requests",
+      "text": "Nectar users can request `quality=high` with gptimage. Other tiers continue to receive medium quality. [Browse models](https://enter.pollinations.ai/models?q=gptimage).",
       "prs": [
         4729
       ],

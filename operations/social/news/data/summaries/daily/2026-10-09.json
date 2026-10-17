@@ -2,14 +2,10 @@
   "date": "2026-10-09",
   "period_start": "2026-10-09",
   "period_end": "2026-10-09",
-  "title": "New ways to speak, transcribe, and make decisions",
-  "summary": "New voice, transcription, and Decisions models arrived alongside community apps and a substantial round of API, SDK, and CLI fixes.\n\nMAI-Voice-2.1 and Flash added text-to-speech with 97 voices each. MAI Transcribe 2 added multilingual file transcription with timed segments, plus a separate model for live PCM transcription. GPT-6 Luna Decisions added text and JSON decisions with streaming. Decisions requests no longer hit a local timeout, and region-restricted provider responses can reach a model’s declared fallback.\n\nThe app catalog added Arabic-language Video and Create 3D apps, illustrated four-line fables from Fable Finder, and boundary-message drafts from Nice No. Screenshots were added to the 31 listings missing them, and two language labels were corrected.\n\nGrowing agent conversations can reuse more of their prompt cache. The Responses API now separates parallel Gemini tool calls and streams tool arguments incrementally; the Messages API accepts supported PDF document blocks. Canonical model IDs with unencoded slashes resolve correctly, image and video boolean options accept values like `1` and `yes` while rejecting unknown values, and shell command substitution decodes UTF-8 correctly.",
-  "pr_count": 36,
+  "title": "MAI audio models cover files, live speech, and voices",
+  "summary": "New MAI audio models and typed decisions led a day of API compatibility fixes, community additions, and less surprising developer tools.\n\nThree team PRs added MAI Transcribe 2 for multilingual audio files, a streaming variant for live WebSocket transcription, and two MAI Voice text-to-speech models with 97 voices. Transcription docs also clarify which models support subtitle formats.\n\nA Quest contribution added paid-only `openai/gpt-6-luna-decisions` for choice, score, and predicate questions that return typed answers with probabilities and confidence. The shared Decisions adapter also stopped cutting off slow requests at its local 30-second deadline, while provider region rejections can now trigger a configured fallback.\n\nFour community apps joined the catalog, and screenshots were added to its 31 remaining entries without previews. A new Service Providers page explains inference and tool data flows and identifies details that remain unverified. Smaller updates corrected catalog languages and Quest standings.",
+  "pr_count": 35,
   "prs": [
-    {
-      "number": 15192,
-      "date": "2026-10-09"
-    },
     {
       "number": 16599,
       "date": "2026-10-09"
@@ -63,10 +59,6 @@
       "date": "2026-10-09"
     },
     {
-      "number": 16788,
-      "date": "2026-10-09"
-    },
-    {
       "number": 16790,
       "date": "2026-10-09"
     },
@@ -111,6 +103,10 @@
       "date": "2026-10-09"
     },
     {
+      "number": 16880,
+      "date": "2026-10-09"
+    },
+    {
       "number": 16883,
       "date": "2026-10-09"
     },
@@ -151,12 +147,39 @@
       "date": "2026-10-09"
     }
   ],
-  "generated_at": "2026-10-10T06:30:11.746320+00:00",
+  "generated_at": "2026-10-17T23:18:26.318920+00:00",
   "highlights": [
     {
+      "emoji": "🤖",
+      "title": "GPT-6 Luna Decisions",
+      "text": "Ask choice, score, or predicate questions with `openai/gpt-6-luna-decisions` and get typed answers with probabilities and confidence instead of prose. [Browse the model](https://enter.pollinations.ai/models?q=openai/gpt-6-luna-decisions).",
+      "prs": [
+        16701
+      ],
+      "kind": "model"
+    },
+    {
       "emoji": "🎵",
-      "title": "MAI voices for speech",
-      "text": "Generate speech with MAI-Voice-2.1 or its Flash variant, each offering 97 voices and MP3 or PCM output. [Browse models](https://enter.pollinations.ai/models).",
+      "title": "MAI file transcription",
+      "text": "Transcribe multilingual audio files with `microsoft/mai-transcribe-2`, including automatic language detection and timed segments. [Browse the model](https://enter.pollinations.ai/models?q=microsoft/mai-transcribe-2).",
+      "prs": [
+        16798
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "MAI live transcription",
+      "text": "Send live PCM audio to `microsoft/mai-transcribe-2-streaming` over the realtime WebSocket API and receive incremental finalized text. [Browse the model](https://enter.pollinations.ai/models?q=microsoft/mai-transcribe-2-streaming).",
+      "prs": [
+        16802
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "MAI-Voice-2.1 speech",
+      "text": "Generate speech with MAI-Voice-2.1, choosing from 97 voices and MP3 or 24 kHz PCM output. [Find the model](https://enter.pollinations.ai/models?q=MAI-Voice-2.1).",
       "prs": [
         16800
       ],
@@ -164,40 +187,12 @@
     },
     {
       "emoji": "🎵",
-      "title": "MAI transcription, two ways",
-      "text": "Transcribe multilingual audio files with timed segments using `microsoft/mai-transcribe-2`, or send live PCM audio to `microsoft/mai-transcribe-2-streaming`. [Browse the file transcription model](https://enter.pollinations.ai/models?q=microsoft/mai-transcribe-2).",
+      "title": "MAI-Voice-2.1 Flash",
+      "text": "Generate speech with MAI-Voice-2.1 Flash, with the same 97-voice selection and MP3 or 24 kHz PCM output. [Find the model](https://enter.pollinations.ai/models?q=MAI-Voice-2.1%20Flash).",
       "prs": [
-        16798,
-        16802
+        16800
       ],
       "kind": "model"
-    },
-    {
-      "emoji": "🤖",
-      "title": "GPT-6 Luna Decisions",
-      "text": "Use `openai/gpt-6-luna-decisions` for text or JSON decisions, including streaming requests. [Browse the model](https://enter.pollinations.ai/models?q=openai/gpt-6-luna-decisions).",
-      "prs": [
-        16701
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Fable Finder",
-      "text": "Give it a lesson you keep forgetting; get a four-line fable and an illustration. [Try it](https://mhmdrizki803-boop.github.io/fable-finder).",
-      "prs": [
-        16869
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "✨",
-      "title": "Nice No",
-      "text": "Turn an awkward request into a gentle, firm, or brief boundary message, with a follow-up for pushback. [Try it](https://nice-no.maxtoms21.chatgpt.site).",
-      "prs": [
-        16871
-      ],
-      "kind": "app"
     }
   ],
   "changelog": []

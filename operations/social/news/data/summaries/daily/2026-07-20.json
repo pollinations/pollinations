@@ -2,12 +2,20 @@
   "date": "2026-07-20",
   "period_start": "2026-07-20",
   "period_end": "2026-07-20",
-  "title": "Embeddings got sharper, more role-aware, and multimodal",
-  "summary": "A catalog-and-embeddings day: clearer model choices, stronger vector search, a publisher path, and infrastructure that tells the truth when the internet does not.\n\nGemini Embedding 2 now uses its GA multi-region endpoint and documented task instructions, while Cohere gets query/document roles, text-image embedding support arrives, and model-specific dimension and context guidance makes vector search less of a guessing game. Existing Gemini 2 indexes should be re-embedded before mixing old and new vectors.\n\nAll 132 model descriptions were rewritten around practical strengths and trade-offs, Sonar's high-context preset was renamed for clarity without breaking existing aliases, and API-key permissions now show only callable canonical models—including active private community models. Less catalog archaeology, fewer retired IDs appearing where they cannot help.\n\nA new GitHub issue form gives prospective community-model publishers a clear path to request account-level public publishing access, linked directly from My Models and the API docs. Private models remain available to register without the allowlist ceremony.",
-  "pr_count": 9,
+  "title": "More capable embeddings, with one migration to mind",
+  "summary": "Embeddings gained image inputs and more room for text, community publishers got a request path, and the model and app catalogs got easier to navigate.\n\n`cohere-embed-v4` accepts text with one image per input and supports `query` and `document` retrieval roles. `qwen3-embedding-8b` lists a 40,960-token context limit. `gemini-2` moved to Gemini Embedding 2's GA endpoint, which produces vectors in a different space: stored preview-era vectors need re-embedding before comparison. Model-specific dimensions, Gemini task instructions, and the associated usage rules are documented.\n\nMy Models and the API docs link to a new request form for community model publishers. It covers access to publish models publicly, not registration of individual models; signed-in users can still register and call private, owner-only models without that access.\n\nRegistry descriptions across text, image, audio, embeddings, 3D, and realtime models now explain uses and trade-offs. The high-context Perplexity Sonar preset is named `perplexity-high`; its previous names remain aliases, and the catalog distinguishes it from fast search.",
+  "pr_count": 10,
   "prs": [
     {
       "number": 12507,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12591,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12593,
       "date": "2026-07-20"
     },
     {
@@ -27,10 +35,6 @@
       "date": "2026-07-20"
     },
     {
-      "number": 12599,
-      "date": "2026-07-20"
-    },
-    {
       "number": 12600,
       "date": "2026-07-20"
     },
@@ -43,35 +47,70 @@
       "date": "2026-07-20"
     }
   ],
-  "generated_at": "2026-07-21T07:01:05.159806+00:00",
+  "generated_at": "2026-10-17T23:03:01.985861+00:00",
   "highlights": [
     {
+      "emoji": "🎨",
+      "title": "Images meet Cohere embeddings",
+      "text": "`cohere-embed-v4` accepts text with one image per input, plus `input_type: query` or `document` for retrieval. [Browse the model](https://enter.pollinations.ai/models?q=cohere-embed-v4).",
+      "prs": [
+        12597
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Gemini embeddings move to GA",
+      "text": "`gemini-2` uses Gemini Embedding 2's GA endpoint. Its vectors occupy a different space, so re-embed stored preview-era data before comparing it with new results. [Browse the model](https://enter.pollinations.ai/models?q=gemini-2).",
+      "prs": [
+        12597
+      ],
+      "kind": "model"
+    },
+    {
       "emoji": "✨",
-      "title": "Better embeddings, including multimodal search",
-      "text": "Gemini Embedding 2 now uses its GA endpoint, with role-aware Cohere requests and combined text-image embeddings for less approximate vector search.",
+      "title": "Longer Qwen embedding inputs",
+      "text": "`qwen3-embedding-8b` supports inputs up to the deployment's 40,960-token context limit, up from 32,768. [Browse the model](https://enter.pollinations.ai/models?q=qwen3-embedding-8b).",
       "prs": [
         12597
       ],
       "kind": "api"
     },
     {
-      "emoji": "💡",
-      "title": "Model pickers now speak human",
-      "text": "All 132 model descriptions were rewritten around practical trade-offs—quality, speed, cost, and capabilities—so apps can help people choose without making them read provider lore. [Browse models](https://gen.pollinations.ai/v1/models)",
-      "prs": [
-        12598
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🚀",
-      "title": "Community model publishing has a front door",
-      "text": "Prospective publishers can now request allowlist access for public text, image, embedding, speech, and transcription models; private models still need no invitation. [Request access](https://github.com/pollinations/pollinations/issues/new/choose)",
+      "emoji": "🔗",
+      "title": "Request public model publishing",
+      "text": "A new form linked from My Models and the API docs lets you request access to publish community models in the public catalog. Private, owner-only models do not require that access. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         12596
       ],
       "kind": "product"
     }
   ],
-  "changelog": []
+  "changelog": [
+    {
+      "pr_number": 12601,
+      "url": "https://github.com/pollinations/pollinations/pull/12601",
+      "merged_at": "2026-07-20T16:53:26Z",
+      "api_changes": [
+        {
+          "id": "pr-12601:POST /v1/embeddings",
+          "endpoint": "POST /v1/embeddings",
+          "summary": "Create Embeddings",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:input_type",
+              "before": null,
+              "after": {
+                "type": "\"query\"|\"document\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

@@ -2,8 +2,8 @@
   "date": "2025-01-14",
   "period_start": "2025-01-14",
   "period_end": "2025-01-14",
-  "title": "Text API gets more room to run",
-  "summary": "The text API got a higher configured request limit and better tracking, while contribution tooling and architecture docs caught up with reality.\n\nThe text API’s configured limit increased from 20 to 40 requests per minute, with localhost and pollinations.github.io added as allowed domains. The same PR fixed tracking for successful generations and errors.\n\nMentatBot replaced the OpenHands GitHub resolver. Its workflow now responds to `mentat`-labeled issues and pull requests instead of comment and review triggers. The README and homepage references were updated, then the homepage wording was shortened to “AI assistant.”\n\nThe README diagram now shows Mistral, Qwen, and Llama through Scaleway and Deepseek through its API, rather than placing Mistral and Llama under Azure.",
+  "title": "Text API tracking repaired",
+  "summary": "Text API tracking got a repair, the GitHub assistant changed hands, and the architecture diagram caught up with model routing.\n\nText generation success and error events were brought into line with image API analytics. The same PR raised the text API limit from 20 to 40 requests per minute and added localhost and pollinations.github.io to its allowed domains.\n\nThe GitHub resolver switched from OpenHands to MentatBot, using labeled issues and pull requests rather than comment and review triggers. The README and homepage references were updated, with the homepage using the simpler name “AI assistant.”\n\nThe README architecture diagram now shows Mistral, Qwen, and Llama connected through Scaleway and Deepseek models through the Deepseek API, rather than placing Mistral and Llama under Azure.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,7 +23,7 @@
       "date": "2025-01-14"
     }
   ],
-  "generated_at": "2026-10-17T15:32:52.384798+00:00",
+  "generated_at": "2026-10-17T22:28:52.894383+00:00",
   "highlights": [],
   "changelog": []
 }

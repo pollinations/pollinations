@@ -2,8 +2,8 @@
   "date": "2025-12-18",
   "period_start": "2025-12-18",
   "period_end": "2025-12-18",
-  "title": "Gemini 3 Flash takes the default route",
-  "summary": "Gemini 3 Flash became the default Gemini route, chat requests got more consistent, and Enter gained clearer API key status while a tier refactor was rolled back.\n\n`gemini` and `gemini-search` now route to Gemini 3 Flash Preview, while `gemini-fast` provides Gemini 2.5 Flash Lite. The Gemini 3 Flash region was also corrected after the new aliases returned 404s.\n\n`openai-audio` now accepts all 13 voices listed in its model registry. Temperature handling also checks the resolved model, preventing unsupported values from causing 400 errors when an alias routes to GPT-5 or an o-series model.\n\nA new Learn tutorial walks through building a Python Discord bot with Pollinations text generation, Flux images, and voice, including conversation context and error handling.",
+  "title": "Gemini 3 Flash takes the default slot",
+  "summary": "Gemini 3 Flash became the default, audio and chat requests got compatibility fixes, and Enter’s key list became easier to read.\n\n`gemini` and `gemini-search` now route to Gemini 3 Flash Preview, while the new `gemini-fast` name provides Gemini 2.5 Flash Lite. A follow-up changed the Vertex AI region to resolve 404s for the Gemini 3 Flash aliases.\n\n`openai-audio` now accepts all 13 voices shown in its model listing. Temperature handling also checks the resolved model, preventing 400 errors when an alias such as `openai-fast` routes to a model that requires temperature 1.\n\nEnter’s key list gained Last Used and Expires columns, with warnings for keys nearing expiration. A separate tier and frontend refactor was merged, then reverted after it was associated with API docs and chat completion failures; its tier changes are not part of the day’s final result.",
   "pr_count": 8,
   "prs": [
     {
@@ -39,15 +39,24 @@
       "date": "2025-12-18"
     }
   ],
-  "generated_at": "2026-10-17T15:55:59.311897+00:00",
+  "generated_at": "2026-10-17T22:36:59.482815+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Gemini 3 Flash routing",
-      "text": "Use `gemini` for Gemini 3 Flash Preview, or `gemini-fast` for Gemini 2.5 Flash Lite. `gemini-search` now uses Gemini 3 Flash Preview too. [Browse the model](https://enter.pollinations.ai/models?q=gemini-3-flash-preview).",
+      "title": "Gemini 3 Flash default",
+      "text": "`gemini` and `gemini-search` now use Gemini 3 Flash Preview. [Browse the model](https://enter.pollinations.ai/models?q=gemini).",
       "prs": [
         6144,
         6157
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "A lighter Gemini option",
+      "text": "Use `gemini-fast` to select Gemini 2.5 Flash Lite while `gemini` uses Gemini 3 Flash Preview. [Browse the model](https://enter.pollinations.ai/models?q=gemini-fast).",
+      "prs": [
+        6144
       ],
       "kind": "model"
     }

@@ -2,8 +2,8 @@
   "date": "2025-08-24",
   "period_start": "2025-08-24",
   "period_end": "2025-08-24",
-  "title": "A route into the codebase",
-  "summary": "A small community-maintenance day: clearer codebase guidance, more projects in the catalog, and a tidier Claude workflow.\n\nSequa AI's Pollinations codebase-knowledge MCP URL was added to the README, website news, and MCP guidance, making the connection easier for contributors to find.\n\nThe project catalog gained entries including websim-pollinations-ai and Visiora. The website also gained a projects anchor and listed NavyAI and Nebius as supporters.\n\nThe Claude workflow now permits `mcp_sequa_search_web` instead of `web_search`, and the separate automated Claude PR-review workflow was removed.",
+  "title": "A path into the codebase through Sequa AI",
+  "summary": "Contributor guidance gained a codebase-knowledge MCP link, the project catalog grew, and the Claude workflow got a tidy-up.\n\nContributor guidance now links to Sequa AI’s Pollinations codebase-knowledge MCP endpoint, making it easier to explore the project through an MCP client.\n\nThe project catalog gained entries including websim-pollinations-ai and Visiora. The website also gained a direct projects anchor and lists NavyAI and Nebius as supporters.\n\nThe Claude workflow now permits Sequa’s web-search tool in place of its previous web-search tool, and the separate automated Claude PR-review workflow was removed.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,17 @@
       "date": "2025-08-24"
     }
   ],
-  "generated_at": "2026-10-17T15:45:45.157412+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:33:28.235871+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "Explore the codebase with Sequa",
+      "text": "Contributor guidance now includes Sequa AI’s Pollinations codebase-knowledge MCP endpoint for exploring the project through an MCP client. [Open the MCP endpoint](https://mcp.sequa.ai/v1/pollinations/contribute).",
+      "prs": [
+        3841
+      ],
+      "kind": "product"
+    }
+  ],
   "changelog": []
 }

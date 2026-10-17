@@ -2,8 +2,8 @@
   "date": "2025-07-15",
   "period_start": "2025-07-15",
   "period_end": "2025-07-15",
-  "title": "DeepSeek Prompt joins the chat projects list",
-  "summary": "A community-listing day: DeepSeek Prompt joined the chat projects, and Mindcraft’s links now point to its maintained home.\n\nThe community projects list added DeepSeek Prompt, an app for organizing prompt templates and using Pollinations APIs to analyze and improve them.\n\nThe Mindcraft game listing now points to its current website and maintained GitHub repository.",
+  "title": "A prompt tool joins the project list",
+  "summary": "A new community prompt tool joined the project list, and Mindcraft’s links got a tidy-up.\n\nDeepSeek Prompt was added to the Chat projects list. The community app organizes prompt templates, supports drag-and-drop sorting and import/export, and uses Pollinations APIs to help improve prompts.\n\nThe Mindcraft game listing now points to mindcraft.riqvip.dev and the maintained mindcraft-ce repository.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-07-15"
     }
   ],
-  "generated_at": "2026-10-17T15:43:54.839579+00:00",
+  "generated_at": "2026-10-17T22:32:48.023611+00:00",
   "highlights": [],
   "changelog": []
 }

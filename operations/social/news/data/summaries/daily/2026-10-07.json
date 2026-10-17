@@ -2,9 +2,9 @@
   "date": "2026-10-07",
   "period_start": "2026-10-07",
   "period_end": "2026-10-07",
-  "title": "Three more models for text, images, and reasoning",
-  "summary": "Three models, more video reference options, two community apps, and a CLI that checks the folder before sending the request.\n\nQuest contributions added paid-only Nex N2.5 Pro, Nex N2.5 Mini, and Mistral Large 4. All three accept image input and support reasoning; Pro and Mistral Large 4 also support tool calling.\n\nThe SDK now accepts image, video, and audio reference URLs for video generation, either individually or as arrays. Its existing first- and last-frame image option still works.\n\nSoloForge AI joined the build listing with a workflow from content ideas to generated assets and publishing. Audio joined the video and audio listing with text-to-speech. New app submissions now include Pollinations credit, a platform, and a screenshot.",
-  "pr_count": 16,
+  "title": "Three reasoning models join the lineup",
+  "summary": "Three reasoning models, SDK video guidance, and reusable account routes landed alongside CLI and catalog fixes.\n\nAdded Nex N2.5 Pro, Nex N2.5 Mini, and Mistral Large 4. All three accept text and images; Pro and Mistral support tools, while Mini supports streaming but not tools. Mistral reasoning is translated into OpenAI-compatible responses. Separately, Ling 3.1 Flash now has an 8-request-per-minute per-user cap, and the API docs list Grok Imagine Video 1.5 Lite.\n\nThe SDK gained `referenceImages`, `referenceVideos`, and `referenceAudios` options for guiding video generation; supported combinations are listed in model capabilities. The CLI also creates missing output folders before requesting a generation, and rapid chat follow-ups now retain the preceding reply in context.\n\nThe dashboard moved key management, balance, earnings, and Quest rewards onto `/api/account/*` routes that apps and agents can also use with appropriately permissioned keys. Key editing gained a PATCH route. Dashboard account calls now use a short-lived session token, and detailed usage CSV downloads retain their attachment filename.",
+  "pr_count": 19,
   "prs": [
     {
       "number": 15780,
@@ -35,11 +35,19 @@
       "date": "2026-10-07"
     },
     {
+      "number": 16654,
+      "date": "2026-10-07"
+    },
+    {
       "number": 16664,
       "date": "2026-10-07"
     },
     {
       "number": 16665,
+      "date": "2026-10-07"
+    },
+    {
+      "number": 16669,
       "date": "2026-10-07"
     },
     {
@@ -52,6 +60,10 @@
     },
     {
       "number": 16688,
+      "date": "2026-10-07"
+    },
+    {
+      "number": 16691,
       "date": "2026-10-07"
     },
     {
@@ -71,22 +83,30 @@
       "date": "2026-10-07"
     }
   ],
-  "generated_at": "2026-10-08T06:33:15.419311+00:00",
+  "generated_at": "2026-10-17T23:17:30.646877+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Two Nex reasoning models",
-      "text": "Try paid-only `nex-agi/nex-n2.5-pro` and `nex-agi/nex-n2.5-mini` with text or image input. Pro also supports tool calling. [Explore text models](https://gen.pollinations.ai/v1/models).",
+      "title": "Nex N2.5 Pro",
+      "text": "Use `nex-agi/nex-n2.5-pro` for text and image input, tools, reasoning, and structured output with a 262,144-token context. [View the model](https://enter.pollinations.ai/models?q=nex-agi/nex-n2.5-pro).",
       "prs": [
-        16340,
+        16340
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Nex N2.5 Mini",
+      "text": "Use `nex-agi/nex-n2.5-mini` for text and image input, reasoning, structured output, and streaming with a 262,144-token context. [View the model](https://enter.pollinations.ai/models?q=nex-agi/nex-n2.5-mini).",
+      "prs": [
         16341
       ],
       "kind": "model"
     },
     {
       "emoji": "🤖",
-      "title": "Mistral Large 4 added",
-      "text": "Use paid-only Mistral Large 4 for text and image input, reasoning, and tool calling. [Explore text models](https://gen.pollinations.ai/v1/models).",
+      "title": "Mistral Large 4",
+      "text": "Use `mistralai/mistral-large-4` with text, images, tools, and reasoning. It has a 524,288-token context, and its reasoning appears in OpenAI-compatible `reasoning_content`. [View the model](https://enter.pollinations.ai/models?q=mistralai/mistral-large-4).",
       "prs": [
         16606
       ],
@@ -94,30 +114,21 @@
     },
     {
       "emoji": "🎨",
-      "title": "More video reference options",
-      "text": "Pass image, video, or audio reference URLs to video generation through the SDK, including arrays of URLs. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "title": "Guide video with reference media",
+      "text": "The SDK now accepts `referenceImages`, `referenceVideos`, and `referenceAudios` in video options for visual, motion or style, and audio guidance. Check `/models` for each model's supported combinations. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         16705
       ],
       "kind": "product"
     },
     {
-      "emoji": "✨",
-      "title": "SoloForge AI joins the catalog",
-      "text": "Turn content ideas into generated assets, review them, and organize publishing workflows with Pollinations image generation. [Try it](https://soloforge-ai-web.onrender.com).",
+      "emoji": "🔗",
+      "title": "Account tools for apps",
+      "text": "Apps and agents can use permissioned `/api/account/*` routes to work with keys, balances, earnings, and Quest rewards. A new PATCH route supports key editing. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        16664
+        16678
       ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎵",
-      "title": "Audio joins the catalog",
-      "text": "Try this community text-to-speech app; its BYOP access requires sign-in. [Try it](https://dwikatmahmoud87-source.github.io/Gtdcg).",
-      "prs": [
-        16665
-      ],
-      "kind": "app"
+      "kind": "api"
     }
   ],
   "changelog": []

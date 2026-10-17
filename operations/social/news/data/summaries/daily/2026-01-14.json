@@ -3,7 +3,7 @@
   "period_start": "2026-01-14",
   "period_end": "2026-01-14",
   "title": "Clearer app authorization and key guidance",
-  "summary": "Clearer authorization, a new developer-tool listing, and a provider change for DeepSeek V3.2.\n\nThe authorization page now lists text, image, audio, and video permissions alongside Pollen balance, key expiry, and model access. API-key guidance was also corrected across the docs and product surfaces: publishable keys are described as limited to 1 Pollen per IP per hour, and both key types spend from the account balance. The rate-limit behavior itself did not change.\n\nPolliDev, a tool for managing generative image assets and prompts, was added to the Dev_Tools catalog and README showcase. The YouTube MASHINA showcase entry was removed.\n\nDeepSeek V3.2 now routes through Fireworks AI in the shared model registry and text API. Its `deepseek-v3` and `deepseek-reasoning` aliases remain; provider-specific token overrides were also removed for GLM-4.7 and MiniMax M2.1.",
+  "summary": "Clearer key permissions and guidance, a new route for DeepSeek V3.2, and another developer tool in the catalog.\n\nThe authorization page now lists requested text, image, audio, and video permissions alongside Pollen balance, key expiry, and model access. Key guidance across the docs, dashboard, website, and MCP responses now consistently describes the publishable-key limit as 1 Pollen per IP per hour and clarifies that both key types spend the account’s Pollen. The wording changed; rate-limit behavior did not.\n\nDeepSeek V3.2 now routes through Fireworks AI instead of Google Vertex AI MaaS in the shared registry and text API. The `deepseek-v3` and `deepseek-reasoning` aliases remain. The team also removed explicit `max-tokens` overrides from the Fireworks configurations for GLM-4.7 and MiniMax M2.1.\n\nAn agent-added catalog entry brings @FabioArieiraBaia’s PolliDev, a tool for managing generative image assets and prompts, to Dev_Tools and the README showcase. The YouTube MASHINA showcase entry was removed.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,7 +23,7 @@
       "date": "2026-01-14"
     }
   ],
-  "generated_at": "2026-10-17T15:59:14.526042+00:00",
+  "generated_at": "2026-10-17T22:38:11.161989+00:00",
   "highlights": [],
   "changelog": []
 }

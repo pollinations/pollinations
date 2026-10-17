@@ -2,8 +2,8 @@
   "date": "2025-12-09",
   "period_start": "2025-12-09",
   "period_end": "2025-12-09",
-  "title": "Website news catches up",
-  "summary": "The website news caught up, and database lookups got some attention.\n\nThe news highlights now cover the December 8 updates to models, search, Chat visualizations, and daily Pollen allowances, while older entries were removed.\n\nNew indexes target auth and API-key lookups, event batch processing, and time-range queries. API behavior is unchanged.",
+  "title": "The website news caught up",
+  "summary": "The website news caught up with recent changes, and database indexes gave common lookups a shorter path.\n\nThe news page added December 8 entries about video and text models, search options, and Chart.js visualizations in Chat. These are updates to the highlights, not new launches in this day's PRs.\n\nThe same news update listed daily Pollen allowances for Spore, Seed, Flower, and Nectar, while keeping the December 3 Seedream 4.5 and Seedance Pro-Fast entry.\n\nNew indexes target auth and API-key lookups, event batch processing, and time-range queries. They are intended to reduce query time without changing API behavior.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-12-09"
     }
   ],
-  "generated_at": "2026-10-17T15:54:21.001474+00:00",
+  "generated_at": "2026-10-17T22:36:30.186075+00:00",
   "highlights": [],
   "changelog": []
 }

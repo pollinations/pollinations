@@ -2,8 +2,8 @@
   "date": "2025-11-28",
   "period_start": "2025-11-28",
   "period_end": "2025-11-28",
-  "title": "Nano Banana Pro gets 4K output",
-  "summary": "Nano Banana Pro gained 4K output while chat compatibility, error reporting, and balance checks got less brittle.\n\nNano Banana Pro now supports 1K, 2K, and 4K output based on requested dimensions, with dimensions mapped to the closest supported aspect ratio. Its default side length also increased from 1024 to 2048 pixels.\n\nThe chat API now accepts content-part arrays in more message roles, along with document file parts, Anthropic cache controls, and provider-specific content types. Streaming errors preserve upstream HTTP statuses, and Azure OpenAI requests translate `max_tokens` for newer models.\n\nEnter now tracks recent meter balances locally and updates them after billable requests, reducing balance-check calls to Polar and the chance of requests encountering its API rate limits.",
+  "title": "Nano Banana Pro can generate 4K images",
+  "summary": "4K Nano Banana Pro images, more flexible chat inputs, and fewer balance-check round trips.\n\nNano Banana Pro now selects 1K, 2K, or 4K output based on the requested pixel count and maps dimensions to the closest supported aspect ratio. Its default side length also increased from 1024 to 2048 pixels.\n\nThe chat API now accepts content-part arrays beyond user messages, including document file parts and Anthropic cache controls. Streaming errors preserve upstream HTTP statuses, and `max_tokens` works with newer Azure OpenAI models. Five Claude configurations also moved to a native Bedrock provider connection.\n\nEnter now tracks meter balances locally for five minutes and updates the cached balance after billable requests. That means fewer balance-check calls and less chance of a request running into the balance provider’s API limits.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,16 +23,25 @@
       "date": "2025-11-28"
     }
   ],
-  "generated_at": "2026-10-17T15:53:13.167229+00:00",
+  "generated_at": "2026-10-17T22:36:04.524636+00:00",
   "highlights": [
     {
       "emoji": "🎨",
       "title": "Nano Banana Pro in 4K",
-      "text": "Request up to 4K output from `nanobanana-pro`. Its default side length is now 2048 pixels, up from 1024. [Browse the model](https://enter.pollinations.ai/models?q=nanobanana-pro).",
+      "text": "Generate images with `nanobanana-pro` at up to 4K resolution. Its default side length is now 2048 pixels. [Explore the model](https://enter.pollinations.ai/models?q=nanobanana-pro).",
       "prs": [
         5454
       ],
       "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "More flexible chat inputs",
+      "text": "Send content-part arrays in system, developer, assistant, and tool messages. Chat requests also accept document file parts and Anthropic `cache_control`. [See the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        5456
+      ],
+      "kind": "api"
     }
   ],
   "changelog": []

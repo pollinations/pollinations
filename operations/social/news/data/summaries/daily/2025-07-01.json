@@ -3,7 +3,7 @@
   "period_start": "2025-07-01",
   "period_end": "2025-07-01",
   "title": "Anonymous model access corrected",
-  "summary": "Anonymous model access got corrected while text routing, ad-request privacy, and image cache matching were tightened.\n\nUnauthenticated requests now default to the anonymous tier. The tier fix restores anonymous access to `openai` and extends it to `openai-fast`, MIDIjourney, and Elixpo Search. Text requests return 402 for insufficient access and 404 for unknown models; GPT Image requires flower tier or higher.\n\nRoblox-backed text routing gained random selection across six Azure endpoints. A subsequent tier fix restored `openai` as GPT-4.1 Mini, identified `openai-fast` as GPT-4.1 Nano, moved the Roblox model to flower-tier access, and mapped `openai-audio` to `gpt-4o-mini-audio-preview`.\n\nAuthenticated nex.ad requests no longer include the user's IP or fire impression URLs. Image semantic-cache matches now require a higher similarity score, reducing loose matches. Azure endpoint parsing also accepts `cognitiveservices.azure.com` addresses.",
+  "summary": "Anonymous model access got sorted out, authenticated ad requests share less data, and model routing and image cache matching were tuned.\n\nUnauthenticated requests now use the anonymous tier. `openai` is restored with GPT-4.1 Mini, while `openai-fast`, MIDIjourney, and Elixpo Search are available to anonymous users. Text requests now return 402 for insufficient access and 404 for unknown models; GPT Image requires the flower tier or higher.\n\nAuthenticated nex.ad requests no longer include the user's IP or fire impression URLs. Unauthenticated requests keep the existing behavior.\n\nGPT-4.1 Mini requests can be distributed across six Azure Roblox endpoints. The image semantic cache now requires a closer match, and Azure resource parsing accepts both Cognitive Services and OpenAI endpoint domains.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,17 @@
       "date": "2025-07-01"
     }
   ],
-  "generated_at": "2026-10-17T15:43:04.645453+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:32:24.461664+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "More models without signing in",
+      "text": "Anonymous requests can use `openai` with GPT-4.1 Mini, `openai-fast` with GPT-4.1 Nano, MIDIjourney, and Elixpo Search. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        2715
+      ],
+      "kind": "model"
+    }
+  ],
   "changelog": []
 }

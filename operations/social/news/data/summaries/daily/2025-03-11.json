@@ -3,7 +3,7 @@
   "period_start": "2025-03-11",
   "period_end": "2025-03-11",
   "title": "An OpenAI-compatible chat endpoint",
-  "summary": "OpenAI-compatible chat, new text model options, and even a route in for Flash widgets.\n\nAdded POST `/v1/chat/completions` for streaming and non-streaming chat requests in OpenAI-compatible formats.\n\nDeepSeek joined text generation, and `openai-reasoning` moved from o1-mini to o3-mini with vision listed as supported. Token-limited o1-mini requests now use its supported parameter. Images gained an SDXL fallback when Cloudflare Flux fails, while short prompts are no longer automatically enhanced.\n\nAdded cross-domain policy responses for the text and image services, allowing Flash widgets on older devices such as Chumby and Sony Dash to make requests.",
+  "summary": "OpenAI-compatible chat, DeepSeek and o3-mini joined a day of more deliberate image prompts and even a route in for Flash widgets.\n\nAdded POST /v1/chat/completions with streaming and non-streaming responses, giving existing OpenAI-style clients a familiar route into the text API.\n\nDeepSeek joined text generation, while openai-reasoning switched from o1-mini to o3-mini. The reasoning model listing was also updated to mark vision support.\n\nShort image prompts are no longer automatically enhanced. Image generation also gained an SDXL fallback for requests where Cloudflare Flux fails.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,12 +31,12 @@
       "date": "2025-03-11"
     }
   ],
-  "generated_at": "2026-10-17T15:35:20.723664+00:00",
+  "generated_at": "2026-10-17T22:29:16.757649+00:00",
   "highlights": [
     {
       "emoji": "🔗",
-      "title": "OpenAI-compatible chat endpoint",
-      "text": "Send streaming or non-streaming chat requests to `/v1/chat/completions` using OpenAI-compatible request and response formats. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "title": "OpenAI-compatible chat",
+      "text": "Send streaming or non-streaming chat requests to POST `/v1/chat/completions` using an OpenAI-compatible format. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         1319
       ],
@@ -44,18 +44,35 @@
     },
     {
       "emoji": "🤖",
-      "title": "More text model options",
-      "text": "DeepSeek was added to text generation, and `openai-reasoning` now routes to o3-mini with vision support listed. [Browse models](https://enter.pollinations.ai/models).",
+      "title": "DeepSeek joins text generation",
+      "text": "Generate text with the newly added DeepSeek integration. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        1318,
+        1318
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Reasoning moves to o3-mini",
+      "text": "`openai-reasoning` now routes to o3-mini instead of o1-mini; its model listing also marks vision support. [View the model](https://enter.pollinations.ai/models?q=openai-reasoning).",
+      "prs": [
         1321
       ],
       "kind": "model"
     },
     {
+      "emoji": "🎨",
+      "title": "Short prompts stay short",
+      "text": "Short image prompts are no longer automatically enhanced, giving you more direct control over what you ask for. [Try image generation](https://gen.pollinations.ai/docs).",
+      "prs": [
+        1318
+      ],
+      "kind": "api"
+    },
+    {
       "emoji": "📱",
       "title": "Flash widgets can connect",
-      "text": "Cross-domain policies let Flash-based widgets, including those on Chumby and Sony Dash, request text and images. Old hardware gets another job.",
+      "text": "Flash-based widgets, including those on older devices, can make cross-domain requests to the text and image services. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         1289
       ],

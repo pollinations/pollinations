@@ -2,9 +2,9 @@
   "date": "2026-02-18",
   "period_start": "2026-02-18",
   "period_end": "2026-02-18",
-  "title": "added an interactive build diary to the community page",
-  "summary": "transparency means seeing the messy parts too. also remapped upstream 429s to 502s. if the provider is choked, that's a bad gateway, not you spamming. clarity helps",
-  "pr_count": 5,
+  "title": "Community news gets a Build Diary",
+  "summary": "Community updates got a browsable diary, API errors got clearer, and Seed tier commit counts stopped caring about January 1.\n\nThe Community page’s static News section was replaced with an interactive timeline of PR analyses, daily summaries, and weekly digests. Readers can browse by date, open PR details, and view images made for different platforms. The page also shows more top contributors.\n\nUpstream provider 429 responses are now returned as 502 across proxied text, image, and audio requests, while Enter’s own limits remain 429. Chat completion errors also extract readable messages from upstream JSON instead of leaving clients to parse the whole response.\n\nSeed tier GitHub commit counts now use a rolling 90-day window rather than resetting with the calendar year. The tier explanation also reflects weekly evaluations and automatic upgrades.",
+  "pr_count": 4,
   "prs": [
     {
       "number": 8366,
@@ -21,38 +21,16 @@
     {
       "number": 8385,
       "date": "2026-02-18"
-    },
-    {
-      "number": 8404,
-      "date": "2026-02-18"
     }
   ],
-  "generated_at": "2026-02-19T06:21:56.260376+00:00",
+  "generated_at": "2026-10-17T22:40:40.173710+00:00",
   "highlights": [
     {
-      "emoji": "📅",
-      "title": "Build Diary",
-      "text": "The [Community page](https://hello.pollinations.ai) now features an interactive timeline of the project's history. Navigate daily changes and digests with keyboard controls.",
+      "emoji": "📱",
+      "title": "Browse the Build Diary",
+      "text": "Explore an interactive timeline of PR analyses, daily summaries, and weekly digests on the Community page. Open PR details and browse the images made for each update. [Visit the community site](https://pollinations.ai).",
       "prs": [
         8366
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🐛",
-      "title": "Readable Errors",
-      "text": "The [API](https://gen.pollinations.ai) now extracts actual human-readable messages from upstream JSON errors. No more raw dumps when providers fail.",
-      "prs": [
-        8379
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🌱",
-      "title": "Seed Tier Logic",
-      "text": "GitHub activity qualification now uses a rolling 90-day window instead of resetting yearly. Your status is safe in January.",
-      "prs": [
-        8385
       ],
       "kind": "product"
     }

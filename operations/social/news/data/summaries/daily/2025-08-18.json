@@ -2,8 +2,8 @@
   "date": "2025-08-18",
   "period_start": "2025-08-18",
   "period_end": "2025-08-18",
-  "title": "More options for text, images, and tools",
-  "summary": "Five text models joined the list, from image-capable GPT-5 Nano to DeepSeek R1 0528, alongside a few model configuration updates.\n\nGPT-5 Nano and Claude 3.5 Haiku were added to the text model list. Both support tools, and GPT-5 Nano accepts image input alongside text.\n\nOpenAI o3 and DeepSeek R1 0528 joined the text model list, with DeepSeek R1 0528 routed through Bedrock.\n\nGemini 2.5 Flash Lite was added. The same PR added upstream identifiers for nova-fast and roblox-rp, plus cached-input pricing for nova-fast.",
+  "title": "More ways to work with text and images",
+  "summary": "Five text models joined the list, including image-capable GPT-5 Nano and reasoning model DeepSeek R1 0528.\n\nGPT-5 Nano and Claude 3.5 Haiku joined the text model list with tool support. GPT-5 Nano also accepts image input.\n\nOpenAI o3, Gemini 2.5 Flash Lite, and the reasoning model DeepSeek R1 0528 were added to the text model list.\n\nThe same PR added upstream model identifiers for nova-fast and roblox-rp, plus cached-input pricing for nova-fast. Model lists, like gardens, need labeling.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,21 +11,48 @@
       "date": "2025-08-18"
     }
   ],
-  "generated_at": "2026-10-17T15:45:44.576675+00:00",
+  "generated_at": "2026-10-17T22:33:23.919612+00:00",
   "highlights": [
     {
       "emoji": "🤖",
       "title": "GPT-5 Nano added",
-      "text": "GPT-5 Nano accepts text and image input and supports tools. [Find GPT-5 Nano](https://enter.pollinations.ai/models?q=GPT-5%20Nano).",
+      "text": "GPT-5 Nano accepts text and image inputs and supports tools. [Browse the model](https://enter.pollinations.ai/models?q=GPT-5%20Nano).",
       "prs": [
         3742
       ],
       "kind": "model"
     },
     {
-      "emoji": "💡",
+      "emoji": "🤖",
+      "title": "Claude 3.5 Haiku added",
+      "text": "Claude 3.5 Haiku joins the text model list with tool support. [Browse the model](https://enter.pollinations.ai/models?q=Claude%203.5%20Haiku).",
+      "prs": [
+        3742
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "OpenAI o3 added",
+      "text": "OpenAI o3 joins the text model list. [Browse the model](https://enter.pollinations.ai/models?q=OpenAI%20o3).",
+      "prs": [
+        3742
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Gemini 2.5 Flash Lite added",
+      "text": "Gemini 2.5 Flash Lite joins the text model list. [Browse the model](https://enter.pollinations.ai/models?q=Gemini%202.5%20Flash%20Lite).",
+      "prs": [
+        3742
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
       "title": "DeepSeek R1 0528 added",
-      "text": "DeepSeek R1 0528 joins the text model list as a reasoning model. [Find DeepSeek R1 0528](https://enter.pollinations.ai/models?q=DeepSeek%20R1%200528).",
+      "text": "DeepSeek R1 0528 joins the text model list as a reasoning model. [Browse the model](https://enter.pollinations.ai/models?q=DeepSeek%20R1%200528).",
       "prs": [
         3742
       ],

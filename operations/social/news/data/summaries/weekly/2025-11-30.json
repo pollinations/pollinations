@@ -2,8 +2,8 @@
   "date": "2025-11-30",
   "period_start": "2025-11-23",
   "period_end": "2025-11-29",
-  "title": "New models, bigger images",
-  "summary": "New models drew the attention, while a week of compatibility and reliability fixes made them easier to use through the same APIs.\n\nClaude Opus 4.5 joined as `claude-large`, alongside Sonnet 4.5 as `claude` and Haiku as `claude-fast`. Nano Banana Pro joined the image lineup, then gained 1K, 2K, and 4K output with a 2048-pixel default side length.\n\nImage URLs now work in Vertex AI vision requests, and text parsing preserves parameters such as `max_tokens`. Chat validation accepts more provider-specific finish reasons and content formats, while Azure OpenAI requests translate `max_tokens` for newer models. The common API got less inclined to reject a valid response for having the wrong accent.\n\nResponse tracking now reads a clone instead of consuming the caller’s stream. Proxy and streaming errors preserve upstream HTTP statuses, and broader integration tests cover text models, recorded upstream responses, and audio output.\n\nEnter now tracks recent meter balances locally and updates them after billable requests, reducing balance-check calls. Model lists label pricing in Pollen, expose `is_specialized`, and draw descriptions and modalities from shared registry data.",
+  "title": "Claude Opus 4.5 and Nano Banana Pro joined the lineup",
+  "summary": "New Claude and image models arrived while the APIs around them got better at accepting real-world requests and preserving their responses.\n\n`claude-large` now selects Claude Opus 4.5, while `claude` selects Sonnet 4.5 and `claude-fast` selects Haiku 4.5. On the image side, `nanobanana-pro` added Gemini 3 Pro Image, then gained output selection up to 4K, closer aspect-ratio matching, and a 2048-pixel default side length.\n\nImage URLs now work in Vertex AI vision requests, and parsing preserves token limits and other OpenAI-compatible options instead of silently dropping them. Chat validation accepts provider-specific finish reasons and missing assistant content; content-part arrays also work beyond user messages, including document parts and Anthropic cache controls. Streaming errors retain upstream HTTP statuses, and newer Azure OpenAI models accept `max_tokens`.\n\nEnter now tracks a copy of each response, leaving streaming output available to its caller, and handles responses without extractable model usage. It also caches meter balances for five minutes and updates the cached balance after billable requests, reducing balance-check calls. Model listings now show prices in Pollen and use consistent specialization metadata.\n\nThe new `DELETE /delete/prompt/:prompt` endpoint invalidates an image cache entry using its original prompt and query parameters. Its JSON response reports the result of each deletion attempt.",
   "pr_count": 16,
   "prs": [
     {
@@ -71,5 +71,5 @@
       "date": "2025-11-29"
     }
   ],
-  "generated_at": "2026-10-17T16:06:45.476582+00:00"
+  "generated_at": "2026-10-17T23:26:00.667778+00:00"
 }

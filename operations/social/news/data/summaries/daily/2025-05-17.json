@@ -2,8 +2,8 @@
   "date": "2025-05-17",
   "period_start": "2025-05-17",
   "period_end": "2025-05-17",
-  "title": "AI Chat joins the creative apps list",
-  "summary": "A community addition: AI Chat joins the project list with multimodel chat, images, and voice on Windows.\n\nAI Chat by @narendradwivedi was added to the README and website’s creative apps list. The Windows app puts multiple AI models in one chat interface, with saved conversations, image generation, explanations of images from URLs, and voice responses.",
+  "title": "AI Chat joins the community project list",
+  "summary": "A community-made Windows chat app joined the project list, bringing several AI models and multimodal tools into one interface.\n\nAI Chat by @narendradwivedi was added to the README and website’s creative apps list. The Windows app puts multiple AI models in one chat interface, with saved conversations, image generation, image explanations from URLs, and voice responses.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-05-17"
     }
   ],
-  "generated_at": "2026-10-17T15:39:55.198131+00:00",
+  "generated_at": "2026-10-17T22:31:13.361238+00:00",
   "highlights": [],
   "changelog": []
 }

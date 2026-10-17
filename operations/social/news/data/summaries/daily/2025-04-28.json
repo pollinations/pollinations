@@ -2,8 +2,8 @@
   "date": "2025-04-28",
   "period_start": "2025-04-28",
   "period_end": "2025-04-28",
-  "title": "Mistral gets a different engine",
-  "summary": "Mistral changed engines, Echo AI joined the project list, and a few text and image interface edges got tidied up.\n\nThe `mistral` text model now routes to `mistral-small-3.1-24b-instruct-2503` instead of the Cloudflare model, retaining its 8,192-token maximum and 0.3 temperature.\n\n@3ch0AI’s Echo AI was added to the Tools & Interfaces list. It’s an HTML chat interface built with Pollinations text and image generation, streaming responses, and authentication.\n\nThe image editor’s inactive Imagine button now says “Write the 'Imagine' word only”; its active copy is unchanged.",
+  "title": "The `mistral` model gets a new backend",
+  "summary": "A new backend for `mistral`, sturdier ad handling in streaming text, and a community project added to the list.\n\nThe `mistral` text model was switched from a Cloudflare model to `mistral-small-3.1-24b-instruct-2503`, while retaining its 8,192-token maximum and 0.3 temperature.\n\nThe `p-ads` marker now forces an ad attempt ahead of the usual eligibility checks, with a Ko-fi fallback when no affiliate matches. The fix also covers streaming responses and more message-content formats.\n\nThe community project list now includes Echo AI, an HTML chat interface built with Pollinations text and image generation.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,12 +27,12 @@
       "date": "2025-04-28"
     }
   ],
-  "generated_at": "2026-10-17T15:38:31.017686+00:00",
+  "generated_at": "2026-10-17T22:30:37.979734+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Mistral changes engines",
-      "text": "The `mistral` text model now uses `mistral-small-3.1-24b-instruct-2503`, retaining its 8,192-token maximum. [Browse the model](https://enter.pollinations.ai/models?q=mistral).",
+      "title": "Mistral gets a new backend",
+      "text": "The `mistral` text model now uses `mistral-small-3.1-24b-instruct-2503`, keeping the same 8,192-token maximum. [Browse the model](https://enter.pollinations.ai/models?q=mistral).",
       "prs": [
         1807
       ],

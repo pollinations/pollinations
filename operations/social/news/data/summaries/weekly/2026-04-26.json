@@ -2,10 +2,18 @@
   "date": "2026-04-26",
   "period_start": "2026-04-19",
   "period_end": "2026-04-25",
-  "title": "The Great Model Migration",
-  "summary": "A massive week for model upgrades, MCP capabilities, and giving developers finer control over their generations.\n\nAdded Claude Opus 4.7, DeepSeek V4, gptimage-2, and Qwen3-TTS, while upgrading MiniMax and Kimi.\n\nOverhauled the MCP server with dynamic registries and 35+ voices, added deterministic audio seeds, and replaced boolean image reasoning with fast/balanced/pro modes.\n\nReplaced rolling usage windows with a precise calendar picker, added hourly data granularity, and improved BYOP attribution.\n\nRedesigned the BYOP consent screen, refreshed the pricing UI, and fixed a slew of mobile layout and scrolling issues.",
-  "pr_count": 39,
+  "title": "The model menu grew in every direction",
+  "summary": "More models and finer creative controls arrived alongside clearer app permissions and a much closer view of Pollen usage.\n\nThe week brought GPT Image 2, Qwen speech with optional style direction, Claude Opus 4.7, and Kimi K2.6. Existing routes also moved forward: minimax to M2.7, qwen-vision to Qwen3 VL 30B A3B Thinking, and deepseek to V4 Flash, with a separate V4 Pro option. The old DeepSeek V3 and V3.2 aliases were removed.\n\nGPT Image 2 added quality and transparency options; image reasoning gained fast, balanced, and pro modes while retaining boolean compatibility. The SDK added multi-image generation with URL or base64 responses, and ElevenLabs speech and music gained optional seeds for best-effort repeatable variants. More knobs, without requiring everyone to turn them.\n\nUsage can be filtered by API key, queried for exact UTC days, ISO weeks, or months, and downloaded as a detailed CSV for the selected period. Selecting a day now shows hourly buckets, while charts retain small fractional Pollen values. Authorized MCP tools can also check balance and usage.\n\nSDK device-code authorization gives CLI and headless apps a way to request access without starting with an API key, and new helpers manage account keys. The app consent screen makes spending limits and model access clearer, with account permissions opt-in. Keys can read their own usage without account-wide usage access; Play still allows logged-out model browsing but asks users to log in before generating.",
+  "pr_count": 60,
   "prs": [
+    {
+      "number": 10324,
+      "date": "2026-04-19"
+    },
+    {
+      "number": 10327,
+      "date": "2026-04-19"
+    },
     {
       "number": 10328,
       "date": "2026-04-19"
@@ -59,6 +67,18 @@
       "date": "2026-04-20"
     },
     {
+      "number": 10357,
+      "date": "2026-04-20"
+    },
+    {
+      "number": 10360,
+      "date": "2026-04-20"
+    },
+    {
+      "number": 10361,
+      "date": "2026-04-20"
+    },
+    {
       "number": 10368,
       "date": "2026-04-20"
     },
@@ -68,6 +88,10 @@
     },
     {
       "number": 10371,
+      "date": "2026-04-20"
+    },
+    {
+      "number": 10373,
       "date": "2026-04-20"
     },
     {
@@ -91,6 +115,14 @@
       "date": "2026-04-21"
     },
     {
+      "number": 10377,
+      "date": "2026-04-21"
+    },
+    {
+      "number": 10391,
+      "date": "2026-04-21"
+    },
+    {
       "number": 10393,
       "date": "2026-04-21"
     },
@@ -103,6 +135,18 @@
       "date": "2026-04-22"
     },
     {
+      "number": 10397,
+      "date": "2026-04-22"
+    },
+    {
+      "number": 10398,
+      "date": "2026-04-22"
+    },
+    {
+      "number": 10401,
+      "date": "2026-04-22"
+    },
+    {
       "number": 10402,
       "date": "2026-04-22"
     },
@@ -111,11 +155,23 @@
       "date": "2026-04-23"
     },
     {
+      "number": 10412,
+      "date": "2026-04-23"
+    },
+    {
+      "number": 10414,
+      "date": "2026-04-23"
+    },
+    {
       "number": 10415,
       "date": "2026-04-23"
     },
     {
       "number": 10416,
+      "date": "2026-04-23"
+    },
+    {
+      "number": 10420,
       "date": "2026-04-23"
     },
     {
@@ -139,6 +195,22 @@
       "date": "2026-04-24"
     },
     {
+      "number": 10400,
+      "date": "2026-04-24"
+    },
+    {
+      "number": 10417,
+      "date": "2026-04-24"
+    },
+    {
+      "number": 10430,
+      "date": "2026-04-24"
+    },
+    {
+      "number": 10432,
+      "date": "2026-04-24"
+    },
+    {
       "number": 10435,
       "date": "2026-04-24"
     },
@@ -155,13 +227,25 @@
       "date": "2026-04-24"
     },
     {
+      "number": 10450,
+      "date": "2026-04-24"
+    },
+    {
       "number": 10449,
       "date": "2026-04-25"
     },
     {
       "number": 10453,
       "date": "2026-04-25"
+    },
+    {
+      "number": 10461,
+      "date": "2026-04-25"
+    },
+    {
+      "number": 10463,
+      "date": "2026-04-25"
     }
   ],
-  "generated_at": "2026-04-26T06:36:13.049262+00:00"
+  "generated_at": "2026-10-17T23:27:24.523806+00:00"
 }

@@ -2,8 +2,8 @@
   "date": "2025-11-25",
   "period_start": "2025-11-25",
   "period_end": "2025-11-25",
-  "title": "Streaming responses stay intact",
-  "summary": "One PR kept response tracking out of the stream, made proxy errors more consistent, and widened integration coverage.\n\nEnter now reads a clone when tracking responses, leaving the stream available to the caller. Tracking also handles responses without extractable model usage.\n\nProxy errors now retain the upstream status and use a consistent format.\n\nRecorded upstream responses, more text-model coverage, and audio-output checks strengthen integration tests.",
+  "title": "Response tracking leaves streams intact",
+  "summary": "A maintenance day for streaming responses, clearer chat-completion errors, and broader integration checks.\n\nEnter now tracks a copy of each response, so reading usage data does not consume streaming output meant for the caller. Tracking also handles responses without extractable model usage.\n\nProxy errors now retain the upstream status and use a consistent error format.\n\nIntegration tests now cover more text models and audio output, with recorded upstream responses to make those checks more reliable.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-11-25"
     }
   ],
-  "generated_at": "2026-10-17T15:53:09.959201+00:00",
+  "generated_at": "2026-10-17T22:35:55.780594+00:00",
   "highlights": [],
   "changelog": []
 }

@@ -2,8 +2,8 @@
   "date": "2025-11-04",
   "period_start": "2025-11-04",
   "period_end": "2025-11-04",
-  "title": "Perplexity Sonar joins the text models",
-  "summary": "Perplexity Sonar models and public model discovery landed alongside Pollen estimates, streaming repairs, and a website migration still needing a build fix.\n\nAdded `perplexity-fast` and `perplexity-reasoning`, both with tool support. Response validation now accepts the empty finish reason Perplexity can return in regular and streaming completions.\n\nAdded a public text-model list endpoint and browser-ready examples in the API docs. The website was switched toward Enter’s image, text, and model endpoints, with clearer image-generation errors and a restored full-color image watermark. A follow-up configuration edit introduced duplicate declarations that block the frontend build, so the website migration should not be treated as working end to end.\n\nEnter gained text and image pricing tables showing model-specific rates and estimated output per Pollen. The service registry also dropped tier requirements and tier-based queue limits; the changes do not establish a new price or guarantee access to a particular model.",
+  "title": "Two Perplexity Sonar models join the text API",
+  "summary": "Two Sonar models and a text-model discovery endpoint arrived alongside clearer Pollen estimates and a round of streaming and site repairs.\n\nPerplexity Sonar and Sonar Reasoning were added as `perplexity-fast` and `perplexity-reasoning`, both with tool support. Response validation was also adjusted to accept the empty `finish_reason` values these models can return in regular and streaming completions.\n\nAn unauthenticated text-model listing endpoint was added, and the main site's generation requests and model lists were moved toward Enter's API. The image slideshow now displays API error messages rather than broken images. A subsequent configuration edit introduced duplicate declarations that prevent the frontend from compiling; the docs also gained a Quick Start.\n\nEnter gained text and image model pricing tables showing rates and estimated outputs per Pollen for different workloads. Separately, tier requirements were removed from service definitions, and the default queue limit became three requests per interval for all users. The table changes alone do not establish a change in charges or access.",
   "pr_count": 15,
   "prs": [
     {
@@ -67,30 +67,32 @@
       "date": "2025-11-04"
     }
   ],
-  "generated_at": "2026-10-17T15:51:34.540407+00:00",
+  "generated_at": "2026-10-17T22:35:23.909620+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Perplexity Sonar arrives",
-      "text": "Use `perplexity-fast` for conversational text and tool calls. [View the model](https://enter.pollinations.ai/models?q=perplexity-fast).",
+      "title": "Perplexity Sonar joins",
+      "text": "Use `perplexity-fast` for conversational text generation with tool support. [Browse the model](https://enter.pollinations.ai/models?q=perplexity-fast).",
       "prs": [
-        4969
+        4969,
+        4985
       ],
       "kind": "model"
     },
     {
       "emoji": "🤖",
-      "title": "Sonar with reasoning",
-      "text": "Try `perplexity-reasoning` for reasoning-capable conversations with tool support. [View the model](https://enter.pollinations.ai/models?q=perplexity-reasoning).",
+      "title": "Sonar Reasoning joins",
+      "text": "Use `perplexity-reasoning` for reasoning-focused conversations with tool support. [Browse the model](https://enter.pollinations.ai/models?q=perplexity-reasoning).",
       "prs": [
-        4969
+        4969,
+        4985
       ],
       "kind": "model"
     },
     {
       "emoji": "🔗",
-      "title": "Public text model discovery",
-      "text": "Fetch the text-model list without authentication from `GET /api/generate/text/models`. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Text models by API",
+      "text": "Fetch the available text-model names with an unauthenticated GET request to `/api/generate/text/models`.",
       "prs": [
         4973
       ],

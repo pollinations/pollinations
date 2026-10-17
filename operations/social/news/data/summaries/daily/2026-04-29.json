@@ -2,12 +2,16 @@
   "date": "2026-04-29",
   "period_start": "2026-04-29",
   "period_end": "2026-04-29",
-  "title": "BYOP gets unlimited budgets and stricter auth",
-  "summary": "A solid day of API developer experience upgrades, BYOP flexibility, and splitting our generation gateway onto dedicated infrastructure.\n\nBring Your Own Provider (BYOP) is now more flexible. You can set an explicit unlimited budget for trusted apps by passing a null value, bypassing the default cap. We also added support for multiple redirect URIs per API key with strict RFC 8252-compliant loopback handling. Better security, fewer auth headaches.\n\nNova Reel video generation now supports seeds for reproducible outputs. We also fixed how we handle user-supplied image URLs across 12 models—broken links now correctly return a 400 instead of a 500, and magic-byte MIME detection means Telegram CDN links finally work. Plus, Portkey provider errors are now surfaced at the top level so you don't have to parse nested JSON to figure out why a text generation failed.\n\nWe extracted the core generation gateway into its own dedicated service at gen.pollinations.ai. This separates heavy API traffic from the dashboard, meaning more reliable and scalable performance for everyone hitting the endpoints.",
-  "pr_count": 10,
+  "title": "Generation gets its own API home",
+  "summary": "Generation moved to its own API home, Nova Reel gained reproducible seeds, and app keys gained multiple callback URLs.\n\nImage, video, text, chat, and speech generation routes moved to `gen.pollinations.ai`, along with the interactive API reference. The chat app now uses the video route for video requests, and provider errors include a useful message when one is available.\n\nNova Reel accepts a `seed` for reproducible single-shot and multi-shot videos. Image and video paths now return HTTP 400 when a supplied image URL cannot be fetched; GPT Image and Flux Kontext also identify input images by their contents when a CDN supplies an unhelpful MIME type.\n\nPublishable app keys can register multiple redirect URIs through the key dashboard and APIs, with authorization checking callbacks against the selected key. The BYOP consent screen also accepts a cleared budget field for an unlimited Pollen budget. Enter’s key controls, balance, pricing, and usage views picked up more consistent tooltips.",
+  "pr_count": 12,
   "prs": [
     {
       "number": 10445,
+      "date": "2026-04-29"
+    },
+    {
+      "number": 10451,
       "date": "2026-04-29"
     },
     {
@@ -43,38 +47,42 @@
       "date": "2026-04-29"
     },
     {
+      "number": 10551,
+      "date": "2026-04-29"
+    },
+    {
       "number": 10554,
       "date": "2026-04-29"
     }
   ],
-  "generated_at": "2026-04-30T06:49:48.842923+00:00",
+  "generated_at": "2026-10-17T22:49:31.818533+00:00",
   "highlights": [
     {
-      "emoji": "🎬",
-      "title": "Seed support for Nova Reel",
-      "text": "You can now pass a `seed` parameter to our video generation model. Iterative prompting is finally possible without the output hallucinating a completely new timeline on every request. Check the [API Docs](https://gen.pollinations.ai/docs).",
+      "emoji": "🔗",
+      "title": "Generation has a new home",
+      "text": "Send image, video, text, chat, and speech requests to `gen.pollinations.ai`; the interactive API reference moved there too. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        10466
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Repeatable Nova Reel videos",
+      "text": "Set `seed` on Nova Reel single-shot or multi-shot video requests to reproduce a result; use `-1` for a random seed. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         10445
       ],
       "kind": "api"
     },
     {
-      "emoji": "🌸",
-      "title": "YSOAI Image Generator",
-      "text": "A new community-built image generation interface joins the showcase. [Try it](https://huggingface.co/spaces/yassinovich/YSOAI)",
+      "emoji": "🔗",
+      "title": "Multiple app callback URLs",
+      "text": "Register multiple redirect URIs for one publishable app key in Enter, so an app can have more than one authorized callback. [Manage API keys](https://enter.pollinations.ai/keys).",
       "prs": [
-        10544
+        10524
       ],
-      "kind": "app"
-    },
-    {
-      "emoji": "✨",
-      "title": "LAHgen",
-      "text": "Another text-to-image creation tool takes root in the community directory. [Try it](https://image.khminds.com/)",
-      "prs": [
-        10546
-      ],
-      "kind": "app"
+      "kind": "product"
     }
   ],
   "changelog": []

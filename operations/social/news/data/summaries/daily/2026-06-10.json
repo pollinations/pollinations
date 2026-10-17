@@ -2,35 +2,85 @@
   "date": "2026-06-10",
   "period_start": "2026-06-10",
   "period_end": "2026-06-10",
-  "title": "Proper error codes for content policy rejections",
-  "summary": "A quiet day fixing HTTP status codes so content policy rejections return a 422 instead of a panic-inducing 500.\n\nWe stopped throwing generic 500 errors when upstream content moderation kicks in. You'll now get a proper 422 with a `content_policy_violation` code, meaning you can actually handle these programmatically instead of regexing error strings. As a bonus, our status monitors will stop panicking about degraded models when users just ask for spicy things.",
-  "pr_count": 1,
+  "title": "Content-policy rejections get a useful error",
+  "summary": "Image and video errors got clearer, while options that never did anything finally stopped pretending.\n\nImage and video moderation rejections from DashScope, Replicate, Vertex AI and Azure now return HTTP 422 with a stable `content_policy_violation` code and the provider's reason, rather than appearing as server errors. Clients can tell when to change a request instead of retrying it; model-health monitoring no longer counts these rejections as backend failures.\n\nThe API schemas, SDK, MCP tools, CLI and Play stopped offering or forwarding several inert options, including `enhance`, `negative_prompt`, `nologo`, `nofeed` and image or video `private` parameters. The API parameter docs were updated too. Older gen image requests that still send removed keys are ignored rather than rejected; text privacy controls are unchanged.\n\nThe README's Latest News now documents the previously added `p-video-720p` and `p-video-1080p` resolution options and links to the Unified API. An older app listing was removed.",
+  "pr_count": 5,
   "prs": [
+    {
+      "number": 11712,
+      "date": "2026-06-10"
+    },
+    {
+      "number": 11713,
+      "date": "2026-06-10"
+    },
+    {
+      "number": 11716,
+      "date": "2026-06-10"
+    },
+    {
+      "number": 11719,
+      "date": "2026-06-10"
+    },
     {
       "number": 11722,
       "date": "2026-06-10"
     }
   ],
-  "generated_at": "2026-06-11T07:35:26.366474+00:00",
-  "highlights": [
+  "generated_at": "2026-10-17T22:58:12.158547+00:00",
+  "highlights": [],
+  "changelog": [
     {
-      "emoji": "🤖",
-      "title": "Blame the prompt, not the server",
-      "text": "Content moderation rejections now return a 422 `content_policy_violation` instead of a generic 500 error. Your code can finally tell the difference between a blocked prompt and an actual server fire.",
-      "prs": [
-        11722
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "📱",
-      "title": "Trimming the dead leaves",
-      "text": "Removed legacy image parameters (`negative_prompt`, `enhance`, `nologo`) from the [API](https://gen.pollinations.ai/docs) and SDKs. They weren't doing anything anyway, so we stopped pretending.",
-      "prs": [
-        11712
-      ],
-      "kind": "api"
+      "pr_number": 11719,
+      "url": "https://github.com/pollinations/pollinations/pull/11719",
+      "merged_at": "2026-06-10T10:50:09Z",
+      "api_changes": [
+        {
+          "id": "pr-11719:GET /image/{prompt}",
+          "endpoint": "GET /image/{prompt}",
+          "summary": "Generate Image",
+          "action": "CHANGE",
+          "breaking": true,
+          "changes": [
+            {
+              "field": "parameters:query:enhance",
+              "before": {
+                "type": "boolean",
+                "required": false
+              },
+              "after": null,
+              "breaking": true
+            },
+            {
+              "field": "parameters:query:negative_prompt",
+              "before": {
+                "type": "string",
+                "required": false
+              },
+              "after": null,
+              "breaking": true
+            }
+          ]
+        },
+        {
+          "id": "pr-11719:GET /video/{prompt}",
+          "endpoint": "GET /video/{prompt}",
+          "summary": "Generate Video",
+          "action": "CHANGE",
+          "breaking": true,
+          "changes": [
+            {
+              "field": "parameters:query:enhance",
+              "before": {
+                "type": "boolean",
+                "required": false
+              },
+              "after": null,
+              "breaking": true
+            }
+          ]
+        }
+      ]
     }
-  ],
-  "changelog": []
+  ]
 }

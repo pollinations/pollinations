@@ -2,8 +2,8 @@
   "date": "2026-08-30",
   "period_start": "2026-08-30",
   "period_end": "2026-08-30",
-  "title": "Community embedding models join the standard API",
-  "summary": "Embeddings became a first-class community API, Floret learned the full media catalog, and a new app turns prompts into illustrated stories.\n\nCommunity model owners can now register embedding models for discovery in Pollinations catalogs, and developers can call them through the familiar OpenAI-compatible POST /v1/embeddings endpoint. Dashboard, Account API, and polli CLI support arrived together, with shared fallbacks, rate limits, and token handling already wired in.\n\nFloret now discovers supported text, image, video, audio, transcription, and audio-transform models directly from the live catalog. Its new general-purpose media tools return publicly usable image and video URLs, while streamed tool progress stays where it belongs: in OpenAI-compatible tool-call deltas, not masquerading as assistant prose.\n\nAI Story & Image Studio joined the community app garden at adventuretreehouse.com, generating short stories and matching illustrations together through Pollinations text and image APIs. The README also received its daily news and star-history refresh, because even a garden needs a reasonably current signpost.",
+  "title": "Community embeddings join the model catalog",
+  "summary": "Community embeddings gained an endpoint, Floret learned more audio and video work, and a story-making app joined the catalog.\n\nCommunity publishers can register and test OpenAI-compatible embedding models through My Models, the Account API, and the polli CLI. Registered models appear in model listings and accept text inputs through `/v1/embeddings`, with optional dimensions and float or base64 output.\n\nFloret now discovers models by their catalogued capabilities, can delegate text generation to models without tool calling, and adds audio generation, transcription, voice changing, and voice isolation. Video generation uses catalogued duration defaults and end frames when available; streaming tool progress now arrives as structured tool-call deltas.\n\nAI Story & Image Studio was added to the image app catalog. The README was also refreshed with a clearer explanation of canonical model slugs and updated star-history charts.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,21 +23,21 @@
       "date": "2026-08-30"
     }
   ],
-  "generated_at": "2026-08-31T06:38:13.255746+00:00",
+  "generated_at": "2026-10-17T23:09:43.834504+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "Community Embeddings",
-      "text": "Community embedding models now work through the standard OpenAI-compatible `/v1/embeddings` endpoint. The vector garden is open.",
+      "emoji": "🔗",
+      "title": "Publish community embedding models",
+      "text": "Register and test OpenAI-compatible embedding models in My Models or the polli CLI. They appear in model listings and accept text through `/v1/embeddings`, with optional dimensions and float or base64 output. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         13406
       ],
       "kind": "api"
     },
     {
-      "emoji": "✨",
-      "title": "Floret Media Tools",
-      "text": "Floret now discovers the live catalog for text, images, video, audio, transcription, and audio transforms—returning usable public media URLs and streaming tool progress.",
+      "emoji": "🎵",
+      "title": "More audio tools for Floret",
+      "text": "Floret can now generate and transcribe audio, change voices, and isolate voices. Audio generation also accepts duration and seed.",
       "prs": [
         14106
       ],
@@ -45,12 +45,12 @@
     },
     {
       "emoji": "🎨",
-      "title": "AI Story & Image Studio",
-      "text": "Turn a prompt into a short story with matching illustrations in one go. [Try it](https://adventuretreehouse.com)",
+      "title": "Floret follows model capabilities",
+      "text": "Floret now discovers text, image, video, and audio models from the catalog, including text models that cannot call tools. Its video tools use available duration defaults and end-frame support.",
       "prs": [
-        14128
+        14106
       ],
-      "kind": "app"
+      "kind": "product"
     }
   ],
   "changelog": []

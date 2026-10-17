@@ -2,9 +2,9 @@
   "date": "2026-08-16",
   "period_start": "2026-08-16",
   "period_end": "2026-08-16",
-  "title": "Image edits now keep the shape of the original",
-  "summary": "A busy garden day: composition-preserving image edits, inspectable agent tool calls, cleaner agent UX, and new ways for Quest rewards to land.\n\nImage edit requests without an explicit size now derive a safe, 16px-aligned output size from the source image, so portrait, landscape, and wide edits keep their composition instead of quietly becoming squares. The app directory also gained NeuralCanvas, a native Kotlin and Jetpack Compose Android image generator built on the Pollinations image API.\n\nManaged agents now return Open WebUI-compatible records for tool calls, parameters, outputs, and failures in both streaming and completed responses. MCP connections also follow ordinary redirects, which is useful because URLs, like houses, occasionally move without telling the integration.\n\nAgent model listings, cards, pricing guidance, and creation forms were consolidated around shared tooltips, compact descriptions, stable mobile layouts, and category-specific legends. Long model IDs now truncate cleanly, pricing context stays where it is useful, and the community-agent form has less ceremonial labeling.",
-  "pr_count": 14,
+  "title": "Quest codes and bonus rewards",
+  "summary": "Quest codes and visible agent tool calls arrived alongside shape-preserving image edits, easier OAuth consent, and a tidier model catalog.\n\nThe Quests overview gained a place to redeem campaign codes. Each code can reveal a hidden quest and immediately claim its Pollen reward once per campaign. Bonus rewards without catalog entries now appear with a claim flow.\n\nAgent responses now include tool-call details in streaming and non-streaming output: tool name, arguments, and the resulting text or failure. Managed-agent configuration was narrowed to built-in Pollinations MCP tools, with a simpler dashboard switch and CLI status. An MCP redirect-handling fix also merged, and the agent form lost a few redundant labels.\n\nWhen an image edit omits `size`, dimensions now follow the first source image’s aspect ratio instead of defaulting to a square. OAuth consent details can scroll within short screens, keeping authorize actions accessible even when permissions expand.",
+  "pr_count": 15,
   "prs": [
     {
       "number": 13442,
@@ -47,6 +47,10 @@
       "date": "2026-08-16"
     },
     {
+      "number": 13461,
+      "date": "2026-08-16"
+    },
+    {
       "number": 13463,
       "date": "2026-08-16"
     },
@@ -63,43 +67,25 @@
       "date": "2026-08-16"
     }
   ],
-  "generated_at": "2026-08-17T06:18:52.226372+00:00",
+  "generated_at": "2026-10-17T23:06:59.838886+00:00",
   "highlights": [
     {
-      "emoji": "🎨",
-      "title": "Image edits keep their shape",
-      "text": "Omit `size` when editing a portrait, landscape, or wide image and supported models now preserve its aspect ratio instead of squaring it off. [API Docs](https://gen.pollinations.ai/docs)",
-      "prs": [
-        13459
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Agents show their work",
-      "text": "Managed-agent responses now expose tool names, parameters, outputs, and failures in streaming and non-streaming Open WebUI-compatible blocks. Debugging the robot is marginally less mystical.",
-      "prs": [
-        13465
-      ],
-      "kind": "api"
-    },
-    {
       "emoji": "🎯",
-      "title": "Bonus Pollen rewards",
-      "text": "Campaign rewards can now be claimed through Quests and appear under Bonus rewards, while contributor grants land through the same quest flow.",
+      "title": "Redeem Quest codes",
+      "text": "Enter a campaign code in Quests to uncover a hidden quest and claim its Pollen reward. Bonus rewards also have a place to claim them.",
       "prs": [
         13470
       ],
       "kind": "product"
     },
     {
-      "emoji": "📱",
-      "title": "NeuralCanvas on Android",
-      "text": "A native Kotlin/Jetpack Compose app turns text prompts into images with the Pollinations image API. [Try it](https://play.google.com/store/apps/details?id=com.proApps.aiimagegenerator)",
+      "emoji": "🤖",
+      "title": "See agent tool calls",
+      "text": "Managed-agent responses now show tool names, arguments, and text results or failures in streaming and non-streaming output. Generated media links stay in the response. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        13449
+        13465
       ],
-      "kind": "app"
+      "kind": "api"
     }
   ],
   "changelog": []

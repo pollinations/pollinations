@@ -3,7 +3,7 @@
   "period_start": "2025-08-14",
   "period_end": "2025-08-14",
   "title": "A new text model for Roblox roleplay",
-  "summary": "A new roleplay text model, a community Telegram bot, and better accounting for text requests.\n\nAdded `roblox-rp` with anonymous access and tool support. Requests randomly route to Llama 3 8B Instruct or Mistral Small 2402 on Bedrock. The same work extracted message sanitization into a shared utility and removed `claudyclaude` from the available model list.\n\nAdded Pollix AI, a multilingual Telegram assistant with fast replies and image understanding, to the project list and social bots catalog.\n\nReworked text-request events to record timing, status, model selection, token usage, and moderation results. The model list also dropped `gpt-5-nano`, while `openai-large` access changed from seed to flower.",
+  "summary": "A new roleplay text model joined the lineup, text-request tracking got more useful, and the community catalog gained a Telegram bot.\n\nAdded `roblox-rp` with anonymous access and tool support. Requests route to either Llama 3 8B Instruct or Mistral Small 2402. The same work kept Bedrock conversations valid when messages have empty content or begin without a user message.\n\nMoved `openai-large` access from seed to flower and removed `gpt-5-nano` from the model list. Text-request tracking now records timing, status, model selection, token usage, and moderation results.\n\nPollix AI, a community-built multilingual assistant with image understanding, was added to the project list and social bots catalog.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,12 +23,12 @@
       "date": "2025-08-14"
     }
   ],
-  "generated_at": "2026-10-17T15:45:24.512086+00:00",
+  "generated_at": "2026-10-17T22:33:22.762613+00:00",
   "highlights": [
     {
       "emoji": "🤖",
       "title": "Roblox roleplay text model",
-      "text": "Try `roblox-rp` for roleplay text with tool support and anonymous access. Requests route to either Llama 3 8B Instruct or Mistral Small 2402. [Browse the model](https://enter.pollinations.ai/models?q=roblox-rp).",
+      "text": "Try `roblox-rp` without an account, with tool support. Each request uses either Llama 3 8B Instruct or Mistral Small 2402. [Browse the model](https://enter.pollinations.ai/models?q=roblox-rp).",
       "prs": [
         3679,
         3696

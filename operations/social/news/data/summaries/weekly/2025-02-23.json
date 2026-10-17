@@ -2,8 +2,8 @@
   "date": "2025-02-23",
   "period_start": "2025-02-16",
   "period_end": "2025-02-22",
-  "title": "Four more ways to build with Pollinations",
-  "summary": "Four community projects joined the directory while privacy defaults and the way pollinations.ai appears in shared links got attention.\n\nThe project listings gained a real-time model comparison tool, a Telegram word game that turns players’ words into images, Zelos AI’s prompt-enhanced image generator, and image1gen’s web interface for image generation. The invitation to submit a project also got shorter and more direct.\n\nA merged change treats requests to `/openai` paths as private even when `private` is omitted or set to false. Other paths keep their existing behavior.\n\nThe site’s sharing metadata gained a social-share banner, image dimensions, and a large Twitter card. The default description and organization details for search engines were refreshed too.",
+  "title": "Four more ways to build and play",
+  "summary": "Community-made tools took the lead, while small changes made projects easier to find and OpenAI-compatible requests more private.\n\nThe directory gained a real-time language-model comparison tool and two image generators: Zelos AI, which enhances prompts, and image1gen, a web interface for the API. The Social Bots list also gained One Word, a Telegram word game that turns players’ words into images.\n\nThe Projects page got a shorter submission prompt. Shared links now use a banner, with updated preview metadata and structured data to help the site appear more clearly in search results.\n\nDefault-private handling was merged for OpenAI-compatible requests, without changing the behavior of other routes.",
   "pr_count": 7,
   "prs": [
     {
@@ -35,5 +35,5 @@
       "date": "2025-02-22"
     }
   ],
-  "generated_at": "2026-10-17T16:03:16.860112+00:00"
+  "generated_at": "2026-10-17T23:23:43.923753+00:00"
 }

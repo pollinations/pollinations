@@ -2,8 +2,8 @@
   "date": "2025-02-05",
   "period_start": "2025-02-05",
   "period_end": "2025-02-05",
-  "title": "Two Gemini options for the text API",
-  "summary": "Two Gemini models joined the text API, while Pollinations.DIY and a community Telegram bot found their way into the project listings.\n\nThe text API added `gemini` for Gemini 2.0 Flash and `gemini-thinking` for Gemini 2.0 Flash Thinking. Requests can pass through temperature and JSON-mode options.\n\nPollinations.DIY, a browser coding environment built on bolt.diy with Pollinations services, was added to the website and README. The API docs also gained image and text SSE feed examples, while the news section was reorganized.\n\nTitan-GPT was added to the website and README Social Bots lists. The free Telegram bot offers Pollinations-powered image and text generation.",
+  "title": "Gemini 2.0 joins the text API",
+  "summary": "Gemini 2.0 Flash and Flash Thinking joined the text API, with more community projects to discover and clearer feed examples.\n\nAdded `gemini` for Gemini 2.0 Flash and `gemini-thinking` for Gemini 2.0 Flash Thinking, with temperature and JSON-mode options passed through to the models. The website and README now cover both additions.\n\nPollinations.DIY, a browser coding environment using Pollinations services, was added to the website and README. Titan-GPT, a Telegram bot for image and text generation, joined the Social Bots lists.\n\nThe API docs gained image and text SSE feed examples, while the website’s image-feed example now logs `imageURL`. An Azure-hosted gpt-4o-mini configuration was also added with unsupported parameters omitted.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,12 +19,12 @@
       "date": "2025-02-05"
     }
   ],
-  "generated_at": "2026-10-17T15:33:29.869957+00:00",
+  "generated_at": "2026-10-17T22:28:54.944795+00:00",
   "highlights": [
     {
       "emoji": "🤖",
       "title": "Gemini 2.0 Flash",
-      "text": "Use `gemini` through the text API, with temperature and JSON-mode options. [Browse the model](https://enter.pollinations.ai/models?q=gemini).",
+      "text": "Use `gemini` for Gemini 2.0 Flash through the text API, with temperature and JSON-mode options. [Browse the model](https://enter.pollinations.ai/models?q=gemini).",
       "prs": [
         1152
       ],
@@ -32,8 +32,8 @@
     },
     {
       "emoji": "💡",
-      "title": "Gemini Flash Thinking",
-      "text": "Use `gemini-thinking` for Gemini 2.0 Flash Thinking through the text API. [Browse the model](https://enter.pollinations.ai/models?q=gemini-thinking).",
+      "title": "Gemini 2.0 Flash Thinking",
+      "text": "Use `gemini-thinking` through the text API, with temperature and JSON-mode options. [Browse the model](https://enter.pollinations.ai/models?q=gemini-thinking).",
       "prs": [
         1152
       ],

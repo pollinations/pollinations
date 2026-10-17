@@ -3,7 +3,7 @@
   "period_start": "2026-02-02",
   "period_end": "2026-02-02",
   "title": "A home for GSoC 2026 contributors",
-  "summary": "A GSoC contributor hub, image-generation groundwork, and a new entry tier led the day; news copy and MCP model listings got tidied up too.\n\nA GSoC app was added with project ideas, mentor profiles, a timeline, application guidance, FAQs, and an assistant for contributor questions. The ideas range from gaming SDKs and a CLI to a platform health agent and multimodal semantic cache.\n\nA TwinFlow-Z-Image-Turbo server was added with aspect-ratio-preserving scaling up to 1280×1280 pixels and a five-step default. Flux Schnell’s GPU setup was also updated for RTX 5090 hardware.\n\nMicrobe was added to the tier configuration at 0.1 Pollen per day. Enter’s tier panel and the Hello page now show five tiers, with Microbe described as the entry tier and Spore as verified. Signup and verification logic did not change.",
+  "summary": "A GSoC contributor hub, TwinFlow image-generation work, and a new entry tier led the day; MCP model lists stopped keeping five-minute-old answers around.\n\nA GSoC 2026 app was added with project ideas, mentor profiles, a timeline, FAQs, and guidance that points contributors toward project-specific issues. The ideas range from gaming SDKs and a CLI to a platform health agent and a multimodal semantic cache.\n\nA TwinFlow-Z-Image-Turbo server was added with aspect-ratio-preserving scaling up to 1280×1280 pixels and a five-step default. The Flux Schnell server also switched to FP4 weights for RTX 5090 GPUs.\n\nMicrobe was added to the tier configuration at 0.1 Pollen per day. Enter’s tier panel and Hello page now describe five tiers, with Microbe as the entry tier and Spore as verified; signup and verification logic did not change.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,16 +31,25 @@
       "date": "2026-02-02"
     }
   ],
-  "generated_at": "2026-10-17T16:02:04.628870+00:00",
+  "generated_at": "2026-10-17T22:38:59.262384+00:00",
   "highlights": [
     {
       "emoji": "💡",
-      "title": "GSoC ideas take shape",
-      "text": "Explore GSoC 2026 project ideas, mentor profiles, application guidance, and a contributor Q&A assistant in the new GSoC app.",
+      "title": "Explore GSoC 2026 ideas",
+      "text": "A new GSoC app brings project ideas, mentor profiles, a timeline, FAQs, and contribution guidance together in one place.",
       "prs": [
         7269
       ],
       "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "TwinFlow image server added",
+      "text": "A TwinFlow-Z-Image-Turbo server was added with aspect-ratio-preserving scaling up to 1280×1280 pixels and a five-step default.",
+      "prs": [
+        7854
+      ],
+      "kind": "model"
     }
   ],
   "changelog": []

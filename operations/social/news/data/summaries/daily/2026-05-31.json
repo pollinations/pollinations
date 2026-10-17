@@ -2,21 +2,42 @@
   "date": "2026-05-31",
   "period_start": "2026-05-31",
   "period_end": "2026-05-31",
-  "title": "React SDK and UI components",
-  "summary": "Official React and UI packages dropped, turning OAuth and wallet integration into a two-import job.\n\nWiring up OAuth and API key management is tedious. We added @pollinations_ai/sdk/react and @pollinations_ai/ui so you don't have to. Wrap your app in a PolliProvider, drop in the pre-built wallet components, and get back to building the actual app. SSR-safe hooks included.",
-  "pr_count": 1,
+  "title": "React apps get login and account tools",
+  "summary": "React apps gained login hooks and ready-made account UI, while Pollen accounting and community records got a tidy-up.\n\nThe team added `@pollinations_ai/sdk/react` with a `PolliProvider` and hooks for login state, account details, balance, key details, and usage. Apps can set OAuth key permissions, model restrictions, Pollen budgets, and expiry defaults, then override them per login. A new `@pollinations_ai/ui` package adds themed, auth-aware components, with a React showcase for trying them and generating example code.\n\nThe team centralized ledger rounding at eight decimal places. BYOP debits, developer credits, and generation tracking now use the same charged amount, so recorded totals match the ledger.\n\nAn agent refreshed app metrics and health-check records without changing app functionality. The team also clarified the quick contribution flow and removed an outdated Contributor badge promise.",
+  "pr_count": 4,
   "prs": [
     {
       "number": 11217,
       "date": "2026-05-31"
+    },
+    {
+      "number": 11337,
+      "date": "2026-05-31"
+    },
+    {
+      "number": 11427,
+      "date": "2026-05-31"
+    },
+    {
+      "number": 11429,
+      "date": "2026-05-31"
     }
   ],
-  "generated_at": "2026-06-01T07:40:04.018021+00:00",
+  "generated_at": "2026-10-17T22:57:50.064433+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "React Auth & UI Packages",
-      "text": "Drop in a `PolliProvider` to get SSR-safe auth hooks, OAuth login, and wallet UI components with two imports. Stop writing auth boilerplate and check the [React Docs](https://react-hooks.pollinations.ai).",
+      "emoji": "🔗",
+      "title": "React login and account hooks",
+      "text": "Add Pollinations login to a React app with `PolliProvider`, then read account, balance, key, and usage details through hooks. Set model restrictions, Pollen budgets, permissions, and expiry for OAuth login. [Explore the React SDK](https://react.pollinations.ai).",
+      "prs": [
+        11217
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "Ready-made React account UI",
+      "text": "Use themed login, identity, balance, and key-detail components from `@pollinations_ai/ui`, or try them in the React showcase and generate example code. [Explore the React UI](https://react.pollinations.ai).",
       "prs": [
         11217
       ],

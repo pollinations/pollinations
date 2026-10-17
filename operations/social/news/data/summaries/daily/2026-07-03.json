@@ -2,9 +2,9 @@
   "date": "2026-07-03",
   "period_start": "2026-07-03",
   "period_end": "2026-07-03",
-  "title": "Transparent usage tracking for advanced search models",
-  "summary": "Transparent usage tracking for advanced search models, a new community chat interface, and a fix for silent data loss.\n\nWe've updated the registry to fully support Perplexity search and Gemini grounding (2.5 and 3.x). Usage for these advanced capabilities is now clearly itemized, giving you full visibility into your API consumption when leveraging live search.\n\nThe community apps directory just grew. Flow Linnom, a multi-model chat interface built by the community, is now live in the Greenhouse for your exploring pleasure.\n\nBrowsers have limits, and stuffing too many image attachments into chat used to silently fail when localStorage maxed out. We now throw a clear toast notification so you know exactly what's happening before you hit refresh.",
-  "pr_count": 3,
+  "title": "Search charges get their own line",
+  "summary": "Search billing got more precise, chat got a storage warning, and the app showcase got a little easier to navigate.\n\nPerplexity and Gemini search fees were added alongside token charges. Perplexity aliases use their search-context tiers; Gemini 2.5 charges once per grounded prompt, while Gemini 3.x charges per distinct web-search query and deduplicates repeats across stream chunks.\n\nA community fix adds a warning when a full browser storage quota prevents the chat app from saving image attachments. The warning makes clear that those attachments will be lost on reload.\n\nFlow Linnom, a community-built interface for chatting with multiple language models, was added to the app catalog and showcase. The app submission template now links directly to the review criteria, so contributors can check them before filing.",
+  "pr_count": 5,
   "prs": [
     {
       "number": 11956,
@@ -15,21 +15,19 @@
       "date": "2026-07-03"
     },
     {
+      "number": 12181,
+      "date": "2026-07-03"
+    },
+    {
+      "number": 12200,
+      "date": "2026-07-03"
+    },
+    {
       "number": 12210,
       "date": "2026-07-03"
     }
   ],
-  "generated_at": "2026-07-04T06:58:25.652675+00:00",
-  "highlights": [
-    {
-      "emoji": "🤖",
-      "title": "Flow Linnom",
-      "text": "A new multi-model chat interface joins the community directory. For when querying just one LLM isn't enough. [Try it](https://flow.linnom.com)",
-      "prs": [
-        12070
-      ],
-      "kind": "app"
-    }
-  ],
+  "generated_at": "2026-10-17T23:00:38.746113+00:00",
+  "highlights": [],
   "changelog": []
 }

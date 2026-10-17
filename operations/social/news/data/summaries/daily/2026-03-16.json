@@ -2,9 +2,9 @@
   "date": "2026-03-16",
   "period_start": "2026-03-16",
   "period_end": "2026-03-16",
-  "title": "shipped some infrastructure today",
-  "summary": "- spores & seeds now get hourly pollen drips via cloudflare cron\n- fixed nanobanana generation (vertex ai had invalid image sizes)\n- bumped tinybird limits so the models page stopped jumping around",
-  "pr_count": 4,
+  "title": "Smaller, more frequent Pollen refills",
+  "summary": "Hourly Pollen refills for Spore and Seed, a calmer Models page, and fewer failed small-image requests.\n\nSpore and Seed grants changed to hourly refills, while other tiers keep their existing schedules. Refills now add Pollen up to a tier’s cap rather than resetting the balance, and account responses include the next refill time when a tier has one. Balance checks also prevent requests whose estimated cost exceeds available Pollen.\n\nThe Models page replaced its expanding categories with tabs and responsive cards, avoiding the scroll jumps that came with the old layout. Fetching more model stats also fills in per-Pollen estimates that previously appeared as dashes. The README’s news and app showcase got their regular refresh.\n\nVertex AI image requests no longer use the unsupported 0.5K size. Supported 512×512 nanobanana requests now select 1K instead of returning a 400 error, with broader image-generation tests covering dimensions and image-to-image requests.",
+  "pr_count": 5,
   "prs": [
     {
       "number": 9145,
@@ -12,6 +12,10 @@
     },
     {
       "number": 9160,
+      "date": "2026-03-16"
+    },
+    {
+      "number": 9170,
       "date": "2026-03-16"
     },
     {
@@ -23,35 +27,16 @@
       "date": "2026-03-16"
     }
   ],
-  "generated_at": "2026-03-17T06:24:31.300128+00:00",
+  "generated_at": "2026-10-17T22:43:48.255554+00:00",
   "highlights": [
     {
-      "emoji": "✨",
-      "title": "Hourly Pollen Refills",
-      "text": "Spore and Seed tier balances now regenerate every hour. Your free tier credits grow back naturally while you figure out why your code isn't working.",
+      "emoji": "🎯",
+      "title": "Browse models without the jumps",
+      "text": "The Models page now uses category tabs and responsive cards instead of expanding sections, so comparing models no longer sends the page jumping. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        9145
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "📱",
-      "title": "Full Model Roster",
-      "text": "The [models table](https://hello.pollinations.ai) now correctly fetches stats for all 200+ available models instead of giving up at 50. We also cleaned up the UI so you can easily spot new and alpha models.",
-      "prs": [
-        9178,
         9160
       ],
       "kind": "product"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Nanobanana Image Sizes",
-      "text": "Requesting smaller images from nanobanana models now returns actual pixels instead of Vertex AI errors.",
-      "prs": [
-        9182
-      ],
-      "kind": "api"
     }
   ],
   "changelog": []

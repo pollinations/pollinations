@@ -2,9 +2,9 @@
   "date": "2026-09-21",
   "period_start": "2026-09-21",
   "period_end": "2026-09-21",
-  "title": "Three community routers now pick healthy models for the job",
-  "summary": "A routing-heavy day: smarter community agents, one-command MCP setup, a rebuilt Enter catalog, and more models ready for work.\n\nPolyrouter, triage-router, and tiered-health-router turn a single model call into fast, balanced, or deep routing based on request complexity, live health, capabilities, context limits, and modality support. They preserve the original conversation, expose their decisions in traces or headers, and can move on when a candidate route is unavailable.\n\n`polli mcp` now discovers, installs, inspects, and removes MCP server entries across 13 coding clients without bulldozing existing third-party configuration. The surrounding MCP work also fixes FFmpeg file handling, improves Connected Apps setup for Gmail and GitHub, and gets Ask Jev deployments loading their shared schema again.\n\nThe Enter interface now shares a more consistent set of responsive dialogs, fields, links, tooltips, and confirmations. Models, Agents, and MCP tabs are reachable again, while reusable search, filters, sorting, health metadata, copy actions, and Open WebUI launchers make the catalog less like a drawer full of cables.",
-  "pr_count": 17,
+  "title": "Grok 4.7 added; Gemini routes adjusted",
+  "summary": "Grok 4.7, three community model routers, and MCP setup for 13 coding clients led a day of catalog and agent-tool repairs.\n\nGrok 4.7 was added for paid requests, with reasoning, tools, structured outputs, up to 10 reference images, and a 500,000-token context window. Direct Vertex routes were restored as the primary path for six Gemini text and four Gemini image models, with fallbacks retained.\n\nQuest contributors added polyrouter, triage-router, and tiered-health-router. Each chooses a compatible model using some combination of task complexity, price, and recent health data; their request handling and fallback behavior differ, so there is now more than one answer to the question of which model to call.\n\nThe new `polli mcp` commands list catalog servers and install, inspect, or remove them across 13 coding clients. Agent tooling also gained clearer Connected Apps discovery and fixed FFmpeg input handling; Polli's subcommand help colors are more consistent.",
+  "pr_count": 13,
   "prs": [
     {
       "number": 15032,
@@ -23,23 +23,11 @@
       "date": "2026-09-21"
     },
     {
-      "number": 15190,
-      "date": "2026-09-21"
-    },
-    {
       "number": 15246,
       "date": "2026-09-21"
     },
     {
-      "number": 15250,
-      "date": "2026-09-21"
-    },
-    {
       "number": 15252,
-      "date": "2026-09-21"
-    },
-    {
-      "number": 15254,
       "date": "2026-09-21"
     },
     {
@@ -48,10 +36,6 @@
     },
     {
       "number": 15264,
-      "date": "2026-09-21"
-    },
-    {
-      "number": 15267,
       "date": "2026-09-21"
     },
     {
@@ -75,53 +59,50 @@
       "date": "2026-09-21"
     }
   ],
-  "generated_at": "2026-09-22T06:30:12.955487+00:00",
+  "generated_at": "2026-10-17T23:14:04.466150+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Grok 4.7 added",
-      "text": "Try paid-only `x-ai/grok-4.7` with image input, reasoning, tools, structured outputs, and a 500K context window through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
+      "title": "Grok 4.7 joins the catalog",
+      "text": "Use `x-ai/grok-4.7` for reasoning, tools, structured outputs, and prompts with up to 10 reference images. It has a 500,000-token context window and requires paid access. [View the model](https://enter.pollinations.ai/models?q=x-ai/grok-4.7).",
       "prs": [
         15278
       ],
       "kind": "model"
     },
     {
-      "emoji": "🎯",
-      "title": "Three community model routers",
-      "text": "Try `afanasevmylife/polyrouter`, `community/xiaotian1171/triage-router`, or `community/tomdacatto/tiered-health-router` to route requests using complexity and recent model health, with different cost, latency, and capability checks.",
-      "prs": [
-        15041,
-        15069,
-        15141
-      ],
-      "kind": "product"
-    },
-    {
       "emoji": "🔗",
-      "title": "MCP setup with `polli`",
-      "text": "Use `polli mcp` to discover, install, check, and remove MCP servers across 13 coding clients. [Find the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "title": "MCP setup from Polli",
+      "text": "Use `polli mcp` to browse MCP servers and install, inspect, or remove them in 13 coding clients, including Claude Code, Cursor, VS Code, and Zed. [Explore the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         15032
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎨",
-      "title": "Bees Pollination image app",
-      "text": "Connect your Pollinations account, enter a prompt, and generate an image in your browser. [Try it](https://halimyassine.github.io/bees-pollination-app).",
+      "emoji": "🤖",
+      "title": "Polyrouter picks a model",
+      "text": "Call `afanasevmylife/polyrouter` through the Responses API to route a request by complexity, model capabilities, price, and recent health. Its `polyrouter_trace` field shows the choice in Responses API results. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        15246
+        15041
       ],
-      "kind": "app"
+      "kind": "product"
     },
     {
-      "emoji": "✨",
-      "title": "Easier catalog browsing",
-      "text": "Search and filter models, agents, and MCP servers in Enter, with five sort options and model health information to help narrow the field.",
+      "emoji": "🤖",
+      "title": "Triage-router handles fallback",
+      "text": "Try `community/xiaotian1171/triage-router` for capability-aware routing across fast, balanced, and deep model pools. It accepts Responses and Chat Completions requests and can choose another tier after certain model errors. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        15270,
-        15286
+        15069
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Tiered routing with health checks",
+      "text": "Try `community/tomdacatto/tiered-health-router` to classify a request as fast, balanced, or deep, then select a compatible model using catalog prices and recent health. It preserves image, audio, video, and tool-calling requirements. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        15141
       ],
       "kind": "product"
     }

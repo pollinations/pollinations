@@ -2,9 +2,9 @@
   "date": "2026-02-25",
   "period_start": "2026-02-25",
   "period_end": "2026-02-25",
-  "title": "shipped a website refresh and a new media upload service",
-  "summary": "added grok-imagine support and custom voice IDs for elevenlabs. also taught the video pipeline to handle rejection (better rate limit fallbacks). 14 PRs merged",
-  "pr_count": 14,
+  "title": "An upload API for images, audio, and video",
+  "summary": "A new media upload API, more creative options, steadier chat requests, and a clearer path through the project.\n\nAdded a media service that accepts multipart files, raw binary, or base64 JSON and returns a public URL. Uploads have a 24 MB limit, and identical files reuse the same stored object.\n\nAdded the alpha `grok-imagine` image model and support for custom ElevenLabs voice IDs alongside speech presets. Imagen 4, Grok video, and Qwen Character were re-enabled; Grok video now preserves multiple reference images. After several routing changes, Wan 2.6 video requests now go directly to Alibaba DashScope.\n\nText requests no longer pass Anthropic-specific `cache_control` to providers that reject it, and direct Anthropic requests get a `max_tokens` default when callers omit one. Polly now returns an OpenAI-shaped chat completion with token usage and passes supported generation parameters through to its underlying model.",
+  "pr_count": 15,
   "prs": [
     {
       "number": 5684,
@@ -24,6 +24,10 @@
     },
     {
       "number": 8551,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8559,
       "date": "2026-02-25"
     },
     {
@@ -63,12 +67,12 @@
       "date": "2026-02-25"
     }
   ],
-  "generated_at": "2026-02-26T06:21:39.244819+00:00",
+  "generated_at": "2026-10-17T22:41:47.169272+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "Media Uploads",
-      "text": "New `media.pollinations.ai` service. Upload up to 10MB, get a hash, keep your app's assets persistent.",
+      "emoji": "🔗",
+      "title": "Upload media by API",
+      "text": "Upload images, audio, or video as a file, raw binary, or base64 JSON, and get a public URL back. [Explore the media service](https://media.pollinations.ai).",
       "prs": [
         5684
       ],
@@ -76,8 +80,8 @@
     },
     {
       "emoji": "🎨",
-      "title": "Grok-Imagine",
-      "text": "Added `grok-imagine` (alpha). xAI's latest visual model is now available for generation.",
+      "title": "Grok Imagine images",
+      "text": "Generate images from text prompts with the alpha `grok-imagine` model, with square, portrait, and landscape sizes. [View the model](https://enter.pollinations.ai/models?q=grok-imagine).",
       "prs": [
         8329
       ],
@@ -85,19 +89,20 @@
     },
     {
       "emoji": "🎵",
-      "title": "Custom Voices",
-      "text": "Audio API now accepts custom ElevenLabs voice IDs. Bring your own clones instead of just using presets.",
+      "title": "Your ElevenLabs voice IDs",
+      "text": "Use a custom ElevenLabs voice ID in the speech API’s `voice` field; the existing voice presets still work. [Explore the audio API](https://gen.pollinations.ai/docs).",
       "prs": [
         8488
       ],
       "kind": "api"
     },
     {
-      "emoji": "✨",
-      "title": "Website Refresh",
-      "text": "Complete redesign with a new \"flywheel\" narrative and clearer [contributor tiers](https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md).",
+      "emoji": "💡",
+      "title": "Find your way in",
+      "text": "The redesigned Hello and Community pages make it easier to find contribution paths, the roadmap, and how Pollen works. [Explore pollinations](https://pollinations.ai).",
       "prs": [
-        8577
+        8577,
+        8598
       ],
       "kind": "product"
     }

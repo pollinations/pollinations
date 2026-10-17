@@ -3,7 +3,7 @@
   "period_start": "2025-01-31",
   "period_end": "2025-01-31",
   "title": "Prompt enhancer labeling catches up",
-  "summary": "A small cleanup made the image prompt enhancer’s labeling consistent without changing how it works.\n\nThe image model feed and README now label the prompt enhancer as Azure OpenAI rather than Groq. The module was renamed and an unused dependency removed; the enhancer’s implementation did not change.",
+  "summary": "A small cleanup brought the image prompt enhancer’s labeling and code structure into alignment without changing how it works.\n\nImage model information now labels the prompt enhancer as Azure OpenAI rather than Groq. The module was renamed, its imports and architecture diagram were updated, and an unused dependency was removed. The enhancer’s implementation did not change.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-01-31"
     }
   ],
-  "generated_at": "2026-10-17T15:33:08.979538+00:00",
+  "generated_at": "2026-10-17T22:28:55.113312+00:00",
   "highlights": [],
   "changelog": []
 }

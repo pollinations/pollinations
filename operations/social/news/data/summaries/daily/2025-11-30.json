@@ -2,8 +2,8 @@
   "date": "2025-11-30",
   "period_start": "2025-11-30",
   "period_end": "2025-11-30",
-  "title": "More community projects in the showcase",
-  "summary": "The showcase grew, while fixes targeted model validation, tier display, Polar rate limits, and event-record reliability.\n\nThirteen projects were added to the showcase, spanning terminal chat, image galleries, sticker making, a LINE image bot, and PDF-to-speech. ViralFlow AI joined the creative projects list, while descriptions for existing listings became clearer. These are showcase and listing changes, not changes to the apps themselves.\n\nThe Llama 3.1 8B configuration now requests at most 4096 output tokens, below the model’s 8192-token limit. That prevents validation errors caused by the previous default.\n\nCustomer-state and tier routes now reuse cached Polar data to reduce rate-limit errors. A separate lookup fix lets the Tier panel return an active subscription’s tier name and daily Pollen allowance instead of showing “Unknown Tier” and “0 pollen/day.”",
+  "title": "More community projects to explore",
+  "summary": "The community showcase grew by fourteen projects while tier lookups, mistral-fast requests, and event recording got reliability fixes.\n\nThirteen projects were added to the showcase, spanning terminal chat, image galleries, stickers, and PDF-to-speech. ViralFlow AI joined the creative projects list with a workflow that uses Pollinations images in generated videos. Ten existing project descriptions were also clarified; those edits change the listings, not the apps.\n\nCustomer-state and tier routes now reuse cached Polar responses to reduce rate-limit errors. A separate fix corrects product lookups so active subscriptions can return their tier name and daily Pollen allowance instead of “Unknown Tier” and “0 pollen/day.”\n\nThe Bedrock configuration for Llama 3.1 8B (`mistral-fast`) now requests at most 4096 output tokens, below the model’s limit. This prevents validation errors caused by the previous default.",
   "pr_count": 16,
   "prs": [
     {
@@ -71,7 +71,18 @@
       "date": "2025-11-30"
     }
   ],
-  "generated_at": "2026-10-17T15:53:43.048905+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:36:13.873009+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Fourteen community projects added",
+      "text": "Explore newly listed projects for terminal chat, image galleries, stickers, PDF-to-speech, and video creation with ViralFlow AI. [Explore community projects](https://pollinations.ai).",
+      "prs": [
+        5491,
+        5502
+      ],
+      "kind": "product"
+    }
+  ],
   "changelog": []
 }

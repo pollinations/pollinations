@@ -2,9 +2,9 @@
   "date": "2026-07-31",
   "period_start": "2026-07-01",
   "period_end": "2026-07-31",
-  "title": "More things than pixels",
-  "summary": "July turned Pollinations into a broader creative workbench: 3D, vectors, music, richer audio, agent tools, and a rapidly expanding model garden all arrived through the same familiar APIs.\n\n3D generation arrived with Trellis 2 and Rodin 2.5, followed by Recraft SVG output, Lyria music clips, richer ElevenLabs dialogue and isolation tools, OCR, transcription, and longer-running Wan video jobs. The API spent the month acquiring formats.\n\nNew GPT, Claude, Gemini, Grok, Qwen, Mistral, Cohere, NVIDIA, image, audio, and video models expanded the unified endpoint, while embeddings gained multimodal and role-aware search support. Better descriptions, search, access labels, and mobile cards made the growing catalog less archaeological.\n\nModel builders gained private testing before publication, readable model titles, image-generation and edit support, configurable fallbacks, and delegated agent tokens. The Greenhouse also added a substantial crop of community apps, from creative studios to chat tools, storybooks, games, and Roblox infrastructure.\n\nPollen activity gained accurate, scrollable history and daily charts; Enter moved to shareable routes; model discovery became faster and clearer; and public media galleries gave tagged creations durable, attributable homes.",
-  "pr_count": 288,
+  "title": "More than images and chat",
+  "summary": "July widened what people can make through the API while giving community builders more control over models, media, and Pollen.\n\nThe API added GLB generation, new video and realtime models, SVG generation and editing, music clips, and speech tools for dialogue, timestamps, voice changing, and isolation.\n\nGPT 5.6 variants, Claude Opus 5, newer Gemini models, and more text models joined the catalog. Embeddings gained image input; model search, descriptions, access labels, usage reporting, and routing fixes made the larger lineup easier to use.\n\nOwners gained private models, publishing controls, readable titles, community image generation and editing, and ordered fallback routes. Weaver added an OpenAI-compatible multimodal agent; delegated runs let eligible agents use a caller’s access and budget without receiving their API key.\n\nTier progression and hourly refills gave way to Quest and Paid Pollen balances. New login Quests, clearer Quest status in Polli, and an Activity view for usage and earnings made rewards and spending easier to follow; apps also gained PKCE login.",
+  "pr_count": 284,
   "prs": [
     {
       "number": 12060,
@@ -19,19 +19,7 @@
       "date": "2026-07-01"
     },
     {
-      "number": 12138,
-      "date": "2026-07-01"
-    },
-    {
       "number": 12139,
-      "date": "2026-07-01"
-    },
-    {
-      "number": 12140,
-      "date": "2026-07-01"
-    },
-    {
-      "number": 12141,
       "date": "2026-07-01"
     },
     {
@@ -55,19 +43,7 @@
       "date": "2026-07-01"
     },
     {
-      "number": 12156,
-      "date": "2026-07-01"
-    },
-    {
-      "number": 12161,
-      "date": "2026-07-01"
-    },
-    {
       "number": 12162,
-      "date": "2026-07-01"
-    },
-    {
-      "number": 12163,
       "date": "2026-07-01"
     },
     {
@@ -76,6 +52,10 @@
     },
     {
       "number": 12048,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12129,
       "date": "2026-07-02"
     },
     {
@@ -88,6 +68,10 @@
     },
     {
       "number": 12171,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12174,
       "date": "2026-07-02"
     },
     {
@@ -107,6 +91,10 @@
       "date": "2026-07-02"
     },
     {
+      "number": 12191,
+      "date": "2026-07-02"
+    },
+    {
       "number": 12192,
       "date": "2026-07-02"
     },
@@ -119,12 +107,16 @@
       "date": "2026-07-03"
     },
     {
-      "number": 12210,
+      "number": 12181,
       "date": "2026-07-03"
     },
     {
-      "number": 12218,
-      "date": "2026-07-04"
+      "number": 12200,
+      "date": "2026-07-03"
+    },
+    {
+      "number": 12210,
+      "date": "2026-07-03"
     },
     {
       "number": 12221,
@@ -136,6 +128,10 @@
     },
     {
       "number": 12215,
+      "date": "2026-07-05"
+    },
+    {
+      "number": 12233,
       "date": "2026-07-05"
     },
     {
@@ -155,19 +151,15 @@
       "date": "2026-07-05"
     },
     {
+      "number": 12247,
+      "date": "2026-07-06"
+    },
+    {
       "number": 12250,
       "date": "2026-07-06"
     },
     {
-      "number": 12272,
-      "date": "2026-07-07"
-    },
-    {
       "number": 12273,
-      "date": "2026-07-07"
-    },
-    {
-      "number": 12282,
       "date": "2026-07-07"
     },
     {
@@ -183,19 +175,7 @@
       "date": "2026-07-08"
     },
     {
-      "number": 12293,
-      "date": "2026-07-08"
-    },
-    {
       "number": 12299,
-      "date": "2026-07-09"
-    },
-    {
-      "number": 12303,
-      "date": "2026-07-09"
-    },
-    {
-      "number": 12304,
       "date": "2026-07-09"
     },
     {
@@ -203,8 +183,8 @@
       "date": "2026-07-09"
     },
     {
-      "number": 12306,
-      "date": "2026-07-09"
+      "number": 11928,
+      "date": "2026-07-10"
     },
     {
       "number": 12274,
@@ -223,12 +203,20 @@
       "date": "2026-07-10"
     },
     {
+      "number": 12321,
+      "date": "2026-07-10"
+    },
+    {
       "number": 12324,
       "date": "2026-07-10"
     },
     {
-      "number": 12339,
-      "date": "2026-07-11"
+      "number": 12335,
+      "date": "2026-07-10"
+    },
+    {
+      "number": 12337,
+      "date": "2026-07-10"
     },
     {
       "number": 12340,
@@ -243,7 +231,27 @@
       "date": "2026-07-12"
     },
     {
+      "number": 12268,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12270,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12271,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12285,
+      "date": "2026-07-12"
+    },
+    {
       "number": 12286,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12347,
       "date": "2026-07-12"
     },
     {
@@ -263,7 +271,15 @@
       "date": "2026-07-12"
     },
     {
-      "number": 12294,
+      "number": 12312,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12338,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12355,
       "date": "2026-07-13"
     },
     {
@@ -275,7 +291,15 @@
       "date": "2026-07-13"
     },
     {
+      "number": 12371,
+      "date": "2026-07-13"
+    },
+    {
       "number": 12377,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12378,
       "date": "2026-07-13"
     },
     {
@@ -387,10 +411,6 @@
       "date": "2026-07-13"
     },
     {
-      "number": 12423,
-      "date": "2026-07-13"
-    },
-    {
       "number": 12424,
       "date": "2026-07-13"
     },
@@ -415,6 +435,10 @@
       "date": "2026-07-14"
     },
     {
+      "number": 12373,
+      "date": "2026-07-14"
+    },
+    {
       "number": 12428,
       "date": "2026-07-14"
     },
@@ -428,10 +452,6 @@
     },
     {
       "number": 12432,
-      "date": "2026-07-14"
-    },
-    {
-      "number": 12433,
       "date": "2026-07-14"
     },
     {
@@ -487,7 +507,7 @@
       "date": "2026-07-15"
     },
     {
-      "number": 12473,
+      "number": 12475,
       "date": "2026-07-15"
     },
     {
@@ -503,14 +523,6 @@
       "date": "2026-07-15"
     },
     {
-      "number": 12481,
-      "date": "2026-07-15"
-    },
-    {
-      "number": 12482,
-      "date": "2026-07-15"
-    },
-    {
       "number": 12484,
       "date": "2026-07-15"
     },
@@ -519,19 +531,11 @@
       "date": "2026-07-15"
     },
     {
-      "number": 12492,
-      "date": "2026-07-15"
-    },
-    {
       "number": 12493,
       "date": "2026-07-15"
     },
     {
       "number": 12494,
-      "date": "2026-07-15"
-    },
-    {
-      "number": 12499,
       "date": "2026-07-15"
     },
     {
@@ -555,14 +559,6 @@
       "date": "2026-07-17"
     },
     {
-      "number": 12510,
-      "date": "2026-07-17"
-    },
-    {
-      "number": 12515,
-      "date": "2026-07-17"
-    },
-    {
       "number": 12516,
       "date": "2026-07-17"
     },
@@ -576,10 +572,6 @@
     },
     {
       "number": 12522,
-      "date": "2026-07-17"
-    },
-    {
-      "number": 12523,
       "date": "2026-07-17"
     },
     {
@@ -599,23 +591,11 @@
       "date": "2026-07-18"
     },
     {
-      "number": 12533,
-      "date": "2026-07-18"
-    },
-    {
       "number": 12534,
       "date": "2026-07-18"
     },
     {
       "number": 12536,
-      "date": "2026-07-18"
-    },
-    {
-      "number": 12537,
-      "date": "2026-07-18"
-    },
-    {
-      "number": 12538,
       "date": "2026-07-18"
     },
     {
@@ -655,10 +635,6 @@
       "date": "2026-07-18"
     },
     {
-      "number": 12560,
-      "date": "2026-07-18"
-    },
-    {
       "number": 12566,
       "date": "2026-07-18"
     },
@@ -667,19 +643,11 @@
       "date": "2026-07-18"
     },
     {
-      "number": 12568,
-      "date": "2026-07-18"
-    },
-    {
       "number": 12569,
       "date": "2026-07-18"
     },
     {
       "number": 12571,
-      "date": "2026-07-18"
-    },
-    {
-      "number": 12573,
       "date": "2026-07-18"
     },
     {
@@ -703,11 +671,15 @@
       "date": "2026-07-19"
     },
     {
-      "number": 12590,
-      "date": "2026-07-19"
+      "number": 12507,
+      "date": "2026-07-20"
     },
     {
-      "number": 12507,
+      "number": 12591,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12593,
       "date": "2026-07-20"
     },
     {
@@ -724,10 +696,6 @@
     },
     {
       "number": 12598,
-      "date": "2026-07-20"
-    },
-    {
-      "number": 12599,
       "date": "2026-07-20"
     },
     {
@@ -755,15 +723,11 @@
       "date": "2026-07-21"
     },
     {
-      "number": 12622,
-      "date": "2026-07-21"
-    },
-    {
-      "number": 12623,
-      "date": "2026-07-21"
-    },
-    {
       "number": 12206,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12612,
       "date": "2026-07-22"
     },
     {
@@ -787,6 +751,10 @@
       "date": "2026-07-22"
     },
     {
+      "number": 12654,
+      "date": "2026-07-22"
+    },
+    {
       "number": 12655,
       "date": "2026-07-22"
     },
@@ -796,10 +764,6 @@
     },
     {
       "number": 12659,
-      "date": "2026-07-22"
-    },
-    {
-      "number": 12662,
       "date": "2026-07-22"
     },
     {
@@ -839,7 +803,15 @@
       "date": "2026-07-23"
     },
     {
+      "number": 12674,
+      "date": "2026-07-23"
+    },
+    {
       "number": 12675,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12677,
       "date": "2026-07-23"
     },
     {
@@ -860,6 +832,10 @@
     },
     {
       "number": 12696,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12700,
       "date": "2026-07-23"
     },
     {
@@ -931,10 +907,6 @@
       "date": "2026-07-25"
     },
     {
-      "number": 12750,
-      "date": "2026-07-25"
-    },
-    {
       "number": 12751,
       "date": "2026-07-25"
     },
@@ -943,23 +915,19 @@
       "date": "2026-07-25"
     },
     {
-      "number": 12753,
-      "date": "2026-07-25"
-    },
-    {
-      "number": 12756,
-      "date": "2026-07-25"
-    },
-    {
       "number": 12757,
       "date": "2026-07-25"
     },
     {
-      "number": 12760,
-      "date": "2026-07-25"
+      "number": 12769,
+      "date": "2026-07-26"
     },
     {
       "number": 12778,
+      "date": "2026-07-26"
+    },
+    {
+      "number": 12779,
       "date": "2026-07-26"
     },
     {
@@ -975,10 +943,6 @@
       "date": "2026-07-26"
     },
     {
-      "number": 12785,
-      "date": "2026-07-26"
-    },
-    {
       "number": 12715,
       "date": "2026-07-27"
     },
@@ -987,19 +951,19 @@
       "date": "2026-07-27"
     },
     {
+      "number": 12791,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12792,
+      "date": "2026-07-27"
+    },
+    {
       "number": 12793,
       "date": "2026-07-27"
     },
     {
-      "number": 12795,
-      "date": "2026-07-27"
-    },
-    {
       "number": 12797,
-      "date": "2026-07-27"
-    },
-    {
-      "number": 12798,
       "date": "2026-07-27"
     },
     {
@@ -1028,6 +992,10 @@
     },
     {
       "number": 12787,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12812,
       "date": "2026-07-28"
     },
     {
@@ -1079,6 +1047,10 @@
       "date": "2026-07-29"
     },
     {
+      "number": 12815,
+      "date": "2026-07-29"
+    },
+    {
       "number": 12838,
       "date": "2026-07-29"
     },
@@ -1123,10 +1095,6 @@
       "date": "2026-07-30"
     },
     {
-      "number": 12876,
-      "date": "2026-07-30"
-    },
-    {
       "number": 12879,
       "date": "2026-07-30"
     },
@@ -1136,6 +1104,10 @@
     },
     {
       "number": 12884,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12893,
       "date": "2026-07-30"
     },
     {
@@ -1151,6 +1123,18 @@
       "date": "2026-07-31"
     },
     {
+      "number": 12900,
+      "date": "2026-07-31"
+    },
+    {
+      "number": 12901,
+      "date": "2026-07-31"
+    },
+    {
+      "number": 12928,
+      "date": "2026-07-31"
+    },
+    {
       "number": 12962,
       "date": "2026-07-31"
     },
@@ -1159,5 +1143,5 @@
       "date": "2026-07-31"
     }
   ],
-  "generated_at": "2026-09-04T15:20:27.482870+00:00"
+  "generated_at": "2026-10-17T23:32:37.667009+00:00"
 }

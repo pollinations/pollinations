@@ -2,16 +2,12 @@
   "date": "2026-04-04",
   "period_start": "2026-04-04",
   "period_end": "2026-04-04",
-  "title": "Audio APIs gained memory, timing, and speaker labels",
-  "summary": "A media-heavy day: smarter transcripts, cached audio, bigger Klein reference sets, and Nova Reel videos that finally get a full minute.\n\nRepeated text-to-speech and music requests now return from a unified media cache instead of regenerating the same audio. The STT API also gained Scribe speaker diarization and Whisper word-level timestamps through verbose_json, so transcripts can say who spoke and exactly when.\n\nKlein 4B moved to a self-hosted RunPod backend, bringing image generation and editing onto one code path. Klein prompts and edits can now use up to 10 reference images, up from four.\n\nFixed routing for Nova Reel's automated multi-shot tasks and extended the model's maximum video duration to 60 seconds. Longer sequences, fewer mysterious parameter detours.",
-  "pr_count": 12,
+  "title": "More room to edit images, longer Nova Reel clips",
+  "summary": "More reference images for Klein edits, cached repeat audio, and fixes for video, transcription, and API keys.\n\nFLUX.2 Klein 4B image editing now accepts up to 10 reference images instead of 4, alongside a backend change for generation and editing. Nova Reel’s multi-shot request fix lets its model accept durations up to 60 seconds in six-second steps; Enter’s query validator still caps requests at 30 seconds.\n\nGET audio requests with the same text and generation parameters can return a cached response; `seed=-1` requests fresh output. A community contribution also requests word-level timestamps for OVHcloud Whisper transcriptions, including detailed responses such as `verbose_json`.\n\nKey verification now reads updated permissions and metadata directly, including permission grants for device-flow keys. The authorization screen also has a clearer label for the `keys` scope.",
+  "pr_count": 9,
   "prs": [
     {
       "number": 9603,
-      "date": "2026-04-04"
-    },
-    {
-      "number": 9916,
       "date": "2026-04-04"
     },
     {
@@ -23,15 +19,7 @@
       "date": "2026-04-04"
     },
     {
-      "number": 9927,
-      "date": "2026-04-04"
-    },
-    {
       "number": 9928,
-      "date": "2026-04-04"
-    },
-    {
-      "number": 9930,
       "date": "2026-04-04"
     },
     {
@@ -55,32 +43,23 @@
       "date": "2026-04-04"
     }
   ],
-  "generated_at": "2026-09-04T11:42:04.890697+00:00",
+  "generated_at": "2026-10-17T22:46:32.116095+00:00",
   "highlights": [
     {
-      "emoji": "🎵",
-      "title": "More detailed speech transcripts",
-      "text": "Get speaker diarization with Scribe or word-level timestamps with Whisper through the STT API. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        9603
-      ],
-      "kind": "api"
-    },
-    {
       "emoji": "🎨",
-      "title": "Storyboards on an infinite canvas",
-      "text": "Plan scenes on an infinite canvas and generate images with StoryBoard AI. [Try it](https://storyboard-ai-ochre.vercel.app/).",
+      "title": "More references for Klein edits",
+      "text": "Edit with `FLUX.2 Klein 4B` using up to 10 reference images, up from 4. [Find the model](https://enter.pollinations.ai/models?q=FLUX.2%20Klein%204B).",
       "prs": [
-        9937
+        9925
       ],
-      "kind": "app"
+      "kind": "model"
     },
     {
-      "emoji": "🎯",
-      "title": "Longer Nova Reel videos",
-      "text": "Create multi-shot Nova Reel videos up to 60 seconds long, up from 30 seconds. [Browse models](https://enter.pollinations.ai/models).",
+      "emoji": "🎵",
+      "title": "Repeat audio, less waiting",
+      "text": "Repeated GET audio requests with the same text and generation parameters can return a cached response. Use `seed=-1` when you want a fresh generation. [Explore the audio API](https://gen.pollinations.ai/docs).",
       "prs": [
-        9938
+        9928
       ],
       "kind": "api"
     }

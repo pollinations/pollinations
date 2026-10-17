@@ -3,7 +3,7 @@
   "period_start": "2025-11-18",
   "period_end": "2025-11-18",
   "title": "Two reasoning models join the text API",
-  "summary": "Two reasoning models arrived, model listings moved to the gateway, and requests got clearer model reporting and errors.\n\nKimi K2 Thinking and Gemini 3 Pro Preview were added with reasoning and tool support. Gemini 3 Pro Preview also accepts image, audio, and video input.\n\nThe gateway's text and image model endpoints now return registry-backed listings with aliases, pricing, descriptions, and capability metadata. The old backend `/models` endpoints return HTTP 410 and point to their replacements. The `openai` alias now selects GPT-5 Nano, while `openai-large` selects GPT-4.1.\n\nImage responses now identify the model actually used for Turbo and Flux requests. Invalid model names and image parameters return HTTP 400; text-service errors have a structured response. Upstream IDs were corrected for three text models, Gemini's uppercase `STOP` finish reason is accepted, and streaming requests ask providers for usage data.",
+  "summary": "Two reasoning models arrived, model discovery got a clearer home, and generation responses became more accurate.\n\nKimi K2 Thinking and Gemini 3 Pro Preview were added with reasoning and tool use. Kimi accepts text; Gemini accepts text, images, audio, and video as input.\n\nThe gateway’s text and image model endpoints now return registry-backed listings with aliases, pricing, descriptions, and capabilities. The old backend `/models` endpoints return HTTP 410 and point to their replacements. The `openai` alias now maps to GPT-5 Nano, and `openai-large` maps to GPT-4.1.\n\nImage responses now identify whether Turbo or Flux actually handled a request. Invalid model names and image parameters return HTTP 400; text errors have a structured response. Corrected upstream IDs for three text models, improved compatibility with Gemini’s finish reason, and added streaming-usage requests.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,7 +23,7 @@
       "date": "2025-11-18"
     }
   ],
-  "generated_at": "2026-10-17T15:52:42.704080+00:00",
+  "generated_at": "2026-10-17T22:35:54.533915+00:00",
   "highlights": [
     {
       "emoji": "🤖",
@@ -46,7 +46,7 @@
     {
       "emoji": "🔗",
       "title": "Richer model listings",
-      "text": "The gateway's text and image model endpoints now include aliases, pricing, descriptions, and capability metadata, making it easier to choose a model programmatically. [Browse models](https://enter.pollinations.ai/models).",
+      "text": "The gateway’s text and image model endpoints now return aliases, pricing, descriptions, and capability metadata from the model registry. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         5342
       ],

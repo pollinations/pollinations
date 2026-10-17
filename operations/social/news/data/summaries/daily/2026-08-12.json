@@ -2,10 +2,14 @@
   "date": "2026-08-12",
   "period_start": "2026-08-12",
   "period_end": "2026-08-12",
-  "title": "The SDK now tells you which models exist—and when an image request did not become an image",
-  "summary": "A practical day for builders: reliable SDK model lists, long-running MCP requests, and one more community image app in the garden.\n\nSDK model discovery now calls the documented `/models` endpoint and returns the expected array, while image URL downloads reject non-2xx responses through the existing error parser instead of quietly handing callers an error page shaped like an image.\n\nAuthenticated MCP requests no longer hit a generic 30-second abort timer. Long-running work can finish, and callers still retain explicit cancellation through native AbortSignal support.\n\nIMADreamer was added to the Pollinations app directory, giving people another free, API-powered route from a text prompt to generated images.",
-  "pr_count": 4,
+  "title": "Longer MCP requests can finish",
+  "summary": "MCP requests got room to finish, SDK errors got clearer, and the community app catalog got a little more useful.\n\nAuthenticated MCP requests no longer stop automatically after 30 seconds, while caller-provided cancellation still works. Chat completions also stopped passing an obsolete timeout option.\n\nPollinations.models() now returns the model array promised by its type. Failed image-edit downloads now surface the API error message, code and HTTP status instead of being treated as image data.\n\nThe image catalog gained IMADreamer, while 56 rows pointing to unavailable or unsuitable destinations were removed. The README’s Latest News was also refreshed with an August 11 entry about visual previews for retained apps.",
+  "pr_count": 5,
   "prs": [
+    {
+      "number": 13258,
+      "date": "2026-08-12"
+    },
     {
       "number": 13298,
       "date": "2026-08-12"
@@ -23,35 +27,7 @@
       "date": "2026-08-12"
     }
   ],
-  "generated_at": "2026-08-13T06:38:28.132923+00:00",
-  "highlights": [
-    {
-      "emoji": "🎨",
-      "title": "IMADreamer joins the garden",
-      "text": "A free, Pollinations-powered image generator for turning prompts into pixels. [Try it](https://fastnow.github.io/imadreamer)",
-      "prs": [
-        13306
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "💡",
-      "title": "Models, now in a proper row",
-      "text": "`Pollinations.models()` now reliably returns the available model array, so SDK apps can discover what the API has on offer. [SDK](https://www.npmjs.com/package/@pollinations/sdk)",
-      "prs": [
-        13300
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Let MCP requests breathe",
-      "text": "Authenticated MCP requests can now run past 30 seconds when the job actually needs the time. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)",
-      "prs": [
-        13301
-      ],
-      "kind": "product"
-    }
-  ],
+  "generated_at": "2026-10-17T23:06:25.933868+00:00",
+  "highlights": [],
   "changelog": []
 }

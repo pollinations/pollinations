@@ -2,8 +2,8 @@
   "date": "2025-03-23",
   "period_start": "2025-03-16",
   "period_end": "2025-03-22",
-  "title": "More choices for text and vision",
-  "summary": "This week expanded what people can build with Pollinations, while making repeat requests cheaper and community projects easier to find.\n\nThe `mistral` chat model moved to vision-capable Mistral Small, then to Mistral Small 3.1 2503. `qwen-reasoning` joined the text model list through Groq. The text API also gained parsing for `reasoning_effort`, though the supplied changes do not establish whether that setting reaches the model provider.\n\nAn MCP server gave assistants tools to create image URLs, fetch images, and list image models. A community guide showed how to connect Pollinations text models to OpenWebUI, while a new Python example demonstrated audio transcription.\n\nAn image cache Worker was added to reuse results for matching URLs, followed by a text API Worker that can serve cached responses from R2. Image-request analytics moved to the image cache Worker so cache hits and generation outcomes can be recorded separately.\n\nJenny AI, Watch TV with neko, PixPax, Case Me, and OkeyAI API Playground joined the project listings. Existing entries gained clearer author credit and links, and a duplicate listing was removed.",
+  "title": "More ways to use the text API",
+  "summary": "The model lineup grew, assistants gained image tools, and caching work took shape beneath a growing collection of community projects.\n\nThe `mistral` slot moved to vision-capable Mistral Small 3.1 2503, with streaming support, and `qwen-reasoning` added Qwen QWQ 32B. The lineup also dropped Claude 3.5 Haiku. The API began parsing `reasoning_effort`, though these changes do not establish that the value reaches the model provider.\n\nA new MCP server gives assistants tools to create image URLs, fetch images as base64 data, and list image models. Its package and command were renamed to `pollinations-model-context-protocol`, with setup documentation updated to match. A community guide also showed how to connect Pollinations text models to OpenWebUI.\n\nTwo Cloudflare Workers added distinct caching paths: one for eligible image requests, keyed by URL path and normalized query parameters, and one that checks R2 before forwarding eligible text requests to the origin. Both retain bypasses for requests that should not be cached.\n\nJenny AI, Watch TV with neko, PixPax, Case Me, and OkeyAI API Playground joined the project listings. Existing Elixpo projects gained clearer author credits, while duplicate and outdated listing details were cleaned up.",
   "pr_count": 19,
   "prs": [
     {
@@ -83,5 +83,5 @@
       "date": "2025-03-22"
     }
   ],
-  "generated_at": "2026-10-17T16:03:37.305231+00:00"
+  "generated_at": "2026-10-17T23:23:59.620810+00:00"
 }

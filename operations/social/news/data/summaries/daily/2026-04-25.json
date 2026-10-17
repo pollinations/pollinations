@@ -2,8 +2,8 @@
   "date": "2026-04-25",
   "period_start": "2026-04-25",
   "period_end": "2026-04-25",
-  "title": "Media files can now describe themselves",
-  "summary": "A tidy day for developer visibility: inspect media metadata, read usage charts more closely, and keep the community showcase current.\n\nThe media API gained a `GET /{hash}/metadata` JSON endpoint, so developers can check a stored file's size and content type without downloading it or treating HEAD requests as an oracle.\n\nThe account usage dashboard now supports hourly buckets in daily views and formats charts more cleanly on mobile, making API activity easier to inspect without zooming into a small blue mystery.\n\nAutomated updates refreshed app health and usage metrics in the APPS registry, alongside the README's Latest News and Recent Apps sections. The garden signs have been replaced.",
+  "title": "A closer look at daily usage",
+  "summary": "Hourly usage views and downloadable-free media metadata led the day, with a little app-catalog housekeeping behind them.\n\nThe usage dashboard now shows hourly UTC buckets when you select a day; week and month views still group usage by day. Pollen charts also retain small fractional values instead of rounding them to zero.\n\nThe media API gained GET /{hash}/metadata, returning a file’s hash, content type, byte size, and upload time when recorded. The endpoint and its actual response fields are now documented.\n\nThe app catalog’s metrics and health-check snapshot was refreshed, while the README now credits the creators of TimeMachine Chat, Scene2Text, and AI Models Laboratory.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,25 +23,25 @@
       "date": "2026-04-25"
     }
   ],
-  "generated_at": "2026-09-04T11:45:59.864325+00:00",
+  "generated_at": "2026-10-17T22:48:54.184368+00:00",
   "highlights": [
-    {
-      "emoji": "🔗",
-      "title": "Media metadata endpoint",
-      "text": "Get a file’s size and content type as JSON with `GET /{hash}/metadata`, without downloading the file.",
-      "prs": [
-        10449
-      ],
-      "kind": "api"
-    },
     {
       "emoji": "📱",
       "title": "Hourly usage views",
-      "text": "See how your usage changes hour by hour in the dashboard’s daily view, including on mobile.",
+      "text": "Select a day in the usage dashboard to see hourly UTC usage. Pollen charts now show even small fractional amounts.",
       "prs": [
         10453
       ],
       "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Media metadata endpoint",
+      "text": "Use `GET /{hash}/metadata` to check a stored file’s type, size, and recorded upload time without downloading it. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        10449
+      ],
+      "kind": "api"
     }
   ],
   "changelog": []

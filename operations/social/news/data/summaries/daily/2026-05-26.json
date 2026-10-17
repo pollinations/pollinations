@@ -2,26 +2,28 @@
   "date": "2026-05-26",
   "period_start": "2026-05-26",
   "period_end": "2026-05-26",
-  "title": "Documentation built for LLMs",
-  "summary": "A complete overhaul of the documentation surface, featuring one-click copy buttons designed specifically for feeding context to LLM coding assistants.\n\nWe rebuilt the documentation surface with modular markdown and added a new guides section. The dashboard now features 'Copy for LLMs' buttons—one click grabs context-aware API, BYOP, CLI, or MCP documentation formatted specifically to be pasted into your AI coding assistant. Less typing, more generating.",
-  "pr_count": 1,
+  "title": "Developer docs get a clearer map",
+  "summary": "A documentation day: clearer integration guides, more ways to copy or download the API reference, and a refreshed community catalog.\n\nThe API reference now shares per-concept Markdown with LLM-readable docs and new BYOP, CLI, and MCP Server guides. Navigation was reorganized, with page-aware copy controls, focused documentation slices, and JSON or YAML OpenAPI downloads.\n\nThe generated APIDOCS page now has a shorter introduction and links to the BYOP, CLI, and MCP Server guides instead of carrying its former endpoint overview and quick-start examples.\n\nAn automated refresh updated app catalog metrics and health checks, while the README’s Latest News now links to Helix AI.",
+  "pr_count": 4,
   "prs": [
     {
       "number": 10960,
       "date": "2026-05-26"
-    }
-  ],
-  "generated_at": "2026-05-27T07:22:00.853658+00:00",
-  "highlights": [
+    },
     {
-      "emoji": "🤖",
-      "title": "LLM-Ready Docs",
-      "text": "We added \"Copy for LLMs\" buttons to the [Dashboard](https://enter.pollinations.ai) rail. One click grabs context-aware API, CLI, or MCP docs so you can paste them straight into your AI coding assistant and get back to building.",
-      "prs": [
-        10960
-      ],
-      "kind": "product"
+      "number": 11294,
+      "date": "2026-05-26"
+    },
+    {
+      "number": 11295,
+      "date": "2026-05-26"
+    },
+    {
+      "number": 11300,
+      "date": "2026-05-26"
     }
   ],
+  "generated_at": "2026-10-17T22:54:50.760119+00:00",
+  "highlights": [],
   "changelog": []
 }

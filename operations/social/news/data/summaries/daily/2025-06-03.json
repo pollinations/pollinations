@@ -3,7 +3,7 @@
   "period_start": "2025-06-03",
   "period_end": "2025-06-03",
   "title": "Transparent backgrounds for GPT Image",
-  "summary": "Transparent GPT Image backgrounds, less repetitive text ads, and a fresh crop of community projects.\n\nGPT Image generation and editing gained a `transparent=true` API parameter. It defaults to false, so existing requests keep their usual backgrounds.\n\nAuthenticated users with `show_ads` turned off no longer receive text-service ads. Other changes request contextual ads from Nex.Ad, avoid adding another ad when a conversation already contains one, and make sponsor and support labels more consistent.\n\nThe README was restored, and project listings added two Spanish-language creative tools—a slideshow maker and an image-based memory game—alongside Whizzy AI, Mindcraft, Minecraft agent projects, and a Telegram chatbot. Apparently Minecraft remains a reasonable place to test whether an agent can follow instructions.",
+  "summary": "Transparent GPT Image backgrounds, text ads that heed preferences and conversation history, and another batch of community-built projects.\n\nThe image API added `transparent=true` for GPT Image generation and editing. It defaults to false, so existing requests keep their current background behavior.\n\nAuthenticated users’ `show_ads=false` preference now skips text-response ads. Ad insertion also checks conversation history before adding another, while sponsor and support messages received clearer labels and formatting.\n\nThe project lists gained Spanish-language presentation and memory-game tools, study and Telegram assistants, and Minecraft agent projects. The root README was also restored and expanded.",
   "pr_count": 11,
   "prs": [
     {
@@ -51,16 +51,25 @@
       "date": "2025-06-03"
     }
   ],
-  "generated_at": "2026-10-17T15:41:55.345320+00:00",
+  "generated_at": "2026-10-17T22:31:52.897644+00:00",
   "highlights": [
     {
       "emoji": "🎨",
       "title": "Transparent GPT Image backgrounds",
-      "text": "Add `transparent=true` to GPT Image generation or editing requests to get an image without a solid background. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "text": "Add `transparent=true` to GPT Image generation or editing requests to get a transparent background. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         2223
       ],
       "kind": "api"
+    },
+    {
+      "emoji": "✨",
+      "title": "Text ads respect preferences",
+      "text": "Authenticated text requests now skip ads when your `show_ads` preference is false.",
+      "prs": [
+        2261
+      ],
+      "kind": "product"
     }
   ],
   "changelog": []

@@ -2,8 +2,8 @@
   "date": "2025-04-30",
   "period_start": "2025-04-01",
   "period_end": "2025-04-30",
-  "title": "A text feed joins the homepage",
-  "summary": "April made more of Pollinations visible and easier to use, while model routing and request handling kept changing underneath.\n\nThe homepage gained a toggle between image and text feeds, with an editor for generated text. The image editor also began fetching its model options from the API.\n\nApps, bots, image tools, and interfaces joined the project list throughout the month. Featured browsing, GitHub stars, and clearer sorting made the growing catalog easier to explore.\n\nGemini, GPT-4.1, Llama 4 Scout, and Mistral changes reshaped the text lineup. Aliases, vision metadata, and catalog cleanup helped clients find the intended capabilities despite the routing changes.\n\nText caching began accounting for the full POST body, errors gained upstream details, and image generation gained more fallback routes. API examples and agent-readable endpoint descriptions also got attention.",
+  "title": "Text joins the homepage",
+  "summary": "Text joined the homepage, the community directory grew easier to explore, and model and request handling changed beneath both.\n\nA new feed and editor put generated text beside images. The image editor now gets its model choices from the API, while feed controls and link previews received smaller fixes.\n\nThe directory added community-built image tools, chat apps, accessibility projects, and other experiments. Featured browsing, GitHub star counts, and priority-based sorting made the expanding list easier to navigate.\n\nGemini, GPT-4.1, Llama 4 Scout, and Mistral configurations changed across the month. Aliases, provider routes, and image-input metadata were adjusted so model names and advertised capabilities better matched their backends.\n\nImage generation gained Dreamshaper and Turbo fallbacks. Text POST cache keys now include the full request body, and text errors preserve upstream statuses when available.",
   "pr_count": 82,
   "prs": [
     {
@@ -335,5 +335,5 @@
       "date": "2025-04-30"
     }
   ],
-  "generated_at": "2026-10-17T16:08:35.892093+00:00"
+  "generated_at": "2026-10-17T23:30:25.408808+00:00"
 }

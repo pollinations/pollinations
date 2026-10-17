@@ -2,9 +2,9 @@
   "date": "2026-02-28",
   "period_start": "2026-02-01",
   "period_end": "2026-02-28",
-  "title": "More ways to generate",
-  "summary": "February widened the models and tools people can build with, while making credits, apps, and API behavior easier to understand.\n\nThe API added models across text, image, audio, and video, including Claude Opus and Sonnet 4.6, Whisper transcription, ElevenLabs voices, Grok image-to-video, and Seedream 5.0 Lite. Video dimensions became more consistent across models.\n\nOpenClaw gained setup tooling and an integration guide; Play gained embedded docs; and API docs gained code samples. The text API was rewritten in Hono and TypeScript, while model listings began exposing context limits and filtering by access.\n\nThe showcase gained apps ranging from SlidePainter to PollenPages, restored missing entries, and reorganized its registry into 15 categories. Daily health checks now hide broken apps until they are fixed.\n\nMicrobe joined the tier configuration, daily refills were corrected, and existing API keys became editable without replacement. Pollen badges appeared across apps, making credit use more visible.",
-  "pr_count": 218,
+  "title": "More ways to make and move media",
+  "summary": "February widened the creative API while making community apps, model choices, and everyday account controls easier to navigate.\n\nAudio gained speech, transcription, and music endpoints; video gained LTX-2 and better image inputs and sizing. A new upload API gave generated work a place to put its files, while Seedream 5 and Nano Banana 2 expanded image options.\n\nCommunity submissions filled the catalog with creative tools, bots, learning apps, and developer utilities. Platform badges, clearer filters, and better descriptions made that growing collection easier to browse; the Community page gained a browsable Build Diary.\n\nPlay gained copyable request URLs, the API reference gained task-based examples and a video route, and OpenClaw got setup guidance and search options. The npm tools took new names, while Polly gained a chat-completions endpoint.\n\nClaude Opus and Sonnet moved to 4.6, GLM moved to GLM-5, and Gemini Pro and MiniMax received upgrades. Routing, aliases, and model listings were adjusted alongside them so clients have clearer choices.",
+  "pr_count": 212,
   "prs": [
     {
       "number": 7269,
@@ -83,10 +83,6 @@
       "date": "2026-02-06"
     },
     {
-      "number": 7994,
-      "date": "2026-02-06"
-    },
-    {
       "number": 8000,
       "date": "2026-02-06"
     },
@@ -128,6 +124,10 @@
     },
     {
       "number": 8029,
+      "date": "2026-02-08"
+    },
+    {
+      "number": 8040,
       "date": "2026-02-08"
     },
     {
@@ -175,15 +175,19 @@
       "date": "2026-02-08"
     },
     {
-      "number": 8103,
-      "date": "2026-02-08"
-    },
-    {
       "number": 8104,
       "date": "2026-02-08"
     },
     {
       "number": 8101,
+      "date": "2026-02-09"
+    },
+    {
+      "number": 8107,
+      "date": "2026-02-09"
+    },
+    {
+      "number": 8109,
       "date": "2026-02-09"
     },
     {
@@ -197,6 +201,14 @@
     {
       "number": 8123,
       "date": "2026-02-09"
+    },
+    {
+      "number": 7291,
+      "date": "2026-02-10"
+    },
+    {
+      "number": 7640,
+      "date": "2026-02-10"
     },
     {
       "number": 8124,
@@ -215,6 +227,10 @@
       "date": "2026-02-10"
     },
     {
+      "number": 7893,
+      "date": "2026-02-11"
+    },
+    {
       "number": 8165,
       "date": "2026-02-11"
     },
@@ -227,12 +243,24 @@
       "date": "2026-02-11"
     },
     {
+      "number": 7933,
+      "date": "2026-02-12"
+    },
+    {
       "number": 8179,
       "date": "2026-02-12"
     },
     {
       "number": 8187,
       "date": "2026-02-12"
+    },
+    {
+      "number": 8189,
+      "date": "2026-02-12"
+    },
+    {
+      "number": 7735,
+      "date": "2026-02-13"
     },
     {
       "number": 8205,
@@ -276,6 +304,10 @@
     },
     {
       "number": 8248,
+      "date": "2026-02-15"
+    },
+    {
+      "number": 8257,
       "date": "2026-02-15"
     },
     {
@@ -351,6 +383,10 @@
       "date": "2026-02-16"
     },
     {
+      "number": 8301,
+      "date": "2026-02-16"
+    },
+    {
       "number": 8324,
       "date": "2026-02-16"
     },
@@ -407,14 +443,6 @@
       "date": "2026-02-18"
     },
     {
-      "number": 8404,
-      "date": "2026-02-18"
-    },
-    {
-      "number": 7920,
-      "date": "2026-02-19"
-    },
-    {
       "number": 7939,
       "date": "2026-02-19"
     },
@@ -427,15 +455,19 @@
       "date": "2026-02-19"
     },
     {
-      "number": 8398,
-      "date": "2026-02-19"
-    },
-    {
       "number": 8421,
       "date": "2026-02-19"
     },
     {
       "number": 7236,
+      "date": "2026-02-20"
+    },
+    {
+      "number": 8437,
+      "date": "2026-02-20"
+    },
+    {
+      "number": 8439,
       "date": "2026-02-20"
     },
     {
@@ -447,7 +479,7 @@
       "date": "2026-02-21"
     },
     {
-      "number": 8467,
+      "number": 8457,
       "date": "2026-02-21"
     },
     {
@@ -500,6 +532,10 @@
     },
     {
       "number": 7664,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7680,
       "date": "2026-02-22"
     },
     {
@@ -635,6 +671,10 @@
       "date": "2026-02-23"
     },
     {
+      "number": 8503,
+      "date": "2026-02-23"
+    },
+    {
       "number": 8515,
       "date": "2026-02-23"
     },
@@ -651,75 +691,7 @@
       "date": "2026-02-24"
     },
     {
-      "number": 7259,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7262,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7272,
-      "date": "2026-02-24"
-    },
-    {
       "number": 7274,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7293,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7299,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7301,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7305,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7307,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7319,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7326,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7331,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7336,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7347,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7374,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7376,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7532,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 8476,
       "date": "2026-02-24"
     },
     {
@@ -727,15 +699,19 @@
       "date": "2026-02-24"
     },
     {
+      "number": 8529,
+      "date": "2026-02-24"
+    },
+    {
       "number": 8532,
       "date": "2026-02-24"
     },
     {
-      "number": 8537,
+      "number": 8534,
       "date": "2026-02-24"
     },
     {
-      "number": 8538,
+      "number": 8537,
       "date": "2026-02-24"
     },
     {
@@ -760,6 +736,10 @@
     },
     {
       "number": 8551,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8559,
       "date": "2026-02-25"
     },
     {
@@ -799,10 +779,6 @@
       "date": "2026-02-25"
     },
     {
-      "number": 8546,
-      "date": "2026-02-26"
-    },
-    {
       "number": 8597,
       "date": "2026-02-26"
     },
@@ -812,6 +788,10 @@
     },
     {
       "number": 8607,
+      "date": "2026-02-26"
+    },
+    {
+      "number": 8612,
       "date": "2026-02-26"
     },
     {
@@ -828,10 +808,6 @@
     },
     {
       "number": 8634,
-      "date": "2026-02-27"
-    },
-    {
-      "number": 8648,
       "date": "2026-02-27"
     },
     {
@@ -879,5 +855,5 @@
       "date": "2026-02-28"
     }
   ],
-  "generated_at": "2026-10-17T16:09:52.672608+00:00"
+  "generated_at": "2026-10-17T23:31:31.975207+00:00"
 }

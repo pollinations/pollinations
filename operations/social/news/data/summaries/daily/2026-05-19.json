@@ -2,12 +2,24 @@
   "date": "2026-05-19",
   "period_start": "2026-05-19",
   "period_end": "2026-05-19",
-  "title": "Gemini 3.5 Flash joins the text endpoint",
-  "summary": "A solid day of model upgrades: Gemini 3.5 Flash hits the text endpoint, video generation gets more reliable, and a new app joins the greenhouse.\n\nWe've wired up Google's gemini-3.5-flash via Vertex AI. It brings fast, reasoning-capable completions to the text endpoint, complete with support for tool sanitization, code execution, and v3-flash thinking.\n\nSeedream 5 and Seedance Pro have been migrated to Replicate. This means better stability and a standardized 720p output for your video generation calls. We also retired the legacy Seedance Lite model to keep the infrastructure clean.\n\nAnother community-built app, Duwit, has been added to the business showcase. Always good to see what people are building with the API.",
-  "pr_count": 3,
+  "title": "Seedream and Seedance move to Replicate",
+  "summary": "Seedream editing gets more flexible, seedance-pro gets dimension-aware video framing, and Gemini 3.5 Flash joins the model lineup.\n\nSeedream 4.0, 4.5 Pro and 5 image generation, plus seedance-pro video generation, were moved to Replicate while keeping their public model IDs. Seedream 5 now supports multiple reference images for edits and can infer an aspect ratio from supplied dimensions. Seedream 4.0 gains custom dimensions, and image requests without a size use the selected model’s defaults. Seedance-pro now accepts seven aspect ratios and infers the closest one from width and height; it is limited to 720p. The older seedance Lite model was retired.\n\nAdded paid-only `gemini-3.5-flash` with a 1,048,576-token context window. It accepts text, images, audio and video, and supports tools, search, code execution and reasoning.\n\nDuwit, a business web app by @Ashraf-Swaidan, joined the app catalog and App Greenhouse. The catalog now lists 784 community apps.",
+  "pr_count": 6,
   "prs": [
     {
       "number": 11073,
+      "date": "2026-05-19"
+    },
+    {
+      "number": 11166,
+      "date": "2026-05-19"
+    },
+    {
+      "number": 11170,
+      "date": "2026-05-19"
+    },
+    {
+      "number": 11174,
       "date": "2026-05-19"
     },
     {
@@ -19,25 +31,44 @@
       "date": "2026-05-19"
     }
   ],
-  "generated_at": "2026-05-20T07:08:55.095654+00:00",
+  "generated_at": "2026-10-17T22:54:34.551579+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "Gemini 3.5 Flash",
-      "text": "Google's `gemini-3.5-flash` is now live on the [text endpoint](https://gen.pollinations.ai/v1/chat/completions). Fast, capable of reasoning, and ready for tool use and code execution.",
+      "emoji": "🤖",
+      "title": "Gemini 3.5 Flash added",
+      "text": "Use `gemini-3.5-flash` with text, image, audio or video input, plus tools, search, code execution and reasoning. It has a 1,048,576-token context window and requires paid access. [View the model](https://enter.pollinations.ai/models?q=gemini-3.5-flash).",
       "prs": [
         11181
       ],
       "kind": "model"
     },
     {
-      "emoji": "🌸",
-      "title": "Duwit joins the showcase",
-      "text": "Another community-built app hits the greenhouse directory. [Try it](https://duwit-45a37.web.app/)",
+      "emoji": "🎨",
+      "title": "More flexible Seedream edits",
+      "text": "Seedream 5 accepts multiple reference images and defaults to the input image’s aspect ratio for edits. It can also infer a non-square aspect ratio when you supply dimensions without one. [View the model](https://enter.pollinations.ai/models?q=seedream5).",
       "prs": [
-        11175
+        11073,
+        11174
       ],
-      "kind": "app"
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Custom Seedream 4.0 dimensions",
+      "text": "Seedream 4.0 now accepts custom dimensions from 1024 to 4096 pixels for image generation and editing. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        11174
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Dimension-aware Seedance video",
+      "text": "For `seedance-pro`, you can supply width and height without `aspectRatio`; the model selects the closest of seven supported aspect ratios. Output is limited to 720p. [View the model](https://enter.pollinations.ai/models?q=seedance-pro).",
+      "prs": [
+        11073
+      ],
+      "kind": "model"
     }
   ],
   "changelog": []

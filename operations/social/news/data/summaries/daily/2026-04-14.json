@@ -2,12 +2,20 @@
   "date": "2026-04-14",
   "period_start": "2026-04-14",
   "period_end": "2026-04-14",
-  "title": "Gemini gets a thinking mode for images",
-  "summary": "A focused day bringing native reasoning to Gemini image models and fixing dashboard timeouts for heavy API users.\n\nAdded a `?reasoning=true` flag to the image API. Appending this to Gemini requests activates native thinking modes via Vertex AI for complex prompts, leaving the rest of the models untouched.\n\nOptimized the usage dashboard and Tinybird data pipes so they stop timing out on heavy API users. Power users can now reliably export detailed logs and daily summaries without silent truncations.",
-  "pr_count": 2,
+  "title": "Gemini images get an optional reasoning mode",
+  "summary": "Optional reasoning for Gemini images, more precise usage windows and exports, and a refreshed community catalog.\n\nThe image API added a `reasoning` flag for nanobanana, nanobanana-2, and nanobanana-pro. It defaults to off; enabling it uses Gemini thinking mode for text rendering and layout. Other image models ignore the flag.\n\nEnter’s usage graph now requests the selected 7-, 30-, or 90-day window, and its API-key filter uses exact per-key daily data. Daily Summary exports cover the full selected period; Detailed Usage exports contain the latest 50,000 rows within it. Usage APIs also gained `days` options and stable pagination.\n\nThe automated catalog update raised the Greenhouse count from 673 to 678 community apps. A follow-up README update refreshed Latest News and Recent Apps and corrected Polli-com’s author credit.",
+  "pr_count": 4,
   "prs": [
     {
       "number": 10196,
+      "date": "2026-04-14"
+    },
+    {
+      "number": 10208,
+      "date": "2026-04-14"
+    },
+    {
+      "number": 10209,
       "date": "2026-04-14"
     },
     {
@@ -15,14 +23,23 @@
       "date": "2026-04-14"
     }
   ],
-  "generated_at": "2026-04-15T06:34:15.194090+00:00",
+  "generated_at": "2026-10-17T22:47:41.845064+00:00",
   "highlights": [
     {
-      "emoji": "🧠",
-      "title": "Gemini Image Reasoning",
-      "text": "Gemini can now think before it draws. Append `?reasoning=true` to your [image requests](https://gen.pollinations.ai/image/{prompt}) to enable native reasoning modes for complex prompts.",
+      "emoji": "🎨",
+      "title": "Reasoning for Gemini images",
+      "text": "Set `reasoning=true` when generating images with `nanobanana`, `nanobanana-2`, or `nanobanana-pro` to use Gemini thinking mode for text rendering and layout. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         10196
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Choose usage history windows",
+      "text": "Use the `days` parameter to request up to 90 days of usage history or daily aggregates. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        10222
       ],
       "kind": "api"
     }

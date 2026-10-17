@@ -2,8 +2,8 @@
   "date": "2026-07-14",
   "period_start": "2026-07-14",
   "period_end": "2026-07-14",
-  "title": "GPT Image and FLUX.2 Klein got sturdier routes",
-  "summary": "A reliability-heavy day: sturdier image routes, public media galleries, honest model-speed metrics, and an SDK that retries less creatively.\n\nImage generation received a fairly determined reliability pass: gpt-image-2 now runs through dedicated Azure deployments with regional retries, while gptimage and gptimage-large gained model-specific Sweden Central resources and failover paths. FLUX.2 Klein moved onto a validated Vast tunnel route, and its deployment build path was restored. Unsupported gpt-image-2 transparency requests now fail early with a useful 400 instead of wandering off to a provider error.\n\nTagged uploads at media.pollinations.ai now act as an explicit publishing step, creating anonymous, shareable tag galleries with newest-first pagination. Untagged files remain private UUID-addressed blobs, and upload owners can remove published media. The API docs now include runnable multipart upload examples for the whole UUID, gallery, deletion, and identity arrangement.\n\nThe monitor now reports sortable tokens-per-second throughput based on full streamed request duration, replacing the older TTFT fields. Its table also stopped fighting the browser with nested scrollbars, so it behaves cleanly from narrow phones through desktop screens. A rare case of UX becoming less theatrical.",
+  "title": "Tagged uploads get public galleries",
+  "summary": "Tagged media galleries and clearer model-speed comparisons arrived alongside a substantial round of image-routing repairs.\n\nMedia uploads gained optional tags and public, paginated galleries; untagged files remain unlisted. Owners can delete tagged uploads, the upload limit rose from 50 MB to 100 MB, and SDK upload tags and runnable API examples were added. Uploads now get unique URLs rather than deduplicated, content-addressed ones.\n\nModel Monitor gained a sortable tokens-per-second column and a table that scrolls with the page. A daily Discord leaderboard ranks community text models by tokens served, with a separate panel for the three fastest qualifying models.\n\nMerged GPT Image routing changes use dedicated resources per model and retry eligible upstream failures, reducing the chance that one resource problem affects every image model. The fixes also distinguish resource blocks from prompt rejections, reject unsupported transparency requests for `gpt-image-2`, and update its supported-parameter docs. FLUX.2 Klein received a backend routing change.",
   "pr_count": 16,
   "prs": [
     {
@@ -16,6 +16,10 @@
     },
     {
       "number": 12287,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12373,
       "date": "2026-07-14"
     },
     {
@@ -32,10 +36,6 @@
     },
     {
       "number": 12432,
-      "date": "2026-07-14"
-    },
-    {
-      "number": 12433,
       "date": "2026-07-14"
     },
     {
@@ -71,46 +71,107 @@
       "date": "2026-07-14"
     }
   ],
-  "generated_at": "2026-07-15T06:54:42.012635+00:00",
+  "generated_at": "2026-10-17T23:01:59.738947+00:00",
   "highlights": [
     {
-      "emoji": "✨",
-      "title": "Public media galleries",
-      "text": "Tag an upload to publish it in a shareable, newest-first gallery at `GET /media?tag=`; leave it untagged and it stays private. [API Docs](https://gen.pollinations.ai/docs)",
+      "emoji": "🎨",
+      "title": "Public media tag galleries",
+      "text": "Tag uploads to publish them in browsable, paginated galleries, or leave them untagged and accessible only by URL. Uploads can be up to 100 MB, and the SDK accepts upload tags. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         12277
       ],
       "kind": "api"
     },
     {
-      "emoji": "🚀",
-      "title": "GPT Image models rerouted",
-      "text": "`gptimage`, `gptimage-large`, and `gpt-image-2` now use dedicated Azure routes with regional failover, so image generations and edits have somewhere else to go when one garden closes.",
-      "prs": [
-        12430,
-        12467,
-        12470
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🌟",
-      "title": "Model speed, measured properly",
-      "text": "Model Monitor now sorts models by streamed completion throughput in tokens per second. Less folklore, more `tok/s`. [Check the monitor](https://model-monitor.pollinations.ai)",
+      "emoji": "🎯",
+      "title": "Compare model speed",
+      "text": "Model Monitor has a sortable Speed column showing completion tokens per second, so you can compare throughput alongside model health. [Open Model Monitor](https://model-monitor.pollinations.ai).",
       "prs": [
         12287
       ],
       "kind": "product"
     },
     {
-      "emoji": "💡",
-      "title": "Seeds reach the SDK API",
-      "text": "`@pollinations/sdk` now forwards seeds to Gen, giving SDK users reproducible generations without client-side retry roulette. [View package](https://www.npmjs.com/package/@pollinations/sdk)",
+      "emoji": "🤖",
+      "title": "Community model leaderboard",
+      "text": "A daily pixel-art leaderboard in Discord ranks community text models by tokens served over 24 hours, with a separate panel for the fastest qualifying models. [Visit community chat](https://chat.pollinations.ai).",
       "prs": [
-        12457
+        12373
       ],
       "kind": "product"
     }
   ],
-  "changelog": []
+  "changelog": [
+    {
+      "pr_number": 12465,
+      "url": "https://github.com/pollinations/pollinations/pull/12465",
+      "merged_at": "2026-07-14T17:06:17Z",
+      "api_changes": [
+        {
+          "id": "pr-12465:DELETE /media/{id}",
+          "endpoint": "DELETE /media/{id}",
+          "summary": "Delete media",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-12465:GET /media",
+          "endpoint": "GET /media",
+          "summary": "List a public tag gallery",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-12465:GET /{hash}",
+          "endpoint": "GET /{hash}",
+          "summary": "Retrieve media",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-12465:GET /{hash}/metadata",
+          "endpoint": "GET /{hash}/metadata",
+          "summary": "Get file metadata",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-12465:GET /{id}",
+          "endpoint": "GET /{id}",
+          "summary": "Retrieve media",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-12465:GET /{id}/metadata",
+          "endpoint": "GET /{id}/metadata",
+          "summary": "Get file metadata",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-12465:HEAD /{hash}",
+          "endpoint": "HEAD /{hash}",
+          "summary": "Check if media exists",
+          "action": "REMOVE",
+          "breaking": true,
+          "changes": []
+        },
+        {
+          "id": "pr-12465:HEAD /{id}",
+          "endpoint": "HEAD /{id}",
+          "summary": "Check if media exists",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        }
+      ]
+    }
+  ]
 }

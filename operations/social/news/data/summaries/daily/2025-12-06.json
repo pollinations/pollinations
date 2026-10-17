@@ -3,7 +3,7 @@
   "period_start": "2025-12-06",
   "period_end": "2025-12-06",
   "title": "Flux AI joins the creative projects list",
-  "summary": "The creative projects list gained Flux AI and tidied up a couple of older listings.\n\nAdded kinai9661’s Cloudflare Workers-based adaptive image generation app, Flux AI, to the site’s creative projects list and project directories. The refreshed lists also dropped the “new” marker from AI Stickers Generator and StickerHub.",
+  "summary": "A community image-generation project joined the creative directory.\n\nFlux AI, a Cloudflare Workers-based adaptive image generation app by kinai9661, was added to the site’s creative projects list and project directories. The refreshed lists also removed the “new” marker from two older sticker apps.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-12-06"
     }
   ],
-  "generated_at": "2026-10-17T15:54:03.965143+00:00",
+  "generated_at": "2026-10-17T22:36:21.623346+00:00",
   "highlights": [],
   "changelog": []
 }

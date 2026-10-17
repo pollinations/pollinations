@@ -2,9 +2,9 @@
   "date": "2026-03-01",
   "period_start": "2026-02-22",
   "period_end": "2026-02-28",
-  "title": "The Great Showcase Reorganization",
-  "summary": "The community built so many apps we had to redesign the showcase, rewrite the text backend, and finally ship media storage.\n\nWe merged over 50 community app submissions this week. To prevent the registry from turning into a junk drawer, we recategorized all 542 ecosystem apps into 15 specific domains and added platform badges (Web, Discord, CLI). We also deployed an automated health checker that unlists apps if they stay broken for 7 consecutive days.\n\nYou can now upload files. `media.pollinations.ai` is a new content-addressed storage service backed by Cloudflare Workers and R2. Send us up to 10MB of images, audio, or video, and get a SHA-256 hash back for persistent media support in your apps. We also added a secure DELETE endpoint, because mistakes happen.\n\nThe models got smarter and faster. Claude was upgraded to Sonnet 4.6 and migrated to the direct Anthropic API for prompt caching. We also wired up Grok-Imagine (alpha), Seedream 5.0 Lite, Gemini 3.1 Flash/Pro, and Minimax 2.5. On the audio side, you can now pass custom ElevenLabs voice UUIDs to use your own voice clones.\n\nThe text generation service was entirely rewritten in Hono and TypeScript for better performance and type safety. We also fixed a rate limiter bug so you actually get your burst capacity back after idling, and updated Wan video generation to automatically fall back to DashScope when upstream providers rate-limit us.",
-  "pr_count": 105,
+  "title": "More apps, easier to find",
+  "summary": "The app garden grew, while new models, a media API, and clearer documentation made more of Pollinations useful to build with.\n\nThe community showcase grew across creative tools, learning apps, bots, developer utilities, and illustrated storytelling. Eighteen missing apps were restored, while purpose and genre filters plus platform badges made the catalog easier to browse. By February 26, all 562 listed apps had platform labels. A roundup of six submissions consolidated showcase entries rather than adding six more distinct apps.\n\nAlpha models `nomnom` and `polly` added research and tool-assisted workflows. The paid `claude` route moved to Sonnet 4.6; `gemini-large` moved to Gemini 3.1 Pro Preview; and `minimax` moved to M2.5. Image generation gained alpha `grok-imagine` and paid `seedream5` and `nanobanana-2`. Existing Gemini 3 Pro names kept their original target rather than changing under callers.\n\nA new API accepts file, raw-binary, or base64 uploads and returns a public URL. Later in the week it gained support for arbitrary binary files and authenticated deletion by the uploader; the final upload limit is 10 MB. A separate `/video/{prompt}` route, custom ElevenLabs voice IDs, and fixes to video model routing and reference images broadened the ways to work with media.\n\nThe API reference was reorganized by task, with cURL, Python, JavaScript, browser-URL examples, and compact docs for AI agents. Model listings gained `context_length` for 21 text models, replacing the old `context_window` field for clients that read it. Updated submission guidelines, Hello and Community pages, and setup packages also made it easier to find a way into the project.",
+  "pr_count": 91,
   "prs": [
     {
       "number": 7224,
@@ -48,6 +48,10 @@
     },
     {
       "number": 7664,
+      "date": "2026-02-22"
+    },
+    {
+      "number": 7680,
       "date": "2026-02-22"
     },
     {
@@ -183,6 +187,10 @@
       "date": "2026-02-23"
     },
     {
+      "number": 8503,
+      "date": "2026-02-23"
+    },
+    {
       "number": 8515,
       "date": "2026-02-23"
     },
@@ -199,75 +207,7 @@
       "date": "2026-02-24"
     },
     {
-      "number": 7259,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7262,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7272,
-      "date": "2026-02-24"
-    },
-    {
       "number": 7274,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7293,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7299,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7301,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7305,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7307,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7319,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7326,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7331,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7336,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7347,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7374,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7376,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 7532,
-      "date": "2026-02-24"
-    },
-    {
-      "number": 8476,
       "date": "2026-02-24"
     },
     {
@@ -275,15 +215,19 @@
       "date": "2026-02-24"
     },
     {
+      "number": 8529,
+      "date": "2026-02-24"
+    },
+    {
       "number": 8532,
       "date": "2026-02-24"
     },
     {
-      "number": 8537,
+      "number": 8534,
       "date": "2026-02-24"
     },
     {
-      "number": 8538,
+      "number": 8537,
       "date": "2026-02-24"
     },
     {
@@ -308,6 +252,10 @@
     },
     {
       "number": 8551,
+      "date": "2026-02-25"
+    },
+    {
+      "number": 8559,
       "date": "2026-02-25"
     },
     {
@@ -347,10 +295,6 @@
       "date": "2026-02-25"
     },
     {
-      "number": 8546,
-      "date": "2026-02-26"
-    },
-    {
       "number": 8597,
       "date": "2026-02-26"
     },
@@ -360,6 +304,10 @@
     },
     {
       "number": 8607,
+      "date": "2026-02-26"
+    },
+    {
+      "number": 8612,
       "date": "2026-02-26"
     },
     {
@@ -376,10 +324,6 @@
     },
     {
       "number": 8634,
-      "date": "2026-02-27"
-    },
-    {
-      "number": 8648,
       "date": "2026-02-27"
     },
     {
@@ -427,5 +371,5 @@
       "date": "2026-02-28"
     }
   ],
-  "generated_at": "2026-03-18T22:36:47.246410+00:00"
+  "generated_at": "2026-10-17T23:26:51.803789+00:00"
 }

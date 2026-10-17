@@ -2,12 +2,24 @@
   "date": "2026-06-12",
   "period_start": "2026-06-12",
   "period_end": "2026-06-12",
-  "title": "New coding models and cheaper inference",
-  "summary": "We added Kimi K2.7 for coding, unlocked 1080p video generation, dropped Qwen costs, and fixed a stubborn boolean bug in the text API.\n\nWe wired up Moonshot AI's Kimi K2.7 Code model (256K context, reasoning) to the free tier. We also migrated Wan and Qwen models to new providers, which unlocked 1080p Wan video generation and dropped Qwen text generation costs by 2.5x.\n\nFixed a classic string-to-boolean parsing bug in the text API. Passing '?stream=false' or '?json=false' will now actually disable streaming and JSON modes, rather than enthusiastically enabling them.",
-  "pr_count": 3,
+  "title": "Kimi K2.7 Code joins the text models",
+  "summary": "A new coding model and 1080p Wan video option landed alongside more flexible MCP voices and text parameters that finally take “false” for an answer.\n\nAdded Moonshot’s coding-focused `kimi-k2.7-code` through OpenRouter, with image input, tool use, reasoning, and a 262,144-token context window. It also accepts the `kimi-k2.7` and `kimi-k2p7` aliases.\n\nAdded `wan-pro-1080p` as a separate video model, while moving existing Wan video and Wan/Qwen image models to Replicate. Wan Pro supports an end-frame keyframe; Qwen Image supports editing with up to three reference images. `qwen-coder-large` moved to OpenRouter. The API docs were regenerated to include the 1080p model.\n\nMCP audio tools accept voice names returned by `listAudioVoices` instead of limiting requests to a fixed list. An SDK alpha also keeps unfamiliar model categories in catalog results and makes HTTP error handling consistent across the client and React hooks. Unused package exports, widgets, and maintenance scripts were removed.",
+  "pr_count": 8,
   "prs": [
     {
+      "number": 11746,
+      "date": "2026-06-12"
+    },
+    {
+      "number": 11747,
+      "date": "2026-06-12"
+    },
+    {
       "number": 11753,
+      "date": "2026-06-12"
+    },
+    {
+      "number": 11757,
       "date": "2026-06-12"
     },
     {
@@ -15,29 +27,55 @@
       "date": "2026-06-12"
     },
     {
+      "number": 11759,
+      "date": "2026-06-12"
+    },
+    {
+      "number": 11761,
+      "date": "2026-06-12"
+    },
+    {
       "number": 11762,
       "date": "2026-06-12"
     }
   ],
-  "generated_at": "2026-06-13T07:15:37.930822+00:00",
+  "generated_at": "2026-10-17T22:58:33.612067+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Kimi learns to code",
-      "text": "Moonshot AI's Kimi K2.7 Code model (`kimi-k2.7-code`) is now live. 256K context and reasoning capabilities for when your scripts need adult supervision. Check the [Available Text Models](https://gen.pollinations.ai/v1/models).",
+      "title": "Kimi K2.7 Code",
+      "text": "Try `kimi-k2.7-code` for coding tasks with reasoning, tools, up to 10 reference images, and a 262,144-token context window. [Browse the model](https://enter.pollinations.ai/models?q=kimi-k2.7-code).",
       "prs": [
         11753
       ],
       "kind": "model"
     },
     {
-      "emoji": "🎥",
-      "title": "1080p Wan video & cheaper Qwen",
-      "text": "We've added `wan-pro-1080p` for high-res [video generation](https://gen.pollinations.ai), plus dropped the cost of `qwen-coder-large` by 2.5x. Better pixels, cheaper tokens.",
+      "emoji": "🎨",
+      "title": "Wan Pro at 1080p",
+      "text": "Generate 1080p video with the separate `wan-pro-1080p` model. [Browse the model](https://enter.pollinations.ai/models?q=wan-pro-1080p).",
       "prs": [
         11762
       ],
       "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Choose an end frame",
+      "text": "Give `wan-pro` an end-frame keyframe to guide where a generated video finishes. [See the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        11762
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎵",
+      "title": "More MCP audio voices",
+      "text": "MCP audio tools accept voice names discovered through `listAudioVoices` instead of restricting requests to a fixed list. [See the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        11757
+      ],
+      "kind": "product"
     }
   ],
   "changelog": []

@@ -2,8 +2,8 @@
   "date": "2026-08-05",
   "period_start": "2026-08-05",
   "period_end": "2026-08-05",
-  "title": "Eleven more ways to find Pollinations in the wild",
-  "summary": "A community harvest: eleven new apps, sturdier generation routes, and API tooling that reveals more while guessing less.\n\nThe community directory grew across chat, image, writing, Android, desktop, and no-code workflows: from Batch Imagine and jewelry rendering to bilingual story tools, cat stickers, receipt tarot, and a visual agent-automation builder. The app garden is becoming usefully strange.\n\nMCP agents can now inspect available account Quests with the new read-only listQuests tool, while filtered per-key and per-model usage queries work again. API-key validation, permissions, metadata, delegated tokens, and account access are also now handled consistently across the platform.\n\nFlux fallback routing now goes through the shared registry for more resilient image generation; Trellis reports invalid image inputs as useful 400s; and Azure reasoning models quietly ignore sampling fields they do not support. Myceli requests also have room to finish, with a five-minute proxy timeout.",
+  "title": "More ways to see who is building what",
+  "summary": "Community publishers gained profiles, accounts gained an MCP quest tool, eleven apps joined the catalog, and SDK and model requests got less surprising.\n\nCommunity model publishers can add a public name and service link that appear alongside their models in Enter. The new read-only `listQuests` MCP tool lets an authenticated account check its quests and earned rewards; claiming still happens in the dashboard.\n\nCommunity additions span batch image generation, jewelry renders from kids’ sketches, cat-photo stickers, Arabic/English story development, no-code agent workflows, and a fortune teller that reads receipts. The additions bring the App Greenhouse to 858 apps.\n\nSDK model listings now return raw registry fields in server order, so consumers handle their own presentation. Convenience helpers make one request and return one result; callers wanting multiple images can use `imageGenerate({ n })`. Unset model and voice options now stay unset, while the API defaults model-free video requests to `veo` and image edits to `flux`. Shared request handling was also simplified across developer tools, and MCP web search now accepts models advertising the capability rather than a fixed list.",
   "pr_count": 23,
   "prs": [
     {
@@ -11,7 +11,11 @@
       "date": "2026-08-05"
     },
     {
-      "number": 12924,
+      "number": 12956,
+      "date": "2026-08-05"
+    },
+    {
+      "number": 12958,
       "date": "2026-08-05"
     },
     {
@@ -91,51 +95,38 @@
       "date": "2026-08-05"
     },
     {
-      "number": 13113,
-      "date": "2026-08-05"
-    },
-    {
       "number": 13123,
       "date": "2026-08-05"
     }
   ],
-  "generated_at": "2026-08-06T07:03:28.616100+00:00",
+  "generated_at": "2026-10-17T23:05:51.300162+00:00",
   "highlights": [
     {
       "emoji": "🎯",
-      "title": "Quests enter MCP",
-      "text": "Agents can now inspect available account Quests with the read-only `listQuests` tool—useful work, now queryable by machines too. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)",
+      "title": "Check quests through MCP",
+      "text": "Use the read-only `listQuests` tool to see an authenticated account’s quests and earned rewards. Claiming rewards still happens in the dashboard. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         12276
       ],
       "kind": "product"
     },
     {
-      "emoji": "✨",
-      "title": "Visual agent workflows",
-      "text": "Build multi-step AI automations in Flow with drag-and-drop agents, HTTP requests, conditions, transforms, and outputs. [Try it](https://pollinations-chat-kohl.vercel.app)",
+      "emoji": "🌟",
+      "title": "Profiles for community publishers",
+      "text": "Community model publishers can set a public provider name and service link, shown alongside their models in Enter. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        13108
+        13079
       ],
-      "kind": "app"
+      "kind": "product"
     },
     {
-      "emoji": "🎨",
-      "title": "Jewelry sketches, rendered",
-      "text": "Sparkle Studio turns jewelry descriptions or rough sketches into polished photorealistic designs. [Try it](https://sparkle-studio-pollinations-a031.onbelmo.uk)",
+      "emoji": "🔗",
+      "title": "More models for MCP search",
+      "text": "MCP web search accepts models that advertise `web_search` capability instead of relying on a three-model list. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
-        13089
+        12956
       ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🐱",
-      "title": "Cats, now sticker-shaped",
-      "text": "Upload a cat photo and turn its fur, eyes, and general feline bureaucracy into personalized cartoon stickers. [Try it](https://fantastic-dolphin-00911c.netlify.app)",
-      "prs": [
-        13109
-      ],
-      "kind": "app"
+      "kind": "product"
     }
   ],
   "changelog": []

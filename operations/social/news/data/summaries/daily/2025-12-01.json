@@ -2,8 +2,8 @@
   "date": "2025-12-01",
   "period_start": "2025-12-01",
   "period_end": "2025-12-01",
-  "title": "Video generation joins the prompt route",
-  "summary": "Preview video generation arrived alongside richer chat controls, a December news banner, and clearer community-focused docs.\n\nPreview support for Veo 3.1 Fast and Seedance adds MP4 output, with image-to-video input for Seedance. Requests can set duration, aspect ratio, and audio; Enter also adds per-second video pricing information.\n\nThe chat app adds session controls for the system prompt and generation settings, renders charts in messages, and puts streamed reasoning in a collapsible panel. Sidebar and layout changes make those controls easier to reach.\n\nA dismissible December news banner lists Pollen tiers and featured models. A link beneath GitHub sign-in invites votes on other login providers; neither change alters account balances or sign-in options.",
+  "title": "Preview video generation with Veo and Seedance",
+  "summary": "Preview video generation and richer community chat led the day, while the site got clearer about the people building on it.\n\nPreview video generation was added to the prompt route with Veo 3.1 Fast and Seedance. Both return MP4 files; Seedance also accepts an image as input. Requests can set duration, aspect ratio, and audio, and Enter now shows per-second video pricing.\n\nThe community chat app gained session controls for the system prompt, max tokens, temperature, and top-p. It can render charts in messages and show streamed reasoning in a collapsible panel, alongside a tidier sidebar and layout.\n\nWebsite and documentation copy now emphasizes open development and 500+ community projects. Project listings gained refreshed descriptions and a corrected ReThink AI link.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,21 +31,39 @@
       "date": "2025-12-01"
     }
   ],
-  "generated_at": "2026-10-17T15:53:43.726390+00:00",
+  "generated_at": "2026-10-17T22:36:18.918731+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Veo and Seedance video",
-      "text": "Generate preview MP4 videos with `veo` or `seedance`; Seedance also accepts an image to animate. Set `duration`, `aspectRatio`, and `audio` on the prompt route. [Browse Veo](https://enter.pollinations.ai/models?q=veo).",
+      "title": "Veo video generation",
+      "text": "Generate preview MP4 videos with `veo` (`veo-3.1-fast`). Choose a 4-, 6-, or 8-second duration. [View Veo](https://enter.pollinations.ai/models?q=veo).",
       "prs": [
         5434
       ],
       "kind": "model"
     },
     {
-      "emoji": "💡",
-      "title": "Charts and controls in chat",
-      "text": "Adjust the system prompt and generation settings for a chat session, view charts in messages, and expand streamed reasoning when you want to inspect it. [Explore chat](https://chat.pollinations.ai).",
+      "emoji": "🎨",
+      "title": "Seedance image-to-video",
+      "text": "Generate preview MP4 videos with `seedance`, including from an input image. [View Seedance](https://enter.pollinations.ai/models?q=seedance).",
+      "prs": [
+        5434
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "📱",
+      "title": "Charts in community chat",
+      "text": "The community chat app can render bar, line, pie, and scatter charts in messages, including streamed chart responses.",
+      "prs": [
+        5536
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Chat sessions, your settings",
+      "text": "Set a system prompt, max tokens, temperature, and top-p for a chat session. Streamed reasoning now appears in a collapsible panel.",
       "prs": [
         5536
       ],

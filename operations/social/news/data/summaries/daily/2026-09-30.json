@@ -2,10 +2,14 @@
   "date": "2026-09-30",
   "period_start": "2026-09-30",
   "period_end": "2026-09-30",
-  "title": "A new front door for finding apps",
-  "summary": "A busy day for app discovery, model and audio tools, community projects, staging workflows, and numbers that mean what they say.\n\nWebsite v2 brought a new home page, navigation, legal pages, and day/night scenes. The rebuilt Apps page adds weekly-ranked listings and searchable filters you can share by URL; ranking now follows catalog listings rather than App Key redirects. Search keeps your scroll position, the homepage shows GitHub and Discord activity, and the shared UI and lotus icons got smaller consistency fixes.\n\nGPT-6.1 Sol joined the text model lineup. The SDK now passes speech controls through and supports voice-changing and voice-isolation uploads; five video models accept their documented fixed resolutions. New Polli harness setups default to GPT-6 Sol, while flux.2-max’s OpenRouter fallback now charges for the image it returns rather than the size requested.\n\nThe app directory gained a Godot 4 addon for text, image, and speech generation, a speech-to-text app, and two Arabic RTL apps with browser-only BYOP sign-in. Community model creators’ GitHub handles now appear in the key model picker. The Honey Census also gives eligible Pollen buyers a rewarded way to say what would help them build more.",
-  "pr_count": 28,
+  "title": "GPT-6.1 Sol joins the model lineup",
+  "summary": "GPT-6.1 Sol, new audio SDK tools, a rebuilt app directory, and a fresh website shared the day with some necessary model housekeeping.\n\nGPT-6.1 Sol was added with text and image input, tools, reasoning, a 1,050,000-token context window, and Quest Pollen access. Five video models now declare their fixed output resolutions, so requests specifying those resolutions are accepted. Amazon Nova Canvas and Reel were retired on September 30 with no replacement or fallback; generation requests using their IDs return 400. A FLUX.2 Max fallback billing fix charges for the image returned rather than the size requested, and generated API docs reflect the model-list changes.\n\nThe rebuilt Apps page adds a searchable directory, shareable filters and sorting, and a spotlight for the most-used Pollen Pay apps. Weekly rankings now credit catalog listings for successful, billable BYOP use instead of showing App Key redirect URLs. Search and filter changes no longer jump to the top of the page. Four community submissions joined the catalog, including a Godot 4 editor addon for text, image, and speech generation.\n\nThe SDK adds `audioTransform` for voice changing and voice isolation, while speech requests now send duration and seed and can include a reference-audio URL. Polli CLI 0.1.21 defaults nine managed harnesses to GPT-6 Sol without changing explicit model choices or existing local configurations. The computer MCP shell also preserves UTF-8 and binary bytes through file-writing commands; CLI and device-flow guides received corrections.",
+  "pr_count": 27,
   "prs": [
+    {
+      "number": 15486,
+      "date": "2026-09-30"
+    },
     {
       "number": 15546,
       "date": "2026-09-30"
@@ -35,19 +39,11 @@
       "date": "2026-09-30"
     },
     {
-      "number": 15877,
-      "date": "2026-09-30"
-    },
-    {
       "number": 15879,
       "date": "2026-09-30"
     },
     {
       "number": 15887,
-      "date": "2026-09-30"
-    },
-    {
-      "number": 15895,
       "date": "2026-09-30"
     },
     {
@@ -119,12 +115,12 @@
       "date": "2026-09-30"
     }
   ],
-  "generated_at": "2026-10-01T06:32:47.090824+00:00",
+  "generated_at": "2026-10-17T23:16:06.019325+00:00",
   "highlights": [
     {
       "emoji": "🤖",
       "title": "GPT-6.1 Sol added",
-      "text": "Use `openai/gpt-6.1-sol` for text and chat, including with Quest Pollen. [Explore text models](https://gen.pollinations.ai/v1/models).",
+      "text": "Use `openai/gpt-6.1-sol` for text and image input, tools, reasoning, and up to 1,050,000 tokens of context. It supports Quest Pollen accounts. [View the model](https://enter.pollinations.ai/models?q=openai/gpt-6.1-sol).",
       "prs": [
         15960
       ],
@@ -132,17 +128,35 @@
     },
     {
       "emoji": "🎵",
-      "title": "Transform audio with the SDK",
-      "text": "The SDK adds `audioTransform()` for voice-changing and voice-isolation requests. Speech requests also accept duration, seed, and reference audio. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "title": "More audio in the SDK",
+      "text": "Use `audioTransform` to send files to the voice changer or voice isolator. SDK speech requests can also include reference audio, duration, and seed. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         15917
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎨",
-      "title": "Find your next app",
-      "text": "The rebuilt Apps page has a searchable directory, URL-persistent category and platform filters, and a weekly-ranked Pollen Pay spotlight. [Explore apps](https://pollinations.ai).",
+      "emoji": "🤖",
+      "title": "GPT-6 Sol for harnesses",
+      "text": "New Polli CLI configurations for nine managed coding harnesses now default to `openai/gpt-6-sol`. Explicit model choices and existing local configurations stay as they are. [Get Polli](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        15887
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "The Honey Census",
+      "text": "Bought Pollen? The new public GitHub survey asks how you use it and what could work better. Eligible respondents can claim 10 Quest Pollen for a qualifying response.",
+      "prs": [
+        15934
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "📱",
+      "title": "A better app directory",
+      "text": "Search community apps, filter by category, platform, or Pollen Pay, and sort by New or Popular. A weekly spotlight shows the most-used listed Pollen Pay apps. [Browse the apps](https://pollinations.ai).",
       "prs": [
         15997,
         15919
@@ -150,20 +164,12 @@
       "kind": "product"
     },
     {
-      "emoji": "🎯",
-      "title": "Pollinations for Godot 4",
-      "text": "Add text, image, and speech generation to a Godot 4 project with a global Pollinations node. [View repo](https://github.com/davealan74/godot-pollinations).",
+      "emoji": "✨",
+      "title": "A new front door",
+      "text": "The redesigned website brings apps, Quests, developer tools, and getting-started paths onto the homepage, with day/night artwork and community counts. [Take a look](https://pollinations.ai).",
       "prs": [
-        15931
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "💡",
-      "title": "The Honey Census Quest",
-      "text": "Eligible Pollen buyers can answer a survey about purchases and usage for a 10 Quest Pollen reward. The Bee Census is paused.",
-      "prs": [
-        15934
+        15983,
+        15973
       ],
       "kind": "product"
     }

@@ -2,8 +2,8 @@
   "date": "2025-03-23",
   "period_start": "2025-03-23",
   "period_end": "2025-03-23",
-  "title": "SearchGPT streams get their own cache entries",
-  "summary": "Two fixes made SearchGPT streaming and image option handling more predictable.\n\nThe text API now includes `stream` in its cache key, so a streaming SearchGPT request cannot receive a cached non-streaming response.\n\nImage parameter sanitization now treats malformed values as false for `enhance`, `nologo`, `nofeed`, and `private`. Feed events consequently receive boolean `enhance` values.",
+  "title": "SearchGPT streaming gets its own cache entries",
+  "summary": "Two fixes made SearchGPT streaming cache correctly and image flags less willing to believe typos.\n\nThe text API cache now accounts for the `stream` parameter, so a streaming SearchGPT request won't receive a cached non-streaming response.\n\nImage parameter sanitization now treats malformed values as false for `enhance`, `nologo`, `nofeed`, and `private`. Feed events also receive a boolean `enhance` value.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-03-23"
     }
   ],
-  "generated_at": "2026-10-17T15:36:07.240158+00:00",
+  "generated_at": "2026-10-17T22:29:38.220651+00:00",
   "highlights": [],
   "changelog": []
 }

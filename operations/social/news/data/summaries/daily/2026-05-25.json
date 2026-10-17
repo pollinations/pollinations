@@ -2,26 +2,20 @@
   "date": "2026-05-25",
   "period_start": "2026-05-25",
   "period_end": "2026-05-25",
-  "title": "Helix AI joins the greenhouse",
-  "summary": "A quiet day tending the garden as Helix AI gets added to the community showcase.\n\nHelix AI just landed in the greenhouse directory. Another community app built on the infrastructure, now visible in the showcase for anyone looking to see what people are making.",
-  "pr_count": 1,
+  "title": "More community apps in the Greenhouse",
+  "summary": "Three community apps joined the showcase, and the catalog got a little tidier.\n\nThe catalog added n8n-grok, a node-based image generator; Multi Image Generator, an image-to-image and model-comparison tool; and Helix AI, a web chat app. The updates also refreshed app metrics and cleared duplicate or older fresh-app listings.",
+  "pr_count": 2,
   "prs": [
+    {
+      "number": 11285,
+      "date": "2026-05-25"
+    },
     {
       "number": 11291,
       "date": "2026-05-25"
     }
   ],
-  "generated_at": "2026-05-26T07:07:36.083775+00:00",
-  "highlights": [
-    {
-      "emoji": "💬",
-      "title": "Helix AI Enters the Chat",
-      "text": "Another community creation lands in the showcase. [Try it](https://helixai-4-0.github.io/)",
-      "prs": [
-        11291
-      ],
-      "kind": "app"
-    }
-  ],
+  "generated_at": "2026-10-17T22:54:50.707322+00:00",
+  "highlights": [],
   "changelog": []
 }

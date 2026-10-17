@@ -2,12 +2,16 @@
   "date": "2026-05-12",
   "period_start": "2026-05-12",
   "period_end": "2026-05-12",
-  "title": "Auto top-ups for Pollen credits",
-  "summary": "Auto top-ups for Pollen credits are live, plus two new community apps hit the showcase.\n\nAdded Stripe Customer Portal integration so you can configure your account to automatically grab more Pollen when your balance dips. Uninterrupted API calls, zero manual intervention.\n\nTwo new community projects hit the showcase today. Pollenforge-CLI helps streamline Markdown formatting workflows, and Storytale is a multiplayer game for collaborative narrative building.",
-  "pr_count": 3,
+  "title": "Pollen gets automatic top-ups",
+  "summary": "Auto top-ups came to Pollen settings, while the community catalog gained two apps and clearer contributor credits.\n\nEnter added auto top-up settings and Stripe Customer Portal access. Users can choose a Pollen pack for automatic purchase when their paid balance reaches 5 Pollen or less, and manage payment methods, billing details, and invoices.\n\nThe agent-maintained catalog added @ganya002’s Pollenforge-CLI, which formats Markdown, and Storytale, a multiplayer game for writing a shared story one sentence at a time. The Greenhouse now lists 738 apps.\n\nA README update replaced generic platform credits with contributor credits for The room, The Stream Church Webapp, and AI Art Gallery.",
+  "pr_count": 4,
   "prs": [
     {
       "number": 10561,
+      "date": "2026-05-12"
+    },
+    {
+      "number": 10884,
       "date": "2026-05-12"
     },
     {
@@ -19,26 +23,7 @@
       "date": "2026-05-12"
     }
   ],
-  "generated_at": "2026-05-13T06:58:41.218591+00:00",
-  "highlights": [
-    {
-      "emoji": "🛠️",
-      "title": "Pollenforge-CLI",
-      "text": "A community-built CLI tool for wrangling Markdown into formatted output just dropped in the showcase. [View repo](https://github.com/ganya002/Pollenforge-CLI/tree/main)",
-      "prs": [
-        10903
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎲",
-      "title": "Storytale",
-      "text": "Take turns building a shared narrative with friends in this new multiplayer storytelling game powered by our text models. [Try it](https://storytale.net)",
-      "prs": [
-        10904
-      ],
-      "kind": "app"
-    }
-  ],
+  "generated_at": "2026-10-17T22:50:58.185315+00:00",
+  "highlights": [],
   "changelog": []
 }

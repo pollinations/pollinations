@@ -2,8 +2,8 @@
   "date": "2025-07-09",
   "period_start": "2025-07-09",
   "period_end": "2025-07-09",
-  "title": "Community project listings corrected",
-  "summary": "A small directory cleanup gave toai.chat the right credit and refreshed the community project tables.\n\nThe toai.chat listing now credits @Veallym0n, points to the correct repository, and describes its curl-based AI interaction with multimodal and MCP support. Regenerated project tables also add PairFusion and CraftUI and remove the Pollinations MCP Server row.",
+  "title": "toai.chat gets the right credit",
+  "summary": "A little directory gardening: toai.chat has the right credit and details, and the project tables have been refreshed.\n\nCorrected the project listing to credit @Veallym0n and link to the toai.chat repository.\n\nThe listing now describes toai.chat’s curl-based AI interaction, multimodal support, and MCP support. Its star count and submission date were also corrected.\n\nRegenerated the project directory and README tables with the corrected listing. The refreshed tables add PairFusion and CraftUI and remove the Pollinations MCP Server row.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-07-09"
     }
   ],
-  "generated_at": "2026-10-17T15:43:36.943847+00:00",
+  "generated_at": "2026-10-17T22:32:39.577247+00:00",
   "highlights": [],
   "changelog": []
 }

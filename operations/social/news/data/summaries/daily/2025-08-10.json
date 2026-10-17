@@ -2,8 +2,8 @@
   "date": "2025-08-10",
   "period_start": "2025-08-10",
   "period_end": "2025-08-10",
-  "title": "Access guidance moves to tier wording",
-  "summary": "The Special Bee request path was removed, with access guidance and schemas updated to use tier wording.\n\nRemoved the Special Bee request form and upgrade links. The auth dashboard now describes Flower and Nectar access as limited during beta, and the gpt-image-1 access error points users to tier information instead of the removed form. Docs and published schemas also use tier wording. The PR shows no change to tier eligibility or API request handling.",
+  "title": "Clearer access guidance",
+  "summary": "Special Bee request links gave way to clearer beta tier guidance and consistent tier wording.\n\nThe auth dashboard now describes Flower and Nectar access as limited during beta. The `gpt-image-1` access error points people to tier information instead of a removed request form.\n\nThe README, API docs, site news and agent guide now use tier-system wording in place of Special Bee references.\n\nThe Special Bee issue template, upgrade links and obsolete request files were removed. Published agent and workflow schemas now use `tier` instead of `special_bee`; the diff shows no change to tier eligibility or API request handling.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-08-10"
     }
   ],
-  "generated_at": "2026-10-17T15:45:08.659470+00:00",
+  "generated_at": "2026-10-17T22:33:14.755948+00:00",
   "highlights": [],
   "changelog": []
 }

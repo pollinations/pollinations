@@ -2,8 +2,8 @@
   "date": "2025-10-07",
   "period_start": "2025-10-07",
   "period_end": "2025-10-07",
-  "title": "Model aliases get counted as the right models",
-  "summary": "Model aliases now get the right usage and price calculations, while Enter gets a clearer dashboard and Hacktoberfest gets a better place to plant app ideas.\n\nConfigured aliases now resolve to their service IDs before Enter checks free usage and calculates generation prices. The same work tightened validation for the anonymous, seed, flower, and nectar tiers.\n\nThe dashboard gained a collapsible FAQ covering Pollen, trial access, model access, and pricing. Updated branding, typography, and card layouts make balances and API keys easier to scan; the balance now shows two decimal places.\n\nPrisimIG was added to the Creative projects list. It offers several image styles, three output sizes, and batches of up to five images without sign-up or an API key.",
+  "title": "Model aliases resolve to the intended model",
+  "summary": "Model aliases resolve correctly, Enter explains itself a little better, and Hacktoberfest ideas have room to grow.\n\nThe shared registry now resolves configured aliases to their service IDs. Enter uses the resolved model for free-usage checks and generation prices, rather than treating an alias as the default text or image model.\n\nThe dashboard gained a collapsible FAQ covering Pollen, access and model pricing. Updated branding, typography and card layouts make balances and API keys easier to scan; balances now show two decimal places.\n\nPrisimIG joined the creative-projects list. The Hacktoberfest ideas guide was added and then reshaped around contributor-submitted, buildable app specifications, with starter examples and guidance for submitting multiple ideas. The bot and game concepts are prompts to build, not finished integrations.",
   "pr_count": 9,
   "prs": [
     {
@@ -43,7 +43,18 @@
       "date": "2025-10-07"
     }
   ],
-  "generated_at": "2026-10-17T15:48:22.845538+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:34:22.200158+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "Model aliases resolve correctly",
+      "text": "Configured model aliases now resolve to their intended models, including when Enter checks free usage and calculates generation prices. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        4250,
+        4394
+      ],
+      "kind": "api"
+    }
+  ],
   "changelog": []
 }

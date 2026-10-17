@@ -3,7 +3,7 @@
   "period_start": "2025-03-27",
   "period_end": "2025-03-27",
   "title": "MCP installation gets a clearer path",
-  "summary": "Four community projects joined the showcase while the MCP package got a more usable installation path.\n\nThe MCP package was renamed to `@pollinations/model-context-protocol`, and its executable and Claude Desktop installer were updated to use the published package. The quick start was shortened, and the package now declares Node.js 14 as its minimum with an AbortController fallback for older versions.\n\nThe project showcase added toai.chat for terminal-based AI chat via curl and TeekGenAI for prompt-to-image generation without a login. Both are community-built ways to use Pollinations without building an interface first.\n\nThe community listings added a Chinese-language Telegram bot for chat, images, speech, and transcription, alongside IMyself AI, which offers image, text, and audio generation plus speech-to-text in Chinese and English.",
+  "summary": "MCP installation got a clearer route, while four community projects joined the showcase.\n\nThe MCP server package was renamed to `@pollinations/model-context-protocol`, and its executable was corrected so `npx @pollinations/model-context-protocol` can start the server. The Claude Desktop installer now uses the published package name. A later update declares Node.js 14 as the minimum and adds compatibility code, though the changes do not establish that every dependency works on older Node versions.\n\nThe project lists gained a Chinese-language Telegram bot for chat, images, speech, and transcription, plus IMyself AI, which offers image, text, and audio features in Chinese and English.\n\nThe showcase added toai.chat for AI chat through terminal curl commands and TeekGenAI for prompt-to-image generation without a login. One keeps you in the terminal; the other barely asks you to leave the prompt box.",
   "pr_count": 7,
   "prs": [
     {
@@ -35,7 +35,7 @@
       "date": "2025-03-27"
     }
   ],
-  "generated_at": "2026-10-17T15:36:33.078307+00:00",
+  "generated_at": "2026-10-17T22:29:50.776109+00:00",
   "highlights": [],
   "changelog": []
 }

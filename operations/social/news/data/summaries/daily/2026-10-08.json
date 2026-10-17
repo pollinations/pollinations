@@ -2,9 +2,9 @@
   "date": "2026-10-08",
   "period_start": "2026-10-08",
   "period_end": "2026-10-08",
-  "title": "More models, with fewer media surprises",
-  "summary": "Two text models joined the catalog, the Responses API expanded to every Chat model, and community apps, Quests and developer tools all got attention.\n\nClaude Haiku 5.5 and StepFun Step 5 Preview were added as paid-only text models, both with 1M-token contexts, image input and tool calling. A Qwen-Audio 3.0 TTS Flash replacement was merged for October 9; existing Qwen TTS model IDs remain aliases. Video requests now pass the requested aspect ratio to p-video, Recraft vector accepts its supported ratios, and large audio and image-edit uploads no longer hit the coordinator’s 32 MiB RPC limit.\n\nEvery Chat Completions text model can now serve `/v1/responses`, including Claude, Gemini, community models and chat-only agents through a Chat-to-Responses adapter. Community publishers can also register JSON-only endpoints without SSE; streaming clients receive the completed answer as a valid event stream. Floret gained conversational Quest model preferences, while Gemini tool-call handling and the search-plus-JSON route received targeted fixes. Agents can discover the polli skill through well-known URLs.\n\nA Quest contribution added Pi Workbench, which runs upstream Pi in a browser workbench with a terminal, project files and Pollinations account connection. Keigo Formatter joined the writing app catalog for turning rough Japanese memos into polite business Japanese. The monthly Quest leaderboard now shows daily rank movement and podium medals; tied rows also show the positive Pollen gap needed to move ahead.",
-  "pr_count": 34,
+  "title": "More model choice, and better control over output",
+  "summary": "New text and speech models, broader API compatibility, a dated News changelog, and a CLI that is a little harder to fool.\n\nClaude Haiku 5.5 and StepFun Step 5 Preview were added as paid-only text models, both with million-token context windows. Qwen Audio 3.0 TTS Flash was added as the replacement for Qwen3-TTS Instruct Flash ahead of the older model’s October 10 retirement, with instruction-guided speech and more voices. A separate fix keeps 9:16 p-video requests vertical and maps Recraft Vector dimensions to supported ratios; the audio model documentation was regenerated.\n\nEvery Chat text model now supports `/v1/responses` through either its native endpoint or an adapter. Community publishers can register text endpoints that do not stream; callers still receive a completed-answer event stream, and model listings identify the capability. Floret now accepts model preferences in `metadata` and can identify Quest-compatible models conversationally. Agent Skills discovery makes the polli skill findable from the Gen site. Fixes preserve Gemini tool-call signatures, accept array tool parameters without `items`, improve usage reporting for cache writes, and let large generation uploads pass through the coordinator.\n\nEnter’s News work moved toward a shared index and a dated Changelog for model and API changes, including changed capabilities and revised retirement dates. The monthly Quest leaderboard now shows daily rank movement and podium medals, with a corrected Pollen amount for breaking ties. A Quest contribution added Pi Workbench, which runs Pi in a browser sandbox with project editing and preview tools. Community work also added a Japanese business-writing app to the catalog, expanded community-model publisher access, and made Polli more explicit about Discord history it could not verify.",
+  "pr_count": 36,
   "prs": [
     {
       "number": 15299,
@@ -28,6 +28,10 @@
     },
     {
       "number": 16572,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16663,
       "date": "2026-10-08"
     },
     {
@@ -64,6 +68,10 @@
     },
     {
       "number": 16739,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16746,
       "date": "2026-10-08"
     },
     {
@@ -143,53 +151,98 @@
       "date": "2026-10-08"
     }
   ],
-  "generated_at": "2026-10-09T06:32:03.630134+00:00",
+  "generated_at": "2026-10-17T23:18:27.810926+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Two long-context text models",
-      "text": "Try `anthropic/claude-haiku-5.5` and `stepfun/step-5-preview` for text and image input, tool calls and 1M-token contexts. Both are paid-only models available through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
+      "title": "Claude Haiku 5.5 added",
+      "text": "Use `anthropic/claude-haiku-5.5` for text and image input, tools, adaptive reasoning, and a million-token context window. [Browse the model](https://enter.pollinations.ai/models?q=anthropic/claude-haiku-5.5).",
       "prs": [
-        16713,
+        16713
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Step 5 Preview added",
+      "text": "`stepfun/step-5-preview` accepts text and images and supports tool calls, structured output, and a million-token context window. [Browse the model](https://enter.pollinations.ai/models?q=stepfun/step-5-preview).",
+      "prs": [
         16796
       ],
       "kind": "model"
     },
     {
+      "emoji": "🎵",
+      "title": "Qwen speech replacement added",
+      "text": "`qwen/qwen-audio-3.0-tts-flash` was added to replace Qwen3-TTS Instruct Flash ahead of its October 10 retirement. It supports instruction-guided emotion, tone, and dialect, plus 12 system voices. [Browse the model](https://enter.pollinations.ai/models?q=qwen/qwen-audio-3.0-tts-flash).",
+      "prs": [
+        16821
+      ],
+      "kind": "model"
+    },
+    {
       "emoji": "🔗",
-      "title": "Responses for every Chat model",
-      "text": "Models available through Chat Completions can now be called through `/v1/responses`, including Claude, Gemini, community models and chat-only agents. See the [API docs](https://gen.pollinations.ai/docs).",
+      "title": "Responses across text models",
+      "text": "Use `/v1/responses` with every text model that supports Chat Completions, including Claude, Gemini, and Chat-registered community models. Models without a native Responses endpoint are adapted through the Chat pipeline. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         16811
       ],
       "kind": "api"
     },
     {
-      "emoji": "💡",
+      "emoji": "🔗",
       "title": "Publish non-streaming text models",
-      "text": "Community publishers can register OpenAI-compatible endpoints that return JSON without SSE. Streaming clients still receive a valid event stream, with the full answer delivered at once.",
+      "text": "Community publishers can register Chat Completions or Responses endpoints that return JSON without token-by-token streaming. Model listings expose `supports_streaming: false`, so callers can tell when an answer will arrive at once. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         16732
       ],
       "kind": "api"
     },
     {
-      "emoji": "💻",
-      "title": "Pi in a browser workbench",
-      "text": "Pi Workbench runs upstream Pi in the browser, with a terminal, file access, HTML previews and project ZIP downloads. Visitors can connect their own Pollinations account.",
+      "emoji": "🤖",
+      "title": "Choose Floret’s inner model",
+      "text": "Send `metadata.model` to choose Floret’s inner text model. Floret can also check `paid_only` when you ask it to prefer Quest-compatible models; that preference is conversational, not a restriction. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        16033
+        15299
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Discover the polli skill",
+      "text": "Compatible Agent Skills installers can discover the existing polli CLI skill from `gen.pollinations.ai` through its new well-known index. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        16859
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "💡",
+      "title": "A dated Enter Changelog",
+      "text": "Enter’s News page groups model and API changes by date and shows what changed, including capabilities, access, voices, and revised retirement dates. Daily highlights appear alongside it. [Visit Enter](https://enter.pollinations.ai/models).",
+      "prs": [
+        16725,
+        16828
       ],
       "kind": "product"
     },
     {
-      "emoji": "✨",
-      "title": "Polish a Japanese memo",
-      "text": "Keigo Formatter turns rough Japanese notes into polite business Japanese using the Pollinations text API. [Try it](https://ucalis-uma.github.io/keigo-formatter).",
+      "emoji": "🎯",
+      "title": "Quest ranks have movement",
+      "text": "The monthly Quest leaderboard now shows places gained or lost since 00:00 UTC, marks new participants, and gives the top three ranks podium medals. [Visit Pollinations](https://pollinations.ai).",
       "prs": [
-        16810
+        16861
       ],
-      "kind": "app"
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Pi in a browser workbench",
+      "text": "Pi Workbench runs Pi in a browser sandbox with a project editor, terminal, HTML preview, and ZIP downloads. Visitors can use a Pollinations key or authorize their wallet for model calls.",
+      "prs": [
+        16033
+      ],
+      "kind": "product"
     }
   ],
   "changelog": [

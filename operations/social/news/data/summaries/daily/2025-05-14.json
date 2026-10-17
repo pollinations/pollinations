@@ -2,8 +2,8 @@
   "date": "2025-05-14",
   "period_start": "2025-05-14",
   "period_end": "2025-05-14",
-  "title": "Ads follow the conversation",
-  "summary": "Text API work made affiliate copy more context-aware and browser errors readable, with analytics plumbing added behind the scenes.\n\nAffiliate ad copy is now written to match the response and recent conversation instead of translating existing ad text. The ad marker is kept out of messages sent to the text model.\n\nNon-OK responses from the text origin now include a CORS header, so cross-origin browser requests can inspect the error.\n\nA non-cacheable tracking-pixel function was added for request analytics.",
+  "title": "Affiliate ads follow the conversation",
+  "summary": "Text API work made affiliate copy more contextual and browser errors easier to inspect, with a tracking pixel added behind the scenes.\n\nAffiliate copy is now generated as a short sentence using the current response and the last three conversation messages, rather than translating existing ad text. The `p-ads` marker still guides ad generation but is removed before messages reach the text model.\n\nThe text cache now adds a CORS header to non-OK origin responses, so cross-origin browser requests can inspect errors instead of losing them to the browser’s CORS checks.\n\nA non-cacheable tracking-pixel function was added for analytics. The text cache also moved to a named origin address.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-05-14"
     }
   ],
-  "generated_at": "2026-10-17T15:39:39.541005+00:00",
+  "generated_at": "2026-10-17T22:31:06.790982+00:00",
   "highlights": [],
   "changelog": []
 }

@@ -2,9 +2,9 @@
   "date": "2026-02-06",
   "period_start": "2026-02-06",
   "period_end": "2026-02-06",
-  "title": "fresh engines on the api: - LTX-2 (video generation)\n- Imagen 3 (via api.airforce)\n- Claude Opus 4.6 shipped, merged, and live",
-  "summary": "no waitlists. just open source tools for people who build. go make something weird. 🌸",
-  "pr_count": 9,
+  "title": "LTX-2 adds video with audio",
+  "summary": "LTX-2 adds video with audio, Claude moves to Opus 4.6, and two unreliable model additions are pulled back.\n\nLTX-2 was added for paid text-to-video generation with audio and clips from 1 to 10 seconds. Imagen 3 and Grok Imagine Video were also added, then removed from the configured models after unreliable upstream results. Support for parsing streamed video responses remains in place, but Grok video is not enabled.\n\n`claude-large` was updated to Claude Opus 4.6, with Opus 4.5 retained as a fallback. Mistral Small 3.2 moved to OVHcloud, followed by configuration fixes for its new route. Seven existing models were marked paid-only.\n\nZ-Image’s 2× upscaler now points to the correct checkpoint. Imagen 3 dimension requests were mapped to its supported sizes before the model was removed; fixed timeouts were removed for Flux Klein, Kontext and Seedream. Enter’s per-Pollen estimates now use observed seven-day usage rather than theoretical workloads.",
+  "pr_count": 8,
   "prs": [
     {
       "number": 7903,
@@ -12,10 +12,6 @@
     },
     {
       "number": 7922,
-      "date": "2026-02-06"
-    },
-    {
-      "number": 7994,
       "date": "2026-02-06"
     },
     {
@@ -43,14 +39,23 @@
       "date": "2026-02-06"
     }
   ],
-  "generated_at": "2026-03-18T19:58:13.608088+00:00",
+  "generated_at": "2026-10-17T22:39:28.826172+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "New Provider: api.airforce",
-      "text": "Added `imagen` (Google Imagen 3) and `grok-video` (xAI Grok Imagine Video) models via [api.airforce](https://api.airforce).",
+      "emoji": "🎨",
+      "title": "LTX-2 video with audio",
+      "text": "Generate 1–10-second videos with audio using `ltx2`. This model requires Pollen. [Explore LTX-2](https://enter.pollinations.ai/models?q=ltx2).",
       "prs": [
-        8001
+        7903
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Claude Opus 4.6",
+      "text": "`claude-large` now uses Claude Opus 4.6, with Opus 4.5 retained as a fallback. [Explore the model](https://enter.pollinations.ai/models?q=claude-large).",
+      "prs": [
+        8004
       ],
       "kind": "model"
     }

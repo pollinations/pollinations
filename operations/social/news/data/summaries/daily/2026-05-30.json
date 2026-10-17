@@ -2,18 +2,10 @@
   "date": "2026-05-30",
   "period_start": "2026-05-30",
   "period_end": "2026-05-30",
-  "title": "PetalGen makes image prompts less monolithic",
-  "summary": "A community harvest: prompt tooling, five new apps, and slightly less manual GitHub gardening.\n\nPetalGen joined the Greenhouse with a tool for breaking dense image prompts into structured, remixable parts. Useful for creators who want to inspect what a prompt is doing before asking the model to interpret their entire stream of consciousness.\n\nThe app directory picked up RagmyAI for chat-based image creation, SceneWeave for text and URL-driven story experiments, AI Web Translator for BYOK browser translation, GrowthKit Studio for automated business reports, and The Mork Stack for agentic social and trading workflows.\n\nProject automation now routes new development issues into the right tracking epics and sends Quest work to the Dev board, while daily app health metrics and the README's news and app listings continue refreshing automatically.",
-  "pr_count": 9,
+  "title": "More ways to make things",
+  "summary": "Six community apps joined the catalog, from remixable image prompts to web translation, while the README caught up with May 29’s updates.\n\nThe app catalog added RagmyAI for image generation, SceneWeave for writing from pasted story text, and PetalGen for turning image prompts into structured, remixable modules.\n\nThe Mork Stack brings Discord-based workflows for social media and Solana trading; GrowthKit Studio uses Pollinations as its LLM backend to generate Business Kit reports.\n\nAi Web Translator, a Firefox extension for AI web translation with bring-your-own-key support, was added to the learn app catalog. These six additions bring the App Greenhouse count to 791.",
+  "pr_count": 7,
   "prs": [
-    {
-      "number": 11402,
-      "date": "2026-05-30"
-    },
-    {
-      "number": 11404,
-      "date": "2026-05-30"
-    },
     {
       "number": 11408,
       "date": "2026-05-30"
@@ -43,35 +35,7 @@
       "date": "2026-05-30"
     }
   ],
-  "generated_at": "2026-09-04T11:51:53.070314+00:00",
-  "highlights": [
-    {
-      "emoji": "🎨",
-      "title": "Remix image prompts with PetalGen",
-      "text": "Break a long image prompt into structured modules you can remix. [Try it](https://petalgen.tools4all.ai).",
-      "prs": [
-        11423
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Chat your way to images",
-      "text": "RagmyAI offers a conversational interface for generating images with Pollinations. [Try it](https://ragmyai.com).",
-      "prs": [
-        11417
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Translate pages in Firefox",
-      "text": "AI Web Translator is a Firefox add-on for web translation with Bring Your Own Key support. [Try it](https://addons.mozilla.org/en-US/firefox/addon/ai-web-translator-byok/).",
-      "prs": [
-        11416
-      ],
-      "kind": "app"
-    }
-  ],
+  "generated_at": "2026-10-17T22:55:12.539526+00:00",
+  "highlights": [],
   "changelog": []
 }

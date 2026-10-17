@@ -2,8 +2,8 @@
   "date": "2025-06-30",
   "period_start": "2025-06-01",
   "period_end": "2025-06-30",
-  "title": "Images keep their edges—and find their cache",
-  "summary": "June made image and text requests more useful while giving the growing collection of community projects a clearer home.\n\nGPT Image added transparent PNG output and a `transparent=true` option for generation and editing. Identical simultaneous requests now share a generation, and semantic caching can reuse results for similar prompts.\n\nThe text lineup gained DeepSeek R1-0528, search-enhanced models, and o3 with image input. The `llama` alias moved to Llama 4 Scout, `/models` became easier to browse, and requests without a selected model now use `openai-fast`.\n\nThe project directory gained seven categories and clearer links, then filled out with creative tools, Roblox games, developer wrappers, and CraftUI as the first Vibe Coding entry. Duplicate listings and broken links got some attention too.\n\nChat ads stopped replacing answers, began respecting the authenticated ad preference, and stayed out of JSON responses. Queue changes gave most token-authenticated requests more room, while token validation was reduced from three user-detail queries to one.",
+  "title": "Images keep their edges",
+  "summary": "June made image and text requests more useful while giving the growing community project directory a clearer shape.\n\nGPT Image gained transparent PNG output through `transparent=true`, including for edits. Repeated in-flight requests can share a generation, and a semantic cache can reuse results for similar prompts.\n\nThe catalog added O3 with image input and search options, updated DeepSeek reasoning and the `llama` alias, and put GPT-4.1 Nano in the anonymous tier. Requests without an explicit model now use that faster `openai-fast` option.\n\nThe directory was reorganized into seven categories as community additions continued across creative tools, bots, games, and app-building. CraftUI became the first Vibe Coding entry.\n\nText ads began respecting account preferences and conversation history without replacing answers. Queue rules gained clearer tier distinctions, token validation was shortened, and content-free performance tracking was added for text generation.",
   "pr_count": 60,
   "prs": [
     {
@@ -247,5 +247,5 @@
       "date": "2025-06-25"
     }
   ],
-  "generated_at": "2026-10-17T16:08:53.899581+00:00"
+  "generated_at": "2026-10-17T23:30:37.364519+00:00"
 }

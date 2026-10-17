@@ -2,9 +2,9 @@
   "date": "2026-09-20",
   "period_start": "2026-09-13",
   "period_end": "2026-09-19",
-  "title": "Agents learned to remember, collaborate, and explain themselves",
-  "summary": "This week Pollinations made agents more capable and accountable, made model discovery health-aware, and gave a rapidly growing community more places to build strange useful things.\n\nThe agent stack got a substantial upgrade: endpoint agents can declare media modalities, accept flexible metadata, preserve partial configurations, and route Polli workflows through dedicated inner models. Computer MCP gained persistent user memory, a shared Git-backed Collective Memory repository, caller-attributed Git commits, richer shell tools, and a more capable git client. Meanwhile, agent errors now retain their real statuses and terminal details instead of becoming generic 502 fog.\n\nModel catalogs now expose source, reliability, route health, status, success rates, request counts, and primary-versus-fallback behavior. The dashboard defaults to healthy official models, while developers can still inspect the wider garden. Community monitoring also became more evidence-based, separating real caller traffic from probes and waiting for sustained recovery before relisting a model. Reliability is no longer a vibes-based field.\n\nNew text, image, audio, and structured-decision models landed alongside sturdier routing for GPT Image, Scout, Z-Image, Gemini Fast, and community providers. New additions include FLUX.2 Max, GPT-4o Mini, Tencent HY3 and HY4 Preview, ElevenLabs Music v2.5, and Jev with its companion MCP server. Behind the scenes, caching, isolated provider routes, validated fallbacks, and precision-preserving usage telemetry made the infrastructure less likely to develop opinions at 3 a.m.\n\nThe directory welcomed comic studios, persistent NPCs, developer tools, education apps, Arabic RTL BYOP examples, tarot, image-persona editing, games, bots, and more. Builders can now discover CatGPT Comics, Barnaby the Crow, Moko, PollenBatch, GitMuse, Regexly, Codeverter, SQLCraft, TestMine, ApiScribe, PersonaMorph, Oracle Mystique, and a growing set of browser-only OAuth examples. The ecosystem is increasingly a collection of people following their own oddly specific ideas all the way through.",
-  "pr_count": 109,
+  "title": "Model health became part of discovery",
+  "summary": "Model discovery became more honest about reliability while agents, new models, and community-built tools gave people more to do with the catalog.\n\nReliability moved from a behind-the-scenes check into model listings and tools for inspecting routes. Enter now starts with healthy official models, list requests can filter by health, and listings include a 24-hour health signal by default. Separate status and route views show when a fallback rescued a request—and when the primary route still needs attention. Models without measurements report `unknown`.\n\nEndpoint agents can declare their input and output modalities, accept request metadata across three API surfaces, and use an inner-model override in Chat Completions. Computer MCP agents gained shared public memory, more shell and Git tools, and commits attributed by default to the caller’s linked GitHub identity. Two one-time Quests reward trying an eligible agent or creating one that receives a successful request.\n\nElevenLabs Music v2.5 brought 3–300-second music generation; paid-only FLUX.2 Max added image generation and editing with up to eight reference images. GPT-4o Mini and two Tencent reasoning models joined the paid-only text lineup, while Jev added typed decisions from JSON state. Llama 4 Scout returned with updated routing and a narrower declared capability set, which requests now check up front.\n\nPollinations chat models gained a provider for Simon Willison’s `llm` CLI and Python library. The `polli` CLI gained an opt-in update command and more useful usage filters, token totals, and CSV export. Reusable React chat components, inline dashboard media, and Copy buttons for code blocks made the surrounding tools less fiddly.",
+  "pr_count": 100,
   "prs": [
     {
       "number": 14799,
@@ -23,27 +23,11 @@
       "date": "2026-09-13"
     },
     {
-      "number": 14819,
-      "date": "2026-09-13"
-    },
-    {
-      "number": 14833,
-      "date": "2026-09-13"
-    },
-    {
-      "number": 14835,
-      "date": "2026-09-13"
-    },
-    {
       "number": 14836,
       "date": "2026-09-13"
     },
     {
       "number": 14838,
-      "date": "2026-09-13"
-    },
-    {
-      "number": 14839,
       "date": "2026-09-13"
     },
     {
@@ -75,19 +59,15 @@
       "date": "2026-09-14"
     },
     {
+      "number": 14853,
+      "date": "2026-09-14"
+    },
+    {
       "number": 14856,
       "date": "2026-09-14"
     },
     {
-      "number": 14864,
-      "date": "2026-09-14"
-    },
-    {
       "number": 14866,
-      "date": "2026-09-14"
-    },
-    {
-      "number": 14868,
       "date": "2026-09-14"
     },
     {
@@ -123,19 +103,11 @@
       "date": "2026-09-15"
     },
     {
-      "number": 14899,
-      "date": "2026-09-15"
-    },
-    {
       "number": 14901,
       "date": "2026-09-15"
     },
     {
       "number": 14914,
-      "date": "2026-09-15"
-    },
-    {
-      "number": 14915,
       "date": "2026-09-15"
     },
     {
@@ -167,6 +139,10 @@
       "date": "2026-09-16"
     },
     {
+      "number": 14681,
+      "date": "2026-09-16"
+    },
+    {
       "number": 14869,
       "date": "2026-09-16"
     },
@@ -180,10 +156,6 @@
     },
     {
       "number": 14940,
-      "date": "2026-09-16"
-    },
-    {
-      "number": 14944,
       "date": "2026-09-16"
     },
     {
@@ -215,10 +187,6 @@
       "date": "2026-09-16"
     },
     {
-      "number": 14958,
-      "date": "2026-09-16"
-    },
-    {
       "number": 14960,
       "date": "2026-09-16"
     },
@@ -228,6 +196,10 @@
     },
     {
       "number": 14972,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14975,
       "date": "2026-09-16"
     },
     {
@@ -251,11 +223,11 @@
       "date": "2026-09-16"
     },
     {
-      "number": 14999,
+      "number": 15000,
       "date": "2026-09-16"
     },
     {
-      "number": 15000,
+      "number": 15004,
       "date": "2026-09-16"
     },
     {
@@ -391,11 +363,11 @@
       "date": "2026-09-18"
     },
     {
-      "number": 15131,
+      "number": 15144,
       "date": "2026-09-18"
     },
     {
-      "number": 15144,
+      "number": 15149,
       "date": "2026-09-18"
     },
     {
@@ -403,19 +375,11 @@
       "date": "2026-09-18"
     },
     {
-      "number": 15155,
-      "date": "2026-09-19"
-    },
-    {
       "number": 15157,
       "date": "2026-09-19"
     },
     {
       "number": 15165,
-      "date": "2026-09-19"
-    },
-    {
-      "number": 15172,
       "date": "2026-09-19"
     },
     {
@@ -443,5 +407,5 @@
       "date": "2026-09-19"
     }
   ],
-  "generated_at": "2026-09-20T06:28:27.583723+00:00"
+  "generated_at": "2026-10-17T23:28:41.932159+00:00"
 }

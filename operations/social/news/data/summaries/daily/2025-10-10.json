@@ -2,8 +2,8 @@
   "date": "2025-10-10",
   "period_start": "2025-10-10",
   "period_end": "2025-10-10",
-  "title": "Model choices get a reshuffle",
-  "summary": "Model mappings changed, tier-aware tracking moved into Enter, and the registry got less willing to guess what a request meant.\n\n`openai-large` was switched to GPT-5 Chat and its 20,000-character input cap was removed. The OpenAI text service defaults changed, Kontext returned to the seed-tier image configuration, and the image registry gained `gptimage` aliases. Text model aliases now come from the shared registry.\n\nEnter added a tier to user records and auth sessions. Generation tracking now reads the authenticated user's tier and passes it to generation backends, rather than relying on response data. This does not add tier-based usage enforcement.\n\nThe docs clarify that GPT-5 accepts only the default temperature of 1 and does not support `top_p`. They also add guidance for verbatim TTS output and a warning about requesting system prompts from reasoning models.",
+  "title": "Model routing gets a clearer map",
+  "summary": "Model choices and aliases got a reshuffle, while tier tracking and API guidance became less reliant on guesswork.\n\nRegistry changes updated text-model selections and aliases, moved `openai-large` to `gpt-5-chat-latest`, restored Kontext to the seed-tier image configuration, and added `gptimage` aliases. Invalid service IDs and missing model IDs are now caught rather than silently falling through; configuration checks use the production registry definitions.\n\nEnter now stores a user's tier in their auth session and uses it for generation tracking instead of reading it from response data. It also forwards the tier to generation backends. This change does not add tier-based usage enforcement.\n\nThe docs now spell out GPT-5's temperature and `top_p` limitations, warn against requesting system prompts from reasoning models, and offer a tip for prompting verbatim TTS output. Contributor-attribution guidance was also added.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,12 +31,12 @@
       "date": "2025-10-10"
     }
   ],
-  "generated_at": "2026-10-17T15:48:44.698498+00:00",
+  "generated_at": "2026-10-17T22:34:33.568499+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "GPT-5 Chat for openai-large",
-      "text": "`openai-large` is configured for `gpt-5-chat-latest` instead of GPT-4.1, and its former 20,000-character input cap was removed. [Browse the model](https://enter.pollinations.ai/models?q=openai-large).",
+      "title": "Openai-large changes models",
+      "text": "`openai-large` now maps to `gpt-5-chat-latest`, and its model definition no longer has a 20,000-character input cap. [Browse models](https://enter.pollinations.ai/models?q=openai-large).",
       "prs": [
         4466,
         4475
@@ -45,8 +45,17 @@
     },
     {
       "emoji": "🎨",
-      "title": "Kontext returns to images",
-      "text": "Kontext is back in the seed-tier image model configuration, with a 1216-pixel maximum side length. [Browse the model](https://enter.pollinations.ai/models?q=kontext).",
+      "title": "Kontext returns to image config",
+      "text": "Kontext is back in the seed-tier image model configuration, with a 1216-pixel maximum side length. [Browse models](https://enter.pollinations.ai/models?q=kontext).",
+      "prs": [
+        4466
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "New gptimage aliases",
+      "text": "The image registry now recognizes `gptimage`, with `gpt-image` and `gpt-image-1-mini` as aliases. [Browse models](https://enter.pollinations.ai/models?q=gptimage).",
       "prs": [
         4466
       ],

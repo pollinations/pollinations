@@ -3,7 +3,7 @@
   "period_start": "2025-12-24",
   "period_end": "2025-12-24",
   "title": "Fewer dead ends for chat clients and tools",
-  "summary": "A day of removing avoidable errors from chat, tools, and image generation, while making room for another community app.\n\nOpenAI-compatible clients that append extra path segments can now reach chat completions instead of getting a 404. Gemini tool calls no longer fail when their schemas contain fields Vertex AI does not support. Model lookups also became case-insensitive, and DeepSeek V3.2’s registry ID was corrected.\n\nA missing configuration that caused `gptimage-large` image generation requests to fail was added.\n\nThe Indonesian-language n8n-grok image generator joined the creative app directory. App submissions now get stronger duplicate checks before proceeding, with borderline matches flagged for review.",
+  "summary": "Chat clients and Gemini tools got fewer error paths, `gptimage-large` got a repair, and the community app garden gained n8n-grok.\n\nThe gateway now handles OpenAI-compatible clients that append extra path segments instead of returning a 404. Gemini tool calls also avoid 400 errors when parameter schemas contain fields Vertex AI does not support. Model registry lookups now ignore case, and DeepSeek V3.2 uses `deepseek-v3.2` as its registry ID.\n\nA configuration fix addresses image generation failures with `gptimage-large`.\n\n@aikhusus2025-ctrl’s Indonesian-language n8n-grok joined the creative app directory. App submissions now check for matching projects and use a similarity check to catch likely duplicates before they become PRs.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,7 +27,7 @@
       "date": "2025-12-24"
     }
   ],
-  "generated_at": "2026-10-17T15:56:34.484219+00:00",
+  "generated_at": "2026-10-17T22:37:17.203361+00:00",
   "highlights": [],
   "changelog": []
 }

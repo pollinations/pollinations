@@ -2,8 +2,8 @@
   "date": "2025-02-02",
   "period_start": "2025-01-26",
   "period_end": "2025-02-01",
-  "title": "DeepSeek-R1 joins the text models",
-  "summary": "A new reasoning model arrived while community projects became easier to discover and submit, with smaller improvements to request handling and site details.\n\nThe reasoning-enabled `deepseek-r1` model was added. `llamalight` now uses Llama 3.1 8B through Cloudflare, and `p1` was removed from the model list.\n\nProjects missing after a UI update were restored and organized by category. A Submit Your Project button and GitHub issue form replaced the email-based route. Kushai’s AI PowerPoint Generator, Pollinations Chat, and Deep Saga joined the listings during the week.\n\nThe text API’s per-IP queue cap was removed, image request queues were adjusted, and authorized image requests gained a priority path. Requests without valid authorization still use the regular image queue.\n\nA lime favicon makes the tab easier to spot; logo variants add color elsewhere. Supporter links without a protocol now open as HTTPS destinations, and the prompt enhancer’s documentation and feed correctly label it Azure OpenAI. The enhancer’s behavior did not change.",
+  "title": "DeepSeek-R1 joined the text lineup",
+  "summary": "A new reasoning model and a repaired community showcase made it easier to find both things to build with and things people have built.\n\nThe reasoning-enabled `deepseek-r1` model was added, `llamalight` moved to Llama 3.1 8B, and the text API’s 60-request per-IP queue cap was removed.\n\nProject listings missing after the previous UI update were restored and organized by type. A new Submit Your Project button opens a GitHub issue form, while AI PowerPoint Generator, Pollinations Chat, and the Android RPG Deep Saga joined the listings. The shelf has more on it, and there’s a clearer way to add your own.\n\nImage requests with a valid priority token can bypass the per-IP generation queue; other requests continue through the normal queue. Separately, the prompt enhancer’s model information now names Azure OpenAI correctly, with no change to how the enhancer works.\n\nSupporter links without a protocol now open as HTTPS links instead of resolving within pollinations.ai. A lime favicon makes the site easier to pick out in a row of tabs, and the site and README received updated image-generation figures and a clearer description of the project.",
   "pr_count": 11,
   "prs": [
     {
@@ -51,5 +51,5 @@
       "date": "2025-02-01"
     }
   ],
-  "generated_at": "2026-10-17T16:03:16.350228+00:00"
+  "generated_at": "2026-10-17T23:23:42.514259+00:00"
 }

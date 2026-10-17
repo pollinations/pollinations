@@ -3,7 +3,7 @@
   "period_start": "2025-03-26",
   "period_end": "2025-03-26",
   "title": "A chat model for Roblox projects",
-  "summary": "Roblox-focused chat joins the model list, while image fallbacks and text API diagnostics get some attention.\n\nAdded `roblox-rp`, a censored chat model with a system prompt for Roblox development, Lua, and roleplay.\n\nExpanded keyword matching for dating and NSFW prompts, revised referral messages, and added `/redirect/*` handling for referral links and analytics.\n\nRestored Cloudflare SDXL as the image fallback when Cloudflare Flux fails, before trying ComfyUI. `gpt-4o-mini` now uses its primary configuration rather than randomly choosing between two; tunnel restart configuration and text API diagnostics were also added.",
+  "summary": "A Roblox-focused chat model joined the lineup, while image fallbacks and routing got some attention.\n\nAdded `roblox-rp`, a filtered chat model with guidance for Roblox development, Lua, and roleplay.\n\nExpanded dating and NSFW prompt detection, revised referral messages, and added redirect routing with analytics.\n\nRestored Cloudflare SDXL as the fallback when Cloudflare Flux image generation fails, before trying ComfyUI. Added tunnel restart configuration and text API diagnostics.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,12 +15,12 @@
       "date": "2025-03-26"
     }
   ],
-  "generated_at": "2026-10-17T15:36:26.707471+00:00",
+  "generated_at": "2026-10-17T22:29:47.118297+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Roblox-focused chat",
-      "text": "Use `roblox-rp` for Roblox development, Lua, and roleplay in a censored chat model. [Browse the model](https://enter.pollinations.ai/models?q=roblox-rp).",
+      "title": "Chat for Roblox projects",
+      "text": "Use `roblox-rp` for Roblox development, Lua, and roleplay with a filtered chat model. [Browse the model](https://enter.pollinations.ai/models?q=roblox-rp).",
       "prs": [
         1442
       ],

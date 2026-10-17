@@ -2,8 +2,8 @@
   "date": "2025-05-09",
   "period_start": "2025-05-09",
   "period_end": "2025-05-09",
-  "title": "Text model routing gets narrower",
-  "summary": "Text-model routing was pared back, two community projects joined the directory, and Mirexa’s listing got a clearer label.\n\nThe Portkey mapping no longer selects upstream models for eleven text-model aliases, including `claude`, `gemini`, and `command-r`. No replacement routing was added in the change.\n\nThe project list added @ray23-bit’s Indonesian-language Rizqi O Chatbot, which combines chat, images, and text-to-audio, and @henk717’s KoboldAI, a browser-based writing interface that uses Pollinations for image generation.\n\nMirexa’s model description now identifies it as an AI companion using GPT-4.1 and lists Azure as its provider. Model behavior did not change.",
+  "title": "Two community projects join the directory",
+  "summary": "Two community projects joined the directory, Mirexa’s listing got clearer, and several Portkey model-alias mappings were removed.\n\nThe project listings added Rizqi O Chatbot, an Indonesian-language app combining chat, image generation and text-to-audio, and KoboldAI, a browser-based AI writing interface that uses Pollinations for images.\n\nPortkey mappings were disabled for several text-model aliases, including gemini, claude and command-r. Requests using those aliases no longer select their previously mapped upstream models through this routing path; the change did not add a nano fallback.\n\nThe model listing now describes Mirexa as an AI companion using GPT-4.1 and names Azure as its provider. Model behavior did not change.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,7 +23,7 @@
       "date": "2025-05-09"
     }
   ],
-  "generated_at": "2026-10-17T15:39:18.431346+00:00",
+  "generated_at": "2026-10-17T22:30:57.998268+00:00",
   "highlights": [],
   "changelog": []
 }

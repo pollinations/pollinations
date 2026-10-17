@@ -2,8 +2,8 @@
   "date": "2025-05-30",
   "period_start": "2025-05-30",
   "period_end": "2025-05-30",
-  "title": "Preferences get an API",
-  "summary": "User preferences gained an API, PixPal joined the catalog, and ads and image-cache behavior got some careful repairs.\n\nAuthenticated users can now read and update preferences through GET and POST `/preferences`, either one key at a time or in batches. The same PR changed GPT Image access to exclude Seed-tier users and made edited-image filenames follow the response content type.\n\nPixPal was added to the README and website catalog. The community-built assistant works with images, screenshots, 3D games, and blog posts.\n\nAffiliate and fallback ads now carry an explicit ad label, including in streaming responses. Ad-generation instructions also account for conversation language and preserve markdown links. The PR fixed a redirect-function naming conflict and disabled image ads.",
+  "title": "User preferences get an API",
+  "summary": "Preferences got an API, ads got clearer labels, PixPal joined the catalog, and the image cache got its imports sorted.\n\nAuthenticated GET and POST `/preferences` endpoints were added for reading and updating one setting or several at once. GPT Image edits also now use the uploaded image’s Content-Type when naming files.\n\nAffiliate and fallback ads now carry an Ad label, including in streaming responses. Redirect target IDs are sanitized before lookup, and image ads were disabled.\n\nThe community project list added PixPal, a chat assistant for image work, building websites from screenshots, creating 3D games, and writing blog posts.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,12 +23,12 @@
       "date": "2025-05-30"
     }
   ],
-  "generated_at": "2026-10-17T15:41:23.515892+00:00",
+  "generated_at": "2026-10-17T22:31:41.370859+00:00",
   "highlights": [
     {
       "emoji": "✨",
       "title": "User preferences API",
-      "text": "Read and update your preferences through authenticated GET and POST `/preferences` requests, one key or several at a time. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "text": "Read and update individual preferences or multiple settings through authenticated GET and POST `/preferences` requests. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         2184
       ],

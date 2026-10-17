@@ -2,8 +2,8 @@
   "date": "2025-04-07",
   "period_start": "2025-04-07",
   "period_end": "2025-04-07",
-  "title": "Opt-in ads cover streamed text",
-  "summary": "Opt-in affiliate links now work across regular and streamed text responses, with the default still set to no referral links.\n\nChat completions gained opt-in affiliate-link processing for both regular and streamed responses. The `p-ads` marker enables contextual selection using generated text and recent messages; streamed responses can append a link at the end. Without the marker, the default referral-link probability remains zero.",
+  "title": "Opt-in ads reach streamed chat responses",
+  "summary": "Text API ad processing moved from non-streamed responses to eligible streams, while remaining opt-in by default.\n\nChat completions can now process affiliate ads when `p-ads` appears in a message or generated content, including non-markdown output. The same processing was added to eligible streamed responses, where a link can be appended at the end. Without the marker, the default referral-link probability remains 0%.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-04-07"
     }
   ],
-  "generated_at": "2026-10-17T15:37:13.481946+00:00",
+  "generated_at": "2026-10-17T22:30:07.705022+00:00",
   "highlights": [],
   "changelog": []
 }

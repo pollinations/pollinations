@@ -2,16 +2,24 @@
   "date": "2026-03-22",
   "period_start": "2026-03-15",
   "period_end": "2026-03-21",
-  "title": "The community went on a shipping bender",
-  "summary": "The community shipped an absurd number of apps this week, so we spent our time making sure the infrastructure, frontend, and billing could keep up.\n\nWe merged over 30 community app submissions this week. The ecosystem is expanding in weird, wonderful, and highly technical directions. People built integrations for ESP32 microcontrollers, PowerShell environments, and the Claude Code CLI. We also saw Twitch chatbots, procedurally generated MUDs, and automated YouTube Shorts pipelines. The API is officially everywhere.\n\nWe overhauled how free tier allowances work. Spore and Seed tiers now get their pollen refilled hourly via a new Cloudflare Cron system, rather than waiting for a daily reset. We also implemented strict balance protections to ensure free tier overages can never spill over and drain your paid credits. Finally, we fixed the auto-upgrade scripts so eligible GitHub contributors get their Seed tier bumps reliably.\n\nThe frontend got a massive performance boost. We implemented lazy-loading, chunk splitting, and SWR caching to drastically cut initial bundle sizes and make return visits near-instant. We also redesigned the homepage, added drag-and-drop file uploads to the Play page, and completely rebuilt the model monitor so it actually tracks the health of audio and video models alongside text and images.\n\nOn the model front, we added the massive Qwen3.5 397B model via Fireworks, giving you access to a 262K context window. We upgraded the Klein image model to support multi-image editing via a new multipart endpoint (up to 4 reference images). We also fixed a nasty bug where the audio API was parsing MP3s as MP4s, resulting in wild duration estimates that triggered false 'Insufficient Balance' errors.",
-  "pr_count": 61,
+  "title": "Pollen refills got smaller and more frequent",
+  "summary": "Pollen became easier to manage, image workflows gained useful controls, and the community catalog grew while the underlying routes got a careful tune-up.\n\nSpore and Seed changed to hourly refills that top balances up to a tier’s cap rather than resetting them. Accounts now report the next refill time where applicable, and balance checks account for estimated request costs. Fixes to ElevenMusic MP3 estimates and anomalous usage estimates address false 402 responses; model pricing averages also stopped counting successful zero-price requests.\n\nPlay added drag-and-drop and click-to-browse reference images with upload feedback. Flux Klein 4B edits can use up to four references instead of only the first. Pruna image edits now receive image URLs in the form they accept, Vertex AI passes through image-edit seeds and maps supported 512×512 Nano Banana requests to 1K, and Nano Banana moved to the stable gemini-2.5-flash-image model.\n\nNew additions span interactive stories, writing tools, games, image apps, desktop assistants, hardware experiments, and developer examples. Among them are House Painter for exterior color previews, NEURGenerator for ESP32-S3 hardware, a Claude Code plugin, and an app combining images, music, and text.\n\nThe Models page switched from expanding sections to tabs and responsive cards, with more complete per-Pollen estimates. Model Monitor now includes audio and video, separates models by endpoint, and makes degraded or off states clearer. A Qwen3.5 397B route was added, then removed from the registry after provider requests failed.",
+  "pr_count": 76,
   "prs": [
     {
       "number": 8901,
       "date": "2026-03-15"
     },
     {
+      "number": 9014,
+      "date": "2026-03-15"
+    },
+    {
       "number": 9128,
+      "date": "2026-03-15"
+    },
+    {
+      "number": 9140,
       "date": "2026-03-15"
     },
     {
@@ -51,6 +59,10 @@
       "date": "2026-03-16"
     },
     {
+      "number": 9170,
+      "date": "2026-03-16"
+    },
+    {
       "number": 9178,
       "date": "2026-03-16"
     },
@@ -71,6 +83,10 @@
       "date": "2026-03-17"
     },
     {
+      "number": 9200,
+      "date": "2026-03-17"
+    },
+    {
       "number": 9216,
       "date": "2026-03-17"
     },
@@ -87,11 +103,27 @@
       "date": "2026-03-17"
     },
     {
+      "number": 9227,
+      "date": "2026-03-17"
+    },
+    {
       "number": 9229,
       "date": "2026-03-17"
     },
     {
       "number": 8114,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9246,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9250,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9257,
       "date": "2026-03-18"
     },
     {
@@ -151,8 +183,28 @@
       "date": "2026-03-18"
     },
     {
+      "number": 9282,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9283,
+      "date": "2026-03-18"
+    },
+    {
       "number": 9284,
       "date": "2026-03-18"
+    },
+    {
+      "number": 9286,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9298,
+      "date": "2026-03-19"
+    },
+    {
+      "number": 9300,
+      "date": "2026-03-19"
     },
     {
       "number": 9316,
@@ -160,6 +212,10 @@
     },
     {
       "number": 9323,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9334,
       "date": "2026-03-20"
     },
     {
@@ -211,6 +267,10 @@
       "date": "2026-03-21"
     },
     {
+      "number": 9381,
+      "date": "2026-03-21"
+    },
+    {
       "number": 9384,
       "date": "2026-03-21"
     },
@@ -251,5 +311,5 @@
       "date": "2026-03-21"
     }
   ],
-  "generated_at": "2026-03-22T06:16:15.361378+00:00"
+  "generated_at": "2026-10-17T23:27:08.864774+00:00"
 }

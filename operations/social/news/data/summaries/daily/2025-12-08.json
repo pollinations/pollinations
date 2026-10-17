@@ -3,7 +3,7 @@
   "period_start": "2025-12-08",
   "period_end": "2025-12-08",
   "title": "Z-Image-Turbo joins image generation",
-  "summary": "Z-Image-Turbo gained an upscaled image path, generated images lost their logo, and Enter made the legacy-auth transition clearer.\n\nAdded the self-hosted `zimage` model with 2× upscaling and dedicated request routing. Generated images also no longer receive a Pollinations logo, so the `nologo` parameter was removed.\n\nThe legacy auth site now names December 15, 2025 at 00:00 UTC as its closing time and directs users to Enter. Existing tokens will stop working, and data will not be migrated. Enter also added community links beneath its header logo.\n\nPack checkout now looks up products by slug rather than configured IDs. Enter’s pricing table makes units and model capabilities easier to read.",
+  "summary": "Z-Image-Turbo arrived, generated images shed their logo, and the old auth site got a dated closing notice.\n\nAdded the self-hosted `zimage` model with 2× upscaling, plus routing to a dedicated server pool. A follow-up corrected how requested dimensions are calculated before upscaling.\n\nImage generation was changed to leave off the Pollinations logo. The `nologo` parameter was removed because there is no longer a logo to opt out of; JPEG conversion and EXIF metadata remain.\n\nA notice on auth.pollinations.ai names December 15, 2025 at 00:00 UTC as its closing time and points users to Enter. It warns that existing tokens will stop working and data will not be migrated.",
   "pr_count": 10,
   "prs": [
     {
@@ -47,17 +47,26 @@
       "date": "2025-12-08"
     }
   ],
-  "generated_at": "2026-10-17T15:54:32.147377+00:00",
+  "generated_at": "2026-10-17T22:36:33.195735+00:00",
   "highlights": [
     {
       "emoji": "🎨",
       "title": "Z-Image-Turbo with upscaling",
-      "text": "Generate images with `zimage`, an alpha text-to-image model that uses 2× upscaling. [Explore the model](https://enter.pollinations.ai/models?q=zimage).",
+      "text": "Generate images with `zimage`, a self-hosted Z-Image-Turbo model that applies 2× upscaling. [Browse the model](https://enter.pollinations.ai/models?q=zimage).",
       "prs": [
         5800,
         5803
       ],
       "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "Images without the logo",
+      "text": "Generate images without a Pollinations logo or an extra `nologo` flag. [Try image generation](https://gen.pollinations.ai/image/{prompt}).",
+      "prs": [
+        5792
+      ],
+      "kind": "api"
     }
   ],
   "changelog": []

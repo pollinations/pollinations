@@ -2,8 +2,8 @@
   "date": "2025-04-27",
   "period_start": "2025-04-27",
   "period_end": "2025-04-27",
-  "title": "Feed counters get a quieter update",
-  "summary": "A quieter feed display and a community browser script added to the project list.\n\nThe feed now displays generation rates and increments image and text counters at five times their previous values. The count badge also no longer blinks or glows. Load-bar thresholds still use the original rate.\n\nPollinations.ai Enhancer was added to the Tools & Interfaces list. The script offers readability improvements, download options, and access to generation metadata; this change lists the tool rather than changing pollinations.ai pages.",
+  "title": "Feed counters match the updated display rates",
+  "summary": "Feed counts got a quieter, adjusted display, and a community browser tool joined the project list.\n\nThe feed’s Gen / Sec display and image and text counters now use fivefold values. Load-bar thresholds still use the original rate; this changes the display, not generation speed.\n\nThe generation count badge no longer blinks or glows.\n\nPollinations.ai Enhancer was added to the Tools & Interfaces list and README. The community browser script offers better readability, download options, and access to generation metadata; this PR lists the tool rather than changing pollinations.ai pages.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,17 @@
       "date": "2025-04-27"
     }
   ],
-  "generated_at": "2026-10-17T15:38:43.141124+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:30:38.696897+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "Pollinations.ai Enhancer listed",
+      "text": "Find a community browser script that improves page readability and adds download options and access to generation metadata. The project list now includes it; pollinations.ai pages themselves have not changed.",
+      "prs": [
+        1798
+      ],
+      "kind": "product"
+    }
+  ],
   "changelog": []
 }

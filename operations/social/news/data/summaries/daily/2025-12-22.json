@@ -2,8 +2,8 @@
   "date": "2025-12-22",
   "period_start": "2025-12-22",
   "period_end": "2025-12-22",
-  "title": "A new frontend for pollinations.ai",
-  "summary": "A rebuilt site frontend and a cleaner app directory led the day, alongside clearer subscription details and more honest model-health numbers.\n\nMerged a themeable replacement frontend that brings the theme creator, image playground, app directory, community page and docs together. A grayscale preset was added, the plants preset got a shorter name, and the contributors section gained a repository link.\n\nConsolidated 318 app listings into one date-sorted directory, which supplies the Apps page and the README’s recent-app list. Submission review gained clearer summaries and checks, while a workflow fix lets issue-form submissions create PRs again.\n\nThe project galleries added BhaujAI for business and creator tasks, Asive AI for coding and chat, and Multi Image Generator for side-by-side image-model comparisons.",
+  "title": "A new home for the playground and community",
+  "summary": "A themeable site, a consolidated community app directory, clearer subscription details, and model health numbers that know the difference between an outage and a 401.\n\nThe pollinations.ai frontend was replaced with the themeable site previously at hello.pollinations.ai, bringing its image playground, theme creator, app directory, community page, and docs together. A grayscale theme preset was added, and the contributors section gained a repository link.\n\nApp listings were consolidated into one date-sorted directory, with the 10 newest also shown in the README. Submission changes improved contributor credit and review, and fixed an issue-form error that prevented submissions from creating PRs. Three more community projects were added: BhaujAI, Asive AI, and Multi Image Generator.\n\nEnter's tier view now uses structured subscription details, including refill countdowns and cancellation dates. The change also fixed tier date fields that prevented API documentation from generating.",
   "pr_count": 11,
   "prs": [
     {
@@ -51,14 +51,32 @@
       "date": "2025-12-22"
     }
   ],
-  "generated_at": "2026-10-17T15:56:40.026595+00:00",
+  "generated_at": "2026-10-17T22:37:12.060310+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "A themeable site frontend",
-      "text": "The replacement pollinations.ai frontend brings the theme creator, image playground, app directory, community page and docs together. [Explore pollinations.ai](https://pollinations.ai).",
+      "title": "Playground meets theme creator",
+      "text": "The pollinations.ai site now brings the image playground, theme creator, app directory, community page, and docs together. [Explore the site](https://pollinations.ai).",
       "prs": [
         6345
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "A grayscale theme preset",
+      "text": "Give the site a monochrome look with the new grayscale preset in the theme creator. [Explore the site](https://pollinations.ai).",
+      "prs": [
+        6349
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Community apps, one directory",
+      "text": "Browse 318 community app listings in one date-sorted directory, with descriptions, categories, and links to their projects. [Browse community apps](https://pollinations.ai).",
+      "prs": [
+        6320
       ],
       "kind": "product"
     }

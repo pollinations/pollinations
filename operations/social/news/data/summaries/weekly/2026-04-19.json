@@ -2,16 +2,28 @@
   "date": "2026-04-19",
   "period_start": "2026-04-12",
   "period_end": "2026-04-18",
-  "title": "Inference speedruns and reasoning flags",
-  "summary": "We drastically cut inference latency, launched an official CLI, and merged a massive wave of community apps.\n\nWe ripped out old infrastructure and migrated Kimi, DeepSeek, GLM, Qwen, and Minimax to Fireworks and AWS Bedrock, resulting in up to 50x faster generation. Sana 1.6B moved to GH200 instances (dropping to ~0.165s per image), and Gemini image models got a native reasoning flag.\n\nWe shipped the official @pollinations_ai/cli (v0.1.0). It gives you text, image, audio, and video generation straight from your command line, complete with real-time text streaming, perfectly sized tables, and a --play flag that instantly plays generated audio.\n\nWe updated our CORS middleware so standard OpenAI SDKs work directly from the browser without preflight errors. We also fixed the usage dashboard so heavy API users can export their logs without silent truncations, and restored the Veo 3.1 Fast model.\n\nA massive week for the community showcase. We merged over a dozen apps, including a real-time AI infinite runner game, a generator for fake academic museum exhibits, ComfyUI routing nodes, and a mobile-first AI assistant.",
-  "pr_count": 29,
+  "title": "Pollinations found its way into the terminal",
+  "summary": "A new terminal interface, refreshed generation models, clearer usage data, and a growing app catalog made Pollinations easier to use and explore.\n\nThe alpha `polli` CLI arrived with text, chat, image, audio, and video generation, plus transcription, uploads, model discovery, and script-friendly JSON output. A day later, interactive text generation gained default streaming and generated audio gained a play option. Browser developers got a quieter improvement too: CORS preflight now accepts headers sent by browser-based OpenAI SDK calls.\n\n`kimi` moved to Kimi K2.5 with image input and a 262K-token context window; `glm` and `qwen-large` moved to GLM 5.1 and Qwen3.6 Plus. DeepSeek and MiniMax received routing changes. Veo 3.1 Fast switched from a retired preview ID to Google's GA model ID, addressing model-not-found errors.\n\nThe default Sana Sprint image model moved from 0.6B to 1.6B on a GH200 worker, which reports roughly 0.165 seconds per image versus 0.25 seconds on the previous A100 setup. Individual dimensions can now reach 768 pixels within a 512×512 total-pixel cap. Gemini image models gained an optional `reasoning` flag for text rendering and layout; it stays off unless requested.\n\nEnter’s usage graph now follows the selected 7-, 30-, or 90-day window, with exact daily data for API-key filters and exports that respect the selected period. Usage APIs gained `days` options and stable pagination. Public model prices were separated from internal costs, with explicit prices added for Seedream and Wan. Audio generation routes also gained the access and budget checks used by other generation routes.",
+  "pr_count": 45,
   "prs": [
+    {
+      "number": 10147,
+      "date": "2026-04-12"
+    },
+    {
+      "number": 10149,
+      "date": "2026-04-12"
+    },
     {
       "number": 10155,
       "date": "2026-04-12"
     },
     {
       "number": 10156,
+      "date": "2026-04-12"
+    },
+    {
+      "number": 10157,
       "date": "2026-04-12"
     },
     {
@@ -27,6 +39,18 @@
       "date": "2026-04-12"
     },
     {
+      "number": 9635,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10173,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10174,
+      "date": "2026-04-13"
+    },
+    {
       "number": 10176,
       "date": "2026-04-13"
     },
@@ -36,6 +60,14 @@
     },
     {
       "number": 10178,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10180,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10181,
       "date": "2026-04-13"
     },
     {
@@ -59,11 +91,15 @@
       "date": "2026-04-13"
     },
     {
-      "number": 10194,
-      "date": "2026-04-13"
+      "number": 10196,
+      "date": "2026-04-14"
     },
     {
-      "number": 10196,
+      "number": 10208,
+      "date": "2026-04-14"
+    },
+    {
+      "number": 10209,
       "date": "2026-04-14"
     },
     {
@@ -71,7 +107,19 @@
       "date": "2026-04-14"
     },
     {
+      "number": 10167,
+      "date": "2026-04-15"
+    },
+    {
+      "number": 10227,
+      "date": "2026-04-15"
+    },
+    {
       "number": 10235,
+      "date": "2026-04-15"
+    },
+    {
+      "number": 10236,
       "date": "2026-04-15"
     },
     {
@@ -91,6 +139,14 @@
       "date": "2026-04-16"
     },
     {
+      "number": 10231,
+      "date": "2026-04-16"
+    },
+    {
+      "number": 10260,
+      "date": "2026-04-16"
+    },
+    {
       "number": 10270,
       "date": "2026-04-16"
     },
@@ -99,11 +155,11 @@
       "date": "2026-04-17"
     },
     {
-      "number": 10282,
+      "number": 10279,
       "date": "2026-04-17"
     },
     {
-      "number": 10287,
+      "number": 10282,
       "date": "2026-04-17"
     },
     {
@@ -115,13 +171,21 @@
       "date": "2026-04-17"
     },
     {
+      "number": 10299,
+      "date": "2026-04-18"
+    },
+    {
       "number": 10306,
       "date": "2026-04-18"
     },
     {
       "number": 10313,
       "date": "2026-04-18"
+    },
+    {
+      "number": 10319,
+      "date": "2026-04-18"
     }
   ],
-  "generated_at": "2026-04-19T06:32:36.167679+00:00"
+  "generated_at": "2026-10-17T23:27:22.828704+00:00"
 }

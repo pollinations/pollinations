@@ -2,9 +2,9 @@
   "date": "2026-03-30",
   "period_start": "2026-03-30",
   "period_end": "2026-03-30",
-  "title": "Unity games can now translate themselves",
-  "summary": "A community-heavy day: real-time Unity translation, nine new apps in the garden, and a smoother Pollen checkout.\n\nXUnity.AutoPollinationTranslator joined the showcase, bringing real-time Pollinations-powered translation to Unity games. Modders and players can translate games on the fly, which is a fairly direct use of text generation and also a good excuse to revisit old JRPGs.\n\nThe directory gained Onyx Sign for vector-ready AI signatures, a 3D Icon Generator, Persona AI for character prompts, and Website Studio for evaluating website builders. New learning and writing tools also arrived: Zairok AI Discovery, WishCraft, Learnty, Noyaku for comics and webtoon translation, and YoutubeToBlog.\n\nThe Pollen checkout now uses an updated pack catalog with clear bonus tiers, while the purchase grid wraps properly on mobile. Buying credits should now involve less horizontal scrolling, one of the internet's less beloved traditions.",
-  "pr_count": 14,
+  "title": "Pollen packs get stepped grants",
+  "summary": "Stepped Pollen packs and a mobile checkout fix landed alongside ten new community app listings.\n\nCheckout now offers six Pollen packs, from $2 for 2.5 Pollen to $100 for 200 Pollen, replacing the blanket 2× bonus for new purchases. Balance and pricing pages reflect the pack-specific grants, and purchase buttons now fit narrow mobile screens.\n\nThe community catalog added apps for 3D icons, character prompts, affirmations and goal boards, personalized learning games, vector signatures, and turning YouTube videos into blog posts.\n\nNew catalog entries cover AI-tool discovery, website-building reviews, Unity game translation, and Android translation for comics and other reading. The Greenhouse reached 670 apps, and its daily app metrics were refreshed.",
+  "pr_count": 13,
   "prs": [
     {
       "number": 9650,
@@ -51,10 +51,6 @@
       "date": "2026-03-30"
     },
     {
-      "number": 9751,
-      "date": "2026-03-30"
-    },
-    {
       "number": 9752,
       "date": "2026-03-30"
     },
@@ -63,35 +59,7 @@
       "date": "2026-03-30"
     }
   ],
-  "generated_at": "2026-09-04T11:54:59.370703+00:00",
-  "highlights": [
-    {
-      "emoji": "🎯",
-      "title": "Translate Unity games",
-      "text": "XUnity.AutoPollinationTranslator uses the Pollinations API for real-time Unity game translation. [View repo](https://github.com/kikyo2006/XUnity.AutoPollinationTranslator).",
-      "prs": [
-        9742
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Signatures ready for vectors",
-      "text": "Onyx Sign generates minimalist 2D signatures and exports handwriting-ready vector files. [Try it](https://onyxsign.vercel.app/).",
-      "prs": [
-        9744
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "💡",
-      "title": "Make a learning game",
-      "text": "Learnty generates personalized learning games with AI. [Try it](https://learnty.site).",
-      "prs": [
-        9745
-      ],
-      "kind": "app"
-    }
-  ],
+  "generated_at": "2026-10-17T22:45:48.905658+00:00",
+  "highlights": [],
   "changelog": []
 }

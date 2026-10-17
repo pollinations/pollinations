@@ -2,9 +2,9 @@
   "date": "2026-09-22",
   "period_start": "2026-09-22",
   "period_end": "2026-09-22",
-  "title": "Four new heavyweight text models joined the API",
-  "summary": "A model-heavy day: four new text models, more direct provider routes, a rebuilt Enter management flow, and docs aligned with production.\n\nThe unified text API gained GLM-5.3 FlashX, Claude Opus 5.5, and GPT-6 Sol and Luna. The new lineup covers long-context and multimodal work: GLM and Opus support 1M-token contexts, Opus includes adaptive thinking and automatic tools, and the GPT-6 models arrive through OpenAI's Responses API with explicit context-tier support.\n\nWan and Qwen models now prefer direct Alibaba routes while retaining existing providers as fallbacks, bringing Alibaba context and cache tiers to supported Qwen text models. Mistral Large 3 fallbacks now go directly to Mistral as well, and seeded requests are translated for upstream compatibility instead of wandering into a 422.\n\nThe Enter interface now unifies sign-in, authorization, device approval, API-key management, top-ups, and error handling. Models, Agents, and MCP catalog tabs are back with consistent forms, permissions, confirmations, and layouts that keep long configuration screens inside the viewport.",
-  "pr_count": 9,
+  "title": "Four long-context text models added",
+  "summary": "Four long-context models joined the API, Enter got a clearer front door, and model routing received some necessary patience.\n\nQuest contributions added GLM-5.3 FlashX and Claude Opus 5.5; the team added GPT-6 Sol and Luna. All four are paid-only, accept text and images, and support tools and reasoning or thinking. Their context windows reach roughly one million tokens. The generated API docs now list Sol and Luna.\n\nSign-in, app authorization, device approval, keys, and top-ups now use more consistent screens and guidance. Key forms gained model search and filtering, while the Models, Agents, and MCP catalog tabs returned with reorganized cards and clearer controls.\n\nThe community catalog added Aizen, an Arabic, right-to-left TTS web app. The README also refreshed its recent news and star-history charts.",
+  "pr_count": 10,
   "prs": [
     {
       "number": 15178,
@@ -12,6 +12,10 @@
     },
     {
       "number": 15271,
+      "date": "2026-09-22"
+    },
+    {
+      "number": 15283,
       "date": "2026-09-22"
     },
     {
@@ -27,7 +31,7 @@
       "date": "2026-09-22"
     },
     {
-      "number": 15302,
+      "number": 15307,
       "date": "2026-09-22"
     },
     {
@@ -43,21 +47,21 @@
       "date": "2026-09-22"
     }
   ],
-  "generated_at": "2026-09-23T06:30:56.766681+00:00",
+  "generated_at": "2026-10-17T23:14:03.328362+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "GPT-6 Sol and Luna",
-      "text": "Use the paid-only `openai/gpt-6-sol` and `openai/gpt-6-luna` models through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
+      "title": "GLM-5.3 FlashX joins",
+      "text": "Use `z-ai/glm-5.3-flashx` with text, up to 10 reference images, tools, and reasoning across a 1,048,576-token context. [View the model](https://enter.pollinations.ai/models?q=z-ai/glm-5.3-flashx).",
       "prs": [
-        15312
+        15178
       ],
       "kind": "model"
     },
     {
-      "emoji": "✨",
-      "title": "Claude Opus 5.5",
-      "text": "Try `anthropic/claude-opus-5.5` with image input, adaptive thinking, automatic tools, and a 1M-token context window through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
+      "emoji": "🤖",
+      "title": "Claude Opus 5.5 joins",
+      "text": "Use `anthropic/claude-opus-5.5` with text, up to 20 reference images, tools, and adaptive thinking in a 1M-token context. [View the model](https://enter.pollinations.ai/models?q=anthropic/claude-opus-5.5).",
       "prs": [
         15309
       ],
@@ -65,12 +69,30 @@
     },
     {
       "emoji": "🤖",
-      "title": "GLM-5.3 FlashX",
-      "text": "Send text or images to the paid-only `z-ai/glm-5.3-flashx` model, with a 1M-token context window. Explore it through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
+      "title": "GPT-6 Sol joins",
+      "text": "Use `openai/gpt-6-sol` for text and image input, tools, and reasoning with up to 1,050,000 tokens of context. [View the model](https://enter.pollinations.ai/models?q=openai/gpt-6-sol).",
       "prs": [
-        15178
+        15312
       ],
       "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "GPT-6 Luna joins",
+      "text": "Use `openai/gpt-6-luna` for text and image input, tools, and reasoning with up to 1,050,000 tokens of context. [View the model](https://enter.pollinations.ai/models?q=openai/gpt-6-luna).",
+      "prs": [
+        15312
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "A clearer Enter",
+      "text": "Search and filter models while setting key permissions, and browse the restored Models, Agents, and MCP tabs. Sign-in and authorization screens now give clearer guidance too. [Open Enter](https://enter.pollinations.ai/keys).",
+      "prs": [
+        15271
+      ],
+      "kind": "product"
     }
   ],
   "changelog": []

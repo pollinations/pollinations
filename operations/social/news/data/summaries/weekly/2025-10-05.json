@@ -2,8 +2,8 @@
   "date": "2025-10-05",
   "period_start": "2025-09-28",
   "period_end": "2025-10-04",
-  "title": "Image models became easier to discover",
-  "summary": "This week made models easier to find, repeat text requests faster on cache hits, and the growing community easier to explore.\n\nA new `/api/generate/image/models` endpoint lets apps retrieve the available image models programmatically. An API reference and OpenAPI schema now cover generation requests, image parameters, model listings, and structured errors.\n\nThe projects list gained Persian-language chat, a context-aware assistant, image tools, diagrams, comics, travel helpers, and multi-agent workflows. Hacktoberfest and Contributor badge guidelines, along with a Code of Conduct, also made participation clearer.\n\nSmaller cache metadata avoids R2 metadata-size failures, while more precise exclusions leave similarly named paths cacheable. HEAD requests now use the corresponding GET entry, and repeat POST requests to the text API root can return cached responses instead of always reaching the origin.\n\nWhen Nano Banana produces no image, the API now surfaces an available explanation or refusal reason instead of a generic error. Nanobanana and Seedream received longer queue intervals and lower Flower and Nectar concurrency caps; authenticated requests from the same IP share a queue. Seedream now requires Flower, Kontext was removed from the available models, and prompt enhancement returns the original prompt without rewriting it.",
+  "title": "The project list grew in several directions",
+  "summary": "More people brought things to build with, while the APIs got easier to explore and more predictable to use.\n\nThe community listings gained Persian-language chat, browser and desktop image generators, an Arabic coding-education platform, and projects spanning agents, diagrams, travel, messaging, and collaborative art. October contribution guidelines also clarified which merged PRs count toward the event badge.\n\nEnter added an image-model listing endpoint and an API reference for generation requests. The image API now gives more useful reasons when Nano Banana produces no image, and model response headers use registry names rather than internal provider paths. The guide also gained reference-image and sizing details. Seedream now requires Flower access, and Kontext was removed from the available image models.\n\nAccount management became less fussy: API keys no longer require an allowed-domains field, deletion asks for confirmation, and the profile menu links to the customer portal. The account page shows Pollen balances to four decimal places, while signup handles existing Polar customer records. The new API reference and broader request validation make generation requests easier to put together.\n\nCache exclusions were narrowed to exact paths, HEAD requests now reuse GET cache entries without returning a body, and text-cache entries carry less metadata. POST requests to the text API root can also use cached responses. Together, these changes remove several ways a reusable response could miss the cache.",
   "pr_count": 22,
   "prs": [
     {
@@ -95,5 +95,5 @@
       "date": "2025-10-04"
     }
   ],
-  "generated_at": "2026-10-17T16:06:06.130427+00:00"
+  "generated_at": "2026-10-17T23:25:31.185609+00:00"
 }

@@ -2,8 +2,8 @@
   "date": "2025-10-08",
   "period_start": "2025-10-08",
   "period_end": "2025-10-08",
-  "title": "Image generation returns, and audio gets more room",
-  "summary": "Image generation and editing returned to `gptimage`, audio requests got more room, and Enter’s FAQ and API key labels became easier to use.\n\n`gptimage` was re-enabled for text-to-image generation and image editing with seed-tier access. `openai-audio` now accepts up to 10,000 input characters and 6,384 completion tokens. The same PR moved `openai-reasoning` to its Azure Myceli configuration.\n\nEnter’s Pollen FAQ now appears on the sign-in page, with clearer answers about daily grants, model access, wallets and Quests. Its answers moved to markdown, and a follow-up fix made list bullets display properly.\n\nDescriptions entered when creating API keys are now saved and shown in the key table instead of being replaced by a placeholder.",
+  "title": "GPT Image returns, and audio gets more room",
+  "summary": "GPT Image returned, audio got larger inputs, and Enter’s FAQ and API key descriptions became more useful.\n\n`gptimage` was re-enabled for seed-tier text-to-image generation and image editing, with images limited to 1024 pixels on the longest side. `openai-audio` now accepts up to 10,000 input characters and 6,384 completion tokens. `openai-reasoning` moved to a new Azure configuration.\n\nEnter’s Pollen FAQ moved to markdown and was added to the sign-in page. It now clarifies daily grant timing, model access, wallets, and Quests; a follow-up fixed missing bullet markers and improved spacing in longer answers.\n\nDescriptions entered when creating API keys now save in the expected metadata field and appear in the key table. Keys without descriptions still show a placeholder.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,12 +23,12 @@
       "date": "2025-10-08"
     }
   ],
-  "generated_at": "2026-10-17T15:48:10.976138+00:00",
+  "generated_at": "2026-10-17T22:34:24.849149+00:00",
   "highlights": [
     {
       "emoji": "🎨",
       "title": "GPT Image returns",
-      "text": "Use `gptimage` for text-to-image generation and image editing with seed-tier access, at up to 1024 pixels on the longest side. [View the model](https://enter.pollinations.ai/models?q=gptimage).",
+      "text": "Seed-tier users can generate and edit images with `gptimage`, up to 1024 pixels on the longest side. [Browse the model](https://enter.pollinations.ai/models?q=gptimage).",
       "prs": [
         4420
       ],
@@ -37,7 +37,7 @@
     {
       "emoji": "🎵",
       "title": "More room for audio",
-      "text": "`openai-audio` now accepts up to 10,000 input characters and 6,384 completion tokens. [View the model](https://enter.pollinations.ai/models?q=openai-audio).",
+      "text": "`openai-audio` now accepts up to 10,000 input characters and 6,384 completion tokens. [Browse the model](https://enter.pollinations.ai/models?q=openai-audio).",
       "prs": [
         4420
       ],

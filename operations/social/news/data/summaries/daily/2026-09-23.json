@@ -2,9 +2,9 @@
   "date": "2026-09-23",
   "period_start": "2026-09-23",
   "period_end": "2026-09-23",
-  "title": "The image API got three new models and fewer queues",
-  "summary": "A busy garden day: bigger-context text models, a much wider image bench, healthier discovery, and shared tools spreading through the ecosystem.\n\nMAI Image 2.6 and its Flash variant joined the public image endpoints for generation and one-reference edits, while Azure-hosted FLUX 1.1 Pro added seed-aware PNG generation with regional fallback. GPT Image 2, Flare, and Sunburst also lost their local per-user RPM ceilings where OpenAI overflow is available, so larger bursts can run until upstream capacity is actually exhausted.\n\nGPT-5.3 Codex is now available through Azure with a verified 400K-token context window, supporting tools, reasoning, files, images, structured output, streaming, and terminal workflows. Xiaomi MiMo V2.6 Flash and Pro also landed with image input and million-token context windows, while MiniMax M2.7 was rerouted so requests once again receive the model they asked for rather than an accidental successor.\n\nPublic model discovery now favors community proxy models that have cleared an 80% success rate across their recent eligible requests, while unknown-health models and the complete catalog remain available when needed. The contributor publishing path also opened to selected MCP Quest agents and Saauf, which means more community models can make it into that catalog through the existing workflow.",
-  "pr_count": 18,
+  "title": "More ways to make images",
+  "summary": "New image and text models, 3D generation in Floret, and a model catalog that puts recent reliability up front.\n\nMicrosoft MAI Image 2.6 and 2.6 Flash were added for generation and single-reference edits up to 1536 × 1536. FLUX 1.1 Pro was added for text-to-image generation with reproducible seeds. The per-user request gates were also removed from GPT Image 2, 2.5 Flare, and 2.5 Sunburst.\n\nGPT-5.3 Codex and Xiaomi MiMo V2.6 Flash and Pro joined the text model list. Codex supports tools, reasoning, and image input; both MiMo variants support those capabilities with million-token context windows. MiniMax M2.7 was rerouted so requests reach M2.7 rather than being forwarded to M3. Model documentation and the README were refreshed.\n\nFloret can now generate 3D assets from a prompt, optionally using an image reference, and return hosted download links. Its FFmpeg tool can process public HTTPS sources and return hosted output; media uploads now accept URLs or data URIs rather than workspace paths.",
+  "pr_count": 16,
   "prs": [
     {
       "number": 15279,
@@ -24,10 +24,6 @@
     },
     {
       "number": 15311,
-      "date": "2026-09-23"
-    },
-    {
-      "number": 15319,
       "date": "2026-09-23"
     },
     {
@@ -71,59 +67,79 @@
       "date": "2026-09-23"
     },
     {
-      "number": 15367,
-      "date": "2026-09-23"
-    },
-    {
       "number": 15375,
       "date": "2026-09-23"
     }
   ],
-  "generated_at": "2026-09-24T06:30:47.627029+00:00",
+  "generated_at": "2026-10-17T23:14:38.533309+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "More image models",
-      "text": "Generate images with `microsoft/mai-image-2.6`, `microsoft/mai-image-2.6-flash`, or `black-forest-labs/flux.1.1-pro`. Both MAI variants also support one-reference edits. [Explore image models](https://gen.pollinations.ai/image/models).",
+      "title": "MAI Image 2.6 Flash",
+      "text": "Generate images or edit one reference image with `microsoft/mai-image-2.6-flash`, at sizes up to 1536 × 1536. [Find the model](https://enter.pollinations.ai/models?q=microsoft%2Fmai-image-2.6-flash).",
       "prs": [
-        15320,
-        15331,
+        15320
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "MAI Image 2.6",
+      "text": "Use `microsoft/mai-image-2.6` for text-to-image generation or edits with one reference image, up to 1536 × 1536. [Find the model](https://enter.pollinations.ai/models?q=microsoft%2Fmai-image-2.6).",
+      "prs": [
+        15331
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "FLUX 1.1 Pro",
+      "text": "Generate PNG images with `black-forest-labs/flux.1.1-pro`. Set a seed when you want a reproducible result. [Find the model](https://enter.pollinations.ai/models?q=black-forest-labs%2Fflux.1.1-pro).",
+      "prs": [
         15333
       ],
       "kind": "model"
     },
     {
       "emoji": "🤖",
-      "title": "New long-context text models",
-      "text": "Try `openai/gpt-5.3-codex` for coding with a 400K-token context window, or `xiaomi/mimo-v2.6-flash` and `xiaomi/mimo-v2.6-pro` for text-and-image input with roughly one-million-token windows. [Explore text models](https://gen.pollinations.ai/v1/models).",
+      "title": "GPT-5.3 Codex",
+      "text": "Use `openai/gpt-5.3-codex` for coding tasks with text or image input, tools, and reasoning. [Find the model](https://enter.pollinations.ai/models?q=openai%2Fgpt-5.3-codex).",
       "prs": [
-        15304,
+        15304
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "MiMo V2.6 Flash and Pro",
+      "text": "Xiaomi’s MiMo V2.6 Flash and Pro accept text and images, support tools and reasoning, and have million-token context windows. Both are paid-only. [Browse models](https://enter.pollinations.ai/models?q=MiMo%20V2.6).",
+      "prs": [
         15311
       ],
       "kind": "model"
     },
     {
       "emoji": "✨",
-      "title": "Floret adds downloadable 3D",
-      "text": "Floret now supports downloadable 3D generation and uses shared MCP media tools.",
+      "title": "Floret makes 3D assets",
+      "text": "Ask Floret to generate a 3D asset from a prompt, with an optional reference image, and get a download link. It can also process public HTTPS media with FFmpeg and return hosted output.",
       "prs": [
         15298
       ],
       "kind": "product"
     },
     {
-      "emoji": "📱",
-      "title": "ShouldIApply joins the showcase",
-      "text": "Paste a resume and job description to get an estimate of your odds of passing the initial screening stage. [Try it](https://notsointresting.github.io/shouldiapply).",
+      "emoji": "🎯",
+      "title": "Browse reliable community models",
+      "text": "Enter’s model catalog now defaults to `status:reliable` and shows the health sample behind each status label. Models without recent data remain listed. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        15330
+        15279
       ],
-      "kind": "app"
+      "kind": "product"
     },
     {
-      "emoji": "🎯",
-      "title": "Find more reliable models",
-      "text": "Public model discovery now considers recent success rates for community proxy models. Need the complete catalog? Use `reliability=all`. [Browse text models](https://gen.pollinations.ai/v1/models).",
+      "emoji": "🔗",
+      "title": "Control model-list filtering",
+      "text": "Model-list requests now filter public community proxy models using recent reliability. Add `?reliability=all` or send `Pollinations-Model-Reliability: all` to include otherwise accessible models excluded by that filter. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         15279
       ],

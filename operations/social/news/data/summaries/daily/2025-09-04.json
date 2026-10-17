@@ -2,8 +2,8 @@
   "date": "2025-09-04",
   "period_start": "2025-09-04",
   "period_end": "2025-09-04",
-  "title": "Text generation configuration gets tidier",
-  "summary": "A quieter day spent making text model configuration and transforms less surprising.\n\nText generation now reads provider settings directly from model definitions and composes model transforms in a clearer pipeline. Failed transforms fall back to the original request, and system-message support is set per model, including for DeepSeek Reasoning.",
+  "title": "Model behavior follows model definitions",
+  "summary": "A text-generation cleanup put model behavior in model definitions, made transforms fall back safely, and retired old paths.\n\nText generation now reads provider names and system-message support from each model’s configuration. DeepSeek Reasoning is marked as not supporting system messages; Qwen Coder and Gemini 2.5 Flash Lite now specify their provider model names explicitly.\n\nModel transforms can now be composed with pipe, addTools and overrideModel. If a transform fails, generation falls back to the original messages and options.\n\nThe Azure o4-mini configuration has its own key, the gpt-4.1-nano alias was removed from openai-fast, and legacy search and OptiLLM generator modules were removed.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-09-04"
     }
   ],
-  "generated_at": "2026-10-17T15:46:02.660623+00:00",
+  "generated_at": "2026-10-17T22:33:31.237605+00:00",
   "highlights": [],
   "changelog": []
 }

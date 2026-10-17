@@ -2,8 +2,8 @@
   "date": "2026-06-24",
   "period_start": "2026-06-24",
   "period_end": "2026-06-24",
-  "title": "The community map and front page got their daily refresh",
-  "summary": "A quiet maintenance pass kept the app directory, health checks, and repository news current.\n\nAutomated updates refreshed app health and usage metrics in APPS and GREENHOUSE, while the README's Latest News section caught up with current community activity. The garden labels remain legible.",
+  "title": "The app catalog got a fresh check",
+  "summary": "A maintenance day: fresher app listings and README coverage for the previous day’s audio and text model news.\n\nApp metrics and health-check results were refreshed, updating Greenhouse ordering and listings, including Viralent and Aqua Application Programming Interface.\n\nThe README’s Latest News now includes the June 23 Stable Audio 3 entry, covering audio up to 380 seconds at 44.1 kHz stereo and audio-to-audio style transfer.\n\nThe same README update added the June 23 Mercury 2 entry, noting cached input and reasoning-token support, and cleared older entries to make room.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2026-06-24"
     }
   ],
-  "generated_at": "2026-09-04T11:57:17.844540+00:00",
+  "generated_at": "2026-10-17T22:59:31.849441+00:00",
   "highlights": [],
   "changelog": []
 }

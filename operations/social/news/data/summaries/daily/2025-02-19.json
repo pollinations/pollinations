@@ -2,8 +2,8 @@
   "date": "2025-02-19",
   "period_start": "2025-02-19",
   "period_end": "2025-02-19",
-  "title": "Private by default for OpenAI-compatible requests",
-  "summary": "One focused merge made privacy the default for OpenAI-compatible requests.\n\nA merged change treats requests to `/openai` paths as private even when the `private` parameter is omitted or set to false. Other paths keep their existing behavior.",
+  "title": "Private handling for OpenAI-compatible requests",
+  "summary": "A focused privacy fix for OpenAI-compatible requests, with other routes left unchanged.\n\nRequests to `/openai` paths are now treated as private whether the `private` parameter is omitted or set to false. Other paths keep their existing behavior.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-02-19"
     }
   ],
-  "generated_at": "2026-10-17T15:33:54.737395+00:00",
+  "generated_at": "2026-10-17T22:28:55.567254+00:00",
   "highlights": [],
   "changelog": []
 }

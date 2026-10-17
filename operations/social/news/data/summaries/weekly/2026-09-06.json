@@ -2,9 +2,9 @@
   "date": "2026-09-06",
   "period_start": "2026-08-30",
   "period_end": "2026-09-05",
-  "title": "The Responses API became a first-class route",
-  "summary": "Pollinations spent the week turning a large model catalog into a more capable agent-and-media platform, with Responses API support, community publishing, MCP tools, and fallback plumbing all growing roots at once.\n\nThe week began with direct stateless Responses support for 56 provider routes, then expanded it across built-in, community, and agent-backed text models. Managed agents now return structured JSON and lifecycle SSE events through Responses, with replayable history, MCP activity, usage, media results, and per-child billing. The surrounding work hardened SSE parsing, error semantics, missing-usage handling, request options, and provider-native streaming. The API is now much less of a translation layer and much more of a proper road.\n\nCommunity endpoints gained embeddings, video, and speech/TTS support, all wired through catalog discovery, dashboard controls, Account APIs, Polli CLI, billing, rewards, fallback behavior, and OpenAI-compatible routes. A substantial catalog cleanup made modality behavior declarative, listing schemas consistent, titles reliable, queued changes visible, and publishing faster. Community publishers can now bring considerably more than chat models to the garden.\n\nHosted MCP servers received their own catalog, documentation, connection flow, and clearer architecture. Composio connectors brought Gmail, Slack, GitHub, Drive, and a great many other outside-world buttons to agents through caller-owned connections. Managed prompt agents moved into Gen with scoped run tokens, while agent metadata, tool rendering, stream handling, and Open WebUI compatibility were tightened around the edges. Agents can now browse, generate, call tools, and bill the right wallet without having to pretend this is simple.\n\nPolli CLI added harness profiles for Pi, OpenCode, Prime Agent, and OpenClaw, each with reversible setup, managed keys, live model catalogs, and Pollinations skills. The React SDK moved its PolliProvider to OAuth PKCE, the OAuth examples split clean browser login from server-backed account linking, and Open WebUI launched as a Pollinations-login chat workspace with per-user generation and MCP access. The infrastructure is increasingly meeting developers where they already have terminal tabs open.",
-  "pr_count": 140,
+  "title": "Community publishing moved beyond chat",
+  "summary": "Pollinations grew into a more connected platform: more kinds of community models to publish, a stateless API for agent workflows, and more ways to use both.\n\nPublishers gained registration and testing for embeddings, synchronous video, and text-to-speech models through My Models, the Account API, and polli. Community text models and endpoint agents can now specify an exact Chat Completions or Responses upstream URL. The wait for community publishing and related endpoint changes fell from 12 hours to 3.\n\nThe stateless `/v1/responses` endpoint gained eligible text models, community endpoints, and managed agents, with streaming where supported. Managed-agent responses now expose ordered assistant messages and executed MCP calls; follow-ups can supply completed tool outputs without running them again. Model discovery identifies supported targets instead of leaving callers to guess.\n\nConnected apps such as Gmail, Slack, GitHub, and Drive became available to agents through Composio MCP using each caller’s connections. A hosted Open WebUI added Pollinations login and opt-in MCP tools, while polli gained setup profiles for Pi, OpenCode, Prime Agent, and OpenClaw. Floret also gained audio tools and catalog-driven model discovery.\n\nNew arrivals covered image generation and editing with FLUX.2 Pro, FLUX.2 Flex, and MAI Image 2.5 Flash; video with MiniMax H3 Max Turbo; and multimodal or long-context text with Inkling, Gemini 3.8 Flash, GPT-6 Astra, and new Qwen models, among others. Wan Pro and Wan 3.0 gained reference-to-video inputs, including end-frame support on Wan 3.0.",
+  "pr_count": 127,
   "prs": [
     {
       "number": 13406,
@@ -27,6 +27,10 @@
       "date": "2026-08-31"
     },
     {
+      "number": 13981,
+      "date": "2026-08-31"
+    },
+    {
       "number": 14008,
       "date": "2026-08-31"
     },
@@ -36,6 +40,10 @@
     },
     {
       "number": 14097,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14110,
       "date": "2026-08-31"
     },
     {
@@ -59,15 +67,7 @@
       "date": "2026-08-31"
     },
     {
-      "number": 14178,
-      "date": "2026-08-31"
-    },
-    {
       "number": 14179,
-      "date": "2026-08-31"
-    },
-    {
-      "number": 14180,
       "date": "2026-08-31"
     },
     {
@@ -115,10 +115,6 @@
       "date": "2026-08-31"
     },
     {
-      "number": 14202,
-      "date": "2026-08-31"
-    },
-    {
       "number": 14204,
       "date": "2026-08-31"
     },
@@ -139,15 +135,7 @@
       "date": "2026-08-31"
     },
     {
-      "number": 14213,
-      "date": "2026-08-31"
-    },
-    {
       "number": 14215,
-      "date": "2026-08-31"
-    },
-    {
-      "number": 14220,
       "date": "2026-08-31"
     },
     {
@@ -179,11 +167,7 @@
       "date": "2026-09-01"
     },
     {
-      "number": 14237,
-      "date": "2026-09-01"
-    },
-    {
-      "number": 14240,
+      "number": 14238,
       "date": "2026-09-01"
     },
     {
@@ -219,10 +203,6 @@
       "date": "2026-09-01"
     },
     {
-      "number": 14282,
-      "date": "2026-09-01"
-    },
-    {
       "number": 14283,
       "date": "2026-09-01"
     },
@@ -232,6 +212,10 @@
     },
     {
       "number": 14291,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14296,
       "date": "2026-09-01"
     },
     {
@@ -251,10 +235,6 @@
       "date": "2026-09-01"
     },
     {
-      "number": 14313,
-      "date": "2026-09-01"
-    },
-    {
       "number": 14317,
       "date": "2026-09-01"
     },
@@ -271,10 +251,6 @@
       "date": "2026-09-01"
     },
     {
-      "number": 14323,
-      "date": "2026-09-01"
-    },
-    {
       "number": 14239,
       "date": "2026-09-02"
     },
@@ -288,14 +264,6 @@
     },
     {
       "number": 14318,
-      "date": "2026-09-02"
-    },
-    {
-      "number": 14324,
-      "date": "2026-09-02"
-    },
-    {
-      "number": 14328,
       "date": "2026-09-02"
     },
     {
@@ -375,10 +343,6 @@
       "date": "2026-09-03"
     },
     {
-      "number": 14382,
-      "date": "2026-09-03"
-    },
-    {
       "number": 14383,
       "date": "2026-09-03"
     },
@@ -388,6 +352,10 @@
     },
     {
       "number": 14385,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14392,
       "date": "2026-09-03"
     },
     {
@@ -447,10 +415,6 @@
       "date": "2026-09-04"
     },
     {
-      "number": 14434,
-      "date": "2026-09-04"
-    },
-    {
       "number": 14438,
       "date": "2026-09-04"
     },
@@ -468,14 +432,6 @@
     },
     {
       "number": 14449,
-      "date": "2026-09-04"
-    },
-    {
-      "number": 14451,
-      "date": "2026-09-04"
-    },
-    {
-      "number": 14452,
       "date": "2026-09-04"
     },
     {
@@ -499,10 +455,6 @@
       "date": "2026-09-04"
     },
     {
-      "number": 14466,
-      "date": "2026-09-04"
-    },
-    {
       "number": 14360,
       "date": "2026-09-05"
     },
@@ -516,10 +468,6 @@
     },
     {
       "number": 14469,
-      "date": "2026-09-05"
-    },
-    {
-      "number": 14477,
       "date": "2026-09-05"
     },
     {
@@ -567,5 +515,5 @@
       "date": "2026-09-05"
     }
   ],
-  "generated_at": "2026-09-08T22:07:03.474422+00:00"
+  "generated_at": "2026-10-17T23:28:40.616772+00:00"
 }

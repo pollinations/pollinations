@@ -2,20 +2,16 @@
   "date": "2026-03-13",
   "period_start": "2026-03-13",
   "period_end": "2026-03-13",
-  "title": "shipped 8 PRs today",
-  "summary": "the seed upgrade workflow used to take 25 hours. rewrote it, now it takes seconds. also added dirtberry-pro for images, qwen3-tts for audio, and moved klein 4b to a dedicated pipeline. open source ai infrastructure continues. 🐝",
-  "pr_count": 8,
+  "title": "New options for speech, text, and images",
+  "summary": "New speech, text, and image models joined the garden, while CatGPT got Pollinations login and public user data gained a read-only endpoint.\n\nSeraphyn joined as a community provider with alpha `qwen3-tts` speech and `openai-seraphyn` text models. The alpha `dirtberry-pro` model adds another text-to-image option for realistic images, pixel art, and complex scenes. FLUX.2 Klein 4B moved to a different provider and is now marked alpha; its image-input support remains listed.\n\nCatGPT added Pollinations login for meme generation, selfie uploads through the Pollinations media store, and an account view showing Pollen balance. It also got a lighter theme and the original CatGPT comic in its header. Gratisfy joined the app catalog with unified access to free inference providers, benchmarks, and provider discovery.\n\nThe new `d1_user_public` Tinybird endpoint queries the latest synced user snapshot for fields including names, GitHub identifiers, and tiers. It excludes emails and balances.",
+  "pr_count": 7,
   "prs": [
-    {
-      "number": 8985,
-      "date": "2026-03-13"
-    },
     {
       "number": 9035,
       "date": "2026-03-13"
     },
     {
-      "number": 9073,
+      "number": 9071,
       "date": "2026-03-13"
     },
     {
@@ -39,12 +35,21 @@
       "date": "2026-03-13"
     }
   ],
-  "generated_at": "2026-03-14T06:14:34.829767+00:00",
+  "generated_at": "2026-10-17T22:43:53.239960+00:00",
   "highlights": [
     {
       "emoji": "🎵",
-      "title": "Voice acting via system prompt",
-      "text": "Seraphyn joined as a community provider, bringing `qwen3-tts` to the [Unified API](https://gen.pollinations.ai). You can now style the voice output just by describing what you want in the system prompt.",
+      "title": "Qwen speech joins the API",
+      "text": "The alpha `qwen3-tts` model generates WAV speech through `/v1/audio/speech`. Use the `voice` parameter to describe the voice you want, with up to 4,096 characters of input. [Browse the model](https://enter.pollinations.ai/models?q=qwen3-tts).",
+      "prs": [
+        9080
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Seraphyn adds GPT-5.4",
+      "text": "The alpha `openai-seraphyn` text model adds a GPT-5.4 option with tool support. [Browse the model](https://enter.pollinations.ai/models?q=openai-seraphyn).",
       "prs": [
         9080
       ],
@@ -52,30 +57,30 @@
     },
     {
       "emoji": "🎨",
-      "title": "Dirtberry Pro",
-      "text": "Added `dirtberry-pro` to the image model roster. Pass it as your model parameter when you need high realism and complex scenes.",
+      "title": "Dirtberry Pro makes images",
+      "text": "The alpha `dirtberry-pro` model adds text-to-image generation aimed at realism, pixel art, and complex scenes. [Browse the model](https://enter.pollinations.ai/models?q=dirtberry-pro).",
       "prs": [
         9082
       ],
       "kind": "model"
     },
     {
-      "emoji": "📊",
-      "title": "Public user endpoint",
-      "text": "We opened a restricted Tinybird pipe that safely exposes public profile and tier data. You can finally build those community leaderboards without leaking secrets.",
+      "emoji": "✨",
+      "title": "CatGPT gets Pollinations login",
+      "text": "Sign in with Pollinations to generate cat memes, upload a selfie, and see your Pollen balance in CatGPT. The cats also have a new cream-colored home.",
+      "prs": [
+        9076
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Public user snapshot endpoint",
+      "text": "Query the latest synced user snapshot through the read-only `d1_user_public` Tinybird endpoint. It includes names, GitHub identifiers, and tiers, but not emails or balances.",
       "prs": [
         9078
       ],
       "kind": "api"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Gratisfy integration",
-      "text": "Pollinations is now hooked up to Gratisfy, letting you access our endpoints alongside other free AI providers through a single unified API.",
-      "prs": [
-        9088
-      ],
-      "kind": "product"
     }
   ],
   "changelog": []

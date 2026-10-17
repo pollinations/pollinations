@@ -2,9 +2,9 @@
   "date": "2026-09-09",
   "period_start": "2026-09-09",
   "period_end": "2026-09-09",
-  "title": "Every media model can now speak Chat and Responses",
-  "summary": "A broad interoperability day: media now fits inside Chat and Responses, creative tools gained new doors, and the API surface got sturdier around the edges.\n\nImages, video, audio, and 3D models with native routes now work through OpenAI-compatible Chat and Responses, returning shareable public URLs and Markdown embeds. Those endpoints also accept image attachments for edits and video start frames, while hosted agents now return replayable paired function-call items instead of making clients redo completed server-tool work.\n\nGIMP 3 gained a BYOP plugin for generating and editing layers without touching the original, while NVIDIA Asset Harvester joined the 3D registry to turn one image into a downloadable Gaussian-splat PLY. PolliArena adds blind image-model battles for finding personal favorites, and 3D jobs now patiently survive transient provider status errors rather than submitting a second generation.\n\nMCP clients now receive reusable public links for images, audio, video, and 3D without the download-and-reupload ceremony. Image edits avoid duplicate safety checks, durable background jobs retain their original cache identity, and community video requests can use provider-reported generated duration when available.",
-  "pr_count": 23,
+  "title": "Media generation joins Chat and Responses",
+  "summary": "Media models found their way into Chat, image-to-3D gained a Gaussian-splat option, and GIMP and the SDK got new ways to make things.\n\nImage, video, audio, and 3D models with supported text-input routes can now generate from prompts sent to `/v1/chat/completions` or `/v1/responses`. Supported image and video models also accept image parts for edits or video start frames. Both paths return public media links; image generation and edits received cache and request-handling fixes.\n\nCommunity-contributed `nvidia/asset-harvester` adds reference-image-to-3D generation, returning a PLY Gaussian splat rather than a GLB. It requires Paid Pollen and its canonical model ID. The shared 3D client now retries temporary server errors while checking a generation job, and the docs reflect the model's input and output.\n\nA community GIMP 3 plug-in brings generation and non-destructive layer editing into the editor. The SDK gained typed `embeddings()` methods for text and multimodal inputs. Hosted agents now represent completed server-run tools as paired function items for continuation, while MCP returns existing public media URLs instead of copying files. CLI harness defaults were refreshed, and the app catalog gained PolliArena for blind image-model comparisons.",
+  "pr_count": 24,
   "prs": [
     {
       "number": 13667,
@@ -67,6 +67,10 @@
       "date": "2026-09-09"
     },
     {
+      "number": 14627,
+      "date": "2026-09-09"
+    },
+    {
       "number": 14631,
       "date": "2026-09-09"
     },
@@ -99,49 +103,49 @@
       "date": "2026-09-09"
     }
   ],
-  "generated_at": "2026-09-10T06:30:26.477455+00:00",
+  "generated_at": "2026-10-17T23:12:23.682526+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Media through chat APIs",
-      "text": "Generate images, video, audio, and 3D through `/v1/chat/completions` or `/v1/responses`. Supported media workflows also accept image URLs or data URIs as inputs. [Explore the API](https://gen.pollinations.ai/docs).",
+      "title": "Media generation in conversations",
+      "text": "Send a text prompt to a supported image, video, audio, or 3D model through `/v1/chat/completions` or `/v1/responses` and get a public media link back. Generation settings still belong on the native media endpoints. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        14618,
+        14618
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Image inputs for media models",
+      "text": "Send an image URL or data URI alongside a prompt to a supported image or video model in Chat or Responses. Use it as a source for an image edit or as a video start frame. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
         14648
       ],
       "kind": "api"
     },
     {
       "emoji": "✨",
-      "title": "Images become Gaussian splats",
-      "text": "Give `nvidia/asset-harvester` one image and get a Gaussian-splat PLY through the 3D API. [Explore the API](https://gen.pollinations.ai/docs).",
+      "title": "Image-to-3D Gaussian splats",
+      "text": "Give `nvidia/asset-harvester` a reference image and get a Gaussian-splat PLY file through the 3D API. Use the canonical model ID; this model requires Paid Pollen. [View the model](https://enter.pollinations.ai/models?q=nvidia/asset-harvester).",
       "prs": [
-        14556
+        14556,
+        14627
       ],
       "kind": "model"
     },
     {
       "emoji": "🎨",
-      "title": "Pollinations in GIMP 3",
-      "text": "A GIMP 3 plug-in adds image generation and editing, with controls that adapt to each model’s capabilities.",
+      "title": "Pollinations inside GIMP 3",
+      "text": "A community GIMP 3 plug-in can generate an image or edit the active layer, placing the result in a new layer so the source stays put. It connects through browser-based account approval and offers the image models available to your account.",
       "prs": [
         14569
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎯",
-      "title": "Blind image model battles",
-      "text": "PolliArena lets you compare secretly randomized Pollinations image models side by side, with support for connecting your own wallet. [Try it](https://polli-arena.cloudbr.eu.org).",
-      "prs": [
-        14639
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🤖",
+      "emoji": "🔗",
       "title": "Embeddings in the SDK",
-      "text": "Call `embeddings()` from the Pollinations SDK for text, batch, or multimodal inputs, with typed responses. [View the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "text": "Use `embeddings()` in `@pollinations/sdk` for single text, batches, or supported text, image, audio, and video content parts. Options include model, dimensions, encoding, and provider-specific input types. [View the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         14450
       ],

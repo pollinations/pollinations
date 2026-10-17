@@ -2,17 +2,17 @@
   "date": "2026-03-15",
   "period_start": "2026-03-08",
   "period_end": "2026-03-14",
-  "title": "POLLINATIONS WEEKLY vol.42 — speedruns & drop-in endpoints → INFRASTRUCTURE SPEEDRUNS\nWe optimized the Seed tier auto-upgrade workflow",
-  "summary": "Previously, calculating GitHub activity to upgrade contributors took about 25 hours to complete. It now takes a few seconds. Turns out you don't actually need to bend the space-time continuum to parse a list of commits. Speaking of time, Pollen credit refills are now hourly instead of daily. If you burn through your local allocation, just go get a coffee and come back. → OPENAI DROP-IN & NEW MODELS\nYou can now use our image generation endpoints as a drop-in replacement for OpenAI's API. Change the base URL, keep your existing code, get pixels back. We also routed a mountain of new models into the infrastructure:\n1. Pruna p-image, p-image-edit, and p-video\n2. dirtberry and dirtberry-pro\n3. claude-airforce via api.airforce\n4. qwen3-tts via our new community provider Seraphyn → BYOP & THE ECOSYSTEM\nBring Your Own Provider (BYOP) auth is becoming the standard. We wired it up for the AI Dungeon Master and Product Packaging apps, alongside a new media upload service. We also fixed a CORS-adjacent blocker that was preventing browser extensions from generating App Keys. Finally, Polly v2 is live with native-speed internals, and the frontend got a cozy redesign with a new scene background and palette system",
-  "pr_count": 31,
+  "title": "Images fit into more existing workflows",
+  "summary": "Images became easier to generate and edit, while new models, connected community apps, and a pixel-art front door made more of Pollinations accessible.\n\nOpenAI-compatible generation and edit endpoints were added, accepting prompts and source images from URLs or uploads, with base64 or URL responses. The compatible model list also expanded to include permitted image and audio models alongside text. In the playground, image generation gained support for a supplied API key.\n\nNew alpha options covered realistic and complex-scene images with Dirtberry and Dirtberry Pro, speech with Qwen3 TTS, and text with Claude Sonnet 4.6 and Seraphyn’s GPT-5.4 option. Pruna added image generation, image editing, and text- or image-to-video models. Nanobanana-2 and Nanobanana Pro also gained a smaller 0.5K image tier.\n\nA run of image-service changes addressed avoidable blocks and rejected requests. Nanobanana stopped adding safety instructions to every prompt and limits its extra pre-check to `safe=true`; GPT image models changed endpoints to address content-policy blocks. Fixed legacy backends, GPT Image edit endpoint fixes, and Klein request changes tackled routing and request failures.\n\nProduct Packaging Designer and AI Dungeon Master added Pollinations account connection so people can use their own Pollen. Those apps and Virtual Makeup added media uploads, while AI Dungeon Master gained an Adventure Gallery. CatGPT added Pollinations login, selfie uploads, and a Pollen balance view. The app catalog was deduplicated, and Gratisfy joined it.",
+  "pr_count": 39,
   "prs": [
     {
       "number": 8902,
       "date": "2026-03-08"
     },
     {
-      "number": 8899,
-      "date": "2026-03-09"
+      "number": 8941,
+      "date": "2026-03-08"
     },
     {
       "number": 8949,
@@ -20,6 +20,10 @@
     },
     {
       "number": 8969,
+      "date": "2026-03-09"
+    },
+    {
+      "number": 8970,
       "date": "2026-03-09"
     },
     {
@@ -59,19 +63,23 @@
       "date": "2026-03-10"
     },
     {
+      "number": 9031,
+      "date": "2026-03-11"
+    },
+    {
       "number": 9032,
       "date": "2026-03-11"
     },
     {
-      "number": 8985,
-      "date": "2026-03-13"
+      "number": 9052,
+      "date": "2026-03-12"
     },
     {
       "number": 9035,
       "date": "2026-03-13"
     },
     {
-      "number": 9073,
+      "number": 9071,
       "date": "2026-03-13"
     },
     {
@@ -115,11 +123,31 @@
       "date": "2026-03-14"
     },
     {
+      "number": 9089,
+      "date": "2026-03-14"
+    },
+    {
       "number": 9091,
       "date": "2026-03-14"
     },
     {
+      "number": 9093,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9094,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9104,
+      "date": "2026-03-14"
+    },
+    {
       "number": 9105,
+      "date": "2026-03-14"
+    },
+    {
+      "number": 9107,
       "date": "2026-03-14"
     },
     {
@@ -129,7 +157,11 @@
     {
       "number": 9117,
       "date": "2026-03-14"
+    },
+    {
+      "number": 9121,
+      "date": "2026-03-14"
     }
   ],
-  "generated_at": "2026-03-15T06:25:52.957902+00:00"
+  "generated_at": "2026-10-17T23:27:00.096640+00:00"
 }

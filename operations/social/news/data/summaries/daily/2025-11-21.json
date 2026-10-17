@@ -2,8 +2,8 @@
   "date": "2025-11-21",
   "period_start": "2025-11-21",
   "period_end": "2025-11-21",
-  "title": "Image model picker handles the new API response",
-  "summary": "The image model picker caught up with the API’s switch from strings to objects.\n\nThe frontend image model dropdown now reads model objects instead of expecting strings. It uses each model’s name as its ID, shows its description when available, and keeps the full object for model details. Text models are unchanged.",
+  "title": "Image model picker handles updated API responses",
+  "summary": "The image model picker caught up with the API’s new response format.\n\nThe frontend image model dropdown now handles model objects instead of strings. It uses each model’s name as its ID and shows its description when available. Text model selection is unchanged.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-11-21"
     }
   ],
-  "generated_at": "2026-10-17T15:52:51.304273+00:00",
+  "generated_at": "2026-10-17T22:35:53.402216+00:00",
   "highlights": [],
   "changelog": []
 }

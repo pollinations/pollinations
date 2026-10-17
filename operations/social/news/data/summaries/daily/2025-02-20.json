@@ -2,8 +2,8 @@
   "date": "2025-02-20",
   "period_start": "2025-02-20",
   "period_end": "2025-02-20",
-  "title": "Better previews when sharing pollinations.ai",
-  "summary": "A small cleanup for how pollinations.ai appears in shared links and search results.\n\nMerged a social-share banner to replace the logo in link previews, with image dimensions and a large Twitter card. The update also refreshes the default description and adds organization details for search engines.",
+  "title": "A better preview when sharing pollinations.ai",
+  "summary": "A small tidy-up for how pollinations.ai appears in shared links and search results.\n\nSharing the site now uses a banner instead of the logo, with image dimensions and a large Twitter card specified in the metadata. The default description and fallback URL were updated, and Organization structured data was added for search engines.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-02-20"
     }
   ],
-  "generated_at": "2026-10-17T15:33:58.840646+00:00",
+  "generated_at": "2026-10-17T22:28:55.624317+00:00",
   "highlights": [],
   "changelog": []
 }

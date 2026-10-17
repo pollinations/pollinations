@@ -2,8 +2,8 @@
   "date": "2026-07-24",
   "period_start": "2026-07-24",
   "period_end": "2026-07-24",
-  "title": "SVGs and 30-second music clips joined the API",
-  "summary": "A format-expanding day: SVG vectors and music clips arrived, image models got sturdier routes, and community models became more visible.\n\nPollinations can now generate real SVG vector artwork with Recraft, including text-to-SVG and single-reference-image requests through the image and OpenAI-compatible endpoints. Lyria 3 Clip also landed, producing verified 30-second stereo MP3s through GET and OpenAI-compatible audio requests. Pixels were apparently not enough formats.\n\nNanoBanana, NanoBanana 2, NanoBanana 2 Lite, NanoBanana Pro, and Seedream Pro now run through pinned OpenRouter provider routes while keeping their existing aliases, editing flows, reference-image support, resolution controls, caching, EXIF behavior, and content-policy responses. NanoBanana 2 and Pro retain direct 4K generation, while Seedream keeps its 2K and 4K presets.\n\nThe Flux Klein worker now caps requests at a tested 2.36-megapixel area, uses a more resilient CUDA allocator setup, clears cache after out-of-memory events, and returns controlled responses for oversized work. Supported large formats such as 1536×1536 and 2048×1152 get a steadier worker instead of an opportunity to discover GPU limits the dramatic way.",
+  "title": "Music clips and editable vector images",
+  "summary": "New music and SVG models arrived while image routing, model estimates, and GPU limits got some practical attention.\n\nLyria 3 Clip adds prompt-to-music generation as a fixed 30-second MP3. Recraft V4.1 Vector adds SVG generation and editing from text or one reference image; image responses preserve the SVG, and OpenAI-compatible responses identify it with `media_type`. Both models were added to the API docs.\n\nNanoBanana, NanoBanana 2, Lite, and Pro moved to OpenRouter while retaining their public names and existing image controls. Seedream Pro moved there too, with explicit dimensions that keep supported wide and tall 2K requests at 2K rather than promoting them to 4K. Its edits still match the reference image’s shape when no ratio is supplied. NanoBanana usage reports now combine text and reference-image prompt tokens.\n\nModel estimates now draw from a larger stats set, bringing lower-volume models into view. Klein now rejects images above roughly 2.4 megapixels before inference and returns guidance to try smaller dimensions or fewer references if the GPU runs out of memory.",
   "pr_count": 13,
   "prs": [
     {
@@ -59,12 +59,12 @@
       "date": "2026-07-24"
     }
   ],
-  "generated_at": "2026-07-25T06:55:31.040074+00:00",
+  "generated_at": "2026-10-17T23:03:11.227461+00:00",
   "highlights": [
     {
       "emoji": "🎵",
       "title": "Lyria 3 music clips",
-      "text": "Generate 30-second stereo MP3s with `lyria` or `lyria-3` through GET audio requests or the OpenAI-compatible API. [Try the API](https://gen.pollinations.ai/docs)",
+      "text": "Generate a 30-second MP3 from a music prompt with `lyria-3-clip` through the audio API. [Explore Lyria 3 Clip](https://enter.pollinations.ai/models?q=lyria-3-clip).",
       "prs": [
         12725
       ],
@@ -72,21 +72,22 @@
     },
     {
       "emoji": "🎨",
-      "title": "Recraft SVG generation",
-      "text": "Turn prompts—or one reference image—into real SVG files with `recraft-v4.1-vector`, available from image and OpenAI-compatible generation/edit endpoints. [Try it](https://pollinations.ai/play)",
+      "title": "Editable SVGs with Recraft",
+      "text": "Use `recraft-v4.1-vector` to generate an SVG from text or edit one using a reference image. [Explore Recraft V4.1 Vector](https://enter.pollinations.ai/models?q=recraft-v4.1-vector).",
       "prs": [
         12731
       ],
       "kind": "model"
     },
     {
-      "emoji": "✨",
-      "title": "Community model stats, including the long tail",
-      "text": "Public model estimates now cover all eligible models, including community image models that were previously below the volume cutoff. [View the model monitor](https://model-monitor.pollinations.ai)",
+      "emoji": "🔗",
+      "title": "SVG through the image API",
+      "text": "Image GET responses can return `image/svg+xml` without converting it to JPEG. OpenAI-compatible image responses include `media_type` so clients can identify SVG output. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        12721
+        12731,
+        12733
       ],
-      "kind": "product"
+      "kind": "api"
     }
   ],
   "changelog": []

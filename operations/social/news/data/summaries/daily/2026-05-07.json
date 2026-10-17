@@ -2,9 +2,9 @@
   "date": "2026-05-07",
   "period_start": "2026-05-07",
   "period_end": "2026-05-07",
-  "title": "Vector embeddings hit the API",
-  "summary": "A heavy-hitting day bringing vector embeddings, Seedance 2.0 video generation, and a smoother way for app creators to earn pollen.\n\nWe shipped a dedicated /v1/embeddings endpoint to power your RAG, clustering, and semantic search pipelines. To keep the free tier running smoothly, requests without a specified model now automatically route to OpenAI's text-embedding-3-small.\n\nReplicate is now wired up as a provider, bringing the Seedance 2.0 video model to the API. You can now push prompts and images into 720p text-to-video, image-to-video, and frame interpolation pipelines.\n\nWe simplified the Bring Your Own Pollen (BYOP) margin billing system, making it much easier for app creators to earn pollen when users generate content through their apps. We also fixed a dashboard sorting quirk so standard API keys stay in their own lane instead of masquerading as App keys.",
-  "pr_count": 5,
+  "title": "Embeddings get an API and three models",
+  "summary": "Embeddings gained an API, Seedance gained more ways to make video, and BYOP apps gained developer earnings.\n\nAdded OpenAI-compatible `/v1/embeddings` and an embedding-model listing, with Gemini Embedding 2 and two OpenAI embedding models. Requests can batch up to 32 text inputs; Gemini also accepts image, audio and video content parts. `openai-3-small` is the default when no model is specified, while `gemini-2` requires a paid balance.\n\nAdded the paid-only `seedance-2.0` video model for text-to-video, a starting image, first-and-last-frame interpolation, or multiple reference images. It supports 4–15-second 720p clips, optional native audio and eight aspect ratios.\n\nApp Key owners can enable developer earnings for BYOP apps, with the share disclosed on consent screens and credited to the owner's wallet. The dashboard also keeps ordinary publishable API keys separate from App keys, so app-only settings appear where they belong.",
+  "pr_count": 6,
   "prs": [
     {
       "number": 10358,
@@ -12,6 +12,10 @@
     },
     {
       "number": 10422,
+      "date": "2026-05-07"
+    },
+    {
+      "number": 10732,
       "date": "2026-05-07"
     },
     {
@@ -27,30 +31,50 @@
       "date": "2026-05-07"
     }
   ],
-  "generated_at": "2026-05-08T06:33:44.368779+00:00",
+  "generated_at": "2026-10-17T22:50:26.976189+00:00",
   "highlights": [
     {
-      "emoji": "🧠",
-      "title": "Text Embeddings API",
-      "text": "You can now generate vector embeddings directly through the `/v1/embeddings` endpoint. Wire it up for semantic search or RAG without leaving the [Unified API](https://gen.pollinations.ai).",
+      "emoji": "🔗",
+      "title": "Embeddings via the API",
+      "text": "Send text or batches of up to 32 inputs to the OpenAI-compatible `/v1/embeddings` endpoint. Choose output dimensions within your model's limits. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         10358
       ],
       "kind": "api"
     },
     {
-      "emoji": "🎬",
-      "title": "Seedance 2.0 Video Model",
-      "text": "We wired up Replicate to bring you Seedance 2.0. Text-to-video, image-to-video, and frame interpolation are now live for your 720p generation needs.",
+      "emoji": "🤖",
+      "title": "Gemini Embedding 2",
+      "text": "Use `gemini-2` to embed text, images, audio or video content parts. It requires a paid balance. [View the model](https://enter.pollinations.ai/models?q=gemini-2).",
+      "prs": [
+        10358,
+        10760
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "OpenAI embedding models",
+      "text": "Choose `openai-3-small` or `openai-3-large` for text embeddings. `openai-3-small` is the default for `/v1/embeddings` when you omit `model`. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        10358,
+        10760
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Seedance 2.0 video",
+      "text": "Generate 4–15-second 720p videos with `seedance-2.0` from text, a starting image, first and last frames, or multiple reference images. Optional native audio is supported. [View the model](https://enter.pollinations.ai/models?q=seedance-2.0).",
       "prs": [
         10739
       ],
       "kind": "model"
     },
     {
-      "emoji": "🍯",
-      "title": "Creator Rewards",
-      "text": "App builders can now earn Pollen when users generate content through their apps. Opt-in via your API keys in the [Dashboard](https://enter.pollinations.ai) and watch the balance go up.",
+      "emoji": "💡",
+      "title": "Earnings for BYOP apps",
+      "text": "App Key owners can enable developer earnings for BYOP apps when creating or editing a key. Users see the developer's share on the consent screen. [Manage API keys](https://enter.pollinations.ai/keys).",
       "prs": [
         10422
       ],

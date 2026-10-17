@@ -2,9 +2,9 @@
   "date": "2026-05-16",
   "period_start": "2026-05-16",
   "period_end": "2026-05-16",
-  "title": "LTX-2 can now turn a starting image into video",
-  "summary": "LTX-2 learned image-to-video, API errors became readable, and four more community apps sprouted in the directory.\n\nLTX-2 gained image-to-video support: pass an image URL to the API and the gateway fetches it before handing a base64 copy to the ComfyUI backend. A still image now has somewhere to go.\n\nImage endpoints now return the actual URL-fetch status and upstream 400 error details instead of generic provider errors or empty JSON. Gemini responses from Vertex also preserve every returned text part, so outputs and refusals no longer begin halfway through their own sentence.\n\nThe community showcase added Navaro for AI trip itineraries, MoodCanvas AI for concept-driven mood boards, KelasWeb for AI-guided web development learning, and TubeBoost AI for translating YouTube metadata.",
-  "pr_count": 18,
+  "title": "LTX-2 gains image-to-video input",
+  "summary": "LTX-2 learned image-to-video, four community apps joined the catalog, and image errors got more useful.\n\nLTX-2 now accepts an image through the `image` parameter to generate video from a starting frame. Text-to-video requests keep their existing path.\n\nThe community catalog added a trip planner, a mood-board maker, an Indonesian web-development tutor, and a YouTube metadata translator, bringing the Greenhouse count to 743. The README’s Latest News was also refreshed with earlier updates; that edit did not change the underlying services.\n\nFailed image URL downloads and upstream image requests now return more specific error details instead of generic messages or an empty `{}`. Vertex image responses also retain all Gemini text parts, so refusals no longer begin mid-sentence.",
+  "pr_count": 10,
   "prs": [
     {
       "number": 10971,
@@ -15,19 +15,7 @@
       "date": "2026-05-16"
     },
     {
-      "number": 10995,
-      "date": "2026-05-16"
-    },
-    {
       "number": 10997,
-      "date": "2026-05-16"
-    },
-    {
-      "number": 10998,
-      "date": "2026-05-16"
-    },
-    {
-      "number": 10999,
       "date": "2026-05-16"
     },
     {
@@ -35,31 +23,11 @@
       "date": "2026-05-16"
     },
     {
-      "number": 11004,
-      "date": "2026-05-16"
-    },
-    {
-      "number": 11005,
-      "date": "2026-05-16"
-    },
-    {
-      "number": 11006,
-      "date": "2026-05-16"
-    },
-    {
       "number": 11007,
       "date": "2026-05-16"
     },
     {
-      "number": 11011,
-      "date": "2026-05-16"
-    },
-    {
       "number": 11012,
-      "date": "2026-05-16"
-    },
-    {
-      "number": 11015,
       "date": "2026-05-16"
     },
     {
@@ -79,34 +47,25 @@
       "date": "2026-05-16"
     }
   ],
-  "generated_at": "2026-09-04T11:49:59.032575+00:00",
+  "generated_at": "2026-10-17T22:51:35.998570+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Image-to-video with LTX-2",
-      "text": "Give LTX-2 a starting image to generate a video from it. [Browse models](https://enter.pollinations.ai/models?q=ltx-2).",
+      "title": "Turn images into video",
+      "text": "Give `ltx-2` an image through the `image` parameter to generate video from a starting frame. [View the model](https://enter.pollinations.ai/models?q=ltx-2).",
       "prs": [
         10971
       ],
       "kind": "model"
     },
     {
-      "emoji": "🎨",
-      "title": "Mood boards from a concept",
-      "text": "MoodCanvas AI turns a single concept into an aesthetic mood board using the Pollinations Image API. [Try it](https://moodcanvasai.netlify.app/).",
+      "emoji": "📊",
+      "title": "A four-hour traffic view",
+      "text": "Model Monitor now has a 4h window for spotting traffic changes that get lost between the 1h and 24h views. [Open Model Monitor](https://model-monitor.pollinations.ai).",
       "prs": [
-        11020
+        11012
       ],
-      "kind": "app"
-    },
-    {
-      "emoji": "✨",
-      "title": "Plan a trip with Navaro",
-      "text": "Enter a destination, trip length, and interests to get a personalized day-by-day itinerary. [Try it](https://navaro-ai.netlify.app).",
-      "prs": [
-        11019
-      ],
-      "kind": "app"
+      "kind": "product"
     }
   ],
   "changelog": []

@@ -2,9 +2,9 @@
   "date": "2026-03-06",
   "period_start": "2026-03-06",
   "period_end": "2026-03-06",
-  "title": "sdk got an upgrade today",
-  "summary": "speech-to-text and media uploads are now built directly into the npm package. also taught the media service how to name files correctly on download, which is nice. step-3.5-flash is back in the routing pool too",
-  "pr_count": 3,
+  "title": "The SDK picks up audio, uploads, and account tools",
+  "summary": "The SDK gained transcription, uploads, and account tools, while media filenames and Step 3.5 Flash requests got sorted out.\n\n@pollinations_ai/sdk 4.1.0 adds audio transcription, media uploads, Bring Your Own Pollen authorization URLs, and helpers for profiles, balances, usage, and API key validation.\n\nUploaded filenames now affect content-addressed URLs and appear in download headers. Re-uploading a file refreshes its 14-day retention period; the incompatible DELETE endpoint was removed.\n\nThe text backend now recognizes the already-registered `step-3.5-flash` model, fixing requests that previously returned 404.",
+  "pr_count": 4,
   "prs": [
     {
       "number": 8856,
@@ -15,38 +15,51 @@
       "date": "2026-03-06"
     },
     {
+      "number": 8884,
+      "date": "2026-03-06"
+    },
+    {
       "number": 8886,
       "date": "2026-03-06"
     }
   ],
-  "generated_at": "2026-03-07T06:09:23.813149+00:00",
+  "generated_at": "2026-10-17T22:42:53.494464+00:00",
   "highlights": [
     {
-      "emoji": "📦",
-      "title": "SDK Upgrades: Audio & BYOP",
-      "text": "The hive has ears. You can now run Whisper Speech-to-Text, handle media uploads, and let users spend their own Pollen credits directly through the SDK.",
+      "emoji": "🎵",
+      "title": "Transcribe audio from the SDK",
+      "text": "Use `transcribe()` to send audio to the transcription API, with options for model, language, and response format. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         8856
       ],
       "kind": "product"
     },
     {
-      "emoji": "🧠",
-      "title": "Step-3.5-Flash Available",
-      "text": "`step-3.5-flash` is now wired up and ready for chat completions via the [Unified API](https://gen.pollinations.ai).",
+      "emoji": "🎨",
+      "title": "Upload media from the SDK",
+      "text": "Use `upload()` for images, audio, or video and get back a public media URL. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
-        8871
+        8856
       ],
-      "kind": "model"
+      "kind": "product"
     },
     {
-      "emoji": "💾",
-      "title": "Media Storage Upgrades",
-      "text": "Name tags for your files. Media downloads now preserve your original filenames, and re-uploading an existing file automatically resets its 14-day expiration timer.",
+      "emoji": "🔗",
+      "title": "Build wallet authorization links",
+      "text": "Use `authorizeUrl()` to create Bring Your Own Pollen authorization links scoped by model, budget, and permissions. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
-        8886
+        8856
       ],
-      "kind": "api"
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Check accounts from the SDK",
+      "text": "Retrieve profiles, Pollen balances, and usage, or validate an API key to inspect its permissions, budget, and expiry. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "prs": [
+        8856
+      ],
+      "kind": "product"
     }
   ],
   "changelog": []

@@ -2,8 +2,8 @@
   "date": "2026-01-15",
   "period_start": "2026-01-15",
   "period_end": "2026-01-15",
-  "title": "Keys can grant scoped account access",
-  "summary": "More control over what an app's key can access, a crypto option for Pollen, and a Play login crash fixed.\n\nKey creation and authorization now share controls for allowed models, Pollen budget, expiry, and account permissions. Apps can preselect these options when sending someone through authorization, and permitted keys can access new profile, balance, and usage endpoints.\n\nNOWPayments checkout was added alongside fiat checkout on Enter. Crypto Pollen has its own balance, while the dashboard shows a combined paid balance.\n\nPlay now reads the balance API's current response field and checks for a value before formatting it, fixing a crash after login.",
+  "title": "Crypto checkout added for Pollen",
+  "summary": "Pollen gained a crypto checkout, apps gained finer authorization controls, and Play stopped tripping over its balance badge.\n\nNOWPayments checkout was added alongside fiat checkout, with a payment-method choice on Enter. Crypto purchases have a separate balance, while the dashboard shows fiat and crypto Pollen together.\n\nApps can preselect allowed models, a Pollen budget, expiry and account permissions when sending someone to `/authorize`. New permission-gated endpoints let authorized keys read account profile, balance and usage data.\n\nThe Play page now reads the current balance API response and checks that a value exists before formatting it, fixing a crash after login.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,12 +19,30 @@
       "date": "2026-01-15"
     }
   ],
-  "generated_at": "2026-10-17T15:59:15.466381+00:00",
+  "generated_at": "2026-10-17T22:38:14.949747+00:00",
   "highlights": [
     {
+      "emoji": "✨",
+      "title": "Crypto checkout for Pollen",
+      "text": "Choose crypto at checkout to buy Pollen. Enter shows your fiat and crypto Pollen together in the paid-balance display.",
+      "prs": [
+        6733
+      ],
+      "kind": "product"
+    },
+    {
       "emoji": "🔗",
-      "title": "Scoped access for app keys",
-      "text": "Apps can preselect model access, a Pollen budget, expiry, and account permissions during authorization. Permitted keys can also fetch profile, balance, and usage data through new endpoints. [Connect user wallets](https://gen.pollinations.ai/docs#tag/connect-user-wallets).",
+      "title": "Account data for authorized apps",
+      "text": "Keys with the relevant permissions can read account profile, balance and usage through `/api/account/profile`, `/api/account/balance` and `/api/account/usage`.",
+      "prs": [
+        7303
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Preselect app authorization options",
+      "text": "Apps can preselect allowed models, account permissions, a Pollen budget and expiry in the `/authorize` flow.",
       "prs": [
         7303
       ],

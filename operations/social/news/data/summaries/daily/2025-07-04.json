@@ -2,8 +2,8 @@
   "date": "2025-07-04",
   "period_start": "2025-07-04",
   "period_end": "2025-07-04",
-  "title": "Text model routing gets a reshuffle",
-  "summary": "Bidara opened to anonymous use, text routes changed models, and the API docs became easier to follow.\n\nBidara moved from Seed-tier to anonymous access. The `openai` route now uses GPT-4o mini, `openai-large` uses GPT-4.1, and `openai-fast` and `openai-roblox` use GPT-4.1 nano. The `openai-audio` route now has a 1,000-character input limit. Internal image-cache exploration tools were also added.\n\nThe community projects listing now includes Argent Script, a text-to-speech tool by withthatway powered by GPT-4o Audio.\n\nThe API docs now have clearer endpoint sections, tier and authentication guidance, and expanded examples for multimodal requests, vision, speech-to-text, function calling, and text-to-speech. Kontext image-to-image request examples were also added; its Seed-tier eligibility did not change.",
+  "title": "Text model routing changes",
+  "summary": "Text models changed routes, the API docs got easier to navigate, and a community speech tool joined the projects list.\n\n`openai-large` now routes to GPT-4.1, `openai` to GPT-4o mini, and `openai-fast` and `openai-roblox` to GPT-4.1 nano. Bidara moved from Seed-tier to anonymous access. The API now returns an error for invalid authentication tokens rather than trying another authentication method, and `openai-audio` has a 1,000-character input limit.\n\nThe API docs now have clearer endpoint navigation and examples for multimodal requests, vision, speech-to-text, function calling, and text-to-speech. Site examples also show how to use a reference image with Kontext via `?model=kontext&image=URL`; its Seed-tier eligibility did not change.\n\nArgent Script, a community text-to-speech tool, joined the Creative Projects listing. Behind the scenes, new scripts make it possible to sample cached GPT Image outputs and organize image-to-image inputs, prompts, and metadata for analysis.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,21 +23,12 @@
       "date": "2025-07-04"
     }
   ],
-  "generated_at": "2026-10-17T15:43:30.347380+00:00",
+  "generated_at": "2026-10-17T22:32:35.626579+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Bidara without a tier",
-      "text": "Bidara is now available to anonymous text API requests. [Browse the model](https://enter.pollinations.ai/models?q=bidara).",
-      "prs": [
-        2721
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "✨",
-      "title": "Updated OpenAI model routes",
-      "text": "`openai-large` now routes to GPT-4.1, while `openai` uses GPT-4o mini and `openai-fast` and `openai-roblox` use GPT-4.1 nano. [Browse models](https://enter.pollinations.ai/models).",
+      "title": "GPT-4.1 on openai-large",
+      "text": "`openai-large` now routes to GPT-4.1. [Browse the model](https://enter.pollinations.ai/models?q=openai-large).",
       "prs": [
         2766
       ],

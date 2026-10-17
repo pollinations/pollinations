@@ -3,7 +3,7 @@
   "period_start": "2025-03-12",
   "period_end": "2025-03-12",
   "title": "Mistral Small 24B joins text generation",
-  "summary": "Mistral Small 24B joined the text API, reasoning-model prompts got more reliable, and two community projects got their listings updated.\n\nThe text API added `mistral`, backed by Mistral Small 24B. Another model choice, without another endpoint to learn.\n\n@taylorsnupe’s PromptPix Android app joined the project list; it generates images from prompts as you scroll and lets you save favorites. @withthatway’s chatbot listing was updated to MiReXa AI and now includes audio generation among its features.\n\nFor DeepSeek and other affected reasoning models that do not accept the system role, the text client now converts system messages into prefixed user messages. That includes configured default prompts; models that support system messages keep their existing behavior.",
+  "summary": "Mistral Small 24B joined the text API, reasoning models got more reliable system instructions, and the community project list picked up an Android image app.\n\nAdded `mistral` as a text-generation option, backed by Mistral Small 24B.\n\nFor DeepSeek and other models that do not accept the system role, the text client now passes system instructions as user messages instead. That includes configured default prompts.\n\nThe project list gained PromptPix, an Android app that generates images as you scroll and lets you save favorites. The chatbot formerly listed as urSapere AI is now listed as MiReXa AI, with audio generation among its features.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,12 +27,12 @@
       "date": "2025-03-12"
     }
   ],
-  "generated_at": "2026-10-17T15:34:53.692247+00:00",
+  "generated_at": "2026-10-17T22:29:16.522921+00:00",
   "highlights": [
     {
       "emoji": "🤖",
       "title": "Mistral Small 24B added",
-      "text": "Generate text with `mistral`, backed by Mistral Small 24B. [Browse the model](https://enter.pollinations.ai/models?q=mistral).",
+      "text": "Generate text with Mistral Small 24B using the `mistral` model ID. [Browse the model](https://enter.pollinations.ai/models?q=mistral).",
       "prs": [
         1330
       ],

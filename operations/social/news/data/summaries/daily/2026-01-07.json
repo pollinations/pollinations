@@ -2,8 +2,8 @@
   "date": "2026-01-07",
   "period_start": "2026-01-07",
   "period_end": "2026-01-07",
-  "title": "Claude Sonnet and Opus change routes",
-  "summary": "Claude’s routing and request handling got attention, OpenCode gained a configuration installer, and ChatPUA joined the app catalog.\n\n`claude` and `claude-large` were moved from AWS Bedrock to Google Vertex AI to address token-rate limits. `claude-fast` remains on Bedrock. The same PR added Oh My Pollicode, an installer that configures Pollinations models for OpenCode and oh-my-opencode.\n\nThe Vertex AI configurations now return OpenAI-style string content to address response-validation errors. They also supply a 64,000-token default when `max_tokens` is omitted, while still accepting a value supplied by the caller.\n\nLibre-Connect’s bilingual iOS roleplay chat app was added to the app catalog and README’s recent apps list.",
+  "title": "An OpenCode setup helper",
+  "summary": "Claude got a new route and request fixes, OpenCode got a setup helper, and the app catalog gained ChatPUA.\n\nOh My Pollicode was added to install OpenCode and oh-my-opencode and write Pollinations provider and multi-agent model configuration. Less config editing before the agents start talking.\n\n`claude` (Sonnet 4.5) and `claude-large` (Opus 4.5) were moved from Bedrock to Vertex AI to address token-rate limits; `claude-fast` stays on Bedrock. Follow-up fixes made Vertex responses pass OpenAI-style validation and gave requests that omit `max_tokens` a default, while still allowing callers to set their own.\n\nLibre-Connect’s bilingual iOS roleplay chat app was added to the catalog and README’s recent apps list. It includes avatars, GIFs, groups and scenes.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,12 +23,12 @@
       "date": "2026-01-07"
     }
   ],
-  "generated_at": "2026-10-17T15:58:24.014284+00:00",
+  "generated_at": "2026-10-17T22:37:53.421614+00:00",
   "highlights": [
     {
       "emoji": "🔗",
-      "title": "Pollinations setup for OpenCode",
-      "text": "Oh My Pollicode installs OpenCode and oh-my-opencode and writes Pollinations provider and multi-agent model configuration to your OpenCode config.",
+      "title": "OpenCode setup helper",
+      "text": "Oh My Pollicode can install OpenCode and oh-my-opencode and write a Pollinations provider and multi-agent model configuration.",
       "prs": [
         6895
       ],

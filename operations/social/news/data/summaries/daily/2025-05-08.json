@@ -2,8 +2,8 @@
   "date": "2025-05-08",
   "period_start": "2025-05-08",
   "period_end": "2025-05-08",
-  "title": "A new model and more predictable model handling",
-  "summary": "A new text-and-image model, intact JSON Schema requests, and a model list that no longer offers what it can’t serve.\n\nAdded `openai-roblox`, a GPT-4.1-mini model that accepts text and images and supports tools. The same PR changed Roblox-referrer routing to use llamascout regardless of the requested model, preserved the first existing system message in model context wrappers, updated Phi-4 Instruct’s listed provider, and adjusted spacing instructions for the hypnosisTracy persona.\n\nThe OpenAI-compatible endpoint now forwards the complete `response_format` object to compatible models, including a supplied JSON schema. JSON mode requests without `response_format` still fall back to `{ \"type\": \"json_object\" }`.\n\nRemoved `llama-vision` from the text API’s available models list, so it is no longer advertised as a text-and-image option.",
+  "title": "A new GPT-4.1-mini model option",
+  "summary": "A new GPT-4.1-mini model option arrived alongside more reliable JSON Schema forwarding and a tidier model list.\n\nAdded `openai-roblox` with text and image input, text output, and tool support. The same PR also changed Roblox-referrer routing to use llamascout, preserved the first existing system message in model context wrappers, corrected Phi-4 Instruct’s provider listing, and adjusted the hypnosisTracy persona’s spacing instructions.\n\nThe OpenAI-compatible text endpoint now forwards the full `response_format` object to compatible models instead of dropping a supplied JSON schema. JSON mode still falls back to `{ \"type\": \"json_object\" }` when no response format is supplied.\n\nRemoved `llama-vision` from the text API’s available-models list, so it is no longer advertised as an option.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,12 +19,12 @@
       "date": "2025-05-08"
     }
   ],
-  "generated_at": "2026-10-17T15:39:16.568244+00:00",
+  "generated_at": "2026-10-17T22:30:56.517468+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "OpenAI Roblox model added",
-      "text": "`openai-roblox` accepts text and image input, produces text, and supports tools. [Browse the model](https://enter.pollinations.ai/models?q=openai-roblox).",
+      "title": "GPT-4.1-mini model option",
+      "text": "Use `openai-roblox` for text and image input, text output, and tool support. [Browse the model](https://enter.pollinations.ai/models?q=openai-roblox).",
       "prs": [
         1925
       ],

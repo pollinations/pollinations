@@ -2,16 +2,12 @@
   "date": "2026-08-26",
   "period_start": "2026-08-26",
   "period_end": "2026-08-26",
-  "title": "Discord linking turns joining the community into a Quest",
-  "summary": "A community-heavy day: Discord rewards, three new apps, and MCP agents that can search the web or stitch media together.\n\nAccounts can now link one Discord identity alongside GitHub sign-in, see their Pollinations server connection, and claim 1 Pollen for joining. The Quest path was also simplified behind the scenes: server-side verification and the reward remain, with fewer dashboard requests involved.\n\nThe app directory gained Pollinations App for wallet-connected image generation, Dery AI for collaborative image-making, and Descriptly, which uses vision models to suggest accessible alt text for images changed in pull requests. The README now keeps the recent-apps and project-activity picture current too.\n\nAgents can now search and fetch web content through a private Exa MCP integration without forwarding caller credentials. FFmpeg MCP also learned to accept multiple public inputs, so a single job can combine separate video, audio, and other media files before returning a hosted output.",
-  "pr_count": 11,
+  "title": "Discord accounts connect to Quests",
+  "summary": "Discord-linked Quests, web-aware agents and multi-input FFmpeg joined three community apps, while wallet checks got stricter.\n\nEnter added Discord account linking while keeping GitHub as the sign-in provider. Connected accounts confirmed as Pollinations server members are eligible for a one-time, 1-Pollen Discord Quest. Membership is checked for the Quest rather than displayed on the account page.\n\nThe MCP catalog gained Exa tools for web search and fetching source-page content. The FFmpeg tool now accepts multiple HTTPS inputs for workflows such as combining media, and supports safe single-file output extensions beyond its former fixed list.\n\nDescriptly uses vision models to suggest alt text for images changed in pull requests. Pollinations App lets people generate images with their own Pollen, while Dery AI offers collaborative image creation.",
+  "pr_count": 10,
   "prs": [
     {
       "number": 13741,
-      "date": "2026-08-26"
-    },
-    {
-      "number": 13941,
       "date": "2026-08-26"
     },
     {
@@ -51,12 +47,12 @@
       "date": "2026-08-26"
     }
   ],
-  "generated_at": "2026-08-27T09:15:50.518510+00:00",
+  "generated_at": "2026-10-17T23:09:14.799310+00:00",
   "highlights": [
     {
-      "emoji": "🔗",
-      "title": "Connect your Discord account",
-      "text": "Link Discord to your Pollinations account, verify hive membership, and claim a 1-Pollen community Quest. [Connect your account](https://enter.pollinations.ai/keys)",
+      "emoji": "🎯",
+      "title": "Discord joins Quests",
+      "text": "Link a Discord account to your existing Pollinations account. Connected members of the Pollinations server are eligible for a one-time, 1-Pollen Quest. [Join the community](https://discord.gg/k9F7SyTgqn).",
       "prs": [
         13741,
         13950
@@ -64,31 +60,22 @@
       "kind": "product"
     },
     {
-      "emoji": "🎬",
-      "title": "FFmpeg MCP takes multiple inputs",
-      "text": "Combine separate video, audio, and media files in one MCP job, then get the finished file hosted on Pollinations Media. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)",
+      "emoji": "🎨",
+      "title": "Multi-input FFmpeg tools",
+      "text": "Give the `runFfmpeg` MCP tool multiple HTTPS sources to combine video or audio with positional `-i` inputs and multi-input filters. Outputs can use any safe single-file extension. [Explore MCP tools](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         14002
       ],
       "kind": "product"
     },
     {
-      "emoji": "🔍",
-      "title": "Exa Search MCP joins the agent toolbox",
-      "text": "Prompt agents can now search the web and fetch pages through Exa in the shared MCP catalog. The internet remains largely unformatted. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)",
+      "emoji": "🔗",
+      "title": "Exa search for agents",
+      "text": "The new `/mcp/exa` endpoint gives Gen and prompt agents `web_search_exa` for web results and `web_fetch_exa` for source-page content. [Explore MCP tools](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         14013
       ],
-      "kind": "product"
-    },
-    {
-      "emoji": "💡",
-      "title": "Descriptly writes alt-text suggestions for PR images",
-      "text": "Use Pollinations vision models to spot changed images in pull requests and propose accessible descriptions. [View repo](https://github.com/g33ky00/descriptly)",
-      "prs": [
-        13969
-      ],
-      "kind": "app"
+      "kind": "api"
     }
   ],
   "changelog": []

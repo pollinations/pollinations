@@ -2,14 +2,10 @@
   "date": "2026-07-04",
   "period_start": "2026-07-04",
   "period_end": "2026-07-04",
-  "title": "Claude Fable 5 returns to the text API",
-  "summary": "Claude Fable 5 returns to the unified text API, while the app directory and project news keep themselves current.\n\nClaude Fable 5 is back through Bedrock for paid text workloads, including adaptive thinking support. Developers have another capable model available through the same unified endpoint; software continues its ancient ritual of removing a model and then finding it again.\n\nAutomated updates refreshed community app health and usage data in the directory, while the repository README's Latest News section caught up with the day.",
-  "pr_count": 3,
+  "title": "Claude Fable 5 returns",
+  "summary": "Claude Fable 5 returned with image input, tools, and a large context; the README made room for a community chat app.\n\nClaude Fable 5 was restored as a paid-only text model through the chat completions API. It accepts text and up to 20 reference images, supports tools, and has a 1 million-token context.\n\nRequests use adaptive thinking and omit sampling parameters the model rejects. Token billing distinguishes input, cached reads, cache writes, and output.\n\nThe README’s Latest News section added Flow Linnom, a community multi-model chat interface, in place of an older Generative Soundscape entry.",
+  "pr_count": 2,
   "prs": [
-    {
-      "number": 12218,
-      "date": "2026-07-04"
-    },
     {
       "number": 12221,
       "date": "2026-07-04"
@@ -19,12 +15,12 @@
       "date": "2026-07-04"
     }
   ],
-  "generated_at": "2026-09-04T11:42:55.428035+00:00",
+  "generated_at": "2026-10-17T23:00:38.722211+00:00",
   "highlights": [
     {
       "emoji": "🤖",
       "title": "Claude Fable 5 returns",
-      "text": "Claude Fable 5 is back as a text model with adaptive thinking support. [View the model](https://enter.pollinations.ai/models?q=global.anthropic.claude-fable-5).",
+      "text": "Use the paid-only Claude Fable 5 model for text, up to 20 reference images, and tool calls, with a 1 million-token context. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         12222
       ],

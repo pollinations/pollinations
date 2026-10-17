@@ -2,8 +2,8 @@
   "date": "2026-01-09",
   "period_start": "2026-01-09",
   "period_end": "2026-01-09",
-  "title": "A storyboard app joins the catalog",
-  "summary": "A new community storyboard app, clearer app authorization, and model usage estimates made for a day of useful housekeeping.\n\nThe community app catalog added @eneryu’s Onyx, which turns scripts into noir-style visual storyboards. A duplicate TeleChars AI listing was also consolidated.\n\nA new Bring Your Own Pollen guide explains how apps can let people authorize with Pollinations and use their own Pollen. The authorization screen now identifies the app receiving access more plainly.\n\nEnter’s model table now estimates how far one Pollen goes using observed usage, with workload-based estimates when that data is unavailable. A public endpoint also provides aggregated model usage stats.",
+  "title": "Model costs get a reality check",
+  "summary": "Model costs are easier to estimate, keys are easier to configure, and a noir storyboard app joined the catalog.\n\nEnter’s Pollen estimates now use observed model usage when available, with workload-based estimates as a fallback. A new public `/api/model-stats` endpoint exposes aggregated usage for the last seven complete days.\n\nA new Bring Your Own Pollen guide explains how apps can let users authorize with Pollinations, while the authorize screen more plainly says which app receives a key. API key model selection now shows display names alongside API IDs; the key form also received accessibility improvements.\n\n@eneryu’s Onyx, which turns scripts into noir-style storyboard sequences, was added to the app catalog. The catalog also consolidated two listings for TeleChars AI.",
   "pr_count": 8,
   "prs": [
     {
@@ -39,16 +39,16 @@
       "date": "2026-01-09"
     }
   ],
-  "generated_at": "2026-10-17T15:58:47.688918+00:00",
+  "generated_at": "2026-10-17T22:38:06.099750+00:00",
   "highlights": [
     {
-      "emoji": "🔗",
-      "title": "Bring Your Own Pollen",
-      "text": "Build apps where people authorize with Pollinations and use their own Pollen. The authorization screen now makes clearer which app they’re connecting to. [Connect user wallets](https://gen.pollinations.ai/docs#tag/connect-user-wallets).",
+      "emoji": "📊",
+      "title": "Public model usage stats",
+      "text": "Query `/api/model-stats` for aggregated model usage across the last seven complete days. Results are cached for six hours.",
       "prs": [
-        6947
+        6949
       ],
-      "kind": "product"
+      "kind": "api"
     }
   ],
   "changelog": []

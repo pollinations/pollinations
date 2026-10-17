@@ -2,8 +2,8 @@
   "date": "2025-10-04",
   "period_start": "2025-10-04",
   "period_end": "2025-10-04",
-  "title": "Image models get a listing endpoint",
-  "summary": "A new image-model listing endpoint and API reference landed alongside a model-registry fix, tighter image queues and more precise usage tracking.\n\nAdded `/api/generate/image/models` alongside an API reference and OpenAPI schema covering generation requests, image parameters, model listings and structured errors.\n\nEnter’s text-model registry now includes `gpt-5-mini-2025-08-07`, addressing requests that failed because the model ID was absent.\n\nSeedream now requires the Flower tier, and Kontext was removed from the available image models. Nanobanana and Seedream have longer queue intervals and lower Flower and Nectar concurrency caps; authenticated requests from the same IP share a queue. Prompt enhancement now returns the original prompt without rewriting it.",
+  "title": "An API reference and an image-model listing endpoint",
+  "summary": "A new API reference and image-model listing endpoint landed alongside model-registry fixes and tighter image queues.\n\nEnter added a Scalar API reference covering generation requests, image parameters, model listings, and structured errors. A new `/api/generate/image/models` endpoint lists image models, and request validation now covers more generation parameters and image defaults.\n\nEnter registered `gpt-5-mini-2025-08-07`, fixing requests that failed because its ID was missing. Pricing definitions now use dollar-per-token rates, while image usage tracking reads the model and image-token count from response headers when available.\n\nSeedream now requires Flower access, and Kontext was removed from the available image models. Nano-banana and Seedream received longer queue intervals and lower Flower and Nectar concurrency caps; token-authenticated requests now share a queue by IP address.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,11 +27,11 @@
       "date": "2025-10-04"
     }
   ],
-  "generated_at": "2026-10-17T15:47:54.864169+00:00",
+  "generated_at": "2026-10-17T22:34:16.449240+00:00",
   "highlights": [
     {
       "emoji": "🔗",
-      "title": "List image models",
+      "title": "List image models by API",
       "text": "Use `/api/generate/image/models` to retrieve the available image models programmatically.",
       "prs": [
         4305

@@ -3,7 +3,7 @@
   "period_start": "2026-01-01",
   "period_end": "2026-01-01",
   "title": "Pollen balances and subscription tiers stay in sync",
-  "summary": "A little New Year housekeeping: Pollen and tier fixes, VisionAI in the app showcase, and expired Seedream promo labels cleared away.\n\nBalance lookup now checks Polar when the stored balance is zero, helping purchased Pollen appear without overwriting a spent balance. Subscription grant events also update both the stored tier and daily Pollen balance after tier changes.\n\n@Superheroghost’s Pollinations VisionAI was added to the app catalog and README showcase. The public image-generation UI supports Pollinations models and API keys.\n\nThe expired 99% off badge and promotional descriptions were removed from `seedream` and `seedream-pro`, following the promotion’s scheduled December 31 end.",
+  "summary": "A new year of housekeeping: Pollen and tier fixes, a community image app, and the end of Seedream promo labels.\n\nBalance lookups now check Polar when the stored balance is zero and update it only if Polar shows more Pollen. Subscription grant events now update both the stored tier and daily Pollen balance after tier changes.\n\nThe community-built Pollinations VisionAI image-generation UI was added to the app catalog and README showcase. It supports Pollinations API keys.\n\nThe expired 99% off badge and promotional copy were removed from `seedream` and `seedream-pro` listings. The promotion was scheduled to end December 31, 2025.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,7 +23,7 @@
       "date": "2026-01-01"
     }
   ],
-  "generated_at": "2026-10-17T15:57:39.254102+00:00",
+  "generated_at": "2026-10-17T22:37:36.439035+00:00",
   "highlights": [],
   "changelog": []
 }

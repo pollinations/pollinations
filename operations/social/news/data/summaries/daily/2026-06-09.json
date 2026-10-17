@@ -2,10 +2,18 @@
   "date": "2026-06-09",
   "period_start": "2026-06-09",
   "period_end": "2026-06-09",
-  "title": "Pruna models get reliable routing and explicit resolutions",
-  "summary": "A quick tune-up for video generation: Pruna models stop hanging indefinitely, and Wan-Pro image-to-video is back online.\n\nWe routed Pruna models (p-image, p-image-edit, p-video) through Replicate. The main win here is bounded polling—failed requests now return a crisp 400 error instead of hanging indefinitely. We also split p-video into explicit p-video-720p and p-video-1080p models, so you can choose your resolution instead of relying on inferred heights.\n\nWan-Pro (wan2.7) image-to-video generation was throwing 500 errors because the upstream API changed its expected payload from a simple string to a media array. We updated the plumbing to match the new format. Pixels are flowing normally again.",
-  "pr_count": 2,
+  "title": "Pruna video gets explicit resolution choices",
+  "summary": "Pruna video gained explicit resolution models, while Wan-pro and Klein image routing got repairs.\n\nPruna image and video models were routed through Replicate. Video generation now has separate `p-video-720p` and `p-video-1080p` models, with the API docs updated to match. The `p-video` and `pruna-video` aliases select 720p even if a request asks for a height of 1080 or more; use `p-video-1080p` explicitly for that resolution. Image edits now require an input image, and provider errors are returned more accurately.\n\nFixed `wan-pro` image-to-video requests that failed because the start image was sent in a format the provider did not accept. `wan-fast` keeps its existing request format.\n\nUpdated Klein 4B image-request routing to a replacement GPU endpoint, alongside the fallback route.",
+  "pr_count": 6,
   "prs": [
+    {
+      "number": 11692,
+      "date": "2026-06-09"
+    },
+    {
+      "number": 11693,
+      "date": "2026-06-09"
+    },
     {
       "number": 11698,
       "date": "2026-06-09"
@@ -13,14 +21,22 @@
     {
       "number": 11701,
       "date": "2026-06-09"
+    },
+    {
+      "number": 11702,
+      "date": "2026-06-09"
+    },
+    {
+      "number": 11706,
+      "date": "2026-06-09"
     }
   ],
-  "generated_at": "2026-06-10T07:24:37.659831+00:00",
+  "generated_at": "2026-10-17T22:58:05.196287+00:00",
   "highlights": [
     {
-      "emoji": "🎬",
-      "title": "HD Video Generation",
-      "text": "Pruna video generation now supports explicit resolution control. Choose between `p-video-720p` and `p-video-1080p` for your next generation. Check the [Unified API](https://gen.pollinations.ai).",
+      "emoji": "🎨",
+      "title": "Choose Pruna video resolution",
+      "text": "Generate Pruna video with `p-video-720p` or select `p-video-1080p` explicitly for 1080p. The `p-video` and `pruna-video` aliases select 720p, even when you request a height of 1080 or more. [See p-video-1080p](https://enter.pollinations.ai/models?q=p-video-1080p).",
       "prs": [
         11698
       ],

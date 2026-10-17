@@ -2,26 +2,40 @@
   "date": "2026-05-28",
   "period_start": "2026-05-28",
   "period_end": "2026-05-28",
-  "title": "Local currency checkout for Pollen packs",
-  "summary": "Checkout now speaks your local currency when buying Pollen packs.\n\nStripe Adaptive Pricing is now live on the backend. If you're buying Pollen packs outside the US, checkout will automatically route to your local currency. Grants stay USD-anchored, but paying for things just got a little more native to wherever you happen to be.",
-  "pr_count": 1,
+  "title": "Pollen checkout gets local-currency pricing support",
+  "summary": "Checkout gained local-currency pricing support, staging got an invite list, and token accounting learned that providers disagree about arithmetic.\n\nPollen pack checkout now creates USD-priced Stripe sessions with Adaptive Pricing, so supported buyers may see prices in their local currency. Pack links and the products API now use keys such as `p2` instead of dollar amounts. The checkout work did not enable currency-locked methods such as UPI or Pix; related news-banner edits removed an outdated bonus notice and a WeChat Pay claim.\n\nStaging signup and authenticated Enter and Gen requests now check a GitHub ID allowlist, including requests made with existing sessions or API keys. Denied visitors get an explanation and a link to the main site; production authentication is unchanged.\n\nThe app catalog refreshed its metrics and Greenhouse listings, adding Perchance AI Generator and LAHgen. The README’s Latest News was also updated with a recap of model news from May 27.",
+  "pr_count": 7,
   "prs": [
+    {
+      "number": 11169,
+      "date": "2026-05-28"
+    },
     {
       "number": 11172,
       "date": "2026-05-28"
-    }
-  ],
-  "generated_at": "2026-05-29T07:15:38.289709+00:00",
-  "highlights": [
+    },
     {
-      "emoji": "🌍",
-      "title": "Local Currency Support",
-      "text": "Stripe adaptive pricing is live. You can now buy Pollen packs in your local currency instead of doing mental math against the USD. [Dashboard](https://enter.pollinations.ai)",
-      "prs": [
-        11172
-      ],
-      "kind": "product"
+      "number": 11187,
+      "date": "2026-05-28"
+    },
+    {
+      "number": 11339,
+      "date": "2026-05-28"
+    },
+    {
+      "number": 11340,
+      "date": "2026-05-28"
+    },
+    {
+      "number": 11344,
+      "date": "2026-05-28"
+    },
+    {
+      "number": 11347,
+      "date": "2026-05-28"
     }
   ],
+  "generated_at": "2026-10-17T22:54:59.504617+00:00",
+  "highlights": [],
   "changelog": []
 }

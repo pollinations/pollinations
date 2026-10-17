@@ -2,8 +2,8 @@
   "date": "2026-08-28",
   "period_start": "2026-08-28",
   "period_end": "2026-08-28",
-  "title": "Play, browse, and compare models with fewer clicks",
-  "summary": "A buzzing day for getting from model discovery to working output: direct Play links, a new 4K video model, healthier community catalogs, and a Quest scoreboard.\n\nSupported models now include a Try in Play action that opens a correctly configured Play session directly from the listing. Pixel Forge also joined the community app catalog as a focused image studio for comparing Flux, Dreamshaper, Klein, GPT Image 2, Zimage, and Nanobanana at chosen dimensions.\n\nGemini Omni 1.1 Flash is now available for short text- or keyframe-driven videos with synchronized audio, vertical or widescreen output, and resolutions up to 4K. When a request cannot complete, Gemini Omni now returns useful provider and moderation details instead of the traditional mysterious 502 fog.\n\nThe app catalog now has visual previews across all 835 active apps, backed by weekly screenshot keepalives, while DemoWeaver and Automated Video App joined the build and video ecosystem. New public models and endpoint agents also get a clear scheduled publication window, shown directly in My Models.",
+  "title": "Gemini Omni adds video with synchronized audio",
+  "summary": "Video with audio, model-to-Play links, and a Quest leaderboard led a day of catalog and model maintenance.\n\nAdded paid-only `google/gemini-omni-1.1-flash` video generation from text or up to two image keyframes, with synchronized audio and controls for duration, aspect ratio, and resolution up to 4K. A follow-up preserves provider failure details so content-policy refusals can be reported accurately.\n\nEligible model catalog rows now open the selected model in Play, which also picks the matching Image, Text, Audio, or Video tab. The community app catalog gained screenshots for 66 reviewed apps, bringing all 835 active apps into view with images; three community-built apps joined the catalog.\n\nCommunity now shows the top eight Quest contributors and overall totals, based on recorded GitHub issue Quest rewards. A public leaderboard endpoint returns up to 50 contributors with their completed Quest counts and Pollen earned.",
   "pr_count": 13,
   "prs": [
     {
@@ -59,30 +59,12 @@
       "date": "2026-08-28"
     }
   ],
-  "generated_at": "2026-08-29T06:25:52.816079+00:00",
+  "generated_at": "2026-10-17T23:09:33.118485+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "Every model gets a playground",
-      "text": "Open any supported Image, Text, Audio, or Video model directly in a preconfigured [Play session](https://pollinations.ai/play).",
-      "prs": [
-        13940
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🎯",
-      "title": "The quest garden has rankings",
-      "text": "The Community page now shows the top Quest contributors, completed quests, and Pollen earned. Useful motivation, mildly dangerous for your sleep schedule.",
-      "prs": [
-        13966
-      ],
-      "kind": "product"
-    },
-    {
       "emoji": "🎨",
-      "title": "Two frames, then cinema",
-      "text": "Generate 3–10 second, audio-synced video clips with `google/gemini-omni-1.1-flash`: text or two keyframes in, 360p to 4K video out. [Check the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Gemini Omni video",
+      "text": "Generate video with synchronized audio from text or up to two image keyframes using `google/gemini-omni-1.1-flash`. Choose a 3–10 second duration, landscape or portrait framing, and resolution up to 4K. [Browse the model](https://enter.pollinations.ai/models?q=google/gemini-omni-1.1-flash).",
       "prs": [
         14083
       ],
@@ -90,12 +72,30 @@
     },
     {
       "emoji": "✨",
-      "title": "Pixels enter the forge",
-      "text": "Pixel Forge is a focused image studio for comparing Flux, Dreamshaper, Klein, GPT Image 2, Zimage, and Nanobanana at the dimensions you choose. [Try it](https://b3b41020.github.io/pixel-forge)",
+      "title": "Models open in Play",
+      "text": "Use “Try in Play” from an eligible model catalog row to open that model on the matching Image, Text, Audio, or Video tab. You can also link directly to a model with `/play?model=<id>`. [Try Play](https://pollinations.ai/play).",
       "prs": [
-        14074
+        13940
       ],
-      "kind": "app"
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Quest contributor leaderboard",
+      "text": "See the top eight Quest contributors in Community, alongside totals for completed Quests and Pollen earned.",
+      "prs": [
+        13966
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Quest leaderboard API",
+      "text": "Query `GET /api/quests/leaderboard` for up to 50 contributors ranked by Quest Pollen earned, with completed Quest counts and overall totals.",
+      "prs": [
+        13966
+      ],
+      "kind": "api"
     }
   ],
   "changelog": []

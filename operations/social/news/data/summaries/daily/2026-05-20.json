@@ -2,12 +2,28 @@
   "date": "2026-05-20",
   "period_start": "2026-05-20",
   "period_end": "2026-05-20",
-  "title": "Polly renders tables cleanly and stops asking follow-up questions",
-  "summary": "Polly gets a rendering overhaul and a personality tweak, plus clearer API error codes for text generation.\n\nA pair of updates to Polly's rendering engine and personality. Tables and math equations now render reliably with proper font fallbacks and markdown support, rather than spitting out raw formatting markers. We also tuned the voice to be warmer and explicitly banned unsolicited follow-up questions and standard chatbot fluff.\n\nWhen an upstream text provider hits a rate limit, the API now returns a 502 Bad Gateway instead of passing through a 429. This stops client applications from confusing upstream limits with their own rate limits, making retry logic much simpler to write.",
-  "pr_count": 3,
+  "title": "Clearer errors from the text API",
+  "summary": "Text API errors are clearer, media usage has finer-grained durations, and Polly is less likely to turn a table—or a dollar amount—into a formatting problem.\n\nA team fix maps text-provider rate limits to HTTP 502 instead of passing the provider’s 429 to chat API callers. The response still records `upstreamStatus: 429` for debugging; a 429 from a user-supplied image URL remains client-facing.\n\nA team fix lets generation events record fractional video durations and adds `input_audio_seconds`, `output_audio_seconds`, and `output_video_seconds` to per-request usage responses, CSV exports, and SDK types. Agent-maintained API docs now show the fields. The migration reset historical integer video-duration values in the old column to zero.\n\nTwo team fixes make Polly’s tables and equations more reliable in Discord. Table images render bold and italic text instead of Markdown markers, failed image renders fall back to code blocks, and plain dollar amounts no longer get mistaken for math. Replies also keep adjacent text and code together when they fit.",
+  "pr_count": 7,
   "prs": [
     {
       "number": 11182,
+      "date": "2026-05-20"
+    },
+    {
+      "number": 11185,
+      "date": "2026-05-20"
+    },
+    {
+      "number": 11186,
+      "date": "2026-05-20"
+    },
+    {
+      "number": 11189,
+      "date": "2026-05-20"
+    },
+    {
+      "number": 11193,
       "date": "2026-05-20"
     },
     {
@@ -19,17 +35,16 @@
       "date": "2026-05-20"
     }
   ],
-  "generated_at": "2026-05-21T07:13:01.310566+00:00",
+  "generated_at": "2026-10-17T22:54:26.880275+00:00",
   "highlights": [
     {
-      "emoji": "🤖",
-      "title": "Polly Upgrades",
-      "text": "We've tuned Polly's voice to drop the annoying chatbot fluff, improved LaTeX and markdown rendering for tables, and batched code blocks to keep your chat clean.",
+      "emoji": "💡",
+      "title": "Media seconds in usage history",
+      "text": "Per-request usage responses now include `input_audio_seconds`, `output_audio_seconds`, and `output_video_seconds`, so you can inspect audio and video usage alongside each request. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        11194,
-        11195
+        11185
       ],
-      "kind": "product"
+      "kind": "api"
     }
   ],
   "changelog": []

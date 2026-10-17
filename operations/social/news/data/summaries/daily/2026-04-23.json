@@ -2,12 +2,20 @@
   "date": "2026-04-23",
   "period_start": "2026-04-23",
   "period_end": "2026-04-23",
-  "title": "MCP v2.1.0: Dynamic registries and account tools",
-  "summary": "A heavy frontend polish day brings a massive MCP server upgrade, a personalized Play page experience, and a much smoother mobile UI.\n\nThe MCP server got a hefty upgrade. Agents can now tap into 9 video models and over 35 voices via dynamic registries. We also added account tools so your agents can check their own Pollen balances without leaving the terminal.\n\nWe've updated the Play page to focus on a streamlined, authenticated flow. Logging in now unlocks the full model catalog and ensures proper BYOP traffic attribution for creators.\n\nA cluster of UI updates makes browsing models and managing keys significantly less annoying. The pricing page now features brand logos and one-click API key copying. On mobile, we fixed the background scrolling in modals, centered the header, and cleaned up the pricing tables.",
-  "pr_count": 6,
+  "title": "MCP finds more models and checks your Pollen",
+  "summary": "MCP gained a wider model menu and account tools, while Play, model browsing, and mobile key dialogs got a practical tidy-up.\n\nThe MCP package now validates models and voices against the gateway registries instead of short fixed lists. Its video tools accept nine listed models, audio tools can use more than 35 voices, and speech tools accept an audio-model override. New account tools let an authorized key check its Pollen balance and request usage.\n\nVisitors can still browse the full Play model catalog while logged out, but generating now starts the login flow rather than using a shared anonymous key. Play also distinguishes server-side secret keys from BYOP App Keys.\n\nEnter’s model cards and pricing rows gained provider logos, status badges, copyable API model keys, and clearer mobile details. TTS prices now appear as estimated per-second rates; public model keys and routing did not change.",
+  "pr_count": 9,
   "prs": [
     {
       "number": 10379,
+      "date": "2026-04-23"
+    },
+    {
+      "number": 10412,
+      "date": "2026-04-23"
+    },
+    {
+      "number": 10414,
       "date": "2026-04-23"
     },
     {
@@ -16,6 +24,10 @@
     },
     {
       "number": 10416,
+      "date": "2026-04-23"
+    },
+    {
+      "number": 10420,
       "date": "2026-04-23"
     },
     {
@@ -31,12 +43,21 @@
       "date": "2026-04-23"
     }
   ],
-  "generated_at": "2026-04-24T06:36:55.491346+00:00",
+  "generated_at": "2026-10-17T22:48:57.612773+00:00",
   "highlights": [
     {
-      "emoji": "🤖",
-      "title": "MCP Server v2.1.0",
-      "text": "Your agents just got an upgrade. The [MCP package](https://www.npmjs.com/package/@pollinations_ai/mcp) now supports dynamic registries, unlocking 9 video models, 35+ voices, and direct Pollen balance checks.",
+      "emoji": "🎨",
+      "title": "More choices in MCP",
+      "text": "MCP video tools now accept nine registry-listed models, and audio tools can use more than 35 voices. Speech tools also let you override the audio model. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        10379
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Check Pollen from MCP",
+      "text": "Use the new `getBalance` and `getUsage` tools to check your Pollen balance and request or daily usage with an authorized key. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         10379
       ],

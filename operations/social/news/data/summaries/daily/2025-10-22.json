@@ -2,8 +2,8 @@
   "date": "2025-10-22",
   "period_start": "2025-10-22",
   "period_end": "2025-10-22",
-  "title": "More community projects in the directory",
-  "summary": "The garden got more projects and clearer API guides, while image usage, pricing, and request limits received a closer look.\n\nThe project catalog added nine Hacktoberfest apps and eight other submissions, spanning Telegram bots, image tools, an Android app, and a Markdown editor. BeeCoder joined the Vibe Coding listings, and several existing projects received corrected contributor credits.\n\nThe API guide now runs from quick start to advanced usage, with expanded Python, JavaScript, and cURL examples for text, images, and audio. The Pollen FAQ also clarifies how key types, free-model limits, and Pollen spending currently work, while keeping planned Front-End Key spending distinct from existing capabilities.\n\nGPT Image tracking now reports actual output-token usage instead of a fixed one-token count. Image-model pricing and the free-or-paid labels for several models were corrected in the registry.",
+  "title": "Image usage accounting gets more accurate",
+  "summary": "Image accounting and request controls got a closer look, while the API docs and community project directory grew.\n\nGPT Image now reports actual output-token usage instead of a fixed one-token count. Pricing records were also corrected for nanobanana, seedream, kontext, and turbo, along with the free or paid status of several models.\n\nKontext now requires seed-tier authentication or higher and has tier-based request and concurrency limits. Image queues can size themselves to each model's concurrency cap rather than a hardcoded limit. GPTImage also gained automated controls for accounts with a sustained pattern of failed requests.\n\nThe API documentation now starts with a quick start and builds toward advanced use, with expanded Python, JavaScript, and cURL examples for text, image, and audio. The Pollen FAQ also clarifies what different API keys can access today and separates current capabilities from launch goals.",
   "pr_count": 7,
   "prs": [
     {
@@ -35,7 +35,7 @@
       "date": "2025-10-22"
     }
   ],
-  "generated_at": "2026-10-17T15:49:36.045161+00:00",
+  "generated_at": "2026-10-17T22:34:51.004602+00:00",
   "highlights": [],
   "changelog": []
 }

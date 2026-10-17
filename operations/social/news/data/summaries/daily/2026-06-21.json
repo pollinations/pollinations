@@ -2,24 +2,26 @@
   "date": "2026-06-21",
   "period_start": "2026-06-21",
   "period_end": "2026-06-21",
-  "title": "Activity dashboard gets a usage UI refresh",
-  "summary": "A quiet maintenance day: clearer usage data, fresh ecosystem metrics, and audit automation wired in.\n\nThe activity dashboard’s usage interface was refreshed, making it easier to inspect how Pollinations infrastructure is being used without excavating the numbers by hand.\n\nThe daily app metrics update keeps the project’s view of its growing ecosystem current. The garden has been counted.\n\nCredentials for the pollinations-audit GitHub App were added to repository secrets, supporting automated project oversight behind the scenes.",
-  "pr_count": 3,
+  "title": "Activity brings usage and transactions together",
+  "summary": "Activity now puts filtered API usage, transactions, and app earnings in one place—and stops rounding tiny Pollen amounts into oblivion.\n\nActivity now pairs an API usage chart with a transaction table. Shared period, API key, and model filters let people inspect both views together; the table replaces the separate recent-transactions section on the Pollen page.\n\nApp earnings are now an always-visible Activity section, with the earnings setting using the same name. Usage and earnings also have empty states specific to the selected period.\n\nActivity charts and totals show small nonzero Pollen amounts more precisely instead of rounding them to zero. CSV downloads explain when they are unavailable because data is loading or the selected period has nothing to export.",
+  "pr_count": 1,
   "prs": [
     {
       "number": 11933,
       "date": "2026-06-21"
-    },
-    {
-      "number": 11934,
-      "date": "2026-06-21"
-    },
-    {
-      "number": 11937,
-      "date": "2026-06-21"
     }
   ],
-  "generated_at": "2026-09-04T11:56:43.745058+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:59:16.270671+00:00",
+  "highlights": [
+    {
+      "emoji": "📱",
+      "title": "Explore your API activity",
+      "text": "Compare API usage and transactions in Activity with shared period, API key, and model filters. App earnings have their own always-visible section.",
+      "prs": [
+        11933
+      ],
+      "kind": "product"
+    }
+  ],
   "changelog": []
 }

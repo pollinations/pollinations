@@ -2,8 +2,8 @@
   "date": "2025-08-03",
   "period_start": "2025-08-03",
   "period_end": "2025-08-03",
-  "title": "Generation counters return to the front page",
-  "summary": "Front-page counters returned while the community showcase picked up four more projects and a cleanup.\n\nGeneration count badges are back on the image and text feeds, with estimated totals and rates. Feed-switch button labels are also protected from automatic rephrasing.\n\nThe Creative Projects directory gained Imagine Draw AI and Aimpress for image generation, Evolve AI for speech, code and images, and What is this? for identifying objects in photos.\n\nProject tables gained refreshed entries and star counts, and the Discord bot listing now points to its contributor’s repository. Long descriptions and author names are shortened so the tables remain readable.",
+  "title": "Generation counts return to the front page",
+  "summary": "Front-page counters returned while four community projects joined the creative directory.\n\nGeneration count badges are back on the image and text feeds, with corrected displayed rates. Feed-switch button labels also stay put instead of being automatically rephrased.\n\nThe Creative Projects directory added Imagine Draw AI for prompt-based images and Aimpress for images with optional styles, effects, and aspect ratios. Aimpress also publishes images to a searchable public archive.\n\nTwo more projects joined the directory: Evolve AI combines speech, code, and image generation, while What is this? identifies objects in uploaded photos.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,7 +31,28 @@
       "date": "2025-08-03"
     }
   ],
-  "generated_at": "2026-10-17T15:44:52.694245+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:33:15.093326+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "More community image tools",
+      "text": "Discover Imagine Draw AI for prompt-based images and Aimpress for images with styles, effects, and aspect ratios.",
+      "prs": [
+        3410,
+        3412
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "Speech, code, and photo identification",
+      "text": "Explore Evolve AI for speech, code, and image generation, or What is this? for identifying objects in photos.",
+      "prs": [
+        3413,
+        3414
+      ],
+      "kind": "product"
+    }
+  ],
   "changelog": []
 }

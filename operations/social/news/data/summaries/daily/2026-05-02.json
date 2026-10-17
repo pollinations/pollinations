@@ -2,9 +2,9 @@
   "date": "2026-05-02",
   "period_start": "2026-05-02",
   "period_end": "2026-05-02",
-  "title": "More control over images, with fewer generation hiccups",
-  "summary": "A broad shipping day: reference-guided Grok images, GPT-5.5 and AssemblyAI, plus a generation stack that should trip over itself less often.\n\nGrok Imagine and Grok Imagine Pro now accept up to five reference images through the API and Play UI. Image and video generation also moved into the main gen worker with Cloudflare-powered transforms, while registry timing fixes reduce dropped requests and 500s during rapid image runs. Media uploads on Play now correctly accept valid API keys again.\n\nThe text endpoint gained GPT-5.5, including reasoning, vision, and tool calling. Audio transcription now supports AssemblyAI universal-2 and universal-3-pro through the API, SDK, and CLI, with the dashboard giving the new transcription provider its proper logo.\n\nText requests with the same parameters now share cache entries even when tools shuffle URL parameter order. Polli CLI authentication can accept a token over stdin for scripts and CI, and the mobile model table now keeps scores visible while taming long names and badge clutter.",
-  "pr_count": 16,
+  "title": "GPT-5.5 joins the model list; Grok gets reference images",
+  "summary": "GPT-5.5, AssemblyAI transcription, and Grok reference images arrived alongside fixes for uploads, image routing, and checkout credits.\n\nGPT-5.5 was added for text and image input, tool calling, and reasoning with a 1M-token context. It requires a paid balance. Grok Imagine and Grok Imagine Pro gained image-to-image generation from one reference image, including uploads in Play.\n\nThe transcription endpoint gained Universal-2 and Universal-3 Pro, with text, JSON, and subtitle responses. Responses identify the model used if Universal-3 Pro falls back to Universal-2. SDK types and CLI model hints were updated, and the models gained an AssemblyAI logo in Enter.\n\nImage and video generation handlers moved into the gen gateway. A follow-up adjusted image-server registration timing to avoid excluding healthy servers during request bursts. A community fix corrected API-key validation for media uploads, including uploads from Play; another made reordered text query parameters share a cache entry.",
+  "pr_count": 13,
   "prs": [
     {
       "number": 10567,
@@ -23,15 +23,7 @@
       "date": "2026-05-02"
     },
     {
-      "number": 10611,
-      "date": "2026-05-02"
-    },
-    {
       "number": 10612,
-      "date": "2026-05-02"
-    },
-    {
-      "number": 10614,
       "date": "2026-05-02"
     },
     {
@@ -55,10 +47,6 @@
       "date": "2026-05-02"
     },
     {
-      "number": 10623,
-      "date": "2026-05-02"
-    },
-    {
       "number": 10624,
       "date": "2026-05-02"
     },
@@ -71,12 +59,12 @@
       "date": "2026-05-02"
     }
   ],
-  "generated_at": "2026-09-04T11:47:36.689670+00:00",
+  "generated_at": "2026-10-17T22:50:01.701703+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "GPT-5.5 joins the text API",
-      "text": "Use `gpt-5.5` for text generation with reasoning and tool calling. [View the model](https://enter.pollinations.ai/models?q=gpt-5.5).",
+      "title": "GPT-5.5 joins the lineup",
+      "text": "Use `gpt-5.5` for reasoning and tool calling with text or image input and a 1M-token context. A paid balance is required. [View the model](https://enter.pollinations.ai/models?q=gpt-5.5).",
       "prs": [
         10598
       ],
@@ -84,21 +72,30 @@
     },
     {
       "emoji": "🎵",
-      "title": "AssemblyAI transcription models",
-      "text": "Transcribe audio with `universal-2` or `universal-3-pro` through the audio API, SDK, or CLI. [View universal-3-pro](https://enter.pollinations.ai/models?q=universal-3-pro).",
+      "title": "AssemblyAI speech-to-text",
+      "text": "Transcribe audio with Universal-2 or Universal-3 Pro through `/v1/audio/transcriptions`. Choose text, JSON, SRT, or VTT output. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         10616
       ],
-      "kind": "model"
+      "kind": "api"
     },
     {
       "emoji": "🎨",
-      "title": "Grok Imagine takes references",
-      "text": "Use a reference image for image-to-image generation with Grok Imagine or Grok Imagine Pro. [Browse models](https://enter.pollinations.ai/models?q=grok-imagine).",
+      "title": "Reference images for Grok",
+      "text": "Give Grok Imagine or Grok Imagine Pro a reference image to generate an edit. You can upload one in Play; if you supply several, only the first is used. [Open Play](https://pollinations.ai/play).",
       "prs": [
         10617
       ],
       "kind": "model"
+    },
+    {
+      "emoji": "💡",
+      "title": "Pipe a key into polli",
+      "text": "Use `polli auth login --with-token` to read an existing API key from stdin, without putting it in a command argument.",
+      "prs": [
+        10626
+      ],
+      "kind": "product"
     }
   ],
   "changelog": []

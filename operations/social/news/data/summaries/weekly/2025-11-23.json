@@ -2,8 +2,8 @@
   "date": "2025-11-23",
   "period_start": "2025-11-16",
   "period_end": "2025-11-22",
-  "title": "More models, clearer names",
-  "summary": "The API gained more ways to talk to models, while model discovery and request behavior became more consistent.\n\nKimi K2 Thinking and Gemini 3 Pro Preview joined the text API with reasoning and tool support; Gemini also accepts image, audio, and video input. Fast options changed too: `openai-fast` moved to GPT-5 Nano, and `mistral-fast` added Llama 3.1 8B with tools. Gemini is listed as `gemini-large`, while its earlier IDs still work as aliases.\n\nChat completions gained OpenAI-compatible audio fields. Requests can carry base64 audio in wav, mp3, flac, opus, or pcm16 format, and ask for audio output with a chosen voice and format.\n\nGateway model listings gained aliases, pricing, descriptions, and capability metadata. The image picker was updated to read the new model objects and show descriptions, while a pricing-page button added a way to vote on future models.\n\nEnter’s text, image, and chat routes adopted one authentication and Pollen-balance rule, with successful uncached requests billed by usage. Image responses now identify the model used for Turbo and Flux; invalid model names and image parameters return HTTP 400, and text-service errors have a structured response.",
+  "title": "Audio joined chat completions",
+  "summary": "Chat learned to handle audio while the model catalog became broader, clearer, and more consistent across the API and UI.\n\nChat completion requests gained OpenAI-compatible audio input and output fields. Messages can carry base64 audio in wav, mp3, flac, opus, or pcm16 format, and requests can ask for text or audio output with a chosen voice and format.\n\nKimi K2 Thinking and Gemini 3 Pro Preview joined the text API with reasoning and tool use; Gemini also accepts image, audio, and video input. On the faster side, `openai-fast` moved to GPT-5 Nano, `mistral-fast` added text-only Llama 3.1 8B with tool support, and `mistral-small` moved to Mistral Small 3.2.\n\nThe gateway’s text and image model listings now draw aliases, pricing, descriptions, and capabilities from the model registry. Gemini appears in the text list as `gemini-large` while its earlier names remain aliases, and the image model picker now handles the richer API response and displays descriptions when available. A pricing-page button also points to community voting for future models.\n\nImage responses now identify whether Turbo or Flux handled a request. Invalid model names and image parameters return HTTP 400, text errors have a structured response, and text compatibility improvements cover upstream model IDs, Gemini finish reasons, and streaming-usage requests.",
   "pr_count": 13,
   "prs": [
     {
@@ -59,5 +59,5 @@
       "date": "2025-11-21"
     }
   ],
-  "generated_at": "2026-10-17T16:06:35.330183+00:00"
+  "generated_at": "2026-10-17T23:25:56.768885+00:00"
 }

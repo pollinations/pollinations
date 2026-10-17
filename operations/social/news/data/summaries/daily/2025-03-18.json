@@ -2,8 +2,8 @@
   "date": "2025-03-18",
   "period_start": "2025-03-18",
   "period_end": "2025-03-18",
-  "title": "Mistral moves to Small and gains vision support",
-  "summary": "Mistral Small gained vision support and updated API routes, while a project link and outdated text API documentation got tidied up.\n\nThe `mistral` chat model was updated from Mistral Nemo to Mistral Small and marked as supporting vision. Two PRs added OpenAI-compatible configurations for direct Vertex AI and Scaleway routes, including streaming endpoint selection and translation of `seed` to Mistral’s `random_seed` parameter.\n\nPrivatePollenAI’s author link now points to MMojoCoder’s GitHub profile. Its app and repository links are unchanged.\n\nThe README no longer claims a 20-requests-per-minute per-IP limit. An unused, commented-out rate limiter was removed too; request handling did not change.",
+  "title": "Mistral Small takes the `mistral` slot",
+  "summary": "Mistral Small gained the `mistral` slot and vision support, while a project link and text API documentation got tidied up.\n\nThe `mistral` chat model changed from Mistral Nemo to Mistral Small 3.1 2503, with vision support and separate streaming and non-streaming endpoints. Related configurations added a Scaleway mapping and translated `seed` to Mistral’s `random_seed` parameter.\n\nPrivatePollenAI’s author link now points to MMojoCoder’s GitHub profile. The app and repository links did not change.\n\nThe README no longer claims a 20-requests-per-minute per-IP limit. Unused rate-limiter code was removed; request handling did not change.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,12 +23,12 @@
       "date": "2025-03-18"
     }
   ],
-  "generated_at": "2026-10-17T15:35:51.612331+00:00",
+  "generated_at": "2026-10-17T22:29:33.189341+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Mistral Small gains vision",
-      "text": "The `mistral` chat model now uses Mistral Small and is marked as supporting image inputs. [Browse the model](https://enter.pollinations.ai/models?q=mistral).",
+      "title": "Mistral Small gets vision",
+      "text": "The `mistral` chat model now uses Mistral Small 3.1 2503 and supports vision. Streaming is supported too. [Browse the model](https://enter.pollinations.ai/models?q=mistral).",
       "prs": [
         1393,
         1395

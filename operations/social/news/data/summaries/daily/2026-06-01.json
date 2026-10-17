@@ -2,16 +2,40 @@
   "date": "2026-06-01",
   "period_start": "2026-06-01",
   "period_end": "2026-06-01",
-  "title": "Polly learns to draw charts and tables",
-  "summary": "A massive day for the community greenhouse, alongside crucial fixes for audio streams, Grok API quirks, and a major visual upgrade for Polly on Discord.\n\nPolly just got a massive visual upgrade on Discord. We added an explicit `render_visual` tool that generates 9 types of matplotlib charts and perfectly formatted PIL data tables. No more raw markdown tables breaking on mobile screens—just clean, Discord-themed images.\n\nFixed a couple of nasty audio bugs. ElevenLabs TTS streams were returning placeholder RIFF header sizes, which crashed ffmpeg and Python wave. We now buffer and rewrite the byte counts before sending them back. We also fixed a 500 error in the OVH Whisper STT endpoint so you can actually get your transcripts in text, srt, or vtt formats without the server panicking.\n\nUpstream providers can be picky, so we added some middleware diplomacy. We're now stripping `reasoning_effort` from non-reasoning Grok models and `stream_options` from non-OpenAI Azure models to prevent 500 and 422 errors. We also stripped cache control annotations that were breaking multi-turn Grok chats, and fixed Grok-video to actually respect your aspect ratio instead of defaulting to a square.",
-  "pr_count": 26,
+  "title": "Polly can draw the answer",
+  "summary": "Polly learned to draw charts, the community catalog reached 802 apps, and a long list of audio, video and chat edge cases got less interesting.\n\nPolly gained a `render_visual` tool for attaching tables and charts to Discord replies. It supports multiple visuals in one reply, with better table formatting and a fallback to raw markdown if rendering fails. A separate change keeps an unavailable tool out of Polly's API mode.\n\nFifteen community apps joined the catalog, spanning image makers, study tools, chat assistants, a resume builder and an n8n node for image and video generation. Agent-maintained catalog updates also removed four dead listings, so the showcase has fewer trips to a 404.\n\nWAV speech responses now carry correct file sizes, and Whisper transcription handles text and subtitle response formats. Grok video honors `aspectRatio` without explicit dimensions; the Playground also clears incompatible TTS voice selections. Text-request fixes address Grok conversation annotations, non-reasoning Grok options and streaming options rejected by non-OpenAI Azure models. Model metadata and audio request handling received smaller corrections.",
+  "pr_count": 41,
   "prs": [
     {
       "number": 10806,
       "date": "2026-06-01"
     },
     {
+      "number": 11380,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11426,
+      "date": "2026-06-01"
+    },
+    {
       "number": 11431,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11439,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11450,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11453,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11455,
       "date": "2026-06-01"
     },
     {
@@ -23,7 +47,27 @@
       "date": "2026-06-01"
     },
     {
+      "number": 11459,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11460,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11470,
+      "date": "2026-06-01"
+    },
+    {
       "number": 11476,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11483,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11495,
       "date": "2026-06-01"
     },
     {
@@ -31,7 +75,15 @@
       "date": "2026-06-01"
     },
     {
+      "number": 11504,
+      "date": "2026-06-01"
+    },
+    {
       "number": 11505,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11507,
       "date": "2026-06-01"
     },
     {
@@ -40,6 +92,10 @@
     },
     {
       "number": 11509,
+      "date": "2026-06-01"
+    },
+    {
+      "number": 11510,
       "date": "2026-06-01"
     },
     {
@@ -95,6 +151,10 @@
       "date": "2026-06-01"
     },
     {
+      "number": 11534,
+      "date": "2026-06-01"
+    },
+    {
       "number": 11535,
       "date": "2026-06-01"
     },
@@ -111,44 +171,53 @@
       "date": "2026-06-01"
     }
   ],
-  "generated_at": "2026-06-02T07:34:33.015388+00:00",
+  "generated_at": "2026-10-17T22:56:48.922147+00:00",
   "highlights": [
     {
-      "emoji": "🤖",
-      "title": "Polly Paints by Numbers",
-      "text": "Our Discord bot now uses an explicit `render_visual` tool to generate 9 types of matplotlib charts and perfectly formatted data tables. [Join the Discord](https://discord.gg/pollinations-ai-885844321461485618)",
+      "emoji": "🎨",
+      "title": "Charts in Polly replies",
+      "text": "Polly can attach tables and charts directly to Discord replies, including bar, line, scatter, pie and heatmap charts. One reply can contain multiple visuals.",
       "prs": [
         10806
       ],
       "kind": "product"
     },
     {
-      "emoji": "🚀",
-      "title": "Moving Day on NPM",
-      "text": "All our packages (SDK, UI, MCP, CLI) have officially migrated to the `@pollinations` scope. Time to update those `package.json` imports. [View NPM SDK](https://www.npmjs.com/package/@pollinations/sdk)",
+      "emoji": "✨",
+      "title": "More shared UI components",
+      "text": "The React UI package adds reusable dialogs, dropdowns, sliders, tables, alerts and wallet displays for building Pollinations-powered interfaces. [Explore the React UI](https://react.pollinations.ai).",
       "prs": [
-        11460
+        11439,
+        11508
       ],
       "kind": "product"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Automate the Hive with n8n",
-      "text": "A new community-built n8n node lets you drop free-tier AI image and video generation directly into your automation pipelines. [Try it](https://unjustifiable-pedicellar-nadia.ngrok-free.dev/workflow/oWorRAl4sY41omgW)",
-      "prs": [
-        11517
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "💡",
-      "title": "Forging Better Prompts",
-      "text": "Turn vague ideas into context-aware, highly specific AI inputs with PromptForge, a new community tool in the greenhouse. [Try it](https://knowledgeable-interface-for-refinem.vercel.app)",
-      "prs": [
-        11532
-      ],
-      "kind": "app"
     }
   ],
-  "changelog": []
+  "changelog": [
+    {
+      "pr_number": 11507,
+      "url": "https://github.com/pollinations/pollinations/pull/11507",
+      "merged_at": "2026-06-01T16:23:23Z",
+      "api_changes": [
+        {
+          "id": "pr-11507:POST /v1/audio/speech",
+          "endpoint": "POST /v1/audio/speech",
+          "summary": "Text to Speech (OpenAI-compatible)",
+          "action": "CHANGE",
+          "breaking": true,
+          "changes": [
+            {
+              "field": "body:speed",
+              "before": {
+                "type": "number",
+                "required": false
+              },
+              "after": null,
+              "breaking": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

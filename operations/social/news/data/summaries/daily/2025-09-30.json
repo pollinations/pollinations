@@ -2,8 +2,8 @@
   "date": "2025-09-30",
   "period_start": "2025-09-30",
   "period_end": "2025-09-30",
-  "title": "A simpler account page and smoother signup",
-  "summary": "Account and signup friction got trimmed, repeat text requests gained a cache path, and the community directory grew by one assistant.\n\nEnter’s account page now shows a more precise Pollen balance, puts the customer portal and sign-out in the profile menu, and simplifies API key creation by removing the allowed-domains prompt. Key deletion now asks for confirmation. Signup also handles accounts whose customer record already exists.\n\nPOST requests to the root of the text API can now return cached responses instead of always reaching the origin, making cache hits faster. Root-path GET requests still bypass the cache.\n\nThe community projects directory added @hadadarjt’s J.A.R.V.I.S., a context-aware chat assistant that uses Pollinations for image and audio generation.",
+  "title": "A simpler Enter account page",
+  "summary": "Enter account and signup fixes led the day, alongside better caching for repeat text requests and a new community chat listing.\n\nEnter’s account page got a narrower layout and a Pollen balance shown to four decimal places. API key creation no longer asks for allowed domains, key deletion now requires confirmation, and the profile menu provides access to the customer portal and sign-out. Signup also handles accounts whose Polar customer record already exists.\n\nPOST requests to the text API’s root path can now use cached responses rather than always reaching the origin. Repeated requests with cache hits can return faster; root-path GET behavior is unchanged.\n\nThe llms guide now covers reference images for kontext, nanobanana, and seedream, including the public limit of four reference URLs per request. It also documents nanobanana’s custom sizes and seedream’s high-resolution output.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,12 +27,12 @@
       "date": "2025-09-30"
     }
   ],
-  "generated_at": "2026-10-17T15:47:40.836750+00:00",
+  "generated_at": "2026-10-17T22:34:11.039559+00:00",
   "highlights": [
     {
-      "emoji": "✨",
-      "title": "A tidier account page",
-      "text": "See your Pollen balance at four decimal places, create API keys without an allowed-domains prompt, and find the customer portal in your profile menu. [Open API keys](https://enter.pollinations.ai/keys).",
+      "emoji": "🔗",
+      "title": "Simpler API key setup",
+      "text": "Create an API key without filling in an allowed-domains field. Enter’s account page also puts the customer portal in your profile menu. [Manage your keys](https://enter.pollinations.ai/keys).",
       "prs": [
         4207
       ],

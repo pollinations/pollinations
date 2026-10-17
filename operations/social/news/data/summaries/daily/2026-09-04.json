@@ -2,9 +2,9 @@
   "date": "2026-09-04",
   "period_start": "2026-09-04",
   "period_end": "2026-09-04",
-  "title": "More ways to talk to models, agents, and MCP tools",
-  "summary": "A crowded day of better OpenAI-compatible agent plumbing, new creative models and MCP tools, smoother onboarding, and APIs that fail with considerably less interpretive dance.\n\nThe OpenAI-compatible Responses API now works statelessly across built-in, community, and agent-backed text models, including streaming, tools, structured output, reasoning, usage, and prompt caching. Managed agents now run through Gen with scoped run tokens, preserving their billing, caching, and tracing across child-model and MCP calls. Open WebUI also gained per-user Pollinations MCP access and stopped attaching unwanted builtin tools to every chat, so managed agents and tool-sensitive community models can simply get on with it.\n\nGPT-6 Astra is now available through a single canonical model ID with support for vision, streaming, tools, structured output, and prompt caching. MiniMax H3 Max Turbo joins the video lineup with synchronized audio, first- and last-frame guidance, and multiple clip lengths. MCP clients can now use Nectar for image creation and editing, video, and speech, while the newly listed Pollin Uptime gateway offers multimodal routing with a four-layer fallback cascade.\n\nPolli now exposes OpenAI-compatible Chat Completions, Responses, and Models endpoints with SSE streaming and function-call events. Its broader upgrade adds scoped Discord search, fresher code intelligence with revision provenance, hardened 4K Mermaid and PNG visuals, stronger model fallback, and independent deployment. It also has published privacy and service terms, because even a helpful robot needs paperwork.",
-  "pr_count": 22,
+  "title": "Two new models for video and long-context text",
+  "summary": "Two new models, stateless Responses support, Open WebUI tools, and a more capable Polli made for a busy day.\n\nMiniMax H3 Max Turbo was added for text-to-video and first/last-frame image-to-video, with synchronized audio and 5-, 10-, or 15-second outputs. GPT-6 Astra was added for text generation with tools, reasoning, up to 10 reference images, and a 1,050,000-token context window.\n\nThe API gained stateless POST /v1/responses support for eligible text models, community endpoints, and managed agents, including streaming and tool handling where supported. Managed agents now run through Gen and ignore caller-provided tools rather than rejecting the whole chat request.\n\nOpen WebUI gained Pollinations MCP tools using each signed-in user's key, and Enter can open eligible models there with the model preselected. A follow-up stopped Open WebUI from attaching built-in tools to every chat request. The community catalog also added Pollin Uptime and Nectar MCP.",
+  "pr_count": 18,
   "prs": [
     {
       "number": 14309,
@@ -39,10 +39,6 @@
       "date": "2026-09-04"
     },
     {
-      "number": 14434,
-      "date": "2026-09-04"
-    },
-    {
       "number": 14438,
       "date": "2026-09-04"
     },
@@ -60,14 +56,6 @@
     },
     {
       "number": 14449,
-      "date": "2026-09-04"
-    },
-    {
-      "number": 14451,
-      "date": "2026-09-04"
-    },
-    {
-      "number": 14452,
       "date": "2026-09-04"
     },
     {
@@ -89,58 +77,74 @@
     {
       "number": 14464,
       "date": "2026-09-04"
-    },
-    {
-      "number": 14466,
-      "date": "2026-09-04"
     }
   ],
-  "generated_at": "2026-09-05T06:28:12.926631+00:00",
+  "generated_at": "2026-10-17T23:11:19.811029+00:00",
   "highlights": [
     {
-      "emoji": "🤖",
-      "title": "GPT-6 Astra added",
-      "text": "Use `openai/gpt-6-astra` for text and vision requests, with tools, structured output, and streaming support. [Explore text models](https://gen.pollinations.ai/v1/models).",
-      "prs": [
-        14464
-      ],
-      "kind": "model"
-    },
-    {
       "emoji": "🎨",
-      "title": "MiniMax video with audio",
-      "text": "Generate 5-, 10-, or 15-second clips with `minimax/minimax-h3-max-turbo`, including synchronized audio and optional first- and last-frame inputs. [Explore the API](https://gen.pollinations.ai/docs).",
+      "title": "MiniMax H3 Max Turbo",
+      "text": "Generate 5-, 10-, or 15-second videos from text or first and last frames, with synchronized audio, using `minimax/minimax-h3-max-turbo`. [Browse the model](https://enter.pollinations.ai/models?q=minimax/minimax-h3-max-turbo).",
       "prs": [
         14428
       ],
       "kind": "model"
     },
     {
-      "emoji": "🔗",
-      "title": "Responses across text models",
-      "text": "Use the stateless, OpenAI-compatible `/v1/responses` endpoint across built-in, community, and agent-backed text models, with streaming, tools, and structured output. [See the API docs](https://gen.pollinations.ai/docs).",
+      "emoji": "🤖",
+      "title": "GPT-6 Astra",
+      "text": "Use `openai/gpt-6-astra` for text generation with tools, reasoning, up to 10 reference images, and a 1,050,000-token context window. [Browse the model](https://enter.pollinations.ai/models?q=openai/gpt-6-astra).",
       "prs": [
-        14376
+        14464
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Stateless Responses API",
+      "text": "Call `POST /v1/responses` with `store: false` on supported text models and managed agents. The stateless API supports streaming, with model capabilities listed in discovery. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14376,
+        14449
       ],
       "kind": "api"
     },
     {
-      "emoji": "🌟",
-      "title": "Pollin Uptime playground",
-      "text": "Try Chat, Vision, Images, Video, and Voice in a community-built playground with automatic fallback routing. [Try it](https://brhost.eu.org).",
+      "emoji": "💡",
+      "title": "Pollinations tools in Open WebUI",
+      "text": "Use Pollinations MCP tools in Open WebUI with your own key, or open an eligible model from Enter with its ID already selected. MCP tools remain opt-in for each chat. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        14420
+        14405,
+        14459
       ],
-      "kind": "app"
+      "kind": "product"
     },
     {
-      "emoji": "🎯",
-      "title": "Nectar MCP creative tools",
-      "text": "Give a compatible MCP client tools for generating and editing images, creating videos, and generating speech. [View repo](https://github.com/pinkpixel-dev/nectar-mcp).",
+      "emoji": "🤖",
+      "title": "Stream chats with Polli",
+      "text": "Polli now offers OpenAI-compatible Chat Completions and Responses endpoints that can stream replies and caller-facing function calls.",
       "prs": [
-        14461
+        14438
       ],
-      "kind": "app"
+      "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Polli renders diagrams",
+      "text": "Polli can attach rendered Mermaid diagrams as PNGs in Discord replies, alongside charts and paginated tables.",
+      "prs": [
+        14440
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "First key, automatic Pollen",
+      "text": "Create your first API key through the dashboard or BYOP flow, and the 0.25-Pollen first-key Quest reward is claimed automatically. Other earned Quests still need a manual claim. [Create an API key](https://enter.pollinations.ai/keys).",
+      "prs": [
+        14441
+      ],
+      "kind": "product"
     }
   ],
   "changelog": []

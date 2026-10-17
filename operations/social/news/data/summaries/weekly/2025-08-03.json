@@ -2,8 +2,8 @@
   "date": "2025-08-03",
   "period_start": "2025-07-27",
   "period_end": "2025-08-02",
-  "title": "Kontext gained a second engine",
-  "summary": "This week tuned the model lineup and image API, then tightened a few limits and fixes around the edges.\n\nThe image API gained an OpenAPI spec for its existing models, parameters, authentication, and rate limits. A separate change gave `kontext` a BPAIGen-first path with Kontext as fallback, raised its configured maximum side length to 1216 pixels, and added optional `guidance_scale` control. Image responses also report which service generated the image. The spec documents the API; it does not add a docs route or change API behavior.\n\nGLM-4 9B Chat was added with an 8,192-token configuration. Across two changes, the `openai` aliases were rerouted; by the end of the week, `openai`, `openai-fast`, and `openai-roblox` pointed to Azure GPT-4.1 Nano, while `openai-large` pointed to Azure GPT-4.1. The model list also lost `openai-reasoning`, and DeepSeek R1 0528’s maximum output was set to 2,000 tokens.\n\nAd selection was fixed so blocked referrers are excluded rather than triggering ads. Audio limits were tightened, error logging was made more robust for message collections, and image-parameter debugging and a token-validation performance test were added.",
+  "title": "The image API got easier to navigate",
+  "summary": "A week of clearer image API documentation, revised model routes, and smaller fixes to how requests are handled.\n\nAn OpenAPI spec now describes image prompts, models, parameters, authentication, and rate limits without changing API behavior. Kontext also gained a BPAIGen-first route with a Kontext fallback, a configured maximum side length of 1216 pixels, and an optional guidance_scale control.\n\nGLM-4 9B Chat joined the text models. The openai aliases changed across two updates; by July 31, openai, openai-fast, and openai-roblox routed to Azure GPT-4.1 Nano, and openai-roblox allowed anonymous access. Openai-reasoning was removed from the available model list, while DeepSeek R1 0528 received a 2,000-token maximum output.\n\nBlocked referrers are no longer forced into ad selection. Audio input and token limits were reduced, error logging was hardened for message collections, and image-parameter diagnostics were added.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,5 +23,5 @@
       "date": "2025-08-01"
     }
   ],
-  "generated_at": "2026-10-17T16:05:31.493591+00:00"
+  "generated_at": "2026-10-17T23:25:05.025808+00:00"
 }

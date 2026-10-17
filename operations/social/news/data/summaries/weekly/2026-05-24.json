@@ -2,9 +2,9 @@
   "date": "2026-05-24",
   "period_start": "2026-05-17",
   "period_end": "2026-05-23",
-  "title": "The Community Harvest",
-  "summary": "A massive wave of community apps shipped alongside major upgrades to video transitions and audio transcription.\n\nWe merged nearly 40 community apps this week. The ecosystem is buzzing with everything from Discord bots and AI-powered economic analysis to roleplay environment generators and automated restaurant ordering via WhatsApp. If you built it, we probably merged it.\n\nYou can now generate video transitions between two specific images by passing an array of URLs (image[0] for start, image[1] for end). We also migrated Seedream 5 and Seedance Pro to Replicate, standardizing outputs at a crisp 720p and retiring the legacy lite model.\n\nThe audio transcription endpoint now supports OpenAI-compatible diarization. Pass `response_format=diarized_json` and get back structured JSON with speaker labels and timestamps. We also doubled the polling timeout to 240s so your massive podcast files stop failing at the 2-minute mark.\n\nGoogle's `gemini-3.5-flash` is now live via Vertex, and we slashed the price of `gemini-search` by absorbing the grounding fees. On the infrastructure side, we ripped out artificial fetch timeouts that were killing long-running generations, mapped upstream rate limits to 502s for better retry logic, and added early validation so you don't waste time sending images to text-only models.",
-  "pr_count": 55,
+  "title": "More control over generated video",
+  "summary": "This week gave builders more control over video and images while making the surrounding APIs, usage records, and dashboard less surprising.\n\nSupported video models now accept both a start image and an end image, while a single image still works as before. Seedance-pro gained dimension-aware framing across seven aspect ratios, with output limited to 720p. Model listings now expose video capabilities, and the MCP video tool accepts longer durations where the model supports them.\n\nSeedream 5 gained multiple reference images and aspect-ratio inference for edits; Seedream 4.0 gained custom dimensions. Seedream 4.0, 4.5 Pro, and 5 moved to Replicate without changing their public model IDs. Paid-only Gemini 3.5 Flash joined the lineup with multimodal input and a 1,048,576-token context window. Image-capability listings were also corrected, and chat now returns a clear 400 when a selected model cannot accept an image.\n\nAssemblyAI and ElevenLabs Scribe can return speaker-labeled, timestamped transcripts through `response_format=diarized_json`. Per-request usage records and CSV exports gained separate input-audio, output-audio, and output-video seconds, with fractional video durations in generation events. Pricing now derives Pollen charges from one cost rate per model; Gemini Fast input-audio and Scribe hourly charges changed.\n\nSeveral fixed time limits were removed from slower gateway and image-fetching paths, and AssemblyAI transcription polling now allows up to four minutes. An unconfigured usage rate no longer prevents other rated usage in the same report from being tracked and charged. Provider rate limits now return a 502 from the text API while retaining the upstream status for debugging. The `/api/docs` redirect also preserves query parameters, including `?format=json`.",
+  "pr_count": 75,
   "prs": [
     {
       "number": 11009,
@@ -175,6 +175,26 @@
       "date": "2026-05-17"
     },
     {
+      "number": 10984,
+      "date": "2026-05-18"
+    },
+    {
+      "number": 11096,
+      "date": "2026-05-18"
+    },
+    {
+      "number": 11097,
+      "date": "2026-05-18"
+    },
+    {
+      "number": 11108,
+      "date": "2026-05-18"
+    },
+    {
+      "number": 11111,
+      "date": "2026-05-18"
+    },
+    {
       "number": 11113,
       "date": "2026-05-18"
     },
@@ -187,7 +207,35 @@
       "date": "2026-05-18"
     },
     {
+      "number": 11141,
+      "date": "2026-05-18"
+    },
+    {
+      "number": 11147,
+      "date": "2026-05-18"
+    },
+    {
+      "number": 11150,
+      "date": "2026-05-18"
+    },
+    {
+      "number": 11152,
+      "date": "2026-05-18"
+    },
+    {
       "number": 11073,
+      "date": "2026-05-19"
+    },
+    {
+      "number": 11166,
+      "date": "2026-05-19"
+    },
+    {
+      "number": 11170,
+      "date": "2026-05-19"
+    },
+    {
+      "number": 11174,
       "date": "2026-05-19"
     },
     {
@@ -203,6 +251,22 @@
       "date": "2026-05-20"
     },
     {
+      "number": 11185,
+      "date": "2026-05-20"
+    },
+    {
+      "number": 11186,
+      "date": "2026-05-20"
+    },
+    {
+      "number": 11189,
+      "date": "2026-05-20"
+    },
+    {
+      "number": 11193,
+      "date": "2026-05-20"
+    },
+    {
       "number": 11194,
       "date": "2026-05-20"
     },
@@ -211,11 +275,15 @@
       "date": "2026-05-20"
     },
     {
+      "number": 10991,
+      "date": "2026-05-21"
+    },
+    {
       "number": 11201,
       "date": "2026-05-21"
     },
     {
-      "number": 11226,
+      "number": 11214,
       "date": "2026-05-21"
     },
     {
@@ -223,9 +291,21 @@
       "date": "2026-05-21"
     },
     {
+      "number": 11234,
+      "date": "2026-05-22"
+    },
+    {
       "number": 11236,
       "date": "2026-05-22"
+    },
+    {
+      "number": 11237,
+      "date": "2026-05-22"
+    },
+    {
+      "number": 11246,
+      "date": "2026-05-23"
     }
   ],
-  "generated_at": "2026-05-24T07:03:48.326047+00:00"
+  "generated_at": "2026-10-17T23:27:41.686873+00:00"
 }

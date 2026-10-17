@@ -2,8 +2,8 @@
   "date": "2026-10-10",
   "period_start": "2026-10-10",
   "period_end": "2026-10-10",
-  "title": "Play brings image, video, and audio into one place",
-  "summary": "Play got a new home, PDFs and video got better model support, and agents got catalogs instead of having to guess where the API lives.\n\nThe team added a new Play page with shared controls for image, video, and audio generation. Inputs stay in shareable URLs, and the page provides uploads, previews, downloads, and copyable API URLs for the requests it makes. The website also gained clearer stats and app listings, expandable model descriptions, a more consistent Play layout, and restored redirects for old image links.\n\nA Quest contribution added base64 PDF input for Claude on Bedrock and GPT on Azure/OpenAI, including GPT models that use the Responses API. Another corrected Nova 2 Lite video input so clips reach the model; unsupported video formats and audio now receive explicit errors. Related media-fetch errors now say “media” rather than “image.”\n\nQuest contributors added a public AI Catalog and MCP server cards, plus an RFC 9727 API catalog pointing agents to the OpenAPI description and documentation. The API docs sidebar was tidied, and the generated API reference was refreshed.",
+  "title": "Play becomes a media playground",
+  "summary": "Play gained a full media playground, agents gained discovery catalogs, and PDFs became valid input for supported Claude and GPT models.\n\nThe Play page was replaced with a playground for image, video and audio generation, with uploads, previews, downloads, request-based API examples and shareable URLs that preserve supported settings through sign-in. Text mode was removed. The page was brought into the shared site layout alongside Home, Apps and Community updates; legacy image links also regained redirects so embeds receive images rather than website HTML.\n\nClaude and GPT requests gained base64 PDF input, including GPT requests through the Responses API. Nova 2 Lite now accepts video parts instead of dropping them and rejects unsupported audio input. Model listings gained a `paid_only` field, the bare `tts` alias was corrected to use free OpenAI TTS, and Qwen3 VL was moved to a working route. Smaller CLI, media-error and transcription-doc changes make the edges less surprising.\n\nHosted MCP servers gained an AI catalog and public Server Cards describing how to connect. A separate RFC 9727 API catalog points agents to the OpenAPI specification and plain-text guide without requiring them to know those URLs first. The merged API docs sidebar was also regrouped around public paths.",
   "pr_count": 25,
   "prs": [
     {
@@ -51,6 +51,10 @@
       "date": "2026-10-10"
     },
     {
+      "number": 16949,
+      "date": "2026-10-10"
+    },
+    {
       "number": 16950,
       "date": "2026-10-10"
     },
@@ -64,10 +68,6 @@
     },
     {
       "number": 16958,
-      "date": "2026-10-10"
-    },
-    {
-      "number": 16961,
       "date": "2026-10-10"
     },
     {
@@ -107,22 +107,21 @@
       "date": "2026-10-10"
     }
   ],
-  "generated_at": "2026-10-11T06:29:49.985515+00:00",
+  "generated_at": "2026-10-17T23:18:32.971020+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "A new Play page",
-      "text": "Generate images, video, and audio in one place. Keep inputs in a shareable URL, preview and download results, or copy the API URL for the request you made. [Try Play](https://pollinations.ai/play).",
+      "title": "A new Play playground",
+      "text": "Generate images, video and audio in one place, with uploads, previews, downloads and API examples built from your request. Shareable URLs keep supported settings together. [Try Play](https://pollinations.ai/play).",
       "prs": [
-        16213,
-        16985
+        16213
       ],
       "kind": "product"
     },
     {
-      "emoji": "💡",
-      "title": "PDFs for Claude and GPT",
-      "text": "Send base64 PDFs in chat requests to Claude on Bedrock or GPT on Azure/OpenAI, including GPT models using the Responses API. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "emoji": "✨",
+      "title": "PDFs in chat requests",
+      "text": "Send base64 PDFs to supported Claude and GPT models, including GPT models using the Responses API. Chat `file` parts and `/v1/messages` PDF document blocks are supported. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         16898
       ],
@@ -130,22 +129,30 @@
     },
     {
       "emoji": "🤖",
-      "title": "Catalogs for agent discovery",
-      "text": "Agents can find the API through an RFC 9727 catalog and discover hosted MCP servers through an AI Catalog and server cards. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "title": "Discover hosted MCP servers",
+      "text": "Agents can find hosted MCP servers through `/.well-known/ai-catalog.json` and read public Server Cards for connection details. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
-        16862,
+        16862
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Discover the API spec",
+      "text": "The new `/.well-known/api-catalog` gives agents a standard way to find the OpenAPI specification and plain-text guide. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
         16908
       ],
       "kind": "api"
     },
     {
-      "emoji": "📱",
-      "title": "Furniture ideas from a photo",
-      "text": "Send MebelSmetaBot a photo of a room or kitchen to visualize new furniture in the space. [Try it](https://t.me/MebelSmetaBot).",
+      "emoji": "💡",
+      "title": "Check model eligibility",
+      "text": "Entries from `/v1/models` and `/v1/models/{model}` now include `paid_only`, so OpenAI-compatible clients can tell which models require paid Pollen without another lookup. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        16948
+        16953
       ],
-      "kind": "app"
+      "kind": "api"
     }
   ],
   "changelog": [

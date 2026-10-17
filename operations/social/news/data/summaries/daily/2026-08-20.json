@@ -2,14 +2,10 @@
   "date": "2026-08-20",
   "period_start": "2026-08-20",
   "period_end": "2026-08-20",
-  "title": "Community models got clearer, healthier catalogs",
-  "summary": "A buzzing day for community endpoints: clearer catalogs, sturdier generation paths, transcription, and some extremely niche apps in the garden.\n\nCommunity model listings now show access requirements plus useful text-model metadata such as tool calling, reasoning support, and context length. Unhealthy endpoints are hidden from catalogs and fallback routing rather than erased, can still be called by exact ID, and return once recovery is proven. If the community catalog briefly cannot load, static models keep resolving instead of the API falling over.\n\nProxy models, prompt agents, and endpoint agents now share one typed community-endpoint system across the dashboard, APIs, Enter, Gen, and polli CLI. Managed agents also trust the tools advertised by their enabled MCP servers, so adding a namespaced tool no longer requires updating a second allowlist somewhere else. Software briefly remembers what dynamic means.\n\nGPT transcription is now available for uploaded audio and live sessions through the existing audio and realtime APIs. The app directory also picked up The Mita, a context-aware Roblox character chat, and Cursor Maker, which turns a one-line idea into Windows cursor art.",
-  "pr_count": 17,
+  "title": "Batch and live GPT transcription added",
+  "summary": "Batch and live transcription arrived, community models gained clearer metadata and healthier listings, and generation got a few sturdier failure paths.\n\nAzure-backed `gpt-transcribe` was added for batch speech-to-text, alongside `gpt-live-transcribe` for streaming transcription over Realtime. Both accept Quest Pollen, and the API docs now list them.\n\nOwners can advertise tool-calling, reasoning, and context-length metadata for text proxies. Hidden models leave listings and fallbacks but remain callable by exact ID; monitoring can hide failing models sooner and relist recovered ones. Community proxies and agents now share typed listings, while managed agents can use every tool advertised by their enabled Pollinations MCP server.\n\nThe catalog added The Mita, a Roblox character chat, and Cursor Maker, which turns a description into a Windows cursor design. The dashboard received smaller model-card and mobile-drawer fixes, and the README was refreshed with earlier news.",
+  "pr_count": 15,
   "prs": [
-    {
-      "number": 13514,
-      "date": "2026-08-20"
-    },
     {
       "number": 13524,
       "date": "2026-08-20"
@@ -51,10 +47,6 @@
       "date": "2026-08-20"
     },
     {
-      "number": 13629,
-      "date": "2026-08-20"
-    },
-    {
       "number": 13630,
       "date": "2026-08-20"
     },
@@ -67,7 +59,7 @@
       "date": "2026-08-20"
     },
     {
-      "number": 13637,
+      "number": 13641,
       "date": "2026-08-20"
     },
     {
@@ -75,53 +67,94 @@
       "date": "2026-08-20"
     }
   ],
-  "generated_at": "2026-08-21T06:15:50.710568+00:00",
+  "generated_at": "2026-10-17T23:08:13.099412+00:00",
   "highlights": [
     {
       "emoji": "🎵",
-      "title": "GPT transcription, including live",
-      "text": "Send uploaded audio to `gpt-transcribe` or transcribe a live session with `gpt-live-transcribe` through the existing audio and realtime APIs. [API Docs](https://gen.pollinations.ai/docs)",
+      "title": "GPT batch transcription",
+      "text": "Transcribe audio with `gpt-transcribe` through `/v1/audio/transcriptions`, with optional language, prompt, and temperature settings. [Browse the model](https://enter.pollinations.ai/models?q=gpt-transcribe).",
       "prs": [
         13599
       ],
       "kind": "model"
     },
     {
-      "emoji": "✨",
-      "title": "Community model labels that answer useful questions",
-      "text": "Browse community text models with declared tool calling, reasoning support, and context length before handing them your prompt.",
+      "emoji": "🎵",
+      "title": "GPT live transcription",
+      "text": "Stream speech-to-text with `gpt-live-transcribe` over the Realtime API. [Browse the model](https://enter.pollinations.ai/models?q=gpt-live-transcribe).",
+      "prs": [
+        13599
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Community model capability metadata",
+      "text": "Community text-model owners can declare tool calling, reasoning, and context length in My Models or the community-endpoint API. Those declarations appear in the model catalog to help developers find suitable models; they do not change request forwarding. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         13524
       ],
       "kind": "api"
     },
     {
-      "emoji": "🔗",
-      "title": "MCP tools now discover themselves",
-      "text": "Enabled Pollinations MCP servers can advertise tools directly to managed agents. One less allowlist to forget in a drawer somewhere. [MCP Server Docs](https://gen.pollinations.ai/docs#tag/mcp-server)",
+      "emoji": "🤖",
+      "title": "More tools for managed agents",
+      "text": "Managed agents can use every tool advertised by their enabled Pollinations MCP server, rather than a fixed eight-tool list. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         13628
       ],
       "kind": "product"
-    },
-    {
-      "emoji": "🤖",
-      "title": "The Mita joins chat",
-      "text": "A Roblox character AI for spoken roleplay that keeps the conversation context, now discoverable through Pollinations chat. [Try it](https://www.roblox.com/games/98105867888961/The-Mita)",
-      "prs": [
-        13626
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Make a cursor from a sentence",
-      "text": "Cursor Maker turns prompts such as “glowing blue crystal arrow” into custom Windows cursor art using the Pollinations image API. [Try it](https://hk.1r.gs)",
-      "prs": [
-        13630
-      ],
-      "kind": "app"
     }
   ],
-  "changelog": []
+  "changelog": [
+    {
+      "pr_number": 13634,
+      "url": "https://github.com/pollinations/pollinations/pull/13634",
+      "merged_at": "2026-08-20T15:56:27Z",
+      "api_changes": [
+        {
+          "id": "pr-13634:GET /realtime",
+          "endpoint": "GET /realtime",
+          "summary": "Realtime WebSocket",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:model",
+              "before": {
+                "type": "\"gpt-realtime-2.1\"|\"gpt-realtime-2.1-mini\"|\"gpt-realtime-2\"|\"scribe-realtime\"",
+                "required": false
+              },
+              "after": {
+                "type": "\"gpt-realtime-2.1\"|\"gpt-realtime-2.1-mini\"|\"gpt-realtime-2\"|\"scribe-realtime\"|\"gpt-live-transcribe\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-13634:GET /v1/realtime",
+          "endpoint": "GET /v1/realtime",
+          "summary": "Realtime WebSocket",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:model",
+              "before": {
+                "type": "\"gpt-realtime-2.1\"|\"gpt-realtime-2.1-mini\"|\"gpt-realtime-2\"|\"scribe-realtime\"",
+                "required": false
+              },
+              "after": {
+                "type": "\"gpt-realtime-2.1\"|\"gpt-realtime-2.1-mini\"|\"gpt-realtime-2\"|\"scribe-realtime\"|\"gpt-live-transcribe\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

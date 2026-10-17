@@ -2,9 +2,9 @@
   "date": "2026-10-12",
   "period_start": "2026-10-12",
   "period_end": "2026-10-12",
-  "title": "Claude fast mode joins a tidier media API",
-  "summary": "Claude fast mode, model-scoped keys, Roblox NPCs, and better agent entry points shared the day with a substantial round of API and tool fixes.\n\nClaude Opus 5.5 fast mode was added for text and image inputs. Speech requests now honor supported speed settings, Whisper subtitle formats return measured segments, and GPT Transcribe accepts plain-text output. DreamShaper keeps approximately the requested aspect ratio when shrinking oversized images; smaller SDK, MCP, and Gemini speech fixes make media requests more predictable.\n\nTwo Roblox NPC examples, Pollen Village’s Sage and Grix the blacksmith, were added alongside a game about spotting AI-generated images, a multi-model chat studio, a stickman image maker, and a YouTube research tool. App catalog corrections and pre-review fixes make submitted apps easier to find and assess.\n\nAPI keys can now allow specific model IDs without opening an entire category, with controls in the dashboard and Polli CLI. MCP clients gained a metadata-document sign-in option, and the activity table can group requests or Pollen spending by model or key. Key-editing, mobile controls, wallet display, and Quest status also received fixes.",
-  "pr_count": 57,
+  "title": "More control over keys, usage and what’s new",
+  "summary": "A crowded day: model-specific keys, adjustable speech, agent entry points and sandbox persistence, with a fair amount of plumbing underneath.\n\nAPI keys can now be restricted to specific model IDs, not just whole model categories, including through BYOP links and `polli keys update`. Enter added usage grouping by model or key and reorganized its news into Announcements, Updates and Changelog tabs. Key editors gained clearer permissions controls, while fixes preserve unchanged limits when saving and make Quest balances and mobile controls behave more predictably.\n\nAdded paid-only `anthropic/claude-opus-5.5:fast`, and `/v1/audio/speech` now accepts 0.25–4× speed for OpenAI TTS models. DreamShaper preserves aspect ratios when resizing oversized requests. Transcription, Gemini speech, SDK reference media and audio uploads received format and serialization fixes; DeepSeek charging and provider routing were also corrected.\n\nNew Agent Skills cover direct REST API use and Quest contributions. Agents can request Markdown API docs, and website responses advertise existing discovery resources through Link headers. Roblox creators gained two NPC examples; sandboxes gained herdr support so agents in its panes can survive disconnects and pause/resume. Enter also added an OAuth flow for compatible MCP clients using Client ID Metadata Documents, while the Discord bots can be addressed by mention in any channel.",
+  "pr_count": 61,
   "prs": [
     {
       "number": 15569,
@@ -95,10 +95,6 @@
       "date": "2026-10-12"
     },
     {
-      "number": 17073,
-      "date": "2026-10-12"
-    },
-    {
       "number": 17080,
       "date": "2026-10-12"
     },
@@ -151,11 +147,19 @@
       "date": "2026-10-12"
     },
     {
+      "number": 17148,
+      "date": "2026-10-12"
+    },
+    {
       "number": 17149,
       "date": "2026-10-12"
     },
     {
       "number": 17153,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17154,
       "date": "2026-10-12"
     },
     {
@@ -179,7 +183,15 @@
       "date": "2026-10-12"
     },
     {
+      "number": 17174,
+      "date": "2026-10-12"
+    },
+    {
       "number": 17175,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17179,
       "date": "2026-10-12"
     },
     {
@@ -219,6 +231,10 @@
       "date": "2026-10-12"
     },
     {
+      "number": 17216,
+      "date": "2026-10-12"
+    },
+    {
       "number": 17217,
       "date": "2026-10-12"
     },
@@ -235,52 +251,124 @@
       "date": "2026-10-12"
     }
   ],
-  "generated_at": "2026-10-13T06:10:47.394597+00:00",
+  "generated_at": "2026-10-17T23:22:52.147921+00:00",
   "highlights": [
     {
-      "emoji": "🤖",
-      "title": "Claude Opus 5.5 fast",
-      "text": "Use `anthropic/claude-opus-5.5:fast` for text, images, and tool calling when you want the fast-mode route. [Browse the model](https://enter.pollinations.ai/models?q=anthropic/claude-opus-5.5%3Afast).",
-      "prs": [
-        16954
-      ],
-      "kind": "model"
-    },
-    {
       "emoji": "🎯",
-      "title": "Keys scoped to models",
-      "text": "Limit an API key to specific model IDs instead of granting access to a whole category. Set model permissions in the dashboard, BYOP authorization, or Polli CLI. [Manage keys](https://enter.pollinations.ai/keys).",
+      "title": "Keys for specific models",
+      "text": "Limit an API key to model IDs such as `flux` instead of granting access to an entire category. Set limits through BYOP links or the CLI, and review them in the key dashboard. [Manage API keys](https://enter.pollinations.ai/keys).",
       "prs": [
         17213
       ],
       "kind": "api"
     },
     {
-      "emoji": "💡",
-      "title": "See usage your way",
-      "text": "Group activity by model or API key to compare request counts and Pollen spending. Your selection stays in shared URLs and browser navigation.",
+      "emoji": "✨",
+      "title": "Usage by model or key",
+      "text": "Switch the activity table between Models and Keys to compare request counts or Pollen usage. The grouping stays in shared URLs and browser history.",
       "prs": [
         17165
       ],
       "kind": "product"
     },
     {
-      "emoji": "🔗",
-      "title": "API access for sandboxed agents",
-      "text": "The `pollinations-api` Agent Skill shows agents how to call image generation and chat directly when installing the CLI is not an option. [Explore the API](https://gen.pollinations.ai/docs).",
+      "emoji": "💡",
+      "title": "One place for news",
+      "text": "Enter now puts Announcements, product Updates and the Changelog in separate tabs. Signed-out visitors can read all three.",
+      "prs": [
+        16986
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Claude Opus 5.5 fast",
+      "text": "Use the paid-only `anthropic/claude-opus-5.5:fast` model ID for a fast-mode route without a fallback to standard-speed providers. [View the model](https://enter.pollinations.ai/models?q=anthropic/claude-opus-5.5:fast).",
+      "prs": [
+        16954
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Set OpenAI speech speed",
+      "text": "Send `speed` to `/v1/audio/speech` with `openai/tts-1` or `openai/tts-1-hd` to generate speech from 0.25× to 4× speed. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        16532
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "REST API Agent Skill",
+      "text": "Agents that cannot install the CLI can discover a skill for making image, chat and audio requests directly through HTTP.",
       "prs": [
         16945
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎯",
-      "title": "A blacksmith who remembers",
-      "text": "Give Roblox NPCs a persona and a separate conversation with each player using Pollinations text models. Grix the blacksmith comes as an example. [View repo](https://github.com/pollinations/pollinations/tree/main/apps/roblox-npc).",
+      "emoji": "🔗",
+      "title": "Markdown docs for agents",
+      "text": "Request `/docs` with `Accept: text/markdown` to get the API guide without parsing an HTML reference page. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        17147
+        16988
       ],
-      "kind": "app"
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Agent discovery from pages",
+      "text": "Website responses now include Link headers pointing agents to existing API descriptions, documentation and catalogs. No HTML scraping expedition required.",
+      "prs": [
+        17009
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Quest skill for agents",
+      "text": "A discoverable Agent Skill guides coding agents through finding open contribution Quests, checking their rules, submitting a linked PR and claiming an awarded reward. [Read the contributor guide](https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md).",
+      "prs": [
+        17154
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎮",
+      "title": "Talking Roblox NPC examples",
+      "text": "Build from two Luau examples that let Roblox NPCs answer players using Pollinations text models. Both include example places and setup guides.",
+      "prs": [
+        17129
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Agents that survive disconnects",
+      "text": "Pollinations sandbox templates now include herdr, so agents started in its panes can keep running through SSH disconnects and sandbox pause/resume.",
+      "prs": [
+        17208
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "MCP client sign-in",
+      "text": "Compatible MCP clients can use an HTTPS Client ID Metadata Document for account sign-in without registering a `pk_` app. Users still review the client and authorize access with their own account.",
+      "prs": [
+        17209
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Mention Discord bots anywhere",
+      "text": "Address CatGPT or Opposite Prompt by @mention in any channel; they no longer respond to ordinary messages in their former channels. [Join the community chat](https://chat.pollinations.ai).",
+      "prs": [
+        17230
+      ],
+      "kind": "product"
     }
   ],
   "changelog": []

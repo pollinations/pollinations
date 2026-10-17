@@ -2,8 +2,8 @@
   "date": "2025-03-28",
   "period_start": "2025-03-28",
   "period_end": "2025-03-28",
-  "title": "Clearer API docs and broader MCP support",
-  "summary": "Clearer API examples, less stale model lists, and a little pruning in the community showcase.\n\nThe API docs gained clearer audio, vision, and request-body examples. Version 1.0.6 of @pollinations/model-context-protocol adds support for Node.js 14 and 15, with installation and troubleshooting guidance.\n\nRequests to /openai/models now bypass caching, so model-list changes such as qwen-reasoning and phi-mini can appear without waiting for a stale response to expire.\n\nRiffle, which uses Pollinations to work readers’ vocabulary words into English-reading content, was added to the project listings. The TeekGenAI listing was removed; neither change alters the image API.",
+  "title": "Model lists stop serving stale responses",
+  "summary": "Model lists shed stale cache responses, the community showcase got a tidy-up, and API examples became easier to follow.\n\nRequests to `/openai/models` now bypass the cache, so OpenAI-compatible model lists can reflect changes such as qwen-reasoning and phi-mini without waiting for a cached response to expire.\n\nRiffle, an app that weaves vocabulary practice into English reading, was added to the Creative Apps listings. The TeekGenAI listing was removed; the image API and external app were not changed.\n\nThe API docs gained clearer audio, vision, and request-body examples. Version 1.0.6 of `@pollinations/model-context-protocol` adds compatibility for Node.js versions below 16 and declares support for Node.js 14+.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,7 +23,7 @@
       "date": "2025-03-28"
     }
   ],
-  "generated_at": "2026-10-17T15:36:45.131564+00:00",
+  "generated_at": "2026-10-17T22:29:55.529385+00:00",
   "highlights": [],
   "changelog": []
 }

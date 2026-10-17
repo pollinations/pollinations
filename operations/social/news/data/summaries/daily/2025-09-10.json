@@ -3,7 +3,7 @@
   "period_start": "2025-09-10",
   "period_end": "2025-09-10",
   "title": "Text model routing changed",
-  "summary": "Text model routing changed, token limits became hard caps, and a Portuguese-language image generator joined Creative Projects.\n\n`openai-large` now resolves to GPT-5 Nano. GPT-4.1 and its `gpt-4.1` alias were removed from the available models list, while `openai-fast` remains on GPT-4.1 Nano. Requests also gained backend-model-ID aliases for Mistral Small 3.1 24B and DeepSeek R1 0528.\n\nText requests now respect each model’s configured `max_tokens` limit rather than allowing a higher requested value to override it. Requests below the cap keep their chosen limit; requests without one use the configured limit.\n\nCapyUniverse – CapyIMG was added to Creative Projects. Its browser interface lets people set a prompt, exclusions, image size, aspect ratio, and a count of one to four images.",
+  "summary": "Text model routing and token caps changed, CapyIMG joined Creative Projects, and the request pipeline got a modular rewrite.\n\n`openai-large` now resolves to GPT-5 Nano instead of GPT-4.1, while `openai-fast` remains on GPT-4.1 Nano. Text requests also gained backend-model-ID aliases for Mistral Small 3.1 24B and DeepSeek R1 0528.\n\nText requests now use each model's configured `max_tokens` as a ceiling, falling back to the global limit when needed. Requests below the ceiling keep their chosen value; `openai-large` requests above 1024 tokens are capped at 1024.\n\n@faelscarpato’s browser-based image generator was added to the Creative Projects directory. Its Brazilian Portuguese interface offers prompts, elements to avoid, image sizes, aspect ratios, and batches of one to four images.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,7 +27,17 @@
       "date": "2025-09-10"
     }
   ],
-  "generated_at": "2026-10-17T15:46:32.107881+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:33:47.805394+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "More text model aliases",
+      "text": "Text requests now recognize backend model IDs for Mistral Small 3.1 24B and DeepSeek R1 0528. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        4015
+      ],
+      "kind": "api"
+    }
+  ],
   "changelog": []
 }

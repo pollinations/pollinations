@@ -2,8 +2,8 @@
   "date": "2025-10-14",
   "period_start": "2025-10-14",
   "period_end": "2025-10-14",
-  "title": "Enter’s model-list proxy returns models",
-  "summary": "Enter’s model-list proxy was fixed, while the text catalog shed unused entries and Mistral Nemo aliases.\n\nFixed Enter’s `/api/generate/openai/models` proxy to request the upstream model-list endpoint instead of its root, which returned a redirect. The same PR added browser-protection headers and updated asset and HTML caching on the main site.\n\nRemoved `mistral-naughty` from the available model list and service registry, along with its `mistral-romance`, `mistral-nemo-instruct-2407-romance`, and `mistral-roblox` aliases.\n\nRemoved unused text services and orphaned model IDs, leaving the registry aligned with 18 available services. Model descriptions and OpenAI o4 Mini’s capitalization also got a cleanup.",
+  "title": "Enter’s model-list proxy gets the right response",
+  "summary": "The model list got a working proxy and a smaller catalog; software occasionally benefits from knowing what it actually serves.\n\nEnter’s `/api/generate/openai/models` proxy now requests the upstream model-list path instead of its root, returning a model list rather than a redirect. The same PR adjusted site caching and fixed a TypeScript compilation error.\n\nRemoved `mistral-naughty` from the available model list and shared registry, along with its romance and Roblox aliases.\n\nRemoved unused services and orphaned model IDs, leaving the registry aligned with 18 available services. Several model descriptions and OpenAI o4 Mini’s capitalization were also tidied up.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2025-10-14"
     }
   ],
-  "generated_at": "2026-10-17T15:48:43.179384+00:00",
+  "generated_at": "2026-10-17T22:34:32.606599+00:00",
   "highlights": [],
   "changelog": []
 }

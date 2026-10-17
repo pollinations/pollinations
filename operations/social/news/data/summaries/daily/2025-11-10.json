@@ -2,8 +2,8 @@
   "date": "2025-11-10",
   "period_start": "2025-11-10",
   "period_end": "2025-11-10",
-  "title": "Two more models for text and tools",
-  "summary": "Claude Sonnet 4.5 and Grok 4 Fast joined the model list, while image requests got sturdier and account guidance moved toward Enter.\n\nClaude Sonnet 4.5 was added as `claude-large`, with image input and tool calling. Grok 4 Fast was added as `grok`, also with tool support. DeepSeek V3.1’s connection was updated to use an OpenAI-compatible endpoint.\n\nImage generation now retries server errors up to three times. Seedream 4.0 downloads reference images before sending them for image-to-image generation, avoiding failures when an image host blocks direct access. Enter’s image service was also configured to use exact-match caching.\n\nAuthentication and registration links were consolidated around Enter, including for MCP. The $5 Pollen top-up button was disabled, so none of the three displayed top-up buttons starts checkout.",
+  "title": "Two more text models, and a DeepSeek repair",
+  "summary": "Claude Sonnet 4.5 and Grok 4 Fast joined the model lineup while image requests, authentication, and policy pages got attention.\n\nClaude Sonnet 4.5 was added as `claude-large` with image input and tool calling. Grok 4 Fast’s non-reasoning model was added as `grok`, also with tool support. DeepSeek V3.1 was updated to use an OpenAI-compatible endpoint.\n\nImage generation now retries ComfyUI HTTP 500 errors up to three attempts. Seedream 4.0 downloads reference images server-side to avoid failures when an image host blocks the model provider, and Enter’s image service was configured to use an exact-match cache.\n\nLegacy authentication code was removed, and MCP authentication, configuration, registration links, and documentation were updated to point to enter.pollinations.ai.",
   "pr_count": 10,
   "prs": [
     {
@@ -47,12 +47,12 @@
       "date": "2025-11-10"
     }
   ],
-  "generated_at": "2026-10-17T15:52:02.325475+00:00",
+  "generated_at": "2026-10-17T22:35:32.346538+00:00",
   "highlights": [
     {
       "emoji": "🤖",
       "title": "Claude Sonnet 4.5 added",
-      "text": "Use `claude-large` for conversations with image input and tool calling. [Browse the model](https://enter.pollinations.ai/models?q=claude-large).",
+      "text": "Use `claude-large` for text and image input with tool calling. [Browse the model](https://enter.pollinations.ai/models?q=claude-large).",
       "prs": [
         5129
       ],
@@ -61,7 +61,7 @@
     {
       "emoji": "🤖",
       "title": "Grok 4 Fast added",
-      "text": "Use the non-reasoning Grok 4 Fast model as `grok`, including with tools. [Browse the model](https://enter.pollinations.ai/models?q=grok).",
+      "text": "Use the non-reasoning Grok 4 Fast model as `grok`, including for requests with tools. [Browse the model](https://enter.pollinations.ai/models?q=grok).",
       "prs": [
         5131
       ],

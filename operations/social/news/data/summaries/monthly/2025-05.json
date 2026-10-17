@@ -2,8 +2,8 @@
   "date": "2025-05-31",
   "period_start": "2025-05-01",
   "period_end": "2025-05-31",
-  "title": "GPT Image grows beyond generation",
-  "summary": "May brought more control over images and text, easier ways to build with Pollinations, and a growing directory of community projects.\n\nThe image API added `gptimage`, then gained editing, quality settings, and edits using multiple image URLs. Prompt translation and image error handling also received fixes.\n\nText requests gained a larger character limit, new model options, JSON Schema forwarding, and sampling controls. Model listings became more precise, while streaming responses and cache reuse got steadier.\n\nThe MCP server gained a local `npx` setup path and later OAuth 2.1 for clients. WebSim added prompt-generated, single-file HTML with a selectable model; guides clarified MCP setup and audio responses.\n\nCommunity additions ranged from chat and writing tools to image apps, coding interfaces, accessibility software, and bots. The directory also gained a Vibe Coding category and cleaner featured-project ordering.",
+  "title": "GPT Image gains editing",
+  "summary": "May expanded what people could build with Pollinations, especially with images and text, while making access and the growing app directory easier to navigate.\n\nAdded `gptimage` for image generation, then added editing, quality controls, and multiple reference images. Image prompt translation also got a reliability fix.\n\nText requests gained more room, new model options, JSON Schema forwarding, and sampling controls. WebSim added prompt-to-HTML generation with model selection.\n\nMCP gained a local CLI and OAuth flow. Shared authentication and queue handling, dashboard tiers, tier-based routing, and a preferences API made account behavior more defined.\n\nCommunity additions ranged from chat and coding tools to image apps, accessibility software, and video projects. Categories and featured-project ordering were cleaned up so the directory could keep pace.",
   "pr_count": 101,
   "prs": [
     {
@@ -411,5 +411,5 @@
       "date": "2025-05-31"
     }
   ],
-  "generated_at": "2026-10-17T16:08:56.307439+00:00"
+  "generated_at": "2026-10-17T23:30:38.408090+00:00"
 }

@@ -2,12 +2,40 @@
   "date": "2026-06-28",
   "period_start": "2026-06-21",
   "period_end": "2026-06-27",
-  "title": "The Great Audio Upgrade",
-  "summary": "We completely overhauled our audio generation stack and officially launched the Quest system to replace passive tiers.\n\nA massive week for making noise. We wired up Stable Audio 3 (and 3 Medium via fal for audio-to-audio style transfer), ElevenLabs SFX, Multilingual v2, and music_v2 with reference-audio conditioning. To top it off, we dropped ElevenLabs TTS pricing to at-cost.\n\nThe old passive tier system is dead. We replaced it with an active Quest ledger where you earn Pollen for doing useful things like contributing code or setting up your account. We also shipped a live Cloudflare Worker dashboard to track real-time quest completions and wired up Polar top-ups.\n\nAdded Inception's Mercury 2 as a paid-only text model. More importantly, we removed premature image validation on our gateway, meaning multimodal requests actually pass through to supported text providers now instead of bouncing.\n\nWelcomed RoleChar, SpiritPet World, and REKTY AI to the community showcase. On the docs side, we officially documented the shift from Publishable Keys to Bring Your Own Pollen (BYOP), added social metadata, and cleaned up the dashboard auth navigation so you don't lose your place when logging in.",
-  "pr_count": 22,
+  "title": "Quests gave Pollen rewards a home",
+  "summary": "This week made Pollen easier to earn and understand, while expanding the audio toolbox and tidying the APIs around it.\n\nA public quest catalog and dashboard let people browse available rewards, check their progress, and claim earned Pollen. A second dashboard view added recent rewards, per-quest earned and claimed totals, and a leaderboard. Guidance now explains earning Pollen through Quests, including contributions and model use.\n\nElevenMusic gained reference-audio conditioning, composition plans, and tracks saved for later inpainting. Stable Audio expanded from a 2.5 addition to two Stable Audio 3 options: Medium and an alpha Large model, both supporting prompts or reference audio and durations up to 380 seconds. Sound-effects generation and speech in 29 languages joined the audio lineup, and TTS input grew to 10,000 characters. Existing Stable Audio names now alias Medium, whose output is MP3 rather than the earlier WAV.\n\nActivity brought API usage, transactions, and app earnings together. Shared period, key, and model filters make usage and transactions easier to compare; more precise figures keep small nonzero Pollen amounts from looking like zero. Empty states and CSV availability messages now reflect the selected data.\n\nMercury 2 joined the text models with tool support and a 128,000-token context window. For Gemini, `reasoning_effort` is now the supported reasoning control across Gen, the SDK, and MCP; deprecated `thinking` aliases no longer control it. The text API also leaves image-input acceptance to providers instead of rejecting requests solely on a missing registry label.",
+  "pr_count": 35,
   "prs": [
     {
+      "number": 11933,
+      "date": "2026-06-21"
+    },
+    {
+      "number": 11641,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11642,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11914,
+      "date": "2026-06-22"
+    },
+    {
       "number": 11931,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11940,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11943,
+      "date": "2026-06-22"
+    },
+    {
+      "number": 11944,
       "date": "2026-06-22"
     },
     {
@@ -31,6 +59,10 @@
       "date": "2026-06-23"
     },
     {
+      "number": 11954,
+      "date": "2026-06-23"
+    },
+    {
       "number": 11961,
       "date": "2026-06-23"
     },
@@ -43,7 +75,19 @@
       "date": "2026-06-23"
     },
     {
+      "number": 11974,
+      "date": "2026-06-24"
+    },
+    {
+      "number": 11975,
+      "date": "2026-06-24"
+    },
+    {
       "number": 11856,
+      "date": "2026-06-25"
+    },
+    {
+      "number": 11984,
       "date": "2026-06-25"
     },
     {
@@ -63,15 +107,7 @@
       "date": "2026-06-25"
     },
     {
-      "number": 12005,
-      "date": "2026-06-26"
-    },
-    {
-      "number": 12006,
-      "date": "2026-06-26"
-    },
-    {
-      "number": 12008,
+      "number": 12004,
       "date": "2026-06-26"
     },
     {
@@ -80,6 +116,22 @@
     },
     {
       "number": 12012,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12018,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12028,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12029,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12031,
       "date": "2026-06-27"
     },
     {
@@ -95,5 +147,5 @@
       "date": "2026-06-27"
     }
   ],
-  "generated_at": "2026-06-28T07:18:18.267347+00:00"
+  "generated_at": "2026-10-17T23:27:55.965093+00:00"
 }

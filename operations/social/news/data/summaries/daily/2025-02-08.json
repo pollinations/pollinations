@@ -3,7 +3,7 @@
   "period_start": "2025-02-08",
   "period_end": "2025-02-08",
   "title": "Clearer guidance for image inputs",
-  "summary": "A documentation update makes it easier to choose a model for image inputs.\n\nThe vision docs now identify `openai`, `openai-large`, and `claude-hybridspace` as models that accept image inputs, and clarify that Gemini models do not currently accept them. The JSON and Python examples use `openai`; URL and base64 image options remain documented.",
+  "summary": "The vision docs now make it easier to pick a model that accepts image inputs.\n\nThe vision API docs now identify `openai`, `openai-large`, and `claude-hybridspace` as accepting image inputs, and clarify that Gemini models do not currently accept them. The JSON and Python examples use `openai`; URL and base64 image options remain documented.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-02-08"
     }
   ],
-  "generated_at": "2026-10-17T15:33:27.825320+00:00",
+  "generated_at": "2026-10-17T22:28:55.142552+00:00",
   "highlights": [],
   "changelog": []
 }

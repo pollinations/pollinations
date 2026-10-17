@@ -2,8 +2,8 @@
   "date": "2025-01-13",
   "period_start": "2025-01-13",
   "period_end": "2025-01-13",
-  "title": "Feature requests get a clearer path",
-  "summary": "A small community-facing cleanup made feature requests, OpenHands information, and contribution paths easier to find.\n\nThe homepage now points people to GitHub issues for feature requests, with the message moved into a more visible announcement.\n\nThe homepage announcement links to the OpenHands repository, and the README adds OpenHands to its feature and news sections.\n\nThe README now makes GitHub issues and Discord easier to find alongside other ways to contribute. Contact and link layouts were also adjusted for desktop and mobile.",
+  "title": "A clearer path for feature requests",
+  "summary": "Feature requests got a clearer route from the homepage to GitHub issues.\n\nThe homepage now gives feature requests a dedicated OpenHands announcement with a link to GitHub issues. The README adds OpenHands to its feature overview and clarifies how to propose ideas or contribute through GitHub and Discord.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2025-01-13"
     }
   ],
-  "generated_at": "2026-10-17T15:32:52.380323+00:00",
+  "generated_at": "2026-10-17T22:28:53.476946+00:00",
   "highlights": [],
   "changelog": []
 }

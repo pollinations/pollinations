@@ -2,8 +2,8 @@
   "date": "2025-07-22",
   "period_start": "2025-07-22",
   "period_end": "2025-07-22",
-  "title": "Gemma joins anonymous text generation",
-  "summary": "One PR brought a new anonymous text model, reduced auth-related database contention, and moved text analytics into the cache worker.\n\nAdded `gemma-roblox`, backed by Gemma 2 9B IT Fast, with tool support and a 1,024-token output configuration.\n\nDisabled per-user metric writes at several call sites and added an index for API token lookups, addressing database contention affecting authentication requests.\n\nMoved text-generation success and error analytics from the text server to the cache worker, with events for requests, cache activity, generation, and failures.",
+  "title": "A new anonymous text model",
+  "summary": "A new anonymous text model arrived alongside work to ease authentication contention and tidy up text analytics.\n\nAdded `gemma-roblox`, backed by Nebius Gemma 2 9B IT Fast, with tool support and a 1,024-token output configuration.\n\nDisabled per-user metric writes at several request paths to reduce database contention affecting authentication, and added an index for API token lookups.\n\nMoved text-generation success and error analytics out of the text server and added request, cache, generation, and failure events to the cache worker. Cache metadata now retains only selected request headers.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,12 +11,12 @@
       "date": "2025-07-22"
     }
   ],
-  "generated_at": "2026-10-17T15:44:14.309750+00:00",
+  "generated_at": "2026-10-17T22:32:54.515954+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Gemma for anonymous text",
-      "text": "Try `gemma-roblox` for text generation with tool support and up to 1,024 output tokens. [Browse the model](https://enter.pollinations.ai/models?q=gemma-roblox).",
+      "title": "Gemma Roblox joins text",
+      "text": "Use `gemma-roblox` for anonymous text requests, with tool support and up to 1,024 output tokens. [Browse the model](https://enter.pollinations.ai/models?q=gemma-roblox).",
       "prs": [
         3260
       ],

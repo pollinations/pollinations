@@ -2,8 +2,8 @@
   "date": "2026-01-12",
   "period_start": "2026-01-12",
   "period_end": "2026-01-12",
-  "title": "The community app catalog grew in several directions",
-  "summary": "A community-heavy day: dozens of app listings, a fallback route for Claude, and clearer rules for submitting apps.\n\nThirty-four PRs added app listings spanning image and video creation, chat, classroom tools, games, bots, and developer tools. Examples include Vibed’s AI-assisted coding workspace, Orchive’s orchard advice, Hibiscus’s image and video studio, and FragBin’s shareable snippets. A separate PR refreshed the README’s ten-app showcase. Most catalog entries came through the app-adding agent, with further additions from the team.\n\nRequests to `claude` and `claude-large` now route through AWS Bedrock first, with automatic fallback to Google Vertex AI if Bedrock fails. The change gives both Claude models another provider path without changing their model IDs.\n\nApp submission validation now requires Seed tier or higher, distinguishes unregistered or unset-tier accounts from rejected Spore submissions, and handles names containing spaces, quotes, or @ in duplicate checks. The submission form and review categories were revised, while the Hello and Enter tier explanations now spell out the Seed-to-Flower path and note that tier values may change during beta.",
+  "title": "The community app catalog grew in every direction",
+  "summary": "A community harvest of new catalog listings, with Claude fallback routing and clearer app-submission rules.\n\nDozens of community-built apps joined the catalog, spanning image and video tools, chat bots, classroom tools, world-builders, and more. Examples include Hibiscus for image and video creation, Orchive for apple growers, and a Limnoria plugin that brings Pollinations to IRC. The README’s recent-app showcase was refreshed too.\n\nRequests to `claude` and `claude-large` use AWS Bedrock as the primary provider, with an automatic fallback to Google Vertex AI if Bedrock fails. The change also adds provider-specific fallback authentication handling.\n\nSubmission guidance and review categories were revised, and validation now handles names containing spaces, quotes, or @ without breaking duplicate checks. Submissions require at least Seed tier; the tier explanations clarify how GitHub activity relates to Seed and that Flower requires Seed plus an app showcase submission.",
   "pr_count": 43,
   "prs": [
     {
@@ -179,7 +179,17 @@
       "date": "2026-01-12"
     }
   ],
-  "generated_at": "2026-10-17T15:59:47.046773+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:38:10.938627+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Claude gets provider fallback",
+      "text": "Requests to `claude` and `claude-large` have an automatic fallback to Google Vertex AI if their primary provider fails. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        7089
+      ],
+      "kind": "model"
+    }
+  ],
   "changelog": []
 }

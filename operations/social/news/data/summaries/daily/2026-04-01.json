@@ -2,12 +2,16 @@
   "date": "2026-04-01",
   "period_start": "2026-04-01",
   "period_end": "2026-04-01",
-  "title": "Video generation hits warp speed",
-  "summary": "LTX-2 video generation gets a massive speed boost on new hardware, while the community ships four new apps and patches up the elevator game.\n\nWe migrated the LTX-2 video backend to a GH200 instance. End-to-end video generation times have dropped to a very reasonable 12-16 seconds. We also bolted on token authentication while we were under the hood.\n\nThe community directory absorbed four new projects today: Puzzel Math (elementary education), SciVis AI (sci-fi science illustrations), ItacaLab (graphic editor for authors), and ContentAI (business writing). A solid cross-section of people building weird and useful things on top of the API.\n\nA couple of quality-of-life fixes landed for the Sirius Cybernetics Elevator Challenge. Bring-Your-Own-Pollen (BYOP) keys now persist in local storage so you don't have to re-type them on every visit, and hitting logout actually redirects you to the login screen. Basic state management, but we love to see it.",
-  "pr_count": 7,
+  "title": "The elevator game gets a proper lobby",
+  "summary": "A community-heavy day: the elevator game gained a login screen, the app garden grew, and LTX-2 changed backends.\n\nThe Sirius Cybernetics Elevator Challenge added an in-app login screen, a profile menu showing account details and Pollen balance, and a five-floor shaft display. Logout now returns players to login. The game also improved its sign-in flow, character conversations, response parsing, and animation sizing.\n\nThe community catalog added Puzzel Math, SciVis AI, ItacaLab, ContentAI, and several other submitted apps across learning, images, and writing. A metrics refresh put the Greenhouse at 680 listed apps.\n\nThe LTX-2 video pipeline moved to a GH200 backend with updated job handling. The model registry now marks LTX-2 as alpha.",
+  "pr_count": 9,
   "prs": [
     {
       "number": 9616,
+      "date": "2026-04-01"
+    },
+    {
+      "number": 9792,
       "date": "2026-04-01"
     },
     {
@@ -27,6 +31,10 @@
       "date": "2026-04-01"
     },
     {
+      "number": 9799,
+      "date": "2026-04-01"
+    },
+    {
       "number": 9816,
       "date": "2026-04-01"
     },
@@ -35,52 +43,16 @@
       "date": "2026-04-01"
     }
   ],
-  "generated_at": "2026-04-02T06:24:59.107942+00:00",
+  "generated_at": "2026-10-17T22:46:01.555904+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "LTX-2 goes brrrrr",
-      "text": "We moved the video generation backend to a GH200 instance. End-to-end generation times just dropped to 12-16 seconds.",
+      "emoji": "🎮",
+      "title": "An elevator game lobby",
+      "text": "The Sirius Cybernetics Elevator Challenge added an in-app login screen, a profile menu with your Pollen balance, and a five-floor shaft display. Logging out takes you back to the login screen.",
       "prs": [
-        9616
+        9819
       ],
       "kind": "product"
-    },
-    {
-      "emoji": "🎨",
-      "title": "SciVis AI",
-      "text": "Generate scientific visualizations in six different sci-fi styles using the [Image API](https://gen.pollinations.ai/image/models). [Try it](https://s971153.github.io/scivis-ai/)",
-      "prs": [
-        9796
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "✨",
-      "title": "ItacaLab",
-      "text": "Books need covers too. A new graphic editor tailored for authors to generate artwork for their literary projects. [Try it](https://itacalab.editoraitacaiunas.com/)",
-      "prs": [
-        9797
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "📱",
-      "title": "ContentAI",
-      "text": "Generate optimized social media content for your business without the usual headache. [Try it](https://contentaiak.lovable.app)",
-      "prs": [
-        9798
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "💡",
-      "title": "Puzzel Math",
-      "text": "An interactive educational math app for elementary students, powered by the hive. [Try it](https://apps.apple.com/vn/app/puzzlemath-kids/id6751527974?l=vi)",
-      "prs": [
-        9795
-      ],
-      "kind": "app"
     }
   ],
   "changelog": []

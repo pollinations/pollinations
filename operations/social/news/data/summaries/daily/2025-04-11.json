@@ -2,8 +2,8 @@
   "date": "2025-04-11",
   "period_start": "2025-04-11",
   "period_end": "2025-04-11",
-  "title": "Frontend NSFW filter removed",
-  "summary": "Frontend filtering changed, text-response referral selection was adjusted, and social preview images got their missing metadata.\n\nThe frontend no longer filters content on an NSFW basis. This changes frontend behavior, not necessarily filtering elsewhere.\n\nReferral matching now considers both input messages and generated text. Referral links have a 10% selection probability, while the Ko-fi fallback is selected 30% of the time when no relevant affiliate is found, rather than every time.\n\nPages now include image metadata for social previews. The change also removes duplicate social tags and updates the site's logo, icons, and banner assets.",
+  "title": "Frontend NSFW filtering removed",
+  "summary": "A frontend filter came out, social preview images got wired in, and text-response referral selection changed.\n\nThe frontend no longer filters content on the basis of its NSFW classification. This change is specific to the frontend.\n\nReferral matching now considers both input messages and generated text. The selection probabilities for referral links and the Ko-fi fallback were also adjusted, alongside additions to Pollinator Agent integration tracking.\n\nPages now include image metadata for social previews, with duplicate Open Graph and Twitter tags removed. Site logo, banner, and touch-icon assets were updated too.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2025-04-11"
     }
   ],
-  "generated_at": "2026-10-17T16:02:32.141556+00:00",
+  "generated_at": "2026-10-17T22:30:16.904187+00:00",
   "highlights": [],
   "changelog": []
 }

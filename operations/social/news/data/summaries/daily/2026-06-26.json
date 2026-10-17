@@ -2,20 +2,12 @@
   "date": "2026-06-26",
   "period_start": "2026-06-26",
   "period_end": "2026-06-26",
-  "title": "Quest logic and top-up achievements",
-  "summary": "A day of tying up loose ends: fixing quest triggers for Pollen top-ups and welcoming a new community bot to the greenhouse.\n\nWe ironed out a few edge cases in the achievement system. Buying exactly 100 Pollen now correctly triggers the 100-Pollen quest (because >= makes more sense than >), Polar checkouts are now properly wired into the rewards ledger with backfilled data, and legacy quest cards have been cleanly split from the new launch-era ones so early adopters keep their old badges.\n\nThe community app directory continues to expand. REKTY AI has been officially added to the bots showcase and is now live for discovery in the greenhouse.",
-  "pr_count": 4,
+  "title": "Another bot joins the showcase",
+  "summary": "A quiet day for the garden: one more community bot in the showcase and a README update about Quests.\n\nREKTY AI was added to the bots category in the app catalog, Greenhouse, and README showcase, bringing the Greenhouse count to 813 community apps.\n\nThe README’s Latest News now points readers to the June 25 Quests update, covering Pollen rewards for GitHub contributions and cross-modality model usage. An older GLM-5.2 news entry was removed from the list; the model itself did not change.",
+  "pr_count": 2,
   "prs": [
     {
-      "number": 12005,
-      "date": "2026-06-26"
-    },
-    {
-      "number": 12006,
-      "date": "2026-06-26"
-    },
-    {
-      "number": 12008,
+      "number": 12004,
       "date": "2026-06-26"
     },
     {
@@ -23,17 +15,7 @@
       "date": "2026-06-26"
     }
   ],
-  "generated_at": "2026-06-27T07:01:50.614720+00:00",
-  "highlights": [
-    {
-      "emoji": "🤖",
-      "title": "REKTY AI",
-      "text": "The community app directory grows by one. REKTY AI is now live in the [showcase](https://pollinations.ai). [View repo](https://github.com/rekty/Rekty-AI)",
-      "prs": [
-        12010
-      ],
-      "kind": "app"
-    }
-  ],
+  "generated_at": "2026-10-17T22:59:51.098602+00:00",
+  "highlights": [],
   "changelog": []
 }

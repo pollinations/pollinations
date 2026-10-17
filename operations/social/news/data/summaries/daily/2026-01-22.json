@@ -2,8 +2,8 @@
   "date": "2026-01-22",
   "period_start": "2026-01-22",
   "period_end": "2026-01-22",
-  "title": "Vercel AI SDK provider added to the directory",
-  "summary": "A community-built Vercel AI SDK provider joined the developer tools directory.\n\nThe community-built Pollinations Provider was added to the developer tools directory and README app list. It supports text, image, and speech generation through the Vercel AI SDK.",
+  "title": "A Vercel AI SDK provider joins the developer tools list",
+  "summary": "The developer tools directory now points Vercel AI SDK users to a community provider for text, images, and speech.\n\n@artsiombarouski’s Pollinations provider was added to the Dev_Tools directory and README app list. It supports text, image, and speech generation through the Vercel AI SDK.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,17 @@
       "date": "2026-01-22"
     }
   ],
-  "generated_at": "2026-10-17T16:00:31.015302+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:38:30.038038+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "Pollinations for Vercel AI SDK",
+      "text": "Find @artsiombarouski’s Pollinations provider in the developer tools directory. It supports text, image, and speech generation through the Vercel AI SDK.",
+      "prs": [
+        7552
+      ],
+      "kind": "product"
+    }
+  ],
   "changelog": []
 }

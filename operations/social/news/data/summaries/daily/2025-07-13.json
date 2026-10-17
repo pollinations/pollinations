@@ -2,8 +2,8 @@
   "date": "2025-07-13",
   "period_start": "2025-07-13",
   "period_end": "2025-07-13",
-  "title": "More ways to play and create",
-  "summary": "Five community projects joined the directory, and its links, credits, and star counts got a tidy-up.\n\nThe project directory added 云渺仙途：凡尘篇, a Chinese-language AI text cultivation sandbox, and EzPromptla, which helps build image prompts from categories such as portraits and products.\n\nSocialScribe joined the Vibe Coding list with browser-based writing and rewriting controls. Querynator5000 joined Hack & Build with a natural-language interface for working with databases in the browser.\n\nUltimaX Intelligence was added to Chat Projects as an Open-WebUI-based interface for using multiple AI models without registration.",
+  "title": "More ways to write and make images",
+  "summary": "Five community projects joined the directory, and a round of link and credit repairs made the existing listings easier to explore.\n\nThe project directory added SocialScribe, a browser extension for rewriting text with tone and formatting controls, and EzPromptla, which helps turn ideas into image prompts.\n\nTwo more community projects joined the directory: the Chinese-language AI text cultivation sandbox 云渺仙途：凡尘篇 and UltimaX Intelligence, an Open-WebUI-based interface for multiple models.\n\nQuerynator5000 joined the Hack & Build listing. It offers a browser-based natural-language interface for exploring and manipulating databases, with local persistence.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,7 +31,7 @@
       "date": "2025-07-13"
     }
   ],
-  "generated_at": "2026-10-17T15:43:48.829401+00:00",
+  "generated_at": "2026-10-17T22:32:48.734857+00:00",
   "highlights": [],
   "changelog": []
 }

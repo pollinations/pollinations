@@ -3,7 +3,7 @@
   "period_start": "2025-03-31",
   "period_end": "2025-03-31",
   "title": "More ways to make images",
-  "summary": "Six community projects joined the lists, from image-making tools and a Flutter SDK to a podcast where the models do the talking.\n\nThe creative-app showcase added Ayushman Bhattacharya’s Elixpo Art, which supports aspect ratios and reference images, and LAHGen, a text-to-image app with multiple artistic styles.\n\nThe project lists added mahmood-asadi’s WordPress AI Vision Block, which saves generated images to the Media Library with a post, and @Meenapintu’s Flutter/Dart SDK for text, image and audio generation.\n\nThe directory added @the_yerminator’s AlphaLLM Discord bot for conversation-aware text, images and voice, alongside @brain.diver’s Podcast #1500, where LLMs discuss topics including vibe coding. Project-submission instructions also gained an attribution requirement.",
+  "summary": "Six community projects joined the directory, spanning image-making, WordPress, Flutter, Discord and an LLM podcast.\n\nThe project showcase added Elixpo Art, which supports thematic prompts, aspect ratios and reference images, and LAHGen, which generates images in different artistic styles.\n\nThe directory added a Gutenberg block that generates images and saves them to the WordPress Media Library, plus a community Flutter/Dart SDK for text, image and audio generation.\n\nAlphaLLM, a conversation-aware Discord bot with image and voice generation, joined the Social Bots list. The Creative Apps list added Podcast #1500, where LLMs discuss topics including vibe coding.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,7 +31,7 @@
       "date": "2025-03-31"
     }
   ],
-  "generated_at": "2026-10-17T15:36:49.195277+00:00",
+  "generated_at": "2026-10-17T22:29:57.262863+00:00",
   "highlights": [],
   "changelog": []
 }

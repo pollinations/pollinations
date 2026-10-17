@@ -2,9 +2,9 @@
   "date": "2026-03-08",
   "period_start": "2026-03-01",
   "period_end": "2026-03-07",
-  "title": "→ THE MODEL ROSTER EXPANDS\nWe wired up suno-v5, step-3.5-flash, and flux-2-dev via api.airforce",
-  "summary": "We also added image input support for flux-2-dev and put in a fix to snap its dimensions to supported sizes. Turns out sending arbitrary pixel dimensions to an API that expects very specific boxes ends exactly how you'd expect. → SDK & INFRASTRUCTURE\nThe NPM package (@pollinations_ai/sdk) just got a major update with STT (Speech-to-Text), Media Upload, and Account Endpoints. On the backend, we normalized the finish_reason output to match the OpenAI format because everyone expects that schema now. We also added abuse detection crons, started banning deleted GitHub accounts, and tweaked the media service to add Content-Disposition headers. → THE COMMUNITY APP AVALANCHE\nOver 15 new apps hit the showcase this week, including Pollinations CLI, PromptLab Studio, and an AI Image Gallery. To handle the volume, we added a step to approve apps before PR creation so the repo doesn't turn into the wild west",
-  "pr_count": 79,
+  "title": "More models, with the details filled in",
+  "summary": "New ways to make media were matched by better tools for building apps and more faithful responses from the API.\n\nAlpha Suno v5 music generation joined the audio API, alongside Step 3.5 Flash for text and FLUX.2 Dev for images. Follow-up work routed Suno requests to music generation, fixed Step 3.5 Flash requests that returned 404, and gave FLUX.2 Dev image-to-image input and support for requested square, portrait, or landscape proportions. GPT Image resource configurations were also updated.\n\n@pollinations_ai/sdk 4.1.0 added audio transcription, media uploads, Bring Your Own Pollen authorization links, and helpers for profiles, balances, usage, and API-key validation. Publishable keys gained App URL settings, registered app attribution on authorization screens, and an endpoint for looking up that attribution. Together, these changes give app builders more of the pieces they need without assembling every request by hand.\n\nGeneral-purpose text models no longer receive a default conversational system prompt when callers do not provide one. Image-bearing message arrays stay intact, Vertex AI tool schemas retain supported fields, and tool-call completions report a consistent finish reason while preserving Gemini 3 thought signatures. A fix for failing text requests also landed. The common thread: pass along what the caller meant, then describe what the model actually did.\n\nA community-built ComfyUI integration brought Pollinations image, video, text, and audio nodes into visual workflows. Across the week, the catalog and showcase added coding agents, app builders, study tools, image and video editors, writing apps, bots, and more. These are community integrations and listings, not changes to the listed apps’ code.",
+  "pr_count": 86,
   "prs": [
     {
       "number": 8100,
@@ -79,11 +79,23 @@
       "date": "2026-03-01"
     },
     {
+      "number": 8694,
+      "date": "2026-03-01"
+    },
+    {
       "number": 8702,
       "date": "2026-03-01"
     },
     {
       "number": 8710,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8715,
+      "date": "2026-03-01"
+    },
+    {
+      "number": 8717,
       "date": "2026-03-01"
     },
     {
@@ -151,6 +163,10 @@
       "date": "2026-03-02"
     },
     {
+      "number": 8673,
+      "date": "2026-03-02"
+    },
+    {
       "number": 8729,
       "date": "2026-03-02"
     },
@@ -164,10 +180,6 @@
     },
     {
       "number": 8775,
-      "date": "2026-03-03"
-    },
-    {
-      "number": 8787,
       "date": "2026-03-03"
     },
     {
@@ -275,6 +287,10 @@
       "date": "2026-03-05"
     },
     {
+      "number": 8851,
+      "date": "2026-03-05"
+    },
+    {
       "number": 8859,
       "date": "2026-03-05"
     },
@@ -283,7 +299,15 @@
       "date": "2026-03-05"
     },
     {
+      "number": 8868,
+      "date": "2026-03-05"
+    },
+    {
       "number": 8869,
+      "date": "2026-03-05"
+    },
+    {
+      "number": 8874,
       "date": "2026-03-05"
     },
     {
@@ -292,6 +316,10 @@
     },
     {
       "number": 8871,
+      "date": "2026-03-06"
+    },
+    {
+      "number": 8884,
       "date": "2026-03-06"
     },
     {
@@ -323,5 +351,5 @@
       "date": "2026-03-07"
     }
   ],
-  "generated_at": "2026-03-08T06:19:52.781661+00:00"
+  "generated_at": "2026-10-17T23:26:52.210310+00:00"
 }

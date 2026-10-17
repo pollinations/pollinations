@@ -2,8 +2,8 @@
   "date": "2025-01-23",
   "period_start": "2025-01-23",
   "period_end": "2025-01-23",
-  "title": "Larger default images, with some model changes",
-  "summary": "Images got a larger default size, text gained a practical-minded persona, and two community tools became easier to find.\n\nImage requests without dimensions now default to 1024×1024, and Flux Schnell gained 1024×1024 generation through Cloudflare Workers AI. Flux and Turbo have lower maximum side lengths, while flux-realism, flux-anime, flux-3d, and any-dark were removed from the available image models. The text service also changed the backend used for llama requests.\n\nThe text service gained a Realistic assistant persona prompt focused on practical problem-solving, context-aware tone, actionable advice, and solutions that account for real-world constraints.\n\nThe homepage and README now point readers to a community Node.js package for image generation and LLM access, plus a dashboard for monitoring text and image servers.",
+  "title": "Images default to 1024×1024",
+  "summary": "Bigger default images, a more practical assistant persona, and a new route behind `llama`.\n\nImage requests without dimensions now default to 1024×1024 instead of 768×768, and Flux Schnell gained a 1024×1024 generation path through Cloudflare Workers AI. The same PR reduced the maximum side lengths for Flux and Turbo, removed four image models, and moved the `llama` text route to Llama 3.3 70B Instruct FP8 Fast.\n\nThe text service gained a Realistic persona prompt that combines practical problem-solving, investigation, brainstorming, and advice shaped by real-world constraints.\n\nThe homepage and README added links to a community Node.js package for image generation and LLM access, plus a dashboard for monitoring text and image servers.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,12 +19,12 @@
       "date": "2025-01-23"
     }
   ],
-  "generated_at": "2026-10-17T15:32:53.274040+00:00",
+  "generated_at": "2026-10-17T22:28:53.658430+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Larger images by default",
-      "text": "Image requests without dimensions now default to 1024×1024. Flux Schnell also gained 1024×1024 generation through Cloudflare Workers AI. [Try the playground](https://pollinations.ai/play).",
+      "title": "Larger default images",
+      "text": "Image requests without dimensions now default to 1024×1024 instead of 768×768, with a 1024×1024 generation path for Flux Schnell. [Try image generation](https://gen.pollinations.ai/image/{prompt}).",
       "prs": [
         1067
       ],
@@ -32,12 +32,21 @@
     },
     {
       "emoji": "🤖",
-      "title": "A Realistic assistant persona",
-      "text": "A new text persona prompt emphasizes grounded brainstorming, actionable advice, and answers that account for real-world constraints.",
+      "title": "A realistic assistant persona",
+      "text": "The text service gained a Realistic persona prompt designed for practical problem-solving, grounded brainstorming, and advice that accounts for real-world constraints.",
       "prs": [
         1064
       ],
       "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "Llama gets a new route",
+      "text": "The `llama` route now uses Llama 3.3 70B Instruct FP8 Fast. [Browse the model](https://enter.pollinations.ai/models?q=llama).",
+      "prs": [
+        1067
+      ],
+      "kind": "model"
     }
   ],
   "changelog": []

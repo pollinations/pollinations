@@ -2,8 +2,8 @@
   "date": "2026-01-10",
   "period_start": "2026-01-10",
   "period_end": "2026-01-10",
-  "title": "One SDK for generation in Node.js and browsers",
-  "summary": "A unified SDK replaces the old React package, text model names get less fussy, and account and model-stats pages become clearer.\n\nThe team added `@pollinations/sdk` 4.0.1 with image, video, text, chat, audio, and model-list requests through the unified API. It includes streaming, batch and conversation helpers, typed responses, retries, and timeouts. This is a breaking replacement for the old React package; React hooks are not included.\n\nText-generation validation now accepts registry aliases as well as service IDs. `kimi` replaces `kimi-k2-thinking` as the service ID, while `kimi-k2-thinking` and `kimi-k2` remain aliases; `kimi-reasoning` was added and `kimi-thinking` removed. The gateway also picked up a Gemini token-accounting fix so downstream analytics do not calculate negative visible-token counts.\n\nThe legacy auth page removed its login button and now directs people to Enter for accounts and tokens. Its notice says registrations, logins, and token management are disabled there, while anonymous API calls still work.",
+  "title": "One SDK for generation requests",
+  "summary": "A new cross-platform SDK arrived while accounts, model names, token counts, and dashboard stats got less confusing.\n\nAdded @pollinations/sdk 4.0.1 for Node.js and browsers, covering image, video, text, chat, and audio generation plus model lists. It brings streaming, conversation and batch helpers, typed responses, retries, and timeouts. This replaces the old React package; its hooks are not part of the new SDK.\n\nThe legacy auth page now directs people to Enter for accounts and tokens instead of offering registration, login, or token management there. It also clarifies that anonymous API calls still work.\n\nText-generation validation now accepts model aliases from the shared registry. Kimi uses `kimi` as its service ID while retaining `kimi-k2-thinking` and `kimi-k2` as aliases. A gateway update also corrects Gemini thought-token accounting in downstream analytics.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,12 +27,12 @@
       "date": "2026-01-10"
     }
   ],
-  "generated_at": "2026-10-17T15:58:53.573685+00:00",
+  "generated_at": "2026-10-17T22:38:02.122126+00:00",
   "highlights": [
     {
-      "emoji": "🔗",
-      "title": "Unified generation SDK",
-      "text": "Use `@pollinations/sdk` for image, video, text, chat, and audio requests from Node.js or the browser, with streaming and batch helpers. It replaces the old React package; React hooks are not included.",
+      "emoji": "🚀",
+      "title": "One SDK, more modalities",
+      "text": "Use `@pollinations/sdk` from Node.js or the browser for image, video, text, chat, audio, and model-list requests. It includes streaming, conversation and batch helpers; the former React hooks are not included. [View the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         7002
       ],

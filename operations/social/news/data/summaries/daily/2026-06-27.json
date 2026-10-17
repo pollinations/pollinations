@@ -2,9 +2,9 @@
   "date": "2026-06-27",
   "period_start": "2026-06-27",
   "period_end": "2026-06-27",
-  "title": "Quests got a live scoreboard and clearer language",
-  "summary": "A garden-tending day: live quest activity, open multimodal text inputs, registry-driven model plumbing, and a vigorous removal of old code.\n\nThe new live quest dashboard reads directly from the production rewards ledger, showing completed quests in timestamp order and which ones are earning the most claimed Pollen. The quest catalog also fixed the GitHub contribution quest description, while site copy, docs, and agent prompts now consistently call the system Quests and Pollen.\n\nThe text gateway no longer blocks multimodal inputs with Pollinations-side image validation before providers see them. API configuration is also being standardized around reasoning_effort, and the authentication docs now point developers to the current BYOP flow.\n\nImage and video model availability now comes straight from the shared registry instead of a local duplicate catalog. Tests and frontend model metadata were refactored around shared, structured sources, so adding or changing models should require less archaeological work.",
-  "pr_count": 18,
+  "title": "A closer look at where Pollen goes",
+  "summary": "A quest dashboard puts Pollen activity in view, while chat requests get clearer reasoning controls and provider-side image-input decisions.\n\nA quest dashboard was added with recent rewards, per-quest earned and claimed totals, and a leaderboard for Pollen earned. A community contribution clarified how to complete the GitHub issue quest, while site and submission guidance now describes earning Pollen through Quests rather than tier upgrades or hourly refills. The guidance change does not alter app eligibility.\n\nThe text API no longer rejects image inputs solely because a model lacks an image-support label in the registry; providers now decide whether to accept them. For reasoning, `reasoning_effort` is the supported option across Gen, the SDK, and MCP. It maps to Gemini 2.5 token budgets and Gemini 3 settings, while the deprecated `thinking` aliases no longer control reasoning.\n\nEnter’s model catalog now groups badges that share a price and billing unit across desktop and mobile. Per-Pollen sorting uses the underlying seven-day average instead of rounded display text, so close values appear in the right order. Model prices did not change.",
+  "pr_count": 8,
   "prs": [
     {
       "number": 12012,
@@ -12,14 +12,6 @@
     },
     {
       "number": 12018,
-      "date": "2026-06-27"
-    },
-    {
-      "number": 12021,
-      "date": "2026-06-27"
-    },
-    {
-      "number": 12022,
       "date": "2026-06-27"
     },
     {
@@ -31,43 +23,11 @@
       "date": "2026-06-27"
     },
     {
-      "number": 12030,
-      "date": "2026-06-27"
-    },
-    {
       "number": 12031,
       "date": "2026-06-27"
     },
     {
-      "number": 12033,
-      "date": "2026-06-27"
-    },
-    {
-      "number": 12034,
-      "date": "2026-06-27"
-    },
-    {
-      "number": 12036,
-      "date": "2026-06-27"
-    },
-    {
       "number": 12037,
-      "date": "2026-06-27"
-    },
-    {
-      "number": 12038,
-      "date": "2026-06-27"
-    },
-    {
-      "number": 12039,
-      "date": "2026-06-27"
-    },
-    {
-      "number": 12041,
-      "date": "2026-06-27"
-    },
-    {
-      "number": 12043,
       "date": "2026-06-27"
     },
     {
@@ -79,16 +39,25 @@
       "date": "2026-06-27"
     }
   ],
-  "generated_at": "2026-09-04T11:58:08.599297+00:00",
+  "generated_at": "2026-10-17T23:00:18.363683+00:00",
   "highlights": [
     {
-      "emoji": "🎯",
-      "title": "Quest rewards dashboard",
-      "text": "A new dashboard Worker provides real-time Quest and Pollen reward data from the rewards ledger.",
+      "emoji": "🌟",
+      "title": "Quest rewards in view",
+      "text": "A new quest dashboard shows recent rewards, earned and claimed totals by quest, and the top Pollen earners.",
       "prs": [
         12012
       ],
       "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Gemini reasoning controls",
+      "text": "Use `reasoning_effort` to choose Gemini reasoning levels; Gemini 2.5 maps them to token budgets, while Gemini 3 uses its supported settings. The old `thinking` aliases no longer control reasoning. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        12029
+      ],
+      "kind": "api"
     }
   ],
   "changelog": []

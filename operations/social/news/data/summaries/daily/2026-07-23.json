@@ -2,9 +2,9 @@
   "date": "2026-07-23",
   "period_start": "2026-07-23",
   "period_end": "2026-07-23",
-  "title": "More models, more modalities, fewer endpoint migrations",
-  "summary": "A busy model day: new text and speech options, sharper Grok images, steadier video jobs, and a Discord bot with fewer ways to get stuck.\n\nGemini Flash-Lite now runs on stable Gemini 3.5 without changing its existing aliases or multimodal, tool, search, structured-output, reasoning, and streaming features. LongCat 2.0 joins the text API with a 1M-token context window and tool support, while CSM 1B adds six-voice text-to-speech through the audio API. The model catalog also learned the proper logos for several of its newer residents.\n\nBasic Grok Imagine image generation and editing now default to 2K output. Grok Imagine Pro and Grok Video Pro moved onto OpenRouter's xAI routes while keeping their existing capabilities, and video jobs now stop after a deliberate three-minute maximum rather than wandering through legacy retries for much longer.\n\nThe Discord bot was reorganized, its prompt was trimmed, mention search and X links were repaired, Mermaid fences now render inline, and repeated failed tool calls no longer become a small infinite tragedy.",
-  "pr_count": 12,
+  "title": "Three model additions across text and speech",
+  "summary": "Gemini 3.5 Flash Lite, LongCat 2.0, and CSM speech joined the models, while basic Grok images moved to 2K and Polli learned a few better habits.\n\nGemini Flash Lite moved to 3.5, including the fast search model, while existing aliases remain. LongCat 2.0 adds a 1,048,576-token context window, reasoning controls, and function tools. CSM 1B adds text-to-speech with six Sesame voices and five output formats; the audio docs now list its voices and formats, and the catalog has more model brand logos.\n\nBasic Grok Imagine image generation and editing now request 2K resolution. Grok Imagine Pro image and Grok Video Pro requests moved to OpenRouter; Video Pro retains its existing clip options but now rejects fractional durations and has a three-minute polling limit.\n\nPolli now renders Mermaid fences inline, handles Discord mentions and X links more reliably, and avoids repeating identical tool calls. Its prompt and GitHub actions were also tightened, with restricted actions hidden from non-admins.",
+  "pr_count": 15,
   "prs": [
     {
       "number": 12647,
@@ -27,7 +27,15 @@
       "date": "2026-07-23"
     },
     {
+      "number": 12674,
+      "date": "2026-07-23"
+    },
+    {
       "number": 12675,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12677,
       "date": "2026-07-23"
     },
     {
@@ -51,34 +59,29 @@
       "date": "2026-07-23"
     },
     {
+      "number": 12700,
+      "date": "2026-07-23"
+    },
+    {
       "number": 12704,
       "date": "2026-07-23"
     }
   ],
-  "generated_at": "2026-07-24T07:00:22.839538+00:00",
+  "generated_at": "2026-10-17T23:22:10.763029+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Polli learned diagrams and better search",
-      "text": "The Discord bot now renders Mermaid diagrams inline, handles mention searches and X links more reliably, and stops retrying the same broken tool call forever. [Join the chat](https://chat.pollinations.ai)",
-      "prs": [
-        12647
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🚀",
-      "title": "Gemini 3.5 Flash-Lite",
-      "text": "Existing Flash-Lite and `gemini-search-fast` aliases now run on stable Gemini 3.5 Flash-Lite, keeping multimodal input, tools, web search, structured output, reasoning, and streaming. [Browse models](https://gen.pollinations.ai/v1/models)",
+      "title": "Gemini Flash Lite 3.5",
+      "text": "Use `gemini-flash-lite-3.5` for multimodal input, tools, structured output, reasoning, and streaming. Fast search also moved to Gemini 3.5 Flash Lite. [Browse the model](https://enter.pollinations.ai/models?q=gemini-flash-lite-3.5).",
       "prs": [
         12669
       ],
       "kind": "model"
     },
     {
-      "emoji": "🚀",
-      "title": "LongCat 2.0",
-      "text": "Paid API users can call `longcat`, `longcat-2`, or `longcat-2.0` for reasoning, function tools, streaming, prompt caching, and a rather excessive 1M-token context window. [API docs](https://gen.pollinations.ai/docs)",
+      "emoji": "🤖",
+      "title": "LongCat 2.0 joins",
+      "text": "Try `longcat` with a 1,048,576-token context window, reasoning controls, and function tools. [Browse the model](https://enter.pollinations.ai/models?q=longcat).",
       "prs": [
         12670
       ],
@@ -86,8 +89,8 @@
     },
     {
       "emoji": "🎵",
-      "title": "CSM 1B speech",
-      "text": "Text-to-speech gained CSM 1B: six voices, five output formats, and direct routing for speech that does not need to sound like it came from a voicemail tree. [Try the audio API](https://gen.pollinations.ai/audio/{text})",
+      "title": "CSM speech with six voices",
+      "text": "Generate speech with `csm-1b` using six Sesame voices and choose mp3, opus, flac, wav, or pcm output. [Browse the model](https://enter.pollinations.ai/models?q=csm-1b).",
       "prs": [
         12673
       ],
@@ -95,8 +98,8 @@
     },
     {
       "emoji": "🎨",
-      "title": "Grok Imagine defaults to 2K",
-      "text": "Basic `grok-imagine-image` generation and editing now produce sharper 2K images by default. More pixels, same request. [Generate an image](https://gen.pollinations.ai/image/{prompt})",
+      "title": "Grok Imagine goes 2K",
+      "text": "Basic `grok-imagine-image` now requests 2K resolution for both image generation and editing. [Browse the model](https://enter.pollinations.ai/models?q=grok-imagine-image).",
       "prs": [
         12704
       ],

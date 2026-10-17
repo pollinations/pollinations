@@ -2,8 +2,8 @@
   "date": "2025-12-26",
   "period_start": "2025-12-26",
   "period_end": "2025-12-26",
-  "title": "App authorization meets playground sign-in",
-  "summary": "Apps can request model-scoped access, the playground gained sign-in, and the site added per-page translation.\n\nThird-party apps gained a redirect-based flow for requesting API keys with selected model access. The playground gained Login and Logout controls, and uses the current key for image and text generation.\n\nThe site added per-page translation based on browser language, including list content and News, with a visible translation indicator and English fallback. The Apps showcase also fetches its listings from GitHub.\n\nThe model-list endpoints filter results for restricted API keys while leaving unrestricted lists intact. `/v1/models` also adopted an OpenAI-compatible list response.",
+  "title": "App authorization reaches the playground",
+  "summary": "App authorization, permission-aware model discovery, playground login, and browser-language translation all landed on the same day.\n\nThird-party apps can now send users through an authorization page to sign in, review the requesting app’s hostname, and choose which models it may use. The playground gained Login and Logout controls and uses the current user’s access for image and text generation.\n\nThe model-list endpoints now filter results when given a key restricted to certain models. `/v1/models` also returns an OpenAI-compatible list response, changing its previous response schema.\n\nThe site added translation for the active page, including lists and News, with an indicator beneath the navigation. English remains the fallback if translation fails.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,35 +23,43 @@
       "date": "2025-12-26"
     }
   ],
-  "generated_at": "2026-10-17T15:56:55.485093+00:00",
+  "generated_at": "2026-10-17T22:37:24.565225+00:00",
   "highlights": [
     {
       "emoji": "🔗",
-      "title": "Connect apps, then create",
-      "text": "Third-party apps can request access to selected models through a redirect flow. Sign in to the playground to generate images and text with the models available to your key. [Try the playground](https://pollinations.ai/play).",
+      "title": "Connect apps with model choice",
+      "text": "Authorize a third-party app through a redirect, review its hostname, and choose which models it can use. [Connect user wallets](https://gen.pollinations.ai/docs#tag/connect-user-wallets).",
       "prs": [
-        6410,
+        6410
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Log in to the playground",
+      "text": "Log in to generate images and text with your own model access. The model selector shows which models your current access enables. [Try the playground](https://pollinations.ai/play).",
+      "prs": [
         6467
       ],
       "kind": "product"
     },
     {
-      "emoji": "✨",
-      "title": "Pages in your language",
-      "text": "Site pages can translate to your browser language, including News and list content. An indicator shows when translation is active, with English as the fallback. [Visit pollinations.ai](https://pollinations.ai).",
-      "prs": [
-        6466
-      ],
-      "kind": "product"
-    },
-    {
       "emoji": "🤖",
-      "title": "Model lists match access",
-      "text": "With a restricted API key, `/v1/models`, `/image/models`, and `/text/models` list only permitted models. `/v1/models` also returns an OpenAI-compatible list. [Browse the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Model lists match permissions",
+      "text": "Model-list endpoints filter results for keys restricted to specific models. `/v1/models` now returns an OpenAI-compatible list response. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         6464
       ],
       "kind": "api"
+    },
+    {
+      "emoji": "🌟",
+      "title": "Pages in your language",
+      "text": "Read the active page, including lists and News, in your browser’s language. An indicator shows when translation is in use, and English is the fallback. [Visit pollinations.ai](https://pollinations.ai).",
+      "prs": [
+        6466
+      ],
+      "kind": "product"
     }
   ],
   "changelog": []

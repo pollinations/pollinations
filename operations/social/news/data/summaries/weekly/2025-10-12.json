@@ -2,8 +2,8 @@
   "date": "2025-10-12",
   "period_start": "2025-10-05",
   "period_end": "2025-10-11",
-  "title": "Image generation found new routes",
-  "summary": "Model routes and accounting got a careful tune-up while image tools, Enter, and community apps became more useful.\n\n`gptimage` returned for generation and editing, then gained separate model routes for those tasks. Kontext returned to the seed-tier image configuration and moved to a route supporting generation and input-image edits. Nano Banana joined the nectar-tier lineup, and the image API gained `/about` for model details. A busy week for pixels.\n\n`openai-large` switched to GPT-5 Chat without its former 20,000-character input cap. `deepseek` moved to V3.1 with hybrid reasoning, and `mistral` moved to Small 3.2; existing names remain aliases where noted. Alias resolution also became more consistent across pricing, free-usage checks, and the shared text registry.\n\nEnter’s FAQ expanded from the dashboard to sign-in, with clearer explanations of grants, model access, wallets, Quests, and image usage per Pollen. Balances, API keys, and account layouts got readability and mobile improvements. Generation tracking also began using the authenticated user’s tier; that change does not add tier-based usage enforcement.\n\n`openai-audio` gained higher input and completion limits. Registered wildcard referrers can authenticate subdomains without registering each one, while exact matches retain priority and parent domains still need their own match. The docs also gained GPT-5 parameter and verbatim TTS guidance.",
+  "title": "Model names got a more reliable map",
+  "summary": "A week of making model names more dependable, refreshing the models behind them, and giving people more ways to build with the results.\n\nAliases now resolve to their intended service models, including for Enter’s free-usage checks and generation prices. Registry checks also catch invalid service IDs and missing model IDs instead of silently falling through. `openai-large` now maps to `gpt-5-chat-latest`, while the image registry recognizes `gptimage`, `gpt-image`, and `gpt-image-1-mini`.\n\n`gptimage` returned for seed-tier generation and editing, then split its work between `gpt-image-1-mini` for generation and `gpt-image-1` for edits. `kontext` moved to Azure Flux Kontext for generation and editing, with a 1024-pixel maximum side length. Nano Banana was added as a nectar-tier image model, and the image API gained an `/about` endpoint for model details.\n\n`deepseek` moved to DeepSeek V3.1 with hybrid reasoning, and former reasoning names remain as aliases. `mistral` moved to Small 3.2; `mistral-naughty` replaced the `mistral-romance` listing while preserving the old name as an alias. `openai-audio` now accepts up to 10,000 input characters and 6,384 completion tokens. The docs also clarify GPT-5 parameter limits and offer prompting guidance for reasoning models and verbatim TTS.\n\nA growing Pollen FAQ now covers grants, wallets, Quests, model access, and image output per Pollen. Balance and API-key screens received clearer labels and layouts, key descriptions now appear where expected, and sign-in and account pages adapt to phones. Enter also uses the tier stored in a user’s session for generation tracking; that change does not add tier-based usage enforcement.",
   "pr_count": 46,
   "prs": [
     {
@@ -191,5 +191,5 @@
       "date": "2025-10-11"
     }
   ],
-  "generated_at": "2026-10-17T16:06:13.781782+00:00"
+  "generated_at": "2026-10-17T23:25:34.089522+00:00"
 }

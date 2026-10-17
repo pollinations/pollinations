@@ -2,12 +2,16 @@
   "date": "2026-03-31",
   "period_start": "2026-03-31",
   "period_end": "2026-03-31",
-  "title": "CatGPT brings sassy webcomics to Discord",
-  "summary": "A massive day for the ecosystem with a sassy comic-generating Discord cat, game UI polish, and six new community apps hitting the showcase.\n\nvoodoohop dropped a new Discord bot into the directory. It uses Claude for witty banter and nanobanana to generate custom comic strips featuring your avatar interacting with a sassy AI cat. Because the internet's ultimate destiny is always cats.\n\nCommunity contributor ChunkyPanda29 shipped a pair of PRs to polish the Sirius Cybernetics Elevator challenge. They fixed itch.io deployment quirks and wired up responsive Lottie-based floor animations that actually scale correctly when you resize your browser.\n\nSix new community projects just landed in the showcase. The ecosystem is getting weird and wonderful: we've got a WhatsApp assistant (Soy Cosmo), an AI RPG engine, a language learning tool (Vocamax), a recipe visualizer, and a couple of new Discord bots. People are building wild things with simple HTTP calls.",
-  "pr_count": 9,
+  "title": "Discord messages become cat comics",
+  "summary": "A community-heavy day brought cat comics to Discord, animated floors to Sirius Elevator, and more apps to explore.\n\nCatGPT was added as a Discord bot that turns messages in a configured channel into black-and-white cat webcomics. Claude writes a short, sarcastic reply; nanobanana draws the comic using the sender’s avatar as a reference for the human character.\n\nSirius Cybernetics Elevator gained floor-specific Lottie backgrounds for floors 1–5, PNG alternatives, a floor indicator, and a persistent animation toggle. Follow-up sizing changes adapt the backgrounds for embedded and standalone views.\n\nThe community catalog added an Arabic-language recipe-image app, labol lens, two games, and vocamax, an Android vocabulary app that uses Pollinations for images and learning support.",
+  "pr_count": 12,
   "prs": [
     {
       "number": 9607,
+      "date": "2026-03-31"
+    },
+    {
+      "number": 9747,
       "date": "2026-03-31"
     },
     {
@@ -20,6 +24,14 @@
     },
     {
       "number": 9772,
+      "date": "2026-03-31"
+    },
+    {
+      "number": 9773,
+      "date": "2026-03-31"
+    },
+    {
+      "number": 9774,
       "date": "2026-03-31"
     },
     {
@@ -43,70 +55,26 @@
       "date": "2026-03-31"
     }
   ],
-  "generated_at": "2026-04-01T06:32:18.354401+00:00",
+  "generated_at": "2026-10-17T22:46:00.071209+00:00",
   "highlights": [
     {
-      "emoji": "🤖",
-      "title": "CatGPT",
-      "text": "A new Discord bot that uses Claude to generate webcomic panels of your avatar arguing with a cat. Because the internet needed this.",
+      "emoji": "🎨",
+      "title": "Cat comics in Discord",
+      "text": "CatGPT turns messages in a configured Discord channel into black-and-white webcomics, complete with a sarcastic reply and a human character based on the sender’s avatar.",
       "prs": [
         9765
       ],
-      "kind": "app"
+      "kind": "product"
     },
     {
-      "emoji": "🍳",
-      "title": "Smart Kitchen AI",
-      "text": "A community-built culinary platform that hallucinates recipe visualizations on demand. [Try it](https://matbaki.vercel.app)",
+      "emoji": "✨",
+      "title": "Animated Sirius Elevator floors",
+      "text": "Explore floors 1–5 with Lottie backgrounds, switch to PNG alternatives, and toggle animation on or off. Your animation setting persists between visits.",
       "prs": [
-        9771
+        9607,
+        9789
       ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🔍",
-      "title": "Labol Lens",
-      "text": "A streamlined image generation interface added to the community showcase. [Try it](https://labol-lens.streamlit.app/)",
-      "prs": [
-        9772
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "👾",
-      "title": "Exovia Destek",
-      "text": "Another Discord bot joins the hive, proving that text generation is the new server admin. [Try it](https://discord.com/invite/3BF7NH4fKN)",
-      "prs": [
-        9775
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "📚",
-      "title": "Vocamax",
-      "text": "A language learning app using our API to generate educational content on the fly. [Try it](https://play.google.com/store/apps/details?id=com.musiclearns.music_app)",
-      "prs": [
-        9776
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎲",
-      "title": "AI RPG Engine",
-      "text": "A browser-based RPG engine that uses our endpoints to run the campaign. Roll for initiative. [Try it](https://yuuki8763.github.io/en/index.html)",
-      "prs": [
-        9787
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "📱",
-      "title": "Soy Cosmo",
-      "text": "A WhatsApp personal assistant that generates images and audio. Texting AI is officially mainstream. [Try it](https://soy-cosmo.web.app)",
-      "prs": [
-        9788
-      ],
-      "kind": "app"
+      "kind": "product"
     }
   ],
   "changelog": []

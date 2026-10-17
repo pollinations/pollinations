@@ -2,12 +2,24 @@
   "date": "2026-03-18",
   "period_start": "2026-03-18",
   "period_end": "2026-03-18",
-  "title": "Bots taking over Discord and Telegram",
-  "summary": "An absolute avalanche of community apps: 14 new showcase additions ranging from ESP32 microcontrollers to Telegram bots and desktop novel generators.\n\nThe community showcase absorbed a swarm of new bots today. 'Suspicious Helper' brings a massive open-source integration to Discord, while 'PromptPilot' wires 20 different generation models straight into Telegram. We also merged OtakuBox and OpenRelay (an SMTP routing bot, because why not).\n\nPeople are building weird and heavy things. We added 'NovelSeek-Pro-PC' (an end-to-end desktop ebook generator), 'Alchemica' (an AI element-mixing game), and 'Parallel' (an alternate-life timeline simulator). Throw in 'lstation.co' for interactive kids' stories, and the creative directory is looking dense.\n\nThe API is escaping the browser. 'NEURGenerator' provides a reference implementation for running Pollinations on an ESP32-S3 microcontroller with PSRAM. On the mobile front, we added 'Nova.ai' for iOS and 'Luna', a self-hosted Chinese AI companion. We also merged 'House Painter', 'SRTAudio', and 'Vibe DB' into the greenhouse.",
-  "pr_count": 16,
+  "title": "More ways to build with Pollinations",
+  "summary": "Community projects filled the catalog while Build Diary loading, model routes, and GitHub username sync got repairs.\n\nFourteen catalog updates added community projects spanning novel writing, interactive stories, games, dataset tools, desktop assistants, and chat bots. Among them: House Painter visualizes exterior color schemes, Alchemica invents element combinations, and NEURGenerator brings the API to ESP32-S3 hardware.\n\nBuild Diary changes fixed entry loading that could freeze the page, corrected broken daily images and stale weekly paths, and standardized how daily and weekly summaries are read. Weekly entries now use the Sunday publish date for the preceding week.\n\nNano Banana was moved from a preview image model to the stable `gemini-2.5-flash-image` model ahead of the preview’s scheduled March 19 retirement. Qwen3.5 397B and its aliases were removed from the registry after requests through Fireworks serverless failed.",
+  "pr_count": 22,
   "prs": [
     {
       "number": 8114,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9246,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9250,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9257,
       "date": "2026-03-18"
     },
     {
@@ -67,61 +79,23 @@
       "date": "2026-03-18"
     },
     {
+      "number": 9282,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9283,
+      "date": "2026-03-18"
+    },
+    {
       "number": 9284,
+      "date": "2026-03-18"
+    },
+    {
+      "number": 9286,
       "date": "2026-03-18"
     }
   ],
-  "generated_at": "2026-03-19T06:19:59.721818+00:00",
-  "highlights": [
-    {
-      "emoji": "🤖",
-      "title": "Silicon meets pollen",
-      "text": "Someone wired the API into an ESP32-S3 microcontroller (NEURGenerator). Hardware hackers now have a reference for bringing generation to physical devices.",
-      "prs": [
-        9271
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "📱",
-      "title": "Pocket-sized infrastructure",
-      "text": "Nova.ai just dropped into the showcase—a full iOS assistant with streaming chat and image generation built entirely on our endpoints.",
-      "prs": [
-        9277
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "📚",
-      "title": "The hive writes a novel",
-      "text": "NovelSeek-Pro-PC is now in the creative directory. It's a desktop tool that takes you from a blank page to a fully formatted ebook with generated cover art.",
-      "prs": [
-        8114
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "👾",
-      "title": "Bot swarm",
-      "text": "The community showcase on our [website](https://hello.pollinations.ai) absorbed over a dozen new apps this week, including Telegram model-routers and massive Discord bot presets.",
-      "prs": [
-        8114,
-        9262,
-        9269,
-        9270,
-        9271,
-        9272,
-        9273,
-        9274,
-        9275,
-        9276,
-        9277,
-        9278,
-        9280,
-        9281
-      ],
-      "kind": "app"
-    }
-  ],
+  "generated_at": "2026-10-17T22:44:32.479661+00:00",
+  "highlights": [],
   "changelog": []
 }

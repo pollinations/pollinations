@@ -3,7 +3,7 @@
   "period_start": "2025-12-04",
   "period_end": "2025-12-04",
   "title": "More control over Seedream and Seedance",
-  "summary": "Seedream and Seedance gained clearer model choices, audio and prompt requests got more predictable, and thirteen community projects joined the directory.\n\nSeedream and Seedance gained separate standard and pro choices. `seedream` selects Seedream 4.0, while `seedream-pro` selects 4.5 with 4K and multi-image support. For video, `seedance` selects Lite and `seedance-pro` selects Pro-Fast; both support text-to-video and image-to-video. Seedance usage is now represented in video tokens across model listings, usage headers and Enter pricing.\n\nSimple GET text requests now recognize audio-output models and request audio, fixing 400 responses for models such as `openai-audio`. That model's input limit was reduced to 2,500 characters and its completion limit to 512 tokens. Errors point to Enter for full audio capabilities, and the auth page notes a planned move by Dec. 8.\n\nThirteen community projects joined the directories, spanning line art, video creation, social posting, note-taking, chat, Telegram characters, waste identification and a Godville browser extension. The Projects page submission button was also corrected to open the current app-submission template.",
+  "summary": "Seedream and Seedance gained clearer model choices, audio and image requests got fixes, and thirteen community projects joined the directory.\n\nImage and video generation gained separate standard and pro model choices. `seedream` selects Seedream 4.0, while `seedream-pro` selects 4.5 with 4K and multi-image support. `seedance` selects Lite, and `seedance-pro` selects Pro-Fast. Seedance usage and pricing displays now use video tokens rather than seconds.\n\n`openai-audio` now has a 2,500-character input limit and a 512-token completion limit. Its input-length errors point to Enter for full audio capabilities, and an auth-page notice describes a move by Dec. 8. The simple GET text endpoint also now detects audio-output models, fixing 400 responses for requests such as `openai-audio`.\n\nThirteen projects joined the directories, spanning SAGE’s Android creative workflows, LineSketch AI’s line art, MindFlow’s searchable notes, TeleChars AI’s Telegram characters, and more chat, creative, and game experiments. The Projects page submission button now opens the current app-submission form.",
   "pr_count": 19,
   "prs": [
     {
@@ -83,12 +83,12 @@
       "date": "2025-12-04"
     }
   ],
-  "generated_at": "2026-10-17T15:54:32.688071+00:00",
+  "generated_at": "2026-10-17T22:36:28.757171+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Two Seedream choices",
-      "text": "Choose `seedream` for Seedream 4.0, or `seedream-pro` for 4.5 with 4K and multi-image support. [Explore Seedream Pro](https://enter.pollinations.ai/models?q=seedream-pro).",
+      "title": "Two Seedream image options",
+      "text": "Choose `seedream` for Seedream 4.0 or `seedream-pro` for Seedream 4.5 with 4K and multi-image support. [Browse models](https://enter.pollinations.ai/models?q=seedream-pro).",
       "prs": [
         5616
       ],
@@ -96,8 +96,8 @@
     },
     {
       "emoji": "🎨",
-      "title": "Seedance Lite or Pro",
-      "text": "Generate from text or images with `seedance` for Lite or `seedance-pro` for Pro-Fast. Both default to 720p and five seconds, with a ten-second maximum. [Explore Seedance Pro](https://enter.pollinations.ai/models?q=seedance-pro).",
+      "title": "Seedance Lite and Pro",
+      "text": "Choose `seedance` for Lite video generation or `seedance-pro` for Pro-Fast. Both support up to 10-second videos. [Browse models](https://enter.pollinations.ai/models?q=seedance-pro).",
       "prs": [
         5616
       ],

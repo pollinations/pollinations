@@ -2,9 +2,9 @@
   "date": "2026-10-14",
   "period_start": "2026-10-14",
   "period_end": "2026-10-14",
-  "title": "More model choice, fewer lost reference images",
-  "summary": "New text models, 3D and React SDK tools, two community games, and a round of fixes for images, streams, and the UI.\n\nLightning Text v2 and v2.1 were added with image input, JSON output, and tool calling. Image work now forwards the supported number of reference images to MAI and Grok Imagine, while Qwen Image 3 Pro’s fallback stays on the Pro model. Claude routing now prefers Anthropic with AWS Bedrock as fallback.\n\nThe SDK gained 3D generation, model status, and speech word timings; its React package gained generation hooks and a streaming transport for Vercel AI SDK’s useChat. CLI and REST-agent device sign-in became easier to guide, while MCP balance and model errors became more accurate. Sandbox templates got smaller, and the per-user running-sandbox cap rose from three to eight.\n\nModel Match asks players to identify which AI wrote an anonymous answer, using pre-generated rounds that need no API key to play. Tiny Fighter Arena turns a one-line description into a drawn fighter with moves, stats, and a battle to enter.",
-  "pr_count": 29,
+  "title": "Two Lightning Text models join a sturdier API",
+  "summary": "New text models and SDK tools arrived alongside more reliable generation, better keyboard access and room for eight running sandboxes.\n\nInferencePort Lightning Text v2 and v2.1 were added with image input, tool use, JSON output and 128,000-token context windows. Image edits now forward all accepted reference images for MAI and Grok models, Qwen Image 3 has a Pro-model fallback, and Claude routing gained an AWS fallback. Chat streams with no output are no longer cached, and failed Floret streams report a generation error.\n\nThe SDK added 3D generation, model-status queries, speech with timestamps, five React generation hooks and a transport for AI SDK useChat. CLI JSON-mode login now shows users how to approve device sign-in; MCP model checks and balance responses are clearer, and SDK errors preserve useful gateway messages. The REST agent skill also gained user-approved device sign-in instructions.\n\nDashboard and Playground controls gained better-connected labels, more visible keyboard focus and tooltips that stay on screen and work with screen readers. Theme state is more consistent, system color-mode changes are followed when no override is saved, and disabled controls behave as disabled controls should.",
+  "pr_count": 30,
   "prs": [
     {
       "number": 16265,
@@ -63,6 +63,10 @@
       "date": "2026-10-14"
     },
     {
+      "number": 17402,
+      "date": "2026-10-14"
+    },
+    {
       "number": 17409,
       "date": "2026-10-14"
     },
@@ -99,10 +103,6 @@
       "date": "2026-10-14"
     },
     {
-      "number": 17494,
-      "date": "2026-10-14"
-    },
-    {
       "number": 17495,
       "date": "2026-10-14"
     },
@@ -115,6 +115,10 @@
       "date": "2026-10-14"
     },
     {
+      "number": 17502,
+      "date": "2026-10-14"
+    },
+    {
       "number": 17505,
       "date": "2026-10-14"
     },
@@ -123,52 +127,61 @@
       "date": "2026-10-14"
     }
   ],
-  "generated_at": "2026-10-15T06:08:35.897019+00:00",
+  "generated_at": "2026-10-17T23:19:37.142277+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Lightning Text v2.1",
-      "text": "Use `inferenceport-ai/lightning-text-v2.1` with text or image input, JSON output, and tool calling. It requires paid Pollen. [View the model](https://enter.pollinations.ai/models?q=inferenceport-ai/lightning-text-v2.1).",
+      "title": "Lightning Text v2 and v2.1",
+      "text": "Try two InferencePort text models with 128,000-token context windows, image input, tool use and JSON output. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         16265
       ],
       "kind": "model"
     },
     {
-      "emoji": "✨",
-      "title": "3D in the SDK",
-      "text": "Generate binary 3D output with `model3d()`, discover 3D models with `models(\"3d\")`, and get typed model status and speech word timings in the SDK alpha. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "emoji": "🎨",
+      "title": "3D generation in the SDK",
+      "text": "Use `model3d()` to generate a 3D file from a public reference image, with options for resolution, seed and safety. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         17310
       ],
       "kind": "product"
     },
     {
-      "emoji": "🔗",
+      "emoji": "🎵",
+      "title": "Speech with word timings",
+      "text": "Use `audioSpeechWithTimestamps()` to get speech audio, character alignments and derived word timings in one SDK response. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "prs": [
+        17310
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Model health in the SDK",
+      "text": "Query model health and metadata with `modelStatus()`, including traffic and rolling-window filters. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "prs": [
+        17310
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
       "title": "React generation hooks",
-      "text": "The React SDK now has hooks for image, text, audio, video, and transcription generation, plus a streaming transport for Vercel AI SDK’s `useChat`. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "text": "Build with headless hooks for image, text, audio, video and transcription generation. Each provides loading and error state, plus run, rerun and cancel controls. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         17331
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎯",
-      "title": "Guess the model",
-      "text": "Read an anonymous AI answer and guess which of four models wrote it. Five rounds, no API key needed. [Try it](https://patbing.github.io/model-match).",
+      "emoji": "🔗",
+      "title": "Pollinations transport for useChat",
+      "text": "Connect AI SDK `useChat` to streaming Pollinations responses with `usePollinationsChatTransport`, including usage and server-run MCP tool results. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
-        17388
+        17331
       ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Make a tiny fighter",
-      "text": "Describe a fighter in one line, then see AI give it a portrait, moves, stats, and a battle. [Try it](https://tomdacatto.github.io/pollinations-fighter-arena).",
-      "prs": [
-        17424
-      ],
-      "kind": "app"
+      "kind": "product"
     }
   ],
   "changelog": [

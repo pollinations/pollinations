@@ -2,8 +2,8 @@
   "date": "2026-01-03",
   "period_start": "2026-01-03",
   "period_end": "2026-01-03",
-  "title": "Random seeds produce fresh results",
-  "summary": "Random-seed requests got their randomness back, while mobile tables and the API docs became easier to use.\n\nThree PRs fixed `seed=-1` across text and image generation: requests bypass gateway caches, and the services turn -1 into a fresh seed instead of producing repeat results. An explicit image `seed=0` also stays intact.\n\nAPI key and Pricing tables now scroll inside their own containers on narrow screens, rather than pushing the whole page sideways.\n\nThe README, quick references, app template and service docs now direct developers to `gen.pollinations.ai`. The regenerated API reference adds a vision example and clarifies the `/v1/models` response format and model-restricted keys.",
+  "title": "Random seeds are random again",
+  "summary": "Random-seed requests now produce fresh results, while mobile tables, API docs and recent news got tidied up.\n\nThree fixes make `seed=-1` generate fresh text and images instead of repeating cached or deterministic results. Explicit image seeds, including `0`, keep their intended behavior.\n\nAPI key and Pricing tables now scroll within their own containers on narrow screens, rather than dragging the whole page sideways.\n\nThe README and API references now point developers to `gen.pollinations.ai`. The regenerated reference adds a vision-request example and clarifies the `/v1/models` response format and model-restricted key behavior.",
   "pr_count": 8,
   "prs": [
     {
@@ -39,7 +39,7 @@
       "date": "2026-01-03"
     }
   ],
-  "generated_at": "2026-10-17T15:57:56.598626+00:00",
+  "generated_at": "2026-10-17T22:37:44.213424+00:00",
   "highlights": [],
   "changelog": []
 }

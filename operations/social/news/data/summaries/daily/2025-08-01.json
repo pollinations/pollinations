@@ -2,8 +2,8 @@
   "date": "2025-08-01",
   "period_start": "2025-08-01",
   "period_end": "2025-08-01",
-  "title": "Ad filtering follows the blocklist",
-  "summary": "A focused fix for ad selection, with tighter audio model limits and sturdier diagnostics.\n\nFixed ad selection so blocked referrers are excluded rather than triggering ads.\n\nReduced the maximum input for `openai-audio` from 5,000 to 2,000 characters and set both `gpt-4o-mini-audio-preview` token limits to 512.\n\nError-response logging now handles message collections without a `reduce` method. Image-parameter debugging and a token-validation performance test were added.",
+  "title": "Blocked referrers no longer force ads",
+  "summary": "One focused fix corrected ad selection for blocked referrers, adjusted audio limits, and tightened diagnostics.\n\nAd selection now blocks referrers on the blocked-domain list instead of forcing ads for them.\n\nThe maximum input for `openai-audio` dropped from 5,000 to 2,000 characters, and both token limits for `gpt-4o-mini-audio-preview` are now 512.\n\nError-response logging now handles message collections without a reduce method. Image-parameter debug logging and a token-validation performance test were also added.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-08-01"
     }
   ],
-  "generated_at": "2026-10-17T15:44:34.712153+00:00",
+  "generated_at": "2026-10-17T22:33:02.449856+00:00",
   "highlights": [],
   "changelog": []
 }

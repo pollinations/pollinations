@@ -2,10 +2,14 @@
   "date": "2026-07-10",
   "period_start": "2026-07-10",
   "period_end": "2026-07-10",
-  "title": "GPT 5.6, Seedream 5 Pro, and a Gemini GA migration",
-  "summary": "A heavy model update day featuring GPT 5.6, Seedream 5 Pro, a Gemini GA migration, and CLI upgrades for tracking quest rewards.\n\nThe model roster gets a reshuffle. We added the GPT 5.6 family (Sol, Terra, Luna) and Seedream 5 Pro. On the Google side, they retired the Gemini 3.1 Flash Lite preview, which started throwing 502s. We've wired the endpoints to the GA model, so your Gemini calls will actually resolve again.\n\nThe polli CLI hits v0.1.6. You can now check your quest rewards and filter pending or claimed Pollen without leaving the terminal. We also added a caching layer to the model health endpoints, making CLI and monitor status checks significantly snappier.\n\nRolled out the welcome mat for JustScriptzz, riofndev, and solarnode-developement, granting them access to deploy and tinker with community models.",
-  "pr_count": 5,
+  "title": "New text and image models, with Gemini routing repaired",
+  "summary": "New text and image models arrived; quests got a clearer CLI view, tiers went away, and model-health data learned to say how old it is.\n\nAdded ChatGPT 5.6 Sol, Terra, and Luna with tools, reasoning, up to 10 reference images, and 1,050,000-token context windows. Seedream 5.0 Pro adds image generation and editing with up to 10 reference images. Gemini Flash Lite and fast search now route to Google's GA model after the preview was retired; Flux Schnell's provider listing was also corrected without changing its routing.\n\nRemoved user-tier progression and hourly Pollen refills. Tiers no longer govern model access or wallet behavior, while existing Quest and Paid Pollen balances remain intact and generation still spends Quest Pollen first. Enter's tier controls and tier fields in account responses and SDK types were removed.\n\n`polli quests` now shows account reward status alongside quests, with filters for open, claimable, claimed, and coming-soon quests. It replaces `polli quests mine`; claiming still happens in the dashboard.",
+  "pr_count": 9,
   "prs": [
+    {
+      "number": 11928,
+      "date": "2026-07-10"
+    },
     {
       "number": 12274,
       "date": "2026-07-10"
@@ -23,30 +27,303 @@
       "date": "2026-07-10"
     },
     {
+      "number": 12321,
+      "date": "2026-07-10"
+    },
+    {
       "number": 12324,
+      "date": "2026-07-10"
+    },
+    {
+      "number": 12335,
+      "date": "2026-07-10"
+    },
+    {
+      "number": 12337,
       "date": "2026-07-10"
     }
   ],
-  "generated_at": "2026-07-11T06:43:42.410378+00:00",
+  "generated_at": "2026-10-17T23:01:37.546404+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "GPT 5.6 & Seedream 5 Pro",
-      "text": "The GPT 5.6 family (Sol, Terra, Luna) is now live for text generation, alongside Seedream 5 Pro for high-quality images. Check the [Available Models](https://gen.pollinations.ai/v1/models).",
+      "emoji": "🤖",
+      "title": "Three ChatGPT 5.6 models",
+      "text": "Try Sol, Terra, and Luna with tools, reasoning, up to 10 reference images, and 1,050,000-token context windows. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         12309
       ],
       "kind": "model"
     },
     {
-      "emoji": "✨",
-      "title": "CLI Quest Rewards",
-      "text": "Track your earned Pollen and quest progress directly from the terminal with the updated [Polli CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "emoji": "🎨",
+      "title": "Seedream 5.0 Pro",
+      "text": "Generate and edit images with `seedream5-pro`, using up to 10 reference images. [View the model](https://enter.pollinations.ai/models?q=seedream5-pro).",
+      "prs": [
+        12309
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Quest rewards in polli",
+      "text": "Run `polli quests` to see which rewards are ready to claim or already claimed, and filter quests by status. Claiming still happens in the dashboard. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         12274
       ],
       "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Model health with timestamps",
+      "text": "Check model health over windows up to seven days. Status responses now include a fetch timestamp and flag cached data served during an upstream failure. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        12295
+      ],
+      "kind": "api"
     }
   ],
-  "changelog": []
+  "changelog": [
+    {
+      "pr_number": 11928,
+      "url": "https://github.com/pollinations/pollinations/pull/11928",
+      "merged_at": "2026-07-10T16:05:02Z",
+      "api_changes": [
+        {
+          "id": "pr-11928:DELETE /account/my-models/{id}",
+          "endpoint": "DELETE /account/my-models/{id}",
+          "summary": "Delete My Model",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-11928:GET /3d/models",
+          "endpoint": "GET /3d/models",
+          "summary": "List 3D Models",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-11928:GET /3d/{prompt}",
+          "endpoint": "GET /3d/{prompt}",
+          "summary": "Generate 3D Model",
+          "action": "CHANGE",
+          "breaking": true,
+          "changes": [
+            {
+              "field": "parameters:query:model",
+              "before": {
+                "type": "string",
+                "required": false
+              },
+              "after": {
+                "type": "\"trellis-2-low\"|\"trellis-2-medium\"|\"trellis-2-high\"|\"hyper3d-rodin\"|\"rodin\"",
+                "required": true
+              },
+              "breaking": true
+            }
+          ]
+        },
+        {
+          "id": "pr-11928:GET /account/earnings",
+          "endpoint": "GET /account/earnings",
+          "summary": "Get Developer Earnings",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:entity_ids",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-11928:GET /account/key/usage",
+          "endpoint": "GET /account/key/usage",
+          "summary": "Get API Key Usage",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:api_key_ids",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:models",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-11928:GET /account/my-models",
+          "endpoint": "GET /account/my-models",
+          "summary": "List My Models",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-11928:GET /account/usage",
+          "endpoint": "GET /account/usage",
+          "summary": "Get Usage History",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:api_key_ids",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:models",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-11928:GET /audio/{text}",
+          "endpoint": "GET /audio/{text}",
+          "summary": "Generate Audio",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:loop",
+              "before": null,
+              "after": {
+                "type": "\"true\"|\"false\"",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:negative_prompt",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:prompt_influence",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:seconds",
+              "before": null,
+              "after": {
+                "type": "number",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:steps",
+              "before": null,
+              "after": {
+                "type": "integer",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-11928:GET /quests/catalog",
+          "endpoint": "GET /quests/catalog",
+          "summary": "Get Quest Catalog",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-11928:GET /v1/models/status",
+          "endpoint": "GET /v1/models/status",
+          "summary": "Model Health Status",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-11928:GET /video/models",
+          "endpoint": "GET /video/models",
+          "summary": "List Video Models",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-11928:POST /account/my-models",
+          "endpoint": "POST /account/my-models",
+          "summary": "Create My Model",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-11928:POST /account/my-models/models",
+          "endpoint": "POST /account/my-models/models",
+          "summary": "List Upstream Models",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-11928:POST /account/my-models/test",
+          "endpoint": "POST /account/my-models/test",
+          "summary": "Test My Model Endpoint",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-11928:POST /account/my-models/{id}/update",
+          "endpoint": "POST /account/my-models/{id}/update",
+          "summary": "Update My Model",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-11928:POST /v1/audio/music/upload",
+          "endpoint": "POST /v1/audio/music/upload",
+          "summary": "Upload Music Reference",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        }
+      ]
+    }
+  ]
 }

@@ -2,10 +2,18 @@
   "date": "2026-02-10",
   "period_start": "2026-02-10",
   "period_end": "2026-02-10",
-  "title": "just merged docs directly into the play page",
-  "summary": "no more tab switching while testing endpoints. ⚡️ also dropped qwen-character for better roleplay & hardened polly against prompt injection. shipping daily. 🌸🐝",
-  "pr_count": 4,
+  "title": "A character model joins the lineup",
+  "summary": "A roleplay model and copyable API examples lead the day, alongside two community apps and some less-visible response fixes.\n\nAdded `qwen-character`, an alpha text model tuned to stay in character during roleplay. The unstable `flux-2-dev` was removed from the image model registry and routing.\n\nPlay’s Integrate section now builds copyable image, text, and audio GET URLs from the selected model and prompt. The standalone Docs page was removed, and `/docs` now redirects to `/play`.\n\nThe showcase added Korpi.AI, which generates AI stories with Flux, and Sage, a Discord bot with assistant features and server utilities.",
+  "pr_count": 6,
   "prs": [
+    {
+      "number": 7291,
+      "date": "2026-02-10"
+    },
+    {
+      "number": 7640,
+      "date": "2026-02-10"
+    },
     {
       "number": 8124,
       "date": "2026-02-10"
@@ -23,12 +31,21 @@
       "date": "2026-02-10"
     }
   ],
-  "generated_at": "2026-03-18T19:58:13.617187+00:00",
+  "generated_at": "2026-10-17T22:39:47.951208+00:00",
   "highlights": [
     {
-      "emoji": "📚",
-      "title": "Docs Meet Play",
-      "text": "Documentation merged directly into the Play page—configure models visually and copy generated API code instantly.",
+      "emoji": "🤖",
+      "title": "Meet qwen-character",
+      "text": "Try `qwen-character`, an alpha text model for roleplay that aims to keep replies in character. [View the model](https://enter.pollinations.ai/models?q=qwen-character).",
+      "prs": [
+        8124
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "Copy API calls from Play",
+      "text": "Choose a model and prompt in Play, then copy a ready-to-edit GET URL for image, text, or audio generation. [Open Play](https://pollinations.ai/play).",
       "prs": [
         8130
       ],

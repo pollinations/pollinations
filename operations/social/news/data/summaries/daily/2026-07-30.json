@@ -2,8 +2,8 @@
   "date": "2026-07-30",
   "period_start": "2026-07-30",
   "period_end": "2026-07-30",
-  "title": "OCR, transcription, and long-context chat got new machinery",
-  "summary": "A crowded model day: new OCR, transcription, chat, and multimodal options, plus quieter upgrades to identity, routing, and the newly named Weaver agent.\n\nMistral OCR 4 is now available on the existing text and chat routes for extracting Markdown and structured content from images and selected PDF pages. AssemblyAI transcription now defaults to Universal-3.5 Pro while keeping older model IDs alive, and Cohere Command A+ joins the catalog with long context, streaming, JSON, and automatic tools.\n\nQwen3.7 Flash joined the API for multimodal, reasoning, tool, streaming, and cache-aware work. Meanwhile, Kimi K3 moved to Fireworks, Step Flash moved to DeepInfra, and Pruna image generation and editing moved to DeepInfra without asking existing integrations to learn new names or parameters. Software has once again relocated the plumbing rather than the kitchen.\n\nThe former polli-agent is now discoverable as `weaver`, available through `voodoohop/weaver`, and served from weaver.pollinations.ai. Its file serving is now constrained to its temporary workspace, so valid generated files still work while traversal paths and wandering symlinks do not.",
+  "title": "More text models, with one same-day reversal",
+  "summary": "New text models and upgraded transcription arrived; the multimodal agent became Weaver, and account identity checks stopped depending on usernames.\n\nCohere Command A+ joined the text lineup with a 128K context window, tools and automatic reasoning. Qwen3.7 Flash added text, image and video input, tools, toggleable reasoning and a 1M-token context window. Kimi K3 gained Quest Pollen access, while Kimi K3 and Step Flash changed providers. Mistral OCR 4 was added and then reverted the same day, so it is not part of the resulting model lineup.\n\nAssemblyAI transcription now uses Universal-3.5 Pro, with the older Universal-3 Pro IDs retained as aliases. Its plain-text, SRT and VTT responses now record audio-duration-based Pollen usage. The existing p-image and p-image-edit models also moved to DeepInfra without changing their public names or parameters.\n\nThe multimodal agent was renamed Weaver and its apps listing points to the weaver subdomain. Its OpenAI-compatible chat endpoint remains, but clients using the `polli` model ID need to switch to `weaver`. A README update published earlier Polli Agent and Agent Run Tokens news under their previous names.",
   "pr_count": 11,
   "prs": [
     {
@@ -27,10 +27,6 @@
       "date": "2026-07-30"
     },
     {
-      "number": 12876,
-      "date": "2026-07-30"
-    },
-    {
       "number": 12879,
       "date": "2026-07-30"
     },
@@ -43,6 +39,10 @@
       "date": "2026-07-30"
     },
     {
+      "number": 12893,
+      "date": "2026-07-30"
+    },
+    {
       "number": 12896,
       "date": "2026-07-30"
     },
@@ -51,41 +51,32 @@
       "date": "2026-07-30"
     }
   ],
-  "generated_at": "2026-07-31T07:08:56.250456+00:00",
+  "generated_at": "2026-10-17T23:04:23.049907+00:00",
   "highlights": [
-    {
-      "emoji": "🎵",
-      "title": "Sharper speech-to-text",
-      "text": "Transcription now runs on AssemblyAI Universal-3.5 Pro at the same base rate, with plain text, SRT, and VTT output still available. [API Docs](https://gen.pollinations.ai/docs)",
-      "prs": [
-        12875
-      ],
-      "kind": "model"
-    },
     {
       "emoji": "🤖",
       "title": "Cohere Command A+",
-      "text": "Call `command-a-plus` for 128K-context chat, reasoning, JSON, streaming, and automatic tool use—with Quest Pollen access. [Available models](https://gen.pollinations.ai/v1/models)",
+      "text": "Use `command-a-plus` for text and tool-calling requests with a 128K context window and automatic reasoning. [View the model](https://enter.pollinations.ai/models?q=command-a-plus).",
       "prs": [
         12879
       ],
       "kind": "model"
     },
     {
-      "emoji": "🚀",
+      "emoji": "✨",
       "title": "Qwen3.7 Flash",
-      "text": "A fast paid model for text, images, video, tools, reasoning, streaming, and prompt-cache-aware workloads is now available as `qwen3.7-flash`. [Try the playground](https://pollinations.ai/play)",
+      "text": "Send text, images or video to `qwen3.7-flash`, with tools, toggleable reasoning and a 1M-token context window. [View the model](https://enter.pollinations.ai/models?q=qwen3.7-flash).",
       "prs": [
         12896
       ],
       "kind": "model"
     },
     {
-      "emoji": "✨",
-      "title": "Weaver joins the model catalog",
-      "text": "The Polli media agent is now `weaver`: discover it via `/v1/models` and invoke it through `voodoohop/weaver`.",
+      "emoji": "🎵",
+      "title": "Universal-3.5 Pro transcription",
+      "text": "Transcribe audio with AssemblyAI Universal-3.5 Pro. Existing Universal-3 Pro model IDs still work as aliases. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        12884
+        12875
       ],
       "kind": "model"
     }

@@ -2,8 +2,8 @@
   "date": "2025-02-28",
   "period_start": "2025-02-28",
   "period_end": "2025-02-28",
-  "title": "Cleaner text streams and clearer errors",
-  "summary": "One text API overhaul tightened streaming and error handling while moving OpenAI-backed requests through a new gateway client.\n\nThe merged text API change simplifies streaming responses, tests that streams end with a single SSE [DONE] event, and preserves provider error details in API errors.\n\nCloudflare requests omit the unsupported seed parameter, and the shared OpenAI-compatible client adds a default system prompt only when the selected model has one configured.\n\nOpenAI model aliases, OpenAI-backed personas, search, and referral processing were moved from a direct Azure OpenAI client to a Portkey gateway client. Request parsing and referrer handling were also consolidated into a shared utility.",
+  "title": "Text requests take a new route",
+  "summary": "The text API got a new route for OpenAI-backed requests, simpler streaming, and fewer provider-specific surprises.\n\nOpenAI model aliases, OpenAI-backed personas, search, and referral processing now use a gateway client instead of connecting directly to Azure OpenAI. Existing aliases still map to their Azure deployments.\n\nStreaming response handling was simplified, including a single SSE [DONE] event. API errors now preserve provider details.\n\nCloudflare requests no longer include an unsupported seed parameter, and the shared client adds a default system prompt only when the selected model has one configured.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-02-28"
     }
   ],
-  "generated_at": "2026-10-17T15:34:37.629058+00:00",
+  "generated_at": "2026-10-17T22:28:56.320318+00:00",
   "highlights": [],
   "changelog": []
 }

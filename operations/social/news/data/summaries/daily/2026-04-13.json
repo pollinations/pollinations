@@ -2,10 +2,22 @@
   "date": "2026-04-13",
   "period_start": "2026-04-13",
   "period_end": "2026-04-13",
-  "title": "A massive harvest for the app showcase",
-  "summary": "A huge day for the community showcase with seven new apps added, plus some essential hardware and registry tuning under the hood.\n\nThe community directory is overflowing today. We merged in a huge batch of new tools built on our infrastructure, including ComfyUI nodes (Overtli Studio), a brand visual generator (StyleOps), a deadpan fake museum exhibit creator (The Institute of Everything), and a handful of Telegram bots and art apps. The ecosystem is buzzing.\n\nWe accidentally dropped a few apps during a recent file rebuild. Today we restored tomdacatto's video generator and @abhi5hek1979's Polli-com to the directory, and fixed the attribution for PollGen so @XHyperDEVX gets proper credit. Everyone's Flower tier status is back where it belongs.\n\nOn the backend, we fixed an INT4 model path issue for RTX 4090s, swapped the Z-Image heartbeat to HTTPS to stop proxy errors, and ripped out a complex ServiceId lookup layer in the model registry. Simpler internal architecture, stabler image generation.",
-  "pr_count": 9,
+  "title": "More community projects to explore",
+  "summary": "A day of tending the garden: more community apps to find, better creator credits, and fixes for audio access and image backends.\n\nThe app catalog added Overtli Studio Suite’s ComfyUI nodes, StyleOps’ brand-asset generator, The Institute of Everything’s fictional museum exhibits, and four existing apps spanning art, fiction, chat, and virtual characters. Polli-com and a Seedance-powered video generator were also restored to the catalog.\n\nAudio generation routes now apply the access checks used by other generation routes, including model permissions, API key budgets, and whether the available Pollen covers the estimated request.\n\nUnavailable app listings were removed, while catalog and README credits were corrected for NetSim, J.A.R.V.I.S., UltimaX Intelligence, PollGen, and several featured apps. Finding a working app is useful; crediting its maker is also a good idea.",
+  "pr_count": 13,
   "prs": [
+    {
+      "number": 9635,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10173,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10174,
+      "date": "2026-04-13"
+    },
     {
       "number": 10176,
       "date": "2026-04-13"
@@ -16,6 +28,14 @@
     },
     {
       "number": 10178,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10180,
+      "date": "2026-04-13"
+    },
+    {
+      "number": 10181,
       "date": "2026-04-13"
     },
     {
@@ -37,50 +57,9 @@
     {
       "number": 10192,
       "date": "2026-04-13"
-    },
-    {
-      "number": 10194,
-      "date": "2026-04-13"
     }
   ],
-  "generated_at": "2026-04-14T06:34:18.792227+00:00",
-  "highlights": [
-    {
-      "emoji": "🔗",
-      "title": "ComfyUI Nodes",
-      "text": "Overtli Studio Suite built custom nodes to route generations through our API directly inside your local ComfyUI workflows. [View repo](https://github.com/OvertliDS/overtli-studio-suite)",
-      "prs": [
-        10176
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Brand Generation",
-      "text": "StyleOps joined the showcase, wrapping our image models into a dedicated tool for spitting out cohesive brand assets. [Try it](https://styleops.co)",
-      "prs": [
-        10177
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "💡",
-      "title": "The Institute of Everything",
-      "text": "A new community app that generates highly detailed, deadpan academic museum exhibits for completely absurd concepts. [Try it](https://rizperdana.github.io/institute-ai/)",
-      "prs": [
-        10178
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🌟",
-      "title": "Showcase Expansion",
-      "text": "Four new community tools just dropped: Pigment, PseudoWrite, Tawer_bot, and JFOAC. The ecosystem grows. [View repos](https://hello.pollinations.ai)",
-      "prs": [
-        10182
-      ],
-      "kind": "app"
-    }
-  ],
+  "generated_at": "2026-10-17T22:47:50.967421+00:00",
+  "highlights": [],
   "changelog": []
 }

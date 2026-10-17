@@ -2,8 +2,8 @@
   "date": "2025-04-12",
   "period_start": "2025-04-12",
   "period_end": "2025-04-12",
-  "title": "The homepage gets a text feed",
-  "summary": "A text feed joined the homepage, Llama 4 Scout joined the model lineup, and link previews stopped depending on JavaScript.\n\nThe homepage now has a toggle between image and text feeds. The new text feed includes a stream of generated responses and an editor; projects now open on a Featured category with tabs for browsing.\n\nAdded `llamascout` through Cloudflare with a 4096-token output limit. The `mistral` and `qwen-qwq` mappings now use Cloudflare models, while the `deepseek-reasoning` listing points to DeepSeek-R1 Distill Qwen 32B rather than full DeepSeek R1.\n\nOpen Graph and Twitter Card metadata moved into the initial HTML, letting link previews read the site title, description, and banner without running React.",
+  "title": "Text joins the homepage feed",
+  "summary": "Text got a place beside images on the homepage, Llama 4 Scout joined the model list, and link previews stopped depending on JavaScript.\n\nThe homepage gained a toggle between image and text feeds, with a stream of generated responses and an editor for text. Projects now open on a Featured category with tabs for browsing; the same PR refreshed homepage layouts and controls.\n\nAdded Llama 4 Scout 17B as `llamascout` with a 4096-token output limit. `mistral` now maps to Mistral Small 3.1 24B, `qwen-qwq` to QWQ 32B, and the `deepseek-reasoning` model-list entry to DeepSeek-R1 Distill Qwen 32B rather than the full DeepSeek R1. The duplicate `qwen-reasoning` mapping was removed, and Gemini model-list entries were commented out.\n\nOpen Graph and Twitter Card metadata moved into the initial HTML, letting link previews read the site title, description, and banner without running JavaScript. The React Helmet dependency was removed.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,12 +19,12 @@
       "date": "2025-04-12"
     }
   ],
-  "generated_at": "2026-10-17T15:37:37.660612+00:00",
+  "generated_at": "2026-10-17T22:30:20.235123+00:00",
   "highlights": [
     {
       "emoji": "✨",
-      "title": "A feed for text",
-      "text": "Switch between image and text feeds on the homepage, and use the editor alongside a stream of generated responses. [Visit Pollinations](https://pollinations.ai).",
+      "title": "Text joins the feed",
+      "text": "Switch between image and text feeds on the homepage, and use the editor alongside a stream of generated responses. Projects also have a Featured category and browsing tabs. [Visit Pollinations](https://pollinations.ai).",
       "prs": [
         1488
       ],
@@ -33,7 +33,16 @@
     {
       "emoji": "🤖",
       "title": "Llama 4 Scout added",
-      "text": "Use `llamascout` for text generation, with a 4096-token output limit. [Browse the model](https://enter.pollinations.ai/models?q=llamascout).",
+      "text": "Use Llama 4 Scout 17B as `llamascout`, with up to 4096 output tokens. [View the model](https://enter.pollinations.ai/models?q=llamascout).",
+      "prs": [
+        1634
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Updated text model mappings",
+      "text": "`mistral` now uses Mistral Small 3.1 24B, `qwen-qwq` uses QWQ 32B, and `deepseek-reasoning` points to DeepSeek-R1 Distill Qwen 32B. Familiar names, different models behind them. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         1634
       ],

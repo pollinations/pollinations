@@ -2,12 +2,16 @@
   "date": "2026-06-29",
   "period_start": "2026-06-29",
   "period_end": "2026-06-29",
-  "title": "Bring your own model: Community text endpoints",
-  "summary": "Community-hosted text models hit the registry, nanobanana stops ignoring reference images, and atomic syncs bring a broken quest back online.\n\nYou can now register your own OpenAI-compatible text endpoints in the dashboard. They get routed through `community/{username}/{model-id}` and you set your own per-1M-token pricing. Devs get to monetize their hosted models, and everyone else gets a decentralized registry of community-run AI.\n\nRipped out a legacy transparent-image hack that was clobbering user-provided reference images at non-square aspect ratios. Vertex AI handles the dimensions natively now, so your reference pixels actually make it to the model.\n\nThe daily sync between APPS.md and Tinybird was using separate async delete and insert operations, which temporarily emptied the app directory mid-flight. Switched to a single atomic replace. The 'App listed on Pollinations' quest is reliably claimable again.",
-  "pr_count": 3,
+  "title": "Community text models join Enter",
+  "summary": "Community text models gained a route into Enter, while image references and the app directory got less surprising.\n\nOwners can register and test OpenAI-compatible text endpoints in Enter. Published models get `community/{username}/{model-id}` IDs, appear in model listings, and support chat, text, and streaming requests. The Earnings view now breaks down community-model rewards alongside app-markup earnings. Owner authorization was also updated for CloudCompile.\n\nNon-square nanobanana requests no longer add a blank image and replacement instruction alongside a user’s reference image. Aspect ratios still use Vertex AI’s native configuration, improving reference-image adherence, particularly for nanobanana-2.\n\nThe daily app-directory sync now replaces its data in one operation rather than deleting and appending it separately, avoiding a gap that could interfere with App Listed quest claims. Two listings now point to their authors’ current GitHub accounts. The README also received a roundup of previously added model-status, quest, and community-app updates.",
+  "pr_count": 6,
   "prs": [
     {
       "number": 11567,
+      "date": "2026-06-29"
+    },
+    {
+      "number": 12097,
       "date": "2026-06-29"
     },
     {
@@ -17,14 +21,31 @@
     {
       "number": 12104,
       "date": "2026-06-29"
+    },
+    {
+      "number": 12110,
+      "date": "2026-06-29"
+    },
+    {
+      "number": 12111,
+      "date": "2026-06-29"
     }
   ],
-  "generated_at": "2026-06-30T07:14:06.870568+00:00",
+  "generated_at": "2026-10-17T23:00:05.713202+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "Community Text Endpoints",
-      "text": "Bring your own brain. Register and monetize your own OpenAI-compatible models via the [dashboard](https://enter.pollinations.ai), or query the new decentralized registry of community-run AI at `community/{username}/{model-id}`.",
+      "emoji": "🤖",
+      "title": "Publish community text models",
+      "text": "Community model owners can register and test OpenAI-compatible text endpoints in Enter, then see model rewards in the Earnings view. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        11567
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Call community models",
+      "text": "Published `community/{username}/{model-id}` models appear in model listings and work through chat and text endpoints, including streaming. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         11567
       ],

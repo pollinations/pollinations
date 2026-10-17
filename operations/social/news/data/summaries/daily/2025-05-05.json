@@ -3,7 +3,7 @@
   "period_start": "2025-05-05",
   "period_end": "2025-05-05",
   "title": "Streaming text responses can be cached",
-  "summary": "A cache repair for streaming text: completed responses can now be reused without compression getting in the way.\n\nReworked the text API cache so completed streams can be stored and reused. Equivalent requests across different hosts now share a cache key, and response headers are normalized to avoid double compression.",
+  "summary": "A cache repair for streaming text: completed responses can be reused without tripping over headers or host-specific keys.\n\nThe text API’s caching was reworked to store completed streams for reuse. Equivalent requests across different hosts now share a cache key, and response-header handling avoids double compression.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-05-05"
     }
   ],
-  "generated_at": "2026-10-17T15:38:57.988441+00:00",
+  "generated_at": "2026-10-17T22:30:51.939625+00:00",
   "highlights": [],
   "changelog": []
 }

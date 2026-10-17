@@ -2,9 +2,9 @@
   "date": "2026-04-02",
   "period_start": "2026-04-02",
   "period_end": "2026-04-02",
-  "title": "Heavy metal for audio and video",
-  "summary": "A massive day for multimedia: new 4K image models, upgraded audio and video pipelines, five new community apps, and an AI cat that can now see your face to roast you better.\n\nWe migrated LTX video to v2.3 on GH200 hardware for faster rendering. Audio also got a massive bump: ACE-Step 1.5 Turbo now generates 30-second stereo music tracks in under 12 seconds, and we upgraded the OpenAI TTS endpoints to the latest mini and large models. Zero code changes required to get the better audio.\n\nAdded Wan 2.7 Image and Pro models to the API via DashScope. You can now generate 4K resolution images with models that actually pay attention to the details in your prompt.\n\nCatGPT now uses Claude-fast's vision capabilities to analyze your avatar before insulting you. In less antagonistic news, we fixed a caching bug so API key updates in the dashboard reflect immediately without requiring a hard refresh.",
-  "pr_count": 11,
+  "title": "New ways to make music and work with audio",
+  "summary": "New music, image, and audio models joined a more perceptive CatGPT, while API key reads got less forgetful.\n\nACE-Step 1.5 Turbo was added as an alpha music model: send lyrics to the audio endpoint and get an MP3, with optional duration and style controls. `openai-audio` was updated to a newer mini model, and a paid-only `openai-audio-large` option was added.\n\nWan 2.7 Image and Image Pro were added for generation and editing, with up to nine input images for edits; Pro also supports 4K text-to-image requests. The `ltx-2` registry now identifies LTX-2.3 and accepts `ltx-2.3` as an alias, alongside backend work on its two-stage upscaler.\n\nCatGPT now writes a short reply before generating its webcomic and includes that reply in the image prompt. Its web app and Discord bot can also use an attached image to inform the reply. Existing web-app users will need to authorize it again.",
+  "pr_count": 12,
   "prs": [
     {
       "number": 9641,
@@ -20,6 +20,10 @@
     },
     {
       "number": 9828,
+      "date": "2026-04-02"
+    },
+    {
+      "number": 9833,
       "date": "2026-04-02"
     },
     {
@@ -51,97 +55,52 @@
       "date": "2026-04-02"
     }
   ],
-  "generated_at": "2026-04-03T06:24:18.470220+00:00",
+  "generated_at": "2026-10-17T22:46:22.047752+00:00",
   "highlights": [
     {
       "emoji": "🎵",
-      "title": "The hive drops a beat",
-      "text": "ACE-Step 1.5 Turbo is now live on the [Audio API](https://gen.pollinations.ai/audio/{text}). Generate 15-30 second stereo music tracks from text prompts in under 12 seconds.",
+      "title": "Lyrics into music",
+      "text": "Use the alpha `acestep` model to turn lyrics into an MP3, with optional `duration` and `style` controls. [Browse the model](https://enter.pollinations.ai/models?q=acestep).",
       "prs": [
         9828
       ],
       "kind": "model"
     },
     {
-      "emoji": "🖼️",
-      "title": "Wan 2.7 enters the studio",
-      "text": "Added `wan-image` and `wan-image-pro` to the [Image API](https://gen.pollinations.ai/image/models), bringing up to 4K resolution and thinking mode capabilities.",
+      "emoji": "🎨",
+      "title": "Wan 2.7 images",
+      "text": "Generate or edit images with `wan-image` and `wan-image-pro`. Edits accept up to nine input images; Pro supports 4K text-to-image requests. [Browse the models](https://enter.pollinations.ai/models?q=wan-image).",
       "prs": [
         9839
       ],
       "kind": "model"
     },
     {
-      "emoji": "🎙️",
-      "title": "High fidelity buzzing",
-      "text": "Upgraded the default OpenAI audio endpoint to the latest mini model and added `openai-audio-large` for premium text-to-speech.",
+      "emoji": "🎵",
+      "title": "New OpenAI audio options",
+      "text": "`openai-audio` now uses a newer mini model, and paid-only `openai-audio-large` offers a larger option. [Browse the audio models](https://enter.pollinations.ai/models?q=openai-audio).",
       "prs": [
         9856
       ],
       "kind": "model"
     },
     {
-      "emoji": "🎬",
-      "title": "LTX hits version 2.3",
-      "text": "The LTX video model has been bumped to v2.3 and migrated to GH200 hardware for faster generation.",
+      "emoji": "🎨",
+      "title": "LTX-2.3 video update",
+      "text": "The `ltx-2` video model is now identified as LTX-2.3 and also accepts `ltx-2.3` as an alias. [Browse the model](https://enter.pollinations.ai/models?q=ltx-2).",
       "prs": [
         9827
       ],
       "kind": "model"
     },
     {
-      "emoji": "👁️",
-      "title": "The cats can see you now",
-      "text": "CatGPT now uses Claude-fast with vision to analyze your avatar and deliver highly personalized, image-aware roasts.",
+      "emoji": "🤖",
+      "title": "CatGPT gets visual context",
+      "text": "CatGPT now writes its cat reply before making the webcomic, and its web app and Discord bot can respond to an attached image. Existing web-app users will need to authorize it again.",
       "prs": [
         9812
       ],
       "kind": "product"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Laying down the tiles",
-      "text": "Generate seamless repeating textures for games and backgrounds using Flux Schnell. [Try it](https://tiletile.netlify.app/)",
-      "prs": [
-        9838
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "📸",
-      "title": "Welcome to the Studio",
-      "text": "A lightweight, open-source web UI for AI image generation powered by the Pollinations API. [Try it](https://image-ai.testes.eu.org)",
-      "prs": [
-        9844
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Picture perfect previews",
-      "text": "A dedicated tool to generate perfectly sized Open Graph preview cards for social media. [Try it](https://ogp-maker-teal.vercel.app/)",
-      "prs": [
-        9846
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "📱",
-      "title": "Shorts on autopilot",
-      "text": "Automatically generate and publish YouTube Shorts directly from news URLs. [View repo](https://github.com/oguzgokyar/Video_Kur)",
-      "prs": [
-        9847
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "✨",
-      "title": "Fresh in the greenhouse",
-      "text": "Easy AI-powered photo editing directly from the browser. [Try it](https://vision.scripted.my.id/)",
-      "prs": [
-        9848
-      ],
-      "kind": "app"
     }
   ],
   "changelog": []

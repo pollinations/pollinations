@@ -3,7 +3,7 @@
   "period_start": "2025-04-23",
   "period_end": "2025-04-23",
   "title": "FoodAnaly joins the community project list",
-  "summary": "The community project list gained FoodAnaly, an app for examining what’s in your food.\n\nFoodAnaly was added to the LLM Integrations list, projects CSV, and README. It helps people explore food ingredients, nutrition, dietary insights, and alternatives.",
+  "summary": "The community project list grew by one: FoodAnaly brings food and nutrition analysis to the showcase.\n\nFoodAnaly was added to the LLM Integrations list, projects CSV, and README. The app examines food ingredients, nutrition, and health impacts, with dietary insights and alternative recommendations.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-04-23"
     }
   ],
-  "generated_at": "2026-10-17T15:38:07.763062+00:00",
+  "generated_at": "2026-10-17T22:30:31.127996+00:00",
   "highlights": [],
   "changelog": []
 }

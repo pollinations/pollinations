@@ -2,9 +2,9 @@
   "date": "2026-09-05",
   "period_start": "2026-09-05",
   "period_end": "2026-09-05",
-  "title": "Managed agents now speak structured Responses",
-  "summary": "A dense reliability day: structured agents, community TTS and new models, plus a thorough cleanup of the strange places streaming likes to fail.\n\nManaged agents gained replayable structured output across Responses and Chat: ordered assistant and MCP results, lifecycle SSE events, media and tool results, strict usage data, and validation for unsupported reasoning-summary requests. Agent activity is now considerably less archaeological to consume.\n\nSpeech is now a first-class community-model modality, so publishers can register OpenAI-compatible TTS endpoints and stream native audio through the usual auth, caching, rewards, and fallback machinery. The model catalog also picked up Qwen3.8 Flash for text and multimodal work plus MAI Image 2.5 Flash for image generation and single-reference editing. Community text registrations now use one precise upstream API URL, making the dashboard and CLI flow clearer while preserving the right API style.\n\nA broad pass through text and SDK streaming fixed the awkward edges: standards-compliant SSE parsing, clean [DONE] handling, intact events when terminal usage is missing, useful terminal error statuses, and stable timeout codes. Simple Responses-backed text requests no longer send an unwanted default seed, while worker rejection handling now behaves around malformed upstream JSON and SSE instead of producing theatrical diagnostics.",
-  "pr_count": 16,
+  "title": "Two new models for text and images",
+  "summary": "New text and image models, community speech publishing, structured agent output, and a good deal less guesswork when requests fail.\n\nQwen3.8 Flash was added for text generation with image and video input, reasoning, tools, and a 1M-token context window. MAI Image 2.5 Flash adds text-to-image generation and editing with one reference image.\n\nPublishers can register text-to-speech models through My Models, the Account API, or the CLI. Community text models and endpoint agents now register an exact Chat Completions or Responses URL, making the upstream API choice explicit.\n\nThe Responses API now returns ordered assistant messages and executed MCP calls for managed agents, with corresponding streaming events. Follow-up requests can include completed tool outputs without rerunning them; API documentation now covers the Responses flow.",
+  "pr_count": 15,
   "prs": [
     {
       "number": 14360,
@@ -20,10 +20,6 @@
     },
     {
       "number": 14469,
-      "date": "2026-09-05"
-    },
-    {
-      "number": 14477,
       "date": "2026-09-05"
     },
     {
@@ -71,44 +67,470 @@
       "date": "2026-09-05"
     }
   ],
-  "generated_at": "2026-09-06T06:26:32.155060+00:00",
+  "generated_at": "2026-10-17T23:11:28.617318+00:00",
   "highlights": [
     {
-      "emoji": "🎨",
-      "title": "MAI Image 2.5 Flash",
-      "text": "Generate images with `microsoft/mai-image-2.5-flash`, or edit one JPEG or PNG reference image. [Explore image models](https://gen.pollinations.ai/image/models).",
+      "emoji": "🤖",
+      "title": "Structured managed-agent output",
+      "text": "Use `/v1/responses` to receive ordered assistant messages and executed MCP calls, including lifecycle events when streaming. Stateless follow-ups can include completed tool outputs without running those tools again. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        14469
+        14360
       ],
-      "kind": "model"
+      "kind": "api"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Publish community speech models",
+      "text": "Register an OpenAI-compatible text-to-speech endpoint in My Models, the Account API, or `polli my-models`. Its audio can then be requested through `/v1/audio/speech`. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        14387
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🤖",
-      "title": "Qwen3.8 Flash joins text",
-      "text": "The paid-only `qwen/qwen3.8-flash` model has been added to the text API. [Explore text models](https://gen.pollinations.ai/v1/models).",
+      "title": "Qwen3.8 Flash",
+      "text": "Try `qwen/qwen3.8-flash` for text output from text, image, or video input, with reasoning, tool support, and a 1M-token context window. It requires paid eligibility. [View the model](https://enter.pollinations.ai/models?q=qwen/qwen3.8-flash).",
       "prs": [
         14467
       ],
       "kind": "model"
     },
     {
-      "emoji": "🎵",
-      "title": "Publish community speech models",
-      "text": "Community-model publishers can register OpenAI-compatible `/v1/audio/speech` endpoints that accept text, voice, and format options and stream audio responses. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "emoji": "🎨",
+      "title": "MAI Image 2.5 Flash",
+      "text": "Generate images from text or edit an image using one JPEG or PNG reference with `microsoft/mai-image-2.5-flash`. [View the model](https://enter.pollinations.ai/models?q=microsoft/mai-image-2.5-flash).",
       "prs": [
-        14387
+        14469
       ],
-      "kind": "api"
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Choose your text upstream",
+      "text": "Community text-model publishers can register an exact Chat Completions or Responses endpoint URL, including query parameters, through My Models or `polli my-models`. Responses registrations work with both Pollinations text APIs. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        14479
+      ],
+      "kind": "product"
     },
     {
       "emoji": "✨",
-      "title": "Structured managed-agent responses",
-      "text": "Build with ordered assistant and MCP results, lifecycle streaming events, and stateless history replay in the Responses API. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "title": "More SDK routing control",
+      "text": "`@pollinations/sdk` 5.1.0-alpha.7 adds separate chat routing overrides for text, web search, image, video, and audio capabilities, plus model-specific resolution options for image and video generation. [View the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
-        14360
+        14498
       ],
-      "kind": "api"
+      "kind": "product"
     }
   ],
-  "changelog": []
+  "changelog": [
+    {
+      "pr_number": 14485,
+      "url": "https://github.com/pollinations/pollinations/pull/14485",
+      "merged_at": "2026-09-05T12:52:52Z",
+      "api_changes": [
+        {
+          "id": "pr-14485:DELETE /account/integrations/{id}",
+          "endpoint": "DELETE /account/integrations/{id}",
+          "summary": "Disconnect App",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-14485:GET /3d/{prompt}",
+          "endpoint": "GET /3d/{prompt}",
+          "summary": "Generate 3D Model",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:model",
+              "before": {
+                "type": "enum",
+                "required": true
+              },
+              "after": {
+                "type": "enum",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-14485:GET /account/integrations",
+          "endpoint": "GET /account/integrations",
+          "summary": "List Connected Apps",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-14485:GET /account/integrations/toolkits",
+          "endpoint": "GET /account/integrations/toolkits",
+          "summary": "Search Connectable Apps",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-14485:GET /image/{prompt}",
+          "endpoint": "GET /image/{prompt}",
+          "summary": "Generate Image",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:model",
+              "before": {
+                "type": "string",
+                "required": true
+              },
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-14485:GET /text/{prompt}",
+          "endpoint": "GET /text/{prompt}",
+          "summary": "Simple Text Generation",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:frequency_penalty",
+              "before": {
+                "type": "number",
+                "required": true
+              },
+              "after": {
+                "type": "number",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:max_completion_tokens",
+              "before": {
+                "type": "integer",
+                "required": true
+              },
+              "after": {
+                "type": "integer",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:max_tokens",
+              "before": {
+                "type": "integer",
+                "required": true
+              },
+              "after": {
+                "type": "integer",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:presence_penalty",
+              "before": {
+                "type": "number",
+                "required": true
+              },
+              "after": {
+                "type": "number",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:repetition_penalty",
+              "before": {
+                "type": "number",
+                "required": true
+              },
+              "after": {
+                "type": "number",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:top_p",
+              "before": {
+                "type": "number",
+                "required": true
+              },
+              "after": {
+                "type": "number",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-14485:GET /v1/models/status",
+          "endpoint": "GET /v1/models/status",
+          "summary": "Model Health Status",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:format",
+              "before": null,
+              "after": {
+                "type": "\"raw\"",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:minutes",
+              "before": null,
+              "after": {
+                "type": "integer",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-14485:GET /video/{prompt}",
+          "endpoint": "GET /video/{prompt}",
+          "summary": "Generate Video",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:model",
+              "before": {
+                "type": "string",
+                "required": true
+              },
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-14485:PATCH /account/agents/{id}",
+          "endpoint": "PATCH /account/agents/{id}",
+          "summary": "Update Agent",
+          "action": "CHANGE",
+          "breaking": true,
+          "changes": [
+            {
+              "field": "body:mcpServers",
+              "before": {
+                "type": "\"pollinations\"|\"ffmpeg\"|\"exa\"[]",
+                "required": false
+              },
+              "after": {
+                "type": "\"pollinations\"|\"ffmpeg\"|\"exa\"|\"composio\"[]",
+                "required": false
+              },
+              "breaking": true
+            }
+          ]
+        },
+        {
+          "id": "pr-14485:POST /account/agents",
+          "endpoint": "POST /account/agents",
+          "summary": "Create Agent",
+          "action": "CHANGE",
+          "breaking": true,
+          "changes": [
+            {
+              "field": "body:mcpServers",
+              "before": {
+                "type": "\"pollinations\"|\"ffmpeg\"|\"exa\"[]",
+                "required": false
+              },
+              "after": {
+                "type": "\"pollinations\"|\"ffmpeg\"|\"exa\"|\"composio\"[]",
+                "required": false
+              },
+              "breaking": true
+            }
+          ]
+        },
+        {
+          "id": "pr-14485:POST /account/integrations",
+          "endpoint": "POST /account/integrations",
+          "summary": "Connect App",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-14485:POST /account/my-models/endpoint-agents",
+          "endpoint": "POST /account/my-models/endpoint-agents",
+          "summary": "Create Endpoint Agent",
+          "action": "CHANGE",
+          "breaking": true,
+          "changes": [
+            {
+              "field": "body:api",
+              "before": null,
+              "after": {
+                "type": "\"chat_completions\"|\"responses\"",
+                "required": true
+              },
+              "breaking": true
+            },
+            {
+              "field": "body:baseUrl",
+              "before": {
+                "type": "string · uri",
+                "required": true
+              },
+              "after": null,
+              "breaking": true
+            },
+            {
+              "field": "body:url",
+              "before": null,
+              "after": {
+                "type": "string · uri",
+                "required": true
+              },
+              "breaking": true
+            }
+          ]
+        },
+        {
+          "id": "pr-14485:POST /account/my-models/{id}/update",
+          "endpoint": "POST /account/my-models/{id}/update",
+          "summary": "Update My Model",
+          "action": "CHANGE",
+          "breaking": true,
+          "changes": [
+            {
+              "field": "body:api",
+              "before": null,
+              "after": {
+                "type": "\"chat_completions\"|\"responses\"",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:inputModalities",
+              "before": {
+                "type": "\"text\"|\"image\"|\"audio\"[]",
+                "required": false
+              },
+              "after": {
+                "type": "\"text\"|\"image\"|\"audio\"|\"video\"[]",
+                "required": false
+              },
+              "breaking": true
+            },
+            {
+              "field": "body:url",
+              "before": null,
+              "after": {
+                "type": "string · uri",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-14485:POST /text",
+          "endpoint": "POST /text",
+          "summary": "Text Generation With Messages",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:prompt_cache_key",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:prompt_cache_options",
+              "before": null,
+              "after": {
+                "type": "[PromptCacheOptions](#promptcacheoptions)",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:prompt_cache_retention",
+              "before": null,
+              "after": {
+                "type": "\"in_memory\"|\"24h\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-14485:POST /v1/chat/completions",
+          "endpoint": "POST /v1/chat/completions",
+          "summary": "Chat Completions",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:prompt_cache_key",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:prompt_cache_options",
+              "before": null,
+              "after": {
+                "type": "[PromptCacheOptions](#promptcacheoptions)",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:prompt_cache_retention",
+              "before": null,
+              "after": {
+                "type": "\"in_memory\"|\"24h\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-14485:POST /v1/responses",
+          "endpoint": "POST /v1/responses",
+          "summary": "Create Response",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        }
+      ]
+    }
+  ]
 }

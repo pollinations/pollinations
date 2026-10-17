@@ -2,8 +2,8 @@
   "date": "2025-09-14",
   "period_start": "2025-09-07",
   "period_end": "2025-09-13",
-  "title": "Enter became a home for API access",
-  "summary": "Enter gained a place to manage API access while model routing and request limits became more explicit.\n\nGitHub sign-in, API key controls, and a customer meter balance view give people one place to manage their access. The work also added the customer, proxy, and generation-event plumbing behind those flows.\n\n`openai-large` now resolves to GPT-5 Nano; GPT-4.1 and its alias left the available models list, while `openai-fast` remains on GPT-4.1 Nano. Backend-model-ID aliases were added for Mistral Small 3.1 24B and DeepSeek R1 0528. Mistral Small 2402 Romance Companion became visible in the catalog, moved to the flower tier, and gained two aliases.\n\nText requests now respect each model’s configured `max_tokens` cap. Image requests without dimensions use `sideLength` for both sides; Flux’s maximum side length changed from 1280 to 768, and Azure GPT-4.1’s token settings changed from 1024 to 512.\n\nCapyUniverse – CapyIMG, a Portuguese-language browser image generator, was added to Creative Projects. It offers prompt and exclusion fields, size and aspect-ratio controls, and a choice of one to four images.",
+  "title": "Enter got accounts and API keys",
+  "summary": "Enter gained self-service account tools while text routing and generation limits got a careful tune-up.\n\nGitHub sign-in and a dashboard let users create, list and delete API keys, and see their Polar customer meter balance. API proxy routes and generation tracking were added behind those flows.\n\n`openai-large` now resolves to GPT-5 Nano rather than GPT-4.1. Requests gained backend-model-ID aliases for Mistral Small 3.1 24B and DeepSeek R1 0528. Mistral Small 2402 Romance Companion was unhidden, moved to the flower tier, and given two aliases.\n\nText requests now respect each model’s configured `max_tokens` ceiling, falling back to the global limit when needed. `openai-large` requests are capped at 1024 tokens; Flux’s maximum side length is 768, and Azure GPT-4.1’s token-limit settings are 512. Images requested without dimensions now use `sideLength` for both width and height.\n\nA modular rewrite reorganized the request pipeline. Queue-full and text-service logs gained user context, 429s got separate logging, and two text-transform import casing issues were corrected. Error response JSON stayed the same.",
   "pr_count": 7,
   "prs": [
     {
@@ -35,5 +35,5 @@
       "date": "2025-09-11"
     }
   ],
-  "generated_at": "2026-10-17T16:05:52.500194+00:00"
+  "generated_at": "2026-10-17T23:25:18.805365+00:00"
 }

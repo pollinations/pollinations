@@ -2,16 +2,16 @@
   "date": "2026-10-04",
   "period_start": "2026-10-04",
   "period_end": "2026-10-04",
-  "title": "The community made games out of mysteries, impostors, and postcards",
-  "summary": "A community-heavy day brought eleven new apps, new model Quests, sturdier generation requests, and fewer ways for CLI configuration to go sideways.\n\nEleven apps joined the games and learning collections. Players can question voiced suspects in Alibi and Whodunnit, try three real-or-AI guessing games, or pass one device around for Mole Party, Whisperwick, and Liar’s Supper. Postcard Worlds turns generated scenes into places to explore; Tunemory and Chorus turn study notes into songs.\n\nNew Quests reward trying video and community models, and community-model publishers can earn Pollen when others use their models. Model rates now show dollar amounts directly, x402 prepaid-key buyers can choose an exact amount, and CLI and MCP earnings reports can cover up to 365 days. Key edits preserve an unchanged expiry, key permissions print readably in the CLI, and the Quests page puts categories before bonus rewards.\n\nNew chats default to gpt-5.4-nano, with four ready-to-pick model pins, a Pollen-balance link, and third-party chat sharing off by default. Existing installations can apply the settings without losing their own pins or chats. Production also moved to a larger instance after health checks began timing out.",
+  "title": "Open WebUI gets better starting points",
+  "summary": "Eleven community apps joined the catalog while Open WebUI, model routing, payment flows, and agent tools got attention.\n\nOpen WebUI added four pinned everyday models for people without their own pins, switched new chats to `openai/gpt-5.4-nano`, and added general-purpose starter prompts. Its production container also gained capacity. Elsewhere, Play stopped sending reference images to models that cannot use them, while the dashboard clarified price labels and request estimates. Quests received a layout adjustment, and the website stopped retrying non-rate-limit errors.\n\nCommunity builders added eleven apps: voice murder mysteries, real-or-AI guessing games, three pass-and-play deduction games, and Postcard Worlds, which uses generated images and vision to make explorable scenes. Tunemory and Chorus also turn study notes into songs. Apparently the next sensible use for AI is accusing your friends of being impostors.\n\nA new x402 endpoint lets buyers choose a prepaid API key amount from $0.01 to $10,000 without a Pollinations login; existing pack URLs still work. Browser visits to legacy image and text paywalls now get a readable payment page with a Weft setup link, while agents keep their JSON response. Key editing also stopped extending an unchanged expiry through rounding.",
   "pr_count": 37,
   "prs": [
     {
-      "number": 15732,
+      "number": 15998,
       "date": "2026-10-04"
     },
     {
-      "number": 15998,
+      "number": 16127,
       "date": "2026-10-04"
     },
     {
@@ -155,50 +155,21 @@
       "date": "2026-10-04"
     }
   ],
-  "generated_at": "2026-10-05T06:45:05.004316+00:00",
+  "generated_at": "2026-10-17T23:17:12.447816+00:00",
   "highlights": [
     {
-      "emoji": "🎯",
-      "title": "Quests for curious model users",
-      "text": "Try a video model or a community model to earn 0.25 Pollen for each Setup Quest. Community-model publishers can earn 2 Pollen when others spend more than 0.5 Paid Pollen across their models.",
+      "emoji": "✨",
+      "title": "Open WebUI chat starters",
+      "text": "New chats start with `openai/gpt-5.4-nano`, and people without custom pins get four everyday models in the picker. Four general-purpose prompts offer a place to start.",
       "prs": [
-        15732
+        16249
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎨",
-      "title": "Walk through generated postcards",
-      "text": "Enter a place in [Postcard Worlds](https://tomdacatto.github.io/pollinations-postcard-worlds), then click doors, paths, or windows to generate the next matching view. [Try it](https://tomdacatto.github.io/pollinations-postcard-worlds).",
-      "prs": [
-        16425
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎵",
-      "title": "Turn notes into songs",
-      "text": "Paste facts into [Tunemory](https://tomdacatto.github.io/pollinations-tunemory) for a short song that checks its lyrics against your notes, or choose a style for your study song in [Chorus](https://xiaotian1171.github.io/chorus). [Try Tunemory](https://tomdacatto.github.io/pollinations-tunemory) or [try Chorus](https://xiaotian1171.github.io/chorus).",
-      "prs": [
-        16417,
-        16418
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎵",
-      "title": "Question the suspects",
-      "text": "Interrogate four voiced AI suspects and track contradictions in [Alibi](https://tomdacatto.github.io/pollinations-alibi), or investigate a 3D mansion by speaking to five suspects in [Whodunnit](https://guest453.github.io/whodunnit). [Try Alibi](https://tomdacatto.github.io/pollinations-alibi) or [try Whodunnit](https://guest453.github.io/whodunnit).",
-      "prs": [
-        16376,
-        16377
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Claude Code connects directly",
-      "text": "Polli’s Claude Code setup now connects directly to Gen’s `/v1/messages` instead of using Claude Code Router. See the [Polli CLI package](https://www.npmjs.com/package/@pollinations/cli).",
+      "emoji": "🤖",
+      "title": "Direct Claude Code harness",
+      "text": "Use `polli harness claude-code on` to configure Claude Code for Gen’s `/v1/messages` endpoint without Claude Code Router. Pollinations settings stay separate from your native Claude login and settings. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         16311
       ],

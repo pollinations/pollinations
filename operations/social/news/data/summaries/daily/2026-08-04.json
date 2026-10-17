@@ -2,9 +2,9 @@
   "date": "2026-08-04",
   "period_start": "2026-08-04",
   "period_end": "2026-08-04",
-  "title": "Model selection got simpler without breaking old links",
-  "summary": "A model-registry tuning day: cleaner model selection, more faithful Cohere requests, and API errors that say what actually happened.\n\nTrellis 2, Perplexity Sonar, Grok 4.20, and Gemini variants now resolve through cleaner canonical model entries and parameters. Retired IDs remain as safe aliases, while search, reasoning, and API-key behavior consistently follow the selected canonical model.\n\nInkling and Cohere proxy handling was simplified so native messages, reasoning effort, tools, tool choice, streaming, and supported image input reach Command A Plus with fewer translation layers. Azure-specific cleanup remains where it belongs.\n\nInvalid image URLs reported by Portkey now return HTTP 400 instead of being mistaken for provider failures. Developers get a useful client-side error, and model-health telemetry stops blaming models for malformed requests.",
-  "pr_count": 5,
+  "title": "Model options move from aliases to parameters",
+  "summary": "Model choices got clearer, Command A+ gained image input, and legacy responses now carry attribution.\n\nTrellis 2 now takes a `resolution` parameter, Perplexity Sonar uses `web_search_options.search_context_size`, and Grok selects its reasoning deployment through `reasoning_effort`. Older model IDs still resolve, but their names no longer select those behaviors on their own.\n\nInkling now passes reasoning settings and tool schemas through to OpenRouter. Command A+ passes messages, reasoning settings, and tools through to Azure, and its model listing now includes image input.\n\nLegacy image responses now include a Pollinations lockup, while successful legacy image and text responses include attribution headers available to browser clients. The `nologo` parameter is still accepted but no longer removes branding.",
+  "pr_count": 6,
   "prs": [
     {
       "number": 12978,
@@ -12,6 +12,10 @@
     },
     {
       "number": 13032,
+      "date": "2026-08-04"
+    },
+    {
+      "number": 13036,
       "date": "2026-08-04"
     },
     {
@@ -27,12 +31,39 @@
       "date": "2026-08-04"
     }
   ],
-  "generated_at": "2026-08-05T07:03:30.409425+00:00",
+  "generated_at": "2026-10-17T23:05:16.945031+00:00",
   "highlights": [
     {
+      "emoji": "🎨",
+      "title": "Choose Trellis 2 resolution",
+      "text": "Set `model=trellis-2` and choose `resolution=low`, `medium`, or `high`. Low is the default; output cost follows the selected resolution. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        13043
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Set Perplexity search context",
+      "text": "Choose Perplexity Sonar’s search context with `web_search_options.search_context_size` rather than a model-name variant. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        13043
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Select Grok reasoning",
+      "text": "Use `reasoning_effort` to select Grok’s reasoning deployment; the old reasoning model name no longer selects it by itself. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        13043
+      ],
+      "kind": "api"
+    },
+    {
       "emoji": "✨",
-      "title": "Command A Plus, less translation",
-      "text": "Native messages, `reasoning_effort`, tool calls, streaming, and verified image inputs now pass through more faithfully on Cohere Command A Plus.",
+      "title": "Images for Command A+",
+      "text": "`command-a-plus` now lists image input alongside text. Its messages, reasoning settings, and tools pass through without model-specific rewriting. [Browse models](https://enter.pollinations.ai/models?q=command-a-plus).",
       "prs": [
         13032
       ],

@@ -2,9 +2,9 @@
   "date": "2026-09-12",
   "period_start": "2026-09-12",
   "period_end": "2026-09-12",
-  "title": "Agents got a durable workspace and room to actually finish the job",
-  "summary": "A large agent-and-model day: persistent workspaces, longer tool runs, resilient model routing, 1080p video, and fewer dead ends when a request needs attention.\n\nThe new built-in computer MCP gives each user a persistent private workspace, Bash, asset publishing, and authenticated pushes to their own repositories. Agent runs now have more CPU, subrequests, steps, and tool calls for multi-file work; tool results and upstream errors also reach clients in usable formats instead of becoming mysterious failures. Floret moved shell execution into disposable Cloudflare containers, keeping credentials out of the terminal while preserving workspace files and streaming output.\n\nCommunity models now have canonical `community/owner/model` IDs while existing aliases keep generating, and DeepSeek V4.1 Flash joined the text API with reasoning and tool use. Callers can bring a fallback chain of up to four models, Perplexity search settings pass through intact, model status reads the catalog correctly, and media caching has one active path instead of carrying a retired bucket around like archaeological baggage.\n\nMiniMax H3 Max Turbo can now generate 1080p text-to-video and image-to-video clips through the existing generation routes. The app registry also gained Pollination_chatbot, a Login with Pollinations chat interface that can talk through OpenAI, Mistral, and Gemini-backed models.",
-  "pr_count": 17,
+  "title": "More ways to choose and use models",
+  "summary": "New model options, a persistent computer for agents, and direct account controls made this a busy day for both generation and the tools around it.\n\nDeepSeek V4.1 Flash was added with reasoning, tool calling, image input, and a 1,048,576-token context window. MiniMax H3 Max Turbo gained 1080p video at its existing durations. Generation requests can now list up to four models as an ordered fallback chain. Community models adopted `community/owner/model` as their catalog and API-key permission ID; the previous `owner/model` form remains a generation alias.\n\nComputer MCP adds a private, persistent filesystem and bash tool for agents. Prompt agents can now take up to 24 steps and make 48 tool calls, while code agents have more execution headroom. Tool results and failures are easier for clients to handle, including across chat turns. Floret also gained typed media response blocks and optional terminal stream usage.\n\nNew standalone top-up and API-key editor pages give in-chat payment notices a useful destination. Low-balance notices point to wallet top-up; exhausted key-budget notices point to the relevant key editor and clarify that adding wallet funds does not raise a key budget. The pages also offer a link back to the app after checkout.",
+  "pr_count": 18,
   "prs": [
     {
       "number": 14621,
@@ -35,15 +35,15 @@
       "date": "2026-09-12"
     },
     {
+      "number": 14754,
+      "date": "2026-09-12"
+    },
+    {
       "number": 14755,
       "date": "2026-09-12"
     },
     {
       "number": 14761,
-      "date": "2026-09-12"
-    },
-    {
-      "number": 14764,
       "date": "2026-09-12"
     },
     {
@@ -71,56 +71,78 @@
       "date": "2026-09-12"
     },
     {
+      "number": 14790,
+      "date": "2026-09-12"
+    },
+    {
       "number": 14792,
       "date": "2026-09-12"
     }
   ],
-  "generated_at": "2026-09-13T06:31:17.380329+00:00",
+  "generated_at": "2026-10-17T23:12:48.342377+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "DeepSeek V4.1 Flash",
-      "text": "Try `deepseek/deepseek-v4.1-flash` for reasoning and tool use, with a 1,048,576-token context window. [Explore text models](https://gen.pollinations.ai/v1/models).",
+      "title": "DeepSeek V4.1 Flash added",
+      "text": "Try `deepseek/deepseek-v4.1-flash` for reasoning and tool calling, with text and image input and a 1,048,576-token context window. [View the model](https://enter.pollinations.ai/models?q=deepseek/deepseek-v4.1-flash).",
       "prs": [
         14736
       ],
       "kind": "model"
     },
     {
-      "emoji": "🔗",
-      "title": "Choose your model fallbacks",
-      "text": "List up to four models in a comma-separated `model` parameter, such as `?model=a,b`, to give generation requests an ordered fallback chain. [Explore the API](https://gen.pollinations.ai/docs).",
-      "prs": [
-        14784
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "💡",
-      "title": "A computer for agents",
-      "text": "The built-in `/mcp/computer` server gives agents a private persistent filesystem and a bash tool for working across files. [Explore MCP tools](https://gen.pollinations.ai/docs#tag/mcp-servers).",
-      "prs": [
-        14741
-      ],
-      "kind": "product"
-    },
-    {
       "emoji": "🎨",
-      "title": "Minimax video in 1080p",
-      "text": "Generate 1080p video with `minimax/minimax-h3-max-turbo` from text or first and last frames. [Explore the API](https://gen.pollinations.ai/docs).",
+      "title": "MiniMax video at 1080p",
+      "text": "Generate 1080p video with MiniMax H3 Max Turbo from text or first and last frames, at its existing 5-, 10-, and 15-second durations. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         14747
       ],
       "kind": "model"
     },
     {
-      "emoji": "📱",
-      "title": "Pollination_chatbot joins the garden",
-      "text": "Chat with Pollinations text models, including OpenAI, Mistral, and Gemini options. [Try it](https://pollinations-chatbot.vercel.app).",
+      "emoji": "🔗",
+      "title": "Bring your own fallbacks",
+      "text": "List up to four comma-separated models in a generation request. If one fails after its provider routes are tried, the next model gets a turn. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        14750
+        14784
       ],
-      "kind": "app"
+      "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "A persistent computer for agents",
+      "text": "Computer MCP gives your agents a private filesystem that persists between runs, plus bash for working with files and repositories. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        14741
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Top up from chat",
+      "text": "Payment notices in chat now link to a standalone wallet top-up or the relevant API-key editor, depending on what needs attention. Both pages offer a link back to your app.",
+      "prs": [
+        14740
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Community model IDs clarified",
+      "text": "Community models now use `community/owner/model` in the catalog and when creating or updating API-key permissions. Existing `owner/model` names still work for generation. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        14621
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "✨",
+      "title": "Typed media from Floret",
+      "text": "Floret chat responses now include ordered, typed media in `message.content_blocks` alongside Markdown in `message.content`. Streams can also include a terminal usage chunk when `stream_options.include_usage` is true. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14787
+      ],
+      "kind": "api"
     }
   ],
   "changelog": []

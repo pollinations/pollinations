@@ -2,8 +2,8 @@
   "date": "2025-02-24",
   "period_start": "2025-02-24",
   "period_end": "2025-02-24",
-  "title": "More ways to use text generation",
-  "summary": "Two text options and longer OpenAI requests led the day, alongside a new community bot and some careful work under the text API’s hood.\n\nAdded `openai-reasoning`, backed by o1-mini, and `hypnosis-tracy`, a self-help hypnosis persona. The OpenAI text request limit doubled from 256,000 to 512,000 message characters.\n\nGacha joined the Social Bots listings with chat, web search, and character-aware image generation. Project repository links now point directly to their repos, and authors can link to profiles beyond Discord.\n\nOpenAI-style responses preserve existing IDs and creation timestamps. Several text generators moved to a shared client, while SearchGPT gained support for an explicitly selected model instead of always forcing its default. The changes also adjusted Hugging Face request limits and expanded integration tests.",
+  "title": "More ways to use the text API",
+  "summary": "Two text options, a larger request limit, a community bot, and some less surprising behavior under the text API’s hood.\n\nAdded `openai-reasoning` for o1-mini and `hypnosis-tracy`, a self-help hypnosis persona. The OpenAI text request limit increased from 256,000 to 512,000 message characters.\n\nGacha joined the Social Bots listings with chat, web search, and character-aware image generation. Project repository links now point directly to their supplied URLs, and author names can link to profiles outside Discord.\n\nOpenAI-style responses preserve existing IDs and creation timestamps, while Hugging Face requests use a lower output limit. Several text generators moved to a shared client, and SearchGPT can use an explicitly supplied model instead of always selecting `openai-large`.",
   "pr_count": 6,
   "prs": [
     {
@@ -31,12 +31,12 @@
       "date": "2025-02-24"
     }
   ],
-  "generated_at": "2026-10-17T15:34:24.132671+00:00",
+  "generated_at": "2026-10-17T22:28:55.884242+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Reasoning with o1-mini",
-      "text": "Use `openai-reasoning` for text requests routed to o1-mini. [Browse the model](https://enter.pollinations.ai/models?q=openai-reasoning).",
+      "title": "o1-mini joins text",
+      "text": "The new `openai-reasoning` option routes text requests to o1-mini. [View the model](https://enter.pollinations.ai/models?q=openai-reasoning).",
       "prs": [
         1229
       ],
@@ -44,21 +44,39 @@
     },
     {
       "emoji": "✨",
-      "title": "Meet hypnosis-tracy",
-      "text": "Try `hypnosis-tracy`, a self-help hypnosis persona backed by the text generator. [Browse the model](https://enter.pollinations.ai/models?q=hypnosis-tracy).",
+      "title": "A hypnosis persona",
+      "text": "`hypnosis-tracy` adds a self-help hypnosis persona backed by `openai-large`. [View the model](https://enter.pollinations.ai/models?q=hypnosis-tracy).",
       "prs": [
         1229
       ],
       "kind": "model"
     },
     {
-      "emoji": "🚀",
-      "title": "Longer text requests",
-      "text": "The OpenAI text request limit doubled to 512,000 message characters, leaving more room for long conversations and inputs. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "emoji": "💡",
+      "title": "More room for text",
+      "text": "OpenAI text requests can contain up to 512,000 message characters, up from 256,000. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         1229
       ],
       "kind": "api"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Choose SearchGPT’s model",
+      "text": "SearchGPT accepts an explicitly supplied model instead of always using `openai-large`. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        1231
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Meet Gacha bot",
+      "text": "Gacha joined the Social Bots listings. It combines chat, web search, selectable image models, and character-aware images through `!webgen`. [Explore community apps](https://pollinations.ai).",
+      "prs": [
+        1224
+      ],
+      "kind": "product"
     }
   ],
   "changelog": []

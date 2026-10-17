@@ -2,8 +2,8 @@
   "date": "2025-05-01",
   "period_start": "2025-05-01",
   "period_end": "2025-05-01",
-  "title": "More room for text requests",
-  "summary": "Text requests got four times the room, image fallback got simpler, and referral links got less frequent.\n\nThe text request limit increased fourfold, from 512,000 to 2,048,000 characters. Model listings now describe `openai` as GPT-4.1-mini and `openai-large` as GPT-4.1; `openai-reasoning` and `gemini` were removed from the available-model list.\n\nIf Cloudflare Dreamshaper fails, image generation now falls through to the general ComfyUI call rather than trying a dedicated Turbo fallback first.\n\nReferral-link insertion probabilities dropped from 10% to 3% normally and from 30% to 6% when trigger words match. The affiliate list and selection weights were adjusted too.",
+  "title": "Larger text requests and clearer model listings",
+  "summary": "Text requests got four times the character room, model listings got clearer, and image fallback took a more direct route.\n\nThe text request limit rose from 512,000 to 2,048,000 characters. Model listings now identify `openai` as GPT-4.1-mini and `openai-large` as GPT-4.1; `openai-reasoning` and `gemini` were removed from the available-model list.\n\nReferral-link insertion became less frequent, including when trigger words match. The affiliate selection was also adjusted.\n\nWhen Cloudflare Dreamshaper fails, image generation now falls through to the general ComfyUI call instead of trying a dedicated Turbo fallback first.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,12 +11,21 @@
       "date": "2025-05-01"
     }
   ],
-  "generated_at": "2026-10-17T15:38:50.756685+00:00",
+  "generated_at": "2026-10-17T22:30:46.625081+00:00",
   "highlights": [
     {
+      "emoji": "🤖",
+      "title": "Clearer text model listings",
+      "text": "`openai` is now listed as GPT-4.1-mini and `openai-large` as GPT-4.1, making the choice between the two IDs clearer. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        1861
+      ],
+      "kind": "model"
+    },
+    {
       "emoji": "✨",
-      "title": "More room for text",
-      "text": "Text requests now accept up to 2,048,000 characters, up from 512,000. [See the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Larger text requests",
+      "text": "Text requests now accept up to 2,048,000 characters, up from 512,000, so larger inputs need less splitting. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         1861
       ],

@@ -2,8 +2,8 @@
   "date": "2025-03-07",
   "period_start": "2025-03-07",
   "period_end": "2025-03-07",
-  "title": "Text models move onto a shared route",
-  "summary": "Text model routing got simpler, and `claude-hybridspace` became `claude`.\n\nScaleway-backed models and the former Cloudflare client now use the existing Portkey route. The migration retains model-specific prompts. The model list also renames `claude-hybridspace` to `claude` and describes it as Claude 3.5 Haiku; callers using the old name will need to update it.",
+  "title": "Claude gets a shorter model name",
+  "summary": "Text model routing got simpler, while Claude 3.5 Haiku got a shorter model name that callers will need to adopt.\n\nThe model list now uses `claude` for Claude 3.5 Haiku instead of `claude-hybridspace`. Callers using the old name need to update it.\n\nRouting for `qwen-coder`, `mistral`, `llama-scaleway`, `llamalight-scaleway`, and `deepseek-r1-llama` now goes through Portkey, with their model-specific prompts retained.\n\nThe separate Cloudflare text client was removed in favor of the existing Portkey route.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-03-07"
     }
   ],
-  "generated_at": "2026-10-17T15:34:53.402218+00:00",
+  "generated_at": "2026-10-17T22:29:06.545327+00:00",
   "highlights": [],
   "changelog": []
 }

@@ -2,16 +2,28 @@
   "date": "2026-04-12",
   "period_start": "2026-04-12",
   "period_end": "2026-04-12",
-  "title": "Text models get a massive speed and brain upgrade",
-  "summary": "A massive day for speed: text models migrated to Fireworks for 50x faster inference, Sana image generation drops to 165ms, and OpenAI SDKs now work directly in the browser.\n\nWe re-routed a huge chunk of our text models to faster infrastructure. Kimi, DeepSeek, GLM, Minimax, and Qwen-large are now running on Fireworks AI and Bedrock. The results? Up to 50x faster generation speeds. We also bumped Qwen to the 396B flagship and gave Kimi the K2-thinking model with a 128K context window.\n\nWe upgraded the default Sana model to 1.6B and moved the whole thing over to GH200 instances. It now spits out images in about 0.165 seconds. Blink and you'll miss the inference.\n\nBrowsers and CORS preflight checks are a notoriously annoying combination. We updated our CORS middleware to properly reflect custom telemetry headers, meaning you can now drop standard OpenAI SDKs directly into client-side web apps without the browser yelling at you.",
-  "pr_count": 5,
+  "title": "Text models get new routes and versions",
+  "summary": "Text and image models got a tune-up, browser SDK calls cleared CORS preflight, and the app showcase got a tidy-up.\n\n`kimi` ultimately moved to Kimi K2.5 with image input and a 262K-token context window. `glm` moved to GLM 5.1, `qwen-large` to Qwen3.6 Plus, and `deepseek` and `minimax` received provider routing changes. Step 3.5 Flash was added and then removed from the model registry the same day.\n\nThe default image model changed from Sana Sprint 0.6B to 1.6B on a GH200 worker. The setup reports roughly 0.165 seconds per image, compared with 0.25 seconds on the previous A100 worker. Individual dimensions can now reach 768 pixels, subject to a 512×512 total-pixel cap.\n\nEnter now reflects requested CORS headers, allowing browser-based OpenAI SDK calls to `/v1/chat/completions` that include telemetry headers such as `x-stainless-os`.",
+  "pr_count": 8,
   "prs": [
+    {
+      "number": 10147,
+      "date": "2026-04-12"
+    },
+    {
+      "number": 10149,
+      "date": "2026-04-12"
+    },
     {
       "number": 10155,
       "date": "2026-04-12"
     },
     {
       "number": 10156,
+      "date": "2026-04-12"
+    },
+    {
+      "number": 10157,
       "date": "2026-04-12"
     },
     {
@@ -27,44 +39,44 @@
       "date": "2026-04-12"
     }
   ],
-  "generated_at": "2026-04-13T06:40:41.248883+00:00",
+  "generated_at": "2026-10-17T22:47:38.085432+00:00",
   "highlights": [
     {
-      "emoji": "🧠",
-      "title": "Kimi gets a brain upgrade",
-      "text": "The `kimi` text model now runs Moonshot's K2-thinking model under the hood. You get reasoning blocks and a massive 128K context window for your largest prompts.",
+      "emoji": "🤖",
+      "title": "Kimi K2.5 takes over",
+      "text": "`kimi` now uses Kimi K2.5, with image input and a 262K-token context window. [View the model](https://enter.pollinations.ai/models?q=kimi).",
       "prs": [
-        10155
+        10155,
+        10156
       ],
       "kind": "model"
     },
     {
-      "emoji": "⚡",
-      "title": "50x faster text generation",
-      "text": "We migrated `deepseek`, `glm`, `minimax`, and `qwen-large` to Fireworks AI. Latency dropped off a cliff, and Qwen got bumped to its 396B flagship version. Try them in the [Unified API](https://gen.pollinations.ai).",
+      "emoji": "🤖",
+      "title": "GLM moves to 5.1",
+      "text": "Use `glm` to access GLM 5.1; existing GLM aliases still point to it. [View the model](https://enter.pollinations.ai/models?q=glm).",
       "prs": [
-        10156,
+        10156
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Qwen-large gets Qwen3.6 Plus",
+      "text": "`qwen-large` now uses Qwen3.6 Plus. [View the model](https://enter.pollinations.ai/models?q=qwen-large).",
+      "prs": [
         10160
       ],
       "kind": "model"
     },
     {
-      "emoji": "🖼️",
-      "title": "Sana hits 0.165s per image",
-      "text": "The default Sana [image model](https://gen.pollinations.ai/image/models) was upgraded to 1.6B and moved to GH200 instances. Better pixels, delivered in a fraction of a second.",
+      "emoji": "🎨",
+      "title": "Sana Sprint grows up",
+      "text": "Sana Sprint now defaults to the 1.6B image model. Its new worker reports roughly 0.165 seconds per image, down from 0.25 seconds on the previous setup. [Try image generation](https://gen.pollinations.ai/image/{prompt}).",
       "prs": [
         10159
       ],
       "kind": "model"
-    },
-    {
-      "emoji": "🌐",
-      "title": "Client-side OpenAI SDK support",
-      "text": "We adjusted our CORS headers so standard OpenAI SDKs now work directly from the browser. Build your frontend apps without fighting preflight errors.",
-      "prs": [
-        10165
-      ],
-      "kind": "api"
     }
   ],
   "changelog": []

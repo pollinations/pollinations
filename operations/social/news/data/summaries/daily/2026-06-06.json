@@ -2,8 +2,8 @@
   "date": "2026-06-06",
   "period_start": "2026-06-06",
   "period_end": "2026-06-06",
-  "title": "The community map stays current",
-  "summary": "A quiet maintenance day: fresh community apps, news, and greenhouse signals on the public map.\n\nAutomated updates refreshed the README's latest news and recent apps, while app metrics, health checks, and greenhouse status were brought up to date. The repo remains a reasonably accurate field guide to what people are building.",
+  "title": "The README points to the Playground",
+  "summary": "A quiet day of upkeep: a clearer path to the Playground and fresh data in the app listings.\n\nA README news item now links to the standalone Playground, where people can try image, video, text, and audio generation without code. The Recent Apps list was also updated; removing Ather Mini from that list did not remove the app.\n\nThe public app catalog and greenhouse listings were refreshed with automated app metrics and health-check data.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,7 @@
       "date": "2026-06-06"
     }
   ],
-  "generated_at": "2026-09-04T11:52:29.364080+00:00",
+  "generated_at": "2026-10-17T22:57:47.314365+00:00",
   "highlights": [],
   "changelog": []
 }

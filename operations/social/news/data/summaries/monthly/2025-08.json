@@ -2,8 +2,8 @@
   "date": "2025-08-31",
   "period_start": "2025-08-01",
   "period_end": "2025-08-31",
-  "title": "More choices in the text API",
-  "summary": "August broadened the text model lineup and community project catalog while making image caching and API usage easier to inspect.\n\nThe model list gained GPT-5 options, OpenAI o3, Claude 3.5 Haiku, Gemini 2.5 Flash Lite, DeepSeek R1 0528, and the `roblox-rp` model. Routing and access settings were adjusted alongside them.\n\nCommunity additions ranged from multilingual chat assistants and a prompt-to-diagram tool to image generators and creative toolboxes. The front page also regained generation counters, and the catalog became easier to browse.\n\nThe image cache was split into replaceable components, then gained multilingual prompt matching and length-aware similarity thresholds. Response headers now show whether a hit was exact or semantic, and semantic hits report their similarity score.\n\nAccess guidance moved to tier wording after the Special Bee request path was removed. Text-request events gained model, timing, token, and moderation details; completions and usage records now include the user's tier.",
+  "title": "More text models, more uses",
+  "summary": "August broadened the text model lineup and community catalog while making image caching, access guidance, and request tracking more precise.\n\nGPT-5, image-capable GPT-5 Nano, Claude 3.5 Haiku, OpenAI o3, Gemini 2.5 Flash Lite, DeepSeek R1 0528, and the tool-capable roblox-rp model joined the text work. DeepSeek reasoning also moved to a new route.\n\nNew listings covered multilingual chat, image generation, diagrams, and creative tools. Front-page generation counts returned, and a direct projects link made the catalog easier to reach.\n\nThe image cache moved to TypeScript and Hono, with exact and semantic matches separated. Multilingual embeddings and prompt-sensitive thresholds improved matching, while responses now identify which kind of cache hit occurred.\n\nBeta tier guidance replaced obsolete Special Bee request links, and image docs were trimmed to match their current scope. Text tracking gained timing, usage, moderation, and tier data; completions now report `user_tier`.",
   "pr_count": 25,
   "prs": [
     {
@@ -107,5 +107,5 @@
       "date": "2025-08-27"
     }
   ],
-  "generated_at": "2026-10-17T16:09:00.710274+00:00"
+  "generated_at": "2026-10-17T23:30:44.319475+00:00"
 }

@@ -2,8 +2,8 @@
   "date": "2025-06-16",
   "period_start": "2025-06-16",
   "period_end": "2025-06-16",
-  "title": "A tidier model catalog",
-  "summary": "The model catalog got easier to browse, and the Creative Projects list gained a celebrity image generator.\n\n`GET /models` no longer returns pricing fields. It lists non-community models first, then community models, alphabetically within each group. The catalog also assigns `openai-fast` (GPT-4.1 Nano) to the anonymous tier and refreshes OpenAI model descriptions and provider labels. Text-generation telemetry now retains complete usage data, including cached-token counts.\n\nThe Creative Projects list now includes @Colin-Zero’s Celebrity AI Image Generator, which uses Pollinations.ai and a1.art to make celebrity images from text or selfies from uploaded photos.",
+  "title": "GPT-4.1 Nano joins the anonymous tier",
+  "summary": "GPT-4.1 Nano moved into the anonymous tier, the model listing got a cleanup, and the community showcase gained an image tool.\n\nThe model catalog now assigns `openai-fast` (GPT-4.1 Nano) to the anonymous tier.\n\nThe Creative Projects list added a community tool for generating celebrity images from text and making celebrity selfies from uploaded photos.\n\nGET /models now puts non-community models before community models and sorts each group by name. Pricing fields were removed from that response, while text-generation telemetry now retains complete usage data, including cached-token counts.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,16 +15,16 @@
       "date": "2025-06-16"
     }
   ],
-  "generated_at": "2026-10-17T15:42:32.068164+00:00",
+  "generated_at": "2026-10-17T22:32:12.398714+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "GPT-4.1 Nano in anonymous tier",
-      "text": "The model catalog now assigns `openai-fast` (GPT-4.1 Nano) to the anonymous tier. [Browse the model](https://enter.pollinations.ai/models?q=openai-fast).",
+      "title": "GPT-4.1 Nano, anonymously",
+      "text": "The model catalog now puts `openai-fast` (GPT-4.1 Nano) in the anonymous tier. [Browse the model](https://enter.pollinations.ai/models?q=openai-fast).",
       "prs": [
         2502
       ],
-      "kind": "model"
+      "kind": "api"
     }
   ],
   "changelog": []

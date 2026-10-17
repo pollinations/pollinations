@@ -3,7 +3,7 @@
   "period_start": "2025-09-23",
   "period_end": "2025-09-23",
   "title": "Seedream 4.0 joins image generation",
-  "summary": "Seedream arrived for image generation, GPT-5 Chat gained a model alias, and paid requests got clearer Pollen balance checks.\n\nThree PRs added the seed-tier `seedream` model for text-to-image and reference-image generation. Requests can produce watermark-free images with a configured maximum side length of 2048 pixels. Image analytics now records the options people actually requested, including model and dimensions.\n\n`openai-large` now routes seed-tier requests to GPT-5 Chat and has a `gpt-5-chat` alias. `openai` now aliases `openai-fast` on GPT-4.1 Nano, while `openai-audio` accepts up to 5,000 input characters, up from 2,000. Token-authenticated nanobanana requests have a fixed queue cap.\n\nEnter now checks for an active session and positive Pollen balance before proxying paid text or image requests; free-model requests remain available without that check. Cached responses are not charged, and generation tracking includes cache hits and failed requests. The API also accepts `POST /openai`.",
+  "summary": "Seedream 4.0 arrived, text models changed routes, and paid-generation checks got stricter.\n\nThree PRs added the seed-tier `seedream` model for text-to-image and reference-image generation. Requests ask for watermark-free output, with a configured maximum side length of 2048 pixels. Image analytics also now records the requested settings instead of fixed defaults.\n\n`openai-large` now routes seed-tier users to GPT-5 Chat, also available as `gpt-5-chat`. `openai` now aliases `openai-fast` on GPT-4.1 Nano. `openai-audio` accepts up to 5,000 input characters, up from 2,000.\n\nEnter now checks for an active session and a positive Pollen balance before forwarding paid text or image requests; free-model requests remain available without that check. Cached responses are not charged, and `POST /openai` is accepted alongside `/openai/chat/completions`.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,12 +27,12 @@
       "date": "2025-09-23"
     }
   ],
-  "generated_at": "2026-10-17T15:46:59.287002+00:00",
+  "generated_at": "2026-10-17T22:33:55.550451+00:00",
   "highlights": [
     {
       "emoji": "🎨",
       "title": "Seedream 4.0 images",
-      "text": "Generate images from a prompt or use a reference image with `seedream`. It supports seed-tier access and requests watermark-free output. [Browse Seedream](https://enter.pollinations.ai/models?q=seedream).",
+      "text": "Generate images from a prompt or provide a reference image with the seed-tier `seedream` model. Its requests ask for output without a watermark. [Explore Seedream](https://enter.pollinations.ai/models?q=seedream).",
       "prs": [
         4142,
         4143,
@@ -42,8 +42,8 @@
     },
     {
       "emoji": "🤖",
-      "title": "GPT-5 Chat alias",
-      "text": "Seed-tier requests to `openai-large` now use GPT-5 Chat, also available as `gpt-5-chat`. [Browse the model](https://enter.pollinations.ai/models?q=gpt-5-chat).",
+      "title": "GPT-5 Chat routing",
+      "text": "Seed-tier users can use GPT-5 Chat through `openai-large` or the `gpt-5-chat` alias. The `openai` alias now points to `openai-fast` on GPT-4.1 Nano. [Browse models](https://enter.pollinations.ai/models?q=gpt-5-chat).",
       "prs": [
         4141
       ],
@@ -52,9 +52,18 @@
     {
       "emoji": "🎵",
       "title": "Longer audio input",
-      "text": "`openai-audio` now accepts up to 5,000 input characters, up from 2,000. [Try the audio API](https://gen.pollinations.ai/docs).",
+      "text": "`openai-audio` now accepts up to 5,000 input characters, up from 2,000. [Browse models](https://enter.pollinations.ai/models?q=openai-audio).",
       "prs": [
         4141
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Shorter OpenAI route",
+      "text": "Send requests to `POST /openai` as an alternative to `/openai/chat/completions`. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        4135
       ],
       "kind": "api"
     }

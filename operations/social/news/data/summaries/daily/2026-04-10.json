@@ -2,12 +2,20 @@
   "date": "2026-04-10",
   "period_start": "2026-04-10",
   "period_end": "2026-04-10",
-  "title": "No more mental math for your balance",
-  "summary": "A solid day of quality-of-life upgrades: dynamic balance estimates, bigger typography, and throttle-proof Gemini routing.\n\nThe pricing table now looks at your actual signed-in balance and tells you exactly how many generations you can afford across different models. We do the math so you don't have to.\n\nWe restored the website's title and heading sizes to be properly readable again, and standardized the subtitle format on the Play page to keep things tidy.\n\nWe updated the routing for Gemini 2.5 Flash Lite to use Vertex's global endpoint instead of a single region. This pools our quota and prevents throttling when the network gets busy.",
-  "pr_count": 3,
+  "title": "Model estimates now use your Pollen balance",
+  "summary": "Balance-based image estimates arrived in the dashboard, three model routes were adjusted, and the website got a tidy-up.\n\nThe dashboard’s pricing table now estimates how many images a signed-in user can make with each model based on their balance. Models with less than one estimated request show 0 and a top-up explanation; signed-out visitors still see an approximate one-Pollen estimate.\n\nDeepSeek and Kimi moved to different backends without changing their public model names. `gemini-2.5-flash-lite` moved to Vertex’s global endpoint to reduce region-specific 429 errors.\n\nWebsite heading sizes were restored and the Play subtitle was brought into line with other pages. The app catalog received updated metrics and health checks, while the README refreshed Recent Apps credits and links.",
+  "pr_count": 6,
   "prs": [
     {
       "number": 10051,
+      "date": "2026-04-10"
+    },
+    {
+      "number": 10102,
+      "date": "2026-04-10"
+    },
+    {
+      "number": 10106,
       "date": "2026-04-10"
     },
     {
@@ -15,29 +23,24 @@
       "date": "2026-04-10"
     },
     {
+      "number": 10116,
+      "date": "2026-04-10"
+    },
+    {
       "number": 10118,
       "date": "2026-04-10"
     }
   ],
-  "generated_at": "2026-04-11T06:20:34.096177+00:00",
+  "generated_at": "2026-10-17T22:47:13.333798+00:00",
   "highlights": [
     {
-      "emoji": "⚡",
-      "title": "DeepSeek & Kimi Upgrades",
-      "text": "Migrated DeepSeek and Kimi to new infrastructure. Expect significantly fewer dropped connections and faster response times when chatting in the [Playground](https://pollinations.ai/play).",
+      "emoji": "🎯",
+      "title": "Estimates for your balance",
+      "text": "Sign in to see how many images your Pollen balance is estimated to cover for each model, rather than a generic one-Pollen example. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        10116
+        10051
       ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🌍",
-      "title": "Gemini Flash Lite Routing",
-      "text": "Rerouted Gemini 2.5 Flash Lite to global endpoints to pool quota. It should now actually survive when everyone tries to hit the [Text API](https://gen.pollinations.ai/v1/chat/completions) at the exact same time.",
-      "prs": [
-        10118
-      ],
-      "kind": "model"
+      "kind": "product"
     }
   ],
   "changelog": []

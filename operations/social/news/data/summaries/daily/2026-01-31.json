@@ -2,8 +2,8 @@
   "date": "2026-01-31",
   "period_start": "2026-01-31",
   "period_end": "2026-01-31",
-  "title": "Paid-only models get a clear boundary",
-  "summary": "Paid-only model balances are now explicit, Moltbot joined the catalog, and SDXL Turbo left the image roster.\n\nSeven models, including `claude-large`, `nanobanana-pro` and `veo`, now require purchased-pack or crypto Pollen rather than daily tier grants. The model API exposes a `paid_only` field, while Play and Enter label the affected models and explain which balance applies.\n\nThe Social_Bots catalog now includes @its3li’s Moltbot, a Telegram and WhatsApp assistant built with Pollinations. It also takes a featured spot in the README.\n\nThe `turbo` image model was removed from the registry and its dedicated routing. Self-hosted image routing retains the zimage and Flux pools.",
+  "title": "Paid-only models get clearer balance rules",
+  "summary": "Paid-only model rules got explicit, Moltbot joined the catalog, and SDXL Turbo left the image lineup.\n\nSeven models now require purchased-pack or crypto Pollen; daily tier grants cannot cover their requests. The model API exposes `paid_only`, and Play and Enter label the affected models. Daily tier refills also moved to a scheduled workflow.\n\nThe community catalog added @its3li’s Moltbot, a Telegram and WhatsApp assistant using Pollinations, under Social Bots.\n\nThe `turbo` image model and its dedicated routing were removed. Self-hosted image routing retains the zimage and Flux pools.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,7 +23,7 @@
       "date": "2026-01-31"
     }
   ],
-  "generated_at": "2026-10-17T16:01:53.210798+00:00",
+  "generated_at": "2026-10-17T22:38:53.006792+00:00",
   "highlights": [],
   "changelog": []
 }

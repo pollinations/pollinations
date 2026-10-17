@@ -2,12 +2,20 @@
   "date": "2026-07-26",
   "period_start": "2026-07-26",
   "period_end": "2026-07-26",
-  "title": "ElevenLabs audio grew up into a small post-production suite",
-  "summary": "Audio got dialogue, isolation, and timestamps; realtime gained a long-context multimodal model; Mistral generation got its key back.\n\nPollinations now handles multi-speaker dialogue, speech isolation from uploaded audio or video, and timestamped TTS output. Builders can generate conversations with up to ten voices, pull clean speech from media files, and synchronize captions or highlighted text to generated audio.\n\nGPT Realtime 2.1 Mini joined the realtime API with a 128K context window, text, image, and PCM voice support, plus tools, reasoning, cancellation, caching, and ten voices. A fairly complete conversational machine, in other words.\n\nThe generation Worker now receives its configured Mistral API key, restoring reliable Mistral-backed generation without expanding access to unrelated service secrets.",
-  "pr_count": 5,
+  "title": "More ways to generate speech",
+  "summary": "A lot of audio today: multi-speaker dialogue, voice editing, timestamped speech, and a new realtime model.\n\nElevenLabs dialogue adds multi-speaker audio from up to 25 text turns and 10 voices. A separate speech endpoint returns audio with character-level timestamps for ElevenLabs v3, Flash v2.5, and Multilingual v2.\n\nVoice Changer transforms a recording’s voice while keeping its timing and delivery. Voice Isolator removes background sound from audio or video while preserving speech.\n\n`gpt-realtime-2.1-mini` joins the realtime WebSocket route with text, audio, and image input; text and audio output; tool use; and a 128K-token context window. Usage accounting also distinguishes cached audio and image tokens.",
+  "pr_count": 6,
   "prs": [
     {
+      "number": 12769,
+      "date": "2026-07-26"
+    },
+    {
       "number": 12778,
+      "date": "2026-07-26"
+    },
+    {
+      "number": 12779,
       "date": "2026-07-26"
     },
     {
@@ -21,45 +29,50 @@
     {
       "number": 12782,
       "date": "2026-07-26"
-    },
-    {
-      "number": 12785,
-      "date": "2026-07-26"
     }
   ],
-  "generated_at": "2026-07-27T07:21:00.711761+00:00",
+  "generated_at": "2026-10-17T23:03:29.247819+00:00",
   "highlights": [
     {
       "emoji": "🎵",
-      "title": "ElevenLabs dialogue",
-      "text": "Generate multi-speaker scenes with up to 10 voices and 25 turns through `POST /v1/audio/dialogue`. The hive has learned to hold a conversation. [API Docs](https://gen.pollinations.ai/docs)",
+      "title": "Multi-speaker dialogue",
+      "text": "Generate audio from up to 25 text turns and 10 voices with `eleven-dialogue` at `POST /v1/audio/dialogue`. [Browse the model](https://enter.pollinations.ai/models?q=eleven-dialogue).",
       "prs": [
         12778
       ],
       "kind": "model"
     },
     {
-      "emoji": "✨",
-      "title": "Voice isolation",
-      "text": "Send audio or video to `POST /v1/audio/voice-isolator` and get the speech back as a clean MP3. Useful when the background has opinions. [API Docs](https://gen.pollinations.ai/docs)",
+      "emoji": "🎵",
+      "title": "Change a recorded voice",
+      "text": "Send a recording to `POST /v1/audio/voice-changer` to change its voice while keeping the original timing and delivery. Preset and custom ElevenLabs voices are supported. [Explore the audio API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        12779
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Isolate speech from noise",
+      "text": "Send audio or video to `POST /v1/audio/voice-isolator` to remove background sound and get speech back as MP3. [Explore the audio API](https://gen.pollinations.ai/docs).",
       "prs": [
         12780
       ],
       "kind": "api"
     },
     {
-      "emoji": "🚀",
+      "emoji": "🤖",
       "title": "GPT Realtime 2.1 Mini",
-      "text": "`gpt-realtime-2.1-mini` is now available for large-context realtime text, image, and voice sessions—with tools, PCM audio, caching, and ten voices. [API Docs](https://gen.pollinations.ai/docs)",
+      "text": "Use `gpt-realtime-2.1-mini` over `/v1/realtime` with text, audio, or image input, plus text or audio output and tool use. [Browse the model](https://enter.pollinations.ai/models?q=gpt-realtime-2.1-mini).",
       "prs": [
         12781
       ],
       "kind": "model"
     },
     {
-      "emoji": "🎯",
-      "title": "TTS timestamps",
-      "text": "Get ElevenLabs speech plus character-level alignment from `POST /v1/audio/speech/with-timestamps`, for captions and text that highlights itself while it talks. [API Docs](https://gen.pollinations.ai/docs)",
+      "emoji": "🎵",
+      "title": "Speech with character timestamps",
+      "text": "Use `POST /v1/audio/speech/with-timestamps` to get ElevenLabs speech with audio and character-level timing for original and normalized text. It supports v3, Flash v2.5, and Multilingual v2. [Explore the audio API](https://gen.pollinations.ai/docs).",
       "prs": [
         12782
       ],

@@ -2,9 +2,9 @@
   "date": "2026-02-16",
   "period_start": "2026-02-16",
   "period_end": "2026-02-16",
-  "title": "20 PRs merged",
-  "summary": "biggest update: the new 'Pollen' badge system is live across all apps. 🌸 making credits transparent for the open source ecosystem. also shipped:\n- video consistency tools\n- character design personas\n- new AI router for devs shipping daily. build with us. 🐝",
-  "pr_count": 20,
+  "title": "The app catalog gets better signposts",
+  "summary": "A busy day in the app garden: clearer catalog badges, a restored apps page, and a lot more community-built things to explore.\n\nThe apps page added Fresh, Pollen, and Buzz badges for recently approved apps, apps with Pollinations sign-in, and apps with at least 100 API requests in 24 hours. Category filters now persist in the URL, and a separate fix restored the catalog after its app-list source returned a 404.\n\nCommunity additions span illustrated storybooks, presentations, image editing, personas, storyboards, live-coded music, stickers, and filmmaking with scene memory. Two larger batches also brought image generators, a jigsaw puzzle maker, and other creative tools into the catalog.\n\nThe catalog also gained apps for focus wallpapers, branching chat, quizzes, citations, model benchmarking, guided journaling, and a Telegram assistant. Developer additions include an OpenCode plugin and an interface for running local models.",
+  "pr_count": 21,
   "prs": [
     {
       "number": 7358,
@@ -67,6 +67,10 @@
       "date": "2026-02-16"
     },
     {
+      "number": 8301,
+      "date": "2026-02-16"
+    },
+    {
       "number": 8324,
       "date": "2026-02-16"
     },
@@ -87,43 +91,16 @@
       "date": "2026-02-16"
     }
   ],
-  "generated_at": "2026-02-17T06:20:26.526015+00:00",
+  "generated_at": "2026-10-17T22:40:50.534314+00:00",
   "highlights": [
     {
-      "emoji": "🌸",
-      "title": "Badges in Bloom",
-      "text": "Navigate the ecosystem with our new organic badge system (Fresh, Pollen, Buzz) to find the best [community apps](https://hello.pollinations.ai).",
+      "emoji": "✨",
+      "title": "Find your kind of app",
+      "text": "Browse apps by category and spot new arrivals with Fresh badges, Pollinations sign-in with Pollen badges, and recent activity with Buzz badges. Filters stay in the URL, so you can share what you found. [Explore community apps](https://pollinations.ai).",
       "prs": [
         8284
       ],
       "kind": "product"
-    },
-    {
-      "emoji": "🎥",
-      "title": "Consistent AI Video",
-      "text": "Try **P2S**, a new tool for maintaining character and scene consistency across frames in AI filmmaking.",
-      "prs": [
-        8327
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Sticker Garden",
-      "text": "Generate custom sticker packs with style presets and batch variants in this new [creative app](https://hello.pollinations.ai).",
-      "prs": [
-        8328
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "💻",
-      "title": "OpenCode Plugin",
-      "text": "Developers can now access Pollinations models directly within the OpenCode environment.",
-      "prs": [
-        7727
-      ],
-      "kind": "app"
     }
   ],
   "changelog": []

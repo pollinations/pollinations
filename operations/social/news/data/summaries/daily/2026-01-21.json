@@ -2,8 +2,8 @@
   "date": "2026-01-21",
   "period_start": "2026-01-21",
   "period_end": "2026-01-21",
-  "title": "Images can become dubbed video",
-  "summary": "A model-heavy day: image-to-video with optional dubbing, a larger Klein, Gemini 2.5 Pro, and a monitor that knows a bad request is not a broken model.\n\nWan 2.6 was added as `wan` for image-to-video generation. It produces 720p clips lasting 2–15 seconds, with auto-dubbed audio on by default and an option to turn it off. Usage reporting separates audio seconds from video.\n\nThe 9B `klein-large` model was added for text-to-image generation and reference-image editing. Flux also gained a 1024×1024 total-pixel cap, clearer dimension validation, and HTTP errors instead of server crashes on unexpected generation failures.\n\n`gemini-legacy` was added with a 1M-token context window and support for text, image, audio, and video inputs. It returns text and supports reasoning, tools, search, and code execution.",
+  "title": "Turn images into video with Wan 2.6",
+  "summary": "Image-to-video, Gemini 2.5 Pro, and a larger Klein model joined the lineup, while Flux gained canvas room and model health stats got clearer.\n\nAlibaba Wan 2.6 was added as `wan`. It turns an input image into 720P video lasting 2–15 seconds, with auto-dubbed audio on by default and an option to turn it off. Usage reporting now separates audio seconds from video usage; the shared usage headers no longer include `x-usage-total-tokens`.\n\nGoogle's Gemini 2.5 Pro was added as `gemini-legacy`, with a 1M-token context window, multimodal input, reasoning, tools, search, and code execution.\n\n`klein-large` adds the 9B FLUX.2 Klein model for image generation and reference-image editing under a non-commercial license. Flux also accepts up to 1024×1024 total pixels, up from 768×768, and rejects out-of-range dimensions with HTTP 400.",
   "pr_count": 7,
   "prs": [
     {
@@ -35,34 +35,43 @@
       "date": "2026-01-21"
     }
   ],
-  "generated_at": "2026-10-17T16:00:39.550526+00:00",
+  "generated_at": "2026-10-17T22:38:35.477327+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Turn images into video",
-      "text": "Use `wan` to turn an image into a 720p video lasting 2–15 seconds. Auto-dubbed audio is on by default; set `audio=false` to skip it. [View the model](https://enter.pollinations.ai/models?q=wan).",
+      "title": "Images become Wan videos",
+      "text": "Send an image to `wan` for a 720P video lasting 2–15 seconds. Auto-dubbed audio is on by default; set `audio=false` to leave it out. [Browse the model](https://enter.pollinations.ai/models?q=wan).",
       "prs": [
         7513
       ],
       "kind": "model"
     },
     {
+      "emoji": "🤖",
+      "title": "Gemini 2.5 Pro added",
+      "text": "Use `gemini-legacy` for a 1M-token context window, multimodal input, reasoning, tools, search, and code execution. [Browse the model](https://enter.pollinations.ai/models?q=gemini-legacy).",
+      "prs": [
+        7518
+      ],
+      "kind": "model"
+    },
+    {
       "emoji": "🎨",
       "title": "Klein gets a 9B variant",
-      "text": "Generate images or edit them with reference images using `klein-large`. The 9B model has a non-commercial license. [View the model](https://enter.pollinations.ai/models?q=klein-large).",
+      "text": "Generate or edit images with reference images using `klein-large`, the FLUX.2 Klein 9B variant. It carries a non-commercial license. [Browse the model](https://enter.pollinations.ai/models?q=klein-large).",
       "prs": [
         7523
       ],
       "kind": "model"
     },
     {
-      "emoji": "🤖",
-      "title": "Gemini 2.5 Pro added",
-      "text": "Use `gemini-legacy` for a 1M-token context window, multimodal inputs, reasoning, tools, search, and code execution. It returns text. [View the model](https://enter.pollinations.ai/models?q=gemini-legacy).",
+      "emoji": "✨",
+      "title": "Larger Flux image canvases",
+      "text": "Flux now accepts up to 1024×1024 total pixels, up from 768×768, giving image prompts more room to work. [Explore image generation](https://gen.pollinations.ai/docs).",
       "prs": [
-        7518
+        7522
       ],
-      "kind": "model"
+      "kind": "api"
     }
   ],
   "changelog": []

@@ -2,16 +2,12 @@
   "date": "2026-09-20",
   "period_start": "2026-09-20",
   "period_end": "2026-09-20",
-  "title": "A new bilingual image studio joins the garden",
-  "summary": "A new bilingual image studio landed, Jev gained a proper decisions endpoint, and Mistral Small 4 got a more direct route.\n\nAtelier — Pollinations Image Studio is now live at image.xt1171.eu.org. It offers English and 简体中文 interfaces, live selection from the current image-model catalog, and reference-image editing for iterating on a result instead of politely starting over from scratch.\n\nDevelopers can now send typed state-and-question requests to POST /alpha/decisions and receive native answers plus token usage, without packing structured work into chat messages. Ask Jev MCP uses the same authenticated path, while the existing chat route remains intact. Jev is also now canonically available as typesafe/jev-1.13, with the older names continuing to work.\n\nMistral Small 4 and its aliases now default directly to Mistral's mistral-small-2603 checkpoint, with OpenRouter retained as an automatic fallback. Same model, fewer layers of infrastructure doing interpretive dance.",
-  "pr_count": 5,
+  "title": "Jev gets a native decisions endpoint",
+  "summary": "Jev gained a native decisions API, Mistral Small 4 got a direct route, and a community image studio joined the catalog.\n\nAdded `POST /alpha/decisions` for JSON requests with a state and named choice, score, or noul questions. It returns answers and token usage, and Ask Jev MCP now uses the same request schema. The team also made `typesafe/jev-1.13` the canonical model name in API responses while keeping `jev` and `typesafe/jev` as aliases.\n\nMistral Small 4 and its existing aliases now route through Mistral’s direct API rather than OpenRouter, with the same checkpoint and a 64,000-token output default. The fallback remains available.\n\nCommunity-built Atelier joined the image app catalog. Its English and Simplified Chinese interface supports prompt-based generation and reference-image editing with the Pollinations image API.",
+  "pr_count": 4,
   "prs": [
     {
       "number": 15207,
-      "date": "2026-09-20"
-    },
-    {
-      "number": 15208,
       "date": "2026-09-20"
     },
     {
@@ -27,23 +23,15 @@
       "date": "2026-09-20"
     }
   ],
-  "generated_at": "2026-09-21T06:39:19.540240+00:00",
+  "generated_at": "2026-10-17T23:13:39.339003+00:00",
   "highlights": [
     {
-      "emoji": "🎨",
-      "title": "Atelier image studio",
-      "text": "Make images with live model selection and reference-image editing in English or Simplified Chinese. [Try it](https://image.xt1171.eu.org).",
-      "prs": [
-        15207
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🤖",
+      "emoji": "🎯",
       "title": "Typed decisions with Jev",
-      "text": "Send typed state and questions to `POST /alpha/decisions` and get answers with token usage. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "text": "Send a state and named choice, score, or noul questions as JSON to `POST /alpha/decisions`. Get native answers and token usage back without packing the request into a chat message. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        15217
+        15217,
+        15243
       ],
       "kind": "api"
     }

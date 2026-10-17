@@ -3,7 +3,7 @@
   "period_start": "2025-10-29",
   "period_end": "2025-10-29",
   "title": "More room for Seedream images",
-  "summary": "Seedream gets a larger canvas, image routing gets tidier, and several model settings change.\n\nSeedream’s maximum pixel budget increased from 2048×2048 to 4096×4096. Requests without dimensions now default to 1024×1024, rather than the maximum. Other image models keep their existing defaults.\n\nEnter’s image proxy now forwards request methods, headers, and bodies as expected. Kontext requests through Enter no longer hit the Seed-tier check, and its model configuration now matches the registry used for resolution and tier enforcement. Seedream requests are restricted to Enter.\n\n`openai-large` now uses GPT-4.1 instead of GPT-5 Chat. The same update changes input and output limits for several models and raises the required tiers for `qwen-coder` and `mistral`.",
+  "summary": "Seedream gained a larger canvas, `openai-large` switched to GPT-4.1, and Enter's image request path got repairs.\n\nSeedream's maximum image size increased to 4096×4096 pixels. Requests without dimensions now default to 1024×1024 instead of the maximum, and Seedream requests must go through Enter rather than the direct image service.\n\n`openai-large` now uses GPT-4.1 instead of GPT-5 Chat, with a 10,000-character input limit. Input and output limits also decreased for `openai-audio`, the GPT-5 Chat output limit decreased, and `qwen-coder` and `mistral` now require Flower and Seed access respectively.\n\nEnter's image proxy now forwards request details needed by the upstream image service. Kontext requests through Enter no longer hit the Seed-tier check, and its model configuration now matches the registry used for resolution and access checks.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,14 +27,23 @@
       "date": "2025-10-29"
     }
   ],
-  "generated_at": "2026-10-17T15:50:26.003184+00:00",
+  "generated_at": "2026-10-17T22:35:06.235958+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "A larger Seedream canvas",
-      "text": "Seedream now supports a maximum pixel budget of 4096×4096. Leave dimensions out for a 1024×1024 image, or specify a larger size through Enter. [View Seedream](https://enter.pollinations.ai/models?q=seedream).",
+      "title": "Larger Seedream images",
+      "text": "Request Seedream images up to 4096×4096 pixels. Leave dimensions out for a 1024×1024 default. [Browse models](https://enter.pollinations.ai/models?q=seedream).",
       "prs": [
         4848
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "GPT-4.1 for openai-large",
+      "text": "`openai-large` now uses GPT-4.1 instead of GPT-5 Chat, with a 10,000-character input limit. [View the model](https://enter.pollinations.ai/models?q=openai-large).",
+      "prs": [
+        4857
       ],
       "kind": "model"
     }

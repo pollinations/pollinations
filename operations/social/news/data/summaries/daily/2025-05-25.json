@@ -2,8 +2,8 @@
   "date": "2025-05-25",
   "period_start": "2025-05-25",
   "period_end": "2025-05-25",
-  "title": "A code generator joins the project showcase",
-  "summary": "A community code generator joined the showcase, while text error handling and ad routing got tidier.\n\nThe project list and LLM Integrations page now include a community-built Websim app that generates code from a description and programming language, with explainer and reviewer modes.\n\nError logging now tolerates null entries in message arrays instead of throwing a second error while handling the first one. Software has enough layers of errors already.\n\nA broad referrer exclusion was narrowed, Windsurf and Claude AI were added to affiliate options, and Character.AI’s selection weight was reduced.",
+  "title": "A code generator joins the showcase",
+  "summary": "A community code generator joined the showcase, while text error handling and ad matching got more precise.\n\nA community-built Websim app was added to the project list and LLM Integrations showcase. It generates code from a description and chosen language, and includes Explainer and Reviewer modes.\n\nError logging now tolerates null entries in message arrays instead of throwing a second error and obscuring the original response.\n\nAd processing now skips the specific `v1_rblx_access` referrer rather than any referrer containing `roblox`. Affiliate selection was also adjusted, with Windsurf and Claude AI added and Character.AI weighted lower.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,7 +15,17 @@
       "date": "2025-05-25"
     }
   ],
-  "generated_at": "2026-10-17T15:40:36.034000+00:00",
-  "highlights": [],
+  "generated_at": "2026-10-17T22:31:32.154122+00:00",
+  "highlights": [
+    {
+      "emoji": "💡",
+      "title": "Community code generator",
+      "text": "A Websim app in the project showcase generates code from a description and chosen language, with modes for explaining and reviewing code.",
+      "prs": [
+        2086
+      ],
+      "kind": "product"
+    }
+  ],
   "changelog": []
 }

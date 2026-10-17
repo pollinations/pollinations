@@ -2,16 +2,28 @@
   "date": "2026-04-12",
   "period_start": "2026-04-05",
   "period_end": "2026-04-11",
-  "title": "The free tier gets heavier",
-  "summary": "We moved heavy-hitting models to the free tier, stabilized backend routing, and welcomed a massive wave of new community apps.\n\nWe consolidated some backend providers and decided to just make a bunch of heavy hitters free. GPT-5.4, Grok-4-20, Qwen Coder, gptimage-large, and FLUX.1 Kontext are now available without a subscription.\n\nDeepSeek and Kimi got routed to Fireworks for better uptime, Gemini Flash Lite is now pooling quota on Vertex's global endpoint, and we fixed a nasty CUDA hang by swapping in Sana Sprint 1.6B on the Lambda workers.\n\nYou all shipped 20 new apps to the community directory this week. The greenhouse now includes native macOS clients, Android roleplay chats, philosophical analyzers, and botanical quiz games.\n\nWe handed the GitHub repository keys over to our AI mascot. Polly now autonomously triages issues, flags duplicates, and decides whether to comment, label, or close tickets.",
-  "pr_count": 36,
+  "title": "More models, familiar endpoints",
+  "summary": "New models arrived while the routes, image handling, pricing estimates, and community showcase around them got a careful tune-up.\n\nThe text lineup gained `grok-large` for Grok 4.20 Reasoning and `mistral-large` for Mistral Large 3. `openai` moved to GPT-5.4 Nano, `openai-large` to GPT-5.4, and `openai-audio-large` to GPT-Audio 1.5. Several existing models also stopped requiring paid access.\n\nDeepSeek V3.2 and Kimi K2.5 were returned to Fireworks after a replacement route showed a reported failure rate of about 75%, then moved to different backends later in the week. Gemini 2.5 Flash Lite’s routing was also adjusted twice to address quota-related 429s, ending with a move to Vertex’s global endpoint. Public model names stayed the same for DeepSeek and Kimi.\n\nThe community catalog gained chat, image, video, writing, and creative tools, including URV AI Chat, Chroma, Dreamframe, polimage, and Splash Tool. Across the week, catalog and README updates removed broken listings, refreshed showcase data, restored a creator’s listing, and credited app makers by their own accounts rather than a generic one.\n\nNunchaku now serializes GPU work, detects out-of-memory errors, and caps requests at 810,000 pixels. An empty image model parameter falls back to `zimage`. The image API also dropped its unused `/feed` event stream and feed-payload work; `nofeed` and `private` remain accepted but no longer control feed publishing.",
+  "pr_count": 53,
   "prs": [
+    {
+      "number": 9960,
+      "date": "2026-04-05"
+    },
     {
       "number": 9965,
       "date": "2026-04-05"
     },
     {
       "number": 9967,
+      "date": "2026-04-05"
+    },
+    {
+      "number": 9969,
+      "date": "2026-04-05"
+    },
+    {
+      "number": 9970,
       "date": "2026-04-05"
     },
     {
@@ -31,15 +43,51 @@
       "date": "2026-04-05"
     },
     {
+      "number": 9988,
+      "date": "2026-04-06"
+    },
+    {
+      "number": 9993,
+      "date": "2026-04-06"
+    },
+    {
+      "number": 9996,
+      "date": "2026-04-06"
+    },
+    {
       "number": 10003,
       "date": "2026-04-06"
+    },
+    {
+      "number": 10022,
+      "date": "2026-04-07"
+    },
+    {
+      "number": 10025,
+      "date": "2026-04-07"
     },
     {
       "number": 10027,
       "date": "2026-04-07"
     },
     {
+      "number": 10040,
+      "date": "2026-04-08"
+    },
+    {
+      "number": 10048,
+      "date": "2026-04-08"
+    },
+    {
       "number": 10049,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10060,
+      "date": "2026-04-09"
+    },
+    {
+      "number": 10061,
       "date": "2026-04-09"
     },
     {
@@ -99,6 +147,10 @@
       "date": "2026-04-09"
     },
     {
+      "number": 10079,
+      "date": "2026-04-09"
+    },
+    {
       "number": 10080,
       "date": "2026-04-09"
     },
@@ -123,7 +175,7 @@
       "date": "2026-04-09"
     },
     {
-      "number": 10094,
+      "number": 10097,
       "date": "2026-04-09"
     },
     {
@@ -135,7 +187,19 @@
       "date": "2026-04-10"
     },
     {
+      "number": 10102,
+      "date": "2026-04-10"
+    },
+    {
+      "number": 10106,
+      "date": "2026-04-10"
+    },
+    {
       "number": 10109,
+      "date": "2026-04-10"
+    },
+    {
+      "number": 10116,
       "date": "2026-04-10"
     },
     {
@@ -143,13 +207,17 @@
       "date": "2026-04-10"
     },
     {
-      "number": 10127,
+      "number": 10120,
       "date": "2026-04-11"
     },
     {
-      "number": 10135,
+      "number": 10122,
+      "date": "2026-04-11"
+    },
+    {
+      "number": 10129,
       "date": "2026-04-11"
     }
   ],
-  "generated_at": "2026-04-12T06:31:06.535848+00:00"
+  "generated_at": "2026-10-17T23:27:13.694863+00:00"
 }

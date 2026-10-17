@@ -3,7 +3,7 @@
   "period_start": "2025-12-05",
   "period_end": "2025-12-05",
   "title": "Shorter paths for the generation API",
-  "summary": "Shorter API paths and a new text model arrived alongside an image-editing fix and two community project listings.\n\nA new gen.pollinations.ai gateway adds shorter paths for image and text generation, OpenAI-compatible requests, and the text model list. The API documentation now uses those paths and explains text-generation query parameters.\n\nAdded `nova-micro` for text conversations and tool use, with `amazon-nova-micro` and `nova` as aliases.\n\nGPT Image img2img requests now use `gpt-image-1-mini` through the image edits endpoint instead of switching to `gpt-image-1`.",
+  "summary": "Shorter API paths and Amazon Nova Micro joined the model lineup, alongside a GPT Image editing fix and two community project listings.\n\nAdded a `gen.pollinations.ai` gateway with shorter image, text and OpenAI-compatible paths, plus a `/models` shortcut. The API documentation now uses the new paths and covers text-generation query parameters.\n\nAdded Amazon Nova Micro as `nova-micro`, with `amazon-nova-micro` and `nova` aliases. It supports text conversations and tools.\n\nFixed GPT Image img2img requests to use `gpt-image-1-mini` with the image-editing endpoint, rather than switching models. This PR also included gateway and documentation changes covered above.",
   "pr_count": 5,
   "prs": [
     {
@@ -27,21 +27,22 @@
       "date": "2025-12-05"
     }
   ],
-  "generated_at": "2026-10-17T15:54:07.009641+00:00",
+  "generated_at": "2026-10-17T22:36:24.197129+00:00",
   "highlights": [
     {
       "emoji": "🔗",
       "title": "Shorter generation API paths",
-      "text": "Call image and text generation through shorter `gen.pollinations.ai` paths, with `/models` as a shortcut to the text model list. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "text": "Use `gen.pollinations.ai` paths such as `/image/*`, `/text/*` and `/v1/*`, with `/models` as a shortcut to the text model list. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        5672
+        5672,
+        5676
       ],
       "kind": "api"
     },
     {
       "emoji": "🤖",
       "title": "Amazon Nova Micro added",
-      "text": "Use `nova-micro` for text conversations and tool calls. [Browse the model](https://enter.pollinations.ai/models?q=nova-micro).",
+      "text": "Use `nova-micro` for text conversations and tool calls; `amazon-nova-micro` and `nova` are aliases. [View the model](https://enter.pollinations.ai/models?q=nova-micro).",
       "prs": [
         5677
       ],

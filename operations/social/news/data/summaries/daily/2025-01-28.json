@@ -3,7 +3,7 @@
   "period_start": "2025-01-28",
   "period_end": "2025-01-28",
   "title": "DeepSeek-R1 joins the text models",
-  "summary": "DeepSeek-R1 was added, the community showcase got its projects back, and submitting an app became less of a scavenger hunt.\n\nAdded the reasoning-enabled `deepseek-r1` chat model. `llamalight` now uses Llama 3.1 8B through Cloudflare, while `p1` was removed from the model list. The text API’s per-IP queue cap was removed, and image request queues were adjusted.\n\nThe Projects page now has a Submit Your Project button that opens a structured GitHub issue form. The README links to the form too, replacing the previous email-based submission route.\n\nProjects missing after the previous UI update were restored and organized into categories covering integrations, creative apps, tools, bots, libraries, and tutorials. The README project list and image-generation figures were updated, and the website footer now identifies Pollinations as open source and based in Berlin.",
+  "summary": "DeepSeek-R1 joined the model lineup, while community projects got their listings back and a simpler way to submit new ones.\n\nAdded `deepseek-r1`, a reasoning-enabled DeepSeek-R1 Distill Qwen 32B chat model. `llamalight` now uses Llama 3.1 8B, and the text API’s 60-request per-IP queue cap was removed.\n\nThe Projects page now has a Submit Your Project button that opens a GitHub issue form, replacing email submissions. The form asks how a project uses Pollinations and what it was built with.\n\nProject listings lost in the previous UI update were restored and organized by type, from LLM integrations to tutorials. The site and README also got updated image-generation figures and a clearer description of Pollinations’ open-source roots and Berlin location.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,12 +23,12 @@
       "date": "2025-01-28"
     }
   ],
-  "generated_at": "2026-10-17T15:33:15.095339+00:00",
+  "generated_at": "2026-10-17T22:28:54.439090+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "DeepSeek-R1 joins the models",
-      "text": "Try reasoning-enabled chat with `deepseek-r1`, based on DeepSeek-R1 Distill Qwen 32B. [Browse the model](https://enter.pollinations.ai/models?q=deepseek-r1).",
+      "title": "DeepSeek-R1 joins the lineup",
+      "text": "Try the reasoning-enabled `deepseek-r1` chat model, based on DeepSeek-R1 Distill Qwen 32B. [Browse the model](https://enter.pollinations.ai/models?q=deepseek-r1).",
       "prs": [
         1105
       ],
@@ -37,7 +37,7 @@
     {
       "emoji": "✨",
       "title": "Submit your project",
-      "text": "Built something with Pollinations? The Projects page now has a Submit Your Project button that opens a GitHub issue form. [Explore projects](https://pollinations.ai).",
+      "text": "Built something with Pollinations? The Projects page now has a Submit Your Project button that opens a GitHub issue form for sharing it. [Visit the community showcase](https://pollinations.ai).",
       "prs": [
         1106
       ],

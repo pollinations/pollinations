@@ -2,9 +2,9 @@
   "date": "2026-08-30",
   "period_start": "2026-08-23",
   "period_end": "2026-08-29",
-  "title": "Agents got a hosted tool shelf",
-  "summary": "This week made Pollinations more composable: agents gained a hosted tool shelf, creators gained clearer earnings and publishing paths, and the model catalog became much easier to search, inspect, and use.\n\nAgent composition arrived alongside endpoint-agent registration, a hosted MCP registry and Gen proxy, and new MCP tools for transcription, FFmpeg media work, and Exa web search. Agents can now discover agents, call them under inherited permissions, and reach hosted tools through one authenticated, Pollen-accounted path. Software continues its gradual transformation into a very organized pile of tools.\n\nModel browsing gained structured search qualifiers, autocomplete, direct Play links, tool-calling markers, context-window and video-duration details, and publisher-qualified canonical IDs ahead of the September transition. New OpenAI-compatible model lookup support rounds out a catalog that is increasingly usable by both humans and clients.\n\nVideo generation expanded with Wan 3.0 and Gemini Omni 1.1 Flash, while Seedance gained image, video, and audio reference inputs. Registry-defined frame limits, catalog duration metadata, better provider error preservation, and direct model routing make the growing video stack clearer at the edges where APIs tend to become interpretive dance.\n\nEarnings landed in both the SDK and polli CLI, model cards now link directly to earnings activity, and a public Quest leaderboard recognizes contributors. Community-model publication and term changes gained visible scheduling, while Quest rewards were clarified and wired to the author of the merged solution.",
-  "pr_count": 99,
+  "title": "Agents got a workshop",
+  "summary": "Agents gained more tools, video gained more ways to be guided, and the growing model catalog became easier to navigate.\n\nAgents can now delegate to other agents, load tools from a hosted MCP registry, transcribe audio, search and fetch web pages, and process media with FFmpeg. Endpoint-agent registration and CLI commands make them easier to set up; a new command also connects DeepSeek Harness to Pollinations models and MCP tools.\n\nRoutes were added for Seedance 2.5, Wan 3.0, and Gemini Omni video generation. Seedance gained reference image, video, and audio URLs; Wan supports short clips from text or an image; and Gemini Omni generates video with synchronized audio. Longer media requests can rejoin an in-progress job, while video frame limits are now enforced rather than silently ignored.\n\nThe catalog gained a “Hide paid” filter, searchable access and capability filters, autocomplete, and tooltips for declared context-window and video-duration limits. Eligible models now open directly in the right Play tab. Publisher-qualified IDs already work as aliases; they are planned to become canonical on September 7 at 14:00 UTC, with existing IDs remaining aliases.\n\nNew routes include MiniMax H3, Qwen Image 3, Z-Image, and paid-only GLM-5.3 Flash. GLM-5.3 moved to a direct Fireworks route and is no longer marked paid-only; its reasoning requirement remains. Text requests gained additional controls, and model lookup by ID or alias was added.",
+  "pr_count": 93,
   "prs": [
     {
       "number": 13496,
@@ -31,7 +31,7 @@
       "date": "2026-08-23"
     },
     {
-      "number": 13738,
+      "number": 13739,
       "date": "2026-08-23"
     },
     {
@@ -43,19 +43,7 @@
       "date": "2026-08-23"
     },
     {
-      "number": 13751,
-      "date": "2026-08-23"
-    },
-    {
       "number": 13755,
-      "date": "2026-08-23"
-    },
-    {
-      "number": 13757,
-      "date": "2026-08-23"
-    },
-    {
-      "number": 13758,
       "date": "2026-08-23"
     },
     {
@@ -64,6 +52,10 @@
     },
     {
       "number": 13762,
+      "date": "2026-08-23"
+    },
+    {
+      "number": 13766,
       "date": "2026-08-23"
     },
     {
@@ -99,10 +91,6 @@
       "date": "2026-08-24"
     },
     {
-      "number": 13803,
-      "date": "2026-08-24"
-    },
-    {
       "number": 13804,
       "date": "2026-08-24"
     },
@@ -116,14 +104,6 @@
     },
     {
       "number": 13816,
-      "date": "2026-08-24"
-    },
-    {
-      "number": 13831,
-      "date": "2026-08-24"
-    },
-    {
-      "number": 13834,
       "date": "2026-08-24"
     },
     {
@@ -155,6 +135,10 @@
       "date": "2026-08-25"
     },
     {
+      "number": 13841,
+      "date": "2026-08-25"
+    },
+    {
       "number": 13852,
       "date": "2026-08-25"
     },
@@ -176,10 +160,6 @@
     },
     {
       "number": 13880,
-      "date": "2026-08-25"
-    },
-    {
-      "number": 13885,
       "date": "2026-08-25"
     },
     {
@@ -220,10 +200,6 @@
     },
     {
       "number": 13741,
-      "date": "2026-08-26"
-    },
-    {
-      "number": 13941,
       "date": "2026-08-26"
     },
     {
@@ -403,5 +379,5 @@
       "date": "2026-08-29"
     }
   ],
-  "generated_at": "2026-08-30T06:27:26.163568+00:00"
+  "generated_at": "2026-10-17T23:28:34.604860+00:00"
 }

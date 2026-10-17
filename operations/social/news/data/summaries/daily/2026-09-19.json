@@ -2,24 +2,16 @@
   "date": "2026-09-19",
   "period_start": "2026-09-19",
   "period_end": "2026-09-19",
-  "title": "Five more ways to build with Pollinations",
-  "summary": "A community-heavy day: new browser-only BYOP examples, creative apps, healthier model discovery, and analytics that can finally count what happened.\n\nThe app directory gained PersonaMorph for wallet-connected artistic photo edits and Oracle Mystique for illustrated three-card tarot readings. Both are small, opinionated examples of what happens when image generation, chat, OAuth, and somebody's very specific idea collide.\n\nThree Arabic RTL apps joined the directory: baboolharech, Text to Speech in video_audio, and aaarraaa. Each demonstrates the BYOP OAuth 2.1 PKCE flow entirely in the browser, so builders can explore authenticated image, speech, and login flows without first adopting the ancient tradition of maintaining a backend.\n\nThe /v1/models and /models endpoints now return cached health data by default, including 24-hour status, success rate, and request volume. Developers can make a more informed model choice before finding out the interesting way; the API safely reports unknown when the health feed is unavailable.",
-  "pr_count": 10,
+  "title": "Model listings now include health",
+  "summary": "Model listings gained a health signal, while five community apps joined the catalog.\n\nModel discovery responses gained a `health` field by default, with status, success rate, and request count drawn from a rolling 24-hour window. Models without measurements report `unknown` rather than breaking discovery. The API reference was updated to explain the field.\n\nThe image app catalog added baboolharech, PersonaMorph, and aaarraaa. PersonaMorph turns photos into artistic personas; baboolharech and aaarraaa are Arabic right-to-left web apps. All three also appear in the README’s recent-apps list.\n\nOracle Mystique joined the chat catalog with illustrated tarot readings, and Text to speech joined the video/audio catalog. The README also refreshed its Latest News links to point to September 18 announcements.",
+  "pr_count": 8,
   "prs": [
-    {
-      "number": 15155,
-      "date": "2026-09-19"
-    },
     {
       "number": 15157,
       "date": "2026-09-19"
     },
     {
       "number": 15165,
-      "date": "2026-09-19"
-    },
-    {
-      "number": 15172,
       "date": "2026-09-19"
     },
     {
@@ -47,41 +39,15 @@
       "date": "2026-09-19"
     }
   ],
-  "generated_at": "2026-09-20T06:26:53.012936+00:00",
+  "generated_at": "2026-10-17T23:13:33.355882+00:00",
   "highlights": [
     {
-      "emoji": "🎨",
-      "title": "Photos become artistic personas",
-      "text": "PersonaMorph uses image edits to transform photos into artistic personas. [Try it](https://personamorph-ai-production.up.railway.app).",
+      "emoji": "🎯",
+      "title": "Check model health",
+      "text": "Model listings now include `health` by default, with a status, success rate, and request count from the last 24 hours. Models without measurements show `unknown`. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
-        15194
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "✨",
-      "title": "An illustrated tarot reading",
-      "text": "Oracle Mystique draws and illustrates Past, Present, and Future cards. [Try it](https://oracle-mystique.up.railway.app).",
-      "prs": [
-        15196
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎵",
-      "title": "Arabic text-to-speech app",
-      "text": "Text to speech brings an Arabic RTL interface to the community app directory. [Try it](https://thinglover21-ux.github.io/My-app-mod).",
-      "prs": [
-        15198
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Model health in listings",
-      "text": "Model discovery responses now include 24-hour status, success rate, and request count by default. Check the [available text models](https://gen.pollinations.ai/v1/models).",
-      "prs": [
-        15157
+        15157,
+        15165
       ],
       "kind": "api"
     }

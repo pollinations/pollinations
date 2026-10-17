@@ -2,10 +2,70 @@
   "date": "2026-02-08",
   "period_start": "2026-02-01",
   "period_end": "2026-02-07",
-  "title": "The Generative Media Explosion",
-  "summary": "We plugged in a ridiculous number of new models and finally gave the reasoning engines enough time to think.\n\nWe wired up a massive batch of new image and video models. LTX-2 via Modal gives us 1024x1024 video with audio. We also integrated api.airforce to bring in Imagen 3, Imagen 4, Flux 2 Dev, and Grok Video (which gets a shiny new 'Alpha' tag in the UI).\n\nUpgraded Claude to Opus 4.6 on Bedrock. More importantly, we moved the Portkey gateway to a custom domain to bump the proxy read timeout from 100s to 600s. Reasoning models can now actually finish their thoughts without the connection dropping. We also migrated Mistral to OVHcloud and ironed out the resulting config quirks.\n\nExpanded our Vast.ai GPU fleet and switched z-image to safetensors to eliminate image generation queues. Added some internal Grafana panels to keep an eye on the economics of it all.\n\nAdded a new `/v1/audio/speech` endpoint backed by ElevenLabs. It includes voice mapping for OpenAI compatibility, meaning you can just swap the base URL and get high-quality TTS.",
-  "pr_count": 15,
+  "title": "More ways to make things",
+  "summary": "The API grew across image, video and speech, while longer text requests, API key controls and contributor guidance got attention too.\n\nThe week added LTX-2 for 1–10-second video with audio and ElevenLabs text-to-speech through POST and GET endpoints. Image work included a TwinFlow-Z-Image-Turbo server and two new alpha models, Imagen 4 and FLUX.2 Dev. Grok Imagine Video was pulled from the model configuration after unreliable results on Friday, then added as an alpha model on Saturday.\n\nGPT-5 Mini’s completion limit rose from 1,024 to 16,384 tokens, and the text gateway moved off a request path that timed out on long-running prompts. Claude-large moved to Opus 4.6 with Opus 4.5 as a fallback; midijourney moved to GPT-5.2 while keeping its prompt transform. Model routing fixes and fresher MCP model lists rounded out the work.\n\nExisting API keys can now be renamed, enabled or disabled, and edited for budget, permissions, model access and expiry. Category-wide controls make model selection less fiddly. Microbe was added at 0.1 Pollen per day, the bulk refill check was fixed so an individual refill cannot skip everyone else, and Enter’s per-Pollen estimates now use observed seven-day usage.\n\nA GSoC 2026 hub brought project ideas, mentors, dates, FAQs and contribution guidance together. Follow-up edits clarified where to find proposal guidance and project-specific issues, corrected timeline and mentor details, and adjusted the site chatbot.",
+  "pr_count": 29,
   "prs": [
+    {
+      "number": 7269,
+      "date": "2026-02-02"
+    },
+    {
+      "number": 7850,
+      "date": "2026-02-02"
+    },
+    {
+      "number": 7854,
+      "date": "2026-02-02"
+    },
+    {
+      "number": 7855,
+      "date": "2026-02-02"
+    },
+    {
+      "number": 7858,
+      "date": "2026-02-02"
+    },
+    {
+      "number": 7866,
+      "date": "2026-02-02"
+    },
+    {
+      "number": 7857,
+      "date": "2026-02-03"
+    },
+    {
+      "number": 7862,
+      "date": "2026-02-03"
+    },
+    {
+      "number": 7875,
+      "date": "2026-02-03"
+    },
+    {
+      "number": 7904,
+      "date": "2026-02-03"
+    },
+    {
+      "number": 7537,
+      "date": "2026-02-04"
+    },
+    {
+      "number": 7917,
+      "date": "2026-02-04"
+    },
+    {
+      "number": 7943,
+      "date": "2026-02-04"
+    },
+    {
+      "number": 7947,
+      "date": "2026-02-04"
+    },
+    {
+      "number": 7949,
+      "date": "2026-02-04"
+    },
     {
       "number": 7877,
       "date": "2026-02-05"
@@ -20,10 +80,6 @@
     },
     {
       "number": 7922,
-      "date": "2026-02-06"
-    },
-    {
-      "number": 7994,
       "date": "2026-02-06"
     },
     {
@@ -67,5 +123,5 @@
       "date": "2026-02-07"
     }
   ],
-  "generated_at": "2026-03-18T22:22:09.582030+00:00"
+  "generated_at": "2026-10-17T23:26:38.703654+00:00"
 }

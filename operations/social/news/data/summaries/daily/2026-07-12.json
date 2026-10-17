@@ -2,9 +2,9 @@
   "date": "2026-07-12",
   "period_start": "2026-07-12",
   "period_end": "2026-07-12",
-  "title": "A faster, cleaner view of your Pollen activity",
-  "summary": "A dashboard-focused day: clearer Pollen activity, faster model discovery, a new reasoning model, and docs that survive copy-paste.\n\nThe Activity dashboard now runs on materialized Tinybird datasources, with unified infinite-scroll event history and daily charts for usage, earnings, BYOP markup, and community model rewards. Read-time event deduplication keeps the charts, transactions, and CSV exports accurate.\n\nThe dashboard’s Models section gained a search bar that filters by model name, display name, description, and provider while leaving navigation tabs in place. Muse Spark 1.1 also joined the catalog for text and image-to-text work, including its always-on reasoning mode.\n\nThe Python Quick Start now uses the correct OpenAI SDK `/v1` base URL, and generated media API docs send upload and retrieval curl examples to media.pollinations.ai rather than a text endpoint. Small slashes, large amounts of developer time.",
-  "pr_count": 7,
+  "title": "Activity gets a clearer picture of usage and earnings",
+  "summary": "A clearer Activity dashboard, searchable models, Muse Spark 1.1, and documentation that points to the right places.\n\nEnter’s Activity tab now brings API usage, app markup earnings, and community model rewards into a paginated Last events feed. Charts switch between Pollen and request counts, with filters for keys, models, apps, and community models. Usage exports distinguish API keys, and duplicate events no longer inflate charts, transactions, or CSVs. The data window starts on January 1, 2026.\n\nCommunity-contributed search in the dashboard’s Models section filters by name, description, or brand without switching tabs. An All tab is now the default, so the catalog starts with the whole catalog rather than just images.\n\nMeta Muse Spark 1.1 was added as a paid-only text model. It accepts text and up to 10 reference images, supports tools and reasoning, and has a 1,048,576-token context window.",
+  "pr_count": 12,
   "prs": [
     {
       "number": 11939,
@@ -15,7 +15,27 @@
       "date": "2026-07-12"
     },
     {
+      "number": 12268,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12270,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12271,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12285,
+      "date": "2026-07-12"
+    },
+    {
       "number": 12286,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12347,
       "date": "2026-07-12"
     },
     {
@@ -35,35 +55,86 @@
       "date": "2026-07-12"
     }
   ],
-  "generated_at": "2026-07-13T13:07:44.652695+00:00",
+  "generated_at": "2026-10-17T23:01:41.124486+00:00",
   "highlights": [
     {
-      "emoji": "✨",
-      "title": "The hive’s ledger",
-      "text": "Track exact Pollen spend and earnings together in a fast Activity dashboard, with infinite event history and daily breakdowns.",
+      "emoji": "📱",
+      "title": "Activity in one place",
+      "text": "Review API usage, app earnings, and community model rewards in a Last events feed. Switch charts between Pollen and request counts, then filter usage or earnings to see what contributed.",
       "prs": [
-        11939
+        11939,
+        12349
       ],
       "kind": "product"
     },
     {
-      "emoji": "🔍",
-      "title": "Find a model without spelunking",
-      "text": "The dashboard’s Models catalog now searches names, brands, and descriptions while keeping category tabs pinned.",
+      "emoji": "🎯",
+      "title": "Search the model catalog",
+      "text": "Find models by name, description, or brand in the dashboard. The new All tab shows the full catalog by default. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         12286
       ],
       "kind": "product"
     },
     {
-      "emoji": "🚀",
+      "emoji": "🤖",
       "title": "Muse Spark 1.1",
-      "text": "`muse-spark-1.1` is now available for paid text and vision generation, with always-on reasoning for harder prompts. [Browse models](https://gen.pollinations.ai/v1/models)",
+      "text": "Try paid-only `muse-spark` for text tasks with tools and reasoning; it can take up to 10 reference images. [Browse Muse Spark](https://enter.pollinations.ai/models?q=muse-spark).",
       "prs": [
         12350
       ],
       "kind": "model"
     }
   ],
-  "changelog": []
+  "changelog": [
+    {
+      "pr_number": 11939,
+      "url": "https://github.com/pollinations/pollinations/pull/11939",
+      "merged_at": "2026-07-12T00:30:32Z",
+      "api_changes": [
+        {
+          "id": "pr-11939:GET /account/earnings",
+          "endpoint": "GET /account/earnings",
+          "summary": "Get Developer Earnings",
+          "action": "CHANGE",
+          "breaking": true,
+          "changes": [
+            {
+              "field": "parameters:query:api_key_ids",
+              "before": {
+                "type": "string",
+                "required": false
+              },
+              "after": null,
+              "breaking": true
+            },
+            {
+              "field": "parameters:query:entity_ids",
+              "before": {
+                "type": "string",
+                "required": false
+              },
+              "after": null,
+              "breaking": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pr_number": 12347,
+      "url": "https://github.com/pollinations/pollinations/pull/12347",
+      "merged_at": "2026-07-12T11:41:10Z",
+      "api_changes": [
+        {
+          "id": "pr-12347:GET /account/earnings/transactions",
+          "endpoint": "GET /account/earnings/transactions",
+          "summary": "Get Earnings Transactions",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        }
+      ]
+    }
+  ]
 }

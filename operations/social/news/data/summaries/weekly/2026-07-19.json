@@ -2,9 +2,9 @@
   "date": "2026-07-19",
   "period_start": "2026-07-12",
   "period_end": "2026-07-18",
-  "title": "Community creations found a place to grow",
-  "summary": "The community filled the garden with new apps and shareable creations while the model catalog, dashboard, and generation routes grew easier to use.\n\nThe app directory gained a large batch of tools for voice translation, interactive fiction, design, video, study, and more. Tagged media uploads added shareable public galleries, and several community apps began publishing generated images there with source tags while keeping reference uploads unlisted. The week brought new Pollen quests for using an app through BYOP and keeping an app active.\n\nMuse Spark 1.1, GPT Realtime 2.1, Sana Sprint, GPT-OSS, HappyHorse 1.1, and several OpenRouter text models joined the lineup or received new defaults. Veo 3.1 Fast gained explicit 720p and 1080p tiers, while audio model listings became more accurate. Text, image, voice, and video builders got more choices without needing another API.\n\nActivity gained faster Pollen history, daily breakdowns, and read-time deduplication for charts and exports. Model search, clearer access labels, copyable IDs, and mobile-friendly cards made the growing catalog less of an excavation. Path-based dashboard routes preserve useful view state when links are shared or people return from sign-in and checkout.\n\nCommunity model owners can register models privately, test them with their own key, then publish them when ready. The 3D generation docs gained quick starts and model references, the Model Monitor began tracking 3D-capable models, and 3D requests moved to InferencePort’s official API endpoint.",
-  "pr_count": 116,
+  "title": "The model lineup widened across text, image, audio, and video",
+  "summary": "More models arrived, while the tools for finding them, sharing their output, and understanding their usage grew up around them.\n\nMuse Spark 1.1, GPT Realtime 2.1, Sana, GPT-OSS 20B, six additional text models, and HappyHorse 1.1 joined the lineup. Video gained distinct 720p and 1080p Veo 3.1 Fast options. Model descriptions and docs were updated to make capabilities and resolution choices easier to understand.\n\nNew community models now default to Private: owners can register and call them without listing them for everyone. Eligible publishers can make models Public, with visibility and pricing controls in the dashboard and Polli CLI. A daily Discord leaderboard and Model Monitor’s speed comparison offer more ways to see how community models perform.\n\nUploads gained optional tags and paginated public galleries, while untagged files remain unlisted. The upload limit rose to 100 MB, SDK uploads gained tag support, and uploads now receive unique URLs. CatGPT, AI Dungeon Master, and several community apps began publishing generated images to galleries or tagged media storage.\n\nEnter’s Activity tab brought API usage, app markup earnings, and community model rewards into a paginated events feed, with filters and charts for Pollen or request counts. Exports now distinguish API keys, and duplicate events no longer inflate reports. Two BYOP Quests added rewards for logging in through an app and for an external user logging in through an app owner’s authorization flow. Model listings also gained clearer Quest and Paid labels.",
+  "pr_count": 111,
   "prs": [
     {
       "number": 11939,
@@ -15,7 +15,27 @@
       "date": "2026-07-12"
     },
     {
+      "number": 12268,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12270,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12271,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12285,
+      "date": "2026-07-12"
+    },
+    {
       "number": 12286,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12347,
       "date": "2026-07-12"
     },
     {
@@ -35,7 +55,15 @@
       "date": "2026-07-12"
     },
     {
-      "number": 12294,
+      "number": 12312,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12338,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12355,
       "date": "2026-07-13"
     },
     {
@@ -47,7 +75,15 @@
       "date": "2026-07-13"
     },
     {
+      "number": 12371,
+      "date": "2026-07-13"
+    },
+    {
       "number": 12377,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12378,
       "date": "2026-07-13"
     },
     {
@@ -159,10 +195,6 @@
       "date": "2026-07-13"
     },
     {
-      "number": 12423,
-      "date": "2026-07-13"
-    },
-    {
       "number": 12424,
       "date": "2026-07-13"
     },
@@ -187,6 +219,10 @@
       "date": "2026-07-14"
     },
     {
+      "number": 12373,
+      "date": "2026-07-14"
+    },
+    {
       "number": 12428,
       "date": "2026-07-14"
     },
@@ -200,10 +236,6 @@
     },
     {
       "number": 12432,
-      "date": "2026-07-14"
-    },
-    {
-      "number": 12433,
       "date": "2026-07-14"
     },
     {
@@ -259,7 +291,7 @@
       "date": "2026-07-15"
     },
     {
-      "number": 12473,
+      "number": 12475,
       "date": "2026-07-15"
     },
     {
@@ -275,14 +307,6 @@
       "date": "2026-07-15"
     },
     {
-      "number": 12481,
-      "date": "2026-07-15"
-    },
-    {
-      "number": 12482,
-      "date": "2026-07-15"
-    },
-    {
       "number": 12484,
       "date": "2026-07-15"
     },
@@ -291,19 +315,11 @@
       "date": "2026-07-15"
     },
     {
-      "number": 12492,
-      "date": "2026-07-15"
-    },
-    {
       "number": 12493,
       "date": "2026-07-15"
     },
     {
       "number": 12494,
-      "date": "2026-07-15"
-    },
-    {
-      "number": 12499,
       "date": "2026-07-15"
     },
     {
@@ -327,14 +343,6 @@
       "date": "2026-07-17"
     },
     {
-      "number": 12510,
-      "date": "2026-07-17"
-    },
-    {
-      "number": 12515,
-      "date": "2026-07-17"
-    },
-    {
       "number": 12516,
       "date": "2026-07-17"
     },
@@ -348,10 +356,6 @@
     },
     {
       "number": 12522,
-      "date": "2026-07-17"
-    },
-    {
-      "number": 12523,
       "date": "2026-07-17"
     },
     {
@@ -371,23 +375,11 @@
       "date": "2026-07-18"
     },
     {
-      "number": 12533,
-      "date": "2026-07-18"
-    },
-    {
       "number": 12534,
       "date": "2026-07-18"
     },
     {
       "number": 12536,
-      "date": "2026-07-18"
-    },
-    {
-      "number": 12537,
-      "date": "2026-07-18"
-    },
-    {
-      "number": 12538,
       "date": "2026-07-18"
     },
     {
@@ -427,10 +419,6 @@
       "date": "2026-07-18"
     },
     {
-      "number": 12560,
-      "date": "2026-07-18"
-    },
-    {
       "number": 12566,
       "date": "2026-07-18"
     },
@@ -439,19 +427,11 @@
       "date": "2026-07-18"
     },
     {
-      "number": 12568,
-      "date": "2026-07-18"
-    },
-    {
       "number": 12569,
       "date": "2026-07-18"
     },
     {
       "number": 12571,
-      "date": "2026-07-18"
-    },
-    {
-      "number": 12573,
       "date": "2026-07-18"
     },
     {
@@ -471,5 +451,5 @@
       "date": "2026-07-18"
     }
   ],
-  "generated_at": "2026-10-17T16:07:47.133260+00:00"
+  "generated_at": "2026-10-17T23:28:08.837637+00:00"
 }

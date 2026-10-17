@@ -2,8 +2,8 @@
   "date": "2025-03-31",
   "period_start": "2025-03-01",
   "period_end": "2025-03-31",
-  "title": "More models behind one text API",
-  "summary": "March made Pollinations easier to use from existing tools, with more model choices, broader audio support, and a growing community directory.\n\nGemini, Qwen reasoning, Mistral Small, and new vision and Roblox-focused options joined the chat lineup. An OpenAI-compatible chat endpoint gave existing clients a familiar way in.\n\nThe text API gained selectable voices and streaming audio. The MCP server grew from image generation to text, speech, and model discovery, then got a clearer package and installation path.\n\nProjects moved higher on the homepage as the directory gained creative apps, bots, tutorials, and SDKs. ComfyUI and OpenWebUI guides offered more ways to connect Pollinations to tools people already use.\n\nModel routing, image fallbacks, and request defaults were adjusted. Cache work for image and text responses, plus a SearchGPT streaming fix, made repeat requests and response formats more predictable.",
+  "title": "More models, a familiar chat endpoint",
+  "summary": "March made Pollinations easier to use from existing clients and assistants, while widening the model lineup and tending the community directory.\n\nAn OpenAI-compatible `/v1/chat/completions` endpoint joined the text API alongside Gemini, DeepSeek, Qwen reasoning, Phi, and vision-capable Mistral Small. Function calling, system instructions, and model routing also got more consistent.\n\n`openai-audio` added speech generation to the text API. The MCP server then gave assistants tools for images, text, speech, and model discovery, with a corrected package command and setup guides.\n\nShort prompts stopped receiving automatic enhancement, image generation gained fallbacks when Cloudflare Flux fails, and the docs added examples for sending local images to vision models. Image flags and private feed handling became more precise.\n\nApps, SDKs, bots, and tutorials joined the showcase, from a ComfyUI node and Flutter SDK to creative apps and multilingual guides. Featured projects moved higher on the homepage, and listings gained clearer categories and credits.",
   "pr_count": 106,
   "prs": [
     {
@@ -431,5 +431,5 @@
       "date": "2025-03-31"
     }
   ],
-  "generated_at": "2026-10-17T16:08:33.904698+00:00"
+  "generated_at": "2026-10-17T23:30:19.852527+00:00"
 }

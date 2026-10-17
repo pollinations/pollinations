@@ -2,8 +2,8 @@
   "date": "2025-01-26",
   "period_start": "2025-01-19",
   "period_end": "2025-01-25",
-  "title": "The text API grew in models and capacity",
-  "summary": "More ways to make things, fewer obstacles in the request path, and a rebuilt front door for finding what the community has made.\n\nClaude 3.5 Haiku, Qwen 2.5 Coder 32B, and DeepSeek reasoning joined the text API. The request limit rose from 40 to 200 per minute, while model routing and error handling were tightened. The 56,000-character input check was removed for `openai` by the following day.\n\nThe homepage rebuild made projects, integration examples, and news easier to explore across screen sizes. Tutorials gained an interactive book of more than 90 artistic styles, community tools were linked from the site and README, and familiar image-prompt redirects were restored.\n\nRequests without dimensions now default to 1024×1024, and Flux Schnell gained 1024×1024 generation through Cloudflare Workers AI. Prompt sanitization preserves Persian and other non-Latin characters. Flux and Turbo received lower maximum side lengths, and four image-model variants were removed.\n\nA Realistic persona prompt emphasizes actionable advice that accounts for real-world constraints. Unity’s image instructions now favor raw Pollinations URLs with `enhance=true`, while selfie prompts refer to the current user’s preferred aesthetic.",
+  "title": "The text API gained range and breathing room",
+  "summary": "More ways to make things: expanded text models, larger default images, and a rebuilt place to explore them.\n\nClaude Hybridspace, Qwen Coder, and DeepSeek Reasoner joined the text API, while `llamalight` and `llama` moved to new Llama versions. The rate limit rose from 40 to 200 requests per minute, and the 56,000-character input check was removed. OpenRouter routing and error handling also changed, and a Realistic persona added an option for advice grounded in practical constraints.\n\nImages requested without dimensions now default to 1024×1024, with a matching Flux Schnell generation path through Cloudflare Workers AI. Prompt sanitization now preserves Persian and other non-Latin characters. Unity also adjusted its image instructions to return raw URLs, request enhancement, and use the current user's preferred aesthetic for selfies. The image changes reduced maximum side lengths for Flux and Turbo and removed four models.\n\nA responsive homepage rebuild refreshed the image feed and editor, integration examples, project listings, text transformations, and community sections. Public image-prompt redirects and site routing were restored in a follow-up. Earlier in the week, the homepage and README also gained links to a book of more than 90 generated artistic styles and a community Node.js package.",
   "pr_count": 10,
   "prs": [
     {
@@ -47,5 +47,5 @@
       "date": "2025-01-25"
     }
   ],
-  "generated_at": "2026-10-17T16:03:03.983111+00:00"
+  "generated_at": "2026-10-17T23:23:32.401562+00:00"
 }

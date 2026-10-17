@@ -2,8 +2,8 @@
   "date": "2025-12-23",
   "period_start": "2025-12-23",
   "period_end": "2025-12-23",
-  "title": "New image model, newer DeepSeek",
-  "summary": "GPT Image 1.5 and DeepSeek V3.2 joined the model lineup, while pricing and in-flight spending became easier to account for.\n\nAdded `gptimage-large` for text-to-image generation and image editing, backed by GPT Image 1.5. The `deepseek` model now routes to V3.2, with a `deepseek-v3.2` alias. Veo 3.1 Fast’s registry metadata also now identifies its existing image-to-video support, including start and end frames.\n\nGeneration requests now reserve an estimated charge before processing, so balance checks account for requests already in flight; the final charge replaces the estimate when processing finishes. Model information now uses registry field names for Pollen prices, and text requests stop rather than continuing with a partially converted image URL.\n\nThe new site layout gained a dismissible banner linking to the old site. The app directory added Shaper AI by @stanica, a Chrome extension for page editing, writing, chat, and PDF summaries. The README’s Latest News section was refreshed with December 22 updates; that edit did not change the underlying services.",
+  "title": "GPT Image 1.5 joins the image API, and DeepSeek moves to V3.2",
+  "summary": "GPT Image 1.5 and DeepSeek V3.2 joined the model lineup, while generation accounting and pricing responses got more precise.\n\nAdded `gptimage-large` for text-to-image generation and image editing, and updated `deepseek` to route to V3.2. Veo 3.1 Fast’s registry entry now identifies its existing image-to-video support, so clients can discover that it accepts image inputs.\n\nBalance checks now account for estimated charges on concurrent generation requests before those requests finish. Model information returns Pollen prices under registry field names, and text requests now fail when an image URL cannot be converted rather than continuing with a partial input.\n\nThe new site layout gained a dismissible banner linking to the older site. The app directory added Shaper AI, while the README’s Latest News was refreshed with previously added features.",
   "pr_count": 8,
   "prs": [
     {
@@ -39,12 +39,12 @@
       "date": "2025-12-23"
     }
   ],
-  "generated_at": "2026-10-17T15:56:33.266362+00:00",
+  "generated_at": "2026-10-17T22:37:13.949010+00:00",
   "highlights": [
     {
       "emoji": "🎨",
       "title": "GPT Image 1.5 added",
-      "text": "Use `gptimage-large` to generate images from text or edit images with text and image inputs. [Browse the model](https://enter.pollinations.ai/models?q=gptimage-large).",
+      "text": "Use `gptimage-large` to generate images from text or edit them with image inputs. [View the model](https://enter.pollinations.ai/models?q=gptimage-large).",
       "prs": [
         6393
       ],
@@ -53,7 +53,7 @@
     {
       "emoji": "🤖",
       "title": "DeepSeek moves to V3.2",
-      "text": "The `deepseek` model now uses DeepSeek V3.2; `deepseek-v3.2` is available as an alias. [Browse the model](https://enter.pollinations.ai/models?q=deepseek-v3.2).",
+      "text": "The `deepseek` model now uses DeepSeek V3.2; `deepseek-v3.2` is also available as an alias. [View the model](https://enter.pollinations.ai/models?q=deepseek).",
       "prs": [
         6398
       ],

@@ -2,9 +2,9 @@
   "date": "2026-10-01",
   "period_start": "2026-10-01",
   "period_end": "2026-10-01",
-  "title": "More ways to make and edit images",
-  "summary": "A busy day for getting started and making things: editor integrations, clearer first runs, new community agents, Quest improvements, and roomier APIs.\n\nA new Krita plug-in generates and edits on fresh layers, and a Figma image studio joined the app catalog. Requests to the old MAI Image 2.5 Flash ID now reach 2.6 Flash, while Krea's fallback preserves requested aspect ratios instead of quietly making squares.\n\nPolli now guides newcomers toward a working OpenCode connection or generated image, and the CLI offers device login without making them restart their first command. Home shows live activity and app discovery tabs; Play and Community share the refreshed design. Model permissions are quicker to select, phone dialogs fit better, and a failed session refresh no longer hides an already-open dashboard. The hosted MCP has a clearer name—Connectors—with its endpoint unchanged.\n\nThe Quests page gained monthly standings and a suggested open Quest to reach the next rank. Connecting Polli CLI through device login earns a one-time 2-Pollen reward, and pagination now brings bounties beyond GitHub's first 100 results into reward evaluation. The Pollen page also supports saved-card checkout and auto top-up.",
-  "pr_count": 32,
+  "title": "More ways to make video and ask for decisions",
+  "summary": "New video and decision models, a Krita plug-in, bigger uploads, and more ways to find your footing with Polli and Quests.\n\nHeyGen Video 1 adds short videos with synchronized audio from text or a start frame. Kev 4B and Span-01 Lite join the decision models, while the old MAI Image 2.5 Flash ID now points to 2.6 Flash. Krea 2 Medium’s fallback also preserves requested aspect ratios.\n\nA community-made Krita plug-in generates and edits images into new layers. Lamplighter and Pen add two approaches to collective memory: fact-checked replies and collaborative fiction. A private agent configuration explores small collaboration jobs; two more contributors gained agent-publishing access. The hosted Composio MCP is now named Connectors, with its endpoint unchanged.\n\nWallet purchases and auto top-up now share one pack picker, with a saved-card checkout option. Key and app-consent screens gained model-category toggles and counts. Quests gained monthly standings, a 2-Pollen Polli CLI connection quest, and a fix that includes issues beyond GitHub search’s first page. Dashboard session refreshes and phone-sized dialogs also got more resilient.",
+  "pr_count": 31,
   "prs": [
     {
       "number": 15093,
@@ -51,10 +51,6 @@
       "date": "2026-10-01"
     },
     {
-      "number": 16107,
-      "date": "2026-10-01"
-    },
-    {
       "number": 16115,
       "date": "2026-10-01"
     },
@@ -71,6 +67,10 @@
       "date": "2026-10-01"
     },
     {
+      "number": 16128,
+      "date": "2026-10-01"
+    },
+    {
       "number": 16130,
       "date": "2026-10-01"
     },
@@ -80,10 +80,6 @@
     },
     {
       "number": 16139,
-      "date": "2026-10-01"
-    },
-    {
-      "number": 16143,
       "date": "2026-10-01"
     },
     {
@@ -135,56 +131,114 @@
       "date": "2026-10-01"
     }
   ],
-  "generated_at": "2026-10-02T06:31:28.156247+00:00",
+  "generated_at": "2026-10-17T23:16:32.606925+00:00",
   "highlights": [
     {
-      "emoji": "🤖",
-      "title": "Two decision models added",
-      "text": "Try `jaredpalmer/kev-4b` or the free `respan/span-01-lite` with decision requests or [chat completions](https://gen.pollinations.ai/v1/chat/completions).",
+      "emoji": "🎨",
+      "title": "Generate inside Krita",
+      "text": "A community-made Krita 5+ plug-in generates images into new layers and can edit a layer or selection without changing the source.",
       "prs": [
-        15968,
+        15578
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎵",
+      "title": "HeyGen video with audio",
+      "text": "Use `heygen/heygen-video-1` to make 5–15-second videos with synchronized audio from text or a start-frame image. [Browse the model](https://enter.pollinations.ai/models?q=heygen/heygen-video-1).",
+      "prs": [
+        16128
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Kev joins decisions",
+      "text": "Send state and questions to `jaredpalmer/kev-4b` through the decisions or chat API. Quest Pollen can be used for this model. [Browse the model](https://enter.pollinations.ai/models?q=jaredpalmer/kev-4b).",
+      "prs": [
+        15968
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Span-01 Lite scores behaviour",
+      "text": "Use `respan/span-01-lite` for behaviour-scoring questions through the decisions or chat API, without a paid balance. [Browse the model](https://enter.pollinations.ai/models?q=respan/span-01-lite).",
+      "prs": [
         15970
       ],
       "kind": "model"
     },
     {
-      "emoji": "🎨",
-      "title": "Image tools for artists",
-      "text": "A Krita plug-in generates and edits at canvas or selection size, placing results on new layers. Pollinations for Figma brings image generation and editing into Figma. [Try it](https://guest453.github.io/pollinations-figma/).",
+      "emoji": "✨",
+      "title": "Collective-memory writing agents",
+      "text": "Lamplighter writes fact-checked replies to unanswered posts; Pen continues a shared story one short part at a time.",
       "prs": [
-        15578,
-        16120
+        15093,
+        15160
       ],
-      "kind": "app"
+      "kind": "product"
     },
     {
       "emoji": "🚀",
-      "title": "Larger media uploads",
-      "text": "Stream FormData or raw files up to 400 MiB through [the media store](https://media.pollinations.ai) without changing your existing upload requests. Base64 JSON uploads remain capped at 100 MiB.",
+      "title": "Upload files up to 400 MiB",
+      "text": "Stream larger files through `POST /upload` or `polli upload` without loading the whole file into CLI memory. [Open the media store](https://media.pollinations.ai).",
       "prs": [
         15956
       ],
       "kind": "api"
     },
     {
-      "emoji": "✨",
-      "title": "Polli’s smoother first run",
-      "text": "Start an interactive Polli CLI generation without a key: it offers login, then resumes your command. A one-time Quest awards 2 Pollen for connecting with `polli auth login`.",
+      "emoji": "💡",
+      "title": "Larger text API requests",
+      "text": "Chat Completions, Responses and Messages now accept JSON request bodies up to 32 MiB, leaving more room for inline images. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
-        16176,
-        16177,
-        16184
+        16186
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Choose models by category",
+      "text": "When creating or editing a key, select whole model categories with one click and see how many models you’ve chosen. App consent offers the same controls. [Manage API keys](https://enter.pollinations.ai/keys).",
+      "prs": [
+        16151
       ],
       "kind": "product"
     },
     {
       "emoji": "💡",
-      "title": "Agents for shared stories",
-      "text": "Three community agents joined collective memory: Lamplighter replies to unanswered posts, Pen writes the next part of a shared story, and Micro-Mission Broker creates one verifiable job per run.",
+      "title": "Two Polli starter tasks",
+      "text": "Follow short recipes to connect OpenCode and verify a reply, or generate an image from the terminal and check the saved file. [Get Polli CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
-        15093,
-        15160,
-        15257
+        16177
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "Connect Polli, earn Pollen",
+      "text": "A one-time Quest awards 2 Pollen for connecting your account with `polli auth login`. Existing device-login connections qualify. [Get Polli CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        16184
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🌟",
+      "title": "Monthly Quest standings",
+      "text": "See the month’s top Quest contributors, your position and the Pollen gap to the next rank on the Quests page. [Open Enter](https://enter.pollinations.ai/keys).",
+      "prs": [
+        16188
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "📱",
+      "title": "Find newer community apps",
+      "text": "The Home app shelf now lets you switch between Most used this week and Newest, alongside fresh community activity numbers. [Explore pollinations](https://pollinations.ai).",
+      "prs": [
+        16185
       ],
       "kind": "product"
     }

@@ -3,7 +3,7 @@
   "period_start": "2025-11-27",
   "period_end": "2025-11-27",
   "title": "Claude Opus 4.5 joins the text models",
-  "summary": "Claude Opus 4.5 and Nano Banana Pro joined the model lineup, chat validation got less picky, and three community projects joined the listings.\n\nAdded Claude Opus 4.5 as `claude-large`, with image input and tool support. `claude` now selects Sonnet 4.5, while Haiku moves to `claude-fast`. Bedrock models also default to 16,384 max tokens unless a request specifies otherwise.\n\nAdded `nanobanana-pro`, backed by Gemini 3 Pro Image, to the image model registry. It uses the existing Nano Banana image-generation path, including width and height parameters, and is described as supporting 4K images and Thinking.\n\nChat completion validation now accepts provider-specific finish reasons in regular and streaming responses, plus assistant messages with missing content. That keeps valid Gemini responses from being rejected for not looking quite enough like OpenAI.",
+  "summary": "Claude Opus 4.5 and Nano Banana Pro joined the model lineup, chat validation got less fussy, and three community projects joined the listings.\n\nClaude Opus 4.5 was added as `claude-large`, with image input and tool support. The `claude` name now selects Sonnet 4.5, while `claude-fast` selects Haiku 4.5. Bedrock models also default to 16,384 max tokens unless a request specifies otherwise.\n\n`nanobanana-pro` adds Gemini 3 Pro Image to the image model registry, using the existing Nano Banana generation path and its width and height controls. Its registry description lists 4K images and Thinking support.\n\nChat completion validation now accepts provider-specific finish reasons in regular and streaming responses, plus assistant messages with missing content. Responses from non-OpenAI providers no longer have to pretend they use OpenAI's exact schema.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,12 +23,12 @@
       "date": "2025-11-27"
     }
   ],
-  "generated_at": "2026-10-17T15:53:18.890044+00:00",
+  "generated_at": "2026-10-17T22:36:04.758868+00:00",
   "highlights": [
     {
       "emoji": "🤖",
       "title": "Claude Opus 4.5 added",
-      "text": "Use `claude-large` for Claude Opus 4.5 with image input and tool support. `claude` now selects Sonnet 4.5; Haiku is available as `claude-fast`. [Browse Claude Opus 4.5](https://enter.pollinations.ai/models?q=claude-large).",
+      "text": "Use `claude-large` for Claude Opus 4.5 with image input and tools. `claude` now selects Sonnet 4.5; Haiku 4.5 is available as `claude-fast`. [Browse Claude Opus 4.5](https://enter.pollinations.ai/models?q=claude-large).",
       "prs": [
         5426
       ],
@@ -37,7 +37,7 @@
     {
       "emoji": "🎨",
       "title": "Nano Banana Pro added",
-      "text": "Generate images with `nanobanana-pro`, backed by Gemini 3 Pro Image and described as supporting 4K output and Thinking. [Browse Nano Banana Pro](https://enter.pollinations.ai/models?q=nanobanana-pro).",
+      "text": "Generate images with Gemini 3 Pro Image using `nanobanana-pro`, with width and height controls through the existing Nano Banana path. [Browse Nano Banana Pro](https://enter.pollinations.ai/models?q=nanobanana-pro).",
       "prs": [
         5427
       ],

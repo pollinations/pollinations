@@ -2,8 +2,8 @@
   "date": "2025-10-19",
   "period_start": "2025-10-19",
   "period_end": "2025-10-19",
-  "title": "Claude Haiku 4.5 joins the model list",
-  "summary": "Claude Haiku 4.5 joined the model list while the community brought a solo RPG and seven projects to the showcase.\n\nAdded Claude Haiku 4.5 as `claudyclaude`, with text and image input plus tool support. The model work also raised an existing model’s input limit from 10,000 to 30,000 characters and adjusted parameter handling so downstream APIs validate ranges and several models use provider temperature defaults.\n\ncodevector-2003 added AI Dungeon Master, a fantasy RPG that generates story scenes and images. Players can take suggested paths or write their own actions, with dice combat, character stats, inventory, story history and browser-based saves.\n\nSeven projects joined the showcase, spanning editable thumbnails, API examples, image generation, an iOS Shortcut and browser-based agent tools. BeeCoder, which connects VS Code Copilot to Pollinations, also joined the vibe-coding project list.",
+  "title": "Claude Haiku 4.5 added for text, images, and tools",
+  "summary": "Claude Haiku 4.5 joined the model list while a solo fantasy RPG and seven community projects brought more things to explore.\n\nClaude Haiku 4.5 was added as `claudyclaude`, with text and image input plus tool support. An existing model’s input limit rose from 10,000 to 30,000 characters, and text-generation parameter ranges now pass through to downstream APIs for validation.\n\ncodevector-2003 added AI Dungeon Master, a React and Vite fantasy RPG with generated story scenes and images, custom actions, dice-based combat, inventory, and browser saves.\n\nSeven projects joined the showcase, spanning thumbnail and image creation, API demos, an iOS Shortcut, browser-based agent tools, and BeeCoder’s VS Code Copilot connection. BeeCoder was also added to the vibe-coding project list.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,16 +23,34 @@
       "date": "2025-10-19"
     }
   ],
-  "generated_at": "2026-10-17T15:49:10.882553+00:00",
+  "generated_at": "2026-10-17T22:34:45.696635+00:00",
   "highlights": [
     {
       "emoji": "🤖",
       "title": "Claude Haiku 4.5 added",
-      "text": "Send text or images to `claudyclaude`, with tool support for workflows that need it. [View the model](https://enter.pollinations.ai/models?q=claudyclaude).",
+      "text": "Use `claudyclaude` with text or image input and tool support. [Browse the model](https://enter.pollinations.ai/models?q=claudyclaude).",
       "prs": [
         4615
       ],
       "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Build your own dungeon story",
+      "text": "AI Dungeon Master lets you make a character and play through generated scenes and images, with custom actions, dice combat, and browser saves.",
+      "prs": [
+        4506
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "Seven projects join the showcase",
+      "text": "Explore community projects for editable thumbnails, image generation, API demos, an iOS Shortcut, browser agent tools, and a VS Code Copilot connection. [Explore community projects](https://pollinations.ai).",
+      "prs": [
+        4616
+      ],
+      "kind": "product"
     }
   ],
   "changelog": []

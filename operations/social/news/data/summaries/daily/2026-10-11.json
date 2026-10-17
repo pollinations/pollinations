@@ -2,9 +2,9 @@
   "date": "2026-10-11",
   "period_start": "2026-10-11",
   "period_end": "2026-10-11",
-  "title": "Sandboxes can run longer and get more room",
-  "summary": "Longer and larger sandboxes, three community apps, more capable Polli replies, and sturdier API and cache paths.\n\nSandbox timeouts can now extend past E2B’s 24-hour limit through automatic renewals, subject to the requesting key’s budget. The polli CLI gained a timeout option and a pause command, while the new opt-in `pollinations-large` template offers 4 vCPU and 8 GB RAM for heavier work.\n\nCommunity additions include InkBloom for printable coloring pages, Text Comparison with an Arabic right-to-left interface, and Midi Journey 2 for conversational MIDI work in Ableton Live. App submissions now accept raw GitHub repository images and more screenshot shapes. Weekly app rankings also read from an hourly snapshot instead of recalculating on every page request.\n\nPolli switched to GPT-6.1-Sol and can queue follow-ups, address requests separately or together, and respond with emoji reactions. Requests from different users remain permission-isolated.",
-  "pr_count": 15,
+  "title": "Sandboxes can outlast a day",
+  "summary": "Longer-lived sandboxes, better Discord follow-ups, and reasoning replay landed alongside app-catalog and cache fixes.\n\nSandbox timeouts can now extend beyond E2B’s 24-hour run limit through the existing API calls, with `polli sandbox create --timeout` and `polli sandbox pause` added to the CLI. Daily restarts preserve files, memory, and processes, but drop open connections. Opt-in support for a 4 vCPU, 8 GB `pollinations-large` template was also added alongside the unchanged default; the PR did not create the E2B template.\n\nPolli’s Discord conversations now queue messages that arrive while it is working, rather than rejecting them. It can respond to follow-ups with text, reactions, or both, and its support guidance now points it toward current model catalogs.\n\nThe stateless `/v1/responses` endpoint now accepts replayed encrypted reasoning items used by Codex-style clients, while Azure Responses calls can return JSON without waiting for a long upstream call before receiving headers. Updated docs explain how to pass reasoning between turns and which stored-response features remain unsupported.",
+  "pr_count": 16,
   "prs": [
     {
       "number": 16896,
@@ -23,11 +23,11 @@
       "date": "2026-10-11"
     },
     {
-      "number": 17050,
+      "number": 17041,
       "date": "2026-10-11"
     },
     {
-      "number": 17071,
+      "number": 17050,
       "date": "2026-10-11"
     },
     {
@@ -51,6 +51,10 @@
       "date": "2026-10-11"
     },
     {
+      "number": 17109,
+      "date": "2026-10-11"
+    },
+    {
       "number": 17115,
       "date": "2026-10-11"
     },
@@ -67,49 +71,31 @@
       "date": "2026-10-11"
     }
   ],
-  "generated_at": "2026-10-12T06:45:57.410600+00:00",
+  "generated_at": "2026-10-17T23:18:56.965123+00:00",
   "highlights": [
     {
       "emoji": "🚀",
-      "title": "Longer, larger sandboxes",
-      "text": "Request sandbox runs beyond 24 hours through E2B’s timeout API, or choose `pollinations-large` when a job needs 4 vCPU and 8 GB RAM.",
+      "title": "Sandboxes beyond 24 hours",
+      "text": "Set sandbox timeouts beyond a day through the existing API calls or `polli sandbox create --timeout`. Daily restarts preserve files, memory, and processes, but drop open connections. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         16896,
+        17091
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "A larger sandbox option",
+      "text": "Sandbox creation now supports opting into `pollinations-large`, a 4 vCPU, 8 GB template, alongside the unchanged 2 vCPU, 2 GB default. The E2B template itself was not created by this change. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
         17115
       ],
       "kind": "product"
     },
     {
-      "emoji": "🎨",
-      "title": "InkBloom coloring pages",
-      "text": "Turn photos or text prompts into printable coloring pages. [Try it](https://coloring-project1.ismailbanouigu.workers.dev).",
-      "prs": [
-        17034
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "💡",
-      "title": "Text Comparison joins Learn",
-      "text": "Explore Text Comparison through its Arabic right-to-left interface. [Try it](https://mahmoudpov373-star.github.io/Comart).",
-      "prs": [
-        17035
-      ],
-      "kind": "app"
-    },
-    {
-      "emoji": "🎵",
-      "title": "Compose with Midi Journey",
-      "text": "Compose and transform MIDI through conversation in Ableton Live with this Max for Live device. [View repo](https://github.com/pollinations/MIDIjourney).",
-      "prs": [
-        17108
-      ],
-      "kind": "app"
-    },
-    {
       "emoji": "🤖",
-      "title": "Polli keeps the conversation going",
-      "text": "Polli can queue follow-ups, reply to requests separately or together, and answer with emoji reactions. [Join the chat](https://chat.pollinations.ai).",
+      "title": "Polli takes follow-ups",
+      "text": "Send a follow-up while Polli is working in Discord: it can queue the message for its next model call instead of rejecting it. Replies can include text, reactions, or both. [Visit the community chat](https://chat.pollinations.ai).",
       "prs": [
         17125
       ],

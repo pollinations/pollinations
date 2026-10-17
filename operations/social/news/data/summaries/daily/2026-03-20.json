@@ -2,12 +2,16 @@
   "date": "2026-03-20",
   "period_start": "2026-03-20",
   "period_end": "2026-03-20",
-  "title": "Klein learns to multitask and gptimage returns",
-  "summary": "A heavy day for the community showcase, native PowerShell integrations, and a massive upgrade to Klein's image blending capabilities.\n\nThe Klein model's image-to-image pipeline got a major upgrade: it now supports blending up to four parallel reference images via a new multipart endpoint. In parallel, we migrated some underlying Azure resources to bring the gptimage and gptimage-large models fully back online.\n\nWindows developers can now pipe Pollinations text and image generation directly into PowerShell scripts and Azure workflows. Two new community integrations just dropped, making enterprise scripting significantly more interesting.\n\nWe added a provider-agnostic guard to the text API. If an upstream model fails and returns an empty completion, you'll now get a proper 502 Bad Gateway error instead of a confusing, empty 200 OK. Failures should look like failures.",
-  "pr_count": 10,
+  "title": "Flux Klein edits can use four reference images",
+  "summary": "Flux Klein gained four-image editing, seven community projects joined the catalog, and text and image request handling got fixes.\n\nFlux Klein 4B image editing now accepts up to four reference images instead of using only the first. Text-to-image generation is unchanged.\n\nSeven community projects were added, spanning cryptid images, PowerShell image and text examples, financial analysis, saved web highlights, story writing, and bouquet previews. A README update also corrected creator attribution for Daily Cryptid and Parallel.\n\nWhen an upstream provider returns no content, tool calls, or completion tokens, the text API now returns a 502 error identifying the model instead of passing along an apparently successful empty response.",
+  "pr_count": 11,
   "prs": [
     {
       "number": 9323,
+      "date": "2026-03-20"
+    },
+    {
+      "number": 9334,
       "date": "2026-03-20"
     },
     {
@@ -47,38 +51,16 @@
       "date": "2026-03-20"
     }
   ],
-  "generated_at": "2026-03-21T06:10:53.817644+00:00",
+  "generated_at": "2026-10-17T22:44:29.332086+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Klein Multi-Image Blending",
-      "text": "The Klein model's image-to-image pipeline now accepts up to four parallel reference images via a multipart endpoint. Check the [API Docs](https://enter.pollinations.ai/api/docs) to start blending.",
+      "title": "Four-image Flux Klein edits",
+      "text": "Edit with up to four reference images using Flux Klein 4B, rather than having all but the first ignored. [Browse models](https://enter.pollinations.ai/models?q=Flux%20Klein%204B).",
       "prs": [
         9350
       ],
-      "kind": "api"
-    },
-    {
-      "emoji": "💻",
-      "title": "PowerShell & .NET Integrations",
-      "text": "You can now pipe text and image generation directly into your Windows scripting and Azure workflows. Because sometimes you just need to generate pixels from a terminal.",
-      "prs": [
-        9343,
-        9344
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🌟",
-      "title": "Showcase Explosion",
-      "text": "The community directory is growing. New additions include a daily cryptid generator, a Turkish financial analysis bot, a markdown story exporter, and an AI bouquet designer. See what people are building on the [main website](https://hello.pollinations.ai).",
-      "prs": [
-        9323,
-        9349,
-        9353,
-        9354
-      ],
-      "kind": "product"
+      "kind": "model"
     }
   ],
   "changelog": []

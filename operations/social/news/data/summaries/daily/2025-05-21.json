@@ -2,8 +2,8 @@
   "date": "2025-05-21",
   "period_start": "2025-05-21",
   "period_end": "2025-05-21",
-  "title": "GPT Image can edit existing images",
-  "summary": "GPT Image gained editing support and more quality choices, with requests now following the same image queue.\n\nThe gptimage integration now supports image editing when a request includes an image, while requests without one continue to generate new images. Image inputs can be URLs, file paths, base64 data, or buffers.\n\nImage requests now accept low, medium, high, or hd quality. Invalid values fall back to medium.\n\nValid tokens no longer bypass the image queue for gptimage requests.",
+  "title": "Image editing joins gptimage",
+  "summary": "gptimage gained image editing and quality controls, alongside its existing image generation path.\n\nThe gptimage integration now edits an existing image when one is supplied and generates a new image when it is not. Image inputs can come from URLs, file paths, base64 data, or buffers. Requests also accept low, medium, high, or hd quality; gptimage requests now use the image queue even with a valid token.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,12 +11,21 @@
       "date": "2025-05-21"
     }
   ],
-  "generated_at": "2026-10-17T15:40:13.482152+00:00",
+  "generated_at": "2026-10-17T22:31:21.181526+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Edit with GPT Image",
-      "text": "Provide an image with your `gptimage` request to edit it, or leave it out to generate a new one. Image inputs support URLs, file paths, base64 data, and buffers. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "title": "Edit images with gptimage",
+      "text": "Send an image with a `gptimage` request to edit it; leave the image out to generate one from scratch. Inputs can be URLs, file paths, base64 data, or buffers. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        2035
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "✨",
+      "title": "Choose image quality",
+      "text": "Set `gptimage` quality to `low`, `medium`, `high`, or `hd` to suit what you're making. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         2035
       ],

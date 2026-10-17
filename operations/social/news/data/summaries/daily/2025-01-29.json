@@ -3,7 +3,7 @@
   "period_start": "2025-01-29",
   "period_end": "2025-01-29",
   "title": "Pollinations Chat joins the project directory",
-  "summary": "A community-built text-and-image chat app found a place in the project directory.\n\nPollinations Chat, a community-built app for text-and-image conversations, was added to the LLM Integrations listings in the README and website project directory.",
+  "summary": "A community text-and-image chat app joined the project listings.\n\nThe README and website project directory now list @adrianoprogramer’s Pollinations Chat, a community app for chatting with text and images.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-01-29"
     }
   ],
-  "generated_at": "2026-10-17T15:32:53.599514+00:00",
+  "generated_at": "2026-10-17T22:28:54.408131+00:00",
   "highlights": [],
   "changelog": []
 }

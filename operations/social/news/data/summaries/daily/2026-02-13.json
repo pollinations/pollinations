@@ -2,10 +2,14 @@
   "date": "2026-02-13",
   "period_start": "2026-02-13",
   "period_end": "2026-02-13",
-  "title": "Heavyweight models for text and audio",
-  "summary": "A heavy shipping day bringing GLM-5, ElevenLabs Scribe v2, and a unified resolution system for all video models.\n\nWe bumped our GLM integration to version 5 (Z.ai's 744B MoE model) and wired up ElevenLabs Scribe v2 for high-accuracy speech-to-text. Both are live and drop-in ready via the standard OpenAI-compatible endpoints.\n\nVideo generation parameters are now standardized across Wan, Veo, Grok, and LTX-2. You can pass consistent dimensions regardless of the underlying model, and Grok finally respects the settings. We also migrated Wan to the Airforce API under the hood.\n\nThe dashboard now dynamically matches your tier panel to your actual community rank color instead of defaulting to amber. A small visual fix that makes the UI feel a bit more put together.",
-  "pr_count": 4,
+  "title": "GLM-5 and Scribe v2 join the model lineup",
+  "summary": "GLM-5 and Scribe v2 joined the lineup, video dimensions got more useful, and Node 23 stopped being a startup obstacle.\n\nThe `glm` text model now routes to GLM-5, with a new `glm-5` alias; the existing `glm-4.7` and `glm-4p7` aliases resolve to it too. ElevenLabs Scribe v2 was added as `scribe` on the Whisper-compatible transcription endpoint, with text, JSON, and detailed JSON responses.\n\nVideo generation now uses supplied dimensions to choose aspect ratio and resolution for Veo, Seedance, and Wan, and to size Grok Video requests. Wan 2.6 also gained text-to-video and image-to-video support through its new provider route.\n\nThe tier explanation now uses the color of the current tier. API-key permission toggles and the audio model’s “Select all” control also show a pointer cursor.",
+  "pr_count": 5,
   "prs": [
+    {
+      "number": 7735,
+      "date": "2026-02-13"
+    },
     {
       "number": 8205,
       "date": "2026-02-13"
@@ -23,12 +27,12 @@
       "date": "2026-02-13"
     }
   ],
-  "generated_at": "2026-03-18T21:29:41.035981+00:00",
+  "generated_at": "2026-10-17T22:40:17.874468+00:00",
   "highlights": [
     {
       "emoji": "🤖",
       "title": "GLM moves to version 5",
-      "text": "Use Z.ai's GLM-5 for text generation, replacing GLM 4.7. [Find GLM-5](https://enter.pollinations.ai/models?q=GLM-5).",
+      "text": "Use `glm-5` for GLM-5 text generation. The existing `glm`, `glm-4.7`, and `glm-4p7` aliases now resolve to GLM-5 too. [Browse the model](https://enter.pollinations.ai/models?q=glm-5).",
       "prs": [
         8206
       ],
@@ -36,8 +40,8 @@
     },
     {
       "emoji": "🎵",
-      "title": "Scribe v2 transcription",
-      "text": "Transcribe speech with ElevenLabs Scribe v2 through an OpenAI-compatible API. [Find Scribe v2](https://enter.pollinations.ai/models?q=Scribe%20v2).",
+      "title": "Scribe v2 transcribes audio",
+      "text": "Send audio to `/v1/audio/transcriptions` with `scribe` for speech-to-text. Choose `text`, `json`, or `verbose_json` responses; structured output can include words and segments. [Browse the model](https://enter.pollinations.ai/models?q=scribe).",
       "prs": [
         8208
       ],
@@ -45,8 +49,8 @@
     },
     {
       "emoji": "🎨",
-      "title": "Consistent video resolutions",
-      "text": "Choose video resolution through a unified system across Wan, Veo, Grok and LTX-2. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "title": "More control over video",
+      "text": "Supply width and height to guide video aspect ratio and resolution across Veo, Seedance, Grok Video, and Wan 2.6. Wan 2.6 also supports text-to-video and image-to-video. [See the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         8210
       ],

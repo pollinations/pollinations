@@ -2,9 +2,9 @@
   "date": "2026-06-30",
   "period_start": "2026-06-30",
   "period_end": "2026-06-30",
-  "title": "Two new models: Claude Sonnet 5 and Nano Banana 2 Lite",
-  "summary": "A busy day for the model roster and community tooling, with Quests getting terminal support and mobile authorization returning to the basic human right of scrolling.\n\nThe model menu grew at both ends: Claude Sonnet 5 arrives through Bedrock with 1M context, vision, tools, caching, and adaptive thinking, while nanobanana-2-lite adds a lightweight 1K image-generation option powered by Gemini 3.1 Flash-Lite Image.\n\nNew account APIs and polli CLI commands let people inspect completed Quests, earned rewards, and their own community models. Dashboard notices now point people toward Quests and the community-models alpha, while three more contributors received permission to register models.\n\nThe Authorization page no longer locks scrolling on mobile, so approving an app no longer involves negotiating with a page that has decided vertical movement is optional.",
-  "pr_count": 11,
+  "title": "NanoBanana 2 Lite joins the image models",
+  "summary": "Two new models landed alongside Quest status tools, community model management, and a mobile authorization fix.\n\nAdded paid-only `nanobanana-2-lite` for image generation and editing with up to 14 reference images. Its route defaults to 1K output.\n\nAdded paid-only `claude-sonnet-5` with a 1M-token context, image input, tool calls, and adaptive thinking.\n\nAdded a read-only Quest status API and Polli Quest commands. Invite-only community model management moved to `/account/my-models` for dashboard and API use, with a matching Polli command. Public model IDs now use `{username}/{model-id}`, while older IDs remain aliases. Three more accounts became eligible to register models, and dashboard banners now point people to Quests and the community models alpha.",
+  "pr_count": 10,
   "prs": [
     {
       "number": 12107,
@@ -24,10 +24,6 @@
     },
     {
       "number": 12123,
-      "date": "2026-06-30"
-    },
-    {
-      "number": 12125,
       "date": "2026-06-30"
     },
     {
@@ -51,12 +47,12 @@
       "date": "2026-06-30"
     }
   ],
-  "generated_at": "2026-09-04T11:58:54.807530+00:00",
+  "generated_at": "2026-10-17T23:00:17.908876+00:00",
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Nano Banana 2 Lite",
-      "text": "Generate images with `nanobanana-2-lite`, a lighter option powered by Gemini 3.1 Flash-Lite Image. [Browse the model](https://enter.pollinations.ai/models?q=nanobanana-2-lite).",
+      "title": "NanoBanana 2 Lite",
+      "text": "Generate or edit images with `nanobanana-2-lite`, using up to 14 reference images. [Browse the model](https://enter.pollinations.ai/models?q=nanobanana-2-lite).",
       "prs": [
         12132
       ],
@@ -65,21 +61,46 @@
     {
       "emoji": "🤖",
       "title": "Claude Sonnet 5",
-      "text": "Use `claude-sonnet-5` for text and vision tasks with tool support and a 1M-token context window. [Browse the model](https://enter.pollinations.ai/models?q=claude-sonnet-5).",
+      "text": "Use `claude-sonnet-5` for text and image input, tool calls, adaptive thinking, and a 1M-token context. [Browse the model](https://enter.pollinations.ai/models?q=claude-sonnet-5).",
       "prs": [
         12133
       ],
       "kind": "model"
     },
     {
-      "emoji": "✨",
-      "title": "Quests in the CLI",
-      "text": "Check earned Quest rewards with `polli quests` and administer community models with `polli my-models`. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "emoji": "🎯",
+      "title": "Check Quest status",
+      "text": "Read your completed Quests and earned rewards through `GET /account/quests`, or check them with `polli quests` and `polli quests mine`. [See the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         12107
       ],
-      "kind": "product"
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Manage your models",
+      "text": "Eligible community model owners can list, register, update, test, and remove models through `/account/my-models` or `polli my-models`. Public model IDs now use `{username}/{model-id}`; older IDs remain aliases. [See the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        12107
+      ],
+      "kind": "api"
     }
   ],
-  "changelog": []
+  "changelog": [
+    {
+      "pr_number": 12107,
+      "url": "https://github.com/pollinations/pollinations/pull/12107",
+      "merged_at": "2026-06-30T11:10:35Z",
+      "api_changes": [
+        {
+          "id": "pr-12107:GET /account/quests",
+          "endpoint": "GET /account/quests",
+          "summary": "Get Quest Status",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        }
+      ]
+    }
+  ]
 }

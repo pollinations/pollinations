@@ -2,9 +2,9 @@
   "date": "2026-07-25",
   "period_start": "2026-07-25",
   "period_end": "2026-07-25",
-  "title": "Claude Opus 5 arrives behind claude-large",
-  "summary": "Claude Opus 5 joined the shared endpoint, community models got names, and larger Quest reward batches stopped meeting database limits.\n\nThe existing claude-large alias now routes to Claude Opus 5 on Bedrock, retaining vision, streaming, tools, opt-in reasoning, and established alias workflows. Developers can also target the new claude-opus-5 model ID directly, while malformed image URLs now return a clear 400.\n\nCommunity endpoint publishers can now give models a short title separate from their longer description, with model cards and polli my-models list showing the readable name. Older listings remain compatible through description and slug fallbacks, while publishing guardrails are enforced consistently across the API and dashboard.\n\nReward processing now inserts pending Quest rewards individually inside a single transaction, avoiding D1 parameter-limit failures without giving up idempotency or inserted-reward reporting. Larger completed Quest batches can now reliably land in users' wallets.",
-  "pr_count": 10,
+  "title": "Claude Large moves to Opus 5",
+  "summary": "Opus 5 joined the Claude aliases, community models gained readable titles, and quest reward scans got sturdier.\n\n`claude-large` now routes to Claude Opus 5, with `claude-opus-5` added as an alias. Reasoning remains opt-in, and access remains paid-only.\n\nCreators can give a community model a display title separate from its callable slug and description. The catalog, model cards, form, CLI, and API docs now reflect the field; older models retain fallback titles.\n\nReward recording no longer hits the database parameter limit on scans with many earned rewards. It still records only new rewards; claiming Pollen remains a separate step.",
+  "pr_count": 6,
   "prs": [
     {
       "number": 12692,
@@ -19,10 +19,6 @@
       "date": "2026-07-25"
     },
     {
-      "number": 12750,
-      "date": "2026-07-25"
-    },
-    {
       "number": 12751,
       "date": "2026-07-25"
     },
@@ -31,28 +27,16 @@
       "date": "2026-07-25"
     },
     {
-      "number": 12753,
-      "date": "2026-07-25"
-    },
-    {
-      "number": 12756,
-      "date": "2026-07-25"
-    },
-    {
       "number": 12757,
-      "date": "2026-07-25"
-    },
-    {
-      "number": 12760,
       "date": "2026-07-25"
     }
   ],
-  "generated_at": "2026-09-04T11:48:31.304313+00:00",
+  "generated_at": "2026-10-17T23:03:25.856992+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Claude Opus 5 added",
-      "text": "Use `claude-opus-5` directly, or access it through the paid-only `claude-large` alias. [View the model](https://enter.pollinations.ai/models?q=claude-opus-5).",
+      "title": "Claude Opus 5",
+      "text": "Use `claude-opus-5` or `claude-large` for Opus 5, with reasoning available when requested. Access remains paid-only. [Browse the model](https://enter.pollinations.ai/models?q=claude-opus-5).",
       "prs": [
         12751
       ],
@@ -61,12 +45,56 @@
     {
       "emoji": "✨",
       "title": "Titles for community models",
-      "text": "Give your community endpoint a title separate from its description. The title appears on model cards and in `polli my-models list`.",
+      "text": "Give your community model a display title without changing the slug used to call it. Set the title in the model form or with `polli my-models`.",
       "prs": [
         12692
       ],
-      "kind": "api"
+      "kind": "product"
     }
   ],
-  "changelog": []
+  "changelog": [
+    {
+      "pr_number": 12752,
+      "url": "https://github.com/pollinations/pollinations/pull/12752",
+      "merged_at": "2026-07-25T10:46:33Z",
+      "api_changes": [
+        {
+          "id": "pr-12752:POST /account/my-models",
+          "endpoint": "POST /account/my-models",
+          "summary": "Create My Model",
+          "action": "CHANGE",
+          "breaking": true,
+          "changes": [
+            {
+              "field": "body:title",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": true
+              },
+              "breaking": true
+            }
+          ]
+        },
+        {
+          "id": "pr-12752:POST /account/my-models/{id}/update",
+          "endpoint": "POST /account/my-models/{id}/update",
+          "summary": "Update My Model",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:title",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

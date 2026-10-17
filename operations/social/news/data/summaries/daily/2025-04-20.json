@@ -2,8 +2,8 @@
   "date": "2025-04-20",
   "period_start": "2025-04-20",
   "period_end": "2025-04-20",
-  "title": "RuangRiung joins the project catalog",
-  "summary": "A quieter day: a bilingual image app joined the catalog, while text API ad controls and agent-readable API metadata got updates.\n\nThe project catalog added RuangRiung AI Image Generator, a web app that supports Indonesian and English.\n\nText API ad selection gained configurable domain matching for referrer headers, with a fallback to origin information when no referrer is present. Matching domains can be selected for ads on every request.\n\nFive public resources now describe API endpoints, models, capabilities, and usage for AI agents and developers, including llms.txt, agents.json, arazzo.json, and mcp.json.",
+  "title": "An Indonesian image app joins the catalog",
+  "summary": "A community image app joined the catalog, agent-readable API resources grew, and text API ad selection gained domain checks.\n\nRuangRiung AI Image Generator was added to the website and README project listings. The community-built app supports Indonesian and English.\n\nFive public metadata resources were added, covering API endpoints, models, capabilities, services and usage guidance. The API descriptions in agents.json and arazzo.json identify themselves as version 1.0.1.\n\nText API ad selection can now match configured domains against referrers without case sensitivity and check Origin information when a referrer is absent. Matching requests are selected for ads with 100% probability.",
   "pr_count": 3,
   "prs": [
     {
@@ -19,7 +19,7 @@
       "date": "2025-04-20"
     }
   ],
-  "generated_at": "2026-10-17T15:38:11.358208+00:00",
+  "generated_at": "2026-10-17T22:30:29.758352+00:00",
   "highlights": [],
   "changelog": []
 }

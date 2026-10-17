@@ -2,8 +2,8 @@
   "date": "2025-07-08",
   "period_start": "2025-07-08",
   "period_end": "2025-07-08",
-  "title": "VOID.AI joins the Chat projects list",
-  "summary": "A community addition: VOID.AI joined the Chat projects list.\n\nThe community project VOID.AI was added to the Chat projects list, with links to its app and source code. Its listing describes an AI mentor for code walkthroughs, writing help, and everyday advice.",
+  "title": "VOID.AI joins the chat projects list",
+  "summary": "A new community chat project joins the list: VOID.AI, an AI mentor for coding, writing, and everyday questions.\n\nAdded @Ajay-Dhakad’s VOID.AI to the chat projects list, with links to the app and its source code. It’s described as an AI mentor and productivity partner for code walkthroughs, writing help, advice, and motivation.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,7 +11,7 @@
       "date": "2025-07-08"
     }
   ],
-  "generated_at": "2026-10-17T15:43:23.884348+00:00",
+  "generated_at": "2026-10-17T22:32:38.007281+00:00",
   "highlights": [],
   "changelog": []
 }

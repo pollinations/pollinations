@@ -2,8 +2,8 @@
   "date": "2026-08-17",
   "period_start": "2026-08-17",
   "period_end": "2026-08-17",
-  "title": "API keys became less mysterious at the edges",
-  "summary": "A busy day for builders and key holders: better model tooling, a rebuilt catalog, visible quest progress, and fewer authentication-shaped traps.\n\nKey creation now accepts fractional expiry periods correctly, publishable keys can save their first redirect URI and become app keys, and invalid keys return an actionable 401 with a route to fix them. Permission screens also consistently read redirect metadata and now include an account's own private models, so valid grants do not quietly disappear during edits.\n\nAnyone can now probe upstream model IDs and test private endpoints before saving them in My Models. Polli CLI gained image-model creation, testing, pricing metadata, and clearer documentation for image editing and public model setup; meanwhile, one publisher-access path now covers community models and managed agents.\n\nThe models catalog was rebuilt for desktop and mobile with better metadata, model-type icons, copy controls, accessible tooltips, and useful Free and New markers. Meadows joined the app registry as a single chat playground for text, image, video, and audio models, while a small toggle-dialog fix restored the ancient art of putting spaces between words.",
+  "title": "Quests show how far you have to go",
+  "summary": "Quest progress is visible, private models are easier to set up, and the model catalog and key permissions make more sense.\n\nMeasurable Quests now show progress bars and current/target values, including for Pollen top-ups, external app users, and GitHub account age. Quest-code redemption was removed; claimable Bonus rewards remain in the regular Quest flow.\n\nAny authenticated account can now fetch upstream model IDs and test an endpoint before registering a private model, without publisher approval. The publisher request form also covers public managed agents, public community models, or both. Image-model CLI guidance now explains testing, image-edit inputs, and how pricing depends on visibility; a community-contributed fix tidied the endpoint toggle dialog.\n\nThe models catalog now presents IDs, capabilities, access labels, rate limits, and pricing more consistently across desktop and mobile, with better touch and keyboard controls. Meadows, a community playground for text, image, video, and audio models, joined the app catalog, and the README news was refreshed. Model Monitor's favorites and persistent filter selections were removed; its scope and type filters remain.",
   "pr_count": 19,
   "prs": [
     {
@@ -35,15 +35,15 @@
       "date": "2026-08-17"
     },
     {
+      "number": 13478,
+      "date": "2026-08-17"
+    },
+    {
       "number": 13482,
       "date": "2026-08-17"
     },
     {
       "number": 13484,
-      "date": "2026-08-17"
-    },
-    {
-      "number": 13491,
       "date": "2026-08-17"
     },
     {
@@ -59,7 +59,7 @@
       "date": "2026-08-17"
     },
     {
-      "number": 13503,
+      "number": 13500,
       "date": "2026-08-17"
     },
     {
@@ -71,11 +71,11 @@
       "date": "2026-08-17"
     },
     {
-      "number": 13508,
+      "number": 13506,
       "date": "2026-08-17"
     },
     {
-      "number": 13509,
+      "number": 13508,
       "date": "2026-08-17"
     },
     {
@@ -83,52 +83,43 @@
       "date": "2026-08-17"
     }
   ],
-  "generated_at": "2026-08-18T06:14:31.289997+00:00",
+  "generated_at": "2026-10-17T23:22:13.600069+00:00",
   "highlights": [
     {
-      "emoji": "✨",
-      "title": "The model garden got labels",
-      "text": "The redesigned model catalog makes official and community models easier to compare across desktop and mobile, with clearer pricing, access details, and copyable model info. [Browse models](https://enter.pollinations.ai/keys)",
-      "prs": [
-        13469
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Image models get a CLI key",
-      "text": "Community model builders can now create, price, validate, and list image endpoints with `polli-cli my-models`, including image-edit input support.",
-      "prs": [
-        13491
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "💡",
-      "title": "Every hive gets a probe",
-      "text": "Any account can fetch upstream model IDs and test a private community endpoint from My Models before saving it. Blind configuration, a cherished software tradition, is optional now.",
-      "prs": [
-        13493
-      ],
-      "kind": "product"
-    },
-    {
       "emoji": "🎯",
-      "title": "Quest bars grow leaves",
-      "text": "Measurable Quests now show exact progress and goal bars for things like top-ups, app users, and GitHub account age.",
+      "title": "See your Quest progress",
+      "text": "Measurable Quests now show a progress bar and current/target values, so you can see how close you are to a Pollen top-up, app-user, or GitHub account-age goal.",
       "prs": [
         13492
       ],
       "kind": "product"
     },
     {
-      "emoji": "🌟",
-      "title": "A meadow for every model",
-      "text": "Meadows puts Pollinations text, image, video, and audio models in one chat playground for side-by-side experimentation. [Try it](https://meadowy.roboticrobot.xyz)",
+      "emoji": "🔗",
+      "title": "Test private model endpoints",
+      "text": "In My Models, authenticated accounts can fetch a provider's model IDs and test an upstream endpoint before registering a private model. Public publishing still requires approval.",
       "prs": [
-        13484
+        13493
       ],
-      "kind": "app"
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Request agent publishing access",
+      "text": "The publisher request form now lets you ask to publish public managed agents, public community models, or both. Private agents do not need publishing approval.",
+      "prs": [
+        13474
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "A clearer models catalog",
+      "text": "Compare model capabilities, access labels, rate limits, and pricing in redesigned desktop and mobile cards, with clearer details controls on mobile. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        13469
+      ],
+      "kind": "product"
     }
   ],
   "changelog": []

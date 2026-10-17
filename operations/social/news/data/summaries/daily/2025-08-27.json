@@ -3,7 +3,7 @@
   "period_start": "2025-08-27",
   "period_end": "2025-08-27",
   "title": "Text completions report user tier",
-  "summary": "A small text API update makes user tier visible in completions and usage tracking.\n\nText completions now include `user_tier`, set to the authenticated tier or `anonymous`. Text event tracking records the tier too, making usage easier to break down.",
+  "summary": "A small text API update makes user tier visible in completions and easier to track.\n\nText completions gained a `user_tier` field showing the authenticated tier or `anonymous`. Event tracking now records tier as well, and the model-name discovery script displays it alongside results.",
   "pr_count": 1,
   "prs": [
     {
@@ -11,12 +11,12 @@
       "date": "2025-08-27"
     }
   ],
-  "generated_at": "2026-10-17T15:45:52.394119+00:00",
+  "generated_at": "2026-10-17T22:33:27.839920+00:00",
   "highlights": [
     {
       "emoji": "💡",
       "title": "Tier in text completions",
-      "text": "Text completions now include `user_tier`, showing the authenticated tier or `anonymous`.",
+      "text": "Text completion responses now include `user_tier`, showing the authenticated tier or `anonymous`. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         3876
       ],

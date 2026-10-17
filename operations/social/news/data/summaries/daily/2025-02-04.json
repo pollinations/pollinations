@@ -2,8 +2,8 @@
   "date": "2025-02-04",
   "period_start": "2025-02-04",
   "period_end": "2025-02-04",
-  "title": "More checks in image generation",
-  "summary": "Image generation gained more safety checks, feed events gained maturity data, and Pal Chat joined the community project listings.\n\nImage prompts gained LlamaGuard classification alongside the existing image checks. Prohibited requests can be rejected, and prompt enhancement now has a fallback when language detection fails.\n\nFeed listeners excluding NSFW content now account for additional maturity flags. The end_generating event gained a nested maturity field and no longer includes originalPrompt; LlamaGuard 7B AWQ was also added as a safety model in the text API.\n\nThe README and website now list Pal Chat, an iOS app by @pallavmac that puts Pollinations models and other LLMs in one chat interface.",
+  "title": "Image prompts get LlamaGuard checks",
+  "summary": "LlamaGuard adds image-prompt checks and feed maturity metadata, while Pal Chat joins the community project listings.\n\nImage generation gained LlamaGuard prompt classification. Prompts flagged for both mature and child-exploitation content are rejected, and repeated prohibited-content requests from the same IP are blocked.\n\nFeed listeners excluding NSFW content now account for additional maturity flags. The end_generating event gained a nested maturity field and no longer includes originalPrompt. LlamaGuard 7B AWQ was also added as a safety model in the text API.\n\nPal Chat, an iOS app that puts Pollinations models and other LLMs in one chat interface, was added to the README and website project listings.",
   "pr_count": 2,
   "prs": [
     {
@@ -15,16 +15,16 @@
       "date": "2025-02-04"
     }
   ],
-  "generated_at": "2026-10-17T15:33:23.001428+00:00",
+  "generated_at": "2026-10-17T22:28:54.877880+00:00",
   "highlights": [
     {
-      "emoji": "🔗",
-      "title": "Maturity data in feed events",
-      "text": "The `end_generating` feed event now includes a nested `maturity` field, giving feed builders more information for content filtering.",
+      "emoji": "🤖",
+      "title": "LlamaGuard joins the text API",
+      "text": "Use LlamaGuard 7B AWQ for safety classification through the text API. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         1111
       ],
-      "kind": "api"
+      "kind": "model"
     }
   ],
   "changelog": []

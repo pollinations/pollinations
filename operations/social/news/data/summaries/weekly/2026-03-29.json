@@ -2,20 +2,28 @@
   "date": "2026-03-29",
   "period_start": "2026-03-22",
   "period_end": "2026-03-28",
-  "title": "The Frontier Model Avalanche",
-  "summary": "We wired up a massive wave of frontier models, switched the entire billing system to hourly drips, and watched the community app directory explode.\n\nWe integrated a massive wave of new models this week. Amazon's Nova family (text, canvas, reel), Alibaba's Qwen suite (text, coder, vision, image editing), and xAI's Grok (reasoning, image, video) are all live. We also added Wan2.2 for free-tier video, and split Midijourney into Haiku (free) and Opus (large) variants.\n\nWaiting 24 hours for a credit refill is a relic of the past. All tiers now receive Pollen refills hourly. We also overhauled the automated Spore-to-Seed GitHub upgrades—expanding the commit evaluation window to a full year, switching to immutable GitHub IDs to survive username changes, and spreading the cron jobs out to avoid API rate limits.\n\nBuilding CLI tools just got easier. We implemented the RFC 8628 Device Authorization Grant, allowing secure, browser-based login for terminal and headless apps. On the backend, we overhauled Bring Your Own Pollen (BYOP) tracking with new Tinybird pipelines, giving us actual visibility into app ownership and ecosystem health.\n\nWe scrubbed aggressive marketing copy from the Play page and BYOP flows, replacing it with simpler, hackerspace-appropriate language. We also shipped a much-needed upgrade to the model monitor UI, adding 7-day aggregation windows and interactive health cards.",
-  "pr_count": 86,
+  "title": "The model menu got considerably wider",
+  "summary": "The model menu grew across text, images, and video, while apps and account tools got better at helping people use it.\n\nQwen brought code, long-context reasoning, and vision models. Nova and Grok gained new chat options, while `midijourney` gained two tiers. The `nova` alias now points to Nova 2 Lite; the main site separately switched its default text model to `nova-fast`. Models backed by four broken providers were removed from the registry. More choices are useful; choices that cannot answer are less so.\n\nNova Canvas, Qwen Image, and Grok Imagine added image generation or editing options. Nova Reel, Grok video, `wan-fast`, and the returning LTX-2 expanded video generation. Follow-up work corrected image input for `grok-video-pro` and routing for LTX-2. Video models that support audio now default to including it, with `audio=false` available when silence is the point.\n\nRegistered SPORE users can now submit apps to the Greenhouse. Review changes preserve submitted names and fuller descriptions, while catalog cleanup removed duplicate old-format rows without discarding apps found only there. New projects covered teaching, language practice, creative tools, terminal workflows, and more; the README also began crediting recent app creators by name.\n\nA device-code login flow gives CLIs and headless apps a browser-based way to connect. The dashboard explains API Keys and App Keys more clearly, and Spore-to-Seed checks now survive GitHub username changes. Websim gained a working prompt-and-model starting point; the Elevator Challenge added account connection and model choice; CatGPT now uses a signed-in player's key and handles shared model selections more reliably.",
+  "pr_count": 99,
   "prs": [
     {
       "number": 9420,
       "date": "2026-03-22"
     },
     {
-      "number": 9444,
+      "number": 9421,
       "date": "2026-03-22"
     },
     {
-      "number": 9450,
+      "number": 9424,
+      "date": "2026-03-22"
+    },
+    {
+      "number": 9426,
+      "date": "2026-03-22"
+    },
+    {
+      "number": 9444,
       "date": "2026-03-22"
     },
     {
@@ -43,6 +51,10 @@
       "date": "2026-03-23"
     },
     {
+      "number": 9452,
+      "date": "2026-03-23"
+    },
+    {
       "number": 9453,
       "date": "2026-03-23"
     },
@@ -55,15 +67,15 @@
       "date": "2026-03-23"
     },
     {
-      "number": 9457,
-      "date": "2026-03-23"
-    },
-    {
       "number": 9458,
       "date": "2026-03-23"
     },
     {
       "number": 9462,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9465,
       "date": "2026-03-23"
     },
     {
@@ -79,7 +91,11 @@
       "date": "2026-03-23"
     },
     {
-      "number": 9479,
+      "number": 9477,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9478,
       "date": "2026-03-23"
     },
     {
@@ -107,11 +123,15 @@
       "date": "2026-03-23"
     },
     {
-      "number": 9501,
+      "number": 9502,
       "date": "2026-03-23"
     },
     {
-      "number": 9502,
+      "number": 9503,
+      "date": "2026-03-23"
+    },
+    {
+      "number": 9504,
       "date": "2026-03-23"
     },
     {
@@ -123,6 +143,14 @@
       "date": "2026-03-24"
     },
     {
+      "number": 9521,
+      "date": "2026-03-24"
+    },
+    {
+      "number": 9522,
+      "date": "2026-03-24"
+    },
+    {
       "number": 9526,
       "date": "2026-03-24"
     },
@@ -131,15 +159,7 @@
       "date": "2026-03-24"
     },
     {
-      "number": 9537,
-      "date": "2026-03-24"
-    },
-    {
       "number": 9538,
-      "date": "2026-03-25"
-    },
-    {
-      "number": 9540,
       "date": "2026-03-25"
     },
     {
@@ -155,7 +175,15 @@
       "date": "2026-03-25"
     },
     {
-      "number": 9562,
+      "number": 9550,
+      "date": "2026-03-25"
+    },
+    {
+      "number": 9554,
+      "date": "2026-03-25"
+    },
+    {
+      "number": 9555,
       "date": "2026-03-25"
     },
     {
@@ -199,10 +227,6 @@
       "date": "2026-03-25"
     },
     {
-      "number": 9587,
-      "date": "2026-03-25"
-    },
-    {
       "number": 9542,
       "date": "2026-03-26"
     },
@@ -241,6 +265,14 @@
     {
       "number": 9633,
       "date": "2026-03-26"
+    },
+    {
+      "number": 9643,
+      "date": "2026-03-27"
+    },
+    {
+      "number": 9578,
+      "date": "2026-03-28"
     },
     {
       "number": 9628,
@@ -283,11 +315,19 @@
       "date": "2026-03-28"
     },
     {
+      "number": 9672,
+      "date": "2026-03-28"
+    },
+    {
       "number": 9673,
       "date": "2026-03-28"
     },
     {
       "number": 9675,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9676,
       "date": "2026-03-28"
     },
     {
@@ -343,6 +383,18 @@
       "date": "2026-03-28"
     },
     {
+      "number": 9695,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9697,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9699,
+      "date": "2026-03-28"
+    },
+    {
       "number": 9702,
       "date": "2026-03-28"
     },
@@ -351,5 +403,5 @@
       "date": "2026-03-28"
     }
   ],
-  "generated_at": "2026-03-29T06:22:53.391278+00:00"
+  "generated_at": "2026-10-17T23:27:07.167768+00:00"
 }

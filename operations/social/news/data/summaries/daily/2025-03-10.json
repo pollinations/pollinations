@@ -2,8 +2,8 @@
   "date": "2025-03-10",
   "period_start": "2025-03-10",
   "period_end": "2025-03-10",
-  "title": "Two Gemini models join the text API",
-  "summary": "Two Gemini chat models arrived, DeepSeek got longer responses, and the community project gallery kept growing.\n\nAdded `gemini`, based on Gemini 2.0 Flash Lite Preview, and `gemini-thinking`, based on Gemini 2.0 Flash Thinking Experimental, to the chat model list.\n\nDeepSeek's response limit rose from 4,096 to 8,192 tokens. Audio-model requests that omit a voice now default to `amuch` instead of `alloy`.\n\nThe project listings gained AvatarStudio, Herramientas IA, AI Unlimited Customizable Feature Module, and a Chinese children's storybook demo; Elixpo's listing was updated to Elixpo-Art. The storybook entry also gained language metadata and an English description, while the website's estimated image count received updated calculation inputs.",
+  "title": "Two Gemini options join chat",
+  "summary": "Two Gemini chat models joined the text API, DeepSeek got room for longer answers, and the community project gallery grew.\n\nThe text API added `gemini`, based on Gemini 2.0 Flash Lite Preview, and `gemini-thinking`, based on Gemini 2.0 Flash Thinking Experimental. One favors a lighter chat model; the other is configured to reason step by step when appropriate.\n\nDeepSeek's response limit rose from 4,096 to 8,192 tokens. Audio requests that omit a voice now default to `amuch` instead of `alloy`.\n\nThe project lists gained AvatarStudio, a DescartesJS-based tool collection, a Chinese-language AI tools interface, and a Chinese children's storybook demo. The Elixpo listing was updated to Elixpo-Art, and the storybook entry introduced language and country metadata for non-English projects.",
   "pr_count": 9,
   "prs": [
     {
@@ -43,12 +43,12 @@
       "date": "2025-03-10"
     }
   ],
-  "generated_at": "2026-10-17T15:35:22.499539+00:00",
+  "generated_at": "2026-10-17T22:29:16.138252+00:00",
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Gemini Flash Lite joins chat",
-      "text": "Use `gemini` for chat requests with Gemini 2.0 Flash Lite Preview. [Browse the model](https://enter.pollinations.ai/models?q=gemini).",
+      "title": "Gemini Flash Lite chat",
+      "text": "Try `gemini`, based on Gemini 2.0 Flash Lite Preview, through the text API. [View the model](https://enter.pollinations.ai/models?q=gemini).",
       "prs": [
         1301
       ],
@@ -56,10 +56,19 @@
     },
     {
       "emoji": "💡",
-      "title": "Gemini Thinking joins chat",
-      "text": "Use `gemini-thinking` for chat requests with Gemini 2.0 Flash Thinking Experimental. [Browse the model](https://enter.pollinations.ai/models?q=gemini-thinking).",
+      "title": "Gemini Thinking chat",
+      "text": "Try `gemini-thinking`, based on Gemini 2.0 Flash Thinking Experimental and configured to reason step by step when appropriate. [View the model](https://enter.pollinations.ai/models?q=gemini-thinking).",
       "prs": [
         1301
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Longer DeepSeek responses",
+      "text": "DeepSeek can now return up to 8,192 tokens per response, twice its previous limit.",
+      "prs": [
+        1302
       ],
       "kind": "model"
     }

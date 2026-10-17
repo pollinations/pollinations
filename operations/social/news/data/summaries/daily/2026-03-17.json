@@ -2,9 +2,9 @@
   "date": "2026-03-17",
   "period_start": "2026-03-17",
   "period_end": "2026-03-17",
-  "title": "shipped 6 PRs today",
-  "summary": "qwen3.5 397b is now live. you can finally upload files on the play page. also fixed a stubborn kv caching bug that was ignoring api key permission changes, which was a great time. homepage got some fresh paint too",
-  "pr_count": 6,
+  "title": "Reference images are easier to add in Play",
+  "summary": "Reference images got easier to upload, Qwen3.5 joined the model list, and Model Monitor learned to watch audio and video too.\n\nPlay added click-to-browse and drag-and-drop reference-image uploads, with progress and error feedback. The homepage now gives a clearer overview of available capabilities, while model links retain their destination through sign-in.\n\nQwen3.5 397B A17B was added as `qwen`, with image inputs, tools, reasoning, and a 262,144-token context window. Related model work corrected the Suno music-generation route and added a proxy route for qwen3-tts requests.\n\nModel Monitor now includes audio models and identifies video models by their output modality. It also separates models by endpoint, makes degraded and off states easier to spot, and puts models without data at the bottom of the table.",
+  "pr_count": 10,
   "prs": [
     {
       "number": 9156,
@@ -19,6 +19,10 @@
       "date": "2026-03-17"
     },
     {
+      "number": 9200,
+      "date": "2026-03-17"
+    },
+    {
       "number": 9216,
       "date": "2026-03-17"
     },
@@ -27,38 +31,50 @@
       "date": "2026-03-17"
     },
     {
+      "number": 9220,
+      "date": "2026-03-17"
+    },
+    {
       "number": 9225,
+      "date": "2026-03-17"
+    },
+    {
+      "number": 9227,
+      "date": "2026-03-17"
+    },
+    {
+      "number": 9229,
       "date": "2026-03-17"
     }
   ],
-  "generated_at": "2026-03-18T06:23:31.721923+00:00",
+  "generated_at": "2026-10-17T22:44:19.370683+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "Drag-and-Drop Uploads",
-      "text": "You can now upload local images (up to 5MB) directly on the Play page instead of hunting for URLs.",
+      "emoji": "🎨",
+      "title": "Drop images into Play",
+      "text": "Add reference images by browsing or dragging files into Play, with upload progress and errors shown there. [Try Play](https://pollinations.ai/play).",
       "prs": [
         9156
       ],
       "kind": "product"
     },
     {
-      "emoji": "📊",
-      "title": "Omniscient Model Monitor",
-      "text": "The model monitor now tracks audio and video models alongside text and images, so you know exactly what's up (or down).",
-      "prs": [
-        9187
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🧠",
-      "title": "Qwen3.5 397B Arrives",
-      "text": "We've added Qwen3.5 397B to the [Unified API](https://gen.pollinations.ai). Massive 262K context window, vision, and reasoning capabilities are now a single endpoint away.",
+      "emoji": "🤖",
+      "title": "Qwen3.5 397B joins",
+      "text": "Use `qwen` for text and image inputs, tools, and reasoning, with a 262,144-token context window. [Explore the model](https://enter.pollinations.ai/models?q=qwen).",
       "prs": [
         9225
       ],
       "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Monitor audio and video models",
+      "text": "Model Monitor now includes audio and video models alongside text and image models, with clearer indicators for degraded or off states. [Open Model Monitor](https://model-monitor.pollinations.ai).",
+      "prs": [
+        9187
+      ],
+      "kind": "product"
     }
   ],
   "changelog": []

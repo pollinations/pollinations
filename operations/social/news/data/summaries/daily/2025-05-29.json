@@ -2,8 +2,8 @@
   "date": "2025-05-29",
   "period_start": "2025-05-29",
   "period_end": "2025-05-29",
-  "title": "Nectar requests skip the queue",
-  "summary": "A day of request-path work: Nectar queue bypass, more reusable text caching, and stage-based GPT Image routing.\n\nQueue handling now accounts for authentication and user tier. Nectar-tier requests bypass the queue whether authenticated by token or registered referrer; other token-authenticated requests enter with no queue interval. Referrer validation was added, and GPT Image access now checks authentication directly rather than using queue bypass as a proxy.\n\nText cache keys now ignore authentication and request-control fields, so otherwise identical requests can use the same cached result instead of creating separate entries.\n\nGPT Image requests now select an endpoint by user stage instead of at random: Seed uses one endpoint, while Flower and Nectar use another. Failed Turbo and Flux fetches now return an error immediately rather than retrying.",
+  "title": "Queue rules follow user tier",
+  "summary": "Queue priority now follows tier and authentication, text caching ignores irrelevant request fields, and GPT Image routing follows user stage.\n\nNectar requests now skip the queue whether authenticated by token or registered referrer. Other token-authenticated requests enter with a zero interval, while standard queue timing remains for other requests. GPT Image access is checked against authentication status rather than queue bypass.\n\nText cache keys now ignore authentication and cache-control fields, so otherwise identical requests can use the same cache entry even when those fields differ.\n\nGPT Image requests now route by user stage instead of randomly: Seed uses one endpoint, while Flower and Nectar use another. Failed Turbo and Flux fetches now return an error immediately rather than retrying.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,7 +23,7 @@
       "date": "2025-05-29"
     }
   ],
-  "generated_at": "2026-10-17T15:41:07.151799+00:00",
+  "generated_at": "2026-10-17T22:31:40.781780+00:00",
   "highlights": [],
   "changelog": []
 }

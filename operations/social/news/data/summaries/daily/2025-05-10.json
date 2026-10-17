@@ -2,8 +2,8 @@
   "date": "2025-05-10",
   "period_start": "2025-05-10",
   "period_end": "2025-05-10",
-  "title": "Two community projects join the directory",
-  "summary": "Two community projects joined the directory, while the MCP and audio guides got more useful.\n\nThe project lists now include Aiphoto智能绘画, which makes images from Chinese-language descriptions, and SingodiyaTech, a Telegram bot offering AI features.\n\nThe MCP guides now list Pink Pixel’s community-maintained MCPollinations server alongside the official server, with installation details. The website guide also drops an outdated Node.js image and audio example.\n\nThe text-to-speech POST docs now show that `/openai` returns JSON containing base64-encoded audio at `choices[0].message.audio.data`, rather than a raw MP3. The cURL, Python, and JavaScript examples show how to decode it.",
+  "title": "Two more projects in the community directory",
+  "summary": "Two community projects joined the directory, while the MCP and text-to-speech guides got more accurate.\n\nThe project listings added Aiphoto智能绘画, which generates images from Chinese descriptions, and SingodiyaTech, a Telegram bot offering AI features.\n\nThe MCP guides now list the community-maintained MCPollinations server alongside the official server, and clarify the official install command. An outdated website example was removed.\n\nThe text-to-speech POST docs now show that /openai returns JSON containing base64-encoded audio, not a raw MP3. The cURL, Python, and JavaScript examples show how to decode it.",
   "pr_count": 4,
   "prs": [
     {
@@ -23,7 +23,7 @@
       "date": "2025-05-10"
     }
   ],
-  "generated_at": "2026-10-17T15:39:17.980797+00:00",
+  "generated_at": "2026-10-17T22:30:58.486512+00:00",
   "highlights": [],
   "changelog": []
 }

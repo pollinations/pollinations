@@ -2,8 +2,8 @@
   "date": "2025-12-31",
   "period_start": "2025-12-01",
   "period_end": "2025-12-31",
-  "title": "More ways to make and work with media",
-  "summary": "December made more of Pollinations usable from the browser while expanding media generation, model choices, and the tools for building with them.\n\nVideo generation reached the API and Chat, with Seedance and Veo gaining image-guided options. Chat added image and video controls, Play gained reference images and a Watch Feed, and Gemini chat requests gained video input.\n\nSeedream 4.5, Seedance Pro-Fast, Z-Image Turbo, GPT-5.2, Gemini 3 Flash, GPT Image 1.5, and DeepSeek V3.2 joined or took over routes. Follow-up work improved image sizing, editing, and model-specific request handling.\n\nHello gained a rebuilt playground, and a replacement site frontend brought Play, docs, themes, and community pages together. The app directory was consolidated into 318 listings as new community projects kept arriving.\n\nEnter added usage exports, model-restricted keys, app authorization, and clearer accounting for pending spend. New accounts gained automatic Spore assignment, while separate tier and pack balances made daily resets easier to understand.",
+  "title": "More ways to make images and video",
+  "summary": "Generation gained more models and controls, while the site, API, and Pollen tools became easier to use together.\n\nVeo and Seedance video generation gained chat controls, image inputs, and frame-based options. Seedream, GPT Image, and Z-Image expanded image generation and editing; Z-Image became the default image model.\n\nThe rebuilt Hello playground became the pollinations.ai frontend, bringing generation, docs, themes, and a consolidated community app directory together. Play later gained reference-image editing and a feed of completed images.\n\nEnter added usage exports, model-restricted keys, and an authorization flow for third-party apps. Balance tracking now separates tier grants from purchased packs, with both shown in the dashboard.\n\nGPT-5.2, Gemini 3 Flash, and DeepSeek V3.2 joined or took over model routes. Gemini gained built-in tools and video input, while compatibility fixes addressed thinking settings, tool schemas, and streaming text.",
   "pr_count": 266,
   "prs": [
     {
@@ -1071,5 +1071,5 @@
       "date": "2025-12-31"
     }
   ],
-  "generated_at": "2026-10-17T16:09:45.011594+00:00"
+  "generated_at": "2026-10-17T23:31:22.424448+00:00"
 }

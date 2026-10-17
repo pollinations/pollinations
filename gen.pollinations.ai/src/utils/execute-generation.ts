@@ -124,7 +124,9 @@ export async function executeGeneration(
         }
 
         await cacheWrite;
-        return { result: { status: "cached" }, settlement };
+        // This execution produced a fresh cache entry (the R2 has() pre-check
+        // inside missed), so the requester experienced a MISS, not a HIT.
+        return { result: { status: "generated" }, settlement };
     } catch (error) {
         await settlement;
         throw error;

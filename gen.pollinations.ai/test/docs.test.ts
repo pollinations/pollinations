@@ -717,42 +717,49 @@ describe("docs routes", () => {
         expect(html).toContain("#tag/connect-user-wallets");
     });
 
-    it.each([
-        ["production", "https://enter.pollinations.ai"],
-        ["staging", "https://staging.enter.myceli.ai"],
-        ["development", "http://localhost:3000"],
-    ])(
-        "connects docs to the %s account service without rendering credentials",
-        async (environment, enterUrl) => {
-            const ctx = createExecutionContext();
-            const response = await worker.fetch(
-                new Request("https://gen.pollinations.ai/docs", {
-                    headers: {
-                        Authorization: "Bearer example-private-credential",
-                    },
-                }),
-                {
-                    ...envWithEnterSchema({}),
-                    ENVIRONMENT: environment,
-                    DOCS_APP_KEY: "pk_docs_test",
-                } as CloudflareBindings,
-                ctx,
-            );
-            await waitOnExecutionContext(ctx);
-            const html = await response.text();
-            expect(response.status).toBe(200);
-            expect(html).toContain('id="ph-docs-account"');
-            expect(html).toContain('data-app-key="pk_docs_test"');
-            expect(html).toContain(`data-enter-url="${enterUrl}"`);
-            expect(html).toContain('src="/docs-assets/connect.js"');
-            expect(html).toContain('href="/docs-assets/connect.css"');
-            expect(html).toContain("window.pollinationsDocsConfiguration =");
-            expect(html).toContain(
-                "window.pollinationsDocsReference = Scalar.createApiReference(",
-            );
-            expect(html).not.toContain("example-private-credential");
-        },
-    );
+    it("adds the pinned sign-in button without rendering credentials", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs", {
+                headers: {
+                    Authorization: "Bearer example-private-credential",
+                },
+            }),
+            {
+                ...envWithEnterSchema({}),
+                DOCS_APP_KEY: "pk_docs_test",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        const html = await response.text();
+        expect(response.status).toBe(200);
+        expect(html).toContain(
+            '<polli-connect app-key="pk_docs_test" budget="5" expiry="7">',
+        );
+        expect(html).toMatch(
+            /<script defer src="https:\/\/cdn\.jsdelivr\.net\/npm\/@pollinations\/ui@[^"]+\/dist\/connect\.js" integrity="sha384-[^"]+" crossorigin="anonymous">/,
+        );
+        // The page runs the tested helper's own source.
+        expect(html).toContain(String(authenticateDocsRequest));
+        expect(html).toContain(
+            "window.pollinationsDocsReference = Scalar.createApiReference(",
+        );
+        expect(html).not.toContain("example-private-credential");
+    });
+
+    it("omits sign-in when no docs App Key is configured", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        const html = await response.text();
+        expect(html).not.toContain("<polli-connect");
+        expect(html).not.toContain("connect.js");
+    });
 
     it("puts the dashboard and help links in the docs drawer", async () => {
         const ctx = createExecutionContext();

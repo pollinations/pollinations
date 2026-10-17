@@ -20,22 +20,13 @@
         "baseUrl": ".",
         "paths": {
             "@/*": ["src/*"],
-            "@shared/*": ["../shared/*"],
-            "@pollinations/sdk/react": [
-                "../packages/sdk/src/react/index.ts"
-            ],
-            "@pollinations/ui/app-user-menu/sdk": [
-                "../packages/ui/src/modules/app-user-menu/sdk.ts"
-            ]
-        },
-        "jsx": "react-jsx"
+            "@shared/*": ["../shared/*"]
+        }
     },
     "include": [
         "src/**/*",
         "test/**/*",
         "worker-bindings.d.ts"
     ],
-    "exclude": [
-        "node_modules"
-    ]
+    "exclude": ["node_modules"]
 }

@@ -26,6 +26,7 @@ import { stringify as yamlStringify } from "yaml";
 import type { Env } from "@/env.ts";
 import BRAND_LOCKUP_SVG from "../../../packages/ui/src/brand/lockup-horizontal.svg?raw";
 import LOGO_WHITE_SVG from "../../../packages/ui/src/brand/lockup-horizontal-white.svg?raw";
+import { authenticateDocsRequest } from "../docs-client/request-auth.ts";
 import { CODE_SAMPLES, RESPONSE_EXAMPLES } from "./docs-samples.ts";
 import {
     API_REFERENCE_CUSTOM_CSS,
@@ -436,22 +437,28 @@ const GUIDE_REDIRECT_TAGS: Record<string, string> = {
     mcp: "mcp-servers",
 };
 
-function pollinationsDocsHtml(appKey: string, enterUrl: string): string {
+function pollinationsDocsHtml(appKey: string): string {
     const navIcons = JSON.stringify(DOC_TAG_NAV_ICON_HTML);
     const sidebarBrand = JSON.stringify(
         `<a href="/docs" class="ph-docs-brand" aria-label="Pollinations Docs"><span class="ph-docs-lockup" aria-hidden="true">${BRAND_LOCKUP_SVG}</span><span class="ph-docs-divider" aria-hidden="true"></span><span class="ph-docs-label">Docs</span></a>`,
     );
     const sidebarLinks = JSON.stringify(DOCS_SIDEBAR_LINKS_HTML);
+    // Sign-in is the published <polli-connect> drop-in, pinned like Scalar.
+    const connect = appKey
+        ? `<polli-connect app-key="${appKey}" budget="5" expiry="7"></polli-connect>`
+        : "";
+    const connectScript = appKey
+        ? `<script defer src="${CONNECT_CDN}" integrity="${CONNECT_INTEGRITY}" crossorigin="anonymous"></script>`
+        : "";
     return `<style>${POLLINATIONS_DOCS_CSS}</style>
-<link rel="stylesheet" href="/docs-assets/connect.css">
 <div class="ph-fab-cluster">
   <button class="ph-fab ph-fab-copy" type="button" aria-label="Copy full docs as Markdown" title="Copy the full docs as Markdown, ready to paste into an AI assistant">
     <span class="ph-fab-face ph-fab-idle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy for LLMs</span>
     <span class="ph-fab-face ph-fab-done" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Copied</span>
   </button>
-  <div id="ph-docs-account" data-theme="amber" data-app-key="${appKey}" data-enter-url="${enterUrl}"></div>
+  ${connect}
 </div>
-<script type="module" src="/docs-assets/connect.js"></script>
+${connectScript}
 <script>
 (function () {
   function normalizeLegacyHash() {
@@ -470,6 +477,25 @@ function pollinationsDocsHtml(appKey: string, enterUrl: string): string {
       await navigator.clipboard.writeText(await res.text());
       copy.classList.add('is-copied');
       setTimeout(function () { copy.classList.remove('is-copied'); }, 1500);
+    });
+  }
+  // Rebuild the reference whenever the connected key changes, so Scalar's
+  // manually edited credentials are cleared on Disconnect too.
+  var connect = document.querySelector('polli-connect');
+  if (connect) {
+    var authenticate = (${authenticateDocsRequest});
+    connect.addEventListener('change', function () {
+      var apiKey = connect.apiKey;
+      if (!window.pollinationsDocsReference) return;
+      window.pollinationsDocsReference.destroy();
+      window.pollinationsDocsReference = Scalar.createApiReference('#app', Object.assign({}, window.pollinationsDocsConfiguration, {
+        authentication: {
+          preferredSecurityScheme: 'bearerAuth',
+          securitySchemes: { bearerAuth: { token: apiKey ? 'YOUR_API_KEY' : '' } },
+        },
+        // Pinned Scalar 1.74 calls this with the actual outbound Request.
+        onRequestBuilt: function (event) { authenticate(event.request, apiKey); },
+      }));
     });
   }
   // Text-based DOM scan for Scalar buttons whose class names get hashed
@@ -1066,6 +1092,10 @@ const SCALAR_CDN =
     "https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.74.0/dist/browser/standalone.js";
 const SCALAR_INTEGRITY =
     "sha384-VXnKAz61Xwc3tbw1P+KKrUP7YbcsSl1Ik4is5UnogJyw9XEYZ5Ay/T1i0zPYtSZH";
+const CONNECT_CDN =
+    "https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.19/dist/connect.js";
+const CONNECT_INTEGRITY =
+    "sha384-UkxnnQi3VW38H7E5Ovpysgy6ia/d3V/pjZlHx2xN7ZKlqHOa1sEWSWSVJL5xs3Gc";
 
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     const routes = new Hono<Env>()
@@ -1122,7 +1152,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 },
             })(c, next);
             if (!response) return;
-            // Render the reference independently of React and OAuth hydration.
+            // Expose the reference and its config so sign-in can rebuild it.
             const html = (await response.text())
                 .replace(
                     `<script src="${SCALAR_CDN}">`,
@@ -1143,14 +1173,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             const insertAt = bodyOpenMatch.index + bodyOpenMatch[0].length;
             return c.html(
                 htmlWithMeta.slice(0, insertAt) +
-                    pollinationsDocsHtml(
-                        c.env.DOCS_APP_KEY ?? "",
-                        c.env.ENVIRONMENT === "production"
-                            ? "https://enter.pollinations.ai"
-                            : c.env.ENVIRONMENT === "staging"
-                              ? "https://staging.enter.myceli.ai"
-                              : "http://localhost:3000",
-                    ) +
+                    pollinationsDocsHtml(c.env.DOCS_APP_KEY ?? "") +
                     htmlWithMeta.slice(insertAt),
             );
         })

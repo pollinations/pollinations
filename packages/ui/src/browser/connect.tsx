@@ -51,7 +51,6 @@ class PolliConnect extends HTMLElement {
         this.#root?.unmount();
         this.#root = undefined;
         if (activeConnect === this) activeConnect = undefined;
-        this.#setKey(null);
     }
 
     attributeChangedCallback(

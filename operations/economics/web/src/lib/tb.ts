@@ -38,7 +38,10 @@ export class TbError extends Error {
     }
 }
 
-async function fetchPipe<T>(pipe: string, signal?: AbortSignal): Promise<T[]> {
+export async function fetchPipe<T>(
+    pipe: string,
+    signal?: AbortSignal,
+): Promise<T[]> {
     if (fixturesMode()) {
         const rows = FIXTURES[pipe];
         if (!rows) throw new Error(`Missing fixture for pipe ${pipe}`);

@@ -8,29 +8,41 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 
 // Read the private vendor journals before importing any calculations.
 const Dashboard = lazy(async () => {
-    const response = await fetch("/api/economics/vendor-journals", {
-        credentials: "same-origin",
-    });
-    if (!response.ok)
-        throw new Error(
-            "Vendor journals could not be loaded from Drive. Reload to retry.",
+    try {
+        const response = await fetch("/api/economics/vendor-journals", {
+            credentials: "same-origin",
+        });
+        if (!response.ok)
+            throw new Error(
+                "Vendor journals could not be loaded from Drive. Reload to retry.",
+            );
+        const { initializeProviderRegistry } = await import(
+            "./lib/providerRegistry"
         );
-    const { initializeProviderRegistry } = await import(
-        "./lib/providerRegistry"
-    );
-    const snapshot = (await response.json()) as {
-        vendorDetails: unknown;
-        planning: unknown;
-    };
-    initializeProviderRegistry(snapshot.vendorDetails);
-    const { parsePlanningDocument } = await import("./lib/planning");
-    const planningDocument = parsePlanningDocument(snapshot.planning);
-    const { default: Economics } = await import("./App");
-    return {
-        default: (
-            props: Omit<ComponentProps<typeof Economics>, "planningDocument">,
-        ) => <Economics {...props} planningDocument={planningDocument} />,
-    };
+        const snapshot = (await response.json()) as {
+            vendorDetails: unknown;
+            planning: unknown;
+        };
+        initializeProviderRegistry(snapshot.vendorDetails);
+        const { parsePlanningDocument } = await import("./lib/planning");
+        const planningDocument = parsePlanningDocument(snapshot.planning);
+        const { default: Economics } = await import("./App");
+        return {
+            default: (
+                props: Omit<
+                    ComponentProps<typeof Economics>,
+                    "planningDocument"
+                >,
+            ) => <Economics {...props} planningDocument={planningDocument} />,
+        };
+    } catch (error) {
+        const { SourceRecovery } = await import("./components/SourceRecovery");
+        const reason =
+            error instanceof Error
+                ? error.message
+                : "Vendor journals are unavailable.";
+        return { default: () => <SourceRecovery reason={reason} /> };
+    }
 });
 function App() {
     const { user, isPending, error } = useDashboardSession();

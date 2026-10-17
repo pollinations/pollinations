@@ -1019,10 +1019,15 @@ class DeliverTest(unittest.TestCase):
         api = {
             f"pulls/{deploy_posts.CUTOVER_PR}": {"merged_at": "2026-10-20T00:00:00Z", "merge_commit_sha": "cutover"},
             "git/ref/heads/production": {"object": {"sha": "production"}},
+            # PR 2 was rebase-merged: its commit title names no PR, GitHub's commit link does.
             "compare/cutover...production": {"status": "ahead", "commits": [
-                {"commit": {"message": f"change (#{n})"}} for n in (1, 2, 3, 4, 5)]},
+                {"sha": f"c{n}", "commit": {"message": "rebased change" if n == 2 else f"change (#{n})"}}
+                for n in (1, 2, 3, 4, 5)]},
             "pulls/1": pr(1, "2026-10-20T00:00:00Z"), "pulls/2": pr(2), "pulls/3": pr(3),
             "pulls/4": pr(4, "2026-10-19T10:00:00Z"), "pulls/5": pr(5, base="production"),
+            **{f"commits/c{n}/pulls": [pr(n, *args)] for n, args in
+               ((1, ("2026-10-20T00:00:00Z",)), (2, ()), (3, ()), (4, ("2026-10-19T10:00:00Z",)),
+                (5, ("2026-10-21T10:00:00Z", "production")))},
             f"actions/workflows/{workflow}/runs": {"workflow_runs": [
                 {"id": 1, "head_sha": "production", "created_at": "2026-10-21T11:00:00Z"}]},
             "actions/runs/1/jobs": {"jobs": [{"name": "deploy-media", "conclusion": "success"},

@@ -12,7 +12,6 @@ Use --preview to inspect readiness without writing records or sending anything.
 import argparse
 import base64
 import json
-import re
 import subprocess
 import sys
 import time
@@ -55,7 +54,6 @@ WORKFLOWS = {
 }
 PRS_DIR = f"{POSTS_REL_DIR}/discord/prs"
 HELD_PATH = f"{PRS_DIR}/held.json"
-SQUASHED = re.compile(r"\(#(\d+)\)$")
 POST = read_post(PROMPTS_DIR / "posts/discord/pr.md")
 
 
@@ -123,8 +121,10 @@ def discover(state: dict, head: str, cutover: dict, rules: Path) -> None:
             return  # the cutover is on main but hasn't reached production
         raise ValueError("Production no longer contains the saved news cursor; inspect the rollback")
     commits = pages(f"compare/{since}...{head}", "commits") if since != head else []
-    numbers = {int(match[1]) for commit in commits
-               if (match := SQUASHED.search(commit["commit"]["message"].split("\n", 1)[0]))}
+    # GitHub links every commit to the PR that brought it, whether it was squashed, rebased or
+    # merged; the base check leaves out production promotions.
+    numbers = {pr["number"] for commit in commits for pr in github(f"commits/{commit['sha']}/pulls")
+               if pr["base"]["ref"] == "main" and pr["merged_at"]}
     for number in sorted(numbers):
         pr = github(f"pulls/{number}")
         if pr["base"]["ref"] != "main" or (pr["merged_at"] or "") < cutover["merged_at"]:

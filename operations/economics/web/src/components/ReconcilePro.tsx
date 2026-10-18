@@ -25,7 +25,11 @@ export function useAmountDisplay() {
         fmtUnsignedPct: (value: number | null | undefined) =>
             fmtUnsignedPct(value, pro ? 2 : 0),
         fmtNumber: pro ? fmtExactNumber : fmtNumber,
-        fmtSignedUsd: (value: number | null) =>
-            value != null && value > 0 ? `+${usd(value)}` : usd(value),
+        fmtSignedUsd: (value: number | null) => {
+            const formatted = usd(value);
+            return formatted && value != null && value > 0
+                ? `+${formatted}`
+                : formatted;
+        },
     };
 }

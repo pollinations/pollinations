@@ -47,7 +47,7 @@ export function dataConfidence(
                 cost > 0
                     ? `${Math.floor(Math.max(0, 1 - unmatched / cost) * 100)}% of recorded costs have usage records. `
                     : "";
-            const amount = fmtUsd(unmatched);
+            const amount = fmtUsd(unmatched) || "A recorded cost";
             return {
                 status: "Partial",
                 detail: `${percentage}${amount} has no matching usage; ${report.provisional ? "results use recorded figures" : "results remain unknown"}.`,

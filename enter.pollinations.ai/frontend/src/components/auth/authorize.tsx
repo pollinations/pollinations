@@ -464,11 +464,15 @@ export function Authorize() {
                 url.hash = hash.toString();
             }
             window.location.href = url.toString();
-        } else if (document.referrer && window.history.length > 1) {
+        } else if (window.history.length > 1) {
             // Unvalidated redirect: return to the page that opened this one
             // without sending anything to the redirect URL. history.length
-            // also counts forward entries and navigation.canGoBack ignores
-            // cross-origin pages, so the referrer shows a previous page.
+            // also counts forward entries, so open the dashboard if back()
+            // goes nowhere.
+            const fallback = setTimeout(() => navigate({ to: "/" }), 1000);
+            window.addEventListener("pagehide", () => clearTimeout(fallback), {
+                once: true,
+            });
             window.history.back();
         } else {
             navigate({ to: "/" });

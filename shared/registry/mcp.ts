@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "TIME_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "time",
+        name: "Time",
+        description:
+            "Read the current time and do timezone-correct conversion and date arithmetic.",
+        binding: "TIME_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Free. Runs no model calls and adds no MCP fee.",
             rates: [],
         },
     },

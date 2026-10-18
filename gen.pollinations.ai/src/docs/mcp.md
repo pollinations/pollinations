@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Time | `https://gen.pollinations.ai/mcp/time` | Read the current time and do timezone-correct conversion and date arithmetic | [Source](https://github.com/pollinations/pollinations/tree/main/apps/time-mcp) |
 
 Send the key with every request:
 
@@ -207,6 +208,16 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### Time MCP
+
+The Time server gives agents a reliable clock: `time_now` returns the current
+date, time, weekday, and unix time in UTC plus any requested IANA timezones;
+`time_convert` converts a wall-clock time between timezones with DST handled;
+`time_math` adds or subtracts calendar units (with month-end clamping, so
+January 31 plus one month is February 28) and measures the exact calendar
+distance between two times. All tools are pure date math: no model calls, no
+extra fee.
 
 ### Billing and permissions
 

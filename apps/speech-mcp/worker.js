@@ -77,7 +77,9 @@ function buildServer() {
                     .min(1)
                     .max(256)
                     .optional()
-                    .describe('Voice name from list_speech_models, default "alloy".'),
+                    .describe(
+                        'Voice name from list_speech_models, default "alloy".',
+                    ),
                 model: z
                     .string()
                     .min(1)
@@ -111,9 +113,7 @@ function buildServer() {
             const contentType = response.headers.get("content-type") || "";
             if (contentType.includes("application/json")) {
                 const payload = await response.json();
-                return createMCPResponse([
-                    createTextContent(payload, true),
-                ]);
+                return createMCPResponse([createTextContent(payload, true)]);
             }
             const bytes = Buffer.from(await response.arrayBuffer());
             if (!bytes.length) {
@@ -143,38 +143,53 @@ function buildServer() {
                 audio: z
                     .string()
                     .min(4)
-                    .describe("Base64 audio bytes or a data:<mime>;base64,... URI, up to 25 MB."),
+                    .describe(
+                        "Base64 audio bytes or a data:<mime>;base64,... URI, up to 25 MB.",
+                    ),
                 filename: z
                     .string()
                     .min(1)
                     .max(256)
                     .optional()
-                    .describe('Filename hint for the upload, default "audio.mp3".'),
+                    .describe(
+                        'Filename hint for the upload, default "audio.mp3".',
+                    ),
                 model: z
                     .string()
                     .min(1)
                     .max(256)
                     .optional()
-                    .describe("Transcription model id from list_speech_models."),
+                    .describe(
+                        "Transcription model id from list_speech_models.",
+                    ),
                 language: z
                     .string()
                     .min(2)
                     .max(8)
                     .optional()
-                    .describe("ISO-639-1 language code of the audio, e.g. en, fr."),
+                    .describe(
+                        "ISO-639-1 language code of the audio, e.g. en, fr.",
+                    ),
                 prompt: z
                     .string()
                     .min(1)
                     .max(1000)
                     .optional()
-                    .describe("Hint text to guide the model's style or vocabulary."),
+                    .describe(
+                        "Hint text to guide the model's style or vocabulary.",
+                    ),
                 response_format: z
                     .enum(["json", "verbose_json", "text", "srt", "vtt"])
                     .optional()
-                    .describe("Transcript format, default json. Support is model-dependent."),
+                    .describe(
+                        "Transcript format, default json. Support is model-dependent.",
+                    ),
             }),
         },
-        async ({ audio, filename, model, language, prompt, response_format }, context) => {
+        async (
+            { audio, filename, model, language, prompt, response_format },
+            context,
+        ) => {
             const { bytes, mimeType } = decodeAudio(audio);
             const form = new FormData();
             form.append(
@@ -251,8 +266,7 @@ function unauthorizedResponse() {
         {
             status: 401,
             headers: {
-                "WWW-Authenticate":
-                    'Bearer realm="speech-mcp.pollinations.ai"',
+                "WWW-Authenticate": 'Bearer realm="speech-mcp.pollinations.ai"',
             },
         },
     );

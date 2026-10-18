@@ -7,11 +7,7 @@ import {
 import worker from "./worker.js";
 
 const TOKEN = "sk_test_request_scoped";
-const EXPECTED_TOOLS = [
-    "list_speech_models",
-    "text_to_speech",
-    "transcribe",
-];
+const EXPECTED_TOOLS = ["list_speech_models", "text_to_speech", "transcribe"];
 
 function localFetch(input, init) {
     const request = input instanceof Request ? input : new Request(input, init);
@@ -126,7 +122,9 @@ test("text_to_speech returns audio and forwards the caller's key", async (t) => 
             headers: { "Content-Type": "audio/mpeg" },
         });
     });
-    const client = await connectClient({ versionNegotiation: { mode: "auto" } });
+    const client = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
     t.after(() => client.close());
     const result = await client.callTool({
         name: "text_to_speech",
@@ -164,10 +162,7 @@ test("transcribe uploads the audio as multipart with the caller's key", async (t
             `Bearer ${TOKEN}`,
         );
         // fetch sets the multipart boundary itself, never a fixed content-type.
-        assert.equal(
-            new Headers(init.headers).get("content-type"),
-            null,
-        );
+        assert.equal(new Headers(init.headers).get("content-type"), null);
         const form = init.body;
         assert.ok(form instanceof FormData);
         const file = form.get("file");
@@ -179,7 +174,9 @@ test("transcribe uploads the audio as multipart with the caller's key", async (t
         assert.equal(form.get("prompt"), null);
         return Response.json({ text: "Hello world." });
     });
-    const client = await connectClient({ versionNegotiation: { mode: "auto" } });
+    const client = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
     t.after(() => client.close());
     const result = await client.callTool({
         name: "transcribe",
@@ -207,7 +204,9 @@ test("transcribe accepts a data URI and keeps its mime type", async (t) => {
         assert.equal(file.name, "audio.mp3");
         return Response.json({ text: "Hello world." });
     });
-    const client = await connectClient({ versionNegotiation: { mode: "auto" } });
+    const client = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
     t.after(() => client.close());
     const result = await client.callTool({
         name: "transcribe",
@@ -239,7 +238,9 @@ test("list_speech_models returns the live audio catalog", async (t) => {
         );
         return Response.json(catalog);
     });
-    const client = await connectClient({ versionNegotiation: { mode: "auto" } });
+    const client = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
     t.after(() => client.close());
     const result = await client.callTool({
         name: "list_speech_models",
@@ -254,7 +255,9 @@ test("rejects invalid audio and empty input before fetching", async (t) => {
     const fetchMock = t.mock.method(globalThis, "fetch", async () => {
         throw new Error("Unexpected fetch for invalid arguments");
     });
-    const client = await connectClient({ versionNegotiation: { mode: "auto" } });
+    const client = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
     t.after(() => client.close());
     for (const arguments_ of [
         { input: "" },
@@ -303,7 +306,9 @@ test("uses shared gateway error mapping", async (t) => {
             { status: 402 },
         );
     });
-    const client = await connectClient({ versionNegotiation: { mode: "auto" } });
+    const client = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
     t.after(() => client.close());
     const result = await client.callTool({
         name: "text_to_speech",

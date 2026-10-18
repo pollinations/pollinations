@@ -4275,11 +4275,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionTextTokens": 0.00000028,
       "promptCachedTokens": 0.0000000028,
+      "promptImageTokens": 0.00000014,
       "promptTextTokens": 0.00000014,
     },
     "price": {
       "completionTextTokens": 0.00000028,
       "promptCachedTokens": 0.0000000028,
+      "promptImageTokens": 0.00000014,
       "promptTextTokens": 0.00000014,
     },
   },
@@ -4299,11 +4301,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionTextTokens": 0.00000087,
       "promptCachedTokens": 0.0000000036,
+      "promptImageTokens": 0.000000435,
       "promptTextTokens": 0.000000435,
     },
     "price": {
       "completionTextTokens": 0.00000087,
       "promptCachedTokens": 0.0000000036,
+      "promptImageTokens": 0.000000435,
       "promptTextTokens": 0.000000435,
     },
   },

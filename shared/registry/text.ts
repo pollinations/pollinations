@@ -2772,6 +2772,8 @@ const TEXT_BASE_SERVICES = {
         cost: {
             promptTextTokens: perMillion(0.14),
             promptCachedTokens: perMillion(0.0028),
+            // Novita reports image tokens as prompt tokens; bill them at the input rate.
+            promptImageTokens: perMillion(0.14),
             completionTextTokens: perMillion(0.28),
         },
         title: "MiMo V2.6 Flash",
@@ -2798,6 +2800,8 @@ const TEXT_BASE_SERVICES = {
         cost: {
             promptTextTokens: perMillion(0.435),
             promptCachedTokens: perMillion(0.0036),
+            // Novita reports image tokens as prompt tokens; bill them at the input rate.
+            promptImageTokens: perMillion(0.435),
             completionTextTokens: perMillion(0.87),
         },
         title: "MiMo V2.6 Pro",

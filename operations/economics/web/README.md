@@ -59,7 +59,9 @@ next check. Temporary Enter failures return 503 without clearing the session. Se
 The identity token is encrypted inside the HttpOnly cookie.
 `npm run decrypt-vars` preserves the separately approved app signing secret and
 loads the staging reader and approved read-only Drive credential from encrypted
-`../secrets/web.dev.json`; it never reads production secrets. Missing Drive
+`../secrets/web.dev.json`; it does not decrypt the production configuration.
+The approved read-only Drive service account is shared with production; the
+Tinybird reader remains staging-only. Missing Drive
 configuration stops startup before replacing the existing local configuration.
 Deploy Enter's client registration first, provision approved app secrets, then
 build and deploy the Economics Worker through GitHub Actions.

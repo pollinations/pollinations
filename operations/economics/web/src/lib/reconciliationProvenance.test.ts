@@ -13,6 +13,8 @@ import {
     reconciliationState,
 } from "./reconciliation";
 
+import { vendorSourceDifferences } from "./vendorLedger";
+
 const now = new Date("2026-10-16T12:00:00Z");
 const blankConfig = (): EconomicsPrivateConfig => ({
     forecastRules: {},
@@ -359,3 +361,27 @@ it("retains a verified bank invoice when its service-month cost is still missing
         amountLabel: "Bank payment · expense to reconcile",
     });
 });
+
+it.each([0, 0.19])(
+    "keeps exact linked amounts (%s) in source explanations in every display mode",
+    (amount) => {
+        const difference = vendorSourceDifferences({
+            vendorLedger: [{ ...cost("openrouter"), paid: -amount }],
+            vendorStatements: [
+                {
+                    ...cost("openrouter"),
+                    entry_id: "statement",
+                    type: "statement",
+                    paid: 0,
+                    statement_amount: 1,
+                    compared_entry_ids: ["openrouter"],
+                },
+            ],
+        });
+        expect(difference).toHaveLength(1);
+        expect(difference[0].explanation).toContain(
+            `linked records total ${amount} USD`,
+        );
+        expect(difference[0].amountUsd).toBeCloseTo(1 - amount);
+    },
+);

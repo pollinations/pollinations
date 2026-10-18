@@ -18,7 +18,7 @@ export function useAmountDisplay() {
     return {
         pro,
         fmtUsd: usd,
-        fmtRateUsd: pro ? fmtRateUsd : fmtUsd,
+        fmtRateUsd,
         fmtPct: (value: number | null) => fmtPct(value, pro ? 2 : 0),
         fmtMarginPct: (value: number | null) =>
             fmtMarginPct(value, pro ? 2 : 0),

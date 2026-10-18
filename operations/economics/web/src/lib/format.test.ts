@@ -112,10 +112,12 @@ describe("fmtUsd", () => {
         expect(fmtUsd(-0.0009)).toBe("");
         expect(fmtUsd(-0.05667)).toBe("");
         expect(fmtUsd(-0.03609)).toBe("");
-        for (const value of [-0.99, 0, 0.99]) {
+        for (const value of [-0.99, 0.99]) {
             expect(fmtUsd(value)).toBe("");
             expect(fmtNumber(value)).toBe("");
         }
+        expect(fmtUsd(0)).toBe("$0");
+        expect(fmtNumber(0)).toBe("0");
         expect(fmtUsd(1)).toBe("$1");
         expect(fmtNumber(-1)).toBe("−1");
     });

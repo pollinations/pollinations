@@ -3,7 +3,7 @@ import { chmod, readFile, rename, writeFile } from "node:fs/promises";
 const target = new URL("../.dev.vars", import.meta.url);
 const temporary = new URL("../.dev.vars.tmp", import.meta.url);
 // Preserve the separately approved local signing secret. Never generate one,
-// import production credentials, or bring back the retired shared password.
+// read the production configuration, or bring back the retired shared password.
 const existing = await readFile(target, "utf8").catch((error) => {
     if (error.code === "ENOENT") return "";
     throw error;

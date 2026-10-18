@@ -423,9 +423,7 @@ describe("data confidence from shared source checks", () => {
         const confidence = dataConfidence([], result);
         expect(confidence.status).toBe("Partial");
         expect(confidence.detail).toContain("99%");
-        expect(confidence.detail).toContain(
-            "A recorded cost has no matching usage",
-        );
+        expect(confidence.detail).toContain("$0.19 has no matching usage");
         expect(confidence.detail).not.toContain("<$1");
         expect(result.currentResultUsd).toBeCloseTo(1999.81);
         expect(result.fullCostResultUsd).toBeCloseTo(1999.81);

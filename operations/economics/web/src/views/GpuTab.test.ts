@@ -557,7 +557,7 @@ it("pairs GPU usage and funding with shares and keeps results as amounts", () =>
     expect(cards.slice(cards.indexOf('aria-label="Result"'))).not.toContain(
         "%",
     );
-    expect(cards).not.toContain(">$0<");
+    expect(cards).toContain(">$0<");
     expect(cards.match(/>Quest</g)).toHaveLength(1);
     expect(cards).toContain("polli:text-paid-deep");
     expect(cards).toContain("polli:text-tier-deep");

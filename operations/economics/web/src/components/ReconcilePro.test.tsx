@@ -21,7 +21,7 @@ function Numbers() {
 
 it("uses whole units outside Pro without turning missing amounts into zero or partial coverage into 100%", () => {
     expect(renderToStaticMarkup(<Numbers />)).toBe(
-        "<span>$1,235 | −1,235 |  | 43% | &lt;100% | –</span>",
+        "<span>$1,235 | −1,235 | $0.125 | 43% | &lt;100% | –</span>",
     );
 });
 

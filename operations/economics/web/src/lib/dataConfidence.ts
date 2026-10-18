@@ -1,6 +1,6 @@
 import type { OpTransactionRow } from "../types";
 import { hasReconciledTransactionEvidence } from "./documents";
-import { fmtUsd } from "./format";
+import { fmtExactUsd as fmtUsd } from "./format";
 import { toUsd } from "./fx";
 import type { ReconciliationIssue } from "./reconciliation";
 import type { unitEconomicsReport } from "./unitEconomics";
@@ -47,7 +47,7 @@ export function dataConfidence(
                 cost > 0
                     ? `${Math.floor(Math.max(0, 1 - unmatched / cost) * 100)}% of recorded costs have usage records. `
                     : "";
-            const amount = fmtUsd(unmatched) || "A recorded cost";
+            const amount = fmtUsd(unmatched);
             return {
                 status: "Partial",
                 detail: `${percentage}${amount} has no matching usage; ${report.provisional ? "results use recorded figures" : "results remain unknown"}.`,

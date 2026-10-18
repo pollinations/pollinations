@@ -78,7 +78,7 @@ export function hasVisibleAmount(
 // Normal display hides sub-unit amounts; exact inspection keeps the source value.
 export function fmtSmartNumber(value: number): string {
     const magnitude = Math.abs(value);
-    if (magnitude < 1) return "";
+    if (magnitude > 0 && magnitude < 1) return "";
     return new Intl.NumberFormat("en-US", {
         maximumFractionDigits: 0,
     }).format(magnitude);

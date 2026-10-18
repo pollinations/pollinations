@@ -63,6 +63,7 @@ const sales: StripeSalesRow = {
     refunds: 0,
     reversals: 0,
     stripe_fees: 5,
+    dispute_fees: 0,
     net_sales: 100,
     net_after_fees: 95,
     payments: 1,

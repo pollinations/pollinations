@@ -11,6 +11,7 @@ const row: StripeSalesRow = {
     refunds: 0,
     reversals: 0,
     stripe_fees: 3,
+    dispute_fees: 0,
     net_sales: 100,
     net_after_fees: 97,
     payments: 1,
@@ -75,6 +76,7 @@ it("stops Ko-fi projections on closure while retaining recorded October activity
         revenue_stream: "kofi" as const,
         gross_sales: 5,
         stripe_fees: 0.7,
+        dispute_fees: 0,
     };
     const actual = { ...kofi, month: "2026-10", coverage_complete: 0 };
     const latest = [row, kofi];

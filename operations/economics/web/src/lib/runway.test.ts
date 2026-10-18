@@ -129,6 +129,7 @@ const stripeSales = (
     refunds: 20,
     net_sales: 100,
     stripe_fees: 5,
+    dispute_fees: 0,
     net_after_fees: 95,
     payments: 3,
     refund_count: 1,

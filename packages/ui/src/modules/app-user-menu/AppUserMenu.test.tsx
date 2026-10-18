@@ -109,7 +109,12 @@ describe("AppUserMenu", () => {
         expect(html).toContain("Permissions");
         expect(html).toContain("Disconnect");
         expect(html).toContain('href="https://example.com/help"');
-        expect(html).toContain("Need help?");
+        expect(html.indexOf("Need help?")).toBeLessThan(html.indexOf("<hr"));
+        expect(html.indexOf("<hr")).toBeLessThan(html.indexOf("Permissions"));
+        expect(html.indexOf("Permissions")).toBeLessThan(
+            html.indexOf("Disconnect"),
+        );
+        expect(renderMenu()).not.toContain("<hr");
         expect(renderMenu()).toContain("Buy Pollen");
     });
 

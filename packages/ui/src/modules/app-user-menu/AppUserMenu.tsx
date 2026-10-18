@@ -175,6 +175,34 @@ export function AppUserMenu({
                 >
                     {(close) => (
                         <>
+                            {menuLinks.map(({ label, href, icon }) => {
+                                const Icon = icon
+                                    ? MENU_LINK_ICONS[icon]
+                                    : ExternalLinkIcon;
+                                return (
+                                    <DropdownItem
+                                        key={href}
+                                        as="a"
+                                        href={href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={close}
+                                    >
+                                        <Icon
+                                            className="polli:h-4 polli:w-4 polli:shrink-0"
+                                            aria-hidden="true"
+                                        />
+                                        {label}
+                                        <ExternalLinkIcon
+                                            className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
+                                            aria-hidden="true"
+                                        />
+                                    </DropdownItem>
+                                );
+                            })}
+                            {menuLinks.length > 0 && (
+                                <hr className="polli:my-1 polli:border-t polli:border-theme-text-strong/15" />
+                            )}
                             {editKeyUrl && (
                                 <DropdownItem
                                     as="a"
@@ -213,31 +241,6 @@ export function AppUserMenu({
                                     />
                                 </DropdownItem>
                             )}
-                            {menuLinks.map(({ label, href, icon }) => {
-                                const Icon = icon
-                                    ? MENU_LINK_ICONS[icon]
-                                    : ExternalLinkIcon;
-                                return (
-                                    <DropdownItem
-                                        key={href}
-                                        as="a"
-                                        href={href}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        onClick={close}
-                                    >
-                                        <Icon
-                                            className="polli:h-4 polli:w-4 polli:shrink-0"
-                                            aria-hidden="true"
-                                        />
-                                        {label}
-                                        <ExternalLinkIcon
-                                            className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
-                                            aria-hidden="true"
-                                        />
-                                    </DropdownItem>
-                                );
-                            })}
                             <DropdownItem
                                 type="button"
                                 className="polli:justify-start polli:text-left"

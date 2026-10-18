@@ -752,11 +752,6 @@ describe("docs routes", () => {
             .replaceAll("&amp;", "&");
         expect(JSON.parse(decodedLinks)).toEqual([
             {
-                href: "https://enter.pollinations.ai",
-                label: "Dashboard",
-                icon: "app",
-            },
-            {
                 href: "https://discord.com/channels/885844321461485618/889573359111774329",
                 label: "Need help?",
                 icon: "discord",

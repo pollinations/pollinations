@@ -210,9 +210,8 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     ),
 };
 
-// The account menu includes Dashboard; support stays available before sign-in.
+// Support stays available before sign-in; the avatar links to the dashboard.
 const DOCS_MENU_LINKS = [
-    { href: "https://enter.pollinations.ai", label: "Dashboard", icon: "app" },
     {
         href: "https://discord.com/channels/885844321461485618/889573359111774329",
         label: "Need help?",
@@ -232,14 +231,10 @@ const DOCS_SUPPORT_ICONS: Record<string, string> = {
     ),
 };
 
-const DOCS_SUPPORT_LINKS_HTML = `<nav class="ph-docs-links" aria-label="Support">${DOCS_MENU_LINKS.filter(
-    ({ icon }) => icon !== "app",
-)
-    .map(
-        ({ href, label, icon }) =>
-            `<a class="ph-docs-link" href="${href}" target="_blank" rel="noopener noreferrer">${DOCS_SUPPORT_ICONS[icon]}<span>${label}</span>${docsIcon('<path d="M7 17 17 7M9 7h8v8" />').replace('class="ph-doc-icon"', 'class="ph-doc-icon ph-docs-link-arrow"')}</a>`,
-    )
-    .join("")}</nav>`;
+const DOCS_SUPPORT_LINKS_HTML = `<nav class="ph-docs-links" aria-label="Support">${DOCS_MENU_LINKS.map(
+    ({ href, label, icon }) =>
+        `<a class="ph-docs-link" href="${href}" target="_blank" rel="noopener noreferrer">${DOCS_SUPPORT_ICONS[icon]}<span>${label}</span>${docsIcon('<path d="M7 17 17 7M9 7h8v8" />').replace('class="ph-doc-icon"', 'class="ph-doc-icon ph-docs-link-arrow"')}</a>`,
+).join("")}</nav>`;
 
 const DOC_TAG_NAV_ICON_HTML: Record<string, string> = Object.fromEntries(
     Object.entries(DOC_TAG_ICON_HTML).map(([tag, icon]) => [
@@ -1116,7 +1111,7 @@ const SCALAR_INTEGRITY =
 const CONNECT_CDN =
     "https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.20/dist/connect.js";
 const CONNECT_INTEGRITY =
-    "sha384-xiQGFMY9flZs1XSL2KtDScxEKwCSxDhWInw3Tk/R3Ba+Xn3hL99Fm/CSTjSowOpL";
+    "sha384-5TyixdMblLsOFCUsOZFrFIhY5XlKI3ZwkRCVQHsjYR+YXPHDR3Jt0zpct7lnaDGD";
 
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     const routes = new Hono<Env>()

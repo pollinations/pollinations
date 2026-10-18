@@ -324,6 +324,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
                                 : String(error),
                     },
                 );
+                throw error;
             }
         }
 

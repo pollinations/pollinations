@@ -1,0 +1,294 @@
+{
+  "date": "2026-10-17",
+  "period_start": "2026-10-17",
+  "period_end": "2026-10-17",
+  "title": "Sign-in gets easier to add and use",
+  "summary": "Sign-in takes fewer steps, agents get sandboxes, uploads get a privacy option, and five community apps join the catalog.\n\nThe interactive API docs gained Pollinations Connect, so readers can authorize their account and try requests without pasting a key. Plain HTML pages can now add sign-in with the `<polli-connect>` component, without a build step. Smaller docs navigation and loading fixes accompanied the changes.\n\nA Quest contribution added Machines MCP tools for creating, connecting to, pausing and managing Linux sandboxes, running commands, and reading or writing files. The API reference now covers sandbox routes and pricing, with a follow-up correcting its guide link and reference validation.\n\nMedia uploads gained opt-in image metadata stripping through `safe=privacy`, while preserving orientation and colour profile; the upload reference was updated to match. DeepSeek V4.1 Flash gained Quest Pollen access and remote image URL handling as its primary route moved to Azure, with Fireworks as fallback.",
+  "pr_count": 18,
+  "prs": [
+    {
+      "number": 15428,
+      "date": "2026-10-17"
+    },
+    {
+      "number": 17615,
+      "date": "2026-10-17"
+    },
+    {
+      "number": 17698,
+      "date": "2026-10-17"
+    },
+    {
+      "number": 17779,
+      "date": "2026-10-17"
+    },
+    {
+      "number": 17780,
+      "date": "2026-10-17"
+    },
+    {
+      "number": 17785,
+      "date": "2026-10-17"
+    },
+    {
+      "number": 17789,
+      "date": "2026-10-17"
+    },
+    {
+      "number": 17798,
+      "date": "2026-10-17"
+    },
+    {
+      "number": 17799,
+      "date": "2026-10-17"
+    },
+    {
+      "number": 17801,
+      "date": "2026-10-17"
+    },
+    {
+      "number": 17803,
+      "date": "2026-10-17"
+    },
+    {
+      "number": 17807,
+      "date": "2026-10-17"
+    },
+    {
+      "number": 17808,
+      "date": "2026-10-17"
+    },
+    {
+      "number": 17810,
+      "date": "2026-10-17"
+    },
+    {
+      "number": 17814,
+      "date": "2026-10-17"
+    },
+    {
+      "number": 17819,
+      "date": "2026-10-17"
+    },
+    {
+      "number": 17830,
+      "date": "2026-10-17"
+    },
+    {
+      "number": 17833,
+      "date": "2026-10-17"
+    }
+  ],
+  "generated_at": "2026-10-18T11:10:18.737049+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "Try API requests signed in",
+      "text": "Connect your Pollinations account in the interactive API docs to try requests with your own key, without pasting it into the tester. [Open the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17808
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "Drop-in sign-in for HTML",
+      "text": "Add `<polli-connect>` to a plain HTML page for Pollinations sign-in without a build step. Read the connected key from `element.apiKey` or listen for `change` events. [Explore the UI package](https://react.pollinations.ai).",
+      "prs": [
+        17814
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Linux sandboxes for agents",
+      "text": "Machines MCP gives agents tools to create and manage Linux sandboxes, run commands, and read or write text files. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        17698
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Private image uploads",
+      "text": "Set `safe=privacy` or send `Pollinations-Safe: privacy` to strip supported location, camera and embedded-text metadata before storing an image, while keeping its orientation and colour profile. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        15428
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "DeepSeek Flash accepts Quest Pollen",
+      "text": "Use DeepSeek V4.1 Flash with Quest Pollen as well as paid access. Remote image URLs are handled on its Azure route, with Fireworks retained as fallback. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        17615
+      ],
+      "kind": "model"
+    }
+  ],
+  "changelog": [
+    {
+      "pr_number": 17833,
+      "url": "https://github.com/pollinations/pollinations/pull/17833",
+      "merged_at": "2026-10-17T22:43:11Z",
+      "api_changes": [
+        {
+          "id": "pr-17833:DELETE /alpha/e2b/sandboxes/{id}",
+          "endpoint": "DELETE /alpha/e2b/sandboxes/{id}",
+          "summary": "Delete sandbox",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-17833:GET /alpha/e2b/pricing",
+          "endpoint": "GET /alpha/e2b/pricing",
+          "summary": "Get sandbox pricing",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-17833:GET /alpha/e2b/sandboxes/{id}",
+          "endpoint": "GET /alpha/e2b/sandboxes/{id}",
+          "summary": "Get sandbox",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-17833:GET /alpha/e2b/sandboxes/{id}/logs",
+          "endpoint": "GET /alpha/e2b/sandboxes/{id}/logs",
+          "summary": "Get sandbox logs",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-17833:GET /alpha/e2b/sandboxes/{id}/metrics",
+          "endpoint": "GET /alpha/e2b/sandboxes/{id}/metrics",
+          "summary": "Get sandbox metrics",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-17833:GET /alpha/e2b/v2/sandboxes",
+          "endpoint": "GET /alpha/e2b/v2/sandboxes",
+          "summary": "List sandboxes",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-17833:GET /api/x402/keys",
+          "endpoint": "GET /api/x402/keys",
+          "summary": "Choose an x402 prepaid API key amount",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-17833:GET /api/x402/keys/{packKey}",
+          "endpoint": "GET /api/x402/keys/{packKey}",
+          "summary": "Buy a prepaid API key with x402",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-17833:POST /alpha/e2b/sandboxes",
+          "endpoint": "POST /alpha/e2b/sandboxes",
+          "summary": "Create sandbox (v1)",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-17833:POST /alpha/e2b/sandboxes/{id}/connect",
+          "endpoint": "POST /alpha/e2b/sandboxes/{id}/connect",
+          "summary": "Connect or resume sandbox (v1)",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-17833:POST /alpha/e2b/sandboxes/{id}/pause",
+          "endpoint": "POST /alpha/e2b/sandboxes/{id}/pause",
+          "summary": "Pause sandbox",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-17833:POST /alpha/e2b/sandboxes/{id}/timeout",
+          "endpoint": "POST /alpha/e2b/sandboxes/{id}/timeout",
+          "summary": "Set sandbox timeout",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-17833:POST /alpha/e2b/v2/sandboxes",
+          "endpoint": "POST /alpha/e2b/v2/sandboxes",
+          "summary": "Create sandbox",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-17833:POST /alpha/e2b/v2/sandboxes/{id}/connect",
+          "endpoint": "POST /alpha/e2b/v2/sandboxes/{id}/connect",
+          "summary": "Connect or resume sandbox",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-17833:POST /api/x402/keys/{packKey}",
+          "endpoint": "POST /api/x402/keys/{packKey}",
+          "summary": "Buy a prepaid API key with x402",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-17833:POST /upload",
+          "endpoint": "POST /upload",
+          "summary": "Upload media",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:header:Pollinations-Safe",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "parameters:query:safe",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-17833:PUT /alpha/e2b/sandboxes/{id}/network",
+          "endpoint": "PUT /alpha/e2b/sandboxes/{id}/network",
+          "summary": "Update sandbox network",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        }
+      ]
+    }
+  ]
+}

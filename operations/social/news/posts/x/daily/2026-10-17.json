@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-10-17",
+  "period_start": "2026-10-17",
+  "period_end": "2026-10-17",
+  "generated_at": "2026-10-18T11:10:18.737049+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/7e95aa19bc990163349c97129fe2abe8b444580eb77d16d82474c1d236e15749"
+    }
+  ],
+  "text": "added Machines MCP tools for Linux sandboxes: create one, run commands, read/write files. interactive API docs gained Connect sign-in (no pasted key); plain HTML gets `<polli-connect>` with no build step. uploads can opt into metadata stripping with `safe=privacy`."
+}

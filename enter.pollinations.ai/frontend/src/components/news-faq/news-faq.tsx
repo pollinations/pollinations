@@ -7,7 +7,7 @@ import {
     currentAnnouncements,
     Updates,
 } from "./news-banner.tsx";
-import { newsHighlights, useNewsIndex } from "./news-index.ts";
+import { newsDaily, useNewsIndex } from "./news-index.ts";
 
 const CHANGELOG_LINKS = (
     <div className="flex gap-4">
@@ -39,7 +39,7 @@ export const NewsFaq: FC = () => {
             : []),
         {
             label: "Updates",
-            panel: <Updates items={index ? newsHighlights(index) : []} />,
+            panel: <Updates items={index ? newsDaily(index) : []} />,
         },
         {
             label: "Changelog",

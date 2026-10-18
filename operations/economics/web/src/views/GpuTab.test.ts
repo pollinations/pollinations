@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { ReconcileProContext } from "../components/ReconcilePro";
 import {
     gpuResourceRows,
     gpuResourceSummary,
@@ -561,4 +562,29 @@ it("pairs GPU usage and funding with shares and keeps results as amounts", () =>
     expect(cards.match(/>Quest</g)).toHaveLength(1);
     expect(cards).toContain("polli:text-paid-deep");
     expect(cards).toContain("polli:text-tier-deep");
+});
+
+it("omits the whole total label for hidden sub-dollar amounts and restores it in Pro", () => {
+    const element = createElement(GpuTab, {
+        month: "2026-06",
+        data: {
+            ...baseData,
+            vendorLedger: [cloud({ paid: -0.2 })],
+            opPollen: [
+                pollen({
+                    price_paid: 0.3,
+                    price_quests: 0.2,
+                    byop_paid: 0,
+                    model_paid: 0,
+                }),
+            ],
+        },
+    });
+    const normal = renderToStaticMarkup(element);
+    expect(normal).not.toContain(" total");
+    const pro = renderToStaticMarkup(
+        createElement(ReconcileProContext.Provider, { value: true }, element),
+    );
+    expect(pro).toContain("$0.5 total");
+    expect(pro).toContain("$0.2 total");
 });

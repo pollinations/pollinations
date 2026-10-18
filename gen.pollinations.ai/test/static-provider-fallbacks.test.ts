@@ -641,8 +641,8 @@ describe("static provider fallbacks", () => {
             servedBy: fallback,
             quotedBy: primary,
         });
-        expect(billing.cost.totalCost).toBeCloseTo(0.00004, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(0.0000422, 8);
+        expect(billing.cost.totalCost).toBeCloseTo(0.00002, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0000211, 8);
     });
 
     it("charges Decider's Vercel price on its OpenRouter fallback", () => {
@@ -1556,6 +1556,18 @@ describe("static provider fallbacks", () => {
         ).toMatchObject({
             "custom-host": "https://api.deepinfra.com/v1/openai",
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",
+        });
+        expect(
+            findModelByName("xiaomi/mimo-v2.6-flash:deepinfra")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "XiaomiMiMo/MiMo-V2.6-Flash",
+        });
+        expect(
+            findModelByName("xiaomi/mimo-v2.6-pro:deepinfra")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "XiaomiMiMo/MiMo-V2.6-Pro",
         });
         expect(findModelByName("qwen/qwen3.7-flash")?.config()).toMatchObject({
             directEndpoint:

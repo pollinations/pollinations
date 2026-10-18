@@ -3,7 +3,11 @@
 import { createRoot, type Root } from "react-dom/client";
 import { AppUserMenu } from "../modules/app-user-menu/AppUserMenu.tsx";
 import { ConnectAuth } from "./connect-auth.tsx";
-import { CONNECT_ATTRIBUTES, connectOptions } from "./connect-options.ts";
+import {
+    CONNECT_ATTRIBUTES,
+    connectMenuOptions,
+    connectOptions,
+} from "./connect-options.ts";
 
 // Marks the account menu's panel, which is portalled to <body>.
 const MENU = "polli-connect-menu";
@@ -114,7 +118,10 @@ class PolliConnect extends HTMLElement {
     #render() {
         this.#root?.render(
             <ConnectAuth {...connectOptions(this)} onChange={this.#setKey}>
-                <AppUserMenu menuClassName={MENU} />
+                <AppUserMenu
+                    menuClassName={MENU}
+                    {...connectMenuOptions(this)}
+                />
             </ConnectAuth>,
         );
     }

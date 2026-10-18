@@ -26,7 +26,15 @@ describe("RFC 9728 protected resource metadata", () => {
         expect(await res.json()).toEqual({
             resource: ORIGIN,
             authorization_servers: ["https://staging.enter.pollinations.ai"],
+            scopes_supported: [
+                "generate",
+                "profile",
+                "usage",
+                "keys",
+                "machines",
+            ],
             bearer_methods_supported: ["header"],
+            resource_name: "Pollinations API",
             resource_documentation: `${ORIGIN}/docs/llm.txt`,
         });
 

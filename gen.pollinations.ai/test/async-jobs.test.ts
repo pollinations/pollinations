@@ -304,3 +304,122 @@ it("submits POST /v1/images/generations with Prefer: wait=10, respond-async", as
     expect(new Uint8Array(await result.arrayBuffer())).toEqual(output);
     expect(executions).toBe(1);
 }, 30_000);
+
+// A retry of a failed job must not take the record away from the accounts
+// that submitted the identical request; they keep reading it for 24 hours.
+it("keeps a failed job readable by its owner when another account retries the identical request", async () => {
+    const owner = await createTestApiKey({ user: { packBalance: 100 } });
+    const retrying = await createTestApiKey({ user: { packBalance: 100 } });
+    env.REPLICATE_API_TOKEN = "workers-test-only";
+    const tinybird = createMockTinybird();
+    const output = Uint8Array.from(
+        atob(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==",
+        ),
+        (char) => char.charCodeAt(0),
+    );
+    let executions = 0;
+    let providerShouldFail = true;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const url = new URL(
+            input instanceof Request ? input.url : String(input),
+        );
+        if (url.host === "api.replicate.com") {
+            executions++;
+            if (providerShouldFail) {
+                return new Response("upstream exploded", { status: 500 });
+            }
+            return Response.json(
+                {
+                    id: "async-retry-test",
+                    status: "succeeded",
+                    output: ["https://replicate.delivery/async-retry.png"],
+                },
+                { status: 201 },
+            );
+        }
+        if (url.host === "replicate.delivery") {
+            return new Response(output, {
+                headers: { "content-type": "image/png" },
+            });
+        }
+        if (url.pathname === "/v0/pipes/public_model_stats.json") {
+            return Response.json({ data: [] });
+        }
+        const handler = tinybird.handlerMap[url.host];
+        if (handler) return handler(new Request(input, init));
+        throw new Error(
+            `Unexpected outbound request: ${url.host}${url.pathname}`,
+        );
+    });
+
+    const url = `https://gen.pollinations.ai/image/async-retry-${crypto.randomUUID()}?model=bytedance/seedream-4.0&safe=false&width=1024&height=1024`;
+    const request = (key: string) =>
+        new Request(url, {
+            headers: {
+                authorization: `Bearer ${key}`,
+                Prefer: "respond-async",
+            },
+        });
+    const statusRequest = (key: string, id: string) =>
+        worker.fetch(
+            new Request(`https://gen.pollinations.ai/v1/jobs/${id}`, {
+                headers: { authorization: `Bearer ${key}` },
+            }),
+            env,
+            createExecutionContext(),
+        );
+
+    // The owner's generation fails upstream.
+    const submitted = await worker.fetch(
+        request(owner.key),
+        env,
+        createExecutionContext(),
+    );
+    expect(submitted.status, await submitted.clone().text()).toBe(202);
+    const { id } = await submitted.json<{ id: string }>();
+    await vi.waitFor(async () => {
+        const failed = await statusRequest(owner.key, id);
+        expect(failed.status).toBe(200);
+        expect((await failed.json<{ status: string }>()).status).toBe("failed");
+    });
+    providerShouldFail = false;
+
+    // Another account retries the identical request: a new run is expected,
+    // executed and billed once for the retrying account.
+    const retry = await worker.fetch(
+        request(retrying.key),
+        env,
+        createExecutionContext(),
+    );
+    expect(retry.status, await retry.clone().text()).toBe(202);
+    expect((await retry.json<{ id: string }>()).id).toBe(id);
+    await vi.waitFor(async () => {
+        const succeeded = await statusRequest(retrying.key, id);
+        expect((await succeeded.json<{ status: string }>()).status).toBe(
+            "succeeded",
+        );
+    });
+
+    // The original account submitted this identical request, so its job
+    // record must stay readable for the promised 24 hours.
+    const ownerStatus = await statusRequest(owner.key, id);
+    expect(
+        ownerStatus.status,
+        (await ownerStatus.clone().text()) || undefined,
+    ).toBe(200);
+    expect((await ownerStatus.json<{ status: string }>()).status).toBe(
+        "succeeded",
+    );
+
+    expect(executions).toBeGreaterThanOrEqual(2);
+    const billed = tinybird.state.events.filter((event) => event.isBilledUsage);
+    expect(billed).toHaveLength(1);
+    const retryingBalance = await getUserBalance(
+        drizzle(env.DB),
+        retrying.userId,
+    );
+    expect(retryingBalance.packBalance).toBeLessThan(100);
+    const ownerBalance = await getUserBalance(drizzle(env.DB), owner.userId);
+    expect(ownerBalance.packBalance).toBe(100);
+}, 30_000);

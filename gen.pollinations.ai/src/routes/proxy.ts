@@ -244,6 +244,19 @@ const decisionHandlers = factory.createHandlers(
     generateDecision,
 );
 
+// Shared by `/alpha/decisions` and its TypeSafe-path alias `/v1/systemone`.
+const decisionResponses = {
+    200: {
+        description: "Decision answers with token usage",
+        content: {
+            "application/json": {
+                schema: resolver(CreateDecisionResponseSchema),
+            },
+        },
+    },
+    ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
+};
+
 const responsesHandlers = factory.createHandlers(
     textBodyLimit,
     validator("json", CreateResponseRequestSchema),
@@ -759,17 +772,18 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Models that support this endpoint list `/alpha/decisions` in `supported_endpoints`. The response is JSON only; there is no streaming.",
             ].join("\n"),
-            responses: {
-                200: {
-                    description: "Decision answers with token usage",
-                    content: {
-                        "application/json": {
-                            schema: resolver(CreateDecisionResponseSchema),
-                        },
-                    },
-                },
-                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
-            },
+            responses: decisionResponses,
+        }),
+        ...decisionHandlers,
+    )
+    .post(
+        "/v1/systemone",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Create Decision (System One path)",
+            description:
+                "TypeSafe's System One path for clients that append `/v1/systemone` to a base URL. Same request, response, models, and billing as `POST /alpha/decisions`.",
+            responses: decisionResponses,
         }),
         ...decisionHandlers,
     )

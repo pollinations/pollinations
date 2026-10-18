@@ -963,11 +963,9 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-opus-4-6-v1",
             defaultOptions: { max_tokens: 128000 },
         }),
-    // global.* inference profiles for Opus 4.7/4.8 return Bedrock-side
-    // Internal/ServiceUnavailable errors; the us.* profiles are healthy.
     "claude-opus-4-7": () =>
         createBedrockNativeConfig({
-            model: "us.anthropic.claude-opus-4-7",
+            model: "global.anthropic.claude-opus-4-7",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-opus-5": () =>

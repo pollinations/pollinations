@@ -9,9 +9,12 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 // Read the private vendor journals before importing any calculations.
 const Dashboard = lazy(async () => {
     try {
-        const response = await fetch("/api/economics/vendor-journals", {
-            credentials: "same-origin",
-        });
+        const url = new URL(window.location.href);
+        const refresh = url.searchParams.get("refresh") === "1";
+        const response = await fetch(
+            `/api/economics/vendor-journals${refresh ? "?refresh=1" : ""}`,
+            { credentials: "same-origin" },
+        );
         if (!response.ok)
             throw new Error(
                 "Vendor journals could not be loaded from Drive. Reload to retry.",
@@ -27,6 +30,10 @@ const Dashboard = lazy(async () => {
         const { parsePlanningDocument } = await import("./lib/planning");
         const planningDocument = parsePlanningDocument(snapshot.planning);
         const { default: Economics } = await import("./App");
+        if (refresh) {
+            url.searchParams.delete("refresh");
+            window.history.replaceState(null, "", url);
+        }
         return {
             default: (
                 props: Omit<

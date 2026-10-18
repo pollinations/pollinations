@@ -924,6 +924,13 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
     const fixtures = fixturesMode();
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<Data | null>(null);
+    const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+    // Reuse a short-lived snapshot across tabs; reload starts a fresh session.
+    const dataCache = useRef<{
+        data: Data;
+        loadedAt: number;
+        attempt: number;
+    } | null>(null);
     const [pro, setPro] = useState(readProMode);
     const [activeView, setActiveView] = useState<ActiveView>(initialView);
     const setProMode = (enabled: boolean) => {
@@ -959,45 +966,58 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
         let cancelled = false;
         const controller = new AbortController();
         setError(null);
+        const sources = [
+            ...new Set([
+                ...VIEW_SOURCES[activeView],
+                "opTransactions",
+                "vendorLedger",
+                "opPollen",
+                "stripeSales",
+                "privateConfig",
+            ]),
+        ] as DataSource[];
+        const cached = dataCache.current;
+        if (
+            cached &&
+            cached.attempt === attempt &&
+            Date.now() - cached.loadedAt < 60 * 60_000 &&
+            sources.every((source) => cached.data[source] != null)
+        ) {
+            setData(cached.data);
+            setUpdatedAt(cached.loadedAt);
+            setLoadedView(activeView);
+            setLoading(false);
+            return;
+        }
+        dataCache.current = null;
         setLoading(true);
         setLoadedView(null);
-        loadAll(
-            [
-                ...new Set([
-                    ...VIEW_SOURCES[activeView],
-                    "opTransactions",
-                    "vendorLedger",
-                    "opPollen",
-                    "stripeSales",
-                    "privateConfig",
-                ]),
-            ] as DataSource[],
-            controller.signal,
-            planningDocument,
-        )
+        loadAll(sources, controller.signal, planningDocument)
             .then((loaded) => {
                 if (cancelled || retryKey !== attempt) return;
-                // Keep the ledger sources already in memory so the row-count
-                // chips stay populated across view switches.
-                let merged = loaded;
-                setData((current) => {
-                    merged = withLedgerSources(loaded, current);
-                    return merged;
-                });
+                dataCache.current = {
+                    data: loaded,
+                    loadedAt: Date.now(),
+                    attempt,
+                };
+                setUpdatedAt(dataCache.current.loadedAt);
+                setData(loaded);
                 setLoadedView(activeView);
                 setLoading(false);
                 const missing = LEDGER_SOURCES.filter(
-                    (source) => merged[source] == null,
+                    (source) => loaded[source] == null,
                 );
                 if (missing.length === 0) return;
                 loadAll(missing, controller.signal)
                     .then((extra) => {
                         if (cancelled || retryKey !== attempt) return;
-                        setData((current) =>
-                            current
-                                ? withLedgerSources(current, extra)
-                                : current,
+                        if (!dataCache.current) return;
+                        const merged = withLedgerSources(
+                            dataCache.current.data,
+                            extra,
                         );
+                        dataCache.current.data = merged;
+                        setData(merged);
                     })
                     .catch(() => {
                         // Counts stay hidden for the sources that failed; the
@@ -1313,6 +1333,38 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
             >
                 <main className="flex w-full flex-col gap-6 px-4 py-14 pb-32 sm:px-6 sm:py-10 sm:pb-32 md:py-8 lg:px-8">
                     <section className="flex flex-col gap-5">
+                        <div className="flex flex-wrap items-center justify-end gap-3 text-xs text-theme-text-muted">
+                            {updatedAt !== null && (
+                                <time
+                                    dateTime={new Date(updatedAt).toISOString()}
+                                    title="Financial data fetched at this time. Drive journals are cached for up to 24 hours; Refresh data reloads both."
+                                >
+                                    Updated{" "}
+                                    {new Date(updatedAt).toLocaleString(
+                                        undefined,
+                                        {
+                                            month: "short",
+                                            day: "numeric",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                        },
+                                    )}
+                                </time>
+                            )}
+                            <button
+                                type="button"
+                                disabled={loading}
+                                className="cursor-pointer underline-offset-4 hover:text-theme-text-strong hover:underline disabled:cursor-wait disabled:opacity-50"
+                                onClick={() => {
+                                    setLoading(true);
+                                    const url = new URL(window.location.href);
+                                    url.searchParams.set("refresh", "1");
+                                    window.location.assign(url.toString());
+                                }}
+                            >
+                                Refresh data
+                            </button>
+                        </div>
                         {viewData?.planningError && (
                             <p
                                 role="status"

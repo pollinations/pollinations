@@ -79,7 +79,42 @@ async function driveToken(env: DriveEnv): Promise<string> {
     return token.access_token;
 }
 
-export async function readVendorJournals(env: DriveEnv) {
+// Private, per-worker memory only. Every HTTP request still passes admin auth.
+let journalCache:
+    | {
+          credentials: string | undefined;
+          expiresAt: number;
+          value: Promise<ReturnType<typeof assembleVendorJournals>>;
+      }
+    | undefined;
+
+export function readVendorJournals(env: DriveEnv, refresh = false) {
+    if (
+        !refresh &&
+        journalCache &&
+        journalCache.credentials === env.ECONOMICS_GOOGLE_DRIVE_CREDENTIALS &&
+        Date.now() < journalCache.expiresAt
+    )
+        return journalCache.value;
+    const entry = {
+        credentials: env.ECONOMICS_GOOGLE_DRIVE_CREDENTIALS,
+        expiresAt: Number.POSITIVE_INFINITY,
+        value: loadVendorJournals(env),
+    };
+    journalCache = entry;
+    entry.value = entry.value
+        .then((snapshot) => {
+            entry.expiresAt = Date.now() + 24 * 60 * 60_000;
+            return snapshot;
+        })
+        .catch((error) => {
+            if (journalCache === entry) journalCache = undefined;
+            throw error;
+        });
+    return entry.value;
+}
+
+async function loadVendorJournals(env: DriveEnv) {
     const token = await driveToken(env);
     const headers = { Authorization: `Bearer ${token}` };
     const files: { id: string; name: string }[] = [];

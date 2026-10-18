@@ -38,3 +38,8 @@
 .economics-table tbody > tr:hover > :is(td, th) {
     background: color-mix(in srgb, var(--polli-color-text-strong) 3%, var(--polli-color-surface-opaque));
 }
+
+.runway-more-vendors {
+    --polli-color-text-soft: var(--polli-color-text-muted);
+    color: var(--polli-color-text-muted);
+}

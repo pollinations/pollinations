@@ -647,6 +647,12 @@ export const portkeyConfig: PortkeyConfigMap = {
             // Reasons only when asked; keep the model's reasoning default.
             defaultOptions: { reasoning_effort: "high" },
         }),
+    "deepseek-ai/DeepSeek-V4.1-Flash-1017": () =>
+        createDeepInfraModelConfig({
+            model: "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+            // Reasons only when asked; keep the model's reasoning default.
+            defaultOptions: { reasoning_effort: "high" },
+        }),
     "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp": () =>
         createDeepInfraModelConfig({
             model: "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
@@ -873,6 +879,12 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/deepseek-v4p1-flash": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v4p1-flash",
+        }),
+
+    // -- Fireworks AI (DeepSeek V4.1 Flash 1017) -----------------------------
+    "accounts/fireworks/models/deepseek-v4p1-flash-1017": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/deepseek-v4p1-flash-1017",
         }),
 
     // -- Fireworks AI (Kimi, GLM, Qwen) --------------------------------------

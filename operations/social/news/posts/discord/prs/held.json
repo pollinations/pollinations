@@ -31,11 +31,6 @@
       "merge_sha": "3b6628e89ee2c14eb670b146e86d019ce8c2b814",
       "merged_at": "2026-10-18T12:35:16Z",
       "required": [
-        "deploy-applications.yml:Deploy apps/websim",
-        "deploy-applications.yml:Deploy operations/economics",
-        "deploy-applications.yml:Deploy operations/kpi",
-        "deploy-applications.yml:Deploy operations/model-monitor",
-        "deploy-applications.yml:Deploy operations/observability",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen"
       ]
@@ -51,7 +46,6 @@
       "merge_sha": "7ff927dd6915a1fe43450ade523d8a39d5c679a1",
       "merged_at": "2026-10-18T15:02:49Z",
       "required": [
-        "deploy-applications.yml:Deploy operations/economics",
         "deploy-cloudflare-production.yml:deploy-enter"
       ]
     },
@@ -68,12 +62,6 @@
       "merge_sha": "f3577cb1bf910836be998d0ba9cf99da500b2426",
       "merged_at": "2026-10-18T15:46:55Z",
       "required": [
-        "deploy-applications.yml:Deploy apps/react",
-        "deploy-applications.yml:Deploy apps/websim",
-        "deploy-applications.yml:Deploy operations/economics",
-        "deploy-applications.yml:Deploy operations/kpi",
-        "deploy-applications.yml:Deploy operations/model-monitor",
-        "deploy-applications.yml:Deploy operations/observability",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen"
       ]

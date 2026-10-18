@@ -11,7 +11,6 @@ import {
     callOpenRouterRecraftVectorAPI,
     callOpenRouterSeedreamFlashAPI,
     callOpenRouterSeedreamProAPI,
-    FLUX3_KLEIN_UPSTREAM,
     mapOpenRouterGeminiImageUsage,
 } from "../../src/image/models/openRouterImageModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
@@ -614,52 +613,6 @@ describe("OpenRouter FLUX.3 Image", () => {
             );
         },
     );
-
-    it.each([
-        ["768", "768"],
-        ["1k", "1K"],
-        ["1.5k", "1.5K"],
-        ["2k", "2K"],
-        ["4k", "4K"],
-    ] as const)(
-        "maps FLUX 3 Image Klein's %s tier to upstream resolution %s",
-        async (resolution, upstreamResolution) => {
-            setEnv();
-            const requests: Record<string, unknown>[] = [];
-            mockFlux3Fetch(requests);
-
-            await callOpenRouterFlux3API(
-                "test prompt",
-                { ...flux3Params, resolution },
-                FLUX3_KLEIN_UPSTREAM,
-            );
-
-            expect(requests[0]).toMatchObject({
-                model: "black-forest-labs/flux-3-image-klein",
-                resolution: upstreamResolution,
-                provider: {
-                    only: ["black-forest-labs"],
-                    allow_fallbacks: false,
-                },
-            });
-        },
-    );
-
-    it("bills FLUX 3 Image Klein under its own model ID", async () => {
-        setEnv();
-        const requests: Record<string, unknown>[] = [];
-        mockFlux3Fetch(requests);
-
-        const result = await callOpenRouterFlux3API(
-            "test prompt",
-            { ...flux3Params, resolution: "4k" },
-            FLUX3_KLEIN_UPSTREAM,
-        );
-
-        expect(result.trackingData).toMatchObject({
-            actualModel: "black-forest-labs/flux-3-image-klein",
-        });
-    });
 
     it("defaults to 1K and bills OpenRouter's reported cost", async () => {
         setEnv();

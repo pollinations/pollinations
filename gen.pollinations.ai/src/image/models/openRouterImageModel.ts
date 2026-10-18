@@ -50,26 +50,6 @@ const FLUX3_ASPECT_RATIOS = [
     "1:2",
     "9:21",
 ] as const;
-// FLUX.3 Image and FLUX 3 Klein share the Black Forest Labs endpoint and request
-// shape. Each maps its public resolution tokens to the upstream tiers.
-type Flux3Upstream = {
-    model: string;
-    resolutions: Record<string, string>;
-};
-const FLUX3_UPSTREAM: Flux3Upstream = {
-    model: FLUX3_MODEL,
-    resolutions: { "1k": "1K", "2k": "2K" },
-};
-export const FLUX3_KLEIN_UPSTREAM: Flux3Upstream = {
-    model: "black-forest-labs/flux-3-image-klein",
-    resolutions: {
-        "768": "768",
-        "1k": "1K",
-        "1.5k": "1.5K",
-        "2k": "2K",
-        "4k": "4K",
-    },
-};
 const SEEDREAM_PRO_MODEL = "bytedance-seed/seedream-4.5";
 const QWEN_IMAGE_3_PRO_MODEL = "qwen/qwen-image-3-pro";
 const SEEDREAM_FLASH_MODEL = "bytedance-seed/seedream-5-0-flash";
@@ -806,7 +786,6 @@ export async function callOpenRouterFlux2MaxAPI(
 export async function callOpenRouterFlux3API(
     prompt: string,
     safeParams: ImageParams,
-    upstream: Flux3Upstream = FLUX3_UPSTREAM,
 ): Promise<ImageGenerationResult> {
     const apiKey = requireOpenRouterImageApiKey();
     // BFL does not follow redirects, so inline references as data URIs.
@@ -820,10 +799,10 @@ export async function callOpenRouterFlux3API(
         },
     }));
     const requestBody: Record<string, unknown> = {
-        model: upstream.model,
+        model: FLUX3_MODEL,
         prompt,
         n: 1,
-        resolution: upstream.resolutions[safeParams.resolution ?? "1k"],
+        resolution: safeParams.resolution === "2k" ? "2K" : "1K",
         aspect_ratio:
             safeParams.aspectRatio === "adaptive"
                 ? "auto"
@@ -869,7 +848,7 @@ export async function callOpenRouterFlux3API(
     return {
         buffer: base64ToBuffer(encodedImage),
         trackingData: {
-            actualModel: upstream.model,
+            actualModel: FLUX3_MODEL,
             // Our cost is OpenRouter's reported charge plus its 5.5%
             // credit-purchase fee, so the launch discount ending needs no
             // code change.

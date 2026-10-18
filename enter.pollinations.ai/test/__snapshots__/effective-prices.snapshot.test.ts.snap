@@ -491,24 +491,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "black-forest-labs/flux-3-image-klein": {
     "cost": {
-      "completionImageTokens": 0.009495,
-    },
-    "costVariants": {
-      "1.5k": {
-        "completionImageTokens": 0.011605,
-      },
-      "2k": {
-        "completionImageTokens": 0.01477,
-      },
-      "4k": {
-        "completionImageTokens": 0.03798,
-      },
-      "768": {
-        "completionImageTokens": 0.00844,
-      },
+      "completionImageTokens": 0.000000009,
     },
     "price": {
-      "completionImageTokens": 0.009495,
+      "completionImageTokens": 0.000000009,
     },
   },
   "black-forest-labs/flux.1-kontext-pro": {

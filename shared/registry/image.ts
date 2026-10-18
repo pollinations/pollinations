@@ -185,65 +185,24 @@ const IMAGE_BASE_SERVICES = {
     },
     "black-forest-labs/flux-3-image-klein": {
         aliases: [],
-        provider: "openrouter",
+        provider: "fal",
         publisher: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2026-10-15").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // BFL per-image rates (2026-10-15), including OpenRouter's 5.5% fee.
+        // fal pricing (2026-10-18): $0.009 per billed unit. fal bills BFL's
+        // per-image tiers in these units (1K = 1, 4K = 4), so price = fal's
+        // charge. Usage counts millionths of a unit.
         cost: {
-            completionImageTokens: 0.009 * 1.055, // 1K, the default
+            completionImageTokens: perMillion(0.009),
         },
-        ...defineCostVariants(
-            {
-                "768": { completionImageTokens: 0.008 * 1.055 },
-                "1.5k": { completionImageTokens: 0.011 * 1.055 },
-                "2k": { completionImageTokens: 0.014 * 1.055 },
-                "4k": { completionImageTokens: 0.036 * 1.055 },
-            },
-            matchResolution("768", "1.5k", "2k", "4k"),
-            {
-                "768": {
-                    label: "768",
-                    description:
-                        "Applies when the requested image resolution is 768 × 768.",
-                },
-                "1.5k": {
-                    label: "1.5K",
-                    description:
-                        "Applies when the requested image resolution is 1.5K.",
-                },
-                "2k": {
-                    label: "2K",
-                    description:
-                        "Applies when the requested image resolution is 2K.",
-                },
-                "4k": {
-                    label: "4K",
-                    description:
-                        "Applies when the requested image resolution is 4K.",
-                },
-            },
-            "1K",
-            [
-                {
-                    "key": "resolution",
-                    "label": "Resolution",
-                    "values": {
-                        "": "1K",
-                        "768": "768",
-                        "1.5k": "1.5K",
-                        "2k": "2K",
-                        "4k": "4K",
-                    },
-                },
-            ],
-        ),
-        resolutions: ["1k", "768", "1.5k", "2k", "4k"],
+        priceUnits: {
+            completionImageTokens: { unit: "megapixel", quantity: 1_000_000 },
+        },
         title: "FLUX.3 Image Klein",
         description:
-            "Distilled text-to-image and multi-reference editing from 768px to 4K with up to ten references",
+            "Distilled text-to-image and multi-reference editing up to 4K with up to ten references",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10,

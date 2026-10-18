@@ -7,11 +7,11 @@ import type { BalanceAccess } from "../models/model-status-chips.tsx";
 import { formatPriceLine } from "../models/price-badge.tsx";
 
 const NEWS_INDEX_URL =
-    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/index.json";
+    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/data/index.json";
 
 type Change = { before: unknown; after: unknown };
 
-/** One official model change, built from PR gists by news_index.py. */
+/** One official model change, from the /models record or a PR description, built by news_index.py. */
 export type ModelNews = {
     id: string;
     model_id: string;
@@ -22,8 +22,9 @@ export type ModelNews = {
     /** Retirements announced in a PR description (#16818). */
     status?: "scheduled" | "cancelled";
     previous_date?: string;
-    pr: number;
-    url: string;
+    /** The PR that announced it; a change seen in the live model list has none. */
+    pr?: number;
+    url?: string;
     pricing_units?: {
         before?: ApiModelInfo["pricing_units"];
         after?: ApiModelInfo["pricing_units"];

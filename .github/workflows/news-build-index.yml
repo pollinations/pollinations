@@ -1,10 +1,11 @@
 name: News / Build index
 
-# Rebuilds operations/social/news/index.json on the news branch: the feed Enter's
-# /news page and the README read. Runs after every PR gist and every daily summary.
+# Rebuilds operations/social/news/data/index.json on the news branch: the feed Enter's
+# /news page reads. Runs after every News / Posts run (the day's PR notes, the
+# daily summary and the /models record).
 on:
   workflow_run:
-    workflows: ['News / Create PR gist', 'News / Posts']
+    workflows: ['News / Posts']
     types: [completed]
   schedule:
     - cron: '30 6 * * *' # Daily rebuild so dated entries roll out of the window
@@ -34,9 +35,7 @@ jobs:
           filter: blob:none
           sparse-checkout-cone-mode: false
           sparse-checkout: |
-            operations/social/news/gists/**/*.json
-            operations/social/news/daily/*/summary.json
-            /operations/social/news/index.json
+            /operations/social/news/data/
 
       - name: Set up Python
         uses: actions/setup-python@v6

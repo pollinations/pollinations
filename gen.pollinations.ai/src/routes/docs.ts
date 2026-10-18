@@ -1,4 +1,5 @@
 import { Scalar } from "@scalar/hono-api-reference";
+import { getPublicUrl } from "@shared/public-origin.ts";
 import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import { getImageModelIds, getVideoModelIds } from "@shared/registry/image.ts";
@@ -25,6 +26,7 @@ import { stringify as yamlStringify } from "yaml";
 import type { Env } from "@/env.ts";
 import BRAND_LOCKUP_SVG from "../../../packages/ui/src/brand/lockup-horizontal.svg?raw";
 import LOGO_WHITE_SVG from "../../../packages/ui/src/brand/lockup-horizontal-white.svg?raw";
+import { authenticateDocsRequest } from "../docs-client/request-auth.ts";
 import { CODE_SAMPLES, RESPONSE_EXAMPLES } from "./docs-samples.ts";
 import {
     API_REFERENCE_CUSTOM_CSS,
@@ -61,6 +63,7 @@ import PUBLIC_STATS_MD from "../docs/public-stats.md?raw";
 import QUICK_START_MD from "../docs/quick-start.md?raw";
 import SAFETY_MD from "../docs/safety.md?raw";
 import SANDBOXES_MD from "../docs/sandboxes.md?raw";
+import SANDBOXES_API_MD from "../docs/sandboxes-api.md?raw";
 import TEXT_GENERATION_MD from "../docs/text-generation.md?raw";
 import VIDEO_GENERATION_MD from "../docs/video-generation.md?raw";
 import X402_PREPAID_KEYS_MD from "../docs/x402-prepaid-keys.md?raw";
@@ -80,6 +83,7 @@ const DOC_TAGS = {
     codingHarnesses: "Coding Harnesses",
     mcpServers: "MCP Servers",
     sandboxes: "Sandboxes",
+    sandboxesApi: "Sandboxes API",
     errors: "Errors",
     safety: "Safety",
     text: "Text",
@@ -122,6 +126,10 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
 const docsIcon = (body: string): string =>
     `<svg class="ph-doc-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
 
+const terminalIcon = docsIcon(
+    '<polyline points="4 8 8 12 4 16" /><line x1="12" y1="20" x2="20" y2="20" />',
+);
+
 const DOC_TAG_ICON_HTML: Record<string, string> = {
     [DOC_TAGS.quickStart]: docsIcon(
         '<path d="M7 20h10" /><path d="M10 20c5.5-2.5.8-6.4 3-10" /><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z" /><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z" />',
@@ -147,18 +155,15 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     [DOC_TAGS.publishAgent]: docsIcon(
         '<rect x="4" y="7" width="16" height="13" rx="2" /><path d="M9 3h6" /><path d="M12 3v4" /><circle cx="9" cy="13" r="1" fill="currentColor" /><circle cx="15" cy="13" r="1" fill="currentColor" /><path d="M9 17h6" />',
     ),
-    [DOC_TAGS.cli]: docsIcon(
-        '<polyline points="4 8 8 12 4 16" /><line x1="12" y1="20" x2="20" y2="20" />',
-    ),
+    [DOC_TAGS.cli]: terminalIcon,
     [DOC_TAGS.codingHarnesses]: docsIcon(
         '<path d="M4 7h16" /><path d="M4 17h16" /><circle cx="9" cy="7" r="2" fill="currentColor" /><circle cx="15" cy="17" r="2" fill="currentColor" />',
     ),
     [DOC_TAGS.mcpServers]: docsIcon(
         '<rect x="2" y="7" width="8" height="10" rx="1.5" /><rect x="14" y="7" width="8" height="10" rx="1.5" /><path d="M10 12h4" />',
     ),
-    [DOC_TAGS.sandboxes]: docsIcon(
-        '<rect x="3" y="4" width="18" height="16" rx="2" /><polyline points="7 9 10 12 7 15" /><line x1="13" y1="15" x2="17" y2="15" />',
-    ),
+    [DOC_TAGS.sandboxes]: terminalIcon,
+    [DOC_TAGS.sandboxesApi]: terminalIcon,
     [DOC_TAGS.errors]: docsIcon('<path d="M18 6 6 18M6 6l12 12" />'),
     [DOC_TAGS.safety]: docsIcon('<polyline points="20 6 9 17 4 12" />'),
     [DOC_TAGS.text]: docsIcon(
@@ -385,7 +390,7 @@ const PUBLISH_AGENT_SECTION = `## Publish an Agent\n\n${PUBLISH_AGENT_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
 const CODING_HARNESSES_SECTION = `## Coding Harnesses\n\n${CODING_HARNESSES_DOCS}`;
 const MCP_SECTION = `## MCP Servers\n\n${MCP_DOCS}`;
-const SANDBOXES_SECTION = `## Sandboxes\n\n${SANDBOXES_DOCS}`;
+const SANDBOXES_SECTION = `## Sandboxes\n\n${SANDBOXES_DOCS}\n\n### Sandboxes API\n\n${SANDBOXES_API_MD.trim()}`;
 
 const LLM_DOC_TEXT = [
     GEN_API_DOCS,
@@ -432,19 +437,28 @@ const GUIDE_REDIRECT_TAGS: Record<string, string> = {
     mcp: "mcp-servers",
 };
 
-function pollinationsDocsHtml(): string {
+function pollinationsDocsHtml(appKey: string): string {
     const navIcons = JSON.stringify(DOC_TAG_NAV_ICON_HTML);
     const sidebarBrand = JSON.stringify(
         `<a href="/docs" class="ph-docs-brand" aria-label="Pollinations Docs"><span class="ph-docs-lockup" aria-hidden="true">${BRAND_LOCKUP_SVG}</span><span class="ph-docs-divider" aria-hidden="true"></span><span class="ph-docs-label">Docs</span></a>`,
     );
     const sidebarLinks = JSON.stringify(DOCS_SIDEBAR_LINKS_HTML);
+    // Sign-in is the published <polli-connect> drop-in, pinned like Scalar.
+    const connect = appKey
+        ? `<polli-connect app-key="${appKey}" budget="5" expiry="7"></polli-connect>`
+        : "";
+    const connectScript = appKey
+        ? `<script defer src="${CONNECT_CDN}" integrity="${CONNECT_INTEGRITY}" crossorigin="anonymous"></script>`
+        : "";
     return `<style>${POLLINATIONS_DOCS_CSS}</style>
 <div class="ph-fab-cluster">
-  <button class="ph-fab ph-fab-copy" type="button" title="Copy the full docs as Markdown, ready to paste into an AI assistant">
+  <button class="ph-fab ph-fab-copy" type="button" aria-label="Copy full docs as Markdown" title="Copy the full docs as Markdown, ready to paste into an AI assistant">
     <span class="ph-fab-face ph-fab-idle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy for LLMs</span>
     <span class="ph-fab-face ph-fab-done" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Copied</span>
   </button>
+  ${connect}
 </div>
+${connectScript}
 <script>
 (function () {
   function normalizeLegacyHash() {
@@ -465,6 +479,25 @@ function pollinationsDocsHtml(): string {
       setTimeout(function () { copy.classList.remove('is-copied'); }, 1500);
     });
   }
+  // Rebuild the reference whenever the connected key changes, so Scalar's
+  // manually edited credentials are cleared on Disconnect too.
+  var connect = document.querySelector('polli-connect');
+  if (connect) {
+    var authenticate = (${authenticateDocsRequest});
+    connect.addEventListener('change', function () {
+      var apiKey = connect.apiKey;
+      if (!window.pollinationsDocsReference) return;
+      window.pollinationsDocsReference.destroy();
+      window.pollinationsDocsReference = Scalar.createApiReference('#app', Object.assign({}, window.pollinationsDocsConfiguration, {
+        authentication: {
+          preferredSecurityScheme: 'bearerAuth',
+          securitySchemes: { bearerAuth: { token: apiKey ? 'YOUR_API_KEY' : '' } },
+        },
+        // Pinned Scalar 1.74 calls this with the actual outbound Request.
+        onRequestBuilt: function (event) { authenticate(event.request, apiKey); },
+      }));
+    });
+  }
   // Text-based DOM scan for Scalar buttons whose class names get hashed
   // by the CDN bundle — we tag them by their stable label so our CSS can
   // hide ("Ask AI") or style ("Show more") them.
@@ -475,14 +508,13 @@ function pollinationsDocsHtml(): string {
   // Scalar 1.74 folds the drawer's groups (Get Started, Guides, ...). Open
   // each once on load so every page is listed, as before; readers can still
   // fold them.
-  var openedGroups = {};
+  var openedGroups = new WeakSet();
   function openDrawerGroups() {
     var groups = document.querySelectorAll('.scalar-app [data-sidebar-id^="api/tag-group/"]');
     for (var g = 0; g < groups.length; g++) {
-      var id = groups[g].getAttribute('data-sidebar-id');
-      if (openedGroups[id]) continue;
+      if (openedGroups.has(groups[g])) continue;
       var toggle = groups[g].firstElementChild && groups[g].firstElementChild.querySelector('button[aria-expanded="false"]');
-      openedGroups[id] = true;
+      openedGroups.add(groups[g]);
       if (toggle) toggle.click();
     }
   }
@@ -555,11 +587,7 @@ function generationDocumentation(): OpenApiSchema {
         "x-tagGroups": [
             {
                 name: "Get Started",
-                tags: [
-                    DOC_TAGS.quickStart,
-                    DOC_TAGS.authentication,
-                    DOC_TAGS.x402PrepaidKeys,
-                ],
+                tags: [DOC_TAGS.quickStart, DOC_TAGS.authentication],
             },
             {
                 name: "Guides",
@@ -594,7 +622,9 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.communityAgents,
                     DOC_TAGS.quests,
                     DOC_TAGS.mediaStorage,
+                    DOC_TAGS.sandboxesApi,
                     DOC_TAGS.account,
+                    DOC_TAGS.x402PrepaidKeys,
                     DOC_TAGS.safety,
                     DOC_TAGS.errors,
                     DOC_TAGS.publicStats,
@@ -651,6 +681,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.sandboxes,
                 description: SANDBOXES_DOCS,
+            },
+            {
+                name: DOC_TAGS.sandboxesApi,
+                description: SANDBOXES_API_MD.trim(),
             },
             {
                 name: DOC_TAGS.errors,
@@ -1054,9 +1088,23 @@ export async function buildMergedOpenApiSpec(
     };
 }
 
+const SCALAR_CDN =
+    "https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.74.0/dist/browser/standalone.js";
+const SCALAR_INTEGRITY =
+    "sha384-VXnKAz61Xwc3tbw1P+KKrUP7YbcsSl1Ik4is5UnogJyw9XEYZ5Ay/T1i0zPYtSZH";
+const CONNECT_CDN =
+    "https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.19/dist/connect.js";
+const CONNECT_INTEGRITY =
+    "sha384-UkxnnQi3VW38H7E5Ovpysgy6ia/d3V/pjZlHx2xN7ZKlqHOa1sEWSWSVJL5xs3Gc";
+
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     const routes = new Hono<Env>()
         .get("/", async (c, next) => {
+            const publicUrl = getPublicUrl(c);
+            if (publicUrl.hostname === "gen.myceli.ai") {
+                publicUrl.hostname = "gen.pollinations.ai";
+                return c.redirect(publicUrl.href, 302);
+            }
             c.header("Vary", "Accept", { append: true });
             if (c.req.header("accept")?.includes("text/markdown")) {
                 // Cloudflare ignores Vary on cached responses: keep it private.
@@ -1067,7 +1115,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             }
             const response = await Scalar<Env>({
                 // Pin the CDN bundle so sidebar changes are verified before upgrading.
-                cdn: "https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.74.0",
+                cdn: SCALAR_CDN,
                 pageTitle: SEO_TITLE,
                 title: SEO_TITLE,
                 favicon: FAVICON_DATA_URI,
@@ -1079,6 +1127,8 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 customCss: API_REFERENCE_CUSTOM_CSS,
                 hideModels: true,
                 hideClientButton: true,
+                persistAuth: false,
+                telemetry: false,
                 onSidebarClick: () => {
                     // Let Scalar finish navigation before closing a guide's drawer.
                     requestAnimationFrame(() => {
@@ -1102,7 +1152,16 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 },
             })(c, next);
             if (!response) return;
-            const html = await response.text();
+            // Expose the reference and its config so sign-in can rebuild it.
+            const html = (await response.text())
+                .replace(
+                    `<script src="${SCALAR_CDN}">`,
+                    `<script src="${SCALAR_CDN}" integrity="${SCALAR_INTEGRITY}" crossorigin="anonymous">`,
+                )
+                .replace(
+                    "Scalar.createApiReference('#app',",
+                    "window.pollinationsDocsReference = Scalar.createApiReference('#app', window.pollinationsDocsConfiguration =",
+                );
             const htmlWithMeta = withHtmlClass(
                 injectDocsSocialHead(html, c),
                 "dark",
@@ -1114,7 +1173,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             const insertAt = bodyOpenMatch.index + bodyOpenMatch[0].length;
             return c.html(
                 htmlWithMeta.slice(0, insertAt) +
-                    pollinationsDocsHtml() +
+                    pollinationsDocsHtml(c.env.DOCS_APP_KEY ?? "") +
                     htmlWithMeta.slice(insertAt),
             );
         })

@@ -119,11 +119,38 @@ ${POLLI_UI_TOKENS_CSS}
    below, and drop the bar's separator line; the copy button keeps only its
    icon on small screens. The account stays inside the drawer. */
 @media (width < 1000px) {
-    .ph-fab-cluster { top: 6px; right: 12px; }
+    .ph-fab-cluster { top: 9px; right: 12px; }
     .scalar-app header.border-b { border-bottom-width: 0; }
+    .scalar-app .t-doc__header > header {
+        height: 56px; flex-shrink: 0; padding-right: 170px; gap: 8px;
+    }
+    .scalar-app .t-doc__header > header > button {
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        width: auto; height: 44px; flex-shrink: 0; margin: 0; padding: 0 14px;
+        border: 0; border-radius: 999px; aspect-ratio: auto;
+        background: var(--polli-color-brand-accent); color: oklch(0.2 0.02 80);
+        font: 600 14px/1 var(--scalar-font, system-ui, sans-serif);
+    }
+    .scalar-app .t-doc__header > header > button svg { width: 20px; height: 20px; }
+    .scalar-app .t-doc__header > header > button:hover { filter: brightness(1.06); }
+    .scalar-app .t-doc__header > header > button:focus-visible {
+        outline: 2px solid var(--polli-color-brand-accent); outline-offset: 2px;
+    }
+    .scalar-app:not(.references-sidebar-mobile-open) .t-doc__header > header > button::after { content: "Menu"; }
+    .scalar-app .t-doc__header > header > span { overflow: hidden; text-overflow: ellipsis; }
+    .references-sidebar-mobile-open .t-doc__header > header { height: 0; padding: 0; }
+    .references-sidebar-mobile-open .t-doc__header > header > :not(button) { display: none; }
+    .references-sidebar-mobile-open .t-doc__header > header > button {
+        position: absolute; top: 12px; right: 12px; width: 44px; padding: 0; z-index: 20;
+    }
+    .references-sidebar-mobile-open .t-doc__header .ph-docs-brand {
+        min-height: 68px; padding: 12px 68px 12px 14px; gap: 8px; box-sizing: border-box;
+    }
     body:has(.references-sidebar-mobile-open) .ph-fab-cluster { display: none; }
 }
 @media (max-width: 640px) {
+    .ph-fab-cluster { top: 11px; }
+    .scalar-app .t-doc__header > header { padding-right: 60px; }
     .ph-fab { height: 34px; padding: 0 12px; font-size: 13px; }
     .ph-fab svg { width: 14px; height: 14px; }
     .ph-fab-copy .ph-fab-face { font-size: 0; gap: 0; }

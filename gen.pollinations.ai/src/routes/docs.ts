@@ -558,6 +558,7 @@ ${connectScript}
     for (var i = 0; i < nodes.length; i++) {
       var text = (nodes[i].textContent || '').trim();
       var navText = normalizeScalarNavLabel(text);
+      if (text === 'Open Menu' || text === 'Close Menu') nodes[i].setAttribute('aria-label', text);
       if (/^ask ai\\b/i.test(text)) nodes[i].style.display = 'none';
       else if (/^show more\\b/i.test(text)) nodes[i].classList.add('ph-show-more');
       else if (navIcons[navText] && !nodes[i].querySelector('.ph-doc-icon')) {

@@ -1343,11 +1343,13 @@ const TEXT_BASE_SERVICES = {
         // Provider retires this route on 2027-04-06.
         priceMultiplier: 0.75,
         paidOnly: false,
+        // Azure Global Standard meters "Grok 4.2 Inp/Outp glbl" ($1.25 / $2.50
+        // per 1M, effective 2026-05-01), the same rates as grok-4.3.
         cost: {
-            promptTextTokens: perMillion(2.0),
+            promptTextTokens: perMillion(1.25),
             promptCachedTokens: perMillion(0.2),
-            promptImageTokens: perMillion(2.0),
-            completionTextTokens: perMillion(6.0),
+            promptImageTokens: perMillion(1.25),
+            completionTextTokens: perMillion(2.5),
         },
         title: "Grok 4.20",
         description: "Multimodal chat and tool calling with optional reasoning",
@@ -1655,9 +1657,10 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1, // Billed at cost, no margin.
         paidOnly: true,
         cost: {
-            // OpenRouter list price plus its 5.5% credit fee, as every
-            // OpenRouter route records.
-            promptTextTokens: perMillion(0.04) * 1.055,
+            // OpenRouter list price ($0.02/M input and cached input) plus its
+            // 5.5% credit fee, as every OpenRouter route records.
+            promptTextTokens: perMillion(0.02) * 1.055,
+            promptCachedTokens: perMillion(0.02) * 1.055,
             completionTextTokens: perMillion(0),
         },
         title: "Liquid D1",
@@ -2836,8 +2839,8 @@ const TEXT_BASE_SERVICES = {
             promptVideoTokens: perMillion(2.0),
             completionTextTokens: perMillion(12.0),
         },
-        // Vertex reprices the whole request from 200K prompt tokens. Image
-        // tokens retain their separately advertised base rate.
+        // Vertex reprices the whole request from 200K prompt tokens; its single
+        // input price covers text, image, audio and video.
         ...defineCostVariants(
             {
                 long_context: {
@@ -2845,6 +2848,7 @@ const TEXT_BASE_SERVICES = {
                     promptCachedTokens: perMillion(0.4),
                     promptCacheWriteTokens: perMillion(4.0),
                     promptAudioTokens: perMillion(4.0),
+                    promptImageTokens: perMillion(4.0),
                     promptVideoTokens: perMillion(4.0),
                     completionTextTokens: perMillion(18.0),
                 },
@@ -2854,7 +2858,7 @@ const TEXT_BASE_SERVICES = {
                 long_context: {
                     label: "Long context (200K+)",
                     description:
-                        "At least 200,000 prompt tokens; text, cached, cache-write, audio, video, and output rates increase while image input stays at its separately advertised base price.",
+                        "At least 200,000 prompt tokens; text, cached, cache-write, image, audio, video, and output rates increase.",
                 },
             },
             "<200K context",

@@ -74,6 +74,20 @@ export const CONSENT_PERMISSIONS = [
     "machines",
 ] as const;
 
+export const OAUTH_SCOPES = ["generate", ...CONSENT_PERMISSIONS] as const;
+
+/** Generation is inherent to API keys; account scopes remain opt-in. */
+export function getGrantedOAuthScope(
+    requested: ReadonlySet<string>,
+    accountPermissions: string[],
+): string | undefined {
+    if (!requested.size) return undefined;
+    return [
+        ...(requested.has("generate") ? ["generate"] : []),
+        ...accountPermissions,
+    ].join(" ");
+}
+
 export function sanitizeAuthorizeAccountPermissions(
     permissions: string[] | null | undefined,
 ): string[] | null {

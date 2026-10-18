@@ -7008,7 +7008,8 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
                       }),
                   })
                 : new Request(
-                      `https://gen.pollinations.ai/${route}/green%20sprout?model=${encodeURIComponent(registered.modelId)}&reference_images=${encodeURIComponent("https://media.example.com/style.jpg")}`,
+                      // 16x9 is an aspect ratio for video, not an image size.
+                      `https://gen.pollinations.ai/${route}/green%20sprout?model=${encodeURIComponent(registered.modelId)}&width=16&height=9&reference_images=${encodeURIComponent("https://media.example.com/style.jpg")}`,
                       { headers: { Authorization: `Bearer ${caller.key}` } },
                   );
         const disconnectedContext = createExecutionContext();

@@ -140,17 +140,26 @@ function llmsTxt(c: Context<Env>): Response {
 - [Polli CLI agent skill](${origin}/docs/polli-skill.md): Commands, authentication, structured output, and common tasks.
 - [Agent Skills index](${origin}/.well-known/agent-skills/index.json): Install the polli skill with any Agent Skills discovery client.
 - [Direct REST API skill](${origin}/.well-known/agent-skills/pollinations-api/SKILL.md): Call the API with curl or fetch when the CLI cannot be installed.
+- [Pollinations SDK skill](${origin}/.well-known/agent-skills/pollinations-sdk/SKILL.md): Use the official npm SDK from code with an API key.
 - [Bring Your Own Pollen skill](${origin}/.well-known/agent-skills/bring-your-own-pollen/SKILL.md): Add user-paid sign-in (OAuth PKCE, fragment, or device flow) so each user spends their own Pollen.
 - [API catalog](${origin}/.well-known/api-catalog): RFC 9727 linkset pointing agents at the OpenAPI schema and the plain-text API guide.
-- [Polli CLI guide](${origin}/docs/llm.txt?section=cli): Installation, login, usage, and harness setup.
-- [API quick start and reference](${origin}/docs/llm.txt): Plain-text API guide and integrations.
+- [API quick start and reference](${origin}/docs/llm.txt): Plain-text API reference and guides.
 - [Interactive API docs](${origin}/docs): Browse endpoints and examples in a browser.
 - [OpenAPI schema](${origin}/openapi.json): Current endpoints and request schemas.
 - [Live model catalog](${origin}/models): Current model IDs and capabilities.
 - [MCP server catalog](${origin}/mcp): Agent tools and server URLs.
 - [OAuth protected resource metadata](${origin}/.well-known/oauth-protected-resource): RFC 9728 pointer to the authorization server that issues API keys.
 - [MCP AI Catalog](${origin}/.well-known/ai-catalog.json): SEP-2127 discovery of MCP Server Cards.
-- [MCP setup guide](${origin}/docs/llm.txt?section=mcp): Connect an agent to the hosted tools.
+
+## Guides
+
+- [Connect User Wallets (BYOP)](${origin}/docs/llm.txt?section=byop): Let users pay with their own Pollen.
+- [Publish an Agent](${origin}/docs/llm.txt?section=publish-an-agent): Publish a hosted agent.
+- [Publish a Model](${origin}/docs/llm.txt?section=publish-a-model): Connect your model endpoint.
+- [Sandboxes](${origin}/docs/llm.txt?section=sandboxes): Run code in a virtual machine.
+- [Coding Harnesses](${origin}/docs/llm.txt?section=coding-harnesses): Connect a coding assistant.
+- [MCP Servers](${origin}/docs/llm.txt?section=mcp): Give agents access to tools.
+- [CLI](${origin}/docs/llm.txt?section=cli): Use Pollinations from a terminal.
 
 ## Contribute
 
@@ -158,7 +167,8 @@ function llmsTxt(c: Context<Env>): Response {
 
 ## Account
 
-- [Create an API key](https://enter.pollinations.ai/keys): Sign in and manage keys.
+- [Create a secret key](https://enter.pollinations.ai/keys): Sign in and manage keys.
+- [Buy a prepaid key with USDC (x402)](${origin}/docs/llm.txt?section=x402): No account or sign-in; pay from $0.01 on Base.
 - [Balance and Pollen](https://enter.pollinations.ai/pollen): Check available credits.
 `,
         {

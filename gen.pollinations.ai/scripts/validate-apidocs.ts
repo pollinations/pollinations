@@ -33,6 +33,25 @@ const IMAGE_MODELS = new Set([
     "black-forest-labs/flux.2-klein-4b",
 ]);
 
+// POST operations that accept no request body.
+const BODYLESS_POSTS = [
+    // Sync redeploys the stored repository.
+    {
+        origin: "https://gen.pollinations.ai",
+        path: /^\/account\/agents\/[^/]+\/sync$/,
+    },
+    // Pause only stops the sandbox's lease renewal.
+    {
+        origin: "https://gen.pollinations.ai",
+        path: /^\/alpha\/e2b\/sandboxes\/[^/]+\/pause$/,
+    },
+    // The x402 payment travels in the PAYMENT-SIGNATURE header.
+    {
+        origin: "https://enter.pollinations.ai",
+        path: /^\/api\/x402\/keys\/[^/]+$/,
+    },
+];
+
 // Public read endpoints whose curl examples must not show Authorization.
 const MEDIA_ID = "550e8400-e29b-41d4-a716-446655440000";
 const PUBLIC_READ_PATHS = new Set([
@@ -130,14 +149,16 @@ function validate(md: string): Failure[] {
         // Find the nearest preceding heading to give a useful failure path.
         const heading = findEnclosingHeading(lines, block.startLine);
 
-        // Sync redeploys the stored repository and accepts no request body.
-        const isBodylessSync =
+        const isBodyless =
             method === "POST" &&
-            parsedUrl?.origin === "https://gen.pollinations.ai" &&
-            /^\/account\/agents\/[^/]+\/sync$/.test(parsedUrl.pathname);
+            BODYLESS_POSTS.some(
+                ({ origin, path }) =>
+                    parsedUrl?.origin === origin &&
+                    path.test(parsedUrl.pathname),
+            );
 
         // 2. Other write methods must include a body indicator.
-        if (["POST", "PUT", "PATCH"].includes(method) && !isBodylessSync) {
+        if (["POST", "PUT", "PATCH"].includes(method) && !isBodyless) {
             const hasBody = /(-d\s|--data-binary|-F\s|-F"|--form)/.test(
                 block.body,
             );

@@ -53,24 +53,32 @@ export type StatPair = {
 export function PairedStatCards({
     cards,
     layout = "columns",
+    compact = false,
 }: {
     cards: StatPair[];
     layout?: "columns" | "rows";
+    compact?: boolean;
 }) {
     return (
         <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))]">
             {cards.map((card) => (
                 <Surface as="section" key={card.label} aria-label={card.label}>
-                    <div className="mb-3 flex min-h-6 flex-wrap content-start items-baseline justify-between gap-x-3 gap-y-1">
+                    <div
+                        className={`${compact ? "mb-2" : "mb-3"} flex min-h-6 flex-wrap content-start items-baseline justify-between gap-x-3 gap-y-1`}
+                    >
                         <h3 className="text-sm font-semibold">{card.label}</h3>
                         {card.total && (
-                            <span className="text-xs text-theme-text-soft">
+                            <span
+                                className={`text-xs ${compact ? "text-theme-text-muted" : "text-theme-text-soft"}`}
+                            >
                                 {card.total}
                             </span>
                         )}
                     </div>
                     {layout === "rows" ? (
-                        <div className="space-y-3 tabular-nums">
+                        <div
+                            className={`${compact ? "space-y-2" : "space-y-3"} tabular-nums`}
+                        >
                             {card.items.map((item, index) => (
                                 <div
                                     key={
@@ -80,16 +88,20 @@ export function PairedStatCards({
                                     }
                                     className={`grid items-baseline gap-x-3 ${card.items.some((entry) => entry.detail != null) ? "grid-cols-[1fr_auto_3rem]" : "grid-cols-[1fr_auto]"}`}
                                 >
-                                    <span className="text-sm">
+                                    <span
+                                        className={`text-sm ${compact ? "text-theme-text-muted" : ""}`}
+                                    >
                                         {item.label}
                                     </span>
                                     <strong
-                                        className={`text-xl sm:text-2xl ${item.valueClassName ?? TONE_CLASS[item.tone ?? "base"]}`}
+                                        className={`${compact ? "text-xl" : "text-xl sm:text-2xl"} ${item.valueClassName ?? TONE_CLASS[item.tone ?? "base"]}`}
                                     >
                                         {item.value}
                                     </strong>
                                     {item.detail != null && (
-                                        <span className="text-right text-sm text-theme-text-soft">
+                                        <span
+                                            className={`text-right ${compact ? "text-xs text-theme-text-muted" : "text-sm text-theme-text-soft"}`}
+                                        >
                                             {item.detail}
                                         </span>
                                     )}

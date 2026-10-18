@@ -593,6 +593,7 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
         <div className="flex flex-col gap-4">
             {!data.planningError && (
                 <PairedStatCards
+                    compact
                     layout="rows"
                     cards={[
                         {
@@ -689,12 +690,16 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                             />
                                         </span>
                                     ),
-                                    value: runwayPeriodText({
-                                        capped: runway.runwayCapped,
-                                        exhaustedMonth:
-                                            runway.runwayExhaustedMonth,
-                                        lastMonth: last?.month ?? null,
-                                    }),
+                                    value: (
+                                        <span className="text-base">
+                                            {runwayPeriodText({
+                                                capped: runway.runwayCapped,
+                                                exhaustedMonth:
+                                                    runway.runwayExhaustedMonth,
+                                                lastMonth: last?.month ?? null,
+                                            })}
+                                        </span>
+                                    ),
                                     tone: runwayTone,
                                 },
                             ],
@@ -708,7 +713,7 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                           : "Snapshot date unavailable",
                                       detail: (
                                           <Gauge
-                                              className="mt-4 w-full"
+                                              className="mt-2 w-full"
                                               left={balances.paid_balance}
                                               leftLabel="Paid"
                                               right={balances.quest_balance}

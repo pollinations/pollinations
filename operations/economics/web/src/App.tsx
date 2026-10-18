@@ -1333,38 +1333,6 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
             >
                 <main className="flex w-full flex-col gap-6 px-4 py-14 pb-32 sm:px-6 sm:py-10 sm:pb-32 md:py-8 lg:px-8">
                     <section className="flex flex-col gap-5">
-                        <div className="flex flex-wrap items-center justify-end gap-3 text-xs text-theme-text-muted">
-                            {updatedAt !== null && (
-                                <time
-                                    dateTime={new Date(updatedAt).toISOString()}
-                                    title="Financial data fetched at this time. Drive journals are cached for up to 24 hours; Refresh data reloads both."
-                                >
-                                    Updated{" "}
-                                    {new Date(updatedAt).toLocaleString(
-                                        undefined,
-                                        {
-                                            month: "short",
-                                            day: "numeric",
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                        },
-                                    )}
-                                </time>
-                            )}
-                            <button
-                                type="button"
-                                disabled={loading}
-                                className="cursor-pointer underline-offset-4 hover:text-theme-text-strong hover:underline disabled:cursor-wait disabled:opacity-50"
-                                onClick={() => {
-                                    setLoading(true);
-                                    const url = new URL(window.location.href);
-                                    url.searchParams.set("refresh", "1");
-                                    window.location.assign(url.toString());
-                                }}
-                            >
-                                Refresh data
-                            </button>
-                        </div>
                         {viewData?.planningError && (
                             <p
                                 role="status"
@@ -1435,7 +1403,45 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
                                 )}
                             </div>
                         </header>
-                        {filters}
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div>{filters}</div>
+                            <div className="flex flex-wrap items-center gap-2 text-xs text-theme-text-muted">
+                                {updatedAt !== null && (
+                                    <time
+                                        dateTime={new Date(
+                                            updatedAt,
+                                        ).toISOString()}
+                                        title="Financial data fetched at this time. Drive journals are cached for up to 24 hours; Refresh data reloads both."
+                                    >
+                                        Updated{" "}
+                                        {new Date(updatedAt).toLocaleString(
+                                            undefined,
+                                            {
+                                                month: "short",
+                                                day: "numeric",
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                            },
+                                        )}
+                                    </time>
+                                )}
+                                <button
+                                    type="button"
+                                    disabled={loading}
+                                    className="cursor-pointer underline-offset-4 hover:text-theme-text-strong hover:underline disabled:cursor-wait disabled:opacity-50"
+                                    onClick={() => {
+                                        setLoading(true);
+                                        const url = new URL(
+                                            window.location.href,
+                                        );
+                                        url.searchParams.set("refresh", "1");
+                                        window.location.assign(url.toString());
+                                    }}
+                                >
+                                    Refresh data
+                                </button>
+                            </div>
+                        </div>
                         <ReconcileProContext.Provider value={pro}>
                             <div className="flex flex-col gap-5">{content}</div>
                         </ReconcileProContext.Provider>

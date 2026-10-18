@@ -1216,8 +1216,9 @@ const TEXT_BASE_SERVICES = {
         publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2026-10-18").getTime(),
-        priceMultiplier: 1,
-        paidOnly: false,
+        // 0.5x matches DeepInfra's output price (0.60 per M).
+        priceMultiplier: 0.5,
+        paidOnly: true,
         // Fireworks standard serverless rates (2026-10-18).
         cost: {
             promptTextTokens: perMillion(0.3),

@@ -3334,6 +3334,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.04,
     },
   },
+  "qwen/qwen-image-2.1-pro:openrouter": {
+    "cost": {
+      "completionImageTokens": 0.04853,
+    },
+    "price": {
+      "completionImageTokens": 0.04853,
+    },
+  },
   "qwen/qwen-image-2.1-turbo": {
     "cost": {
       "completionImageTokens": 0.016,

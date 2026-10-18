@@ -204,7 +204,6 @@ function buildRegistry(
                   ]),
               ]
             : entry.eventType === "generate.text" &&
-                !entry.definition.supportedEndpoints &&
                 entry.supportedEndpoints.includes("/v1/chat/completions")
               ? // Responses calls a native upstream or adapts to Chat;
                 // /v1/messages always runs as a Chat request.

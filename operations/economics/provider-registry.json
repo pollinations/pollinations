@@ -1,5 +1,5 @@
 {
-  "version": 33,
+  "version": 34,
   "canonicalModelRenames": {
     "claude": [
       {
@@ -4125,6 +4125,10 @@
           }
         ]
       }
+    },
+    {
+      "id": "vllm-sr",
+      "aliases": []
     },
     {
       "id": "windsurf",

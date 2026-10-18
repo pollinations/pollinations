@@ -369,6 +369,43 @@ for (const path of ["/alpha/decisions", "/v1/systemone"]) {
     });
 }
 
+for (const path of ["/v1/responses", "/v1/messages"]) {
+    test(`D3 uses the shared Chat adapter on ${path}`, async ({
+        apiKey,
+        mocks,
+    }) => {
+        const content = JSON.stringify({ state: "Disk at 93%.", questions });
+        const request =
+            path === "/v1/responses"
+                ? { model: "vllm-sr/d3", input: content }
+                : {
+                      model: "vllm-sr/d3",
+                      max_tokens: 64,
+                      messages: [{ role: "user", content }],
+                  };
+        const { response, wait } = await post(path, apiKey, request);
+        expect(response.status).toBe(200);
+        const body = (await response.json()) as {
+            output?: { content: { text: string }[] }[];
+            content?: { text: string }[];
+            usage: { input_tokens: number; output_tokens: number };
+        };
+        const text =
+            body.output?.[0].content[0].text ?? body.content?.[0].text ?? "";
+        expect(JSON.parse(text)).toEqual(answers);
+        expect(body.usage).toMatchObject({
+            input_tokens: 452,
+            output_tokens: 0,
+        });
+        await wait();
+        expect(mocks.decisions.state.requests).toHaveLength(1);
+        expect(mocks.decisions.state.requests[0]).toMatchObject({
+            pathname: "/v1/systemone",
+            body: { model: "vllm-sr/d3", state: "Disk at 93%.", questions },
+        });
+    });
+}
+
 test("D3 rejects malformed questions before calling upstream", async ({
     mocks,
 }) => {

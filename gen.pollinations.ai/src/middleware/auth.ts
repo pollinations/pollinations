@@ -79,6 +79,11 @@ function installAuth(
         if (!apiKey) return;
 
         const models = apiKey.permissions?.models;
+        if (!model.definition) {
+            throw new HTTPException(400, {
+                message: `Model '${model.resolved}' is not available`,
+            });
+        }
         if (!keyAllowsModel(models, model.resolved, model.definition)) {
             // A key limited to specific models asks for this one model; a key
             // limited to categories asks for the model's category.

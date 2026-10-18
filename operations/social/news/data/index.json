@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-17T23:39:27.485212+00:00",
+  "generated_at": "2026-10-18T06:11:36.109877+00:00",
   "models": [
     {
       "id": "2026-09-22:anthropic/claude-opus-5.5",
@@ -5455,282 +5455,167 @@
           }
         }
       }
+    },
+    {
+      "id": "2026-10-17:anthropic/claude-fable-5.1",
+      "model_id": "anthropic/claude-fable-5.1",
+      "title": "Claude Fable 5.1",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-17",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00001",
+            "promptCachedTokens": "0.00000025",
+            "promptCacheWriteTokens": "0.0000125",
+            "completionTextTokens": "0.00005"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000075",
+            "promptCachedTokens": "0.0000001875",
+            "promptCacheWriteTokens": "0.000009375",
+            "completionTextTokens": "0.0000375"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-17:anthropic/claude-haiku-5.5",
+      "model_id": "anthropic/claude-haiku-5.5",
+      "title": "Claude Haiku 5.5",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-17",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptCachedTokens": "0.00000001",
+            "promptCacheWriteTokens": "0.000000125",
+            "completionTextTokens": "0.0000005"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000075",
+            "promptCachedTokens": "0.0000000075",
+            "promptCacheWriteTokens": "0.00000009375",
+            "completionTextTokens": "0.000000375"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-17:anthropic/claude-opus-5.5",
+      "model_id": "anthropic/claude-opus-5.5",
+      "title": "Claude Opus 5.5",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-17",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000004",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.000005",
+            "completionTextTokens": "0.00002"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000003",
+            "promptCachedTokens": "0.00000015",
+            "promptCacheWriteTokens": "0.00000375",
+            "completionTextTokens": "0.000015"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-17:anthropic/claude-sonnet-5.5",
+      "model_id": "anthropic/claude-sonnet-5.5",
+      "title": "Claude Sonnet 5.5",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-17",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000001",
+            "promptCacheWriteTokens": "0.0000025",
+            "completionTextTokens": "0.00001"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000015",
+            "promptCachedTokens": "0.000000075",
+            "promptCacheWriteTokens": "0.000001875",
+            "completionTextTokens": "0.0000075"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-17:deepseek/deepseek-v4.1-flash",
+      "model_id": "deepseek/deepseek-v4.1-flash",
+      "title": "DeepSeek V4.1 Flash",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-17",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": true,
+          "after": false
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000002",
+            "promptCachedTokens": "0.000000006",
+            "completionTextTokens": "0.0000006"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.000000003",
+            "promptImageTokens": "0.00000015",
+            "completionTextTokens": "0.0000006"
+          }
+        }
+      }
     }
   ],
   "api": [
-    {
-      "id": "pr-15059:GET /3d/models",
-      "endpoint": "GET /3d/models",
-      "summary": "List 3D Models",
-      "action": "CHANGE",
-      "breaking": true,
-      "changes": [
-        {
-          "field": "parameters:header:pollinations-model-status",
-          "before": {
-            "type": "\"all\"|\"healthy\"",
-            "required": false
-          },
-          "after": null,
-          "breaking": true
-        },
-        {
-          "field": "parameters:query:status",
-          "before": {
-            "type": "\"all\"|\"healthy\"",
-            "required": false
-          },
-          "after": null,
-          "breaking": true
-        }
-      ],
-      "date": "2026-09-17",
-      "pr": 15059,
-      "url": "https://github.com/pollinations/pollinations/pull/15059"
-    },
-    {
-      "id": "pr-15059:GET /audio/models",
-      "endpoint": "GET /audio/models",
-      "summary": "List Audio Models",
-      "action": "CHANGE",
-      "breaking": true,
-      "changes": [
-        {
-          "field": "parameters:header:pollinations-model-status",
-          "before": {
-            "type": "\"all\"|\"healthy\"",
-            "required": false
-          },
-          "after": null,
-          "breaking": true
-        },
-        {
-          "field": "parameters:query:status",
-          "before": {
-            "type": "\"all\"|\"healthy\"",
-            "required": false
-          },
-          "after": null,
-          "breaking": true
-        }
-      ],
-      "date": "2026-09-17",
-      "pr": 15059,
-      "url": "https://github.com/pollinations/pollinations/pull/15059"
-    },
-    {
-      "id": "pr-15059:GET /embeddings/models",
-      "endpoint": "GET /embeddings/models",
-      "summary": "List Embedding Models",
-      "action": "CHANGE",
-      "breaking": true,
-      "changes": [
-        {
-          "field": "parameters:header:pollinations-model-status",
-          "before": {
-            "type": "\"all\"|\"healthy\"",
-            "required": false
-          },
-          "after": null,
-          "breaking": true
-        },
-        {
-          "field": "parameters:query:status",
-          "before": {
-            "type": "\"all\"|\"healthy\"",
-            "required": false
-          },
-          "after": null,
-          "breaking": true
-        }
-      ],
-      "date": "2026-09-17",
-      "pr": 15059,
-      "url": "https://github.com/pollinations/pollinations/pull/15059"
-    },
-    {
-      "id": "pr-15059:GET /image/models",
-      "endpoint": "GET /image/models",
-      "summary": "List Image & Video Models",
-      "action": "CHANGE",
-      "breaking": true,
-      "changes": [
-        {
-          "field": "parameters:header:pollinations-model-status",
-          "before": {
-            "type": "\"all\"|\"healthy\"",
-            "required": false
-          },
-          "after": null,
-          "breaking": true
-        },
-        {
-          "field": "parameters:query:status",
-          "before": {
-            "type": "\"all\"|\"healthy\"",
-            "required": false
-          },
-          "after": null,
-          "breaking": true
-        }
-      ],
-      "date": "2026-09-17",
-      "pr": 15059,
-      "url": "https://github.com/pollinations/pollinations/pull/15059"
-    },
-    {
-      "id": "pr-15059:GET /models",
-      "endpoint": "GET /models",
-      "summary": "List Models",
-      "action": "CHANGE",
-      "breaking": true,
-      "changes": [
-        {
-          "field": "parameters:header:pollinations-model-status",
-          "before": {
-            "type": "\"all\"|\"healthy\"",
-            "required": false
-          },
-          "after": null,
-          "breaking": true
-        },
-        {
-          "field": "parameters:query:status",
-          "before": {
-            "type": "\"all\"|\"healthy\"",
-            "required": false
-          },
-          "after": null,
-          "breaking": true
-        }
-      ],
-      "date": "2026-09-17",
-      "pr": 15059,
-      "url": "https://github.com/pollinations/pollinations/pull/15059"
-    },
-    {
-      "id": "pr-15059:GET /models/status",
-      "endpoint": "GET /models/status",
-      "summary": "Model Health Status",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-09-17",
-      "pr": 15059,
-      "url": "https://github.com/pollinations/pollinations/pull/15059"
-    },
-    {
-      "id": "pr-15059:GET /text/models",
-      "endpoint": "GET /text/models",
-      "summary": "List Text Models (Detailed)",
-      "action": "CHANGE",
-      "breaking": true,
-      "changes": [
-        {
-          "field": "parameters:header:pollinations-model-status",
-          "before": {
-            "type": "\"all\"|\"healthy\"",
-            "required": false
-          },
-          "after": null,
-          "breaking": true
-        },
-        {
-          "field": "parameters:query:status",
-          "before": {
-            "type": "\"all\"|\"healthy\"",
-            "required": false
-          },
-          "after": null,
-          "breaking": true
-        }
-      ],
-      "date": "2026-09-17",
-      "pr": 15059,
-      "url": "https://github.com/pollinations/pollinations/pull/15059"
-    },
-    {
-      "id": "pr-15059:GET /v1/models",
-      "endpoint": "GET /v1/models",
-      "summary": "List Models (OpenAI-compatible)",
-      "action": "CHANGE",
-      "breaking": true,
-      "changes": [
-        {
-          "field": "parameters:header:pollinations-model-status",
-          "before": {
-            "type": "\"all\"|\"healthy\"",
-            "required": false
-          },
-          "after": null,
-          "breaking": true
-        },
-        {
-          "field": "parameters:query:status",
-          "before": {
-            "type": "\"all\"|\"healthy\"",
-            "required": false
-          },
-          "after": null,
-          "breaking": true
-        }
-      ],
-      "date": "2026-09-17",
-      "pr": 15059,
-      "url": "https://github.com/pollinations/pollinations/pull/15059"
-    },
-    {
-      "id": "pr-15059:GET /v1/models/status",
-      "endpoint": "GET /v1/models/status",
-      "summary": "Model Health Status",
-      "action": "REMOVE",
-      "breaking": true,
-      "changes": [],
-      "date": "2026-09-17",
-      "pr": 15059,
-      "url": "https://github.com/pollinations/pollinations/pull/15059"
-    },
-    {
-      "id": "pr-15059:GET /v1/models/status/routes",
-      "endpoint": "GET /v1/models/status/routes",
-      "summary": "Model Route Health Status",
-      "action": "REMOVE",
-      "breaking": true,
-      "changes": [],
-      "date": "2026-09-17",
-      "pr": 15059,
-      "url": "https://github.com/pollinations/pollinations/pull/15059"
-    },
-    {
-      "id": "pr-15059:GET /video/models",
-      "endpoint": "GET /video/models",
-      "summary": "List Video Models",
-      "action": "CHANGE",
-      "breaking": true,
-      "changes": [
-        {
-          "field": "parameters:header:pollinations-model-status",
-          "before": {
-            "type": "\"all\"|\"healthy\"",
-            "required": false
-          },
-          "after": null,
-          "breaking": true
-        },
-        {
-          "field": "parameters:query:status",
-          "before": {
-            "type": "\"all\"|\"healthy\"",
-            "required": false
-          },
-          "after": null,
-          "breaking": true
-        }
-      ],
-      "date": "2026-09-17",
-      "pr": 15059,
-      "url": "https://github.com/pollinations/pollinations/pull/15059"
-    },
     {
       "id": "pr-15258:POST /alpha/decisions",
       "endpoint": "POST /alpha/decisions",
@@ -8796,26 +8681,6 @@
         15045
       ],
       "kind": "product"
-    },
-    {
-      "date": "2026-09-17",
-      "emoji": "✨",
-      "title": "Account status at a glance",
-      "text": "See Pollen balances in Enter and your key’s remaining budget in the app menu. The menu also gives you direct access to Permissions, Buy Pollen, and Disconnect. [Manage your keys](https://enter.pollinations.ai/keys).",
-      "prs": [
-        14951
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-17",
-      "emoji": "🔗",
-      "title": "Model health, separately",
-      "text": "Query `GET /models/status` for model health, route counters, fallback rescues, and latency without pulling health data through the model list. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        15052
-      ],
-      "kind": "api"
     }
   ]
 }

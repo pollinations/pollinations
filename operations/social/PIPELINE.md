@@ -29,7 +29,7 @@ AFTER THOSE (news-build-index.yml)
   news_index.py → data/index.json (Enter /news)
 
 07:00 DAILY (repo-update-readme.yml)
-  star history chart + readme.py: the 10 newest highlights → one auto-merged README PR
+  star history chart + readme.py: the 10 newest daily items → one auto-merged README PR
 ```
 
 | Time (UTC) | Saved | Delivery |
@@ -86,8 +86,8 @@ Each `posts/<platform>/<job>/` folder holds one file per post and its `delivery.
 
 ### Summaries: `data/summaries/`
 
-- `daily/YYYY-MM-DD.json` — the day's summary from the `daily`-tier notes, with the numbers of the PRs it covers; its `highlights` (every change worth showing users, each with a `kind`: `model`, `api` or `product`; apps are left to the app catalog) and its `changelog` feed `index.json`
-- `weekly/YYYY-MM-DD.json` — the week's summary. `YYYY-MM-DD` is the Sunday publish date; it covers the previous Sun→Sat window, read from those days' daily summaries and highlights. Saturday's daily is written just before it, in the same run
+- `daily/YYYY-MM-DD.json` — the day's summary from the `daily`-tier notes, with the numbers of the PRs it covers; its `daily` items (every change worth showing users, each with a `kind`: `model`, `api` or `product`; apps are left to the app catalog) and its `changelog` feed `index.json`
+- `weekly/YYYY-MM-DD.json` — the week's summary. `YYYY-MM-DD` is the Sunday publish date; it covers the previous Sun→Sat window, read from those days' daily summaries and their daily items. Saturday's daily is written just before it, in the same run
 - `monthly/YYYY-MM.json` — the month's summary, from its daily summaries
 
 `changelog` lists every PR of the day, posted or not, that changed the API (`api_changes`) or scheduled a model retirement (`announcements`): what Enter's Changelog reads. A day without `daily`-tier notes writes no post and saves a summary holding only its `date` and `changelog`, or nothing when that is empty.
@@ -166,14 +166,14 @@ Every PR merged into `main` or `master` that month, counted per GitHub account (
 
 ### Enter `/news`: `data/index.json`
 
-`news_index.py` (workflow `news-build-index.yml`, after every `news-posts.yml` run and at 06:30) writes `index.json` from the files above; Enter's `/news` page reads only this file, and the daily README pull request takes its 10 newest highlights. It keeps the last 30 days (at least 10 highlights):
+`news_index.py` (workflow `news-build-index.yml`, after every `news-posts.yml` run and at 06:30) writes `index.json` from the files above; Enter's `/news` page reads only this file, and the daily README pull request takes its 10 newest daily items. It keeps the last 30 days (at least 10 daily items):
 
 | Section | Source | Dated |
 |---|---|---|
 | `models` | The `/models` record: a model added, removed, or its price, Quest/Paid access or capabilities changed between two recorded days. Official models only | the day before the morning record that first shows it (the day it went live) |
 | `models` (retiring) | A `RETIRE` row in a PR description (below), from the dailies' `changelog` | its `Effective` date |
 | `api` | The dailies' `changelog` (the docs PR's `api_changes`) | the docs PR's merge day |
-| `highlights` | Each daily summary's `highlights` | the day |
+| `daily` | Each daily summary's `daily` items | the day |
 
 Announce a decided retirement with a row in the PR description. Registry comments are never read: a provider's deadline (`// Provider retires this route on …`) is an internal reminder, and most end in a reroute.
 
@@ -194,7 +194,7 @@ Announce a decided retirement with a row in the PR description. Registry comment
 | `news-posts.yml` | 06:00 daily, 18:00 Sunday, 14:00 Wednesday | posts job: `posts.py write` + `save` + push, one post at a time; deliver job: `deliver.py` (only it holds the Buffer and Discord keys) |
 | `news-deploy-posts.yml` | production pushes and every completed Cloudflare, website, Applications, E2B and Portkey run (a run that failed may still have deployed the jobs a PR needs); manual readiness preview by default | `deploy_posts.py` |
 | `news-build-index.yml` | after `news-posts.yml`, and 06:30 daily | `news_index.py` → `data/index.json` |
-| `repo-update-readme.yml` | 07:00 daily | the star history chart and `readme.py` (the 10 newest highlights except apps, with category badge, date and text, between the README's news markers), in one auto-merged PR |
+| `repo-update-readme.yml` | 07:00 daily | the star history chart and `readme.py` (the 10 newest daily items except apps, with category badge, date and text, between the README's news markers), in one auto-merged PR |
 
 ### Manual runs of `news-posts.yml`
 
@@ -216,8 +216,8 @@ A preview is the before/after check for any change to a prompt or a script: run 
 | `deliver.py` | `schedule` (Buffer), `send` (Discord; the model and community posts from their work folder), `mark` (a person settles a stuck send) |
 | `deploy_posts.py` | `--production CHECKOUT [--preview]`: held production PRs → affected deployment jobs → the note and picture prompt (`prompts/summaries/pr.md`) → the text (`prompts/posts/discord/pr.md`) → Discord, recorded with `deliver.py` |
 | `contributors.py` | The month's merged PRs per GitHub account, for `data/contributors/<month>.json` |
-| `news_index.py` | `data/index.json`: model news, API changes and daily highlights for Enter `/news` |
-| `readme.py` | The README's Latest News: the index's 10 newest highlights except apps (Recent Apps lists those), each with a category badge (Model, API, Feature), linked title, date and text |
+| `news_index.py` | `data/index.json`: model news, API changes and daily items for Enter `/news` |
+| `readme.py` | The README's Latest News: the index's 10 newest daily items except apps (Recent Apps lists those), each with a category badge (Model, API, Feature), linked title, date and text |
 | `common.py` | Shared: prompt loading and brand injection, the model and picture calls, file builders, note helpers |
 | `test_news.py` | Tests (`python3 -m unittest operations/social/scripts/test_news.py`) |
 
@@ -250,7 +250,7 @@ A preview is the before/after check for any change to a prompt or a script: run 
 
 ## Key Design Decisions
 
-1. **The daily reads GitHub, everything else reads the daily.** The weekly and monthly read its summaries, Enter `/news` its highlights and `changelog`.
+1. **The daily reads GitHub, everything else reads the daily.** The weekly and monthly read its summaries, Enter `/news` its daily items and `changelog`.
 2. **The diff decides.** Notes are written from the diff; titles and descriptions only add what the diff supports.
 3. **Notes hold facts; summaries and posts hold presentation** — notes are read once and not kept; headlines and platform wording are written from them.
 4. **`publish_tier` gates what reaches the daily and weekly posts** — non-user-facing PRs stay out.

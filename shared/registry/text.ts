@@ -1209,6 +1209,32 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "deepseek/deepseek-v4.1-flash-1017": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        aliases: [],
+        provider: "fireworks",
+        publisher: "DeepSeek",
+        category: "text",
+        addedDate: new Date("2026-10-18").getTime(),
+        // 0.5x matches DeepInfra's output price (0.60 per M).
+        priceMultiplier: 0.5,
+        paidOnly: true,
+        // Fireworks standard serverless rates (2026-10-18).
+        cost: {
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.006),
+            completionTextTokens: perMillion(1.2),
+        },
+        title: "DeepSeek V4.1 Flash 1017",
+        description:
+            "Reasoning, coding, tool calling, and image understanding.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "deepseek/deepseek-v4-flash-vision-exp": {
         supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: [],
@@ -2769,17 +2795,19 @@ const TEXT_BASE_SERVICES = {
     "xiaomi/mimo-v2.6-flash": {
         supportedParameters: CHAT_PARAMETERS.mimo,
         aliases: [],
-        provider: "openrouter",
+        provider: "novita",
         publisher: "Xiaomi",
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter Xiaomi FP8 endpoint, verified 2026-09-22.
+        // Novita direct (2026-10-10): base rates without OpenRouter's 5.5% fee.
         cost: {
-            promptTextTokens: perMillion(0.14) * 1.055,
-            promptCachedTokens: perMillion(0.0028) * 1.055,
-            completionTextTokens: perMillion(0.28) * 1.055,
+            promptTextTokens: perMillion(0.14),
+            promptCachedTokens: perMillion(0.0028),
+            // Novita reports image tokens as prompt tokens; bill them at the input rate.
+            promptImageTokens: perMillion(0.14),
+            completionTextTokens: perMillion(0.28),
         },
         title: "MiMo V2.6 Flash",
         description:
@@ -2795,17 +2823,19 @@ const TEXT_BASE_SERVICES = {
     "xiaomi/mimo-v2.6-pro": {
         supportedParameters: CHAT_PARAMETERS.mimo,
         aliases: [],
-        provider: "openrouter",
+        provider: "novita",
         publisher: "Xiaomi",
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter Xiaomi FP8 endpoint, verified 2026-09-22.
+        // Novita direct (2026-10-10): base rates without OpenRouter's 5.5% fee.
         cost: {
-            promptTextTokens: perMillion(0.435) * 1.055,
-            promptCachedTokens: perMillion(0.0036) * 1.055,
-            completionTextTokens: perMillion(0.87) * 1.055,
+            promptTextTokens: perMillion(0.435),
+            promptCachedTokens: perMillion(0.0036),
+            // Novita reports image tokens as prompt tokens; bill them at the input rate.
+            promptImageTokens: perMillion(0.435),
+            completionTextTokens: perMillion(0.87),
         },
         title: "MiMo V2.6 Pro",
         description:

@@ -31,6 +31,7 @@ const VIDEO_FRAME_LIMITS = [
     ["x-ai/grok-imagine-video-1.5-lite:openrouter", 1],
     ["bytedance/seedance-2.5", 2],
     ["alibaba/happyhorse-1.1", 1],
+    ["kwaivgi/kling-v3.0-std", 2],
     ["heygen/heygen-video-1", 1],
     ["minimax/minimax-h3", 0],
     ["minimax/minimax-h3-max", 2],

@@ -214,6 +214,30 @@ export const TEXT_FALLBACKS = {
             ),
         },
     },
+    "xiaomi/mimo-v2.6-flash": {
+        "xiaomi/mimo-v2.6-flash:deepinfra": {
+            provider: "deepinfra",
+            addedDate: new Date("2026-10-10").getTime(),
+            // DeepInfra direct (2026-10-10): base rates without OpenRouter's 5.5% fee.
+            cost: {
+                promptTextTokens: perMillion(0.14),
+                promptCachedTokens: perMillion(0.0028),
+                completionTextTokens: perMillion(0.28),
+            },
+        },
+    },
+    "xiaomi/mimo-v2.6-pro": {
+        "xiaomi/mimo-v2.6-pro:deepinfra": {
+            provider: "deepinfra",
+            addedDate: new Date("2026-10-10").getTime(),
+            // DeepInfra bills input at $0.43 per 1M; the public price stays at Novita's $0.435.
+            cost: {
+                promptTextTokens: perMillion(0.43),
+                promptCachedTokens: perMillion(0.0036),
+                completionTextTokens: perMillion(0.87),
+            },
+        },
+    },
     "deepseek/deepseek-v4-flash": {
         "deepseek/deepseek-v4-flash:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
@@ -237,6 +261,20 @@ export const TEXT_FALLBACKS = {
                 promptTextTokens: perMillion(0.3),
                 promptCachedTokens: perMillion(0.006),
                 completionTextTokens: perMillion(1.2),
+            },
+        },
+    },
+    "deepseek/deepseek-v4.1-flash-1017": {
+        "deepseek/deepseek-v4.1-flash-1017:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            addedDate: new Date("2026-10-18").getTime(),
+            cost: {
+                // DeepInfra list rates (2026-10-18); its 51% promotion is not
+                // passed on.
+                promptTextTokens: perMillion(0.2),
+                promptCachedTokens: perMillion(0.006),
+                completionTextTokens: perMillion(0.6),
             },
         },
     },

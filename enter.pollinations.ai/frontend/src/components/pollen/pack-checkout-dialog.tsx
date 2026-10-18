@@ -42,7 +42,10 @@ type StartResult =
 /** The open session for one pack, kept while the page lives. */
 type SessionSlot = { packKey: PollenPackKey; start: Promise<StartResult> };
 
-/** Stripe's hosted page: every method, for buyers without a saved card. */
+/**
+ * Stripe's hosted page: every method, for buyers without a saved card or
+ * billing address.
+ */
 export function hostedCheckoutHref(packKey: string, query: string): string {
     return `/api/stripe/checkout/${packKey}${query ? `?${query}` : ""}`;
 }
@@ -104,15 +107,15 @@ type PackCheckoutDialogProps = {
      * session only lists cards saved while paying at Checkout, never ones
      * added in the billing portal, so the modal can't rely on that list.
      */
-    card: SavedPaymentMethod | undefined;
+    card: SavedPaymentMethod;
     /** Where tax is worked out from: the address shown under Billing. */
     billingAddress: BillingOverview["billingDetails"];
 };
 
 /**
- * The pay modal for buyers with a saved card: one Confirm, or Stripe's
- * hosted page for another card or method. Two clicks from the pack button;
- * reopening the same pack mounts the same session.
+ * The pay modal for buyers with a saved card and billing address: one
+ * Confirm, or Stripe's hosted page for another card or method. Two clicks
+ * from the pack button; reopening the same pack mounts the same session.
  */
 export const PackCheckoutDialog: FC<PackCheckoutDialogProps> = ({
     open,
@@ -186,7 +189,7 @@ const CheckoutBody: FC<{
     onFinished: () => void;
     onRetry: () => void;
     onCredited?: () => void;
-    card: SavedPaymentMethod | undefined;
+    card: SavedPaymentMethod;
     billingAddress: BillingOverview["billingDetails"];
     onClose: () => void;
 }> = ({
@@ -295,7 +298,7 @@ const WalletPay: FC<{
     hostedHref: string;
     onComplete: (sessionId: string) => void;
     onLoadError: () => void;
-    card: SavedPaymentMethod | undefined;
+    card: SavedPaymentMethod;
     billingAddress: BillingOverview["billingDetails"];
     onClose: () => void;
 }> = ({
@@ -417,16 +420,15 @@ const WalletPay: FC<{
 
     const taxReady = session?.tax.status === "ready";
     const tax = session?.total.taxExclusive;
-    // No billing address, or not enough for tax (a US address without a
-    // ZIP, say): Stripe's page asks for it.
+    // Stripe didn't accept the address for tax: its page asks for one.
     const needsDetails = session?.tax.status === "requires_billing_address";
     const selectorOk = selector === "none" || selector === "ready";
     // Not session.canConfirm: it waits for a Payment Element, which the
     // saved card replaces.
-    const canConfirm = Boolean(card && taxReady && actions && selectorOk);
+    const canConfirm = Boolean(taxReady && actions && selectorOk);
 
     async function confirmWithCard(): Promise<void> {
-        if (!card || !actions) return;
+        if (!actions) return;
         setSubmitting(true);
         setError(null);
         const failure = await actions.confirmWithCard(card.id);
@@ -441,15 +443,14 @@ const WalletPay: FC<{
     return (
         <DialogBody
             actions={
-                // With a saved card, Confirm is the one action and fills the
-                // row; Cancel moves to the quiet line below it. Missing tax
-                // details or a selector that never loaded replace it with
-                // Stripe's page.
-                ready && card && (needsDetails || selector === "failed") ? (
+                // Confirm is the one action and fills the row; Cancel moves
+                // to the quiet line below it. Tax Stripe can't work out or a
+                // selector that never loaded replace it with Stripe's page.
+                ready && (needsDetails || selector === "failed") ? (
                     <HostedButton href={hostedHref}>
                         Pay on Stripe’s page
                     </HostedButton>
-                ) : ready && card ? (
+                ) : ready ? (
                     <Button
                         intent="commit"
                         size="lg"
@@ -464,19 +465,11 @@ const WalletPay: FC<{
                               : "Confirm"}
                     </Button>
                 ) : (
-                    <>
-                        <CloseButton onClick={onClose} disabled={submitting} />
-                        {ready && session && (
-                            // A card Stripe won't show again: its own page.
-                            <HostedButton href={hostedHref}>
-                                Pay on Stripe’s page
-                            </HostedButton>
-                        )}
-                    </>
+                    <CloseButton onClick={onClose} />
                 )
             }
             footnote={
-                ready && card ? (
+                ready ? (
                     <div className="flex items-center justify-between gap-4 px-(--polli-dialog-gutter) pb-6 text-[13px] leading-snug">
                         <button
                             type="button"
@@ -515,7 +508,7 @@ const WalletPay: FC<{
                                         : tax && tax.minorUnitsAmount > 0
                                           ? `Includes service fee and ${tax.amount} tax`
                                           : "Includes service fee",
-                                    card && formatCard(card.brand, card.last4),
+                                    formatCard(card.brand, card.last4),
                                 ]
                                     .filter(Boolean)
                                     .join(" · ")}
@@ -523,13 +516,13 @@ const WalletPay: FC<{
                         </div>
                     )}
                     <div ref={currencySelector} />
-                    {needsDetails && card && (
+                    {needsDetails && (
                         <p className="text-[13px] leading-snug text-theme-text-muted">
-                            Stripe needs your billing address to work out tax,
-                            so pay on Stripe’s page instead.
+                            Stripe couldn’t work out tax from your billing
+                            address, so pay on Stripe’s page instead.
                         </p>
                     )}
-                    {selector === "failed" && !needsDetails && card && (
+                    {selector === "failed" && !needsDetails && (
                         <p className="text-[13px] leading-snug text-theme-text-muted">
                             The currency choice didn’t load here, so pay on
                             Stripe’s page instead.

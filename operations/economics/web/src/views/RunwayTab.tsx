@@ -27,7 +27,7 @@ import {
     fmtUsd,
     hasVisibleAmount,
 } from "../lib/format";
-import { monthName } from "../lib/months";
+import { monthName, monthShift } from "../lib/months";
 import {
     buildRunway,
     type RunwayAssumption,
@@ -78,7 +78,7 @@ export function fmtRunwayTableValue(value: number | null | undefined): string {
 const SUMMARY_HELP: Record<string, string[]> = {
     Expenses: [
         "Main amount: costs funded with cash.",
-        "Parentheses: additional costs covered by provider credits.",
+        "Below cash: additional costs covered by provider credits.",
     ],
     "Cash change": [
         "Actual: bank inflows minus outflows, including exchange-rate changes.",
@@ -86,30 +86,28 @@ const SUMMARY_HELP: Record<string, string[]> = {
     ],
     "Cash balance": [
         "Past months: balance at the END of the month.",
-        "To date: balance from the latest imported bank entries.",
+        "The Cash card shows the latest recorded bank balance and its date.",
         "Plan: expected balance at the END of the month.",
     ],
 };
 
 const REVENUE_HELP: Record<string, string[]> = {
-    "Gross customer payments": [
-        "Customer payments recorded by Stripe this month.",
-        "Before fees, refunds and chargebacks.",
+    "Customer payments": [
+        "Stripe payments before fees, refunds and chargebacks.",
+        "Historical Polar: bank payouts minus test purchases, not gross sales.",
     ],
-    "Stripe fees (including dispute fees)": [
-        "Stripe fees charged this month, including dispute fees.",
+    "Stripe fees": [
+        "Payment processing and Stripe product fees, net of fee credits; excludes dispute fees.",
         "May relate to older sales.",
     ],
-    Refunds: ["Refunds recorded this month, including older purchases."],
-    "Chargebacks / other reversals": [
-        "Payments reversed this month.",
-        "Dispute fees are listed under Stripe fees.",
+    "Refunds, disputes & chargebacks": [
+        "Customer refunds, disputed payments, chargebacks and other payment reversals recorded this month, including older purchases and failed payments.",
+        "Includes dispute fees, less recoveries and returned dispute fees.",
     ],
     "stripe sales": [
         "Customer payments minus Stripe fees.",
         "Refunds and reversals appear separately.",
     ],
-    "stripe refunds": ["Refunds and reversals recorded this month."],
 };
 function categoryExplanation(category: string): string[] {
     if (category === "revenue")
@@ -125,7 +123,7 @@ function categoryExplanation(category: string): string[] {
     return pnlSource(category) === "ledger"
         ? [
               "Provider costs for the month of usage.",
-              "Parentheses: credit-funded costs. Plan: expected cash payments.",
+              "Below cash: credit-funded costs. Plan: expected cash payments.",
           ]
         : [
               "Bank payments in this category, by payment month.",
@@ -146,7 +144,7 @@ function rowExplanation(row: RunwayMatrixRow): string[] {
         ];
     if (pnlSource(row.category) === "ledger")
         return [
-            "Provider costs for this month; parentheses show credit-funded usage.",
+            "Provider costs for this month; the smaller line shows credit-funded usage.",
             "Plan: expected cash payments after available credits.",
         ];
     if (row.category === "balance_sheet")
@@ -189,9 +187,7 @@ function ForecastVendor({ row }: { row: RunwayMatrixRow }) {
             <span>
                 {row.vendor === "stripe sales"
                     ? "Stripe sales after fees"
-                    : row.vendor === "stripe refunds"
-                      ? "Refunds and reversals"
-                      : row.vendor}
+                    : row.vendor}
             </span>
             <CalculationInfo label={row.vendor} lines={rowExplanation(row)} />
         </span>
@@ -209,7 +205,8 @@ function ForecastValue({
 }) {
     const { fmtNumber: fmtRunwayTableValue } = useAmountDisplay();
     if (issue) return "–";
-    if (!assumptions?.length) return fmtRunwayTableValue(value);
+    const formatted = fmtRunwayTableValue(value);
+    if (!formatted || !assumptions?.length) return formatted;
     return (
         <Tooltip
             triggerAs="span"
@@ -225,7 +222,7 @@ function ForecastValue({
             }
         >
             <span className="underline decoration-dotted decoration-theme-border underline-offset-2">
-                {fmtRunwayTableValue(value)}
+                {formatted}
             </span>
         </Tooltip>
     );
@@ -235,15 +232,15 @@ function hasAmount(value: number | null | undefined): value is number {
     return value != null && Math.abs(value) >= 0.005;
 }
 
-// Usage paid with provider credits sits beside the cash figure in gray
-// parentheses; a month funded only by credits shows just that figure.
+// Credit-funded usage stays separate from cash, including credit-only months.
 function CreditAmount({ value }: { value: number | null | undefined }) {
     const { pro, fmtNumber: fmtRunwayTableValue } = useAmountDisplay();
-    if (pro ? value == null || value === 0 : !hasAmount(value)) return null;
+    if (value == null || value === 0 || (!pro && Math.abs(value) < 1))
+        return null;
     return (
-        <span className="ml-1 text-theme-text-muted">
-            ({fmtRunwayTableValue(value)})
-        </span>
+        <div className="text-xs font-normal text-theme-text-muted">
+            {fmtRunwayTableValue(value)}
+        </div>
     );
 }
 
@@ -254,9 +251,7 @@ function showCash(cash: number | null, credit: number | null | undefined) {
 const MONTH_COLUMN_CLASS = "min-w-28 whitespace-nowrap";
 
 function monthKindLabel(kind: RunwayColumn["kind"]): string | null {
-    if (kind === "actual") return null;
-    if (kind === "current") return "To date";
-    return "Plan";
+    return kind === "forecast" ? "Plan" : null;
 }
 
 type RunwayGroup = {
@@ -265,6 +260,81 @@ type RunwayGroup = {
     values: Record<string, number | null>;
     creditValues: Record<string, number>;
 };
+
+export function runwayDetailRows(rows: RunwayMatrixRow[]): RunwayMatrixRow[] {
+    const result: RunwayMatrixRow[] = [];
+    let payments: RunwayMatrixRow | undefined;
+    for (const row of rows.flatMap((row) =>
+        row.vendor === "stripe refunds" && row.category === "revenue"
+            ? [{ ...row, vendor: "Refunds, disputes & chargebacks" }]
+            : row.details?.length
+              ? row.details.map((detail) => ({
+                    ...row,
+                    vendor: detail.label,
+                    values: detail.values,
+                    forecastMethod: null,
+                    forecastPaymentTiming: null,
+                }))
+              : [row],
+    )) {
+        if (
+            row.category !== "revenue" ||
+            !["Gross customer payments", "polar"].includes(row.vendor)
+        ) {
+            result.push(row);
+            continue;
+        }
+        if (!payments) {
+            payments = {
+                ...row,
+                vendor: "Customer payments",
+                values: { ...row.values },
+            };
+            result.push(payments);
+            continue;
+        }
+        for (const [column, amount] of Object.entries(row.values)) {
+            payments.values[column] =
+                amount == null
+                    ? (payments.values[column] ?? null)
+                    : (payments.values[column] ?? 0) + amount;
+        }
+        payments.actualIssues = {
+            ...payments.actualIssues,
+            ...row.actualIssues,
+        };
+        payments.forecastIssue ??= row.forecastIssue;
+    }
+    return result;
+}
+
+// Presentation only: all rows still contribute to category totals.
+export function groupRunwayVendors(
+    rows: RunwayMatrixRow[],
+    currentMonth: string,
+): { primary: RunwayMatrixRow[]; more: RunwayMatrixRow[] } {
+    const lastMonth = `${monthShift(currentMonth, -1)}:actual`;
+    const amount = (row: RunwayMatrixRow, id: string) =>
+        Math.abs(row.values[id] ?? 0) + Math.abs(row.creditValues?.[id] ?? 0);
+    const primary: RunwayMatrixRow[] = [];
+    const more: RunwayMatrixRow[] = [];
+    for (const row of [...rows].sort(
+        (a, b) => amount(b, lastMonth) - amount(a, lastMonth),
+    )) {
+        const visible =
+            row.forecastIssue ||
+            Object.values(row.actualIssues ?? {}).some(Boolean) ||
+            amount(row, lastMonth) >= 10 ||
+            Object.keys(row.values).some(
+                (id) =>
+                    id.endsWith(":forecast") &&
+                    id.slice(0, 7) >= currentMonth &&
+                    amount(row, id) >= 10,
+            );
+        (visible ? primary : more).push(row);
+    }
+    return { primary, more };
+}
 
 function groupRows(
     rows: RunwayMatrixRow[],
@@ -354,7 +424,6 @@ function SummaryRow({
                     {showCash(value(column), credit?.(column))
                         ? fmtRunwayTableValue(value(column))
                         : null}
-                    <CreditAmount value={credit?.(column)} />
                     {label === "Expenses" && column.provisional && (
                         <span
                             className="ml-1 text-intent-warning-text"
@@ -364,6 +433,7 @@ function SummaryRow({
                             *
                         </span>
                     )}
+                    <CreditAmount value={credit?.(column)} />
                 </TableCell>
             ))}
         </TableRow>
@@ -397,6 +467,7 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
             runway.columns.filter(
                 (column) =>
                     column.month.startsWith(year) &&
+                    column.kind !== "current" &&
                     (!data.planningError || column.kind !== "forecast"),
             ),
         [runway.columns, year, data.planningError],
@@ -490,7 +561,7 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                                 label="Month-end cash"
                                                 lines={[
                                                     `Expected cash at the END of ${fmtPeriod(monthEnd)}.`,
-                                                    "Recorded bank cash plus remaining planned movements.",
+                                                    "Reviewed closed-month cash plus full-month plans; current bank payments do not change the plan.",
                                                     ...(runway.forecastTimingNote
                                                         ? [
                                                               runway.forecastTimingNote,
@@ -633,6 +704,17 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                     ]}
                 />
             )}
+            <p className="text-sm text-theme-text-muted">
+                Plan baseline: {fmtPeriod(runway.review.baselineMonth)} ·
+                Reviewed {fmtPeriod(runway.review.asOf)}
+                {runway.review.baselineMonth !==
+                monthShift(runway.currentMonth, -1)
+                    ? " · Needs monthly review — projected cash and runway unavailable"
+                    : runway.fundingProvisional &&
+                        runway.projectedMonthEndCashUsd != null
+                      ? " · Provisional runway — baseline cash/credit split where funding is unverified"
+                      : ""}
+            </p>
             <TableScroller scrollRef={tableScrollRef}>
                 <DataTable className="runway-table min-w-max">
                     <TableHead>
@@ -716,6 +798,7 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                         group={group}
                                         columns={columns}
                                         nested
+                                        currentMonth={runway.currentMonth}
                                     />
                                 ))}
                         {groups
@@ -740,13 +823,76 @@ function RunwayCategoryRows({
     group,
     columns,
     nested = false,
+    currentMonth,
 }: {
     group: RunwayGroup;
     columns: RunwayColumn[];
     nested?: boolean;
+    currentMonth?: string;
 }) {
     const { pro, fmtNumber: fmtRunwayTableValue } = useAmountDisplay();
     const [expanded, setExpanded] = useState(group.category === "revenue");
+    const [moreExpanded, setMoreExpanded] = useState(false);
+    const rows = runwayDetailRows(group.rows).filter(
+        (row) =>
+            pro ||
+            hasVisibleAmount(
+                columns.flatMap((column) => [
+                    row.values[column.id],
+                    row.creditValues?.[column.id] ?? 0,
+                ]),
+            ) ||
+            (nested &&
+                currentMonth &&
+                (row.forecastIssue ||
+                    Object.values(row.actualIssues ?? {}).some(Boolean))),
+    );
+    const { primary, more } = currentMonth
+        ? groupRunwayVendors(rows, currentMonth)
+        : { primary: rows, more: [] };
+    const renderRows = (items: RunwayMatrixRow[]) =>
+        items.map((row) => (
+            <TableRow
+                className="runway-detail"
+                key={`${row.category}|${row.vendor}`}
+            >
+                <TableCell
+                    className={cn(
+                        "sticky left-0 z-10 whitespace-nowrap bg-surface-opaque text-theme-text-soft",
+                        nested ? "pl-12" : "pl-8",
+                    )}
+                >
+                    <ForecastVendor row={row} />
+                </TableCell>
+                {columns.map((column) => (
+                    <TableCell
+                        key={column.id}
+                        align="right"
+                        numeric
+                        className={cn(
+                            MONTH_COLUMN_CLASS,
+                            runwayValueClass(row.values[column.id]),
+                        )}
+                    >
+                        {showCash(
+                            row.values[column.id],
+                            row.creditValues?.[column.id],
+                        ) && (
+                            <ForecastValue
+                                assumptions={row.assumptions[column.id]}
+                                value={row.values[column.id]}
+                                issue={
+                                    column.kind === "forecast"
+                                        ? row.forecastIssue
+                                        : undefined
+                                }
+                            />
+                        )}
+                        <CreditAmount value={row.creditValues?.[column.id]} />
+                    </TableCell>
+                ))}
+            </TableRow>
+        ));
 
     return (
         <>
@@ -789,7 +935,6 @@ function RunwayCategoryRows({
                         )
                             ? fmtRunwayTableValue(group.values[column.id])
                             : null}
-                        <CreditAmount value={group.creditValues[column.id]} />
                         {group.rows.some(
                             (row) => row.actualIssues?.[column.id],
                         ) && (
@@ -801,78 +946,34 @@ function RunwayCategoryRows({
                                 *
                             </span>
                         )}
+                        <CreditAmount value={group.creditValues[column.id]} />
                     </TableCell>
                 ))}
             </TableRow>
-            {expanded &&
-                group.rows
-                    .flatMap((row) =>
-                        row.details?.length
-                            ? row.details.map((detail) => ({
-                                  ...row,
-                                  vendor: detail.label,
-                                  values: detail.values,
-                                  forecastMethod: null,
-                                  forecastPaymentTiming: null,
-                              }))
-                            : [row],
-                    )
-                    .filter(
-                        (row) =>
-                            pro ||
-                            hasVisibleAmount(
-                                columns.flatMap((column) => [
-                                    row.values[column.id],
-                                    row.creditValues?.[column.id] ?? 0,
-                                ]),
-                            ),
-                    )
-                    .map((row) => (
-                        <TableRow
-                            className="runway-detail"
-                            key={`${row.category}|${row.vendor}`}
-                        >
-                            <TableCell
-                                className={cn(
-                                    "sticky left-0 z-10 whitespace-nowrap bg-surface-opaque text-theme-text-soft",
-                                    nested ? "pl-12" : "pl-8",
-                                )}
-                            >
-                                <ForecastVendor row={row} />
-                            </TableCell>
-                            {columns.map((column) => (
-                                <TableCell
-                                    key={column.id}
-                                    align="right"
-                                    numeric
-                                    className={cn(
-                                        MONTH_COLUMN_CLASS,
-                                        runwayValueClass(row.values[column.id]),
-                                    )}
-                                >
-                                    {showCash(
-                                        row.values[column.id],
-                                        row.creditValues?.[column.id],
-                                    ) && (
-                                        <ForecastValue
-                                            assumptions={
-                                                row.assumptions[column.id]
-                                            }
-                                            value={row.values[column.id]}
-                                            issue={
-                                                column.kind === "forecast"
-                                                    ? row.forecastIssue
-                                                    : undefined
-                                            }
-                                        />
-                                    )}
-                                    <CreditAmount
-                                        value={row.creditValues?.[column.id]}
-                                    />
+            {expanded && (
+                <>
+                    {renderRows(primary)}
+                    {more.length > 0 && (
+                        <>
+                            <TableRow>
+                                <TableCell className="sticky left-0 z-10 whitespace-nowrap bg-surface-opaque pl-12 text-theme-text-soft">
+                                    <TableDisclosureButton
+                                        className="polli:text-theme-text-muted"
+                                        expanded={moreExpanded}
+                                        onClick={() =>
+                                            setMoreExpanded((value) => !value)
+                                        }
+                                    >
+                                        more vendors · {more.length}
+                                    </TableDisclosureButton>
                                 </TableCell>
-                            ))}
-                        </TableRow>
-                    ))}
+                                <TableCell colSpan={columns.length} />
+                            </TableRow>
+                            {moreExpanded && renderRows(more)}
+                        </>
+                    )}
+                </>
+            )}
         </>
     );
 }

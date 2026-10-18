@@ -8,7 +8,6 @@
     "packages/auth",
     "packages/sdk",
     "packages/ui",
-    "apps/react",
     "operations/economics/web"
   ],
   "scripts": {

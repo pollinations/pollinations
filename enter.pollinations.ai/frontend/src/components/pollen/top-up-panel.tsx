@@ -121,11 +121,11 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         setBilling(initialBilling);
     }, [initialBilling]);
 
-    const hasSavedCard = Boolean(
-        billing?.paymentMethods.some(
-            (method) => method.type === "card" && !method.wallet,
-        ),
+    // Default first, as Billing lists them.
+    const savedCard = billing?.paymentMethods.find(
+        (method) => method.type === "card" && !method.wallet,
     );
+    const hasSavedCard = Boolean(savedCard);
     const publishableKey = hasSavedCard ? billing?.publishableKey : undefined;
     useEffect(() => {
         if (publishableKey) preloadStripe(publishableKey);
@@ -452,13 +452,8 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                 pack={selectedPack ?? (POLLEN_PACKS[0] as PollenPack)}
                 checkoutQuery={checkoutParams.toString()}
                 onCredited={onWalletChange}
-                onCompleteDetails={() =>
-                    openBillingPortal(
-                        returnToTopUp,
-                        undefined,
-                        selectedPack?.packKey,
-                    )
-                }
+                card={savedCard}
+                billingAddress={billing?.billingDetails ?? null}
             />
         </div>
     );

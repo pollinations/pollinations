@@ -20,8 +20,11 @@ import {
 } from "@stripe/stripe-js";
 import type { FC, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
+import type {
+    BillingOverview,
+    SavedPaymentMethod,
+} from "../../backend-types.ts";
 import { config } from "../../config.ts";
-import { useResetWhenShownAgain } from "../../lib/billing-portal.ts";
 import { CheckoutConfirmation } from "./checkout-confirmation.tsx";
 import { formatCard } from "./payment-method-format.ts";
 
@@ -96,8 +99,14 @@ type PackCheckoutDialogProps = {
     /** return/redirect for the standalone top-up page, as a query string. */
     checkoutQuery: string;
     onCredited?: () => void;
-    /** Open Stripe to add the billing address tax needs; resolves to an error message, "" on success. */
-    onCompleteDetails: () => Promise<string>;
+    /**
+     * The card to pay with, from the buyer's own billing data. Stripe's
+     * session only lists cards saved while paying at Checkout, never ones
+     * added in the billing portal, so the modal can't rely on that list.
+     */
+    card: SavedPaymentMethod | undefined;
+    /** Where tax is worked out from: the address shown under Billing. */
+    billingAddress: BillingOverview["billingDetails"];
 };
 
 /**
@@ -111,7 +120,8 @@ export const PackCheckoutDialog: FC<PackCheckoutDialogProps> = ({
     pack,
     checkoutQuery,
     onCredited,
-    onCompleteDetails,
+    card,
+    billingAddress,
 }) => {
     const slot = useRef<SessionSlot | null>(null);
     const [attempt, setAttempt] = useState(0);
@@ -149,7 +159,8 @@ export const PackCheckoutDialog: FC<PackCheckoutDialogProps> = ({
                         setAttempt((value) => value + 1);
                     }}
                     onCredited={onCredited}
-                    onCompleteDetails={onCompleteDetails}
+                    card={card}
+                    billingAddress={billingAddress}
                     onClose={() => onOpenChange(false)}
                 />
             )}
@@ -175,7 +186,8 @@ const CheckoutBody: FC<{
     onFinished: () => void;
     onRetry: () => void;
     onCredited?: () => void;
-    onCompleteDetails: () => Promise<string>;
+    card: SavedPaymentMethod | undefined;
+    billingAddress: BillingOverview["billingDetails"];
     onClose: () => void;
 }> = ({
     hostedHref,
@@ -183,7 +195,8 @@ const CheckoutBody: FC<{
     onFinished,
     onRetry,
     onCredited,
-    onCompleteDetails,
+    card,
+    billingAddress,
     onClose,
 }) => {
     const [state, setState] = useState<BodyState>({ phase: "loading" });
@@ -258,7 +271,8 @@ const CheckoutBody: FC<{
                         setState({ phase: "complete", sessionId });
                     }}
                     onLoadError={() => setState(LOAD_ERROR)}
-                    onCompleteDetails={onCompleteDetails}
+                    card={card}
+                    billingAddress={billingAddress}
                     onClose={onClose}
                 />
             );
@@ -281,7 +295,8 @@ const WalletPay: FC<{
     hostedHref: string;
     onComplete: (sessionId: string) => void;
     onLoadError: () => void;
-    onCompleteDetails: () => Promise<string>;
+    card: SavedPaymentMethod | undefined;
+    billingAddress: BillingOverview["billingDetails"];
     onClose: () => void;
 }> = ({
     stripe,
@@ -289,7 +304,8 @@ const WalletPay: FC<{
     hostedHref,
     onComplete,
     onLoadError,
-    onCompleteDetails,
+    card,
+    billingAddress,
     onClose,
 }) => {
     const currencySelector = useRef<HTMLDivElement>(null);
@@ -306,8 +322,8 @@ const WalletPay: FC<{
     const [selector, setSelector] = useState<
         "none" | "loading" | "ready" | "failed"
     >("none");
-    const [openingDetails, setOpeningDetails] = useState(false);
-    useResetWhenShownAgain(() => setOpeningDetails(false));
+    // Read once on mount, like the session: a wallet refresh mustn't restart it.
+    const addressOnMount = useRef(billingAddress);
     const callbacks = useRef({ onComplete, onLoadError });
     callbacks.current = { onComplete, onLoadError };
 
@@ -332,17 +348,25 @@ const WalletPay: FC<{
             if (canceled) return;
             if (loaded.type === "error") return callbacks.current.onLoadError();
             let current = loaded.actions.getSession();
-            const saved = current.savedPaymentMethods?.[0];
-            // Tax follows the saved card's billing address, as on Stripe's
-            // page, so the total shown is the total charged.
-            const address = saved?.billingDetails.address;
+            // Tax follows the billing address shown under Billing, which auto
+            // top-up invoices use too, so the total shown is the total
+            // charged. Stripe's session has no address for cards added in
+            // the billing portal: it doesn't list those cards at all.
+            const billed = addressOnMount.current;
             if (
                 current.tax.status === "requires_billing_address" &&
-                address?.country
+                billed?.country
             ) {
                 const updated = await loaded.actions.updateBillingAddress({
-                    name: saved?.billingDetails.name,
-                    address: { ...address, country: address.country },
+                    ...(billed.name ? { name: billed.name } : {}),
+                    address: {
+                        country: billed.country,
+                        line1: billed.line1,
+                        line2: billed.line2,
+                        city: billed.city,
+                        state: billed.state,
+                        postal_code: billed.postalCode,
+                    },
                 });
                 if (canceled) return;
                 if (updated.type === "success") current = updated.session;
@@ -391,26 +415,15 @@ const WalletPay: FC<{
         };
     }, [stripe, checkout]);
 
-    const card = session?.savedPaymentMethods?.[0];
     const taxReady = session?.tax.status === "ready";
     const tax = session?.total.taxExclusive;
-    // The saved card's address wasn't enough for tax (a US card without a
-    // ZIP, say): only the buyer can complete it, on Stripe.
+    // No billing address, or not enough for tax (a US address without a
+    // ZIP, say): Stripe's page asks for it.
     const needsDetails = session?.tax.status === "requires_billing_address";
     const selectorOk = selector === "none" || selector === "ready";
     // Not session.canConfirm: it waits for a Payment Element, which the
     // saved card replaces.
     const canConfirm = Boolean(card && taxReady && actions && selectorOk);
-
-    async function completeDetails(): Promise<void> {
-        setOpeningDetails(true);
-        setError(null);
-        const failure = await onCompleteDetails();
-        if (failure) {
-            setError(failure);
-            setOpeningDetails(false);
-        }
-    }
 
     async function confirmWithCard(): Promise<void> {
         if (!card || !actions) return;
@@ -431,19 +444,8 @@ const WalletPay: FC<{
                 // With a saved card, Confirm is the one action and fills the
                 // row; Cancel moves to the quiet line below it. Missing tax
                 // details or a selector that never loaded replace it with
-                // the way forward.
-                ready && card && needsDetails ? (
-                    <Button
-                        size="lg"
-                        disabled={openingDetails}
-                        onClick={() => void completeDetails()}
-                        className="w-full"
-                    >
-                        {openingDetails
-                            ? "Opening Stripe…"
-                            : "Complete billing details on Stripe"}
-                    </Button>
-                ) : ready && card && selector === "failed" ? (
+                // Stripe's page.
+                ready && card && (needsDetails || selector === "failed") ? (
                     <HostedButton href={hostedHref}>
                         Pay on Stripe’s page
                     </HostedButton>
@@ -513,11 +515,7 @@ const WalletPay: FC<{
                                         : tax && tax.minorUnitsAmount > 0
                                           ? `Includes service fee and ${tax.amount} tax`
                                           : "Includes service fee",
-                                    card &&
-                                        formatCard(
-                                            card.card.brand,
-                                            card.card.last4,
-                                        ),
+                                    card && formatCard(card.brand, card.last4),
                                 ]
                                     .filter(Boolean)
                                     .join(" · ")}
@@ -527,12 +525,11 @@ const WalletPay: FC<{
                     <div ref={currencySelector} />
                     {needsDetails && card && (
                         <p className="text-[13px] leading-snug text-theme-text-muted">
-                            Stripe needs your full billing address to work out
-                            tax. On Stripe, open your initials (top right), then
-                            Profile settings, then buy again.
+                            Stripe needs your billing address to work out tax,
+                            so pay on Stripe’s page instead.
                         </p>
                     )}
-                    {selector === "failed" && card && (
+                    {selector === "failed" && !needsDetails && card && (
                         <p className="text-[13px] leading-snug text-theme-text-muted">
                             The currency choice didn’t load here, so pay on
                             Stripe’s page instead.

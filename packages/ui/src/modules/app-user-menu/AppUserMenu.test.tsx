@@ -98,7 +98,6 @@ describe("AppUserMenu", () => {
         const html = renderToStaticMarkup(
             <AppUserMenu
                 showBuyPollen={false}
-                menuSide="top"
                 menuLinks={[
                     { label: "Need help?", href: "https://example.com/help" },
                 ]}

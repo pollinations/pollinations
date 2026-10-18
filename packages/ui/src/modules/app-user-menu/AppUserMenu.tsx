@@ -47,7 +47,6 @@ export type AppUserMenuProps = {
     labels?: Partial<AppUserMenuLabels>;
     /** Class for the dropdown panel, which renders in a portal outside the menu. */
     menuClassName?: string;
-    menuSide?: "top" | "bottom";
     menuLinks?: {
         label: string;
         href: string;
@@ -80,7 +79,6 @@ export function AppUserMenu({
     connectSize = "md",
     labels: labelOverrides,
     menuClassName,
-    menuSide,
     menuLinks = [],
     showBuyPollen = true,
 }: AppUserMenuProps) {
@@ -166,7 +164,6 @@ export function AppUserMenu({
                     menuLabel={labels.appUserMenu}
                     className="polli:max-w-80"
                     menuClassName={menuClassName}
-                    side={menuSide}
                     secondaryContent={
                         pollenSource ? (
                             <AccountPollen source={pollenSource} />

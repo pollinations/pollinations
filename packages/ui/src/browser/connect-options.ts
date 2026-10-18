@@ -14,7 +14,6 @@ export const CONNECT_ATTRIBUTES = [
     "permissions",
     "enter-url",
     "hide-buy-pollen",
-    "menu-side",
     "menu-links",
 ] as const;
 
@@ -52,7 +51,7 @@ export function connectOptions(
 /** Optional presentation settings; these never change the requested access. */
 export function connectMenuOptions(
     element: Pick<Element, "getAttribute">,
-): Pick<AppUserMenuProps, "showBuyPollen" | "menuSide" | "menuLinks"> {
+): Pick<AppUserMenuProps, "showBuyPollen" | "menuLinks"> {
     let links: unknown = [];
     try {
         links = JSON.parse(element.getAttribute("menu-links") || "[]");
@@ -61,8 +60,6 @@ export function connectMenuOptions(
     }
     return {
         showBuyPollen: element.getAttribute("hide-buy-pollen") === null,
-        menuSide:
-            element.getAttribute("menu-side") === "top" ? "top" : "bottom",
         menuLinks: Array.isArray(links)
             ? links.filter(
                   (link) =>

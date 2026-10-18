@@ -50,7 +50,6 @@ Add the page URL, without query or fragment, as a Redirect URI on your App Key. 
 | `models` | Comma-separated, as `models` below |
 | `permissions` | Comma-separated scopes: `profile`, `usage`, `keys` |
 | `hide-buy-pollen` | Hides the top-up menu item; the balance and Disconnect remain available (UI 0.1.0-alpha.20+) |
-| `menu-side` | Preferred dropdown placement: `top` or `bottom` (default), adjusted to fit the viewport (UI 0.1.0-alpha.20+) |
 | `menu-links` | JSON array of `{ "label": "Dashboard", "href": "https://example.com" }` links shown in the signed-in menu; optional `icon`: `app`, `discord`, or `bug`; only HTTP(S) links are accepted (UI 0.1.0-alpha.20+) |
 
 For custom menu links, use UI `0.1.0-alpha.20` or later and single quotes around the JSON attribute:

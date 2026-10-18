@@ -9,7 +9,6 @@ describe("connectMenuOptions", () => {
     test("keeps the default menu and accepts a docs footer configuration", () => {
         expect(connectMenuOptions(element({}))).toEqual({
             showBuyPollen: true,
-            menuSide: "bottom",
             menuLinks: [],
         });
         const links = [
@@ -23,11 +22,10 @@ describe("connectMenuOptions", () => {
             connectMenuOptions(
                 element({
                     "hide-buy-pollen": "",
-                    "menu-side": "top",
                     "menu-links": JSON.stringify(links),
                 }),
             ),
-        ).toEqual({ showBuyPollen: false, menuSide: "top", menuLinks: links });
+        ).toEqual({ showBuyPollen: false, menuLinks: links });
     });
 
     test("ignores malformed menu configuration without blocking sign-in", () => {
@@ -43,7 +41,6 @@ describe("connectMenuOptions", () => {
                 connectMenuOptions(element({ "menu-links": value })),
             ).toEqual({
                 showBuyPollen: true,
-                menuSide: "bottom",
                 menuLinks: [],
             });
         }

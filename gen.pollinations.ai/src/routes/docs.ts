@@ -448,7 +448,7 @@ function pollinationsDocsHtml(appKey: string): string {
         .replaceAll('"', "&quot;");
     // Sign-in is the published <polli-connect> drop-in, pinned like Scalar.
     const connect = appKey
-        ? `<div class="ph-docs-account"><polli-connect app-key="${appKey}" budget="5" expiry="7" hide-buy-pollen menu-side="top" menu-links="${menuLinks}"></polli-connect></div>`
+        ? `<div class="ph-docs-account"><polli-connect app-key="${appKey}" budget="5" expiry="7" hide-buy-pollen menu-links="${menuLinks}"></polli-connect></div>`
         : "";
     const connectScript = appKey
         ? `<script defer src="${CONNECT_CDN}" integrity="${CONNECT_INTEGRITY}" crossorigin="anonymous"></script>`
@@ -1111,7 +1111,7 @@ const SCALAR_INTEGRITY =
 const CONNECT_CDN =
     "https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.20/dist/connect.js";
 const CONNECT_INTEGRITY =
-    "sha384-5TyixdMblLsOFCUsOZFrFIhY5XlKI3ZwkRCVQHsjYR+YXPHDR3Jt0zpct7lnaDGD";
+    "sha384-9e0ucXSJrvLUvlRtPQ2N/j41OJx/5ob+9qk9CaJK9PaY477QIQiQFWE+l/RofoSi";
 
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     const routes = new Hono<Env>()

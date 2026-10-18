@@ -1032,6 +1032,13 @@ const generateImage = async (
                 "qwen-image-2.1-turbo",
             );
 
+        case "qwen/qwen-image-2.1-pro":
+            return await callAlibabaImage(
+                prompt,
+                safeParams,
+                "qwen-image-2.1-pro",
+            );
+
         case "qwen/qwen-image-3:openrouter":
             return await callOpenRouterQwenImage3API(prompt, safeParams);
 

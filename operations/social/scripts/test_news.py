@@ -21,7 +21,7 @@ import readme
 from common import (NEWS_REL_DIR, build_daily_summary_artifact, call_pollinations_api, daily_summary_input,
                     fetch_all_snapshots, monthly_digest_input, post_recap, weekly_digest_input)
 from contributors import github_account, rank_contributors
-from news_index import api_entries, build_index, highlight_entries, model_changes, model_entries
+from news_index import api_entries, build_index, daily_entries, model_changes, model_entries
 from prs import announced_retirements, api_changes, api_changes_for_pr, api_surface, changes_text
 import prs
 
@@ -135,21 +135,21 @@ class NotesAndIndexTest(unittest.TestCase):
         self.assertEqual(daily.count("https://example.com/app"), 1)
         self.assertNotIn("secret-detail", daily)  # API changes reach Enter, not the posts
         summary = {"date": "2026-10-07", "title": "Speech", "summary": "Eleven v4 added.", "pr_count": 2,
-                   "highlights": [{"title": "Eleven v4", "text": "Generate speech.", "kind": "model"}],
+                   "daily": [{"title": "Eleven v4", "text": "Generate speech.", "kind": "model"}],
                    "changelog": [{"pr_number": 1, "api_changes": [{"endpoint": "GET /secret-detail"}]}]}
         weekly = weekly_digest_input([summary], "2026-10-01", "2026-10-07")
         for fact in ("Eleven v4 added.", "Generate speech.", "PRs selected for daily recaps: 2"):
             self.assertIn(fact, weekly)
         self.assertNotIn("secret-detail", weekly)
 
-    def test_daily_summary_stores_its_highlights_for_the_index(self):
+    def test_daily_summary_stores_its_daily_items_for_the_index(self):
         summary = {"arcs": [{"headline": "New speech", "summary": "Eleven v4 added."}],
-                   "highlights": [{"emoji": "🎵", "title": "Eleven v4", "text": "Generate speech.", "prs": [1]},
+                   "daily": [{"emoji": "🎵", "title": "Eleven v4", "text": "Generate speech.", "prs": [1]},
                                   {"title": "No text"}, "not an item"]}
         artifact = build_daily_summary_artifact(summary, [{"pr_number": 1}], "2026-10-06", "now")
-        self.assertEqual(artifact["highlights"], [summary["highlights"][0]])
+        self.assertEqual(artifact["daily"], [summary["daily"][0]])
         quiet = build_daily_summary_artifact({"arcs": []}, [{"pr_number": 2}], "2026-10-07", "now")
-        self.assertEqual(quiet["highlights"], [])
+        self.assertEqual(quiet["daily"], [])
 
     def test_index_model_news_comes_from_the_record_dated_the_day_before(self):
         def snapshot(*models, **categories):
@@ -318,13 +318,13 @@ class NotesAndIndexTest(unittest.TestCase):
         self.assertNotIn("overdue", entries)
         self.assertNotIn("status", entries["gone"])  # the removal itself, not the announcement
 
-    def test_index_highlights_keep_a_full_page(self):
-        summaries = [{"date": f"2026-09-{day:02d}", "highlights": [
+    def test_index_daily_items_keep_a_full_page(self):
+        summaries = [{"date": f"2026-09-{day:02d}", "daily": [
             {"emoji": "🎨", "title": f"Item {day}", "text": "Try it.", **({"kind": "app"} if day == 3 else {})}]}
             for day in range(1, 13)]
-        self.assertEqual(len(highlight_entries(summaries, "2026-09-11")), 10)
-        self.assertEqual(highlight_entries(summaries, "2026-09-11")[0]["title"], "Item 12")
-        self.assertEqual(len(highlight_entries(summaries, "2026-09-01")), 12)
+        self.assertEqual(len(daily_entries(summaries, "2026-09-11")), 10)
+        self.assertEqual(daily_entries(summaries, "2026-09-11")[0]["title"], "Item 12")
+        self.assertEqual(len(daily_entries(summaries, "2026-09-01")), 12)
         with tempfile.TemporaryDirectory() as directory:
             news = Path(directory)
             (news / "data/summaries/daily").mkdir(parents=True)
@@ -335,7 +335,7 @@ class NotesAndIndexTest(unittest.TestCase):
                  "merged_at": "2026-09-11T10:00:00Z", "api_changes": [{"endpoint": "GET /v1/x", "action": "ADD"}]}]}))
             index = build_index(news, "2026-09-13")
         self.assertEqual(index["models"], [])
-        self.assertEqual(index["highlights"][0]["title"], "Item 12")
+        self.assertEqual(index["daily"][0]["title"], "Item 12")
         self.assertEqual([(entry["endpoint"], entry["date"], entry["pr"]) for entry in index["api"]],
                          [("GET /v1/x", "2026-09-11", 9)])
 
@@ -364,7 +364,7 @@ EMPTY_CATALOG = {"text": [], "image": [], "video": [], "audio": [], "embeddings"
 REPLY = {
     "pr_summary": "#1: Larger media inputs", "pr_count": 2, "one_liner": "Uploads grow.", "theme": "Bigger inputs.",
     "arcs": [{"headline": "Larger uploads", "summary": "Uploads increase from 32 MiB to 100 MiB — größer."}],
-    "highlights": [{"emoji": "🚀", "title": "Larger uploads", "text": "Upload up to 100 MiB.", "prs": [1]}],
+    "daily": [{"emoji": "🚀", "title": "Larger uploads", "text": "Upload up to 100 MiB.", "prs": [1]}],
     "tweet": "Uploads now take 100 MiB.", "title": "Larger uploads", "body": "Uploads grow to 100 MiB.",
     "hook": "Uploads grew.", "closing": "The repo is public.", "hashtags": ["#AI", "#OpenSource"],
     "message": "Hi <@&1424461167883194418>", "caption": "Bigger boxes.", "image_prompt": "Bee carrying a big box",
@@ -382,16 +382,16 @@ def note(number, merged_at, tier="daily"):
 
 
 class ReadmeTest(unittest.TestCase):
-    def test_the_readme_lists_the_10_newest_highlights_but_apps_with_badge_date_and_text(self):
-        highlights = [{"date": "2026-10-06", "emoji": "🎵", "title": f"Item {n}", "kind": "model",
+    def test_the_readme_lists_the_10_newest_daily_items_but_apps_with_badge_date_and_text(self):
+        items = [{"date": "2026-10-06", "emoji": "🎵", "title": f"Item {n}", "kind": "model",
                        "text": f"Try it. [Open it](https://example.com/{n})."} for n in range(14)]
-        highlights[1] = {"date": "2026-10-16", "title": "No link", "text": "Plain.", "kind": "product"}
-        highlights[2] = {**highlights[2], "kind": "api", "text": "Use [the store](https://example.com/s) now."}
-        highlights[3] = {**highlights[3], "kind": "app"}
-        del highlights[4]["kind"]
+        items[1] = {"date": "2026-10-16", "title": "No link", "text": "Plain.", "kind": "product"}
+        items[2] = {**items[2], "kind": "api", "text": "Use [the store](https://example.com/s) now."}
+        items[3] = {**items[3], "kind": "app"}
+        del items[4]["kind"]
         with tempfile.TemporaryDirectory() as directory:
             index, readme_file = Path(directory, "index.json"), Path(directory, "README.md")
-            index.write_text(json.dumps({"highlights": highlights}))
+            index.write_text(json.dumps({"daily": items}))
             readme_file.write_text("intro\n<!-- news:start -->\n- old\n<!-- news:end -->\noutro\n")
             with patch("sys.argv", ["readme.py", str(index), str(readme_file)]):
                 readme.main()

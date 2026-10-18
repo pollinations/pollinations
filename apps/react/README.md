@@ -1,8 +1,13 @@
 # react.pollinations.ai
 
-Public showcase for React UI surfaces.
+Local showcase for React UI surfaces and internal visual QA.
 
-The public app is organized around:
+The public `react.pollinations.ai` and `react.myceli.ai` sites permanently redirect
+all paths to the [UI package documentation](../../packages/ui/README.md), which
+links to the SDK's React documentation. Cloudflare Pages deploys only `redirect/`;
+the showcase and its SDK/UI dependencies are no longer built for deployment.
+
+The local app is organized around:
 
 - `Primitives` - exported building blocks from `packages/ui/src/primitives`.
 - `Compositions` - exported SDK-free recipes from `packages/ui/src/compositions`.
@@ -10,7 +15,7 @@ The public app is organized around:
 - `Colors` - light/dark design tokens and accent/neutral scopes.
 
 The exhaustive primitive coverage page is still available for internal visual
-QA at `?view=showcase`, but it is intentionally not linked from the public UI.
+QA at `?view=showcase`, but it is intentionally not linked from the navigation.
 
 ## Development
 

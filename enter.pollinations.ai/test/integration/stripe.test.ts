@@ -998,6 +998,97 @@ test("GET /api/stripe/billing returns default card billing address", async ({
     });
 });
 
+// Stripe Tax uses the customer's address when it has any field (failing if
+// it is invalid) and the default card's otherwise: never a mix of both.
+const cardAddress = {
+    line1: "1 Market St",
+    line2: null,
+    city: "San Francisco",
+    state: "CA",
+    postal_code: "94105",
+    country: "US",
+};
+const blankAddress = {
+    line1: null,
+    line2: null,
+    city: null,
+    state: null,
+    postal_code: null,
+    country: null,
+};
+test.for([
+    {
+        name: "a partial customer address stays whole",
+        customerAddress: {
+            ...blankAddress,
+            postal_code: "10001",
+            country: "US",
+        },
+        expected: { ...blankAddress, postal_code: "10001", country: "US" },
+        complete: true,
+    },
+    {
+        name: "no customer address uses the card's",
+        customerAddress: null,
+        expected: cardAddress,
+        complete: true,
+    },
+    {
+        name: "a customer address without a country is incomplete",
+        customerAddress: { ...blankAddress, postal_code: "10001" },
+        expected: { ...blankAddress, postal_code: "10001" },
+        complete: false,
+    },
+    {
+        name: "a customer address of empty fields counts as none",
+        customerAddress: { ...blankAddress, line1: "" },
+        expected: cardAddress,
+        complete: true,
+    },
+])("GET /api/stripe/billing: $name", async (testCase, {
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+    if (!user) throw new Error("Expected seeded test user");
+
+    const customer = mockCustomer("cus_billing_address_source");
+    customer.address = testCase.customerAddress;
+    customer.invoice_settings.default_payment_method = "pm_billing_address";
+    const paymentMethod = mockCardPaymentMethod(
+        "pm_billing_address",
+        customer.id,
+    );
+    paymentMethod.billing_details.address = cardAddress;
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.paymentMethods.push(paymentMethod);
+    await db
+        .update(userTable)
+        .set({ stripeCustomerId: customer.id })
+        .where(eq(userTable.id, user.id));
+
+    const response = await SELF.fetch(`${base}/billing`, {
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+    });
+    expect(response.status).toBe(200);
+    const data = (await response.json()) as {
+        billingDetails: Record<string, unknown>;
+        billingDetailsComplete: boolean;
+    };
+    const { postal_code, ...rest } = testCase.expected;
+    expect(data.billingDetails).toMatchObject({
+        ...rest,
+        postalCode: postal_code,
+    });
+    expect(data.billingDetailsComplete).toBe(testCase.complete);
+});
+
 test("GET /api/stripe/billing returns the pack of the last checkout purchase", async ({
     sessionToken,
     mocks,

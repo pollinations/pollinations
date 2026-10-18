@@ -49,7 +49,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "SPEECH_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -226,6 +227,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "speech",
+        name: "Speech",
+        description:
+            "Generate speech from text and transcribe audio with Pollinations audio models.",
+        binding: "SPEECH_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Speech and transcription use each model's listed audio rate. Model discovery is free.",
             rates: [],
         },
     },

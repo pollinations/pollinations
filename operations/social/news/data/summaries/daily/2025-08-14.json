@@ -24,7 +24,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:33:22.762613+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Roblox roleplay text model",
@@ -35,6 +36,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

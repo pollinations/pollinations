@@ -48,7 +48,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:14:03.328362+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "GLM-5.3 FlashX joins",
@@ -94,6 +95,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

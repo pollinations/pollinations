@@ -44,7 +44,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:49:32.215269+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Llama 3.3 70B",
@@ -72,6 +73,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

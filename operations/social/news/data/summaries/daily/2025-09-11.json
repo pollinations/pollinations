@@ -12,7 +12,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:33:41.292114+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Mistral Romance Companion opens up",
@@ -22,6 +23,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

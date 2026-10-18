@@ -20,7 +20,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:31:40.270763+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "✨",
       "title": "See your user tier",
@@ -30,6 +31,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

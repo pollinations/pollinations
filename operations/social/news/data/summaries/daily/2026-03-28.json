@@ -140,7 +140,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:46:10.291503+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎯",
       "title": "Choose a Websim model",
@@ -159,6 +160,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

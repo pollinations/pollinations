@@ -64,7 +64,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:04:56.021074+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎵",
       "title": "Kokoro speech joins the API",
@@ -111,6 +112,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

@@ -40,7 +40,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:33:45.562158+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Make comics together",
@@ -86,6 +87,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

@@ -40,7 +40,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:47:38.085432+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Kimi K2.5 takes over",
@@ -78,6 +79,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

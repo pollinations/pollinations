@@ -48,71 +48,6 @@
     }
   ],
   "generated_at": "2026-10-17T22:55:08.593712+00:00",
-  "highlights": [
-    {
-      "emoji": "🤖",
-      "title": "Grok 4.3 joins text",
-      "text": "Use Grok 4.3 for text requests with image input, tools and reasoning. [Browse Grok 4.3](https://enter.pollinations.ai/models?q=Grok%204.3).",
-      "prs": [
-        11299
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Gemini Search Fast",
-      "text": "Ask questions with Google Search grounding through Gemini Search Fast, which uses Gemini 3.1 Flash Lite. [Browse Gemini Search Fast](https://enter.pollinations.ai/models?q=Gemini%20Search%20Fast).",
-      "prs": [
-        11299
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Gemini Search Large",
-      "text": "Use Google Search grounding with Gemini Search Large, which uses Gemini 3.5 Flash. [Browse Gemini Search Large](https://enter.pollinations.ai/models?q=Gemini%20Search%20Large).",
-      "prs": [
-        11299
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Wan Pro makes video",
-      "text": "Generate video from text or an image with `wan-pro`, with audio included. It defaults to five seconds at 720p and accepts durations from two to fifteen seconds. [Browse Wan Pro](https://enter.pollinations.ai/models?q=wan-pro).",
-      "prs": [
-        11299
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "✨",
-      "title": "Cohere Embed v4",
-      "text": "Create 1536-dimensional embeddings with `cohere-embed-v4`, which supports a 128K context. [Browse Cohere Embed v4](https://enter.pollinations.ai/models?q=cohere-embed-v4).",
-      "prs": [
-        11299
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "✨",
-      "title": "Qwen3 Embedding 8B",
-      "text": "Create embeddings with `qwen3-embedding-8b`, with a 32K context and dimensions up to 4096. [Browse Qwen3 Embedding 8B](https://enter.pollinations.ai/models?q=qwen3-embedding-8b).",
-      "prs": [
-        11299
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎯",
-      "title": "Larger embedding vectors",
-      "text": "The embeddings API now accepts `dimensions` requests up to 4096, so you can request the full supported size of `qwen3-embedding-8b`. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        11299
-      ],
-      "kind": "api"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 11302,
@@ -368,6 +303,71 @@
           "changes": []
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🤖",
+      "title": "Grok 4.3 joins text",
+      "text": "Use Grok 4.3 for text requests with image input, tools and reasoning. [Browse Grok 4.3](https://enter.pollinations.ai/models?q=Grok%204.3).",
+      "prs": [
+        11299
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Gemini Search Fast",
+      "text": "Ask questions with Google Search grounding through Gemini Search Fast, which uses Gemini 3.1 Flash Lite. [Browse Gemini Search Fast](https://enter.pollinations.ai/models?q=Gemini%20Search%20Fast).",
+      "prs": [
+        11299
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Gemini Search Large",
+      "text": "Use Google Search grounding with Gemini Search Large, which uses Gemini 3.5 Flash. [Browse Gemini Search Large](https://enter.pollinations.ai/models?q=Gemini%20Search%20Large).",
+      "prs": [
+        11299
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Wan Pro makes video",
+      "text": "Generate video from text or an image with `wan-pro`, with audio included. It defaults to five seconds at 720p and accepts durations from two to fifteen seconds. [Browse Wan Pro](https://enter.pollinations.ai/models?q=wan-pro).",
+      "prs": [
+        11299
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "Cohere Embed v4",
+      "text": "Create 1536-dimensional embeddings with `cohere-embed-v4`, which supports a 128K context. [Browse Cohere Embed v4](https://enter.pollinations.ai/models?q=cohere-embed-v4).",
+      "prs": [
+        11299
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "Qwen3 Embedding 8B",
+      "text": "Create embeddings with `qwen3-embedding-8b`, with a 32K context and dimensions up to 4096. [Browse Qwen3 Embedding 8B](https://enter.pollinations.ai/models?q=qwen3-embedding-8b).",
+      "prs": [
+        11299
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Larger embedding vectors",
+      "text": "The embeddings API now accepts `dimensions` requests up to 4096, so you can request the full supported size of `qwen3-embedding-8b`. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        11299
+      ],
+      "kind": "api"
     }
   ]
 }

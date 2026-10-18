@@ -32,7 +32,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:47:13.333798+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎯",
       "title": "Estimates for your balance",
@@ -42,6 +43,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

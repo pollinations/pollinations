@@ -48,7 +48,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:49:27.371025+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🔗",
       "title": "Connect Pollinations to OpenClaw",
@@ -58,6 +59,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

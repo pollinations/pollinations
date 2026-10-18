@@ -20,7 +20,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:36:33.721774+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Tune chat generations",
@@ -30,6 +31,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

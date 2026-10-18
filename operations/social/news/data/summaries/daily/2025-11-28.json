@@ -24,7 +24,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:36:04.524636+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Nano Banana Pro in 4K",
@@ -43,6 +44,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

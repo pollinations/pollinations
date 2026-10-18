@@ -32,7 +32,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:35:11.492740+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "📱",
       "title": "ReImagine on mobile",
@@ -51,6 +52,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

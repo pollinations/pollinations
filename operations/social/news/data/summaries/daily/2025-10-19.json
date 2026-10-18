@@ -24,7 +24,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:34:45.696635+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Claude Haiku 4.5 added",
@@ -52,6 +53,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

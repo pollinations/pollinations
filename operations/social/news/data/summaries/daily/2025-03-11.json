@@ -32,7 +32,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:29:16.757649+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🔗",
       "title": "OpenAI-compatible chat",
@@ -78,6 +79,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

@@ -12,7 +12,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:33:35.228411+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🔗",
       "title": "Manage keys in Enter",
@@ -22,6 +23,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

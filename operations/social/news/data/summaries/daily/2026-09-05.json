@@ -68,62 +68,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:11:28.617318+00:00",
-  "highlights": [
-    {
-      "emoji": "🤖",
-      "title": "Structured managed-agent output",
-      "text": "Use `/v1/responses` to receive ordered assistant messages and executed MCP calls, including lifecycle events when streaming. Stateless follow-ups can include completed tool outputs without running those tools again. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        14360
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🎵",
-      "title": "Publish community speech models",
-      "text": "Register an OpenAI-compatible text-to-speech endpoint in My Models, the Account API, or `polli my-models`. Its audio can then be requested through `/v1/audio/speech`. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        14387
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Qwen3.8 Flash",
-      "text": "Try `qwen/qwen3.8-flash` for text output from text, image, or video input, with reasoning, tool support, and a 1M-token context window. It requires paid eligibility. [View the model](https://enter.pollinations.ai/models?q=qwen/qwen3.8-flash).",
-      "prs": [
-        14467
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎨",
-      "title": "MAI Image 2.5 Flash",
-      "text": "Generate images from text or edit an image using one JPEG or PNG reference with `microsoft/mai-image-2.5-flash`. [View the model](https://enter.pollinations.ai/models?q=microsoft/mai-image-2.5-flash).",
-      "prs": [
-        14469
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Choose your text upstream",
-      "text": "Community text-model publishers can register an exact Chat Completions or Responses endpoint URL, including query parameters, through My Models or `polli my-models`. Responses registrations work with both Pollinations text APIs. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        14479
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "✨",
-      "title": "More SDK routing control",
-      "text": "`@pollinations/sdk` 5.1.0-alpha.7 adds separate chat routing overrides for text, web search, image, video, and audio capabilities, plus model-specific resolution options for image and video generation. [View the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
-      "prs": [
-        14498
-      ],
-      "kind": "product"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 14485,
@@ -531,6 +475,62 @@
           "changes": []
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🤖",
+      "title": "Structured managed-agent output",
+      "text": "Use `/v1/responses` to receive ordered assistant messages and executed MCP calls, including lifecycle events when streaming. Stateless follow-ups can include completed tool outputs without running those tools again. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14360
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Publish community speech models",
+      "text": "Register an OpenAI-compatible text-to-speech endpoint in My Models, the Account API, or `polli my-models`. Its audio can then be requested through `/v1/audio/speech`. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        14387
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Qwen3.8 Flash",
+      "text": "Try `qwen/qwen3.8-flash` for text output from text, image, or video input, with reasoning, tool support, and a 1M-token context window. It requires paid eligibility. [View the model](https://enter.pollinations.ai/models?q=qwen/qwen3.8-flash).",
+      "prs": [
+        14467
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "MAI Image 2.5 Flash",
+      "text": "Generate images from text or edit an image using one JPEG or PNG reference with `microsoft/mai-image-2.5-flash`. [View the model](https://enter.pollinations.ai/models?q=microsoft/mai-image-2.5-flash).",
+      "prs": [
+        14469
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Choose your text upstream",
+      "text": "Community text-model publishers can register an exact Chat Completions or Responses endpoint URL, including query parameters, through My Models or `polli my-models`. Responses registrations work with both Pollinations text APIs. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        14479
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "More SDK routing control",
+      "text": "`@pollinations/sdk` 5.1.0-alpha.7 adds separate chat routing overrides for text, web search, image, video, and audio capabilities, plus model-specific resolution options for image and video generation. [View the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "prs": [
+        14498
+      ],
+      "kind": "product"
     }
   ]
 }

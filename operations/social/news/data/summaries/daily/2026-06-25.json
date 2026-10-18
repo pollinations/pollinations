@@ -32,7 +32,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:59:39.250288+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎯",
       "title": "Quests for Pollen",
@@ -51,6 +52,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

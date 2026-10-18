@@ -12,7 +12,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:32:50.658709+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "💡",
       "title": "Tweet an app idea",
@@ -22,6 +23,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

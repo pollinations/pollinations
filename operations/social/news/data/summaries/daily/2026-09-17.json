@@ -60,26 +60,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:13:22.523160+00:00",
-  "highlights": [
-    {
-      "emoji": "✨",
-      "title": "Account status at a glance",
-      "text": "See Pollen balances in Enter and your key’s remaining budget in the app menu. The menu also gives you direct access to Permissions, Buy Pollen, and Disconnect. [Manage your keys](https://enter.pollinations.ai/keys).",
-      "prs": [
-        14951
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Model health, separately",
-      "text": "Query `GET /models/status` for model health, route counters, fallback rescues, and latency without pulling health data through the model list. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        15052
-      ],
-      "kind": "api"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 15059,
@@ -327,6 +307,26 @@
           ]
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "✨",
+      "title": "Account status at a glance",
+      "text": "See Pollen balances in Enter and your key’s remaining budget in the app menu. The menu also gives you direct access to Permissions, Buy Pollen, and Disconnect. [Manage your keys](https://enter.pollinations.ai/keys).",
+      "prs": [
+        14951
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Model health, separately",
+      "text": "Query `GET /models/status` for model health, route counters, fallback rescues, and latency without pulling health data through the model list. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        15052
+      ],
+      "kind": "api"
     }
   ]
 }

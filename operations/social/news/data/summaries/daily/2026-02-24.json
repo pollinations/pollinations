@@ -40,7 +40,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:41:37.310072+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🔗",
       "title": "Find apps by purpose",
@@ -50,6 +51,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

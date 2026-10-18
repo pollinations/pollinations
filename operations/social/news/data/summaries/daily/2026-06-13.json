@@ -32,7 +32,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:58:37.796135+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Websim gets a workspace",
@@ -61,6 +62,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

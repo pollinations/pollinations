@@ -40,7 +40,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:37:51.948759+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "SANA-Sprint image backend",
@@ -77,6 +78,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

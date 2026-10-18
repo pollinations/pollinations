@@ -96,65 +96,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:02:06.801317+00:00",
-  "highlights": [
-    {
-      "emoji": "🤖",
-      "title": "GPT-OSS 20B joins text",
-      "text": "Use `gpt-oss` for text generation with reasoning and tool calls. [View the model](https://enter.pollinations.ai/models?q=gpt-oss).",
-      "prs": [
-        12566
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Six more text models",
-      "text": "Try Kimi K3, Grok 4.5, Gemma 4 31B, MiMo V2.5, MiMo V2.5 Pro, and Qwen3.7 Max. `qwen-large` also has an updated context configuration and a reasoning toggle. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        12577
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎨",
-      "title": "HappyHorse makes video",
-      "text": "Generate 720p video with `happyhorse-1.1` from text or a first-frame image. Choose from seven aspect ratios and durations of 3–15 seconds; this model is paid-only. [View the model](https://enter.pollinations.ai/models?q=happyhorse-1.1).",
-      "prs": [
-        12577
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "✨",
-      "title": "CatGPT gets a gallery",
-      "text": "Browse generated memes in CatGPT’s public gallery, including creations from its Discord bot.",
-      "prs": [
-        12549,
-        12558
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Dungeon images get saved",
-      "text": "AI Dungeon Master now saves generated images to its public gallery, so an adventure’s artwork has somewhere to go after generation.",
-      "prs": [
-        12555
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🔗",
-      "title": "More creations get media links",
-      "text": "Generated results from Product Packaging Designer, Virtual Makeup, and SlidePainter are now published to Pollinations media storage.",
-      "prs": [
-        12553,
-        12554,
-        12556
-      ],
-      "kind": "product"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 12418,
@@ -230,6 +171,65 @@
           ]
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🤖",
+      "title": "GPT-OSS 20B joins text",
+      "text": "Use `gpt-oss` for text generation with reasoning and tool calls. [View the model](https://enter.pollinations.ai/models?q=gpt-oss).",
+      "prs": [
+        12566
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Six more text models",
+      "text": "Try Kimi K3, Grok 4.5, Gemma 4 31B, MiMo V2.5, MiMo V2.5 Pro, and Qwen3.7 Max. `qwen-large` also has an updated context configuration and a reasoning toggle. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        12577
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "HappyHorse makes video",
+      "text": "Generate 720p video with `happyhorse-1.1` from text or a first-frame image. Choose from seven aspect ratios and durations of 3–15 seconds; this model is paid-only. [View the model](https://enter.pollinations.ai/models?q=happyhorse-1.1).",
+      "prs": [
+        12577
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "CatGPT gets a gallery",
+      "text": "Browse generated memes in CatGPT’s public gallery, including creations from its Discord bot.",
+      "prs": [
+        12549,
+        12558
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Dungeon images get saved",
+      "text": "AI Dungeon Master now saves generated images to its public gallery, so an adventure’s artwork has somewhere to go after generation.",
+      "prs": [
+        12555
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "More creations get media links",
+      "text": "Generated results from Product Packaging Designer, Virtual Makeup, and SlidePainter are now published to Pollinations media storage.",
+      "prs": [
+        12553,
+        12554,
+        12556
+      ],
+      "kind": "product"
     }
   ]
 }

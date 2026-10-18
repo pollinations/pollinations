@@ -32,7 +32,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:34:33.568499+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Openai-large changes models",
@@ -61,6 +62,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

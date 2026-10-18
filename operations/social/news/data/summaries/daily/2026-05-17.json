@@ -176,7 +176,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:52:15.945632+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Set both video frames",
@@ -195,6 +196,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

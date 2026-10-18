@@ -48,7 +48,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:35:32.346538+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Claude Sonnet 4.5 added",
@@ -67,6 +68,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

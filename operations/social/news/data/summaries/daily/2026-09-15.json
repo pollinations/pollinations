@@ -60,53 +60,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:13:01.617690+00:00",
-  "highlights": [
-    {
-      "emoji": "🎯",
-      "title": "Filter models by reliability",
-      "text": "Filter model lists by official or community source, or request only models with fresh, reliable health status. Headers offer the same filters when a client cannot add query parameters. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        14553
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Inspect health by route",
-      "text": "The new `/v1/models/status/routes` endpoint separates caller-visible results from individual primary and fallback attempts, so a successful rescue does not hide a failing route. [Explore the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        14861
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "💡",
-      "title": "See fallback rescues",
-      "text": "Expand models in the monitor to see route health and rescue counts, including a warning when an unhealthy primary is masked by a working fallback. [Open the model monitor](https://model-monitor.pollinations.ai).",
-      "prs": [
-        14861
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🚀",
-      "title": "Update polli on demand",
-      "text": "Run `polli update` to check for and install the latest globally installed `@pollinations/cli`. Nothing installs automatically. [View the CLI package](https://www.npmjs.com/package/@pollinations/cli).",
-      "prs": [
-        14883
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "✨",
-      "title": "Build with shared chat UI",
-      "text": "Use reusable conversation, message, prompt-input, and tool-call components from `@pollinations/ui` in React apps. [Explore the React UI](https://react.pollinations.ai).",
-      "prs": [
-        14855
-      ],
-      "kind": "product"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 14901,
@@ -232,6 +185,53 @@
           ]
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🎯",
+      "title": "Filter models by reliability",
+      "text": "Filter model lists by official or community source, or request only models with fresh, reliable health status. Headers offer the same filters when a client cannot add query parameters. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        14553
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Inspect health by route",
+      "text": "The new `/v1/models/status/routes` endpoint separates caller-visible results from individual primary and fallback attempts, so a successful rescue does not hide a failing route. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14861
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "💡",
+      "title": "See fallback rescues",
+      "text": "Expand models in the monitor to see route health and rescue counts, including a warning when an unhealthy primary is masked by a working fallback. [Open the model monitor](https://model-monitor.pollinations.ai).",
+      "prs": [
+        14861
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🚀",
+      "title": "Update polli on demand",
+      "text": "Run `polli update` to check for and install the latest globally installed `@pollinations/cli`. Nothing installs automatically. [View the CLI package](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        14883
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "Build with shared chat UI",
+      "text": "Use reusable conversation, message, prompt-input, and tool-call components from `@pollinations/ui` in React apps. [Explore the React UI](https://react.pollinations.ai).",
+      "prs": [
+        14855
+      ],
+      "kind": "product"
     }
   ]
 }

@@ -64,7 +64,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:11:23.869679+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🔗",
       "title": "Search repositories with Polli",
@@ -92,6 +93,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

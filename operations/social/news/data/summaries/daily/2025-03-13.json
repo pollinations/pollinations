@@ -24,7 +24,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:29:17.223113+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🚀",
       "title": "Shorter text request spacing",
@@ -43,6 +44,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

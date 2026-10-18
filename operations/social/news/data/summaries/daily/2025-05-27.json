@@ -40,7 +40,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:31:35.746567+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Edit with multiple images",
@@ -61,6 +62,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

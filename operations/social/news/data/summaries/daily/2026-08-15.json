@@ -64,45 +64,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:07:01.120304+00:00",
-  "highlights": [
-    {
-      "emoji": "🤖",
-      "title": "Build your own agents",
-      "text": "Create and edit prompt agents with a Pollinations text model and optional MCP tools, then list them privately or publicly in My Models. Use the dashboard or polli CLI. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        12336
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Nine hosted MCP tools",
-      "text": "Connect an MCP client to tools for generating text, images, video, audio and 3D, creating embeddings, and checking models and balance. [Explore MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
-      "prs": [
-        13111
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🌟",
-      "title": "App growth earns Pollen",
-      "text": "App owners can earn 15 Pollen when someone else makes the first paid request through their BYOP app, and another 15 when their apps reach ten distinct external users.",
-      "prs": [
-        13303
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🎯",
-      "title": "A Quest for senior devs",
-      "text": "The Senior dev Quest awards 3 Pollen to eligible GitHub accounts at least 730 days old, once per GitHub identity.",
-      "prs": [
-        13303,
-        13429
-      ],
-      "kind": "product"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 13427,
@@ -278,6 +239,45 @@
           "changes": []
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🤖",
+      "title": "Build your own agents",
+      "text": "Create and edit prompt agents with a Pollinations text model and optional MCP tools, then list them privately or publicly in My Models. Use the dashboard or polli CLI. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        12336
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Nine hosted MCP tools",
+      "text": "Connect an MCP client to tools for generating text, images, video, audio and 3D, creating embeddings, and checking models and balance. [Explore MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        13111
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🌟",
+      "title": "App growth earns Pollen",
+      "text": "App owners can earn 15 Pollen when someone else makes the first paid request through their BYOP app, and another 15 when their apps reach ten distinct external users.",
+      "prs": [
+        13303
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "A Quest for senior devs",
+      "text": "The Senior dev Quest awards 3 Pollen to eligible GitHub accounts at least 730 days old, once per GitHub identity.",
+      "prs": [
+        13303,
+        13429
+      ],
+      "kind": "product"
     }
   ]
 }

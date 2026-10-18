@@ -104,7 +104,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:36:48.487067+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Gemini gets built-in tools",
@@ -114,6 +115,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

@@ -60,7 +60,24 @@
     }
   ],
   "generated_at": "2026-10-17T23:14:04.466150+00:00",
-  "highlights": [
+  "changelog": [
+    {
+      "pr_number": 15258,
+      "url": "https://github.com/pollinations/pollinations/pull/15258",
+      "merged_at": "2026-09-21T08:50:37Z",
+      "api_changes": [
+        {
+          "id": "pr-15258:POST /alpha/decisions",
+          "endpoint": "POST /alpha/decisions",
+          "summary": "Create Decision",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        }
+      ]
+    }
+  ],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Grok 4.7 joins the catalog",
@@ -105,23 +122,6 @@
         15141
       ],
       "kind": "product"
-    }
-  ],
-  "changelog": [
-    {
-      "pr_number": 15258,
-      "url": "https://github.com/pollinations/pollinations/pull/15258",
-      "merged_at": "2026-09-21T08:50:37Z",
-      "api_changes": [
-        {
-          "id": "pr-15258:POST /alpha/decisions",
-          "endpoint": "POST /alpha/decisions",
-          "summary": "Create Decision",
-          "action": "ADD",
-          "breaking": false,
-          "changes": []
-        }
-      ]
     }
   ]
 }

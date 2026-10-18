@@ -16,7 +16,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:30:38.696897+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🔗",
       "title": "Pollinations.ai Enhancer listed",
@@ -26,6 +27,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

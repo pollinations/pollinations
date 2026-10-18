@@ -68,7 +68,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:22:10.763029+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Gemini Flash Lite 3.5",
@@ -105,6 +106,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

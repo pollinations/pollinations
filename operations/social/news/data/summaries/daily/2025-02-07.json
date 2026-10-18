@@ -32,7 +32,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:28:54.982118+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Hormoz 8B joins chat",
@@ -78,6 +79,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

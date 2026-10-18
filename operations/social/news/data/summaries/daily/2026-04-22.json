@@ -28,7 +28,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:48:38.569314+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "GPT Image 2 added",
@@ -38,6 +39,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

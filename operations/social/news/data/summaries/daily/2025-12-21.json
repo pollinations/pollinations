@@ -72,7 +72,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:37:17.015322+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Choose Veo's last frame",
@@ -119,6 +120,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

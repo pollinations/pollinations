@@ -44,44 +44,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:01:37.546404+00:00",
-  "highlights": [
-    {
-      "emoji": "🤖",
-      "title": "Three ChatGPT 5.6 models",
-      "text": "Try Sol, Terra, and Luna with tools, reasoning, up to 10 reference images, and 1,050,000-token context windows. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        12309
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Seedream 5.0 Pro",
-      "text": "Generate and edit images with `seedream5-pro`, using up to 10 reference images. [View the model](https://enter.pollinations.ai/models?q=seedream5-pro).",
-      "prs": [
-        12309
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎯",
-      "title": "Quest rewards in polli",
-      "text": "Run `polli quests` to see which rewards are ready to claim or already claimed, and filter quests by status. Claiming still happens in the dashboard. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
-      "prs": [
-        12274
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "💡",
-      "title": "Model health with timestamps",
-      "text": "Check model health over windows up to seven days. Status responses now include a fetch timestamp and flag cached data served during an upstream failure. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        12295
-      ],
-      "kind": "api"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 11928,
@@ -324,6 +286,44 @@
           "changes": []
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🤖",
+      "title": "Three ChatGPT 5.6 models",
+      "text": "Try Sol, Terra, and Luna with tools, reasoning, up to 10 reference images, and 1,050,000-token context windows. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        12309
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Seedream 5.0 Pro",
+      "text": "Generate and edit images with `seedream5-pro`, using up to 10 reference images. [View the model](https://enter.pollinations.ai/models?q=seedream5-pro).",
+      "prs": [
+        12309
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Quest rewards in polli",
+      "text": "Run `polli quests` to see which rewards are ready to claim or already claimed, and filter quests by status. Claiming still happens in the dashboard. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        12274
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Model health with timestamps",
+      "text": "Check model health over windows up to seven days. Status responses now include a fetch timestamp and flag cached data served during an upstream failure. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        12295
+      ],
+      "kind": "api"
     }
   ]
 }

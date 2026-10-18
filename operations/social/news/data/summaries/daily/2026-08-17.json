@@ -84,7 +84,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:22:13.600069+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎯",
       "title": "See your Quest progress",
@@ -121,6 +122,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

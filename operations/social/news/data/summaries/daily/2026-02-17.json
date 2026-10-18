@@ -28,7 +28,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:40:30.114327+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Build slides with SlidePainter",
@@ -58,6 +59,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

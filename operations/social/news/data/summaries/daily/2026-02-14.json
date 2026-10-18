@@ -24,7 +24,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:40:06.520225+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🔗",
       "title": "OpenClaw meets Pollinations",
@@ -34,6 +35,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

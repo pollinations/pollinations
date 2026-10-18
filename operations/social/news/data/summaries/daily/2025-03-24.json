@@ -36,7 +36,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:29:54.450053+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎵",
       "title": "MCP can speak now",
@@ -83,6 +84,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

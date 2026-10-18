@@ -48,7 +48,24 @@
     }
   ],
   "generated_at": "2026-10-17T23:00:17.908876+00:00",
-  "highlights": [
+  "changelog": [
+    {
+      "pr_number": 12107,
+      "url": "https://github.com/pollinations/pollinations/pull/12107",
+      "merged_at": "2026-06-30T11:10:35Z",
+      "api_changes": [
+        {
+          "id": "pr-12107:GET /account/quests",
+          "endpoint": "GET /account/quests",
+          "summary": "Get Quest Status",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        }
+      ]
+    }
+  ],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "NanoBanana 2 Lite",
@@ -84,23 +101,6 @@
         12107
       ],
       "kind": "api"
-    }
-  ],
-  "changelog": [
-    {
-      "pr_number": 12107,
-      "url": "https://github.com/pollinations/pollinations/pull/12107",
-      "merged_at": "2026-06-30T11:10:35Z",
-      "api_changes": [
-        {
-          "id": "pr-12107:GET /account/quests",
-          "endpoint": "GET /account/quests",
-          "summary": "Get Quest Status",
-          "action": "ADD",
-          "breaking": false,
-          "changes": []
-        }
-      ]
     }
   ]
 }

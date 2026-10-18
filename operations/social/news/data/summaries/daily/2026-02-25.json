@@ -68,7 +68,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:41:47.169272+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🔗",
       "title": "Upload media by API",
@@ -106,6 +107,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

@@ -52,7 +52,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:37:12.060310+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Playground meets theme creator",
@@ -80,6 +81,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

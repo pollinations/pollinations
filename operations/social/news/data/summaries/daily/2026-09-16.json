@@ -156,107 +156,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:14:08.001648+00:00",
-  "highlights": [
-    {
-      "emoji": "🎵",
-      "title": "ElevenLabs Music v2.5",
-      "text": "Generate 3–300 seconds of music with `elevenlabs/music-v2.5`. It supports instrumental tracks, reference audio, and composition-plan inpainting. [View the model](https://enter.pollinations.ai/models?q=elevenlabs%2Fmusic-v2.5).",
-      "prs": [
-        15042
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎯",
-      "title": "Find healthy models first",
-      "text": "Enter’s model catalog now starts with healthy official models and shows health indicators beside them. Edit the filters or use `status:all` to see the rest. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        14940
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Filter models by health",
-      "text": "Model-list requests can use `status=healthy` to return models with fresh healthy results, or `status=all` to include health data without excluding models. The header is now `Pollinations-Model-Status`. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        14940
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🎨",
-      "title": "CatGPT draws comics",
-      "text": "CatGPT Comic pairs a short, sarcastic cat reply with a single-panel comic in the same chat request. [Read the agent docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        14869
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🤖",
-      "title": "A crow with memory",
-      "text": "Barnaby the Crow is a shopkeeper agent that can save facts you ask it to remember, recall them in a fresh chat, and remove them on request. [Read the agent docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        14907
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🎯",
-      "title": "Persuade an elevator",
-      "text": "Sirius Elevator: The Descent turns an ordinary chat into a game about talking a reluctant elevator down two floors. Mentioning a towel helps, for reasons the elevator presumably understands. [Read the agent docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        14960
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "💡",
-      "title": "Shared memory for agents",
-      "text": "Computer MCP agents can use the public `pollinations/collective-memory` repository to read and contribute shared memory. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
-      "prs": [
-        15026
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Your name on commits",
-      "text": "Computer MCP commits now default to your linked GitHub identity, so GitHub can attribute an agent’s work to your account. Repository-specific Git settings still take precedence. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
-      "prs": [
-        15028
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "✨",
-      "title": "More computer shell tools",
-      "text": "Computer MCP agents can use `xan` for CSV, `html-to-markdown` for HTML conversion, and `file` to identify files. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
-      "prs": [
-        15038
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🔗",
-      "title": "More Git for agents",
-      "text": "Computer MCP’s `git` command now supports operations including `git mv`, rebase, cherry-pick, commit ranges, and formatted logs. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
-      "prs": [
-        15039
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "💡",
-      "title": "Roomier agent descriptions",
-      "text": "Agent and community-endpoint descriptions can now be up to 1,000 characters, up from 160. There is finally room to explain what the thing does. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        15012
-      ],
-      "kind": "api"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 14956,
@@ -624,6 +523,107 @@
           ]
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🎵",
+      "title": "ElevenLabs Music v2.5",
+      "text": "Generate 3–300 seconds of music with `elevenlabs/music-v2.5`. It supports instrumental tracks, reference audio, and composition-plan inpainting. [View the model](https://enter.pollinations.ai/models?q=elevenlabs%2Fmusic-v2.5).",
+      "prs": [
+        15042
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Find healthy models first",
+      "text": "Enter’s model catalog now starts with healthy official models and shows health indicators beside them. Edit the filters or use `status:all` to see the rest. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        14940
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Filter models by health",
+      "text": "Model-list requests can use `status=healthy` to return models with fresh healthy results, or `status=all` to include health data without excluding models. The header is now `Pollinations-Model-Status`. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14940
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎨",
+      "title": "CatGPT draws comics",
+      "text": "CatGPT Comic pairs a short, sarcastic cat reply with a single-panel comic in the same chat request. [Read the agent docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14869
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "A crow with memory",
+      "text": "Barnaby the Crow is a shopkeeper agent that can save facts you ask it to remember, recall them in a fresh chat, and remove them on request. [Read the agent docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14907
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Persuade an elevator",
+      "text": "Sirius Elevator: The Descent turns an ordinary chat into a game about talking a reluctant elevator down two floors. Mentioning a towel helps, for reasons the elevator presumably understands. [Read the agent docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14960
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Shared memory for agents",
+      "text": "Computer MCP agents can use the public `pollinations/collective-memory` repository to read and contribute shared memory. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        15026
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Your name on commits",
+      "text": "Computer MCP commits now default to your linked GitHub identity, so GitHub can attribute an agent’s work to your account. Repository-specific Git settings still take precedence. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        15028
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "More computer shell tools",
+      "text": "Computer MCP agents can use `xan` for CSV, `html-to-markdown` for HTML conversion, and `file` to identify files. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        15038
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "More Git for agents",
+      "text": "Computer MCP’s `git` command now supports operations including `git mv`, rebase, cherry-pick, commit ranges, and formatted logs. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        15039
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Roomier agent descriptions",
+      "text": "Agent and community-endpoint descriptions can now be up to 1,000 characters, up from 160. There is finally room to explain what the thing does. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        15012
+      ],
+      "kind": "api"
     }
   ]
 }

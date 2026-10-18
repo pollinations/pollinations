@@ -32,18 +32,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:02:21.906015+00:00",
-  "highlights": [
-    {
-      "emoji": "🎨",
-      "title": "Sana image generation",
-      "text": "Generate images from text prompts with NVIDIA Sana Sprint 1.6B using `model=sana` on the image API. [Explore Sana](https://enter.pollinations.ai/models?q=sana).",
-      "prs": [
-        12521,
-        12524
-      ],
-      "kind": "model"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 12522,
@@ -72,6 +60,18 @@
           ]
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🎨",
+      "title": "Sana image generation",
+      "text": "Generate images from text prompts with NVIDIA Sana Sprint 1.6B using `model=sana` on the image API. [Explore Sana](https://enter.pollinations.ai/models?q=sana).",
+      "prs": [
+        12521,
+        12524
+      ],
+      "kind": "model"
     }
   ]
 }

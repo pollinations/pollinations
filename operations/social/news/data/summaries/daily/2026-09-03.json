@@ -80,7 +80,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:10:41.539494+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "💡",
       "title": "Pollinations in Open WebUI",
@@ -135,6 +136,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

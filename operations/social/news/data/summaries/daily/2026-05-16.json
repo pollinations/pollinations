@@ -48,7 +48,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:51:35.998570+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Turn images into video",
@@ -67,6 +68,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

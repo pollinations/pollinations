@@ -16,7 +16,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:57:58.062110+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Models from the live catalog",
@@ -35,6 +36,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

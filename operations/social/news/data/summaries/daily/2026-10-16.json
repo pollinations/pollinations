@@ -128,7 +128,24 @@
     }
   ],
   "generated_at": "2026-10-17T23:20:33.301741+00:00",
-  "highlights": [
+  "changelog": [
+    {
+      "pr_number": 17739,
+      "url": "https://github.com/pollinations/pollinations/pull/17739",
+      "merged_at": "2026-10-16T15:25:54Z",
+      "api_changes": [
+        {
+          "id": "pr-17739:POST /v1/systemone",
+          "endpoint": "POST /v1/systemone",
+          "summary": "Create Decision (System One path)",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        }
+      ]
+    }
+  ],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "JavaScript joins Computer MCP",
@@ -174,23 +191,6 @@
         17669
       ],
       "kind": "product"
-    }
-  ],
-  "changelog": [
-    {
-      "pr_number": 17739,
-      "url": "https://github.com/pollinations/pollinations/pull/17739",
-      "merged_at": "2026-10-16T15:25:54Z",
-      "api_changes": [
-        {
-          "id": "pr-17739:POST /v1/systemone",
-          "endpoint": "POST /v1/systemone",
-          "summary": "Create Decision (System One path)",
-          "action": "ADD",
-          "breaking": false,
-          "changes": []
-        }
-      ]
     }
   ]
 }

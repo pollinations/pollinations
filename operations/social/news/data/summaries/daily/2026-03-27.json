@@ -12,7 +12,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:45:11.448965+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Nova-fast by default",
@@ -22,6 +23,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

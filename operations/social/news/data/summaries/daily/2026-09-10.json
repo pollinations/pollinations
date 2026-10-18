@@ -44,7 +44,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:11:55.174319+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🔗",
       "title": "Connect Bloom with polli",
@@ -63,6 +64,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

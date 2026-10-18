@@ -24,7 +24,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:31:31.105664+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🔗",
       "title": "OAuth for MCP clients",
@@ -52,6 +53,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

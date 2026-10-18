@@ -36,7 +36,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:58:00.302117+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Multimodal Playground",
@@ -75,6 +76,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

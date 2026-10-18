@@ -44,7 +44,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:36:16.320847+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Seedream moves to 4.5",
@@ -63,6 +64,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

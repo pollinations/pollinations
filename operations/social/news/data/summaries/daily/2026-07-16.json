@@ -24,7 +24,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:01:58.036472+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎵",
       "title": "GPT Realtime 2.1",
@@ -34,6 +35,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

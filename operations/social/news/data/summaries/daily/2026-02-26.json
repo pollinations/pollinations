@@ -32,7 +32,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:41:51.218667+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🔗",
       "title": "A direct video route",
@@ -52,6 +53,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

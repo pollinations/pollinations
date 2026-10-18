@@ -40,7 +40,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:58:40.724972+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Ideogram 4.0 Turbo",
@@ -77,6 +78,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

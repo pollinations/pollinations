@@ -44,7 +44,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:03:56.086773+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Polli-agent combines media tools",
@@ -64,6 +65,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

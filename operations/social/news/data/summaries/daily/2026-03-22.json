@@ -28,7 +28,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:44:40.026809+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Qwen for code generation",
@@ -56,6 +57,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

@@ -28,7 +28,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:36:24.197129+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🔗",
       "title": "Shorter generation API paths",
@@ -48,6 +49,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

@@ -24,7 +24,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:34:24.849149+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "GPT Image returns",
@@ -43,6 +44,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

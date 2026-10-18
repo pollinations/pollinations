@@ -92,7 +92,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:43:15.920336+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "More community creative tools",
@@ -104,6 +105,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

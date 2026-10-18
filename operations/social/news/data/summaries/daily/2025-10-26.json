@@ -32,7 +32,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:35:00.240848+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Generate the opposite image",
@@ -43,6 +44,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

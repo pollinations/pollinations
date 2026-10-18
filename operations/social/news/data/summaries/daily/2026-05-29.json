@@ -44,7 +44,24 @@
     }
   ],
   "generated_at": "2026-10-17T22:55:20.104000+00:00",
-  "highlights": [
+  "changelog": [
+    {
+      "pr_number": 11272,
+      "url": "https://github.com/pollinations/pollinations/pull/11272",
+      "merged_at": "2026-05-29T15:19:46Z",
+      "api_changes": [
+        {
+          "id": "pr-11272:GET /v1/realtime",
+          "endpoint": "GET /v1/realtime",
+          "summary": "Realtime WebSocket",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        }
+      ]
+    }
+  ],
+  "daily": [
     {
       "emoji": "🎵",
       "title": "Realtime voice sessions",
@@ -99,23 +116,6 @@
         11400
       ],
       "kind": "model"
-    }
-  ],
-  "changelog": [
-    {
-      "pr_number": 11272,
-      "url": "https://github.com/pollinations/pollinations/pull/11272",
-      "merged_at": "2026-05-29T15:19:46Z",
-      "api_changes": [
-        {
-          "id": "pr-11272:GET /v1/realtime",
-          "endpoint": "GET /v1/realtime",
-          "summary": "Realtime WebSocket",
-          "action": "ADD",
-          "breaking": false,
-          "changes": []
-        }
-      ]
     }
   ]
 }

@@ -76,7 +76,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:07:53.864228+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Qwen3.8 27B joins",
@@ -149,6 +150,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

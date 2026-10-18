@@ -48,7 +48,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:36:33.195735+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Z-Image-Turbo with upscaling",
@@ -68,6 +69,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

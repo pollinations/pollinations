@@ -248,99 +248,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:19:42.538249+00:00",
-  "highlights": [
-    {
-      "emoji": "🚀",
-      "title": "Async media generation",
-      "text": "Submit image, video, audio, or 3D generation with `Prefer: respond-async`, then poll the job and download its result. The SDK has matching async helpers. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        17380
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🎯",
-      "title": "Perplexity Decider V1.1",
-      "text": "Use Perplexity Decider V1.1 27B for typed choices, scores, and yes/no probabilities from text input through `/alpha/decisions` or chat completions. [Find the model](https://enter.pollinations.ai/models?q=Perplexity%20Decider%20V1.1%2027B).",
-      "prs": [
-        17484
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎯",
-      "title": "Microsoft Decision 1",
-      "text": "Send fixed choices to `microsoft/microsoft-decision-1` for calibrated probabilities without generated prose. It accepts decision requests through `/alpha/decisions` and chat completions. [Find the model](https://enter.pollinations.ai/models?q=microsoft%2Fmicrosoft-decision-1).",
-      "prs": [
-        17485
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎵",
-      "title": "Sound for silent video",
-      "text": "Give `mirelo/sfx-2.0` one source video and a sound prompt to add synchronized sound effects. The `duration` parameter can select 1–120 seconds. [Find the model](https://enter.pollinations.ai/models?q=mirelo%2Fsfx-2.0).",
-      "prs": [
-        17590
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Agents review pull requests",
-      "text": "Give the new community PR-review agents a GitHub PR link to get code findings and proposed fixes. PR Mender can also prepare a fix diff and corrected files on a branch. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        17282,
-        17437
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "✨",
-      "title": "Names for sandboxes",
-      "text": "Give a sandbox a name when creating it, or keep the generated name. Names appear on dashboard cards and in `polli sandbox list`. [Read the sandbox docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        17416
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🚀",
-      "title": "Faster sandbox reconnects",
-      "text": "Repeat `ssh`, `scp`, and `rsync` connections to a sandbox can reuse an SSH connection and reconnect in under a second on supported systems. [Read the sandbox docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        17519
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🔗",
-      "title": "A skill for user-paid apps",
-      "text": "Agents building apps where users authorize their own Pollen now have a discoverable skill covering web and headless authorization flows. [Read the wallet guide](https://gen.pollinations.ai/docs#tag/connect-user-wallets).",
-      "prs": [
-        17387
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Agent IDs you can call",
-      "text": "Agent API responses and Polli CLI listings now show the callable `model` ID, so you can copy it into a request without guessing the path. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        15382
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🔗",
-      "title": "OAuth discovery on 401",
-      "text": "Gen API authentication errors now include a `WWW-Authenticate` challenge pointing OAuth clients to protected-resource metadata. Clients can discover the right metadata without a hardcoded URL. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        17492
-      ],
-      "kind": "api"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 17443,
@@ -486,6 +393,99 @@
           ]
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🚀",
+      "title": "Async media generation",
+      "text": "Submit image, video, audio, or 3D generation with `Prefer: respond-async`, then poll the job and download its result. The SDK has matching async helpers. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17380
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Perplexity Decider V1.1",
+      "text": "Use Perplexity Decider V1.1 27B for typed choices, scores, and yes/no probabilities from text input through `/alpha/decisions` or chat completions. [Find the model](https://enter.pollinations.ai/models?q=Perplexity%20Decider%20V1.1%2027B).",
+      "prs": [
+        17484
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Microsoft Decision 1",
+      "text": "Send fixed choices to `microsoft/microsoft-decision-1` for calibrated probabilities without generated prose. It accepts decision requests through `/alpha/decisions` and chat completions. [Find the model](https://enter.pollinations.ai/models?q=microsoft%2Fmicrosoft-decision-1).",
+      "prs": [
+        17485
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Sound for silent video",
+      "text": "Give `mirelo/sfx-2.0` one source video and a sound prompt to add synchronized sound effects. The `duration` parameter can select 1–120 seconds. [Find the model](https://enter.pollinations.ai/models?q=mirelo%2Fsfx-2.0).",
+      "prs": [
+        17590
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Agents review pull requests",
+      "text": "Give the new community PR-review agents a GitHub PR link to get code findings and proposed fixes. PR Mender can also prepare a fix diff and corrected files on a branch. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        17282,
+        17437
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "Names for sandboxes",
+      "text": "Give a sandbox a name when creating it, or keep the generated name. Names appear on dashboard cards and in `polli sandbox list`. [Read the sandbox docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17416
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🚀",
+      "title": "Faster sandbox reconnects",
+      "text": "Repeat `ssh`, `scp`, and `rsync` connections to a sandbox can reuse an SSH connection and reconnect in under a second on supported systems. [Read the sandbox docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17519
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "A skill for user-paid apps",
+      "text": "Agents building apps where users authorize their own Pollen now have a discoverable skill covering web and headless authorization flows. [Read the wallet guide](https://gen.pollinations.ai/docs#tag/connect-user-wallets).",
+      "prs": [
+        17387
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Agent IDs you can call",
+      "text": "Agent API responses and Polli CLI listings now show the callable `model` ID, so you can copy it into a request without guessing the path. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        15382
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "OAuth discovery on 401",
+      "text": "Gen API authentication errors now include a `WWW-Authenticate` challenge pointing OAuth clients to protected-resource metadata. Clients can discover the right metadata without a hardcoded URL. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17492
+      ],
+      "kind": "api"
     }
   ]
 }

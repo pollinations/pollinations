@@ -72,7 +72,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:36:13.873009+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Fourteen community projects added",
@@ -83,6 +84,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

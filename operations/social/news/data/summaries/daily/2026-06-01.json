@@ -172,27 +172,6 @@
     }
   ],
   "generated_at": "2026-10-17T22:56:48.922147+00:00",
-  "highlights": [
-    {
-      "emoji": "🎨",
-      "title": "Charts in Polly replies",
-      "text": "Polly can attach tables and charts directly to Discord replies, including bar, line, scatter, pie and heatmap charts. One reply can contain multiple visuals.",
-      "prs": [
-        10806
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "✨",
-      "title": "More shared UI components",
-      "text": "The React UI package adds reusable dialogs, dropdowns, sliders, tables, alerts and wallet displays for building Pollinations-powered interfaces. [Explore the React UI](https://react.pollinations.ai).",
-      "prs": [
-        11439,
-        11508
-      ],
-      "kind": "product"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 11507,
@@ -218,6 +197,27 @@
           ]
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🎨",
+      "title": "Charts in Polly replies",
+      "text": "Polly can attach tables and charts directly to Discord replies, including bar, line, scatter, pie and heatmap charts. One reply can contain multiple visuals.",
+      "prs": [
+        10806
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "More shared UI components",
+      "text": "The React UI package adds reusable dialogs, dropdowns, sliders, tables, alerts and wallet displays for building Pollinations-powered interfaces. [Explore the React UI](https://react.pollinations.ai).",
+      "prs": [
+        11439,
+        11508
+      ],
+      "kind": "product"
     }
   ]
 }

@@ -160,155 +160,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:07:29.568741+00:00",
-  "highlights": [
-    {
-      "emoji": "🎯",
-      "title": "Star models in Monitor",
-      "text": "Star models to keep them at the top, filter down to favorites, and retain your scope and category selections across reloads. [Open Model Monitor](https://model-monitor.pollinations.ai).",
-      "prs": [
-        12644
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Filter models by community",
-      "text": "Add `?community=true` or `?community=false` to model discovery requests to see community or official models only. [Browse the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        13322
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Retry the exact request",
-      "text": "For eligible non-streaming generation requests, an exact retry after a timeout can wait for the work already in progress or read its cached result without another generation charge. Use the same endpoint, body, query parameters, and seed. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        13299,
-        13342,
-        13347
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🎵",
-      "title": "Scribe realtime transcription",
-      "text": "Use `scribe-realtime` through the OpenAI-compatible `/realtime` or `/v1/realtime` WebSocket for incremental and final transcripts, with manual or voice-activity commits. [View Scribe realtime](https://enter.pollinations.ai/models?q=scribe-realtime).",
-      "prs": [
-        13334
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Gemini 3.7 Flash",
-      "text": "The paid `gemini` model now routes to Gemini 3.7 Flash; existing Flash aliases still resolve to it. [View gemini](https://enter.pollinations.ai/models?q=gemini).",
-      "prs": [
-        13335
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Muse Glimmer 30B",
-      "text": "Try `muse-glimmer` for text, reasoning, and tool use with up to 30 reference images and a 131,072-token context window. [View muse-glimmer](https://enter.pollinations.ai/models?q=muse-glimmer).",
-      "prs": [
-        13357
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Muse Spark 1.2",
-      "text": "Muse Spark 1.2 replaces 1.1 as the canonical paid text model; existing Spark aliases still work. [View Muse Spark](https://enter.pollinations.ai/models?q=muse-spark-1.2).",
-      "prs": [
-        13359
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Grok 4.6",
-      "text": "Grok 4.6 replaces 4.5 as the canonical text model, while the 4.5 names remain aliases. [View Grok 4.6](https://enter.pollinations.ai/models?q=grok-4.6).",
-      "prs": [
-        13361
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🤖",
-      "title": "DeepSeek Pro 0813",
-      "text": "`deepseek-pro` now uses the DeepSeek V4 Pro 0813 checkpoint. [View DeepSeek Pro](https://enter.pollinations.ai/models?q=deepseek-pro).",
-      "prs": [
-        13372
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Qwen3.8 2.4T A95B",
-      "text": "Try `qwen3.8-2.4t-a95b` for text with tools, reasoning controls, streaming, and a 262,144-token context window. It accepts Quest Pollen. [View the model](https://enter.pollinations.ai/models?q=qwen3.8-2.4t-a95b).",
-      "prs": [
-        13389
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Seedance 2.0 Mini",
-      "text": "Make paid 4–10 second videos from text or images, with start and end frames and optional audio. Choose 480p or the default 720p. [Find Seedance 2.0 Mini](https://enter.pollinations.ai/models?q=Seedance%202.0%20Mini).",
-      "prs": [
-        13366
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Seedance 2.0 Fast",
-      "text": "Make paid 4–5 second 480p videos from text or images, with start and end frames and optional audio. [Find Seedance 2.0 Fast](https://enter.pollinations.ai/models?q=Seedance%202.0%20Fast).",
-      "prs": [
-        13366
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Grok Imagine Image 2.0",
-      "text": "Generate or edit paid 1K or 2K images at low or medium quality, with up to three reference images. [Find Grok Imagine Image 2.0](https://enter.pollinations.ai/models?q=Grok%20Imagine%20Image%202.0).",
-      "prs": [
-        13373
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎨",
-      "title": "MiniMax H3 video",
-      "text": "Generate paid five-second, 16:9 text-to-video clips with synchronized audio at 480p, 768p, or 2K. [Find MiniMax H3](https://enter.pollinations.ai/models?q=MiniMax%20H3).",
-      "prs": [
-        13378
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎵",
-      "title": "Dialogue joins speech",
-      "text": "Send ElevenLabs dialogue to `POST /v1/audio/speech` using one `voice: text` line per turn in `input`, rather than the removed dialogue route. [Read the audio API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        13358,
-        13370
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🎵",
-      "title": "More voices by URL",
-      "text": "`GET /audio/{text}` now supports every speech model available through the speech POST endpoint, including `eleven-dialogue`, and accepts custom ElevenLabs voice IDs. [Try the simple audio route](https://gen.pollinations.ai/audio/{text}).",
-      "prs": [
-        13377
-      ],
-      "kind": "api"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 13383,
@@ -771,6 +622,155 @@
           ]
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🎯",
+      "title": "Star models in Monitor",
+      "text": "Star models to keep them at the top, filter down to favorites, and retain your scope and category selections across reloads. [Open Model Monitor](https://model-monitor.pollinations.ai).",
+      "prs": [
+        12644
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Filter models by community",
+      "text": "Add `?community=true` or `?community=false` to model discovery requests to see community or official models only. [Browse the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        13322
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Retry the exact request",
+      "text": "For eligible non-streaming generation requests, an exact retry after a timeout can wait for the work already in progress or read its cached result without another generation charge. Use the same endpoint, body, query parameters, and seed. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        13299,
+        13342,
+        13347
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Scribe realtime transcription",
+      "text": "Use `scribe-realtime` through the OpenAI-compatible `/realtime` or `/v1/realtime` WebSocket for incremental and final transcripts, with manual or voice-activity commits. [View Scribe realtime](https://enter.pollinations.ai/models?q=scribe-realtime).",
+      "prs": [
+        13334
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Gemini 3.7 Flash",
+      "text": "The paid `gemini` model now routes to Gemini 3.7 Flash; existing Flash aliases still resolve to it. [View gemini](https://enter.pollinations.ai/models?q=gemini).",
+      "prs": [
+        13335
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Muse Glimmer 30B",
+      "text": "Try `muse-glimmer` for text, reasoning, and tool use with up to 30 reference images and a 131,072-token context window. [View muse-glimmer](https://enter.pollinations.ai/models?q=muse-glimmer).",
+      "prs": [
+        13357
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Muse Spark 1.2",
+      "text": "Muse Spark 1.2 replaces 1.1 as the canonical paid text model; existing Spark aliases still work. [View Muse Spark](https://enter.pollinations.ai/models?q=muse-spark-1.2).",
+      "prs": [
+        13359
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Grok 4.6",
+      "text": "Grok 4.6 replaces 4.5 as the canonical text model, while the 4.5 names remain aliases. [View Grok 4.6](https://enter.pollinations.ai/models?q=grok-4.6).",
+      "prs": [
+        13361
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "DeepSeek Pro 0813",
+      "text": "`deepseek-pro` now uses the DeepSeek V4 Pro 0813 checkpoint. [View DeepSeek Pro](https://enter.pollinations.ai/models?q=deepseek-pro).",
+      "prs": [
+        13372
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Qwen3.8 2.4T A95B",
+      "text": "Try `qwen3.8-2.4t-a95b` for text with tools, reasoning controls, streaming, and a 262,144-token context window. It accepts Quest Pollen. [View the model](https://enter.pollinations.ai/models?q=qwen3.8-2.4t-a95b).",
+      "prs": [
+        13389
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Seedance 2.0 Mini",
+      "text": "Make paid 4–10 second videos from text or images, with start and end frames and optional audio. Choose 480p or the default 720p. [Find Seedance 2.0 Mini](https://enter.pollinations.ai/models?q=Seedance%202.0%20Mini).",
+      "prs": [
+        13366
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Seedance 2.0 Fast",
+      "text": "Make paid 4–5 second 480p videos from text or images, with start and end frames and optional audio. [Find Seedance 2.0 Fast](https://enter.pollinations.ai/models?q=Seedance%202.0%20Fast).",
+      "prs": [
+        13366
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Grok Imagine Image 2.0",
+      "text": "Generate or edit paid 1K or 2K images at low or medium quality, with up to three reference images. [Find Grok Imagine Image 2.0](https://enter.pollinations.ai/models?q=Grok%20Imagine%20Image%202.0).",
+      "prs": [
+        13373
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "MiniMax H3 video",
+      "text": "Generate paid five-second, 16:9 text-to-video clips with synchronized audio at 480p, 768p, or 2K. [Find MiniMax H3](https://enter.pollinations.ai/models?q=MiniMax%20H3).",
+      "prs": [
+        13378
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Dialogue joins speech",
+      "text": "Send ElevenLabs dialogue to `POST /v1/audio/speech` using one `voice: text` line per turn in `input`, rather than the removed dialogue route. [Read the audio API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        13358,
+        13370
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎵",
+      "title": "More voices by URL",
+      "text": "`GET /audio/{text}` now supports every speech model available through the speech POST endpoint, including `eleven-dialogue`, and accepts custom ElevenLabs voice IDs. [Try the simple audio route](https://gen.pollinations.ai/audio/{text}).",
+      "prs": [
+        13377
+      ],
+      "kind": "api"
     }
   ]
 }

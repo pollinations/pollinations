@@ -108,53 +108,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:18:32.971020+00:00",
-  "highlights": [
-    {
-      "emoji": "🎨",
-      "title": "A new Play playground",
-      "text": "Generate images, video and audio in one place, with uploads, previews, downloads and API examples built from your request. Shareable URLs keep supported settings together. [Try Play](https://pollinations.ai/play).",
-      "prs": [
-        16213
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "✨",
-      "title": "PDFs in chat requests",
-      "text": "Send base64 PDFs to supported Claude and GPT models, including GPT models using the Responses API. Chat `file` parts and `/v1/messages` PDF document blocks are supported. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        16898
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Discover hosted MCP servers",
-      "text": "Agents can find hosted MCP servers through `/.well-known/ai-catalog.json` and read public Server Cards for connection details. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
-      "prs": [
-        16862
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Discover the API spec",
-      "text": "The new `/.well-known/api-catalog` gives agents a standard way to find the OpenAPI specification and plain-text guide. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        16908
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "💡",
-      "title": "Check model eligibility",
-      "text": "Entries from `/v1/models` and `/v1/models/{model}` now include `paid_only`, so OpenAI-compatible clients can tell which models require paid Pollen without another lookup. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        16953
-      ],
-      "kind": "api"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 16982,
@@ -225,6 +178,53 @@
           ]
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🎨",
+      "title": "A new Play playground",
+      "text": "Generate images, video and audio in one place, with uploads, previews, downloads and API examples built from your request. Shareable URLs keep supported settings together. [Try Play](https://pollinations.ai/play).",
+      "prs": [
+        16213
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "PDFs in chat requests",
+      "text": "Send base64 PDFs to supported Claude and GPT models, including GPT models using the Responses API. Chat `file` parts and `/v1/messages` PDF document blocks are supported. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        16898
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Discover hosted MCP servers",
+      "text": "Agents can find hosted MCP servers through `/.well-known/ai-catalog.json` and read public Server Cards for connection details. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        16862
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Discover the API spec",
+      "text": "The new `/.well-known/api-catalog` gives agents a standard way to find the OpenAPI specification and plain-text guide. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        16908
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "💡",
+      "title": "Check model eligibility",
+      "text": "Entries from `/v1/models` and `/v1/models/{model}` now include `paid_only`, so OpenAI-compatible clients can tell which models require paid Pollen without another lookup. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        16953
+      ],
+      "kind": "api"
     }
   ]
 }

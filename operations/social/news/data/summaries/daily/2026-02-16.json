@@ -92,7 +92,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:40:50.534314+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "✨",
       "title": "Find your kind of app",
@@ -102,6 +103,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

@@ -52,7 +52,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:49:06.231798+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "DeepSeek V4 Flash",
@@ -107,6 +108,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

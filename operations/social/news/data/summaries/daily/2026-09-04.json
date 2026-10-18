@@ -80,7 +80,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:11:19.811029+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "MiniMax H3 Max Turbo",
@@ -146,6 +147,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

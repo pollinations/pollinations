@@ -68,53 +68,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:03:05.541226+00:00",
-  "highlights": [
-    {
-      "emoji": "🎨",
-      "title": "Community image endpoints",
-      "text": "Register an OpenAI-compatible image provider and use its text-to-image models through `/image/{prompt}` or `/v1/images/generations`. Community image generation responses use `b64_json`. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        12206
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🎯",
-      "title": "Pause your community model",
-      "text": "Model owners can deactivate or reactivate a community model from My Models without changing its configuration. [Open the dashboard](https://enter.pollinations.ai/keys).",
-      "prs": [
-        12643
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Gemini 3.6 Flash",
-      "text": "`gemini` and `gemini-search-large` now use Gemini 3.6 Flash, with Google Search tools supported through their updated routing. [Explore `gemini`](https://enter.pollinations.ai/models?q=gemini).",
-      "prs": [
-        12651
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Laguna S 2.1",
-      "text": "Try `laguna` for text tasks with tools, optional reasoning, and a 1,048,576-token context. [Explore `laguna`](https://enter.pollinations.ai/models?q=laguna).",
-      "prs": [
-        12663
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "📱",
-      "title": "Simpler app submissions",
-      "text": "Submit a community app with an issue form; Enter registration is no longer a prerequisite. Automated checks help prepare it for maintainer review. [Visit the repository](https://github.com/pollinations/pollinations).",
-      "prs": [
-        12642
-      ],
-      "kind": "product"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 12646,
@@ -228,6 +181,53 @@
           ]
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🎨",
+      "title": "Community image endpoints",
+      "text": "Register an OpenAI-compatible image provider and use its text-to-image models through `/image/{prompt}` or `/v1/images/generations`. Community image generation responses use `b64_json`. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        12206
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Pause your community model",
+      "text": "Model owners can deactivate or reactivate a community model from My Models without changing its configuration. [Open the dashboard](https://enter.pollinations.ai/keys).",
+      "prs": [
+        12643
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Gemini 3.6 Flash",
+      "text": "`gemini` and `gemini-search-large` now use Gemini 3.6 Flash, with Google Search tools supported through their updated routing. [Explore `gemini`](https://enter.pollinations.ai/models?q=gemini).",
+      "prs": [
+        12651
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Laguna S 2.1",
+      "text": "Try `laguna` for text tasks with tools, optional reasoning, and a 1,048,576-token context. [Explore `laguna`](https://enter.pollinations.ai/models?q=laguna).",
+      "prs": [
+        12663
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "📱",
+      "title": "Simpler app submissions",
+      "text": "Submit a community app with an issue form; Enter registration is no longer a prerequisite. Automated checks help prepare it for maintainer review. [Visit the repository](https://github.com/pollinations/pollinations).",
+      "prs": [
+        12642
+      ],
+      "kind": "product"
     }
   ]
 }

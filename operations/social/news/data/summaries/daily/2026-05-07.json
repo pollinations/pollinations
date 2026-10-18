@@ -32,7 +32,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:50:26.976189+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🔗",
       "title": "Embeddings via the API",
@@ -80,6 +81,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

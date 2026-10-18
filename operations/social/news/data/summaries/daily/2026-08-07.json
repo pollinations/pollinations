@@ -48,7 +48,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:05:41.824582+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "3D requests in JSON",
@@ -67,6 +68,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

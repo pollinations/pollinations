@@ -44,7 +44,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:29:16.138252+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Gemini Flash Lite chat",
@@ -72,6 +73,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

@@ -28,7 +28,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:40:17.874468+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "GLM moves to version 5",
@@ -56,6 +57,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

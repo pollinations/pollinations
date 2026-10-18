@@ -32,7 +32,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:36:39.949286+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "A rebuilt place to play",
@@ -51,6 +52,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

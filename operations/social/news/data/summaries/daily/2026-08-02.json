@@ -24,7 +24,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:04:42.304602+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Choose video resolution",
@@ -34,6 +35,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

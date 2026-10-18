@@ -24,7 +24,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:28:54.439090+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "DeepSeek-R1 joins the lineup",
@@ -43,6 +44,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

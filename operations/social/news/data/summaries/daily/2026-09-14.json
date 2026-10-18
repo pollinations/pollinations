@@ -56,7 +56,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:12:52.068061+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🔗",
       "title": "Pollinations meets `llm`",
@@ -102,6 +103,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

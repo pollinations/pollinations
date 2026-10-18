@@ -20,7 +20,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:28:52.510634+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Qwen Coder joins text",
@@ -57,6 +58,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

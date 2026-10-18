@@ -72,7 +72,34 @@
     }
   ],
   "generated_at": "2026-10-17T23:18:56.965123+00:00",
-  "highlights": [
+  "changelog": [
+    {
+      "pr_number": 17130,
+      "url": "https://github.com/pollinations/pollinations/pull/17130",
+      "merged_at": "2026-10-11T21:39:41Z",
+      "api_changes": [
+        {
+          "id": "pr-17130:POST /v1/responses",
+          "endpoint": "POST /v1/responses",
+          "summary": "Create Response",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:client_metadata",
+              "before": null,
+              "after": {
+                "type": "object|null",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "daily": [
     {
       "emoji": "🚀",
       "title": "Sandboxes beyond 24 hours",
@@ -100,33 +127,6 @@
         17125
       ],
       "kind": "product"
-    }
-  ],
-  "changelog": [
-    {
-      "pr_number": 17130,
-      "url": "https://github.com/pollinations/pollinations/pull/17130",
-      "merged_at": "2026-10-11T21:39:41Z",
-      "api_changes": [
-        {
-          "id": "pr-17130:POST /v1/responses",
-          "endpoint": "POST /v1/responses",
-          "summary": "Create Response",
-          "action": "CHANGE",
-          "breaking": false,
-          "changes": [
-            {
-              "field": "body:client_metadata",
-              "before": null,
-              "after": {
-                "type": "object|null",
-                "required": false
-              },
-              "breaking": false
-            }
-          ]
-        }
-      ]
     }
   ]
 }

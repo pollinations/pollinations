@@ -12,7 +12,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:31:21.181526+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Edit images with gptimage",
@@ -31,6 +32,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

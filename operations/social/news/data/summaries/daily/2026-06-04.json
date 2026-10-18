@@ -24,7 +24,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:55:39.073517+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🔗",
       "title": "Model catalog in the SDK",
@@ -43,6 +44,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

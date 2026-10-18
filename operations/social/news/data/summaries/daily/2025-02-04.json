@@ -16,7 +16,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:28:54.877880+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "LlamaGuard joins the text API",
@@ -26,6 +27,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

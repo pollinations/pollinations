@@ -132,90 +132,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:10:48.241560+00:00",
-  "highlights": [
-    {
-      "emoji": "🎨",
-      "title": "Publish community video models",
-      "text": "Register and test a video model through the dashboard, Account API, or `polli my-models`. It can take a prompt, duration, and optional reference media, then generate through the video or image API. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        14008
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🎨",
-      "title": "FLUX.2 Pro arrives",
-      "text": "Generate or edit images with `flux-2-pro` using up to eight reference images, plus seed and guidance controls. [Explore FLUX.2 Pro](https://enter.pollinations.ai/models?q=flux-2-pro).",
-      "prs": [
-        14190
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎨",
-      "title": "FLUX.2 Flex arrives",
-      "text": "Generate or edit images with `flux-2-flex` using up to ten reference images, plus seed and guidance controls. [Explore FLUX.2 Flex](https://enter.pollinations.ai/models?q=flux-2-flex).",
-      "prs": [
-        14190
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Full Inkling joins",
-      "text": "Send text, images, or audio to `thinkingmachines/inkling` and get text back, with tool calling, JSON, streaming, and a 1,048,576-token context window. [Explore Inkling](https://enter.pollinations.ai/models?q=thinkingmachines%2Finkling).",
-      "prs": [
-        14156
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Find MCP servers",
-      "text": "The model catalog now has a searchable MCPs tab with server descriptions, endpoints, and billing details. [Browse the catalog](https://enter.pollinations.ai/models).",
-      "prs": [
-        14043
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🌟",
-      "title": "Sort models by popularity",
-      "text": "Official and community model lists now put Popular first, based on distinct users with successful requests over the past seven days. Newest and the other sorts are still there. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        14175
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Connect Pi with Polli",
-      "text": "Use `polli harness pi on` to configure Pi for Pollinations, choose a default model with `--model`, and use `off` or `status` when needed. [Get Polli CLI](https://www.npmjs.com/package/@pollinations/cli).",
-      "prs": [
-        14125,
-        14226
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Connect OpenCode with Polli",
-      "text": "Use `polli harness opencode on` to connect OpenCode and enable its Pollinations plugin for models, media tools, usage, and quests. You can choose a default model with `--model`. [Get Polli CLI](https://www.npmjs.com/package/@pollinations/cli).",
-      "prs": [
-        14155
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "💡",
-      "title": "Issue quests welcome collaborators",
-      "text": "For eligible GitHub issue quests, distinct authors whose merged PRs close the quest issue can each earn a Pollen reward—not just the first closer.",
-      "prs": [
-        14211
-      ],
-      "kind": "product"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 14204,
@@ -533,6 +449,90 @@
           ]
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🎨",
+      "title": "Publish community video models",
+      "text": "Register and test a video model through the dashboard, Account API, or `polli my-models`. It can take a prompt, duration, and optional reference media, then generate through the video or image API. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14008
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "FLUX.2 Pro arrives",
+      "text": "Generate or edit images with `flux-2-pro` using up to eight reference images, plus seed and guidance controls. [Explore FLUX.2 Pro](https://enter.pollinations.ai/models?q=flux-2-pro).",
+      "prs": [
+        14190
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "FLUX.2 Flex arrives",
+      "text": "Generate or edit images with `flux-2-flex` using up to ten reference images, plus seed and guidance controls. [Explore FLUX.2 Flex](https://enter.pollinations.ai/models?q=flux-2-flex).",
+      "prs": [
+        14190
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Full Inkling joins",
+      "text": "Send text, images, or audio to `thinkingmachines/inkling` and get text back, with tool calling, JSON, streaming, and a 1,048,576-token context window. [Explore Inkling](https://enter.pollinations.ai/models?q=thinkingmachines%2Finkling).",
+      "prs": [
+        14156
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Find MCP servers",
+      "text": "The model catalog now has a searchable MCPs tab with server descriptions, endpoints, and billing details. [Browse the catalog](https://enter.pollinations.ai/models).",
+      "prs": [
+        14043
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🌟",
+      "title": "Sort models by popularity",
+      "text": "Official and community model lists now put Popular first, based on distinct users with successful requests over the past seven days. Newest and the other sorts are still there. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        14175
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Connect Pi with Polli",
+      "text": "Use `polli harness pi on` to configure Pi for Pollinations, choose a default model with `--model`, and use `off` or `status` when needed. [Get Polli CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        14125,
+        14226
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Connect OpenCode with Polli",
+      "text": "Use `polli harness opencode on` to connect OpenCode and enable its Pollinations plugin for models, media tools, usage, and quests. You can choose a default model with `--model`. [Get Polli CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        14155
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Issue quests welcome collaborators",
+      "text": "For eligible GitHub issue quests, distinct authors whose merged PRs close the quest issue can each earn a Pollen reward—not just the first closer.",
+      "prs": [
+        14211
+      ],
+      "kind": "product"
     }
   ]
 }

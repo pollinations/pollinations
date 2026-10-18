@@ -176,7 +176,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:20:06.346102+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Kandinsky makes short videos",
@@ -302,6 +303,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

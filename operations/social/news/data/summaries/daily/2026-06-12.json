@@ -40,7 +40,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:58:33.612067+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Kimi K2.7 Code",
@@ -77,6 +78,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

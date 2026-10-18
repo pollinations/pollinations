@@ -24,7 +24,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:42:53.494464+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎵",
       "title": "Transcribe audio from the SDK",
@@ -61,6 +62,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

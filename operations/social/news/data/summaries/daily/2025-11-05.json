@@ -96,7 +96,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:35:30.782928+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Mistral Nemo joins the models",
@@ -124,6 +125,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

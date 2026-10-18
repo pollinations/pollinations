@@ -60,7 +60,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:50:01.701703+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "GPT-5.5 joins the lineup",
@@ -97,6 +98,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

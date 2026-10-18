@@ -84,7 +84,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:36:28.757171+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Two Seedream image options",
@@ -103,6 +104,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

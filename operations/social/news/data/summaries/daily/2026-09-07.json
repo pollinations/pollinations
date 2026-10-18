@@ -48,27 +48,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:11:22.632066+00:00",
-  "highlights": [
-    {
-      "emoji": "🔗",
-      "title": "Name your media uploads",
-      "text": "Set an optional custom ID in `POST /upload` with a user-owned API key. IDs are scoped to your account, and an existing ID returns `409` instead of replacing a file. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        14555
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Consistent model IDs",
-      "text": "Public models now use lowercase `publisher/model` IDs across the catalog and generation routes. Existing IDs still work as request aliases, including with model-restricted keys. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        13076,
-        14545
-      ],
-      "kind": "api"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 14552,
@@ -97,6 +76,27 @@
           ]
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🔗",
+      "title": "Name your media uploads",
+      "text": "Set an optional custom ID in `POST /upload` with a user-owned API key. IDs are scoped to your account, and an existing ID returns `409` instead of replacing a file. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14555
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Consistent model IDs",
+      "text": "Public models now use lowercase `publisher/model` IDs across the catalog and generation routes. Existing IDs still work as request aliases, including with model-restricted keys. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        13076,
+        14545
+      ],
+      "kind": "api"
     }
   ]
 }

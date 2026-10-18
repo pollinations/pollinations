@@ -36,7 +36,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:12:37.088279+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Choose an agent’s inner model",
@@ -55,6 +56,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

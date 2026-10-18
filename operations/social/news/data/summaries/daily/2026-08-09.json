@@ -32,7 +32,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:06:06.166897+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🔗",
       "title": "Model health by ownership",
@@ -42,6 +43,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

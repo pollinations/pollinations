@@ -68,44 +68,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:08:13.099412+00:00",
-  "highlights": [
-    {
-      "emoji": "🎵",
-      "title": "GPT batch transcription",
-      "text": "Transcribe audio with `gpt-transcribe` through `/v1/audio/transcriptions`, with optional language, prompt, and temperature settings. [Browse the model](https://enter.pollinations.ai/models?q=gpt-transcribe).",
-      "prs": [
-        13599
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎵",
-      "title": "GPT live transcription",
-      "text": "Stream speech-to-text with `gpt-live-transcribe` over the Realtime API. [Browse the model](https://enter.pollinations.ai/models?q=gpt-live-transcribe).",
-      "prs": [
-        13599
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Community model capability metadata",
-      "text": "Community text-model owners can declare tool calling, reasoning, and context length in My Models or the community-endpoint API. Those declarations appear in the model catalog to help developers find suitable models; they do not change request forwarding. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        13524
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🤖",
-      "title": "More tools for managed agents",
-      "text": "Managed agents can use every tool advertised by their enabled Pollinations MCP server, rather than a fixed eight-tool list. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
-      "prs": [
-        13628
-      ],
-      "kind": "product"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 13634,
@@ -155,6 +117,44 @@
           ]
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🎵",
+      "title": "GPT batch transcription",
+      "text": "Transcribe audio with `gpt-transcribe` through `/v1/audio/transcriptions`, with optional language, prompt, and temperature settings. [Browse the model](https://enter.pollinations.ai/models?q=gpt-transcribe).",
+      "prs": [
+        13599
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "GPT live transcription",
+      "text": "Stream speech-to-text with `gpt-live-transcribe` over the Realtime API. [Browse the model](https://enter.pollinations.ai/models?q=gpt-live-transcribe).",
+      "prs": [
+        13599
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Community model capability metadata",
+      "text": "Community text-model owners can declare tool calling, reasoning, and context length in My Models or the community-endpoint API. Those declarations appear in the model catalog to help developers find suitable models; they do not change request forwarding. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        13524
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "More tools for managed agents",
+      "text": "Managed agents can use every tool advertised by their enabled Pollinations MCP server, rather than a fixed eight-tool list. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        13628
+      ],
+      "kind": "product"
     }
   ]
 }

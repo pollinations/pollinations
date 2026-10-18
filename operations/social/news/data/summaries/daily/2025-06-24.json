@@ -24,7 +24,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:32:24.289919+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "A faster text default",
@@ -52,6 +53,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

@@ -128,7 +128,52 @@
     }
   ],
   "generated_at": "2026-10-17T23:19:37.142277+00:00",
-  "highlights": [
+  "changelog": [
+    {
+      "pr_number": 17507,
+      "url": "https://github.com/pollinations/pollinations/pull/17507",
+      "merged_at": "2026-10-14T23:35:03Z",
+      "api_changes": [
+        {
+          "id": "pr-17507:POST /account/my-models/endpoint-agents",
+          "endpoint": "POST /account/my-models/endpoint-agents",
+          "summary": "Create Endpoint Agent",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:capabilities",
+              "before": null,
+              "after": {
+                "type": "\"tool_calling\"|\"reasoning\"|\"web_search\"|\"code_execution\"|\"pollinations_models\"[]",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-17507:POST /account/my-models/{id}/update",
+          "endpoint": "POST /account/my-models/{id}/update",
+          "summary": "Update My Model",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:capabilities",
+              "before": null,
+              "after": {
+                "type": "\"tool_calling\"|\"reasoning\"|\"web_search\"|\"code_execution\"|\"pollinations_models\"[]",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Lightning Text v2 and v2.1",
@@ -182,51 +227,6 @@
         17331
       ],
       "kind": "product"
-    }
-  ],
-  "changelog": [
-    {
-      "pr_number": 17507,
-      "url": "https://github.com/pollinations/pollinations/pull/17507",
-      "merged_at": "2026-10-14T23:35:03Z",
-      "api_changes": [
-        {
-          "id": "pr-17507:POST /account/my-models/endpoint-agents",
-          "endpoint": "POST /account/my-models/endpoint-agents",
-          "summary": "Create Endpoint Agent",
-          "action": "CHANGE",
-          "breaking": false,
-          "changes": [
-            {
-              "field": "body:capabilities",
-              "before": null,
-              "after": {
-                "type": "\"tool_calling\"|\"reasoning\"|\"web_search\"|\"code_execution\"|\"pollinations_models\"[]",
-                "required": false
-              },
-              "breaking": false
-            }
-          ]
-        },
-        {
-          "id": "pr-17507:POST /account/my-models/{id}/update",
-          "endpoint": "POST /account/my-models/{id}/update",
-          "summary": "Update My Model",
-          "action": "CHANGE",
-          "breaking": false,
-          "changes": [
-            {
-              "field": "body:capabilities",
-              "before": null,
-              "after": {
-                "type": "\"tool_calling\"|\"reasoning\"|\"web_search\"|\"code_execution\"|\"pollinations_models\"[]",
-                "required": false
-              },
-              "breaking": false
-            }
-          ]
-        }
-      ]
     }
   ]
 }

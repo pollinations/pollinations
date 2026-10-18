@@ -64,7 +64,34 @@
     }
   ],
   "generated_at": "2026-10-17T23:12:14.036121+00:00",
-  "highlights": [
+  "changelog": [
+    {
+      "pr_number": 14566,
+      "url": "https://github.com/pollinations/pollinations/pull/14566",
+      "merged_at": "2026-09-08T08:21:52Z",
+      "api_changes": [
+        {
+          "id": "pr-14566:POST /upload",
+          "endpoint": "POST /upload",
+          "summary": "Upload media",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:id",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "daily": [
     {
       "emoji": "📱",
       "title": "Explore Pollen activity",
@@ -102,33 +129,6 @@
         14589
       ],
       "kind": "model"
-    }
-  ],
-  "changelog": [
-    {
-      "pr_number": 14566,
-      "url": "https://github.com/pollinations/pollinations/pull/14566",
-      "merged_at": "2026-09-08T08:21:52Z",
-      "api_changes": [
-        {
-          "id": "pr-14566:POST /upload",
-          "endpoint": "POST /upload",
-          "summary": "Upload media",
-          "action": "CHANGE",
-          "breaking": false,
-          "changes": [
-            {
-              "field": "body:id",
-              "before": null,
-              "after": {
-                "type": "string",
-                "required": false
-              },
-              "breaking": false
-            }
-          ]
-        }
-      ]
     }
   ]
 }

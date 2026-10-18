@@ -60,7 +60,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:08:57.645961+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Managed agents gain tools",
@@ -134,6 +135,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

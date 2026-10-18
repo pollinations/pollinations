@@ -60,7 +60,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:36:58.285944+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "💡",
       "title": "Export your usage",
@@ -106,6 +107,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

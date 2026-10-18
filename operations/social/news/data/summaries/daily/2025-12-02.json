@@ -28,7 +28,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:36:15.658017+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Make videos in chat",
@@ -47,6 +48,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

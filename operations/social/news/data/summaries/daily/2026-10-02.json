@@ -76,7 +76,24 @@
     }
   ],
   "generated_at": "2026-10-17T23:16:13.858355+00:00",
-  "highlights": [
+  "changelog": [
+    {
+      "pr_number": 16262,
+      "url": "https://github.com/pollinations/pollinations/pull/16262",
+      "merged_at": "2026-10-02T17:42:45Z",
+      "api_changes": [
+        {
+          "id": "pr-16262:POST /account/polli/harness-on",
+          "endpoint": "POST /account/polli/harness-on",
+          "summary": "postAccountPolliHarnessOn",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        }
+      ]
+    }
+  ],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Alpha coding sandboxes",
@@ -122,23 +139,6 @@
         16197
       ],
       "kind": "product"
-    }
-  ],
-  "changelog": [
-    {
-      "pr_number": 16262,
-      "url": "https://github.com/pollinations/pollinations/pull/16262",
-      "merged_at": "2026-10-02T17:42:45Z",
-      "api_changes": [
-        {
-          "id": "pr-16262:POST /account/polli/harness-on",
-          "endpoint": "POST /account/polli/harness-on",
-          "summary": "postAccountPolliHarnessOn",
-          "action": "ADD",
-          "breaking": false,
-          "changes": []
-        }
-      ]
     }
   ]
 }

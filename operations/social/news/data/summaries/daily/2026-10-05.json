@@ -148,71 +148,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:17:20.530496+00:00",
-  "highlights": [
-    {
-      "emoji": "🎨",
-      "title": "FLUX.3 Image added",
-      "text": "Generate or edit at 1K or 2K with `black-forest-labs/flux-3-image`. It supports 15 aspect ratios, adaptive framing, and up to 10 reference images. [View the model](https://enter.pollinations.ai/models?q=black-forest-labs/flux-3-image).",
-      "prs": [
-        16245
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Seedream 5.0 Flash added",
-      "text": "Generate and edit images with `bytedance/seedream-5.0-flash`, using 1K or 2K output and up to 10 references. [View the model](https://enter.pollinations.ai/models?q=bytedance/seedream-5.0-flash).",
-      "prs": [
-        16248
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Liquid D1 decisions",
-      "text": "Ask `liquid/d1` structured choice, score, and probability questions through the decisions or chat API. [View the model](https://enter.pollinations.ai/models?q=liquid/d1).",
-      "prs": [
-        16244
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Ling 3.1 Flash added",
-      "text": "Use `inclusionai/ling-3.1-flash` for text, tool use, and reasoning with a 262,144-token context window. It accepts Quest Pollen. [View the model](https://enter.pollinations.ai/models?q=inclusionai/ling-3.1-flash).",
-      "prs": [
-        16250
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "✨",
-      "title": "Typed decisions in the SDK",
-      "text": "Call the existing decisions endpoint with the typed `decision({ state, questions, model? })` helper in `@pollinations/sdk`. Choice, score, and noul questions keep their API semantics. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
-      "prs": [
-        15410
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🎯",
-      "title": "Search the model catalog",
-      "text": "Filter model-list API results by `query`, `capabilities`, or `agent`, and set a `limit`. MCP's `listModels` tool accepts the same filters. [Browse the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        16246
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Model tags for Open WebUI",
-      "text": "`/v1/models` now includes category tags, plus `community` and `agent` where applicable, so Open WebUI can filter its model picker. [Browse the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        16450
-      ],
-      "kind": "api"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 16488,
@@ -701,6 +636,71 @@
           ]
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🎨",
+      "title": "FLUX.3 Image added",
+      "text": "Generate or edit at 1K or 2K with `black-forest-labs/flux-3-image`. It supports 15 aspect ratios, adaptive framing, and up to 10 reference images. [View the model](https://enter.pollinations.ai/models?q=black-forest-labs/flux-3-image).",
+      "prs": [
+        16245
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Seedream 5.0 Flash added",
+      "text": "Generate and edit images with `bytedance/seedream-5.0-flash`, using 1K or 2K output and up to 10 references. [View the model](https://enter.pollinations.ai/models?q=bytedance/seedream-5.0-flash).",
+      "prs": [
+        16248
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Liquid D1 decisions",
+      "text": "Ask `liquid/d1` structured choice, score, and probability questions through the decisions or chat API. [View the model](https://enter.pollinations.ai/models?q=liquid/d1).",
+      "prs": [
+        16244
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Ling 3.1 Flash added",
+      "text": "Use `inclusionai/ling-3.1-flash` for text, tool use, and reasoning with a 262,144-token context window. It accepts Quest Pollen. [View the model](https://enter.pollinations.ai/models?q=inclusionai/ling-3.1-flash).",
+      "prs": [
+        16250
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "Typed decisions in the SDK",
+      "text": "Call the existing decisions endpoint with the typed `decision({ state, questions, model? })` helper in `@pollinations/sdk`. Choice, score, and noul questions keep their API semantics. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "prs": [
+        15410
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Search the model catalog",
+      "text": "Filter model-list API results by `query`, `capabilities`, or `agent`, and set a `limit`. MCP's `listModels` tool accepts the same filters. [Browse the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        16246
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Model tags for Open WebUI",
+      "text": "`/v1/models` now includes category tags, plus `community` and `agent` where applicable, so Open WebUI can filter its model picker. [Browse the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        16450
+      ],
+      "kind": "api"
     }
   ]
 }

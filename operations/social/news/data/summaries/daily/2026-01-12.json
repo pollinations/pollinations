@@ -180,7 +180,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:38:10.938627+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Claude gets provider fallback",
@@ -190,6 +191,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

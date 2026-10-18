@@ -116,7 +116,34 @@
     }
   ],
   "generated_at": "2026-10-17T23:16:06.019325+00:00",
-  "highlights": [
+  "changelog": [
+    {
+      "pr_number": 15986,
+      "url": "https://github.com/pollinations/pollinations/pull/15986",
+      "merged_at": "2026-09-30T16:14:55Z",
+      "api_changes": [
+        {
+          "id": "pr-15986:GET /models/status",
+          "endpoint": "GET /models/status",
+          "summary": "Model Health Status",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:traffic",
+              "before": null,
+              "after": {
+                "type": "\"all\"|\"regular\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "GPT-6.1 Sol added",
@@ -172,33 +199,6 @@
         15973
       ],
       "kind": "product"
-    }
-  ],
-  "changelog": [
-    {
-      "pr_number": 15986,
-      "url": "https://github.com/pollinations/pollinations/pull/15986",
-      "merged_at": "2026-09-30T16:14:55Z",
-      "api_changes": [
-        {
-          "id": "pr-15986:GET /models/status",
-          "endpoint": "GET /models/status",
-          "summary": "Model Health Status",
-          "action": "CHANGE",
-          "breaking": false,
-          "changes": [
-            {
-              "field": "parameters:query:traffic",
-              "before": null,
-              "after": {
-                "type": "\"all\"|\"regular\"",
-                "required": false
-              },
-              "breaking": false
-            }
-          ]
-        }
-      ]
     }
   ]
 }

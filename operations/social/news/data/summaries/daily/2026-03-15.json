@@ -52,7 +52,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:43:55.557306+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🚀",
       "title": "Faster return visits",
@@ -62,6 +63,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

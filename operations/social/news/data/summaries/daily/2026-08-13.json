@@ -52,7 +52,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:06:45.480348+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Qwen Image 3",
@@ -98,6 +99,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

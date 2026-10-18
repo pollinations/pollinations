@@ -56,36 +56,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:01:41.124486+00:00",
-  "highlights": [
-    {
-      "emoji": "📱",
-      "title": "Activity in one place",
-      "text": "Review API usage, app earnings, and community model rewards in a Last events feed. Switch charts between Pollen and request counts, then filter usage or earnings to see what contributed.",
-      "prs": [
-        11939,
-        12349
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🎯",
-      "title": "Search the model catalog",
-      "text": "Find models by name, description, or brand in the dashboard. The new All tab shows the full catalog by default. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        12286
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Muse Spark 1.1",
-      "text": "Try paid-only `muse-spark` for text tasks with tools and reasoning; it can take up to 10 reference images. [Browse Muse Spark](https://enter.pollinations.ai/models?q=muse-spark).",
-      "prs": [
-        12350
-      ],
-      "kind": "model"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 11939,
@@ -135,6 +105,36 @@
           "changes": []
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "📱",
+      "title": "Activity in one place",
+      "text": "Review API usage, app earnings, and community model rewards in a Last events feed. Switch charts between Pollen and request counts, then filter usage or earnings to see what contributed.",
+      "prs": [
+        11939,
+        12349
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Search the model catalog",
+      "text": "Find models by name, description, or brand in the dashboard. The new All tab shows the full catalog by default. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        12286
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Muse Spark 1.1",
+      "text": "Try paid-only `muse-spark` for text tasks with tools and reasoning; it can take up to 10 reference images. [Browse Muse Spark](https://enter.pollinations.ai/models?q=muse-spark).",
+      "prs": [
+        12350
+      ],
+      "kind": "model"
     }
   ]
 }

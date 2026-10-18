@@ -44,7 +44,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:46:32.116095+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "More references for Klein edits",
@@ -63,6 +64,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

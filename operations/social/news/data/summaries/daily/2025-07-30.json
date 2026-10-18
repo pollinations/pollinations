@@ -12,7 +12,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:33:02.360198+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Kontext tries a new route",
@@ -40,6 +41,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

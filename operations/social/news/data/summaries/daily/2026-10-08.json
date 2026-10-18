@@ -152,7 +152,67 @@
     }
   ],
   "generated_at": "2026-10-17T23:18:27.810926+00:00",
-  "highlights": [
+  "changelog": [
+    {
+      "pr_number": 16809,
+      "url": "https://github.com/pollinations/pollinations/pull/16809",
+      "merged_at": "2026-10-08T14:08:44Z",
+      "api_changes": [
+        {
+          "id": "pr-16809:GET /account/quests/rewards",
+          "endpoint": "GET /account/quests/rewards",
+          "summary": "Get Quest Rewards",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-16809:GET /models/stats",
+          "endpoint": "GET /models/stats",
+          "summary": "Model Usage Stats",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-16809:PATCH /account/keys/{id}",
+          "endpoint": "PATCH /account/keys/{id}",
+          "summary": "Update API Key",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-16809:POST /account/keys",
+          "endpoint": "POST /account/keys",
+          "summary": "Create API Key",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:consent",
+              "before": null,
+              "after": {
+                "type": "object",
+                "required": false
+              },
+              "breaking": false
+            },
+            {
+              "field": "body:description",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Claude Haiku 5.5 added",
@@ -243,66 +303,6 @@
         16033
       ],
       "kind": "product"
-    }
-  ],
-  "changelog": [
-    {
-      "pr_number": 16809,
-      "url": "https://github.com/pollinations/pollinations/pull/16809",
-      "merged_at": "2026-10-08T14:08:44Z",
-      "api_changes": [
-        {
-          "id": "pr-16809:GET /account/quests/rewards",
-          "endpoint": "GET /account/quests/rewards",
-          "summary": "Get Quest Rewards",
-          "action": "ADD",
-          "breaking": false,
-          "changes": []
-        },
-        {
-          "id": "pr-16809:GET /models/stats",
-          "endpoint": "GET /models/stats",
-          "summary": "Model Usage Stats",
-          "action": "ADD",
-          "breaking": false,
-          "changes": []
-        },
-        {
-          "id": "pr-16809:PATCH /account/keys/{id}",
-          "endpoint": "PATCH /account/keys/{id}",
-          "summary": "Update API Key",
-          "action": "ADD",
-          "breaking": false,
-          "changes": []
-        },
-        {
-          "id": "pr-16809:POST /account/keys",
-          "endpoint": "POST /account/keys",
-          "summary": "Create API Key",
-          "action": "CHANGE",
-          "breaking": false,
-          "changes": [
-            {
-              "field": "body:consent",
-              "before": null,
-              "after": {
-                "type": "object",
-                "required": false
-              },
-              "breaking": false
-            },
-            {
-              "field": "body:description",
-              "before": null,
-              "after": {
-                "type": "string",
-                "required": false
-              },
-              "breaking": false
-            }
-          ]
-        }
-      ]
     }
   ]
 }

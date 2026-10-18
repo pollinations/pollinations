@@ -20,7 +20,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:29:38.538350+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Image tools for assistants",
@@ -40,6 +41,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

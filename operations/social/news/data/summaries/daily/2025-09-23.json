@@ -28,7 +28,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:33:55.550451+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Seedream 4.0 images",
@@ -67,6 +68,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

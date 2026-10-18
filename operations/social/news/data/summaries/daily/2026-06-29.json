@@ -32,7 +32,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:00:05.713202+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Publish community text models",
@@ -51,6 +52,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

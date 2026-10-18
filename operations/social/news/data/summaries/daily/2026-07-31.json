@@ -32,7 +32,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:04:16.349830+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "DreamShaper 8 LCM images",
@@ -51,6 +52,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

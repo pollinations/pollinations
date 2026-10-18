@@ -36,7 +36,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:54:26.880275+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "💡",
       "title": "Media seconds in usage history",
@@ -46,6 +47,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

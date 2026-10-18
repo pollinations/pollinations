@@ -104,7 +104,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:12:23.682526+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Media generation in conversations",
@@ -151,6 +152,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

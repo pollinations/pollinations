@@ -28,7 +28,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:32:06.794960+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "O3 can inspect images",
@@ -59,6 +60,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

@@ -72,35 +72,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:01:59.738947+00:00",
-  "highlights": [
-    {
-      "emoji": "🎨",
-      "title": "Public media tag galleries",
-      "text": "Tag uploads to publish them in browsable, paginated galleries, or leave them untagged and accessible only by URL. Uploads can be up to 100 MB, and the SDK accepts upload tags. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        12277
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🎯",
-      "title": "Compare model speed",
-      "text": "Model Monitor has a sortable Speed column showing completion tokens per second, so you can compare throughput alongside model health. [Open Model Monitor](https://model-monitor.pollinations.ai).",
-      "prs": [
-        12287
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Community model leaderboard",
-      "text": "A daily pixel-art leaderboard in Discord ranks community text models by tokens served over 24 hours, with a separate panel for the fastest qualifying models. [Visit community chat](https://chat.pollinations.ai).",
-      "prs": [
-        12373
-      ],
-      "kind": "product"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 12465,
@@ -172,6 +143,35 @@
           "changes": []
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🎨",
+      "title": "Public media tag galleries",
+      "text": "Tag uploads to publish them in browsable, paginated galleries, or leave them untagged and accessible only by URL. Uploads can be up to 100 MB, and the SDK accepts upload tags. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        12277
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Compare model speed",
+      "text": "Model Monitor has a sortable Speed column showing completion tokens per second, so you can compare throughput alongside model health. [Open Model Monitor](https://model-monitor.pollinations.ai).",
+      "prs": [
+        12287
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Community model leaderboard",
+      "text": "A daily pixel-art leaderboard in Discord ranks community text models by tokens served over 24 hours, with a separate panel for the fastest qualifying models. [Visit community chat](https://chat.pollinations.ai).",
+      "prs": [
+        12373
+      ],
+      "kind": "product"
     }
   ]
 }

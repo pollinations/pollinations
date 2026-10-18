@@ -60,44 +60,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:02:21.468026+00:00",
-  "highlights": [
-    {
-      "emoji": "🤖",
-      "title": "Private community models",
-      "text": "Register and call a community model without listing it for everyone. New models default to Private, and visibility can be managed in the dashboard or Polli CLI. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        12333
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Veo at 1080p",
-      "text": "Choose `veo-1080p` for 1080p Veo 3.1 Fast video, or `veo` for 720p. Width and height set the aspect ratio; the model sets the resolution. [View the model](https://enter.pollinations.ai/models?q=veo-1080p).",
-      "prs": [
-        12491
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎯",
-      "title": "Monitor 3D models",
-      "text": "Check 3D generation models in the Model Monitor alongside the existing model categories. [Open the Model Monitor](https://model-monitor.pollinations.ai).",
-      "prs": [
-        12441
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Dashboard links worth sharing",
-      "text": "Enter pages now have direct URLs, and links can retain model searches, activity filters, and Pollen view settings. [Explore models](https://enter.pollinations.ai/models).",
-      "prs": [
-        12458
-      ],
-      "kind": "product"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 12479,
@@ -141,6 +103,44 @@
           ]
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🤖",
+      "title": "Private community models",
+      "text": "Register and call a community model without listing it for everyone. New models default to Private, and visibility can be managed in the dashboard or Polli CLI. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        12333
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Veo at 1080p",
+      "text": "Choose `veo-1080p` for 1080p Veo 3.1 Fast video, or `veo` for 720p. Width and height set the aspect ratio; the model sets the resolution. [View the model](https://enter.pollinations.ai/models?q=veo-1080p).",
+      "prs": [
+        12491
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Monitor 3D models",
+      "text": "Check 3D generation models in the Model Monitor alongside the existing model categories. [Open the Model Monitor](https://model-monitor.pollinations.ai).",
+      "prs": [
+        12441
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Dashboard links worth sharing",
+      "text": "Enter pages now have direct URLs, and links can retain model searches, activity filters, and Pollen view settings. [Explore models](https://enter.pollinations.ai/models).",
+      "prs": [
+        12458
+      ],
+      "kind": "product"
     }
   ]
 }

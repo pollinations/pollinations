@@ -64,7 +64,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:15:19.851801+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🔗",
       "title": "Client tools for prompt agents",
@@ -101,6 +102,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

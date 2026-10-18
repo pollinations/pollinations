@@ -20,7 +20,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:28:53.786143+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Claude Hybridspace joins text",
@@ -57,6 +58,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

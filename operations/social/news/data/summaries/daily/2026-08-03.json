@@ -32,7 +32,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:05:08.442613+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Krea 2 Medium images",
@@ -60,6 +61,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

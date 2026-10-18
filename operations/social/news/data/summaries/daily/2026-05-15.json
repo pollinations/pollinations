@@ -72,7 +72,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:51:45.658999+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Two Qwen vision options",
@@ -128,6 +129,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

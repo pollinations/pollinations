@@ -20,7 +20,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:28:54.944795+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Gemini 2.0 Flash",
@@ -39,6 +40,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

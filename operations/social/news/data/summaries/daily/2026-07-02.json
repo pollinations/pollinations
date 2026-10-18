@@ -56,7 +56,24 @@
     }
   ],
   "generated_at": "2026-10-17T23:00:53.677197+00:00",
-  "highlights": [
+  "changelog": [
+    {
+      "pr_number": 12048,
+      "url": "https://github.com/pollinations/pollinations/pull/12048",
+      "merged_at": "2026-07-02T17:34:58Z",
+      "api_changes": [
+        {
+          "id": "pr-12048:GET /3d/{prompt}",
+          "endpoint": "GET /3d/{prompt}",
+          "summary": "Generate 3D Model",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        }
+      ]
+    }
+  ],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Images become 3D models",
@@ -83,23 +100,6 @@
         12165
       ],
       "kind": "api"
-    }
-  ],
-  "changelog": [
-    {
-      "pr_number": 12048,
-      "url": "https://github.com/pollinations/pollinations/pull/12048",
-      "merged_at": "2026-07-02T17:34:58Z",
-      "api_changes": [
-        {
-          "id": "pr-12048:GET /3d/{prompt}",
-          "endpoint": "GET /3d/{prompt}",
-          "summary": "Generate 3D Model",
-          "action": "ADD",
-          "breaking": false,
-          "changes": []
-        }
-      ]
     }
   ]
 }

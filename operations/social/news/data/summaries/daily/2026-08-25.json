@@ -84,7 +84,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:09:25.362725+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Wan 3.0 video",
@@ -131,6 +132,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

@@ -56,7 +56,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:46:22.047752+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎵",
       "title": "Lyrics into music",
@@ -102,6 +103,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

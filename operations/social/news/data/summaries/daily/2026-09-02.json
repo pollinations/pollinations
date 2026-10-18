@@ -68,44 +68,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:10:27.894056+00:00",
-  "highlights": [
-    {
-      "emoji": "🔗",
-      "title": "Connect apps to agents",
-      "text": "Connect apps such as Gmail, Slack, GitHub, and Drive in Enter, then make their tools available to agents through the Composio MCP server. Tool calls use the caller’s own connections. [Read the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
-      "prs": [
-        14249
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🚀",
-      "title": "Direct Responses API",
-      "text": "Use `POST /v1/responses` for stateless text generation with JSON or SSE output across eligible models. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        14239
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Gemini 3.8 Flash",
-      "text": "Send text, images, audio, or video to `google/gemini-3.8-flash` and get text back, with tools, search, and a 1,048,576-token context window. This is a separate paid-only model; the existing `gemini` service is unchanged. [View the model](https://enter.pollinations.ai/models?q=google/gemini-3.8-flash).",
-      "prs": [
-        14362
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "✨",
-      "title": "One catalog, three tabs",
-      "text": "Browse Models, Agents, and MCP in separate tabs on Enter. Search stays within your current tab, and the Community toggle keeps its setting as you move between them. [Browse the catalog](https://enter.pollinations.ai/models).",
-      "prs": [
-        14318
-      ],
-      "kind": "product"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 14335,
@@ -203,6 +165,44 @@
           ]
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🔗",
+      "title": "Connect apps to agents",
+      "text": "Connect apps such as Gmail, Slack, GitHub, and Drive in Enter, then make their tools available to agents through the Composio MCP server. Tool calls use the caller’s own connections. [Read the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        14249
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🚀",
+      "title": "Direct Responses API",
+      "text": "Use `POST /v1/responses` for stateless text generation with JSON or SSE output across eligible models. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14239
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Gemini 3.8 Flash",
+      "text": "Send text, images, audio, or video to `google/gemini-3.8-flash` and get text back, with tools, search, and a 1,048,576-token context window. This is a separate paid-only model; the existing `gemini` service is unchanged. [View the model](https://enter.pollinations.ai/models?q=google/gemini-3.8-flash).",
+      "prs": [
+        14362
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "One catalog, three tabs",
+      "text": "Browse Models, Agents, and MCP in separate tabs on Enter. Search stays within your current tab, and the Community toggle keeps its setting as you move between them. [Browse the catalog](https://enter.pollinations.ai/models).",
+      "prs": [
+        14318
+      ],
+      "kind": "product"
     }
   ]
 }

@@ -68,7 +68,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:06:59.838886+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎯",
       "title": "Redeem Quest codes",
@@ -87,6 +88,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

@@ -56,7 +56,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:07:31.490613+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎵",
       "title": "Bring your own transcription model",
@@ -75,6 +76,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

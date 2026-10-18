@@ -32,7 +32,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:38:59.262384+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "💡",
       "title": "Explore GSoC 2026 ideas",
@@ -51,6 +52,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

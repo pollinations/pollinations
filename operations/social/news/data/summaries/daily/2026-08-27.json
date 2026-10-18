@@ -60,7 +60,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:09:35.116187+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Guide Seedance with media",
@@ -98,6 +99,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

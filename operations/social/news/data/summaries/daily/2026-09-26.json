@@ -60,7 +60,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:14:50.923449+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "MiniMax H3 Max video",
@@ -97,6 +98,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

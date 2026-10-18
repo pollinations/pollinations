@@ -100,7 +100,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:05:51.300162+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎯",
       "title": "Check quests through MCP",
@@ -128,6 +129,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

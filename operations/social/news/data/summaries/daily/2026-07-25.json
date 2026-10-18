@@ -32,26 +32,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:03:25.856992+00:00",
-  "highlights": [
-    {
-      "emoji": "🤖",
-      "title": "Claude Opus 5",
-      "text": "Use `claude-opus-5` or `claude-large` for Opus 5, with reasoning available when requested. Access remains paid-only. [Browse the model](https://enter.pollinations.ai/models?q=claude-opus-5).",
-      "prs": [
-        12751
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "✨",
-      "title": "Titles for community models",
-      "text": "Give your community model a display title without changing the slug used to call it. Set the title in the model form or with `polli my-models`.",
-      "prs": [
-        12692
-      ],
-      "kind": "product"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 12752,
@@ -95,6 +75,26 @@
           ]
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🤖",
+      "title": "Claude Opus 5",
+      "text": "Use `claude-opus-5` or `claude-large` for Opus 5, with reasoning available when requested. Access remains paid-only. [Browse the model](https://enter.pollinations.ai/models?q=claude-opus-5).",
+      "prs": [
+        12751
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "Titles for community models",
+      "text": "Give your community model a display title without changing the slug used to call it. Set the title in the model form or with `polli my-models`.",
+      "prs": [
+        12692
+      ],
+      "kind": "product"
     }
   ]
 }

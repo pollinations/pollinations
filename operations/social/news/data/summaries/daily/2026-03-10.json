@@ -28,7 +28,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:43:22.668829+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Dirtberry image generation",
@@ -66,6 +67,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

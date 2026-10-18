@@ -28,7 +28,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:30:37.979734+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Mistral gets a new backend",
@@ -38,6 +39,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

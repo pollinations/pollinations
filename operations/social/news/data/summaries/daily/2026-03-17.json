@@ -48,7 +48,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:44:19.370683+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Drop images into Play",
@@ -76,6 +77,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

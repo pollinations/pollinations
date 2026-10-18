@@ -52,7 +52,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:42:51.945992+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🔗",
       "title": "App keys with identity",
@@ -80,6 +81,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

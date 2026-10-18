@@ -252,7 +252,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:22:52.147921+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎯",
       "title": "Keys for specific models",
@@ -370,6 +371,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

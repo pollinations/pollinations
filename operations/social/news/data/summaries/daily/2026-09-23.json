@@ -72,80 +72,6 @@
     }
   ],
   "generated_at": "2026-10-17T23:14:38.533309+00:00",
-  "highlights": [
-    {
-      "emoji": "🎨",
-      "title": "MAI Image 2.6 Flash",
-      "text": "Generate images or edit one reference image with `microsoft/mai-image-2.6-flash`, at sizes up to 1536 × 1536. [Find the model](https://enter.pollinations.ai/models?q=microsoft%2Fmai-image-2.6-flash).",
-      "prs": [
-        15320
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎨",
-      "title": "MAI Image 2.6",
-      "text": "Use `microsoft/mai-image-2.6` for text-to-image generation or edits with one reference image, up to 1536 × 1536. [Find the model](https://enter.pollinations.ai/models?q=microsoft%2Fmai-image-2.6).",
-      "prs": [
-        15331
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🎨",
-      "title": "FLUX 1.1 Pro",
-      "text": "Generate PNG images with `black-forest-labs/flux.1.1-pro`. Set a seed when you want a reproducible result. [Find the model](https://enter.pollinations.ai/models?q=black-forest-labs%2Fflux.1.1-pro).",
-      "prs": [
-        15333
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🤖",
-      "title": "GPT-5.3 Codex",
-      "text": "Use `openai/gpt-5.3-codex` for coding tasks with text or image input, tools, and reasoning. [Find the model](https://enter.pollinations.ai/models?q=openai%2Fgpt-5.3-codex).",
-      "prs": [
-        15304
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "🤖",
-      "title": "MiMo V2.6 Flash and Pro",
-      "text": "Xiaomi’s MiMo V2.6 Flash and Pro accept text and images, support tools and reasoning, and have million-token context windows. Both are paid-only. [Browse models](https://enter.pollinations.ai/models?q=MiMo%20V2.6).",
-      "prs": [
-        15311
-      ],
-      "kind": "model"
-    },
-    {
-      "emoji": "✨",
-      "title": "Floret makes 3D assets",
-      "text": "Ask Floret to generate a 3D asset from a prompt, with an optional reference image, and get a download link. It can also process public HTTPS media with FFmpeg and return hosted output.",
-      "prs": [
-        15298
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🎯",
-      "title": "Browse reliable community models",
-      "text": "Enter’s model catalog now defaults to `status:reliable` and shows the health sample behind each status label. Models without recent data remain listed. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        15279
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Control model-list filtering",
-      "text": "Model-list requests now filter public community proxy models using recent reliability. Add `?reliability=all` or send `Pollinations-Model-Reliability: all` to include otherwise accessible models excluded by that filter. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        15279
-      ],
-      "kind": "api"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 15346,
@@ -369,6 +295,80 @@
           ]
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🎨",
+      "title": "MAI Image 2.6 Flash",
+      "text": "Generate images or edit one reference image with `microsoft/mai-image-2.6-flash`, at sizes up to 1536 × 1536. [Find the model](https://enter.pollinations.ai/models?q=microsoft%2Fmai-image-2.6-flash).",
+      "prs": [
+        15320
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "MAI Image 2.6",
+      "text": "Use `microsoft/mai-image-2.6` for text-to-image generation or edits with one reference image, up to 1536 × 1536. [Find the model](https://enter.pollinations.ai/models?q=microsoft%2Fmai-image-2.6).",
+      "prs": [
+        15331
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "FLUX 1.1 Pro",
+      "text": "Generate PNG images with `black-forest-labs/flux.1.1-pro`. Set a seed when you want a reproducible result. [Find the model](https://enter.pollinations.ai/models?q=black-forest-labs%2Fflux.1.1-pro).",
+      "prs": [
+        15333
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "GPT-5.3 Codex",
+      "text": "Use `openai/gpt-5.3-codex` for coding tasks with text or image input, tools, and reasoning. [Find the model](https://enter.pollinations.ai/models?q=openai%2Fgpt-5.3-codex).",
+      "prs": [
+        15304
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "MiMo V2.6 Flash and Pro",
+      "text": "Xiaomi’s MiMo V2.6 Flash and Pro accept text and images, support tools and reasoning, and have million-token context windows. Both are paid-only. [Browse models](https://enter.pollinations.ai/models?q=MiMo%20V2.6).",
+      "prs": [
+        15311
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "✨",
+      "title": "Floret makes 3D assets",
+      "text": "Ask Floret to generate a 3D asset from a prompt, with an optional reference image, and get a download link. It can also process public HTTPS media with FFmpeg and return hosted output.",
+      "prs": [
+        15298
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Browse reliable community models",
+      "text": "Enter’s model catalog now defaults to `status:reliable` and shows the health sample behind each status label. Models without recent data remain listed. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        15279
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Control model-list filtering",
+      "text": "Model-list requests now filter public community proxy models using recent reliability. Add `?reliability=all` or send `Pollinations-Model-Reliability: all` to include otherwise accessible models excluded by that filter. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        15279
+      ],
+      "kind": "api"
     }
   ]
 }

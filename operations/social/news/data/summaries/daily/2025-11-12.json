@@ -64,7 +64,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:35:44.752547+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "Reasoning controls for chat",
@@ -83,6 +84,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

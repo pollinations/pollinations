@@ -12,7 +12,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:28:52.645579+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "DeepSeek-V3 for text",
@@ -22,6 +23,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

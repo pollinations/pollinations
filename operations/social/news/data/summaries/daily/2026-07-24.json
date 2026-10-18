@@ -60,7 +60,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:03:11.227461+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎵",
       "title": "Lyria 3 music clips",
@@ -89,6 +90,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

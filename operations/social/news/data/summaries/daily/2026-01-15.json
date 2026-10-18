@@ -20,7 +20,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:38:14.949747+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "✨",
       "title": "Crypto checkout for Pollen",
@@ -48,6 +49,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

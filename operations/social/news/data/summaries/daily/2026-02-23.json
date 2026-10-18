@@ -60,7 +60,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:41:26.006537+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "NomNom researches the web",
@@ -106,6 +107,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

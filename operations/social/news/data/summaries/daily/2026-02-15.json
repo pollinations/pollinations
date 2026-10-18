@@ -36,7 +36,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:40:22.056923+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "✨",
       "title": "Find your next app",
@@ -64,6 +65,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

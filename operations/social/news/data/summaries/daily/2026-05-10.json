@@ -124,7 +124,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:51:24.290968+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎵",
       "title": "Audio mode in chat",
@@ -153,6 +154,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

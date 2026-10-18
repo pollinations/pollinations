@@ -80,53 +80,6 @@
     }
   ],
   "generated_at": "2026-10-18T11:10:18.737049+00:00",
-  "highlights": [
-    {
-      "emoji": "🔗",
-      "title": "Try API requests signed in",
-      "text": "Connect your Pollinations account in the interactive API docs to try requests with your own key, without pasting it into the tester. [Open the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        17808
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "✨",
-      "title": "Drop-in sign-in for HTML",
-      "text": "Add `<polli-connect>` to a plain HTML page for Pollinations sign-in without a build step. Read the connected key from `element.apiKey` or listen for `change` events. [Explore the UI package](https://react.pollinations.ai).",
-      "prs": [
-        17814
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🤖",
-      "title": "Linux sandboxes for agents",
-      "text": "Machines MCP gives agents tools to create and manage Linux sandboxes, run commands, and read or write text files. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
-      "prs": [
-        17698
-      ],
-      "kind": "product"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Private image uploads",
-      "text": "Set `safe=privacy` or send `Pollinations-Safe: privacy` to strip supported location, camera and embedded-text metadata before storing an image, while keeping its orientation and colour profile. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        15428
-      ],
-      "kind": "api"
-    },
-    {
-      "emoji": "🤖",
-      "title": "DeepSeek Flash accepts Quest Pollen",
-      "text": "Use DeepSeek V4.1 Flash with Quest Pollen as well as paid access. Remote image URLs are handled on its Azure route, with Fireworks retained as fallback. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        17615
-      ],
-      "kind": "model"
-    }
-  ],
   "changelog": [
     {
       "pr_number": 17833,
@@ -289,6 +242,53 @@
           "changes": []
         }
       ]
+    }
+  ],
+  "daily": [
+    {
+      "emoji": "🔗",
+      "title": "Try API requests signed in",
+      "text": "Connect your Pollinations account in the interactive API docs to try requests with your own key, without pasting it into the tester. [Open the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17808
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "Drop-in sign-in for HTML",
+      "text": "Add `<polli-connect>` to a plain HTML page for Pollinations sign-in without a build step. Read the connected key from `element.apiKey` or listen for `change` events. [Explore the UI package](https://react.pollinations.ai).",
+      "prs": [
+        17814
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Linux sandboxes for agents",
+      "text": "Machines MCP gives agents tools to create and manage Linux sandboxes, run commands, and read or write text files. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        17698
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Private image uploads",
+      "text": "Set `safe=privacy` or send `Pollinations-Safe: privacy` to strip supported location, camera and embedded-text metadata before storing an image, while keeping its orientation and colour profile. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        15428
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "DeepSeek Flash accepts Quest Pollen",
+      "text": "Use DeepSeek V4.1 Flash with Quest Pollen as well as paid access. Remote image URLs are handled on its Azure route, with Fireworks retained as fallback. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        17615
+      ],
+      "kind": "model"
     }
   ]
 }

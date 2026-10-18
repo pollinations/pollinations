@@ -28,7 +28,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:33:47.805394+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "More text model aliases",
@@ -38,6 +39,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

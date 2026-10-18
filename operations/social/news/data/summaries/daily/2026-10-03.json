@@ -56,7 +56,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:16:43.865143+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Larger inline chat media",
@@ -112,6 +113,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

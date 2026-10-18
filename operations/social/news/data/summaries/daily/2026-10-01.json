@@ -132,7 +132,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:16:32.606925+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Generate inside Krita",
@@ -242,6 +243,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

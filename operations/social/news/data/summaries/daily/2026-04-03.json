@@ -100,7 +100,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:46:52.524232+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎵",
       "title": "Dedicated SDK audio calls",
@@ -155,6 +156,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

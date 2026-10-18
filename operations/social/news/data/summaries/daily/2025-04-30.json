@@ -36,7 +36,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:30:49.570707+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Nail art with NailsGen",
@@ -64,6 +65,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

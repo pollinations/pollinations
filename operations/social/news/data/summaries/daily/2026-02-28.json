@@ -44,7 +44,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:42:17.466346+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "MiniMax M2.5 replaces M2.1",
@@ -90,6 +91,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

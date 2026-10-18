@@ -64,7 +64,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:39:48.756107+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎵",
       "title": "Transcribe audio with Whisper",
@@ -137,6 +138,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

@@ -112,7 +112,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:10:41.135266+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "References become video",
@@ -176,6 +177,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

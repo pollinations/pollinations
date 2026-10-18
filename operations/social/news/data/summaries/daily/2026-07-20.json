@@ -48,7 +48,34 @@
     }
   ],
   "generated_at": "2026-10-17T23:03:01.985861+00:00",
-  "highlights": [
+  "changelog": [
+    {
+      "pr_number": 12601,
+      "url": "https://github.com/pollinations/pollinations/pull/12601",
+      "merged_at": "2026-07-20T16:53:26Z",
+      "api_changes": [
+        {
+          "id": "pr-12601:POST /v1/embeddings",
+          "endpoint": "POST /v1/embeddings",
+          "summary": "Create Embeddings",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:input_type",
+              "before": null,
+              "after": {
+                "type": "\"query\"|\"document\"",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Images meet Cohere embeddings",
@@ -84,33 +111,6 @@
         12596
       ],
       "kind": "product"
-    }
-  ],
-  "changelog": [
-    {
-      "pr_number": 12601,
-      "url": "https://github.com/pollinations/pollinations/pull/12601",
-      "merged_at": "2026-07-20T16:53:26Z",
-      "api_changes": [
-        {
-          "id": "pr-12601:POST /v1/embeddings",
-          "endpoint": "POST /v1/embeddings",
-          "summary": "Create Embeddings",
-          "action": "CHANGE",
-          "breaking": false,
-          "changes": [
-            {
-              "field": "body:input_type",
-              "before": null,
-              "after": {
-                "type": "\"query\"|\"document\"",
-                "required": false
-              },
-              "breaking": false
-            }
-          ]
-        }
-      ]
     }
   ]
 }

@@ -24,7 +24,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:41:57.153195+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Seedream 5 image generation",
@@ -52,6 +53,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

@@ -20,7 +20,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:30:56.517468+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "GPT-4.1-mini model option",
@@ -30,6 +31,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

@@ -80,7 +80,8 @@
     }
   ],
   "generated_at": "2026-10-17T23:12:48.342377+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "DeepSeek V4.1 Flash added",
@@ -144,6 +145,5 @@
       ],
       "kind": "api"
     }
-  ],
-  "changelog": []
+  ]
 }

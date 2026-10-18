@@ -40,7 +40,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:37:52.230488+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🤖",
       "title": "GLM-4.7 joins the lineup",
@@ -59,6 +60,5 @@
       ],
       "kind": "model"
     }
-  ],
-  "changelog": []
+  ]
 }

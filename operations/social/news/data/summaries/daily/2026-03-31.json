@@ -56,7 +56,8 @@
     }
   ],
   "generated_at": "2026-10-17T22:46:00.071209+00:00",
-  "highlights": [
+  "changelog": [],
+  "daily": [
     {
       "emoji": "🎨",
       "title": "Cat comics in Discord",
@@ -76,6 +77,5 @@
       ],
       "kind": "product"
     }
-  ],
-  "changelog": []
+  ]
 }

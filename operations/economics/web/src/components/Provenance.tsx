@@ -10,12 +10,12 @@ function InlineSourceBadge({ source }: { source: string }) {
         return (
             <Chip
                 data-theme="neutral"
-                intent="danger"
+                intent="neutral"
                 size="sm"
                 className="font-mono"
-                title={`Unknown source: ${source}`}
+                title={source}
             >
-                ? {source}
+                {source}
             </Chip>
         );
     }

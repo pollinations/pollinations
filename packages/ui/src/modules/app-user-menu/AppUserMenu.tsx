@@ -36,6 +36,8 @@ export type AppUserMenuProps = {
     /** Larger logged-out action for prominent placements such as a page hero. */
     connectSize?: keyof typeof CONNECT_SIZES;
     labels?: Partial<AppUserMenuLabels>;
+    /** Class for the dropdown panel, which renders in a portal outside the menu. */
+    menuClassName?: string;
 };
 
 const defaultLabels: AppUserMenuLabels = {
@@ -61,6 +63,7 @@ export function AppUserMenu({
     dashboardHref,
     connectSize = "md",
     labels: labelOverrides,
+    menuClassName,
 }: AppUserMenuProps) {
     const labels = { ...defaultLabels, ...labelOverrides };
     const size = CONNECT_SIZES[connectSize];
@@ -143,6 +146,7 @@ export function AppUserMenu({
                     }
                     menuLabel={labels.appUserMenu}
                     className="polli:max-w-80"
+                    menuClassName={menuClassName}
                     secondaryContent={
                         pollenSource ? (
                             <AccountPollen source={pollenSource} />

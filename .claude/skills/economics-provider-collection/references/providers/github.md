@@ -40,3 +40,7 @@ Known traps:
 - A net-zero metered response can still contain fully discounted Actions usage.
 - The metered API does not prove the fixed Enterprise subscription amount.
 - Do not net Sponsors payouts against GitHub infrastructure spend.
+- Organization Enterprise seat usage can be a subset of the enterprise-wide
+  receipt. Keep Enterprise subscriptions separate from Actions/Packages;
+  do not add both the organization subtotal and enterprise receipt as costs.
+  Receipt issue date is not its service month.

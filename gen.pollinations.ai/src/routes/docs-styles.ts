@@ -6,47 +6,82 @@ import POLLI_UI_TOKENS_CSS from "../../../packages/ui/src/styles/tokens.css?raw"
 export const POLLINATIONS_DOCS_CSS = `
 ${POLLI_UI_TOKENS_CSS}
 
+/* The dashboard's lockup, a thin rule, then "Docs": the drawer is the only
+   header. */
 .ph-docs-brand {
-    display: flex; align-items: center; gap: 10px; padding: 12px;
-    flex-shrink: 0; font-size: 18px; font-weight: 600;
-    color: var(--polli-color-text-strong); text-decoration: none;
+    display: flex; align-items: center; gap: 12px; padding: 16px 14px 8px;
+    flex-shrink: 0; color: var(--scalar-sidebar-color-1); text-decoration: none;
 }
-.ph-docs-brand svg { display: block; width: 28px; height: 28px; }
+.ph-docs-lockup svg { display: block; height: 20px; width: auto; }
+.ph-docs-divider {
+    width: 1px; height: 16px; background: var(--scalar-sidebar-border-color);
+}
+.ph-docs-label {
+    font-size: 13px; font-weight: 500; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--scalar-sidebar-color-2);
+}
 .ph-docs-brand:focus-visible {
     outline: 2px solid var(--polli-color-focus); outline-offset: -2px;
 }
+
+/* Dashboard, account and help links: Scalar's own row colours, so they read
+   like the rest of the drawer; the arrow says they open another site. */
+.ph-docs-links {
+    display: flex; flex-direction: column; gap: 1px; flex-shrink: 0;
+    padding: 8px var(--scalar-sidebar-padding, 9px) 12px;
+    border-top: 1px solid var(--scalar-sidebar-border-color);
+}
+.ph-docs-link {
+    display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+    border-radius: var(--scalar-radius, 6px);
+    font-size: var(--scalar-font-size-3, 14px);
+    color: var(--scalar-sidebar-color-2); text-decoration: none;
+}
+.ph-docs-link:hover {
+    background: var(--scalar-sidebar-item-hover-background);
+    color: var(--scalar-sidebar-item-hover-color, var(--scalar-sidebar-color-1));
+}
+.ph-docs-link .ph-doc-icon { width: 14px; height: 14px; flex: 0 0 14px; }
+.ph-docs-link .ph-docs-link-arrow { margin-left: auto; opacity: 0.6; }
 
 .ph-fab-cluster {
     position: fixed; top: 16px; right: 18px; z-index: 9999;
     display: flex; gap: 8px; align-items: center;
     justify-content: flex-end; max-width: calc(100vw - 36px);
 }
+/* Bright brand amber with dark text: the page's one primary action, with the
+   contrast of Scalar's own "Test Request" button. Both faces share one grid
+   cell, so "Copied" never changes the button's width. */
 .ph-fab {
-    padding: 10px 14px; border-radius: 999px;
-    border: 0; background: var(--polli-color-bg-active); color: var(--polli-color-text-strong);
-    font: 500 14px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    box-shadow: none;
-    cursor: pointer; text-decoration: none;
-    transition: background .15s, color .15s, filter .15s, transform .1s;
-    display: inline-flex; align-items: center; gap: 6px; line-height: 1;
+    display: inline-grid; height: 38px; padding: 0 16px; border-radius: 999px;
+    border: 0; background: var(--polli-color-brand-accent); color: oklch(0.2 0.02 80);
+    font: 600 14px/1 var(--scalar-font, system-ui, sans-serif);
+    cursor: pointer; transition: filter .15s, transform .1s;
 }
-.ph-fab:hover {
-    background: var(--polli-color-bg-hover); color: var(--polli-color-text-strong);
-    filter: brightness(1.05);
-}
+.ph-fab:hover { filter: brightness(1.06); }
 .ph-fab:active { transform: translateY(1px); }
 .ph-fab:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--polli-color-border);
+    outline: 2px solid var(--polli-color-brand-accent); outline-offset: 2px;
 }
+.ph-fab-face {
+    grid-area: 1 / 1; display: inline-flex; align-items: center;
+    justify-content: center; gap: 8px;
+}
+.ph-fab-done, .ph-fab.is-copied .ph-fab-idle { visibility: hidden; }
+.ph-fab.is-copied .ph-fab-done { visibility: visible; }
 .ph-fab svg { width: 16px; height: 16px; }
+/* Mobile: sit in Scalar's top bar beside its menu button, clear of the content
+   below, and drop the bar's separator line; the copy button keeps only its
+   icon to leave room for sign-in. */
 @media (width < 1000px) {
-    .ph-fab-cluster { top: 60px; right: 12px; }
+    .ph-fab-cluster { top: 6px; right: 12px; }
+    .scalar-app header.border-b { border-bottom-width: 0; }
     body:has(.references-sidebar-mobile-open) .ph-fab-cluster { display: none; }
 }
 @media (max-width: 640px) {
-    .ph-fab { padding: 7px 11px; font-size: 12px; }
+    .ph-fab { height: 34px; padding: 0 12px; font-size: 13px; }
     .ph-fab svg { width: 14px; height: 14px; }
+    .ph-fab-copy .ph-fab-face { font-size: 0; gap: 0; }
 }
 `;
 
@@ -78,9 +113,6 @@ export const API_REFERENCE_CUSTOM_CSS = `
   text-decoration-color: var(--polli-color-text-soft);
 }
 
-.scalar-app .ph-doc-nav-item {
-  align-items: center;
-}
 .ph-doc-nav-icon {
   display: inline-block !important;
   width: 14px !important;
@@ -100,22 +132,22 @@ export const API_REFERENCE_CUSTOM_CSS = `
   color: var(--polli-color-text-soft);
 }
 
-/* Make each drawer section easy to scan. Scalar renders section labels as
-   tag-group rows and inserts a small spacer immediately before each one. */
-.scalar-app [data-sidebar-id^="api/tag-group/"] > div:first-child {
-  height: 12px !important;
-  min-height: 12px !important;
-  flex-shrink: 0;
-}
-.scalar-app [data-sidebar-id^="api/tag-group/"] > div:nth-child(2) {
-  color: var(--polli-color-text-soft) !important;
+/* Amber group titles (Get Started, Guides, ...) split the drawer into its
+   parts. In Scalar 1.74 the title is the link in each group's first row. */
+.scalar-app [data-sidebar-id^="api/tag-group/"] > div:first-child > a {
+  color: var(--polli-color-text-soft);
 }
 
 /* Hide Scalar's native download UI — we surface it via the floating
    action cluster (see .ph-fab-cluster below) for layout consistency. */
 .scalar-app .download-container { display: none !important; }
 
-/* Hide "Powered by Scalar" sidebar footer link. */
+/* Hide Scalar's SDK/MCP promotion, its "Ask AI Agent" form beside Test
+   Request, and the footer attribution. */
+.scalar-app .explore-scalar,
+.scalar-app .selected-client-action,
+.scalar-app .generate-sdk-button,
+.scalar-app .agent-button-container { display: none !important; }
 .scalar-app a[href*="utm_source=powered-by"] { display: none !important; }
 
 /* Hide Scalar's IDE/MCP quick-launch buttons (VS Code, Cursor, Generate MCP).
@@ -159,23 +191,14 @@ export const API_REFERENCE_CUSTOM_CSS = `
     grid-template-columns: 1fr !important;
 }
 
-/* "Show more" buttons (tagged by our docs script — see scanScalarButtons).
-   Use the same ambient Button recipe as packages/ui. */
+/* Keep section expansion quiet and aligned with the content. */
 .scalar-app .ph-show-more {
-    background: var(--polli-color-bg-active) !important;
-    color: var(--polli-color-text-strong) !important;
-    border-color: var(--polli-color-bg-active) !important;
+    margin-inline: 0 auto;
+    background: var(--scalar-background-2);
+    color: var(--scalar-color-2);
 }
 .scalar-app .ph-show-more:hover {
-    background: var(--polli-color-bg-hover) !important;
-    border-color: var(--polli-color-bg-hover) !important;
-}
-/* Force the chevron/triangle SVG inside the button to match text color
-   (otherwise it inherits Scalar's dim color and disappears on amber). */
-.scalar-app .ph-show-more svg,
-.scalar-app .ph-show-more svg * {
-    color: var(--polli-color-text-strong) !important;
-    fill: currentColor !important;
-    stroke: currentColor !important;
+    background: var(--scalar-background-3);
+    color: var(--scalar-color-1);
 }
 `;

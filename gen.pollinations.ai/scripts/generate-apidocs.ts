@@ -1103,6 +1103,7 @@ const PATH_PARAM_EXAMPLES: Record<string, Record<string, string>> = {
     "/{id}/metadata": { id: RESOURCE_ID_EXAMPLE },
     "/media/{id}": { id: RESOURCE_ID_EXAMPLE },
     "/account/keys/{id}": { id: "key_abc123" },
+    "/api/x402/keys/{packKey}": { packKey: "0.50" },
     "/account/integrations/{id}": { id: "ca_abc123" },
     "/account/agents/{id}": { id: RESOURCE_ID_EXAMPLE },
     "/account/agents/{id}/sync": { id: RESOURCE_ID_EXAMPLE },
@@ -1176,6 +1177,7 @@ const TAG_ORDER = [
     "Community Models",
     "Community Agents",
     "Media Storage",
+    "Sandboxes API",
     "Account",
 ];
 

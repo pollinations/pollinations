@@ -7,7 +7,7 @@
   "generated_at": "2026-03-14T06:14:34.829767+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-13/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-13/images/twitter.jpg"
     }
   ],
   "text": "shipped 8 PRs today. the seed upgrade workflow used to take 25 hours. rewrote it, now it takes seconds. also added dirtberry-pro for images, qwen3-tts for audio, and moved klein 4b to a dedicated pipeline. open source ai infrastructure continues. 🐝"

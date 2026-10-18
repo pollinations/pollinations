@@ -7,7 +7,7 @@
   "generated_at": "2026-07-27T07:21:00.711761+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-26/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-07-26/images/twitter.jpg"
     }
   ],
   "text": "shipped: ElevenLabs now adds dialogue, isolates voices, and returns TTS timestamps. GPT Realtime 2.1 Mini joins for long multimodal sessions. Also fixed Mistral generation credentials, which can once again find Mistral generation."

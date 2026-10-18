@@ -7,13 +7,13 @@
   "generated_at": "2026-02-24T06:21:08.385361+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-23/images/instagram-1.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-02-23/images/instagram-1.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-23/images/instagram-2.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-02-23/images/instagram-2.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-23/images/instagram-3.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-02-23/images/instagram-3.jpg"
     }
   ],
   "text": "12 PRs merged. The big one: Claude Sonnet 4.6 is live. 🧠\n\nPolly got a brain transplant (unified API + bot process) and is feeling snappier. The showcase garden grew by 5 apps this week—including AutoTutela for legal docs and ExplainMyBigO for devs who forgot their algorithms class.\n\nPlus, stricter tool validation means less hallucinating. We let Nomnom handle the deprecated code.\n\nShip something cool this weekend. link in bio.\n\n#pollinations #opensource #pixelart #creativecoding #indiedev #claudeai #buildinpublic #generativeart",

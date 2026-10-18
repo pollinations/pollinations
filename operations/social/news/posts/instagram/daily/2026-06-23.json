@@ -7,13 +7,13 @@
   "generated_at": "2026-06-24T07:07:47.585940+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-23/images/instagram-1.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-06-23/images/instagram-1.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-23/images/instagram-2.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-06-23/images/instagram-2.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-23/images/instagram-3.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-06-23/images/instagram-3.jpg"
     }
   ],
   "text": "A few weekend updates shipped to the API. Stable Audio 3 is now live for your soundboard needs (swapped out 2.5). We also added Inception Mercury to the text roster, and finally cleaned up the mobile UI and pricing cards so they actually look right on your phone.\n\nDocs and endpoints are updated. Go build something weird. 🎧✨\n\npollinations.ai\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #stableaudio #generativeai #buildinpublic #webdev",

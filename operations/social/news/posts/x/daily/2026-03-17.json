@@ -7,7 +7,7 @@
   "generated_at": "2026-03-18T06:23:31.721923+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-17/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-17/images/twitter.jpg"
     }
   ],
   "text": "shipped 6 PRs today. qwen3.5 397b is now live. you can finally upload files on the play page. also fixed a stubborn kv caching bug that was ignoring api key permission changes, which was a great time. homepage got some fresh paint too."

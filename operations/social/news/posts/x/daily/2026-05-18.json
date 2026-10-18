@@ -7,7 +7,7 @@
   "generated_at": "2026-05-19T07:08:41.874282+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-18/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-05-18/images/twitter.jpg"
     }
   ],
   "text": "shipped some fixes for how we handle time. removed artificial fetch timeouts and doubled audio transcription polling limits so long jobs actually finish. on the flip side: added strict validation for chat image models so bad vision requests fail immediately."

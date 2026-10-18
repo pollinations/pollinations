@@ -7,7 +7,7 @@
   "generated_at": "2026-09-20T06:26:53.012936+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-19/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-09-19/images/twitter.jpg"
     }
   ],
   "text": "shipped: 5 new build paths: 3 image models, Oracle Mystique in chat, and TTS in video/audio. /v1/models now reports model health; analytics sees page views and sign-in returns again. README also got browser-only Arabic BYOP examples. 10 PRs."

@@ -7,7 +7,7 @@
   "generated_at": "2026-06-11T07:35:26.366474+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-10/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-06-10/images/twitter.jpg"
     }
   ],
   "text": "returning a 500 when someone hits the content filter is basically gaslighting our own uptime monitors. shipped a fix today: content policy rejections now return 422 (unprocessable). the servers are fine."

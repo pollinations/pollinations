@@ -7,7 +7,7 @@
   "generated_at": "2026-10-17T06:07:07.008438+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-16/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-10-16/images/twitter.jpg"
     }
   ],
   "text": "added JavaScript to Computer MCP. agent code can use persistent files and return a JSON-encoded result. /v1/systemone now aliases TypeSafe decisions on /alpha/decisions. the naming problem remains undefeated."

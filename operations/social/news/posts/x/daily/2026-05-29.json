@@ -7,7 +7,7 @@
   "generated_at": "2026-05-30T06:58:00.844570+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-29/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-05-29/images/twitter.jpg"
     }
   ],
   "text": "shipped today:\n- realtime voice api via websocket\n- claude opus 4.8, perplexity sonar, and stepfun 3.5 flash added to the text endpoint\n- if an image keeps getting viewed, we stop deleting it (r2 storage ttl now refreshes on access)."

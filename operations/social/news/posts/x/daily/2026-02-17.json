@@ -7,7 +7,7 @@
   "generated_at": "2026-02-18T06:22:11.715445+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-17/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-02-17/images/twitter.jpg"
     }
   ],
   "text": "shipped SlidePainter and markdown support for app descriptions.\n\nthe markdown feature uses an llm to format text. had to patch it because it started hallucinating creative new names for user apps.\n\nit is now strictly forbidden from renaming things."

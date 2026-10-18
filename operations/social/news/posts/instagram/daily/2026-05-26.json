@@ -7,13 +7,13 @@
   "generated_at": "2026-05-27T07:22:00.853658+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-26/images/instagram-1.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-05-26/images/instagram-1.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-26/images/instagram-2.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-05-26/images/instagram-2.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-26/images/instagram-3.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-05-26/images/instagram-3.jpg"
     }
   ],
   "text": "Docs are now built for LLMs. Added raw markdown sources so your agents can actually digest the API without hallucinating. We also surfaced the guides better and threw some copy buttons into the dashboard rail because highlighting text manually is a crime. Clean docs = better apps. Go feed your agents at pollinations.ai/docs/guides.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #llm #documentation #buildinpublic #developer",

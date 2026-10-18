@@ -7,7 +7,7 @@
   "generated_at": "2026-03-18T19:58:13.615251+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-09/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-02-09/images/twitter.jpg"
     }
   ],
   "text": "Polly just got a major IQ upgrade. 🧠\n\nMerged OpenAI embeddings + a tighter system prompt. Context retrieval is sharper, responses are cleaner.\n\nAlso refactored credit logic—single bucket balance, no more splitting headaches.\n\nShipping daily. 🌸🐝\n#OpenSource #AI"

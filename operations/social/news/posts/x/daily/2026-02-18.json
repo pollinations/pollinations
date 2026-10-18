@@ -7,7 +7,7 @@
   "generated_at": "2026-02-19T06:21:56.260376+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-18/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-02-18/images/twitter.jpg"
     }
   ],
   "text": "added an interactive build diary to the community page. transparency means seeing the messy parts too.\n\nalso remapped upstream 429s to 502s. if the provider is choked, that's a bad gateway, not you spamming. clarity helps."

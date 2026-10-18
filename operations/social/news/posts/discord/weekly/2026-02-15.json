@@ -7,7 +7,7 @@
   "generated_at": "2026-02-16T10:04:13.429831+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-02-15/images/discord.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/weekly/2026-02-15/images/discord.jpg"
     }
   ],
   "text": "## Weekly Update - 2026-02-15\n\nHey <@&1424461167883194418>! 🐝 The hive has been absolutely buzzing this week. We've merged **27 PRs**, and honestly? The loot drop is legendary. Here is what you can play with right now:\n\n🕵️ **Agents That Surf**\nSay hello to **OpenClaw** integration! Your AI agents can now perform web searches and interact with the internet. One-command agents just got a whole lot smarter.\n\n🎬 **Director Mode Unlocked**\nVideo generation is leveling up with **Grok Image-to-Video** support. We also unified video resolutions, so your creations look crisp no matter the format. Plus, **ElevenLabs Scribe v2** is here to make your audio sound smoother than honey.\n\n🧠 **New Flavors & Roleplay**\nModel collectors, eat your heart out. We've added **GLM-5** for general brilliance and the **Qwen-character** model for our roleplay enthusiasts. The `Polly` API also got an embeddings upgrade, making the platform's brain faster and sharper.\n\n💅 **Quality of Life**\nThe **App Showcase** got a massive UI overhaul (it looks *clean*), and we've merged the Docs directly into the Play page. Less tab switching, more building.\n\nGo break things (creatively). We can't wait to see what you make! 🌸"

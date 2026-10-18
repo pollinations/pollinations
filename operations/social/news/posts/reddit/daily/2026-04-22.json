@@ -7,7 +7,7 @@
   "generated_at": "2026-04-23T06:35:47.801866+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-22/images/reddit.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-04-22/images/reddit.jpg"
     }
   ],
   "title": "Added gpt-image-2 via Azure eastus2 and fixed upstream error handling",

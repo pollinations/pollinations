@@ -7,13 +7,13 @@
   "generated_at": "2026-02-19T06:21:56.260376+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-18/images/instagram-1.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-02-18/images/instagram-1.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-18/images/instagram-2.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-02-18/images/instagram-2.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-18/images/instagram-3.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-02-18/images/instagram-3.jpg"
     }
   ],
   "text": "Five PRs merged this week. We added a Build Diary to the community page so you can see the history of what's being made. It's like a guestbook, but for code.\n\nAlso did some plumbing: upstream 429s now map correctly to 502s, and we're actually extracting error messages from JSON now instead of just guessing. Nomnom is pleased.\n\nFinally, added a dashboard to simulate tier costs because math is hard and visualizers are nice.\n\nCheck the repo for the details.\n\n#pollinations #opensource #buildinpublic #pixelart #indiedev #creativecoding #aitools #devlog\n\n#pollinations #opensource #buildinpublic #pixelart #indiedev #creativecoding #aitools #devlog #generativeart #cozyvibes",

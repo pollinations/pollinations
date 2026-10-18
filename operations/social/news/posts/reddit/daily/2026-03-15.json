@@ -7,7 +7,7 @@
   "generated_at": "2026-03-16T06:30:44.244975+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-15/images/reddit.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-15/images/reddit.jpg"
     }
   ],
   "title": "Merged 9 PRs: frontend chunk splitting, MCP integration, and SSE parsing fixes",

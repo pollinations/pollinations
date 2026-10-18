@@ -7,13 +7,13 @@
   "generated_at": "2026-03-27T06:24:30.576814+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-26/images/instagram-1.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-26/images/instagram-1.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-26/images/instagram-2.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-26/images/instagram-2.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-26/images/instagram-3.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-26/images/instagram-3.jpg"
     }
   ],
   "text": "10 PRs merged this week. The showcase is getting crowded in the best way possible—7 new community apps just landed (shoutout to OrchidLLM, TranslateIt, Tofu, Storymake, Apiction, visiona, and opencode). \n\nWe also re-routed dedicated audio models so they actually hit the right endpoint now, polished up the dashboard UI, and squashed a race condition that was keeping stale translations hanging around on category switches. \n\nCheck out the new apps in the showcase. Link in bio.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #webdev #aiart",

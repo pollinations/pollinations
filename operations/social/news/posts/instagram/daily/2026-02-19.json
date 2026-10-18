@@ -7,13 +7,13 @@
   "generated_at": "2026-02-20T06:17:59.715281+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-19/images/instagram-1.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-02-19/images/instagram-1.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-19/images/instagram-2.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-02-19/images/instagram-2.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-19/images/instagram-3.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-02-19/images/instagram-3.jpg"
     }
   ],
   "text": "Housekeeping week. 🧹 The SDK moved house and lost some weight (renamed & cleaned up). We also taught the platform to fix its own bugs—which is either brilliant or the beginning of the end. Plus, the documentation maps are actually readable now.\n\nShip list:\n- SDK/MCP package cleanup\n- Auto-polly AI bug fixer\n- Streamlined onboarding & API guides\n\nCheck the repo for the messy details.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #refactoring #softwareengineering",

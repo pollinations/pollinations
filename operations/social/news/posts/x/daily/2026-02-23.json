@@ -7,7 +7,7 @@
   "generated_at": "2026-02-24T06:21:08.385361+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-23/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-02-23/images/twitter.jpg"
     }
   ],
   "text": "12 PRs merged. Claude upgraded to Sonnet 4.6. Showcase grew by 5 apps—from legal helpers to Big O explainers.\n\nPolly's API and bot logic are finally one process. She thinks faster now. Also fixed tool call validation. Please send valid JSON."

@@ -7,7 +7,7 @@
   "generated_at": "2026-08-22T06:12:25.001480+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-21/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-08-21/images/twitter.jpg"
     }
   ],
   "text": "shipped: shareable app-directory searches, video registry duration fields, per-user RPM in the catalog, and complete prompt-agent OpenAPI docs. Routing/status now separate spillover from degradation. Ten PRs; the garden has labels again."

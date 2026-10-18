@@ -7,13 +7,13 @@
   "generated_at": "2026-07-26T07:03:30.237957+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-07-26/images/instagram-1.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/weekly/2026-07-26/images/instagram-1.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-07-26/images/instagram-2.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/weekly/2026-07-26/images/instagram-2.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-07-26/images/instagram-3.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/weekly/2026-07-26/images/instagram-3.jpg"
     }
   ],
   "text": "58 PRs merged this week. Community models now look more like a publishing surface and less like a drawer of mysterious IDs. The image stack got new pipes, guards, and exits; the catalog learned some manners; and one HTTP call can now produce a few more kinds of thing.\n\nAlso: timeouts can leave politely now. Small mercy. 🌿\n\nDetails are in the repo: github.com/pollinations/pollinations\n\n#pollinations #opensource #aitools #pixelart #creativecoding #buildinpublic #indiedev #generativeai #communitymodels #openrouter #aidevtools #8bitart",

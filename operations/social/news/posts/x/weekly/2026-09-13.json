@@ -7,7 +7,7 @@
   "generated_at": "2026-09-13T06:32:41.130676+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-13/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/weekly/2026-09-13/images/twitter.jpg"
     }
   ],
   "text": "shipped this week: agents got a persistent workspace, filesystem + bash; media models now run through Chat and Responses; callers can set fallback chains. 96 PRs across streams, caches, billing, and the usual software gardening."

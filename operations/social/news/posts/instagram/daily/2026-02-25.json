@@ -7,13 +7,13 @@
   "generated_at": "2026-02-26T06:21:39.244819+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-25/images/instagram-1.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-02-25/images/instagram-1.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-25/images/instagram-2.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-02-25/images/instagram-2.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-25/images/instagram-3.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-02-25/images/instagram-3.jpg"
     }
   ],
   "text": "Renovation week. \n\nThe website got a fresh coat of paint—new flow, better copy, clearer tier cards. Under the hood, we added a dedicated media upload service (finally), support for Grok-imagine, and custom ElevenLabs voices.\n\nAlso fed a bunch of bugs to the backend—stabilized the Wan video pipeline and taught the API some better manners regarding rate limits.\n\n14 PRs merged. Go build something weird.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #webdev #generativeai\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #webdev #generativeai",

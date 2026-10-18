@@ -7,7 +7,7 @@
   "generated_at": "2026-07-15T06:54:42.012635+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-14/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-07-14/images/twitter.jpg"
     }
   ],
   "text": "shipped: GPT Image and FLUX.2 Klein now have sturdier routes; uploaded media can become public tag galleries; Model Monitor shows tokens/sec; SDK retries are now explicit. 16 PRs merged. docs caught up, against their will."

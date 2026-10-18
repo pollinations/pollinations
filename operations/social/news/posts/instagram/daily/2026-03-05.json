@@ -7,13 +7,13 @@
   "generated_at": "2026-03-06T06:15:02.776516+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-05/images/instagram-1.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-05/images/instagram-1.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-05/images/instagram-2.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-05/images/instagram-2.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-05/images/instagram-3.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-05/images/instagram-3.jpg"
     }
   ],
   "text": "18 PRs merged today. We shipped an AI video generator, a Carl Jung bot for your existential crises, and a comics explorer. Also fixed the official badge and cleaned up our model monitor logic so 4xx errors don't tank the success rate stats. The ecosystem keeps growing—browsers, roleplay, junk journals, you name it. Go build something weird. Link in bio.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #aivideo #botdev #webdev",

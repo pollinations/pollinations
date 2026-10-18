@@ -7,7 +7,7 @@
   "generated_at": "2026-07-04T06:58:25.652675+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-07-03/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-07-03/images/twitter.jpg"
     }
   ],
   "text": "shipped some updates. perplexity and gemini search fees now show up as itemized adjustments instead of a mystery. added flow linnom to chat. also, we now actually warn you when you exceed localstorage quota instead of just quietly failing."

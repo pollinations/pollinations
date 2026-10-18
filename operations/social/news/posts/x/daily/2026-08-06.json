@@ -7,7 +7,7 @@
   "generated_at": "2026-08-07T06:31:31.656338+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-08-06/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-08-06/images/twitter.jpg"
     }
   ],
   "text": "shipped: community apps now carry screenshot URLs; models are split into official/community, ordered deterministically, priced visibly, and render faster. Whisper joined bots; long text and FLUX routing got sturdier. 12 PRs, fewer archaeological digs."

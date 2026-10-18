@@ -7,13 +7,13 @@
   "generated_at": "2026-03-18T06:23:31.721923+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-17/images/instagram-1.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-17/images/instagram-1.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-17/images/instagram-2.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-17/images/instagram-2.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-17/images/instagram-3.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-17/images/instagram-3.jpg"
     }
   ],
   "text": "6 PRs merged this week. The play page finally lets you upload files, and we gave the homepage and model monitor some fresh paint.\n\nUnder the hood: Qwen3.5 (397B) is now wired up via Fireworks and ready to chat. We also fixed some weirdness with KV caching when API key permissions change, and clarified the rules for Seed tier dev points so you actually know how you're leveling up.\n\nCheck the repo for the full changelog or just go build something.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #webdev #llm #buildinpublic #retroaesthetic",

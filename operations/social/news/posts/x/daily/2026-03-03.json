@@ -7,7 +7,7 @@
   "generated_at": "2026-03-04T06:17:29.528572+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-03/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-03/images/twitter.jpg"
     }
   ],
   "text": "shipped some updates. added suno-v5, flux-2-dev, and step-3.5-flash to the api. also wired up a cron job to auto-ban deleted github accounts and handle renamed users. more models, fewer ghost accounts."

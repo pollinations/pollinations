@@ -7,13 +7,13 @@
   "generated_at": "2026-03-05T06:16:31.436274+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-04/images/instagram-1.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-04/images/instagram-1.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-04/images/instagram-2.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-04/images/instagram-2.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-04/images/instagram-3.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-04/images/instagram-3.jpg"
     }
   ],
   "text": "11 PRs merged this week. The big one: image-to-image is now live for flux-2-dev. You can now send us pixels and get different pixels back. We also fixed Suno audio routing so your music generation actually goes to the right place.\n\nBehind the scenes, we added better app attribution for publishable keys and smoothed out the community app submission pipeline. Nomnom ate the old paperwork.\n\nSix new community apps just sprouted in the ecosystem this week, including PromptLab Studio and a fantasy story generator. Everything is open source, as always. Link in bio to build something.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #generativeai #webdev",

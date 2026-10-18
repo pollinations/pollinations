@@ -7,13 +7,13 @@
   "generated_at": "2026-04-18T06:24:06.330017+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-17/images/instagram-1.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-04-17/images/instagram-1.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-17/images/instagram-2.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-04-17/images/instagram-2.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-17/images/instagram-3.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-04-17/images/instagram-3.jpg"
     }
   ],
   "text": "Five PRs merged this week. The CLI officially hit v0.1.0 and learned how to stream video demos, which feels like a nice milestone. We also welcomed Flashlearn and Ciel AI to the greenhouse. Finally, we untangled price from cost in the model registry because those are, in fact, two different things. Code is open, as always. Go build something weird. 🌱\n\ngithub.com/pollinations/pollinations\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #cli #devcommunity #techupdate #retroaesthetic",

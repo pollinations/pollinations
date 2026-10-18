@@ -7,7 +7,7 @@
   "generated_at": "2026-06-09T07:10:13.245218+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-08/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-06-08/images/twitter.jpg"
     }
   ],
   "text": "hardcoding model lists in the UI is a great way to guarantee your dashboard is always out of date. just shipped a live model catalog. if a new model is running on the backend, it shows up in the dashboard immediately."

@@ -7,13 +7,13 @@
   "generated_at": "2026-04-24T06:36:55.491346+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-23/images/instagram-1.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-04-23/images/instagram-1.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-23/images/instagram-2.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-04-23/images/instagram-2.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-04-23/images/instagram-3.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-04-23/images/instagram-3.jpg"
     }
   ],
   "text": "Shipped 6 updates this week to keep the garden tidy. MCP v2.1.0 is out—we overhauled the registry and cleaned up the gateway so your agents have better access to account tools.\n\nWe also moved the Play interface to a logged-in experience, so your generations actually save to your own space now instead of vanishing into the void. Finally, we squashed a bunch of mobile layout bugs. Modals and headers should actually fit on your phone screen now.\n\nCode is open, as always. Link in bio to build.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #webdev #mcp #uiux #buildinpublic",

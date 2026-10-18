@@ -7,7 +7,7 @@
   "generated_at": "2026-03-12T06:17:49.772580+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-11/images/reddit.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-11/images/reddit.jpg"
     }
   ],
   "title": "Fixed GPT image generation by routing endpoints to West US 3",

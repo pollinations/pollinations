@@ -7,7 +7,7 @@
   "generated_at": "2026-10-01T06:32:47.090824+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-30/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-09-30/images/twitter.jpg"
     }
   ],
   "text": "shipped a rebuilt Apps page: filter projects, sort by weekly usage, and keep your place after searching. SDKs now accept speech inputs and audioTransform uploads; Polli CLI gets a separate staging login. 28 PRs; the docs redirect works now too."

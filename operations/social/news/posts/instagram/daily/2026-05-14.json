@@ -7,13 +7,13 @@
   "generated_at": "2026-05-15T07:02:51.343772+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-14/images/instagram-1.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-05-14/images/instagram-1.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-14/images/instagram-2.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-05-14/images/instagram-2.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-14/images/instagram-3.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-05-14/images/instagram-3.jpg"
     }
   ],
   "text": "Shipped a few things this week to make the infra run a bit smoother. The Audio API now has faster speech (ElevenLabs Flash v2.5) and stabler ears (OVH Whisper fixes, so it actually preserves your filenames now). We also unified the dashboard design system, because chaotic UI is only charming for so long. 3 PRs merged. Things are running fast and looking clean. Hit the API and build something weird. 🐝🎛️\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #webdev #audioai #uiux #buildinpublic",

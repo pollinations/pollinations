@@ -7,10 +7,10 @@
   "generated_at": "2026-03-10T06:14:28.126870+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-09/images/instagram-2.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-09/images/instagram-2.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-09/images/instagram-3.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-09/images/instagram-3.jpg"
     }
   ],
   "text": "Shipped a few things this week to keep the garden tidy.\n\nPolly got a V2 upgrade — rewritten internals in Rust, zero sycophancy, and noticeably faster. We also spent some time sweeping the floors: hardened the infrastructure against bots trying to game the tier system, and cleared out duplicate apps from the showcase.\n\nOh, and nanobanana now properly respects the safe=false flag, because sometimes you just need the raw output. Fresh logos and PWA assets are live too. Code is in the repo.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #rustlang #buildinpublic #retroaesthetic #cozygaming",

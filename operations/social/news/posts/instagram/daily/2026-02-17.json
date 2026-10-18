@@ -7,13 +7,13 @@
   "generated_at": "2026-02-18T06:22:11.715445+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-17/images/instagram-1.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-02-17/images/instagram-1.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-17/images/instagram-2.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-02-17/images/instagram-2.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-17/images/instagram-3.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-02-17/images/instagram-3.jpg"
     }
   ],
   "text": "We taught the interface to dress better this week — app descriptions now support markdown, so things look tidy. \n\nAlso shipped SlidePainter for when you need to generate visuals instead of doing real work. \n\nFixed a bug where the prettifier was getting too creative and hallucinating app names. It was inspired, but incorrect. Plus, deployments actually go to the right branch now. \n\nCode is live. Go build something weird.\n\n#pollinations #opensource #pixelart #indiedev #creativecoding #generativeart #buildinpublic #github",

@@ -7,7 +7,7 @@
   "generated_at": "2026-03-06T06:15:02.776516+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-05/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-05/images/twitter.jpg"
     }
   ],
   "text": "just shipped 18 PRs. added an ai video generator, a carl jung bot, and a browser extension for images. on the infra side, we stopped counting 4xx errors as successful requests in the model monitor, because reality matters. docs are updated too. 🐝"

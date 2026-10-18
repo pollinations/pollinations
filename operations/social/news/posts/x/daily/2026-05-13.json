@@ -7,7 +7,7 @@
   "generated_at": "2026-05-14T06:57:38.267738+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-13/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-05-13/images/twitter.jpg"
     }
   ],
   "text": "shipped some housekeeping.\n- rewrote the homepage copy so it actually explains what we do\n- translated the pollen FAQ from corporate to human\n- aligned elevenlabs pricing with the scale plan (it's cheaper now)\n\nbetter docs, cheaper audio."

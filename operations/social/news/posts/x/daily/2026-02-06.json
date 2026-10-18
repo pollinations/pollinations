@@ -7,7 +7,7 @@
   "generated_at": "2026-03-18T19:58:13.608088+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-02-06/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-02-06/images/twitter.jpg"
     }
   ],
   "text": "fresh engines on the api:\n\n- LTX-2 (video generation)\n- Imagen 3 (via api.airforce)\n- Claude Opus 4.6\n\nshipped, merged, and live. no waitlists. just open source tools for people who build.\n\ngo make something weird. 🌸"

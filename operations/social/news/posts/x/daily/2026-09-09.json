@@ -7,7 +7,7 @@
   "generated_at": "2026-09-10T06:30:26.477455+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-09/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-09-09/images/twitter.jpg"
     }
   ],
   "text": "shipped: media models now work through Chat and Responses, including image inputs. SDK embeddings landed; GIMP 3 and NVIDIA 3D assets joined the workshop. Also: durable media URLs, leaked-key revocation, and fewer model compatibility séances. 23 PRs."

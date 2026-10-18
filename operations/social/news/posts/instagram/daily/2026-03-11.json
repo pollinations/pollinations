@@ -7,13 +7,13 @@
   "generated_at": "2026-03-12T06:17:49.772580+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-11/images/instagram-1.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-11/images/instagram-1.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-11/images/instagram-2.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-11/images/instagram-2.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-03-11/images/instagram-3.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-03-11/images/instagram-3.jpg"
     }
   ],
   "text": "GPT image generation was getting a little jammed up lately, so we packed our digital bags and migrated the endpoints over to West US 3. ☀️ Just a quick under-the-hood routing fix (shoutout PR #9032), but it means your prompts are completely unblocked and the pixels are flowing smoothly again. No more waiting around for timeouts. Dive back in and keep the weird, wonderful, and cozy ideas coming. 🐝✨ Everything is open source, check the repo to see how it's wired up.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #generativeai #backenddev #aiartcommunity #cozyvibes",

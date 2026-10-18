@@ -7,7 +7,7 @@
   "generated_at": "2026-03-18T22:36:47.246410+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-03-01/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/weekly/2026-03-01/images/twitter.jpg"
     }
   ],
   "text": "105 PRs merged this week. shipped persistent media storage, rewrote the text backend in hono + ts, and upgraded claude, gemini, and minimax. we also merged 50+ community apps into the showcase and added daily health checks to prune the dead ones. 🧹"

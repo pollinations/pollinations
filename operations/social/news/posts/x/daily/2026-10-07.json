@@ -7,7 +7,7 @@
   "generated_at": "2026-10-08T06:33:15.419311+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-07/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-10-07/images/twitter.jpg"
     }
   ],
   "text": "merged today: video generation in the SDK now accepts image, video, and audio reference URLs, singly or in arrays. polli CLI now creates missing output folders before requests and keeps rapid chat follow-ups in order. computers remain very literal."

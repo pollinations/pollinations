@@ -7,7 +7,7 @@
   "generated_at": "2026-06-01T07:40:04.018021+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-05-31/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-05-31/images/twitter.jpg"
     }
   ],
   "text": "shipped a react sdk and ui package today. you can now just wrap your app in our auth provider instead of writing token management boilerplate for the hundredth time. importing components > writing state machines."

@@ -7,13 +7,13 @@
   "generated_at": "2026-06-07T07:21:06.408137+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-07/images/instagram-1.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/weekly/2026-06-07/images/instagram-1.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-07/images/instagram-2.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/weekly/2026-06-07/images/instagram-2.jpg"
     },
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/weekly/2026-06-07/images/instagram-3.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/weekly/2026-06-07/images/instagram-3.jpg"
     }
   ],
   "text": "50 PRs merged this week. The React SDK and UI packages are officially live, meaning you can stop writing boilerplate and start building. Polly also learned how to draw explicit AI-driven tables and charts via render_visual.\n\nWe normalized pricing to at-cost, fixed some audio headers that were acting up, and watched 25 new community apps bloom in the ecosystem. \n\nCheck the repo for the full changelog, or just hit the playground. 🐝✨\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #reactjs #buildinpublic #webdev",

@@ -7,7 +7,7 @@
   "generated_at": "2026-06-12T07:33:12.808105+00:00",
   "images": [
     {
-      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/daily/2026-06-11/images/twitter.jpg"
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news-archive-2026-10-18/operations/social/news/daily/2026-06-11/images/twitter.jpg"
     }
   ],
   "text": "text endpoint now supports claude fable 5 via bedrock. just pass the model name and get tokens back. also added wikimind to the community showcase. steady growth. 🍄"

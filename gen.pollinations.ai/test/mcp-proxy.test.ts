@@ -149,6 +149,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "pollen-cost",
+                name: "Pollen Cost",
+                description:
+                    "Estimate and compare Pollen prices for models before generating.",
+                url: "https://gen.pollinations.ai/mcp/pollen-cost",
+                pricing: {
+                    description:
+                        "Price lookups are free. Generation you run afterwards uses each model's listed rate.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

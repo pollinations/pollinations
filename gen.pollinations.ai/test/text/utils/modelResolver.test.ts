@@ -649,6 +649,31 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("routes DeepSeek V4.1 Flash 1017 directly to Fireworks with a DeepInfra fallback", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "deepseek/deepseek-v4.1-flash-1017",
+        });
+        const fallback = resolveModelConfig(messages, {
+            model: "deepseek/deepseek-v4.1-flash-1017:deepinfra",
+        });
+
+        expect(primary.options.model).toBe(
+            "accounts/fireworks/models/deepseek-v4p1-flash-1017",
+        );
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(primary.options.provider).toBeUndefined();
+        expect(fallback.options.model).toBe(
+            "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+        );
+        expect(fallback.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+    });
+
     it("routes Muse Glimmer directly to DeepInfra", () => {
         const result = resolveModelConfig(messages, { model: "muse-glimmer" });
 

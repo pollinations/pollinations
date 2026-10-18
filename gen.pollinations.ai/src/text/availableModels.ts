@@ -433,6 +433,18 @@ const models: ModelDefinition[] = [
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
+        name: "deepseek/deepseek-v4.1-flash-1017",
+        config: portkeyConfig[
+            "accounts/fireworks/models/deepseek-v4p1-flash-1017"
+        ],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "deepseek/deepseek-v4.1-flash-1017:deepinfra",
+        config: portkeyConfig["deepseek-ai/DeepSeek-V4.1-Flash-1017"],
+        transform: fireworksThinking,
+    },
+    {
         name: "deepseek/deepseek-v4-flash:deepinfra",
         config: portkeyConfig["deepseek-ai/DeepSeek-V4-Flash-0731"],
         transform: fireworksThinking,

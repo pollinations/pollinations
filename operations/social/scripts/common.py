@@ -433,15 +433,15 @@ PRs:
 
 
 def weekly_digest_input(daily_summaries: List[Dict], week_start: str, week_end: str) -> str:
-    """The weekly digest call's user message: the week's daily summaries and highlights."""
+    """The weekly digest call's user message: the week's daily summaries and their daily items."""
     context = [
         {
             "date": summary.get("date"),
             "title": summary.get("title"),
             "summary": summary.get("summary"),
-            "highlights": [
+            "daily": [
                 {"title": item.get("title"), "text": item.get("text")}
-                for item in summary.get("highlights") or []
+                for item in summary.get("daily") or []
             ],
             "pr_count": summary.get("pr_count", 0),
         }
@@ -661,8 +661,8 @@ def build_daily_summary_artifact(
         generated_at=generated_at,
     )
     # Shown directly on Enter's News page via index.json.
-    artifact["highlights"] = [
-        item for item in summary.get("highlights") or []
+    artifact["daily"] = [
+        item for item in summary.get("daily") or []
         if isinstance(item, dict) and item.get("title") and item.get("text")
     ]
     return artifact

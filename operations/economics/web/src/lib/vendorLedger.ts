@@ -1,5 +1,5 @@
 import type { Data, VendorLedgerRow } from "../types";
-import { fmtNumber } from "./format";
+import { fmtExactNumber as fmtNumber } from "./format";
 import { toUsd } from "./fx";
 
 export function vendorLedgerMonth(row: Pick<VendorLedgerRow, "start">): string {

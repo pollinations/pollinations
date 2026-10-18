@@ -75,10 +75,10 @@ export function hasVisibleAmount(
     );
 }
 
-// Display whole units; preserve nonzero amounts below one without showing decimals.
+// Normal display hides sub-unit amounts; exact inspection keeps the source value.
 export function fmtSmartNumber(value: number): string {
     const magnitude = Math.abs(value);
-    if (magnitude > 0 && magnitude < 1) return "<1";
+    if (magnitude > 0 && magnitude < 1) return "";
     return new Intl.NumberFormat("en-US", {
         maximumFractionDigits: 0,
     }).format(magnitude);
@@ -88,17 +88,14 @@ export function fmtUsd(value: number | null | undefined): string {
     if (value == null || !Number.isFinite(value)) return "–";
     // Monetary sums can land just below a decimal boundary in binary arithmetic.
     const magnitude = fmtSmartNumber(Number(Math.abs(value).toPrecision(12)));
-    if (magnitude.startsWith("<")) {
-        return value < 0
-            ? `−<${"$"}${magnitude.slice(1)}`
-            : `<$${magnitude.slice(1)}`;
-    }
+    if (!magnitude) return "";
     return value < 0 ? `−$${magnitude}` : `$${magnitude}`;
 }
 
 export function fmtNumber(value: number | null | undefined): string {
     if (value == null || !Number.isFinite(value)) return "–";
-    const magnitude = fmtSmartNumber(Math.abs(value));
+    const magnitude = fmtSmartNumber(Number(Math.abs(value).toPrecision(12)));
+    if (!magnitude) return "";
     return value < 0 ? `−${magnitude}` : magnitude;
 }
 

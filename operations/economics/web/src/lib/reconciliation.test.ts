@@ -47,6 +47,29 @@ const cost = (vendor: string, type = "inference"): VendorLedgerRow => ({
 });
 
 describe("shared reconciliation", () => {
+    it("does not request partial current-month usage to build a monthly plan", () => {
+        const data: Data = {
+            vendorLedger: [
+                cost("replicate"),
+                {
+                    ...cost("replicate"),
+                    entry_id: "balance",
+                    type: "balance",
+                    start: "2026-10-05 00:00:00",
+                    end: "",
+                    paid: 100,
+                    resource_sku: "current-balance",
+                },
+            ],
+        };
+        const state = reconciliationState(data, now);
+        const gaps = state.issues.filter((row) =>
+            row.messages.some((message) =>
+                message.includes("usage before the 2026-10-05 balance"),
+            ),
+        );
+        expect(gaps).toHaveLength(0);
+    });
     it("derives GPU mapping gaps from the ledgers and clears them when matched", () => {
         const data: Data = {
             opPollen: [
@@ -498,6 +521,7 @@ describe("Sales ledger reconciliation", () => {
         refunds: 10,
         reversals: 5,
         stripe_fees: 3,
+        dispute_fees: 0,
         net_sales: 85,
         net_after_fees: 82,
         payments: 2,
@@ -535,6 +559,7 @@ describe("Sales ledger reconciliation", () => {
                     refunds: 0,
                     reversals: 0,
                     stripe_fees: 0,
+                    dispute_fees: 0,
                     net_sales: 0,
                     net_after_fees: 0,
                     payments: 0,

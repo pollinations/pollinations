@@ -4511,6 +4511,10 @@ export const audioRoutes = new Hono<Env>()
             supportedEndpoint: "/v1/audio/speech",
         }),
         track("generate.audio"),
+        async (c, next) => {
+            if (c.var.track) c.var.track.streamRequested = false;
+            await next();
+        },
         prepareGenerationRequest,
         audioCache,
         generationAccess,
@@ -4758,6 +4762,10 @@ export const audioRoutes = new Hono<Env>()
             supportedEndpoint: "/v1/audio/transcriptions",
         }),
         track("generate.audio"),
+        async (c, next) => {
+            if (c.var.track) c.var.track.streamRequested = false;
+            await next();
+        },
         prepareGenerationRequest,
         textCache,
         generationAccess,

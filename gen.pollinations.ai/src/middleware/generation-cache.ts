@@ -70,6 +70,7 @@ export function normalizedJsonBody(body: string): string {
         if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
             for (const key of Object.keys(parsed)) {
                 if (key.toLowerCase() === "key") delete parsed[key];
+                if (key.toLowerCase() === "stream") delete parsed[key];
             }
         }
         return stableStringify(parsed);

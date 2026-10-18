@@ -14,7 +14,7 @@ import {
 // community clients still send `?nofeed=true`, and excluding it from the
 // cache key prevents those requests from fragmenting the cache. "no-cache"
 // and "key" are request controls that must never affect the cache key.
-export const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key"];
+export const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key", "stream"];
 export const SAFETY_CACHE_VERSION = "bedrock-input-v1";
 
 function hasActiveSafety(value: string | null | undefined): boolean {

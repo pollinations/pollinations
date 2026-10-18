@@ -767,7 +767,9 @@ describe("docs routes", () => {
                 icon: "bug",
             },
         ]);
-        expect(html).not.toContain("ph-docs-links");
+        expect(html).toContain(
+            ".ph-docs-connected .ph-docs-links { display: none; }",
+        );
         expect(html).toMatch(
             /<script defer src="https:\/\/cdn\.jsdelivr\.net\/npm\/@pollinations\/ui@[^"]+\/dist\/connect\.js" integrity="sha384-[^"]+" crossorigin="anonymous">/,
         );
@@ -792,7 +794,7 @@ describe("docs routes", () => {
         expect(html).not.toContain("connect.js");
     });
 
-    it("omits standalone dashboard and help links from the docs drawer", async () => {
+    it("keeps support links in the drawer without an app key, but omits Dashboard", async () => {
         const ctx = createExecutionContext();
         const response = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs"),
@@ -803,12 +805,12 @@ describe("docs routes", () => {
 
         const html = await response.text();
         for (const href of [
-            "https://enter.pollinations.ai",
             "https://discord.com/channels/885844321461485618/889573359111774329",
             "https://github.com/pollinations/pollinations/issues",
         ]) {
-            expect(html).not.toContain(`href=\\"${href}\\"`);
+            expect(html).toContain(`href=\\"${href}\\"`);
         }
+        expect(html).not.toContain('href=\\"https://enter.pollinations.ai\\"');
     });
 
     it("serves the guide as Markdown when an agent prefers it", async () => {

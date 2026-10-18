@@ -210,7 +210,7 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     ),
 };
 
-// Links appear only in the connected account menu, using packages/ui icons.
+// The account menu includes Dashboard; support stays available before sign-in.
 const DOCS_MENU_LINKS = [
     { href: "https://enter.pollinations.ai", label: "Dashboard", icon: "app" },
     {
@@ -224,6 +224,22 @@ const DOCS_MENU_LINKS = [
         icon: "bug",
     },
 ];
+
+const DOCS_SUPPORT_ICONS: Record<string, string> = {
+    discord: `<svg class="ph-doc-icon" aria-hidden="true" viewBox="0 0 24 24"><path fill="currentColor" d="M20.32 4.37A19.8 19.8 0 0 0 15.36 2.83a.07.07 0 0 0-.08.04c-.21.38-.45.88-.62 1.27a18.27 18.27 0 0 0-5.52 0 12.84 12.84 0 0 0-.63-1.27.08.08 0 0 0-.08-.04A19.74 19.74 0 0 0 3.47 4.37a.07.07 0 0 0-.03.03C.31 9.07-.55 13.61-.13 18.1a.08.08 0 0 0 .03.06 19.9 19.9 0 0 0 6.08 3.07.08.08 0 0 0 .09-.03c.47-.64.88-1.31 1.24-2.02a.08.08 0 0 0-.04-.1 13.08 13.08 0 0 1-1.9-.91.08.08 0 0 1-.01-.13c.13-.1.25-.2.37-.29a.07.07 0 0 1 .08-.01 14.24 14.24 0 0 0 12.38 0 .07.07 0 0 1 .08.01c.12.1.25.2.38.3a.08.08 0 0 1-.01.12 12.22 12.22 0 0 1-1.9.9.08.08 0 0 0-.04.11c.36.7.77 1.38 1.23 2.02a.08.08 0 0 0 .1.03 19.84 19.84 0 0 0 6.08-3.07.08.08 0 0 0 .03-.05c.5-5.2-.84-9.7-3.77-13.71a.06.06 0 0 0-.03-.03ZM8.02 15.37c-1.18 0-2.16-1.08-2.16-2.4 0-1.32.96-2.4 2.16-2.4 1.2 0 2.18 1.09 2.16 2.4 0 1.32-.96 2.4-2.16 2.4Zm7.96 0c-1.18 0-2.16-1.08-2.16-2.4 0-1.32.96-2.4 2.16-2.4 1.2 0 2.18 1.09 2.16 2.4 0 1.32-.95 2.4-2.16 2.4Z" /></svg>`,
+    bug: docsIcon(
+        '<path d="m8 2 1.9 1.9M14.1 3.9 16 2" /><path d="M9 7V6a3 3 0 0 1 6 0v1" /><path d="M12 20c-3.3 0-6-2.7-6-6v-3a6 6 0 0 1 12 0v3c0 3.3-2.7 6-6 6Z" /><path d="M12 20v-9M6.5 9C4.6 8.8 3 7.1 3 5M6 13H2M3 21c0-2.1 1.7-3.9 3.8-4M17.5 9C19.4 8.8 21 7.1 21 5M18 13h4M21 21c0-2.1-1.7-3.9-3.8-4" />',
+    ),
+};
+
+const DOCS_SUPPORT_LINKS_HTML = `<nav class="ph-docs-links" aria-label="Support">${DOCS_MENU_LINKS.filter(
+    ({ icon }) => icon !== "app",
+)
+    .map(
+        ({ href, label, icon }) =>
+            `<a class="ph-docs-link" href="${href}" target="_blank" rel="noopener noreferrer">${DOCS_SUPPORT_ICONS[icon]}<span>${label}</span>${docsIcon('<path d="M7 17 17 7M9 7h8v8" />').replace('class="ph-doc-icon"', 'class="ph-doc-icon ph-docs-link-arrow"')}</a>`,
+    )
+    .join("")}</nav>`;
 
 const DOC_TAG_NAV_ICON_HTML: Record<string, string> = Object.fromEntries(
     Object.entries(DOC_TAG_ICON_HTML).map(([tag, icon]) => [
@@ -431,6 +447,7 @@ function pollinationsDocsHtml(appKey: string): string {
     const sidebarBrand = JSON.stringify(
         `<a href="/docs" class="ph-docs-brand" aria-label="Pollinations Docs"><span class="ph-docs-lockup" aria-hidden="true">${BRAND_LOCKUP_SVG}</span><span class="ph-docs-divider" aria-hidden="true"></span><span class="ph-docs-label">Docs</span></a>`,
     );
+    const sidebarLinks = JSON.stringify(DOCS_SUPPORT_LINKS_HTML);
     const menuLinks = JSON.stringify(DOCS_MENU_LINKS)
         .replaceAll("&", "&amp;")
         .replaceAll('"', "&quot;");
@@ -479,6 +496,7 @@ ${connectScript}
     var authenticate = (${authenticateDocsRequest});
     connect.addEventListener('change', function () {
       var apiKey = connect.apiKey;
+      document.body.classList.toggle('ph-docs-connected', !!apiKey);
       // Moving the element into a rebuilt drawer rehydrates the same key.
       if (apiKey === docsKey) return;
       docsKey = apiKey;
@@ -520,6 +538,9 @@ ${connectScript}
     for (var s = 0; s < sidebars.length; s++) {
       if (!sidebars[s].querySelector('.ph-docs-brand')) {
         sidebars[s].insertAdjacentHTML('afterbegin', ${sidebarBrand});
+      }
+      if (!sidebars[s].querySelector('.ph-docs-links')) {
+        sidebars[s].insertAdjacentHTML('beforeend', ${sidebarLinks});
       }
     }
     var accountSidebar = Array.from(sidebars).find(function (sidebar) {

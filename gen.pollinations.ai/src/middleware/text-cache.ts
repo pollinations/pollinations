@@ -47,10 +47,13 @@ const textCacheAdapter: GenerationCacheAdapter = {
         // Keyless callers still share one public entry with each other, so
         // public cache hits stay public - they just stop including answers
         // that were generated for someone who authenticated.
+        // An agent run additionally gets its own entry per request
+        // (`:run:`), so a repeat runs its tools again; the coordinator still
+        // hands a non-streaming result to its caller through that entry.
         const cacheScope = variables.model?.cacheScope;
         const caller = variables.auth?.apiKey?.id ?? "anonymous";
         const partition = cacheScope
-            ? `${cacheScope}:key:${caller}`
+            ? `${cacheScope}:key:${caller}:run:${c.var.requestId}`
             : `key:${caller}`;
         return generateCacheKey(
             c.req.raw,

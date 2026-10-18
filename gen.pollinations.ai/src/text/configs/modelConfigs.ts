@@ -98,6 +98,18 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "jaredpalmer/kev-4b",
     }),
+    "pplx-decider-v1.1-27b": () =>
+        createVercelAIGatewayModelConfig({
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+            model: "perplexity/pplx-decider-v1.1-27b",
+        }),
+    "perplexity/pplx-decider-v1.1-27b:openrouter": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "perplexity/pplx-decider-v1.1-27b",
+    }),
     "liquid-d1": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
@@ -122,6 +134,18 @@ export const portkeyConfig: PortkeyConfigMap = {
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "openai/gpt-6-luna-decisions",
+    }),
+    "microsoft-decision-1": () =>
+        createVercelAIGatewayModelConfig({
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+            model: "microsoft/microsoft-decision-1",
+        }),
+    "microsoft/microsoft-decision-1:openrouter": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "microsoft/microsoft-decision-1",
     }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
@@ -326,6 +350,16 @@ export const portkeyConfig: PortkeyConfigMap = {
             textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
             "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/DeepSeek-V4-Flash-0731/chat/completions?api-version=2024-12-01-preview",
             { defaultOptions: { reasoning_effort: "high" } },
+        ),
+    // Azure DeepSeek V4.1 rejects remote image URLs.
+    "DeepSeek-V4.1-Flash": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/DeepSeek-V4.1-Flash/chat/completions?api-version=2024-12-01-preview",
+            {
+                defaultOptions: { reasoning_effort: "high" },
+                requiresBase64ImageUrls: true,
+            },
         ),
     // Azure Kimi rejects remote image URLs.
     "Kimi-K2.6": () =>
@@ -607,12 +641,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
 
     // -- Exact-checkpoint text fallbacks -------------------------------------
-    "deepseek-ai/DeepSeek-V4.1-Flash": () =>
-        createDeepInfraModelConfig({
-            model: "deepseek-ai/DeepSeek-V4.1-Flash",
-            // Reasons only when asked; keep the model's reasoning default.
-            defaultOptions: { reasoning_effort: "high" },
-        }),
     "deepseek-ai/DeepSeek-V4-Flash-0731": () =>
         createDeepInfraModelConfig({
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",

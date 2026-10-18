@@ -157,6 +157,10 @@ function parseImageParams(
         delete mergedParams.reference_images;
         delete mergedParams.reference_videos;
         delete mergedParams.reference_audios;
+        // Community video endpoints never receive a size, so the image-only
+        // 16 px floor must not reject an aspect ratio like 16x9.
+        delete mergedParams.width;
+        delete mergedParams.height;
     }
     const parseResult = ImageParamsSchema.safeParse(mergedParams);
     if (!parseResult.success) {

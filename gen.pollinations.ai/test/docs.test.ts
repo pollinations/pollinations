@@ -7,10 +7,13 @@ import { parse as yamlParse } from "yaml";
 import {
     buildCurl,
     fetchOpenApiSpec,
+    renderEndpoint,
     type Spec,
 } from "../scripts/generate-apidocs.ts";
 import { requestExampleErrors } from "../scripts/validate-request-examples.ts";
+import { authenticateDocsRequest } from "../src/docs-client/request-auth.ts";
 import worker from "../src/index.ts";
+import { E2B_PATH, e2bRoutes } from "../src/routes/e2b.ts";
 
 function envWithEnterSchema(schema: unknown): CloudflareBindings {
     return {
@@ -41,8 +44,91 @@ function envWithFailedEnterSchema(): CloudflareBindings {
 }
 
 describe("docs routes", () => {
+    it("adds the connected key only to outbound Pollinations requests", () => {
+        for (const host of ["gen", "enter", "media"]) {
+            const request = new Request(
+                `https://${host}.pollinations.ai/account/key`,
+                {
+                    headers: { Authorization: "Bearer YOUR_API_KEY" },
+                },
+            );
+            authenticateDocsRequest(request, "test-connected-credential");
+            expect(request.headers.get("Authorization")).toBe(
+                "Bearer test-connected-credential",
+            );
+        }
+        const foreignRequest = new Request(
+            "https://gen.pollinations.ai.example.com/account/key",
+            {
+                headers: { Authorization: "Bearer YOUR_API_KEY" },
+            },
+        );
+        expect(() =>
+            authenticateDocsRequest(
+                foreignRequest,
+                "test-connected-credential",
+            ),
+        ).toThrow();
+        expect(foreignRequest.headers.get("Authorization")).toBe(
+            "Bearer YOUR_API_KEY",
+        );
+    });
+
+    it("preserves manual authentication and unauthenticated requests", () => {
+        for (const authorization of [null, "Bearer manually-entered-key"]) {
+            const request = new Request(
+                "https://gen.pollinations.ai/account/key",
+                {
+                    headers: authorization
+                        ? { Authorization: authorization }
+                        : {},
+                },
+            );
+            authenticateDocsRequest(request, "test-connected-credential");
+            expect(request.headers.get("Authorization")).toBe(authorization);
+        }
+        const disconnectedRequest = new Request(
+            "https://gen.pollinations.ai/account/key",
+            {
+                headers: { Authorization: "Bearer YOUR_API_KEY" },
+            },
+        );
+        authenticateDocsRequest(disconnectedRequest, null);
+        expect(disconnectedRequest.headers.get("Authorization")).toBe(
+            "Bearer YOUR_API_KEY",
+        );
+    });
+
     afterEach(() => {
         vi.restoreAllMocks();
+    });
+
+    it("redirects the alternate docs hostname to the registered sign-in host", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.myceli.ai/docs?view=reference"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(response.status).toBe(302);
+        expect(response.headers.get("Location")).toBe(
+            "https://gen.pollinations.ai/docs?view=reference",
+        );
+    });
+
+    it("serves canonical docs through the upstream hostname without a redirect loop", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.myceli.ai/docs", {
+                headers: { "X-Forwarded-Host": "gen.pollinations.ai" },
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Location")).toBeNull();
     });
 
     it("generates valid request examples from the checked-out Gen schema", async () => {
@@ -74,6 +160,42 @@ describe("docs routes", () => {
             "seed=:seed",
         );
         expect(requestExampleErrors(schema)).toEqual([]);
+    });
+
+    it("lists every sandbox route in the API reference, linking E2B for fields", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({ paths: {} }),
+        );
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/open-api/generate-schema",
+            ),
+            envWithEnterSchema({ paths: {} }),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        const schema = (await response.json()) as Spec;
+        const routes = e2bRoutes.routes.filter(
+            ({ method }) => method !== "ALL",
+        );
+        expect(routes.length).toBeGreaterThan(0);
+        for (const { method, path } of routes) {
+            const docPath = `${E2B_PATH}${path.replace(":id", "{id}")}`;
+            const operation = schema.paths[docPath]?.[method.toLowerCase()];
+            expect(operation, `${method} ${docPath}`).toMatchObject({
+                tags: ["Sandboxes API"],
+            });
+            if (path !== "/pricing") {
+                expect(operation.description).toContain(
+                    "https://docs.e2b.dev/api-reference/sandboxes/",
+                );
+            }
+        }
+        expect(schema.paths[`${E2B_PATH}/pricing`].get.security).toEqual([]);
+        expect(schema.paths[`${E2B_PATH}/sandboxes`].post.deprecated).toBe(
+            true,
+        );
     });
 
     it("serves a gen-owned OpenAPI schema and merges public Enter paths only", async () => {
@@ -161,6 +283,13 @@ describe("docs routes", () => {
                 "/api/quests/catalog": {
                     get: { tags: ["✨ Quests"], security: [] },
                 },
+                "/x402/keys": {
+                    get: { tags: ["👤 Account"] },
+                },
+                "/x402/keys/{packKey}": {
+                    get: { tags: ["👤 Account"] },
+                    post: { tags: ["👤 Account"] },
+                },
                 "/api/account/quests/rewards": {
                     get: { tags: ["👤 Account"] },
                 },
@@ -187,14 +316,9 @@ describe("docs routes", () => {
         await waitOnExecutionContext(ctx);
 
         expect(response.status).toBe(200);
-        const schema = (await response.json()) as {
-            info: { description: string };
-            paths: Record<string, unknown>;
-            servers: { url: string }[];
+        const schema = (await response.json()) as Spec & {
             "x-tagGroups": { name: string; tags: string[] }[];
             tags: { name: string; description?: string }[];
-            components: { schemas: Record<string, unknown> };
-            "x-schema-sources": Record<string, boolean>;
         };
 
         expect(schema["x-schema-sources"]).toEqual({
@@ -209,6 +333,23 @@ describe("docs routes", () => {
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
         expect(schema.paths["/realtime"]).toBeDefined();
         expect(schema.paths["/v1/realtime"]).toBeDefined();
+        expect(schema).toHaveProperty([
+            "paths",
+            "/v1/systemone",
+            "post",
+            "requestBody",
+            "content",
+            "application/json",
+            "schema",
+        ]);
+        const jobStatusGet = (
+            schema.paths["/v1/jobs/{id}"] as Record<string, unknown>
+        )?.get as { tags?: string[] } | undefined;
+        expect(jobStatusGet?.tags).toEqual(["Jobs"]);
+        expect(
+            schema["x-tagGroups"].find((group) => group.name === "Generation")
+                ?.tags,
+        ).toContain("Jobs");
         expect(
             schema.paths["/v1/audio/transcriptions/realtime"],
         ).toBeUndefined();
@@ -248,6 +389,9 @@ describe("docs routes", () => {
         expect(schema.paths["/account/agents"]).toBeDefined();
         expect(schema.paths["/account/agents/{id}"]).toBeDefined();
         expect(schema.paths["/quests/catalog"]).toBeDefined();
+        expect(schema.paths["/api/x402/keys"]).toBeDefined();
+        expect(schema.paths["/api/x402/keys/{packKey}"]).toBeDefined();
+        expect(schema.paths["/x402/keys/{packKey}"]).toBeUndefined();
         expect(schema.paths["/api/account/key"]).toBeUndefined();
         expect(schema.paths["/api/account/profile"]).toBeUndefined();
         expect(schema.paths["/api/account/quests"]).toBeUndefined();
@@ -262,19 +406,25 @@ describe("docs routes", () => {
         expect(schema.paths["/{id}/metadata"]).toBeDefined();
         expect(schema.paths["/media"]).toBeDefined();
         expect(schema.paths["/media/{id}"]).toBeDefined();
-        const integrations = schema["x-tagGroups"].find(
-            (group) => group.name === "Integrations",
+        const guides = schema["x-tagGroups"].find(
+            (group) => group.name === "Guides",
+        );
+        const getStarted = schema["x-tagGroups"].find(
+            (group) => group.name === "Get Started",
         );
         const resources = schema["x-tagGroups"].find(
             (group) => group.name === "Resources",
         );
-        expect(integrations?.tags).toContain("Publish a Model");
-        expect(integrations?.tags).not.toContain("Community Models");
+        expect(getStarted?.tags).not.toContain("x402 Prepaid Keys");
+        expect(guides?.tags).not.toContain("x402 Prepaid Keys");
+        expect(resources?.tags).toContain("x402 Prepaid Keys");
+        expect(guides?.tags).toContain("Publish a Model");
+        expect(guides?.tags).not.toContain("Community Models");
         expect(resources?.tags).toContain("Community Models");
         expect(resources?.tags).not.toContain("Publish a Model");
-        expect(integrations?.tags).toContain("Publish an Agent");
-        expect(integrations?.tags).toContain("Coding Harnesses");
-        expect(integrations?.tags).not.toContain("Community Agents");
+        expect(guides?.tags).toContain("Publish an Agent");
+        expect(guides?.tags).toContain("Coding Harnesses");
+        expect(guides?.tags).not.toContain("Community Agents");
         expect(resources?.tags).toContain("Community Agents");
         expect(resources?.tags).not.toContain("Publish an Agent");
         expect(schema.tags.map((tag) => tag.name)).toContain(
@@ -297,6 +447,9 @@ describe("docs routes", () => {
         ).toContain("polli harness dsh on");
         expect(schema.tags.map((tag) => tag.name)).toContain("MCP Servers");
         expect(schema.tags.map((tag) => tag.name)).toContain("Quests");
+        expect(schema.tags.map((tag) => tag.name)).toContain(
+            "x402 Prepaid Keys",
+        );
         expect(schema.tags.map((tag) => tag.name)).toContain("Media Storage");
         expect(schema.tags.map((tag) => tag.name)).toContain("Account");
         expect(schema.tags.map((tag) => tag.name)).not.toContain("🌸 BYOP");
@@ -340,6 +493,9 @@ describe("docs routes", () => {
             | undefined;
         expect(realtimeResponses?.["426"]).toBeDefined();
         expect(realtimeResponses?.["503"]).toBeDefined();
+        expect(
+            renderEndpoint(schema, "get", "/v1/realtime", realtimeGet ?? {}),
+        ).toContain("`101` — WebSocket connection established");
 
         const nativeRealtimeGet = (
             schema.paths["/realtime"] as Record<string, unknown>
@@ -410,6 +566,28 @@ describe("docs routes", () => {
             schema.paths["/quests/catalog"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
         expect(questsCatalogGet?.security).toEqual([]);
+
+        const purchase = schema.paths[
+            "/api/x402/keys/{packKey}"
+        ] as unknown as {
+            servers: { url: string }[];
+            get: { tags: string[]; security: unknown[] };
+            post: { tags: string[]; security: unknown[] };
+        };
+        expect(purchase.servers).toEqual([
+            { url: "https://enter.pollinations.ai" },
+        ]);
+        for (const operation of [purchase.get, purchase.post]) {
+            expect(operation.tags).toEqual(["x402 Prepaid Keys"]);
+            expect(operation.security).toEqual([]);
+        }
+        const amountList = schema.paths["/api/x402/keys"] as unknown as {
+            servers: { url: string }[];
+            get: { tags: string[]; security: unknown[] };
+        };
+        expect(amountList.servers).toEqual(purchase.servers);
+        expect(amountList.get.tags).toEqual(["x402 Prepaid Keys"]);
+        expect(amountList.get.security).toEqual([]);
 
         vi.mocked(fetch).mockResolvedValue(Response.json(schema));
         await expect(
@@ -523,6 +701,9 @@ describe("docs routes", () => {
 
         expect(response.status).toBe(200);
         const html = await response.text();
+        expect(html).toContain(
+            '<script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.74.0/dist/browser/standalone.js" integrity="sha384-VXnKAz61Xwc3tbw1P+KKrUP7YbcsSl1Ik4is5UnogJyw9XEYZ5Ay/T1i0zPYtSZH" crossorigin="anonymous">',
+        );
         expect(html).toContain(".scalar-app .markdown table");
         expect(html).toContain("overflow-x: auto");
         expect(html).toContain(
@@ -534,6 +715,69 @@ describe("docs routes", () => {
         expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
         expect(html).toContain("window.location.hash === '#tag/byop'");
         expect(html).toContain("#tag/connect-user-wallets");
+    });
+
+    it("adds the pinned sign-in button without rendering credentials", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs", {
+                headers: {
+                    Authorization: "Bearer example-private-credential",
+                },
+            }),
+            {
+                ...envWithEnterSchema({}),
+                DOCS_APP_KEY: "pk_docs_test",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        const html = await response.text();
+        expect(response.status).toBe(200);
+        expect(html).toContain(
+            '<polli-connect app-key="pk_docs_test" budget="5" expiry="7">',
+        );
+        expect(html).toMatch(
+            /<script defer src="https:\/\/cdn\.jsdelivr\.net\/npm\/@pollinations\/ui@[^"]+\/dist\/connect\.js" integrity="sha384-[^"]+" crossorigin="anonymous">/,
+        );
+        // The page runs the tested helper's own source.
+        expect(html).toContain(String(authenticateDocsRequest));
+        expect(html).toContain(
+            "window.pollinationsDocsReference = Scalar.createApiReference(",
+        );
+        expect(html).not.toContain("example-private-credential");
+    });
+
+    it("omits sign-in when no docs App Key is configured", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        const html = await response.text();
+        expect(html).not.toContain("<polli-connect");
+        expect(html).not.toContain("connect.js");
+    });
+
+    it("puts the dashboard and help links in the docs drawer", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        const html = await response.text();
+        for (const href of [
+            "https://enter.pollinations.ai",
+            "https://discord.com/channels/885844321461485618/889573359111774329",
+            "https://github.com/pollinations/pollinations/issues",
+        ]) {
+            expect(html).toContain(`href=\\"${href}\\"`);
+        }
     });
 
     it("serves the guide as Markdown when an agent prefers it", async () => {
@@ -769,6 +1013,7 @@ describe("docs routes", () => {
         expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/exa");
         expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/composio");
         expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/computer");
+        expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/machines");
         expect(mcpBody).toContain("### Pollinations MCP");
         expect(mcpBody).toContain("### FFmpeg MCP");
         expect(mcpBody).toContain("### Exa Search MCP");

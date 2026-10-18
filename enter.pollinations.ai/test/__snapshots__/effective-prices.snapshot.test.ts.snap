@@ -1230,6 +1230,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
         "promptAudioTokens": 0.000004,
         "promptCacheWriteTokens": 0.000004,
         "promptCachedTokens": 0.0000004,
+        "promptImageTokens": 0.000004,
         "promptTextTokens": 0.000004,
         "promptVideoTokens": 0.000004,
       },
@@ -1260,6 +1261,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
         "promptAudioTokens": 0.00000422,
         "promptCacheWriteTokens": 0.00000422,
         "promptCachedTokens": 0.000000422,
+        "promptImageTokens": 0.00000422,
         "promptTextTokens": 0.00000422,
         "promptVideoTokens": 0.00000422,
       },
@@ -1837,21 +1839,23 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "liquid/d1": {
     "cost": {
       "completionTextTokens": 0,
-      "promptTextTokens": 0.0000000422,
+      "promptCachedTokens": 0.0000000211,
+      "promptTextTokens": 0.0000000211,
     },
     "price": {
       "completionTextTokens": 0,
-      "promptTextTokens": 0.0000000422,
+      "promptCachedTokens": 0.0000000211,
+      "promptTextTokens": 0.0000000211,
     },
   },
   "liquid/d1:vercel": {
     "cost": {
       "completionTextTokens": 0,
-      "promptTextTokens": 0.00000004,
+      "promptTextTokens": 0.00000002,
     },
     "price": {
       "completionTextTokens": 0,
-      "promptTextTokens": 0.00000004,
+      "promptTextTokens": 0.00000002,
     },
   },
   "lykon/dreamshaper-8-lcm": {
@@ -2452,10 +2456,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "nvidia/asset-harvester": {
     "cost": {
-      "completionImageTokens": 0.07,
+      "completionImageTokens": 0.25,
     },
     "price": {
-      "completionImageTokens": 0.07,
+      "completionImageTokens": 0.25,
     },
   },
   "nvidia/nemotron-3-ultra": {
@@ -3955,16 +3959,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "x-ai/grok-4.20": {
     "cost": {
-      "completionTextTokens": 0.000006,
+      "completionTextTokens": 0.0000025,
       "promptCachedTokens": 0.0000002,
-      "promptImageTokens": 0.000002,
-      "promptTextTokens": 0.000002,
+      "promptImageTokens": 0.00000125,
+      "promptTextTokens": 0.00000125,
     },
     "price": {
-      "completionTextTokens": 0.0000045,
+      "completionTextTokens": 0.000001875,
       "promptCachedTokens": 0.00000015,
-      "promptImageTokens": 0.0000015,
-      "promptTextTokens": 0.0000015,
+      "promptImageTokens": 0.0000009375,
+      "promptTextTokens": 0.0000009375,
     },
   },
   "x-ai/grok-4.20:openrouter:xai-zdr": {
@@ -4056,6 +4060,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "long_context": {
         "completionTextTokens": 0.000012,
         "promptCachedTokens": 0.000001,
+        "promptImageTokens": 0.000004,
         "promptTextTokens": 0.000004,
       },
     },

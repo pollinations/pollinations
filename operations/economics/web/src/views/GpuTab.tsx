@@ -286,6 +286,9 @@ export function GpuTab({
         });
     };
 
+    const pollenTotal = fmtUsd(stats.paidUsd + stats.questUsd);
+    const costTotal = fmtUsd(resourceStats.totalCostUsd);
+
     return (
         <div className="flex flex-col gap-4">
             <PairedStatCards
@@ -294,7 +297,7 @@ export function GpuTab({
                     {
                         label: "Pollen used",
                         total: rows.length
-                            ? `${fmtUsd(stats.paidUsd + stats.questUsd)} total`
+                            ? pollenTotal && `${pollenTotal} total`
                             : "No data",
                         items: [
                             {
@@ -341,7 +344,7 @@ export function GpuTab({
                     {
                         label: "GPU costs",
                         total: resourceRows.length
-                            ? `${fmtUsd(resourceStats.totalCostUsd)} total`
+                            ? costTotal && `${costTotal} total`
                             : "No recorded costs",
                         items: [
                             {

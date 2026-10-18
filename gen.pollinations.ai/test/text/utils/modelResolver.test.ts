@@ -649,21 +649,24 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("routes Nemotron 3.5 Super VL to Together with a DeepInfra FP4 fallback", () => {
+    it("routes Nemotron 3.5 Super VL directly to DeepInfra with a Together fallback", () => {
         const primary = resolveModelConfig(messages, {
             model: "nvidia/nemotron-3.5-super-vl",
         });
         const fallback = resolveModelConfig(messages, {
-            model: "nvidia/nemotron-3.5-super-vl:openrouter:deepinfra-fp4",
+            model: "nvidia/nemotron-3.5-super-vl:openrouter:together",
         });
 
-        expect(primary.options.model).toBe("nvidia/nemotron-3.5-super-vl");
-        expect(primary.options.provider).toEqual({
-            only: ["together"],
-            allow_fallbacks: false,
+        expect(primary.options.model).toBe(
+            "nvidia/NVIDIA-Nemotron-3.5-Super-VL",
+        );
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
         });
+        expect(primary.options.provider).toBeUndefined();
         expect(fallback.options.provider).toEqual({
-            only: ["deepinfra/fp4"],
+            only: ["together"],
             allow_fallbacks: false,
         });
     });

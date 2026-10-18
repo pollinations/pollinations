@@ -946,12 +946,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "nvidia/nemotron-3.5-super-vl",
-        config: portkeyConfig["nemotron-3.5-super-vl-openrouter-together"],
+        config: portkeyConfig["nvidia/NVIDIA-Nemotron-3.5-Super-VL"],
         transform: fireworksThinking,
     },
     {
-        name: "nvidia/nemotron-3.5-super-vl:openrouter:deepinfra-fp4",
-        config: portkeyConfig["nemotron-3.5-super-vl-openrouter-deepinfra-fp4"],
+        name: "nvidia/nemotron-3.5-super-vl:openrouter:together",
+        config: portkeyConfig["nemotron-3.5-super-vl-openrouter-together"],
         transform: fireworksThinking,
     },
     {

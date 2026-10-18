@@ -729,15 +729,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         "nvidia/nemotron-3.5-lightning",
         "coreweave/bf16",
     ),
+    "nvidia/NVIDIA-Nemotron-3.5-Super-VL": () =>
+        createDeepInfraModelConfig({
+            model: "nvidia/NVIDIA-Nemotron-3.5-Super-VL",
+        }),
     "nemotron-3.5-super-vl-openrouter-together": createPinnedOpenRouterConfig(
         "nvidia/nemotron-3.5-super-vl",
         "together",
     ),
-    "nemotron-3.5-super-vl-openrouter-deepinfra-fp4":
-        createPinnedOpenRouterConfig(
-            "nvidia/nemotron-3.5-super-vl",
-            "deepinfra/fp4",
-        ),
     "gemini-3-flash-openrouter-vertex-global":
         createPinnedOpenRouterGeminiConfig(
             "gemini-3-flash-preview",

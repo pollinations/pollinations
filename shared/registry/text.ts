@@ -2714,18 +2714,17 @@ const TEXT_BASE_SERVICES = {
     "nvidia/nemotron-3.5-super-vl": {
         supportedParameters: CHAT_PARAMETERS.openRouterNemotronSuperVl,
         aliases: [],
-        provider: "openrouter",
+        provider: "deepinfra",
         publisher: "NVIDIA",
         category: "text",
         addedDate: new Date("2026-10-15").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Together rates (2026-10-15), including the account's
-            // 5.5% credit-purchase fee.
-            promptTextTokens: perMillion(0.15) * 1.055,
-            promptCachedTokens: perMillion(0.02) * 1.055,
-            completionTextTokens: perMillion(0.5) * 1.055,
+            // DeepInfra direct fp4 list rates (2026-10-18). No gateway fee.
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.08),
+            completionTextTokens: perMillion(0.4),
         },
         title: "NVIDIA Nemotron 3.5 Super VL",
         description:

@@ -1179,21 +1179,25 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4.1-flash": {
+        // Azure accepts this full set (probed 2026-10-15).
         supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: [],
-        provider: "deepinfra",
+        provider: "azure",
         publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2026-09-11").getTime(),
-        priceMultiplier: 1,
-        paidOnly: true,
+        // Azure model catalog and retirement schedule (Preview).
+        // Provider retires this route on 2026-12-15.
+        // 0.5x keeps output at the pre-Azure DeepInfra price.
+        priceMultiplier: 0.5,
+        paidOnly: false,
         perUserRpm: 60,
         cost: {
-            // DeepInfra list rates (2026-10-12); its open-ended 30% discount
-            // is not passed on.
-            promptTextTokens: perMillion(0.2),
+            // Azure Global Standard "V4.1 Flash" catalog rates (2026-10-15).
+            promptTextTokens: perMillion(0.3),
             promptCachedTokens: perMillion(0.006),
-            completionTextTokens: perMillion(0.6),
+            promptImageTokens: perMillion(0.3),
+            completionTextTokens: perMillion(1.2),
         },
         title: "DeepSeek V4.1 Flash",
         description:
@@ -1916,7 +1920,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-10-07").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             // Anthropic global standard rates (prompts up to 100K tokens);
             // 5-minute cache writes.
@@ -2028,7 +2032,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-28").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             // Anthropic global standard rates; 5-minute cache writes.
             promptTextTokens: perMillion(2),
@@ -2138,7 +2142,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         // Anthropic global standard rates; 5-minute cache writes.
         cost: {
             promptTextTokens: perMillion(4),
@@ -2219,7 +2223,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-01").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             // Anthropic global standard rates; 5-minute cache writes.
             promptTextTokens: perMillion(10),

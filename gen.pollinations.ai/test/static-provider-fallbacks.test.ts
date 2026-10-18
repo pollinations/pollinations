@@ -211,6 +211,23 @@ describe("static provider fallbacks", () => {
             });
             expect(fallback.cost).toEqual(primary.cost);
             expect(fallback.costVariants).toEqual(primary.costVariants);
+            for (const servedBy of [primary, fallback]) {
+                const billing = calculateUsageBilling({
+                    model,
+                    usage: {
+                        promptTextTokens: 1000,
+                        promptCachedTokens: 500,
+                        promptCacheWriteTokens: 200,
+                        completionTextTokens: 100,
+                    },
+                    servedBy,
+                    quotedBy: primary,
+                });
+                expect(billing.price.totalPrice).toBeCloseTo(
+                    billing.cost.totalCost * 0.75,
+                    12,
+                );
+            }
             expect(findModelByName(model)?.config()).toMatchObject({
                 provider: "anthropic",
                 model: upstream,
@@ -903,10 +920,10 @@ describe("static provider fallbacks", () => {
     });
 
     it.each([
-        ["deepseek/deepseek-v4.1-flash", 0.000326],
+        ["deepseek/deepseek-v4.1-flash", 0.000546],
         ["deepseek/deepseek-v4.1-flash:fireworks", 0.000546],
     ] as const)(
-        "bills DeepSeek V4.1 Flash at the current quote when %s serves",
+        "bills DeepSeek V4.1 Flash at the Azure quote when %s serves",
         (route, cost) => {
             const billing = calculateUsageBilling({
                 model: "deepseek/deepseek-v4.1-flash",
@@ -920,7 +937,7 @@ describe("static provider fallbacks", () => {
                 },
             });
             expect(billing.cost.totalCost).toBeCloseTo(cost, 12);
-            expect(billing.price.totalPrice).toBeCloseTo(0.000326, 8);
+            expect(billing.price.totalPrice).toBeCloseTo(0.000273, 8);
         },
     );
 

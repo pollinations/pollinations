@@ -75,6 +75,25 @@ Collection endpoints:
   Drive under `2026/<MM Month>/Invoices` as
   `YYYY-MM-DD__OVHcloud__IE<id>.pdf` (invoice date).
 
+## Verified — 2026-10-02 (invoice notices)
+
+- OVHcloud may send two invoices for one service month in a single Gmail
+  thread. Inspect every message in that thread; a thread search result is not
+  one invoice.
+- The notification's `www.ovh.ie/cgi-bin/order/bill.pdf?reference=...` link
+  can return an HTML sign-in page to an unauthenticated downloader. Check the
+  response's content type and PDF structure before archiving it as an invoice.
+  Preserve the original RFC822 notice in the issue month's Supporting Evidence
+  folder, record the PDF as missing, and download the supplier PDF from the
+  matching signed-in manager account.
+- In the manager, verify `Myceli.AI OÜ` and the account identifier, then open
+  `My bills` → `Invoices`. Each invoice row has an actions menu with `See PDF
+  version`; this downloads `Invoice_<reference>.pdf` into Downloads. Verify
+  its PDF structure, invoice number, issue date, and service period before
+  archiving. An invoice issued on October 1 for September service belongs in
+  October's `Invoices` folder by issue date, while its usage belongs to
+  September's vendor ledger.
+
 Known traps:
 
 - OVH API requests require signed headers using the application key, application secret, consumer key, method, URL, body, and OVH server timestamp.

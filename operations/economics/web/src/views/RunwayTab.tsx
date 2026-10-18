@@ -710,7 +710,10 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                 {runway.review.baselineMonth !==
                 monthShift(runway.currentMonth, -1)
                     ? " · Needs monthly review — projected cash and runway unavailable"
-                    : ""}
+                    : runway.fundingProvisional &&
+                        runway.projectedMonthEndCashUsd != null
+                      ? " · Provisional runway — baseline cash/credit split where funding is unverified"
+                      : ""}
             </p>
             <TableScroller scrollRef={tableScrollRef}>
                 <DataTable className="runway-table min-w-max">

@@ -1191,17 +1191,21 @@ describe("buildRunway", () => {
         );
     });
 
-    it("requires credit terms and splits credit expiry from new cash", () => {
+    it("estimates the baseline split until credit terms support depletion", () => {
         const usage = baseline({ vendor: "fal", paid: 0, credit: -310 });
         const snapshot = {
             ...balance("fal", 0, 1000),
             start: "2026-08-01 00:00:00",
         };
+        const provisional = buildRunway([opening()], NOW, [usage, snapshot]);
+        expect(provisional.flags.join(" ")).toContain("expiry not verified");
+        expect(provisional.fundingProvisional).toBe(true);
         expect(
-            buildRunway([opening()], NOW, [usage, snapshot]).rows.find(
-                (r) => r.vendor === "fal",
-            )?.forecastIssue,
-        ).toContain("expiry not verified");
+            provisional.rows.find((r) => r.vendor === "fal")?.creditValues?.[
+                "2026-09:forecast"
+            ],
+        ).toBe(-310);
+        expect(provisional.projectedMonthEndCashUsd).toBe(20000);
         const result = buildRunway([opening()], NOW, [
             usage,
             { ...snapshot, end: "2026-09-15 23:59:59" },
@@ -1555,13 +1559,13 @@ describe("buildRunway", () => {
         expect(runpod?.forecastMethod).toBe("one_off");
     });
 
-    it("refuses a balance-aware projection without a checked balance", () => {
+    it("keeps a provisional cash budget without a checked balance", () => {
         const result = buildRunway([opening()], NOW, [
             baseline({ vendor: "vast", type: "gpu" }),
         ]);
 
         expect(result.flags).toContain(
-            "vast: checked account balance missing; future cash and credits are unknown.",
+            "vast: checked account balance missing; funding depletion is unverified; the plan provisionally repeats the baseline cash/credit split.",
         );
     });
 
@@ -2143,6 +2147,40 @@ describe("monthly plan review regressions", () => {
         expect(result.runwayMonths).toBeNull();
     });
 
+    it.each(["fal", "google"])(
+        "keeps %s prepaid/postpaid estimates independent of current Wise and later funding",
+        (vendor) => {
+            const usage = baseline({ vendor, paid: -100, credit: -210 });
+            const plan = buildRunway([opening()], NOW, [usage]);
+            const changed = buildRunway(
+                [opening(), transaction({ vendor, amount: -900 })],
+                NOW,
+                [
+                    usage,
+                    {
+                        ...balance(vendor, 500, 1000),
+                        start: "2026-08-18 00:00:00",
+                        end: "2027-12-31",
+                    },
+                ],
+            );
+            for (const result of [plan, changed]) {
+                const row = result.rows.find((row) => row.vendor === vendor);
+                for (const month of ["2026-08", "2026-09", "2026-10"]) {
+                    expect(row?.values[`${month}:forecast`]).toBe(-100);
+                    expect(row?.creditValues?.[`${month}:forecast`]).toBe(-210);
+                }
+                expect(result.fundingProvisional).toBe(true);
+                expect(result.projectedMonthEndCashUsd).toBe(19900);
+                expect(result.runwayMonths).not.toBeNull();
+            }
+            expect(
+                changed.columns.filter((c) => c.kind === "forecast"),
+            ).toEqual(plan.columns.filter((c) => c.kind === "forecast"));
+            expect(changed.currentCashUsd).toBe(19100);
+        },
+    );
+
     it("never spends a full month twice against a mid-month credit snapshot", () => {
         const usage = baseline({ vendor: "fal", paid: 0, credit: -310 });
         const late = {
@@ -2152,12 +2190,19 @@ describe("monthly plan review regressions", () => {
         };
         const incomplete = buildRunway([opening()], NOW, [usage, late]);
         const row = incomplete.rows.find((row) => row.vendor === "fal");
-        expect(row?.forecastIssue).toContain(
+        expect(row?.forecastIssue).toBeUndefined();
+        expect(incomplete.flags.join(" ")).toContain(
             "opening balance for 2026-08-01 is missing (balance checked 2026-08-18)",
         );
-        expect(incomplete.projectedMonthEndCashUsd).toBeNull();
-        expect(incomplete.runwayMonths).toBeNull();
-        expect(row?.assumptions["2026-08:forecast"]).toBeUndefined();
+        expect(incomplete.fundingProvisional).toBe(true);
+        expect(incomplete.projectedMonthEndCashUsd).toBe(20000);
+        expect(incomplete.runwayMonths).not.toBeNull();
+        expect(row?.values["2026-08:forecast"]).toBe(0);
+        expect(row?.creditValues?.["2026-08:forecast"]).toBe(-310);
+        expect(row?.creditValues?.["2026-09:forecast"]).toBe(-310);
+        expect(row?.assumptions["2026-08:forecast"]?.[0].evidence).toContain(
+            "provisional baseline cash/credit split",
+        );
         const openingBalance = {
             ...late,
             entry_id: "opening-funding",

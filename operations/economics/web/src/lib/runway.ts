@@ -152,6 +152,7 @@ export type RunwayResult = {
     forecastTimingNote: string | null;
     currentCashUsd: number | null;
     review: RunwayReview;
+    fundingProvisional: boolean;
     projectedMonthEndCashUsd: number | null;
     runwayMonths: number | null;
     runwayExhaustedMonth: string | null;
@@ -190,6 +191,7 @@ function addAmount(map: Map<string, number>, key: string, amount: number) {
 type BalanceAwareForecast = {
     facts: DerivedForecastFact[];
     flags: string[];
+    fundingGaps?: string[];
     notices?: string[];
 };
 
@@ -414,11 +416,15 @@ function balanceAwareForecasts(
     now: Date,
     review: RunwayReview,
     privateRules?: Readonly<Record<string, PrivateForecastRule>>,
-): BalanceAwareForecast & { issues: Map<string, string> } {
+): BalanceAwareForecast & {
+    issues: Map<string, string>;
+    fundingGaps: string[];
+} {
     const groups = new Map<string, VendorLedgerRow[]>();
     const facts: DerivedForecastFact[] = [];
     const flags: string[] = [];
     const issues = new Map<string, string>();
+    const fundingGaps: string[] = [];
     const notices: string[] = [];
     const currentMonth = monthShift(review.baselineMonth, 1);
     const previousMonth = review.baselineMonth;
@@ -470,10 +476,11 @@ function balanceAwareForecasts(
             })),
         );
         flags.push(...result.flags);
+        fundingGaps.push(...(result.fundingGaps ?? []));
         notices.push(...(result.notices ?? []));
         if (result.flags.length) issues.set(row.vendor, result.flags.join(" "));
     }
-    return { facts, flags: [...new Set(flags)], notices, issues };
+    return { facts, flags: [...new Set(flags)], fundingGaps, notices, issues };
 }
 
 function accountBalanceForecasts(
@@ -527,7 +534,7 @@ function accountBalanceForecasts(
         rates.set(category, rate);
     }
     const facts: DerivedForecastFact[] = [];
-    const flags: string[] = [];
+    const fundingGaps: string[] = [];
     const notices: string[] = [];
     const add = (
         category: string,
@@ -551,8 +558,8 @@ function accountBalanceForecasts(
             recorded_at: now.toISOString(),
         });
     };
-    // Only opening-day funding can support a full-month cash/credit split.
-    // An October check can document September, but cannot stand in for Oct 1.
+    // Only opening-day funding supports depletion calculations. Without it,
+    // budget the baseline cash/credit split without consuming a later snapshot.
     const openingDate = `${currentMonth}-01`;
     const balance = providerAccountBalanceRows(
         { vendorLedger: cloudRows },
@@ -567,10 +574,10 @@ function accountBalanceForecasts(
         ([, rate]) => rate.timing !== "direct" && rate.total > 0,
     );
     if (fundedRates.length && !balance) {
-        flags.push(
+        fundingGaps.push(
             latestBalanceDate
-                ? `${vendor}: opening balance for ${openingDate} is missing (balance checked ${latestBalanceDate}); the full-month cash/credit split is unknown.`
-                : `${vendor}: checked account balance missing; future cash and credits are unknown.`,
+                ? `${vendor}: opening balance for ${openingDate} is missing (balance checked ${latestBalanceDate}); funding depletion is unverified; the plan provisionally repeats the baseline cash/credit split.`
+                : `${vendor}: checked account balance missing; funding depletion is unverified; the plan provisionally repeats the baseline cash/credit split.`,
         );
     } else if (
         fundedRates.length &&
@@ -579,8 +586,8 @@ function accountBalanceForecasts(
         !balance.expiryAssumed &&
         (balance.creditBalanceUsd ?? 0) > 0
     ) {
-        flags.push(
-            `${vendor}: credit expiry not verified; future cash and credits are unknown.`,
+        fundingGaps.push(
+            `${vendor}: credit expiry not verified; funding depletion is unverified; the plan provisionally repeats the baseline cash/credit split.`,
         );
     }
     const anchor = balance?.balanceAsOf ?? openingDate;
@@ -614,7 +621,7 @@ function accountBalanceForecasts(
             .reduce((sum, [, rate]) => sum + rate.total, 0);
         let newCash = 0;
         let credits = 0;
-        if (flags.length === 0 && totalRate > 0) {
+        if (fundingGaps.length === 0 && totalRate > 0) {
             for (let day = 1; day <= days; day++) {
                 const beforeCredits = lots.reduce(
                     (sum, lot) => sum + lot.creditUsd,
@@ -632,34 +639,37 @@ function accountBalanceForecasts(
         }
         for (const [category, rate] of rates) {
             if (!activeInMonth(month, rate)) continue;
-            const evidence = `${baselineMonth} complete-month usage baseline ${fmtNumber(rate.total)}; ${rate.timing}; full-month budget using opening balance checked ${anchor}${balance?.expiryAssumed ? "; approved snapshot expiry assumption" : ""}`;
+            const funding =
+                rate.timing === "direct"
+                    ? "direct monthly budget"
+                    : fundingGaps.length
+                      ? "provisional baseline cash/credit split; funding depletion unverified"
+                      : `full-month budget using opening balance checked ${anchor}${balance?.expiryAssumed ? "; approved snapshot expiry assumption" : ""}`;
+            const evidence = `${baselineMonth} complete-month usage baseline ${fmtNumber(rate.total)}; ${rate.timing}; ${funding}`;
             if (rate.timing === "direct" || rate.total === 0) {
                 add(category, month, rate.total, 0, evidence);
                 continue;
             }
-            if (flags.length) continue;
             const share = rate.total / totalRate;
+            const cash = fundingGaps.length ? rate.paid : newCash * share;
+            const credit = fundingGaps.length
+                ? rate.total - rate.paid
+                : credits * share;
             // Credits are consumption in the service month; postpaid cash settles
             // the following month. Existing prepaid cash is consumed by lots,
             // never added to the bank-payment forecast a second time.
             add(
                 category,
                 month,
-                rate.timing === "prepaid" ? newCash * share : 0,
-                credits * share,
+                rate.timing === "prepaid" ? cash : 0,
+                credit,
                 evidence,
             );
             if (rate.timing === "postpaid")
-                add(
-                    category,
-                    monthShift(month, 1),
-                    newCash * share,
-                    0,
-                    evidence,
-                );
+                add(category, monthShift(month, 1), cash, 0, evidence);
         }
     }
-    return { facts, flags, notices };
+    return { facts, flags: [], fundingGaps, notices };
 }
 
 function balancesInUsd(balances: Map<string, number>, month: string) {
@@ -964,7 +974,11 @@ export function buildRunway(
         review,
         privateRules,
     );
-    flags.push(...ruleBased.flags, ...balanceAware.flags);
+    flags.push(
+        ...ruleBased.flags,
+        ...balanceAware.flags,
+        ...balanceAware.fundingGaps,
+    );
     const forecastCreditsByMonth = new Map<string, Map<string, number>>();
     const effectiveForecastFacts = [...ruleBased.facts, ...balanceAware.facts];
 
@@ -1716,6 +1730,7 @@ export function buildRunway(
         forecastTimingNote,
         currentCashUsd,
         review,
+        fundingProvisional: balanceAware.fundingGaps.length > 0,
         projectedMonthEndCashUsd,
         runwayMonths,
         runwayExhaustedMonth,

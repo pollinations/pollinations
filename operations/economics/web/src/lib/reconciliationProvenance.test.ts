@@ -385,3 +385,13 @@ it.each([0, 0.19])(
         expect(difference[0].amountUsd).toBeCloseTo(1 - amount);
     },
 );
+
+it("retains funding gaps in reconciliation when the baseline split supports a provisional plan", () => {
+    const state = reconciliationState(
+        { privateConfig: blankConfig(), vendorLedger: [cost("fal")] },
+        now,
+    );
+    expect(state.issues.flatMap((issue) => issue.messages).join(" ")).toContain(
+        "funding depletion is unverified",
+    );
+});

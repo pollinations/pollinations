@@ -264,6 +264,20 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "deepseek/deepseek-v4.1-flash-1017": {
+        "deepseek/deepseek-v4.1-flash-1017:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            addedDate: new Date("2026-10-18").getTime(),
+            cost: {
+                // DeepInfra list rates (2026-10-18); its 51% promotion is not
+                // passed on.
+                promptTextTokens: perMillion(0.2),
+                promptCachedTokens: perMillion(0.006),
+                completionTextTokens: perMillion(0.6),
+            },
+        },
+    },
     "minimax/minimax-m2.7": {
         "minimax/minimax-m2.7:openrouter:minimax": {
             supportedParameters: CHAT_PARAMETERS.openRouterMinimax27FirstParty,

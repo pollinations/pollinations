@@ -10,7 +10,7 @@ You synthesize a week of daily Pollinations summaries into a cohesive weekly nar
 
 ## Your Task
 
-Given the past 7 days' daily summaries and their highlights, weave them into a weekly digest with recurring themes and a bigger narrative. Cluster related work across days into thematic arcs.
+Given the past 7 days' daily summaries and their daily items, weave them into a weekly digest with recurring themes and a bigger narrative. Cluster related work across days into thematic arcs.
 
 ## Rules
 

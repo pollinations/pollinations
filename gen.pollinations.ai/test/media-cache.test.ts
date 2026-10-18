@@ -8,6 +8,7 @@ import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
+import type { AuthVariables } from "@/middleware/auth.ts";
 import type { GenerationCacheVariables } from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { audioCache, imageCache } from "@/middleware/media-cache.ts";
@@ -24,7 +25,10 @@ const testLog = {
 
 type TestEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables & GenerationCacheVariables;
+    Variables: LoggerVariables &
+        RequestIdVariables &
+        GenerationCacheVariables &
+        Partial<AuthVariables>;
 };
 
 type MediaCache = typeof imageCache;
@@ -35,6 +39,20 @@ function createMediaCacheApp(cache: MediaCache, contentType: string) {
         .use("*", async (c, next) => {
             c.set("log", testLog);
             c.set("requestId", "test-request");
+            // Install the auth variable the way the real auth middleware does
+            // so the cache key picks up caller identity.
+            const token = /Bearer (.+)/.exec(
+                c.req.header("authorization") ?? "",
+            )?.[1];
+            if (token) {
+                c.set("auth", {
+                    apiKey: { id: token },
+                    requireUser: () => {
+                        throw new Error("not used in cache tests");
+                    },
+                    requireModelAccess: () => {},
+                });
+            }
             await next();
         })
         .get(
@@ -181,7 +199,7 @@ describe("media cache", () => {
         },
         { label: "audio", cache: audioCache, contentType: "audio/mpeg" },
     ])(
-        "serves cached $label responses before auth while misses still require auth",
+        "serves cached $label responses to their caller while other callers still require auth",
         async ({ cache, contentType }) => {
             const media = createMediaCacheApp(cache, contentType);
             const env = createMediaCacheEnv();
@@ -196,18 +214,46 @@ describe("media cache", () => {
             );
             expect(await consumeAndWait(warm)).toBe("origin:1");
 
+            const cachedSameCaller = await dispatch(
+                media.app,
+                "/media/cached-hit",
+                {
+                    headers: { Authorization: "Bearer test-key" },
+                },
+                env,
+            );
+            expect(await consumeAndWait(cachedSameCaller)).toBe("origin:1");
+            expect(cachedSameCaller.response.status).toBe(200);
+            expect(cachedSameCaller.response.headers.get("X-Cache")).toBe(
+                "HIT",
+            );
+            expect(cachedSameCaller.response.headers.get("Cache-Control")).toBe(
+                IMMUTABLE_CACHE_CONTROL,
+            );
+
             const cachedNoAuth = await dispatch(
                 media.app,
                 "/media/cached-hit",
                 undefined,
                 env,
             );
-            expect(await consumeAndWait(cachedNoAuth)).toBe("origin:1");
-            expect(cachedNoAuth.response.status).toBe(200);
-            expect(cachedNoAuth.response.headers.get("X-Cache")).toBe("HIT");
-            expect(cachedNoAuth.response.headers.get("Cache-Control")).toBe(
-                IMMUTABLE_CACHE_CONTROL,
+            expect(await consumeAndWait(cachedNoAuth)).toBe(
+                "Authentication required",
             );
+            expect(cachedNoAuth.response.status).toBe(401);
+
+            const cachedOtherCaller = await dispatch(
+                media.app,
+                "/media/cached-hit",
+                {
+                    headers: { Authorization: "Bearer other-key" },
+                },
+                env,
+            );
+            expect(await consumeAndWait(cachedOtherCaller)).toBe(
+                "Authentication required",
+            );
+            expect(cachedOtherCaller.response.status).toBe(401);
             expect(media.originHits).toBe(1);
 
             const missNoAuth = await dispatch(
@@ -239,7 +285,9 @@ describe("media cache", () => {
         const cached = await dispatch(
             media.app,
             "/media/case-insensitive",
-            undefined,
+            {
+                headers: { Authorization: "Bearer test-key" },
+            },
             env,
         );
         expect(await consumeAndWait(cached)).toBe("origin:1");
@@ -380,7 +428,14 @@ describe("media cache", () => {
         expect(await consumeAndWait(warm)).toBe("origin:1");
         expect(bucket.putCount).toBe(1);
 
-        const cached = await dispatch(media.app, path, undefined, env);
+        const cached = await dispatch(
+            media.app,
+            path,
+            {
+                headers: { Authorization: "Bearer test-key" },
+            },
+            env,
+        );
         expect(await consumeAndWait(cached)).toBe("origin:1");
         expect(cached.response.headers.get("X-Cache")).toBe("HIT");
         expect(media.originHits).toBe(1);

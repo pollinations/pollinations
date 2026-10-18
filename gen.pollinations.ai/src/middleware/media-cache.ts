@@ -3,6 +3,7 @@
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import { generateCacheKey } from "@/utils/media-cache.ts";
+import type { AuthVariables } from "./auth.ts";
 import {
     createGenerationCache,
     createGenerationExecutionCache,
@@ -39,7 +40,8 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
         storage: "media",
         label: config.label,
         async getKey(c) {
-            const variables = c.var as typeof c.var & Partial<ModelVariables>;
+            const variables = c.var as typeof c.var &
+                Partial<AuthVariables & ModelVariables>;
             const cacheUrl = new URL(c.var.generationRequestUrl ?? c.req.url);
             if (c.var.generationCacheBody) {
                 cacheUrl.searchParams.set(
@@ -50,11 +52,18 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
                     ),
                 );
             }
+            // The cache is read before access checks, so the caller's identity
+            // has to be part of the key: an entry generated for a paying API
+            // key must never be served to another caller (#17522). Entries
+            // generated without a key stay in one shared public bucket, so
+            // public cache hits remain public.
+            const caller = variables.auth?.apiKey?.id;
             return generateCacheKey(
                 cacheUrl,
                 c.req.header(SAFETY_HEADER_NAME),
                 getRequiredSafetyFeatures(variables.model),
                 variables.model?.definition.cacheVersion,
+                caller && `key:${caller}`,
             );
         },
         async get(c, cacheKey) {

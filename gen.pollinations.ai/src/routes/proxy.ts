@@ -966,6 +966,8 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the selected model.",
                 "",
+                "Cached responses are scoped to the API key that generated them; requests with a different key generate again.",
+                "",
                 `**Available models:** ${imageModelNames}. \`${DEFAULT_IMAGE_MODEL}\` is the default.`,
                 "",
                 "Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).",

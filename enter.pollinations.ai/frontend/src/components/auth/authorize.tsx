@@ -464,6 +464,10 @@ export function Authorize() {
                 url.hash = hash.toString();
             }
             window.location.href = url.toString();
+        } else if (window.history.length > 1) {
+            // Unvalidated redirect: return to the page that opened this one
+            // without sending anything to the redirect URL.
+            window.history.back();
         } else {
             navigate({ to: "/" });
         }

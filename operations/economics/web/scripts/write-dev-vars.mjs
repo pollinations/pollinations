@@ -17,15 +17,20 @@ if (!sessionLine)
     );
 const reader = process.env.TINYBIRD_ECONOMICS_READ_TOKEN;
 if (!reader) throw new Error("Missing staging TINYBIRD_ECONOMICS_READ_TOKEN");
+const drive = process.env.ECONOMICS_GOOGLE_DRIVE_CREDENTIALS;
+if (!drive)
+    throw new Error(
+        "Missing ECONOMICS_GOOGLE_DRIVE_CREDENTIALS in the encrypted local staging configuration",
+    );
+const driveJson = JSON.stringify(JSON.parse(drive)).replaceAll("'", "\\u0027");
 await writeFile(
     temporary,
     [
         sessionLine,
         ...existing
             .split("\n")
-            .filter((line) =>
-                /^ECONOMICS_GOOGLE_DRIVE_CREDENTIALS=/.test(line),
-            ),
+            .filter((line) => line.startsWith("TINYBIRD_DEPLOYMENT_ID=")),
+        `ECONOMICS_GOOGLE_DRIVE_CREDENTIALS='${driveJson}'`,
         `TINYBIRD_ECONOMICS_READ_TOKEN=${JSON.stringify(reader)}`,
         'POLLINATIONS_AUTH_BASE_URL="http://localhost:3000"',
         'TINYBIRD_POLLEN_PIPE="economics_pollen_usage_snapshot_api"',

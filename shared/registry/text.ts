@@ -1560,6 +1560,8 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-10-18").getTime(),
         priceMultiplier: 1,
         paidOnly: false,
+        // One shared free key: 16 concurrent requests, 540 per minute.
+        perUserRpm: 30,
         cost: {
             promptTextTokens: perMillion(0),
             completionTextTokens: perMillion(0),

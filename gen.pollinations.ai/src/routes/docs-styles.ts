@@ -24,26 +24,6 @@ ${POLLI_UI_TOKENS_CSS}
     outline: 2px solid var(--polli-color-focus); outline-offset: -2px;
 }
 
-/* Dashboard, account and help links: Scalar's own row colours, so they read
-   like the rest of the drawer; the arrow says they open another site. */
-.ph-docs-links {
-    display: flex; flex-direction: column; gap: 1px; flex-shrink: 0;
-    padding: 8px var(--scalar-sidebar-padding, 9px) 12px;
-    border-top: 1px solid var(--scalar-sidebar-border-color);
-}
-.ph-docs-link {
-    display: flex; align-items: center; gap: 8px; padding: 6px 8px;
-    border-radius: var(--scalar-radius, 6px);
-    font-size: var(--scalar-font-size-3, 14px);
-    color: var(--scalar-sidebar-color-2); text-decoration: none;
-}
-.ph-docs-link:hover {
-    background: var(--scalar-sidebar-item-hover-background);
-    color: var(--scalar-sidebar-item-hover-color, var(--scalar-sidebar-color-1));
-}
-.ph-docs-link .ph-doc-icon { width: 14px; height: 14px; flex: 0 0 14px; }
-.ph-docs-link .ph-docs-link-arrow { margin-left: auto; opacity: 0.6; }
-.ph-docs-connected .ph-docs-links { display: none; }
 .ph-docs-account { display: none; }
 .t-doc__sidebar > .ph-docs-account {
     display: block; flex-shrink: 0; padding: 12px 8px;

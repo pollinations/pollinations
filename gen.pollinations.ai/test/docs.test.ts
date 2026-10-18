@@ -737,6 +737,37 @@ describe("docs routes", () => {
         expect(html).toContain(
             '<polli-connect app-key="pk_docs_test" budget="5" expiry="7" hide-buy-pollen menu-side="top"',
         );
+        let menuLinks: string | null = null;
+        await new HTMLRewriter()
+            .on("polli-connect", {
+                element(element) {
+                    menuLinks = element.getAttribute("menu-links");
+                },
+            })
+            .transform(new Response(html))
+            .text();
+        // HTMLRewriter exposes raw entities; decode as a browser attribute does.
+        const decodedLinks = (menuLinks ?? "")
+            .replaceAll("&quot;", '"')
+            .replaceAll("&amp;", "&");
+        expect(JSON.parse(decodedLinks)).toEqual([
+            {
+                href: "https://enter.pollinations.ai",
+                label: "Dashboard",
+                icon: "app",
+            },
+            {
+                href: "https://discord.com/channels/885844321461485618/889573359111774329",
+                label: "Need help?",
+                icon: "discord",
+            },
+            {
+                href: "https://github.com/pollinations/pollinations/issues",
+                label: "Found a bug?",
+                icon: "bug",
+            },
+        ]);
+        expect(html).not.toContain("ph-docs-links");
         expect(html).toMatch(
             /<script defer src="https:\/\/cdn\.jsdelivr\.net\/npm\/@pollinations\/ui@[^"]+\/dist\/connect\.js" integrity="sha384-[^"]+" crossorigin="anonymous">/,
         );
@@ -761,7 +792,7 @@ describe("docs routes", () => {
         expect(html).not.toContain("connect.js");
     });
 
-    it("puts the dashboard and help links in the docs drawer", async () => {
+    it("omits standalone dashboard and help links from the docs drawer", async () => {
         const ctx = createExecutionContext();
         const response = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs"),
@@ -776,7 +807,7 @@ describe("docs routes", () => {
             "https://discord.com/channels/885844321461485618/889573359111774329",
             "https://github.com/pollinations/pollinations/issues",
         ]) {
-            expect(html).toContain(`href=\\"${href}\\"`);
+            expect(html).not.toContain(`href=\\"${href}\\"`);
         }
     });
 

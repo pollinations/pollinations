@@ -30,17 +30,38 @@ describe("connectMenuOptions", () => {
         ).toEqual({ showBuyPollen: false, menuSide: "top", menuLinks: links });
     });
 
-    test("rejects invalid links and executable URLs", () => {
+    test("ignores malformed menu configuration without blocking sign-in", () => {
         for (const value of [
+            "{",
             "{}",
             "[null]",
+            '[{"label":"Help","href":"/help"}]',
             '[{"label":"Bad","href":"https://example.com","icon":"unknown"}]',
             '[{"label":"Bad","href":"javascript:alert(1)"}]',
         ]) {
-            expect(() =>
+            expect(
                 connectMenuOptions(element({ "menu-links": value })),
-            ).toThrow();
+            ).toEqual({
+                showBuyPollen: true,
+                menuSide: "bottom",
+                menuLinks: [],
+            });
         }
+    });
+
+    test("preserves valid links when other entries are invalid", () => {
+        const valid = { label: "Help", href: "https://example.com/help" };
+        expect(
+            connectMenuOptions(
+                element({
+                    "menu-links": JSON.stringify([
+                        null,
+                        { label: "Bad", href: "javascript:alert(1)" },
+                        valid,
+                    ]),
+                }),
+            ).menuLinks,
+        ).toEqual([valid]);
     });
 });
 

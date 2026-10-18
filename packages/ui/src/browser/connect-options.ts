@@ -53,29 +53,26 @@ export function connectOptions(
 export function connectMenuOptions(
     element: Pick<Element, "getAttribute">,
 ): Pick<AppUserMenuProps, "showBuyPollen" | "menuSide" | "menuLinks"> {
-    const links: unknown = JSON.parse(
-        element.getAttribute("menu-links") || "[]",
-    );
-    if (
-        !Array.isArray(links) ||
-        links.some(
-            (link) =>
-                !link ||
-                typeof link.label !== "string" ||
-                typeof link.href !== "string" ||
-                !/^https?:\/\//.test(link.href) ||
-                (link.icon !== undefined &&
-                    !Object.hasOwn(MENU_LINK_ICONS, link.icon)),
-        )
-    ) {
-        throw new Error(
-            "menu-links must contain labels, HTTP(S) hrefs, and supported icons",
-        );
+    let links: unknown = [];
+    try {
+        links = JSON.parse(element.getAttribute("menu-links") || "[]");
+    } catch {
+        // Optional menu configuration must not prevent sign-in from mounting.
     }
     return {
         showBuyPollen: element.getAttribute("hide-buy-pollen") === null,
         menuSide:
             element.getAttribute("menu-side") === "top" ? "top" : "bottom",
-        menuLinks: links,
+        menuLinks: Array.isArray(links)
+            ? links.filter(
+                  (link) =>
+                      link &&
+                      typeof link.label === "string" &&
+                      typeof link.href === "string" &&
+                      /^https?:\/\//.test(link.href) &&
+                      (link.icon === undefined ||
+                          Object.hasOwn(MENU_LINK_ICONS, link.icon)),
+              )
+            : [],
     };
 }

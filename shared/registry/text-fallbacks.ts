@@ -28,8 +28,9 @@ export const TEXT_FALLBACKS = {
         // Same Liquid backend; this covers gateway failures, not Liquid outages.
         "liquid/d1:vercel": {
             provider: "vercel",
+            // Vercel AI Gateway list price for the Liquid endpoint.
             cost: {
-                promptTextTokens: perMillion(0.04),
+                promptTextTokens: perMillion(0.02),
                 completionTextTokens: perMillion(0),
             },
         },
@@ -166,6 +167,7 @@ export const TEXT_FALLBACKS = {
                     long_context: {
                         promptTextTokens: perMillion(4),
                         promptCachedTokens: perMillion(1),
+                        promptImageTokens: perMillion(4),
                         completionTextTokens: perMillion(12),
                     },
                 },
@@ -174,7 +176,7 @@ export const TEXT_FALLBACKS = {
                     long_context: {
                         label: "Long context (≥200K)",
                         description:
-                            "xAI doubles text, cached, and output rates for the whole request.",
+                            "xAI doubles text, cached, image, and output rates for the whole request.",
                     },
                 },
                 "<200K context",
@@ -857,6 +859,7 @@ export const TEXT_FALLBACKS = {
                         promptCachedTokens: perMillion(0.4) * 1.055,
                         promptCacheWriteTokens: perMillion(4.0) * 1.055,
                         promptAudioTokens: perMillion(4.0) * 1.055,
+                        promptImageTokens: perMillion(4.0) * 1.055,
                         promptVideoTokens: perMillion(4.0) * 1.055,
                         completionTextTokens: perMillion(18.0) * 1.055,
                     },
@@ -866,7 +869,7 @@ export const TEXT_FALLBACKS = {
                     long_context: {
                         label: "Long context (200K+)",
                         description:
-                            "At least 200,000 prompt tokens; text, cached, cache-write, audio, video, and output rates increase while image input stays at its separately advertised base price.",
+                            "At least 200,000 prompt tokens; text, cached, cache-write, image, audio, video, and output rates increase.",
                     },
                 },
                 "<200K context",

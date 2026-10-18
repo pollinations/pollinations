@@ -77,11 +77,12 @@ export function fmtRunwayTableValue(value: number | null | undefined): string {
 
 const SUMMARY_HELP: Record<string, string[]> = {
     Expenses: [
-        "Main amount: costs funded with cash.",
+        "Main amount: cash-funded costs for the month, not necessarily paid that month.",
         "Below cash: additional costs covered by provider credits.",
     ],
     "Cash change": [
         "Actual: bank inflows minus outflows, including exchange-rate changes.",
+        "Expand to see how revenue and expenses reconcile to cash for past months.",
         "Plan: expected cash increase or decrease that month.",
     ],
     "Cash balance": [
@@ -440,6 +441,74 @@ function SummaryRow({
     );
 }
 
+const CASH_BRIDGE_LINES = [
+    [
+        "revenue",
+        "Revenue after fees & refunds",
+        "Revenue recorded for this month, before expenses.",
+    ],
+    [
+        "expenses",
+        "Cash-funded expenses",
+        "Costs assigned to this month. Provider credit usage is excluded.",
+    ],
+    [
+        "receiptsDifference",
+        "Sales → bank receipts",
+        "Bank receipts minus recorded revenue: settlement timing, processor balances and other receipts. This difference does not identify which sales each payout settles.",
+    ],
+    [
+        "paymentsDifference",
+        "Costs → bank payments",
+        "Bank payments minus recorded expenses: prepayments, bills paid in another month and other payment differences.",
+    ],
+    [
+        "otherCash",
+        "Other cash movements",
+        "Bank movements outside revenue and expenses, such as deposits and returned deposits.",
+    ],
+    [
+        "exchangeRates",
+        "Exchange-rate changes",
+        "Change in the USD value of cash held in other currencies; no payment took place.",
+    ],
+] as const;
+
+export function CashBridgeRows({ columns }: { columns: RunwayColumn[] }) {
+    const { fmtNumber } = useAmountDisplay();
+    return (
+        <>
+            {CASH_BRIDGE_LINES.map(([key, label, help]) => (
+                <TableRow
+                    key={key}
+                    className="runway-detail text-theme-text-muted"
+                >
+                    <TableCell className="sticky left-0 z-10 whitespace-nowrap bg-surface-opaque pl-8">
+                        {label}
+                        <CalculationInfo
+                            label={label}
+                            lines={[
+                                help,
+                                "Past months only; missing coverage stays unresolved in reconciliation.",
+                            ]}
+                        />
+                    </TableCell>
+                    {columns.map((column) => (
+                        <TableCell
+                            key={column.id}
+                            align="right"
+                            numeric
+                            className={MONTH_COLUMN_CLASS}
+                        >
+                            {fmtNumber(column.cashBridge?.[key])}
+                        </TableCell>
+                    ))}
+                </TableRow>
+            ))}
+        </>
+    );
+}
+
 export function RunwayTab({ data, year }: { data: Data; year: string }) {
     const {
         fmtNumber: fmtRunwayTableValue,
@@ -473,6 +542,7 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
         [runway.columns, year, data.planningError],
     );
     const [expensesExpanded, setExpensesExpanded] = useState(true);
+    const [cashBridgeExpanded, setCashBridgeExpanded] = useState(false);
     const tableScrollRef = useRef<HTMLDivElement>(null);
     useLayoutEffect(() => {
         const scroller = tableScrollRef.current;
@@ -523,6 +593,7 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
         <div className="flex flex-col gap-4">
             {!data.planningError && (
                 <PairedStatCards
+                    compact
                     layout="rows"
                     cards={[
                         {
@@ -619,12 +690,16 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                             />
                                         </span>
                                     ),
-                                    value: runwayPeriodText({
-                                        capped: runway.runwayCapped,
-                                        exhaustedMonth:
-                                            runway.runwayExhaustedMonth,
-                                        lastMonth: last?.month ?? null,
-                                    }),
+                                    value: (
+                                        <span className="text-base">
+                                            {runwayPeriodText({
+                                                capped: runway.runwayCapped,
+                                                exhaustedMonth:
+                                                    runway.runwayExhaustedMonth,
+                                                lastMonth: last?.month ?? null,
+                                            })}
+                                        </span>
+                                    ),
                                     tone: runwayTone,
                                 },
                             ],
@@ -638,7 +713,7 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                           : "Snapshot date unavailable",
                                       detail: (
                                           <Gauge
-                                              className="mt-4 w-full"
+                                              className="mt-2 w-full"
                                               left={balances.paid_balance}
                                               leftLabel="Paid"
                                               right={balances.quest_balance}
@@ -704,17 +779,6 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                     ]}
                 />
             )}
-            <p className="text-sm text-theme-text-muted">
-                Plan baseline: {fmtPeriod(runway.review.baselineMonth)} ·
-                Reviewed {fmtPeriod(runway.review.asOf)}
-                {runway.review.baselineMonth !==
-                monthShift(runway.currentMonth, -1)
-                    ? " · Needs monthly review — projected cash and runway unavailable"
-                    : runway.fundingProvisional &&
-                        runway.projectedMonthEndCashUsd != null
-                      ? " · Provisional runway — baseline cash/credit split where funding is unverified"
-                      : ""}
-            </p>
             <TableScroller scrollRef={tableScrollRef}>
                 <DataTable className="runway-table min-w-max">
                     <TableHead>
@@ -748,6 +812,10 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                     <TableBody>
                         <SummaryRow
                             label="Cash change"
+                            expanded={cashBridgeExpanded}
+                            onToggle={() =>
+                                setCashBridgeExpanded((current) => !current)
+                            }
                             columns={columns}
                             value={(column) =>
                                 column.forecastComplete === false
@@ -755,6 +823,9 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                     : column.netUsd
                             }
                         />
+                        {cashBridgeExpanded && (
+                            <CashBridgeRows columns={columns} />
+                        )}
                         <SummaryRow
                             label="Cash balance"
                             columns={columns}

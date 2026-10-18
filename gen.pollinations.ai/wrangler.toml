@@ -18,6 +18,7 @@ services = [
     { binding = "ENTER", service = "pollinations-enter" },
     { binding = "POLLINATIONS_MCP", service = "pollinations-mcp" },
     { binding = "ASK_JEV_MCP", service = "ask-jev-mcp" },
+    { binding = "IMAGE_BUDGET_MCP", service = "image-budget-mcp" },
     { binding = "FFMPEG_MCP", service = "pollinations-ffmpeg-mcp" },
     { binding = "EXA_MCP", service = "pollinations-exa-mcp" },
     { binding = "COMPOSIO_MCP", service = "pollinations-composio-mcp" },
@@ -116,6 +117,10 @@ service = "pollinations-mcp"
 [[env.production.services]]
 binding = "ASK_JEV_MCP"
 service = "ask-jev-mcp"
+
+[[env.production.services]]
+binding = "IMAGE_BUDGET_MCP"
+service = "image-budget-mcp"
 
 [[env.production.services]]
 binding = "FFMPEG_MCP"
@@ -246,6 +251,10 @@ binding = "ASK_JEV_MCP"
 service = "ask-jev-mcp-staging"
 
 [[env.staging.services]]
+binding = "IMAGE_BUDGET_MCP"
+service = "image-budget-mcp-staging"
+
+[[env.staging.services]]
 binding = "FFMPEG_MCP"
 service = "pollinations-ffmpeg-mcp-staging"
 
@@ -350,6 +359,10 @@ service = "pollinations-mcp"
 [[env.test.services]]
 binding = "ASK_JEV_MCP"
 service = "ask-jev-mcp"
+
+[[env.test.services]]
+binding = "IMAGE_BUDGET_MCP"
+service = "image-budget-mcp"
 
 [[env.test.services]]
 binding = "FFMPEG_MCP"

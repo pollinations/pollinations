@@ -43,6 +43,7 @@ export type McpPricingInfo = {
 export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "ASK_JEV_MCP"
+    | "IMAGE_BUDGET_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -101,6 +102,19 @@ const COMPOSIO_MCP_PRICING = {
 } as const;
 
 export const MCP_SERVERS = [
+    {
+        id: "image-budget",
+        name: "Image Budget",
+        description:
+            "Compare live fixed per-image prices and plan image batches within a Pollen budget without generating.",
+        binding: "IMAGE_BUDGET_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Free. Reads the model catalog; does not generate or spend Pollen.",
+            rates: [],
+        },
+    },
     {
         id: "pollinations",
         name: "Pollinations",

@@ -22,6 +22,18 @@ test("lists the MCP servers exposed through Gen", async () => {
     expect(await response.json()).toEqual({
         data: [
             {
+                id: "image-budget",
+                name: "Image Budget",
+                description:
+                    "Compare live fixed per-image prices and plan image batches within a Pollen budget without generating.",
+                url: "https://gen.pollinations.ai/mcp/image-budget",
+                pricing: {
+                    description:
+                        "Free. Reads the model catalog; does not generate or spend Pollen.",
+                    rates: [],
+                },
+            },
+            {
                 id: "pollinations",
                 name: "Pollinations",
                 description:
@@ -184,48 +196,60 @@ test("routes Pollinations MCP with caller authorization for downstream billing",
     });
 });
 
-test("routes Ask Jev with caller authorization without an extra MCP debit", async () => {
-    const { key, userId } = await createTestApiKey({
-        user: { tierBalance: 1 },
-    });
-    const payload = {
-        jsonrpc: "2.0",
-        id: 1,
-        method: "tools/call",
-        params: {
-            name: "jev_decide",
-            arguments: {
-                state: "The invoice is paid.",
-                questions: {
-                    paid: { type: "noul", instructions: "Is it paid?" },
+test.for(["ask-jev", "image-budget"])(
+    "routes %s with caller authorization without an extra MCP debit",
+    async (serverId) => {
+        const { key, userId } = await createTestApiKey({
+            user: { tierBalance: 1 },
+        });
+        const payload = {
+            jsonrpc: "2.0",
+            id: 1,
+            method: "tools/call",
+            params:
+                serverId === "image-budget"
+                    ? {
+                          name: "image_budget",
+                          arguments: { images: 100, budget: 1 },
+                      }
+                    : {
+                          name: "jev_decide",
+                          arguments: {
+                              state: "The invoice is paid.",
+                              questions: {
+                                  paid: {
+                                      type: "noul",
+                                      instructions: "Is it paid?",
+                                  },
+                              },
+                          },
+                      },
+        };
+        const response = await SELF.fetch(
+            `https://gen.pollinations.ai/mcp/${serverId}`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    Cookie: "session=private",
+                    "Content-Type": "application/json",
                 },
+                body: JSON.stringify(payload),
             },
-        },
-    };
-    const response = await SELF.fetch(
-        "https://gen.pollinations.ai/mcp/ask-jev",
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${key}`,
-                Cookie: "session=private",
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-        },
-    );
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
-        pathname: "/",
-        authorization: `Bearer ${key}`,
-        cookie: null,
-        payload,
-    });
-    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
-        tierBalance: 1,
-        packBalance: 0,
-    });
-});
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
+            pathname: "/",
+            authorization: `Bearer ${key}`,
+            cookie: null,
+            payload,
+        });
+        expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+            tierBalance: 1,
+            packBalance: 0,
+        });
+    },
+);
 
 test("routes Machines with caller authorization without an extra MCP debit", async () => {
     const { key, userId } = await createTestApiKey({
@@ -262,7 +286,7 @@ test("routes Machines with caller authorization without an extra MCP debit", asy
     });
 });
 
-test.for(["pollinations", "ask-jev", "machines"])(
+test.for(["pollinations", "ask-jev", "machines", "image-budget"])(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(

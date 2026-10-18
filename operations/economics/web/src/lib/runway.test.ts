@@ -366,6 +366,67 @@ describe("buildRunway", () => {
         ).toBe(true);
     });
 
+    it("explains revenue to cash with settlements, payments, deposits and FX without counting provider credits", () => {
+        const bank = [
+            opening(1000),
+            opening(100, { entry_id: "eur-opening", currency: "EUR" }),
+            transaction({
+                entry_id: "payout",
+                date: "2026-07-20",
+                vendor: "stripe",
+                category: "revenue",
+                amount: 150,
+            }),
+            transaction({
+                entry_id: "payment",
+                date: "2026-07-20",
+                amount: -40,
+            }),
+            transaction({
+                entry_id: "deposit-return",
+                date: "2026-07-20",
+                vendor: "deel",
+                category: "balance_sheet",
+                amount: 100,
+            }),
+        ];
+        const result = buildRunway(
+            bank,
+            NOW,
+            [baseline({ paid: -30, credit: -500 })],
+            undefined,
+            [stripeSales()],
+        );
+        const july = result.columns.find((c) => c.id === "2026-07:actual");
+        if (!july?.cashBridge || july.netUsd == null)
+            throw new Error("July cash bridge missing");
+        expect(july.cashBridge).toMatchObject({
+            revenue: 95,
+            expenses: -30,
+            receiptsDifference: 55,
+            paymentsDifference: -10,
+            otherCash: 100,
+        });
+        expect(july.cashBridge?.exchangeRates).toBeCloseTo(-1.01, 8);
+        expect(
+            Object.values(july.cashBridge).reduce(
+                (sum, value) => sum + value,
+                0,
+            ),
+        ).toBeCloseTo(july.netUsd, 8);
+        expect(july.netUsd).toBeCloseTo(208.99, 8);
+        expect(july.totalCreditUsd).toBe(-500);
+        expect(
+            result.columns
+                .filter((c) => c.kind === "forecast")
+                .every((c) => c.cashBridge === undefined),
+        ).toBe(true);
+        const missingSales = buildRunway(bank, NOW, [baseline({ paid: -30 })]);
+        expect(
+            missingSales.columns.find((c) => c.id === july.id)?.cashBridge,
+        ).toBeUndefined();
+    });
+
     it("bridges Stripe activity to bank payouts without changing sales or cash", () => {
         const result = buildRunway(
             [
@@ -388,6 +449,7 @@ describe("buildRunway", () => {
         if (!july) throw new Error("July column missing");
         // Revenue is known; this fixture has no expense coverage.
         expect(july.operatingResultUsd).toBeNull();
+        expect(july.cashBridge).toBeUndefined();
         // Revenue is what entered Stripe in the month; the Wise payout is
         // cash only, so no settlement line bridges the two.
         expect(

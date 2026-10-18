@@ -6,6 +6,7 @@ import { automaticForecastRule, forecastLineRule } from "../lib/forecastTerms";
 import { buildRunway, type RunwayMatrixRow } from "../lib/runway";
 import type { Data, StripeSalesRow } from "../types";
 import {
+    CashBridgeRows,
     fmtRunwayTableValue,
     fmtRunwayUsd,
     groupRunwayVendors,
@@ -222,6 +223,39 @@ describe("RunwayTab labels", () => {
             }),
         );
         expect(html).toContain("Revenue calculation info");
+        expect(html).not.toContain("Plan baseline:");
+        expect(html).not.toContain("Provisional runway —");
+        expect(html).toMatch(/aria-expanded="false"[^>]*>.*?Cash change/s);
+        const bridgeHtml = renderToStaticMarkup(
+            createElement(
+                "table",
+                {},
+                createElement(
+                    "tbody",
+                    {},
+                    createElement(CashBridgeRows, {
+                        columns: [
+                            {
+                                ...actual,
+                                cashBridge: {
+                                    revenue: 120,
+                                    expenses: -50,
+                                    receiptsDifference: 30,
+                                    paymentsDifference: -10,
+                                    otherCash: 5,
+                                    exchangeRates: 2,
+                                },
+                            },
+                            forecast,
+                        ],
+                    }),
+                ),
+            ),
+        );
+        expect(bridgeHtml).toContain("Sales → bank receipts");
+        expect(bridgeHtml).toContain("Costs → bank payments");
+        expect(bridgeHtml).toContain("Other cash movements");
+        expect(bridgeHtml).toContain("Exchange-rate changes");
         expect(html).not.toContain("Revenue · net after deductions");
         expect(html).toContain("Customer payments");
         expect(html).toContain("Stripe fees");

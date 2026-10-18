@@ -138,6 +138,14 @@ export type RunwayColumn = {
     operatingResultUsd: number | null;
     netUsd: number | null;
     runningCashUsd: number | null;
+    cashBridge?: {
+        revenue: number;
+        expenses: number;
+        receiptsDifference: number;
+        paymentsDifference: number;
+        otherCash: number;
+        exchangeRates: number;
+    };
 };
 
 export type RunwayResult = {
@@ -1657,28 +1665,60 @@ export function buildRunway(
             projectedCash += netUsd ?? 0;
             runningCashUsd = projectedCash;
         }
+        const operatingResultUsd =
+            actual &&
+            (totalExpensesUsd == null ||
+                !stripeSalesUsable ||
+                !relevantStripeSales.some(
+                    (sale) => sale.month === column.month,
+                ))
+                ? null
+                : rows
+                      .filter((row) => row.category !== "balance_sheet")
+                      .reduce(
+                          (sum, row) => sum + (row.values[column.id] ?? 0),
+                          0,
+                      );
+        let cashBridge: RunwayColumn["cashBridge"];
+        if (
+            actual &&
+            monthHasBank &&
+            bankCurrenciesUsable &&
+            !missingSales &&
+            operatingResultUsd != null &&
+            totalExpensesUsd != null
+        ) {
+            const revenue = operatingResultUsd - totalExpensesUsd;
+            let receipts = 0;
+            let payments = 0;
+            let otherCash = 0;
+            for (const [key, amount] of cashActualByMonth.get(column.month) ??
+                []) {
+                const category = key.split("\u0000")[0];
+                if (category === "revenue") receipts += amount;
+                else if (category === "balance_sheet") otherCash += amount;
+                else payments += amount;
+            }
+            // Explanation only: cash totals still come directly from Bank.
+            cashBridge = {
+                revenue,
+                expenses: totalExpensesUsd,
+                receiptsDifference: receipts - revenue,
+                paymentsDifference: payments - totalExpensesUsd,
+                otherCash,
+                exchangeRates: fxRevaluationValues[column.id] ?? 0,
+            };
+        }
         return {
             ...column,
+            ...(cashBridge ? { cashBridge } : {}),
             provisional:
                 actual &&
                 (column.kind === "current" || missingCosts || missingSales),
             forecastComplete: column.kind !== "forecast" || planComplete,
             totalExpensesUsd,
             totalCreditUsd,
-            operatingResultUsd:
-                actual &&
-                (totalExpensesUsd == null ||
-                    !stripeSalesUsable ||
-                    !relevantStripeSales.some(
-                        (sale) => sale.month === column.month,
-                    ))
-                    ? null
-                    : rows
-                          .filter((row) => row.category !== "balance_sheet")
-                          .reduce(
-                              (sum, row) => sum + (row.values[column.id] ?? 0),
-                              0,
-                          ),
+            operatingResultUsd,
             netUsd,
             runningCashUsd,
         };

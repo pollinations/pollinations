@@ -842,10 +842,26 @@ export function buildRunway(
             // Cash-only movements (registry `cashOnly` on the vendor or on
             // its cash rule) change cash without a table line, like Stripe
             // payouts.
+            // An explicit reviewed allocation moves only the expense, never
+            // the bank movement or its USD valuation. Do not infer it from an invoice date.
+            const expenseMonth =
+                category !== "revenue" && category !== "balance_sheet"
+                    ? (row.evidence.match(
+                          /(?:^|;\s*)expense_month=(\d{4}-(?:0[1-9]|1[0-2]))(?=;|$)/,
+                      )?.[1] ?? month)
+                    : month;
             const monthValues =
-                actualByMonth.get(month) ?? new Map<string, number>();
+                actualByMonth.get(expenseMonth) ?? new Map<string, number>();
             addAmount(monthValues, key, amountUsd);
-            actualByMonth.set(month, monthValues);
+            actualByMonth.set(expenseMonth, monthValues);
+            if (expenseMonth !== month) {
+                const paymentMonthValues =
+                    actualByMonth.get(month) ?? new Map<string, number>();
+                if (!paymentMonthValues.has(key))
+                    paymentMonthValues.set(key, 0);
+                actualByMonth.set(month, paymentMonthValues);
+                observedMonths.add(expenseMonth);
+            }
             identities.set(key, { category, vendor: lineItem });
         }
         observedMonths.add(month);

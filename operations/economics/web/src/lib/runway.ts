@@ -23,7 +23,7 @@ import {
     RUNWAY_REVIEW,
     type RunwayReview,
 } from "./forecastTerms";
-import { fmtNumber } from "./format";
+import { fmtExactNumber as fmtNumber } from "./format";
 import { canConvertToUsd, toUsd } from "./fx";
 import { monthShift, WINDOW_START } from "./months";
 import {
@@ -151,7 +151,7 @@ export type RunwayResult = {
     latestTransactionDate: string | null;
     forecastTimingNote: string | null;
     currentCashUsd: number | null;
-    currentPlanChangeUsd: number | null;
+    review: RunwayReview;
     projectedMonthEndCashUsd: number | null;
     runwayMonths: number | null;
     runwayExhaustedMonth: string | null;
@@ -372,7 +372,6 @@ function ruleBasedForecasts(
                 vendor === "stripe sales" && !amounts
                     ? salesForecastRows(
                           stripeSales,
-                          [],
                           month,
                           new Date(`${review.asOf}T23:59:59Z`),
                           privateRules?.["stripe sales|revenue"]
@@ -400,7 +399,7 @@ function ruleBasedForecasts(
                     amount.currency,
                     rule.method,
                     amount.sourceMonth
-                        ? `Calculated from verified ${amount.sourceMonth} ${STRIPE_LINES.includes(vendor) ? "Stripe activity" : "bank total"}${projected && privateRules?.["stripe sales|revenue"]?.salesStoppedFrom ? "; closed sales streams use recorded activity only" : ""}`
+                        ? `Calculated from verified ${amount.sourceMonth} ${STRIPE_LINES.includes(vendor) ? "Stripe activity" : "bank total"}${projected && privateRules?.["stripe sales|revenue"]?.salesStoppedFrom ? "; closed sales streams are not projected" : ""}`
                         : "Reviewed fixed amount",
                 );
             }
@@ -436,7 +435,7 @@ function balanceAwareForecasts(
         const provider = resolveProvider(row.vendor);
         const relevant = rows.some(
             (r) =>
-                (r.start.slice(0, 7) === previousMonth ||
+                (r.start.slice(0, 7) >= previousMonth ||
                     isVendorLedgerBalanceRow(r)) &&
                 automaticForecastRule(
                     r.vendor,
@@ -552,16 +551,26 @@ function accountBalanceForecasts(
             recorded_at: now.toISOString(),
         });
     };
+    // Only opening-day funding can support a full-month cash/credit split.
+    // An October check can document September, but cannot stand in for Oct 1.
+    const openingDate = `${currentMonth}-01`;
     const balance = providerAccountBalanceRows(
         { vendorLedger: cloudRows },
-        new Date(`${review.asOf}T23:59:59Z`),
+        new Date(`${openingDate}T23:59:59Z`),
     ).find((row) => row.active && row.balanceStatus === "checked");
+    const latestBalanceDate = cloudRows
+        .filter(isVendorLedgerBalanceRow)
+        .map((row) => row.start.slice(0, 10))
+        .sort()
+        .at(-1);
     const fundedRates = [...rates].filter(
         ([, rate]) => rate.timing !== "direct" && rate.total > 0,
     );
     if (fundedRates.length && !balance) {
         flags.push(
-            `${vendor}: checked account balance missing; future cash and credits are unknown.`,
+            latestBalanceDate
+                ? `${vendor}: opening balance for ${openingDate} is missing (balance checked ${latestBalanceDate}); the full-month cash/credit split is unknown.`
+                : `${vendor}: checked account balance missing; future cash and credits are unknown.`,
         );
     } else if (
         fundedRates.length &&
@@ -574,10 +583,7 @@ function accountBalanceForecasts(
             `${vendor}: credit expiry not verified; future cash and credits are unknown.`,
         );
     }
-    // Budget a complete baseline month against reviewed funding. The snapshot
-    // stays dated; this is a funding estimate, not reconstructed opening cash
-    // or current-month actual usage.
-    const anchor = balance?.balanceAsOf ?? `${currentMonth}-01`;
+    const anchor = balance?.balanceAsOf ?? openingDate;
     const lots = balance?.fundingLots.map((lot) => ({ ...lot })) ?? [];
     for (const [category, rate] of rates) {
         if (
@@ -617,9 +623,7 @@ function accountBalanceForecasts(
                 newCash += consumeBalanceLots(
                     lots,
                     totalRate / days,
-                    month === currentMonth && day < Number(anchor.slice(8, 10))
-                        ? anchor
-                        : `${month}-${String(day).padStart(2, "0")}`,
+                    `${month}-${String(day).padStart(2, "0")}`,
                 );
                 credits +=
                     beforeCredits -
@@ -628,7 +632,7 @@ function accountBalanceForecasts(
         }
         for (const [category, rate] of rates) {
             if (!activeInMonth(month, rate)) continue;
-            const evidence = `${baselineMonth} complete-month usage baseline ${fmtNumber(rate.total)}; ${rate.timing}; full-month budget using balance checked ${anchor}, not an opening-balance reconstruction${balance?.expiryAssumed ? "; approved snapshot expiry assumption" : ""}`;
+            const evidence = `${baselineMonth} complete-month usage baseline ${fmtNumber(rate.total)}; ${rate.timing}; full-month budget using opening balance checked ${anchor}${balance?.expiryAssumed ? "; approved snapshot expiry assumption" : ""}`;
             if (rate.timing === "direct" || rate.total === 0) {
                 add(category, month, rate.total, 0, evidence);
                 continue;
@@ -675,7 +679,13 @@ export function buildRunway(
     review: RunwayReview = RUNWAY_REVIEW,
 ): RunwayResult {
     const currentMonth = now.toISOString().slice(0, 7);
+    const priorMonth = monthShift(currentMonth, -1);
+    const reviewIsCurrent = review.baselineMonth === priorMonth;
     const flags: string[] = [];
+    if (!reviewIsCurrent)
+        flags.push(
+            `Plan baseline ${review.baselineMonth} needs review for ${currentMonth}; close ${priorMonth} before relying on projected cash or runway. Monthly rules have not been changed automatically.`,
+        );
     const actualByMonth = new Map<string, Map<string, number>>();
     const cashActualByMonth = new Map<string, Map<string, number>>();
     const forecastByMonth = new Map<string, Map<string, number>>();
@@ -1039,6 +1049,7 @@ export function buildRunway(
             ),
     );
     const forecastUsable =
+        reviewIsCurrent &&
         invalidForecastFacts === 0 &&
         stripeForecastUsable &&
         balanceAware.flags.length === 0 &&
@@ -1279,12 +1290,7 @@ export function buildRunway(
                             ["Gross customer payments", "gross_sales", 1],
                             ["Stripe fees", "stripe_fees", -1],
                         ] as const)
-                      : identity.vendor === "stripe refunds"
-                        ? ([
-                              ["Refunds", "refunds", -1],
-                              ["Disputes & chargebacks", "reversals", -1],
-                          ] as const)
-                        : [];
+                      : [];
             const details =
                 stripeSalesUsable || stripeForecastUsable
                     ? detailFields.map(([label]) => ({
@@ -1298,7 +1304,6 @@ export function buildRunway(
                         ? identity.vendor === "stripe sales"
                             ? salesForecastRows(
                                   latestStripeSales,
-                                  [],
                                   column.month,
                                   new Date(`${review.asOf}T23:59:59Z`),
                                   privateRules?.["stripe sales|revenue"]
@@ -1325,9 +1330,7 @@ export function buildRunway(
                                     (row[field] +
                                         (field === "stripe_fees"
                                             ? -row.dispute_fees
-                                            : field === "reversals"
-                                              ? row.dispute_fees
-                                              : 0)),
+                                            : 0)),
                                 row.currency,
                                 column.month,
                             ),
@@ -1548,25 +1551,15 @@ export function buildRunway(
             : null;
     const currentCashUsd = cashBalanceByMonth.get(currentMonth) ?? null;
     const currentPlan = forecastByMonth.get(currentMonth);
-    const currentPlanChangeUsd =
-        forecastUsable && currentPlan
-            ? [...currentPlan.values()].reduce((sum, value) => sum + value, 0)
+    const planComplete = forecastUsable && unmodeledRows.length === 0;
+    // Closed months use recorded cash. Current Wise movements never offset
+    // this full-month plan; a stale review cannot silently replace closed months.
+    const openingPlanCash = cashBalanceByMonth.get(priorMonth);
+    const projectedMonthEndCashUsd =
+        planComplete && currentPlan && openingPlanCash != null
+            ? openingPlanCash +
+              [...currentPlan.values()].reduce((sum, value) => sum + value, 0)
             : null;
-    // The plan starts from the reviewed closed month's cash. New Wise entries
-    // update recorded cash only; they never offset or rewrite planned months.
-    let projectedMonthEndCashUsd =
-        cashBalanceByMonth.get(review.baselineMonth) ?? null;
-    for (const month of monthRange(
-        monthShift(review.baselineMonth, 1),
-        currentMonth,
-    )) {
-        const plan = forecastByMonth.get(month);
-        projectedMonthEndCashUsd =
-            forecastUsable && plan && projectedMonthEndCashUsd != null
-                ? projectedMonthEndCashUsd +
-                  [...plan.values()].reduce((sum, value) => sum + value, 0)
-                : null;
-    }
 
     let projectedCash = projectedMonthEndCashUsd;
     let projectionGap = false;
@@ -1655,9 +1648,7 @@ export function buildRunway(
             provisional:
                 actual &&
                 (column.kind === "current" || missingCosts || missingSales),
-            forecastComplete:
-                column.kind !== "forecast" ||
-                (forecastUsable && unmodeledRows.length === 0),
+            forecastComplete: column.kind !== "forecast" || planComplete,
             totalExpensesUsd,
             totalCreditUsd,
             operatingResultUsd:
@@ -1724,7 +1715,7 @@ export function buildRunway(
         latestTransactionDate: latestTransactionDate ?? null,
         forecastTimingNote,
         currentCashUsd,
-        currentPlanChangeUsd,
+        review,
         projectedMonthEndCashUsd,
         runwayMonths,
         runwayExhaustedMonth,

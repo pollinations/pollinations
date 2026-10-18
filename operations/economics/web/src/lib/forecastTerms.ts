@@ -347,10 +347,7 @@ export function forecastLineRule(
         return { method: "one_off", paymentTiming: "direct" };
     }
     const rule = FORECAST_RULE_BY_LINE[key(vendor, category)];
-    if (!rule)
-        return category === "balance_sheet"
-            ? { method: "one_off", paymentTiming: "direct" }
-            : null;
+    if (!rule) return null;
     const result = { ...rule, ...privateRule(vendor, category, privateRules) };
     if (result.fixedAmounts?.length)
         return { ...result, method: "fixed", automaticUsage: false };

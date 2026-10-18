@@ -129,7 +129,7 @@ const balance = (vendor: string, paid: number, credit = 0): VendorLedgerRow =>
         entry_id: `${vendor}-balance`,
         vendor,
         type: "balance",
-        start: "2026-08-22 00:00:00",
+        start: "2026-08-01 00:00:00",
         end: "",
         paid,
         credit,
@@ -215,7 +215,7 @@ describe("buildRunway", () => {
                 {
                     ...balance("e2b", 0, 25099.9),
                     account_id: "da33283c-f2bf-414e-87e3-ab8e20cffc46",
-                    start: "2026-10-02 00:00:00",
+                    start: "2026-10-01 00:00:00",
                     recorded_at: "2026-10-02 00:00:00.000",
                 },
             ],
@@ -618,10 +618,11 @@ describe("buildRunway", () => {
                     "2026-06:actual"
                 ];
             expect(amount("Stripe fees")).toBe(0);
-            expect(amount("Refunds")).toBe(0);
-            expect(amount("Disputes & chargebacks")).toBe(
-                recoveredPrincipal + 60,
-            );
+            expect(
+                rows.find((row) => row.vendor === "stripe refunds")?.values[
+                    "2026-06:actual"
+                ],
+            ).toBe(recoveredPrincipal + 60);
             expect(
                 rows.reduce(
                     (sum, row) => sum + (row.values["2026-06:actual"] ?? 0),
@@ -931,7 +932,7 @@ describe("buildRunway", () => {
         const result = buildRunway([opening(), transaction()], NOW, [
             baseline({ paid: -620 }),
             cloud(),
-            { ...balance("google", 0), start: "2026-08-23 00:00:00" },
+            { ...balance("google", 0), start: "2026-08-01 00:00:00" },
         ]);
         const row = result.rows.find((r) => r.vendor === "google");
         expect(row?.values["2026-08:forecast"]).toBe(-620);
@@ -975,7 +976,7 @@ describe("buildRunway", () => {
             [
                 baseline({ vendor: "replicate" }),
                 cloud({ vendor: "replicate" }),
-                { ...balance("replicate", 10), start: "2026-08-23 00:00:00" },
+                { ...balance("replicate", 10), start: "2026-08-01 00:00:00" },
             ],
         );
         const row = result.rows.find((r) => r.vendor === "replicate");
@@ -986,7 +987,7 @@ describe("buildRunway", () => {
         expect(result.currentCashUsd).toBe(19950);
     });
 
-    it("pins the reviewed plan across imports and calendar rollover", () => {
+    it("pins monthly spending across imports and flags calendar rollover for review", () => {
         const now = new Date("2026-10-18T12:00:00Z");
         const reviewed = [
             baseline({
@@ -995,7 +996,7 @@ describe("buildRunway", () => {
                 end: "2026-10-01 00:00:00",
                 paid: -300,
             }),
-            { ...balance("replicate", 100), start: "2026-10-05 00:00:00" },
+            { ...balance("replicate", 100), start: "2026-10-01 00:00:00" },
         ];
         const sales = [stripeSales({ month: "2026-09" })];
         const before = calculateRunway(
@@ -1066,8 +1067,19 @@ describe("buildRunway", () => {
             sales,
         );
         expect(
-            november.columns.find((c) => c.id === "2026-11:forecast"),
-        ).toEqual(before.columns.find((c) => c.id === "2026-11:forecast"));
+            november.rows.find((row) => row.vendor === "replicate")?.values[
+                "2026-11:forecast"
+            ],
+        ).toBe(
+            before.rows.find((row) => row.vendor === "replicate")?.values[
+                "2026-11:forecast"
+            ],
+        );
+        expect(november.projectedMonthEndCashUsd).toBeNull();
+        expect(november.runwayMonths).toBeNull();
+        expect(november.flags.join(" ")).toContain(
+            "Plan baseline 2026-09 needs review",
+        );
     });
 
     it("uses one fixed override instead of also projecting metered usage", () => {
@@ -1129,7 +1141,7 @@ describe("buildRunway", () => {
             NOW,
             [
                 baseline({ vendor: "replicate" }),
-                { ...balance("replicate", 10), start: "2026-08-23 00:00:00" },
+                { ...balance("replicate", 10), start: "2026-08-01 00:00:00" },
             ],
         );
         expect(
@@ -1152,7 +1164,7 @@ describe("buildRunway", () => {
                 baseline({ vendor: "openai", paid: 0, credit: -310 }),
                 {
                     ...balance("openai", 0, 1000),
-                    start: "2026-08-23 00:00:00",
+                    start: "2026-08-01 00:00:00",
                     end: "2027-12-31 23:59:59",
                 },
             ],
@@ -1172,7 +1184,10 @@ describe("buildRunway", () => {
             )?.values["2026-08:forecast"],
         ).toBe(-90);
         expect(result.projectedMonthEndCashUsd).toBeCloseTo(
-            20000 + (result.currentPlanChangeUsd ?? NaN),
+            20000 +
+                (result.columns.find(
+                    (column) => column.id === "2026-08:forecast",
+                )?.netUsd ?? NaN),
         );
     });
 
@@ -1394,7 +1409,11 @@ describe("buildRunway", () => {
             expect(google?.values["2026-08:forecast"]).toBe(-700);
             expect(google?.values["2026-09:forecast"]).toBeCloseTo(-700, 8);
             expect(result.currentCashUsd).toBe(20000 - paid);
-            expect(result.currentPlanChangeUsd).toBe(95 - 700);
+            expect(
+                result.columns.find(
+                    (column) => column.id === "2026-08:forecast",
+                )?.netUsd,
+            ).toBe(95 - 700);
             expect(result.projectedMonthEndCashUsd).toBe(20095 - 700);
         },
     );
@@ -1434,7 +1453,10 @@ describe("buildRunway", () => {
                 0,
             ),
         ).toBe(-730);
-        expect(result.currentPlanChangeUsd).toBe(95 - 730);
+        expect(
+            result.columns.find((column) => column.id === "2026-08:forecast")
+                ?.netUsd,
+        ).toBe(95 - 730);
         expect(result.currentCashUsd).toBe(19270);
         expect(result.projectedMonthEndCashUsd).toBe(19365);
     });
@@ -1454,7 +1476,10 @@ describe("buildRunway", () => {
             undefined,
             [stripeSales()],
         );
-        expect(result.currentPlanChangeUsd).toBe(-605);
+        expect(
+            result.columns.find((column) => column.id === "2026-08:forecast")
+                ?.netUsd,
+        ).toBe(-605);
         expect(result.projectedMonthEndCashUsd).toBe(19395);
     });
 
@@ -1861,7 +1886,7 @@ describe("ledger-based P&L categories", () => {
                 cloud({ vendor, paid: 0, credit: -220 }),
                 {
                     ...balance(vendor, 0, 100),
-                    start: "2026-08-23 00:00:00",
+                    start: "2026-08-01 00:00:00",
                     end: "2027-12-31",
                 },
             ]);
@@ -1903,7 +1928,7 @@ describe("ledger-based P&L categories", () => {
             }),
             {
                 ...balance("ovhcloud", 0, 150),
-                start: "2026-08-23 00:00:00",
+                start: "2026-08-01 00:00:00",
                 end: "2027-12-31",
             },
         ]);
@@ -2010,4 +2035,161 @@ it("keeps recorded Ko-fi sales separate from the reviewed plan after shutdown", 
             "2026-10:forecast"
         ],
     ).toBe(-5);
+});
+
+describe("monthly plan review regressions", () => {
+    it("never replaces intervening closed cash movements with old plans", () => {
+        const bank = [
+            opening(),
+            ...[
+                ["2026-09-15", -100],
+                ["2026-10-15", -5000],
+                ["2026-11-15", -5000],
+            ].map(([date, amount]) =>
+                transaction({
+                    entry_id: String(date),
+                    date: String(date),
+                    amount: Number(amount),
+                    vendor: "investment",
+                    category: "balance_sheet",
+                }),
+            ),
+        ];
+        const rules = {
+            "elevenlabs|compute": {
+                fixedAmounts: [{ amount: -100, currency: "USD" as const }],
+            },
+        };
+        const now = new Date("2026-12-10T12:00:00Z");
+        const stale = calculateRunway(bank, now, [], rules);
+        expect(
+            stale.columns.find((column) => column.id === "2026-11:actual")
+                ?.runningCashUsd,
+        ).toBe(9900);
+        expect(stale.projectedMonthEndCashUsd).toBeNull();
+        expect(stale.runwayMonths).toBeNull();
+        expect(stale.flags.join(" ")).toContain("close 2026-11");
+        expect(
+            stale.columns
+                .filter((column) => column.kind === "forecast")
+                .every((column) => !column.forecastComplete),
+        ).toBe(true);
+        const review = { baselineMonth: "2026-11", asOf: "2026-12-10" };
+        const renewed = calculateRunway(bank, now, [], rules, [], review);
+        expect(renewed.projectedMonthEndCashUsd).toBe(9800);
+        const live = calculateRunway(
+            [...bank, transaction({ date: "2026-12-09", amount: -999 })],
+            now,
+            [],
+            rules,
+            [],
+            review,
+        );
+        expect(live.currentCashUsd).toBe(8901);
+        expect(live.projectedMonthEndCashUsd).toBe(9800);
+        expect(
+            live.columns.filter((column) => column.kind === "forecast"),
+        ).toEqual(
+            renewed.columns.filter((column) => column.kind === "forecast"),
+        );
+    });
+
+    it("flags a newly used vendor with no baseline instead of assuming zero", () => {
+        const result = calculateRunway(
+            [opening()],
+            new Date("2026-10-18T12:00:00Z"),
+            [
+                cloud({
+                    vendor: "replicate",
+                    paid: -400,
+                    start: "2026-10-01 00:00:00",
+                    end: "2026-10-18 00:00:00",
+                }),
+            ],
+        );
+        expect(
+            result.rows.find((row) => row.vendor === "replicate")
+                ?.forecastIssue,
+        ).toContain("complete 2026-09 usage is missing");
+        expect(result.projectedMonthEndCashUsd).toBeNull();
+        expect(result.runwayMonths).toBeNull();
+        expect(
+            result.columns
+                .filter((column) => column.kind === "forecast")
+                .every((column) => !column.forecastComplete),
+        ).toBe(true);
+    });
+
+    it("requires a rule for an unknown balance-sheet movement", () => {
+        const result = buildRunway(
+            [
+                opening(),
+                transaction({
+                    date: "2026-07-15",
+                    vendor: "unknown-liability",
+                    category: "balance_sheet",
+                    amount: -400,
+                }),
+            ],
+            NOW,
+            [],
+            PRIVATE_RULES,
+        );
+        expect(
+            result.rows.find((row) => row.vendor === "unknown-liability")
+                ?.forecastIssue,
+        ).toBe("Calculation mode missing");
+        expect(result.projectedMonthEndCashUsd).toBeNull();
+        expect(result.runwayMonths).toBeNull();
+    });
+
+    it("never spends a full month twice against a mid-month credit snapshot", () => {
+        const usage = baseline({ vendor: "fal", paid: 0, credit: -310 });
+        const late = {
+            ...balance("fal", 0, 100),
+            start: "2026-08-18 00:00:00",
+            end: "2027-12-31",
+        };
+        const incomplete = buildRunway([opening()], NOW, [usage, late]);
+        const row = incomplete.rows.find((row) => row.vendor === "fal");
+        expect(row?.forecastIssue).toContain(
+            "opening balance for 2026-08-01 is missing (balance checked 2026-08-18)",
+        );
+        expect(incomplete.projectedMonthEndCashUsd).toBeNull();
+        expect(incomplete.runwayMonths).toBeNull();
+        expect(row?.assumptions["2026-08:forecast"]).toBeUndefined();
+        const openingBalance = {
+            ...late,
+            entry_id: "opening-funding",
+            start: "2026-08-01 00:00:00",
+            credit: 410,
+        };
+        const plan = buildRunway([opening()], NOW, [usage, openingBalance]);
+        const withLaterSnapshot = buildRunway([opening()], NOW, [
+            usage,
+            openingBalance,
+            late,
+        ]);
+        const planned = withLaterSnapshot.rows.find(
+            (row) => row.vendor === "fal",
+        );
+        expect(planned?.forecastIssue).toBeUndefined();
+        expect(planned?.creditValues?.["2026-08:forecast"]).toBeCloseTo(-310);
+        expect(planned?.creditValues?.["2026-09:forecast"]).toBeCloseTo(-100);
+        expect(planned?.values["2026-09:forecast"]).toBeCloseTo(-210);
+        expect(
+            withLaterSnapshot.columns.filter(
+                (column) => column.kind === "forecast",
+            ),
+        ).toEqual(plan.columns.filter((column) => column.kind === "forecast"));
+        expect(
+            withLaterSnapshot.rows.find((row) => row.vendor === "fal")?.values[
+                "2026-07:actual"
+            ],
+        ).toBe(0);
+        expect(
+            withLaterSnapshot.rows.find((row) => row.vendor === "fal")
+                ?.creditValues?.["2026-07:actual"],
+        ).toBe(-310);
+    });
 });

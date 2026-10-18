@@ -193,10 +193,8 @@ describe("RunwayTab labels", () => {
         ).toEqual({
             "Gross customer payments": 1115.13,
             "Stripe fees": -23.4539,
-            Refunds: -111.513,
-            "Disputes & chargebacks": -88.0591,
         });
-        for (const row of revenue) {
+        for (const row of revenue.filter((row) => row.details?.length)) {
             expect(
                 row.details?.reduce((sum, d) => sum + d.values[actual.id], 0),
             ).toBeCloseTo(row.values[actual.id] ?? Number.NaN, 8);
@@ -280,9 +278,7 @@ describe("RunwayTab labels", () => {
             (r) => r.vendor === "stripe refunds",
         );
         expect(refundPlan?.values[forecast.id]).toBe(0);
-        expect(
-            refundPlan?.details?.every((d) => d.values[forecast.id] === 0),
-        ).toBe(true);
+        expect(refundPlan?.details).toBeUndefined();
         expect(refundPlan?.values[actual.id]).toBeCloseTo(-199.5721, 8);
         const invalid = buildRunway([], new Date(), [], undefined, [
             { ...sales[0], net_after_fees: 1 },
@@ -334,14 +330,14 @@ describe("RunwayTab labels", () => {
     it("shows full rounded runway amounts without compact suffixes", () => {
         expect(fmtRunwayUsd(12_345.67)).toBe("$12,346");
         expect(fmtRunwayUsd(-1_234.56)).toBe("−$1,235");
-        expect(fmtRunwayUsd(0)).toBe("");
+        expect(fmtRunwayUsd(0)).toBe("$0");
         expect(fmtRunwayUsd(null)).toBe("–");
     });
 
     it("omits repeated currency symbols inside the runway table", () => {
         expect(fmtRunwayTableValue(12_345.67)).toBe("12,346");
         expect(fmtRunwayTableValue(-1_234.56)).toBe("−1,235");
-        expect(fmtRunwayTableValue(0)).toBe("");
+        expect(fmtRunwayTableValue(0)).toBe("0");
         expect(fmtRunwayTableValue(null)).toBe("–");
     });
 

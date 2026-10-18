@@ -108,9 +108,6 @@ const REVENUE_HELP: Record<string, string[]> = {
         "Customer payments minus Stripe fees.",
         "Refunds and reversals appear separately.",
     ],
-    "stripe refunds": [
-        "Refunds, reversals and their dispute fees recorded this month.",
-    ],
 };
 function categoryExplanation(category: string): string[] {
     if (category === "revenue")
@@ -190,9 +187,7 @@ function ForecastVendor({ row }: { row: RunwayMatrixRow }) {
             <span>
                 {row.vendor === "stripe sales"
                     ? "Stripe sales after fees"
-                    : row.vendor === "stripe refunds"
-                      ? "Refunds, disputes & chargebacks"
-                      : row.vendor}
+                    : row.vendor}
             </span>
             <CalculationInfo label={row.vendor} lines={rowExplanation(row)} />
         </span>
@@ -709,6 +704,14 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                     ]}
                 />
             )}
+            <p className="text-sm text-theme-text-muted">
+                Plan baseline: {fmtPeriod(runway.review.baselineMonth)} ·
+                Reviewed {fmtPeriod(runway.review.asOf)}
+                {runway.review.baselineMonth !==
+                monthShift(runway.currentMonth, -1)
+                    ? " · Needs monthly review — projected cash and runway unavailable"
+                    : ""}
+            </p>
             <TableScroller scrollRef={tableScrollRef}>
                 <DataTable className="runway-table min-w-max">
                     <TableHead>
@@ -952,7 +955,7 @@ function RunwayCategoryRows({
                             <TableRow>
                                 <TableCell className="sticky left-0 z-10 whitespace-nowrap bg-surface-opaque pl-12 text-theme-text-soft">
                                     <TableDisclosureButton
-                                        className="runway-more-vendors"
+                                        className="polli:text-theme-text-muted"
                                         expanded={moreExpanded}
                                         onClick={() =>
                                             setMoreExpanded((value) => !value)

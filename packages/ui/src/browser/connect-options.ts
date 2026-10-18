@@ -1,5 +1,9 @@
 import type { AccountPermission } from "@pollinations/sdk";
 import type { PolliProviderProps } from "@pollinations/sdk/react";
+import {
+    type AppUserMenuProps,
+    MENU_LINK_ICONS,
+} from "../modules/app-user-menu/AppUserMenu.tsx";
 
 /** Attributes `<polli-connect>` reads; changing one re-renders it. */
 export const CONNECT_ATTRIBUTES = [
@@ -9,6 +13,9 @@ export const CONNECT_ATTRIBUTES = [
     "models",
     "permissions",
     "enter-url",
+    "hide-buy-pollen",
+    "menu-side",
+    "menu-links",
 ] as const;
 
 /**
@@ -23,6 +30,7 @@ export function connectOptions(
         const value = Number.parseFloat(text(name));
         return Number.isFinite(value) ? value : undefined;
     };
+
     const list = (name: string) => {
         const items = text(name)
             .split(",")
@@ -38,5 +46,36 @@ export function connectOptions(
         permissions: list("permissions") as AccountPermission[] | undefined,
         storage: "sessionStorage",
         enterUrl: text("enter-url") || undefined,
+    };
+}
+
+/** Optional presentation settings; these never change the requested access. */
+export function connectMenuOptions(
+    element: Pick<Element, "getAttribute">,
+): Pick<AppUserMenuProps, "showBuyPollen" | "menuSide" | "menuLinks"> {
+    const links: unknown = JSON.parse(
+        element.getAttribute("menu-links") || "[]",
+    );
+    if (
+        !Array.isArray(links) ||
+        links.some(
+            (link) =>
+                !link ||
+                typeof link.label !== "string" ||
+                typeof link.href !== "string" ||
+                !/^https?:\/\//.test(link.href) ||
+                (link.icon !== undefined &&
+                    !Object.hasOwn(MENU_LINK_ICONS, link.icon)),
+        )
+    ) {
+        throw new Error(
+            "menu-links must contain labels, HTTP(S) hrefs, and supported icons",
+        );
+    }
+    return {
+        showBuyPollen: element.getAttribute("hide-buy-pollen") === null,
+        menuSide:
+            element.getAttribute("menu-side") === "top" ? "top" : "bottom",
+        menuLinks: links,
     };
 }

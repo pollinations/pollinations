@@ -735,7 +735,7 @@ describe("docs routes", () => {
         const html = await response.text();
         expect(response.status).toBe(200);
         expect(html).toContain(
-            '<polli-connect app-key="pk_docs_test" budget="5" expiry="7">',
+            '<polli-connect app-key="pk_docs_test" budget="5" expiry="7" hide-buy-pollen menu-side="top"',
         );
         expect(html).toMatch(
             /<script defer src="https:\/\/cdn\.jsdelivr\.net\/npm\/@pollinations\/ui@[^"]+\/dist\/connect\.js" integrity="sha384-[^"]+" crossorigin="anonymous">/,

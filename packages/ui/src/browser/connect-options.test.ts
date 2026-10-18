@@ -1,8 +1,47 @@
 import { describe, expect, test } from "vitest";
-import { connectOptions } from "./connect-options.ts";
+import { connectMenuOptions, connectOptions } from "./connect-options.ts";
 
 const element = (attributes: Record<string, string>) => ({
     getAttribute: (name: string) => attributes[name] ?? null,
+});
+
+describe("connectMenuOptions", () => {
+    test("keeps the default menu and accepts a docs footer configuration", () => {
+        expect(connectMenuOptions(element({}))).toEqual({
+            showBuyPollen: true,
+            menuSide: "bottom",
+            menuLinks: [],
+        });
+        const links = [
+            {
+                label: "Dashboard",
+                href: "https://enter.pollinations.ai",
+                icon: "app",
+            },
+        ];
+        expect(
+            connectMenuOptions(
+                element({
+                    "hide-buy-pollen": "",
+                    "menu-side": "top",
+                    "menu-links": JSON.stringify(links),
+                }),
+            ),
+        ).toEqual({ showBuyPollen: false, menuSide: "top", menuLinks: links });
+    });
+
+    test("rejects invalid links and executable URLs", () => {
+        for (const value of [
+            "{}",
+            "[null]",
+            '[{"label":"Bad","href":"https://example.com","icon":"unknown"}]',
+            '[{"label":"Bad","href":"javascript:alert(1)"}]',
+        ]) {
+            expect(() =>
+                connectMenuOptions(element({ "menu-links": value })),
+            ).toThrow();
+        }
+    });
 });
 
 describe("connectOptions", () => {

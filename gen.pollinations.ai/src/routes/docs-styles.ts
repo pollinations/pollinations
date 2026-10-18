@@ -43,11 +43,56 @@ ${POLLI_UI_TOKENS_CSS}
 }
 .ph-docs-link .ph-doc-icon { width: 14px; height: 14px; flex: 0 0 14px; }
 .ph-docs-link .ph-docs-link-arrow { margin-left: auto; opacity: 0.6; }
+.ph-docs-connected .ph-docs-links { display: none; }
+.ph-docs-account { display: none; }
+.t-doc__sidebar > .ph-docs-account {
+    display: block; flex-shrink: 0; padding: 12px 8px;
+    border-top: 1px solid var(--scalar-sidebar-border-color);
+}
+.ph-docs-account polli-connect { width: 100%; }
+.ph-docs-account polli-connect > div { justify-content: flex-start; }
+.ph-docs-account polli-connect > div > div {
+    width: 100%; max-width: none; padding: 4px 12px 4px 4px;
+}
+.ph-docs-account button > svg:last-child { margin-left: auto; }
+/* Scalar's unlayered reset otherwise overrides the UI's text sizes. */
+.ph-docs-account polli-connect > div > div [class~="polli:text-sm"] {
+    font-size: 13px; line-height: 18px;
+}
+.ph-docs-account polli-connect > div > div [class~="polli:text-xs"] {
+    font-size: 11px; line-height: 16px;
+}
 
 .ph-fab-cluster {
     position: fixed; top: 16px; right: 18px; z-index: 9999;
     display: flex; gap: 8px; align-items: center;
     justify-content: flex-end; max-width: calc(100vw - 36px);
+}
+/* Keep the shared account control quiet on docs, including its portalled menu. */
+.ph-docs-account polli-connect > div > [data-theme="accent"],
+.polli-connect-menu {
+    --polli-color-bg-active: transparent;
+    --polli-color-bg-hover: var(--scalar-background-2);
+    --polli-color-text-strong: var(--scalar-color-1);
+    --polli-color-text-soft: var(--scalar-color-2);
+    --polli-color-text-base: var(--scalar-color-2);
+    --polli-color-text-hover: var(--scalar-color-1);
+    --polli-color-focus: var(--scalar-color-1);
+    --polli-color-surface-menu: var(--scalar-background-1);
+}
+.polli-connect-menu {
+    --polli-color-surface-menu: var(--scalar-background-2);
+    --polli-color-bg-hover: var(--scalar-background-3);
+    border: 1px solid var(--scalar-border-color);
+}
+/* Restore the standard UI button's typography and spacing after Scalar's reset. */
+.ph-docs-account polli-connect > div > button {
+    width: 100%; max-width: 320px;
+    padding: 0 16px; border: 1px solid var(--polli-color-text-soft);
+    font-size: 14px; line-height: 1.5; font-weight: 500;
+}
+.ph-docs-account polli-connect :is(img, [role="img"]) {
+    width: 28px; height: 28px;
 }
 /* Bright brand amber with dark text: the page's one primary action, with the
    contrast of Scalar's own "Test Request" button. Both faces share one grid
@@ -72,7 +117,7 @@ ${POLLI_UI_TOKENS_CSS}
 .ph-fab svg { width: 16px; height: 16px; }
 /* Mobile: sit in Scalar's top bar beside its menu button, clear of the content
    below, and drop the bar's separator line; the copy button keeps only its
-   icon to leave room for sign-in. */
+   icon on small screens. The account stays inside the drawer. */
 @media (width < 1000px) {
     .ph-fab-cluster { top: 6px; right: 12px; }
     .scalar-app header.border-b { border-bottom-width: 0; }

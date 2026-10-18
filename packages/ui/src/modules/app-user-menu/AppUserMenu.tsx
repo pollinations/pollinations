@@ -11,6 +11,9 @@ import { cn } from "../../lib/cn.ts";
 import { BrandMark } from "../../primitives/BrandMark.tsx";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
 import {
+    AppIcon,
+    BugIcon,
+    DiscordIcon,
     ExternalLinkIcon,
     KeyIcon,
     PowerIcon,
@@ -30,6 +33,12 @@ export type AppUserMenuLabels = {
     logout: string;
 };
 
+export const MENU_LINK_ICONS = {
+    app: AppIcon,
+    discord: DiscordIcon,
+    bug: BugIcon,
+};
+
 export type AppUserMenuProps = {
     /** Optional caller-owned dashboard destination for the linked avatar. */
     dashboardHref?: string;
@@ -38,6 +47,13 @@ export type AppUserMenuProps = {
     labels?: Partial<AppUserMenuLabels>;
     /** Class for the dropdown panel, which renders in a portal outside the menu. */
     menuClassName?: string;
+    menuSide?: "top" | "bottom";
+    menuLinks?: {
+        label: string;
+        href: string;
+        icon?: keyof typeof MENU_LINK_ICONS;
+    }[];
+    showBuyPollen?: boolean;
 };
 
 const defaultLabels: AppUserMenuLabels = {
@@ -64,6 +80,9 @@ export function AppUserMenu({
     connectSize = "md",
     labels: labelOverrides,
     menuClassName,
+    menuSide,
+    menuLinks = [],
+    showBuyPollen = true,
 }: AppUserMenuProps) {
     const labels = { ...defaultLabels, ...labelOverrides };
     const size = CONNECT_SIZES[connectSize];
@@ -147,6 +166,7 @@ export function AppUserMenu({
                     menuLabel={labels.appUserMenu}
                     className="polli:max-w-80"
                     menuClassName={menuClassName}
+                    side={menuSide}
                     secondaryContent={
                         pollenSource ? (
                             <AccountPollen source={pollenSource} />
@@ -174,23 +194,50 @@ export function AppUserMenu({
                                     />
                                 </DropdownItem>
                             )}
-                            <DropdownItem
-                                as="a"
-                                href={topUpUrl.href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={close}
-                            >
-                                <WalletIcon
-                                    className="polli:h-4 polli:w-4 polli:shrink-0"
-                                    aria-hidden="true"
-                                />
-                                {labels.buyPollen}
-                                <ExternalLinkIcon
-                                    className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
-                                    aria-hidden="true"
-                                />
-                            </DropdownItem>
+                            {showBuyPollen && (
+                                <DropdownItem
+                                    as="a"
+                                    href={topUpUrl.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={close}
+                                >
+                                    <WalletIcon
+                                        className="polli:h-4 polli:w-4 polli:shrink-0"
+                                        aria-hidden="true"
+                                    />
+                                    {labels.buyPollen}
+                                    <ExternalLinkIcon
+                                        className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
+                                        aria-hidden="true"
+                                    />
+                                </DropdownItem>
+                            )}
+                            {menuLinks.map(({ label, href, icon }) => {
+                                const Icon = icon
+                                    ? MENU_LINK_ICONS[icon]
+                                    : ExternalLinkIcon;
+                                return (
+                                    <DropdownItem
+                                        key={href}
+                                        as="a"
+                                        href={href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={close}
+                                    >
+                                        <Icon
+                                            className="polli:h-4 polli:w-4 polli:shrink-0"
+                                            aria-hidden="true"
+                                        />
+                                        {label}
+                                        <ExternalLinkIcon
+                                            className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
+                                            aria-hidden="true"
+                                        />
+                                    </DropdownItem>
+                                );
+                            })}
                             <DropdownItem
                                 type="button"
                                 className="polli:justify-start polli:text-left"

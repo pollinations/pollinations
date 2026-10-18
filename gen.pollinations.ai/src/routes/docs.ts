@@ -213,6 +213,7 @@ const DOCS_SIDEBAR_LINKS = [
     {
         href: "https://enter.pollinations.ai",
         label: "Dashboard",
+        menuIcon: "app",
         icon: docsIcon(
             '<rect x="2" y="4" width="20" height="14" rx="2" /><path d="M2 20h20" />',
         ),
@@ -220,11 +221,13 @@ const DOCS_SIDEBAR_LINKS = [
     {
         href: "https://discord.com/channels/885844321461485618/889573359111774329",
         label: "Need help?",
+        menuIcon: "discord",
         icon: `<svg class="ph-doc-icon" aria-hidden="true" viewBox="0 0 24 24"><path fill="currentColor" d="M20.32 4.37A19.8 19.8 0 0 0 15.36 2.83a.07.07 0 0 0-.08.04c-.21.38-.45.88-.62 1.27a18.27 18.27 0 0 0-5.52 0 12.84 12.84 0 0 0-.63-1.27.08.08 0 0 0-.08-.04A19.74 19.74 0 0 0 3.47 4.37a.07.07 0 0 0-.03.03C.31 9.07-.55 13.61-.13 18.1a.08.08 0 0 0 .03.06 19.9 19.9 0 0 0 6.08 3.07.08.08 0 0 0 .09-.03c.47-.64.88-1.31 1.24-2.02a.08.08 0 0 0-.04-.1 13.08 13.08 0 0 1-1.9-.91.08.08 0 0 1-.01-.13c.13-.1.25-.2.37-.29a.07.07 0 0 1 .08-.01 14.24 14.24 0 0 0 12.38 0 .07.07 0 0 1 .08.01c.12.1.25.2.38.3a.08.08 0 0 1-.01.12 12.22 12.22 0 0 1-1.9.9.08.08 0 0 0-.04.11c.36.7.77 1.38 1.23 2.02a.08.08 0 0 0 .1.03 19.84 19.84 0 0 0 6.08-3.07.08.08 0 0 0 .03-.05c.5-5.2-.84-9.7-3.77-13.71a.06.06 0 0 0-.03-.03ZM8.02 15.37c-1.18 0-2.16-1.08-2.16-2.4 0-1.32.96-2.4 2.16-2.4 1.2 0 2.18 1.09 2.16 2.4 0 1.32-.96 2.4-2.16 2.4Zm7.96 0c-1.18 0-2.16-1.08-2.16-2.4 0-1.32.96-2.4 2.16-2.4 1.2 0 2.18 1.09 2.16 2.4 0 1.32-.95 2.4-2.16 2.4Z" /></svg>`,
     },
     {
         href: "https://github.com/pollinations/pollinations/issues",
         label: "Found a bug?",
+        menuIcon: "bug",
         icon: docsIcon(
             '<path d="m8 2 1.9 1.9M14.1 3.9 16 2" /><path d="M9 7V6a3 3 0 0 1 6 0v1" /><path d="M12 20c-3.3 0-6-2.7-6-6v-3a6 6 0 0 1 12 0v3c0 3.3-2.7 6-6 6Z" /><path d="M12 20v-9M6.5 9C4.6 8.8 3 7.1 3 5M6 13H2M3 21c0-2.1 1.7-3.9 3.8-4M17.5 9C19.4 8.8 21 7.1 21 5M18 13h4M21 21c0-2.1-1.7-3.9-3.8-4" />',
         ),
@@ -443,21 +446,28 @@ function pollinationsDocsHtml(appKey: string): string {
         `<a href="/docs" class="ph-docs-brand" aria-label="Pollinations Docs"><span class="ph-docs-lockup" aria-hidden="true">${BRAND_LOCKUP_SVG}</span><span class="ph-docs-divider" aria-hidden="true"></span><span class="ph-docs-label">Docs</span></a>`,
     );
     const sidebarLinks = JSON.stringify(DOCS_SIDEBAR_LINKS_HTML);
+    const menuLinks = JSON.stringify(
+        DOCS_SIDEBAR_LINKS.map(({ href, label, menuIcon }) => ({
+            href,
+            label,
+            icon: menuIcon,
+        })),
+    ).replaceAll('"', "&quot;");
     // Sign-in is the published <polli-connect> drop-in, pinned like Scalar.
     const connect = appKey
-        ? `<polli-connect app-key="${appKey}" budget="5" expiry="7"></polli-connect>`
+        ? `<div class="ph-docs-account"><polli-connect app-key="${appKey}" budget="5" expiry="7" hide-buy-pollen menu-side="top" menu-links="${menuLinks}"></polli-connect></div>`
         : "";
     const connectScript = appKey
         ? `<script defer src="${CONNECT_CDN}" integrity="${CONNECT_INTEGRITY}" crossorigin="anonymous"></script>`
         : "";
     return `<style>${POLLINATIONS_DOCS_CSS}</style>
 <div class="ph-fab-cluster">
-  <button class="ph-fab ph-fab-copy" type="button" aria-label="Copy full docs as Markdown" title="Copy the full docs as Markdown, ready to paste into an AI assistant">
-    <span class="ph-fab-face ph-fab-idle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy for LLMs</span>
+  <button class="ph-fab ph-fab-copy" type="button" aria-label="Copy full docs as Markdown" title="Copy the full docs as Markdown">
+    <span class="ph-fab-face ph-fab-idle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2 2h9a2 2 0 0 1 2 2v1"/></svg>Copy for LLM</span>
     <span class="ph-fab-face ph-fab-done" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Copied</span>
   </button>
-  ${connect}
 </div>
+${connect}
 ${connectScript}
 <script>
 (function () {
@@ -469,7 +479,7 @@ ${connectScript}
   normalizeLegacyHash();
   window.addEventListener('hashchange', normalizeLegacyHash);
 
-  // Copy for LLMs — always copies the full doc (api + integrations).
+  // Copy for LLM — always copies the full doc (api + integrations).
   var copy = document.querySelector('.ph-fab-copy');
   if (copy) {
     copy.addEventListener('click', async function () {
@@ -482,10 +492,16 @@ ${connectScript}
   // Rebuild the reference whenever the connected key changes, so Scalar's
   // manually edited credentials are cleared on Disconnect too.
   var connect = document.querySelector('polli-connect');
+  var account = document.querySelector('.ph-docs-account');
+  var docsKey = null;
   if (connect) {
     var authenticate = (${authenticateDocsRequest});
     connect.addEventListener('change', function () {
       var apiKey = connect.apiKey;
+      document.body.classList.toggle('ph-docs-connected', !!apiKey);
+      // Moving the element into a rebuilt drawer rehydrates the same key.
+      if (apiKey === docsKey) return;
+      docsKey = apiKey;
       if (!window.pollinationsDocsReference) return;
       window.pollinationsDocsReference.destroy();
       window.pollinationsDocsReference = Scalar.createApiReference('#app', Object.assign({}, window.pollinationsDocsConfiguration, {
@@ -528,6 +544,12 @@ ${connectScript}
       if (!sidebars[s].querySelector('.ph-docs-links')) {
         sidebars[s].insertAdjacentHTML('beforeend', ${sidebarLinks});
       }
+    }
+    var accountSidebar = Array.from(sidebars).find(function (sidebar) {
+      return sidebar.getClientRects().length > 0;
+    }) || sidebars[0];
+    if (account && accountSidebar && account.parentElement !== accountSidebar) {
+      accountSidebar.appendChild(account);
     }
     var nodes = document.querySelectorAll('button, a, [role="button"]');
     for (var i = 0; i < nodes.length; i++) {
@@ -1093,9 +1115,9 @@ const SCALAR_CDN =
 const SCALAR_INTEGRITY =
     "sha384-VXnKAz61Xwc3tbw1P+KKrUP7YbcsSl1Ik4is5UnogJyw9XEYZ5Ay/T1i0zPYtSZH";
 const CONNECT_CDN =
-    "https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.19/dist/connect.js";
+    "https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.20/dist/connect.js";
 const CONNECT_INTEGRITY =
-    "sha384-UkxnnQi3VW38H7E5Ovpysgy6ia/d3V/pjZlHx2xN7ZKlqHOa1sEWSWSVJL5xs3Gc";
+    "sha384-3QU0ngDI/4TS0G3XWmtFeOcO5Bn0ngVtfcn0ois8CaWWW8fzuK294g+Lk2QQATaT";
 
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     const routes = new Hono<Env>()

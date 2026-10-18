@@ -56,6 +56,7 @@ describe("getGenerationModelRegistry", () => {
             "qwen/qwen3guard-gen-8b",
             "openai/gpt-oss-20b",
             "respan/span-01-lite",
+            "vllm-sr/d3",
             "openai/whisper-large-v3",
             "lykon/dreamshaper-8-lcm",
         ]);
@@ -141,7 +142,7 @@ describe("getGenerationModelRegistry", () => {
         }
     });
 
-    it("advertises Responses on every text model that serves Chat", async () => {
+    it("adds compatibility transports unless endpoints are explicitly restricted", async () => {
         const registry = await getGenerationModelRegistry(env);
         const text = registry
             .visibleEntries()
@@ -152,8 +153,22 @@ describe("getGenerationModelRegistry", () => {
 
         expect(chat.length).toBeGreaterThan(0);
         for (const entry of chat) {
-            expect(entry.info.supported_endpoints).toContain("/v1/responses");
+            if (entry.definition.supportedEndpoints) {
+                expect(entry.info.supported_endpoints).toEqual(
+                    entry.definition.supportedEndpoints,
+                );
+            } else {
+                expect(entry.info.supported_endpoints).toContain(
+                    "/v1/responses",
+                );
+                expect(entry.info.supported_endpoints).toContain(
+                    "/v1/messages",
+                );
+            }
         }
+        expect(
+            registry.resolve("vllm-sr/d3")?.info.supported_endpoints,
+        ).toEqual(["/alpha/decisions", "/v1/chat/completions"]);
         // Native Responses targets stay a subset; the rest are adapted.
         const native = chat.filter((entry) =>
             supportsDirectResponses(entry.id),

@@ -58,6 +58,19 @@ function createDecisionsMock() {
             state.response = undefined;
         },
         handlerMap: {
+            "decision.vllm-sr.ai": async (request: Request) => {
+                state.requests.push({
+                    pathname: new URL(request.url).pathname,
+                    authorization: request.headers.get("authorization"),
+                    body: await request.json(),
+                });
+                if (state.response) return state.response.clone();
+                return Response.json({
+                    model: "vllm-sr/d3",
+                    answers,
+                    usage: { input_tokens: 452, output_tokens: 0 },
+                });
+            },
             "ai-gateway.vercel.sh": async (request: Request) => {
                 state.requests.push({
                     pathname: new URL(request.url).pathname,
@@ -103,6 +116,7 @@ const test = baseTest.extend<{
     mocks: async ({}, use) => {
         env.OPENROUTER_API_KEY = "openrouter-test-key";
         env.AI_GATEWAY_API_KEY = "vercel-test-key";
+        env.D3_KEY = "d3-test-key";
         const tinybird = createMockTinybird();
         const decisions = createDecisionsMock();
         const fetchMock = createFetchMock({ tinybird, decisions });
@@ -303,6 +317,73 @@ test("routes Span-01 Lite under its own id and bills nothing", async ({
         tierBalance: 1,
         packBalance: 0,
     });
+});
+
+for (const path of ["/alpha/decisions", "/v1/systemone"]) {
+    test(`D3 accepts Quest Pollen without charging on ${path}`, async ({
+        mocks,
+    }) => {
+        const { key, userId } = await createTestApiKey({
+            user: { tierBalance: 1, packBalance: 0 },
+        });
+        const state = { invoice: { daysOverdue: 3 } };
+        const { response, wait } = await post(path, key, {
+            model: "vllm-sr/d3",
+            state,
+            questions,
+        });
+        expect(response.status).toBe(200);
+        await expect(response.json()).resolves.toMatchObject({
+            model: "vllm-sr/d3",
+            provider: "vLLM Semantic Router",
+            answers,
+            usage: { input_tokens: 452, output_tokens: 0 },
+        });
+        expect(mocks.decisions.state.requests).toEqual([
+            {
+                pathname: "/v1/systemone",
+                authorization: "Bearer d3-test-key",
+                body: {
+                    model: "vllm-sr/d3",
+                    state: JSON.stringify(state),
+                    questions,
+                },
+            },
+        ]);
+        await wait();
+        expect(mocks.tinybird.state.events).toHaveLength(1);
+        expect(mocks.tinybird.state.events[0]).toMatchObject({
+            eventType: "generate.text",
+            responseStatus: 200,
+            modelRequested: "vllm-sr/d3",
+            modelProviderUsed: "vllm-sr",
+            tokenCountPromptText: 452,
+            tokenCountCompletionText: 0,
+            totalCost: 0,
+            totalPrice: 0,
+        });
+        expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+            tierBalance: 1,
+            packBalance: 0,
+        });
+    });
+}
+
+test("D3 rejects malformed questions before calling upstream", async ({
+    mocks,
+}) => {
+    const { key } = await createTestApiKey({
+        user: { tierBalance: 1, packBalance: 0 },
+    });
+    const { response, wait } = await post("/alpha/decisions", key, {
+        model: "vllm-sr/d3",
+        state: "Invoice overdue",
+        questions: { action: { type: "unknown" } },
+    });
+    expect(response.status).toBe(400);
+    expect(await response.text()).toContain("questions");
+    await wait();
+    expect(mocks.decisions.state.requests).toHaveLength(0);
 });
 
 test("routes Liquid D1 under its own id and bills input tokens", async ({

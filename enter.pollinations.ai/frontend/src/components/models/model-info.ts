@@ -48,6 +48,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Tencent: "tencent",
     "Thinking Machines": "thinking-machines",
     TypeSafe: "typesafe",
+    "vLLM Semantic Router": "vllm-sr",
     Xiaomi: "xiaomi",
     "Z.ai": "zai",
     xAI: "xai",

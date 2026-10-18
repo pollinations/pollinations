@@ -82,8 +82,12 @@ const SUMMARY_HELP: Record<string, string[]> = {
     ],
     "Cash change": [
         "Actual: bank inflows minus outflows, including exchange-rate changes.",
-        "Expand to see how revenue and expenses reconcile to cash for past months.",
+        "Revenue + cash-funded expenses + cash adjustments = cash change.",
         "Plan: expected cash increase or decrease that month.",
+    ],
+    "Cash adjustments": [
+        "Differences between recorded revenue or expenses and bank movements, plus other cash movements and exchange-rate changes.",
+        "Plan: scheduled movements outside revenue and expenses, such as returned deposits.",
     ],
     "Cash balance": [
         "Past months: balance at the END of the month.",
@@ -116,18 +120,13 @@ function categoryExplanation(category: string): string[] {
             "Sales minus fees, refunds and reversals, plus other revenue.",
             "Recorded sales may still be held in Stripe.",
         ];
-    if (category === "balance_sheet")
-        return [
-            "Cash movements outside revenue and expenses, such as returned deposits.",
-            "Future amounts are planned, not received yet.",
-        ];
     return pnlSource(category) === "ledger"
         ? [
               "Provider costs for the month of usage.",
               "Below cash: credit-funded costs. Plan: expected cash payments.",
           ]
         : [
-              "Bank payments in this category, by payment month.",
+              "Bank-backed costs, assigned to the reviewed service month when recorded; otherwise the payment month.",
               "Plan: expected payments.",
           ];
 }
@@ -151,7 +150,7 @@ function rowExplanation(row: RunwayMatrixRow): string[] {
     if (row.category === "balance_sheet")
         return categoryExplanation(row.category);
     return [
-        "Bank payments or receipts recorded this month.",
+        "Bank-backed amounts, using a reviewed service month for expenses when recorded. Cash keeps its payment date.",
         row.forecastMethod === "one_off"
             ? "One-time amount; no automatic repeat."
             : row.forecastMethod === "funded"
@@ -441,25 +440,15 @@ function SummaryRow({
     );
 }
 
-const CASH_BRIDGE_LINES = [
-    [
-        "revenue",
-        "Revenue after fees & refunds",
-        "Revenue recorded for this month, before expenses.",
-    ],
-    [
-        "expenses",
-        "Cash-funded expenses",
-        "Costs assigned to this month. Provider credit usage is excluded.",
-    ],
+const CASH_ADJUSTMENT_LINES = [
     [
         "receiptsDifference",
-        "Sales → bank receipts",
+        "Revenue timing & other receipts",
         "Bank receipts minus recorded revenue: settlement timing, processor balances and other receipts. This difference does not identify which sales each payout settles.",
     ],
     [
         "paymentsDifference",
-        "Costs → bank payments",
+        "Expense timing & prepayments",
         "Bank payments minus recorded expenses: prepayments, bills paid in another month and other payment differences.",
     ],
     [
@@ -474,11 +463,32 @@ const CASH_BRIDGE_LINES = [
     ],
 ] as const;
 
-export function CashBridgeRows({ columns }: { columns: RunwayColumn[] }) {
+export function cashAdjustmentValue(
+    column: RunwayColumn,
+    planned: number | null,
+): number | null {
+    if (column.kind === "forecast")
+        return column.forecastComplete === false ? null : planned;
+    const bridge = column.cashBridge;
+    return bridge
+        ? bridge.receiptsDifference +
+              bridge.paymentsDifference +
+              bridge.otherCash +
+              bridge.exchangeRates
+        : null;
+}
+
+export function CashAdjustmentRows({
+    columns,
+    plannedValues,
+}: {
+    columns: RunwayColumn[];
+    plannedValues: Record<string, number | null>;
+}) {
     const { fmtNumber } = useAmountDisplay();
     return (
         <>
-            {CASH_BRIDGE_LINES.map(([key, label, help]) => (
+            {CASH_ADJUSTMENT_LINES.map(([key, label, help]) => (
                 <TableRow
                     key={key}
                     className="runway-detail text-theme-text-muted"
@@ -489,7 +499,7 @@ export function CashBridgeRows({ columns }: { columns: RunwayColumn[] }) {
                             label={label}
                             lines={[
                                 help,
-                                "Past months only; missing coverage stays unresolved in reconciliation.",
+                                "These are adjustments, not additional revenue or expenses. Missing coverage stays unresolved in reconciliation.",
                             ]}
                         />
                     </TableCell>
@@ -500,7 +510,19 @@ export function CashBridgeRows({ columns }: { columns: RunwayColumn[] }) {
                             numeric
                             className={MONTH_COLUMN_CLASS}
                         >
-                            {fmtNumber(column.cashBridge?.[key])}
+                            {fmtNumber(
+                                column.kind === "forecast"
+                                    ? key === "otherCash"
+                                        ? cashAdjustmentValue(
+                                              column,
+                                              plannedValues[column.id] ===
+                                                  undefined
+                                                  ? 0
+                                                  : plannedValues[column.id],
+                                          )
+                                        : null
+                                    : column.cashBridge?.[key],
+                            )}
                         </TableCell>
                     ))}
                 </TableRow>
@@ -542,7 +564,8 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
         [runway.columns, year, data.planningError],
     );
     const [expensesExpanded, setExpensesExpanded] = useState(true);
-    const [cashBridgeExpanded, setCashBridgeExpanded] = useState(false);
+    const [cashAdjustmentsExpanded, setCashAdjustmentsExpanded] =
+        useState(false);
     const tableScrollRef = useRef<HTMLDivElement>(null);
     useLayoutEffect(() => {
         const scroller = tableScrollRef.current;
@@ -555,6 +578,9 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
         () => groupRows(runway.rows, columns),
         [columns, runway.rows],
     );
+    const plannedAdjustments =
+        groups.find((group) => group.category === "balance_sheet")?.values ??
+        {};
     const next = runway.columns.find(
         (column) =>
             column.month > runway.currentMonth && column.kind === "forecast",
@@ -812,10 +838,6 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                     <TableBody>
                         <SummaryRow
                             label="Cash change"
-                            expanded={cashBridgeExpanded}
-                            onToggle={() =>
-                                setCashBridgeExpanded((current) => !current)
-                            }
                             columns={columns}
                             value={(column) =>
                                 column.forecastComplete === false
@@ -823,9 +845,6 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                     : column.netUsd
                             }
                         />
-                        {cashBridgeExpanded && (
-                            <CashBridgeRows columns={columns} />
-                        )}
                         <SummaryRow
                             label="Cash balance"
                             columns={columns}
@@ -872,17 +891,30 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                         currentMonth={runway.currentMonth}
                                     />
                                 ))}
-                        {groups
-                            .filter(
-                                (group) => group.category === "balance_sheet",
-                            )
-                            .map((group) => (
-                                <RunwayCategoryRows
-                                    key={group.category}
-                                    group={group}
-                                    columns={columns}
-                                />
-                            ))}
+                        <SummaryRow
+                            label="Cash adjustments"
+                            columns={columns}
+                            value={(column) =>
+                                cashAdjustmentValue(
+                                    column,
+                                    plannedAdjustments[column.id] === undefined
+                                        ? 0
+                                        : plannedAdjustments[column.id],
+                                )
+                            }
+                            expanded={cashAdjustmentsExpanded}
+                            onToggle={() =>
+                                setCashAdjustmentsExpanded(
+                                    (current) => !current,
+                                )
+                            }
+                        />
+                        {cashAdjustmentsExpanded && (
+                            <CashAdjustmentRows
+                                columns={columns}
+                                plannedValues={plannedAdjustments}
+                            />
+                        )}
                     </TableBody>
                 </DataTable>
             </TableScroller>

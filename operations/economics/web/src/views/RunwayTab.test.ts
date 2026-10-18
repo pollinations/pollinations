@@ -6,7 +6,8 @@ import { automaticForecastRule, forecastLineRule } from "../lib/forecastTerms";
 import { buildRunway, type RunwayMatrixRow } from "../lib/runway";
 import type { Data, StripeSalesRow } from "../types";
 import {
-    CashBridgeRows,
+    CashAdjustmentRows,
+    cashAdjustmentValue,
     fmtRunwayTableValue,
     fmtRunwayUsd,
     groupRunwayVendors,
@@ -225,7 +226,8 @@ describe("RunwayTab labels", () => {
         expect(html).toContain("Revenue calculation info");
         expect(html).not.toContain("Plan baseline:");
         expect(html).not.toContain("Provisional runway —");
-        expect(html).toMatch(/aria-expanded="false"[^>]*>.*?Cash change/s);
+        expect(html).toMatch(/aria-expanded="false"[^>]*>.*?Cash adjustments/s);
+        expect(html).not.toMatch(/<button[^>]*>Cash change<\/button>/);
         const bridgeHtml = renderToStaticMarkup(
             createElement(
                 "table",
@@ -233,7 +235,8 @@ describe("RunwayTab labels", () => {
                 createElement(
                     "tbody",
                     {},
-                    createElement(CashBridgeRows, {
+                    createElement(CashAdjustmentRows, {
+                        plannedValues: { [forecast.id]: 45 },
                         columns: [
                             {
                                 ...actual,
@@ -252,8 +255,33 @@ describe("RunwayTab labels", () => {
                 ),
             ),
         );
-        expect(bridgeHtml).toContain("Sales → bank receipts");
-        expect(bridgeHtml).toContain("Costs → bank payments");
+        expect(bridgeHtml).toContain("Revenue timing &amp; other receipts");
+        expect(bridgeHtml).toContain("Expense timing &amp; prepayments");
+        expect(bridgeHtml).not.toContain("Revenue after fees");
+        expect(bridgeHtml).not.toContain("Cash-funded expenses");
+        expect(
+            cashAdjustmentValue(
+                {
+                    ...actual,
+                    cashBridge: {
+                        revenue: 120,
+                        expenses: -50,
+                        receiptsDifference: 30,
+                        paymentsDifference: -10,
+                        otherCash: 5,
+                        exchangeRates: 2,
+                    },
+                },
+                999,
+            ),
+        ).toBe(27);
+        expect(cashAdjustmentValue(forecast, 45)).toBe(45);
+        expect(
+            cashAdjustmentValue({ ...forecast, forecastComplete: false }, 45),
+        ).toBeNull();
+        expect(
+            cashAdjustmentValue({ ...actual, cashBridge: undefined }, 999),
+        ).toBeNull();
         expect(bridgeHtml).toContain("Other cash movements");
         expect(bridgeHtml).toContain("Exchange-rate changes");
         expect(html).not.toContain("Revenue · net after deductions");

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-18T06:11:36.109877+00:00",
+  "generated_at": "2026-10-18T11:12:18.233012+00:00",
   "models": [
     {
       "id": "2026-09-22:anthropic/claude-opus-5.5",
@@ -6835,9 +6835,265 @@
       "date": "2026-10-16",
       "pr": 17739,
       "url": "https://github.com/pollinations/pollinations/pull/17739"
+    },
+    {
+      "id": "pr-17833:DELETE /alpha/e2b/sandboxes/{id}",
+      "endpoint": "DELETE /alpha/e2b/sandboxes/{id}",
+      "summary": "Delete sandbox",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-17",
+      "pr": 17833,
+      "url": "https://github.com/pollinations/pollinations/pull/17833"
+    },
+    {
+      "id": "pr-17833:GET /alpha/e2b/pricing",
+      "endpoint": "GET /alpha/e2b/pricing",
+      "summary": "Get sandbox pricing",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-17",
+      "pr": 17833,
+      "url": "https://github.com/pollinations/pollinations/pull/17833"
+    },
+    {
+      "id": "pr-17833:GET /alpha/e2b/sandboxes/{id}",
+      "endpoint": "GET /alpha/e2b/sandboxes/{id}",
+      "summary": "Get sandbox",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-17",
+      "pr": 17833,
+      "url": "https://github.com/pollinations/pollinations/pull/17833"
+    },
+    {
+      "id": "pr-17833:GET /alpha/e2b/sandboxes/{id}/logs",
+      "endpoint": "GET /alpha/e2b/sandboxes/{id}/logs",
+      "summary": "Get sandbox logs",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-17",
+      "pr": 17833,
+      "url": "https://github.com/pollinations/pollinations/pull/17833"
+    },
+    {
+      "id": "pr-17833:GET /alpha/e2b/sandboxes/{id}/metrics",
+      "endpoint": "GET /alpha/e2b/sandboxes/{id}/metrics",
+      "summary": "Get sandbox metrics",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-17",
+      "pr": 17833,
+      "url": "https://github.com/pollinations/pollinations/pull/17833"
+    },
+    {
+      "id": "pr-17833:GET /alpha/e2b/v2/sandboxes",
+      "endpoint": "GET /alpha/e2b/v2/sandboxes",
+      "summary": "List sandboxes",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-17",
+      "pr": 17833,
+      "url": "https://github.com/pollinations/pollinations/pull/17833"
+    },
+    {
+      "id": "pr-17833:GET /api/x402/keys",
+      "endpoint": "GET /api/x402/keys",
+      "summary": "Choose an x402 prepaid API key amount",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-17",
+      "pr": 17833,
+      "url": "https://github.com/pollinations/pollinations/pull/17833"
+    },
+    {
+      "id": "pr-17833:GET /api/x402/keys/{packKey}",
+      "endpoint": "GET /api/x402/keys/{packKey}",
+      "summary": "Buy a prepaid API key with x402",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-17",
+      "pr": 17833,
+      "url": "https://github.com/pollinations/pollinations/pull/17833"
+    },
+    {
+      "id": "pr-17833:POST /alpha/e2b/sandboxes",
+      "endpoint": "POST /alpha/e2b/sandboxes",
+      "summary": "Create sandbox (v1)",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-17",
+      "pr": 17833,
+      "url": "https://github.com/pollinations/pollinations/pull/17833"
+    },
+    {
+      "id": "pr-17833:POST /alpha/e2b/sandboxes/{id}/connect",
+      "endpoint": "POST /alpha/e2b/sandboxes/{id}/connect",
+      "summary": "Connect or resume sandbox (v1)",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-17",
+      "pr": 17833,
+      "url": "https://github.com/pollinations/pollinations/pull/17833"
+    },
+    {
+      "id": "pr-17833:POST /alpha/e2b/sandboxes/{id}/pause",
+      "endpoint": "POST /alpha/e2b/sandboxes/{id}/pause",
+      "summary": "Pause sandbox",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-17",
+      "pr": 17833,
+      "url": "https://github.com/pollinations/pollinations/pull/17833"
+    },
+    {
+      "id": "pr-17833:POST /alpha/e2b/sandboxes/{id}/timeout",
+      "endpoint": "POST /alpha/e2b/sandboxes/{id}/timeout",
+      "summary": "Set sandbox timeout",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-17",
+      "pr": 17833,
+      "url": "https://github.com/pollinations/pollinations/pull/17833"
+    },
+    {
+      "id": "pr-17833:POST /alpha/e2b/v2/sandboxes",
+      "endpoint": "POST /alpha/e2b/v2/sandboxes",
+      "summary": "Create sandbox",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-17",
+      "pr": 17833,
+      "url": "https://github.com/pollinations/pollinations/pull/17833"
+    },
+    {
+      "id": "pr-17833:POST /alpha/e2b/v2/sandboxes/{id}/connect",
+      "endpoint": "POST /alpha/e2b/v2/sandboxes/{id}/connect",
+      "summary": "Connect or resume sandbox",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-17",
+      "pr": 17833,
+      "url": "https://github.com/pollinations/pollinations/pull/17833"
+    },
+    {
+      "id": "pr-17833:POST /api/x402/keys/{packKey}",
+      "endpoint": "POST /api/x402/keys/{packKey}",
+      "summary": "Buy a prepaid API key with x402",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-17",
+      "pr": 17833,
+      "url": "https://github.com/pollinations/pollinations/pull/17833"
+    },
+    {
+      "id": "pr-17833:POST /upload",
+      "endpoint": "POST /upload",
+      "summary": "Upload media",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:Pollinations-Safe",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:safe",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-10-17",
+      "pr": 17833,
+      "url": "https://github.com/pollinations/pollinations/pull/17833"
+    },
+    {
+      "id": "pr-17833:PUT /alpha/e2b/sandboxes/{id}/network",
+      "endpoint": "PUT /alpha/e2b/sandboxes/{id}/network",
+      "summary": "Update sandbox network",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-17",
+      "pr": 17833,
+      "url": "https://github.com/pollinations/pollinations/pull/17833"
     }
   ],
   "highlights": [
+    {
+      "date": "2026-10-17",
+      "emoji": "🔗",
+      "title": "Try API requests signed in",
+      "text": "Connect your Pollinations account in the interactive API docs to try requests with your own key, without pasting it into the tester. [Open the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17808
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-17",
+      "emoji": "✨",
+      "title": "Drop-in sign-in for HTML",
+      "text": "Add `<polli-connect>` to a plain HTML page for Pollinations sign-in without a build step. Read the connected key from `element.apiKey` or listen for `change` events. [Explore the UI package](https://react.pollinations.ai).",
+      "prs": [
+        17814
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-17",
+      "emoji": "🤖",
+      "title": "Linux sandboxes for agents",
+      "text": "Machines MCP gives agents tools to create and manage Linux sandboxes, run commands, and read or write text files. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        17698
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-17",
+      "emoji": "🎨",
+      "title": "Private image uploads",
+      "text": "Set `safe=privacy` or send `Pollinations-Safe: privacy` to strip supported location, camera and embedded-text metadata before storing an image, while keeping its orientation and colour profile. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        15428
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-10-17",
+      "emoji": "🤖",
+      "title": "DeepSeek Flash accepts Quest Pollen",
+      "text": "Use DeepSeek V4.1 Flash with Quest Pollen as well as paid access. Remote image URLs are handled on its Azure route, with Fireworks retained as fallback. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        17615
+      ],
+      "kind": "model"
+    },
     {
       "date": "2026-10-16",
       "emoji": "🤖",

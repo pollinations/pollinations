@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-10-18",
+  "period_start": "2026-10-11",
+  "period_end": "2026-10-17",
+  "generated_at": "2026-10-18T11:10:34.120384+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/809e2f9327cf843a5aa04cca23e8d225902c01db3b848fa844206ab301c59c65"
+    }
+  ],
+  "text": "Sandboxes can outlast a day; media jobs no longer need to hold an HTTP connection open.\n·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol. 01 — long-running things\n\n1. Sandbox timeouts can extend beyond a day. Daily restarts keep files, memory and processes, but drop open connections. Enter brings SSH and lifecycle controls together; Machines MCP adds sandbox controls.\n\n2. Image, video, audio and 3D jobs accept Prefer: respond-async. Check status and collect results through the API or SDK. One HTTP connection no longer has to outlive your render.\n\n3. Added Kandinsky short video, Qwen Image 2.1 Turbo image generation and editing, Mirelo sound effects for video, plus new chat and typed-decision models.\n\n4. The SDK gained 3D generation, word-timed speech, React hooks and an AI SDK chat transport. Agent Skills, discovery and JavaScript in Computer MCP make the tools easier to find.\n\n5. Keys can target model IDs; owners can grant a denied permission without widening the rest. API docs and a plain-HTML sign-in component simplify access. Keyboard and screen-reader navigation improved too.\n\nCode: https://github.com/pollinations/pollinations\nContributions welcome.\n\n#OpenSource #AI #DevTools #BuildInPublic"
+}

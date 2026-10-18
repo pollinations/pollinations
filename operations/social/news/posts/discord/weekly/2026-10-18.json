@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-10-18",
+  "period_start": "2026-10-11",
+  "period_end": "2026-10-17",
+  "generated_at": "2026-10-18T11:10:34.120384+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/2c00f3c94339b5b98f599994fa0dae39bb02288f810c9eae146fe7364acfb62b"
+    }
+  ],
+  "text": "## Weekly Update - 2026-10-18\n\nHey <@&1424461167883194418> — a lot grew this week. Here’s the useful part:\n\n🪴 **Sandboxes that stick around**\nSandbox timeouts can extend beyond a day. Daily restarts preserve files, memory and processes, though open connections drop. Enter now brings creation, SSH instructions and lifecycle controls onto one page; Machines MCP adds sandbox controls for agents.\n\n🎬 **Models and media**\nKandinsky adds short-video generation; Qwen Image 2.1 Turbo adds image generation and editing. The catalog also gained chat models, two Lightning Text versions and typed-decision models. Mirelo can add synchronized sound effects to a source video, and OpenAI speech gained adjustable speed.\n\n⏳ **Jobs that outlast a request**\nImage, video, audio and 3D requests gained `Prefer: respond-async`, with job status and results available through the API or SDK. The SDK also added 3D generation, word-timed speech, model-status queries, React generation hooks and an AI SDK chat transport. One HTTP connection no longer has to supervise the whole project.\n\n🔑 **Agents and access**\nAgent Skills and discovery docs make the API easier for agents to find. Computer MCP gained JavaScript execution. Keys can be scoped to individual model IDs, with narrower permission grants; interactive API docs and plain HTML apps gained simpler account connection via `<polli-connect>`.\n\n🌱 **Around the edges**\nQuests gained event-code and one-time Discord level rewards. DeepSeek V4.1 Flash gained Quest Pollen access. Keyboard and screen-reader controls improved, and uploads gained an opt-in setting to strip supported image metadata.\n\nCode and changes: https://github.com/pollinations/pollinations"
+}

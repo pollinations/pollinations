@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "weekly",
+  "date": "2026-10-18",
+  "period_start": "2026-10-11",
+  "period_end": "2026-10-17",
+  "generated_at": "2026-10-18T11:10:34.120384+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/86acc786a88567291e87da18b2edd233798ea35a30cbe1171ed516dee4e82ca6"
+    }
+  ],
+  "text": "this week we added `Prefer: respond-async` for image, video, audio & 3D jobs: fetch status and results later. sandboxes can extend past a day; daily restarts preserve files, memory and processes, but drop open connections. even servers need naps."
+}

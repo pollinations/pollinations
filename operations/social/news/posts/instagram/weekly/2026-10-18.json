@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-10-18",
+  "period_start": "2026-10-11",
+  "period_end": "2026-10-17",
+  "generated_at": "2026-10-18T11:10:34.120384+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/63d5b1ed1555cc9d1bacb12a26599fbde30e47c1b54f7edf57e591afa125dc9a"
+    },
+    {
+      "url": "https://media.pollinations.ai/97d69208ef7ef4e97765ccea7551c785aa3fbb1b78d8229da31a351f5f91af9b"
+    },
+    {
+      "url": "https://media.pollinations.ai/014d2c3054970d529f0824c01c2977e8d390f6bb63394d81237d251a6f4716f4"
+    }
+  ],
+  "text": "This week’s code grew a few extra rooms. Sandboxes can keep files and processes through daily restarts, with creation and lifecycle controls together in Enter. Image, video, audio and 3D requests gained async jobs; the SDK picked up more generation tools and React hooks. New models joined the catalog, agents got clearer docs and MCP tools, and keys can grant access more precisely. Also: simpler sign-in, more accessible controls and optional image metadata stripping. A lot of small doors opened. Browse the work at github.com/pollinations and pollinations.ai.\n\n#pollinations #opensource #aitools #pixelart #creativecoding #buildinpublic #indiedev #aidevelopment #developerTools #generativeAI",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

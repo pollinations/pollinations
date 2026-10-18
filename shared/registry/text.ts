@@ -2090,13 +2090,11 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Bedrock us.anthropic.claude-opus-4-7 (US cross-region profile)
-            // standard rates: 10% above the global profile's 5 / 0.5 / 6.25 / 25.
-            // The global.* profile errors, so the regional meter is what bills.
-            promptTextTokens: perMillion(5.5),
-            promptCachedTokens: perMillion(0.55),
-            promptCacheWriteTokens: perMillion(6.875),
-            completionTextTokens: perMillion(27.5),
+            // Bedrock global.anthropic.claude-opus-4-7 global standard rates.
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(0.5),
+            promptCacheWriteTokens: perMillion(6.25),
+            completionTextTokens: perMillion(25),
         },
         title: "Claude Opus 4.7",
         description:

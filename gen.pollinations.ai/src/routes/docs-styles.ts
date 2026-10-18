@@ -70,13 +70,18 @@ ${POLLI_UI_TOKENS_CSS}
 .ph-fab-done, .ph-fab.is-copied .ph-fab-idle { visibility: hidden; }
 .ph-fab.is-copied .ph-fab-done { visibility: visible; }
 .ph-fab svg { width: 16px; height: 16px; }
+/* Mobile: sit in Scalar's top bar beside its menu button, clear of the content
+   below, and drop the bar's separator line; the copy button keeps only its
+   icon to leave room for sign-in. */
 @media (width < 1000px) {
-    .ph-fab-cluster { top: 60px; right: 12px; }
+    .ph-fab-cluster { top: 6px; right: 12px; }
+    .scalar-app header.border-b { border-bottom-width: 0; }
     body:has(.references-sidebar-mobile-open) .ph-fab-cluster { display: none; }
 }
 @media (max-width: 640px) {
     .ph-fab { height: 34px; padding: 0 12px; font-size: 13px; }
     .ph-fab svg { width: 14px; height: 14px; }
+    .ph-fab-copy .ph-fab-face { font-size: 0; gap: 0; }
 }
 `;
 

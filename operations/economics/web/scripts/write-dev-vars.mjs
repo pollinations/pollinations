@@ -21,6 +21,11 @@ await writeFile(
     temporary,
     [
         sessionLine,
+        ...existing
+            .split("\n")
+            .filter((line) =>
+                /^ECONOMICS_GOOGLE_DRIVE_CREDENTIALS=/.test(line),
+            ),
         `TINYBIRD_ECONOMICS_READ_TOKEN=${JSON.stringify(reader)}`,
         'POLLINATIONS_AUTH_BASE_URL="http://localhost:3000"',
         'TINYBIRD_POLLEN_PIPE="economics_pollen_usage_snapshot_api"',

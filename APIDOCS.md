@@ -63,7 +63,9 @@ curl https://gen.pollinations.ai/v1/models \
   - [Community Models](#community-models)
   - [Community Agents](#community-agents)
   - [Media Storage](#media-storage)
+  - [Sandboxes API](#sandboxes-api)
   - [Account](#account)
+  - [x402 Prepaid Keys](#x402-prepaid-keys)
   - [Quests](#quests)
   - [Jobs](#jobs)
   - [3D](#3d)
@@ -2721,7 +2723,7 @@ Create a prompt agent or deploy `agent.ts` from a public GitHub repository. Code
 |---|---|---|
 | `systemPrompt` * | `string` | length: `1…8000` |
 | `baseModel` * | `string` | length: `1…253` |
-| `mcpServers` | enum (6) — `"pollinations"`, `"ask-jev"`, `"ffmpeg"`, …[] | default: `[]` |
+| `mcpServers` | enum (7) — `"pollinations"`, `"ask-jev"`, `"ffmpeg"`, …[] | default: `[]` |
 | `name` * | `string` | length: `1…120` |
 | `title` * | `string` | length: `1…42` |
 | `description` | `string` | default: `""` · max length: `1000` |
@@ -2987,15 +2989,26 @@ curl -X POST "https://media.pollinations.ai/upload" \
 
 **Custom IDs.** Add `id` to either format (for example, `-F id=cover.png` or `"id": "cover.png"`). IDs are case-sensitive, start with a letter or digit, and contain up to 128 letters, digits, dots, underscores, or hyphens. A user-owned API key is required. The returned id includes an opaque account prefix; use the returned URL for retrieval. The same ID works independently for different accounts. Existing files or gallery entries return `409` without replacement, including on retries.
 
+**Privacy.** Add `safe=privacy` (or the `Pollinations-Safe: privacy` header; `safe=true` includes privacy) to strip image metadata such as GPS location, camera details and embedded text before the file is stored. Orientation and colour profile are kept. Images up to 32 MiB are supported; larger images return `413` and unreadable images return `400`. The response carries `X-Safety-Applied: privacy` when metadata was stripped. Without it, files are stored byte for byte.
+
 Untagged files cannot be deleted. They expire after 30 days, but reads refresh retention once a file is at least 15 days old. An ID can be reused only once its file and any gallery entry are gone. A failed upload can still leave its ID occupied, so a retry may return `409`. Custom-ID files are served with `Cache-Control: no-store`.
 
 **Tags publish (alpha).** An optional `tags` field (comma-separated string, or a JSON array in the JSON format) publishes the upload into each tag's public gallery, where anyone can list it via `GET /media?tag={tag}`. Untagged uploads stay unlisted; all retrieval URLs are public, not access-controlled. Knowing one custom URL makes other predictable names in that account guessable. Full endpoint reference: https://media.pollinations.ai/openapi.json
 
 #### `POST` `/upload` — Upload media
 
-Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.
+Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Image metadata is stripped only when requested with `safe=privacy` or the `Pollinations-Safe: privacy` header; `safe=true` also enables privacy. Without it, uploaded bytes are preserved. Privacy processing supports image uploads up to 32 MiB and returns an error for larger or unparseable images. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.
 
 **Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `safe` | `query` | `string` | Comma-separated safety features. `privacy` strips supported image metadata; `true` includes privacy. |
+| `Pollinations-Safe` | `header` | `string` | Same safety features as the `safe` query parameter. |
+
+<sub>`*` = required parameter</sub>
 
 📥 **Request body** · `application/json`
 
@@ -3172,6 +3185,307 @@ Return file metadata (id, content type, size, upload timestamp) as JSON without 
 
 ```bash
 curl "https://media.pollinations.ai/550e8400-e29b-41d4-a716-446655440000/metadata"
+```
+
+### Sandboxes API
+
+Pollinations runs E2B's sandbox API with the rules noted on each endpoint. Request and response fields are in [E2B's API reference](https://docs.e2b.dev/api-reference/sandboxes/create-sandbox-v2).
+
+**Base URL:** `https://gen.pollinations.ai/alpha/e2b`. Send a [secret key](https://enter.pollinations.ai/keys) with the `account:machines` permission as `Authorization: Bearer <key>`. You see only your own sandboxes. Endpoints not listed here return 403.
+
+E2B's SDKs and CLI work unchanged:
+
+```bash
+export E2B_API_URL=https://gen.pollinations.ai/alpha/e2b
+export E2B_API_KEY=sk_...
+```
+
+Setup with polli, credits and runtime: [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes).
+
+#### `GET` `/alpha/e2b/pricing` — Get sandbox pricing
+
+Pollinations' rates in credits per vCPU-second and per GiB-second of memory, each template's size, and how many sandboxes an account can run at once. No key needed.
+
+📤 **Response** · `200` — Rates, template sizes and the running limit.
+
+💻 **Example**
+
+```bash
+curl "https://gen.pollinations.ai/alpha/e2b/pricing"
+```
+
+---
+
+#### `POST` `/alpha/e2b/sandboxes` — Create sandbox (v1)
+
+Kept for E2B's CLI; prefer v2. Pollinations turns auto-pause on by default, enforces secured access and prepays the first lease from your credits. A timeout over 600 seconds keeps the sandbox running until then, prepaid 10 minutes at a time. Enabled `autoResume`, an `iam` configuration or non-empty `volumeMounts` return 400.
+
+Request and response fields: [E2B · Create sandbox](https://docs.e2b.dev/api-reference/sandboxes/create-sandbox)
+
+📥 **Request body** · `application/json`
+
+📤 **Response** · `201` — Success. The body is described on E2B's page.
+
+💻 **Example**
+
+```bash
+curl -X POST "https://gen.pollinations.ai/alpha/e2b/sandboxes" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"templateID":"pollinations","timeout":600}'
+```
+
+---
+
+#### `POST` `/alpha/e2b/v2/sandboxes` — Create sandbox
+
+Pollinations turns auto-pause on by default, enforces secured access and prepays the first lease from your credits. A timeout over 600 seconds keeps the sandbox running until then, prepaid 10 minutes at a time. Enabled `autoResume`, an `iam` configuration or non-empty `volumeMounts` return 400.
+
+Request and response fields: [E2B · Create sandbox (v2)](https://docs.e2b.dev/api-reference/sandboxes/create-sandbox-v2)
+
+📥 **Request body** · `application/json`
+
+📤 **Response** · `201` — Success. The body is described on E2B's page.
+
+💻 **Example**
+
+```bash
+curl -X POST "https://gen.pollinations.ai/alpha/e2b/v2/sandboxes" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"templateID":"pollinations","timeout":600}'
+```
+
+---
+
+#### `GET` `/alpha/e2b/v2/sandboxes` — List sandboxes
+
+Lists only your sandboxes, whatever metadata filter you pass. Only the v2 path is available.
+
+Request and response fields: [E2B · List sandboxes (v2)](https://docs.e2b.dev/api-reference/sandboxes/list-sandboxes-v2)
+
+💻 **Example**
+
+```bash
+curl "https://gen.pollinations.ai/alpha/e2b/v2/sandboxes" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+---
+
+#### `GET` `/alpha/e2b/sandboxes/{id}` — Get sandbox
+
+Request and response fields: [E2B · Get sandbox](https://docs.e2b.dev/api-reference/sandboxes/get-sandbox)
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | Sandbox ID, from create or list. |
+
+<sub>`*` = required parameter</sub>
+
+💻 **Example**
+
+```bash
+curl "https://gen.pollinations.ai/alpha/e2b/sandboxes/example-sandbox" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+---
+
+#### `DELETE` `/alpha/e2b/sandboxes/{id}` — Delete sandbox
+
+Unused prepaid time is not refunded. If the sandbox got a dedicated API key, revoke it separately.
+
+Request and response fields: [E2B · Delete sandbox](https://docs.e2b.dev/api-reference/sandboxes/delete-sandbox)
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | Sandbox ID, from create or list. |
+
+<sub>`*` = required parameter</sub>
+
+💻 **Example**
+
+```bash
+curl -X DELETE "https://gen.pollinations.ai/alpha/e2b/sandboxes/example-sandbox" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+---
+
+#### `GET` `/alpha/e2b/sandboxes/{id}/metrics` — Get sandbox metrics
+
+Request and response fields: [E2B · Get sandbox metrics](https://docs.e2b.dev/api-reference/sandboxes/get-sandbox-metrics)
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | Sandbox ID, from create or list. |
+
+<sub>`*` = required parameter</sub>
+
+💻 **Example**
+
+```bash
+curl "https://gen.pollinations.ai/alpha/e2b/sandboxes/example-sandbox/metrics" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+---
+
+#### `GET` `/alpha/e2b/sandboxes/{id}/logs` — Get sandbox logs
+
+Only this v1 path is available, not `/v2/sandboxes/{id}/logs`.
+
+Request and response fields: [E2B · Get sandbox logs](https://docs.e2b.dev/api-reference/sandboxes/get-sandbox-logs)
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | Sandbox ID, from create or list. |
+
+<sub>`*` = required parameter</sub>
+
+💻 **Example**
+
+```bash
+curl "https://gen.pollinations.ai/alpha/e2b/sandboxes/example-sandbox/logs" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+---
+
+#### `POST` `/alpha/e2b/sandboxes/{id}/pause` — Pause sandbox
+
+Stops the renewal a timeout over 600 seconds started. Unused prepaid time is not refunded.
+
+Request and response fields: [E2B · Pause sandbox](https://docs.e2b.dev/api-reference/sandboxes/pause-sandbox)
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | Sandbox ID, from create or list. |
+
+<sub>`*` = required parameter</sub>
+
+💻 **Example**
+
+```bash
+curl -X POST "https://gen.pollinations.ai/alpha/e2b/sandboxes/example-sandbox/pause" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+---
+
+#### `PUT` `/alpha/e2b/sandboxes/{id}/network` — Update sandbox network
+
+Request and response fields: [E2B · Update sandbox network](https://docs.e2b.dev/api-reference/sandboxes/update-sandbox-network)
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | Sandbox ID, from create or list. |
+
+<sub>`*` = required parameter</sub>
+
+📥 **Request body** · `application/json`
+
+💻 **Example**
+
+```bash
+curl -X PUT "https://gen.pollinations.ai/alpha/e2b/sandboxes/example-sandbox/network" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"denyOut":["0.0.0.0/0"],"allowOut":["gen.pollinations.ai"]}'
+```
+
+---
+
+#### `POST` `/alpha/e2b/sandboxes/{id}/timeout` — Set sandbox timeout
+
+Extra runtime is prepaid from your credits; a shorter timeout refunds nothing. Over 600 seconds keeps the sandbox running until then; 600 or less ends that.
+
+Request and response fields: [E2B · Set sandbox timeout](https://docs.e2b.dev/api-reference/sandboxes/set-sandbox-timeout)
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | Sandbox ID, from create or list. |
+
+<sub>`*` = required parameter</sub>
+
+📥 **Request body** · `application/json`
+
+💻 **Example**
+
+```bash
+curl -X POST "https://gen.pollinations.ai/alpha/e2b/sandboxes/example-sandbox/timeout" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"timeout":3600}'
+```
+
+---
+
+#### `POST` `/alpha/e2b/sandboxes/{id}/connect` — Connect or resume sandbox (v1)
+
+Kept for E2B's CLI; prefer v2. Resumes a paused sandbox. Only `timeout` is used, 300 seconds if omitted. You prepay only the time beyond the current lease, and a timeout over 600 seconds keeps the sandbox running until then.
+
+Request and response fields: [E2B · Connect to sandbox](https://docs.e2b.dev/api-reference/sandboxes/connect-to-sandbox)
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | Sandbox ID, from create or list. |
+
+<sub>`*` = required parameter</sub>
+
+📥 **Request body** · `application/json`
+
+💻 **Example**
+
+```bash
+curl -X POST "https://gen.pollinations.ai/alpha/e2b/sandboxes/example-sandbox/connect" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"timeout":600}'
+```
+
+---
+
+#### `POST` `/alpha/e2b/v2/sandboxes/{id}/connect` — Connect or resume sandbox
+
+Resumes a paused sandbox. Only `timeout` is used, 300 seconds if omitted. You prepay only the time beyond the current lease, and a timeout over 600 seconds keeps the sandbox running until then.
+
+Request and response fields: [E2B · Connect sandbox (v2)](https://docs.e2b.dev/api-reference/sandboxes/connect-sandbox-v2)
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | Sandbox ID, from create or list. |
+
+<sub>`*` = required parameter</sub>
+
+📥 **Request body** · `application/json`
+
+💻 **Example**
+
+```bash
+curl -X POST "https://gen.pollinations.ai/alpha/e2b/v2/sandboxes/example-sandbox/connect" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"timeout":600}'
 ```
 
 ### Account
@@ -3933,6 +4247,70 @@ Returns usage history for the API key used in the request. No scope required —
 ```bash
 curl "https://gen.pollinations.ai/account/key/usage?format=json&limit=100" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+### x402 Prepaid Keys
+
+Buy a prepaid API key with USDC on Base, without creating a Pollinations account. Choose any amount from $0.01 to $10,000 in cents; the key receives the same amount of Pollen.
+
+1. `GET https://enter.pollinations.ai/api/x402/keys/0.50` requests a $0.50 key. `POST` works too. The first response is `402` with payment terms in `PAYMENT-REQUIRED`.
+2. Use an x402-capable wallet or client to sign those terms, then retry the same request with `PAYMENT-SIGNATURE`. The response contains the secret `key` and its `pollen` budget.
+3. Send `Authorization: Bearer <key>` to normal `gen.pollinations.ai` generation endpoints. Check the key's remaining budget at `GET https://gen.pollinations.ai/account/balance`.
+
+Each payment creates a new key. Keep it secret. `GET https://enter.pollinations.ai/api/x402/keys` lists preset amounts; you can also put your own amount in the URL.
+
+#### `GET` `/api/x402/keys` — Choose an x402 prepaid API key amount
+
+Buy a new secret API key without a Pollinations login. GET or POST to /api/x402/keys/0.50 for 0.50 Pollen, or use one of the existing pack URLs below. Choose any amount from $0.01 to $10,000 in cents.
+
+💻 **Example**
+
+```bash
+curl "https://enter.pollinations.ai/api/x402/keys"
+```
+
+---
+
+#### `GET` `/api/x402/keys/{packKey}` — Buy a prepaid API key with x402
+
+GET or POST to /api/x402/keys/{amountUsd} to pay that amount in USDC and receive the same amount of Pollen in a new secret API key. Existing pack keys also work. Returns 402 with exact payment terms; retry with PAYMENT-SIGNATURE. Replaying a settled payment returns the same key, not more credits.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `packKey` * | `path` | `string` | — |
+
+<sub>`*` = required parameter</sub>
+
+📤 **Response** · `200` — Prepaid API key
+
+💻 **Example**
+
+```bash
+curl "https://enter.pollinations.ai/api/x402/keys/0.50"
+```
+
+---
+
+#### `POST` `/api/x402/keys/{packKey}` — Buy a prepaid API key with x402
+
+GET or POST to /api/x402/keys/{amountUsd} to pay that amount in USDC and receive the same amount of Pollen in a new secret API key. Existing pack keys also work. Returns 402 with exact payment terms; retry with PAYMENT-SIGNATURE. Replaying a settled payment returns the same key, not more credits.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `packKey` * | `path` | `string` | — |
+
+<sub>`*` = required parameter</sub>
+
+📤 **Response** · `200` — Prepaid API key
+
+💻 **Example**
+
+```bash
+curl -X POST "https://enter.pollinations.ai/api/x402/keys/0.50"
 ```
 
 ### Quests

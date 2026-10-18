@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "IMAGE_INSPECT_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "image-inspect",
+        name: "Image Inspect",
+        description:
+            "Inspect an image URL or data URI: format, dimensions, bit depth, byte size, and cache headers.",
+        binding: "IMAGE_INSPECT_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Free. Inspection uses no paid providers.",
             rates: [],
         },
     },

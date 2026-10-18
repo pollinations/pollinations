@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Image Inspect | `https://gen.pollinations.ai/mcp/image-inspect` | Read format, dimensions, bit depth, byte size, and cache headers from any public image URL or data URI | [Source](https://github.com/pollinations/pollinations/tree/main/apps/image-inspect-mcp) |
 
 Send the key with every request:
 
@@ -207,6 +208,20 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### Image Inspect MCP
+
+The Image Inspect server reads an image's bytes and reports what they actually
+contain: format (PNG, JPEG, GIF, WebP in all three flavors, or BMP), pixel
+dimensions, bit depth and color type, byte size, and the origin's cache headers
+(ETag, X-Cache, Last-Modified). Pass any public `http(s)` image URL or a base64
+`data:image/...;base64,...` URI to `inspect_image`.
+
+Use it to verify a generation or CDN response before shipping it: the byte size
+and `X-Cache` header show whether a repeated URL was served from cache, and
+`format: null` means the bytes are not a supported image (an error page or a
+truncated download). Bodies are capped at 10 MB; larger responses are reported
+as truncated.
 
 ### Billing and permissions
 

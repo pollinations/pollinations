@@ -27,9 +27,11 @@
     <!-- Chat apps that show our Markdown replies as plain text link
          "[top up](https://…/top-up?ref=…)" through its closing bracket. Drop
          trailing ")" that nothing opened, as GitHub's autolinks do, before
-         the app reads the URL. -->
+         the app reads the URL. Only gen's links, which all carry ref: other
+         values, such as an OAuth state, must come back exactly as sent. -->
     <script>
       (() => {
+        if (!new URLSearchParams(location.search).has("ref")) return;
         let href = location.href;
         while (
           href.endsWith(")") &&

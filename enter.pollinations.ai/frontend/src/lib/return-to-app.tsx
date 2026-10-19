@@ -20,10 +20,10 @@ export function parseAppUrl(value: unknown): string | null {
  * store it in their own URL on first load, because after a Stripe round
  * trip the referrer is Stripe.
  */
-export function referrerAppUrl(): string | null {
-    const referrer = parseAppUrl(landingReferrer());
-    if (!referrer) return null;
-    const url = new URL(referrer);
+export function referrerAppUrl(referrer: string): string | null {
+    const parsed = parseAppUrl(referrer);
+    if (!parsed) return null;
+    const url = new URL(parsed);
     if (url.origin === window.location.origin) return null;
     url.hash = "";
     return url.href;
@@ -31,8 +31,9 @@ export function referrerAppUrl(): string | null {
 
 /**
  * The referrer of the tab's first page that asked, kept for the tab like the
- * analytics source. Signing in comes back from GitHub, or from the Google
- * page that signed in to GitHub, so a later load's referrer is never the app.
+ * analytics source, for links that name no app. Signing in comes back from
+ * GitHub, or from the Google page that signed in to GitHub, so a later
+ * load's referrer is never the app.
  */
 function landingReferrer(): string {
     try {
@@ -53,7 +54,11 @@ function landingReferrer(): string {
 export function preferredReturnUrl(
     redirect: string | undefined,
 ): string | null {
-    const referrer = referrerAppUrl();
+    // A link that names its app is newer than anything kept for the tab:
+    // only this load's own referrer may narrow it to the exact chat.
+    const referrer = referrerAppUrl(
+        redirect ? document.referrer : landingReferrer(),
+    );
     if (!referrer || referrer === redirect) return null;
     if (!redirect) return referrer;
     return new URL(referrer).origin === new URL(redirect).origin

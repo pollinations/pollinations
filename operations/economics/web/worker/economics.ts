@@ -16,7 +16,9 @@ const READ_PIPES = new Set([
 export const economicsRoutes = new Hono<Env>()
     .get("/vendor-journals", async (c) => {
         c.header("Cache-Control", "private, no-store");
-        return c.json(await readVendorJournals(c.env));
+        return c.json(
+            await readVendorJournals(c.env, c.req.query("refresh") === "1"),
+        );
     })
     .get("/pipes/:pipe", async (c) => {
         const pipe = c.req.param("pipe");

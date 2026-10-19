@@ -226,6 +226,84 @@ describe("buildRunway", () => {
         );
     });
 
+    it("allocates reviewed rent to service months without moving cash or changing the plan", () => {
+        const bank = [
+            opening(),
+            transaction({
+                entry_id: "july-payment",
+                vendor: "gaswerksiedlung",
+                category: "office",
+                date: "2026-07-08",
+                amount: -900,
+            }),
+            transaction({
+                entry_id: "september-payment",
+                vendor: "gaswerksiedlung",
+                category: "office",
+                date: "2026-09-04",
+                amount: -900,
+            }),
+            transaction({
+                entry_id: "october-payment",
+                vendor: "gaswerksiedlung",
+                category: "office",
+                date: "2026-10-05",
+                amount: -900,
+            }),
+        ];
+        const rules: Record<string, PrivateForecastRule> = {
+            "gaswerksiedlung|office": {
+                fixedAmounts: [{ amount: -400, currency: "USD" }],
+                activeFrom: "2026-10",
+            },
+        };
+        const now = new Date("2026-10-19T12:00:00Z");
+        const baseline = buildRunway(bank, now, [], rules);
+        const months = ["2026-06", "2026-08", "2026-09"];
+        const allocated = bank.map((row, index) =>
+            index === 0
+                ? row
+                : {
+                      ...row,
+                      evidence: `${row.evidence}; expense_month=${months[index - 1]}; reviewed`,
+                  },
+        );
+        const result = buildRunway(allocated, now, [], rules);
+        const rent = result.rows.find(
+            (row) => row.vendor === "Rent & utilities",
+        );
+        if (!rent) throw new Error("Expected rent row");
+        expect(rent.values["2026-06:actual"]).toBe(-900);
+        expect(rent.values["2026-07:actual"]).toBe(0);
+        expect(rent.values["2026-08:actual"]).toBe(-900);
+        expect(rent.values["2026-09:actual"]).toBe(-900);
+        expect(rent.values["2026-10:forecast"]).toBe(-400);
+        expect(
+            Object.entries(rent.values)
+                .filter(([key]) => !key.endsWith(":forecast"))
+                .reduce((sum, [, value]) => sum + (value ?? 0), 0),
+        ).toBe(-2700);
+        for (const column of result.columns) {
+            const before = baseline.columns.find((c) => c.id === column.id);
+            if (!before) throw new Error("Expected original column");
+            expect(column.netUsd).toBe(before.netUsd);
+            expect(column.runningCashUsd).toBe(before.runningCashUsd);
+            if (column.kind === "forecast")
+                expect(column.totalExpensesUsd).toBe(before.totalExpensesUsd);
+        }
+        expect(result.projectedMonthEndCashUsd).toBe(
+            baseline.projectedMonthEndCashUsd,
+        );
+        expect(bank[1].evidence).toBe("Wise statement");
+        const invalid = buildRunway(
+            bank.map((row) => ({ ...row, evidence: "expense_month=2026-99" })),
+            now,
+            [],
+            rules,
+        );
+        expect(invalid.rows).toEqual(baseline.rows);
+    });
+
     it("keeps a one-month rent amount separate from later fixed rent and electricity", () => {
         const now = new Date("2026-09-05T12:00:00Z");
         const bank = [
@@ -366,6 +444,67 @@ describe("buildRunway", () => {
         ).toBe(true);
     });
 
+    it("explains revenue to cash with settlements, payments, deposits and FX without counting provider credits", () => {
+        const bank = [
+            opening(1000),
+            opening(100, { entry_id: "eur-opening", currency: "EUR" }),
+            transaction({
+                entry_id: "payout",
+                date: "2026-07-20",
+                vendor: "stripe",
+                category: "revenue",
+                amount: 150,
+            }),
+            transaction({
+                entry_id: "payment",
+                date: "2026-07-20",
+                amount: -40,
+            }),
+            transaction({
+                entry_id: "deposit-return",
+                date: "2026-07-20",
+                vendor: "deel",
+                category: "balance_sheet",
+                amount: 100,
+            }),
+        ];
+        const result = buildRunway(
+            bank,
+            NOW,
+            [baseline({ paid: -30, credit: -500 })],
+            undefined,
+            [stripeSales()],
+        );
+        const july = result.columns.find((c) => c.id === "2026-07:actual");
+        if (!july?.cashBridge || july.netUsd == null)
+            throw new Error("July cash bridge missing");
+        expect(july.cashBridge).toMatchObject({
+            revenue: 95,
+            expenses: -30,
+            receiptsDifference: 55,
+            paymentsDifference: -10,
+            otherCash: 100,
+        });
+        expect(july.cashBridge?.exchangeRates).toBeCloseTo(-1.01, 8);
+        expect(
+            Object.values(july.cashBridge).reduce(
+                (sum, value) => sum + value,
+                0,
+            ),
+        ).toBeCloseTo(july.netUsd, 8);
+        expect(july.netUsd).toBeCloseTo(208.99, 8);
+        expect(july.totalCreditUsd).toBe(-500);
+        expect(
+            result.columns
+                .filter((c) => c.kind === "forecast")
+                .every((c) => c.cashBridge === undefined),
+        ).toBe(true);
+        const missingSales = buildRunway(bank, NOW, [baseline({ paid: -30 })]);
+        expect(
+            missingSales.columns.find((c) => c.id === july.id)?.cashBridge,
+        ).toBeUndefined();
+    });
+
     it("bridges Stripe activity to bank payouts without changing sales or cash", () => {
         const result = buildRunway(
             [
@@ -388,6 +527,7 @@ describe("buildRunway", () => {
         if (!july) throw new Error("July column missing");
         // Revenue is known; this fixture has no expense coverage.
         expect(july.operatingResultUsd).toBeNull();
+        expect(july.cashBridge).toBeUndefined();
         // Revenue is what entered Stripe in the month; the Wise payout is
         // cash only, so no settlement line bridges the two.
         expect(

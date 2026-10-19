@@ -299,6 +299,11 @@ const models: ModelDefinition[] = [
         transform: createReasoningEffortTransform("toggle"),
     },
     {
+        name: "inception/mercury-3",
+        config: portkeyConfig["inception/mercury-3"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "cohere/command-a-plus",
         config: portkeyConfig["cohere/command-a-plus"],
     },

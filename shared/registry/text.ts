@@ -768,6 +768,33 @@ const TEXT_BASE_SERVICES = {
         contextLength: 260000,
         isSpecialized: false,
     },
+    "inception/mercury-3": {
+        supportedParameters: CHAT_PARAMETERS.mercury25,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Inception",
+        category: "text",
+        addedDate: new Date("2026-10-19").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter's Inception route list rates (2026-10-19), including the
+        // account's 5.5% credit-purchase fee. Mercury 3 is 50% off until the
+        // promotion ends (no end date published); this uses the list price.
+        cost: {
+            promptTextTokens: perMillion(0.2) * 1.055,
+            promptCachedTokens: perMillion(0.02) * 1.055,
+            completionTextTokens: perMillion(0.7) * 1.055,
+        },
+        title: "Mercury 3",
+        description:
+            "Diffusion reasoning for agentic workflows and real-time voice and search",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "cohere/command-a-plus": {
         supportedParameters: CHAT_PARAMETERS.openRouterCohere,
         aliases: [

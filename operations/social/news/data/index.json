@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-18T16:35:08.466351+00:00",
+  "generated_at": "2026-10-19T06:14:06.110599+00:00",
   "models": [
     {
       "id": "2026-09-22:anthropic/claude-opus-5.5",
@@ -5613,6 +5613,301 @@
           }
         }
       }
+    },
+    {
+      "id": "2026-10-18:deepseek/deepseek-v4.1-flash-1017",
+      "model_id": "deepseek/deepseek-v4.1-flash-1017",
+      "title": "DeepSeek V4.1 Flash 1017",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-18",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.000000003",
+            "completionTextTokens": "0.0000006"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-18:black-forest-labs/flux-3-image-klein",
+      "model_id": "black-forest-labs/flux-3-image-klein",
+      "title": "FLUX.3 Image Klein",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-10-18",
+      "pricing_units": {
+        "before": null,
+        "after": {
+          "completionImageTokens": {
+            "unit": "megapixel",
+            "quantity": 1000000
+          }
+        }
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionImageTokens": "0.000000009"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-18:x-ai/grok-4.20",
+      "model_id": "x-ai/grok-4.20",
+      "title": "Grok 4.20",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-18",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000015",
+            "promptCachedTokens": "0.00000015",
+            "promptImageTokens": "0.0000015",
+            "completionTextTokens": "0.0000045"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000009375",
+            "promptCachedTokens": "0.00000015",
+            "promptImageTokens": "0.0000009375",
+            "completionTextTokens": "0.000001875"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-18:kwaivgi/kling-v3.0-std",
+      "model_id": "kwaivgi/kling-v3.0-std",
+      "title": "Kling 3.0 Standard",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "video",
+      "date": "2026-10-18",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 2
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "video",
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.084",
+            "completionAudioSeconds": "0.042"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-18:liquid/d1",
+      "model_id": "liquid/d1",
+      "title": "Liquid D1",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-18",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000000422"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000000211",
+            "promptCachedTokens": "0.0000000211"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-18:xiaomi/mimo-v2.6-flash",
+      "model_id": "xiaomi/mimo-v2.6-flash",
+      "title": "MiMo V2.6 Flash",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-18",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001477",
+            "promptCachedTokens": "0.000000002954",
+            "completionTextTokens": "0.0000002954"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000014",
+            "promptCachedTokens": "0.0000000028",
+            "promptImageTokens": "0.00000014",
+            "completionTextTokens": "0.00000028"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-18:xiaomi/mimo-v2.6-pro",
+      "model_id": "xiaomi/mimo-v2.6-pro",
+      "title": "MiMo V2.6 Pro",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-18",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000458925",
+            "promptCachedTokens": "0.000000003798",
+            "completionTextTokens": "0.00000091785"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000435",
+            "promptCachedTokens": "0.0000000036",
+            "promptImageTokens": "0.000000435",
+            "completionTextTokens": "0.00000087"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-18:nvidia/asset-harvester",
+      "model_id": "nvidia/asset-harvester",
+      "title": "NVIDIA Asset Harvester",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "3d",
+      "date": "2026-10-18",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionImageTokens": "0.07"
+          },
+          "after": {
+            "currency": "pollen",
+            "completionImageTokens": "0.25"
+          }
+        }
+      }
     }
   ],
   "api": [
@@ -7044,6 +7339,46 @@
     }
   ],
   "daily": [
+    {
+      "date": "2026-10-18",
+      "emoji": "🎨",
+      "title": "Kling 3.0 Standard video",
+      "text": "Make 720p clips from a prompt or start frame, with an optional end frame and audio. Choose a duration from 3 to 15 seconds. [View the model](https://enter.pollinations.ai/models?q=kwaivgi%2Fkling-v3.0-std).",
+      "prs": [
+        15176
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-18",
+      "emoji": "🎨",
+      "title": "FLUX.3 Image Klein",
+      "text": "Generate images or edit with up to 10 reference images and explicit dimensions up to 4096 pixels per side. [View the model](https://enter.pollinations.ai/models?q=FLUX.3%20Image%20Klein).",
+      "prs": [
+        17633
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-18",
+      "emoji": "🤖",
+      "title": "DeepSeek V4.1 Flash 1017",
+      "text": "Use `deepseek/deepseek-v4.1-flash-1017` for text and image input, tools, and reasoning, with a 1,048,576-token context window. [View the model](https://enter.pollinations.ai/models?q=deepseek%2Fdeepseek-v4.1-flash-1017).",
+      "prs": [
+        17859
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-18",
+      "emoji": "🔗",
+      "title": "Custom account menu links",
+      "text": "Apps using `<polli-connect>` can add links to the account menu and optionally hide Buy Pollen while keeping the balance and account actions. [Explore React UI](https://github.com/pollinations/pollinations/tree/main/packages/ui).",
+      "prs": [
+        17863
+      ],
+      "kind": "product"
+    },
     {
       "date": "2026-10-17",
       "emoji": "🔗",
@@ -8867,76 +9202,6 @@
         15165
       ],
       "kind": "api"
-    },
-    {
-      "date": "2026-09-18",
-      "emoji": "🎨",
-      "title": "FLUX.2 Max images",
-      "text": "Generate images or edit with up to eight reference images using `black-forest-labs/flux.2-max`. The primary route accepts custom dimensions, a seed, and PNG output. [View the model](https://enter.pollinations.ai/models?q=black-forest-labs/flux.2-max).",
-      "prs": [
-        14811
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-09-18",
-      "emoji": "🤖",
-      "title": "GPT-4o Mini added",
-      "text": "Use `openai/gpt-4o-mini` for text tasks with tools, structured outputs, and up to ten reference images. [View the model](https://enter.pollinations.ai/models?q=openai/gpt-4o-mini).",
-      "prs": [
-        14791
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-09-18",
-      "emoji": "🤖",
-      "title": "Hy4 Preview joins",
-      "text": "Try `tencent/hy4-preview` for reasoning, tool use, and structured outputs with a 1,048,576-token context window. [View the model](https://enter.pollinations.ai/models?q=tencent/hy4-preview).",
-      "prs": [
-        14798
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-09-18",
-      "emoji": "🤖",
-      "title": "Tencent Hy3 added",
-      "text": "Use `tencent/hy3` for reasoning, tools, and structured outputs with a 262,144-token context window. [View the model](https://enter.pollinations.ai/models?q=tencent/hy3).",
-      "prs": [
-        14812
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-09-18",
-      "emoji": "🎯",
-      "title": "Jev makes typed decisions",
-      "text": "Send `typesafe/jev` a JSON state and `choice`, `score`, or `noul` questions through Chat Completions. Get answers with confidence and probabilities. [View the model](https://enter.pollinations.ai/models?q=typesafe/jev).",
-      "prs": [
-        15111
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-09-18",
-      "emoji": "🔗",
-      "title": "Jev gets an MCP tool",
-      "text": "Use the bring-your-own-key Jev MCP server's `jev_decide` tool to request typed decisions from an MCP client. [Read the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
-      "prs": [
-        15111
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-18",
-      "emoji": "💡",
-      "title": "Inspect CLI usage",
-      "text": "Filter `polli usage` history or daily reports by key, model, and a day range of up to 90 days. Inspect token totals or export raw CSV. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
-      "prs": [
-        15045
-      ],
-      "kind": "product"
     }
   ]
 }

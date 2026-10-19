@@ -32,6 +32,11 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
+        "meta/llama-4-scout:openrouter:deepinfra-fp8-priority",
+        "meta-llama/llama-4-scout",
+        "deepinfra/fp8/priority",
+    ],
+    [
         "meta/llama-4-scout:openrouter:novita-bf16",
         "meta-llama/llama-4-scout",
         "novita/bf16",
@@ -1177,10 +1182,12 @@ describe("static provider fallbacks", () => {
         });
     });
 
-    it("shares Scout capabilities and pricing across its two routes", () => {
+    it.each([
+        "meta/llama-4-scout:openrouter:deepinfra-fp8-priority",
+        "meta/llama-4-scout:openrouter:novita-bf16",
+    ] as const)("preserves Scout capabilities through %s", (fallback) => {
         const primary = TEXT_SERVICES["meta/llama-4-scout"];
-        const route =
-            TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"];
+        const route = TEXT_SERVICES[fallback];
         expect(primary).toMatchObject({
             tools: false,
             contextLength: 131072,
@@ -1503,10 +1510,11 @@ describe("static provider fallbacks", () => {
         expect(billed.price.totalPrice).toBeCloseTo(quoted, 12);
     });
 
-    it("uses the same primary and single fallback for both API formats", () => {
+    it("tries Scout priority before Novita in both API formats", () => {
         const primary = "meta/llama-4-scout";
+        const priority = `${primary}:openrouter:deepinfra-fp8-priority`;
         const novita = `${primary}:openrouter:novita-bf16`;
-        expect(TEXT_SERVICES[primary].fallbacks).toEqual([novita]);
+        expect(TEXT_SERVICES[primary].fallbacks).toEqual([priority, novita]);
         expect(findModelByName(primary)?.config()).toMatchObject({
             model: "meta/llama-4-scout",
             directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
@@ -1524,6 +1532,15 @@ describe("static provider fallbacks", () => {
         expect(resolveDirectResponsesTarget(primary, request)).toMatchObject({
             endpoint: "https://ai-gateway.vercel.sh/v1/responses",
             defaults: { providerOptions: { gateway: { only: ["deepinfra"] } } },
+        });
+        expect(resolveDirectResponsesTarget(priority, request)).toMatchObject({
+            endpoint: "https://openrouter.ai/api/v1/responses",
+            defaults: {
+                provider: {
+                    only: ["deepinfra/fp8/priority"],
+                    allow_fallbacks: false,
+                },
+            },
         });
         expect(resolveDirectResponsesTarget(novita, request)).toMatchObject({
             endpoint: "https://openrouter.ai/api/v1/responses",

@@ -27,11 +27,19 @@
     <!-- Chat apps that show our Markdown replies as plain text link
          "[top up](https://…/top-up?ref=…)" through its closing bracket. Drop
          trailing ")" that nothing opened, as GitHub's autolinks do, before
-         the app reads the URL. Only gen's links, which all carry ref: other
-         values, such as an OAuth state, must come back exactly as sent. -->
-    <script>
+         the app reads the URL. Only gen's fix links (fixLink in gen's
+         refusals.ts): the pages they open, with their ref. Every other value,
+         such as an OAuth state, must come back exactly as sent. Tested by
+         scripts/fix-link-url.test.mjs. -->
+    <script id="fix-link-url">
       (() => {
-        if (!new URLSearchParams(location.search).has("ref")) return;
+        const fixLinkPages = ["/top-up", "/quests", "/edit-key", "/grant"];
+        if (
+          !fixLinkPages.includes(location.pathname) ||
+          !new URLSearchParams(location.search).has("ref")
+        ) {
+          return;
+        }
         let href = location.href;
         while (
           href.endsWith(")") &&

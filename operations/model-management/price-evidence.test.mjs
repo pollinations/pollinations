@@ -691,6 +691,38 @@ test("embedding table input-only price preserves null output and refuses output 
     );
 });
 
+test("categorized embedding rows preserve an explicitly inapplicable output column", () => {
+    const source = `Responses API, Chat Completions API, Realtime API, Batch API, and Assistants API are not priced separately.
+Specialized models
+Prices per 1M tokens.
+Standard
+### Grouped Pricing Table data
+| Category | Model | Input | Cached input | Output |
+| --- | --- | --- | --- | --- |
+| Search | gpt-5-search-api | $1.25 | $0.125 | $10.00 |
+| Embedding | text-embedding-3-small | $0.02 | - | - |
+| Embedding | text-embedding-3-large | $0.13 | - | - |`;
+    const options = {
+        upstreamModel: "openai/text-embedding-3-small",
+        category: "embedding",
+    };
+    const price = extractPrices(source, options);
+    assert.equal(price?.input, 0.02);
+    assert.equal(price.output, null);
+    verifyPositions(source, price);
+    for (const invalid of [
+        source.replace(
+            "Embedding | text-embedding-3-small",
+            "Search | text-embedding-3-small",
+        ),
+        source.replace("$0.02 | - | -", "$0.02 | - | $0.01"),
+        source.replace("$0.02 | - | -", "$0.02 | - | unknown"),
+        source.replace("Standard", "Batch"),
+        `Prices in CAD\n${source}`,
+    ])
+        assert.equal(extractPrices(invalid, options), null);
+});
+
 // Exact layout refetched from https://docs.fireworks.ai/serverless/pricing.
 const orderedTable = `## Text and vision models
 Per-model pricing for headline models. Fast variants appear as adjacent rows. In each Standard or Priority cell, prices are input / cached input / output (USD per 1M tokens), in that order.

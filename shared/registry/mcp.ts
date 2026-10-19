@@ -43,6 +43,7 @@ export type McpPricingInfo = {
 export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "ASK_JEV_MCP"
+    | "USAGE_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -124,6 +125,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Decision tools use Jev's listed model rate. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "usage",
+        name: "Pollinations Usage",
+        description:
+            "Query pollen balance, usage history, and model information",
+        binding: "USAGE_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Free — calls gen.pollinations.ai with your key",
             rates: [],
         },
     },

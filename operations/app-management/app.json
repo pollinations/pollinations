@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "✍️",
+    "name": "Complimentik",
+    "url": "https://alexkupra1.github.io/compliment-app",
+    "description": "Complimentik is a small Russian-language web app that generates sincere, one-of-a-kind compliments for her. The user picks a mood (romantic, funny or supportive), optionally types her name, and the ap",
+    "language": "ru",
+    "category": "writing",
+    "platform": "web",
+    "githubUsername": "alexkupra1",
+    "githubUserId": "340013641",
+    "repositoryUrl": "https://github.com/alexkupra1/compliment-app",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-09",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/16913",
+    "approvedDate": "2026-10-19",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/d7878c0b-7a93-4bcd-96cc-abad528db3b7"
+  },
+  {
     "emoji": "🖼️",
     "name": "Pollinations Demo",
     "url": "https://huggingface.co/spaces/spitfire4794/pollinations-demo",

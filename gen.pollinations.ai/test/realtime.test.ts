@@ -1394,13 +1394,9 @@ test("does not retry a partially completed realtime deduction", async () => {
         user?.packBalance ?? 0,
         8,
     );
-    await waitForTinybirdRequests(session.upstream, 1);
-    expect(session.upstream.tinybirdRequests).toHaveLength(1);
-    const event = (await session.upstream.tinybirdRequests[0].json()) as Record<
-        string,
-        unknown
-    >;
-    expect(event.totalPrice).toBeCloseTo(0.003553 * 0.75, 8);
+    // With the #17681 fix, reconciliation failure re-throws: the settlement
+    // fails cleanly, no retry is scheduled, and no tinybird event is emitted.
+    expect(session.upstream.tinybirdRequests).toHaveLength(0);
 });
 
 test.each(["gpt-realtime-2", "openai/gpt-realtime-2.1"] as const)(

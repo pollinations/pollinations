@@ -388,19 +388,20 @@ describe("billing deduction", () => {
         // Delete the API key row to simulate reconciliation failure
         await db.delete(apiKeyTable).where(eq(apiKeyTable.id, apiKeyId));
 
-        const result = await handleBalanceDeduction({
-            db,
-            isBilledUsage: true,
-            totalPrice: 3,
-            userId,
-            apiKeyId,
-            apiKeyPollenBalance: 10,
-            apiKeyReservedAmount: reserved,
-        });
+        // The error must propagate after the committed debit (fix for #17681)
+        await expect(
+            handleBalanceDeduction({
+                db,
+                isBilledUsage: true,
+                totalPrice: 3,
+                userId,
+                apiKeyId,
+                apiKeyPollenBalance: 10,
+                apiKeyReservedAmount: reserved,
+            }),
+        ).rejects.toThrow(/affected 0 rows/);
 
-        // The debit should be preserved even though reconciliation failed
-        expect(result.billedPrice).toBe(3);
-        expect(result.payerBucket).toBe("tier");
+        // The tier debit is committed before reconciliation runs, so it stays
         expect((await getUserBalance(db, userId)).tierBalance).toBe(97);
     });
 

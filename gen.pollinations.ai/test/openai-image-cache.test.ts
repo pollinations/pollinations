@@ -100,6 +100,8 @@ describe("OpenAI image cache", () => {
             for (const response_format of ["b64_json", "url"]) {
                 const form = new FormData();
                 form.set("prompt", "make it blue");
+                form.set("duration", "3");
+                form.set("audio", "false");
                 form.set("response_format", response_format);
                 form.append(
                     "image",
@@ -122,6 +124,8 @@ describe("OpenAI image cache", () => {
                                   },
                                   body: JSON.stringify({
                                       prompt: "make it blue",
+                                      duration: 3,
+                                      audio: false,
                                       image: [
                                           {
                                               image_url:
@@ -149,6 +153,10 @@ describe("OpenAI image cache", () => {
                     contentType: string;
                     input: { image: string[]; response_format: string };
                 }>();
+                expect(JSON.parse(result.body)).toMatchObject({
+                    duration: encoding === "json" ? 3 : "3",
+                    audio: encoding === "json" ? false : "false",
+                });
                 expect(result.input.response_format).toBe(response_format);
                 expect(result.input.image).toHaveLength(2);
                 expect(JSON.parse(result.body)).not.toHaveProperty("seed");
@@ -311,6 +319,48 @@ describe("OpenAI image cache", () => {
             );
 
             expect(response.status, field).toBe(400);
+        }
+
+        expect(originHits).toBe(0);
+    });
+
+    it("rejects out-of-range seeds before they can reach the POST cache", async () => {
+        let originHits = 0;
+        const app = new Hono<Env>();
+        app.onError((error) => {
+            if (error instanceof ValidationError) {
+                return new Response(error.message, { status: 400 });
+            }
+            return new Response("unexpected error", { status: 500 });
+        });
+        app.post(
+            "/v1/images/generations",
+            validator("json", CreateImageRequestSchema),
+            prepareOpenAIImageGeneration,
+            imageCache,
+            () => {
+                originHits += 1;
+                return new Response("origin");
+            },
+        );
+
+        for (const seed of [-5, 3000000000, 12.5, "not-a-number"]) {
+            const response = await app.fetch(
+                new Request(
+                    "https://gen.pollinations.ai/v1/images/generations",
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            prompt: "a paper boat",
+                            seed,
+                        }),
+                    },
+                ),
+                {} as CloudflareBindings,
+            );
+
+            expect(response.status, String(seed)).toBe(400);
         }
 
         expect(originHits).toBe(0);

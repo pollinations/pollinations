@@ -11,8 +11,7 @@ import {
     questToCard,
 } from "../types.ts";
 
-const DISCORD_INVITE_URL =
-    "https://discord.gg/pollinations-ai-885844321461485618";
+const DISCORD_INVITE_URL = "https://discord.gg/k9F7SyTgqn";
 
 const joinDiscordQuest: QuestDefinition = {
     id: "join_discord",

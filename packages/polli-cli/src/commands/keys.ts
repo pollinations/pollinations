@@ -266,8 +266,8 @@ const update = new Command("update")
         "after",
         `
 Examples:
-  polli keys update <id> --models flux zimage
-  polli keys update <id> --models text flux
+  polli keys update <id> --models black-forest-labs/flux.1-schnell tongyi-mai/z-image-turbo
+  polli keys update <id> --models text black-forest-labs/flux.1-schnell
 `,
     )
     .action(async (id, opts) => {

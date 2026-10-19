@@ -34,6 +34,7 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { discordConfigFromEnv } from "../services/discord.ts";
+import { listedAppSchema, listListedApps } from "../services/listed-apps.ts";
 import { checkQuestsForUser } from "../services/quest-checker.ts";
 import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
 import {
@@ -43,11 +44,16 @@ import {
 import {
     fetchTinybirdRows,
     requireTinybirdReadToken,
+    TinybirdRateLimitError,
 } from "../services/tinybird.ts";
 import { captureFromRequest } from "../utils/product-analytics.ts";
 import { agentsRoutes } from "./agents.ts";
 import { communityEndpointsRoutes } from "./community-endpoints.ts";
 import { promoCodeRedeemRoutes } from "./promo-codes.ts";
+
+const listedAppsResponseSchema = z.object({
+    apps: z.array(listedAppSchema).describe("The caller's listed apps"),
+});
 
 const DEFAULT_USAGE_DAYS = 30;
 const DEFAULT_DAILY_USAGE_DAYS = 90;
@@ -1024,6 +1030,64 @@ export const accountRoutes = new Hono<Env>()
                     email: profile.email ?? null,
                 }),
             });
+        },
+    )
+    .get(
+        "/apps",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "List My Apps",
+            description:
+                "Community app directory listings owned by the account's linked GitHub user, newest approval first. The directory is public, so no extra permission is required (same as `/account/profile`). Returns an empty list when the account has no linked GitHub user or has not listed an app.",
+            responses: {
+                200: {
+                    description: "The caller's listed apps",
+                    content: {
+                        "application/json": {
+                            schema: resolver(listedAppsResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                503: {
+                    description:
+                        "The app directory is temporarily unavailable; retry after the `Retry-After` delay",
+                },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+
+            // githubId is written by the OAuth callback only, so read it from
+            // the row instead of trusting the session user.
+            const account = await drizzle(c.env.DB)
+                .select({ githubId: userTable.githubId })
+                .from(userTable)
+                .where(eq(userTable.id, user.id))
+                .limit(1)
+                .then((rows) => rows[0]);
+
+            try {
+                return c.json({
+                    apps: await listListedApps(
+                        c.env,
+                        account?.githubId ?? null,
+                    ),
+                });
+            } catch (error) {
+                // A rate-limited read must not look like "you have no apps",
+                // so the dashboard gets a retry signal instead of an empty list.
+                if (!(error instanceof TinybirdRateLimitError)) throw error;
+                c.header("Retry-After", "60");
+                return c.json(
+                    {
+                        apps: [],
+                        error: "The app directory is temporarily unavailable. Please try again.",
+                    },
+                    503,
+                );
+            }
         },
     )
     .get(

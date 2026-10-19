@@ -150,6 +150,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "vision",
+                name: "Vision",
+                description:
+                    "Read images with Pollinations vision models: describe, transcribe text and extract JSON.",
+                url: "https://gen.pollinations.ai/mcp/vision",
+                pricing: {
+                    description:
+                        "Each image question uses the vision model's listed text rate. Model discovery is free.",
+                    rates: [],
+                },
+            },
         ],
     });
 });
@@ -263,7 +275,42 @@ test("routes Machines with caller authorization without an extra MCP debit", asy
     });
 });
 
-test.for(["pollinations", "ask-jev", "machines"])(
+test("routes Vision with caller authorization without an extra MCP debit", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const payload = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: { name: "describe_image", arguments: { image: "x" } },
+    };
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/vision",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        pathname: "/",
+        authorization: `Bearer ${key}`,
+        cookie: null,
+        payload,
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
+});
+
+test.for(["pollinations", "ask-jev", "machines", "vision"])(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(

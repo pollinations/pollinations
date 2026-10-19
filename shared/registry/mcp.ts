@@ -49,7 +49,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "VISION_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -226,6 +227,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "vision",
+        name: "Vision",
+        description:
+            "Read images with Pollinations vision models: describe, transcribe text and extract JSON.",
+        binding: "VISION_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Each image question uses the vision model's listed text rate. Model discovery is free.",
             rates: [],
         },
     },

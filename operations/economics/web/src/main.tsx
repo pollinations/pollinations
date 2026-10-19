@@ -13,7 +13,10 @@ const Dashboard = lazy(async () => {
         const refresh = url.searchParams.get("refresh") === "1";
         const response = await fetch(
             `/api/economics/vendor-journals${refresh ? "?refresh=1" : ""}`,
-            { credentials: "same-origin" },
+            {
+                credentials: "same-origin",
+                signal: AbortSignal.timeout(75_000),
+            },
         );
         if (!response.ok)
             throw new Error(
@@ -45,9 +48,11 @@ const Dashboard = lazy(async () => {
     } catch (error) {
         const { SourceRecovery } = await import("./components/SourceRecovery");
         const reason =
-            error instanceof Error
-                ? error.message
-                : "Vendor journals are unavailable.";
+            error instanceof Error && error.name === "TimeoutError"
+                ? "Vendor journals took too long to load. Retry journals."
+                : error instanceof Error
+                  ? error.message
+                  : "Vendor journals are unavailable.";
         return { default: () => <SourceRecovery reason={reason} /> };
     }
 });

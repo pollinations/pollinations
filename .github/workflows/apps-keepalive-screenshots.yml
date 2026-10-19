@@ -28,7 +28,7 @@ on:
         type: string
         default: ''
       models:
-        description: 'Must be empty: full official catalog and market discovery.'
+        description: 'Empty: full catalog. Otherwise: scoped official model IDs, comma separated.'
         type: string
         default: ''
       max_pollen:
@@ -87,7 +87,7 @@ jobs:
         run: |
           node --input-type=module <<'JS'
           import assert from 'node:assert/strict';
-          assert.equal(process.env.MODELS,'');
+          assert.ok(process.env.MODELS==='' || process.env.MODELS.split(',').every(m=>/^[a-z0-9-]+\/[a-z0-9.:-]+$/.test(m)));
           assert.ok(Number(process.env.MAX_POLLEN)>0 && Number(process.env.MAX_POLLEN)<=4);
           JS
       - name: Research official catalog and market with Jev and optional Sol
@@ -177,6 +177,40 @@ jobs:
           const r=JSON.parse(await readFile(process.env.RESEARCH_OUT+'/research.json','utf8'));
           const catalog=JSON.parse(await readFile(process.env.RESEARCH_OUT+'/official-catalog.json','utf8'));
           assert.ok(catalog.every(m=>m.community===false));
+          if(r.requestedModels.length){
+            assert.equal(r.status,'complete',r.models.filter(m=>m.status!=='researched').map(m=>m.name+': '+m.reason).join('; '));
+            assert.equal(r.selectedCount,10);
+            assert.equal(r.discovery.status,'skipped');
+            assert.deepEqual(r.models.map(m=>m.name).sort(),r.requestedModels.toSorted());
+            assert.ok(r.maxPollen<=0.5 && budgetUsed(r)<=r.maxPollen);
+            assert.ok(r.billing && !r.billingGap);
+            const summary=r.models.map(m=>{
+              assert.equal(m.status,'researched',m.reason);
+              assert.ok(['azure','fireworks','bedrock','alternatives'].every(s=>m.searches.some(q=>q.scope===s)));
+              const priced=m.routes.filter(x=>x.identitySupported && Number.isFinite(x.pricing.input) && x.priceEvidence && x.available!==false);
+              assert.ok(priced.length,m.name+': no usable source-bound price');
+              for(const route of m.routes){
+                assert.equal(route.runtimeVerified,false);
+                assert.equal(route.creditEligibility,'unknown');
+                assert.equal(route.cashCost,null);
+                for(const fragment of route.priceEvidence?.evidence??[]){
+                  assert.ok(r.sources.some(s=>s.status==='fetched' && route.claims.some(c=>c.sourceId===s.id) && s.text.slice(fragment.start,fragment.end)===fragment.quote),m.name+': price evidence lost literal provenance');
+                }
+              }
+              if(m.providerComparison?.status==='insufficient') assert.equal(m.recommendation,null,m.name+': recommendation contradicts comparison abstention');
+              else if(m.providerComparison && m.recommendation){
+                assert.equal(m.recommendation.provider,m.providerComparison.candidate.provider);
+                assert.equal(m.recommendation.upstreamModel,m.providerComparison.candidate.upstreamModel);
+              }
+              return {name:m.name,prices:priced.map(x=>({provider:x.provider,input:x.pricing.input,output:x.pricing.output,unit:x.pricing.unit,conditions:x.pricing.conditions,scenarios:x.pricing.variants?.length})),recommendation:m.recommendation?.provider??null,comparison:m.providerComparison?.status??null};
+            });
+            assert.ok(summary.find(m=>m.name==='openai/gpt-image-1.5').prices.some(x=>x.unit==='image' && x.scenarios>=9));
+            assert.ok(summary.find(m=>m.name==='elevenlabs/eleven-multilingual-v2').prices.some(x=>x.unit==='1K_characters'));
+            const issue=parentIssue(r,process.env.RESEARCH_ARTIFACT_URL);
+            assert.ok(issue.body.includes('conditional'));
+            console.log(JSON.stringify({status:r.status,scoped:true,models:r.models.length,pricedModels:summary.length,budgetUsedPollen:budgetUsed(r),billedPollen:r.billing.pollen,calls:r.calls.length,callCounts:Object.fromEntries([...new Set(r.calls.map(c=>c.kind))].map(k=>[k,r.calls.filter(c=>c.kind===k).length])),summary}));
+            process.exit(0);
+          }
           assert.equal(r.selectedCount,r.officialCount);
           assert.equal(r.models.length,catalog.length);
           assert.deepEqual(r.requestedModels,[]);

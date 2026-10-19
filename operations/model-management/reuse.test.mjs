@@ -11,6 +11,42 @@ const model = {
     community: false,
 };
 const guidanceDigest = hash("current guidance");
+
+test("unchanged source reuse cannot resurrect a recommendation after provider comparison abstained", async () => {
+    const { previous, row, refreshed } = fixture();
+    row.providerComparison = {
+        status: "insufficient",
+        candidate: null,
+        requestDigest: hash("native comparison"),
+    };
+    row.recommendation = null;
+    const result = await reuseModel(
+        previous,
+        model,
+        options(async () => refreshed),
+    );
+    assert.ok(result);
+    assert.equal(result.recommendation, null);
+    assert.equal(result.providerComparison.status, "insufficient");
+});
+
+test("reuse resumes research rather than contradicting a different native provider choice", async () => {
+    const { previous, row, refreshed } = fixture();
+    row.providerComparison = {
+        status: "requires-account-and-route-verification",
+        candidate: {
+            provider: "another-provider",
+            upstreamModel: "example-v1",
+        },
+        requestDigest: hash("native comparison"),
+    };
+    const result = await reuseModel(
+        previous,
+        model,
+        options(async () => refreshed),
+    );
+    assert.equal(result, null);
+});
 test("fresh page refreshes cannot extend yesterday's provider search coverage", async () => {
     const { previous, row, refreshed } = fixture();
     row.researchedAt = new Date(Date.now() - 25 * 3600000).toISOString();

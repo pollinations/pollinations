@@ -591,6 +591,36 @@ function fixture(results, decisions = {}) {
     };
 }
 
+test("scoped research reads a fresh publisher price before buying searches", async () => {
+    const f = fixture([]);
+    const url = "https://developers.openai.com/api/docs/pricing.md";
+    f.services.read = async (args) => {
+        f.reads.push(args);
+        return {
+            id: `primary-${f.reads.length}`,
+            url: args.url,
+            status: "fetched",
+            text: `Prices per 1M tokens USD.
+| Model | Input | Output |
+| --- | --- | --- |
+| gpt-4o-mini | $0.15 | $0.60 |`,
+        };
+    };
+    f.services.search = async (query) => {
+        assert.ok(f.reads.some((args) => args.url === url));
+        f.searches.push({ query });
+        return JSON.stringify({ results: [] });
+    };
+    const model = { name: "openai/gpt-4o-mini", category: "text" };
+    const result = await prepareResearch({ models: [model] }, f.services);
+    const [route] = officialCandidates([model], result.sources).models[0]
+        .routes;
+    assert.equal(route.pricing.input, 0.15);
+    assert.equal(route.pricing.output, 0.6);
+    assert.equal(f.reads.filter((args) => args.url === url).length, 1);
+    assert.ok(f.searches.length >= 4);
+});
+
 test("native controller reorders required searches and chooses scoped followups without borrowing another model's coverage", async () => {
     const names = ["maker/Alpha-v3", "maker/Beta-v4"];
     const f = fixture(

@@ -1281,6 +1281,7 @@ function network(
         marketRelation,
         longReason = false,
         extraProvider = false,
+        comparisonChoice,
         extraProviderUrl = "https://8.8.8.8/fixture",
         marketFinish = false,
         chooseControl,
@@ -1373,9 +1374,11 @@ function network(
                       ? extractRelation
                       : "supported",
                 marketFinish,
-                payload.state.actions
-                    ? chooseControl?.(payload, calls)
-                    : undefined,
+                payload.state.providerPolicy
+                    ? comparisonChoice
+                    : payload.state.actions
+                      ? chooseControl?.(payload, calls)
+                      : undefined,
             );
             if (invalid === "all-answer")
                 response.answers.unknown = Object.values(response.answers)[0];
@@ -1746,6 +1749,70 @@ test(
                     route.runtimeVerified === false,
             ),
         );
+    },
+);
+
+test(
+    "final runner recommendation obeys the native provider comparison abstention",
+    { skip: !available && "Python with Scrapling unavailable" },
+    async (t) => {
+        const { out, env } = await fixture(t);
+        const second = "https://8.8.8.8/fixture";
+        await writeFile(
+            join(out, "pages", `${hash(second)}.json`),
+            JSON.stringify({
+                requestedUrl: second,
+                url: second,
+                text,
+                pageDigest: hash(text),
+                extractionVersion: 2,
+                fetchedAt: new Date().toISOString(),
+                links: [],
+            }),
+        );
+        network(t, [model, sol, jev], {
+            extraProvider: true,
+            comparisonChoice: "insufficient",
+        });
+        const report = await main(env);
+        assert.equal(report.status, "complete", report.models[0].reason);
+        assert.equal(
+            report.models[0].providerComparison.status,
+            "insufficient",
+        );
+        assert.equal(report.models[0].recommendation, null);
+    },
+);
+
+test(
+    "final runner recommendation uses the selected provider instead of the first candidate",
+    { skip: !available && "Python with Scrapling unavailable" },
+    async (t) => {
+        const { out, env } = await fixture(t);
+        const second = "https://8.8.8.8/fixture";
+        await writeFile(
+            join(out, "pages", `${hash(second)}.json`),
+            JSON.stringify({
+                requestedUrl: second,
+                url: second,
+                text,
+                pageDigest: hash(text),
+                extractionVersion: 2,
+                fetchedAt: new Date().toISOString(),
+                links: [],
+            }),
+        );
+        network(t, [model, sol, jev], {
+            extraProvider: true,
+            comparisonChoice: "route_1",
+        });
+        const report = await main(env);
+        const [row] = report.models;
+        assert.equal(report.status, "complete", row.reason);
+        assert.equal(row.providerComparison.candidate.index, 1);
+        assert.equal(row.recommendation.provider, row.routes[1].provider);
+        assert.notEqual(row.recommendation.provider, row.routes[0].provider);
+        assert.equal(row.routes[1].runtimeVerified, false);
     },
 );
 

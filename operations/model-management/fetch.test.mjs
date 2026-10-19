@@ -6,6 +6,39 @@ import { fileURLToPath } from "node:url";
 const adapter = fileURLToPath(new URL("./fetch.py", import.meta.url));
 const python = process.env.PYTHON ?? "python";
 
+test("focused excerpts prefer exact checkpoint prices over navigation and retain the complete table header", () => {
+    const result = spawnSync(
+        python,
+        [
+            "-c",
+            `
+import importlib.util, sys
+spec=importlib.util.spec_from_file_location("fetch",sys.argv[1])
+fetch=importlib.util.module_from_spec(spec)
+spec.loader.exec_module(fetch)
+navigation="gpt-4o-mini-tts " + "$9.99 "*400 + "\\n"
+table="Prices per 1M tokens USD.\\n| Model | Input | Output |\\n| --- | --- | --- |\\n" + "| Other model | $1 | $2 |\\n"*100 + "| gpt-4o-mini | $0.15 | $0.60 |\\n"
+text=navigation+table+"footer "*600
+page={"text":text,"url":"https://primary.example/pricing","pageDigest":"digest","extractionVersion":2,"fetchedAt":"2026-10-19T00:00:00Z"}
+focused=fetch._excerpt(page,4000,"gpt-4o-mini",False)
+assert focused["focusMatched"]
+assert "| Model | Input | Output |" in focused["text"]
+assert "| gpt-4o-mini | $0.15 | $0.60 |" in focused["text"]
+assert focused["text"]==text[focused["excerptStart"]:focused["excerptStart"]+len(focused["text"])]
+page["text"]="gpt-4o-mini-tts is a different checkpoint"
+assert not fetch._excerpt(page,1000,"gpt-4o-mini",False)["focusMatched"]
+page["text"]="Claude Sonnet 4.6 costs $3 input and $15 output per MTok"
+assert fetch._excerpt(page,1000,"claude-sonnet-4.6",False)["focusMatched"]
+print("passed")
+`,
+            adapter,
+        ],
+        { encoding: "utf8" },
+    );
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), "passed");
+});
+
 test("source links preserve API documentation and integration routes alongside pricing", () => {
     const result = spawnSync(
         python,
@@ -176,7 +209,7 @@ class Session:
     def __exit__(self, *args): pass
     def get(self, *args, **kwargs):
         global count
-        assert self._curl_session.curl_options[2] == fetch.MAX_RESPONSE_BYTES
+        assert self._curl_session.curl_options[2] == fetch.MAX_HTTP_BYTES
         assert self._curl_session.trust_env is False
         assert self._curl_session.curl_options[3] == ""
         assert kwargs == {"follow_redirects": False, "timeout": 20, "retries": 0}

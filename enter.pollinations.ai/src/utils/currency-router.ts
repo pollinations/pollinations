@@ -46,13 +46,12 @@ const COHORT_BY_COUNTRY: Record<string, CohortId> = {
 // which hides PayPal and adds no local payment method. Checkout stays in USD
 // for them so PayPal shows. Checked in the Stripe sandbox 2026-10-13. AE is
 // left out: Stripe offers its buyers no PayPal even in USD. TR and PK are
-// left out: PayPal doesn't operate there.
+// left out: PayPal doesn't operate there. JP and KE are left out: Alipay in
+// yuan fails in USD, and Kenya's buyer pays steadily in shillings.
 const USD_CHECKOUT_COUNTRIES = new Set([
     "CL",
     "CO",
     "ID",
-    "JP",
-    "KE",
     "KZ",
     "MA",
     "MX",

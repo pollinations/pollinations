@@ -22,6 +22,19 @@ const AGENT_LINKS = [
     '<https://gen.pollinations.ai/.well-known/ai-catalog.json>; rel="describedby"',
 ].join(", ");
 
+// Only the homepage has a summary; other pages need their full HTML content.
+const HOME_MARKDOWN = `# ${ROUTE_META["/"].title}\n\n${ROUTE_META["/"].description}\n\nAgent entry point: https://gen.pollinations.ai/llms.txt\n`;
+
+function acceptsMarkdown(accept: string): boolean {
+    return accept.split(",").some((range) => {
+        const [type, ...params] = range.trim().toLowerCase().split(";");
+        if (type.trim() !== "text/markdown") return false;
+        const q = params.find((param) => param.trim().startsWith("q="));
+        const quality = q === undefined ? 1 : Number(q.split("=")[1]);
+        return quality > 0 && quality <= 1;
+    });
+}
+
 // Cloudflare Workers types (minimal, avoids conflicts with DOM types)
 interface CfElement {
     setAttribute(name: string, value: string): void;
@@ -80,6 +93,26 @@ export default {
             );
         }
 
+        const page = knownPage(url.pathname);
+        if (
+            page === "/" &&
+            (request.method === "GET" || request.method === "HEAD") &&
+            acceptsMarkdown(request.headers.get("accept") ?? "")
+        ) {
+            return new Response(
+                request.method === "HEAD" ? null : HOME_MARKDOWN,
+                {
+                    headers: {
+                        "Content-Type": "text/markdown; charset=utf-8",
+                        Vary: "Accept",
+                        // Cloudflare ignores Vary on cached responses: keep it private.
+                        "Cache-Control": "private, max-age=3600",
+                        Link: AGENT_LINKS,
+                    },
+                },
+            );
+        }
+
         // Serve static assets with per-route meta tag rewriting for SEO
         const response = await env.ASSETS.fetch(request);
 
@@ -89,7 +122,6 @@ export default {
             return response;
         }
 
-        const page = knownPage(url.pathname);
         const meta = page ? ROUTE_META[page] : NOT_FOUND_META;
         const canonical = `https://pollinations.ai${page === "/" ? "" : page}`;
         const jsonLd = page ? getJsonLd(page) : null;
@@ -136,6 +168,7 @@ export default {
         }
         if (page) {
             htmlResponse.headers.set("Link", AGENT_LINKS);
+            if (page === "/") htmlResponse.headers.append("Vary", "Accept");
         }
         return rewriter.transform(htmlResponse);
     },

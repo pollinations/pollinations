@@ -25,6 +25,13 @@ Collection steps:
    Never append the summed account total alongside its lots.
 3. For a closed month, archive the Glass settlement/invoice and use `You Pay`
    as the cash obligation after credits and reseller discounts.
+   In the signed-in `myceliai-aws` Glass account, check Invoices and the
+   Dashboard's AWS Consumption month selector. Record their latest available
+   billing month; if the requested month is absent, keep its settlement and
+   original invoice pending instead of using the previous month's figures.
+   Check AWS Billing and Cost Management → Bills for the same service month:
+   record whether its grand total is still estimated and whether the Invoices
+   tab has issued originals. Do not present an estimated bill as an invoice.
 4. For usage evidence, query Umbrella Cost for the requested period only.
 5. Required credentials:
    - `UMBRELLA_USERNAME`
@@ -40,7 +47,7 @@ Collection steps:
    test -n "${UMBRELLA_PASSWORD:-}" || { echo "UMBRELLA_PASSWORD missing"; exit 1; }
 
    period_start="<YYYY-MM-01>"
-   period_end="<YYYY-MM-DD>" # use the first day of the next month for a calendar month
+   period_end="<YYYY-MM-DD>" # use the last calendar day; this API includes endDate
 
    auth_json="$(curl --fail-with-body --silent --show-error \
      "https://api.umbrellacost.io/api/v1/authentication/token/generate" \
@@ -91,8 +98,10 @@ types and other infrastructure services are infrastructure.
   `USE1-NovaCanvas-*`) and Bedrock Guardrails (`USE1-Guardrail-*`). Guardrails
   is the safety layer that checks opted-in prompts for every provider, not a
   model: book it as `type: infra` (`resource_name: Bedrock Guardrails`), never
-  as inference. Umbrella figures are identical under unblended, net unblended and
-  amortized cost. Console Cost Explorer captures taken before the month is
+  as inference. Cost bases can differ: compare net unblended with unblended
+  explicitly before bridging detailed usage to the reseller invoice. Do not
+  assume the historical agreement of those bases still holds. Console Cost
+  Explorer captures taken before the month is
   finalized differ from Umbrella; Umbrella is the ledger source for Bedrock
   usage from August 2026.
 
@@ -130,7 +139,8 @@ Known traps:
 - Service-name classification matters: Bedrock models are inference; EC2,
   CloudFront, RDS, support and Guardrails are infrastructure. Discounts and
   credits are funding/adjustments, not a separate infrastructure service.
-- Cost-and-usage rows are month-grain. Use `startDate=<YYYY-MM-01>` and `endDate=<first day of next month>` for a bounded calendar month. Treat dates as UTC/calendar-month boundaries unless the export explicitly states otherwise.
+- With `periodGranLevel=month`, use `startDate=<YYYY-MM-01>` and the last calendar day as `endDate`; the API includes the end date. A next-month boundary can return an extra month containing that day. Assert each retained row has the requested `usage_date` and inspect `nextToken` until all pages are collected. Ledger `end` remains the exclusive first day of the following month.
+- Reconcile the final invoice against both unblended and net-unblended totals. Keep invoice discounts, consumed credits and remaining balances distinct. An unexplained invoice/usage difference stays pending; do not spread it across model rows or invent cash funding.
 - Preserve `service_name` in `resource_name` and the usage type in
   `resource_sku`. Write one Compute row per account/service/usage-type group,
   using `type: inference` or `infra` and the evidenced signed funding split.

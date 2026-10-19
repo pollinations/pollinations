@@ -22,6 +22,7 @@ services = [
     { binding = "EXA_MCP", service = "pollinations-exa-mcp" },
     { binding = "COMPOSIO_MCP", service = "pollinations-composio-mcp" },
     { binding = "COMPUTER_MCP", service = "pollinations-computer-mcp" },
+    { binding = "MACHINES_MCP", service = "pollinations-machines-mcp" },
     { binding = "DNS_MCP", service = "dns-mcp" },
     { binding = "MEDIA", service = "pollinations-media", entrypoint = "MediaUpload" }
 ]
@@ -134,6 +135,10 @@ binding = "COMPUTER_MCP"
 service = "pollinations-computer-mcp"
 
 [[env.production.services]]
+binding = "MACHINES_MCP"
+service = "pollinations-machines-mcp"
+
+[[env.production.services]]
 binding = "DNS_MCP"
 service = "dns-mcp"
 
@@ -201,6 +206,8 @@ new_classes = ["CommunityModelRateLimiter"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
+# Public OAuth app identifier; user credentials stay in their browser tab.
+DOCS_APP_KEY = "pk_zM4Wvtd1rgWXRmLP"
 # Durable Object fetches get a 125 s proxy read timeout; requests through
 # this origin get the zone's 300 s (src/durable-objects/GenerationCoordinator.ts).
 GENERATION_EXECUTION_ORIGIN = "https://gen.pollinations.ai"
@@ -258,6 +265,10 @@ service = "pollinations-composio-mcp-staging"
 [[env.staging.services]]
 binding = "COMPUTER_MCP"
 service = "pollinations-computer-mcp-staging"
+
+[[env.staging.services]]
+binding = "MACHINES_MCP"
+service = "pollinations-machines-mcp-staging"
 
 [[env.staging.services]]
 binding = "DNS_MCP"
@@ -364,6 +375,10 @@ service = "pollinations-composio-mcp"
 [[env.test.services]]
 binding = "COMPUTER_MCP"
 service = "pollinations-computer-mcp"
+
+[[env.test.services]]
+binding = "MACHINES_MCP"
+service = "pollinations-machines-mcp"
 
 [[env.test.services]]
 binding = "DNS_MCP"

@@ -70,7 +70,12 @@ SQL >
         tupleElement(attribution, 5) AS source_name,
         tupleElement(attribution, 6) AS sources,
         tupleElement(attribution, 7) AS creator_earnings,
-        if(row_type = 'source', toFloat64(0), pollinations_profit) AS attributed_profit
+        if(row_type = 'source', toFloat64(0), pollinations_profit) AS attributed_profit,
+        -- Keep the app/community overlap on app source rows for Product mix.
+        if(row_type = 'source' AND source_type = 'app' AND model_recipient_id != '',
+            gross_usage, 0) AS app_community_usage,
+        if(row_type = 'source' AND source_type = 'app',
+            model_creator_earnings, 0) AS app_model_earnings
     FROM effective_events
     ARRAY JOIN arrayFilter(x -> tupleElement(x, 1) = 'summary' OR tupleElement(x, 2) != '', [
         tuple('summary', '', '', '', '',
@@ -100,8 +105,12 @@ SQL >
         sumIf(gross_usage, funding = 'paid') AS paid_usage,
         sumIf(creator_earnings, funding = 'paid') AS paid_creator_earnings,
         sumIf(attributed_profit, funding = 'paid') AS paid_pollinations_profit,
+        sumIf(app_community_usage, funding = 'paid') AS paid_community_usage,
+        sumIf(app_model_earnings, funding = 'paid') AS paid_model_creator_earnings,
         sumIf(gross_usage, funding = 'quest') AS quest_usage,
         sumIf(creator_earnings, funding = 'quest') AS quest_creator_earnings,
+        sumIf(app_community_usage, funding = 'quest') AS quest_community_usage,
+        sumIf(app_model_earnings, funding = 'quest') AS quest_model_creator_earnings,
         countIf(funding = 'paid') AS paid_requests,
         countIf(funding = 'quest') AS quest_requests
     FROM expanded_rows
@@ -123,8 +132,12 @@ SQL >
         rows.paid_usage,
         rows.paid_creator_earnings,
         rows.paid_pollinations_profit,
+        rows.paid_community_usage,
+        rows.paid_model_creator_earnings,
         rows.quest_usage,
         rows.quest_creator_earnings,
+        rows.quest_community_usage,
+        rows.quest_model_creator_earnings,
         rows.paid_requests,
         rows.quest_requests
     FROM all_rows AS rows

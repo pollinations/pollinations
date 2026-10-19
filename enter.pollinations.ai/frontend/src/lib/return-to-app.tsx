@@ -21,12 +21,26 @@ export function parseAppUrl(value: unknown): string | null {
  * trip the referrer is Stripe.
  */
 export function referrerAppUrl(): string | null {
-    const referrer = parseAppUrl(document.referrer);
+    const referrer = parseAppUrl(landingReferrer());
     if (!referrer) return null;
     const url = new URL(referrer);
     if (url.origin === window.location.origin) return null;
     url.hash = "";
     return url.href;
+}
+
+/**
+ * The referrer of the tab's first page that asked, kept for the tab like the
+ * analytics source. Signing in comes back from GitHub, or from the Google
+ * page that signed in to GitHub, so a later load's referrer is never the app.
+ */
+function landingReferrer(): string {
+    try {
+        const stored = sessionStorage.getItem("landing_referrer");
+        if (stored !== null) return stored;
+        sessionStorage.setItem("landing_referrer", document.referrer);
+    } catch {}
+    return document.referrer;
 }
 
 /**

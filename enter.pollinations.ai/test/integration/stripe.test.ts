@@ -326,10 +326,17 @@ test.for(checkoutAmounts)(
     "%s should only be accessible when authenticated via session cookie",
     async (route, { sessionToken, mocks }) => {
         await mocks.enable("stripe", "tinybird");
+        // Signed out, the link goes back to the wallet, which asks to sign in.
         const anonymousResponse = await SELF.fetch(`${base}${route}`, {
             method: "GET",
+            redirect: "manual",
         });
-        expect(anonymousResponse.status).toBe(401);
+        expect(anonymousResponse.status).toBe(302);
+        const back = new URL(anonymousResponse.headers.get("location") ?? "");
+        expect(back.pathname).toBe("/pollen");
+        expect(back.searchParams.get("pack")).toBe(route.split("/").pop());
+        expect(back.searchParams.has("checkout_error")).toBe(false);
+        expect(checkoutSessionRequests(mocks.stripe.state)).toHaveLength(0);
 
         const sessionCookieResponse = await SELF.fetch(`${base}${route}`, {
             method: "GET",
@@ -362,7 +369,7 @@ test("GET /api/stripe/products returns pack list", async () => {
     );
 });
 
-test("GET /api/stripe/checkout/:packKey returns 400 for invalid pack keys", async ({
+test("GET /api/stripe/checkout/:packKey sends invalid pack keys back to the wallet", async ({
     sessionToken,
     mocks,
 }) => {
@@ -373,12 +380,92 @@ test("GET /api/stripe/checkout/:packKey returns 400 for invalid pack keys", asyn
             headers: {
                 cookie: `better-auth.session_token=${sessionToken}`,
             },
+            redirect: "manual",
         });
-        expect(response.status).toBe(400);
-        const data = (await response.json()) as { error: string };
-        expect(data.error).toBe("Invalid pack");
+        expect(response.status).toBe(302);
+        const back = new URL(response.headers.get("location") ?? "");
+        expect(back.pathname).toBe("/pollen");
+        expect(back.searchParams.get("checkout_error")).toBe("failed");
+        expect(back.searchParams.has("pack")).toBe(false);
     }
 });
+
+// The browser follows this link, so a checkout that can't open goes back to
+// the page it came from with the reason, never to a JSON error.
+test.for([
+    {
+        name: "signed out",
+        query: `?return=top-up&redirect=${encodeURIComponent("https://app.example/chat")}`,
+        signedIn: false,
+        banned: false,
+        stripeDown: false,
+        expected: {
+            pathname: "/top-up",
+            pack: "p5",
+            checkoutError: null,
+            redirect: "https://app.example/chat",
+        },
+    },
+    {
+        name: "restricted",
+        query: "",
+        signedIn: true,
+        banned: true,
+        stripeDown: false,
+        expected: {
+            pathname: "/pollen",
+            pack: "p5",
+            checkoutError: "restricted",
+            redirect: null,
+        },
+    },
+    {
+        name: "Stripe fails",
+        query: "?return=top-up",
+        signedIn: true,
+        banned: false,
+        stripeDown: true,
+        expected: {
+            pathname: "/top-up",
+            pack: "p5",
+            checkoutError: "failed",
+            redirect: null,
+        },
+    },
+])(
+    "GET /api/stripe/checkout/p5 sends the buyer back when $name",
+    async (testCase, { sessionToken, mocks }) => {
+        await mocks.enable("stripe", "tinybird");
+        if (testCase.banned)
+            await drizzle(env.DB)
+                .update(userTable)
+                .set({ banned: true })
+                .where(eq(userTable.id, await getSeededUserId()));
+        if (testCase.stripeDown)
+            mocks.stripe.state.onCheckoutSessionCreated = async () => {
+                throw new Error("Stripe unavailable");
+            };
+
+        const response = await SELF.fetch(
+            `${base}/checkout/p5${testCase.query}`,
+            {
+                headers: testCase.signedIn
+                    ? { cookie: `better-auth.session_token=${sessionToken}` }
+                    : {},
+                redirect: "manual",
+            },
+        );
+        expect(response.status).toBe(302);
+        const back = new URL(response.headers.get("location") ?? "");
+        expect(back.origin).toBe(new URL(env.STRIPE_SUCCESS_URL).origin);
+        expect({
+            pathname: back.pathname,
+            pack: back.searchParams.get("pack"),
+            checkoutError: back.searchParams.get("checkout_error"),
+            redirect: back.searchParams.get("redirect"),
+        }).toEqual(testCase.expected);
+    },
+);
 
 test("GET /api/stripe/checkout/:packKey reuses the stable Stripe customer", async ({
     sessionToken,

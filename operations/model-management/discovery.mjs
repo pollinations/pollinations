@@ -7,6 +7,19 @@ import { exactModelIdentity } from "./price-evidence.mjs";
 export const discoveryLeadReason = (kind) =>
     `Source identifies a ${kind} research lead; popularity, release recency, pricing and API availability require verification.`;
 
+export function isOfficialModel(name, inventory) {
+    // An upstream publisher namespace alone does not establish a new checkpoint.
+    const parts = name.trim().split("/");
+    const identity = parts.length === 2 ? parts[1] : name.trim();
+    return inventory.some((model) =>
+        [model.name, model.title, ...(model.aliases ?? [])].some(
+            (known) =>
+                typeof known === "string" &&
+                exactModelIdentity(identity, known),
+        ),
+    );
+}
+
 export function discoveryCandidates(sources, inventory) {
     const candidates = [],
         seen = new Set();
@@ -77,17 +90,7 @@ export function discoveryCandidates(sources, inventory) {
                 /^(?:pricing|models?|embeddings?|input|output|details|documentation|read more|learn more|home|overview|introduction|api reference|terms|privacy)$/i.test(
                     name,
                 ) ||
-                (name.includes("/") &&
-                    inventory.some((model) =>
-                        [model.name, ...(model.aliases ?? [])].some(
-                            (official) =>
-                                exactModelIdentity(name, official) ||
-                                exactModelIdentity(
-                                    name,
-                                    official.split("/").at(-1),
-                                ),
-                        ),
-                    ))
+                (name.includes("/") && isOfficialModel(name, inventory))
             )
                 continue;
             const offset = source.text.indexOf(name);

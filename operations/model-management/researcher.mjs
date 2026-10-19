@@ -11,7 +11,11 @@ import {
     calibratedAudit,
     calibrationState,
 } from "./calibration.mjs";
-import { discoveryLeadReason, extractDiscoveries } from "./discovery.mjs";
+import {
+    discoveryLeadReason,
+    extractDiscoveries,
+    isOfficialModel,
+} from "./discovery.mjs";
 import {
     buildClaimAudit,
     buildProviderComparison,
@@ -1032,13 +1036,7 @@ export function assess(
             return (
                 !(
                     item.kind === "model" &&
-                    inventory.some((row) =>
-                        [row.name, ...(row.aliases ?? [])].some(
-                            (name) =>
-                                name.toLowerCase() ===
-                                item.name.trim().toLowerCase(),
-                        ),
-                    )
+                    isOfficialModel(item.name, inventory)
                 ) &&
                 item.sourceIds.some((id) =>
                     sources.some(

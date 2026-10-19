@@ -358,13 +358,14 @@ test("discovery needs distinct platforms, actual Exa search and local Scrapling 
         {
             ...source("a", "provider.example"),
             method: "scrapling-http",
-            text: "publisher/example-v2 and community/user/example-v1 are newly documented models.",
+            text: "publisher/example-v2, mirror/example-v1 and community/user/example-v1 are newly documented models.",
         },
     ];
     const discoveries = [
         " PUBLISHER/EXAMPLE-V1 ",
         "EXAMPLE",
         "publisher/example-v2",
+        "mirror/example-v1",
         "community/user/example-v1",
     ].map((name) => ({
         name,

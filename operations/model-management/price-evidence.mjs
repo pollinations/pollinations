@@ -143,6 +143,7 @@ export function extractPrices(
             if (value === "Image generation") break;
             const heading =
                 /^#{1,6}\s/.test(value) ||
+                value === "Specialized models" ||
                 /^(?:batch|promotional?|trial|priority|flex|fast|ultrafast|reserved)(?: pricing(?: data)?)?$/i.test(
                     value,
                 );
@@ -687,7 +688,13 @@ export function extractPrices(
                 }
             }
         }
-        const modelColumn = headings.indexOf("API model string");
+        const modelColumn = headings.findIndex(
+            (heading) =>
+                heading === "API model string" ||
+                (embedding &&
+                    headings[0] === "Category" &&
+                    heading === "Model"),
+        );
         const modelIndex = modelColumn < 0 ? 0 : modelColumn;
         if (
             modelColumn < 0 &&
@@ -735,7 +742,11 @@ export function extractPrices(
                 break;
             }
             if (excluded.test(line.value)) restricted = true;
-            if (!standard.test(line.value)) break;
+            if (
+                !standard.test(line.value) &&
+                !/^#{1,6}\s+(?:Grouped )?Pricing Table data$/.test(line.value)
+            )
+                break;
         }
         if (
             !unit ||
@@ -850,7 +861,18 @@ export function extractPrices(
                     )) ||
                 (embedding
                     ? output.length !== 0 ||
-                      headings.some((heading) => /\boutput\b/i.test(heading))
+                      (headings.some((heading) =>
+                          /\boutput\b/i.test(heading),
+                      ) &&
+                          !(
+                              headings[0] === "Category" &&
+                              values[0] === "Embedding" &&
+                              headings.every(
+                                  (heading, index) =>
+                                      !/\boutput\b/i.test(heading) ||
+                                      values[index] === "-",
+                              )
+                          ))
                     : output.length !== 1 || input[0].group !== output[0].group)
             )
                 continue;

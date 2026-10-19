@@ -201,3 +201,26 @@ test("numeric publisher namespaces in public Hub metadata remain research leads"
         ["01-ai/Yi-1.5-34B-Chat", "1bitLLM/bitnet_b1_58-large"],
     );
 });
+
+test("a different upstream namespace cannot rediscover an official checkpoint", () => {
+    const text =
+        "deepseek-ai/DeepSeek-V4.1-Flash-1017 models/gemini-4-argon deepseek-ai/DeepSeek-V4.1-Flash-1017-GGUF";
+    const result = discoveryCandidates(
+        [
+            {
+                id: "hub",
+                status: "fetched",
+                url: "https://huggingface.co/models",
+                text,
+            },
+        ],
+        [
+            { name: "deepseek/deepseek-v4.1-flash-1017" },
+            { name: "google/gemini-4-argon" },
+        ],
+    );
+    assert.deepEqual(
+        result.candidates.map((x) => x.name),
+        ["deepseek-ai/DeepSeek-V4.1-Flash-1017-GGUF"],
+    );
+});

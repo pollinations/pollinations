@@ -21,6 +21,8 @@ export default defineWorkersConfig(async ({ mode }) => {
     // pool refuses to start when it is missing, and backend tests do not need
     // a frontend build, so make sure the directory exists.
     mkdirSync(path.join(__dirname, "dist", "client"), { recursive: true });
+    // Deployed Workers run in UTC; local workerd follows the host timezone.
+    process.env.TZ = "UTC";
     const env = loadEnv(mode, process.cwd(), "");
 
     return {

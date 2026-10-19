@@ -458,7 +458,7 @@ const timezoneQuerySchema = z
     )
     .default("UTC")
     .describe(
-        "IANA time zone for calendar windows and daily buckets. Defaults to UTC. Hourly buckets and request timestamps remain UTC.",
+        "IANA time zone for calendar windows and date buckets. Defaults to UTC. Request timestamps remain UTC.",
     );
 
 // Query params schema for usage
@@ -548,7 +548,7 @@ const dailyUsageRecordSchema = z.object({
     date: z
         .string()
         .describe(
-            "Date bucket in the requested timezone (YYYY-MM-DD), or UTC hourly bucket start (YYYY-MM-DD HH:MM:SS) when `granularity=day`. Hourly buckets are anchored at local midnight and last up to 3600 seconds.",
+            "Date bucket in the requested timezone: YYYY-MM-DD, or the hour YYYY-MM-DD HH:00:00 when `granularity=day`",
         ),
     api_key_id: z.string().describe("API key id used for these requests"),
     api_key: z
@@ -626,7 +626,7 @@ const developerEarningsRowSchema = z.object({
     date: z
         .string()
         .describe(
-            "Date bucket in the requested timezone (YYYY-MM-DD), or UTC hourly bucket start (YYYY-MM-DD HH:MM:SS) when `granularity=day`. Hourly buckets are anchored at local midnight and last up to 3600 seconds. Empty string on rollup rows.",
+            "Date bucket in the requested timezone: YYYY-MM-DD, or the hour YYYY-MM-DD HH:00:00 when `granularity=day`; empty string on rollup rows",
         ),
     entity_id: z
         .string()

@@ -1,91 +1,44 @@
-import type { PeriodSelection } from "@pollinations/ui";
+import {
+    getPeriodBucketKeys,
+    isPeriodSelectable,
+    type PeriodSelection,
+    periodFromDate,
+    periodToWindow,
+} from "@pollinations/ui";
 
 export type ActivityPeriod = PeriodSelection & {
-    granularity: "day" | "month";
     bucket?: string;
     anchor?: string;
 };
-export const ACTIVITY_MIN_DATE = new Date(2026, 0, 1);
-export const ACTIVITY_MIN_CALENDAR_DATE = new Date("2026-01-01T00:00:00Z");
-const HOUR = 60 * 60 * 1000;
+export const ACTIVITY_MIN_DATE = new Date("2026-01-01T00:00:00Z");
 
+// Periods and chart buckets are calendar values stored as UTC dates; the API
+// resolves them in the browser's timezone.
 export function activityTimezone(): string {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }
 
-function datePeriod(date: Date): string {
-    return [
-        date.getFullYear(),
-        String(date.getMonth() + 1).padStart(2, "0"),
-        String(date.getDate()).padStart(2, "0"),
-    ].join("-");
-}
-
-export function activityPeriodFromDate(
-    granularity: ActivityPeriod["granularity"],
-    date = new Date(),
-): ActivityPeriod {
-    return {
-        granularity,
-        period: datePeriod(date).slice(0, granularity === "day" ? 10 : 7),
-    };
-}
-
-export function activityWindow(value: ActivityPeriod): {
-    start: Date;
-    end: Date;
-} {
-    const [year, month, day = 1] = value.period.split("-").map(Number);
-    const start = new Date(year, month - 1, day);
-    const end =
-        value.granularity === "day"
-            ? new Date(year, month - 1, day + 1)
-            : new Date(year, month, 1);
-    return { start, end };
+/** The browser's wall-clock time as a calendar value. */
+export function activityNow(now = new Date()): Date {
+    return new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
 }
 
 export function activityDate(value: ActivityPeriod): Date {
-    return activityWindow(value).start;
+    return periodToWindow(value).start;
 }
 
 export function isActivitySelectable(
     value: ActivityPeriod,
-    now = new Date(),
+    now = activityNow(),
 ): boolean {
-    const { start, end } = activityWindow(value);
-    return end > ACTIVITY_MIN_DATE && start <= now;
+    return isPeriodSelectable(value, ACTIVITY_MIN_DATE, now);
 }
 
-export function activityBucketKey(date: Date, value: ActivityPeriod): string {
-    if (value.granularity !== "day") return datePeriod(date);
-    const start = activityDate(value).getTime();
-    const bucket = new Date(
-        start + Math.floor((date.getTime() - start) / HOUR) * HOUR,
-    );
-    return bucket.toISOString().slice(0, 19).replace("T", " ");
-}
-
-export function getActivityBucketKeys(value: ActivityPeriod): string[] {
-    const { start, end } = activityWindow(value);
-    const keys: string[] = [];
-    const cursor = new Date(start);
-    while (cursor < end) {
-        keys.push(activityBucketKey(cursor, value));
-        if (value.granularity === "day")
-            cursor.setTime(cursor.getTime() + HOUR);
-        else cursor.setDate(cursor.getDate() + 1);
-    }
-    return keys;
-}
-
-export function activityBucketKeyToDate(
-    key: string,
-    granularity: ActivityPeriod["granularity"],
-): Date {
-    if (granularity === "day")
-        return new Date(`${key.replace(" ", "T").replace(/Z$/, "")}Z`);
-    const [year, month, day] = key.split("-").map(Number);
-    return new Date(year, month - 1, day);
+export function activityBucketKey(date: Date, value: PeriodSelection): string {
+    return date
+        .toISOString()
+        .slice(0, value.granularity === "day" ? 13 : 10)
+        .replace("T", " ");
 }
 
 export function parseActivityPeriod(
@@ -94,7 +47,7 @@ export function parseActivityPeriod(
     bucket: unknown,
     anchor?: unknown,
 ): ActivityPeriod {
-    const fallback = activityPeriodFromDate("day");
+    const fallback = periodFromDate("day", activityNow());
     if (
         (granularity !== "day" && granularity !== "month") ||
         typeof period !== "string"
@@ -107,16 +60,22 @@ export function parseActivityPeriod(
     const date = activityDate(value);
     if (
         !Number.isFinite(date.getTime()) ||
-        activityPeriodFromDate(granularity, date).period !== period ||
+        periodFromDate(granularity, date).period !== period ||
         !isActivitySelectable(value)
     )
         return fallback;
     if (
         typeof bucket === "string" &&
-        getActivityBucketKeys(value).includes(bucket)
+        getPeriodBucketKeys(value).some(
+            (key) => key.slice(0, granularity === "day" ? 13 : 10) === bucket,
+        )
     ) {
-        const selectedDate = activityBucketKeyToDate(bucket, granularity);
-        if (selectedDate >= ACTIVITY_MIN_DATE && selectedDate <= new Date())
+        const selectedDate = new Date(
+            granularity === "day"
+                ? `${bucket.replace(" ", "T")}:00:00Z`
+                : `${bucket}T00:00:00Z`,
+        );
+        if (selectedDate >= ACTIVITY_MIN_DATE && selectedDate <= activityNow())
             value.bucket = bucket;
     }
     if (
@@ -124,38 +83,32 @@ export function parseActivityPeriod(
         typeof anchor === "string" &&
         /^\d{4}-\d{2}-\d{2}$/.test(anchor)
     ) {
-        const anchorDate = activityBucketKeyToDate(anchor, "month");
+        const anchorDate = new Date(`${anchor}T00:00:00Z`);
         if (
             Number.isFinite(anchorDate.getTime()) &&
-            datePeriod(anchorDate) === anchor &&
+            anchorDate.toISOString().slice(0, 10) === anchor &&
             anchorDate >= ACTIVITY_MIN_DATE &&
-            anchorDate <= new Date()
+            anchorDate <= activityNow()
         )
             value.anchor = anchor;
     }
     return value;
 }
 
-function selectedDate(value: ActivityPeriod): string | undefined {
-    return value.bucket
-        ? datePeriod(activityBucketKeyToDate(value.bucket, value.granularity))
-        : value.anchor;
-}
-
 // The anchor keeps the preferred day even while viewing a shorter month.
-function rememberedActivityDate(value: ActivityPeriod, now = new Date()): Date {
+function rememberedActivityDate(
+    value: ActivityPeriod,
+    now = activityNow(),
+): Date {
     const start = activityDate(value);
-    const anchor = activityBucketKeyToDate(
-        selectedDate(value) ?? datePeriod(start),
-        "month",
+    const anchor = new Date(
+        `${value.bucket?.slice(0, 10) ?? value.anchor ?? start.toISOString().slice(0, 10)}T00:00:00Z`,
     );
     if (value.granularity === "month") {
         const lastDay = new Date(
-            start.getFullYear(),
-            start.getMonth() + 1,
-            0,
-        ).getDate();
-        start.setDate(Math.min(anchor.getDate(), lastDay));
+            Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 0),
+        ).getUTCDate();
+        start.setUTCDate(Math.min(anchor.getUTCDate(), lastDay));
     }
     return new Date(
         Math.min(
@@ -169,24 +122,26 @@ export function changeActivityPeriod(
     value: ActivityPeriod,
     next: PeriodSelection,
 ): ActivityPeriod {
-    if (next.granularity === "week") return value;
-    if (next.granularity === "day") return { ...next, granularity: "day" };
+    if (next.granularity === "day") return next;
     return {
         ...next,
-        granularity: "month",
         anchor:
-            selectedDate(value) ?? datePeriod(rememberedActivityDate(value)),
+            value.bucket?.slice(0, 10) ??
+            value.anchor ??
+            rememberedActivityDate(value).toISOString().slice(0, 10),
     };
 }
 
 export function switchActivityView(
     value: ActivityPeriod,
-    granularity: ActivityPeriod["granularity"],
+    granularity: PeriodSelection["granularity"],
 ): ActivityPeriod {
     if (value.granularity === granularity) return value;
     const date = rememberedActivityDate(value);
-    const next = activityPeriodFromDate(granularity, date);
-    return granularity === "day" ? next : { ...next, anchor: datePeriod(date) };
+    const next = periodFromDate(granularity, date);
+    return granularity === "day"
+        ? next
+        : { ...next, anchor: date.toISOString().slice(0, 10) };
 }
 
 export function shiftActivityPeriod(
@@ -195,12 +150,9 @@ export function shiftActivityPeriod(
 ): ActivityPeriod {
     const date = activityDate(value);
     if (value.granularity === "month")
-        date.setMonth(date.getMonth() + direction);
-    else date.setDate(date.getDate() + direction);
-    return changeActivityPeriod(
-        value,
-        activityPeriodFromDate(value.granularity, date),
-    );
+        date.setUTCMonth(date.getUTCMonth() + direction);
+    else date.setUTCDate(date.getUTCDate() + direction);
+    return changeActivityPeriod(value, periodFromDate(value.granularity, date));
 }
 
 export function toggleActivityBucket(
@@ -210,7 +162,9 @@ export function toggleActivityBucket(
     const bucket = activityBucketKey(date, value);
     return {
         ...value,
-        ...(value.granularity !== "day" ? { anchor: datePeriod(date) } : {}),
+        ...(value.granularity !== "day"
+            ? { anchor: date.toISOString().slice(0, 10) }
+            : {}),
         bucket: value.bucket === bucket ? undefined : bucket,
     };
 }
@@ -219,12 +173,10 @@ export function isInActivityBucket(
     date: string,
     value: ActivityPeriod,
 ): boolean {
-    if (value.bucket === undefined) return true;
-    const timestamp = activityBucketKeyToDate(date, value.granularity);
-    const { start, end } = activityWindow(value);
     return (
-        timestamp >= start &&
-        timestamp < end &&
-        activityBucketKey(timestamp, value) === value.bucket
+        value.bucket === undefined ||
+        date
+            .replace("T", " ")
+            .slice(0, value.granularity === "day" ? 13 : 10) === value.bucket
     );
 }

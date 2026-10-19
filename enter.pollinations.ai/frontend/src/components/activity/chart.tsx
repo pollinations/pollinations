@@ -8,6 +8,7 @@ import {
     ACTIVITY_MIN_DATE,
     type ActivityPeriod,
     activityBucketKey,
+    activityNow,
 } from "./activity-period";
 import { formatActivityPollen } from "./format-activity-pollen";
 import type { DataPoint, Metric } from "./types";
@@ -44,7 +45,7 @@ export const Chart: FC<ChartProps> = ({
     onSelect,
     period,
 }) => {
-    const now = new Date();
+    const now = activityNow();
     const canSelect = (point: DataPoint) =>
         point.timestamp >= ACTIVITY_MIN_DATE && point.timestamp <= now;
     const selectableIndices = data.flatMap((point, index) =>
@@ -292,7 +293,7 @@ export const Chart: FC<ChartProps> = ({
                         activityBucketKey(bar.timestamp, period);
                     const dimmed = Boolean(period.bucket) && !selected;
                     return (
-                        <g key={bar.timestamp.toISOString()}>
+                        <g key={bar.label}>
                             {/* Quest segment (bottom) */}
                             {bar.tierHeight > 0 && (
                                 <rect

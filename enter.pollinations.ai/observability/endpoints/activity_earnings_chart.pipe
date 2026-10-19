@@ -2,18 +2,14 @@ DESCRIPTION >
     Activity developer earnings chart data grouped by date, entity, and source
     from materialized earning events.
     Use 'since' and 'until' for date range filtering.
-    Use 'timezone' for calendar bounds and daily buckets; defaults to UTC.
-    Hourly buckets are UTC instants, anchored at 'since' in the chosen timezone.
+    Use 'grain=hour' to group daily buckets by hour; defaults to daily.
+    Use 'timezone' for calendar bounds and buckets; defaults to UTC.
 
 TOKEN "tinybird_read" READ
 
 NODE activity_earnings_chart_node
 SQL >
     %
-    WITH
-        {% if defined(since) %}
-            toUnixTimestamp(toDateTime({{ String(since) }}, {{ String(timezone, 'UTC') }}))
-        {% else %} 0 {% end %} AS bucket_origin
     -- Inner scope uses *_sum aliases so aggregate aliases never shadow the
     -- source columns (ClickHouse rejects a shadowed alias inside sumIf).
     SELECT
@@ -34,10 +30,7 @@ SQL >
         SELECT
             if(
                 {{ String(grain, 'day') }} = 'hour',
-                formatDateTime(
-                    toDateTime(bucket_origin + intDiv(toUnixTimestamp(event_timestamp) - bucket_origin, 3600) * 3600, 'UTC'),
-                    '%F %T', 'UTC'
-                ),
+                formatDateTime(event_timestamp, '%F %H:00:00', {{ String(timezone, 'UTC') }}),
                 formatDateTime(event_timestamp, '%F', {{ String(timezone, 'UTC') }})
             ) AS date,
             entity_id,

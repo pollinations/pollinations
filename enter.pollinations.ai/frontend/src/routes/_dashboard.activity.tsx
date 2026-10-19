@@ -170,7 +170,7 @@ function ActivityPage() {
                 <LastEventsPanel />
             </Section>
             <p className="px-4 text-micro text-theme-text-muted sm:px-0">
-                Times shown in your local timezone ({activityTimezone()}).
+                Times shown in your timezone ({activityTimezone()}).
             </p>
         </>
     );

@@ -14,7 +14,6 @@ import {
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import { type FC, useEffect, useState } from "react";
 import { accountClient } from "../../api.ts";
-import { formatActivityTimestamp } from "../activity/format-activity-date.ts";
 import { formatActivityPollenThreshold } from "../activity/format-activity-pollen.ts";
 import { LoadError, PageStatus } from "../layout/dashboard-loading.tsx";
 
@@ -65,6 +64,16 @@ function parseTimestamp(value: string): Date {
 
 function timestampMs(value: string): number {
     return parseTimestamp(value).getTime();
+}
+
+function formatTimestamp(value: string): string {
+    return parseTimestamp(value).toLocaleString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
 }
 
 function formatSignedPollen(event: LastEvent): string {
@@ -248,7 +257,7 @@ export const LastEventsPanel: FC = () => {
                             </div>
                             <div className="flex items-center justify-between gap-2 text-xs">
                                 <span className="text-ink-600 tabular-nums">
-                                    {formatActivityTimestamp(event.timestamp)}
+                                    {formatTimestamp(event.timestamp)}
                                 </span>
                                 <EventKindChip event={event} />
                             </div>
@@ -297,9 +306,7 @@ export const LastEventsPanel: FC = () => {
                                         numeric
                                         className={`${TABLE_CELL_CLASS} whitespace-nowrap text-ink-800`}
                                     >
-                                        {formatActivityTimestamp(
-                                            event.timestamp,
-                                        )}
+                                        {formatTimestamp(event.timestamp)}
                                     </TableCell>
                                     <TableCell className={TABLE_CELL_CLASS}>
                                         <EventKindChip event={event} />

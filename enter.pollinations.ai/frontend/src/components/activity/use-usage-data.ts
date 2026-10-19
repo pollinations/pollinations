@@ -1,12 +1,8 @@
+import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { accountClient } from "../../api.ts";
-import {
-    activityBucketKeyToDate,
-    activityTimezone,
-    getActivityBucketKeys,
-    isInActivityBucket,
-} from "./activity-period";
-import { formatActivityChartDate } from "./format-activity-date";
+import { formatActivityChartDate } from "./activity-helpers";
+import { activityTimezone, isInActivityBucket } from "./activity-period";
 import type {
     DailyUsageRecord,
     DataPoint,
@@ -53,8 +49,7 @@ export function useUsageData(
     groupBy: UsageGroupBy,
 ): UsageDataResult {
     const { granularity, period } = filters.period;
-    const timezone = activityTimezone();
-    const requestKey = `${timezone}:${granularity}:${period}`;
+    const requestKey = `${granularity}:${period}`;
     const [result, setResult] = useState<{
         key: string;
         rows: DailyUsageRecord[];
@@ -79,7 +74,13 @@ export function useUsageData(
         setStatus({ key: requestKey, pending: true, error: null });
         return accountClient.usage.daily
             .$get(
-                { query: { granularity, period, timezone } },
+                {
+                    query: {
+                        granularity,
+                        period,
+                        timezone: activityTimezone(),
+                    },
+                },
                 { init: { signal: controller.signal } },
             )
             .then((r) => {
@@ -99,7 +100,7 @@ export function useUsageData(
                         error: err.message || "Couldn’t load usage.",
                     });
             });
-    }, [granularity, period, timezone, requestKey]);
+    }, [granularity, period, requestKey]);
 
     useEffect(() => {
         fetchUsage();
@@ -191,10 +192,10 @@ export function useUsageData(
         });
 
         const isHourly = filters.period.granularity === "day";
-        const bucketKeys = getActivityBucketKeys(filters.period);
+        const bucketKeys = getPeriodBucketKeys(filters.period);
 
         const sorted = bucketKeys.map((bucketKey) => {
-            const date = activityBucketKeyToDate(
+            const date = periodBucketKeyToDate(
                 bucketKey,
                 filters.period.granularity,
             );

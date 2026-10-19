@@ -495,7 +495,7 @@ export class Pollinations {
      * ```ts
      * const result = await pollinations.imageEdit('Make the sky purple', {
      *   image: 'https://example.com/photo.jpg',
-     *   model: 'black-forest-labs/flux.1-schnell',
+     *   model: 'black-forest-labs/flux.1-kontext-pro',
      * });
      * ```
      */

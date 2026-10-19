@@ -3,6 +3,7 @@ import { readVendorJournals } from "./planning";
 
 afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
     vi.useRealTimers();
 });
 
@@ -49,11 +50,7 @@ it("caches journals for 24 hours, supports explicit refresh, isolates credential
     });
     vi.stubGlobal("fetch", fetch);
     const account = env("test@example.invalid");
-    const [first, concurrent] = await Promise.all([
-        readVendorJournals(account),
-        readVendorJournals(account),
-    ]);
-    expect(concurrent).toBe(first);
+    const first = await readVendorJournals(account);
     expect(await readVendorJournals(account)).toBe(first);
     expect(fetch).toHaveBeenCalledTimes(3);
     vi.advanceTimersByTime(23 * 60 * 60_000);
@@ -79,9 +76,54 @@ it("caches journals for 24 hours, supports explicit refresh, isolates credential
         "authentication failed",
     );
     unavailable = false;
-    expect((await readVendorJournals(other)).planning.recordedAt).toBe(
+    expect((await readVendorJournals(other, true)).planning.recordedAt).toBe(
         recordedAt,
     );
     expect(fetch).toHaveBeenCalledTimes(16);
     await expect(readVendorJournals({})).rejects.toThrow("not configured");
+
+    // A stalled request must not be reused by the next request, and a late
+    // result must not replace the newer successful refresh.
+    let release: ((response: Response) => void) | undefined;
+    fetch.mockImplementationOnce(
+        () =>
+            new Promise<Response>((resolve) => {
+                release = resolve;
+            }),
+    );
+    const isolated = env("independent@example.invalid");
+    const slow = readVendorJournals(isolated);
+    await vi.waitFor(() => expect(release).toBeTypeOf("function"));
+    recordedAt = "2026-10-19T13:00:00Z";
+    const newer = await readVendorJournals(isolated);
+    expect(newer.planning.recordedAt).toBe(recordedAt);
+    recordedAt = "2026-10-19T12:00:00Z";
+    release?.(Response.json({ access_token: "test-only-token" }));
+    expect((await slow).planning.recordedAt).toBe(recordedAt);
+    expect(await readVendorJournals(isolated)).toBe(newer);
+
+    // The whole load deadline reaches the upstream request; a timed-out
+    // refresh cannot poison the completed cache or prevent another refresh.
+    const deadline = new AbortController();
+    const timeout = AbortSignal.timeout.bind(AbortSignal);
+    vi.spyOn(AbortSignal, "timeout").mockImplementation((ms) =>
+        ms === 60_000 ? deadline.signal : timeout(ms),
+    );
+    let pendingSignal: AbortSignal | undefined;
+    fetch.mockImplementationOnce((_input, options?: RequestInit) => {
+        pendingSignal = options?.signal ?? undefined;
+        return new Promise<Response>((_resolve, reject) => {
+            pendingSignal?.addEventListener("abort", () =>
+                reject(pendingSignal?.reason),
+            );
+        });
+    });
+    const timedOut = readVendorJournals(isolated, true);
+    const rejected = expect(timedOut).rejects.toThrow("timed out");
+    await vi.waitFor(() => expect(pendingSignal).toBeDefined());
+    deadline.abort(new DOMException("Journal load timed out", "TimeoutError"));
+    await rejected;
+    expect(await readVendorJournals(isolated)).toBe(newer);
+    vi.restoreAllMocks();
+    expect(await readVendorJournals(isolated, true)).not.toBe(newer);
 });

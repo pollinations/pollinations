@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "FX Trade Setup Studio",
+    "url": "https://fxmacrodata.github.io/examples/pollinations/fx-trade-setup-studio",
+    "description": "FX Trade Setup Studio turns a user-entered FX trade setup into visual cards using Pollinations image generation. Enter a currency pair, direction, timeframe, entry, stop, targets, thesis and catalyst,",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "roberttidball",
+    "githubUserId": "57079898",
+    "repositoryUrl": "https://github.com/fxmacrodata/examples/tree/gh-pages/pollinations/fx-trade-setup-studio",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-11",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17062",
+    "approvedDate": "2026-10-19",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/efb81807-a9ab-45de-be46-1bf27772b816"
+  },
+  {
     "emoji": "✍️",
     "name": "Complimentik",
     "url": "https://alexkupra1.github.io/compliment-app",

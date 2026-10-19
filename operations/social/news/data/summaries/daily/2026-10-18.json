@@ -1,0 +1,82 @@
+{
+  "date": "2026-10-18",
+  "period_start": "2026-10-18",
+  "period_end": "2026-10-18",
+  "title": "New ways to make images and video",
+  "summary": "New video, image, and text models arrived alongside configurable account menus and a less fussy Pollen checkout.\n\nCommunity contributions added Kling 3.0 Standard for 720p video from text or a start frame, with optional audio and 3–15-second clips. FLUX.3 Image Klein adds image generation and editing with up to 10 reference images.\n\nA community contribution added DeepSeek V4.1 Flash 1017 as a separate text model with image input, tools, reasoning, and a 1,048,576-token context window. MiMo V2.6 Flash and Pro gained direct provider routes and lower Pollen rates without changing their public IDs or capabilities. Claude Opus 4.7 now uses global Bedrock routing.\n\nThe team moved docs account controls into the navigation drawer and added optional custom links and Buy Pollen visibility controls to the shared `<polli-connect>` component. The retired React UI showcase was replaced with a redirect to the maintained UI documentation.",
+  "pr_count": 8,
+  "prs": [
+    {
+      "number": 15176,
+      "date": "2026-10-18"
+    },
+    {
+      "number": 16957,
+      "date": "2026-10-18"
+    },
+    {
+      "number": 17633,
+      "date": "2026-10-18"
+    },
+    {
+      "number": 17859,
+      "date": "2026-10-18"
+    },
+    {
+      "number": 17863,
+      "date": "2026-10-18"
+    },
+    {
+      "number": 17876,
+      "date": "2026-10-18"
+    },
+    {
+      "number": 17880,
+      "date": "2026-10-18"
+    },
+    {
+      "number": 17903,
+      "date": "2026-10-18"
+    }
+  ],
+  "generated_at": "2026-10-19T06:13:00.413786+00:00",
+  "daily": [
+    {
+      "emoji": "🎨",
+      "title": "Kling 3.0 Standard video",
+      "text": "Make 720p clips from a prompt or start frame, with an optional end frame and audio. Choose a duration from 3 to 15 seconds. [View the model](https://enter.pollinations.ai/models?q=kwaivgi%2Fkling-v3.0-std).",
+      "prs": [
+        15176
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "FLUX.3 Image Klein",
+      "text": "Generate images or edit with up to 10 reference images and explicit dimensions up to 4096 pixels per side. [View the model](https://enter.pollinations.ai/models?q=FLUX.3%20Image%20Klein).",
+      "prs": [
+        17633
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "DeepSeek V4.1 Flash 1017",
+      "text": "Use `deepseek/deepseek-v4.1-flash-1017` for text and image input, tools, and reasoning, with a 1,048,576-token context window. [View the model](https://enter.pollinations.ai/models?q=deepseek%2Fdeepseek-v4.1-flash-1017).",
+      "prs": [
+        17859
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Custom account menu links",
+      "text": "Apps using `<polli-connect>` can add links to the account menu and optionally hide Buy Pollen while keeping the balance and account actions. [Explore React UI](https://github.com/pollinations/pollinations/tree/main/packages/ui).",
+      "prs": [
+        17863
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
+}

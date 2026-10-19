@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ FX Trade Setup Studio](https://fxmacrodata.github.io/examples/pollinations/fx-trade-setup-studio) | FX Trade Setup Studio turns a user-entered FX trade setup into visual cards using Pollinations image generation. Enter a currency pair, direction, timeframe, entry, stop, targets, thesis and catalyst, | [@roberttidball](https://github.com/roberttidball) |
 | [✍️ Complimentik](https://alexkupra1.github.io/compliment-app) | Complimentik is a small Russian-language web app that generates sincere, one-of-a-kind compliments for her. The user picks a mood (romantic, funny or supportive), optionally types her name, and the ap | [@alexkupra1](https://github.com/alexkupra1) |
 | [🖼️ Pollinations Demo](https://huggingface.co/spaces/spitfire4794/pollinations-demo) | Pollinations Postcard Starter turns one prompt into a postcard: an image, a caption, and spoken narration. Visitors sign in with their own Pollen using the device flow (approve a short code, the key s | [@Spit-fires](https://github.com/Spit-fires) |
 | [🖼️ Comic Page from One Prompt](https://huggingface.co/spaces/tomdacatto1/pollinations-comic-maker) | A Hugging Face Space people duplicate: type one idea and get a four-panel comic page. The text model writes the script as JSON (title, fixed character looks, one caption per panel), the image model dr | [@tomdacatto](https://github.com/tomdacatto) |
@@ -30,7 +31,6 @@
 | [🎮 Trolley Match](https://patbing.github.io/trolley-match) | Choose first in five trolley dilemmas, then compare your answers with live Jev decisions. Includes an order-swap experiment and session-only Bring Your Own Pollen sign-in. | [@patbing](https://github.com/patbing) |
 | [🎮 Switchyard](https://saauf.github.io/switchyard) | Choose first in six trolley dilemmas, compare with Jev, and reverse the description order. Includes free practice, exact prompts, probabilities, and session export. | [@Saauf](https://github.com/Saauf) |
 | [🎮 PollinationsCraft](https://github.com/rekty/pollinations-craft/releases/tag/v1.0.0) | A Paper plugin that adds Pollinations to a Minecraft server, paid with the owner's own Pollen: **villager NPCs with personas** that players talk to by right-clicking or /polli say , each NPC with its | [@rekty](https://github.com/rekty) |
-| [🎮 PolliCraft](https://drjacky.github.io/PolliCraft) | A Minecraft server plugin (Paper, Folia, Spigot) that adds Pollinations to a server with one jar. The server owner pays with their own Pollen: one API key goes in plugins/PolliCraft/config.yml (or the | [@Drjacky](https://github.com/Drjacky) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

@@ -12,9 +12,7 @@
     "17897": {
       "merge_sha": "7dd085beb8c3aacb5c4bf9f5fea34e846da60ff0",
       "merged_at": "2026-10-18T22:25:44Z",
-      "required": [
-        "deploy-applications.yml:Deploy operations/economics"
-      ]
+      "required": []
     },
     "17903": {
       "merge_sha": "62fb313a1157fe09b1d3ebc4cf19ea488f294ec9",
@@ -26,9 +24,7 @@
     "17904": {
       "merge_sha": "d75d67b4f8cce229735e7b67afbbdaf17776b89f",
       "merged_at": "2026-10-18T23:54:30Z",
-      "required": [
-        "deploy-applications.yml:Deploy operations/economics"
-      ]
+      "required": []
     }
   },
   "production": "fcae9844e68bb5feb0c8910e217a8c917441a5c0",

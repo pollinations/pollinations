@@ -1,5 +1,48 @@
 {
-  "held": {},
-  "production": "fcae9844e68bb5feb0c8910e217a8c917441a5c0",
+  "held": {
+    "17905": {
+      "merge_sha": "e1c0c423b3623ee229738afa0df24671980d2abf",
+      "merged_at": "2026-10-19T00:16:25Z",
+      "required": []
+    },
+    "17906": {
+      "merge_sha": "261ea8f316bf5e5f18b690221806143c55c1039a",
+      "merged_at": "2026-10-19T02:00:53Z",
+      "required": []
+    },
+    "17907": {
+      "merge_sha": "fc2f43519c3279912297064a8c2f811bbfe3ffa0",
+      "merged_at": "2026-10-19T02:04:04Z",
+      "required": []
+    },
+    "17909": {
+      "merge_sha": "5cb4f4b0a3130aa49b9a8b7364ffeb86fc56b4e2",
+      "merged_at": "2026-10-19T04:12:53Z",
+      "required": []
+    },
+    "17910": {
+      "merge_sha": "9c7df86f4bd330353007eb1f7493d9ff8f7e0982",
+      "merged_at": "2026-10-19T07:28:14Z",
+      "required": []
+    },
+    "17915": {
+      "merge_sha": "74fd495c018c0a071ee629d49e320e14523583d6",
+      "merged_at": "2026-10-19T11:03:32Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-cloudflare-production.yml:deploy-media",
+        "deploy-website-cloudflare.yml:deploy"
+      ]
+    },
+    "17919": {
+      "merge_sha": "88fbd8686395d100f5c6224107669a294bc89ead",
+      "merged_at": "2026-10-19T12:18:00Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/economics"
+      ]
+    }
+  },
+  "production": "0be6a16f4770d56ef08991eaa52b67f3a0353111",
   "master": "02b0575f1ae6daad402bb2782119d7752403ad01"
 }

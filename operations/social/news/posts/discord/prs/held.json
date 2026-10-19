@@ -1,11 +1,5 @@
 {
-  "held": {
-    "17915": {
-      "merge_sha": "74fd495c018c0a071ee629d49e320e14523583d6",
-      "merged_at": "2026-10-19T11:03:32Z",
-      "required": []
-    }
-  },
+  "held": {},
   "production": "0be6a16f4770d56ef08991eaa52b67f3a0353111",
   "master": "02b0575f1ae6daad402bb2782119d7752403ad01"
 }

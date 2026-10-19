@@ -3155,7 +3155,7 @@ const TEXT_BASE_SERVICES = {
             "Text and image understanding with a 128K context window; no tool calling or structured output",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // Verified on both routes; Pollinations cap.
+        maxReferenceImages: 10, // Pollinations cap.
         tools: false,
         supportsStructuredOutput: false,
         maxCompletionTokens: 16384,

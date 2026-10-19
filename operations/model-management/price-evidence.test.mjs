@@ -53,6 +53,271 @@ function verifyPositions(source, result) {
     }
 }
 
+test("current Claude base-input/output-token columns retain MTok units", () => {
+    const page = `## Model pricing
+| Model | Base input tokens | 5m cache writes | 1h cache writes | Cache hits and refreshes | Output tokens |
+| --- | --- | --- | --- | --- | --- |
+| Claude Sonnet 4.6 | $3 / MTok | $3.75 / MTok | $6 / MTok | $0.30 / MTok | $15 / MTok |`;
+    const options = { upstreamModel: "claude-sonnet-4.6", category: "text" };
+    const result = extractPrices(page, options);
+    verifyPositions(page, result);
+    assert.equal(result.input, 3);
+    assert.equal(result.output, 15);
+    assert.equal(
+        extractPrices(page.replaceAll("/ MTok", "/ 1K tokens"), options),
+        null,
+    );
+});
+
+test("public routed-model JSON normalizes per-token prices without inventing missing prices or direct-provider billing", () => {
+    const page = JSON.stringify({
+        data: {
+            id: "qwen/qwen3-coder-next",
+            pricing: {
+                prompt: "0.00000012",
+                completion: "0.0000008",
+                input_cache_read: "0.00000007",
+            },
+        },
+    });
+    const options = {
+        upstreamModel: "qwen/qwen3-coder-next",
+        category: "text",
+        sourceUrl: "https://openrouter.ai/api/v1/model/qwen/qwen3-coder-next",
+    };
+    const result = extractPrices(page, options);
+    verifyPositions(page, result);
+    assert.equal(result.input, 0.12);
+    assert.equal(result.output, 0.8);
+    assert.ok(result.conditions.some((x) => x.includes("fees")));
+    for (const invalid of [
+        page.replace('"0.0000008"', "null"),
+        page.replace('"0.0000008"', '"-1"'),
+        page.replace("qwen3-coder-next", "qwen3-coder-next-2027"),
+    ])
+        assert.equal(extractPrices(invalid, options), null);
+    assert.equal(
+        extractPrices(page, {
+            ...options,
+            sourceUrl: "https://other.example/model/qwen/qwen3-coder-next",
+        }),
+        null,
+    );
+});
+
+test("actual model-page title and cached input component do not hide low/medium image prices", () => {
+    const page = `GPT-Image-1.5 Model | OpenAI API
+Image tokens
+Per 1M tokens
+Input
+$8.00
+Cached input
+$2.00
+Output
+$32.00
+Image generation
+Per image
+Quality
+Low
+1024x1024
+$0.009
+Image generation
+Per image
+Quality
+Medium
+1024x1024
+$0.034
+Image generation
+Per image
+Quality
+High
+1024x1024
+$0.133`;
+    const result = extractPrices(page, {
+        upstreamModel: "gpt-image-1.5",
+        category: "image",
+    });
+    verifyPositions(page, result);
+    assert.deepEqual(
+        result.variants.map((x) => x.input),
+        [0.009, 0.034, 0.133],
+    );
+});
+
+test("vertical text tables keep text output apart from audio input and cached/priority prices", () => {
+    const page = `### Gemini models
+| Model | Type | Price (/1M tokens) <= 200K input tokens | Price (/1M tokens) > 200K input tokens | Price (/1M cached input tokens) |
+| --- | --- | --- | --- | --- |
+| Gemini 2.5 Flash Lite | Input (text, image, video) | $0.10 | $0.10 | $0.01 |
+| | Audio Input | $0.30 | $0.30 | $0.03 |
+| | Text output (response and reasoning) | $0.40 | $0.40 | N/A |`;
+    const result = extractPrices(page, {
+        upstreamModel: "gemini-2.5-flash-lite",
+        category: "text",
+    });
+    verifyPositions(page, result);
+    assert.equal(result.input, 0.1);
+    assert.equal(result.output, 0.4);
+    assert.equal(result.variants.length, 2);
+    assert.ok(result.conditions[0].includes("200K"));
+});
+
+test("video row spans keep source count units and audio/resolution scenarios separate", () => {
+    const page = `### Veo
+| Model | Feature | Description | Input | Output | Output Resolution | Price (USD) |
+| --- | --- | --- | --- | --- | --- | --- |
+| Veo 3.1 Fast | Video + Audio generation | Generate videos | Text/Image prompt | Video + Audio | 720p | $0.10 / 1 count |
+| | | | | | 1080p | $0.12 / 1 count |
+| | Video generation | Generate videos | Text/Image prompt | Video | 720p | $0.08 / 1 count |
+| Veo 3.1 Lite | Video generation | Generate videos | Text/Image prompt | Video | 720p | $0.03 / 1 count |`;
+    const result = extractPrices(page, {
+        upstreamModel: "veo-3.1-fast",
+        category: "video",
+    });
+    verifyPositions(page, result);
+    assert.equal(result.unit, "count");
+    assert.deepEqual(
+        result.variants.map((x) => x.input),
+        [0.1, 0.12, 0.08],
+    );
+    assert.ok(result.variants[2].conditions.includes("Output: Video"));
+    assert.ok(
+        result.conditions.some((x) =>
+            x.includes("duration mapping remains unverified"),
+        ),
+    );
+});
+
+test("tiered publisher prices retain deployment, prompt length and region instead of universal savings", () => {
+    const page = `### Singapore
+| Model ID | Deployment scope | Input tokens per request | Input price (per 1 million tokens) | Output price (per 1 million tokens) |
+| --- | --- | --- | --- | --- |
+| qwen3-coder-next | International | 0<Token≤32K | $0.3 | $1.5 |`;
+    const result = extractPrices(page, {
+        upstreamModel: "qwen3-coder-next",
+        category: "text",
+    });
+    verifyPositions(page, result);
+    assert.equal(result.input, 0.3);
+    assert.equal(result.output, 1.5);
+    assert.ok(result.conditions.some((x) => x.includes("0<Token≤32K")));
+    assert.ok(result.conditions.some((x) => x.includes("International")));
+    assert.ok(result.conditions.some((x) => x.includes("Singapore")));
+});
+
+test("image model cards preserve every quality/resolution rate and reject an unbound calculator", () => {
+    const page = `# GPT Image 1.5
+Image generation
+Per image
+Quality
+Low
+1024x1024
+$0.009
+1024x1536
+$0.013
+Image generation
+Per image
+Quality
+Medium
+1024x1024
+$0.034
+1024x1536
+$0.05`;
+    const options = { upstreamModel: "gpt-image-1.5", category: "image" };
+    const result = extractPrices(page, options);
+    verifyPositions(page, result);
+    assert.equal(result.unit, "image");
+    assert.equal(result.variants.length, 4);
+    assert.deepEqual(
+        result.variants.map((x) => x.input),
+        [0.009, 0.013, 0.034, 0.05],
+    );
+    assert.ok(result.conditions.includes("Quality: Low"));
+    assert.ok(result.conditions.includes("Resolution: 1024x1024"));
+    assert.equal(
+        extractPrices(
+            page.replace("# GPT Image 1.5", "# Pricing calculator"),
+            options,
+        ),
+        null,
+    );
+});
+
+test("speech rate cards preserve character billing and exact versioned registry aliases", () => {
+    const page = `### v2 Multilingual
+Text to Speech
+$0.08
+Price per 1K characters
+Get started
+### Flash / Turbo
+Text to Speech
+$0.04
+Price per 1K characters`;
+    const model = {
+        name: "elevenlabs/eleven-multilingual-v2",
+        aliases: ["multilingual-v2"],
+        category: "audio",
+    };
+    const result = extractPrices(page, { model, upstreamModel: model.name });
+    verifyPositions(page, result);
+    assert.equal(result.input, 0.08);
+    assert.equal(result.unit, "1K_characters");
+    assert.equal(
+        extractPrices(page.replace("v2 Multilingual", "v3 Multilingual"), {
+            model,
+            upstreamModel: model.name,
+        }),
+        null,
+    );
+});
+
+test("video rate tables preserve audio/resolution and do not mistake the Fast checkpoint for a service tier", () => {
+    const page = `## Veo 3.1
+ | Free Tier | Paid Tier, per second in USD
+Veo 3.1 Fast video with audio price (default) | Not available | $0.10 (720p)
+$0.12 (1080p)
+$0.30 (4k)
+Veo 3.1 Lite video with audio price (default) | Not available | $0.05 (720p)`;
+    const options = { upstreamModel: "veo-3.1-fast", category: "video" };
+    const result = extractPrices(page, options);
+    verifyPositions(page, result);
+    assert.equal(result.unit, "second");
+    assert.equal(result.variants.length, 3);
+    assert.deepEqual(
+        result.variants.map((x) => x.input),
+        [0.1, 0.12, 0.3],
+    );
+    assert.ok(result.conditions.some((x) => x.includes("with audio")));
+    assert.ok(result.conditions.some((x) => x.includes("720p")));
+    assert.equal(
+        extractPrices(
+            page.replace("per second in USD", "per 1 count"),
+            options,
+        ),
+        null,
+    );
+});
+
+test("image starting prices retain their resolution formula rather than pretending a flat rate", () => {
+    const page = `### FLUX.2: Megapixel-Based Pricing
+FLUX.2 pricing scales with output resolution (1024×1024 = 1 megapixel).
+| Model | Text-to-Image | Image Editing |
+| --- | --- | --- |
+| FLUX.2 [klein] 4B | from $0.014 | from $0.014 |
+Klein pricing explained: The first megapixel costs a flat rate, then each additional MP adds to the total.
+For example, a 2MP image with Klein 4B costs $0.014 + $0.001 = $0.015.
+Resolution rounding: Resolution always rounds UP to the next megapixel.`;
+    const result = extractPrices(page, {
+        upstreamModel: "flux.2-klein-4b",
+        category: "image",
+    });
+    verifyPositions(page, result);
+    assert.equal(result.input, 0.014);
+    assert.ok(result.conditions.some((x) => x.includes("starting price")));
+    assert.ok(result.conditions.some((x) => x.includes("$0.001")));
+    assert.ok(result.conditions.some((x) => x.includes("rounds UP")));
+});
+
 // Exact excerpts from saved primary Bedrock s37 and Claude s275 pages.
 const bedrock = `## Mistral AI
 On-Demand pricing

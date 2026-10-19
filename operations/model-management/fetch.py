@@ -24,6 +24,7 @@ EXTRACTION_VERSION = 2
 MAX_CHARACTERS = 18_000
 MAX_REDIRECTS = 5
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
+MAX_HTTP_BYTES = 8 * 1024 * 1024
 MAX_HTTP_ATTEMPTS = 3
 HTTP_DEADLINE_SECONDS = 80
 MAX_BROWSER_REQUESTS = 64
@@ -270,7 +271,7 @@ def _reddit_feed_slot(url, deadline):
         time.sleep(delay)
 
 
-def _pinned_fetch(url, deadline, method="GET", headers=None, raw=False, byte_limit=MAX_RESPONSE_BYTES, remaining=None, on_bytes=None):
+def _pinned_fetch(url, deadline, method="GET", headers=None, raw=False, byte_limit=MAX_HTTP_BYTES, remaining=None, on_bytes=None):
     from curl_cffi import CurlOpt
     from scrapling.fetchers import FetcherSession
 
@@ -323,10 +324,30 @@ def _excerpt(page, max_characters, focus, cached):
     start = 0
     metadata = {}
     if focus is not None:
-        match = re.search(re.escape(focus), text, re.IGNORECASE)
+        pattern = r"(?<![\w.-])" + r"[\s_-]+".join(re.escape(part) for part in re.split(r"[\s_-]+", focus)) + r"(?![\w-]|\.\d)"
+        def relevance(match):
+            line = text[text.rfind("\n", 0, match.start()) + 1:text.find("\n", match.end()) if "\n" in text[match.end():] else len(text)]
+            if line.lstrip().startswith("|") and re.search(r"\$\s*\d", line):
+                return (1, len(re.findall(r"\$\s*\d", line)))
+            window = text[max(0, match.start() - 1000):match.end() + 2000]
+            return (0, len(re.findall(r"\$\s*\d|\b(?:USD|pricing|input|output|per image|per second)\b", window, re.I)))
+        match = max(re.finditer(pattern, text, re.IGNORECASE), key=relevance, default=None)
         if match:
             context = min(2_000, max(0, max_characters - len(match.group())))
             start = max(0, match.start() - context)
+            row_start = text.rfind("\n", 0, match.start()) + 1
+            row_end = text.find("\n", match.end())
+            if row_end < 0:
+                row_end = len(text)
+            if text[row_start:row_end].lstrip().startswith("|"):
+                table_start = row_start
+                while table_start > 0:
+                    previous = text.rfind("\n", 0, table_start - 1) + 1
+                    if not text[previous:table_start].lstrip().startswith("|"):
+                        break
+                    table_start = previous
+                if row_end - table_start <= max_characters:
+                    start = max(0, table_start - min(2_000, max_characters - (row_end - table_start)))
         metadata = {"excerptStart": start, "totalCharacters": len(text), "focusMatched": match is not None}
     return {
         "status": "fetched", "url": page["url"], "method": page.get("method", "scrapling-http"),
@@ -435,7 +456,7 @@ def _read_http(url, max_characters, focus=None, include_links=False):
         content = _page_html(page)
         if "xml" in str(headers.get("content-type", headers.get("Content-Type", ""))).lower() and isinstance(getattr(page, "body", None), bytes):
             content = page.body.decode("utf-8", errors="replace")
-        if len(content.encode("utf-8")) > MAX_RESPONSE_BYTES:
+        if len(content.encode("utf-8")) > MAX_HTTP_BYTES:
             return _result(current, "scrapling-http", "upstream content exceeded the fetch limit")
         feed = _feed_text(content, current)
         if feed:

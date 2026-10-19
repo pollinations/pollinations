@@ -197,6 +197,31 @@ export async function reuseModel(
             ),
         );
         assert.equal(assessed.discoveries.length, old.discoveries.length);
+        if (old.providerComparison) {
+            const comparison = old.providerComparison;
+            assert.ok(digest(comparison.requestDigest));
+            assert.deepEqual(
+                assessed.routes.map((route) => route.pricing),
+                old.routes.map((route) => route.pricing),
+            );
+            if (comparison.status === "insufficient") {
+                assert.equal(comparison.candidate, null);
+                assessed.recommendation = null;
+            } else {
+                assert.equal(
+                    comparison.status,
+                    "requires-account-and-route-verification",
+                );
+                assert.equal(
+                    assessed.recommendation?.provider,
+                    comparison.candidate?.provider,
+                );
+                assert.equal(
+                    assessed.recommendation?.upstreamModel,
+                    comparison.candidate?.upstreamModel,
+                );
+            }
+        }
         return {
             ...old,
             ...assessed,

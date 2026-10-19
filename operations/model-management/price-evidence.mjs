@@ -7,6 +7,41 @@ const moneyPattern =
 const escaped = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const currencyCodes = new Set(Intl.supportedValuesOf("currency"));
 
+export function modelIdentityNames(model, upstreamModel = model?.name) {
+    const canonical = model?.name ?? upstreamModel;
+    const slug = canonical
+        ?.split("/")
+        .at(-1)
+        .toLowerCase()
+        .replace(/[\s_]+/g, "-");
+    const publisher = canonical?.includes("/")
+        ? canonical.split("/")[0].replaceAll("-", "")
+        : "";
+    return [
+        ...new Set(
+            [
+                canonical,
+                canonical?.split("/").at(-1),
+                upstreamModel,
+                model?.title,
+                ...(model?.aliases ?? []),
+            ].filter((name) => {
+                if (typeof name !== "string") return false;
+                if (exactModelIdentity(name, canonical)) return true;
+                const alias = name
+                    .toLowerCase()
+                    .replace(/^(v\d+(?:\.\d+)*)\s+(.+)$/, "$2 $1")
+                    .replace(/[\s_]+/g, "-");
+                if (!slug?.endsWith(`-${alias}`)) return false;
+                const removed = slug.slice(0, -alias.length - 1);
+                return (
+                    /^[a-z]+$/.test(removed) && publisher.startsWith(removed)
+                );
+            }),
+        ),
+    ];
+}
+
 // Formatting alone may differ; checkpoint versions and suffixes stay intact.
 export function exactModelIdentity(value, upstreamModel) {
     if (typeof value !== "string" || typeof upstreamModel !== "string")
@@ -15,7 +50,9 @@ export function exactModelIdentity(value, upstreamModel) {
         name
             .replace(/^#{1,6}\s+/, "")
             .toLowerCase()
-            .replace(/[\s-]+/g, "-");
+            .replace(/^(v\d+(?:\.\d+)*)\s+(.+)$/, "$2 $1")
+            .replace(/\[([^\]]+)\]/g, "$1")
+            .replace(/[\s_-]+/g, "-");
     return [upstreamModel, upstreamModel.split("/").at(-1)].some(
         (name) => normalize(value) === normalize(name),
     );
@@ -23,10 +60,29 @@ export function exactModelIdentity(value, upstreamModel) {
 
 // Recognize only explicit table columns and model-page embedding price blocks.
 // Unknown layouts stay unknown instead of guessing from neighboring numbers.
-export function extractPrices(text, { model, upstreamModel, category, quote }) {
+export function extractPrices(
+    text,
+    { model, upstreamModel, category, quote, sourceUrl },
+) {
     if (typeof text !== "string" || !upstreamModel) return null;
     const checkpoint = upstreamModel.split("/").at(-1);
-    const exact = (value) => exactModelIdentity(value, upstreamModel);
+    const names = modelIdentityNames(model, upstreamModel);
+    const exact = (value) =>
+        names.some(
+            (name) =>
+                exactModelIdentity(value, name) ||
+                exactModelIdentity(
+                    value.replace(
+                        /^(?:#{1,6}\s*)?(v\d+(?:\.\d+)*)\s+(.+)$/i,
+                        "$2 $1",
+                    ),
+                    name,
+                ),
+        );
+    const sourcePath =
+        typeof sourceUrl === "string" && URL.canParse(sourceUrl)
+            ? new URL(sourceUrl).pathname
+            : "";
     const kind = category ?? model?.category;
     const embedding = kind === "embedding" || kind === "embeddings";
     const lines = [];
@@ -77,8 +133,14 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
         for (let j = index - 1; j >= 0; j--) {
             const value = lines[j].value;
             if (!value) continue;
+            if (
+                value === "Show discount options" ||
+                value === "StandardPriorityFlex/Batch"
+            )
+                continue;
             if (value.startsWith("|")) continue;
             if (standard.test(value)) return true;
+            if (value === "Image generation") break;
             const heading =
                 /^#{1,6}\s/.test(value) ||
                 /^(?:batch|promotional?|trial|priority|flex|fast|ultrafast|reserved)(?: pricing(?: data)?)?$/i.test(
@@ -106,6 +168,8 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
         priceStart,
         priceEnd,
         conditions = [],
+        unit = "1M_tokens",
+        variants,
     ) => {
         if (quote !== undefined) {
             if (!quote) return null;
@@ -133,11 +197,12 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
             return null;
         return {
             currency: "USD",
-            unit: "1M_tokens",
+            unit,
             input,
             output,
             conditions,
             evidence: fragments,
+            ...(variants ? { variants } : {}),
         };
     };
     const cells = (line) =>
@@ -150,16 +215,483 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
         heading
             .toLowerCase()
             .replace(/^price per 1m (input|output) tokens$/, "$1")
-            .replace(/^(input|output) pricing \(per 1m tokens\)$/, "$1");
+            .replace(
+                /^(input|output) pric(?:e|ing) \(per (?:1m|1 million|million|1,000,000) tokens\)$/,
+                "$1",
+            )
+            .replace(/^(?:base )?(input|output) tokens$/, "$1");
+
+    // This public catalog contract quotes USD per token, not per million tokens.
+    if (
+        /^https:\/\/openrouter\.ai\/api\/v1\/model\/[^/?#]+\/[^/?#]+$/.test(
+            sourceUrl ?? "",
+        ) &&
+        ["text", "embedding"].includes(kind)
+    ) {
+        let data;
+        try {
+            data = JSON.parse(text).data;
+        } catch {
+            return null;
+        }
+        if (!data || !exactModelIdentity(data.id, upstreamModel)) return null;
+        const keys = embedding ? ["prompt"] : ["prompt", "completion"];
+        const identityStart = text.indexOf(data.id);
+        if (identityStart < 0) return null;
+        const fragments = [evidence("model", data.id, identityStart)];
+        const prices = [];
+        for (const key of keys) {
+            const value = data.pricing?.[key];
+            if (
+                typeof value !== "string" ||
+                !/^(?:0|[1-9]\d*)(?:\.\d+)?(?:e[+-]?\d+)?$/i.test(value)
+            )
+                return null;
+            const [coefficient, exponent = "0"] = value
+                .toLowerCase()
+                .split("e");
+            const price = Number(`${coefficient}e${Number(exponent) + 6}`);
+            if (!Number.isFinite(price) || price < 0) return null;
+            const fragment = text.match(
+                new RegExp(
+                    `"${key}"\\s*:\\s*${escaped(JSON.stringify(value))}`,
+                ),
+            );
+            if (!fragment) return null;
+            fragments.push(evidence("price", fragment[0], fragment.index));
+            prices.push(price);
+        }
+        const priceFragments = fragments.filter(
+            (item) => item.kind === "price",
+        );
+        return finish(
+            prices[0],
+            prices[1] ?? null,
+            fragments,
+            Math.min(...priceFragments.map((item) => item.start)),
+            Math.max(...priceFragments.map((item) => item.end)),
+            [
+                "OpenRouter catalog base token prices; routed provider, context tiers, non-token charges and purchase fees require verification",
+            ],
+        );
+    }
+
+    if (!["text", "embedding", "embeddings"].includes(kind)) {
+        const variants = [];
+        const add = (input, unit, conditions, fragments) => {
+            if (fragments.some((item) => item.quote.split(/\s+/).length > 25))
+                return;
+            variants.push({
+                input,
+                output: null,
+                unit,
+                currency: "USD",
+                conditions,
+                evidence: fragments,
+            });
+        };
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            if (
+                kind === "image" &&
+                line.value === "Image generation" &&
+                lines[i + 1]?.value === "Per image" &&
+                lines[i + 2]?.value === "Quality"
+            ) {
+                const title = lines[0].value
+                    .split("|")[0]
+                    .trim()
+                    .replace(/\s+(?:Model|API)(?:\s.*)?$/i, "");
+                const pageOwner =
+                    /\/models\/[^/]+\/?$/.test(sourcePath) &&
+                    exact(sourcePath.split("/").filter(Boolean).at(-1))
+                        ? lines
+                              .slice(0, i)
+                              .findLast((item) => exact(item.value))
+                        : null;
+                const owner =
+                    lines
+                        .slice(0, i)
+                        .findLast((item) => /^#\s+[^#]/.test(item.value)) ??
+                    (exact(title)
+                        ? { value: title, start: lines[0].start }
+                        : null) ??
+                    pageOwner;
+                if (!owner || !exact(owner.value) || !scopeValid(i + 1))
+                    continue;
+                const quality = lines[i + 3];
+                if (!/^(?:Low|Medium|High)$/i.test(quality?.value ?? ""))
+                    continue;
+                for (let j = i + 4; j + 1 < lines.length; j += 2) {
+                    const resolution = lines[j],
+                        rate = lines[j + 1];
+                    const money = rate.value.match(moneyPattern);
+                    if (
+                        !/^\d+\s*[x×]\s*\d+$/.test(resolution.value) ||
+                        !money ||
+                        money[2]
+                    )
+                        break;
+                    add(
+                        Number(money[1]),
+                        "image",
+                        [
+                            `Quality: ${quality.value}`,
+                            `Resolution: ${resolution.value}`,
+                            "output component only; input charges remain unknown",
+                        ],
+                        [
+                            evidence("model", owner.value, owner.start),
+                            evidence(
+                                "unit",
+                                lines[i + 1].value,
+                                lines[i + 1].start,
+                            ),
+                            evidence("condition", quality.value, quality.start),
+                            evidence(
+                                "condition",
+                                resolution.value,
+                                resolution.start,
+                            ),
+                            evidence("price", rate.value, rate.start),
+                        ],
+                    );
+                }
+            }
+            if (
+                kind === "audio" &&
+                exact(line.value) &&
+                lines[i + 1]?.value === "Text to Speech" &&
+                /^Price per 1K characters$/i.test(lines[i + 3]?.value ?? "") &&
+                scopeValid(i)
+            ) {
+                const rate = lines[i + 2],
+                    money = rate.value.match(moneyPattern);
+                if (money && !money[2])
+                    add(
+                        Number(money[1]),
+                        "1K_characters",
+                        ["Text to Speech; per-character billing"],
+                        [
+                            evidence("model", line.value, line.start),
+                            evidence("price", rate.value, rate.start),
+                            evidence(
+                                "unit",
+                                lines[i + 3].value,
+                                lines[i + 3].start,
+                            ),
+                        ],
+                    );
+            }
+            if (kind === "video") {
+                const descriptor = line.value.split("|")[0].trim();
+                const identity = descriptor.replace(
+                    /\s+video\s+(?:with|without)\s+audio\s+price(?:\s*\(default\))?$/i,
+                    "",
+                );
+                if (identity === descriptor || !exact(identity)) continue;
+                const unit = lines
+                    .slice(Math.max(0, i - 8), i)
+                    .findLast((item) =>
+                        /Paid Tier, per second in USD/i.test(item.value),
+                    );
+                if (!unit || !scopeValid(i)) continue;
+                for (let j = i; j < lines.length; j++) {
+                    const current = lines[j];
+                    if (j > i && !/^\$\d/.test(current.value)) break;
+                    const money = current.value.match(
+                        /\$(\d+(?:\.\d+)?)\s*\(([^)]+)\)/,
+                    );
+                    if (!money) break;
+                    const priceStart =
+                        current.start + current.value.indexOf(money[0]);
+                    add(
+                        Number(money[1]),
+                        "second",
+                        [
+                            descriptor,
+                            `Resolution: ${money[2]}`,
+                            "video output; other charges remain unknown",
+                        ],
+                        [
+                            evidence(
+                                "model",
+                                identity,
+                                line.start + line.value.indexOf(identity),
+                            ),
+                            evidence("unit", unit.value, unit.start),
+                            evidence("price", money[0], priceStart),
+                        ],
+                    );
+                }
+            }
+            if (kind === "image" && line.value.startsWith("|")) {
+                const values = cells(line.value);
+                if (!exact(values[0])) continue;
+                const header = lines
+                    .slice(Math.max(0, i - 4), i)
+                    .findLast((item) =>
+                        item.value.startsWith("| Model | Text-to-Image |"),
+                    );
+                const context = lines
+                    .slice(Math.max(0, i - 6), i)
+                    .findLast((item) =>
+                        /pricing scales with output resolution.*megapixel/i.test(
+                            item.value,
+                        ),
+                    );
+                const rate = values[1]?.match(/^from\s+\$(\d+(?:\.\d+)?)$/i);
+                if (!header || !context || !rate || !scopeValid(i)) continue;
+                const nextSection = lines.findIndex(
+                    (item, index) => index > i && /^#{1,6}\s/.test(item.value),
+                );
+                const details = lines
+                    .slice(i + 1, nextSection < 0 ? undefined : nextSection)
+                    .filter(
+                        (item) =>
+                            !item.value.startsWith("|") &&
+                            /pricing explained:|resolution rounding:|(?:megapixel|MP).*\$/i.test(
+                                item.value,
+                            ),
+                    );
+                const conditions = [
+                    "starting price; resolution dependent",
+                    ...details.flatMap((item) =>
+                        item.value.split(/(?<=\.)\s+/),
+                    ),
+                ];
+                add(Number(rate[1]), "image", conditions, [
+                    evidence(
+                        "model",
+                        values[0],
+                        line.start + line.value.indexOf(values[0]),
+                    ),
+                    evidence("unit", context.value, context.start),
+                    evidence(
+                        "price",
+                        values[1],
+                        line.start + line.value.indexOf(values[1]),
+                    ),
+                ]);
+            }
+        }
+        if (variants.length) {
+            const first = variants[0];
+            const fragments = [
+                ...new Map(
+                    variants
+                        .flatMap((item) => item.evidence)
+                        .map((item) => [
+                            `${item.kind}:${item.start}:${item.end}`,
+                            item,
+                        ]),
+                ).values(),
+            ];
+            const priced = fragments.filter((item) => item.kind === "price");
+            const result = finish(
+                first.input,
+                null,
+                fragments,
+                Math.min(...priced.map((item) => item.start)),
+                Math.max(...priced.map((item) => item.end)),
+                first.conditions,
+                first.unit,
+                variants,
+            );
+            if (result) return result;
+        }
+    }
     for (let i = 0; i < lines.length - 2; i++) {
         const header = lines[i];
         if (!header.value.startsWith("|")) continue;
         const headings = cells(header.value);
+        if (
+            (kind === "video" || kind === "image") &&
+            headings[0] === "Model" &&
+            headings.includes("Output Resolution") &&
+            headings.includes("Price (USD)")
+        ) {
+            const variants = [];
+            let owner, feature, output;
+            for (
+                let j = i + 2;
+                j < lines.length && lines[j].value.startsWith("|");
+                j++
+            ) {
+                const row = lines[j],
+                    values = cells(row.value);
+                if (values[0]) {
+                    if (owner && !exact(values[0])) break;
+                    if (!exact(values[0])) continue;
+                    owner = evidence(
+                        "model",
+                        values[0],
+                        row.start + row.value.indexOf(values[0]),
+                    );
+                    feature = output = undefined;
+                }
+                if (!owner) continue;
+                feature = values[headings.indexOf("Feature")] || feature;
+                output = values[headings.indexOf("Output")] || output;
+                const resolution =
+                    values[headings.indexOf("Output Resolution")];
+                const value = values[headings.indexOf("Price (USD)")];
+                const rate = value?.match(
+                    /^\$(\d+(?:\.\d+)?)\s*\/\s*(?:1\s+)?(second|image|count)$/i,
+                );
+                if (
+                    !feature ||
+                    !output ||
+                    !resolution ||
+                    !rate ||
+                    !scopeValid(i)
+                )
+                    continue;
+                const unit = rate[2].toLowerCase();
+                variants.push({
+                    input: Number(rate[1]),
+                    output: null,
+                    unit,
+                    currency: "USD",
+                    conditions: [
+                        feature,
+                        `Output: ${output}`,
+                        `Resolution: ${resolution}`,
+                        ...(unit === "count"
+                            ? [
+                                  "source meter: 1 count; duration mapping remains unverified",
+                              ]
+                            : []),
+                    ],
+                    evidence: [
+                        owner,
+                        evidence(
+                            "unit",
+                            value,
+                            row.start + row.value.indexOf(value),
+                        ),
+                        evidence(
+                            "price",
+                            value,
+                            row.start + row.value.indexOf(value),
+                        ),
+                    ],
+                });
+            }
+            if (variants.length) {
+                const fragments = variants.flatMap((item) => item.evidence);
+                const priced = fragments.filter(
+                    (item) => item.kind === "price",
+                );
+                const first = variants[0];
+                const result = finish(
+                    first.input,
+                    null,
+                    fragments,
+                    Math.min(...priced.map((item) => item.start)),
+                    Math.max(...priced.map((item) => item.end)),
+                    first.conditions,
+                    first.unit,
+                    variants,
+                );
+                if (result) return result;
+            }
+        }
+        if (
+            kind === "text" &&
+            headings[0] === "Model" &&
+            headings[1] === "Type"
+        ) {
+            for (
+                let j = i + 2;
+                j < lines.length && lines[j].value.startsWith("|");
+                j++
+            ) {
+                const row = lines[j],
+                    values = cells(row.value);
+                if (!exact(values[0])) continue;
+                let input, output;
+                for (
+                    let k = j;
+                    k < lines.length && lines[k].value.startsWith("|");
+                    k++
+                ) {
+                    const value = cells(lines[k].value);
+                    if (k > j && value[0]) break;
+                    if (/^Input\b/.test(value[1]) && !/audio/i.test(value[1]))
+                        input = { line: lines[k], values: value };
+                    if (/^Text output\b/i.test(value[1]))
+                        output = { line: lines[k], values: value };
+                }
+                if (!input || !output || !scopeValid(i)) continue;
+                const variants = [];
+                for (let k = 2; k < headings.length; k++) {
+                    if (
+                        !/1M tokens/i.test(headings[k]) ||
+                        excluded.test(headings[k])
+                    )
+                        continue;
+                    const a = input.values[k]?.match(moneyPattern),
+                        b = output.values[k]?.match(moneyPattern);
+                    if (!a || !b || a[2] || b[2]) continue;
+                    variants.push({
+                        input: Number(a[1]),
+                        output: Number(b[1]),
+                        unit: "1M_tokens",
+                        currency: "USD",
+                        conditions: [headings[k]],
+                        evidence: [
+                            evidence(
+                                "model",
+                                values[0],
+                                row.start + row.value.indexOf(values[0]),
+                            ),
+                            evidence(
+                                "unit",
+                                headings[k],
+                                header.start +
+                                    header.value.indexOf(headings[k]),
+                            ),
+                            evidence(
+                                "price",
+                                input.values[k],
+                                input.line.start +
+                                    input.line.value.indexOf(input.values[k]),
+                            ),
+                            evidence(
+                                "price",
+                                output.values[k],
+                                output.line.start +
+                                    output.line.value.indexOf(output.values[k]),
+                            ),
+                        ],
+                    });
+                }
+                if (variants.length) {
+                    const fragments = variants.flatMap((item) => item.evidence);
+                    const priced = fragments.filter(
+                        (item) => item.kind === "price",
+                    );
+                    const first = variants[0];
+                    const result = finish(
+                        first.input,
+                        first.output,
+                        fragments,
+                        Math.min(...priced.map((item) => item.start)),
+                        Math.max(...priced.map((item) => item.end)),
+                        first.conditions,
+                        first.unit,
+                        variants,
+                    );
+                    if (result) return result;
+                }
+            }
+        }
         const modelColumn = headings.indexOf("API model string");
         const modelIndex = modelColumn < 0 ? 0 : modelColumn;
         if (
             modelColumn < 0 &&
-            !/^(?:model|model name|name|[\w ]+ models)$/i.test(headings[0])
+            !/^(?:model(?: name| id)?|name|[\w ]+ models)$/i.test(headings[0])
         )
             continue;
         const separator = /^\|[\s:|-]+\|$/.test(lines[i + 1].value);
@@ -167,12 +699,15 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
             headings.some(
                 (heading) =>
                     tokenHeading(heading) === role &&
-                    heading.toLowerCase() !== role,
+                    /(?:1m|million|1,000,000)\s+(?:input |output )?tokens/i.test(
+                        heading,
+                    ),
             ),
         );
         const inlineUnits =
-            headings.includes("Input") &&
-            headings.includes("Output") &&
+            ["input", "output"].every((role) =>
+                headings.some((heading) => tokenHeading(heading) === role),
+            ) &&
             cells(lines[i + (separator ? 2 : 1)].value).some(
                 (value) => moneyPattern.exec(value)?.[2],
             );
@@ -326,11 +861,11 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
                               ? evidence(
                                     "unit",
                                     header.value.match(
-                                        /1M (?:input |output )?tokens/i,
+                                        /(?:1M|1 million|million|1,000,000) (?:input |output )?tokens/i,
                                     )[0],
                                     header.start +
                                         header.value.search(
-                                            /1M (?:input |output )?tokens/i,
+                                            /(?:1M|1 million|million|1,000,000) (?:input |output )?tokens/i,
                                         ),
                                 )
                               : evidence("unit", unit.value, unit.start),
@@ -396,6 +931,32 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
             const conditions = input[0].group.trim()
                 ? [input[0].group.trim()]
                 : [];
+            for (const label of [
+                "Deployment scope",
+                "Input tokens per request",
+            ]) {
+                const k = headings.indexOf(label);
+                if (k < 0) continue;
+                conditions.push(`${label}: ${values[k]}`);
+                fragments.push(
+                    evidence(
+                        "condition",
+                        values[k],
+                        row.start + row.value.indexOf(values[k]),
+                    ),
+                );
+            }
+            if (headings.includes("Input tokens per request")) {
+                const scope = lines
+                    .slice(0, i)
+                    .findLast((line) => /^#{1,6}\s/.test(line.value));
+                if (scope) {
+                    conditions.push(scope.value);
+                    fragments.push(
+                        evidence("condition", scope.value, scope.start),
+                    );
+                }
+            }
             if (/^Regions?: /i.test(descriptor?.value ?? "")) {
                 conditions.push(descriptor.value);
                 if (descriptor.value.split(/\s+/).length > 25) continue;

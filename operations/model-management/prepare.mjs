@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { isIP } from "node:net";
 import { buildResearchControl } from "./jev.mjs";
-import { exactModelIdentity, extractPrices } from "./price-evidence.mjs";
+import {
+    exactModelIdentity,
+    extractPrices,
+    modelIdentityNames,
+} from "./price-evidence.mjs";
 export const DISCOVERY_MODES = [
     "reddit",
     "quora",
@@ -187,7 +191,7 @@ export function officialCandidates(models, sources, gaps = []) {
         return true;
     });
     const pricingProviders =
-        /(?:^|\.)(?:microsoft\.com|azure\.com|fireworks\.ai|amazon\.com|openai\.com|anthropic\.com|claude\.com|google\.com|x\.ai|deepseek\.com|mistral\.ai|cohere\.com|together\.ai|groq\.com|cerebras\.ai|nvidia\.com|cloudflare\.com|replicate\.com|fal\.ai|runware\.ai|bfl\.ai|recraft\.ai|ideogram\.ai|minimax\.io|kimi\.ai|aliyun\.com|alibabacloud\.com|byteplus\.com|digitalocean\.com|openrouter\.ai)$/;
+        /(?:^|\.)(?:microsoft\.com|azure\.com|fireworks\.ai|amazon\.com|openai\.com|anthropic\.com|claude\.com|google\.com|x\.ai|deepseek\.com|mistral\.ai|cohere\.com|together\.ai|groq\.com|cerebras\.ai|nvidia\.com|cloudflare\.com|replicate\.com|fal\.ai|runware\.ai|bfl\.ai|elevenlabs\.io|recraft\.ai|ideogram\.ai|minimax\.io|kimi\.ai|aliyun\.com|alibabacloud\.com|byteplus\.com|digitalocean\.com|openrouter\.ai)$/;
     const quoteFor = (text, name, predicate = () => true, score = () => 0) => {
         const matches = [];
         for (const segment of text.split(/\n|(?<=[.!?])\s+/)) {
@@ -209,6 +213,7 @@ export function officialCandidates(models, sources, gaps = []) {
         models: models.map((model) => {
             const routes = [];
             const unresolved = [];
+            const identities = modelIdentityNames(model);
             const checkpoint = model.name.split("/").at(-1);
             for (const source of pages) {
                 if (
@@ -235,16 +240,14 @@ export function officialCandidates(models, sources, gaps = []) {
                 )
                     continue;
                 const price = extractPrices(source.text, {
+                    sourceUrl: source.url,
                     model,
                     upstreamModel: model.name,
                     category: model.category,
                 });
                 const displayed = (
-                    price?.evidence.find(
-                        (item) =>
-                            item.kind === "model" &&
-                            exactModelIdentity(item.quote, model.name),
-                    )?.quote ??
+                    price?.evidence.find((item) => item.kind === "model")
+                        ?.quote ??
                     source.text
                         .split("\n")
                         .map((line) => line.trim())
@@ -375,7 +378,15 @@ export function officialCandidates(models, sources, gaps = []) {
                 if (previous < 0) routes.push(route);
                 else {
                     const saved = routes[previous];
-                    if (exactModelIdentity(saved.upstreamModel, displayed)) {
+                    if (
+                        exactModelIdentity(saved.upstreamModel, displayed) ||
+                        (identities.some((name) =>
+                            exactModelIdentity(saved.upstreamModel, name),
+                        ) &&
+                            identities.some((name) =>
+                                exactModelIdentity(displayed, name),
+                            ))
+                    ) {
                         if (price && saved.pricing.input === null)
                             saved.pricing = route.pricing;
                         saved.claims.push(
@@ -443,6 +454,7 @@ export async function prepareResearch(task, services) {
                           (name) =>
                               mentions(source.text, name) ||
                               extractPrices(source.text, {
+                                  sourceUrl: source.url,
                                   upstreamModel: name,
                                   category: task.models.find(
                                       (model) => model.name === name,
@@ -708,11 +720,22 @@ export async function prepareResearch(task, services) {
                 omittedRoutes: Math.max(0, routes.length - 3),
                 routes: routes
                     .slice(0, 3)
-                    .map(({ provider, pricing, available }) => ({
-                        provider,
-                        pricing,
-                        available,
-                    })),
+                    .map(
+                        ({
+                            provider,
+                            pricing: { variants, ...pricing },
+                            available,
+                        }) => ({
+                            provider,
+                            pricing: {
+                                ...pricing,
+                                ...(variants?.length
+                                    ? { variantCount: variants.length }
+                                    : {}),
+                            },
+                            available,
+                        }),
+                    ),
             })),
             sourceCount: sources.length,
             omittedSources: Math.max(0, sources.length - 8),
@@ -882,6 +905,81 @@ export async function prepareResearch(task, services) {
         return returnedLeadIds;
     };
     try {
+        const pricingPages = {
+            openai: (model) => [
+                model.category === "image"
+                    ? `https://developers.openai.com/api/docs/models/${model.name.split("/").at(-1)}`
+                    : PROVIDER_CATALOG_URLS[4],
+            ],
+            anthropic: () => [
+                "https://platform.claude.com/docs/en/about-claude/pricing.md",
+            ],
+            google: () => [
+                "https://cloud.google.com/vertex-ai/generative-ai/pricing",
+            ],
+            "black-forest-labs": () => [
+                "https://help.bfl.ai/articles/7986977817-what-are-the-costs-associated-with-using-your-models",
+            ],
+            elevenlabs: () => [
+                "https://elevenlabs.io/pricing/api",
+                "https://elevenlabs.io/docs/overview/models",
+            ],
+            qwen: (model) => [
+                `https://openrouter.ai/api/v1/model/${model.name}`,
+            ],
+            deepseek: () => [PROVIDER_CATALOG_URLS[1]],
+            "z-ai": () => [PROVIDER_CATALOG_URLS[1]],
+        };
+        for (const model of task.models ?? []) {
+            if (
+                officialCandidates([model], sources).models[0].routes.some(
+                    (route) => route.pricing.input !== null,
+                )
+            )
+                continue;
+            const urls = pricingPages[model.name.split("/")[0]]?.(model) ?? [];
+            for (const url of urls) {
+                const action = {
+                    tool: "fetch",
+                    url,
+                    mode: "http",
+                    focus: model.name.split("/").at(-1),
+                    maxCharacters: 18000,
+                    models: [model.name],
+                    providerPricingSeed: true,
+                    status: "pending",
+                };
+                actions.push(action);
+                const source = await services.read(action);
+                sources.push(source);
+                action.sourceId = source.id;
+                action.status = source.status;
+            }
+            const fallback = `https://openrouter.ai/api/v1/model/${model.name}`;
+            if (
+                model.category === "text" &&
+                pricingPages[model.name.split("/")[0]] &&
+                !urls.includes(fallback) &&
+                !officialCandidates([model], sources).models[0].routes.some(
+                    (route) => route.pricing.input !== null,
+                )
+            ) {
+                const action = {
+                    tool: "fetch",
+                    url: fallback,
+                    mode: "http",
+                    maxCharacters: 18000,
+                    models: [model.name],
+                    providerPricingSeed: true,
+                    status: "pending",
+                };
+                actions.push(action);
+                const source = await services.read(action);
+                sources.push(source);
+                action.sourceId = source.id;
+                action.status = source.status;
+            }
+        }
         const pending = searches.map(([scope, mode, query], index) => ({
             id: `required-${index}`,
             kind: "search",
@@ -994,7 +1092,12 @@ export async function prepareResearch(task, services) {
             const focus = slug && slug.length <= 200 ? slug : undefined;
             const key = JSON.stringify([lead.url, focus]);
             if (seenReads.has(key)) return;
-            if (attempts.length >= 24) {
+            if (
+                attempts.length +
+                    actions.filter((action) => action.providerPricingSeed)
+                        .length >=
+                24
+            ) {
                 gaps.push(
                     `${lead.id}${name ? ` (${name})` : ""}: unread because of the twenty-four-read preparation bound`,
                 );
@@ -1586,6 +1689,7 @@ export async function prepareResearch(task, services) {
                                           ),
                                       ) ||
                                   extractPrices(source.text, {
+                                      sourceUrl: source.url,
                                       upstreamModel: semantic.name,
                                       model: task.models.find(
                                           ({ name }) => name === semantic.name,

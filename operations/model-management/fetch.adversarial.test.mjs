@@ -115,7 +115,7 @@ test(
             assert.equal(call.trust_env, false);
             assert.equal(call.proxy, "");
             assert.equal(call.redirects, false);
-            assert.equal(call.max_response_bytes, 2 * 1024 * 1024);
+            assert.equal(call.max_response_bytes, 8 * 1024 * 1024);
             assert.ok(
                 Array.isArray(call.resolve) && call.resolve.length > 0,
                 "transport DNS must be pinned",
@@ -637,6 +637,29 @@ test("response byte limit rejects oversized ASCII and Unicode before parsing", (
         assert.match(result.error, /limit/);
         assert.equal(calls.length, 1);
     }
+});
+
+test("large documentation HTML can discard scripts while extracted text and raw HTML stay bounded", () => {
+    const allowed = run({
+        pages: [
+            {
+                status: 200,
+                html_content: `<script>${"x".repeat(3 * 1024 * 1024)}</script><p>Exact model pricing: $0.10 per image.</p>`,
+            },
+        ],
+    }).result;
+    assert.equal(allowed.status, "fetched", allowed.error);
+    assert.equal(allowed.text, "Exact model pricing: $0.10 per image.");
+    const denied = run({
+        pages: [
+            {
+                status: 200,
+                html_content: `<script>${"x".repeat(8 * 1024 * 1024)}</script><p>Pricing</p>`,
+            },
+        ],
+    }).result;
+    assert.equal(denied.status, "unavailable");
+    assert.match(denied.error, /limit/);
 });
 
 test("invalid character limits and request shapes reject before HTTP", () => {

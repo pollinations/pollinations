@@ -10,10 +10,12 @@ import {
     CommunityEndpointAdvertisedSchema,
     CommunityEndpointApiSchema,
     type CommunityEndpointPriceKey,
+    EndpointAgentListingPayloadSchema,
     MAX_FALLBACK_TARGETS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
 } from "@shared/community-endpoints.ts";
+import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
 import { ValidationError } from "@shared/http/validation-error.ts";
 import { MODEL_INPUT_MODALITIES } from "@shared/registry/registry.ts";
 import { SAFETY_FEATURES } from "@shared/schemas/safety.ts";
@@ -45,7 +47,9 @@ export const RequiredSafetyFeaturesSchema = z
 const AdvertisedSchema = z
     .object(CommunityEndpointAdvertisedSchema.shape)
     .strict()
-    .describe("Owner-declared catalog metadata for text models.");
+    .describe(
+        "Owner-declared catalog metadata for text models. `streaming: false` marks an endpoint without SSE; the endpoint test detects it.",
+    );
 const PriceSchema = z
     .number()
     .finite()
@@ -69,12 +73,12 @@ const FallbacksSchema = z
     .array(z.string().trim().min(1))
     .max(MAX_FALLBACK_TARGETS)
     .describe(
-        'Community model ids ("<owner>/<name>") tried in order when this model\'s upstream fails, or an empty array to clear them. Each must be another listed community model of the same modality, public or owned by you, and priced at or below this model on every price field.',
+        'Community model ids ("community/<owner>/<name>") tried in order when this model\'s upstream fails, or an empty array to clear them. Each must be another registered community model of the same modality, public or owned by you, and priced at or below this model on every price field.',
     );
 const VisibilitySchema = z
     .enum(COMMUNITY_ENDPOINT_VISIBILITIES)
     .describe(
-        '"private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account.',
+        '"private": owner-only and free at runtime; saved prices and fallbacks are retained. "public": callable by anyone and listed in the catalog when reliability permits. Publishing requires an allowlisted account.',
     );
 const PaidOnlySchema = z
     .boolean()
@@ -108,7 +112,10 @@ const EndpointFieldsSchema = {
     description: z
         .string()
         .trim()
-        .max(COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH)
+        .max(
+            COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
+            `Description must be at most ${COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH} characters`,
+        )
         .optional(),
     baseUrl: z
         .string()
@@ -178,8 +185,15 @@ const ProxyCreateSchema = z.union([
 export const CreateEndpointSchema = ProxyCreateSchema;
 export type ProxyCreateInput = z.infer<typeof ProxyCreateSchema>;
 
+const EndpointAgentModalityFields = EndpointAgentListingPayloadSchema.pick({
+    inputModalities: true,
+    outputModalities: true,
+    capabilities: true,
+}).shape;
+
 export const CreateEndpointAgentSchema = z
     .object({
+        ...EndpointAgentModalityFields,
         name: EndpointFieldsSchema.name,
         title: EndpointFieldsSchema.title,
         description: EndpointFieldsSchema.description,
@@ -200,7 +214,6 @@ const CommonUpdateFieldsSchema = {
     description: EndpointFieldsSchema.description,
     visibility: VisibilitySchema.optional(),
     requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional(),
-    hidden: z.boolean().optional(),
 } as const;
 const ProxyUpdateSchema = z
     .object({
@@ -237,6 +250,7 @@ export const CodeAgentUpdateSchema = z
 const EndpointAgentUpdateSchema = z
     .object({
         ...CommonUpdateFieldsSchema,
+        ...EndpointAgentModalityFields,
         api: CommunityEndpointApiSchema.optional(),
         url: EndpointFieldsSchema.url.optional(),
         upstreamModel: EndpointFieldsSchema.upstreamModel,
@@ -245,14 +259,15 @@ const EndpointAgentUpdateSchema = z
     .strict()
     .superRefine(validateEndpointUpdate);
 
-export const UpdateEndpointSchema = ProxyUpdateSchema;
+export const UpdateEndpointSchema = ProxyUpdateSchema.safeExtend({
+    outputModalities: EndpointAgentModalityFields.outputModalities,
+    capabilities: EndpointAgentModalityFields.capabilities,
+});
 
 const UPDATE_SCHEMA_BY_TYPE = {
     proxy: ProxyUpdateSchema,
     prompt_agent: PromptAgentUpdateSchema,
-    code_agent: CodeAgentUpdateSchema.extend({
-        hidden: CommonUpdateFieldsSchema.hidden,
-    }),
+    code_agent: CodeAgentUpdateSchema,
     endpoint_agent: EndpointAgentUpdateSchema,
 } as const;
 
@@ -329,9 +344,6 @@ const CommunityEndpointResponseFieldsSchema = {
     visibility: VisibilitySchema,
     requiredSafetyFeatures: RequiredSafetyFeaturesSchema,
     pending: PendingCommunityEndpointChangeSchema,
-    hidden: z.boolean(),
-    hiddenReason: z.string().nullable(),
-    hiddenAt: z.string().nullable(),
     createdAt: z.string(),
     updatedAt: z.string(),
 } as const;
@@ -379,6 +391,7 @@ const CodeAgentEndpointResponseSchema = z
 export const EndpointAgentResponseSchema = z
     .object({
         ...CommunityEndpointResponseFieldsSchema,
+        ...EndpointAgentModalityFields,
         type: z.literal("endpoint_agent"),
         api: CommunityEndpointApiSchema,
         url: EndpointFieldsSchema.url,
@@ -400,17 +413,25 @@ export const CommunityEndpointListResponseSchema = z.object({
     provider: z.object({
         name: z.string().nullable(),
         url: z.string().url().nullable(),
+        iconUrl: z.string().refine(isCommunityProviderIconUrl).nullable(),
     }),
 });
 export const CommunityProviderProfileInputSchema = z
     .object({
         name: z.string().trim().max(COMMUNITY_PROVIDER_NAME_MAX_LENGTH),
         url: z.string().trim().max(COMMUNITY_PROVIDER_URL_MAX_LENGTH),
+        iconUrl: z
+            .string()
+            .trim()
+            .refine(isCommunityProviderIconUrl, "Invalid media icon URL")
+            .nullable()
+            .optional(),
     })
     .strict();
 export const CommunityProviderProfileResponseSchema = z.object({
     name: z.string().nullable(),
     url: z.string().url().nullable(),
+    iconUrl: z.string().refine(isCommunityProviderIconUrl).nullable(),
 });
 export const CommunityEndpointModelsResponseSchema = z.object({
     data: z.array(z.string()),
@@ -443,6 +464,18 @@ export const CommunityEndpointTestResponseSchema = z
             .optional()
             .describe(
                 "Image tests only: input types detected from generation and edit probes.",
+            ),
+        streaming: z
+            .literal(false)
+            .optional()
+            .describe(
+                "Text tests only: the endpoint answered `stream: false` but sent no SSE. Register it with `advertised.streaming: false`.",
+            ),
+        streamingError: z
+            .string()
+            .optional()
+            .describe(
+                "Text tests only: why the streaming request found no SSE.",
             ),
     })
     .passthrough();

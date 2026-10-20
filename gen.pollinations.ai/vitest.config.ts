@@ -22,6 +22,7 @@ const genAliases = [
     "events.ts",
     "logger",
     "logger.ts",
+    "middleware/agent-discovery.ts",
     "middleware/auth.ts",
     "middleware/balance.ts",
     "middleware/generation-cache.ts",
@@ -51,6 +52,7 @@ const genAliases = [
     "utils/generation-access.ts",
     "utils/media-cache.ts",
     "utils/model-stats.ts",
+    "utils/refusals.ts",
     "utils/safety-features.ts",
     "utils/text-cache.ts",
 ];
@@ -125,7 +127,10 @@ export default defineConfig(async ({ mode }) => {
                 import.meta.resolve("@cloudflare/vitest-pool-workers"),
             ),
             globalSetup: ["./test/setup/snapshot-server.ts"],
-            setupFiles: ["./test/setup/apply-migrations.ts"],
+            setupFiles: [
+                "./test/setup/apply-migrations.ts",
+                "./test/setup/public-tinybird-pipes.ts",
+            ],
             exclude: [...configDefaults.exclude],
             deps: {
                 optimizer: {
@@ -179,6 +184,19 @@ export default defineConfig(async ({ mode }) => {
                                         components: {},
                                     });
                                 }
+                                // Answers key creation with the request it
+                                // got, so tests see what gen sent.
+                                if (url.pathname === "/api/account/keys") {
+                                    return Response.json({
+                                        key: JSON.stringify({
+                                            authorization:
+                                                request.headers.get(
+                                                    "authorization",
+                                                ),
+                                            body: await request.json(),
+                                        }),
+                                    });
+                                }
                                 return new Response("enter test stub");
                             },
                             POLLINATIONS_MCP: async (request: Request) => {
@@ -208,6 +226,22 @@ export default defineConfig(async ({ mode }) => {
                                     },
                                 });
                             },
+                            ASK_JEV_MCP: async (request: Request) =>
+                                Response.json({
+                                    pathname: new URL(request.url).pathname,
+                                    authorization:
+                                        request.headers.get("authorization"),
+                                    cookie: request.headers.get("cookie"),
+                                    payload: await request.json(),
+                                }),
+                            MACHINES_MCP: async (request: Request) =>
+                                Response.json({
+                                    pathname: new URL(request.url).pathname,
+                                    authorization:
+                                        request.headers.get("authorization"),
+                                    cookie: request.headers.get("cookie"),
+                                    payload: await request.json(),
+                                }),
                             FFMPEG_MCP: async (request: Request) => {
                                 if (
                                     request.headers.has("authorization") ||
@@ -352,6 +386,63 @@ export default defineConfig(async ({ mode }) => {
                                         ],
                                     },
                                 });
+                            },
+                            COMPUTER_MCP: async (request: Request) => {
+                                if (
+                                    request.headers.has("authorization") ||
+                                    request.headers.has("cookie") ||
+                                    !request.headers.has(
+                                        "x-pollinations-user-id",
+                                    )
+                                ) {
+                                    return new Response(
+                                        "Caller identity was not forwarded safely",
+                                        { status: 500 },
+                                    );
+                                }
+                                const payload = (await request.json()) as {
+                                    jsonrpc: string;
+                                    id?: string | number;
+                                    method?: string;
+                                };
+                                const headers = new Headers();
+                                if (payload.method === "tools/call") {
+                                    headers.set(
+                                        "x-pollinations-mcp-cost",
+                                        "0.0002",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-tool",
+                                        "bash",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-status",
+                                        "200",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-adjustment-id",
+                                        "computer.tool_call.v1",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-adjustment-units",
+                                        "1",
+                                    );
+                                }
+                                return Response.json(
+                                    {
+                                        jsonrpc: payload.jsonrpc,
+                                        id: payload.id,
+                                        result: {
+                                            content: [
+                                                {
+                                                    type: "text",
+                                                    text: `computer:${request.headers.get("x-pollinations-user-id")}:${request.headers.get("x-pollinations-user-github")}`,
+                                                },
+                                            ],
+                                        },
+                                    },
+                                    { headers },
+                                );
                             },
                         },
                     },

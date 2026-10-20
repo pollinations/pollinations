@@ -72,9 +72,6 @@ export function toCommunityEndpointResponse(
                 row.pendingAt,
             ),
         pending: pendingBase,
-        hidden: row.hiddenAt !== null,
-        hiddenReason: row.hiddenReason,
-        hiddenAt: row.hiddenAt?.toISOString() ?? null,
         createdAt: row.createdAt.toISOString(),
         updatedAt: row.updatedAt.toISOString(),
     };
@@ -95,6 +92,9 @@ export function toCommunityEndpointResponse(
             type: row.type,
             perUserRpm: payload.perUserRpm,
             api: payload.api,
+            inputModalities: payload.inputModalities,
+            outputModalities: payload.outputModalities,
+            capabilities: payload.capabilities,
             url: row.baseUrl,
             upstreamModel: row.upstreamModel,
         });

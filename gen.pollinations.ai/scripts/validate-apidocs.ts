@@ -2,9 +2,8 @@
 /**
  * Static validator for APIDOCS.md. Catches regressions before they land:
  *   - every internal anchor link resolves to a rendered heading
- *   - every curl example for a write method (POST/PUT/PATCH) carries a body
- *     (`-d`, `-F`, or `--data-binary`) — write endpoints without a body never
- *     work, even if the example "looks" valid
+ *   - curl examples for write methods (POST/PUT/PATCH) carry a body
+ *     (`-d`, `-F`, or `--data-binary`), except known bodyless operations
  *   - no `model=<image-model>` appears inside a `/video/` curl example
  *   - public read examples (media retrieval) do not include `Authorization`
  *   - media-storage examples use the media.pollinations.ai origin
@@ -33,6 +32,25 @@ const IMAGE_MODELS = new Set([
     "google/gemini-3-pro-image",
     "black-forest-labs/flux.2-klein-4b",
 ]);
+
+// POST operations that accept no request body.
+const BODYLESS_POSTS = [
+    // Sync redeploys the stored repository.
+    {
+        origin: "https://gen.pollinations.ai",
+        path: /^\/account\/agents\/[^/]+\/sync$/,
+    },
+    // Pause only stops the sandbox's lease renewal.
+    {
+        origin: "https://gen.pollinations.ai",
+        path: /^\/alpha\/e2b\/sandboxes\/[^/]+\/pause$/,
+    },
+    // The x402 payment travels in the PAYMENT-SIGNATURE header.
+    {
+        origin: "https://enter.pollinations.ai",
+        path: /^\/api\/x402\/keys\/[^/]+$/,
+    },
+];
 
 // Public read endpoints whose curl examples must not show Authorization.
 const MEDIA_ID = "550e8400-e29b-41d4-a716-446655440000";
@@ -131,8 +149,16 @@ function validate(md: string): Failure[] {
         // Find the nearest preceding heading to give a useful failure path.
         const heading = findEnclosingHeading(lines, block.startLine);
 
-        // 2. Write methods must include a body indicator.
-        if (["POST", "PUT", "PATCH"].includes(method)) {
+        const isBodyless =
+            method === "POST" &&
+            BODYLESS_POSTS.some(
+                ({ origin, path }) =>
+                    parsedUrl?.origin === origin &&
+                    path.test(parsedUrl.pathname),
+            );
+
+        // 2. Other write methods must include a body indicator.
+        if (["POST", "PUT", "PATCH"].includes(method) && !isBodyless) {
             const hasBody = /(-d\s|--data-binary|-F\s|-F"|--form)/.test(
                 block.body,
             );
@@ -152,7 +178,7 @@ function validate(md: string): Failure[] {
                 failures.push({
                     rule: "image-model-in-video",
                     line: block.startLine,
-                    message: `/video/ example uses image model "${modelMatch[1]}" — pick a video model (veo, seedance, wan, nova-reel)`,
+                    message: `/video/ example uses image model "${modelMatch[1]}" — pick a video model (veo, seedance, wan)`,
                 });
             }
         }

@@ -5,7 +5,9 @@ These are strategic defaults. The user's explicit, confirmed contract for a spec
 ## Route selection
 
 - Prefer managed serverless inference.
-- For equivalent primary and fallback routes, prefer **Azure**, then **Fireworks**.
+- Primary is the cheapest route at its normal, non-promo price; count credit-funded routes at their real cost to us. Price = primary cost.
+- Fallback is the next cheapest route, on another provider where possible.
+- A promo never chooses the primary or sets the price, except on routes billed at the provider's live price.
 - Before choosing a route, enumerate the exact model across the preferred providers, the current provider, and other already-integrated providers. Compare current posted price, credit eligibility, availability, quotas, capabilities, latency, and maturity.
 - Do not route to a provider solely because an old model name matches. Verify the exact canonical checkpoint, capabilities, limits, latency, and pricing.
 - Direct providers remain valid when the preferred platforms lack an equivalent route or the direct API has a material capability advantage.
@@ -13,10 +15,23 @@ These are strategic defaults. The user's explicit, confirmed contract for a spec
 ## Access and economics
 
 - `paidOnly: false` means Quest-Pollen-accessible. Do not move such a service from a funded/credit route to a route that creates cash spend merely because its posted unit price is lower.
+- Provider credits are consumed by traffic volume, not catalog breadth. Prefer moving existing high-volume cash-spend traffic onto an equivalent credit-eligible route over adding low-volume models. When the public price should stay unchanged, set that route's multiplier explicitly.
 - InferencePort migrations are eligible only for existing `paidOnly: true` services. A new InferencePort model must also be proposed as `paidOnly: true`.
 - Confirm `paidOnly` and `priceMultiplier` for every model. Never infer either from the provider name.
 - Provider cost, Pollinations multiplier, and billing mechanics are separate concepts. Do not use the multiplier to compensate for missing or inaccurate usage accounting.
 - Quality and strategic novelty come before route convenience. A paid-only model may still be worth adding when it is exceptional.
+
+## Catalog scope and lifecycle
+
+- Add a model only when it is differentiated from the public catalog: a new capability, a materially different price or quality point, or a clear user niche. Close older versions of an already-public family as superseded instead of queuing them.
+- Migrate public models facing a provider retirement before starting new additions. Decide the successor, alias, and fallback well before the retirement date.
+- Do not start or merge a new model whose earliest credible deprecation or retirement date is less than two calendar months away. When provider sources disagree, use the earliest date.
+- Treat Preview routes as short-lived: state the retirement date and successor plan in the launch decision.
+
+## Capacity
+
+- Azure Global Standard capacity is not billed while unused; spend is per unit. Size a token-limited deployment so one request at the largest accepted size (prompt plus requested output) fits its per-minute token limit. A lower limit rejects that request with 429 at any traffic level; traffic peaks are the second constraint.
+- Size scarce request-based quotas, such as shared image pools, from measured analogous demand. Request an increase only when production shows 429s or demand nears the limit, and set `perUserRpm` so one user cannot exhaust a small pool.
 
 ## Fallbacks
 
@@ -25,7 +40,7 @@ These are strategic defaults. The user's explicit, confirmed contract for a spec
 - Add or change a fallback only after explicit confirmation of the exact pair. Use the shared generic fallback system; do not build a model-specific retry layer.
 - Directly probe both routes and force the configured fallback through the full applicable local E2E matrix. Prove permissions, billing, provider attribution, cache behavior, errors, and burst capacity independently for the fallback.
 - Provider-managed fallback is distinct from Pollinations fallback. Preserve the provider default unless its tradeoffs require a product decision, and disclose those tradeoffs before editing.
-- Never add a more expensive fallback when users are billed from the cheaper primary quote unless the economics are explicitly accepted.
+- Flag a fallback that costs more than the price in the PR.
 
 ## GPUs and latency
 
@@ -35,6 +50,7 @@ These are strategic defaults. The user's explicit, confirmed contract for a spec
 - Verify identical-request disconnect/rejoin, one upstream execution, completed R2 cache retrieval, and once-only wallet and Tinybird settlement.
 - A route expected to exceed 300 seconds requires a separately approved asynchronous public contract.
 - Do not add slow 3D, video, audio, or specialist media merely for catalog breadth. Test repeated real generations and the slow tail, not one successful request.
+- Non-streaming text requests beyond about 125 seconds are unreliable on the public gateway, and the Portkey path stops waiting for upstream response headers at 290 seconds. Measure non-streaming latency for reasoning-heavy routes at the default effort with a realistic hard prompt; if typical requests exceed that budget, resolve it before launch.
 
 ## Public catalog contract
 
@@ -43,4 +59,4 @@ These are strategic defaults. The user's explicit, confirmed contract for a spec
 - Set `addedDate` once for a genuinely new public model; never refresh it for provider, price, or metadata updates.
 - Descriptions are user-facing for developers: state practical capabilities or differentiators, never repeat the model title, and never mention internal routing.
 - Every new publisher must map to an existing catalog SVG and render correctly.
-- One focused PR per model or tightly coupled family. Secret changes always use their own dedicated PR.
+- One focused PR per model or tightly coupled family.

@@ -93,10 +93,37 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
 });
 
 describe("Wan 3.0 Prime via Fal", () => {
+    it("waits beyond five minutes without submitting another generation", async () => {
+        vi.useFakeTimers();
+        const requests: ProviderRequest[] = [];
+        const fetchSpy = mockFalFetch(requests);
+        const fetchResult = fetchSpy.getMockImplementation();
+        if (!fetchResult)
+            throw new Error("Missing Fal test fetch implementation");
+        const started = Date.now();
+        fetchSpy.mockImplementation(async (url, init) => {
+            if (String(url) === STATUS_URL && Date.now() - started < 360_000) {
+                return Response.json({ status: "IN_PROGRESS" });
+            }
+            return fetchResult(url, init);
+        });
+        const generation = callWan3FalAPI("a slow generation", baseParams);
+        const assertion = expect(generation).resolves.toMatchObject({
+            buffer: Buffer.from(VIDEO_BYTES),
+            trackingData: { usage: { completionVideoSeconds: 5 } },
+        });
+        await vi.advanceTimersByTimeAsync(362_000);
+        await assertion;
+        expect(
+            requests.filter((request) => request.url === TEXT_ENDPOINT),
+        ).toHaveLength(1);
+    });
+
     it.each([
         [undefined, "480p", false, [], "16:9", TEXT_ENDPOINT],
         ["720p", "720p", true, [], "9:16", TEXT_ENDPOINT],
@@ -108,43 +135,49 @@ describe("Wan 3.0 Prime via Fal", () => {
             "adaptive",
             IMAGE_ENDPOINT,
         ],
-    ] as const)("routes resolution %s as %s", async (resolution, expectedResolution, audio, image, expectedAspectRatio, endpoint) => {
-        const requests: ProviderRequest[] = [];
-        mockFalFetch(requests);
+    ] as const)(
+        "routes resolution %s as %s",
+        async (resolution, expectedResolution, audio, image, expectedAspectRatio, endpoint) => {
+            const requests: ProviderRequest[] = [];
+            mockFalFetch(requests);
 
-        const result = await callWan3FalAPI("a sailboat crossing a calm bay", {
-            ...baseParams,
-            resolution,
-            audio,
-            image: [...image],
-            width: expectedAspectRatio === "9:16" ? 720 : 1280,
-            height: expectedAspectRatio === "9:16" ? 1280 : 720,
-        });
+            const result = await callWan3FalAPI(
+                "a sailboat crossing a calm bay",
+                {
+                    ...baseParams,
+                    resolution,
+                    audio,
+                    image: [...image],
+                    width: expectedAspectRatio === "9:16" ? 720 : 1280,
+                    height: expectedAspectRatio === "9:16" ? 1280 : 720,
+                },
+            );
 
-        expect(requests[0]).toEqual({
-            url: endpoint,
-            body: {
-                prompt: "a sailboat crossing a calm bay",
-                resolution: expectedResolution,
-                aspect_ratio: expectedAspectRatio,
-                duration: 5,
-                audio,
-                enable_prompt_expansion: true,
-                enable_safety_checker: true,
-                seed: 42,
-                ...(image[0] ? { start_image_url: image[0] } : {}),
-            },
-        });
-        expect(result).toMatchObject({
-            buffer: Buffer.from(VIDEO_BYTES),
-            mimeType: "video/mp4",
-            durationSeconds: 5,
-            trackingData: {
-                actualModel: "alibaba/wan-3.0",
-                usage: { completionVideoSeconds: 5 },
-            },
-        });
-    });
+            expect(requests[0]).toEqual({
+                url: endpoint,
+                body: {
+                    prompt: "a sailboat crossing a calm bay",
+                    resolution: expectedResolution,
+                    aspect_ratio: expectedAspectRatio,
+                    duration: 5,
+                    audio,
+                    enable_prompt_expansion: true,
+                    enable_safety_checker: true,
+                    seed: 42,
+                    ...(image[0] ? { start_image_url: image[0] } : {}),
+                },
+            });
+            expect(result).toMatchObject({
+                buffer: Buffer.from(VIDEO_BYTES),
+                mimeType: "video/mp4",
+                durationSeconds: 5,
+                trackingData: {
+                    actualModel: "alibaba/wan-3.0",
+                    usage: { completionVideoSeconds: 5 },
+                },
+            });
+        },
+    );
 
     it("surfaces a terminal provider failure", async () => {
         mockFalFetch([], "FAILED");

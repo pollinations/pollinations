@@ -1,10 +1,65 @@
+// Keep useful diagnosis without persisting raw upstream bodies or credentials.
+export function probeErrorDetails(error) {
+    const safeText = (value) =>
+        typeof value === "string"
+            ? value
+                  .replace(/https?:\/\/[^\s"<>]+/gi, "[URL]")
+                  .replace(/Bearer\s+[^\s"<>]+/gi, "Bearer [redacted]")
+                  .replace(
+                      /\b(?:sk_|pk_|sk-|ghp_|github_pat_)[A-Za-z0-9_-]+/g,
+                      "[redacted]",
+                  )
+                  .replace(/[\r\n\t]+/g, " ")
+                  .slice(0, 300)
+            : null;
+    const upstreamStatus = error?.details?.upstreamStatus;
+    return {
+        errorCode:
+            typeof error?.code === "number" && Number.isInteger(error.code)
+                ? String(error.code)
+                : safeText(error?.code),
+        errorMessage: safeText(
+            typeof error === "string" ? error : error?.message,
+        ),
+        upstreamStatus:
+            Number.isInteger(upstreamStatus) &&
+            upstreamStatus >= 400 &&
+            upstreamStatus <= 599
+                ? upstreamStatus
+                : null,
+    };
+}
+
+export function hasChatProbeMarker(content, marker) {
+    if (typeof content !== "string") return false;
+    const finalContent = content
+        .replace(/<thought>[\s\S]*?<\/thought>/gi, "")
+        .replace(/<think>[\s\S]*?<\/think>/gi, "");
+    // Do not accept a copy of the marker from unfinished reasoning.
+    return (
+        !/<(?:thought|think)>/i.test(finalContent) &&
+        finalContent.toLowerCase().includes(marker.toLowerCase())
+    );
+}
+
 export function parseChatStream(body) {
     let content = "";
     let usage;
+    let servedModel;
     let done = false;
     let dataLines = [];
+    let errorDetails;
 
-    const fail = (protocolError) => ({ content, usage, protocolError });
+    // The upstream writes its own model name into every chunk; the monitor
+    // compares it with the declared upstream model (informational only).
+    const served = () => (servedModel ? { servedModel } : {});
+    const fail = (protocolError) => ({
+        content,
+        usage,
+        ...served(),
+        protocolError,
+        ...errorDetails,
+    });
     const flushEvent = () => {
         if (!dataLines.length) return;
         const data = dataLines.join("\n");
@@ -20,6 +75,7 @@ export function parseChatStream(body) {
             throw new Error("stream contained invalid JSON");
         }
         if (chunk?.error || !Array.isArray(chunk?.choices)) {
+            if (chunk?.error) errorDetails = probeErrorDetails(chunk.error);
             throw new Error(
                 chunk?.error?.code === "usage_missing"
                     ? "stream returned usage_missing: missing or invalid token usage"
@@ -29,11 +85,18 @@ export function parseChatStream(body) {
             );
         }
         for (const choice of chunk.choices) {
+            if (choice?.finish_reason === "error") {
+                errorDetails = probeErrorDetails(choice.error);
+                throw new Error("stream ended with finish_reason=error");
+            }
             if (typeof choice?.delta?.content === "string") {
                 content += choice.delta.content;
             }
         }
         if (chunk.usage) usage = chunk.usage;
+        if (typeof chunk.model === "string" && chunk.model) {
+            servedModel = chunk.model;
+        }
     };
 
     try {
@@ -55,7 +118,7 @@ export function parseChatStream(body) {
             return fail("stream ended with an unterminated SSE event");
         }
         if (!done) return fail("stream is missing [DONE]");
-        return { content, usage };
+        return { content, usage, ...served() };
     } catch (err) {
         return fail(err.message);
     }

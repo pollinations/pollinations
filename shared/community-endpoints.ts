@@ -5,6 +5,7 @@ import type { ModelCapability } from "./registry/model-info.ts";
 import {
     type Category,
     MODEL_INPUT_MODALITIES,
+    MODEL_OUTPUT_MODALITIES,
     type ModelDefinition,
     type ModelInputModality,
     type ModelOutputModality,
@@ -18,7 +19,7 @@ import {
 } from "./registry/usage-headers.ts";
 import type { SafetyFeature } from "./schemas/safety.ts";
 
-export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
+export const COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
 export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 3 * 60 * 60 * 1000;
 export const COMMUNITY_ENDPOINT_MODALITIES = [
@@ -41,7 +42,7 @@ export const COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES = [
 // Display name shown in the catalog and dashboard, separate from the callable
 // slug (`name`) and the optional longer `description`.
 export const COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH = 42;
-export const COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH = 160;
+export const COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH = 1000;
 export const COMMUNITY_PROVIDER_NAME_MAX_LENGTH = 42;
 export const COMMUNITY_PROVIDER_URL_MAX_LENGTH = 2048;
 // Zero is free; positive owner-declared prices start at this floor.
@@ -90,6 +91,22 @@ export const COMMUNITY_ENDPOINT_CAPABILITIES = [
 export type CommunityEndpointCapability =
     (typeof COMMUNITY_ENDPOINT_CAPABILITIES)[number];
 
+/**
+ * Traits an endpoint agent may declare for itself. The agent runs its own
+ * tools, so web search, code execution and Pollinations model calls are agent
+ * traits here rather than upstream provider features.
+ */
+export const ENDPOINT_AGENT_CAPABILITIES = [
+    "tool_calling",
+    "reasoning",
+    "web_search",
+    "code_execution",
+    "pollinations_models",
+] as const satisfies readonly ModelCapability[];
+
+export type EndpointAgentCapability =
+    (typeof ENDPOINT_AGENT_CAPABILITIES)[number];
+
 export const CommunityEndpointAdvertisedSchema = z
     .object({
         capabilities: z
@@ -101,6 +118,8 @@ export const CommunityEndpointAdvertisedSchema = z
             .positive()
             .max(MAX_COMMUNITY_CONTEXT_LENGTH)
             .optional(),
+        // Absent means the endpoint streams. The endpoint test detects false.
+        streaming: z.literal(false).optional(),
     })
     .strict();
 
@@ -122,6 +141,7 @@ export function normalizeCommunityEndpointAdvertised(
         if (capabilities.length) advertised.capabilities = capabilities;
     }
     if (value.contextLength) advertised.contextLength = value.contextLength;
+    if (value.streaming === false) advertised.streaming = false;
     return advertised;
 }
 
@@ -574,9 +594,8 @@ export const ProxyListingPayloadSchema = z
         bearerTokenCiphertext: z.string().min(1),
         // Media listings have no text API and do not need a data migration.
         api: CommunityEndpointApiSchema.nullable().default(null),
-        // Owner-set: callers may only spend Paid Pollen on this model. Rows
-        // from before paid-only support are public-spend by default.
-        paidOnly: z.boolean().default(false),
+        // Owner-set: callers may only spend Paid Pollen on this model.
+        paidOnly: z.boolean(),
         modality: z.enum(COMMUNITY_ENDPOINT_MODALITIES),
         imagePricing: z.enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES),
         inputModalities: z.array(z.enum(MODEL_INPUT_MODALITIES)).min(1),
@@ -686,6 +705,22 @@ export const EndpointAgentListingPayloadSchema = z
     .object({
         perUserRpm: z.number().finite().positive().nullable().default(null),
         api: CommunityEndpointApiSchema,
+        inputModalities: z
+            .array(z.enum(MODEL_INPUT_MODALITIES))
+            .min(1)
+            .optional()
+            .describe("Input types accepted by the agent. Defaults to text."),
+        outputModalities: z
+            .array(z.enum(MODEL_OUTPUT_MODALITIES))
+            .min(1)
+            .optional()
+            .describe("Output types produced by the agent. Defaults to text."),
+        capabilities: z
+            .array(z.enum(ENDPOINT_AGENT_CAPABILITIES))
+            .optional()
+            .describe(
+                "Traits the agent supports through its public endpoint, such as tools it runs itself. Defaults to none.",
+            ),
     })
     .strict();
 
@@ -813,6 +848,7 @@ type CommunityEndpointRuntimeBase = {
     description: string | null;
     providerName?: string | null;
     providerUrl?: string | null;
+    providerIconUrl?: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     inputModalities: ModelInputModality[] | null;
@@ -831,8 +867,6 @@ type CommunityEndpointRuntimeBase = {
     // Community model ids tried in order when this endpoint's upstream fails.
     // A target's own list is never followed: the owner declares the full order.
     fallbacks: string[];
-    hiddenAt: number | null;
-    hiddenReason: string | null;
 } & CommunityEndpointPrices;
 
 /** A third-party server, reached with its registered upstream bearer secret. */
@@ -857,6 +891,8 @@ export type CodeAgentCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
 export type EndpointAgentCommunityEndpointRuntime =
     CommunityEndpointRuntimeBase & {
         type: "endpoint_agent";
+        outputModalities?: ModelOutputModality[];
+        capabilities?: EndpointAgentCapability[];
     };
 
 export type CommunityEndpointRuntime =
@@ -885,14 +921,17 @@ export type CommunityModelDefinitionInput = {
     description: string | null;
     providerName?: string | null;
     providerUrl?: string | null;
+    providerIconUrl?: string | null;
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[] | null;
+    outputModalities?: ModelOutputModality[];
     requiredSafetyFeatures?: SafetyFeature[];
     fallbacks?: string[];
     advertised?: CommunityEndpointAdvertised | null;
-    hidden?: boolean;
-    paidOnly?: boolean;
+    // Self-declared endpoint-agent traits; proxies use `advertised` instead.
+    capabilities?: readonly EndpointAgentCapability[];
+    paidOnly: boolean;
 } & CommunityEndpointPrices;
 
 export type CommunityProviderProfile = {
@@ -913,17 +952,14 @@ export function communityModelId(
     ownerGithubUsername: string,
     modelName: string,
 ): string {
-    return `${ownerGithubUsername}/${modelName}`;
+    return `${COMMUNITY_MODEL_PREFIX}${ownerGithubUsername}/${modelName}`;
 }
 
 export function legacyCommunityModelId(
     ownerGithubUsername: string,
     modelName: string,
 ): string {
-    return `${LEGACY_COMMUNITY_MODEL_PREFIX}${communityModelId(
-        ownerGithubUsername,
-        modelName,
-    )}`;
+    return `${ownerGithubUsername}/${modelName}`;
 }
 
 export function normalizeCommunityEndpointBearerToken(value: string): string {
@@ -959,8 +995,8 @@ export function isCommunityEndpointOwnerAllowed(
 export function parseCommunityModelId(
     model: string,
 ): CommunityModelParts | null {
-    const value = model.startsWith(LEGACY_COMMUNITY_MODEL_PREFIX)
-        ? model.slice(LEGACY_COMMUNITY_MODEL_PREFIX.length).trim()
+    const value = model.startsWith(COMMUNITY_MODEL_PREFIX)
+        ? model.slice(COMMUNITY_MODEL_PREFIX.length).trim()
         : model.trim();
     const separator = value.indexOf("/");
     if (separator <= 0) return null;
@@ -1054,14 +1090,22 @@ export function communityModelDefinition(
     );
     const providerName = endpoint.providerName?.trim();
     const providerUrl = endpoint.providerUrl?.trim();
-    const { capabilities = [], ...advertised } =
-        normalizeCommunityEndpointAdvertised(endpoint.advertised, modality);
+    const {
+        capabilities: advertisedCapabilities = [],
+        streaming,
+        ...advertised
+    } = normalizeCommunityEndpointAdvertised(endpoint.advertised, modality);
+    const capabilities = new Set<ModelCapability>([
+        ...advertisedCapabilities,
+        ...(endpoint.capabilities ?? []),
+    ]);
     return {
         aliases,
         provider: "community",
         perUserRpm: endpoint.perUserRpm,
         publisher: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
+        brandIconUrl: endpoint.providerIconUrl ?? undefined,
         category: spec.category,
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
@@ -1069,7 +1113,9 @@ export function communityModelDefinition(
         title: endpoint.title,
         description: description || undefined,
         inputModalities,
-        outputModalities: [...spec.outputModalities],
+        outputModalities: endpoint.outputModalities ?? [
+            ...spec.outputModalities,
+        ],
         ...(spec.restrictDefinitionEndpoints
             ? {
                   supportedEndpoints: communityEndpointSupportedEndpoints(
@@ -1079,18 +1125,20 @@ export function communityModelDefinition(
               }
             : {}),
         requiredSafetyFeatures: endpoint.requiredSafetyFeatures,
-        hidden: endpoint.hidden,
         ...(endpoint.fallbacks?.length
             ? { fallbacks: endpoint.fallbacks }
             : {}),
-        paidOnly: endpoint.paidOnly ?? false,
+        paidOnly: endpoint.paidOnly,
         alpha: true,
         // Explicit false (not omitted) for token-priced image endpoints: the
         // catalog only renders per-1M prices when flat_rate === false or a
         // prompt token price is set.
         ...(isImage ? { flatRate: isFlatRateImage } : {}),
-        ...(capabilities.includes("tool_calling") ? { tools: true } : {}),
-        ...(capabilities.includes("reasoning") ? { reasoning: true } : {}),
+        ...(capabilities.has("tool_calling") ? { tools: true } : {}),
+        ...(capabilities.has("reasoning") ? { reasoning: true } : {}),
+        ...(capabilities.has("web_search") ? { search: true } : {}),
+        ...(capabilities.has("code_execution") ? { codeExecution: true } : {}),
+        ...(streaming === false ? { supportsStreaming: false } : {}),
         ...advertised,
     };
 }

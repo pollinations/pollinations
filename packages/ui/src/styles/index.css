@@ -10,8 +10,15 @@
 @import "tailwindcss/theme.css" layer(theme) prefix(polli);
 @import "tailwindcss/utilities.css" layer(utilities) prefix(polli);
 @import "./fonts.css";
+@import "./links.css";
 @import "./tokens.css";
 @import "../modules/wallet/styles.css";
+@import "./theme.css";
+
+/* Ark keeps closed parts mounted; host apps need not import preflight. */
+[data-scope][hidden]:not([hidden="until-found" i]) {
+    display: none !important;
+}
 
 .polli-scrollbar-subtle {
     scrollbar-width: thin;
@@ -43,6 +50,44 @@
     background-color: var(--polli-color-scrollbar-thumb);
 }
 
+.polli-dialog-floating-controls::before {
+    content: "";
+    position: absolute;
+    inset: -2rem 0 0;
+    z-index: -1;
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        var(--polli-color-surface-block) 40%
+    );
+}
+
+/* Side padding shared by every dialog part. */
+:root {
+    --polli-dialog-gutter: 1.5rem;
+}
+
+/* Phone dialogs keep their rounded outline and a small vertical gap, while
+   their top-level cards run edge to edge with a 20px content gutter.
+   Nested cards keep their own spacing. */
+@media (width < 30rem) {
+    .polli-dialog-mobile-positioner {
+        padding: 0.5rem 0;
+    }
+
+    .polli-dialog-mobile-page {
+        --polli-dialog-gutter: 1.25rem;
+        max-width: none;
+    }
+
+    .polli-dialog-mobile-page
+        .polli-surface-card:not(.polli-surface-card .polli-surface-card) {
+        margin-inline: calc(-1 * var(--polli-dialog-gutter));
+        padding: 1rem var(--polli-dialog-gutter);
+        border-radius: 1.5rem;
+    }
+}
+
 .polli-input-number-clean::-webkit-inner-spin-button,
 .polli-input-number-clean::-webkit-outer-spin-button {
     -webkit-appearance: none;
@@ -56,7 +101,7 @@
 .polli-input,
 .polli-textarea {
     background-color: var(--polli-color-bg-pale);
-    border-color: var(--polli-color-border);
+    border-color: var(--polli-color-divider);
     outline: none;
     box-shadow: none;
 }
@@ -66,19 +111,21 @@
 .polli-textarea:focus,
 .polli-textarea:focus-visible {
     border-color: var(--polli-color-border);
-    outline: none;
-    box-shadow: 0 0 0 1px var(--polli-color-border);
+    outline: 2px solid var(--polli-color-focus);
+    outline-offset: -1px;
 }
 
 .polli-input-shell {
     background-color: var(--polli-color-bg-pale);
-    border-color: var(--polli-color-border);
+    border-color: var(--polli-color-divider);
     outline: none;
     box-shadow: none;
 }
 
 .polli-input-shell:focus-within {
-    box-shadow: 0 0 0 1px var(--polli-color-border);
+    border-color: var(--polli-color-border);
+    outline: 2px solid var(--polli-color-focus);
+    outline-offset: -1px;
 }
 
 .polli-input-shell > .polli-input,
@@ -86,25 +133,31 @@
 .polli-input-shell > .polli-input:focus-visible {
     background-color: transparent;
     border-color: transparent;
+    outline: none;
     box-shadow: none;
 }
 
+/* `data-error` is set by the primitive; `data-invalid` by an invalid Field.Root
+   (Ark), so a field with an error text also paints its control red. */
 .polli-input[data-error="true"],
-.polli-textarea[data-error="true"] {
-    border-color: var(--polli-color-danger-border);
-}
-
+.polli-input[data-invalid],
+.polli-textarea[data-error="true"],
+.polli-textarea[data-invalid],
 .polli-input[data-error="true"]:focus,
 .polli-input[data-error="true"]:focus-visible,
+.polli-input[data-invalid]:focus,
+.polli-input[data-invalid]:focus-visible,
 .polli-textarea[data-error="true"]:focus,
-.polli-textarea[data-error="true"]:focus-visible {
+.polli-textarea[data-error="true"]:focus-visible,
+.polli-textarea[data-invalid]:focus,
+.polli-textarea[data-invalid]:focus-visible {
     border-color: var(--polli-color-danger-border);
-    box-shadow: 0 0 0 1px var(--polli-color-danger-border);
+    outline-color: var(--polli-color-danger-text);
 }
 
 .polli-textarea {
-    --polli-textarea-resizer-color: var(--polli-color-border);
-    scrollbar-color: var(--polli-color-border) transparent;
+    --polli-textarea-resizer-color: var(--polli-color-divider);
+    scrollbar-color: var(--polli-color-divider) transparent;
 }
 
 .polli-textarea:focus {
@@ -138,37 +191,52 @@
     outline: none;
 }
 
+/* A ring outside the shape, so a focused filled button never reads as an
+   outlined one. */
 .polli-control:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--polli-color-border);
+    outline: 2px solid var(--polli-color-focus);
+    outline-offset: 2px;
 }
 
 .polli-control[data-intent="danger"]:focus-visible {
-    box-shadow: 0 0 0 2px var(--polli-color-danger-border);
+    outline-color: var(--polli-color-danger-text);
+}
+
+/* Touch screens: every control gets at least a 44px tap area, without
+   changing how it looks or lays out. Layered, so a control placed with a
+   utility (polli:absolute) keeps that position. */
+@layer components {
+    @media (pointer: coarse) {
+        .polli-control {
+            position: relative;
+        }
+
+        .polli-control::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: max(100%, 44px);
+            height: max(100%, 44px);
+            translate: -50% -50%;
+        }
+    }
 }
 
 .polli-slider {
-    --polli-slider-thumb-shadow-fallback: color-mix(
-        in oklab,
-        var(--polli-color-text-strong) 35%,
-        transparent
-    );
     --polli-slider-progress-value: var(--polli-slider-progress, 0%);
     --polli-slider-fill-value: var(
         --polli-slider-fill,
         var(--polli-color-bg-active)
     );
+    /* A neutral track, so the amber fill alone shows the value. */
     --polli-slider-track-value: var(
         --polli-slider-track,
-        var(--polli-color-bg-pale)
+        var(--polli-color-divider)
     );
     --polli-slider-thumb-border-value: var(
         --polli-slider-thumb-border,
         var(--polli-color-text-strong)
-    );
-    --polli-slider-thumb-shadow-value: var(
-        --polli-slider-thumb-shadow,
-        var(--polli-slider-thumb-shadow-fallback)
     );
 
     width: 100%;
@@ -196,11 +264,6 @@
     opacity: 0.6;
 }
 
-.polli-slider:focus-visible {
-    box-shadow: 0 0 0 2px var(--polli-slider-fill-value),
-        0 0 0 4px var(--polli-color-surface-white);
-}
-
 .polli-slider::-webkit-slider-runnable-track {
     height: 0.5rem;
     border-radius: 9999px;
@@ -221,7 +284,6 @@
     border: 3px solid var(--polli-slider-thumb-border-value);
     border-radius: 9999px;
     background: var(--polli-color-surface-opaque);
-    box-shadow: 0 2px 6px var(--polli-slider-thumb-shadow-value);
     transition: transform 150ms ease;
 }
 
@@ -231,8 +293,28 @@
     border: 3px solid var(--polli-slider-thumb-border-value);
     border-radius: 9999px;
     background: var(--polli-color-surface-opaque);
-    box-shadow: 0 2px 6px var(--polli-slider-thumb-shadow-value);
     transition: transform 150ms ease;
+}
+
+/* Focus rings the thumb, not the track. */
+.polli-slider:focus-visible::-webkit-slider-thumb {
+    box-shadow:
+        0 0 0 2px var(--polli-color-surface-block),
+        0 0 0 4px var(--polli-color-focus);
+}
+
+.polli-slider:focus-visible::-moz-range-thumb {
+    box-shadow:
+        0 0 0 2px var(--polli-color-surface-block),
+        0 0 0 4px var(--polli-color-focus);
+}
+
+/* Forced colors drop box-shadow, so outline the slider instead. */
+@media (forced-colors: active) {
+    .polli-slider:focus-visible {
+        outline: 2px solid;
+        outline-offset: 2px;
+    }
 }
 
 .polli-slider:hover::-webkit-slider-thumb {
@@ -254,7 +336,7 @@
  * AppHeader innerClassName) live in app source, which this build never
  * scans — polli:* utilities used that way must be listed here.
  */
-@source inline("polli:max-w-6xl polli:flex-row");
+@source inline("polli:max-w-6xl polli:flex-row polli:hover:bg-theme-text-muted/15 polli:focus-visible:bg-theme-text-muted/15");
 
 /* Respect the OS "reduce motion" setting app-wide: collapse transitions and
    animations to near-instant (the drawer slide, slider transforms, etc.). */

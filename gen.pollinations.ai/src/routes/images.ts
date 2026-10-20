@@ -5,7 +5,6 @@
  */
 
 import { UpstreamError } from "@shared/error.ts";
-import { getPublicOrigin } from "@shared/public-origin.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
@@ -18,11 +17,7 @@ import {
     CreateImageEditRequestSchema,
     type CreateImageRequest,
 } from "@shared/schemas/openai.ts";
-import {
-    normalizeSafeValue,
-    SAFETY_HEADER_NAME,
-    type SafeValue,
-} from "@shared/schemas/safety.ts";
+import { normalizeSafeValue, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import type { Env } from "@/env.ts";
@@ -34,7 +29,13 @@ import { arrayBufferToBase64 } from "@/util.ts";
 // --- Helpers ---
 
 const QUALITY_MAP: Record<string, string> = { standard: "medium", hd: "high" };
-const PASSTHROUGH_PARAMS = ["safe", "transparent", "guidance_scale"] as const;
+const PASSTHROUGH_PARAMS = [
+    "safe",
+    "transparent",
+    "guidance_scale",
+    "duration",
+    "audio",
+] as const;
 const CACHE_PARAMS = [
     "image",
     "transparent",
@@ -83,19 +84,11 @@ function responseImageUsage(
     return usageToOpenAIImageUsage(usage);
 }
 
-function setUrlParam(url: URL, name: string, value: unknown): void {
-    if (value === undefined || value === null) return;
-    url.searchParams.set(
-        name,
-        Array.isArray(value) ? value.join("|") : String(value),
-    );
-}
-
 /** Resolve OpenAI params to Pollinations equivalents. */
 function resolveParams(opts: {
     size?: string;
     quality?: string;
-    seed?: number;
+    seed?: number | null;
 }): {
     width?: number;
     height?: number;
@@ -193,11 +186,10 @@ async function parseEditInput(c: Context): Promise<{
             quality: (formData.get("quality") as string) || undefined,
             safe: formData.get("safe") as string | null,
             response_format: format.data,
-            extra: {
-                ...(formData.has("resolution")
-                    ? { resolution: formData.get("resolution") as string }
-                    : {}),
-            },
+            extra: collectPassthrough(
+                Object.fromEntries(formData.entries()),
+                "resolution",
+            ),
         };
     }
 
@@ -262,7 +254,6 @@ export async function prepareImageEditRequest(
     c.set("generationRequestBody", identity);
     c.set("generationCacheBody", identity);
     c.set("generationRequestContentType", "application/json");
-    if (c.var.track) c.var.track.streamRequested = false;
     return body;
 }
 
@@ -294,16 +285,12 @@ export const prepareOpenAIImageEditReplay = createMiddleware<Env>(
     },
 );
 
-/** Resolve the POST body to the equivalent public media URL used for caching. */
+/** Normalize the generation body and hash the parts that shape the file. */
 export const prepareOpenAIImageGeneration = createMiddleware<Env>(
     async (c, next) => {
         const body = c.req.valid("json" as never) as CreateImageRequest &
             Record<string, unknown>;
-        const model = c.var.model.resolved;
 
-        // This endpoint returns a complete image/JSON, never an SSE stream.
-        // A passthrough stream flag must not bypass durable media storage.
-        if (c.var.track) c.var.track.streamRequested = false;
         const resolved = resolveParams(body);
         const safePrompt = await applySafetyToInput(
             c,
@@ -315,23 +302,20 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
             prompt: safePrompt,
         });
         c.set("generationRequestBody", JSON.stringify(body));
-
-        const imageUrl = new URL(
-            `/image/${encodeURIComponent(body.prompt)}`,
-            getPublicOrigin(c),
+        // Only the prompt, the model and the generation parameters change the
+        // bytes. Response formatting and caller metadata are left out so they
+        // do not split one image across several cache entries.
+        c.set(
+            "generationCacheBody",
+            normalizedJsonBody(
+                JSON.stringify({
+                    prompt: safePrompt,
+                    model: c.var.model.resolved,
+                    ...resolved,
+                    ...collectPassthrough(body, ...CACHE_PARAMS),
+                }),
+            ),
         );
-        for (const [name, value] of Object.entries({
-            model,
-            ...resolved,
-            ...collectPassthrough(body, ...CACHE_PARAMS),
-        })) {
-            setUrlParam(imageUrl, name, value);
-        }
-        const safeValue = normalizeSafeValue(
-            (body.safe ?? c.req.header(SAFETY_HEADER_NAME)) as SafeValue,
-        );
-        if (safeValue) imageUrl.searchParams.set("safe", safeValue);
-        c.set("generationCacheUrl", imageUrl);
 
         await next();
     },

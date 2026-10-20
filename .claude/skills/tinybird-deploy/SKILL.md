@@ -9,11 +9,13 @@ Deploy observability pipes and datasources to Tinybird Cloud.
 
 ## Requirements
 
+- **Preflight:** `which -a tb && tb --version`. If `tb` is missing or resolves to a pyenv/pip shim instead of `~/.local/bin/tb`, PATH is wrong or the Forward CLI isn't installed — fix PATH or point the user at the install docs; don't curl-pipe an installer.
 - Use the **Tinybird Forward CLI** as `tb`. On this machine it should resolve to `~/.local/bin/tb` and support `tb --cloud deployment create --check`.
 - Do **not** install or update this workflow with `pip install tinybird-cli`; that can put the Classic CLI first on PATH.
 - If `tb --cloud` is missing, or Tinybird says this is a Forward workspace but the CLI is Classic, fix PATH so `~/.local/bin` wins. The Classic CLI is kept only as `tb-classic`.
 - Run commands from `enter.pollinations.ai/observability`.
 - Set `TB_TOKEN` explicitly to a token with `WORKSPACE:DEPLOY` for the target workspace, and pass `--host` on every deploy command. Do not rely on `.tinyb` or `tb workspace use` for workspace selection.
+- `SELECT 1` succeeding doesn't mean a token can read datasources (`PIPES:READ` vs `DATASOURCES:READ` vs `WORKSPACE:DEPLOY`). Probe with a SELECT on a known datasource before relying on a token for a new path.
 
 ## Workspaces
 
@@ -68,6 +70,18 @@ TB_TOKEN="$(security find-generic-password -a "$USER" -s tinybird-staging-deploy
 export TB_HOST TB_TOKEN
 ```
 
+## Step 0: Deploy From a Clean origin/main
+
+A deployment makes the workspace match the local folder, so deploy only from a clean checkout of `origin/main`. A `--check` on a feature branch is fine for validating a PR. To test an unmerged PR end to end, staging may run a feature branch that is rebased on current `origin/main` and whose check table shows only that PR's changes; redeploy staging from `origin/main` after the merge.
+
+```bash
+git fetch origin && test -z "$(git status --porcelain)" && test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+```
+
+Then run Step 1 and read its change table: every `new` and `deleted` resource must map to a merged PR. If one does not, stop and find out why before deploying.
+
+For production, also check every `deleted` row against the code production runs, which lags `main`: `git grep -w <name> origin/production` must find no caller, or the production deploy waits until `main` is promoted. New resources can go first.
+
 ## Step 1: Validate (Dry Run)
 
 Always validate before deploying. This is safe to run against staging.
@@ -95,18 +109,24 @@ Never pass `--auto` or run `deployment promote` unless the user explicitly asks 
 
 Prod deploys use the same command shape after explicitly replacing `TB_TOKEN` with the `tinybird-prod-deploy` Keychain token, but only after staging validation and verification. Deploying to both workspaces is still manual until #11127 is resolved.
 
+Staging and prod are separate approvals — don't batch them into one command, since the user may want to look at staging first. But if the instruction already names both ("deploy to staging and prod"), that is both approvals; don't re-ask in between.
+
 ## Step 3: Verify
 
 Verify the staging deployment and test the deployed endpoints with the read token for the same workspace.
 
 ```bash
+set -o pipefail
 tb --staging --cloud --host "$TB_HOST" endpoint ls
 tb --cloud --host "$TB_HOST" deployment ls
 
 TINYBIRD_TOKEN="$(SOPS_AGE_KEY=$(security find-generic-password -a "$USER" -s sops-age-key -w 2>/dev/null || true) \
   sops -d ../secrets/staging.vars.json | jq -r '.TINYBIRD_READ_TOKEN')"
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/weekly_usage_stats.json?weeks_back=12" \
-  -H "Authorization: Bearer $TINYBIRD_TOKEN" | jq '.data | length'
+curl -fsS "https://api.europe-west2.gcp.tinybird.co/v0/pipes/weekly_usage_stats.json?weeks_back=12" \
+  -H "Authorization: Bearer $TINYBIRD_TOKEN" | jq -e '
+    if has("error") then error(.error)
+    elif (.data | type) != "array" then error("Missing data array")
+    else .data | length end'
 ```
 
 For prod verification, swap `staging.vars.json` to `prod.vars.json` and do not use `--staging`.
@@ -131,11 +151,11 @@ For prod verification, swap `staging.vars.json` to `prod.vars.json` and do not u
 
 1. Create `.pipe` file in `endpoints/`
 2. Validate against staging
-3. Deploy to staging, verify, then prod only when requested
+3. After merge, deploy to staging from `origin/main` (Step 0), verify, then prod only when requested
 
 ## Modify Existing Pipe
 
-Same as above: edit, validate staging, deploy staging, verify, then prod only when requested.
+Same as above: edit, validate staging, merge, deploy staging from `origin/main`, verify, then prod only when requested.
 
 ## View Pipe in UI
 

@@ -1,4 +1,9 @@
-import { forwardRef, type ReactNode } from "react";
+import {
+    type AnchorHTMLAttributes,
+    type ButtonHTMLAttributes,
+    forwardRef,
+    type ReactNode,
+} from "react";
 import { cn } from "../lib/cn.ts";
 import { Tooltip } from "./Tooltip.tsx";
 
@@ -7,24 +12,29 @@ export type IconButtonIntent = "danger" | "info";
 export type IconButtonVariant = "tile" | "ghost";
 
 const intentClasses: Record<IconButtonIntent, string> = {
-    danger:
-        "polli:bg-intent-danger-bg-light polli:hover:bg-intent-danger-bg-hover " +
-        "polli:text-intent-danger-text",
-    info:
-        "polli:bg-intent-info-bg-light polli:hover:bg-intent-info-bg-hover " +
-        "polli:text-intent-info-text",
+    danger: "polli:bg-intent-danger-bg-light polli:text-intent-danger-text",
+    info: "polli:bg-intent-info-bg-light polli:text-intent-info-text",
+};
+
+const intentHoverClasses: Record<IconButtonIntent, string> = {
+    danger: "polli:hover:bg-intent-danger-bg-hover",
+    info: "polli:hover:bg-intent-info-bg-hover",
 };
 
 const variantClasses: Record<IconButtonVariant, string> = {
-    tile:
-        "polli:bg-theme-bg-active polli:hover:bg-theme-bg-hover " +
-        "polli:text-theme-text-soft polli:hover:text-theme-text-strong",
-    ghost:
-        "polli:bg-transparent polli:hover:bg-transparent " +
-        "polli:text-theme-text-muted polli:hover:text-theme-text-soft",
+    tile: "polli:bg-theme-bg-active polli:text-theme-text-soft",
+    ghost: "polli:bg-transparent polli:text-theme-text-muted",
 };
 
-export type IconButtonProps = {
+const variantHoverClasses: Record<IconButtonVariant, string> = {
+    tile: "polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover",
+    ghost: "polli:hover:bg-transparent polli:hover:text-theme-text-soft",
+};
+
+export type IconButtonProps = Omit<
+    ButtonHTMLAttributes<HTMLButtonElement>,
+    "children" | "className" | "title"
+> & {
     intent?: IconButtonIntent;
     variant?: IconButtonVariant;
     pressed?: boolean;
@@ -32,10 +42,13 @@ export type IconButtonProps = {
     tooltip?: ReactNode;
     tooltipAlign?: "start" | "center";
     tooltipClampToViewport?: boolean;
-    onClick: () => void;
     children: ReactNode;
     className?: string;
     size?: "sm" | "md";
+    /** Renders a link with the same look, e.g. a social icon. */
+    href?: string;
+    target?: string;
+    rel?: string;
 };
 
 const sizeClasses = {
@@ -53,27 +66,61 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
             tooltip,
             tooltipAlign,
             tooltipClampToViewport,
-            onClick,
             children,
             className,
             size = "sm",
+            disabled = false,
+            href,
+            target,
+            rel,
+            ...buttonProps
         },
         ref,
     ) => {
-        const button = (
+        const shared = {
+            "aria-label": buttonProps["aria-label"] ?? title,
+            "data-intent": intent,
+            className: cn(
+                "polli-control polli:inline-flex polli:items-center polli:justify-center polli:transition-colors",
+                disabled
+                    ? "polli:cursor-not-allowed polli:opacity-50"
+                    : "polli:cursor-pointer",
+                sizeClasses[size],
+                intent ? intentClasses[intent] : variantClasses[variant],
+                !disabled &&
+                    (intent
+                        ? intentHoverClasses[intent]
+                        : variantHoverClasses[variant]),
+                className,
+            ),
+        };
+        const button = href ? (
+            <a
+                {...(buttonProps as AnchorHTMLAttributes<HTMLAnchorElement>)}
+                {...shared}
+                href={disabled ? undefined : href}
+                target={target}
+                rel={rel}
+                {...(disabled && {
+                    role: buttonProps.role ?? "link",
+                    "aria-disabled": true,
+                    tabIndex: -1,
+                    onClick: (event: React.MouseEvent<HTMLAnchorElement>) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    },
+                })}
+            >
+                {children}
+            </a>
+        ) : (
             <button
+                {...buttonProps}
+                {...shared}
                 ref={ref}
                 type="button"
-                onClick={onClick}
-                aria-label={title}
+                disabled={disabled}
                 aria-pressed={pressed}
-                data-intent={intent}
-                className={cn(
-                    "polli-control polli:inline-flex polli:cursor-pointer polli:items-center polli:justify-center polli:transition-colors",
-                    sizeClasses[size],
-                    intent ? intentClasses[intent] : variantClasses[variant],
-                    className,
-                )}
             >
                 {children}
             </button>
@@ -89,6 +136,11 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
                 align={tooltipAlign}
                 clampToViewport={tooltipClampToViewport}
                 tapEnabled={false}
+                className={
+                    disabled
+                        ? "polli:cursor-not-allowed"
+                        : "polli:cursor-pointer"
+                }
             >
                 {button}
             </Tooltip>

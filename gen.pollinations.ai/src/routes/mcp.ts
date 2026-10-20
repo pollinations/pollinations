@@ -1,3 +1,4 @@
+import type { AuthUser } from "@shared/auth/api-key.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { sendToTinybird } from "@shared/events.ts";
@@ -11,6 +12,7 @@ import {
     getMcpServerDefinition,
     MCP_SERVERS,
     MCP_USAGE_HEADERS,
+    MCP_USER_GITHUB_HEADER,
     MCP_USER_ID_HEADER,
     type McpServerDefinition,
 } from "@shared/registry/mcp.ts";
@@ -27,11 +29,12 @@ import { auth } from "@/middleware/auth.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
+import { requireAccountFunds } from "@/utils/generation-access.ts";
 
 function requestForMcp(
     request: Request,
     server: McpServerDefinition,
-    userId: string,
+    user: AuthUser,
 ): Request {
     const headers = new Headers(request.headers);
     if (server.billing === "usage_receipt") {
@@ -39,7 +42,16 @@ function requestForMcp(
     }
     headers.delete("cookie");
     headers.delete(MCP_USER_ID_HEADER);
-    if (server.userScoped) headers.set(MCP_USER_ID_HEADER, userId);
+    headers.delete(MCP_USER_GITHUB_HEADER);
+    if (server.userScoped) {
+        headers.set(MCP_USER_ID_HEADER, user.id);
+        if (user.githubId && user.githubUsername) {
+            headers.set(
+                MCP_USER_GITHUB_HEADER,
+                `${user.githubId}+${user.githubUsername}`,
+            );
+        }
+    }
     for (const header of Object.values(MCP_USAGE_HEADERS)) {
         headers.delete(header);
     }
@@ -91,6 +103,7 @@ async function settleUsage(
             apiKeyReservedAmount: 0,
             byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
             modelPaidOnly: false,
+            questPollenOnly: c.var.auth.apiKey?.questPollenOnly,
         });
     } catch (error) {
         c.var.log.error(
@@ -163,15 +176,14 @@ export const mcpRoutes = new Hono<Env>()
     .use("/mcp/:serverId", auth(), frontendKeyRateLimit)
     .all("/mcp/:serverId", async (c) => {
         const user = c.var.auth.requireUser();
-        if (
-            c.req.method === "POST" &&
-            Array.isArray(
-                await c.req.raw
-                    .clone()
-                    .json()
-                    .catch(() => null),
-            )
-        ) {
+        const message =
+            c.req.method === "POST"
+                ? await c.req.raw
+                      .clone()
+                      .json<{ method?: unknown } | null>()
+                      .catch(() => null)
+                : null;
+        if (Array.isArray(message)) {
             throw new HTTPException(400, {
                 message: "MCP batch requests are not supported",
             });
@@ -181,11 +193,19 @@ export const mcpRoutes = new Hono<Env>()
         if (!server) {
             throw new HTTPException(404, { message: "MCP server not found" });
         }
+        // A tool's cost is known only from its receipt, so a tool call needs a
+        // spendable balance up front. Initialization and discovery stay free.
+        if (
+            server.billing === "usage_receipt" &&
+            message?.method === "tools/call"
+        ) {
+            await requireAccountFunds(c, 0);
+        }
         const binding = c.env[server.binding] as Fetcher;
 
         const startedAt = new Date();
         const response = await binding.fetch(
-            requestForMcp(c.req.raw, server, user.id),
+            requestForMcp(c.req.raw, server, user),
         );
         if (server.billing === "usage_receipt") {
             const usage = parseMcpUsageHeaders(response.headers);

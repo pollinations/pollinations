@@ -38,6 +38,7 @@ export const user = sqliteTable("user", {
   // Public branding shared by every community model owned by this account.
   communityProviderName: text("community_provider_name"),
   communityProviderUrl: text("community_provider_url"),
+  communityProviderIconUrl: text("community_provider_icon_url"),
   tier: text("tier").default("spore").notNull(),
   tierBalance: real("tier_balance"),
   packBalance: real("pack_balance"),
@@ -146,6 +147,9 @@ export const apikey = sqliteTable("apikey", {
   permissions: text("permissions"),
   metadata: text("metadata"),
   pollenBalance: real("pollen_balance"),
+  questPollenOnly: integer("quest_pollen_only", { mode: "boolean" })
+    .default(false)
+    .notNull(),
   byopClientKeyId: text("byop_client_key_id"),
 }, (table) => [
   index("idx_apikey_key").on(table.key),
@@ -326,6 +330,8 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     enum: ["private", "public"],
   }),
   pendingAt: integer("pending_at", { mode: "timestamp" }),
+  // Historical manual/monitor hide metadata; discovery now uses visibility
+  // and recent reliability. Kept for D1/Tinybird history, never updated.
   hiddenAt: integer("hidden_at", { mode: "timestamp" }),
   hiddenReason: text("hidden_reason"),
   hiddenBy: text("hidden_by"),

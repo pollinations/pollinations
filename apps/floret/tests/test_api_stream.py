@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 
@@ -25,12 +26,23 @@ def _no_network(monkeypatch):
     monkeypatch.setattr("floret.registry.warm_registry", noop)
 
 
-def _request_body(stream: bool) -> dict:
-    return {
+def _request_body(stream: bool, stream_options: dict | None = None) -> dict:
+    body = {
         "model": "floret",
         "messages": [{"role": "user", "content": "hi"}],
         "stream": stream,
     }
+    if stream_options is not None:
+        body["stream_options"] = stream_options
+    return body
+
+
+def _stream_payloads(body: str) -> list[dict]:
+    return [
+        json.loads(line[len("data: ") :])
+        for line in body.split("\n")
+        if line.startswith("data: {")
+    ]
 
 
 # Every request must carry a credential to spend; the gateway supplies a
@@ -44,10 +56,10 @@ async def _fake_run_agent(messages, **kwargs):
 
 @pytest.mark.parametrize(
     "routing",
-    [{"image": "flux"}, {"video": " "}, {"text": None}],
+    [{"image": "flux"}, {"video": " "}, {"model": None}],
 )
 def test_invalid_routing_shape_is_rejected(routing):
-    body = _request_body(stream=False) | {"routing": routing}
+    body = _request_body(stream=False) | {"metadata": routing}
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -56,12 +68,24 @@ def test_invalid_routing_shape_is_rejected(routing):
     assert response.status_code == 422
 
 
-@pytest.mark.parametrize("routing", [None, {"text": "auto"}])
+def test_top_level_routing_is_rejected_with_metadata_hint(monkeypatch):
+    monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
+    body = _request_body(stream=False) | {"routing": {"text": "openai"}}
+
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions", json=body, headers=_HEADERS
+    )
+
+    assert response.status_code == 422
+    assert "metadata.model" in response.text
+
+
+@pytest.mark.parametrize("routing", [None, {"model": "auto"}])
 def test_omitted_and_auto_routing_values_remain_allowed(monkeypatch, routing):
     monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
     body = _request_body(stream=False)
     if routing is not None:
-        body["routing"] = routing
+        body["metadata"] = routing
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -80,7 +104,7 @@ def test_invalid_routing_preference_returns_stable_422(monkeypatch):
 
     monkeypatch.setattr(api_mod, "validate_routing", fake_validate, raising=False)
     monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
-    body = _request_body(stream=False) | {"routing": {"video": "flux"}}
+    body = _request_body(stream=False) | {"metadata": {"video": "flux"}}
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -102,7 +126,7 @@ def test_unavailable_routing_registry_returns_503(monkeypatch):
 
     monkeypatch.setattr(api_mod, "validate_routing", fake_validate, raising=False)
     monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
-    body = _request_body(stream=False) | {"routing": {"video": "flux"}}
+    body = _request_body(stream=False) | {"metadata": {"video": "flux"}}
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -130,7 +154,7 @@ def test_non_stream_routing_is_validated_once_and_propagated(monkeypatch):
 
     monkeypatch.setattr(api_mod, "validate_routing", fake_validate, raising=False)
     monkeypatch.setattr(api_mod, "run_agent", fake_run_agent)
-    body = _request_body(stream=False) | {"routing": {"image_generation": "flux"}}
+    body = _request_body(stream=False) | {"metadata": {"image_generation": "flux"}}
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -158,7 +182,7 @@ def test_stream_routing_is_validated_once_and_propagated(monkeypatch):
 
     monkeypatch.setattr(api_mod, "validate_routing", fake_validate, raising=False)
     monkeypatch.setattr(api_mod, "run_agent_events", fake_events)
-    body = _request_body(stream=True) | {"routing": {"image_generation": "flux"}}
+    body = _request_body(stream=True) | {"metadata": {"image_generation": "flux"}}
 
     with TestClient(api_mod.app).stream(
         "POST", "/v1/chat/completions", json=body, headers=_HEADERS
@@ -168,6 +192,37 @@ def test_stream_routing_is_validated_once_and_propagated(monkeypatch):
 
     assert calls == ["validate", "run"]
     assert response_body.rstrip().endswith("data: [DONE]")
+
+
+async def test_stream_close_waits_for_agent_cleanup(monkeypatch):
+    cleanup_started = asyncio.Event()
+    cleanup_finished = asyncio.Event()
+
+    async def fake_events(messages, **kwargs):
+        try:
+            yield {
+                "type": "tool_start",
+                "id": "call_1",
+                "name": "bash",
+                "arguments": "{}",
+            }
+            await asyncio.Future()
+        finally:
+            cleanup_started.set()
+            await asyncio.sleep(0)
+            cleanup_finished.set()
+
+    monkeypatch.setattr(api_mod, "run_agent_events", fake_events)
+    stream = api_mod._sse_events(
+        [], "floret", "ag_test-token", RoutingPreferences(), False
+    )
+    await anext(stream)
+    await anext(stream)
+
+    await stream.aclose()
+
+    assert cleanup_started.is_set()
+    assert cleanup_finished.is_set()
 
 
 def test_stream_true_returns_openai_sse_chunks(monkeypatch):
@@ -226,6 +281,103 @@ def test_stream_true_returns_openai_sse_chunks(monkeypatch):
             },
         }
     ]
+
+
+@pytest.mark.parametrize("stream_options", [None, {"include_usage": False}])
+def test_stream_omits_usage_when_not_requested(monkeypatch, stream_options):
+    async def fake_events(messages, **kwargs):
+        yield {"type": "final", "text": "done", "artifacts": [], "iterations": 1}
+
+    monkeypatch.setattr(api_mod, "run_agent_events", fake_events)
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions",
+        json=_request_body(stream=True, stream_options=stream_options),
+        headers=_HEADERS,
+    )
+
+    assert response.status_code == 200
+    assert all("usage" not in payload for payload in _stream_payloads(response.text))
+
+
+def test_stream_requested_usage_is_terminal_after_stop(monkeypatch):
+    async def fake_events(messages, **kwargs):
+        yield {"type": "final", "text": "done", "artifacts": [], "iterations": 1}
+
+    monkeypatch.setattr(api_mod, "run_agent_events", fake_events)
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions",
+        json=_request_body(stream=True, stream_options={"include_usage": True}),
+        headers=_HEADERS,
+    )
+
+    assert response.status_code == 200
+    payloads = _stream_payloads(response.text)
+    assert all(payload["usage"] is None for payload in payloads[:-1])
+    assert payloads[-2]["choices"][0]["finish_reason"] == "stop"
+    assert payloads[-1]["choices"] == []
+    assert payloads[-1]["usage"] == {
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "total_tokens": 0,
+    }
+
+
+def test_stream_error_never_emits_success_usage(monkeypatch):
+    async def failing_events(messages, **kwargs):
+        raise RuntimeError("broken")
+        yield  # pragma: no cover
+
+    monkeypatch.setattr(api_mod, "run_agent_events", failing_events)
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions",
+        json=_request_body(stream=True, stream_options={"include_usage": True}),
+        headers=_HEADERS,
+    )
+
+    assert response.status_code == 200
+    payloads = _stream_payloads(response.text)
+    chunks, error_event = payloads[:-1], payloads[-1]
+    assert all(payload["usage"] is None for payload in chunks)
+    assert chunks[-1]["choices"][0]["finish_reason"] == "stop"
+    assert "Generation failed." in response.text
+    assert "broken" not in response.text
+    # Without terminal usage the gateway accepts the stream only when it has an
+    # error event; otherwise it reports "omitted terminal usage" (#17294).
+    assert error_event == {
+        "error": {
+            "message": "Generation failed.",
+            "type": "server_error",
+            "code": "generation_failed",
+        }
+    }
+    assert response.text.rstrip().endswith("data: [DONE]")
+
+
+@pytest.mark.parametrize("stream_options", [None, {"include_usage": True}])
+def test_stream_error_after_tool_call_ends_with_error_event(
+    monkeypatch, stream_options
+):
+    async def failing_events(messages, **kwargs):
+        yield {
+            "type": "tool_start",
+            "id": "call_1",
+            "name": "generate_video",
+            "arguments": "{}",
+        }
+        raise RuntimeError("broken")
+
+    monkeypatch.setattr(api_mod, "run_agent_events", failing_events)
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions",
+        json=_request_body(stream=True, stream_options=stream_options),
+        headers=_HEADERS,
+    )
+
+    payloads = _stream_payloads(response.text)
+    assert payloads[-1]["error"]["code"] == "generation_failed"
+    assert not any(payload.get("usage") for payload in payloads)
+    assert "broken" not in response.text
+    assert response.text.rstrip().endswith("data: [DONE]")
 
 
 def test_stream_emits_keepalives_during_silence(monkeypatch):
@@ -368,20 +520,30 @@ def test_request_without_credential_is_rejected(monkeypatch: pytest.MonkeyPatch)
     client = TestClient(api_mod.app)
     resp = client.post("/v1/chat/completions", json=_request_body(stream=False))
     assert resp.status_code == 401
-    assert resp.json() == {"detail": "Missing agent run token."}
+    assert resp.json() == {"detail": "Missing API key."}
 
 
-@pytest.mark.parametrize("key", ["sk_caller_key", "pk_caller_key", "invalid"])
-def test_direct_endpoint_rejects_non_agent_credentials(key):
-    """Users authenticate to gen; only its delegated token reaches Floret."""
+@pytest.mark.parametrize("key", ["sk_caller_key", "pk_caller_key", "user-key"])
+def test_direct_endpoint_accepts_any_bearer_credential(key, monkeypatch):
+    """Direct callers may spend their own key; Floret forwards it opaquely."""
+    from floret.config import _current_api_key
+    from floret.tools import gen
+
+    async def fake_run_agent(messages, **kwargs):
+        assert _current_api_key() == key
+        assert gen._key() == key
+        return {"text": "ok", "artifacts": [], "iterations": 1}
+
+    monkeypatch.setattr(api_mod, "run_agent", fake_run_agent)
+
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions",
         json=_request_body(stream=False),
         headers={"Authorization": f"Bearer {key}"},
     )
 
-    assert response.status_code == 401
-    assert response.json() == {"detail": "Floret requires an agent run token."}
+    assert response.status_code == 200
+    assert response.json()["choices"][0]["message"]["content"] == "ok"
 
 
 def test_agent_run_token_reaches_brain_and_tools(monkeypatch):

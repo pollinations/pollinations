@@ -97,6 +97,29 @@ describe("sanitizeToolSchemas", () => {
         expect(params.properties.items.items.type).toBe("number");
     });
 
+    it("gives arrays without items an any-item schema Vertex accepts", async () => {
+        const result = await transform([], {
+            tools: [
+                {
+                    type: "function",
+                    function: {
+                        name: "test",
+                        parameters: {
+                            type: "object",
+                            properties: { sheets: { type: "array" } },
+                        },
+                    },
+                },
+            ],
+        });
+
+        const tools = result.options.tools as FunctionTool[];
+        expect(tools[0].function?.parameters).toEqual({
+            type: "object",
+            properties: { sheets: { type: "array", items: {} } },
+        });
+    });
+
     it("removes unsupported schema properties", async () => {
         const result = await transform([], {
             tools: [
@@ -156,7 +179,7 @@ describe("sanitizeToolSchemas", () => {
         expect((await transform(messages, {})).options.tools).toBeUndefined();
     });
 
-    it("is limited to direct Vertex while OpenRouter schemas pass through", async () => {
+    it("sanitizes schemas for direct Vertex and its OpenRouter fallback", async () => {
         const tools = [
             {
                 type: "function",
@@ -172,7 +195,9 @@ describe("sanitizeToolSchemas", () => {
             },
         ];
         const vertexTransform = findModelByName("gemini-search")?.transform;
-        const openRouterTransform = findModelByName("gemini")?.transform;
+        const openRouterTransform = findModelByName(
+            "google/gemini-3.7-flash:openrouter:vertex-global",
+        )?.transform;
         if (!vertexTransform || !openRouterTransform) {
             throw new Error("Gemini transforms missing");
         }
@@ -182,10 +207,15 @@ describe("sanitizeToolSchemas", () => {
         const vertexTool = vertex.options.tools?.[0] as
             | FunctionTool
             | undefined;
+        const openRouterTool = openRouter.options.tools?.[0] as
+            | FunctionTool
+            | undefined;
 
         expect(vertexTool?.function?.parameters).not.toHaveProperty(
             "properties.value.exclusiveMinimum",
         );
-        expect(openRouter.options.tools).toEqual(tools);
+        expect(openRouterTool?.function?.parameters).not.toHaveProperty(
+            "properties.value.exclusiveMinimum",
+        );
     });
 });

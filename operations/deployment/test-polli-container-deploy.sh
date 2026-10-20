@@ -7,7 +7,8 @@ trap cleanup EXIT
 SCRIPT="$(cd "$(dirname "$0")" && pwd)/polli-container-deploy.sh"
 BIN="$ROOT/bin"
 mkdir -p "$ROOT/repo/apps/polli" "$BIN"
-touch "$ROOT/repo/apps/polli/compose.yaml" "$ROOT/repo/apps/polli/Dockerfile" "$ROOT/repo/apps/polli/Dockerfile.visual-studio" "$ROOT/repo/apps/polli/seccomp_profile.json"
+cp "$(dirname "$SCRIPT")/../../apps/polli/compose.yaml" "$ROOT/repo/apps/polli/compose.yaml"
+touch "$ROOT/repo/apps/polli/Dockerfile" "$ROOT/repo/apps/polli/Dockerfile.visual-studio" "$ROOT/repo/apps/polli/seccomp_profile.json"
 git -C "$ROOT/repo" init -q
 git -C "$ROOT/repo" config user.email test@example.invalid
 git -C "$ROOT/repo" config user.name test
@@ -52,7 +53,7 @@ chmod +x "$BIN"/*
 
 run_deploy() {
   local runtime=$1
-  PATH="$BIN:$PATH" MOCK_LOG="$ROOT/commands" SHA="$SHA" FAIL_NEW=1 \
+  PATH="$BIN:$PATH" MOCK_LOG="$ROOT/commands" SHA="$SHA" FAIL_NEW=1 HOME="$ROOT/host-home" \
     POLLI_REPO_ROOT="$ROOT/repo" POLLI_AZURE_HOST=host POLLI_AZURE_USER=user POLLI_AZURE_SSH_KEY=test \
     POLLI_CONTAINER_ROOT="$runtime" bash "$SCRIPT" "$SHA"
 }
@@ -79,6 +80,29 @@ set -e
 grep -q -- "--project-directory $runtime/releases/$OLD" "$ROOT/commands" || { cat "$ROOT/commands" >&2; echo "rollback did not use prior project directory" >&2; exit 1; }
 grep -q "POLLI_IMAGE=polli:$OLD" "$ROOT/commands" || { cat "$ROOT/commands" >&2; echo "rollback did not restore prior image tag" >&2; exit 1; }
 [[ "$(readlink "$runtime/current")" == "$runtime/releases/$OLD" ]] || { echo "rollback changed current" >&2; exit 1; }
+
+# The shipped mount remains read-only; both activation and rollback receive the
+# host key path instead of resolving it inside either release directory.
+key_source="$ROOT/host-home/polli/polli.pem"
+[[ "$key_source" == /* ]]
+for tag in "$SHA" "$OLD"; do
+  grep -F "POLLI_GITHUB_KEY_FILE=$key_source" "$ROOT/commands" | grep -Fq -- "--project-directory $runtime/releases/$tag "
+done
+python3 - "$runtime/releases/$SHA/compose.yaml" <<'PY'
+import pathlib
+import sys
+import yaml
+
+services = yaml.safe_load(pathlib.Path(sys.argv[1]).read_text())["services"]
+mounts = [mount for mount in services["polli"]["volumes"] if isinstance(mount, dict)]
+key_mount, = [mount for mount in mounts if mount.get("target") == "/app/polli.pem"]
+assert key_mount["type"] == "bind"
+assert key_mount["source"] == "${POLLI_GITHUB_KEY_FILE:-./polli.pem}"
+assert key_mount["read_only"] is True
+assert key_mount["bind"]["create_host_path"] is False
+assert all(not isinstance(mount, dict) or mount.get("target") != "/app/polli.pem"
+           for mount in services["visual-studio"]["volumes"])
+PY
 
 # First-deploy failure removes only failed project containers and does not create
 # current or delete the release/data directory.

@@ -1,11 +1,12 @@
+import { requireAccountPermission } from "@shared/auth/account-permissions.ts";
 import { validateCommunityEndpointUrl } from "@shared/community-endpoint-urls.ts";
 import {
-    COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     type CommunityEndpointVisibility,
     communityModelId,
     type EndpointAgentListingPayload,
     effectiveCommunityEndpointVisibility,
     isCommunityEndpointOwnerAllowed,
+    legacyCommunityModelId,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityProviderUrl,
     type ProxyListingPayload,
@@ -13,6 +14,7 @@ import {
     pendingCommunityEndpointChangeIsReady,
     resolveEffectiveProxyListing,
 } from "@shared/community-endpoints.ts";
+import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { resolveModelName } from "@shared/registry/registry.ts";
@@ -36,7 +38,6 @@ import {
     testCommunityTranscriptionEndpoint,
     testCommunityVideoEndpoint,
 } from "../services/community-endpoint-openai.ts";
-import { requireAccountPermission } from "./account-permissions.ts";
 import {
     type FallbackPrimary,
     fallbackTargetRejection,
@@ -162,14 +163,18 @@ async function ensureModelNameAvailable(
     name: string,
     currentId?: string,
 ): Promise<void> {
-    const modelId = communityModelId(ownerGithubUsername, name);
-    let bundledModelExists = false;
-    try {
-        resolveModelName(modelId);
-        bundledModelExists = true;
-    } catch {
-        // Unknown IDs remain available within the owner's namespace.
-    }
+    const bundledModelExists = [
+        communityModelId(ownerGithubUsername, name),
+        legacyCommunityModelId(ownerGithubUsername, name),
+    ].some((modelId) => {
+        try {
+            resolveModelName(modelId);
+            return true;
+        } catch {
+            // Both the canonical ID and its generation alias must be available.
+            return false;
+        }
+    });
     if (bundledModelExists) {
         throw new HTTPException(400, {
             message:
@@ -239,7 +244,7 @@ async function enforceEndpointProbeThrottle(
 }
 
 export const communityEndpointsRoutes = new Hono<Env>()
-    .use(auth({ allowSessionCookie: true, allowApiKey: true }))
+    .use(auth({ allowSessionCookie: false, allowApiKey: true }))
     .get(
         "/",
         describeRoute({
@@ -277,8 +282,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 .orderBy(desc(schema.communityEndpoint.createdAt));
             const owner = await db.query.user.findFirst({
                 columns: {
+                    id: true,
                     communityProviderName: true,
                     communityProviderUrl: true,
+                    communityProviderIconUrl: true,
                 },
                 where: eq(schema.user.id, user.id),
             });
@@ -293,6 +300,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     provider: {
                         name: owner?.communityProviderName ?? null,
                         url: owner?.communityProviderUrl ?? null,
+                        iconUrl: isCommunityProviderIconUrl(
+                            owner?.communityProviderIconUrl,
+                        )
+                            ? owner.communityProviderIconUrl
+                            : null,
                     },
                 }),
             );
@@ -304,7 +316,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Update Community Provider Profile",
             description:
-                "Set the public provider name and HTTPS service link shared by all community models owned by the authenticated account. Send both fields empty to clear the profile. Publishing approval and `account:keys` are required.",
+                "Set the public provider name, HTTPS service link, and optional media.pollinations.ai icon URL shared by all community models owned by the authenticated account. Publishing approval and `account:keys` are required.",
             responses: {
                 200: {
                     description: "Updated community provider profile",
@@ -344,14 +356,28 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     communityProviderUrl: url
                         ? normalizeInputProviderUrl(url)
                         : null,
+                    ...(input.iconUrl === undefined
+                        ? {}
+                        : {
+                              communityProviderIconUrl: input.iconUrl,
+                          }),
                     updatedAt: new Date(),
                 })
                 .where(eq(schema.user.id, user.id))
                 .returning({
                     name: schema.user.communityProviderName,
                     url: schema.user.communityProviderUrl,
+                    iconUrl: schema.user.communityProviderIconUrl,
                 });
-            return c.json(profile);
+            return c.json(
+                CommunityProviderProfileResponseSchema.parse({
+                    name: profile.name,
+                    url: profile.url,
+                    iconUrl: isCommunityProviderIconUrl(profile.iconUrl)
+                        ? profile.iconUrl
+                        : null,
+                }),
+            );
         },
     )
     .get(
@@ -360,7 +386,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "List Fallback Candidates",
             description:
-                "Community models this model may declare as fallbacks: listed, public or owned by you, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
+                "Community models this model may declare as fallbacks: registered, public or owned by you, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
             responses: {
                 200: {
                     description: "Eligible fallback model ids",
@@ -483,6 +509,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const payload: EndpointAgentListingPayload = {
                 perUserRpm: input.perUserRpm,
                 api: input.api,
+                inputModalities: input.inputModalities,
+                outputModalities: input.outputModalities,
+                capabilities: input.capabilities,
             };
             const [row] = await db
                 .insert(schema.communityEndpoint)
@@ -550,9 +579,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
             );
             const targetPolicy = deriveCreateProxyPolicy(input);
             const queuesPublication = input.visibility === "public";
-            const policy = queuesPublication
-                ? deriveCreateProxyPolicy({ ...input, visibility: "private" })
-                : targetPolicy;
             const modelId = communityModelId(ownerGithubUsername, input.name);
             const bearerTokenCiphertext = await encryptSecret(
                 normalizeInputBearerToken(input.bearerToken),
@@ -569,7 +595,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const payload: ProxyListingPayload = {
                 bearerTokenCiphertext,
                 api,
-                ...policy,
+                ...targetPolicy,
                 fallbacks,
             };
             await enforcePublishingAccess(db, user.id, input.visibility);
@@ -659,7 +685,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Test My Model Endpoint",
             description:
-                "Test an upstream model before registering it. Text tests call the selected Chat Completions or Responses URL in JSON and streaming modes; both must return valid token usage. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint; video tests call the exact configured URL and validate completed MP4 data; speech tests send a short sample and accept a valid binary audio response. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
+                "Test an upstream model before registering it. Text tests call the selected Chat Completions or Responses URL in JSON and streaming modes; both must return valid token usage, except that an endpoint without SSE (a JSON reply or a 400/422 to `stream: true`) passes with `streaming: false` and is registered with `advertised.streaming: false`. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint; video tests call the exact configured URL and validate completed MP4 data; speech tests send a short sample and accept a valid binary audio response. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Endpoint test result",
@@ -741,7 +767,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                                   ? "Endpoint responded with audio data"
                                   : input.modality === "embedding"
                                     ? "Endpoint responded with embedding data"
-                                    : "JSON and streaming requests returned valid token usage",
+                                    : result.streaming === false
+                                      ? "JSON request returned valid token usage. The endpoint does not stream, so stream: true calls will get the whole answer as one event stream"
+                                      : "JSON and streaming requests returned valid token usage",
                     ...result,
                 });
             } catch (error) {
@@ -824,24 +852,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.requiredSafetyFeatures !== undefined) {
                 update.requiredSafetyFeatures = input.requiredSafetyFeatures;
             }
-            if (input.hidden !== undefined) {
-                if (
-                    !input.hidden &&
-                    (input.visibility ?? currentVisibility) === "public" &&
-                    endpoint.hiddenAt &&
-                    Date.now() <
-                        endpoint.hiddenAt.getTime() +
-                            COMMUNITY_ENDPOINT_CHANGE_DELAY_MS
-                ) {
-                    throw new HTTPException(400, {
-                        message:
-                            "Community models can be relisted 3 hours after they were hidden",
-                    });
-                }
-                update.hiddenAt = input.hidden ? new Date() : null;
-                update.hiddenReason = input.hidden ? "Hidden by owner" : null;
-                update.hiddenBy = input.hidden ? "owner" : null;
-            }
             await enforcePublishingAccess(
                 db,
                 user.id,
@@ -866,7 +876,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 endpoint.type === "code_agent"
             ) {
                 // Managed configuration is edited through /account/agents.
-                // This route only updates shared listing state such as hidden.
             } else if (endpoint.type === "endpoint_agent") {
                 const current = parseListingPayload(
                     "endpoint_agent",
@@ -883,15 +892,19 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;
                 }
-                if (input.perUserRpm !== undefined || input.api !== undefined) {
-                    update.payload = JSON.stringify({
-                        perUserRpm:
-                            input.perUserRpm === undefined
-                                ? current.perUserRpm
-                                : input.perUserRpm,
-                        api: input.api ?? current.api,
-                    });
-                }
+                update.payload = JSON.stringify({
+                    ...current,
+                    perUserRpm:
+                        input.perUserRpm === undefined
+                            ? current.perUserRpm
+                            : input.perUserRpm,
+                    api: input.api ?? current.api,
+                    inputModalities:
+                        input.inputModalities ?? current.inputModalities,
+                    outputModalities:
+                        input.outputModalities ?? current.outputModalities,
+                    capabilities: input.capabilities ?? current.capabilities,
+                });
             } else {
                 const current = parseListingPayload("proxy", endpoint.payload);
                 if (!current) {
@@ -907,8 +920,15 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ),
                     pendingAt: endpoint.pendingAt,
                 }).payload;
-                const queued = parseListingPayload("proxy", pendingPayload);
+                const queued = parseListingPayload(
+                    "proxy",
+                    pendingReady ? null : endpoint.pendingPayload,
+                );
                 const targetBase = queued ?? stored;
+                // Going private applies the latest queued configuration instead
+                // of discarding it with the publication delay.
+                const base =
+                    input.visibility === "private" ? targetBase : stored;
                 if (
                     (stored.modality === "text" &&
                         input.baseUrl !== undefined) ||
@@ -923,7 +943,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 const targetPolicy = deriveUpdatedProxyPolicy(
                     targetBase,
                     input,
-                    targetVisibility,
                 );
                 const delayPricing =
                     targetVisibility === "public" &&
@@ -937,14 +956,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 const immediateInput = delayPricing
                     ? withoutProxyPricingChanges(input)
                     : input;
-                const policy = deriveUpdatedProxyPolicy(
-                    stored,
-                    immediateInput,
-                    nextVisibility,
-                );
+                const policy = deriveUpdatedProxyPolicy(base, immediateInput);
                 const fallbacks =
                     input.fallbacks === undefined
-                        ? stored.fallbacks
+                        ? base.fallbacks
                         : await resolveFallbacks(db, input.fallbacks, {
                               modelId: communityModelId(
                                   ownerGithubUsername,
@@ -955,12 +970,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           });
                 const bearerTokenCiphertext =
                     input.bearerToken === undefined
-                        ? stored.bearerTokenCiphertext
+                        ? base.bearerTokenCiphertext
                         : await encryptSecret(
                               normalizeInputBearerToken(input.bearerToken),
                               c.env.BETTER_AUTH_SECRET,
                           );
-                const api = input.api ?? stored.api;
+                const api = input.api ?? base.api;
                 const url = input.url ?? input.baseUrl;
                 if (url !== undefined) {
                     update.baseUrl = validateInputEndpointUrl(url);

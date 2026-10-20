@@ -46,10 +46,6 @@ const WAN_SIZES_4K = [
     { ratio: 3 / 4, size: "3072*4096" },
 ] as const;
 
-// Reference-image cap — matches the prior DashScope path and registry
-// maxReferenceImages: 9.
-const WAN_MAX_IMAGES = 9;
-
 // ImageParams.aspectRatio → width/height pair, so an explicit aspect ratio wins
 // over (possibly defaulted) width/height when picking the closest size.
 const ASPECT_RATIO_WH: Record<string, [number, number]> = {
@@ -62,9 +58,9 @@ const ASPECT_RATIO_WH: Record<string, [number, number]> = {
     "9:21": [9, 21],
 };
 
-function resolveSize(
+export function resolveWanImageSize(
     safeParams: ImageParams,
-    sizes: readonly { ratio: number; size: string }[],
+    sizes: readonly { ratio: number; size: string }[] = WAN_SIZES_2K,
 ): string {
     const requested = safeParams.aspectRatio;
     const [w, h] =
@@ -87,20 +83,15 @@ export async function callWanImageAPI(
     const hasImage = images.length > 0;
     const model = isPro ? WAN_IMAGE_PRO_MODEL : WAN_IMAGE_MODEL;
     const modelLabel = isPro ? "Wan 2.7 Image Pro" : "Wan 2.7 Image";
-    const trackingLabel = isPro
-        ? "alibaba/wan-2.7-image-pro"
-        : "alibaba/wan-2.7-image";
 
     // 4K is available only for pro text-to-image; pro editing and the standard
     // model cap at 2K (matches the prior DashScope pixel limits).
-    const size = resolveSize(
+    const size = resolveWanImageSize(
         safeParams,
         isPro && !hasImage ? WAN_SIZES_4K : WAN_SIZES_2K,
     );
 
-    const imageInput = hasImage
-        ? await Promise.all(images.slice(0, WAN_MAX_IMAGES).map(toDataUri))
-        : [];
+    const imageInput = hasImage ? await Promise.all(images.map(toDataUri)) : [];
 
     const input: Record<string, unknown> = {
         prompt,
@@ -165,10 +156,8 @@ export async function callWanImageAPI(
 
     return {
         buffer: imageBuffer,
-        isMature: false,
-        isChild: false,
         trackingData: {
-            actualModel: trackingLabel,
+            actualModel: safeParams.model,
             // Flat per-image pricing on Replicate; report 1 image token.
             usage: {
                 completionImageTokens: 1,

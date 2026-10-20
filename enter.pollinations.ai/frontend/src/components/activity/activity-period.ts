@@ -38,18 +38,12 @@ export function parseActivityPeriod(
 ): ActivityPeriod {
     const fallback = periodFromDate("day");
     if (
-        (granularity !== "day" &&
-            granularity !== "week" &&
-            granularity !== "month") ||
+        (granularity !== "day" && granularity !== "month") ||
         typeof period !== "string"
     )
         return fallback;
     const pattern =
-        granularity === "day"
-            ? /^\d{4}-\d{2}-\d{2}$/
-            : granularity === "week"
-              ? /^\d{4}-W\d{2}$/
-              : /^\d{4}-\d{2}$/;
+        granularity === "day" ? /^\d{4}-\d{2}-\d{2}$/ : /^\d{4}-\d{2}$/;
     if (!pattern.test(period)) return fallback;
     const value: ActivityPeriod = { granularity, period };
     const date = activityDate(value);
@@ -101,8 +95,6 @@ function rememberedActivityDate(value: ActivityPeriod, now = new Date()): Date {
             Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 0),
         ).getUTCDate();
         start.setUTCDate(Math.min(anchor.getUTCDate(), lastDay));
-    } else if (value.granularity === "week") {
-        start.setUTCDate(start.getUTCDate() + ((anchor.getUTCDay() + 6) % 7));
     }
     return new Date(
         Math.min(
@@ -117,19 +109,13 @@ export function changeActivityPeriod(
     next: PeriodSelection,
 ): ActivityPeriod {
     if (next.granularity === "day") return next;
-    const date = rememberedActivityDate(value);
-    if (next.granularity === "month") {
-        return {
-            ...next,
-            anchor:
-                value.bucket?.slice(0, 10) ??
-                value.anchor ??
-                date.toISOString().slice(0, 10),
-        };
-    }
-    const start = activityDate(next);
-    start.setUTCDate(start.getUTCDate() + ((date.getUTCDay() + 6) % 7));
-    return { ...next, anchor: start.toISOString().slice(0, 10) };
+    return {
+        ...next,
+        anchor:
+            value.bucket?.slice(0, 10) ??
+            value.anchor ??
+            rememberedActivityDate(value).toISOString().slice(0, 10),
+    };
 }
 
 export function switchActivityView(
@@ -151,11 +137,7 @@ export function shiftActivityPeriod(
     const date = activityDate(value);
     if (value.granularity === "month")
         date.setUTCMonth(date.getUTCMonth() + direction);
-    else
-        date.setUTCDate(
-            date.getUTCDate() +
-                direction * (value.granularity === "week" ? 7 : 1),
-        );
+    else date.setUTCDate(date.getUTCDate() + direction);
     return changeActivityPeriod(value, periodFromDate(value.granularity, date));
 }
 

@@ -40,6 +40,7 @@ export function createCodeAgentResponsesClient(
     );
     const target: DirectResponsesTarget = {
         authConfigured: true,
+        callerFacingStatus: true,
         endpoint: endpoint.baseUrl,
         headers: {},
         model: endpoint.id,

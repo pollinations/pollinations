@@ -63,6 +63,23 @@ class ModelAliasTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(registry.get_modalities_for_model("chosen"), ["text"])
             self.assertFalse(supports_end_frame("chosen"))
 
+    async def test_pick_model_handles_list_capabilities(self):
+        cache = registry._normalize(
+            {
+                "data": [
+                    {
+                        "id": "image",
+                        "category": "image",
+                        "output_modalities": ["image"],
+                        "supported_endpoints": ["/image/{prompt}"],
+                        "capabilities": ["image_generation"],
+                    }
+                ]
+            }
+        )
+        with patch.object(registry, "_registry_cache", cache):
+            self.assertEqual(registry.pick_model("image"), "image")
+
     async def test_typography_priority_survives_catalog_rename(self):
         for renamed in [False, True]:
             preferred = "openai/gpt-image-1" if renamed else "gptimage"
@@ -137,7 +154,7 @@ class ModelAliasTests(unittest.IsolatedAsyncioTestCase):
             "floret.routing.fetch_model_catalog", AsyncMock(return_value=catalog)
         ):
             self.assertEqual(
-                (await validate_routing(RoutingInput(text="chosen"))).text, "chosen"
+                (await validate_routing(RoutingInput(model="chosen"))).text, "chosen"
             )
 
     async def test_veo_reference_frame_duration_for_legacy_and_canonical_ids(self):

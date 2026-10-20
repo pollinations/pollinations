@@ -1,5 +1,6 @@
 import { env as workerEnv } from "cloudflare:workers";
 import { Container, getContainer } from "@cloudflare/containers";
+import { banners, PINNED_MODELS, PROMPT_SUGGESTIONS } from "./ui-defaults.js";
 
 const CONTAINER_NAME = "primary";
 const WEBUI_URL = required("WEBUI_URL");
@@ -61,11 +62,23 @@ export class OpenWebUIContainer extends Container {
         // get_filtered_models() shows unconfigured models to admins only. Without
         // this every non-admin gets an empty model picker.
         BYPASS_MODEL_ACCESS_CONTROL: "true",
-        // Without this the model picker defaults to the alphabetically first
-        // community model.
-        DEFAULT_MODELS: "openai",
+        // The picker lists the whole catalog (300+ entries, media models
+        // included). ui-defaults.js pins a few everyday models and opens new
+        // chats on the cheap default; the rest keeps gen's order. Seeded once:
+        // see the README for existing installs.
+        DEFAULT_MODELS: PINNED_MODELS[0],
+        DEFAULT_PINNED_MODELS: PINNED_MODELS.join(","),
+        DEFAULT_PROMPT_SUGGESTIONS: JSON.stringify(PROMPT_SUGGESTIONS),
+        WEBUI_BANNERS: JSON.stringify(banners(required("ENTER_URL"))),
+        // This is a shared host: no "share to Open WebUI Community" button
+        // (it uploads chats to openwebui.com), and no blind-comparison arena.
+        ENABLE_COMMUNITY_SHARING: "false",
+        ENABLE_EVALUATION_ARENA_MODELS: "false",
         // Titles, tags and follow-ups need text, even when the chat model generates media.
-        TASK_MODEL_EXTERNAL: "openai/gpt-5-nano",
+        // Non-reasoning on purpose: gpt-5-nano spent 256-1024 reasoning tokens and
+        // 3-12 s per title/tags/follow-up call. Seed value only; the live value is
+        // the `task.model.external` row in the config table.
+        TASK_MODEL_EXTERNAL: "openai/gpt-5.4-nano",
 
         // Model backend: gen.pollinations.ai, bearer = the user's OAuth sk_.
         ENABLE_OLLAMA_API: "false",
@@ -140,6 +153,11 @@ export class OpenWebUIContainer extends Container {
         // one wallet. Local embedding keeps that off a shared budget; the cost
         // is a ~90 MB model download onto the ephemeral disk after a restart.
         ENABLE_VERSION_UPDATE_CHECK: "false",
+
+        // Cache the gen /v1/models fetch per user. The upstream default is 1 s,
+        // so every page load refetched and rebuilt the ~360-model list, which
+        // took 6-8 s on the 0.5 vCPU instance and gated the whole page.
+        MODELS_CACHE_TTL: "300",
     };
 }
 
@@ -149,7 +167,18 @@ function openwebui(env) {
 
 export default {
     async fetch(request, env) {
-        return openwebui(env).fetch(request);
+        const response = await openwebui(env).fetch(request);
+        if (response.webSocket) return response;
+        // Send the full chat URL as the referrer when a user follows a link
+        // out of a chat, so enter's top-up and key pages can bring them back
+        // to that chat. The browser default would send the origin only.
+        const headers = new Headers(response.headers);
+        headers.set("Referrer-Policy", "no-referrer-when-downgrade");
+        return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers,
+        });
     },
 
     // Keepalive: a request every 5 minutes resets sleepAfter.

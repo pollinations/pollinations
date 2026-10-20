@@ -233,6 +233,20 @@ test("connects one GitHub account to a Google account", async ({ mocks }) => {
             (account) => account.providerId,
         ),
     ).toEqual(["github", "google"]);
+
+    // A Google signup that later connected GitHub, for conversion analysis.
+    const events = mocks.tinybird.state.productEvents
+        .filter((row) =>
+            ["signup_completed", "link_started", "link_completed"].includes(
+                String(row.event),
+            ),
+        )
+        .map((row) => [row.event, row.provider, row.user_id]);
+    expect(events).toEqual([
+        ["signup_completed", "google", user?.id],
+        ["link_started", "github", user?.id],
+        ["link_completed", "github", user?.id],
+    ]);
 });
 
 test("GitHub opens the Google account with the same verified email", async ({
@@ -243,6 +257,12 @@ test("GitHub opens the Google account with the same verified email", async ({
 
     const callback = await signIn("github");
     expect(callback.headers.get("Location")).toBe("/");
+    // Joining by email at sign-in is not a connect.
+    expect(
+        mocks.tinybird.state.productEvents.filter((row) =>
+            String(row.event).startsWith("link_"),
+        ),
+    ).toEqual([]);
 
     const users = await drizzle(env.DB).select().from(userTable);
     expect(users).toHaveLength(1);

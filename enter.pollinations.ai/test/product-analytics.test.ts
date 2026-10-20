@@ -308,12 +308,19 @@ test("signing in records the request to GitHub and the resulting session", async
     // The start carries the page it came from, so the funnel can divide it by
     // views of that same page.
     expect(signIn[0]?.page).toBe("/sign-in");
+    // Every stage names the provider, so GitHub and Google funnels separate.
+    expect(signIn.map((row) => row.provider)).toEqual([
+        "github",
+        "github",
+        "github",
+    ]);
     // A first sign-in also created the user, which is what separates new from
     // returning without joining the daily d1_user snapshot.
     const signup = mocks.tinybird.state.productEvents.find(
         (row) => row.event === "signup_completed",
     );
     expect(signup?.user_id).toBe(signIn[2]?.user_id);
+    expect(signup?.provider).toBe("github");
 });
 
 test("a start from an untracked page stays out of the funnel ratio", async ({

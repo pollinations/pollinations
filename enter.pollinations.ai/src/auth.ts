@@ -26,6 +26,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import {
     APIError,
     createAuthMiddleware,
+    getOAuthState,
     getSessionFromCtx,
 } from "better-auth/api";
 import { admin, openAPI } from "better-auth/plugins";
@@ -160,6 +161,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                                 env.BETTER_AUTH_URL,
                             ),
                             ...visitorCountry(authContext.headers),
+                            provider: authContext.body.provider,
                         }),
                     );
                 }
@@ -175,12 +177,10 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                     authContext.query?.code
                 ) {
                     ctx?.waitUntil(
-                        captureProductEvent(
-                            env,
-                            "sign_in_returned",
-                            "",
-                            visitorCountry(authContext.headers),
-                        ),
+                        captureProductEvent(env, "sign_in_returned", "", {
+                            ...visitorCountry(authContext.headers),
+                            provider: authContext.params?.id,
+                        }),
                     );
                 }
                 const linkProvider = authContext.body?.provider;
@@ -195,13 +195,16 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                     ) {
                         throw accountAlreadyConnected(linkProvider);
                     }
-                    if (session && linkProvider === "discord")
+                    if (session)
                         ctx?.waitUntil(
                             captureProductEvent(
                                 env,
                                 "link_started",
                                 session.user.id,
-                                visitorCountry(authContext.headers),
+                                {
+                                    ...visitorCountry(authContext.headers),
+                                    provider: linkProvider,
+                                },
                             ),
                         );
                 }
@@ -235,6 +238,26 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                     });
                 }
             }),
+            // Only an explicit connect carries link state; a sign-up or an
+            // implicit join at sign-in does not. Counted here because the
+            // account create hooks run after the request state is gone.
+            after: createAuthMiddleware(async (authContext) => {
+                if (authContext.path !== "/callback/:id") return;
+                const link = (await getOAuthState())?.link;
+                const provider = authContext.params?.id ?? "";
+                if (link && (await hasAccount(link.userId, provider)))
+                    ctx?.waitUntil(
+                        captureProductEvent(
+                            env,
+                            "link_completed",
+                            link.userId,
+                            {
+                                ...visitorCountry(authContext.headers),
+                                provider,
+                            },
+                        ),
+                    );
+            }),
         },
         database: drizzleAdapter(db, {
             schema: betterAuthSchema,
@@ -249,7 +272,10 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                                 env,
                                 "signup_completed",
                                 user.id,
-                                visitorCountry(context?.headers),
+                                {
+                                    ...visitorCountry(context?.headers),
+                                    provider: callbackProvider(context),
+                                },
                             ),
                         );
                     },
@@ -273,16 +299,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                             throw accountAlreadyConnected(account.providerId);
                         }
                     },
-                    after: async (account, context) => {
-                        if (account.providerId === "discord")
-                            ctx?.waitUntil(
-                                captureProductEvent(
-                                    env,
-                                    "link_completed",
-                                    account.userId,
-                                    visitorCountry(context?.headers),
-                                ),
-                            );
+                    after: async (account) => {
                         if (account.providerId !== "github") return;
                         // These authorization fields stay read-only in Better
                         // Auth, so persist the verified provider profile here.
@@ -428,6 +445,12 @@ function githubProfileSyncPlugin(
  * Users who signed in with Google and never connected GitHub have no
  * github_id; they are skipped.
  */
+// The provider of an OAuth callback; "" for sessions from other flows, such
+// as the CLI device flow.
+function callbackProvider(context?: GenericEndpointContext | null): string {
+    return context?.path === "/callback/:id" ? (context.params?.id ?? "") : "";
+}
+
 export function onAfterSessionCreate(
     env: Cloudflare.Env,
     executionCtx?: ExecutionContext,
@@ -437,12 +460,10 @@ export function onAfterSessionCreate(
         ctx?: GenericEndpointContext | null,
     ) => {
         executionCtx?.waitUntil(
-            captureProductEvent(
-                env,
-                "sign_in_completed",
-                session.userId,
-                visitorCountry(ctx?.headers),
-            ),
+            captureProductEvent(env, "sign_in_completed", session.userId, {
+                ...visitorCountry(ctx?.headers),
+                provider: callbackProvider(ctx),
+            }),
         );
         executionCtx?.waitUntil(
             (async () => {

@@ -3228,12 +3228,8 @@ export async function generateStableAudio3Medium(opts: {
         input.audio_url = `data:${mime};base64,${arrayBufferToBase64(
             await referenceAudio.arrayBuffer(),
         )}`;
-        // fal's init_noise_level is the a2a strength (1.0 = pure generation,
-        // default 0.9). Its docs give 0.1 as the closest-to-input setting, so
-        // lower strengths clamp there.
-        if (strength !== undefined) {
-            input.init_noise_level = Math.max(0.1, strength);
-        }
+        // fal's init_noise_level (0-1, default 0.9) is the a2a strength.
+        if (strength !== undefined) input.init_noise_level = strength;
     }
 
     const endpoint = isAudioToAudio

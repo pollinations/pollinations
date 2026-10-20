@@ -2512,47 +2512,36 @@ fixtureTest(
             },
         );
 
-        // fal's closest-to-input setting is 0.1, so lower strengths clamp.
-        for (const [strength, initNoiseLevel] of [
-            [0.4, 0.4],
-            [0.05, 0.1],
-        ] as const) {
-            calls.length = 0;
-            sentInitNoiseLevel = undefined;
-            const ctx = createExecutionContext();
-            const pending = worker.fetch(
-                new Request(
-                    "https://staging.gen.pollinations.ai/v1/audio/speech",
-                    {
-                        method: "POST",
-                        headers: {
-                            Authorization: `Bearer ${paidApiKey}`,
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                            model: "stable-audio-3-medium",
-                            input: "warm pads",
-                            reference_audio: referenceAudioUrl,
-                            strength,
-                        }),
-                    },
-                ),
-                withInlineGenerationCoordinator({
-                    ...env,
-                    FAL_KEY: "test-fal-key",
-                } as unknown as CloudflareBindings),
-                ctx,
-            );
-            await vi.waitFor(() => expect(calls).toContain(a2aEndpoint));
-            await vi.advanceTimersByTimeAsync(5_000);
-            const response = await pending;
+        const ctx = createExecutionContext();
+        const pending = worker.fetch(
+            new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "stable-audio-3-medium",
+                    input: "warm pads",
+                    reference_audio: referenceAudioUrl,
+                    strength: 0.05,
+                }),
+            }),
+            withInlineGenerationCoordinator({
+                ...env,
+                FAL_KEY: "test-fal-key",
+            } as unknown as CloudflareBindings),
+            ctx,
+        );
+        await vi.waitFor(() => expect(calls).toContain(a2aEndpoint));
+        await vi.advanceTimersByTimeAsync(5_000);
+        const response = await pending;
 
-            expect(response.status).toBe(200);
-            await response.arrayBuffer();
+        expect(response.status).toBe(200);
+        await response.arrayBuffer();
 
-            await waitOnExecutionContext(ctx);
-            expect(sentInitNoiseLevel).toBe(initNoiseLevel);
-        }
+        await waitOnExecutionContext(ctx);
+        expect(sentInitNoiseLevel).toBe(0.05);
     },
 );
 

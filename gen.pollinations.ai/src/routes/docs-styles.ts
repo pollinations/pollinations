@@ -3,78 +3,155 @@
 
 import POLLI_UI_TOKENS_CSS from "../../../packages/ui/src/styles/tokens.css?raw";
 
-const POLLINATIONS_UI_CSS = `
+export const POLLINATIONS_DOCS_CSS = `
 ${POLLI_UI_TOKENS_CSS}
-`;
 
-export const POLLINATIONS_HEADER_CSS = `
-${POLLINATIONS_UI_CSS}
+/* The dashboard's lockup, a thin rule, then "Docs": the drawer is the only
+   header. */
+.ph-docs-brand {
+    display: flex; align-items: center; gap: 12px; padding: 16px 14px 8px;
+    flex-shrink: 0; color: var(--scalar-sidebar-color-1); text-decoration: none;
+}
+.ph-docs-lockup svg { display: block; height: 20px; width: auto; }
+.ph-docs-divider {
+    width: 1px; height: 16px; background: var(--scalar-sidebar-border-color);
+}
+.ph-docs-label {
+    font-size: 13px; font-weight: 500; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--scalar-sidebar-color-2);
+}
+.ph-docs-brand:focus-visible {
+    outline: 2px solid var(--polli-color-focus); outline-offset: -2px;
+}
 
-.ph-bar {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 2147483000;
-    min-height: 48px; box-sizing: border-box;
-    background: var(--polli-color-brand-dark); border-bottom: 1px solid var(--polli-color-divider);
-    display: flex; align-items: center; gap: 10px; padding: 8px 14px;
-    font: 13px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    color: var(--polli-color-text-base);
+.ph-docs-links {
+    display: flex; flex-direction: column; gap: 1px; flex-shrink: 0;
+    padding: 8px var(--scalar-sidebar-padding, 9px) 12px;
+    border-top: 1px solid var(--scalar-sidebar-border-color);
 }
-.ph-bar .ph-brand {
-    color: var(--polli-color-text-strong); text-decoration: none;
-    display: inline-flex; align-items: center; flex-shrink: 0;
+.ph-docs-link {
+    display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+    border-radius: var(--scalar-radius, 6px);
+    font-size: var(--scalar-font-size-3, 14px);
+    color: var(--scalar-sidebar-color-2); text-decoration: none;
 }
-.ph-bar .ph-brand img { height: 18px; width: auto; display: block; }
-@media (min-width: 640px) { .ph-bar .ph-brand img { height: 20px; } }
-@media (max-width: 640px) {
-    .ph-bar { justify-content: center; padding: 8px 12px; }
-    .ph-bar .ph-brand img { height: 22px; }
+.ph-docs-link:hover {
+    background: var(--scalar-sidebar-item-hover-background);
+    color: var(--scalar-sidebar-item-hover-color, var(--scalar-sidebar-color-1));
+}
+.ph-docs-link .ph-doc-icon { width: 14px; height: 14px; flex: 0 0 14px; }
+.ph-docs-link .ph-docs-link-arrow { margin-left: auto; opacity: 0.6; }
+.ph-docs-connected .ph-docs-links { display: none; }
+.ph-docs-account { display: none; }
+.t-doc__sidebar > .ph-docs-account {
+    display: block; flex-shrink: 0; padding: 12px 8px;
+    border-top: 1px solid var(--scalar-sidebar-border-color);
+}
+.ph-docs-account polli-connect { width: 100%; }
+.ph-docs-account polli-connect > div { justify-content: flex-start; }
+.ph-docs-account polli-connect > div > div {
+    width: 100%; max-width: none; padding: 4px 12px 4px 4px;
+}
+.ph-docs-account button > svg:last-child { margin-left: auto; }
+/* Scalar's unlayered reset otherwise overrides the UI's text sizes. */
+.ph-docs-account polli-connect > div > div [class~="polli:text-sm"] {
+    font-size: 13px; line-height: 18px;
+}
+.ph-docs-account polli-connect > div > div [class~="polli:text-xs"] {
+    font-size: 11px; line-height: 16px;
 }
 
 .ph-fab-cluster {
-    position: fixed; top: 64px; right: 18px; z-index: 9999;
+    position: fixed; top: 16px; right: 18px; z-index: 9999;
     display: flex; gap: 8px; align-items: center;
     justify-content: flex-end; max-width: calc(100vw - 36px);
 }
+/* Keep the shared account control quiet on docs, including its portalled menu. */
+.ph-docs-account polli-connect > div > [data-theme="accent"],
+.polli-connect-menu {
+    --polli-color-bg-active: transparent;
+    --polli-color-bg-hover: var(--scalar-background-2);
+    --polli-color-text-strong: var(--scalar-color-1);
+    --polli-color-text-soft: var(--scalar-color-2);
+    --polli-color-text-base: var(--scalar-color-2);
+    --polli-color-text-hover: var(--scalar-color-1);
+    --polli-color-focus: var(--scalar-color-1);
+    --polli-color-surface-menu: var(--scalar-background-1);
+}
+.polli-connect-menu {
+    --polli-color-surface-menu: var(--scalar-background-2);
+    --polli-color-bg-hover: var(--scalar-background-3);
+    border: 1px solid var(--scalar-border-color);
+}
+/* Restore the standard UI button's typography and spacing after Scalar's reset. */
+.ph-docs-account polli-connect > div > button {
+    width: 100%; max-width: 320px;
+    padding: 0 16px; border: 1px solid var(--polli-color-text-soft);
+    font-size: 14px; line-height: 1.5; font-weight: 500;
+}
+.ph-docs-account polli-connect :is(img, [role="img"]) {
+    width: 28px; height: 28px;
+}
+/* Bright brand amber with dark text: the page's one primary action, with the
+   contrast of Scalar's own "Test Request" button. Both faces share one grid
+   cell, so "Copied" never changes the button's width. */
 .ph-fab {
-    padding: 10px 14px; border-radius: 999px;
-    border: 0; background: var(--polli-color-bg-active); color: var(--polli-color-text-strong);
-    font: 500 14px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    box-shadow: none;
-    cursor: pointer; text-decoration: none;
-    transition: background .15s, color .15s, filter .15s, transform .1s;
-    display: inline-flex; align-items: center; gap: 6px; line-height: 1;
+    display: inline-grid; height: 38px; padding: 0 16px; border-radius: 999px;
+    border: 0; background: var(--polli-color-brand-accent); color: oklch(0.2 0.02 80);
+    font: 600 14px/1 var(--scalar-font, system-ui, sans-serif);
+    cursor: pointer; transition: filter .15s, transform .1s;
 }
-.ph-fab:hover {
-    background: var(--polli-color-bg-hover); color: var(--polli-color-text-strong);
-    filter: brightness(1.05);
-}
+.ph-fab:hover { filter: brightness(1.06); }
 .ph-fab:active { transform: translateY(1px); }
 .ph-fab:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--polli-color-border);
+    outline: 2px solid var(--polli-color-brand-accent); outline-offset: 2px;
 }
+.ph-fab-face {
+    grid-area: 1 / 1; display: inline-flex; align-items: center;
+    justify-content: center; gap: 8px;
+}
+.ph-fab-done, .ph-fab.is-copied .ph-fab-idle { visibility: hidden; }
+.ph-fab.is-copied .ph-fab-done { visibility: visible; }
 .ph-fab svg { width: 16px; height: 16px; }
-@media (max-width: 640px) {
-    .ph-fab-cluster { top: 60px; right: 12px; }
-    .ph-fab { padding: 7px 11px; font-size: 12px; }
-    .ph-fab svg { width: 14px; height: 14px; }
-}
-`;
-
-export const POLLINATIONS_HEADER_SCALAR_CSS = `
-/* Push Scalar's mount point down so its content (h1, version badges,
-   sidebar, mobile hamburger row) doesn't render under our fixed bar.
-   Body padding works because .ph-bar is position: fixed — it ignores
-   parent padding, so the bar stays at top while everything else shifts. */
-body { padding-top: 48px; }
-/* Match Scalar's mobile hamburger row background to our bar so the seam
-   between the two reads as one continuous header instead of a stripe. */
-@media (max-width: 1000px) {
-    .scalar-app [class*="lg:hidden"][class*="grid-area:header"] {
-        background: var(--polli-color-brand-dark) !important;
-        border: 0 !important;
-        box-shadow: none !important;
-        backdrop-filter: none !important;
+/* Mobile: sit in Scalar's top bar beside its menu button, clear of the content
+   below, and drop the bar's separator line; the copy button keeps only its
+   icon on small screens. The account stays inside the drawer. */
+@media (width < 1000px) {
+    .ph-fab-cluster { top: 9px; right: 12px; }
+    .scalar-app header.border-b { border-bottom-width: 0; }
+    .scalar-app .t-doc__header > header {
+        height: 56px; flex-shrink: 0; padding-right: 170px; gap: 8px;
     }
+    .scalar-app .t-doc__header > header > button {
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        width: auto; height: 44px; flex-shrink: 0; margin: 0; padding: 0 14px;
+        border: 0; border-radius: 999px; aspect-ratio: auto;
+        background: var(--polli-color-brand-accent); color: oklch(0.2 0.02 80);
+        font: 600 14px/1 var(--scalar-font, system-ui, sans-serif);
+    }
+    .scalar-app .t-doc__header > header > button svg { width: 20px; height: 20px; }
+    .scalar-app .t-doc__header > header > button:hover { filter: brightness(1.06); }
+    .scalar-app .t-doc__header > header > button:focus-visible {
+        outline: 2px solid var(--polli-color-brand-accent); outline-offset: 2px;
+    }
+    .scalar-app:not(.references-sidebar-mobile-open) .t-doc__header > header > button::after { content: "Menu"; }
+    .scalar-app .t-doc__header > header > span { overflow: hidden; text-overflow: ellipsis; }
+    .references-sidebar-mobile-open .t-doc__header > header { height: 0; padding: 0; }
+    .references-sidebar-mobile-open .t-doc__header > header > :not(button) { display: none; }
+    .references-sidebar-mobile-open .t-doc__header > header > button {
+        position: absolute; top: 12px; right: 12px; width: 44px; padding: 0; z-index: 20;
+    }
+    .references-sidebar-mobile-open .t-doc__header .ph-docs-brand {
+        min-height: 68px; padding: 12px 68px 12px 14px; gap: 8px; box-sizing: border-box;
+    }
+    body:has(.references-sidebar-mobile-open) .ph-fab-cluster { display: none; }
+}
+@media (max-width: 640px) {
+    .ph-fab-cluster { top: 11px; }
+    .scalar-app .t-doc__header > header { padding-right: 60px; }
+    .ph-fab { height: 34px; padding: 0 12px; font-size: 13px; }
+    .ph-fab svg { width: 14px; height: 14px; }
+    .ph-fab-copy .ph-fab-face { font-size: 0; gap: 0; }
 }
 `;
 
@@ -106,9 +183,6 @@ export const API_REFERENCE_CUSTOM_CSS = `
   text-decoration-color: var(--polli-color-text-soft);
 }
 
-.scalar-app .ph-doc-nav-item {
-  align-items: center;
-}
 .ph-doc-nav-icon {
   display: inline-block !important;
   width: 14px !important;
@@ -128,22 +202,22 @@ export const API_REFERENCE_CUSTOM_CSS = `
   color: var(--polli-color-text-soft);
 }
 
-/* Make each drawer section easy to scan. Scalar renders section labels as
-   tag-group rows and inserts a small spacer immediately before each one. */
-.scalar-app [data-sidebar-id^="api/tag-group/"] > div:first-child {
-  height: 12px !important;
-  min-height: 12px !important;
-  flex-shrink: 0;
-}
-.scalar-app [data-sidebar-id^="api/tag-group/"] > div:nth-child(2) {
-  color: var(--polli-color-text-soft) !important;
+/* Amber group titles (Get Started, Guides, ...) split the drawer into its
+   parts. In Scalar 1.74 the title is the link in each group's first row. */
+.scalar-app [data-sidebar-id^="api/tag-group/"] > div:first-child > a {
+  color: var(--polli-color-text-soft);
 }
 
 /* Hide Scalar's native download UI — we surface it via the floating
    action cluster (see .ph-fab-cluster below) for layout consistency. */
 .scalar-app .download-container { display: none !important; }
 
-/* Hide "Powered by Scalar" sidebar footer link. */
+/* Hide Scalar's SDK/MCP promotion, its "Ask AI Agent" form beside Test
+   Request, and the footer attribution. */
+.scalar-app .explore-scalar,
+.scalar-app .selected-client-action,
+.scalar-app .generate-sdk-button,
+.scalar-app .agent-button-container { display: none !important; }
 .scalar-app a[href*="utm_source=powered-by"] { display: none !important; }
 
 /* Hide Scalar's IDE/MCP quick-launch buttons (VS Code, Cursor, Generate MCP).
@@ -187,23 +261,14 @@ export const API_REFERENCE_CUSTOM_CSS = `
     grid-template-columns: 1fr !important;
 }
 
-/* "Show more" buttons (tagged by our header script — see scanScalarButtons).
-   Use the same ambient Button recipe as packages/ui. */
+/* Keep section expansion quiet and aligned with the content. */
 .scalar-app .ph-show-more {
-    background: var(--polli-color-bg-active) !important;
-    color: var(--polli-color-text-strong) !important;
-    border-color: var(--polli-color-bg-active) !important;
+    margin-inline: 0 auto;
+    background: var(--scalar-background-2);
+    color: var(--scalar-color-2);
 }
 .scalar-app .ph-show-more:hover {
-    background: var(--polli-color-bg-hover) !important;
-    border-color: var(--polli-color-bg-hover) !important;
-}
-/* Force the chevron/triangle SVG inside the button to match text color
-   (otherwise it inherits Scalar's dim color and disappears on amber). */
-.scalar-app .ph-show-more svg,
-.scalar-app .ph-show-more svg * {
-    color: var(--polli-color-text-strong) !important;
-    fill: currentColor !important;
-    stroke: currentColor !important;
+    background: var(--scalar-background-3);
+    color: var(--scalar-color-1);
 }
 `;

@@ -94,6 +94,29 @@ describe("AppUserMenu", () => {
         expect(html).not.toContain("Unlimited");
     });
 
+    test("customizes the menu without hiding the balance or account actions", () => {
+        const html = renderToStaticMarkup(
+            <AppUserMenu
+                showBuyPollen={false}
+                menuLinks={[
+                    { label: "Need help?", href: "https://example.com/help" },
+                ]}
+            />,
+        );
+        expect(html).not.toContain("Buy Pollen");
+        expect(html).toContain("App budget:");
+        expect(html).toContain("Permissions");
+        expect(html).toContain("Disconnect");
+        expect(html).toContain('href="https://example.com/help"');
+        expect(html.indexOf("Need help?")).toBeLessThan(html.indexOf("<hr"));
+        expect(html.indexOf("<hr")).toBeLessThan(html.indexOf("Permissions"));
+        expect(html.indexOf("Permissions")).toBeLessThan(
+            html.indexOf("Disconnect"),
+        );
+        expect(renderMenu()).not.toContain("<hr");
+        expect(renderMenu()).toContain("Buy Pollen");
+    });
+
     test("shows the wallet for an unlimited key with usage permission", () => {
         sdk.key.data = {
             ...sdk.key.data,

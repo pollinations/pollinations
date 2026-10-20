@@ -51,6 +51,10 @@ consume model context. Anyone with the link can access it; expired files return 
 Models, voices, capabilities, and pricing come from the live registry. Use
 `listModels` before selecting a model or voice.
 
+Agents (`agent: true`) bill the caller for each model and tool call they make;
+`getUsage` lists those charges under the models the agent called. An agent
+without `base_model` lists only `currency` in `pricing`.
+
 ## Development
 
 Requires Node.js 20 or newer. Run the tests with:

@@ -1,12 +1,19 @@
 import {
     Button,
-    Chip,
     Dialog,
     DialogTitle,
+    DownloadIcon,
+    EyeIcon,
+    IconButton,
     InlineLink,
     Tooltip,
 } from "@pollinations/ui";
-import { type DriveDocumentLink, driveDocumentLink } from "../lib/documents";
+import {
+    type DriveDocumentLink,
+    documentDownloadLink,
+    driveDocumentLink,
+    supplierInvoiceLinks,
+} from "../lib/documents";
 
 export function EvidenceAction({
     evidence,
@@ -20,14 +27,24 @@ export function EvidenceAction({
     openDocumentLabel?: string;
 }) {
     const value = evidence.trim();
-    if (!value) {
+    if (!value) return <span>–</span>;
+
+    const invoiceLinks = supplierInvoiceLinks(value);
+    if (invoiceLinks.length > 1) {
         return (
-            <Chip intent="warning" size="sm">
-                Missing
-            </Chip>
+            <span className="inline-flex flex-wrap gap-2">
+                {invoiceLinks.map((link, i) => (
+                    <EvidenceAction
+                        key={link}
+                        evidence={link}
+                        onPreview={onPreview}
+                        previewLabel={`${previewLabel} ${i + 1}`}
+                        openDocumentLabel={`invoice ${i + 1}`}
+                    />
+                ))}
+            </span>
         );
     }
-
     const documentLink = driveDocumentLink(value);
     if (!documentLink) {
         return (
@@ -39,26 +56,47 @@ export function EvidenceAction({
         );
     }
 
-    if (documentLink.previewHref && onPreview) {
+    if (!documentLink.previewHref) {
         return (
-            <InlineLink
-                as="button"
-                type="button"
-                onClick={() => onPreview(documentLink)}
-                external={false}
-                showIcon={false}
-            >
-                {previewLabel}
+            <InlineLink href={documentLink.href} showIcon={false}>
+                {documentLink.label}
             </InlineLink>
         );
     }
-
+    const downloadHref = documentDownloadLink(documentLink);
     return (
-        <InlineLink href={documentLink.href} showIcon={false}>
-            {documentLink.label === "Open folder"
-                ? "Open folder"
-                : openDocumentLabel}
-        </InlineLink>
+        <span className="inline-flex items-center gap-1">
+            {onPreview ? (
+                <IconButton
+                    variant="ghost"
+                    aria-label={previewLabel}
+                    onClick={() => onPreview(documentLink)}
+                >
+                    <EyeIcon className="h-4 w-4" />
+                </IconButton>
+            ) : (
+                <a
+                    href={documentLink.previewHref}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    aria-label={previewLabel}
+                    className="inline-flex h-6 w-6 items-center justify-center rounded text-theme-text-muted hover:text-theme-text-soft focus-visible:outline"
+                >
+                    <EyeIcon className="h-4 w-4" />
+                </a>
+            )}
+            {downloadHref && (
+                <a
+                    href={downloadHref}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    aria-label={`Download ${openDocumentLabel === "Open document" ? "document" : openDocumentLabel}`}
+                    className="inline-flex h-6 w-6 items-center justify-center rounded text-theme-text-muted hover:text-theme-text-soft focus-visible:outline"
+                >
+                    <DownloadIcon className="h-4 w-4" />
+                </a>
+            )}
+        </span>
     );
 }
 

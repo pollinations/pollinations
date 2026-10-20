@@ -87,7 +87,7 @@ describe("gen worker routing", () => {
             error: {
                 code: "UNAUTHORIZED",
                 message:
-                    "A valid API key is required. Get one at https://enter.pollinations.ai/keys",
+                    "A valid API key is required. Get one at https://enter.pollinations.ai/keys, or buy one with USDC (x402) at https://enter.pollinations.ai/api/x402/keys",
             },
         });
         await waitOnExecutionContext(ctx);
@@ -114,7 +114,7 @@ describe("gen worker routing", () => {
             error: {
                 code: "UNAUTHORIZED",
                 message:
-                    "A valid API key is required. Get one at https://enter.pollinations.ai/keys",
+                    "A valid API key is required. Get one at https://enter.pollinations.ai/keys, or buy one with USDC (x402) at https://enter.pollinations.ai/api/x402/keys",
             },
         });
         await waitOnExecutionContext(ctx);
@@ -338,17 +338,21 @@ describe("gen worker routing", () => {
         expect(index.headers.get("Content-Type")).toContain("text/plain");
         expect(index.headers.get("X-Robots-Tag")).toBeNull();
         const body = await index.text();
-        expect(body).toContain("/docs/polli-skill.md");
-        expect(body).toContain("/docs/polli-tasks.md");
-        expect(body).toContain("/docs/llm.txt");
-        expect(body).toContain("/docs/llm.txt?section=cli");
-        expect(body).toContain("/docs/llm.txt?section=mcp");
 
         for (const path of [
             "/docs/polli-skill.md",
             "/docs/polli-tasks.md",
             "/docs/llm.txt",
+            "/docs/llm.txt?section=byop",
+            "/docs/llm.txt?section=publish-an-agent",
+            "/docs/llm.txt?section=publish-a-model",
+            "/docs/llm.txt?section=sandboxes",
+            "/docs/llm.txt?section=coding-harnesses",
+            "/docs/llm.txt?section=mcp",
+            "/docs/llm.txt?section=cli",
+            "/docs/llm.txt?section=x402",
         ]) {
+            expect(body).toContain(path);
             const response = await fetchWorker(path);
             expect(response.status).toBe(200);
             expect(response.headers.get("Content-Type")).toContain(
@@ -381,11 +385,16 @@ describe("gen worker routing", () => {
             "pollinations-api",
             "bring-your-own-pollen",
             "quest-contributor",
+            "pollinations-sdk",
         ]);
         const [polli, apiSkill, byopSkill] = body.skills;
         expect(polli.description).toMatch(/^Generate images/);
         expect(apiSkill.description).toMatch(/without installing/);
         expect(byopSkill.description).toMatch(/Bring Your Own Pollen/);
+        expect(
+            body.skills.find((skill) => skill.name === "pollinations-sdk")
+                ?.description,
+        ).toMatch(/npm package/);
 
         for (const skill of body.skills) {
             expect(skill.type).toBe("skill-md");
@@ -421,6 +430,7 @@ describe("gen worker routing", () => {
         for (const path of [
             "index.json",
             "pollinations-api/SKILL.md",
+            "pollinations-sdk/SKILL.md",
             "bring-your-own-pollen/SKILL.md",
             "quest-contributor/SKILL.md",
         ]) {
@@ -849,10 +859,11 @@ describe("gen worker routing", () => {
             description:
                 "Quick web searches with cited answers; keeps it brief",
         });
-        // Sonar Pro and Reasoning Pro retired into aliases of Sonar.
+        // Sonar Pro and Reasoning Pro retired into aliases of Sonar. Other
+        // Perplexity models, such as decision models, may use the prefix.
         expect(
             models
-                .filter((model) => model.name.startsWith("perplexity/"))
+                .filter((model) => model.name.startsWith("perplexity/sonar"))
                 .map((model) => model.name),
         ).toEqual(["perplexity/sonar"]);
         expect(models.some((model) => model.name === "perplexity-deep")).toBe(
@@ -983,14 +994,28 @@ describe("model status", () => {
         });
     });
 
+    it("rejects invalid minutes before contacting Tinybird", async () => {
+        const upstream = vi.spyOn(globalThis, "fetch");
+        for (const minutes of ["abc", "0", "-5", "1.5", "99999999"]) {
+            const response = await fetchWorker(
+                `/models/status?minutes=${minutes}`,
+            );
+            expect(response.status).toBe(400);
+            expect(await response.json()).toEqual({
+                error: "minutes must be an integer between 1 and 10080",
+            });
+        }
+        expect(upstream).not.toHaveBeenCalled();
+    });
+
     it("passes upstream errors through unchanged", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-            Response.json({ error: "bad minutes" }, { status: 400 }),
+            Response.json({ error: "upstream exploded" }, { status: 500 }),
         );
 
-        const response = await fetchWorker("/models/status?minutes=abc");
-        expect(response.status).toBe(400);
-        expect(await response.json()).toEqual({ error: "bad minutes" });
+        const response = await fetchWorker("/models/status?minutes=15");
+        expect(response.status).toBe(500);
+        expect(await response.json()).toEqual({ error: "upstream exploded" });
     });
 
     it("serves the 7-day model usage stats the dashboard prices models with", async () => {

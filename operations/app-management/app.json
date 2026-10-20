@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "💬",
+    "name": "Shimi Bechor (Firstborn Greeter)",
+    "url": "https://aidoor.shimi.land/greeter.html",
+    "description": "A greeter agent that welcomes visitors and explains a small agent network (its charter, public board and API). It uses the current Pollinations integration: browser-only Connect User Wallets (BYOP) wi",
+    "language": "he",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "sunraz2",
+    "githubUserId": "341301772",
+    "repositoryUrl": "https://github.com/sunraz/shimi-land",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-17",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17816",
+    "approvedDate": "2026-10-20",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/9f57caac-f1be-4652-ab00-0325ecf4b653"
+  },
+  {
     "emoji": "🛠️",
     "name": "SimBox",
     "url": "https://simbox.cesustheteapot.dpdns.org",

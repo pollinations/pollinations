@@ -1,4 +1,4 @@
-import { Button, GitHubIcon, Text } from "@pollinations/ui";
+import { Button, Text } from "@pollinations/ui";
 import { useState } from "react";
 import { SignInScreen } from "./sign-in-screen.tsx";
 
@@ -33,11 +33,7 @@ export function DashboardSignInBanner() {
                     aria-haspopup="dialog"
                     onClick={() => setOpen(true)}
                 >
-                    Sign in with GitHub
-                    <GitHubIcon
-                        aria-hidden="true"
-                        className="h-4 w-4 shrink-0"
-                    />
+                    Sign in
                 </Button>
             </div>
             {open && <DashboardSignInDialog onCancel={() => setOpen(false)} />}

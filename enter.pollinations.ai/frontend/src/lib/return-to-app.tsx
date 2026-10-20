@@ -33,8 +33,8 @@ export function referrerAppUrl(): string | null {
  * The URL to store as `redirect` on first load, or null to keep what we
  * have. The link usually carries the app's origin from the key's metadata;
  * the referrer wins when it is on that same origin, because it can name the
- * exact chat the user left. A referrer from elsewhere never overrides an
- * explicit redirect.
+ * exact chat the user left. An origin-only referrer or one from elsewhere
+ * never overrides an explicit redirect.
  */
 export function preferredReturnUrl(
     redirect: string | undefined,
@@ -42,9 +42,9 @@ export function preferredReturnUrl(
     const referrer = referrerAppUrl();
     if (!referrer || referrer === redirect) return null;
     if (!redirect) return referrer;
-    return new URL(referrer).origin === new URL(redirect).origin
-        ? referrer
-        : null;
+    const url = new URL(referrer);
+    if (url.pathname === "/" && !url.search) return null;
+    return url.origin === new URL(redirect).origin ? referrer : null;
 }
 
 /**

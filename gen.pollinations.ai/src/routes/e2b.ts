@@ -35,6 +35,7 @@ import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
 import { requireAccountFunds } from "@/utils/generation-access.ts";
 import { permissionRequired } from "@/utils/refusals.ts";
+import { sandboxDocs } from "./e2b-docs.ts";
 
 // E2B's control API, forwarded under Pollinations keys. The SDKs talk to the
 // sandboxes themselves (commands, files, ports) directly at E2B with the
@@ -44,7 +45,7 @@ const E2B_API = "https://api.e2b.app";
 export const E2B_PATH = "/alpha/e2b";
 // One E2B team runs every user's sandboxes; this metadata key names the owner.
 const OWNER_KEY = "pollinations_user";
-const MAX_RUNNING_PER_USER = 3;
+const MAX_RUNNING_PER_USER = 8;
 // E2B ends a sandbox's run 24 hours after it starts or resumes.
 const MAX_RUN_MS = 24 * 60 * 60_000;
 // E2B list prices per second, in pollen (1 pollen ≈ $1).
@@ -90,6 +91,7 @@ type NewSandbox = {
     templateID?: string;
     timeout?: number;
     metadata?: Record<string, string>;
+    autoPause?: boolean;
     autoResume?: { enabled?: boolean };
     iam?: unknown;
     volumeMounts?: unknown[];
@@ -444,6 +446,8 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
         .use("*", ...authenticate, requireSandboxAccess)
         // E2B's CLI still creates and connects through the deprecated v1 paths,
         // which take the same bodies as v2.
+        .post("/sandboxes", sandboxDocs.createV1)
+        .post("/v2/sandboxes", sandboxDocs.create)
         .on("POST", ["/sandboxes", "/v2/sandboxes"], async (c) => {
             const startTime = new Date();
             const body = await readJson<NewSandbox>(c);
@@ -471,6 +475,10 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                     headers: { "content-type": "application/json" },
                     body: JSON.stringify({
                         ...body,
+                        // A lease that runs out pauses the sandbox, as polli and
+                        // the dashboard ask; E2B's SDKs omit this unless told
+                        // `lifecycle.onTimeout`, and E2B then kills it.
+                        autoPause: body.autoPause ?? true,
                         ...(until && { timeout: KEEP_LEASE_SECONDS }),
                         // Otherwise envd lets anyone who knows the sandbox ID run
                         // commands and read files in it.
@@ -525,7 +533,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             }
             return c.json(created, 201);
         })
-        .get("/v2/sandboxes", async (c) => {
+        .get("/v2/sandboxes", sandboxDocs.list, async (c) => {
             // Listing is scoped to the caller's sandboxes, whatever they filter.
             const url = new URL(c.req.url);
             const metadata = new URLSearchParams(
@@ -543,26 +551,26 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 { status: response.status, headers },
             );
         })
-        .get("/sandboxes/:id", async (c) => {
+        .get("/sandboxes/:id", sandboxDocs.get, async (c) => {
             const [sandbox] = await showKeeps(c.env, [await ownedSandbox(c)]);
             return c.json(sandbox);
         })
-        .delete("/sandboxes/:id", ownerOnly)
-        .get("/sandboxes/:id/metrics", ownerOnly)
+        .delete("/sandboxes/:id", sandboxDocs.delete, ownerOnly)
+        .get("/sandboxes/:id/metrics", sandboxDocs.metrics, ownerOnly)
         // `e2b sandbox logs` reads this deprecated v1 path.
-        .get("/sandboxes/:id/logs", ownerOnly)
+        .get("/sandboxes/:id/logs", sandboxDocs.logs, ownerOnly)
         // A pause ends a keep, as E2B's timeout would; a timeout or connect
         // longer than 10 minutes starts it again.
-        .post("/sandboxes/:id/pause", async (c) => {
+        .post("/sandboxes/:id/pause", sandboxDocs.pause, async (c) => {
             const response = await ownerOnly(c);
             if (response.ok && !keeper) {
                 await setKeep(c, c.req.param("id"), null);
             }
             return response;
         })
-        .put("/sandboxes/:id/network", ownerOnly)
+        .put("/sandboxes/:id/network", sandboxDocs.network, ownerOnly)
         // Like E2B's, a new timeout replaces the old one, kept or not.
-        .post("/sandboxes/:id/timeout", async (c) => {
+        .post("/sandboxes/:id/timeout", sandboxDocs.timeout, async (c) => {
             const sandbox = await ownedSandbox(c);
             const { timeout } = await readJson<{ timeout: number }>(c);
             const until = keepUntil(timeout);
@@ -576,6 +584,8 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             }
             return response;
         })
+        .post("/sandboxes/:id/connect", sandboxDocs.connectV1)
+        .post("/v2/sandboxes/:id/connect", sandboxDocs.connect)
         .on(
             "POST",
             ["/sandboxes/:id/connect", "/v2/sandboxes/:id/connect"],
@@ -598,16 +608,6 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 return response;
             },
         )
-        // Not E2B's: what the dashboard shows before a create, at the rates
-        // callers pay.
-        .get("/pricing", (c) =>
-            c.json({
-                maxRunning: MAX_RUNNING_PER_USER,
-                vcpuSecond: VCPU_SECOND * PRICE_MULTIPLIER,
-                gibSecond: GIB_SECOND * PRICE_MULTIPLIER,
-                templates: TEMPLATE_SIZES,
-            }),
-        )
         // Everything else (templates, snapshots, forks, volumes, secrets,
         // webhooks, ...) stays closed until someone reviews how it is billed.
         .all("*", () => {
@@ -628,7 +628,18 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             );
         });
 
-export const e2bRoutes = sandboxApi(false, edgeRateLimit, auth());
+export const e2bRoutes = new Hono<Env>()
+    // Not E2B's: the fixed rates callers pay, public so the docs, the
+    // dashboard and Polli can show prices before anyone signs in.
+    .get("/pricing", sandboxDocs.pricing, (c) =>
+        c.json({
+            maxRunning: MAX_RUNNING_PER_USER,
+            vcpuSecond: VCPU_SECOND * PRICE_MULTIPLIER,
+            gibSecond: GIB_SECOND * PRICE_MULTIPLIER,
+            templates: TEMPLATE_SIZES,
+        }),
+    )
+    .route("/", sandboxApi(false, edgeRateLimit, auth()));
 
 // Read again for every renewal, so deleting the key, letting it expire,
 // removing its machines permission or banning the account ends them. A keep

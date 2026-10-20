@@ -25,15 +25,86 @@ afterEach(() => {
 });
 
 describe("generateTextPortkey", () => {
-    it.each([429, 503])(
-        "rescues Scout upstream %i at the primary price",
-        async (status) => {
+    it.each([0, 1, 2, 3])(
+        "uses the GLM 5.3 chain with %i failed providers",
+        async (failures) => {
+            const primary = "z-ai/glm-5.3" as const;
+            const ids = [primary, ...TEXT_SERVICES[primary].fallbacks];
+            const upstreams = [
+                "accounts/fireworks/models/glm-5p3",
+                "zai-org/GLM-5.3",
+                "z-ai/glm-5.3",
+            ];
+            const attempts: string[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (_input, init) => {
+                    const body = JSON.parse(String(init?.body));
+                    attempts.push(body.model);
+                    if (attempts.length <= failures) {
+                        return Response.json(
+                            { error: { message: "Capacity exhausted" } },
+                            { status: 503 },
+                        );
+                    }
+                    return Response.json({
+                        choices: [
+                            {
+                                message: {
+                                    role: "assistant",
+                                    content: "Hello",
+                                },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 10,
+                            completion_tokens: 1,
+                            total_tokens: 11,
+                        },
+                    });
+                },
+            );
+            const run = withModelFallback(
+                ids.map((id) => ({
+                    id,
+                    definition: TEXT_SERVICES[id as keyof typeof TEXT_SERVICES],
+                })),
+                ({ id }) =>
+                    generateTextPortkey([{ role: "user", content: "Hello" }], {
+                        model: id,
+                        max_tokens: 128,
+                    }),
+            );
+            if (failures === ids.length) {
+                await expect(run).rejects.toThrow();
+            } else {
+                expect((await run).candidate.id).toBe(ids[failures]);
+            }
+            expect(attempts).toEqual(
+                upstreams.slice(0, Math.min(failures + 1, ids.length)),
+            );
+        },
+    );
+
+    it.each([
+        { status: 429, failures: 1 },
+        { status: 503, failures: 1 },
+        { status: 429, failures: 2 },
+        { status: 503, failures: 2 },
+    ])(
+        "rescues Scout upstream $status after $failures failures at the primary price",
+        async ({ status, failures }) => {
             syncTextEnvironment({
                 ...env,
                 AI_GATEWAY_API_KEY: "test-vercel-key",
             });
             const primary = "meta/llama-4-scout" as const;
-            const fallback = "meta/llama-4-scout:openrouter:novita-bf16";
+            const fallback = TEXT_SERVICES[primary].fallbacks[failures - 1];
+            const expectedRoutes = [
+                "vercel-deepinfra",
+                "deepinfra/fp8/priority",
+                "novita/bf16",
+            ];
             const routes: string[] = [];
             vi.spyOn(globalThis, "fetch").mockImplementation(
                 async (input, init) => {
@@ -46,7 +117,7 @@ describe("generateTextPortkey", () => {
                         expect(body.provider.allow_fallbacks).toBe(false);
                         const route = body.provider.only[0];
                         routes.push(route);
-                        expect(route).toBe("novita/bf16");
+                        expect(route).toBe(expectedRoutes[routes.length - 1]);
                     } else {
                         expect(String(input)).toBe(
                             "https://ai-gateway.vercel.sh/v1/chat/completions",
@@ -59,6 +130,8 @@ describe("generateTextPortkey", () => {
                             new Headers(init?.headers).get("Authorization"),
                         ).toBe("Bearer test-vercel-key");
                         routes.push("vercel-deepinfra");
+                    }
+                    if (routes.length <= failures) {
                         return Response.json(
                             { error: { message: "Capacity exhausted" } },
                             { status },
@@ -94,20 +167,22 @@ describe("generateTextPortkey", () => {
                         { model: id, max_tokens: 128 },
                     ),
             );
-            expect(routes).toEqual(["vercel-deepinfra", "novita/bf16"]);
+            expect(routes).toEqual(expectedRoutes.slice(0, failures + 1));
             expect(candidate.id).toBe(fallback);
-            expect(index).toBe(1);
+            expect(index).toBe(failures);
             expect(result.choices?.[0]?.message?.content).toBe("Red.");
             const billing = calculateUsageBilling({
                 model: primary,
                 usage: openaiUsageToUsage(
                     result.usage as Parameters<typeof openaiUsageToUsage>[0],
                 ),
-                servedBy: TEXT_SERVICES[fallback],
+                servedBy: candidate.definition,
                 quotedBy: TEXT_SERVICES[primary],
             });
+            const [inputRate, outputRate] =
+                failures === 1 ? [0.15, 0.45] : [0.18, 0.59];
             expect(billing.cost.totalCost).toBeCloseTo(
-                ((167 * 0.18 + 3 * 0.59) / 1_000_000) * 1.055,
+                ((167 * inputRate + 3 * outputRate) / 1_000_000) * 1.055,
                 12,
             );
             // Customer charges use the ledger's eight-decimal precision.

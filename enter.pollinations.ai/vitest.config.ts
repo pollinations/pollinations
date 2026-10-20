@@ -121,8 +121,11 @@ export default defineWorkersConfig(async ({ mode }) => {
                 optimizer: {
                     ssr: {
                         enabled: true,
+                        // better-auth/api with better-auth, so its request
+                        // state (getOAuthState) is the one the handlers set.
                         include: [
                             "better-auth",
+                            "better-auth/api",
                             "kysely",
                             "drizzle-orm",
                             "hono-openapi",

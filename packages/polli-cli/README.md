@@ -58,13 +58,14 @@ polli gen text "Explain quantum tunneling in one sentence"
 polli gen text "Summarize this" < notes.md          # stdin becomes context
 echo "context" | polli gen text "question"
 
-polli gen image "cyberpunk city at night" --model flux --output city.png
-polli gen image "enhance this" --image https://media.pollinations.ai/abc --model gptimage
+polli gen image "cyberpunk city at night" --model black-forest-labs/flux.1-schnell --output city.png
+polli gen image "enhance this" --image https://media.pollinations.ai/abc --model openai/gpt-image-1-mini
 
 polli gen audio "Hello world" --voice nova --output speech.mp3
 polli gen audio "read it to me" --play                # plays back after saving (blocks until done)
 polli gen audio "Hello world" --timestamps            # also saves speech.mp3.json with character timings
 polli gen video "a waterfall in slow motion" --duration 5 --output clip.mp4
+polli gen video "a waterfall in slow motion" --duration 5 --estimate  # cost estimate only, nothing generated
 polli gen 3d "a red fox" --output fox.glb
 polli gen 3d --image https://media.pollinations.ai/abc --resolution high
 polli gen embeddings "first text" "second text"        # one vector per line
@@ -72,7 +73,7 @@ polli gen voice-change talk.mp3 --voice nova
 polli gen isolate interview.mp4                        # strip music/noise, keep speech
 polli gen transcribe speech.mp3
 
-polli gen chat --model openai                         # interactive multi-turn
+polli gen chat --model openai/gpt-5.4-nano            # interactive multi-turn
 ```
 
 `gen text` streams by default. File-output commands pick a sensible default path if `--output` is omitted.
@@ -101,10 +102,10 @@ Two kinds of keys:
 polli keys list
 polli keys create --name mybot --budget 100                    # secret (default)
 polli keys create --name myapp --type publishable              # API publishable
-polli keys create --name myapp --type publishable \            # 3rd-party app key
-  --redirect-uri https://myapp.com/callback --earnings
-polli keys create --name server --models flux zimage            # only these models
-polli keys update <id> --models text flux                       # change the model list
+polli keys create --name myapp --type publishable \
+  --redirect-uri https://myapp.com/callback --earnings          # 3rd-party app key
+polli keys create --name server --models black-forest-labs/flux.1-schnell tongyi-mai/z-image-turbo  # only these models
+polli keys update <id> --models text black-forest-labs/flux.1-schnell  # change the model list
 polli keys revoke <id>
 ```
 
@@ -136,7 +137,7 @@ polli agents delete <id>
 ```json
 {
   "systemPrompt": "You are a concise research assistant.",
-  "baseModel": "openai",
+  "baseModel": "openai/gpt-5.4-nano",
   "mcpServers": ["pollinations"]
 }
 ```
@@ -162,7 +163,7 @@ polli harness dsh on --model moonshotai/kimi-k2.6
 polli harness dsh on --no-mcp     # skip MCP tool configuration
 polli harness hermes on           # adds the Pollinations provider + Polli skill to Hermes Agent
 polli harness hermes on --model deepseek/deepseek-v4-flash
-polli harness opencode on         # enables the Pollinations OpenCode plugin + default model
+polli harness opencode on         # adds the Pollinations provider + default model (OpenCode 1.x and 2.x)
 polli harness openclaw on         # adds the Pollinations provider + Polli skill to OpenClaw
 polli harness pi on               # native provider, key, startup model, and Polli skill
 polli harness prime on            # native Prime Agent provider support
@@ -177,9 +178,10 @@ The DSH adapter configures the Pollinations provider, hosted Pollinations MCP,
 and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`). Hermes Agent
 stores its provider and skill under `$HERMES_HOME` (default `~/.hermes`, or
 `%LOCALAPPDATA%\hermes` on Windows) and discovers the live Pollinations models;
-install its hosted MCP servers with `polli mcp install hermes --all`. OpenCode uses
-its official plugin; OpenClaw uses `openclaw.json`, while Pi and Prime Agent use
-their native `models.json` provider support.
+install its hosted MCP servers with `polli mcp install hermes --all`. OpenCode 1.x
+and 2.0 use a native Pollinations provider; add its media tools separately with
+`polli mcp install opencode --all`. OpenClaw uses `openclaw.json`, while Pi and
+Prime Agent use their native `models.json` provider support.
 Pi 0.99+ also supports `polli mcp install pi --all` for native hosted MCP
 servers. Run `/reload` in Pi afterward; remove them with `polli mcp remove pi`.
 Model setup remains compatible with older Pi versions.
@@ -208,7 +210,7 @@ The default template, and `pollinations-large`, come logged in with the coding h
 - [enter.pollinations.ai](https://enter.pollinations.ai) — dashboard, keys, billing
 - [API docs](https://gen.pollinations.ai/docs)
 - [Source](https://github.com/pollinations/pollinations/tree/main/packages/polli-cli)
-- [Discord](https://discord.gg/pollinations-ai-885844321461485618)
+- [Discord](https://discord.gg/k9F7SyTgqn)
 
 ## License
 

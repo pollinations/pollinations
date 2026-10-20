@@ -1,9 +1,12 @@
+import { OAUTH_SCOPES } from "@shared/auth/authorize-config.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { Hono } from "hono";
 import { etag } from "hono/etag";
 import type { Env } from "@/env.ts";
+import BYOP_SKILL from "../../../.claude/skills/bring-your-own-pollen/SKILL.md?raw";
 import API_SKILL from "../../../.claude/skills/pollinations-api/SKILL.md?raw";
+import SDK_SKILL from "../../../.claude/skills/pollinations-sdk/SKILL.md?raw";
 import QUEST_CONTRIBUTOR_SKILL from "../../../.claude/skills/quest-contributor/SKILL.md?raw";
 import CLI_SKILL from "../../../packages/polli-cli/SKILL.md?raw";
 import { SERVER_CARD_MEDIA_TYPE } from "./mcp-card.ts";
@@ -17,7 +20,9 @@ const SKILLS_SCHEMA =
 const AGENT_SKILLS = [
     { name: "polli", markdown: CLI_SKILL },
     { name: "pollinations-api", markdown: API_SKILL },
+    { name: "bring-your-own-pollen", markdown: BYOP_SKILL },
     { name: "quest-contributor", markdown: QUEST_CONTRIBUTOR_SKILL },
+    { name: "pollinations-sdk", markdown: SDK_SKILL },
 ].map((skill) => ({
     ...skill,
     path: `/.well-known/agent-skills/${skill.name}/SKILL.md`,
@@ -144,7 +149,9 @@ export const wellKnownRoutes = new Hono<Env>()
             authorization_servers: [
                 origin.replace("gen.pollinations.ai", "enter.pollinations.ai"),
             ],
+            scopes_supported: [...OAUTH_SCOPES],
             bearer_methods_supported: ["header"],
+            resource_name: "Pollinations API",
             resource_documentation: `${origin}/docs/llm.txt`,
         });
     });

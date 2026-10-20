@@ -1,23 +1,111 @@
 import { Dialog as ArkDialog } from "@ark-ui/react/dialog";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
     AccountIdentity,
     AccountIdentityLink,
 } from "../compositions/AccountIdentity.tsx";
 import { AccountMenu } from "../compositions/AccountMenu.tsx";
+import { ConfirmationDialog } from "../compositions/ConfirmationDialog.tsx";
+import { FieldStack } from "../compositions/FieldStack.tsx";
 import { MultiSelect } from "../compositions/MultiSelect.tsx";
 import { PeriodPicker } from "../compositions/PeriodPicker.tsx";
 import { AuthAccessItem, ErrorBanner } from "../modules/auth/AuthModal.tsx";
 import { GitHubSignInButton } from "../modules/auth/GitHubSignInButton.tsx";
+import { GoogleSignInButton } from "../modules/auth/GoogleSignInButton.tsx";
 import { PollinationsSignInButton } from "../modules/auth/PollinationsSignInButton.tsx";
 import { DialogFooter, DialogHeader } from "./Dialog.tsx";
 import { Dropdown } from "./Dropdown.tsx";
 import { DropdownItem } from "./DropdownItem.tsx";
+import { Field } from "./Field.tsx";
 import { IconButton } from "./IconButton.tsx";
+import { Input } from "./Input.tsx";
 import { TableHeaderCell } from "./Table.tsx";
+import { Textarea } from "./Textarea.tsx";
 
 describe("shared control accessibility", () => {
+    it.each([false, true])(
+        "honors cancelDisabled=%s for dialog dismissal",
+        (cancelDisabled) => {
+            const onCancel = vi.fn();
+            const dialog = ConfirmationDialog({
+                open: true,
+                title: "Delete item?",
+                confirmLabel: "Delete",
+                cancelDisabled,
+                onConfirm: () => {},
+                onCancel,
+            });
+            dialog.props.onOpenChange(true);
+            expect(onCancel).not.toHaveBeenCalled();
+            dialog.props.onOpenChange(false);
+            expect(onCancel).toHaveBeenCalledTimes(cancelDisabled ? 0 : 1);
+        },
+    );
+
+    it.each([
+        ["input", Input],
+        ["textarea", Textarea],
+    ] as const)(
+        "connects a styled %s to its field label and error state",
+        (tag, Control) => {
+            const markup = renderToStaticMarkup(
+                <>
+                    <FieldStack label="Prompt" error="Enter a prompt">
+                        <Control />
+                    </FieldStack>
+                    <FieldStack label="Another prompt">
+                        <Control />
+                    </FieldStack>
+                </>,
+            );
+            const labels = [...markup.matchAll(/<label\b[^>]*for="([^"]+)"/g)];
+            const controls = [
+                ...markup.matchAll(new RegExp(`<${tag}\\b[^>]*>`, "g")),
+            ];
+            expect(labels).toHaveLength(2);
+            expect(controls).toHaveLength(2);
+            expect(labels[0][1]).not.toBe(labels[1][1]);
+            controls.forEach(([control], index) => {
+                expect(control).toContain(`id="${labels[index][1]}"`);
+            });
+            expect(controls[0][0]).toContain('aria-invalid="true"');
+            expect(controls[1][0]).not.toContain('aria-invalid="true"');
+        },
+    );
+
+    it.each([
+        ["input", Input, Field.Input],
+        ["textarea", Textarea, Field.Textarea],
+    ] as const)(
+        "preserves wrapped and standalone %s props",
+        (tag, Control, Wrapper) => {
+            const wrapped = renderToStaticMarkup(
+                <Field.Root id="prompt" disabled required>
+                    <Field.Label>Prompt</Field.Label>
+                    <Wrapper asChild>
+                        <Control aria-describedby="custom-help" />
+                    </Wrapper>
+                </Field.Root>,
+            );
+            const controls = [
+                ...wrapped.matchAll(new RegExp(`<${tag}\\b[^>]*>`, "g")),
+            ];
+            expect(controls).toHaveLength(1);
+            expect(controls[0][0]).toContain('id="prompt"');
+            expect(controls[0][0]).toContain('aria-describedby="custom-help"');
+            expect(controls[0][0]).toContain('disabled=""');
+            expect(controls[0][0]).toContain('required=""');
+
+            const standalone = renderToStaticMarkup(
+                <Control id="standalone" aria-label="Prompt" error />,
+            );
+            expect(standalone).toContain('id="standalone"');
+            expect(standalone).toContain('aria-label="Prompt"');
+            expect(standalone).toContain('aria-invalid="true"');
+        },
+    );
+
     it("names dropdown dialogs from their own triggers", () => {
         const markup = renderToStaticMarkup(
             <div>
@@ -292,6 +380,15 @@ describe("shared control accessibility", () => {
         expect(githubPending).toContain("Signing in…");
         expect(githubPending).toContain('aria-busy="true"');
         expect(githubPending).toContain('disabled=""');
+
+        const googlePending = renderToStaticMarkup(
+            <GoogleSignInButton isSigningIn />,
+        );
+        expect(renderToStaticMarkup(<GoogleSignInButton />)).toContain(
+            "Sign in with Google",
+        );
+        expect(googlePending).toContain('aria-busy="true"');
+        expect(googlePending).toContain('disabled=""');
     });
 
     it("announces authentication errors", () => {

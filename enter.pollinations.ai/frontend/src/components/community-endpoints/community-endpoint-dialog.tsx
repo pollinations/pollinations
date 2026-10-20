@@ -15,6 +15,7 @@ import {
     Input,
     ScrollArea,
     TabButton,
+    Tooltip,
     XIcon,
 } from "@pollinations/ui";
 import { AuthInfoCard } from "@pollinations/ui/auth";
@@ -57,6 +58,64 @@ import {
     readError,
     toEndpointPayload,
 } from "./types.ts";
+
+export function getCommunityEndpointSubmitDisabledReason({
+    form,
+    isEdit,
+    isEndpointAgent,
+    hasToken,
+    needsTest,
+    testState,
+    testRequirementMet,
+    hasValidVisiblePrices,
+    hasValidPerUserRpm,
+}: {
+    form: EndpointFormState;
+    isEdit: boolean;
+    isEndpointAgent: boolean;
+    hasToken: boolean;
+    needsTest: boolean;
+    testState: ActionState;
+    testRequirementMet: boolean;
+    hasValidVisiblePrices: boolean;
+    hasValidPerUserRpm: boolean;
+}): string | null {
+    if (form.name.trim() === "") {
+        return isEndpointAgent ? "Enter an agent ID" : "Enter a model ID";
+    }
+    if (form.title.trim() === "") {
+        return "Enter a title";
+    }
+    if (form.url.trim() === "") {
+        return form.modality === "video"
+            ? "Enter a video endpoint URL"
+            : "Enter an endpoint URL";
+    }
+    if (!isEndpointAgent && !isEdit && !hasToken) {
+        return "Enter an API bearer token";
+    }
+    if (needsTest && !testRequirementMet) {
+        if (!hasToken) {
+            return isEdit
+                ? "Re-enter your API bearer token and test the endpoint before publishing"
+                : "Enter your API bearer token and test the endpoint before publishing";
+        }
+        if (testState.status === "loading") {
+            return "Waiting for endpoint test to complete";
+        }
+        if (testState.status === "error") {
+            return "Endpoint test failed. Fix errors and test again before publishing";
+        }
+        return "Test the endpoint before publishing";
+    }
+    if (!hasValidVisiblePrices) {
+        return "Enter valid pricing values (or leave blank for free)";
+    }
+    if (!hasValidPerUserRpm) {
+        return "Enter a valid per-user RPM limit";
+    }
+    return "Complete all required fields to save";
+}
 
 type CommunityEndpointDialogProps = {
     /** Present in edit mode (prefills the form); omit to create. */
@@ -316,8 +375,8 @@ export function CommunityEndpointDialog({
 
     // Pricing is only meaningful when the model is (or is being made) public —
     // keyed off the LIVE form value so flipping Visibility to Public in place
-    // reveals the test + pricing section immediately. Private models carry no
-    // pricing (owner is the only caller).
+    // reveals the test + pricing section immediately. Private models are free
+    // at runtime but retain their saved public pricing.
     const isShared = form.visibility === "public" && !isEndpointAgent;
     const returnedFields = isShared
         ? returnedPriceFields(testState, form.modality, form.imagePricing)
@@ -400,6 +459,39 @@ export function CommunityEndpointDialog({
         hasValidPerUserRpm &&
         saveRequirementMet;
 
+    const submitDisabledReason =
+        isSubmitting || canSubmit
+            ? null
+            : getCommunityEndpointSubmitDisabledReason({
+                  form,
+                  isEdit,
+                  isEndpointAgent,
+                  hasToken,
+                  needsTest,
+                  testState,
+                  testRequirementMet,
+                  hasValidVisiblePrices,
+                  hasValidPerUserRpm,
+              });
+
+    const submitButton = (
+        <Button
+            icon={<BeakerIcon />}
+            type="submit"
+            intent="commit"
+            className="disabled:opacity-50"
+            disabled={!canSubmit}
+        >
+            {isSubmitting
+                ? isEdit
+                    ? "Saving…"
+                    : "Creating…"
+                : isEdit
+                  ? "Save changes"
+                  : "Create model"}
+        </Button>
+    );
+
     const actions = (
         <>
             <Button
@@ -412,21 +504,20 @@ export function CommunityEndpointDialog({
             >
                 Cancel
             </Button>
-            <Button
-                icon={<BeakerIcon />}
-                type="submit"
-                intent="commit"
-                className="disabled:opacity-50"
-                disabled={!canSubmit}
-            >
-                {isSubmitting
-                    ? isEdit
-                        ? "Saving…"
-                        : "Creating…"
-                    : isEdit
-                      ? "Save changes"
-                      : "Create model"}
-            </Button>
+            {submitDisabledReason ? (
+                <Tooltip
+                    triggerAs="span"
+                    tapEnabled
+                    ariaLabel={submitDisabledReason}
+                    content={submitDisabledReason}
+                    align="center"
+                    className="inline-flex cursor-not-allowed"
+                >
+                    {submitButton}
+                </Tooltip>
+            ) : (
+                submitButton
+            )}
         </>
     );
 
@@ -458,7 +549,9 @@ export function CommunityEndpointDialog({
                             <>
                                 {isEndpointAgent
                                     ? "Update its listing and connection."
-                                    : "Register an OpenAI-compatible endpoint as a community/{username}/{model-id} model."}
+                                    : "Register an OpenAI-compatible endpoint as a community/{username}/{model-id} model."}{" "}
+                                Saved changes take a minute or two to become
+                                callable.
                                 {!isEdit && (
                                     <>
                                         {" "}
@@ -913,7 +1006,7 @@ export function CommunityEndpointDialog({
                         <AuthInfoCard>
                             <ModelFormRow
                                 label="Fallback models"
-                                help={`Optional. Tried in order when this model's upstream fails, up to ${MAX_FALLBACK_TARGETS}. Each must be another public community model of the same modality, priced at or below this one.`}
+                                help={`Optional. Tried in order when this model's upstream fails, up to ${MAX_FALLBACK_TARGETS}. Each must be a Pollinations model or another public community model of the same modality, priced at or below this one.`}
                             >
                                 <div className="flex flex-col gap-2">
                                     {fallbackRows.map((selected, index) => (

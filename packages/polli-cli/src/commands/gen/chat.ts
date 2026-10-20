@@ -3,6 +3,7 @@ import { createInterface } from "node:readline";
 import chalk from "chalk";
 import { Command } from "commander";
 import { requireKey } from "../../lib/api.js";
+import { POLLI_CLIENT } from "../../lib/client.js";
 import { BASE_URL } from "../../lib/config.js";
 import { budgetHint } from "../../lib/errors.js";
 import { numberOption } from "../../lib/number-option.js";
@@ -87,6 +88,7 @@ export function createChatCommand() {
                         headers: {
                             "Content-Type": "application/json",
                             Authorization: `Bearer ${key}`,
+                            "X-Polli-Client": POLLI_CLIENT,
                         },
                         body: JSON.stringify(body),
                     });

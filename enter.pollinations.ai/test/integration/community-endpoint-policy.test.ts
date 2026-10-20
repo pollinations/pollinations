@@ -7,7 +7,7 @@ import {
 import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { describe, expect } from "vitest";
+import { describe, expect, vi } from "vitest";
 import { deriveCreateProxyPolicy } from "../../src/routes/community-endpoints/proxy-policy.ts";
 import { test } from "../fixtures.ts";
 
@@ -529,5 +529,128 @@ describe("community endpoint configuration policy", () => {
             where: eq(schema.communityEndpoint.id, created.id as string),
         });
         expect(after?.payload).toBe(before?.payload);
+    });
+
+    test("tests a saved model with its stored token and reports its health", async ({
+        accountToken,
+        mocks,
+    }) => {
+        const created = await postModel(accountToken, "", {
+            name: "health-check",
+            title: "Health check",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
+            bearerToken: "saved-provider-token",
+            upstreamModel: "upstream-model",
+            modality: "text",
+        });
+        const id = created.id as string;
+
+        const upstreamCalls: RequestInit[] = [];
+        const mockedFetch = globalThis.fetch;
+        vi.stubGlobal(
+            "fetch",
+            (input: RequestInfo | URL, init?: RequestInit) => {
+                const url = input instanceof Request ? input.url : input;
+                if (new URL(url).host !== "text.example.com") {
+                    return mockedFetch(input, init);
+                }
+                upstreamCalls.push(init ?? {});
+                return Promise.resolve(
+                    Response.json({
+                        choices: [{ message: { content: "OK" } }],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 1,
+                            total_tokens: 3,
+                        },
+                    }),
+                );
+            },
+        );
+        const tested = await postModel(accountToken, `/${id}/test`, {});
+        vi.unstubAllGlobals();
+        expect(tested).toMatchObject({ ok: true, streaming: false });
+        expect(
+            new Headers(upstreamCalls[0]?.headers).get("Authorization"),
+        ).toBe("Bearer saved-provider-token");
+        expect(JSON.parse(String(upstreamCalls[0]?.body))).toMatchObject({
+            model: "upstream-model",
+        });
+
+        await mocks.enable("tinybird");
+        const daysAgo = (days: number) =>
+            new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+        const row = {
+            status: 0,
+            code: "",
+            host: "",
+            counted: 0,
+            from_pollinations: 0,
+            from_owner: 0,
+            message: "",
+        };
+        mocks.tinybird.state.modelHealthResponse = [
+            {
+                ...row,
+                day: daysAgo(0),
+                failure_group: 0,
+                succeeded: 15,
+                failed: 4,
+                last_at: "2026-10-15 17:06:15",
+            },
+            {
+                ...row,
+                day: "1970-01-01",
+                failure_group: 1,
+                status: 502,
+                code: "upstream_error",
+                host: "text.example.com",
+                succeeded: 0,
+                failed: 4,
+                counted: 1,
+                from_pollinations: 2,
+                last_at: "2026-10-15 17:06:15",
+                message: "402 Payment Required",
+            },
+        ];
+        const health = await SELF.fetch(`${endpointUrl}/${id}/health`, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(health.status).toBe(200);
+        const body = (await health.json()) as {
+            days: { day: string; succeeded: number; failed: number }[];
+            failures: unknown[];
+        };
+        expect(mocks.tinybird.state.pipeCalls.at(-1)?.query).toMatchObject({
+            model: created.modelId,
+        });
+        expect(body.days.map((day) => day.day)).toEqual(
+            [6, 5, 4, 3, 2, 1, 0].map(daysAgo),
+        );
+        expect(body.days.at(-1)).toEqual({
+            day: daysAgo(0),
+            succeeded: 15,
+            failed: 4,
+        });
+        expect(body.days[0]).toMatchObject({ succeeded: 0, failed: 0 });
+        expect(body.failures).toEqual([
+            {
+                status: 502,
+                code: "upstream_error",
+                host: "text.example.com",
+                failures: 4,
+                counted: 1,
+                fromPollinations: 2,
+                fromOwner: 0,
+                lastAt: "2026-10-15T17:06:15.000Z",
+                message: "402 Payment Required",
+            },
+        ]);
+
+        const missing = await SELF.fetch(`${endpointUrl}/missing/health`, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(missing.status).toBe(404);
     });
 });

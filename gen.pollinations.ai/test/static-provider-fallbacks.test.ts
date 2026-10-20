@@ -32,6 +32,11 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
+        "meta/llama-4-scout:openrouter:deepinfra-fp8-priority",
+        "meta-llama/llama-4-scout",
+        "deepinfra/fp8/priority",
+    ],
+    [
         "meta/llama-4-scout:openrouter:novita-bf16",
         "meta-llama/llama-4-scout",
         "novita/bf16",
@@ -211,6 +216,23 @@ describe("static provider fallbacks", () => {
             });
             expect(fallback.cost).toEqual(primary.cost);
             expect(fallback.costVariants).toEqual(primary.costVariants);
+            for (const servedBy of [primary, fallback]) {
+                const billing = calculateUsageBilling({
+                    model,
+                    usage: {
+                        promptTextTokens: 1000,
+                        promptCachedTokens: 500,
+                        promptCacheWriteTokens: 200,
+                        completionTextTokens: 100,
+                    },
+                    servedBy,
+                    quotedBy: primary,
+                });
+                expect(billing.price.totalPrice).toBeCloseTo(
+                    billing.cost.totalCost * 0.75,
+                    12,
+                );
+            }
             expect(findModelByName(model)?.config()).toMatchObject({
                 provider: "anthropic",
                 model: upstream,
@@ -624,8 +646,88 @@ describe("static provider fallbacks", () => {
             servedBy: fallback,
             quotedBy: primary,
         });
-        expect(billing.cost.totalCost).toBeCloseTo(0.00004, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(0.0000422, 8);
+        expect(billing.cost.totalCost).toBeCloseTo(0.00002, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0000211, 8);
+    });
+
+    it("charges Decider's Vercel price on its OpenRouter fallback", () => {
+        const primary = TEXT_SERVICES["perplexity/pplx-decider-v1.1-27b"];
+        const fallback =
+            TEXT_SERVICES["perplexity/pplx-decider-v1.1-27b:openrouter"];
+        expect(primary.fallbacks).toEqual([
+            "perplexity/pplx-decider-v1.1-27b:openrouter",
+        ]);
+        expect(fallback).toMatchObject({
+            provider: "openrouter",
+            paidOnly: true,
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        expect(
+            findModelByName("perplexity/pplx-decider-v1.1-27b")?.config(),
+        ).toMatchObject({
+            model: "perplexity/pplx-decider-v1.1-27b",
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+        });
+        expect(
+            findModelByName(
+                "perplexity/pplx-decider-v1.1-27b:openrouter",
+            )?.config(),
+        ).toMatchObject({
+            model: "perplexity/pplx-decider-v1.1-27b",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        });
+        const billing = calculateUsageBilling({
+            model: "perplexity/pplx-decider-v1.1-27b",
+            usage: { promptTextTokens: 1000, completionTextTokens: 0 },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.0000211, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.00002, 12);
+    });
+
+    it("charges Microsoft Decision-1's Vercel price on its OpenRouter fallback", () => {
+        const primary = TEXT_SERVICES["microsoft/microsoft-decision-1"];
+        const fallback =
+            TEXT_SERVICES["microsoft/microsoft-decision-1:openrouter"];
+        expect(primary.fallbacks).toEqual([
+            "microsoft/microsoft-decision-1:openrouter",
+        ]);
+        expect(fallback).toMatchObject({
+            provider: "openrouter",
+            paidOnly: true,
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        expect(
+            findModelByName("microsoft/microsoft-decision-1")?.config(),
+        ).toMatchObject({
+            model: "microsoft/microsoft-decision-1",
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+        });
+        expect(
+            findModelByName(
+                "microsoft/microsoft-decision-1:openrouter",
+            )?.config(),
+        ).toMatchObject({
+            model: "microsoft/microsoft-decision-1",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        });
+        const billing = calculateUsageBilling({
+            model: "microsoft/microsoft-decision-1",
+            usage: { promptTextTokens: 1000, completionTextTokens: 0 },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.00004431, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.000042, 12);
     });
 
     it("quotes OpenAI's context tiers while accounting for OpenRouter's flat fallback cost", () => {
@@ -823,10 +925,10 @@ describe("static provider fallbacks", () => {
     });
 
     it.each([
-        ["deepseek/deepseek-v4.1-flash", 0.000326],
+        ["deepseek/deepseek-v4.1-flash", 0.000546],
         ["deepseek/deepseek-v4.1-flash:fireworks", 0.000546],
     ] as const)(
-        "bills DeepSeek V4.1 Flash at the current quote when %s serves",
+        "bills DeepSeek V4.1 Flash at the Azure quote when %s serves",
         (route, cost) => {
             const billing = calculateUsageBilling({
                 model: "deepseek/deepseek-v4.1-flash",
@@ -840,7 +942,7 @@ describe("static provider fallbacks", () => {
                 },
             });
             expect(billing.cost.totalCost).toBeCloseTo(cost, 12);
-            expect(billing.price.totalPrice).toBeCloseTo(0.000326, 8);
+            expect(billing.price.totalPrice).toBeCloseTo(0.000273, 8);
         },
     );
 
@@ -1080,10 +1182,12 @@ describe("static provider fallbacks", () => {
         });
     });
 
-    it("shares Scout capabilities and pricing across its two routes", () => {
+    it.each([
+        "meta/llama-4-scout:openrouter:deepinfra-fp8-priority",
+        "meta/llama-4-scout:openrouter:novita-bf16",
+    ] as const)("preserves Scout capabilities through %s", (fallback) => {
         const primary = TEXT_SERVICES["meta/llama-4-scout"];
-        const route =
-            TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"];
+        const route = TEXT_SERVICES[fallback];
         expect(primary).toMatchObject({
             tools: false,
             contextLength: 131072,
@@ -1406,10 +1510,11 @@ describe("static provider fallbacks", () => {
         expect(billed.price.totalPrice).toBeCloseTo(quoted, 12);
     });
 
-    it("uses the same primary and single fallback for both API formats", () => {
+    it("tries Scout priority before Novita in both API formats", () => {
         const primary = "meta/llama-4-scout";
+        const priority = `${primary}:openrouter:deepinfra-fp8-priority`;
         const novita = `${primary}:openrouter:novita-bf16`;
-        expect(TEXT_SERVICES[primary].fallbacks).toEqual([novita]);
+        expect(TEXT_SERVICES[primary].fallbacks).toEqual([priority, novita]);
         expect(findModelByName(primary)?.config()).toMatchObject({
             model: "meta/llama-4-scout",
             directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
@@ -1427,6 +1532,15 @@ describe("static provider fallbacks", () => {
         expect(resolveDirectResponsesTarget(primary, request)).toMatchObject({
             endpoint: "https://ai-gateway.vercel.sh/v1/responses",
             defaults: { providerOptions: { gateway: { only: ["deepinfra"] } } },
+        });
+        expect(resolveDirectResponsesTarget(priority, request)).toMatchObject({
+            endpoint: "https://openrouter.ai/api/v1/responses",
+            defaults: {
+                provider: {
+                    only: ["deepinfra/fp8/priority"],
+                    allow_fallbacks: false,
+                },
+            },
         });
         expect(resolveDirectResponsesTarget(novita, request)).toMatchObject({
             endpoint: "https://openrouter.ai/api/v1/responses",
@@ -1459,6 +1573,18 @@ describe("static provider fallbacks", () => {
         ).toMatchObject({
             "custom-host": "https://api.deepinfra.com/v1/openai",
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",
+        });
+        expect(
+            findModelByName("xiaomi/mimo-v2.6-flash:deepinfra")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "XiaomiMiMo/MiMo-V2.6-Flash",
+        });
+        expect(
+            findModelByName("xiaomi/mimo-v2.6-pro:deepinfra")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "XiaomiMiMo/MiMo-V2.6-Pro",
         });
         expect(findModelByName("qwen/qwen3.7-flash")?.config()).toMatchObject({
             directEndpoint:

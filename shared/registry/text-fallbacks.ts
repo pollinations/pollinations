@@ -13,12 +13,35 @@ import { CHAT_PARAMETERS } from "./text-parameters";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "perplexity/pplx-decider-v1.1-27b": {
+        // Same Perplexity backend; covers gateway failures, not Perplexity outages.
+        "perplexity/pplx-decider-v1.1-27b:openrouter": {
+            provider: "openrouter",
+            // OpenRouter list price plus its 5.5% credit fee.
+            cost: {
+                promptTextTokens: perMillion(0.02) * 1.055,
+                completionTextTokens: perMillion(0),
+            },
+        },
+    },
     "liquid/d1": {
         // Same Liquid backend; this covers gateway failures, not Liquid outages.
         "liquid/d1:vercel": {
             provider: "vercel",
+            // Vercel AI Gateway list price for the Liquid endpoint.
             cost: {
-                promptTextTokens: perMillion(0.04),
+                promptTextTokens: perMillion(0.02),
+                completionTextTokens: perMillion(0),
+            },
+        },
+    },
+    "microsoft/microsoft-decision-1": {
+        // Same Azure backend; covers gateway failures, not Microsoft outages.
+        "microsoft/microsoft-decision-1:openrouter": {
+            provider: "openrouter",
+            // OpenRouter list price plus its 5.5% credit fee.
+            cost: {
+                promptTextTokens: perMillion(0.042) * 1.055,
                 completionTextTokens: perMillion(0),
             },
         },
@@ -144,6 +167,7 @@ export const TEXT_FALLBACKS = {
                     long_context: {
                         promptTextTokens: perMillion(4),
                         promptCachedTokens: perMillion(1),
+                        promptImageTokens: perMillion(4),
                         completionTextTokens: perMillion(12),
                     },
                 },
@@ -152,7 +176,7 @@ export const TEXT_FALLBACKS = {
                     long_context: {
                         label: "Long context (≥200K)",
                         description:
-                            "xAI doubles text, cached, and output rates for the whole request.",
+                            "xAI doubles text, cached, image, and output rates for the whole request.",
                     },
                 },
                 "<200K context",
@@ -190,6 +214,30 @@ export const TEXT_FALLBACKS = {
             ),
         },
     },
+    "xiaomi/mimo-v2.6-flash": {
+        "xiaomi/mimo-v2.6-flash:deepinfra": {
+            provider: "deepinfra",
+            addedDate: new Date("2026-10-10").getTime(),
+            // DeepInfra direct (2026-10-10): base rates without OpenRouter's 5.5% fee.
+            cost: {
+                promptTextTokens: perMillion(0.14),
+                promptCachedTokens: perMillion(0.0028),
+                completionTextTokens: perMillion(0.28),
+            },
+        },
+    },
+    "xiaomi/mimo-v2.6-pro": {
+        "xiaomi/mimo-v2.6-pro:deepinfra": {
+            provider: "deepinfra",
+            addedDate: new Date("2026-10-10").getTime(),
+            // DeepInfra bills input at $0.43 per 1M; the public price stays at Novita's $0.435.
+            cost: {
+                promptTextTokens: perMillion(0.43),
+                promptCachedTokens: perMillion(0.0036),
+                completionTextTokens: perMillion(0.87),
+            },
+        },
+    },
     "deepseek/deepseek-v4-flash": {
         "deepseek/deepseek-v4-flash:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
@@ -213,6 +261,20 @@ export const TEXT_FALLBACKS = {
                 promptTextTokens: perMillion(0.3),
                 promptCachedTokens: perMillion(0.006),
                 completionTextTokens: perMillion(1.2),
+            },
+        },
+    },
+    "deepseek/deepseek-v4.1-flash-1017": {
+        "deepseek/deepseek-v4.1-flash-1017:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            addedDate: new Date("2026-10-18").getTime(),
+            cost: {
+                // DeepInfra list rates (2026-10-18); its 51% promotion is not
+                // passed on.
+                promptTextTokens: perMillion(0.2),
+                promptCachedTokens: perMillion(0.006),
+                completionTextTokens: perMillion(0.6),
             },
         },
     },
@@ -474,6 +536,17 @@ export const TEXT_FALLBACKS = {
         },
     },
     "meta/llama-4-scout": {
+        "meta/llama-4-scout:openrouter:deepinfra-fp8-priority": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-19").getTime(),
+            // DeepInfra FP8 priority, verified 2026-10-19. Callers keep the
+            // primary quote; Pollinations absorbs the higher route cost.
+            cost: {
+                promptTextTokens: perMillion(0.15) * 1.055,
+                promptImageTokens: perMillion(0.15) * 1.055,
+                completionTextTokens: perMillion(0.45) * 1.055,
+            },
+        },
         "meta/llama-4-scout:openrouter:novita-bf16": {
             provider: "openrouter",
             addedDate: new Date("2026-09-15").getTime(),
@@ -821,6 +894,7 @@ export const TEXT_FALLBACKS = {
                         promptCachedTokens: perMillion(0.4) * 1.055,
                         promptCacheWriteTokens: perMillion(4.0) * 1.055,
                         promptAudioTokens: perMillion(4.0) * 1.055,
+                        promptImageTokens: perMillion(4.0) * 1.055,
                         promptVideoTokens: perMillion(4.0) * 1.055,
                         completionTextTokens: perMillion(18.0) * 1.055,
                     },
@@ -830,7 +904,7 @@ export const TEXT_FALLBACKS = {
                     long_context: {
                         label: "Long context (200K+)",
                         description:
-                            "At least 200,000 prompt tokens; text, cached, cache-write, audio, video, and output rates increase while image input stays at its separately advertised base price.",
+                            "At least 200,000 prompt tokens; text, cached, cache-write, image, audio, video, and output rates increase.",
                     },
                 },
                 "<200K context",

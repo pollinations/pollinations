@@ -421,8 +421,6 @@ async function createPackCheckoutSession(
                         card: { request_three_d_secure: "any" },
                     },
                 }),
-            // Enable discount/promotion codes
-            allow_promotion_codes: true,
             // Automatic tax & VAT
             automatic_tax: { enabled: true },
             // Auto billing address - collects only what's needed (country for tax)

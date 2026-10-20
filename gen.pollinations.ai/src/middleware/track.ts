@@ -196,6 +196,14 @@ export const track = (eventType: EventType) =>
         const requestTracking = await trackRequest(modelInfo, c.req);
         requestTracking.modelRequested =
             c.var.generationExecution?.originalModel ?? modelInfo.requested;
+        // Only generate.text answers with an SSE stream. Every other event
+        // type returns a file or a JSON envelope, so a stray stream flag
+        // (query or body) must never mark the request as streaming — that
+        // would skip durable generation coordination and double-generate
+        // the identical request.
+        if (eventType !== "generate.text") {
+            requestTracking.streamRequested = false;
+        }
 
         const rawIp = getRealClientIp(c);
         const clientIp =

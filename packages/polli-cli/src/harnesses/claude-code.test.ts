@@ -60,10 +60,7 @@ const calls = () =>
 const installFakeClaude = () => {
     const bin = join(home, "bin");
     mkdirSync(bin, { recursive: true });
-    writeFileSync(
-        join(bin, "claude"),
-        `#!/usr/bin/env node
-const { appendFileSync, readFileSync } = require("node:fs");
+    const script = `const { appendFileSync, readFileSync } = require("node:fs");
 const args = process.argv.slice(2);
 const settings = JSON.parse(readFileSync(args[args.indexOf("--settings") + 1], "utf-8"));
 appendFileSync(${JSON.stringify(callsFile())}, JSON.stringify({ args, settings }) + "\\n");
@@ -72,9 +69,19 @@ if (process.env.FAKE_CLAUDE_FAIL) {
     process.exit(1);
 }
 console.log("pong");
-`,
-    );
-    chmodSync(join(bin, "claude"), 0o755);
+`;
+    if (process.platform === "win32") {
+        const scriptPath = join(bin, "claude.cjs");
+        writeFileSync(scriptPath, script);
+        writeFileSync(
+            join(bin, "claude.cmd"),
+            `@echo off\r\n"${process.execPath}" "${scriptPath}" %*\r\n`,
+        );
+    } else {
+        const binary = join(bin, "claude");
+        writeFileSync(binary, `#!/usr/bin/env node\n${script}`);
+        chmodSync(binary, 0o755);
+    }
     ctx.env = {
         ...process.env,
         HOME: home,

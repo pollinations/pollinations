@@ -4,11 +4,13 @@ import { useEffect, useRef } from "react";
 import { authClient } from "../auth.ts";
 import { config } from "../config.ts";
 
-// Where the visit came from, captured at the first document load and repeated
-// on every view. sessionStorage survives the GitHub redirect, so a signed-in
+// Where the visit came from, captured at module load and repeated on every
+// view. Module load runs before the router, whose redirects (/ to /news, a
+// signed-out page to sign-in) and search validation (/authorize) drop the
+// landing query. sessionStorage survives the GitHub redirect, so a signed-in
 // view still carries the source, which is what attribution joins on. No
 // identifier is stored: no cookie, no random id.
-function sourceAttribution(): Record<string, string> {
+const SOURCE = ((): Record<string, string> => {
     try {
         const stored = sessionStorage.getItem("analytics_source");
         if (stored) return JSON.parse(stored);
@@ -29,7 +31,7 @@ function sourceAttribution(): Record<string, string> {
         sessionStorage.setItem("analytics_source", JSON.stringify(source));
     } catch {}
     return source;
-}
+})();
 
 export function Analytics() {
     const { data: session, isPending, error } = authClient.useSession();
@@ -49,7 +51,7 @@ export function Analytics() {
         const clientId = params.get("client_id") ?? params.get("app_key");
         const view = productPageViewSchema.safeParse({
             page,
-            ...sourceAttribution(),
+            ...SOURCE,
             ...(clientId ? { client_id: clientId.slice(0, 100) } : {}),
         });
         const key = `${userId ?? ""}:${page}`;

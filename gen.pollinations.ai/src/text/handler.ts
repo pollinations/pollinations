@@ -23,7 +23,11 @@ import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { createPromptAgentResponsesClient } from "./agents/client.ts";
 import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
-import { publicChatChoices, publicChatStream } from "./chat/public.ts";
+import {
+    publicChatChoices,
+    publicChatStream,
+    withoutPayg,
+} from "./chat/public.ts";
 import { completionToChatStream } from "./chat/stream.ts";
 import {
     requireChatCompletionUsage,
@@ -206,19 +210,23 @@ function usageHeaders(
     return headers;
 }
 
+// Provider billing fields stay internal. InferencePort's `payg_*` fields hold
+// its ledger entry, including our account balance.
+function isPrivateUsageKey(key: string): boolean {
+    return (
+        key === "cost" ||
+        key === "search_context_size" ||
+        key.startsWith("payg_")
+    );
+}
+
 function publicCompletionUsage(
     usage: ChatCompletion["usage"],
 ): ChatCompletion["usage"] {
-    if (!usage || (!("cost" in usage) && !("search_context_size" in usage))) {
-        return usage;
-    }
-
-    const {
-        cost: _cost,
-        search_context_size: _searchContextSize,
-        ...publicUsage
-    } = usage;
-    return publicUsage;
+    if (!usage || !Object.keys(usage).some(isPrivateUsageKey)) return usage;
+    return Object.fromEntries(
+        Object.entries(usage).filter(([key]) => !isPrivateUsageKey(key)),
+    ) as ChatCompletion["usage"];
 }
 
 function publicChatCompletion(
@@ -226,14 +234,20 @@ function publicChatCompletion(
     isVercel: boolean,
 ): ChatCompletion {
     const usage = publicCompletionUsage(completion.usage);
-    if (!isVercel && usage === completion.usage) return completion;
-    const publicCompletion = {
+    // InferencePort also attaches its `payg_*` ledger to the top level of
+    // non-streaming responses; the stream path strips it in public.ts.
+    const hasPaygTopLevel = Object.keys(completion).some((key) =>
+        key.startsWith("payg_"),
+    );
+    if (!isVercel && !hasPaygTopLevel && usage === completion.usage)
+        return completion;
+    const publicCompletion = withoutPayg({
         ...completion,
         usage,
         choices: isVercel
             ? publicChatChoices(completion.choices)
             : completion.choices,
-    };
+    });
     if (completion.fallbackTarget !== undefined) {
         Object.defineProperty(publicCompletion, "fallbackTarget", {
             value: completion.fallbackTarget,
@@ -409,6 +423,9 @@ async function generateTextResponse(
         // including aliases, community models, and fallback targets.
         const servedModelId = candidate.id || undefined;
         const isVercel = candidate.definition?.provider === "vercel";
+        // InferencePort ends its streams with a PAYG ledger chunk.
+        const filtersStream =
+            isVercel || candidate.definition?.provider === "inferenceport";
         if (requestData.stream) {
             if (!completion.responseStream) {
                 return sendTextStreamResponse(completion, servedModelId);
@@ -417,7 +434,7 @@ async function generateTextResponse(
             const [clientBody, trackingBody] = requireChatStreamUsage(
                 completion.responseStream,
             ).tee();
-            completion.responseStream = isVercel
+            completion.responseStream = filtersStream
                 ? publicChatStream(clientBody)
                 : clientBody;
             const response = sendTextStreamResponse(completion, servedModelId);

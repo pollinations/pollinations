@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
 import * as schema from "../db/better-auth.ts";
-import { toModelCategories } from "../registry/model-permissions.ts";
+import { toModelPermissions } from "../registry/model-permissions.ts";
 import { getRedirectUris, parseMetadata } from "./api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
 import { isUserBanned } from "./ban.ts";
@@ -249,7 +249,7 @@ export async function createApiKeyForUser({
 
     const permissions: Record<string, string[]> = {};
     if (allowedModels) {
-        permissions.models = await toModelCategories(dbBinding, allowedModels);
+        permissions.models = await toModelPermissions(dbBinding, allowedModels);
     }
     if (safeAccountPerms && safeAccountPerms.length > 0) {
         permissions.account = safeAccountPerms;

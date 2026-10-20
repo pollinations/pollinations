@@ -145,6 +145,20 @@ function messageContent(
                 ),
             ];
         }
+        const file = part.file as JsonObject | undefined;
+        if (!output && part.type === "file" && file?.filename) {
+            // pdfFileParts already gave OpenAI PDFs a data URL and filename.
+            return [
+                withPromptCacheBreakpoint(
+                    {
+                        type: "input_file",
+                        file_data: file.file_data,
+                        filename: file.filename,
+                    },
+                    part,
+                ),
+            ];
+        }
         return invalidRequest(
             "messages",
             `Unsupported Chat content part: ${String(part.type ?? "unknown")}`,

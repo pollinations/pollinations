@@ -6,15 +6,25 @@ import {
     useRef,
     useState,
 } from "react";
+import { Pollinations } from "../client.js";
 import { pollinationsErrorFromResponse } from "../error-response.js";
 import { fetchModelCatalog, type ModelCatalog } from "../models.js";
 import type {
     AccountBalance,
     AccountProfile,
+    AudioBinaryResponse,
+    AudioGenerateOptions,
+    ImageGenerateOptions,
+    ImageResponse,
     KeyInfo,
     KeyUsageOptions,
     ModelInfo,
+    TextGenerateOptions,
+    TranscribeOptions,
+    TranscriptionResponse,
     UsageResponse,
+    VideoGenerateOptions,
+    VideoResponse,
 } from "../types.js";
 import { PollinationsError } from "../types.js";
 import {
@@ -290,4 +300,175 @@ export function useAccountKeyUsage(
         [days, limit, before, granularity, period],
     );
     return useAccountResource(fetcher, enabled);
+}
+
+type GenerationRequest<A extends unknown[], T> = (
+    client: Pollinations,
+    signal: AbortSignal,
+    ...args: A
+) => Promise<T>;
+
+export interface GenerationValue<A extends unknown[], T> {
+    data: T | null;
+    isLoading: boolean;
+    error: Error | null;
+    /** Start a request. A request still in flight is cancelled. */
+    run: (...args: A) => Promise<void>;
+    /** Run again with the arguments of the last `run`. */
+    rerun: () => Promise<void>;
+    /** Abort the request in flight. The last result is kept. */
+    cancel: () => void;
+}
+
+/**
+ * Request state for one generation call made with the provider's key. Nothing
+ * is sent until `run`. A key change or unmount aborts the request in flight and
+ * clears the result, so a stale response never reaches the next user.
+ */
+function useGeneration<A extends unknown[], T>(
+    request: GenerationRequest<A, T>,
+): GenerationValue<A, T> {
+    const { apiKey, logout } = useRequiredAuth();
+    const [data, setData] = useState<T | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<Error | null>(null);
+    const controllerRef = useRef<AbortController | null>(null);
+    const lastArgsRef = useRef<A | null>(null);
+
+    const cancel = useCallback(() => {
+        controllerRef.current?.abort();
+        controllerRef.current = null;
+        setIsLoading(false);
+    }, []);
+
+    // A key change resets state and aborts the request in flight.
+    useEffect(() => {
+        lastArgsRef.current = null;
+        setData(null);
+        setError(null);
+        return cancel;
+    }, [apiKey, cancel]);
+
+    const run = useCallback(
+        async (...args: A) => {
+            controllerRef.current?.abort();
+            const controller = new AbortController();
+            controllerRef.current = controller;
+            lastArgsRef.current = args;
+            setIsLoading(true);
+            setError(null);
+            try {
+                if (!apiKey) {
+                    throw new Error("Log in to Pollinations to generate");
+                }
+                const result = await request(
+                    new Pollinations({ apiKey }),
+                    controller.signal,
+                    ...args,
+                );
+                if (!controller.signal.aborted) setData(result);
+            } catch (err) {
+                if (controller.signal.aborted) return;
+                if (err instanceof PollinationsError && err.status === 401) {
+                    logout();
+                }
+                setData(null);
+                setError(err instanceof Error ? err : new Error(String(err)));
+            } finally {
+                if (controllerRef.current === controller) {
+                    controllerRef.current = null;
+                    setIsLoading(false);
+                }
+            }
+        },
+        [apiKey, logout, request],
+    );
+
+    const rerun = useCallback(
+        () =>
+            lastArgsRef.current
+                ? run(...lastArgsRef.current)
+                : Promise.resolve(),
+        [run],
+    );
+
+    return useMemo(
+        () => ({ data, isLoading, error, run, rerun, cancel }),
+        [data, isLoading, error, run, rerun, cancel],
+    );
+}
+
+const imageRequest = (
+    client: Pollinations,
+    signal: AbortSignal,
+    prompt: string,
+    options?: ImageGenerateOptions,
+) => client.image(prompt, { ...options, signal });
+
+const textRequest = (
+    client: Pollinations,
+    signal: AbortSignal,
+    prompt: string,
+    options?: TextGenerateOptions,
+) => client.text(prompt, { ...options, signal });
+
+const audioRequest = (
+    client: Pollinations,
+    signal: AbortSignal,
+    text: string,
+    options?: AudioGenerateOptions,
+) => client.audio(text, { ...options, signal });
+
+const videoRequest = (
+    client: Pollinations,
+    signal: AbortSignal,
+    prompt: string,
+    options?: VideoGenerateOptions,
+) => client.video(prompt, { ...options, signal });
+
+const transcriptionRequest = (
+    client: Pollinations,
+    signal: AbortSignal,
+    audio: ArrayBuffer | Blob,
+    options?: TranscribeOptions,
+) => client.transcribe(audio, { ...options, signal });
+
+/** Image bytes, content type and keyless URL. `run(prompt, options?)`. */
+export function useImageGeneration() {
+    return useGeneration<
+        [prompt: string, options?: ImageGenerateOptions],
+        ImageResponse
+    >(imageRequest);
+}
+
+/** Plain text reply. `run(prompt, options?)`. */
+export function useTextGeneration() {
+    return useGeneration<
+        [prompt: string, options?: TextGenerateOptions],
+        string
+    >(textRequest);
+}
+
+/** Speech or music bytes. `run(text, options?)`. */
+export function useAudioGeneration() {
+    return useGeneration<
+        [text: string, options?: AudioGenerateOptions],
+        AudioBinaryResponse
+    >(audioRequest);
+}
+
+/** Video bytes. `run(prompt, options?)`. */
+export function useVideoGeneration() {
+    return useGeneration<
+        [prompt: string, options?: VideoGenerateOptions],
+        VideoResponse
+    >(videoRequest);
+}
+
+/** Transcript of an audio file. `run(audio, options?)`. */
+export function useTranscription() {
+    return useGeneration<
+        [audio: ArrayBuffer | Blob, options?: TranscribeOptions],
+        TranscriptionResponse
+    >(transcriptionRequest);
 }

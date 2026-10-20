@@ -188,6 +188,7 @@ export type ProxyCreateInput = z.infer<typeof ProxyCreateSchema>;
 const EndpointAgentModalityFields = EndpointAgentListingPayloadSchema.pick({
     inputModalities: true,
     outputModalities: true,
+    capabilities: true,
 }).shape;
 
 export const CreateEndpointAgentSchema = z
@@ -260,6 +261,7 @@ const EndpointAgentUpdateSchema = z
 
 export const UpdateEndpointSchema = ProxyUpdateSchema.safeExtend({
     outputModalities: EndpointAgentModalityFields.outputModalities,
+    capabilities: EndpointAgentModalityFields.capabilities,
 });
 
 const UPDATE_SCHEMA_BY_TYPE = {
@@ -315,6 +317,7 @@ export const TestEndpointSchema = z
             });
         }
     });
+export type TestEndpointInput = z.infer<typeof TestEndpointSchema>;
 const ResponsePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [field.key, z.number()]),
 ) as unknown as Record<CommunityEndpointPriceKey, z.ZodType<number>>;
@@ -477,6 +480,46 @@ export const CommunityEndpointTestResponseSchema = z
             ),
     })
     .passthrough();
+export const CommunityEndpointHealthResponseSchema = z.object({
+    days: z
+        .array(
+            z.object({
+                day: z.string().describe("UTC date, YYYY-MM-DD."),
+                succeeded: z.number().describe("2xx answers."),
+                failed: z.number().describe("5xx answers."),
+            }),
+        )
+        .describe("The last seven UTC days, oldest first."),
+    failures: z
+        .array(
+            z.object({
+                status: z.number().describe("HTTP status of the failed call."),
+                code: z.string().describe("Pollinations error code."),
+                host: z
+                    .string()
+                    .describe(
+                        "Upstream hostname Gen recorded, or empty when the failure has none.",
+                    ),
+                failures: z.number(),
+                counted: z
+                    .number()
+                    .describe(
+                        "Failures that were the final answer to a caller; the rest were retried. Listing health uses only the latest 50 final calls.",
+                    ),
+                fromPollinations: z
+                    .number()
+                    .describe(
+                        "Failures on calls from Pollinations monitors and bots.",
+                    ),
+                fromOwner: z.number().describe("Failures on your own calls."),
+                lastAt: z.string().describe("Latest failure, ISO 8601."),
+                message: z
+                    .string()
+                    .describe("Latest error message, up to 300 characters."),
+            }),
+        )
+        .describe("Up to 10 failure groups, newest first."),
+});
 export const CommunityEndpointDeleteResponseSchema = z.object({
     id: z.string(),
 });

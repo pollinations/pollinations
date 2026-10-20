@@ -79,3 +79,20 @@ describe("GenerateImageRequestQueryParamsSchema booleans", () => {
         }
     });
 });
+
+describe("GenerateImageRequestQueryParamsSchema duration", () => {
+    it("accepts the documented 1-120s bound on GET like on POST", () => {
+        const parsed = GenerateImageRequestQueryParamsSchema.parse({
+            duration: "60",
+        });
+        expect(parsed.duration).toBe(60);
+        expect(() =>
+            GenerateImageRequestQueryParamsSchema.parse({
+                duration: "121",
+            }),
+        ).toThrow();
+        expect(() =>
+            GenerateImageRequestQueryParamsSchema.parse({ duration: "0" }),
+        ).toThrow();
+    });
+});

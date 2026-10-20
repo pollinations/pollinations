@@ -69,35 +69,38 @@ describe("xAI Grok Imagine Video 1.5 Lite", () => {
         [undefined, "720p"],
         ["480p", "480p"],
         ["1080p", "1080p"],
-    ] as const)("sends resolution %s as %s with an aspect ratio for text-to-video", async (resolution, expected) => {
-        setXaiEnv();
-        const requests: Record<string, unknown>[] = [];
-        const headers: Array<string | null> = [];
-        mockXai(requests, undefined, headers);
+    ] as const)(
+        "sends resolution %s as %s with an aspect ratio for text-to-video",
+        async (resolution, expected) => {
+            setXaiEnv();
+            const requests: Record<string, unknown>[] = [];
+            const headers: Array<string | null> = [];
+            mockXai(requests, undefined, headers);
 
-        const result = await createAndReturnVideo("a calm ocean", {
-            ...baseParams,
-            resolution,
-        });
+            const result = await createAndReturnVideo("a calm ocean", {
+                ...baseParams,
+                resolution,
+            });
 
-        expect(headers[0]).toBe("Bearer xai-test-key");
-        expect(requests[0]).toEqual({
-            model: "grok-imagine-video-1.5-lite",
-            prompt: "a calm ocean",
-            duration: 5,
-            resolution: expected,
-            aspect_ratio: "16:9",
-        });
-        expect(result).toMatchObject({
-            buffer: Buffer.from([0, 0, 0, 24]),
-            mimeType: "video/mp4",
-            durationSeconds: 5,
-            trackingData: {
-                actualModel: "x-ai/grok-imagine-video-1.5-lite",
-                usage: { completionVideoSeconds: 5 },
-            },
-        });
-    });
+            expect(headers[0]).toBe("Bearer xai-test-key");
+            expect(requests[0]).toEqual({
+                model: "grok-imagine-video-1.5-lite",
+                prompt: "a calm ocean",
+                duration: 5,
+                resolution: expected,
+                aspect_ratio: "16:9",
+            });
+            expect(result).toMatchObject({
+                buffer: Buffer.from([0, 0, 0, 24]),
+                mimeType: "video/mp4",
+                durationSeconds: 5,
+                trackingData: {
+                    actualModel: "x-ai/grok-imagine-video-1.5-lite",
+                    usage: { completionVideoSeconds: 5 },
+                },
+            });
+        },
+    );
 
     it("forwards one start frame without an aspect ratio and bills the image", async () => {
         setXaiEnv();

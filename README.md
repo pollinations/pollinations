@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🛠️ SimBox](https://simbox.cesustheteapot.dpdns.org) | SimBox is a web sim builder: describe a page, a toy or a tiny game, and an AI agent builds it live in a sandboxed preview. You keep changing it by chatting, and every turn saves a version. How it uses | [@Guest453](https://github.com/Guest453) |
 | [✍️ Vibe Trip Planner](https://arpent.in/vibe) | Pick a handful of pictogram "vibe" blocks (ocean, monastic, cheap eats, slow mornings) and get back a composed trip: a region, day-by-day prose, the route on a map, where to sleep and eat, and real ph | [@FriendsCoin](https://github.com/FriendsCoin) |
 | [✍️ TaleCrafter AI](https://www.talecrafterai.com) | TaleCrafter AI turns ideas into illustrated, narration-first storybooks. Users choose a genre, audience age group, and art style, then create either a complete Classic story or a Plot Twist adventure | [@talecrafterai](https://github.com/talecrafterai) |
 | [🖼️ FX Trade Setup Studio](https://fxmacrodata.github.io/examples/pollinations/fx-trade-setup-studio) | FX Trade Setup Studio turns a user-entered FX trade setup into visual cards using Pollinations image generation. Enter a currency pair, direction, timeframe, entry, stop, targets, thesis and catalyst, | [@roberttidball](https://github.com/roberttidball) |
@@ -30,7 +31,6 @@
 | [🖼️ CastSheet](https://fi8vni13.github.io/castsheet) | Character reference boards for AI production. Describe a character, pick a style, and CastSheet generates a three-view sheet (front · side · back) and a 2×2 expression grid with the free Pollinations | [@fi8vni13](https://github.com/fi8vni13) |
 | [🖼️ Pollen Art Lab](https://ovalprint1-sketch.github.io/pollen-app) | Pollen Art Lab turns a text idea into artwork using the Pollinations image API. Choose a style and aspect ratio, sign in with your Pollinations account (BYOP) and generate an image; each visitor spend | [@ovalprint1-sketch](https://github.com/ovalprint1-sketch) |
 | [💬 point-zero](https://point-zero.pages.dev) | Point Zero… where your big ideas begin! A website I developed to simplify access to AI and help students, programmers, and content creators learn, create, and save time 💛 🤖 Chat with free models ava | [@Developer-loqman-ameur](https://github.com/Developer-loqman-ameur) |
-| [🎮 Trolley Match](https://patbing.github.io/trolley-match) | Choose first in five trolley dilemmas, then compare your answers with live Jev decisions. Includes an order-swap experiment and session-only Bring Your Own Pollen sign-in. | [@patbing](https://github.com/patbing) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

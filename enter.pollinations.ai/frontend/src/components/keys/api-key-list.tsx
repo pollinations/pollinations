@@ -16,7 +16,6 @@ import {
     Tooltip,
     XIcon,
 } from "@pollinations/ui";
-import { formatPollen } from "@pollinations/ui/wallet";
 import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { useState } from "react";
@@ -78,9 +77,15 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const visibleKeys = apiKeys.filter(
         (k) => !k.expiresAt || new Date(k.expiresAt).getTime() > now,
     );
-    const sortedKeys = sortKeys(filterKeys(visibleKeys, query), sort);
+    const filteredKeys = filterKeys(visibleKeys, query);
+    const sortedKeys = sortKeys(filteredKeys, sort);
     const sortedApiKeys = sortedKeys.filter((apiKey) => !isAppKey(apiKey));
     const sortedAppKeys = sortedKeys.filter(isAppKey);
+    // Section actions and empty states depend on what the account owns, not on
+    // the active search, so each create button stays reachable when a filter
+    // hides the section's keys.
+    const hasSecretKeys = visibleKeys.some((apiKey) => !isAppKey(apiKey));
+    const hasAppKeys = visibleKeys.some(isAppKey);
     const hasKeys = visibleKeys.length > 0;
     const noMatches = hasKeys && sortedKeys.length === 0;
 
@@ -183,16 +188,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 : "never"}
                         </span>
                     </span>
-                    {apiKey.totalSpend != null && apiKey.totalSpend > 0 && (
-                        <span>
-                            <span className="text-theme-text-muted">
-                                Spent:{" "}
-                            </span>
-                            <span className="text-theme-text-muted">
-                                {formatPollen(apiKey.totalSpend)}p
-                            </span>
-                        </span>
-                    )}
                     {isPublishable && primaryRedirectUri && (
                         <span className="inline-flex min-w-0 items-center gap-1">
                             <span className="text-theme-text-muted">
@@ -354,10 +349,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
             <Section
                 title="Secrets"
                 id="api-keys"
-                action={sortedApiKeys.length > 0 && keyAction}
+                action={hasSecretKeys && keyAction}
             >
                 <div className="flex flex-col gap-3">
-                    {!sortedApiKeys.length && !hasKeys && (
+                    {!hasSecretKeys && (
                         <Surface className="p-6 text-center">
                             <div className="mb-2">{keyAction}</div>
                             <p className="text-sm text-theme-text-muted">
@@ -380,10 +375,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
             <Section
                 title="Apps"
                 id="app-keys"
-                action={sortedAppKeys.length > 0 && appAction}
+                action={hasAppKeys && appAction}
             >
                 <div className="flex flex-col gap-3">
-                    {!sortedAppKeys.length && !hasKeys && (
+                    {!hasAppKeys && (
                         <Surface className="p-6 text-center">
                             <div className="mb-2">{appAction}</div>
                             <p className="text-sm text-theme-text-muted">

@@ -39,7 +39,6 @@ export type MockTinybirdState = {
     appUsageResponse: UsageRow[];
     modelModalitiesResponse: UsageRow[];
     agentUsageResponse: UsageRow[];
-    keySpendResponse: UsageRow[];
     pipeCalls: PipeCall[];
 };
 
@@ -58,7 +57,6 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         appUsageResponse: [],
         modelModalitiesResponse: [],
         agentUsageResponse: [],
-        keySpendResponse: [],
         pipeCalls: [],
     };
 
@@ -134,10 +132,6 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.agentUsageResponse }, 200);
         })
-        .get("/v0/pipes/activity_key_spend.json", (c) => {
-            state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
-            return c.json({ data: state.keySpendResponse }, 200);
-        })
         .post("/v0/datasources/:datasource/delete", (c) => {
             return c.json({ delete_id: "mock-delete" }, 200);
         });
@@ -163,7 +157,6 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         state.appUsageResponse = [];
         state.modelModalitiesResponse = [];
         state.agentUsageResponse = [];
-        state.keySpendResponse = [];
         state.pipeCalls = [];
     };
 

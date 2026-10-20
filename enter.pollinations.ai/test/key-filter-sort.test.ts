@@ -32,15 +32,6 @@ describe("key sorting", () => {
         ]);
     });
 
-    it("orders by total spend, highest first", () => {
-        const keys = [
-            key({ id: "low", totalSpend: 1 }),
-            key({ id: "zero" }),
-            key({ id: "high", totalSpend: 5 }),
-        ];
-        expect(ids(sortKeys(keys, "spend"))).toEqual(["high", "low", "zero"]);
-    });
-
     it("orders by smallest remaining budget first, uncapped last", () => {
         const keys = [
             key({ id: "uncapped", pollenBalance: null }),

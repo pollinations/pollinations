@@ -31,9 +31,6 @@ export const CORPUS = [
     "MiXeD cAsE sEnTeNcEs AnD nUmBeRs 42",
 ];
 
-// A relative slope difference above this is worth a human look.
-export const SLOPE_TOLERANCE = 0.05;
-
 const USAGE = `Compare the input usage that gen reports for a candidate and a reference model.
 
   POLLINATIONS_API_KEY=sk_... node operations/model-evals/usage-probe.js --pairs candidate=reference[,...] [options]
@@ -45,8 +42,9 @@ const USAGE = `Compare the input usage that gen reports for a candidate and a re
   --dry-run           print the corpus and pairs, call nothing
 
 Sends the ${CORPUS.length}-item corpus once to each model (max_tokens 16) and reports,
-per pair: the median reported prompt-token delta, the prompt tokens per
-character slope of each side, and which usage fields each side returns.
+per pair: the median and range of the reported prompt-token delta. The reasons
+for items that could not be compared and the usage fields each side returns
+are saved in the report.
 Review-only: token counts and usage fields can differ because of wrappers,
 request formatting, routing or accounting, so they never prove what a model
 received and nothing here hides a model.
@@ -61,18 +59,6 @@ export function median(values) {
     return sorted.length % 2
         ? sorted[mid]
         : (sorted[mid - 1] + sorted[mid]) / 2;
-}
-
-/** Least-squares slope of y over x; null when x does not vary. */
-export function slope(points) {
-    if (points.length < 2) return null;
-    const meanX = points.reduce((sum, [x]) => sum + x, 0) / points.length;
-    const meanY = points.reduce((sum, [, y]) => sum + y, 0) / points.length;
-    const sxx = points.reduce((sum, [x]) => sum + (x - meanX) ** 2, 0);
-    if (sxx === 0) return null;
-    return (
-        points.reduce((sum, [x, y]) => sum + (x - meanX) * (y - meanY), 0) / sxx
-    );
 }
 
 /** Dotted paths of every field in a usage object, e.g. `prompt_tokens_details.cached_tokens`. */
@@ -92,7 +78,7 @@ export async function probeModel({ model, seed, api }) {
             ...api,
             model,
             prompt: text,
-            seed: seed + index,
+            seed: (seed + index) % 2147483647,
             maxTokens: 16,
         });
         if (reply.fatal && reply.error !== "missing_usage")
@@ -109,16 +95,6 @@ export async function probeModel({ model, seed, api }) {
 const fieldsOf = (items) =>
     [...new Set(items.flatMap((item) => usageFields(item.usage)))].sort();
 
-const slopeOf = (items) =>
-    slope(
-        items
-            .filter((item) => Number.isFinite(item.usage?.prompt_tokens))
-            .map((item) => [item.chars, item.usage.prompt_tokens]),
-    );
-
-const round = (value, digits) =>
-    value === null ? null : Number(value.toFixed(digits));
-
 /** Pure comparison of two probe results. */
 export function compareUsage(candidate, reference) {
     const perItem = CORPUS.map((text, index) => {
@@ -130,13 +106,14 @@ export function compareUsage(candidate, reference) {
             candidate: Number.isFinite(c) ? c : null,
             reference: Number.isFinite(r) ? r : null,
             delta: Number.isFinite(c) && Number.isFinite(r) ? c - r : null,
+            // Why an item was not compared, readable without another paid run.
+            candidateError: candidate[index].error,
+            referenceError: reference[index].error,
         };
     });
     const deltas = perItem
         .map((item) => item.delta)
         .filter((delta) => delta !== null);
-    const candidateSlope = slopeOf(candidate);
-    const referenceSlope = slopeOf(reference);
     const candidateFields = fieldsOf(candidate);
     const referenceFields = fieldsOf(reference);
     const extraFields = candidateFields.filter(
@@ -149,31 +126,19 @@ export function compareUsage(candidate, reference) {
 
     const flags = [];
     if (deltas.length === 0) flags.push("no_comparable_usage");
-    if (medianDelta) flags.push("input_delta");
-    if (
-        candidateSlope !== null &&
-        referenceSlope !== null &&
-        Math.abs(candidateSlope - referenceSlope) >
-            SLOPE_TOLERANCE * Math.abs(referenceSlope)
-    )
-        flags.push("slope");
-    // A side with no usage at all is already counted as errors, not a schema.
-    if (
-        candidateFields.length &&
-        referenceFields.length &&
-        (extraFields.length || missingFields.length)
-    )
-        flags.push("usage_schema");
+    else if (deltas.length < CORPUS.length) flags.push("incomplete");
+    // Any nonzero delta, so an overhead on a few requests is not hidden by the median.
+    if (deltas.some(Boolean)) flags.push("input_delta");
 
     return {
         review: "human",
         flags,
         comparedItems: deltas.length,
         medianDelta,
-        slope: {
-            candidate: round(candidateSlope, 5),
-            reference: round(referenceSlope, 5),
-        },
+        // The spread shows what a median hides: an overhead on only some requests.
+        deltaRange: deltas.length
+            ? [Math.min(...deltas), Math.max(...deltas)]
+            : null,
         usageFields: {
             candidate: candidateFields,
             reference: referenceFields,
@@ -205,15 +170,14 @@ export function parsePairs(text) {
         });
 }
 
-/** Probes each model once, even when it appears in several pairs. */
-export async function runUsageProbe({ pairs, seed, api }) {
+/** Probes each model once, even when it appears in several pairs, and fills `results` as pairs finish. */
+export async function runUsageProbe({ pairs, seed, api, results = [] }) {
     const probes = new Map();
     const probe = (model) => {
         if (!probes.has(model))
             probes.set(model, probeModel({ model, seed, api }));
         return probes.get(model);
     };
-    const results = [];
     for (const { candidate, reference } of pairs) {
         results.push({
             candidate,
@@ -228,21 +192,14 @@ const signed = (value) => (value > 0 ? `+${value}` : `${value}`);
 
 export function formatResult(result) {
     const head = `${result.flags.length ? "REVIEW" : "ok"}  ${result.candidate} vs ${result.reference}`;
+    const errors = `errors: candidate ${result.errors.candidate}, reference ${result.errors.reference}`;
     if (result.comparedItems === 0)
-        return `${head}: no comparable usage (errors: candidate ${result.errors.candidate}, reference ${result.errors.reference})`;
-    const parts = [
-        `median prompt-token delta ${signed(result.medianDelta)} over ${result.comparedItems} items`,
-        `tokens/char ${result.slope.candidate} vs ${result.slope.reference}`,
-    ];
-    if (result.usageFields.extra.length)
-        parts.push(
-            `extra usage fields: ${result.usageFields.extra.join(", ")}`,
-        );
-    if (result.usageFields.missing.length)
-        parts.push(
-            `missing usage fields: ${result.usageFields.missing.join(", ")}`,
-        );
-    return `${head}: ${parts.join("; ")}`;
+        return `${head}: no comparable usage (${errors})`;
+    const [low, high] = result.deltaRange;
+    const delta = `prompt-token delta median ${signed(result.medianDelta)}, range ${signed(low)}..${signed(high)} over ${result.comparedItems} items`;
+    return result.comparedItems < CORPUS.length
+        ? `${head}: ${delta} (${errors})`
+        : `${head}: ${delta}`;
 }
 
 async function main(argv = process.argv.slice(2)) {
@@ -275,15 +232,23 @@ async function main(argv = process.argv.slice(2)) {
     if (!key) throw new Error("Set POLLINATIONS_API_KEY.");
 
     const startedAt = new Date();
-    const results = await runUsageProbe({
-        pairs,
-        seed,
-        api: {
-            baseUrl: defaultBaseUrl(),
-            key,
-            timeoutMs: Number(opts.timeout) * 1000,
-        },
-    });
+    const results = [];
+    // Our own 401/402/403 stops the run; the pairs that finished are still saved.
+    let stopped;
+    try {
+        await runUsageProbe({
+            pairs,
+            seed,
+            api: {
+                baseUrl: defaultBaseUrl(),
+                key,
+                timeoutMs: Number(opts.timeout) * 1000,
+            },
+            results,
+        });
+    } catch (error) {
+        stopped = error.message;
+    }
     const report = {
         version: 1,
         corpusVersion: CORPUS_VERSION,
@@ -291,6 +256,7 @@ async function main(argv = process.argv.slice(2)) {
         seed,
         corpus: CORPUS,
         results,
+        stopped,
     };
     const dir = join(opts.out, "usage-probes");
     mkdirSync(dir, { recursive: true });
@@ -301,6 +267,7 @@ async function main(argv = process.argv.slice(2)) {
     writeFileSync(file, `${JSON.stringify(report, null, 2)}\n`);
     for (const result of results) console.log(formatResult(result));
     console.log(`Saved ${file}`);
+    if (stopped) throw new Error(stopped);
 }
 
 if (

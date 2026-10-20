@@ -8,7 +8,6 @@ import {
     median,
     parsePairs,
     runUsageProbe,
-    slope,
     usageFields,
 } from "./usage-probe.js";
 
@@ -17,25 +16,6 @@ describe("usage probe maths", () => {
         assert.equal(median([3, 1, 2]), 2);
         assert.equal(median([4, 1, 3, 2]), 2.5);
         assert.equal(median([]), null);
-    });
-
-    test("slope is the least-squares tokens per character", () => {
-        assert.equal(
-            slope([
-                [10, 8],
-                [20, 10],
-                [30, 12],
-            ]),
-            0.2,
-        );
-        assert.equal(slope([[5, 1]]), null);
-        assert.equal(
-            slope([
-                [5, 1],
-                [5, 2],
-            ]),
-            null,
-        );
     });
 
     test("usage fields are listed as dotted paths", () => {
@@ -90,39 +70,64 @@ describe("compareUsage", () => {
         );
     });
 
-    test("a constant prompt overhead shows as a delta with an unchanged slope", () => {
+    test("a constant prompt overhead shows as a delta", () => {
         const result = compareUsage(items({ extra: 11 }), items());
         assert.deepEqual(result.flags, ["input_delta"]);
         assert.equal(result.medianDelta, 11);
-        assert.equal(result.slope.candidate, result.slope.reference);
+        assert.deepEqual(result.deltaRange, [11, 11]);
         assert.ok(result.perItem.every((item) => item.delta === 11));
     });
 
-    test("another tokenizer shows as a slope difference", () => {
-        const result = compareUsage(
-            items({ extra: 4000, perChar: 0.2 }),
-            items(),
+    test("an overhead on only some requests shows in the range", () => {
+        const once = items().map((item, index) =>
+            index
+                ? item
+                : {
+                      ...item,
+                      usage: {
+                          ...item.usage,
+                          prompt_tokens: item.usage.prompt_tokens + 4380,
+                      },
+                  },
         );
-        assert.deepEqual(result.flags, ["input_delta", "slope"]);
-        assert.ok(result.slope.candidate < result.slope.reference);
+        const result = compareUsage(once, items());
+        assert.deepEqual(result.flags, ["input_delta"]);
+        assert.equal(result.medianDelta, 0);
+        assert.deepEqual(result.deltaRange, [0, 4380]);
+        assert.match(
+            formatResult({ candidate: "a", reference: "b", ...result }),
+            /range 0\.\.\+4380 over 16 items$/,
+        );
     });
 
-    test("extra and missing usage fields are listed", () => {
+    test("one matching item among failures is not a pass", () => {
+        const mostlyBroken = items().map((item, index) =>
+            index
+                ? { chars: item.chars, usage: null, error: "http_500" }
+                : item,
+        );
+        const result = compareUsage(mostlyBroken, items());
+        assert.deepEqual(result.flags, ["incomplete"]);
+        assert.equal(result.comparedItems, 1);
+        assert.equal(result.perItem[1].candidateError, "http_500");
+        assert.match(
+            formatResult({ candidate: "a", reference: "b", ...result }),
+            /^REVIEW {2}a vs b: .* over 1 items \(errors: candidate 15, reference 0\)$/,
+        );
+    });
+
+    test("extra and missing usage fields are saved without a flag", () => {
         const result = compareUsage(
             items({ fields: { cost_usd: 0.001 } }),
             items({
                 fields: { completion_tokens_details: { reasoning_tokens: 0 } },
             }),
         );
-        assert.deepEqual(result.flags, ["usage_schema"]);
+        assert.deepEqual(result.flags, []);
         assert.deepEqual(result.usageFields.extra, ["cost_usd"]);
         assert.deepEqual(result.usageFields.missing, [
             "completion_tokens_details.reasoning_tokens",
         ]);
-        assert.match(
-            formatResult({ candidate: "a", reference: "b", ...result }),
-            /^REVIEW {2}a vs b: .*extra usage fields: cost_usd; missing usage fields: completion_tokens_details\.reasoning_tokens/,
-        );
     });
 
     test("failed requests are counted, not compared", () => {
@@ -203,21 +208,28 @@ describe("runUsageProbe against a fake gen", () => {
             CORPUS.map((_, index) => 100 + index),
         );
         const [wrapped, self, down] = results;
-        assert.deepEqual(wrapped.flags, ["input_delta", "usage_schema"]);
+        assert.deepEqual(wrapped.flags, ["input_delta"]);
         assert.equal(wrapped.medianDelta, 11);
         assert.deepEqual(wrapped.usageFields.extra, ["cost_usd"]);
         assert.deepEqual(self.flags, []);
         assert.deepEqual(down.flags, ["no_comparable_usage"]);
     });
 
-    test("our own auth failure stops the run", async () => {
+    test("our own auth failure stops the run and keeps finished pairs", async () => {
+        const results = [];
         await assert.rejects(
             runUsageProbe({
-                pairs: [{ candidate: "auth", reference: "openai" }],
+                pairs: [
+                    { candidate: "openai", reference: "openai" },
+                    { candidate: "auth", reference: "openai" },
+                ],
                 seed: 1,
                 api: { baseUrl },
+                results,
             }),
             /http_401: usage probe cannot continue/,
         );
+        assert.equal(results.length, 1);
+        assert.deepEqual(results[0].flags, []);
     });
 });

@@ -536,6 +536,17 @@ export const TEXT_FALLBACKS = {
         },
     },
     "meta/llama-4-scout": {
+        "meta/llama-4-scout:openrouter:deepinfra-fp8-priority": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-19").getTime(),
+            // DeepInfra FP8 priority, verified 2026-10-19. Callers keep the
+            // primary quote; Pollinations absorbs the higher route cost.
+            cost: {
+                promptTextTokens: perMillion(0.15) * 1.055,
+                promptImageTokens: perMillion(0.15) * 1.055,
+                completionTextTokens: perMillion(0.45) * 1.055,
+            },
+        },
         "meta/llama-4-scout:openrouter:novita-bf16": {
             provider: "openrouter",
             addedDate: new Date("2026-09-15").getTime(),

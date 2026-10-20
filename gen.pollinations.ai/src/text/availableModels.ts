@@ -1175,6 +1175,11 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
+        name: "meta/llama-4-scout:openrouter:deepinfra-fp8-priority",
+        config: portkeyConfig["llama-scout-openrouter-deepinfra-priority"],
+        transform: stripReasoning,
+    },
+    {
         name: "meta/llama-4-scout:openrouter:novita-bf16",
         config: portkeyConfig["llama-scout-openrouter-novita"],
         transform: stripReasoning,

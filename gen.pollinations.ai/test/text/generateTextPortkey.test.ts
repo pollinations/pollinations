@@ -1,6 +1,6 @@
 import { env } from "cloudflare:test";
 import { calculateUsageBilling } from "@shared/registry/registry.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { TEXT_SERVICES } from "@shared/registry/text/index.ts";
 import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { withModelFallback } from "../../src/fallback.ts";

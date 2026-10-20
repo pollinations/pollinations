@@ -6,6 +6,7 @@ import {
     mergeFallbacks,
 } from "../merge-fallbacks";
 import { FallbackFileSchema, ModelFileSchema } from "../model-file-schema";
+import type { MODEL3D_SERVICES as LegacyModel3dServices } from "../model3d.ts";
 import type { ModelDefinition } from "../registry";
 
 // Loads the model3d catalog from one-model-per-file declarations. Order is
@@ -106,9 +107,8 @@ for (const [parent, list] of Object.entries(pending)) {
     routes[parent] = Object.fromEntries(list.map((r) => [r.id, r.def]));
 }
 
-export const MODEL3D_SERVICES = mergeFallbacks(base, routes);
+export const MODEL3D_SERVICES = mergeFallbacks(
+    base,
+    routes,
+) as unknown as typeof LegacyModel3dServices;
 export type Model3dName = keyof typeof MODEL3D_SERVICES;
-
-export const DEFAULT_3D_MODEL = "microsoft/trellis-2" as const;
-
-export const getModel3dModelIds = (): string[] => Object.keys(MODEL3D_SERVICES);

@@ -4,7 +4,7 @@ import {
     runInDurableObject,
     SELF,
 } from "cloudflare:test";
-import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
+import { AUDIO_SERVICES } from "@shared/registry/audio/index.ts";
 import {
     createTestApiKey,
     test as workerTest,

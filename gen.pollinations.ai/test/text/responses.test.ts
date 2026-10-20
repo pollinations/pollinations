@@ -1,6 +1,6 @@
 import { env } from "cloudflare:test";
 import { validator } from "@shared/middleware/validator.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { TEXT_SERVICES } from "@shared/registry/text/index.ts";
 import {
     type CreateResponseRequest,
     CreateResponseRequestSchema,

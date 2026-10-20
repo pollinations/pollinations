@@ -7,6 +7,7 @@ import {
 } from "../merge-fallbacks";
 import { FallbackFileSchema, ModelFileSchema } from "../model-file-schema";
 import type { ModelDefinition } from "../registry";
+import type { TEXT_SERVICES as LegacyTextServices } from "../text.ts";
 
 // Loads the text catalog from one-model-per-file declarations. Order is
 // file-name (canonical id) order — deterministic and conflict-free; the
@@ -104,5 +105,8 @@ for (const [parent, list] of Object.entries(pending)) {
     routes[parent] = Object.fromEntries(list.map((r) => [r.id, r.def]));
 }
 
-export const TEXT_SERVICES = mergeFallbacks(base, routes);
+export const TEXT_SERVICES = mergeFallbacks(
+    base,
+    routes,
+) as unknown as typeof LegacyTextServices;
 export type TextModelName = keyof typeof TEXT_SERVICES;

@@ -6,6 +6,7 @@ import {
     mergeFallbacks,
 } from "../merge-fallbacks";
 import { FallbackFileSchema, ModelFileSchema } from "../model-file-schema";
+import type { REALTIME_SERVICES as LegacyRealtimeServices } from "../realtime.ts";
 import type { ModelDefinition } from "../registry";
 
 // Loads the realtime catalog from one-model-per-file declarations. Order is
@@ -106,11 +107,8 @@ for (const [parent, list] of Object.entries(pending)) {
     routes[parent] = Object.fromEntries(list.map((r) => [r.id, r.def]));
 }
 
-export const REALTIME_SERVICES = mergeFallbacks(base, routes);
+export const REALTIME_SERVICES = mergeFallbacks(
+    base,
+    routes,
+) as unknown as typeof LegacyRealtimeServices;
 export type RealtimeModelName = keyof typeof REALTIME_SERVICES;
-
-export const DEFAULT_REALTIME_MODEL = "openai/gpt-realtime-2.1" as const;
-
-export const REALTIME_MODEL_NAMES = Object.keys(
-    REALTIME_SERVICES,
-) as RealtimeModelName[];

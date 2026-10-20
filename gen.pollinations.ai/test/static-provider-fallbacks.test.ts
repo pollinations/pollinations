@@ -1,10 +1,10 @@
 import { env } from "cloudflare:test";
-import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
+import { AUDIO_SERVICES } from "@shared/registry/audio/index.ts";
 import { AUDIO_FALLBACKS } from "@shared/registry/audio-fallbacks.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image/index.ts";
 import { IMAGE_FALLBACKS } from "@shared/registry/image-fallbacks.ts";
 import { mergeFallbacks } from "@shared/registry/merge-fallbacks.ts";
-import { MODEL3D_SERVICES } from "@shared/registry/model3d.ts";
+import { MODEL3D_SERVICES } from "@shared/registry/model3d/index.ts";
 import {
     calculateUsageBilling,
     getVisibleAudioModels,
@@ -12,7 +12,7 @@ import {
     getVisibleTextModels,
     type ModelDefinition,
 } from "@shared/registry/registry.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { TEXT_SERVICES } from "@shared/registry/text/index.ts";
 import { TEXT_FALLBACKS } from "@shared/registry/text-fallbacks.ts";
 import { describe, expect, it } from "vitest";
 import { findModelByName } from "../src/text/availableModels.ts";

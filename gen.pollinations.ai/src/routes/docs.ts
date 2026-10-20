@@ -1,7 +1,7 @@
 import { Scalar } from "@scalar/hono-api-reference";
 import { getPublicUrl } from "@shared/public-origin.ts";
 import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
-import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
+import { EMBEDDING_SERVICES } from "@shared/registry/embeddings/index.ts";
 import { getImageModelIds, getVideoModelIds } from "@shared/registry/image.ts";
 import { getModel3dModelsInfo } from "@shared/registry/model-info.ts";
 import {

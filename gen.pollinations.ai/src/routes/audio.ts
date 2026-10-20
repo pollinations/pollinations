@@ -6,8 +6,10 @@ import {
 } from "@shared/error.ts";
 import {
     AUDIO_SERVICES,
-    AUDIO_VOICES,
     type AudioModelName,
+} from "@shared/registry/audio/index.ts";
+import {
+    AUDIO_VOICES,
     GEMINI_TTS_VOICES,
     MAI_VOICE_21_VOICES,
     resolveElevenLabsVoiceId,

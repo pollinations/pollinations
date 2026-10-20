@@ -1,12 +1,12 @@
 import { env } from "cloudflare:test";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image/index.ts";
 import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
 import {
     getModels,
     getRegistryModelDefinition,
     type ModelDefinition,
 } from "@shared/registry/registry.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { TEXT_SERVICES } from "@shared/registry/text/index.ts";
 import { describe, expect, it } from "vitest";
 import type { CommunityModelRateLimiter } from "../src/durable-objects/CommunityModelRateLimiter.ts";
 

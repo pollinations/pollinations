@@ -1,4 +1,4 @@
-import { MODEL3D_SERVICES } from "@shared/registry/model3d.ts";
+import { MODEL3D_SERVICES } from "@shared/registry/model3d/index.ts";
 import { z } from "zod";
 
 const VALID_3D_MODELS = [

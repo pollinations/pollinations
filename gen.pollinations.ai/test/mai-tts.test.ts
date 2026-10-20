@@ -1,4 +1,5 @@
-import { AUDIO_SERVICES, MAI_VOICE_21_VOICES } from "@shared/registry/audio.ts";
+import { AUDIO_SERVICES } from "@shared/registry/audio/index.ts";
+import { MAI_VOICE_21_VOICES } from "@shared/registry/audio.ts";
 import {
     type ModelDefinition,
     resolveModelName,

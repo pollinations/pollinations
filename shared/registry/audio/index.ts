@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 import { z } from "zod";
+import type { AUDIO_SERVICES as LegacyAudioServices } from "../audio.ts";
 import {
     type FallbackDefinition,
     type FallbackMap,
@@ -104,7 +105,8 @@ for (const [parent, list] of Object.entries(pending)) {
     routes[parent] = Object.fromEntries(list.map((r) => [r.id, r.def]));
 }
 
-export const AUDIO_SERVICES = mergeFallbacks(base, routes);
+export const AUDIO_SERVICES = mergeFallbacks(
+    base,
+    routes,
+) as unknown as typeof LegacyAudioServices;
 export type AudioModelName = keyof typeof AUDIO_SERVICES;
-
-export const DEFAULT_AUDIO_MODEL = "openai/tts-1" as const;

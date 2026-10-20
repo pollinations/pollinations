@@ -244,6 +244,19 @@ const decisionHandlers = factory.createHandlers(
     generateDecision,
 );
 
+// Shared by `/alpha/decisions` and its TypeSafe-path alias `/v1/systemone`.
+const decisionResponses = {
+    200: {
+        description: "Decision answers with token usage",
+        content: {
+            "application/json": {
+                schema: resolver(CreateDecisionResponseSchema),
+            },
+        },
+    },
+    ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
+};
+
 const responsesHandlers = factory.createHandlers(
     textBodyLimit,
     validator("json", CreateResponseRequestSchema),
@@ -759,17 +772,18 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Models that support this endpoint list `/alpha/decisions` in `supported_endpoints`. The response is JSON only; there is no streaming.",
             ].join("\n"),
-            responses: {
-                200: {
-                    description: "Decision answers with token usage",
-                    content: {
-                        "application/json": {
-                            schema: resolver(CreateDecisionResponseSchema),
-                        },
-                    },
-                },
-                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
-            },
+            responses: decisionResponses,
+        }),
+        ...decisionHandlers,
+    )
+    .post(
+        "/v1/systemone",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Create Decision (System One path)",
+            description:
+                "TypeSafe's System One path for clients that append `/v1/systemone` to a base URL. Same request, response, models, and billing as `POST /alpha/decisions`.",
+            responses: decisionResponses,
         }),
         ...decisionHandlers,
     )
@@ -1256,6 +1270,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Edit images using a text prompt and one or more source images.",
                 "Accepts JSON with image URLs or multipart/form-data with file uploads.",
+                "Video models that advertise this endpoint in `/models` use the images as frame inputs. The Pollinations extensions `duration` (seconds) and `audio` (boolean) are forwarded in both JSON and multipart requests; supported values depend on the model.",
                 'Set response_format to "url" for a stored media URL, or "b64_json" for base64 image data (default).',
                 "Community image models forward edits to the registrant's OpenAI-compatible endpoint as multipart form data.",
                 "",

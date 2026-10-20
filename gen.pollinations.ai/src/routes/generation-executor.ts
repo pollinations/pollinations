@@ -78,6 +78,19 @@ const model3dHandlers = factory.createHandlers(
     generateModel3d,
 );
 
+const decisionHandlers = factory.createHandlers(
+    textBodyLimit,
+    validator("json", CreateDecisionRequestSchema),
+    resolveModel("generate.text", {
+        defaultModel: DEFAULT_DECISION_MODEL,
+        supportedEndpoint: "/alpha/decisions",
+    }),
+    track("generate.text"),
+    textExecutionCache,
+    apiKeyBudgetReservation,
+    generateDecision,
+);
+
 export const generationExecutorRoutes = new Hono<Env>();
 
 generationExecutorRoutes.post(
@@ -106,19 +119,9 @@ generationExecutorRoutes.post(
     generateChatCompletion,
 );
 
-generationExecutorRoutes.post(
-    "/alpha/decisions",
-    textBodyLimit,
-    validator("json", CreateDecisionRequestSchema),
-    resolveModel("generate.text", {
-        defaultModel: DEFAULT_DECISION_MODEL,
-        supportedEndpoint: "/alpha/decisions",
-    }),
-    track("generate.text"),
-    textExecutionCache,
-    apiKeyBudgetReservation,
-    generateDecision,
-);
+generationExecutorRoutes.post("/alpha/decisions", ...decisionHandlers);
+// TypeSafe's own path for the same decisions request.
+generationExecutorRoutes.post("/v1/systemone", ...decisionHandlers);
 
 generationExecutorRoutes.post(
     "/v1/responses",

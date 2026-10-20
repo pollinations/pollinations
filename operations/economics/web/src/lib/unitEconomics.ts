@@ -1,10 +1,23 @@
+import type { Data } from "../types";
+import {
+    computeModeIndex,
+    directDeliveryData,
+    managedInferenceData,
+    pollenComputeMode,
+} from "./computeModes";
+import { fmtExactUsd as fmtUsd } from "./format";
 import type {
     ModelAllocationRow,
     ModelAllocationStatus,
     ModelReconcileRow,
     ModelReconcileStatus,
 } from "./modelReconcile";
-import { type MeteringBasis, providerMeteringBasis } from "./providerRegistry";
+import { modelReconcileRows, modelReconcileSummary } from "./modelReconcile";
+import {
+    type MeteringBasis,
+    providerMeteringBasis,
+    resolveProvider,
+} from "./providerRegistry";
 import {
     CALIB_DRIFT_ABS_ALARM_USD,
     hasCalibDrift,
@@ -181,6 +194,11 @@ function modelNetCash(
     parent: ModelReconcileRow,
     model: ModelAllocationRow,
 ): number | null {
+    if (
+        model.status === "missing usage" ||
+        model.status === "ambiguous allocation"
+    )
+        return null;
     if (model.netCashContributionUsd != null) {
         return model.netCashContributionUsd;
     }
@@ -199,6 +217,11 @@ function modelEconomicContribution(
     parent: ModelReconcileRow,
     model: ModelAllocationRow,
 ): number | null {
+    if (
+        model.status === "missing usage" ||
+        model.status === "ambiguous allocation"
+    )
+        return null;
     if (model.retainedPaidUsd != null && model.providerUsageUsd != null) {
         return model.retainedPaidUsd - model.providerUsageUsd;
     }
@@ -217,6 +240,11 @@ function modelMeterGap(
     parent: ModelReconcileRow,
     model: ModelAllocationRow,
 ): number | null {
+    if (
+        model.status === "missing usage" ||
+        model.status === "ambiguous allocation"
+    )
+        return null;
     if (model.meterGapUsd != null) return model.meterGapUsd;
     if (
         parent.status === "both sources" &&
@@ -315,4 +343,123 @@ export function unitEconomicsRows(
                 a.vendor.localeCompare(b.vendor) ||
                 a.model.localeCompare(b.model),
         );
+}
+
+export type UnitEconomicsView = "vendors" | "inference";
+export type ResultBlocker = {
+    month: string;
+    vendor: string;
+    kind: "costs" | "usage" | "delivery" | "period";
+    message: string;
+    amountUsd: number | null;
+};
+
+// Cards and reconciliation consume this same provider/month join. Model-level
+// allocation and document checks do not decide whether the totals are known.
+export function unitEconomicsReport(
+    data: Data,
+    month: string,
+    view: UnitEconomicsView,
+) {
+    const modeIndex = computeModeIndex(data);
+    const vendorMonths = modelReconcileRows(
+        view === "vendors"
+            ? directDeliveryData(data)
+            : managedInferenceData(data, modeIndex),
+    ).filter((row) => {
+        if (row.month !== month) return false;
+        const amounts = [
+            row.paidPollenUsd,
+            row.questPollenUsd,
+            row.pollenMeterUsd,
+            row.providerUsageUsd,
+        ];
+        // Keep the existing activity threshold, plus explicit zero witnesses.
+        return (
+            amounts.some(
+                (value) => value != null && Math.abs(value) > 0.0001,
+            ) ||
+            (row.status === "both sources" &&
+                amounts.every((value) => value === 0))
+        );
+    });
+    const summary = modelReconcileSummary(vendorMonths);
+    const blockers: ResultBlocker[] = [];
+    if (view === "inference") {
+        for (const row of data.opPollen ?? []) {
+            if (
+                row.month !== month ||
+                row.vendor === "community" ||
+                resolveProvider(row.vendor)?.category === "infrastructure" ||
+                (row.price_paid === 0 && row.price_quests === 0)
+            )
+                continue;
+            const mode = pollenComputeMode(
+                modeIndex,
+                month,
+                row.vendor,
+                row.model,
+            );
+            if (mode !== "mixed" && mode !== "unclassified") continue;
+            blockers.push({
+                month,
+                vendor: row.vendor,
+                kind: "delivery",
+                amountUsd: null,
+                message: `Pollen usage cannot yet be assigned to inference or GPU: ${row.model}.`,
+            });
+        }
+    }
+    for (const row of vendorMonths) {
+        if (row.status === "both sources") continue;
+        // Usage awaiting a delivery split is present, not missing.
+        if (
+            row.status === "provider only" &&
+            blockers.some(
+                (blocker) =>
+                    blocker.vendor === row.vendor &&
+                    blocker.kind === "delivery",
+            )
+        )
+            continue;
+        const missingCosts = row.status === "pollen only";
+        blockers.push({
+            month,
+            vendor: row.vendor,
+            kind: missingCosts ? "costs" : "usage",
+            message: missingCosts
+                ? "Provider costs and cash/credit split are missing for recorded Pollen usage."
+                : `Provider costs of ${fmtUsd(row.providerUsageUsd)} are recorded, but Pollen usage is missing. Import the usage or record verified zero activity; missing usage is not zero.`,
+            amountUsd: missingCosts ? row.pollenMeterUsd : row.providerUsageUsd,
+        });
+    }
+    if (vendorMonths.length === 0 && blockers.length === 0) {
+        blockers.push({
+            month,
+            vendor: view === "inference" ? "Inference" : "Providers",
+            kind: "period",
+            amountUsd: null,
+            message:
+                "No provider costs or Pollen usage are recorded for this period. Import the records or record verified zero activity.",
+        });
+    }
+    // A recorded-figures result includes every recorded cost. Absent usage
+    // stays missing in the join; it is never replaced with a zero-usage row.
+    const canCalculate =
+        vendorMonths.some((row) => row.status === "both sources") &&
+        blockers.every((blocker) => blocker.kind === "usage");
+    const provisional = canCalculate && blockers.length > 0;
+    return {
+        modeIndex,
+        vendorMonths,
+        summary,
+        blockers,
+        provisional,
+        currentResultUsd: canCalculate
+            ? summary.retainedPaidUsd - summary.providerCashUsd
+            : null,
+        fullCostResultUsd: canCalculate
+            ? summary.retainedPaidUsd - summary.providerUsageUsd
+            : null,
+    };
 }

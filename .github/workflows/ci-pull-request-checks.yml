@@ -32,7 +32,7 @@ jobs:
           python-version: '3.11'
       - name: Install dependencies
         if: steps.changes.outputs.changed == 'true'
-        run: pip install requests
+        run: pip install requests pyyaml
       - name: Test PR classification and gist enrichment
         if: steps.changes.outputs.changed == 'true'
         run: python3 -m unittest operations/github/test_project_manager.py operations/social/scripts/test_news.py operations/app-management/ingestion/test_review_agent.py
@@ -149,6 +149,9 @@ jobs:
           operations/model-evals/*.test.js
           operations/model-monitor/src/*.test.js
 
+      - name: Build UI for accounting and package export tests
+        run: npm run build:js --workspace @pollinations/ui
+
       - name: Test model catalog and accounting compatibility
         run: npx vitest run --config apps/model-compatibility.vitest.config.ts
 
@@ -167,10 +170,6 @@ jobs:
         if: steps.enter-frontend.outputs.any_changed == 'true'
         working-directory: enter.pollinations.ai
         run: npm run build:frontend
-
-      - name: Build UI for package export tests
-        if: steps.enter-frontend.outputs.any_changed != 'true'
-        run: npm run build:js --workspace @pollinations/ui
 
       - name: Test UI package exports
         run: node --test packages/ui/scripts/package-exports.test.mjs
@@ -276,7 +275,7 @@ jobs:
         id: gen-files
         run: |
           # Include imported docs and old paths of deleted or renamed inputs.
-          FILES=$(git diff --no-renames --name-only HEAD^1 HEAD | grep -E '^(gen\.pollinations\.ai/|shared/|packages/ui/src/(styles/tokens\.css|brand/lockup-horizontal-white\.svg)$|pollinations\.ai/public/legal/SUBPROCESSORS\.md$|packages/polli-cli/(README|SKILL|TASKS)\.md$|\.claude/skills/(pollinations-api|quest-contributor)/SKILL\.md$|(BRING_YOUR_OWN_MODEL|BRING_YOUR_OWN_POLLEN|BUILD_YOUR_OWN_AGENT|CODING_HARNESSES)\.md$|package(-lock)?\.json$|\.github/workflows/ci-pull-request-checks\.yml$)' || true)
+          FILES=$(git diff --no-renames --name-only HEAD^1 HEAD | grep -E '^(gen\.pollinations\.ai/|shared/|packages/ui/src/(styles/tokens\.css|brand/lockup-horizontal(-white)?\.svg)$|pollinations\.ai/public/legal/SUBPROCESSORS\.md$|packages/polli-cli/(README|SKILL|TASKS)\.md$|\.claude/skills/(bring-your-own-pollen|pollinations-api|pollinations-sdk|quest-contributor)/SKILL\.md$|(BRING_YOUR_OWN_MODEL|BRING_YOUR_OWN_POLLEN|BUILD_YOUR_OWN_AGENT|CODING_HARNESSES)\.md$|package(-lock)?\.json$|\.github/workflows/ci-pull-request-checks\.yml$)' || true)
           echo "Changed files that affect gen.pollinations.ai:"
           echo "$FILES"
           echo "files<<EOF" >> $GITHUB_OUTPUT

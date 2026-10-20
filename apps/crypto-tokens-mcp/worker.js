@@ -39,7 +39,11 @@ async function fetchPairs(path, args, context) {
 
 function buildServer() {
     const server = new McpServer(
-        { name: "crypto-tokens-mcp", title: "Crypto Tokens MCP", version: "0.1.0" },
+        {
+            name: "crypto-tokens-mcp",
+            title: "Crypto Tokens MCP",
+            version: "0.1.0",
+        },
         { capabilities: { tools: {} } },
     );
 
@@ -53,7 +57,9 @@ function buildServer() {
             inputSchema: {
                 address: z
                     .string()
-                    .describe("Token contract address, e.g. 0x6B175474E89094C44Da98b954EedeAC495271d0F"),
+                    .describe(
+                        "Token contract address, e.g. 0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                    ),
             },
         },
         async ({ address }) => {
@@ -65,7 +71,9 @@ function buildServer() {
                     createTextContent(`No pairs found for address ${address}.`),
                 ]);
             }
-            return createMCPResponse([createTextContent(JSON.stringify(pairs, null, 2))]);
+            return createMCPResponse([
+                createTextContent(JSON.stringify(pairs, null, 2)),
+            ]);
         },
     );
 
@@ -79,18 +87,24 @@ function buildServer() {
             inputSchema: {
                 query: z
                     .string()
-                    .describe("Symbol, name, or partial address, e.g. WETH, pepe, USDC"),
+                    .describe(
+                        "Symbol, name, or partial address, e.g. WETH, pepe, USDC",
+                    ),
             },
         },
         async ({ query }) => {
-            const pairs = await fetchPairs(`/search?q=${encodeURIComponent(query)}`);
+            const pairs = await fetchPairs(
+                `/search?q=${encodeURIComponent(query)}`,
+            );
             const top = pairs.slice(0, 10);
             if (top.length === 0) {
                 return createMCPResponse([
                     createTextContent(`No results for query "${query}".`),
                 ]);
             }
-            return createMCPResponse([createTextContent(JSON.stringify(top, null, 2))]);
+            return createMCPResponse([
+                createTextContent(JSON.stringify(top, null, 2)),
+            ]);
         },
     );
 

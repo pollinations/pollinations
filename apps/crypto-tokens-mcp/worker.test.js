@@ -96,7 +96,8 @@ test("rejects JSON-RPC batches", async () => {
 });
 
 test("token_info fetches DexScreener by address and returns formatted pairs", async (t) => {
-    const expectedUrl = "https://api.dexscreener.com/latest/dex/tokens/0x6B175474E89094C44Da98b954EedeAC495271d0F";
+    const expectedUrl =
+        "https://api.dexscreener.com/latest/dex/tokens/0x6B175474E89094C44Da98b954EedeAC495271d0F";
     let calls = 0;
     t.mock.method(globalThis, "fetch", async (input) => {
         calls++;
@@ -197,8 +198,10 @@ test("search_tokens reports no results for empty search", async (t) => {
 });
 
 test("surfaces DexScreener errors", async (t) => {
-    t.mock.method(globalThis, "fetch", async () =>
-        new Response("rate limited", { status: 429 }),
+    t.mock.method(
+        globalThis,
+        "fetch",
+        async () => new Response("rate limited", { status: 429 }),
     );
     const client = await connectClient();
     t.after(() => client.close());

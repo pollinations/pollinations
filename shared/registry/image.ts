@@ -1923,13 +1923,13 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-10-20").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // fal.ai FLUX 3 Max promotional per-second rates (2026-10-20), 75% off
-        // through 2026-11-07. List after the promotion: $0.17/s at 720p and
-        // $0.29/s at 1080p (follow-up PR). fal's page lists no separate audio rate.
-        cost: { completionVideoSeconds: 0.0425 },
+        // fal.ai FLUX 3 Max list per-second rates, effective after the
+        // 75%-off promotion ended on 2026-11-07. fal's page lists no separate
+        // audio rate.
+        cost: { completionVideoSeconds: 0.17 },
         ...defineCostVariants(
             {
-                "1080p": { completionVideoSeconds: 0.0725 },
+                "1080p": { completionVideoSeconds: 0.29 },
             },
             matchResolution("1080p"),
             {

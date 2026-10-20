@@ -444,6 +444,34 @@ export default defineConfig(async ({ mode }) => {
                                     { headers },
                                 );
                             },
+                            OPENVERSE_MCP: async (request: Request) => {
+                                if (
+                                    !request.headers.has("authorization") ||
+                                    request.headers.has("cookie")
+                                ) {
+                                    return new Response(
+                                        "Openverse caller authorization was not preserved safely",
+                                        { status: 500 },
+                                    );
+                                }
+                                const payload = (await request.json()) as {
+                                    jsonrpc: string;
+                                    id?: string | number;
+                                    method?: string;
+                                };
+                                return Response.json({
+                                    jsonrpc: payload.jsonrpc,
+                                    id: payload.id,
+                                    result: {
+                                        content: [
+                                            {
+                                                type: "text",
+                                                text: "openverse proxied",
+                                            },
+                                        ],
+                                    },
+                                });
+                            },
                         },
                     },
                 },

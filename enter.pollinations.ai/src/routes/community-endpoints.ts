@@ -143,7 +143,7 @@ async function requireOwnerGithubUsername(
     if (owner?.githubUsername) return owner.githubUsername;
     throw new HTTPException(400, {
         message:
-            "A GitHub username is required to register community endpoints",
+            "Connect GitHub on your account page to register community models.",
     });
 }
 
@@ -351,15 +351,15 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
             requireAccountPermission(c.var.auth.apiKey, "keys");
-            const ownerGithubUsername = await requireOwnerGithubUsername(
-                db,
-                user.id,
-            );
             const rows = await db
                 .select()
                 .from(schema.communityEndpoint)
                 .where(eq(schema.communityEndpoint.ownerUserId, user.id))
                 .orderBy(desc(schema.communityEndpoint.createdAt));
+            // Registering needs GitHub, so users without it have no rows.
+            const ownerGithubUsername = rows.length
+                ? await requireOwnerGithubUsername(db, user.id)
+                : "";
             const owner = await db.query.user.findFirst({
                 columns: {
                     id: true,

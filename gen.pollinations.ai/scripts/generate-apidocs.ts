@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT_PATH = join(__dirname, "..", "..", "APIDOCS.md");
+// The README's guide table; the docs website lists guides in its sidebar.
+const README_PATH = join(__dirname, "..", "..", "README.md");
 const INTRODUCTION_PATH = join(
     __dirname,
     "..",
@@ -567,10 +569,50 @@ export function renderEndpoint(
     if (bodyContent && bodyMime) {
         out.push(`${CALLOUT.body} · \`${bodyMime}\``);
         out.push("");
-        const rows = collectRows(spec, asObj(bodyContent.schema));
+        const schema = deref(spec, asObj(bodyContent.schema));
+        const variants = asArr(schema.oneOf ?? schema.anyOf).map((variant) =>
+            deref(spec, asObj(variant)),
+        );
+        const tables = variants.map((variant) => collectRows(spec, variant));
+        const shared = (tables[0] ?? []).filter((row) =>
+            tables.every((table) =>
+                table.some(
+                    (other) => JSON.stringify(other) === JSON.stringify(row),
+                ),
+            ),
+        );
+        const sharedNames = new Set(shared.map((row) => row.name));
+        const rows = [...collectRows(spec, schema), ...shared];
         if (rows.length) {
             out.push(renderRowsTable(rows));
             out.push("");
+        }
+        const discriminator = Object.keys(asObj(variants[0]?.properties)).find(
+            (name) => {
+                const values = variants.map((variant) => {
+                    const prop = asObj(asObj(variant.properties)[name]);
+                    return prop.const === undefined
+                        ? asArr(prop.enum)
+                        : [prop.const];
+                });
+                const all = values.flat().map((value) => JSON.stringify(value));
+                return (
+                    values.every((group) => group.length > 0) &&
+                    new Set(all).size === all.length
+                );
+            },
+        );
+        for (const [index, variant] of variants.entries()) {
+            const label = discriminator
+                ? ` · \`${discriminator}\`: ${formatType(asObj(asObj(variant.properties)[discriminator]))}`
+                : "";
+            out.push(`**Alternative ${index + 1}**${label}`, "");
+            out.push(
+                renderRowsTable(
+                    tables[index].filter((row) => !sharedNames.has(row.name)),
+                ),
+                "",
+            );
         }
     }
 
@@ -749,6 +791,11 @@ function loadIntroductionTagline(): string {
 }
 
 function renderGettingStarted(): string {
+    const guides = readFileSync(README_PATH, "utf8")
+        .split("\n## Guides\n")[1]
+        ?.split("\n## ")[0]
+        .trim();
+    if (!guides) throw new Error(`Missing Guides section in ${README_PATH}`);
     return `## ${sectionHeading(SECTIONS.start)}
 
 **1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai/keys). Use the key type for your environment:
@@ -765,7 +812,9 @@ curl ${BASE_URL}/v1/models \\
 
 **3. Pick an endpoint** from the [${sectionHeading(SECTIONS.contents)}](#${sectionAnchor(SECTIONS.contents)}) below.
 
-**Integration guides:** [Connect User Wallets](https://gen.pollinations.ai/docs#tag/connect-user-wallets) · [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) · [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) · [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers) · [CLI](https://gen.pollinations.ai/docs#tag/cli)`;
+## Guides
+
+${guides}`;
 }
 
 function renderTableOfContents(
@@ -779,6 +828,7 @@ function renderTableOfContents(
     out.push(
         `- [${sectionHeading(SECTIONS.start)}](#${sectionAnchor(SECTIONS.start)})`,
     );
+    out.push("- [Guides](#guides)");
     for (const heading of recipeHeadings) {
         out.push(`- [${heading}](#${slug(heading)})`);
     }
@@ -933,6 +983,17 @@ export function simplifyModelEnums(spec: Spec): void {
     }
 }
 
+// `/alpha/decisions` and its alias `/v1/systemone` take the same body.
+const DECISION_EXAMPLE: Json = {
+    state: "My payouts have been failing for 3 days.",
+    questions: {
+        is_urgent: {
+            type: "noul",
+            instructions: "Does this convey urgency?",
+        },
+    },
+};
+
 /**
  * Curated request-body examples for operations whose schemas are too complex
  * to synthesize a meaningful sample from (deeply nested unions, oneOf variants).
@@ -952,15 +1013,8 @@ const CURATED_BODIES: Record<string, Json> = {
         max_tokens: 1024,
         messages: [{ role: "user", content: "Hello" }],
     },
-    postAlphaDecisions: {
-        state: "My payouts have been failing for 3 days.",
-        questions: {
-            is_urgent: {
-                type: "noul",
-                instructions: "Does this convey urgency?",
-            },
-        },
-    },
+    postAlphaDecisions: DECISION_EXAMPLE,
+    postV1Systemone: DECISION_EXAMPLE,
     postV1ImagesGenerations: {
         prompt: "a serene mountain landscape at sunset",
         model: "black-forest-labs/flux.1-schnell",
@@ -1049,12 +1103,15 @@ const PATH_PARAM_EXAMPLES: Record<string, Record<string, string>> = {
     "/{id}/metadata": { id: RESOURCE_ID_EXAMPLE },
     "/media/{id}": { id: RESOURCE_ID_EXAMPLE },
     "/account/keys/{id}": { id: "key_abc123" },
+    "/api/x402/keys/{packKey}": { packKey: "0.50" },
     "/account/integrations/{id}": { id: "ca_abc123" },
     "/account/agents/{id}": { id: RESOURCE_ID_EXAMPLE },
     "/account/agents/{id}/sync": { id: RESOURCE_ID_EXAMPLE },
     "/account/my-models/{id}": { id: RESOURCE_ID_EXAMPLE },
     "/account/my-models/{id}/update": { id: RESOURCE_ID_EXAMPLE },
     "/account/my-models/{id}/fallback-candidates": { id: RESOURCE_ID_EXAMPLE },
+    "/account/my-models/{id}/test": { id: RESOURCE_ID_EXAMPLE },
+    "/account/my-models/{id}/health": { id: RESOURCE_ID_EXAMPLE },
     "/v1/models/{model}": { model: "openai/gpt-5.4-nano" },
 };
 
@@ -1122,6 +1179,7 @@ const TAG_ORDER = [
     "Community Models",
     "Community Agents",
     "Media Storage",
+    "Sandboxes API",
     "Account",
 ];
 

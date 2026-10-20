@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Merged PRs per GitHub account for one month: the monthly job's contributors.json.
+"""Merged PRs per GitHub account for one month: the monthly job's data/contributors/<month>.json.
 
 Every PR merged into main or master counts once; its author and each noreply co-author
 get credit, keyed by GitHub account id so a rename never splits anyone's count.
@@ -44,15 +44,16 @@ NOREPLY_COAUTHOR = re.compile(
 )
 
 
-def search_prs(query: str, token: str) -> List[Dict]:
-    """All PRs a GitHub search matches; fails over the search cap rather than miss some."""
+def search_prs(query: str, token: str, document: str = SEARCH_QUERY) -> List[Dict]:
+    """All PRs a GitHub search matches, with the fields `document` asks for; fails over the
+    search cap rather than miss some."""
     nodes, after = [], None
     while True:
         response = github_api_request(
             "POST",
             f"{GITHUB_API_BASE}/graphql",
             headers=_github_headers(token),
-            json={"query": SEARCH_QUERY, "variables": {"q": query, "after": after}},
+            json={"query": document, "variables": {"q": query, "after": after}},
         )
         payload = response.json()
         if response.status_code != 200 or payload.get("errors"):
@@ -182,7 +183,7 @@ def rank_contributors(prs: List[Dict], token: str) -> List[Dict]:
 
 
 def month_counts(month: str, token: str, repository: str) -> Dict:
-    """The month's merged PRs and who made them, as monthly/<month>/contributors.json."""
+    """The month's merged PRs and who made them, as data/contributors/<month>.json."""
     merged = merged_prs(month, token, repository)
     return {
         "month": month,

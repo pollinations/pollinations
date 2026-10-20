@@ -43,7 +43,7 @@ export function fetchModelHealthRows(): Promise<ModelHealthRow[]> {
 export const modelStatusRoutes = new Hono<Env>().get(
     "/models/status",
     describeRoute({
-        tags: ["📊 Monitor"],
+        tags: ["🤖 Models"],
         summary: "Model Health Status",
         description: [
             "Pollinations-specific diagnostics, not part of the OpenAI-compatible surface. Returns the raw response of the public Tinybird `model_route_health` pipe: a `data` array of rows plus a `meta` array typing each column.",
@@ -93,7 +93,17 @@ export const modelStatusRoutes = new Hono<Env>().get(
             return c.json({ error: "traffic must be all or regular" }, 400);
         url.searchParams.set("traffic", traffic);
         const minutes = c.req.query("minutes");
-        if (minutes !== undefined) url.searchParams.set("minutes", minutes);
+        if (minutes !== undefined) {
+            const parsed = Number(minutes);
+            if (!Number.isInteger(parsed) || parsed < 1 || parsed > 10080)
+                return c.json(
+                    {
+                        error: "minutes must be an integer between 1 and 10080",
+                    },
+                    400,
+                );
+            url.searchParams.set("minutes", String(parsed));
+        }
         const upstream = await fetch(url, {
             cf: { cacheTtl: 60, cacheEverything: true },
         });
@@ -110,7 +120,7 @@ export const modelStatusRoutes = new Hono<Env>().get(
 export const modelStatsRoutes = new Hono<Env>().get(
     "/models/stats",
     describeRoute({
-        tags: ["📊 Monitor"],
+        tags: ["🤖 Models"],
         summary: "Model Usage Stats",
         description: [
             "Pollinations-specific usage statistics for the last 7 days, from the public Tinybird `public_model_stats` pipe: a `data` array with one row per model.",

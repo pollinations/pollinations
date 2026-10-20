@@ -1,5 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { writeFileSync } from "node:fs";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
 import { printEstimate } from "../../lib/estimate.js";
@@ -10,6 +9,7 @@ import {
     printInfo,
     printMeta,
 } from "../../lib/output.js";
+import { prepareOutputPath } from "../../lib/output-file.js";
 
 // The response's Content-Type, not the model name, decides the file
 // extension: zimage, flux and most other models return JPEG.
@@ -29,7 +29,10 @@ export function createImageCommand() {
         .option("--height <n>", "Image height", "1024")
         .option("--seed <n>", "Random seed")
         .option("--safe", "Enable safety filters")
-        .option("--transparent", "Transparent background (PNG)")
+        .option(
+            "--transparent",
+            "Transparent background (GPT Image 1 Mini, 1.5 and 2.5 only)",
+        )
         .option(
             "--image <url...>",
             "Reference image URL(s) for editing/i2i (repeatable)",
@@ -72,8 +75,7 @@ export function createImageCommand() {
             const path = `/image/${encodedPrompt}?${params}`;
 
             // Before the paid request, so a bad --output folder costs nothing.
-            if (opts.output)
-                mkdirSync(dirname(opts.output), { recursive: true });
+            if (opts.output) prepareOutputPath(opts.output);
             if (isHuman) printInfo("Generating image...");
 
             try {

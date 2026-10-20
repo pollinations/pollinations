@@ -6,9 +6,11 @@ import { test } from "./fixtures.ts";
 
 for (const ref of [
     "image",
+    "text",
     "agent_low_balance_topup",
     "agent_low_balance_quests",
     "agent_key_budget",
+    "agent_grant",
 ]) {
     test(`tracks the ${ref} referral`, async ({ mocks }) => {
         await mocks.enable("tinybird");

@@ -10,7 +10,7 @@ import {
     printTable,
 } from "../lib/output.js";
 
-type QuestStatus = "open" | "claimable" | "claimed" | "coming";
+type QuestStatus = "open" | "claimable" | "claimed" | "closed" | "coming";
 
 interface QuestReward {
     id: string;
@@ -50,7 +50,8 @@ function questStatus(quest: QuestEntry): QuestStatus {
         return quest.reward.claimedAt === null ? "claimable" : "claimed";
     }
     if (quest.state === "completed" || quest.status === "completed") {
-        return "claimed";
+        // Completed without a reward for this account: closed by someone else.
+        return "closed";
     }
     return "open";
 }
@@ -61,6 +62,7 @@ function colorStatus(status: QuestStatus): string {
             return chalk.green(status);
         case "claimed":
             return chalk.cyan(status);
+        case "closed":
         case "coming":
             return chalk.dim(status);
         default:
@@ -112,7 +114,7 @@ function renderQuests(quests: QuestEntry[]): void {
 
 export const questsCommand = new Command("quests")
     .description(
-        "List your quests with claim state (open / claimable / claimed / coming)",
+        "List your quests with claim state (open / claimable / claimed / closed / coming)",
     )
     .option("--open", "Show only open quests")
     .option("--claimable", "Show only quests with a reward ready to claim")

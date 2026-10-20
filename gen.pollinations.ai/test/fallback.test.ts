@@ -344,7 +344,7 @@ describe("formatFallbackTarget", () => {
 
 describe("fallback response model attribution", () => {
     const publicId = "qwen/qwen-image-3";
-    const backupId = "qwen/qwen-image-3:replicate";
+    const backupId = "qwen/qwen-image-3:openrouter";
     const model = {
         resolved: publicId,
         definition: IMAGE_SERVICES[publicId],
@@ -448,6 +448,19 @@ describe("isRetryableFallbackError", () => {
                 UpstreamError.fromProvider(402, { message: "no quota" }),
             ),
         ).toBe(true);
+    });
+
+    it("fails over when the provider rejects our egress region", () => {
+        const region = UpstreamError.fromProvider(400, {
+            message: "User location is not supported for the API use.",
+        });
+        expect(isRetryableFallbackError(region)).toBe(true);
+        // An ordinary caller 400 still does not fail over.
+        expect(
+            isRetryableFallbackError(
+                UpstreamError.fromProvider(400, { message: "Invalid voice" }),
+            ),
+        ).toBe(false);
     });
 
     it("uses the wrapper status for a malformed successful response", () => {

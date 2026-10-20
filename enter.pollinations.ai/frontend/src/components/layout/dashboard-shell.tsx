@@ -119,7 +119,7 @@ const brandLinks: readonly BrandLink[] = [
         count: "5k",
     },
     {
-        href: "https://discord.gg/pollinations-ai-885844321461485618",
+        href: "https://discord.gg/k9F7SyTgqn",
         label: "Discord community",
         icon: <DiscordIcon className="h-full w-full" />,
         text: "discord",
@@ -513,7 +513,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         onClick={onNavigate}
                     >
                         {item.label}
-                        {(item.id === "my-models" ||
+                        {(item.id === "sandboxes" ||
                             (item.id === "quests" && questStatus)) && (
                             <Chip
                                 intent="neutral"

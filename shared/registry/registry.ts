@@ -243,12 +243,15 @@ export type ModelDefinition = {
     durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
+    supportsTransparency?: boolean; // Image-only: `transparent=true` returns a PNG with alpha; other models reject it
     /** Output-token limit enforced on public requests and fallback routes. */
     maxCompletionTokens?: number;
     /** False when the model rejects JSON/structured output requests. */
     supportsStructuredOutput?: boolean;
     /** False when the model answers JSON mode (json_object) with no content but honors json_schema. */
     supportsJsonMode?: boolean;
+    /** False when the upstream has no SSE; Gen buffers `stream: true` calls. */
+    supportsStreaming?: boolean;
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.

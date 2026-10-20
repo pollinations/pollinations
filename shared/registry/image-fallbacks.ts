@@ -126,19 +126,16 @@ export const IMAGE_FALLBACKS = {
         },
     },
     "qwen/qwen-image-3": {
-        "qwen/qwen-image-3:fal": { provider: "fal" },
-        "qwen/qwen-image-3:replicate": {
-            provider: "replicate",
-            addedDate: new Date("2026-09-01").getTime(),
+        "qwen/qwen-image-3:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-14").getTime(),
+            // OpenRouter's qwen/qwen-image-3-pro on Alibaba: the primary's
+            // exact checkpoint. The handler records OpenRouter's reported
+            // usage.cost plus the 5.5% credit fee; these rates describe the
+            // route at 1K.
             cost: {
-                promptImageTokens: 0,
-                completionImageTokens: 0.03,
-            },
-            costVariants: {
-                "2k": {
-                    promptImageTokens: 0,
-                    completionImageTokens: 0.03,
-                },
+                promptImageTokens: 0.003 * 1.055,
+                completionImageTokens: 0.04 * 1.055,
             },
         },
     },

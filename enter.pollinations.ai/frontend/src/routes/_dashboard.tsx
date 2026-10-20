@@ -1,4 +1,4 @@
-import { Button, GitHubIcon, InlineLink } from "@pollinations/ui";
+import { Button, GitHubIcon, GoogleIcon, InlineLink } from "@pollinations/ui";
 import {
     Await,
     createFileRoute,
@@ -19,7 +19,7 @@ import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import { SIGNED_OUT_NAV_ITEMS } from "../components/layout/dashboard-theme.ts";
 import { SidebarWallet } from "../components/pollen";
 import { fetchAccountBalance } from "../hooks/use-account-balance.ts";
-import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
+import { useSocialSignIn } from "../hooks/use-social-sign-in.ts";
 
 const DASHBOARD_DATA_STALE_TIME = 30_000;
 let dashboardSessionPromise: ReturnType<typeof authClient.getSession> | null =
@@ -197,7 +197,7 @@ export function SignedOutAccountArea({
 }: {
     callbackURL?: string;
 } = {}) {
-    const { isSigningIn, error, signIn } = useGitHubSignIn(callbackURL);
+    const { signingInWith, error, signIn } = useSocialSignIn(callbackURL);
 
     return (
         <div className="flex flex-col gap-2">
@@ -205,12 +205,27 @@ export function SignedOutAccountArea({
                 as="button"
                 intent="brand"
                 data-theme="accent"
-                onClick={() => void signIn()}
-                disabled={isSigningIn}
+                onClick={() => void signIn("github")}
+                disabled={signingInWith !== null}
                 className="w-full justify-center gap-2 text-center"
             >
                 <GitHubIcon className="h-4 w-4 shrink-0" />
-                {isSigningIn ? "Signing in..." : "Sign in with GitHub"}
+                {signingInWith === "github"
+                    ? "Signing in..."
+                    : "Sign in with GitHub"}
+            </Button>
+            <Button
+                as="button"
+                intent="brand"
+                data-theme="accent"
+                onClick={() => void signIn("google")}
+                disabled={signingInWith !== null}
+                className="w-full justify-center gap-2 text-center"
+            >
+                <GoogleIcon className="h-4 w-4 shrink-0" />
+                {signingInWith === "google"
+                    ? "Signing in..."
+                    : "Sign in with Google"}
             </Button>
             <p className="px-1 text-center text-micro font-normal leading-[1.35] text-theme-text-muted">
                 By continuing, you agree to the{" "}

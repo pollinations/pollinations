@@ -411,8 +411,11 @@ describe("gen worker routing", () => {
                 "public, max-age=3600",
             );
             const bytes = new Uint8Array(await skillFile.arrayBuffer());
+            // Accept CRLF checkouts: git's default core.autocrlf on Windows
+            // gives the bundled bytes CRLF endings; the contract is that the
+            // served file starts with the frontmatter that names the skill.
             expect(new TextDecoder().decode(bytes)).toMatch(
-                new RegExp(`^---\\nname: ${skill.name}\\n`),
+                new RegExp(`^---\\r?\\nname: ${skill.name}\\r?\\n`),
             );
             const hash = await crypto.subtle.digest("SHA-256", bytes);
             const hex = [...new Uint8Array(hash)]

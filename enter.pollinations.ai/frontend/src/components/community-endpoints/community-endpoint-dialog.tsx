@@ -147,9 +147,7 @@ export function CommunityEndpointDialog({
     const testableModelId = endpoint
         ? openWebUiTestableModelId(endpoint)
         : null;
-    const [form, setForm] = useState<EndpointFormState>(() =>
-        open && endpoint ? endpointToForm(endpoint) : emptyForm,
-    );
+    const [form, setForm] = useState<EndpointFormState>(emptyForm);
     const [modelOptions, setModelOptions] = useState<string[]>([]);
     const [modelListState, setModelListState] =
         useState<ActionState>(idleAction);

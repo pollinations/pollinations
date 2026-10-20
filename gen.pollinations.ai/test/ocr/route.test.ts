@@ -53,7 +53,7 @@ async function fetchGen(
 describe("POST /alpha/ocr", () => {
     it("bills the wallet from the page count the provider reported", async () => {
         const caller = await createTestApiKey({
-            user: { tierBalance: 1, packBalance: 0 },
+            user: { tierBalance: 0, packBalance: 10 },
         });
         const before = await getUserBalance(db, caller.userId);
         const events: TinybirdEvent[] = [];
@@ -119,13 +119,15 @@ describe("POST /alpha/ocr", () => {
             },
             include_image_base64: false,
         });
-        expect(response.headers.get("x-model-used")).toBe("mistral-ocr");
+        expect(response.headers.get("x-model-used")).toBe(
+            "mistralai/mistral-ocr",
+        );
         expect(response.headers.get("x-usage-prompt-image-tokens")).toBe(
             String(PAGES_PROCESSED),
         );
 
         const after = await getUserBalance(db, caller.userId);
-        expect(before.tierBalance - after.tierBalance).toBeCloseTo(
+        expect(before.packBalance - after.packBalance).toBeCloseTo(
             PAGES_PROCESSED * PRICE_PER_PAGE,
             10,
         );
@@ -133,7 +135,7 @@ describe("POST /alpha/ocr", () => {
         const billed = events.filter((event) => event.isBilledUsage === true);
         expect(billed).toHaveLength(1);
         expect(billed[0]).toMatchObject({
-            modelUsed: "mistral-ocr",
+            modelUsed: "mistralai/mistral-ocr",
             tokenCountPromptImage: PAGES_PROCESSED,
         });
         expect(billed[0].totalPrice).toBeCloseTo(
@@ -149,7 +151,7 @@ describe("POST /alpha/ocr", () => {
         ["embedded credentials", "https://user:pass@example.com/invoice.pdf"],
     ])("rejects document_url with %s", async (_label, documentUrl) => {
         const caller = await createTestApiKey({
-            user: { tierBalance: 1, packBalance: 0 },
+            user: { tierBalance: 0, packBalance: 10 },
         });
         const before = await getUserBalance(db, caller.userId);
         const upstream = vi.fn(async () => Response.json(OCR_RESPONSE));
@@ -176,9 +178,42 @@ describe("POST /alpha/ocr", () => {
         expect(await getUserBalance(db, caller.userId)).toEqual(before);
     });
 
+    it("rejects a Quest Pollen key because the Mistral route is paid-only", async () => {
+        const caller = await createTestApiKey({
+            user: { tierBalance: 10, packBalance: 0 },
+        });
+        const before = await getUserBalance(db, caller.userId);
+        const upstream = vi.fn(async (_input: RequestInfo | URL) =>
+            Response.json(OCR_RESPONSE),
+        );
+        vi.stubGlobal("fetch", upstream);
+
+        const response = await fetchGen(
+            new Request("https://gen.pollinations.ai/alpha/ocr", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${caller.key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    document: {
+                        type: "document_url",
+                        document_url: "https://example.com/invoice.pdf",
+                    },
+                }),
+            }),
+        );
+
+        expect(response.status).toBe(402);
+        expect(
+            upstream.mock.calls.map(([input]) => String(input)),
+        ).not.toContain(MISTRAL_OCR_URL);
+        expect(await getUserBalance(db, caller.userId)).toEqual(before);
+    });
+
     it("re-runs the upstream for an identical request instead of serving a stored response", async () => {
         const caller = await createTestApiKey({
-            user: { tierBalance: 1, packBalance: 0 },
+            user: { tierBalance: 0, packBalance: 10 },
         });
         const before = await getUserBalance(db, caller.userId);
         const changedResponse = {
@@ -240,14 +275,14 @@ describe("POST /alpha/ocr", () => {
         expect(await second.json()).toEqual(changedResponse);
         expect(upstreamCalls).toBe(2);
         expect(
-            before.tierBalance -
-                (await getUserBalance(db, caller.userId)).tierBalance,
+            before.packBalance -
+                (await getUserBalance(db, caller.userId)).packBalance,
         ).toBeCloseTo((PAGES_PROCESSED + 1) * PRICE_PER_PAGE, 10);
     });
 
     it("charges nothing when the upstream provider fails", async () => {
         const caller = await createTestApiKey({
-            user: { tierBalance: 1, packBalance: 0 },
+            user: { tierBalance: 0, packBalance: 10 },
         });
         const before = await getUserBalance(db, caller.userId);
         vi.stubGlobal(

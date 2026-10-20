@@ -21,7 +21,7 @@ curl -X POST "https://gen.pollinations.ai/alpha/ocr" \
   -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "mistral-ocr",
+    "model": "mistralai/mistral-ocr",
     "document": {
       "type": "document_url",
       "document_url": "https://example.com/invoice.pdf"

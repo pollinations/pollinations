@@ -58,7 +58,7 @@ it("keeps catalog health for filtering and status display", () => {
 it("buckets registry categories without a dashboard section by output modality", () => {
     const [model] = getModelPricesFromCatalog([
         {
-            name: "mistral-ocr",
+            name: "mistralai/mistral-ocr",
             category: "ocr",
             output_modalities: ["text"],
         },
@@ -255,4 +255,22 @@ it("does not label provider-cost-only pricing as free", () => {
     expect(paid.prices).toEqual([]);
     expect(paid.priceAdjustments).toEqual([adjustment]);
     expect(free.free).toBe(true);
+});
+
+it("preserves a community author's capabilities description when its separator does not follow the title", () => {
+    // The community model form accepts title and description independently;
+    // descriptions describe capabilities, not a repeated model title.
+    const [model] = getModelPricesFromCatalog([
+        {
+            name: "community/owner/translator",
+            title: "Translator",
+            community: true,
+            category: "text",
+            description:
+                "Multilingual translation - preserves formatting and tone",
+        },
+    ]);
+    expect(model.description).toBe(
+        "Multilingual translation - preserves formatting and tone",
+    );
 });

@@ -119,10 +119,7 @@ export const getCatalogDescriptionWithoutName = (
     if (prefix && description.startsWith(prefix)) {
         return description.slice(prefix.length).trim() || undefined;
     }
-    const parts = description.split(" - ");
-    return parts.length >= 2
-        ? parts.slice(1).join(" - ").trim() || undefined
-        : description;
+    return description;
 };
 
 function priceNumber(pricing: ApiPricing | undefined, field: PriceField) {

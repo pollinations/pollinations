@@ -4,7 +4,7 @@ import { generateOcr } from "../../src/ocr/handler.ts";
 import type { CreateOcrRequest } from "../../src/schemas/ocr.ts";
 
 const OCR_REQUEST: CreateOcrRequest = {
-    model: "mistral-ocr",
+    model: "mistralai/mistral-ocr",
     document: {
         type: "document_url",
         document_url: "https://example.com/invoice.pdf",
@@ -39,7 +39,7 @@ describe("generateOcr", () => {
         const response = await generateOcr(
             { MISTRAL_API_KEY: "test-key" } as CloudflareBindings,
             OCR_REQUEST,
-            "mistral-ocr",
+            "mistralai/mistral-ocr",
         );
 
         const [url, init] = fetchSpy.mock.calls[0];
@@ -55,7 +55,9 @@ describe("generateOcr", () => {
 
         expect(response.status).toBe(200);
         expect(await response.json()).toEqual(OCR_RESPONSE);
-        expect(response.headers.get("x-model-used")).toBe("mistral-ocr");
+        expect(response.headers.get("x-model-used")).toBe(
+            "mistralai/mistral-ocr",
+        );
         expect(response.headers.get("x-usage-prompt-image-tokens")).toBe("1");
         expect(response.headers.get("x-usage-completion-text-tokens")).toBe(
             "7",
@@ -77,13 +79,14 @@ describe("generateOcr", () => {
         const response = await generateOcr(
             { MISTRAL_API_KEY: "test-key" } as CloudflareBindings,
             OCR_REQUEST,
-            "mistral-ocr",
+            "mistralai/mistral-ocr",
         );
 
         expect(response.headers.get("x-usage-prompt-image-tokens")).toBe("3");
         // Mistral's list price is $4 / 1000 pages, so 3 pages cost $0.012.
         expect(
-            calculatePrice("mistral-ocr", { promptImageTokens: 3 }).totalPrice,
+            calculatePrice("mistralai/mistral-ocr", { promptImageTokens: 3 })
+                .totalPrice,
         ).toBeCloseTo(0.012, 10);
     });
 
@@ -105,7 +108,7 @@ describe("generateOcr", () => {
         const response = await generateOcr(
             { MISTRAL_API_KEY: "test-key" } as CloudflareBindings,
             OCR_REQUEST,
-            "mistral-ocr",
+            "mistralai/mistral-ocr",
         );
 
         expect(response.headers.get("x-usage-prompt-image-tokens")).toBe("2");
@@ -116,7 +119,11 @@ describe("generateOcr", () => {
 
     it("throws a clear error when the Mistral key is not configured", async () => {
         await expect(
-            generateOcr({} as CloudflareBindings, OCR_REQUEST, "mistral-ocr"),
+            generateOcr(
+                {} as CloudflareBindings,
+                OCR_REQUEST,
+                "mistralai/mistral-ocr",
+            ),
         ).rejects.toThrow("MISTRAL_API_KEY");
     });
 
@@ -128,7 +135,7 @@ describe("generateOcr", () => {
             generateOcr(
                 { MISTRAL_API_KEY: "test-key" } as CloudflareBindings,
                 OCR_REQUEST,
-                "mistral-ocr",
+                "mistralai/mistral-ocr",
             ),
         ).rejects.toThrow("boom");
     });

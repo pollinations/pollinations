@@ -54,7 +54,61 @@ const data = (over: Partial<Data>): Data => ({
 });
 
 describe("modelReconcileRows", () => {
-    it("joins both rollout spellings to reviewed costs without rewriting earlier months", () => {
+    it("matches the Wan 1080p line exactly while preserving the separate all-route gap", () => {
+        const invoiceLine = cloud({
+            vendor: "replicate",
+            start: "2026-09-01 00:00:00",
+            end: "2026-10-01 00:00:00",
+            model: "wan-pro-1080p",
+            paid: -64.8,
+            resource_sku: "Output video duration (seconds): wan-27-i2v-1080p",
+            resource_count: 432,
+            resource_name: "Wan 1080p image-to-video",
+        });
+        const billed = pollen({
+            vendor: "replicate",
+            month: "2026-09",
+            model: "alibaba/wan-2.7",
+            currency: "USD",
+            price_paid: 64.8,
+            cost_paid: 64.8,
+            requests_paid: 72,
+        });
+        const input = data({ vendorLedger: [invoiceLine], opPollen: [billed] });
+        const original = JSON.stringify(input);
+        const [exact] = modelReconcileRows(input);
+        expect(exact.models).toHaveLength(1);
+        expect(exact.models[0]).toMatchObject({
+            model: "alibaba/wan-2.7",
+            status: "allocated",
+            providerUsageUsd: 64.8,
+            paidPollenUsd: 64.8,
+            meterGapUsd: 0,
+            netCashContributionUsd: 0,
+        });
+        expect(JSON.stringify(input)).toBe(original);
+        const [allRoutes] = modelReconcileRows(
+            data({
+                vendorLedger: [
+                    invoiceLine,
+                    {
+                        ...invoiceLine,
+                        entry_id: "other-routes",
+                        model: "wan-pro",
+                        resource_sku: "other Wan routes",
+                        paid: -41.6,
+                    },
+                ],
+                opPollen: [{ ...billed, price_paid: 105.4, cost_paid: 105.4 }],
+            }),
+        );
+        expect(allRoutes.models).toHaveLength(1);
+        expect(allRoutes.providerUsageUsd).toBeCloseTo(106.4);
+        expect(allRoutes.models[0].meterGapUsd).toBeCloseTo(1);
+        expect(allRoutes.models[0].netCashContributionUsd).toBeCloseTo(-1);
+    });
+
+    it("joins exact historical and rollout spellings without rewriting source records", () => {
         const canonical = "openai/gpt-image-1-mini";
         const input = data({
             opPollen: [
@@ -103,7 +157,7 @@ describe("modelReconcileRows", () => {
         const september = rows.find((row) => row.month === "2026-09");
         if (!august || !september)
             throw new Error("Missing reconciliation month");
-        expect(august.models.map((row) => row.model)).toEqual(["gptimage"]);
+        expect(august.models.map((row) => row.model)).toEqual([canonical]);
         expect(september.models.map((row) => row.model)).toEqual([canonical]);
         expect(september.providerCashUsd).toBe(15);
         expect(september.paidPollenUsd).toBe(15);
@@ -198,8 +252,12 @@ describe("modelReconcileRows", () => {
         expect(row.questCashSubsidyUsd).toBe(16);
         expect(row.netCashContributionUsd).toBe(50);
 
-        const claude = row.models.find((model) => model.model === "claude");
-        const nova = row.models.find((model) => model.model === "nova");
+        const claude = row.models.find(
+            (model) => model.model === "anthropic/claude-sonnet-4.6",
+        );
+        const nova = row.models.find(
+            (model) => model.model === "amazon/nova-2-lite-v1",
+        );
         if (!claude || !nova) throw new Error("allocated models missing");
         expect(claude.paidPollenUsd).toBe(100);
         expect(claude.questPollenUsd).toBe(20);
@@ -268,8 +326,12 @@ describe("modelReconcileRows", () => {
             }),
         );
 
-        const claude = row.models.find((model) => model.model === "claude");
-        const nova = row.models.find((model) => model.model === "nova");
+        const claude = row.models.find(
+            (model) => model.model === "anthropic/claude-sonnet-4.6",
+        );
+        const nova = row.models.find(
+            (model) => model.model === "amazon/nova-2-lite-v1",
+        );
         if (!claude || !nova) throw new Error("direct models missing");
         expect(claude.providerCashUsd).toBe(90);
         expect(claude.meterGapUsd).toBe(30);
@@ -300,8 +362,12 @@ describe("modelReconcileRows", () => {
             }),
         );
 
-        const claude = row.models.find((model) => model.model === "claude");
-        const nova = row.models.find((model) => model.model === "nova");
+        const claude = row.models.find(
+            (model) => model.model === "anthropic/claude-sonnet-4.6",
+        );
+        const nova = row.models.find(
+            (model) => model.model === "amazon/nova-2-lite-v1",
+        );
         if (!claude || !nova) throw new Error("models missing");
         expect(claude.providerCashUsd).toBe(100);
         expect(claude.status).toBe("allocated");
@@ -325,12 +391,16 @@ describe("modelReconcileRows", () => {
                 ],
             }),
         );
-        expect(row.models.find((m) => m.model === "claude")).toMatchObject({
+        expect(
+            row.models.find((m) => m.model === "anthropic/claude-sonnet-4.6"),
+        ).toMatchObject({
             status: "allocated",
             providerCashUsd: 40,
             providerCreditUsd: 10,
         });
-        expect(row.models.find((m) => m.model === "nova")).toMatchObject({
+        expect(
+            row.models.find((m) => m.model === "amazon/nova-2-lite-v1"),
+        ).toMatchObject({
             status: "unallocated",
             providerCashUsd: null,
         });
@@ -390,13 +460,17 @@ describe("modelReconcileRows", () => {
             }),
         );
 
-        expect(row.models.find((m) => m.model === "kontext")).toMatchObject({
+        expect(
+            row.models.find(
+                (m) => m.model === "black-forest-labs/flux.1-kontext-pro",
+            ),
+        ).toMatchObject({
             status: "allocated",
             providerCashUsd: 40,
         });
-        expect(row.models.find((m) => m.model === "gpt-image-2")).toMatchObject(
-            { status: "allocated", providerCashUsd: 70 },
-        );
+        expect(
+            row.models.find((m) => m.model === "openai/gpt-image-2"),
+        ).toMatchObject({ status: "allocated", providerCashUsd: 70 });
         expect(row.models).toHaveLength(2);
     });
 
@@ -442,10 +516,10 @@ describe("modelReconcileRows", () => {
         );
 
         expect(
-            row.models.find((m) => m.model === "gpt-realtime-2"),
+            row.models.find((m) => m.model === "openai/gpt-realtime-2"),
         ).toMatchObject({ status: "allocated", providerCashUsd: 9 });
         expect(
-            row.models.find((m) => m.model === "gpt-realtime-2.1"),
+            row.models.find((m) => m.model === "openai/gpt-realtime-2.1"),
         ).toMatchObject({ status: "unallocated", providerCashUsd: null });
     });
 
@@ -506,7 +580,9 @@ describe("modelReconcileRows", () => {
             }),
         );
 
-        expect(row.models.find((m) => m.model === "veo")).toMatchObject({
+        expect(
+            row.models.find((m) => m.model === "google/veo-3-fast"),
+        ).toMatchObject({
             status: "allocated",
             pollenMeterUsd: 80,
             providerCashUsd: 100,
@@ -554,18 +630,22 @@ describe("modelReconcileRows", () => {
             }),
         );
 
-        expect(row.models.find((m) => m.model === "elevenmusic")).toMatchObject(
-            { status: "allocated", providerCashUsd: 50 },
-        );
+        expect(
+            row.models.find((m) => m.model === "elevenlabs/music-v2"),
+        ).toMatchObject({ status: "allocated", providerCashUsd: 50 });
         expect(row.models.map((m) => m.model).sort()).toEqual([
-            "elevenlabs + eleven-dialogue",
-            "elevenmusic",
+            "elevenlabs/eleven-v3 + elevenlabs/eleven-v3:dialogue",
+            "elevenlabs/music-v2",
         ]);
         expect(
-            row.models.find((m) => m.model === "elevenlabs + eleven-dialogue"),
+            row.models.find(
+                (m) =>
+                    m.model ===
+                    "elevenlabs/eleven-v3 + elevenlabs/eleven-v3:dialogue",
+            ),
         ).toMatchObject({
             status: "allocated",
-            members: ["elevenlabs", "eleven-dialogue"],
+            members: ["elevenlabs/eleven-v3", "elevenlabs/eleven-v3:dialogue"],
             providerCashUsd: 100,
             pollenMeterUsd: 95,
             lines: [{ label: "eleven_v3", usd: 100 }],
@@ -625,23 +705,25 @@ describe("modelReconcileRows", () => {
         );
 
         expect(row.models.map((m) => m.model).sort()).toEqual([
-            "kontext",
-            "openai-large + midijourney-large",
+            "black-forest-labs/flux.1-kontext-pro",
+            "openai/gpt-5.5 + pollinations/midijourney-large",
         ]);
         expect(
             row.models.find(
-                (m) => m.model === "openai-large + midijourney-large",
+                (m) =>
+                    m.model ===
+                    "openai/gpt-5.5 + pollinations/midijourney-large",
             ),
         ).toMatchObject({
             status: "allocated",
-            members: ["openai-large", "midijourney-large"],
+            members: ["openai/gpt-5.5", "pollinations/midijourney-large"],
             providerCashUsd: 180,
             pollenMeterUsd: 125,
             paidPollenUsd: 250,
             lines: [
                 { label: "5.5 ShortCo opt Gl 1M Tokens", usd: 100 },
                 { label: "5.5 ShortCo inp Gl 1M Tokens", usd: 50 },
-                { label: "openai-large", usd: 30 },
+                { label: "openai/gpt-5.5", usd: 30 },
             ],
         });
         expect(row.buckets).toEqual({
@@ -694,7 +776,7 @@ describe("modelReconcileRows", () => {
 
         expect(row.models).toEqual([
             expect.objectContaining({
-                model: "elevenlabs",
+                model: "elevenlabs/eleven-v3",
                 status: "allocated",
                 providerCashUsd: 100,
             }),
@@ -747,25 +829,25 @@ describe("modelReconcileRows", () => {
         );
 
         expect(row.models.map((m) => m.model).sort()).toEqual([
+            "anthropic/claude-opus-4.8 + claude-large",
             "claude-large",
-            "claude-large + claude-opus-4.6",
-            "claude-opus-4.8 + claude-large",
+            "claude-large + anthropic/claude-opus-4.6",
         ]);
         expect(
             row.models.find(
-                (m) => m.model === "claude-large + claude-opus-4.6",
+                (m) => m.model === "claude-large + anthropic/claude-opus-4.6",
             ),
         ).toMatchObject({
-            status: "allocated",
+            status: "ambiguous allocation",
             providerCreditUsd: 1000,
             pollenMeterUsd: 5,
         });
         expect(
             row.models.find(
-                (m) => m.model === "claude-opus-4.8 + claude-large",
+                (m) => m.model === "anthropic/claude-opus-4.8 + claude-large",
             ),
         ).toMatchObject({
-            status: "allocated",
+            status: "ambiguous allocation",
             providerCreditUsd: 700,
             pollenMeterUsd: 600,
         });
@@ -778,7 +860,7 @@ describe("modelReconcileRows", () => {
         });
     });
 
-    it("keeps a mapped model with no Pollen usage as a normal model row", () => {
+    it("keeps a mapped cost visible while unmatched usage and margin remain unknown", () => {
         const [row] = modelReconcileRows(
             data({
                 vendorLedger: [
@@ -803,16 +885,16 @@ describe("modelReconcileRows", () => {
             }),
         );
 
-        expect(row.models.find((m) => m.model === "flux-2-flex")).toMatchObject(
-            {
-                status: "allocated",
-                providerCashUsd: 5,
-                pollenMeterUsd: 0,
-                paidPollenUsd: 0,
-                questPollenUsd: 0,
-                netCashContributionUsd: -5,
-            },
-        );
+        expect(
+            row.models.find((m) => m.model === "black-forest-labs/flux.2-flex"),
+        ).toMatchObject({
+            status: "missing usage",
+            providerCashUsd: 5,
+            pollenMeterUsd: null,
+            paidPollenUsd: null,
+            questPollenUsd: null,
+            netCashContributionUsd: null,
+        });
         expect(
             row.models.reduce((sum, m) => sum + (m.providerUsageUsd ?? 0), 0),
         ).toBe(25);
@@ -1000,7 +1082,7 @@ describe("modelReconcileRows", () => {
         expect(row.models).toEqual(
             expect.arrayContaining([
                 expect.objectContaining({
-                    model: "claude",
+                    model: "anthropic/claude-sonnet-4.6",
                     status: "unallocated",
                 }),
                 expect.objectContaining({

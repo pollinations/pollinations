@@ -7,7 +7,7 @@ import { z } from "zod";
 
 const OcrDocumentUrlSchema = z
     .object({
-        type: z.literal("document_url"),
+        type: z.enum(["document_url"]),
         document_url: z
             .string()
             .url()
@@ -36,7 +36,7 @@ const OcrDocumentUrlSchema = z
 
 const OcrImageUrlSchema = z
     .object({
-        type: z.literal("image_url"),
+        type: z.enum(["image_url"]),
         image_url: z.string().meta({
             description:
                 "Base64 data URL of the image to process (e.g. `data:image/png;base64,...`).",
@@ -56,8 +56,8 @@ export const CreateOcrRequestSchema = z
     .object({
         model: z.string().optional().meta({
             description:
-                "OCR model id. Defaults to `mistral-ocr`. Only the models served by this experimental endpoint are accepted.",
-            example: "mistral-ocr",
+                "OCR model id. Defaults to `mistralai/mistral-ocr`. Only the models served by this experimental endpoint are accepted.",
+            example: "mistralai/mistral-ocr",
         }),
         document: OcrDocumentSchema,
         include_image_base64: z.boolean().optional().default(false).meta({

@@ -903,7 +903,7 @@ describe("API Key Management", () => {
             });
         });
 
-        test("widens model IDs and aliases to categories and rejects unknown values without changing permissions", async ({
+        test("saves model IDs and aliases as canonical IDs and rejects unknown values without changing permissions", async ({
             accountToken,
         }) => {
             const created = await createApiKeyViaApi(accountToken, {
@@ -942,11 +942,12 @@ describe("API Key Management", () => {
                 where: (apikey, { eq }) => eq(apikey.id, created.id),
             });
             expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
-                "image",
+                "black-forest-labs/flux.1-schnell",
+                "google/gemini-3.1-flash-image",
             ]);
         });
 
-        test("widens community model IDs to their modality's category", async ({
+        test("saves community model IDs and legacy aliases as canonical IDs", async ({
             accountToken,
         }) => {
             const created = await createApiKeyViaApi(accountToken, {
@@ -1009,7 +1010,9 @@ describe("API Key Management", () => {
             expect(response.status).toBe(200);
             const body = (await response.json()) as ApiKeyListResponse;
             const listed = body.data.find((item) => item.id === created.id);
-            expect(listed?.permissions?.models).toEqual(["image"]);
+            expect(listed?.permissions?.models).toEqual([
+                communityModelId("model-owner", "private-model"),
+            ]);
         });
 
         test("should require authentication", async () => {
@@ -1111,7 +1114,10 @@ describe("API Key Management", () => {
             expect(updateResponse.status).toBe(200);
             const result = await updateResponse.json();
             expect(result.permissions).toEqual({
-                models: ["image"],
+                models: [
+                    "black-forest-labs/flux.1-schnell",
+                    "google/gemini-3.1-flash-image",
+                ],
                 account: ["profile", "usage"],
             });
 
@@ -1127,7 +1133,10 @@ describe("API Key Management", () => {
             const keys = (await listResponse.json()) as ApiKeyListResponse;
             const updatedKey = keys.data.find((k) => k.id === keyId);
             expect(updatedKey.permissions).toEqual({
-                models: ["image"],
+                models: [
+                    "black-forest-labs/flux.1-schnell",
+                    "google/gemini-3.1-flash-image",
+                ],
                 account: ["profile", "usage"],
             });
         });
@@ -1167,7 +1176,9 @@ describe("API Key Management", () => {
             const keyInfo = (await accountKeyResponse.json()) as {
                 permissions?: { models?: string[] };
             };
-            expect(keyInfo.permissions?.models).toEqual(["image"]);
+            expect(keyInfo.permissions?.models).toEqual([
+                "black-forest-labs/flux.1-schnell",
+            ]);
         });
 
         test("should reflect updated metadata immediately after update", async ({
@@ -1549,7 +1560,9 @@ describe("API Key Management", () => {
 
             expect(finalKey.name).toBe("final-name");
             expect(finalKey.pollenBalance).toBe(25);
-            expect(finalKey.permissions.models).toEqual(["text"]);
+            expect(finalKey.permissions.models).toEqual([
+                "openai/gpt-5.4-nano",
+            ]);
             expect(finalKey.expiresAt).toBeTruthy();
         });
     });

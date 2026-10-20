@@ -183,6 +183,30 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10,
     },
+    "black-forest-labs/flux-3-image-klein": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Black Forest Labs",
+        category: "image",
+        addedDate: new Date("2026-10-15").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // fal pricing (2026-10-18): $0.009 per billed unit. fal bills BFL's
+        // per-image tiers in these units (1K = 1, 4K = 4), so price = fal's
+        // charge. Usage counts millionths of a unit.
+        cost: {
+            completionImageTokens: perMillion(0.009),
+        },
+        priceUnits: {
+            completionImageTokens: { unit: "megapixel", quantity: 1_000_000 },
+        },
+        title: "FLUX.3 Image Klein",
+        description:
+            "Distilled text-to-image and multi-reference editing up to 4K with up to ten references",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
+    },
     "black-forest-labs/flux.2-flex": {
         aliases: ["flux-2-flex"],
         provider: "azure",
@@ -256,7 +280,7 @@ const IMAGE_BASE_SERVICES = {
         publisher: "Microsoft",
         category: "image",
         addedDate: new Date("2026-09-22").getTime(),
-        retirementDate: new Date("2027-01-09").getTime(),
+        // Provider retires this route on 2027-01-09.
         paidOnly: false,
         priceMultiplier: 0.75,
         perUserRpm: 12,
@@ -268,10 +292,10 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "MAI Image 2.6 Flash",
         description:
-            "Photorealistic generation and single-reference editing with accurate text rendering",
+            "Photorealistic generation and editing with up to five references and accurate text rendering",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 1,
+        maxReferenceImages: 5, // Azure MAI edits accept 1 to 5 `image` parts.
     },
     "microsoft/mai-image-2.6": {
         aliases: [],
@@ -279,7 +303,7 @@ const IMAGE_BASE_SERVICES = {
         publisher: "Microsoft",
         category: "image",
         addedDate: new Date("2026-09-23").getTime(),
-        retirementDate: new Date("2027-01-09").getTime(),
+        // Provider retires this route on 2027-01-09.
         paidOnly: false,
         priceMultiplier: 0.75,
         perUserRpm: 12,
@@ -291,10 +315,10 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "MAI Image 2.6",
         description:
-            "Detailed photorealistic generation and single-reference editing with strong instruction following",
+            "Detailed photorealistic generation and editing with up to five references and strong instruction following",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 1,
+        maxReferenceImages: 5, // Azure MAI edits accept 1 to 5 `image` parts.
     },
     "google/gemini-2.5-flash-image": {
         aliases: ["nanobanana"],
@@ -303,9 +327,9 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         // Vertex AI model page.
-        retirementDate: new Date("2027-03-15").getTime(),
+        // Provider retires this route on 2027-03-15.
         paidOnly: true,
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         cost: {
             // Gemini 2.5 Flash Image via Vertex AI
             promptTextTokens: perMillion(0.3), // per 1M tokens
@@ -327,7 +351,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         cost: {
             // Gemini 3.1 Flash Image via Vertex AI
             promptTextTokens: perMillion(0.5), // per 1M tokens
@@ -349,7 +373,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-06-30").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         cost: {
             // Gemini 3.1 Flash-Lite Image (GA) via Vertex AI — half of nanobanana-2
             promptTextTokens: perMillion(0.25), // per 1M tokens
@@ -393,7 +417,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-12-01").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         cost: {
             // Gemini 3 Pro Image via Vertex AI
             // 1K/2K image: 1120 tokens = $0.134/image ($120/M tokens)
@@ -586,7 +610,7 @@ const IMAGE_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2025-10-10").getTime(),
-        retirementDate: new Date("2027-04-07").getTime(),
+        // Provider retires this route on 2027-04-07.
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -600,6 +624,7 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
+        supportsTransparency: true,
     },
     "openai/gpt-image-1.5": {
         aliases: ["gpt-image-1.5", "gpt-image-large", "gptimage-large"],
@@ -607,7 +632,7 @@ const IMAGE_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2025-12-23").getTime(),
-        retirementDate: new Date("2026-12-16").getTime(),
+        // Provider retires this route on 2026-12-16.
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -624,6 +649,7 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
+        supportsTransparency: true,
     },
     "openai/gpt-image-2": {
         aliases: ["gpt-image-2"],
@@ -631,7 +657,7 @@ const IMAGE_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2026-04-22").getTime(),
-        retirementDate: new Date("2027-10-21").getTime(),
+        // Provider retires this route on 2027-10-21.
         paidOnly: false,
         priceMultiplier: 0.75,
         cost: {
@@ -654,7 +680,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-09-08").getTime(),
         // Azure model catalog; the retirement schedule says 2027-09-09.
-        retirementDate: new Date("2027-09-08").getTime(),
+        // Provider retires this route on 2027-09-08.
         paidOnly: true,
         priceMultiplier: 0.75,
         cost: {
@@ -670,6 +696,7 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16,
+        supportsTransparency: true,
     },
     "openai/gpt-image-2.5-sunburst": {
         aliases: [],
@@ -678,7 +705,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-09-08").getTime(),
         // Azure model catalog; the retirement schedule says 2027-09-09.
-        retirementDate: new Date("2027-09-08").getTime(),
+        // Provider retires this route on 2027-09-08.
         paidOnly: true,
         priceMultiplier: 0.75,
         cost: {
@@ -694,6 +721,7 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16,
+        supportsTransparency: true,
     },
     "black-forest-labs/flux.1-schnell": {
         aliases: ["flux"],
@@ -1313,7 +1341,7 @@ const IMAGE_BASE_SERVICES = {
             "Versatile image creation and editing, strong at text inside images",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 3, // DashScope Qwen Image Edit route cap.
+        maxReferenceImages: 3, // Replicate qwen-image-edit-plus works best with 1 to 3.
     },
     "qwen/qwen-image-2.1": {
         aliases: [],
@@ -1364,6 +1392,26 @@ const IMAGE_BASE_SERVICES = {
         title: "Qwen Image 2.1",
         description:
             "Generates and edits images from prompts and up to ten references, with accurate text rendering",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
+    },
+    "qwen/qwen-image-2.1-turbo": {
+        aliases: [],
+        provider: "alibaba",
+        publisher: "Qwen",
+        category: "image",
+        addedDate: new Date("2026-10-11").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Alibaba Singapore (International) list price (2026-10-13): $0.016 per
+        // output image, whatever the reference image count.
+        cost: {
+            completionImageTokens: 0.016, // per image
+        },
+        title: "Qwen Image 2.1 Turbo",
+        description:
+            "Low-cost generation and editing with up to 10 reference images",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10,
@@ -1432,7 +1480,7 @@ const IMAGE_BASE_SERVICES = {
         description: "Photorealistic image generation and quick edits",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 1, // xAI image edit route forwards one input image.
+        maxReferenceImages: 5, // xAI image edits accept up to 5 `images`.
     },
     "x-ai/grok-imagine-image-quality": {
         aliases: [
@@ -1447,7 +1495,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
         // xAI retires the slug and redirects it to grok-imagine-image-2.0.
-        retirementDate: new Date("2026-11-02").getTime(),
+        // Provider retires this route on 2026-11-02.
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
@@ -1459,7 +1507,7 @@ const IMAGE_BASE_SERVICES = {
             "Higher-fidelity photorealistic images for polished results",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 1, // OpenRouter image edit route forwards one input image.
+        maxReferenceImages: 3, // OpenRouter input_references limit.
     },
     "x-ai/grok-imagine-image-2.0": {
         aliases: ["grok-imagine-image-2.0"],
@@ -1838,6 +1886,35 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 15,
         defaultDuration: 5,
     },
+    "kwaivgi/kling-v3.0-std": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Kuaishou",
+        category: "video",
+        addedDate: new Date("2026-09-19").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // fal.ai kling-video/v3/standard direct published rates (2026-09-22).
+        // No OpenRouter credit fee: fal is the only route (#15176 review
+        // found OpenRouter applies a 5-second billing minimum and returns
+        // 1080p for a requested 720p, so it is not a compatible fallback).
+        // Base is $0.084/s silent; audio adds $0.042/s ($0.126/s with audio).
+        cost: {
+            completionVideoSeconds: 0.084, // per sec at 720p
+            completionAudioSeconds: 0.042, // per sec when audio is enabled
+        },
+        resolutions: ["720p"],
+        title: "Kling 3.0 Standard",
+        description:
+            "Cinematic video with optional synchronized audio from text or start and end frames at 720p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+        minDuration: 3,
+        maxDuration: 15,
+        defaultDuration: 5,
+    },
     "heygen/heygen-video-1": {
         aliases: [],
         provider: "openrouter",
@@ -2031,42 +2108,59 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-09-04").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // fal published post-promotion rates (promotion ends 2026-09-30).
-        // Deploy ahead of the cutoff; a few hours of early activation is accepted.
-        cost: {
-            completionVideoSeconds: 0.025, // Also fal's rate per reported billing unit.
-        },
+        // fal reports resolution-weighted units for the selected resolution.
+        // Keep output duration separate; charge the current endpoint price below.
+        cost: { completionVideoSeconds: 0 },
+        // Retain resolution selection for the catalog and analytics. All
+        // resolutions are billed by provider units, not output duration.
         ...defineCostVariants(
             {
-                "768p": { completionVideoSeconds: 0.04 },
-                "1080p": { completionVideoSeconds: 0.08 },
+                "768p": { completionVideoSeconds: 0 },
+                "1080p": { completionVideoSeconds: 0 },
             },
             matchResolution("768p", "1080p"),
             {
                 "768p": {
                     label: "768p",
                     description:
-                        "Applies when the requested video resolution is 768p.",
+                        "768p video billed from provider-reported units.",
                 },
                 "1080p": {
                     label: "1080p",
                     description:
-                        "Applies when the requested video resolution is 1080p.",
+                        "1080p video billed from provider-reported units.",
                 },
             },
             "480p",
             [
                 {
-                    "key": "resolution",
-                    "label": "Resolution",
-                    "values": {
-                        "": "480p",
-                        "768p": "768p",
-                        "1080p": "1080p",
-                    },
+                    key: "resolution",
+                    label: "Resolution",
+                    values: { "": "480p", "768p": "768p", "1080p": "1080p" },
                 },
             ],
         ),
+        billing: {
+            adjustments: [
+                {
+                    id: "fal.minimax_h3_max_turbo.provider_units.v1",
+                    description:
+                        "Provider cost including the selected resolution",
+                    kind: "video",
+                    unit: "provider unit",
+                    unitCost: 1,
+                    publicPricing: {
+                        label: "Provider cost",
+                        quantity: 1,
+                        unit: "USD",
+                    },
+                    countUnits: (_output, input) =>
+                        input?.providerBilling?.units ?? 0,
+                    resolveUnitCost: (_output, _model, input) =>
+                        input?.providerBilling?.unitCost ?? 0,
+                },
+            ],
+        },
         resolutions: ["480p", "768p", "1080p"],
         title: "MiniMax H3 Max Turbo",
         description:
@@ -2205,6 +2299,79 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 1,
         maxDuration: 10,
         defaultDuration: 5,
+    },
+    "kandinskylab/kandinsky-6.0-lite": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Kandinsky Lab",
+        category: "video",
+        addedDate: new Date("2026-10-11").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // fal.ai list prices for one 5-second 480p video at the default 10
+        // steps. Charges use fal's reported units at its live endpoint price.
+        cost: {
+            completionVideoSeconds: 0.032, // $0.16 per video
+        },
+        ...defineCostVariants(
+            {
+                start_image: {
+                    completionVideoSeconds: 0.034, // $0.17 per video
+                },
+            },
+            ({ input }) => (input?.hasImage ? "start_image" : undefined),
+            {
+                start_image: {
+                    label: "From a start image",
+                    description:
+                        "Applies when the request includes a start image.",
+                },
+            },
+            "From text",
+            [
+                {
+                    key: "input",
+                    label: "Input",
+                    values: { "": "Text", start_image: "Image" },
+                },
+            ],
+        ),
+        resolutions: ["480p"],
+        title: "Kandinsky 6.0 Lite",
+        description:
+            "Fast 5-second video from text or start image with synchronized audio at 480p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "audio_output"],
+        maxReferenceImages: 1,
+        minDuration: 5,
+        maxDuration: 5,
+        defaultDuration: 5,
+    },
+    "mirelo/sfx-2.0": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Mirelo AI",
+        category: "video",
+        addedDate: new Date("2026-10-15").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // fal's price per returned second: $0.010 during Mirelo's launch
+        // promo, $0.015 from 2026-12-14. Charges use fal's reported seconds at
+        // its live endpoint price.
+        cost: { completionVideoSeconds: 0.01 },
+        // The output keeps the source video's dimensions.
+        resolutions: ["source"],
+        title: "Mirelo SFX 2.0",
+        description: "Adds synchronized sound effects to an existing video",
+        inputModalities: ["text", "video"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["reference_videos", "audio_output"],
+        maxReferenceVideos: 1,
+        // Up to the first 120 seconds of the source; fal bills the seconds it returns.
+        minDuration: 1,
+        maxDuration: 120,
+        defaultDuration: 120,
     },
 } as const satisfies Record<string, ModelDefinition>;
 

@@ -69,6 +69,22 @@ const PRICE_LINE_LABELS: Record<PriceKind, Record<PriceDirection, string>> = {
     audioOut: { input: "Audio out", output: "Audio out" },
 };
 
+/** One price line as plain text, e.g. { label: "Text in", value: "$0.15/M" }. */
+export const formatPriceLine = ({
+    direction,
+    kind,
+    price,
+    unit,
+}: ModelPriceLine): { label: string; value: string } => {
+    const { value, tokenScale } = formatDisplayPrice(price, unit === "token");
+    const suffix =
+        unit === "token" ? `/${tokenScale}` : PRICE_UNIT_SUFFIX[unit];
+    return {
+        label: PRICE_LINE_LABELS[kind][direction],
+        value: `$${value}${suffix}`,
+    };
+};
+
 const compactNumber = new Intl.NumberFormat("en", { notation: "compact" });
 
 const formatAdjustmentUnit = ({

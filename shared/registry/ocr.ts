@@ -2,18 +2,20 @@ import type { ModelDefinition } from "./registry";
 
 export type OcrServiceId = keyof typeof OCR_SERVICES;
 
-export const DEFAULT_OCR_MODEL: OcrServiceId = "mistral-ocr";
+export const DEFAULT_OCR_MODEL: OcrServiceId = "mistralai/mistral-ocr";
 
 // First release is a single Mistral-backed alpha endpoint. Paddle and Baidu
 // listings stay out until their upstreams and response shapes are verified.
 export const OCR_SERVICES = {
-    "mistral-ocr": {
-        aliases: ["ocr", "mistral-ocr-latest"],
+    "mistralai/mistral-ocr": {
+        aliases: ["ocr", "mistral-ocr"],
         provider: "mistral",
         publisher: "Mistral",
         category: "ocr",
         addedDate: new Date("2026-08-13").getTime(),
         alpha: true,
+        // Mistral direct upstream: Quest Pollen does not cover it.
+        paidOnly: true,
         priceMultiplier: 1,
         supportedEndpoints: ["/alpha/ocr"],
         // Mistral bills OCR per processed page ($4 / 1000 pages), and one

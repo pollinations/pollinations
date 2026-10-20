@@ -134,6 +134,23 @@ describe("/openapi.json", () => {
             "text/event-stream",
         ]);
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
+        // Most errors omit details, e.g. a 404 for an unknown model.
+        expect(schema).toHaveProperty(
+            [
+                "paths",
+                "/v1/models/{model}",
+                "get",
+                "responses",
+                "404",
+                "content",
+                "application/json",
+                "schema",
+                "properties",
+                "error",
+                "required",
+            ],
+            ["code", "message", "timestamp"],
+        );
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/v1/audio/music/upload"]).toBeUndefined();
         expect(schema.paths["/alpha/audio/stem-separation"]).toBeDefined();

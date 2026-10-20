@@ -30,11 +30,33 @@ function imagePart(block: Extract<MessagesContentBlock, { type: "image" }>) {
     return { type: "image_url", image_url: { url }, ...cacheControl(block) };
 }
 
+function documentPart(
+    block: Extract<MessagesContentBlock, { type: "document" }>,
+): ChatPart {
+    const { source } = block;
+    if (source.type === "base64") {
+        return {
+            type: "file",
+            file: {
+                file_data: `data:${source.media_type};base64,${source.data}`,
+            },
+            ...cacheControl(block),
+        };
+    }
+    if (source.type === "text") {
+        return { type: "text", text: source.data, ...cacheControl(block) };
+    }
+    throw new MessagesRequestError(
+        `A document with a ${source.type} source is not supported; send PDFs as base64 and text as a text source`,
+    );
+}
+
 function contentPart(block: MessagesContentBlock): ChatPart {
     if (block.type === "text") {
         return { type: "text", text: block.text, ...cacheControl(block) };
     }
     if (block.type === "image") return imagePart(block);
+    if (block.type === "document") return documentPart(block);
     throw new MessagesRequestError(
         `A ${block.type} block is not allowed in this message`,
     );
@@ -43,9 +65,10 @@ function contentPart(block: MessagesContentBlock): ChatPart {
 function userMessages(content: MessagesContentBlock[]): ChatMessage[] {
     // Chat carries each tool result as its own `tool` message; Anthropic puts
     // them at the start of the user turn, so they keep their order. Chat tool
-    // messages carry text only, so a result's images open the user message.
+    // messages carry text only, so a result's images and PDFs open the user
+    // message.
     const toolMessages: ChatMessage[] = [];
-    const toolImages: ChatPart[] = [];
+    const toolMedia: ChatPart[] = [];
     const parts: ChatPart[] = [];
     for (const block of content) {
         if (block.type !== "tool_result") {
@@ -53,19 +76,13 @@ function userMessages(content: MessagesContentBlock[]): ChatMessage[] {
             continue;
         }
         const result = block.content ?? "";
+        const resultParts =
+            typeof result === "string" ? [] : result.map(contentPart);
         const text =
             typeof result === "string"
                 ? result
-                : result
-                      .filter((part) => part.type === "text")
-                      .map(contentPart);
-        if (typeof result !== "string") {
-            toolImages.push(
-                ...result.flatMap((part) =>
-                    part.type === "image" ? [imagePart(part)] : [],
-                ),
-            );
-        }
+                : resultParts.filter((part) => part.type === "text");
+        toolMedia.push(...resultParts.filter((part) => part.type !== "text"));
         toolMessages.push({
             role: "tool",
             tool_call_id: block.tool_use_id,
@@ -73,7 +90,7 @@ function userMessages(content: MessagesContentBlock[]): ChatMessage[] {
             ...cacheControl(block),
         } as ChatMessage);
     }
-    const userParts = [...toolImages, ...parts];
+    const userParts = [...toolMedia, ...parts];
     return [
         ...toolMessages,
         ...(userParts.length
@@ -211,9 +228,50 @@ function tools(request: CreateMessageRequest) {
     };
 }
 
-/** Translate a Messages request into the Chat Completions request it runs as. */
+/**
+ * Replaces the oldest images, including screenshots inside tool results, with
+ * a short note once the conversation holds more than the model accepts.
+ * Claude Code keeps every image it reads and assumes Anthropic's limit, so
+ * otherwise every later request fails, its own /compact included.
+ */
+function omitOldestImages(
+    messages: CreateMessageRequest["messages"],
+    maxImages: number,
+): CreateMessageRequest["messages"] {
+    const images = messages
+        .flatMap((message) =>
+            typeof message.content === "string" ? [] : message.content,
+        )
+        .flatMap((block) =>
+            block.type === "tool_result" && Array.isArray(block.content)
+                ? block.content
+                : [block],
+        )
+        .filter((block) => block.type === "image");
+    const omitted = new Set<MessagesContentBlock>(
+        images.slice(0, images.length - maxImages),
+    );
+    const note = `[image omitted: over the ${maxImages}-image limit]`;
+    const replace = <T extends MessagesContentBlock>(block: T): T =>
+        (block.type === "image" && omitted.has(block)
+            ? { type: "text", text: note, ...cacheControl(block) }
+            : block.type === "tool_result" && Array.isArray(block.content)
+              ? { ...block, content: block.content.map(replace) }
+              : block) as T;
+    return messages.map((message) =>
+        typeof message.content === "string"
+            ? message
+            : { ...message, content: message.content.map(replace) },
+    );
+}
+
+/**
+ * Translate a Messages request into the Chat Completions request it runs as.
+ * `maxImages` is the model's declared image limit.
+ */
 export function messagesToChatRequest(
     request: CreateMessageRequest,
+    maxImages = Number.POSITIVE_INFINITY,
 ): CreateChatCompletionRequest {
     const system =
         request.system === undefined
@@ -230,7 +288,12 @@ export function messagesToChatRequest(
     const effort = reasoningEffort(request);
     return {
         model: request.model,
-        messages: [...system, ...request.messages.flatMap(chatMessages)],
+        messages: [
+            ...system,
+            ...omitOldestImages(request.messages, maxImages).flatMap(
+                chatMessages,
+            ),
+        ],
         max_tokens: request.max_tokens,
         stream: request.stream ?? false,
         ...(request.stop_sequences?.length && {

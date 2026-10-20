@@ -24,16 +24,13 @@ import {
     apiDocsAnchor,
     type CardDetail,
     cardDetails,
+    type DailyItem,
     formatNewsDate,
-    type Highlight,
-    highlightLink,
+    itemLink,
     type ModelNews,
     type NewsIndex,
     visibleModelNews,
 } from "./news-index.ts";
-
-export const NEWS_MORE_URL =
-    "https://github.com/pollinations/pollinations#-latest-news";
 
 /** Rows shown at first and added per "Show older". */
 const PAGE_SIZE = 10;
@@ -43,7 +40,7 @@ type Announcement = {
     /** The day it shipped or takes effect. */
     date: string;
     until: string;
-    label: "New" | "Changing";
+    label: "New" | "Updated" | "Changing";
     title: string;
     text: string;
     icon: IconTileProps["icon"];
@@ -68,6 +65,24 @@ const ANNOUNCEMENTS: Announcement[] = [
         },
     },
     {
+        date: "2026-10-17",
+        until: "2026-10-31",
+        label: "Updated",
+        title: "25% off selected Claude models",
+        text: "Haiku 5.5, Sonnet 5.5, Opus 5.5 and Fable 5.1: 25% off standard API prices.",
+        icon: WalletIcon,
+        cta: { label: "View models", href: "/models?q=anthropic" },
+    },
+    {
+        date: "2026-10-13",
+        until: "2026-10-27",
+        label: "Updated",
+        title: "Sandboxes",
+        text: "Now in your dashboard: create, resume and kill sandboxes, then connect over SSH.",
+        icon: TerminalIcon,
+        cta: { label: "Open Sandboxes", href: "/sandboxes" },
+    },
+    {
         date: "2026-10-10",
         until: "2026-10-24",
         label: "New",
@@ -77,27 +92,6 @@ const ANNOUNCEMENTS: Announcement[] = [
         cta: {
             label: "Visit the website",
             href: "https://pollinations.ai",
-        },
-    },
-    {
-        date: "2026-10-06",
-        until: "2026-10-20",
-        label: "New",
-        title: "Pay with crypto",
-        text: "Buy Pollen packs with USDC: pick a pack, then choose Pay with Crypto.",
-        icon: WalletIcon,
-        cta: { label: "Buy Pollen", href: "/pollen" },
-    },
-    {
-        date: "2026-10-02",
-        until: "2026-10-16",
-        label: "New",
-        title: "Sandboxes",
-        text: "Create E2B-compatible sandboxes with the API or polli sandbox, then connect over SSH.",
-        icon: TerminalIcon,
-        cta: {
-            label: "Read the docs",
-            href: "https://gen.pollinations.ai/docs#tag/sandboxes",
         },
     },
 ];
@@ -355,8 +349,8 @@ export const Announcements: FC<{ items: Announcement[] }> = ({ items }) => (
     </ul>
 );
 
-/** The daily highlights as a grid of cards, newest first. */
-export const Updates: FC<{ items: Highlight[] }> = ({ items }) => {
+/** The daily items as a grid of cards, newest first. */
+export const Updates: FC<{ items: DailyItem[] }> = ({ items }) => {
     const [visible, setVisible] = useState(PAGE_SIZE);
     const updates = items.slice(0, visible);
     if (updates.length === 0) return null;
@@ -365,7 +359,7 @@ export const Updates: FC<{ items: Highlight[] }> = ({ items }) => {
         <>
             <ul className="grid gap-3 sm:grid-cols-2">
                 {updates.map((item) => {
-                    const { text, link } = highlightLink(item.text);
+                    const { text, link } = itemLink(item.text);
                     return (
                         <Surface
                             as="li"

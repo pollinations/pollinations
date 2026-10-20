@@ -1,4 +1,4 @@
-import { CONSENT_PERMISSIONS } from "@shared/auth/authorize-config.ts";
+import { OAUTH_SCOPES } from "@shared/auth/authorize-config.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -30,7 +30,7 @@ export const wellKnownRoutes = new Hono<Env>()
             token_endpoint: `${origin}/api/oauth/token`,
             userinfo_endpoint: `${origin}/api/oauth/userinfo`,
             device_authorization_endpoint: `${origin}/api/device/code`,
-            scopes_supported: [...CONSENT_PERMISSIONS],
+            scopes_supported: [...OAUTH_SCOPES],
             response_types_supported: ["code"],
             grant_types_supported: ["authorization_code", DEVICE_CODE_GRANT],
             code_challenge_methods_supported: ["S256"],

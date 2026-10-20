@@ -240,4 +240,105 @@ describe("Alibaba media adapters", () => {
             ).toBe(model === "wan2.7-image" ? null : "enable");
         },
     );
+    it("sends Qwen Image 2.1 Turbo the requested size, seed and no watermark, billing each output image", async () => {
+        const fetch = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(
+                Response.json({
+                    output: {
+                        choices: [
+                            { message: { content: [{ image: outputUrl }] } },
+                        ],
+                    },
+                    usage: { image_count: 1, width: 1280, height: 720 },
+                }),
+            )
+            .mockResolvedValueOnce(
+                new Response("image", {
+                    headers: { "content-type": "image/png" },
+                }),
+            );
+        const turbo: ImageParams = {
+            ...params,
+            model: "qwen/qwen-image-2.1-turbo",
+            width: 1280,
+            height: 720,
+        };
+        const result = await callAlibabaImage(
+            "A lighthouse at dusk",
+            turbo,
+            "qwen-image-2.1-turbo",
+        );
+        expect(fetch.mock.calls[0][0]).toBe(
+            "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+        );
+        expect(
+            new Headers(fetch.mock.calls[0][1]?.headers).get(
+                "X-DashScope-Async",
+            ),
+        ).toBeNull();
+        expect(
+            JSON.parse(fetch.mock.calls[0][1]?.body as string).parameters,
+        ).toEqual({
+            size: "1280*720",
+            n: 1,
+            seed: 42,
+            watermark: false,
+            prompt_extend: false,
+        });
+        expect(result.trackingData?.usage).toEqual({
+            completionImageTokens: 1,
+        });
+        const definition = IMAGE_SERVICES["qwen/qwen-image-2.1-turbo"];
+        const billed = calculateUsageBilling({
+            model: turbo.model,
+            usage: result.trackingData?.usage ?? {},
+            servedBy: definition,
+            quotedBy: definition,
+        });
+        expect(billed.price.totalPrice).toBeCloseTo(0.016);
+    });
+
+    it("sends Qwen Image 2.1 Turbo reference images and bills only the output image", async () => {
+        const fetch = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(
+                Response.json({
+                    output: {
+                        choices: [
+                            { message: { content: [{ image: outputUrl }] } },
+                        ],
+                    },
+                    usage: { image_count: 1 },
+                }),
+            )
+            .mockResolvedValueOnce(
+                new Response("image", {
+                    headers: { "content-type": "image/png" },
+                }),
+            );
+        const result = await callAlibabaImage(
+            "Make it blue",
+            {
+                ...params,
+                model: "qwen/qwen-image-2.1-turbo",
+                image: [
+                    "data:image/png;base64,AQID",
+                    "data:image/png;base64,BAUG",
+                ],
+            },
+            "qwen-image-2.1-turbo",
+        );
+        expect(
+            JSON.parse(fetch.mock.calls[0][1]?.body as string).input.messages[0]
+                .content,
+        ).toEqual([
+            { image: "data:image/png;base64,AQID" },
+            { image: "data:image/png;base64,BAUG" },
+            { text: "Make it blue" },
+        ]);
+        expect(result.trackingData?.usage).toEqual({
+            completionImageTokens: 1,
+        });
+    });
 });

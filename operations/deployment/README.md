@@ -17,6 +17,10 @@ Application deployment is discovered from each app's `deploy.json`. All
 applications deploy from `production`; `main` never deploys. Manual dispatch
 accepts an application name or path and is also restricted to `production`.
 
+Health checks expect HTTP 200 by default. Redirect-only apps set `verify_redirect`
+to their destination URL; every checked URL must return HTTP 301 with that exact
+destination before deployment succeeds.
+
 ## Single-endpoint registration cutover
 
 This change is **not safe for automatic production promotion** until a real

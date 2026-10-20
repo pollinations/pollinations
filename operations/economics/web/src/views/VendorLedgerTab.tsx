@@ -9,7 +9,6 @@ import {
 import { Fragment, useMemo, useState } from "react";
 import {
     DataTable,
-    GROUP_BORDER,
     type SortColumn,
     TableScroller,
     useSortableRows,
@@ -17,8 +16,9 @@ import {
 } from "../components/DataTable";
 import { EvidenceAction, EvidencePreview } from "../components/Evidence";
 import { SourceCell } from "../components/Provenance";
+import { useAmountDisplay } from "../components/ReconcilePro";
 import type { DriveDocumentLink } from "../lib/documents";
-import { fmtMonthDay, fmtNumber, fmtUtcDateTime } from "../lib/format";
+import { fmtMonthDay, fmtUtcDateTime } from "../lib/format";
 import {
     type MonthFilterValue,
     matchesMonth,
@@ -58,6 +58,8 @@ function costTypeLabel(type: string): string {
     if (normalized === "gpu") return "GPU";
     if (normalized === "infra") return "Infrastructure";
     if (normalized === "balance") return "Balance";
+    if (normalized === "planned") return "Planned cash · non-posting";
+    if (normalized === "statement") return "Source total · non-posting";
     return normalized || "Unclassified";
 }
 
@@ -84,18 +86,48 @@ export function VendorLedgerTab({
     month?: MonthFilterValue;
     vendor?: ValueFilter;
 }) {
+    const { fmtNumber } = useAmountDisplay();
     const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
     const [previewDocument, setPreviewDocument] =
         useState<DriveDocumentLink | null>(null);
     const baseRows = useMemo(
         () =>
-            (data.vendorLedger ?? []).filter(
+            [
+                ...(data.vendorLedger ?? []),
+                ...(data.vendorStatements ?? []),
+                ...(data.vendorPlans ?? []),
+            ].filter(
                 (row) =>
-                    row.start.slice(0, 7) >= WINDOW_START &&
-                    matchesMonth(row.start, month) &&
+                    (row.type === "planned" ||
+                        row.start.slice(0, 7) >= WINDOW_START) &&
+                    (row.type === "planned"
+                        ? (typeof month === "string" ? [month] : month).some(
+                              (selected) =>
+                                  !selected ||
+                                  ((!row.start ||
+                                      row.start <=
+                                          (selected.length === 4
+                                              ? `${selected}-12`
+                                              : selected)) &&
+                                      (!row.end ||
+                                          row.end >=
+                                              (selected.length === 4
+                                                  ? `${selected}-01`
+                                                  : selected))),
+                          ) ||
+                          (Array.isArray(month) && month.length === 0)
+                        : matchesMonth(row.start, month) ||
+                          (!!row.comparison_month &&
+                              matchesMonth(row.comparison_month, month))) &&
                     matchesValue(row.vendor, vendor),
             ),
-        [data.vendorLedger, month, vendor],
+        [
+            data.vendorLedger,
+            data.vendorStatements,
+            data.vendorPlans,
+            month,
+            vendor,
+        ],
     );
     const sortColumns = useMemo<SortColumn<VendorLedgerRow>[]>(
         () => [
@@ -106,6 +138,10 @@ export function VendorLedgerTab({
             { key: "resource", value: resourceLabel },
             { key: "paid", value: (row) => row.paid },
             { key: "credit", value: (row) => row.credit },
+            {
+                key: "statement_amount",
+                value: (row) => row.plan_amount ?? row.statement_amount ?? null,
+            },
             { key: "currency", value: (row) => row.currency },
             { key: "source", value: (row) => row.source },
             { key: "evidence", value: (row) => row.evidence },
@@ -152,28 +188,16 @@ export function VendorLedgerTab({
                         >
                             Model / resource
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={3}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
-                            Vendor funding
+                        <TableHeaderCell colSpan={4} align="center">
+                            Recorded amounts
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={2}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
+                        <TableHeaderCell colSpan={2} align="center">
                             Evidence
                         </TableHeaderCell>
                         <TableHeaderCell rowSpan={2}>Details</TableHeaderCell>
                     </TableRow>
                     <TableRow>
-                        <TableHeaderCell
-                            align="right"
-                            className={GROUP_BORDER}
-                            {...headerProps("paid")}
-                        >
+                        <TableHeaderCell align="right" {...headerProps("paid")}>
                             Paid
                         </TableHeaderCell>
                         <TableHeaderCell
@@ -186,9 +210,12 @@ export function VendorLedgerTab({
                             Currency
                         </TableHeaderCell>
                         <TableHeaderCell
-                            className={GROUP_BORDER}
-                            {...headerProps("source")}
+                            align="right"
+                            {...headerProps("statement_amount")}
                         >
+                            Source / planned amount
+                        </TableHeaderCell>
+                        <TableHeaderCell {...headerProps("source")}>
                             Source
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("evidence")}>
@@ -212,9 +239,12 @@ export function VendorLedgerTab({
                                         </TableCell>
                                         <TableCell className="whitespace-nowrap text-xs">
                                             <span>
-                                                {fmtMonthDay(row.start)}
+                                                {row.type === "planned"
+                                                    ? row.start ||
+                                                      "Forecast start"
+                                                    : fmtMonthDay(row.start)}
                                                 {row.end
-                                                    ? ` – ${fmtMonthDay(row.end)}${row.end.slice(0, 4) !== row.start.slice(0, 4) ? `, ${row.end.slice(0, 4)}` : ""}`
+                                                    ? ` – ${row.type === "planned" ? row.end : fmtMonthDay(row.end)}${row.end.slice(0, 4) !== row.start.slice(0, 4) ? `, ${row.end.slice(0, 4)}` : ""}`
                                                     : ""}
                                             </span>
                                         </TableCell>
@@ -224,17 +254,31 @@ export function VendorLedgerTab({
                                         <TableCell>
                                             {resourceLabel(row)}
                                         </TableCell>
-                                        <TableCell
-                                            align="right"
-                                            className={GROUP_BORDER}
-                                        >
-                                            {fmtNumber(row.paid)}
+                                        <TableCell align="right">
+                                            {["statement", "planned"].includes(
+                                                row.type,
+                                            )
+                                                ? "–"
+                                                : fmtNumber(row.paid)}
                                         </TableCell>
                                         <TableCell align="right">
-                                            {fmtNumber(row.credit)}
+                                            {["statement", "planned"].includes(
+                                                row.type,
+                                            )
+                                                ? "–"
+                                                : fmtNumber(row.credit)}
                                         </TableCell>
                                         <TableCell>{row.currency}</TableCell>
-                                        <TableCell className={GROUP_BORDER}>
+                                        <TableCell align="right">
+                                            {(row.plan_amount ??
+                                                row.statement_amount) == null
+                                                ? "–"
+                                                : fmtNumber(
+                                                      (row.plan_amount ??
+                                                          row.statement_amount) as number,
+                                                  )}
+                                        </TableCell>
+                                        <TableCell>
                                             <SourceCell
                                                 sources={[row.source]}
                                             />
@@ -257,13 +301,41 @@ export function VendorLedgerTab({
                                     {isExpanded ? (
                                         <TableRow>
                                             <TableCell
-                                                colSpan={11}
-                                                className="bg-theme-bg-active/40"
+                                                colSpan={12}
+                                                className="pl-6"
                                             >
                                                 <dl className="grid gap-4 p-2 sm:grid-cols-2 lg:grid-cols-4">
+                                                    {row.type === "planned" ? (
+                                                        <>
+                                                            <DetailItem
+                                                                label="Cadence"
+                                                                value={
+                                                                    row.plan_cadence
+                                                                }
+                                                            />
+                                                            <DetailItem
+                                                                label="Category"
+                                                                value={
+                                                                    row.plan_category
+                                                                }
+                                                            />
+                                                            <DetailItem
+                                                                label="Settled Bank entries"
+                                                                value={row.settled_by_entry_ids?.join(
+                                                                    ", ",
+                                                                )}
+                                                            />
+                                                        </>
+                                                    ) : null}
                                                     <DetailItem
                                                         label="Period"
                                                         value={`${fmtUtcDateTime(row.start)} – ${fmtUtcDateTime(row.end)}`}
+                                                    />
+                                                    <DetailItem
+                                                        label="Compared ledger entries"
+                                                        value={row.compared_entry_ids?.join(
+                                                            ", ",
+                                                        )}
                                                     />
                                                     <DetailItem
                                                         label="Recorded"
@@ -295,9 +367,9 @@ export function VendorLedgerTab({
                                                     />
                                                     <DetailItem
                                                         label="Count"
-                                                        value={
-                                                            row.resource_count
-                                                        }
+                                                        value={fmtNumber(
+                                                            row.resource_count,
+                                                        )}
                                                     />
                                                     <DetailItem
                                                         label="Entry ID"

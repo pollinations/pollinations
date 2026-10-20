@@ -127,14 +127,6 @@ describe("resolveModelConfig", () => {
         },
     );
 
-    it("routes Claude Fable 5.1 to its global profile", () => {
-        expect(
-            resolveModelConfig(messages, {
-                model: "anthropic/claude-fable-5.1",
-            }).options.model,
-        ).toBe("global.anthropic.claude-fable-5-1");
-    });
-
     it("does not set max_tokens for non-Anthropic models", () => {
         const result = resolveModelConfig(messages, {
             model: "openai/gpt-5.4-nano",
@@ -210,18 +202,6 @@ describe("resolveModelConfig", () => {
             directEndpoint: "https://api.novita.ai/openai/v1/chat/completions",
         });
         expect(result.options.provider).toBeUndefined();
-    });
-
-    it("pins the Ling OpenRouter fallback to Novita without gateway fallback", () => {
-        const result = resolveModelConfig(messages, {
-            model: "inclusionai/ling-3.1-flash:openrouter:novita",
-        });
-
-        expect(result.options.model).toBe("inclusionai/ling-3.1-flash");
-        expect(result.options.provider).toEqual({
-            only: ["novita"],
-            allow_fallbacks: false,
-        });
     });
 
     it("pins Nex N2.5 Mini to Nex AGI on OpenRouter without fallback", () => {
@@ -309,6 +289,21 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it.each([
+        ["xiaomi/mimo-v2.6-flash", "xiaomimimo/mimo-v2.6-flash"],
+        ["xiaomi/mimo-v2.6-pro", "xiaomimimo/mimo-v2.6-pro"],
+    ])("routes %s directly to Novita as %s", (model, upstream) => {
+        const result = resolveModelConfig(messages, { model });
+
+        expect(result.options.model).toBe(upstream);
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            directEndpoint: "https://api.novita.ai/openai/v1/chat/completions",
+            model: upstream,
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it("routes Opus 5.5 fast mode through OpenRouter's Anthropic fast endpoint", () => {
         const result = resolveModelConfig(messages, {
             model: "anthropic/claude-opus-5.5:fast",
@@ -321,54 +316,27 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("routes Claude Sonnet 5.5 to the Bedrock global inference profile", () => {
-        const result = resolveModelConfig(messages, {
-            model: "anthropic/claude-sonnet-5.5",
-        });
+    it.each([
+        ["anthropic/claude-haiku-5.5", "claude-haiku-5-5"],
+        ["anthropic/claude-sonnet-5.5", "claude-sonnet-5-5"],
+        ["anthropic/claude-opus-5.5", "claude-opus-5-5"],
+        ["anthropic/claude-fable-5.1", "claude-fable-5-1"],
+    ])(
+        "routes %s to Anthropic with a Bedrock global fallback",
+        (model, upstream) => {
+            const primary = resolveModelConfig(messages, { model });
+            expect(primary.options.model).toBe(upstream);
+            expect(primary.options.modelConfig?.provider).toBe("anthropic");
+            expect(primary.options.max_tokens).toBe(128000);
 
-        expect(result.options.model).toBe("global.anthropic.claude-sonnet-5-5");
-        expect(result.options.modelConfig?.provider).toBe("bedrock");
-        expect(result.options.max_tokens).toBe(128000);
-    });
-
-    it("routes Claude Haiku 5.5 to the Bedrock global inference profile and the Vercel fallback to the gateway", () => {
-        const primary = resolveModelConfig(messages, {
-            model: "anthropic/claude-haiku-5.5",
-        });
-        expect(primary.options.model).toBe("global.anthropic.claude-haiku-5-5");
-        expect(primary.options.modelConfig?.provider).toBe("bedrock");
-        expect(primary.options.max_tokens).toBe(128000);
-
-        const fallback = resolveModelConfig(messages, {
-            model: "anthropic/claude-haiku-5.5:vercel",
-        });
-        expect(fallback.options.model).toBe("anthropic/claude-haiku-5.5");
-        expect(fallback.options.modelConfig?.directEndpoint).toBe(
-            "https://ai-gateway.vercel.sh/v1/chat/completions",
-        );
-    });
-
-    it("routes Claude Opus 5.5 to the Bedrock global inference profile", () => {
-        const result = resolveModelConfig(messages, {
-            model: "anthropic/claude-opus-5.5",
-        });
-
-        expect(result.options.model).toBe("global.anthropic.claude-opus-5-5");
-        expect(result.options.modelConfig?.provider).toBe("bedrock");
-        expect(result.options.max_tokens).toBe(128000);
-    });
-
-    it("routes the Claude Opus 5.5 Anthropic fallback to the exact OpenRouter endpoint", () => {
-        const result = resolveModelConfig(messages, {
-            model: "anthropic/claude-opus-5.5:openrouter:anthropic",
-        });
-
-        expect(result.options.model).toBe("anthropic/claude-opus-5.5");
-        expect(result.options.provider).toEqual({
-            only: ["anthropic"],
-            allow_fallbacks: false,
-        });
-    });
+            const fallback = resolveModelConfig(messages, {
+                model: `${model}:aws`,
+            });
+            expect(fallback.options.model).toBe(`global.anthropic.${upstream}`);
+            expect(fallback.options.modelConfig?.provider).toBe("bedrock");
+            expect(fallback.options.max_tokens).toBe(128000);
+        },
+    );
 
     it("pins Inkling to Together on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
@@ -492,6 +460,23 @@ describe("resolveModelConfig", () => {
         });
         expect(result.options.provider).toBeUndefined();
     });
+
+    it.each([
+        ["inferenceport-ai/lightning-text-v2", "lightning"],
+        ["inferenceport-ai/lightning-text-v2.1", "lightning-text-v2.1"],
+    ])(
+        "routes %s directly to InferencePort without fallback",
+        (model, upstream) => {
+            const result = resolveModelConfig(messages, { model });
+
+            expect(result.options.model).toBe(upstream);
+            expect(result.options.modelConfig).toMatchObject({
+                provider: "openai",
+                "custom-host": "https://api.inferenceport.ai/v1",
+            });
+            expect(result.options.provider).toBeUndefined();
+        },
+    );
 
     it("routes Step Flash directly to DeepInfra without fallback", () => {
         const result = resolveModelConfig(messages, {
@@ -679,6 +664,31 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("routes DeepSeek V4.1 Flash 1017 directly to Fireworks with a DeepInfra fallback", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "deepseek/deepseek-v4.1-flash-1017",
+        });
+        const fallback = resolveModelConfig(messages, {
+            model: "deepseek/deepseek-v4.1-flash-1017:deepinfra",
+        });
+
+        expect(primary.options.model).toBe(
+            "accounts/fireworks/models/deepseek-v4p1-flash-1017",
+        );
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(primary.options.provider).toBeUndefined();
+        expect(fallback.options.model).toBe(
+            "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+        );
+        expect(fallback.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+    });
+
     it("routes Muse Glimmer directly to DeepInfra", () => {
         const result = resolveModelConfig(messages, { model: "muse-glimmer" });
 
@@ -701,6 +711,18 @@ describe("resolveModelConfig", () => {
             "custom-host": "https://ai-gateway.vercel.sh/v1",
         });
         expect(result.options.provider).toBeUndefined();
+    });
+
+    it("pins Muse Wonder to Meta on OpenRouter", () => {
+        const result = resolveModelConfig(messages, {
+            model: "meta/muse-wonder-1.0",
+        });
+
+        expect(result.options.model).toBe("meta/muse-wonder");
+        expect(result.options.provider).toEqual({
+            only: ["meta"],
+            allow_fallbacks: false,
+        });
     });
 
     it("routes Grok 4.6 directly to its Azure deployment", () => {
@@ -770,8 +792,6 @@ describe("resolveModelConfig", () => {
         ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
-        ["xiaomi/mimo-v2.6-flash", "xiaomi/mimo-v2.6-flash", "xiaomi/fp8"],
-        ["xiaomi/mimo-v2.6-pro", "xiaomi/mimo-v2.6-pro", "xiaomi/fp8"],
         ["minimax-m2.7", "minimax/minimax-m2.7", "novita/fp8"],
         [
             "minimax/minimax-m2.7:openrouter:minimax",
@@ -841,23 +861,24 @@ describe("resolveModelConfig", () => {
         ).toBe("none");
     });
 
-    it("routes DeepSeek V4.1 Flash to DeepInfra with a Fireworks fallback", () => {
+    it("routes DeepSeek V4.1 Flash to Azure with a Fireworks fallback", () => {
         const primary = resolveModelConfig(messages, {
             model: "deepseek/deepseek-v4.1-flash",
         });
-        const fallback = resolveModelConfig(messages, {
+        const fireworks = resolveModelConfig(messages, {
             model: "deepseek/deepseek-v4.1-flash:fireworks",
         });
 
-        expect(primary.options.model).toBe("deepseek-ai/DeepSeek-V4.1-Flash");
+        expect(primary.options.model).toBe("DeepSeek-V4.1-Flash");
         expect(primary.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://api.deepinfra.com/v1/openai",
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-swedencentral",
+            "azure-deployment-id": "DeepSeek-V4.1-Flash",
         });
-        expect(fallback.options.model).toBe(
+        expect(fireworks.options.model).toBe(
             "accounts/fireworks/models/deepseek-v4p1-flash",
         );
-        expect(fallback.options.modelConfig).toMatchObject({
+        expect(fireworks.options.modelConfig).toMatchObject({
             provider: "openai",
             "custom-host": "https://api.fireworks.ai/inference/v1",
         });

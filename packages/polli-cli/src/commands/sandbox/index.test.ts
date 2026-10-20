@@ -1,11 +1,13 @@
 import {
+    fstatSync,
     mkdirSync,
     mkdtempSync,
+    openSync,
     readFileSync,
     rmSync,
     writeFileSync,
 } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -14,11 +16,21 @@ vi.mock("node:os", async (original) => {
     return { ...os, homedir: vi.fn(os.homedir) };
 });
 
+vi.mock("node:fs", async (original) => {
+    const fs = await original<typeof import("node:fs")>();
+    return {
+        ...fs,
+        openSync: vi.fn(fs.openSync),
+        fstatSync: vi.fn(fs.fstatSync),
+    };
+});
+
 let home: string;
 
 beforeEach(() => {
     vi.resetModules();
-    home = mkdtempSync(join(tmpdir(), "polli-sandbox-test-"));
+    // Short, so ssh's connection-sharing socket path fits.
+    home = mkdtempSync("/tmp/polli-");
     vi.mocked(homedir).mockReturnValue(home);
     mkdirSync(join(home, ".pollinations", "ssh"), { recursive: true });
     // Avoid generating an SSH key; setup only needs this file to exist.
@@ -206,5 +218,129 @@ describe("sandbox timeout and pause", () => {
             expect.stringContaining("/alpha/e2b/sandboxes/sbx1/pause"),
             expect.objectContaining({ method: "POST" }),
         );
+    });
+});
+
+describe("ssh connections", () => {
+    async function prepare(response: Response) {
+        const { setKeyOverride } = await import("../../lib/config.js");
+        setKeyOverride("sk_test");
+        let stderr = "";
+        vi.spyOn(process.stderr, "write").mockImplementation((value) => {
+            stderr += String(value);
+            return true;
+        });
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => response),
+        );
+        const { sandboxCommand } = await import("./index.js");
+        return {
+            run: (...args: string[]) =>
+                sandboxCommand.parseAsync(args, { from: "user" }),
+            stderr: () => stderr,
+        };
+    }
+
+    it("writes a config that shares one connection between ssh, scp and rsync", async () => {
+        const { setupSsh } = await import("./ssh.js");
+
+        setupSsh();
+
+        const config = readFileSync(
+            join(home, ".pollinations", "ssh", "config"),
+            "utf8",
+        );
+        expect(config).toContain("ControlMaster auto");
+        expect(config).toContain("ControlPersist 10m");
+    });
+
+    it("doesn't share connections when the socket path would be too long", async () => {
+        const long = join(home, "a-long-company-managed-account-name");
+        mkdirSync(join(long, ".pollinations", "ssh"), { recursive: true });
+        writeFileSync(join(long, ".pollinations", "ssh", "id_ed25519"), "");
+        vi.mocked(homedir).mockReturnValue(long);
+        const { setupSsh } = await import("./ssh.js");
+
+        setupSsh();
+
+        const config = readFileSync(
+            join(long, ".pollinations", "ssh", "config"),
+            "utf8",
+        );
+        expect(config).not.toContain("ControlMaster");
+    });
+
+    it("prints Gen's refusal as a sentence on the terminal, where ssh doesn't hide it", async () => {
+        const tty = join(home, "tty");
+        const fs = await vi.importActual<typeof import("node:fs")>("node:fs");
+        // ssh with ControlPersist gives the proxy /dev/null as stderr.
+        vi.mocked(fstatSync).mockImplementation(((fd: number) =>
+            fd === 2
+                ? fs.statSync("/dev/null")
+                : fs.fstatSync(fd)) as typeof fstatSync);
+        vi.mocked(openSync).mockImplementation((path, ...rest) =>
+            fs.openSync(path === "/dev/tty" ? tty : path, ...rest),
+        );
+        const command = await prepare(
+            Response.json(
+                {
+                    code: 429,
+                    message:
+                        "At most 3 sandboxes can run at once. Kill or pause one first.",
+                },
+                { status: 429 },
+            ),
+        );
+
+        await expect(
+            command.run("proxy", "paused1.polli"),
+        ).rejects.toMatchObject({ code: 1 });
+
+        const shown = readFileSync(tty, "utf8");
+        expect(shown).toContain(
+            "Could not reach sandbox paused1.polli: At most 3 sandboxes can run at once. Kill or pause one first.\nSee your sandboxes: polli sandbox list",
+        );
+        expect(command.stderr()).toBe("");
+    });
+});
+
+describe("sandbox list", () => {
+    it("shows a sandbox's name, and none for an unnamed one", async () => {
+        const { setKeyOverride } = await import("../../lib/config.js");
+        const { setOutputMode } = await import("../../lib/output.js");
+        setKeyOverride("sk_test");
+        setOutputMode("human");
+        let stdout = "";
+        vi.spyOn(process.stdout, "write").mockImplementation((value) => {
+            stdout += String(value);
+            return true;
+        });
+        const sandbox = {
+            templateID: "pollinations",
+            state: "paused",
+            cpuCount: 2,
+            memoryMB: 2048,
+            endAt: "2026-10-14T00:00:00Z",
+        };
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json([
+                    {
+                        ...sandbox,
+                        sandboxID: "sbx1",
+                        metadata: { name: "brave-otter" },
+                    },
+                    { ...sandbox, sandboxID: "sbx2" },
+                ]),
+            ),
+        );
+        const { sandboxCommand } = await import("./index.js");
+
+        await sandboxCommand.parseAsync(["list"], { from: "user" });
+
+        expect(stdout).toMatch(/sbx1\s+brave-otter\s+pollinations/);
+        expect(stdout).toMatch(/sbx2\s+pollinations/);
     });
 });

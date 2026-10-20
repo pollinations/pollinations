@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -121,6 +121,34 @@ describe("gen text output", () => {
             model: "server-model",
             tokens: 7,
         });
+    });
+
+    it("rejects an existing directory as --output before the request is sent", async () => {
+        const folder = mkdtempSync(join(tmpdir(), "polli-text-test-"));
+        folders.push(folder);
+        const directory = join(folder, "existing-directory");
+        mkdirSync(directory);
+
+        setKeyOverride("sk_test");
+        setOutputMode("json");
+        const errors: string[] = [];
+        vi.spyOn(process.stderr, "write").mockImplementation((value) => {
+            errors.push(String(value));
+            return true;
+        });
+        // The command must stop before fetchGen: generation is billed before the
+        // response is saved, so reaching the network would already cost Pollen.
+        const fetchSpy = vi.fn();
+        vi.stubGlobal("fetch", fetchSpy);
+
+        await expect(
+            createTextCommand().parseAsync(["hi", "--output", directory], {
+                from: "user",
+            }),
+        ).rejects.toThrow();
+
+        expect(fetchSpy).not.toHaveBeenCalled();
+        expect(errors.join("")).toContain("it is a directory, not a file");
     });
 });
 

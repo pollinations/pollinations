@@ -1,5 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { writeFileSync } from "node:fs";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
 import {
@@ -9,6 +8,7 @@ import {
     printInfo,
     printMeta,
 } from "../../lib/output.js";
+import { prepareOutputPath } from "../../lib/output-file.js";
 
 // The response's Content-Type, not the model name, decides the file
 // extension: zimage, flux and most other models return JPEG.
@@ -65,8 +65,7 @@ export function createImageCommand() {
             const path = `/image/${encodedPrompt}?${params}`;
 
             // Before the paid request, so a bad --output folder costs nothing.
-            if (opts.output)
-                mkdirSync(dirname(opts.output), { recursive: true });
+            if (opts.output) prepareOutputPath(opts.output);
             if (isHuman) printInfo("Generating image...");
 
             try {

@@ -63,10 +63,12 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     let githubProfile: { id: number; username: string } | undefined;
 
     // Connected accounts are one per provider: quests key their rewards on
-    // the Discord and GitHub ids, so a second link would earn them again.
+    // the Discord, GitHub and Google ids, so a second link would earn them
+    // again.
     const connectableProviders: Record<string, string> = {
         discord: "Discord",
         github: "GitHub",
+        google: "Google",
     };
 
     const hasAccount = async (userId: string, providerId: string) => {
@@ -203,6 +205,17 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                             ),
                         );
                 }
+                // GitHub stays connected once linked: quests and community
+                // models key on users.github_id.
+                if (
+                    authContext.path === "/unlink-account" &&
+                    authContext.body?.providerId === "github"
+                ) {
+                    throw new APIError("BAD_REQUEST", {
+                        code: "GITHUB_ACCOUNT_CANNOT_BE_DISCONNECTED",
+                        message: "GitHub can't be disconnected once connected.",
+                    });
+                }
                 if (authContext.path !== "/delete-user") return;
 
                 const session = await getSessionFromCtx(authContext);
@@ -244,12 +257,20 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             },
             account: {
                 create: {
+                    // Also covers implicit links on sign-in, which skip
+                    // the /link-social check above.
                     before: async (account) => {
                         if (
-                            account.providerId === "discord" &&
-                            (await hasAccount(account.userId, "discord"))
+                            Object.hasOwn(
+                                connectableProviders,
+                                account.providerId,
+                            ) &&
+                            (await hasAccount(
+                                account.userId,
+                                account.providerId,
+                            ))
                         ) {
-                            throw accountAlreadyConnected("discord");
+                            throw accountAlreadyConnected(account.providerId);
                         }
                     },
                     after: async (account, context) => {

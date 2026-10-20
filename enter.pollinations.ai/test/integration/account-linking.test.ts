@@ -69,17 +69,17 @@ async function finishOAuth(
     });
 }
 
-async function signInWithGoogle(): Promise<Response> {
+async function signIn(provider: "github" | "google"): Promise<Response> {
     const start = await SELF.fetch(
         "http://localhost:3000/api/auth/sign-in/social",
         {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ provider: "google", callbackURL: "/" }),
+            body: JSON.stringify({ provider, callbackURL: "/" }),
         },
     );
     expect(start.status).toBe(200);
-    return finishOAuth(start, "google");
+    return finishOAuth(start, provider);
 }
 
 function sessionCookieFrom(response: Response): string {
@@ -90,15 +90,26 @@ function sessionCookieFrom(response: Response): string {
     return `better-auth.session_token=${token}`;
 }
 
-function startGitHubLink(sessionCookie: string): Promise<Response> {
-    return SELF.fetch("http://localhost:3000/api/auth/link-social", {
+function postWithSession(
+    sessionCookie: string,
+    path: string,
+    body: object,
+): Promise<Response> {
+    return SELF.fetch(`http://localhost:3000/api/auth${path}`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             Cookie: sessionCookie,
             Origin: "http://localhost:3000",
         },
-        body: JSON.stringify({ provider: "github", callbackURL: "/account" }),
+        body: JSON.stringify(body),
+    });
+}
+
+function startGitHubLink(sessionCookie: string): Promise<Response> {
+    return postWithSession(sessionCookie, "/link-social", {
+        provider: "github",
+        callbackURL: "/account",
     });
 }
 
@@ -115,7 +126,7 @@ async function providersByEmail(email: string) {
 test("signs up with Google without a GitHub identity", async ({ mocks }) => {
     await mocks.enable("google", "tinybird");
 
-    const callback = await signInWithGoogle();
+    const callback = await signIn("google");
     expect(callback.status).toBe(302);
     expect(callback.headers.get("Location")).toBe("/");
 
@@ -137,7 +148,7 @@ test("Google opens the GitHub account with the same verified email", async ({
 }) => {
     await mocks.enable("google", "tinybird");
 
-    const callback = await signInWithGoogle();
+    const callback = await signIn("google");
     expect(callback.headers.get("Location")).toBe("/");
 
     const accounts = await providersByEmail("test@example.com");
@@ -156,7 +167,7 @@ test("Google never links on an unverified email", async ({
 
     // Google has not verified the address.
     mocks.google.state.user.emailVerified = false;
-    const unverifiedGoogle = await signInWithGoogle();
+    const unverifiedGoogle = await signIn("google");
     expect(unverifiedGoogle.headers.get("Location")).toContain(
         "error=account_not_linked",
     );
@@ -164,7 +175,7 @@ test("Google never links on an unverified email", async ({
     // Our account has not verified it.
     mocks.google.state.user.emailVerified = true;
     await drizzle(env.DB).update(userTable).set({ emailVerified: false });
-    const unverifiedLocal = await signInWithGoogle();
+    const unverifiedLocal = await signIn("google");
     expect(unverifiedLocal.headers.get("Location")).toContain(
         "error=account_not_linked",
     );
@@ -179,7 +190,7 @@ test("Google never links on an unverified email", async ({
 test("connects one GitHub account to a Google account", async ({ mocks }) => {
     await mocks.enable("google", "github", "tinybird");
     mocks.google.state.user.email = "google-user@example.com";
-    const sessionCookie = sessionCookieFrom(await signInWithGoogle());
+    const sessionCookie = sessionCookieFrom(await signIn("google"));
 
     const callback = await finishOAuth(
         await startGitHubLink(sessionCookie),
@@ -200,6 +211,71 @@ test("connects one GitHub account to a Google account", async ({ mocks }) => {
     await expect(secondLink.json()).resolves.toMatchObject({
         code: "GITHUB_ACCOUNT_ALREADY_CONNECTED",
     });
+
+    const secondGoogle = await postWithSession(sessionCookie, "/link-social", {
+        provider: "google",
+        callbackURL: "/account",
+    });
+    expect(secondGoogle.status).toBe(400);
+    await expect(secondGoogle.json()).resolves.toMatchObject({
+        code: "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
+    });
+
+    const unlink = await postWithSession(sessionCookie, "/unlink-account", {
+        providerId: "github",
+    });
+    expect(unlink.status).toBe(400);
+    await expect(unlink.json()).resolves.toMatchObject({
+        code: "GITHUB_ACCOUNT_CANNOT_BE_DISCONNECTED",
+    });
+    expect(
+        (await providersByEmail("google-user@example.com")).map(
+            (account) => account.providerId,
+        ),
+    ).toEqual(["github", "google"]);
+});
+
+test("GitHub opens the Google account with the same verified email", async ({
+    mocks,
+}) => {
+    await mocks.enable("google", "github", "tinybird");
+    await signIn("google");
+
+    const callback = await signIn("github");
+    expect(callback.headers.get("Location")).toBe("/");
+
+    const users = await drizzle(env.DB).select().from(userTable);
+    expect(users).toHaveLength(1);
+    expect(users[0]).toMatchObject({
+        githubId: mocks.github.state.user.id,
+        githubUsername: mocks.github.state.user.login,
+    });
+    expect(
+        (await providersByEmail("test@example.com")).map(
+            (account) => account.providerId,
+        ),
+    ).toEqual(["github", "google"]);
+});
+
+test("never joins a second GitHub account on sign-in", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    await mocks.enable("github", "tinybird");
+    const firstGithubId = mocks.github.state.user.id;
+    mocks.github.state.user.id = firstGithubId + 1;
+    mocks.github.state.user.login = "second-github";
+
+    const callback = await signIn("github");
+    expect(callback.headers.get("Location")).toContain(
+        "error=unable_to_link_account",
+    );
+
+    const [user] = await drizzle(env.DB).select().from(userTable);
+    expect(user?.githubId).toBe(firstGithubId);
+    expect(await providersByEmail("test@example.com")).toMatchObject([
+        { providerId: "github" },
+    ]);
 });
 
 test("refuses a GitHub account that belongs to another user", async ({
@@ -208,7 +284,7 @@ test("refuses a GitHub account that belongs to another user", async ({
 }) => {
     await mocks.enable("google", "github", "tinybird");
     mocks.google.state.user.email = "google-user@example.com";
-    const sessionCookie = sessionCookieFrom(await signInWithGoogle());
+    const sessionCookie = sessionCookieFrom(await signIn("google"));
 
     const callback = await finishOAuth(
         await startGitHubLink(sessionCookie),

@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated: 2026-10-15**
+**Last updated: 2026-10-20**
 
 ## 1) Scope & Roles
 

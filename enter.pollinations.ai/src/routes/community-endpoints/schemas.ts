@@ -73,7 +73,7 @@ const FallbacksSchema = z
     .array(z.string().trim().min(1))
     .max(MAX_FALLBACK_TARGETS)
     .describe(
-        'Community model ids ("community/<owner>/<name>") tried in order when this model\'s upstream fails, or an empty array to clear them. Each must be another registered community model of the same modality, public or owned by you, and priced at or below this model on every price field.',
+        'Model ids tried in order when this model\'s upstream fails, or an empty array to clear them. Each must be a Pollinations model id or another registered community model ("community/<owner>/<name>") that is public or owned by you, with the same modality and priced at or below this model on every price field.',
     );
 const VisibilitySchema = z
     .enum(COMMUNITY_ENDPOINT_VISIBILITIES)

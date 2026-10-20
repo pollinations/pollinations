@@ -13,11 +13,16 @@ import {
     parseListingPayload,
     pendingCommunityEndpointChangeIsReady,
     resolveEffectiveProxyListing,
+    staticFallbackRejection,
 } from "@shared/community-endpoints.ts";
 import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { resolveModelName } from "@shared/registry/registry.ts";
+import {
+    getModels,
+    getRegistryModelDefinition,
+    resolveModelName,
+} from "@shared/registry/registry.ts";
 import { decryptSecret, encryptSecret } from "@shared/secret-encryption.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -466,7 +471,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "List Fallback Candidates",
             description:
-                "Community models this model may declare as fallbacks: registered, public or owned by you, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
+                "Models this model may declare as fallbacks: community models that are public or owned by you, and Pollinations models, with the same modality and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
             responses: {
                 200: {
                     description: "Eligible fallback model ids",
@@ -535,15 +540,24 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     schema.user,
                     eq(schema.communityEndpoint.ownerUserId, schema.user.id),
                 );
-            const data = candidates
-                .flatMap(({ endpoint: row, ownerGithubUsername: owner }) => {
-                    if (!owner) return [];
-                    const modelId = communityModelId(owner, row.name);
-                    return fallbackTargetRejection(primary, modelId, row)
-                        ? []
-                        : [modelId];
-                })
-                .sort();
+            const data = [
+                ...candidates.flatMap(
+                    ({ endpoint: row, ownerGithubUsername: owner }) => {
+                        if (!owner) return [];
+                        const modelId = communityModelId(owner, row.name);
+                        return fallbackTargetRejection(primary, modelId, row)
+                            ? []
+                            : [modelId];
+                    },
+                ),
+                ...getModels().filter(
+                    (modelId) =>
+                        !staticFallbackRejection(
+                            primary,
+                            getRegistryModelDefinition(modelId),
+                        ),
+                ),
+            ].sort();
             return c.json({ data });
         },
     )

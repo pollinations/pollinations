@@ -3,7 +3,7 @@ import { chmod, readFile, rename, writeFile } from "node:fs/promises";
 const target = new URL("../.dev.vars", import.meta.url);
 const temporary = new URL("../.dev.vars.tmp", import.meta.url);
 // Preserve the separately approved local signing secret. Never generate one,
-// import production credentials, or bring back the retired shared password.
+// read the production configuration, or bring back the retired shared password.
 const existing = await readFile(target, "utf8").catch((error) => {
     if (error.code === "ENOENT") return "";
     throw error;
@@ -17,10 +17,20 @@ if (!sessionLine)
     );
 const reader = process.env.TINYBIRD_ECONOMICS_READ_TOKEN;
 if (!reader) throw new Error("Missing staging TINYBIRD_ECONOMICS_READ_TOKEN");
+const drive = process.env.ECONOMICS_GOOGLE_DRIVE_CREDENTIALS;
+if (!drive)
+    throw new Error(
+        "Missing ECONOMICS_GOOGLE_DRIVE_CREDENTIALS in the encrypted local staging configuration",
+    );
+const driveJson = JSON.stringify(JSON.parse(drive)).replaceAll("'", "\\u0027");
 await writeFile(
     temporary,
     [
         sessionLine,
+        ...existing
+            .split("\n")
+            .filter((line) => line.startsWith("TINYBIRD_DEPLOYMENT_ID=")),
+        `ECONOMICS_GOOGLE_DRIVE_CREDENTIALS='${driveJson}'`,
         `TINYBIRD_ECONOMICS_READ_TOKEN=${JSON.stringify(reader)}`,
         'POLLINATIONS_AUTH_BASE_URL="http://localhost:3000"',
         'TINYBIRD_POLLEN_PIPE="economics_pollen_usage_snapshot_api"',

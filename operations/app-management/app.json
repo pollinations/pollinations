@@ -1,6 +1,27 @@
 [
   {
     "emoji": "✍️",
+    "name": "Vibe Trip Planner",
+    "url": "https://arpent.in/vibe",
+    "description": "Pick a handful of pictogram \"vibe\" blocks (ocean, monastic, cheap eats, slow mornings) and get back a composed trip: a region, day-by-day prose, the route on a map, where to sleep and eat, and real ph",
+    "language": "en",
+    "category": "writing",
+    "platform": "web",
+    "githubUsername": "FriendsCoin",
+    "githubUserId": "6728402",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-17",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17827",
+    "approvedDate": "2026-10-20",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/76b4168f-f8c7-41b3-856f-35ef485b2cba"
+  },
+  {
+    "emoji": "✍️",
     "name": "TaleCrafter AI",
     "url": "https://www.talecrafterai.com",
     "description": "TaleCrafter AI turns ideas into illustrated, narration-first storybooks. Users choose a genre, audience age group, and art style, then create either a complete Classic story or a Plot Twist adventure ",

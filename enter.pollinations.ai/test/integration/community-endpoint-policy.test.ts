@@ -2,9 +2,18 @@ import { env, SELF } from "cloudflare:test";
 import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
+    communityEndpointPriceFieldsForModality,
+    communityEndpointPrices,
+    MAX_COMMUNITY_PRICE_PER_TOKEN,
     parseListingPayload,
+    staticFallbackRejection,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
+import {
+    getModels,
+    getRegistryModelDefinition,
+    type ModelName,
+} from "@shared/registry/registry.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, vi } from "vitest";
@@ -488,6 +497,80 @@ describe("community endpoint configuration policy", () => {
         expect(candidates.data).toContain(cheaperModelId);
         expect(candidates.data).not.toContain(expensiveModelId);
         expect(candidates.data).not.toContain(primary.modelId as string);
+    });
+
+    test("accepts a Pollinations model as a fallback only when it costs no more", async ({
+        accountToken,
+    }) => {
+        await approveCommunityModels();
+        const textPrices = Object.fromEntries(
+            communityEndpointPriceFieldsForModality("text").map((field) => [
+                field.key,
+                MAX_COMMUNITY_PRICE_PER_TOKEN,
+            ]),
+        );
+        const cheaperPrices = { promptTextPrice: 0.000001 };
+        const rejectionAt = (
+            prices: Record<string, number>,
+            modelId: ModelName,
+        ) =>
+            staticFallbackRejection(
+                {
+                    modality: "text",
+                    imagePricing: "request",
+                    paidOnly: false,
+                    prices: communityEndpointPrices(prices),
+                },
+                getRegistryModelDefinition(modelId),
+            );
+        // Picked with the shared rule, so no catalog id is hardcoded.
+        const target = getModels().find(
+            (modelId) =>
+                !rejectionAt(textPrices, modelId) &&
+                rejectionAt(cheaperPrices, modelId),
+        );
+        expect(target).toBeDefined();
+        const primary = await postModel(accountToken, "", {
+            name: "primary-with-static-fallback",
+            title: "Primary with a Pollinations fallback",
+            visibility: "public",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
+            bearerToken: "test-provider-token",
+            ...textPrices,
+            fallbacks: [target],
+        });
+        const published = await publishPendingModel(
+            accountToken,
+            primary.id as string,
+        );
+        expect(published.fallbacks).toEqual([target]);
+        const response = await SELF.fetch(
+            `${endpointUrl}/${primary.id as string}/fallback-candidates`,
+            { headers: { Authorization: `Bearer ${accountToken}` } },
+        );
+        const candidates = await response.json<{ data: string[] }>();
+        expect(candidates.data).toContain(target);
+
+        const cheaper = await SELF.fetch(endpointUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accountToken}`,
+            },
+            body: JSON.stringify({
+                name: "cheaper-than-static",
+                title: "Cheaper than its fallback",
+                visibility: "public",
+                api: "chat_completions",
+                url: "https://text.example.com/v1/chat/completions",
+                bearerToken: "test-provider-token",
+                ...cheaperPrices,
+                fallbacks: [target],
+            }),
+        });
+        expect(cheaper.status).toBe(400);
+        expect(await cheaper.text()).toContain("costs more than this model");
     });
 
     test("clears advertised metadata without rewriting payload for listing-only changes", async ({

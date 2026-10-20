@@ -12,7 +12,7 @@ import type { ModelDefinition } from "../registry";
 // file-name (canonical id) order — deterministic and conflict-free; the
 // legacy table's curated order carried no behavior.
 type ModelModule = { default: unknown; id: unknown };
-type RouteModule = ModelModule & { parent: unknown };
+type RouteModule = ModelModule & { parent: unknown; order: unknown };
 
 function parseModules<Mods extends Record<string, ModelModule>>(
     modules: Mods,
@@ -51,12 +51,21 @@ const base = parseModules(
 const routeModules = import.meta.glob("./routes/*.ts", {
     eager: true,
 }) as Record<string, RouteModule>;
-const routes: FallbackMap = {};
+// Routes keep the source declaration order — the order mergeFallbacks tries
+// them in — which file names do not reproduce.
+const pending: Record<
+    string,
+    Array<{ id: string; order: number; def: FallbackDefinition }>
+> = {};
 for (const file of Object.keys(routeModules).sort()) {
     const mod = routeModules[file];
-    if (typeof mod.id !== "string" || typeof mod.parent !== "string") {
+    if (
+        typeof mod.id !== "string" ||
+        typeof mod.parent !== "string" ||
+        typeof mod.order !== "number"
+    ) {
         throw new Error(
-            `[registry/text] ${file}: missing \`id\`/\`parent\` exports`,
+            `[registry/text] ${file}: missing \`id\`/\`parent\`/\`order\` exports`,
         );
     }
     const parsed = FallbackFileSchema.safeParse(mod.default);
@@ -70,14 +79,29 @@ for (const file of Object.keys(routeModules).sort()) {
             `[registry/text] ${file}: parent "${mod.parent}" is not a model`,
         );
     }
-    if (!(mod.parent in routes)) routes[mod.parent] = {};
-    const group = routes[mod.parent];
-    if (mod.id in group) {
+    if (!pending[mod.parent]) pending[mod.parent] = [];
+    const list = pending[mod.parent];
+    if (list.some((r) => r.id === mod.id)) {
         throw new Error(
             `[registry/text] duplicate route id "${mod.id}" (${file})`,
         );
     }
-    group[mod.id] = parsed.data as FallbackDefinition;
+    if (list.some((r) => r.order === mod.order)) {
+        throw new Error(
+            `[registry/text] duplicate route order ${mod.order} under "${mod.parent}" (${file})`,
+        );
+    }
+    list.push({
+        id: mod.id,
+        order: mod.order,
+        def: parsed.data as FallbackDefinition,
+    });
+}
+
+const routes: FallbackMap = {};
+for (const [parent, list] of Object.entries(pending)) {
+    list.sort((a, b) => a.order - b.order);
+    routes[parent] = Object.fromEntries(list.map((r) => [r.id, r.def]));
 }
 
 export const TEXT_SERVICES = mergeFallbacks(base, routes);

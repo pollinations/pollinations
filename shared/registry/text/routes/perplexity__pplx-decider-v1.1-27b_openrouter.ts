@@ -5,6 +5,7 @@ import { perMillion } from "../../price-helpers";
 
 export const id = "perplexity/pplx-decider-v1.1-27b:openrouter";
 export const parent = "perplexity/pplx-decider-v1.1-27b";
+export const order = 0;
 
 export default {
     provider: "openrouter",

@@ -5,6 +5,7 @@ import { perMillion } from "../../price-helpers";
 
 export const id = "liquid/d1:vercel";
 export const parent = "liquid/d1";
+export const order = 0;
 
 export default {
     provider: "vercel",

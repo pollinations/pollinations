@@ -4,6 +4,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "moonshotai/kimi-k2.6:deepinfra";
 export const parent = "moonshotai/kimi-k2.6";
+export const order = 1;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,

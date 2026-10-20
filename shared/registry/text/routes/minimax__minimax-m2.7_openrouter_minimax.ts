@@ -4,6 +4,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "minimax/minimax-m2.7:openrouter:minimax";
 export const parent = "minimax/minimax-m2.7";
+export const order = 0;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.openRouterMinimax27FirstParty,

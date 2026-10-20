@@ -4,6 +4,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "nvidia/nemotron-3-ultra:deepinfra";
 export const parent = "nvidia/nemotron-3-ultra";
+export const order = 0;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,

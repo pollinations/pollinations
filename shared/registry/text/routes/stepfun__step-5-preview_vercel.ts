@@ -6,6 +6,7 @@ import { perMillion } from "../../price-helpers";
 
 export const id = "stepfun/step-5-preview:vercel";
 export const parent = "stepfun/step-5-preview";
+export const order = 0;
 
 export default {
     provider: "vercel",

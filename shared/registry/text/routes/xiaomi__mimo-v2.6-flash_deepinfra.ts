@@ -3,6 +3,7 @@ import { perMillion } from "../../price-helpers";
 
 export const id = "xiaomi/mimo-v2.6-flash:deepinfra";
 export const parent = "xiaomi/mimo-v2.6-flash";
+export const order = 0;
 
 export default {
     provider: "deepinfra",

@@ -4,6 +4,7 @@ import { perMillion } from "../../price-helpers";
 
 export const id = "x-ai/grok-4.6:xai";
 export const parent = "x-ai/grok-4.6";
+export const order = 1;
 
 export default {
     provider: "xai",

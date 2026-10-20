@@ -4,6 +4,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "google/gemma-4-26b-a4b-it:deepinfra";
 export const parent = "google/gemma-4-26b-a4b-it";
+export const order = 0;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,

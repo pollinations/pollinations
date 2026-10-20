@@ -4,6 +4,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16";
 export const parent = "nvidia/nemotron-3.5-lightning";
+export const order = 0;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.openRouterNemotron,

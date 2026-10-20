@@ -3,6 +3,7 @@ import { perMillion } from "../../price-helpers";
 
 export const id = "mistralai/mistral-small-4:openrouter";
 export const parent = "mistralai/mistral-small-4";
+export const order = 0;
 
 export default {
     provider: "openrouter",

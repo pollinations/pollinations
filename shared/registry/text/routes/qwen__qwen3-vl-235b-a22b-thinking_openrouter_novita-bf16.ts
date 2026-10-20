@@ -4,6 +4,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "qwen/qwen3-vl-235b-a22b-thinking:openrouter:novita-bf16";
 export const parent = "qwen/qwen3-vl-235b-a22b-thinking";
+export const order = 0;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.openRouterQwenVl,

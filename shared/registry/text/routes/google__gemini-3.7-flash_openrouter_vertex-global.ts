@@ -5,6 +5,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "google/gemini-3.7-flash:openrouter:vertex-global";
 export const parent = "google/gemini-3.7-flash";
+export const order = 0;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.gemini35,

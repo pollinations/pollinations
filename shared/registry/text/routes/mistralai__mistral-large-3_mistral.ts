@@ -4,6 +4,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "mistralai/mistral-large-3:mistral";
 export const parent = "mistralai/mistral-large-3";
+export const order = 0;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.mistralLarge,

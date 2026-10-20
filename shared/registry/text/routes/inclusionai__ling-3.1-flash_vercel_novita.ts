@@ -3,6 +3,7 @@ import { perMillion } from "../../price-helpers";
 
 export const id = "inclusionai/ling-3.1-flash:vercel:novita";
 export const parent = "inclusionai/ling-3.1-flash";
+export const order = 0;
 
 export default {
     provider: "vercel",

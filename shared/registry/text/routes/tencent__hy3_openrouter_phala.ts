@@ -4,6 +4,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "tencent/hy3:openrouter:phala";
 export const parent = "tencent/hy3";
+export const order = 0;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.openRouterHy3Phala,

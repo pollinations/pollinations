@@ -3,6 +3,7 @@ import { perMillion } from "../../price-helpers";
 
 export const id = "openai/gpt-6-astra:azure:datazone";
 export const parent = "openai/gpt-6-astra";
+export const order = 0;
 
 export default {
     provider: "azure",

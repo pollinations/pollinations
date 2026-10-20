@@ -4,6 +4,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "deepseek/deepseek-v4-pro:openrouter:streamlake";
 export const parent = "deepseek/deepseek-v4-pro";
+export const order = 0;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.openRouterStreamLakeReasoning,

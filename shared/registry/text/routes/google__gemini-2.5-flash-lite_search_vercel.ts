@@ -4,6 +4,7 @@ import { perMillion } from "../../price-helpers";
 
 export const id = "google/gemini-2.5-flash-lite:search:vercel";
 export const parent = "google/gemini-2.5-flash-lite:search";
+export const order = 0;
 
 export default {
     provider: "vercel",

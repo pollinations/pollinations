@@ -4,6 +4,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "x-ai/grok-4.3:openrouter:xai-zdr";
 export const parent = "x-ai/grok-4.3";
+export const order = 0;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.openRouterGrok43,

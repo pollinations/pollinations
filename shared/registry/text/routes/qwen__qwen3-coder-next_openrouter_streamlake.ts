@@ -4,6 +4,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "qwen/qwen3-coder-next:openrouter:streamlake";
 export const parent = "qwen/qwen3-coder-next";
+export const order = 0;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.openRouterQwenCoderNext,

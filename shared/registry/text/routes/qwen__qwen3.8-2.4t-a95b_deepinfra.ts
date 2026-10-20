@@ -4,6 +4,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "qwen/qwen3.8-2.4t-a95b:deepinfra";
 export const parent = "qwen/qwen3.8-2.4t-a95b";
+export const order = 0;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,

@@ -5,6 +5,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "google/gemini-4-argon:openrouter:ai-studio";
 export const parent = "google/gemini-4-argon";
+export const order = 0;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.gemini35AiStudio,

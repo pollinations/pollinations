@@ -4,6 +4,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "deepseek/deepseek-v4-flash:deepinfra";
 export const parent = "deepseek/deepseek-v4-flash";
+export const order = 0;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,

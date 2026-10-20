@@ -4,6 +4,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "anthropic/claude-fable-5:openrouter:vertex-global";
 export const parent = "anthropic/claude-fable-5";
+export const order = 0;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.openRouterOpus,

@@ -4,6 +4,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "meta/muse-glimmer-30b:openrouter:together";
 export const parent = "meta/muse-glimmer-30b";
+export const order = 0;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.openRouterMuseGlimmer,

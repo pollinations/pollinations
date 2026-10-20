@@ -3,6 +3,7 @@ import { perMillion } from "../../price-helpers";
 
 export const id = "meta/llama-4-scout:openrouter:deepinfra-fp8-priority";
 export const parent = "meta/llama-4-scout";
+export const order = 0;
 
 export default {
     provider: "openrouter",

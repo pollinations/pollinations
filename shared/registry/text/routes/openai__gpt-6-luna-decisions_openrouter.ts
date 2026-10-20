@@ -5,6 +5,7 @@ import { perMillion } from "../../price-helpers";
 
 export const id = "openai/gpt-6-luna-decisions:openrouter";
 export const parent = "openai/gpt-6-luna-decisions";
+export const order = 0;
 
 export default {
     provider: "openrouter",

@@ -4,6 +4,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "qwen/qwen3.8-27b:openrouter:reka-fp8";
 export const parent = "qwen/qwen3.8-27b";
+export const order = 0;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.qwen38Reka,

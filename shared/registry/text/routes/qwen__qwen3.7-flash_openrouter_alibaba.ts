@@ -5,6 +5,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "qwen/qwen3.7-flash:openrouter:alibaba";
 export const parent = "qwen/qwen3.7-flash";
+export const order = 0;
 
 export default {
     provider: "openrouter",

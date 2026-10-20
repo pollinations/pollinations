@@ -4,6 +4,7 @@ import { perMillion } from "../../price-helpers";
 
 export const id = "x-ai/grok-4.7:openrouter";
 export const parent = "x-ai/grok-4.7";
+export const order = 0;
 
 export default {
     provider: "openrouter",

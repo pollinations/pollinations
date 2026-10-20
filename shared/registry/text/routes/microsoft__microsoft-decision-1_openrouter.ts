@@ -5,6 +5,7 @@ import { perMillion } from "../../price-helpers";
 
 export const id = "microsoft/microsoft-decision-1:openrouter";
 export const parent = "microsoft/microsoft-decision-1";
+export const order = 0;
 
 export default {
     provider: "openrouter",

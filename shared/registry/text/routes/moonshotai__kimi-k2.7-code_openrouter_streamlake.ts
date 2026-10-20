@@ -4,6 +4,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "moonshotai/kimi-k2.7-code:openrouter:streamlake";
 export const parent = "moonshotai/kimi-k2.7-code";
+export const order = 0;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.openRouterKimiStreamLake,

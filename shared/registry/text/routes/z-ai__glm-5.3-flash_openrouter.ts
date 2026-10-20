@@ -4,6 +4,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "z-ai/glm-5.3-flash:openrouter";
 export const parent = "z-ai/glm-5.3-flash";
+export const order = 0;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.openRouterGlm53,

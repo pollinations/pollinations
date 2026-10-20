@@ -4,6 +4,7 @@ import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "meta/muse-wonder-1.0:vercel";
 export const parent = "meta/muse-wonder-1.0";
+export const order = 0;
 
 export default {
     supportedParameters: CHAT_PARAMETERS.vercelMuseWonder,

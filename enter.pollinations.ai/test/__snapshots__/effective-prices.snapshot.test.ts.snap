@@ -20,7 +20,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0,
     },
   },
-  "alibaba/wan-2.2-fast:fal": {
+  "alibaba/wan-2.2-fast:replicate": {
     "cost": {
       "completionVideoSeconds": 0.01,
       "promptImageTokens": 0,

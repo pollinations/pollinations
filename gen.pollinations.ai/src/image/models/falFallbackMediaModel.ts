@@ -195,7 +195,9 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
                 : {}),
         }),
     },
-    "alibaba/wan-2.2-fast:fal": {
+    // Primary route for alibaba/wan-2.2-fast (moved off Replicate, 2026-10-21).
+    // Fal Turbo endpoints; tracking keeps the requested (base) model id.
+    "alibaba/wan-2.2-fast": {
         textEndpoint: "fal-ai/wan/v2.2-a14b/text-to-video/turbo",
         imageEndpoint: "fal-ai/wan/v2.2-a14b/image-to-video/turbo",
         duration: () => 5,

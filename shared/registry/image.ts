@@ -1072,14 +1072,16 @@ const IMAGE_BASE_SERVICES = {
     },
     "alibaba/wan-2.2-fast": {
         aliases: ["wan2.2", "wan-2.2", "wan-fast"],
-        provider: "replicate",
+        provider: "fal",
         publisher: "Alibaba",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Replicate wan-2.2-fast, locked to 480p. Silent, fixed ~5s clip billed
-        // flat ($0.01/s x 5s = $0.05).
+        // Fal wan-2.2-turbo, locked to 480p. Silent, fixed ~5s clip billed
+        // flat ($0.01/s x 5s = $0.05). Primary moved off Replicate, which
+        // returned 4xx on ~48% of requests (31 req, 15 errors_4xx,
+        // 2026-10-21 /models/status); Replicate stays as a fallback-only route.
         cost: {
             promptImageTokens: 0,
             completionVideoSeconds: 0.01, // per sec (480p, silent)

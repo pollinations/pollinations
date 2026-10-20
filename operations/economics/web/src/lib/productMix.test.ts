@@ -1,4 +1,7 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { ProductMixCard } from "../components/ProductMixCard";
 import type { Data, OpPollenRow, RevenueShareSourceRow } from "../types";
 import { monthlyProductMix } from "./productMix";
 
@@ -155,4 +158,25 @@ describe("monthlyProductMix", () => {
         };
         expect(monthlyProductMix(invalid, ["2026-09"])[0].streams).toBeNull();
     });
+});
+
+it("keeps sub-unit retained amounts readable in chart tooltips", () => {
+    const html = renderToStaticMarkup(
+        createElement(ProductMixCard, {
+            rows: [
+                {
+                    month: "2026-09",
+                    streams: {
+                        models: { consumed: 0.5, retained: 0.2 },
+                        byop: { consumed: 0, retained: 0 },
+                        community: { consumed: 0, retained: 0 },
+                    },
+                },
+            ],
+            activeMonth: "2026-09",
+            onInspect: () => {},
+        }),
+    );
+    expect(html).toContain("0.2 retained</title>");
+    expect(html).not.toContain(":  retained");
 });

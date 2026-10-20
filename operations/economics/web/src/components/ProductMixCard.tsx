@@ -1,4 +1,5 @@
 import { CardIcon, Heading, Surface } from "@pollinations/ui";
+import { fmtExactNumber } from "../lib/format";
 import { monthName, monthShift } from "../lib/months";
 import { PRODUCT_STREAMS, type ProductMixMonth } from "../lib/productMix";
 import { trendPercentChange } from "../lib/trends";
@@ -164,8 +165,7 @@ export function ProductMixCard({
                                             fill={stream.color}
                                         >
                                             <title>
-                                                {monthName(rows[i].month)}:{" "}
-                                                {fmtNumber(value)} retained
+                                                {`${monthName(rows[i].month)}: ${fmtExactNumber(value)} retained`}
                                             </title>
                                         </circle>
                                     </g>

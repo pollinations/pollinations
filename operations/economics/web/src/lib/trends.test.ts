@@ -28,6 +28,7 @@ const sale = (
     refunds: 100,
     reversals: 20,
     stripe_fees: 80,
+    dispute_fees: 0,
     net_sales: 880,
     net_after_fees: 800,
     payments: 10,

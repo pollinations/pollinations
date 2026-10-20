@@ -43,6 +43,7 @@ export type McpPricingInfo = {
 export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "ASK_JEV_MCP"
+    | "SECOND_OPINION_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -124,6 +125,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Decision tools use Jev's listed model rate. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "second-opinion",
+        name: "Second Opinion",
+        description:
+            "Ask the same question to several models and compare their answers side by side.",
+        binding: "SECOND_OPINION_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Each model call uses that model's listed rate. No additional MCP fee.",
             rates: [],
         },
     },

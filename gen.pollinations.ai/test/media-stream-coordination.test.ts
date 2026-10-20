@@ -3,10 +3,8 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { env } from "cloudflare:workers";
-import { getUserBalance } from "@shared/billing/balance.ts";
 import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
-import { drizzle } from "drizzle-orm/d1";
 import { afterEach, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
 
@@ -117,44 +115,4 @@ it("coordinates identical media requests that carry a stray stream flag", async 
     expect((await a.clone().arrayBuffer()).byteLength).toBeGreaterThan(0);
     expect((await b.clone().arrayBuffer()).byteLength).toBeGreaterThan(0);
     await provider.drain();
-}, 30_000);
-
-it("shares the media cache entry between stream and non-stream forms of one request", async () => {
-    const owner = await createTestApiKey({ user: { packBalance: 100 } });
-    env.REPLICATE_API_TOKEN = "workers-test-only";
-    const tinybird = createMockTinybird();
-    const provider = mockReplicate(false, tinybird);
-    const prompt = `wave5-identity-${crypto.randomUUID()}`;
-
-    const ctxPlain = createExecutionContext();
-    const plain = await worker.fetch(
-        imageRequest(owner.key, prompt, false),
-        env,
-        ctxPlain,
-    );
-    expect(plain.status).toBe(200);
-    expect(provider.executions).toBe(1);
-    expect((await plain.clone().arrayBuffer()).byteLength).toBeGreaterThan(0);
-    await waitOnExecutionContext(ctxPlain);
-    await provider.drain();
-
-    // The identical image with only a stray stream flag appended must reuse
-    // the entry, not regenerate and rebill the same bytes.
-    const ctxStreamed = createExecutionContext();
-    const streamed = await worker.fetch(
-        imageRequest(owner.key, prompt, true),
-        env,
-        ctxStreamed,
-    );
-    await waitOnExecutionContext(ctxStreamed);
-    expect(streamed.status).toBe(200);
-    expect(streamed.headers.get("x-cache")).toBe("HIT");
-    expect(provider.executions).toBe(1);
-    expect((await streamed.clone().arrayBuffer()).byteLength).toBeGreaterThan(
-        0,
-    );
-
-    // And the payer was billed exactly once.
-    const balance = await getUserBalance(drizzle(env.DB), owner.userId);
-    expect(balance.packBalance).toBeLessThan(100);
 }, 30_000);

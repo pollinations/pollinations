@@ -7,7 +7,7 @@ import type { ModelDefinition } from "./registry";
 export const DEFAULT_REALTIME_MODEL = "openai/gpt-realtime-2.1" as const;
 export type RealtimeModelName = keyof typeof REALTIME_SERVICES;
 
-const OPENAI_REALTIME_BASE = {
+export const OPENAI_REALTIME_BASE = {
     aliases: [],
     provider: "azure",
     publisher: "OpenAI",
@@ -19,7 +19,7 @@ const OPENAI_REALTIME_BASE = {
     reasoning: true,
 } satisfies Partial<ModelDefinition>;
 
-const OPENAI_REALTIME_COST = {
+export const OPENAI_REALTIME_COST = {
     promptTextTokens: 0.000004,
     promptCachedTokens: 0.0000004,
     promptAudioTokens: 0.000032,

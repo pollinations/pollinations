@@ -167,12 +167,12 @@ ${icons}
     return { html, text };
 }
 
-/** Send one notice. False when sending failed; the failure is logged. */
+/** Send one notice. A failed send is logged. */
 export async function sendNotice(
     env: CloudflareBindings,
     user: { id: string; email: string },
     notice: Notice,
-): Promise<boolean> {
+): Promise<void> {
     const unsubscribeUrl = new URL("/api/unsubscribe", env.BETTER_AUTH_URL);
     unsubscribeUrl.search = new URLSearchParams({
         u: user.id,
@@ -191,14 +191,12 @@ export async function sendNotice(
             },
             ...renderNotice(notice, env.BETTER_AUTH_URL, unsubscribeUrl.href),
         });
-        return true;
     } catch (error) {
         log.error("Account notice {id} failed: {code} {error}", {
             id: notice.id,
             code: (error as { code?: string }).code ?? "unknown",
             error: error instanceof Error ? error.message : String(error),
         });
-        return false;
     }
 }
 
@@ -224,14 +222,10 @@ export async function sendRunningLowNotice(
         .first<{ email: string; balance: number }>();
     if (!user) return;
 
-    const notice = runningLowNotice(user.balance);
-    if (await sendNotice(env, { id: userId, email: user.email }, notice)) {
-        return;
-    }
-    // A failed send frees the slot for the next crossing.
-    await env.DB.prepare(
-        "UPDATE user SET low_balance_notified_at = NULL WHERE id = ?",
-    )
-        .bind(userId)
-        .run();
+    // Gen calls once per crossing, so a failed send is logged, not retried.
+    await sendNotice(
+        env,
+        { id: userId, email: user.email },
+        runningLowNotice(user.balance),
+    );
 }

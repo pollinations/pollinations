@@ -11,17 +11,12 @@ type SentEmail = {
     headers: Record<string, string>;
 };
 
-function withOutbox(fail = false) {
+function withOutbox() {
     const sent: SentEmail[] = [];
     const notifyEnv = {
         ...env,
         EMAIL: {
             send: async (message: SentEmail) => {
-                if (fail) {
-                    throw Object.assign(new Error("rate limited"), {
-                        code: "E_RATE_LIMIT_EXCEEDED",
-                    });
-                }
                 sent.push(message);
                 return { messageId: crypto.randomUUID() };
             },
@@ -101,18 +96,6 @@ test("running-low email goes out once per pack below 20% of the last pack", asyn
     ).run();
     await processAutoTopUpForUser(notifyEnv, "low");
     expect(sent).toHaveLength(2);
-});
-
-test("a failed running-low email frees the slot for the next crossing", async () => {
-    await addUser("bounce", { packBalance: 1, lastPackPollen: 10 });
-
-    await processAutoTopUpForUser(withOutbox(true).notifyEnv, "bounce");
-    expect(await notifiedAt("bounce")).toBeNull();
-
-    const { sent, notifyEnv } = withOutbox();
-    await processAutoTopUpForUser(notifyEnv, "bounce");
-    expect(sent).toHaveLength(1);
-    expect(await notifiedAt("bounce")).not.toBeNull();
 });
 
 test("auto top-up failed emails once per failure", async () => {

@@ -373,12 +373,25 @@ describe("against a local fake gen", () => {
                 ],
                 env,
             );
+            // A bad pair fails before the good pair ahead of it is probed.
+            const printed = lines.length;
             await assert.rejects(
                 main(
-                    ["compare", "--pairs", "a=vendor/unknown", "--out", out],
+                    [
+                        "compare",
+                        "--pairs",
+                        "vendor/official=vendor/official,a=vendor/unknown",
+                        "--out",
+                        out,
+                    ],
                     env,
                 ),
                 /No reference/,
+            );
+            assert.equal(lines.length, printed);
+            await assert.rejects(
+                main(["compare", "--seed", "abc", "--out", out], env),
+                /--seed must be a whole number/,
             );
         } finally {
             console.log = log;

@@ -7,6 +7,11 @@ import { ask, defaultBaseUrl } from "./lib/gen.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
+/** Bump when a probe or the normalisation changes: old references stop comparing. */
+export const PROBE_SET_VERSION = 1;
+export const MIN_REPETITIONS = 8;
+const MAX_TOKENS = 1024;
+
 const USAGE = `Check whether a model answers like the model it claims to be. Review only:
 nothing here hides or changes a model, it only prints findings for a person.
 
@@ -17,16 +22,11 @@ nothing here hides or changes a model, it only prints findings for a person.
                                    reference of the model it claims to be
                                    (openai=openai checks a model against itself)
 
-  --repetitions N                  answers per probe and model, at least ${8} (default 8)
+  --repetitions N                  answers per probe and model, at least ${MIN_REPETITIONS} (default ${MIN_REPETITIONS})
   --seed N                         first request seed (default: random; saved)
   --timeout SECONDS                per-request time limit (default 120)
   --out DIR                        references and reports (default: operations/model-evals/data/fingerprints)
 `;
-
-/** Bump when a probe or the normalisation changes: old references stop comparing. */
-export const PROBE_SET_VERSION = 1;
-export const MIN_REPETITIONS = 8;
-const MAX_TOKENS = 1024;
 
 const ONE_WORD = /^[a-z]+$/;
 // Short open questions with many valid answers. Each model family has its own
@@ -339,7 +339,18 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
         key,
         timeoutMs: Number(opts.timeout) * 1000,
     };
-    const seed = Number(opts.seed ?? Math.floor(Math.random() * 2 ** 30));
+    const whole = (name, value) => {
+        const number = Number(value);
+        if (!Number.isSafeInteger(number))
+            throw new Error(`--${name} must be a whole number.`);
+        return number;
+    };
+    // A non-numeric seed would send seed: null, so gen's cache would replay one answer.
+    const seed = whole(
+        "seed",
+        opts.seed ?? Math.floor(Math.random() * 2 ** 30),
+    );
+    const repetitions = whole("repetitions", opts.repetitions);
     const list = (value) =>
         (value ?? "")
             .split(",")
@@ -350,7 +361,7 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
         for (const model of list(opts.models)) {
             const reference = await buildReference({
                 model,
-                repetitions: Number(opts.repetitions),
+                repetitions,
                 seed,
                 api,
             });
@@ -367,15 +378,21 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
         return;
     }
 
-    const reports = [];
-    for (const pair of list(opts.pairs)) {
+    // Load every reference first, so a bad pair fails before any paid request.
+    const pairs = list(opts.pairs).map((pair) => {
         const [candidate, claims] = pair.split("=").map((s) => s.trim());
         const path = referencePath(opts.out, claims ?? "");
         if (!candidate || !claims || !existsSync(path))
             throw new Error(
                 `No reference for "${pair}": run \`reference --models ${claims ?? "<model>"}\` first.`,
             );
-        const reference = JSON.parse(readFileSync(path, "utf-8"));
+        return {
+            candidate,
+            reference: JSON.parse(readFileSync(path, "utf-8")),
+        };
+    });
+    const reports = [];
+    for (const { candidate, reference } of pairs) {
         const report = await compareWithReference({
             candidate,
             reference,

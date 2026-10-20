@@ -18,7 +18,7 @@ const modelSchema = (defaultModel: string) =>
                 "Model to use. See /image/models for the current canonical IDs and aliases.",
         });
 
-const GenerateImageRequestQueryParamsBaseSchema = z.object({
+export const GenerateImageRequestQueryParamsSchema = z.object({
     // Image model params
     model: modelSchema(DEFAULT_IMAGE_MODEL),
     width: z.coerce.number().int().nonnegative().optional().default(1024).meta({
@@ -148,15 +148,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     }),
 });
 
-// No route-wide duration cap here: the schema's documented 1-120s bound is the
-// shared public limit, and per-model refinements in ImageParamsSchema plus the
-// providers themselves narrow it further (no model supports more than 15s
-// today). A GET-only 30s cap survived the Nova Reel retirement and rejected
-// values the POST routes and the generated OpenAPI documentation accept.
-export const GenerateImageRequestQueryParamsSchema =
-    GenerateImageRequestQueryParamsBaseSchema;
-
 export const GenerateVideoRequestQueryParamsSchema =
-    GenerateImageRequestQueryParamsBaseSchema.extend({
+    GenerateImageRequestQueryParamsSchema.extend({
         model: modelSchema("google/veo-3.1-fast"),
     });

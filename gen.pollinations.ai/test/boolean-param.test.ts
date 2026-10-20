@@ -82,8 +82,6 @@ describe("GenerateImageRequestQueryParamsSchema booleans", () => {
 
 describe("GenerateImageRequestQueryParamsSchema duration", () => {
     it("accepts the documented 1-120s bound on GET like on POST", () => {
-        // A route-wide 30s cap once rejected 31-120s here while the POST
-        // routes and the generated OpenAPI documentation accepted them.
         const parsed = GenerateImageRequestQueryParamsSchema.parse({
             duration: "60",
         });

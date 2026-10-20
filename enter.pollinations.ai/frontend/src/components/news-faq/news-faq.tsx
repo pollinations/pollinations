@@ -1,24 +1,13 @@
-import { GitHubIcon, InlineLink, Section, TabButton } from "@pollinations/ui";
+import { InlineLink, Section, TabButton } from "@pollinations/ui";
 import { type FC, type ReactNode, useState } from "react";
 import { FAQ } from "./faq.tsx";
 import {
     Announcements,
     Changelog,
     currentAnnouncements,
-    NEWS_MORE_URL,
     Updates,
 } from "./news-banner.tsx";
-import { newsHighlights, useNewsIndex } from "./news-index.ts";
-
-const GITHUB_LINK = (
-    <InlineLink href={NEWS_MORE_URL} size="sm">
-        <GitHubIcon
-            aria-hidden="true"
-            className="mr-1.5 inline-block h-4 w-4 align-text-bottom"
-        />
-        More on GitHub
-    </InlineLink>
-);
+import { newsDaily, useNewsIndex } from "./news-index.ts";
 
 const CHANGELOG_LINKS = (
     <div className="flex gap-4">
@@ -50,8 +39,7 @@ export const NewsFaq: FC = () => {
             : []),
         {
             label: "Updates",
-            links: GITHUB_LINK,
-            panel: <Updates items={index ? newsHighlights(index) : []} />,
+            panel: <Updates items={index ? newsDaily(index) : []} />,
         },
         {
             label: "Changelog",

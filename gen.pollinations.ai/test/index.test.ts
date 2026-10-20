@@ -411,8 +411,11 @@ describe("gen worker routing", () => {
                 "public, max-age=3600",
             );
             const bytes = new Uint8Array(await skillFile.arrayBuffer());
+            // Accept CRLF checkouts: git's default core.autocrlf on Windows
+            // gives the bundled bytes CRLF endings; the contract is that the
+            // served file starts with the frontmatter that names the skill.
             expect(new TextDecoder().decode(bytes)).toMatch(
-                new RegExp(`^---\\nname: ${skill.name}\\n`),
+                new RegExp(`^---\\r?\\nname: ${skill.name}\\r?\\n`),
             );
             const hash = await crypto.subtle.digest("SHA-256", bytes);
             const hex = [...new Uint8Array(hash)]
@@ -2352,6 +2355,8 @@ fixtureTest(
                         unknown
                     >;
                     expect(body.prompt).toBe("warm pads");
+                    // no strength → fal keeps its default init_noise_level.
+                    expect(body.init_noise_level).toBeUndefined();
                     sentAudioUrl = body.audio_url;
 
                     return Response.json({
@@ -2435,6 +2440,108 @@ fixtureTest(
         expect(calls).toContain(a2aEndpoint);
         expect(calls).toContain(resultUrl);
         expect(calls).toContain(falFileUrl);
+    },
+);
+
+fixtureTest(
+    "maps stable-audio-3-medium strength to fal init_noise_level",
+    async ({ paidApiKey }) => {
+        vi.useFakeTimers({ toFake: ["setTimeout"] });
+        const calls: string[] = [];
+        const a2aEndpoint =
+            "https://queue.fal.run/fal-ai/stable-audio-3/medium/audio-to-audio";
+        const statusUrl = `${a2aEndpoint}/requests/a2a-strength/status`;
+        const resultUrl = `${a2aEndpoint}/requests/a2a-strength`;
+        const falFileUrl = "https://v3.fal.media/files/test-a2a-strength.mp3";
+        const referenceAudioUrl =
+            "https://media.pollinations.ai/test-reference-audio";
+        let sentInitNoiseLevel: unknown;
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+
+                if (request.url === referenceAudioUrl) {
+                    return new Response(new Uint8Array([82, 73, 70, 70]), {
+                        headers: { "Content-Type": "audio/wav" },
+                    });
+                }
+
+                if (request.url === a2aEndpoint) {
+                    const body = (await request.json()) as Record<
+                        string,
+                        unknown
+                    >;
+                    sentInitNoiseLevel = body.init_noise_level;
+
+                    return Response.json({
+                        request_id: "a2a-strength",
+                        status_url: statusUrl,
+                        response_url: resultUrl,
+                    });
+                }
+
+                if (request.url === statusUrl) {
+                    return Response.json({ status: "COMPLETED" });
+                }
+
+                if (request.url === resultUrl) {
+                    return Response.json({
+                        audio: { url: falFileUrl, content_type: "audio/mpeg" },
+                        seed: 1,
+                    });
+                }
+
+                if (request.url === falFileUrl) {
+                    return new Response(new Uint8Array([73, 68, 51, 4]), {
+                        headers: { "Content-Type": "audio/mpeg" },
+                    });
+                }
+
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const pending = worker.fetch(
+            new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "stable-audio-3-medium",
+                    input: "warm pads",
+                    reference_audio: referenceAudioUrl,
+                    strength: 0.05,
+                }),
+            }),
+            withInlineGenerationCoordinator({
+                ...env,
+                FAL_KEY: "test-fal-key",
+            } as unknown as CloudflareBindings),
+            ctx,
+        );
+        await vi.waitFor(() => expect(calls).toContain(a2aEndpoint));
+        await vi.advanceTimersByTimeAsync(5_000);
+        const response = await pending;
+
+        expect(response.status).toBe(200);
+        await response.arrayBuffer();
+
+        await waitOnExecutionContext(ctx);
+        expect(sentInitNoiseLevel).toBe(0.05);
     },
 );
 
@@ -2585,9 +2692,12 @@ fixtureTest(
                     expect(formData.get("prompt")).toBe("warm pads");
                     expect(formData.get("model")).toBe("stable-audio-3");
                     expect(formData.get("output_format")).toBe("mp3");
-                    // a2a sends the reference clip, not a duration.
+                    // a2a sends the reference clip and still needs a
+                    // duration: the clip does not set the output length.
                     expect(formData.get("audio")).toBeInstanceOf(File);
-                    expect(formData.get("duration")).toBeNull();
+                    expect(formData.get("duration")).toBe("190");
+                    // no strength → Stability's default applies.
+                    expect(formData.get("strength")).toBeNull();
 
                     return Response.json({ id: generationId }, { status: 202 });
                 }
@@ -2655,6 +2765,173 @@ fixtureTest(
         );
     },
     20_000,
+);
+
+fixtureTest(
+    "sends stable-audio-3-large strength and duration on audio-to-audio",
+    async ({ paidApiKey }) => {
+        const generationId = "test-a2a-strength-generation-id";
+        const a2aEndpoint =
+            "https://api.stability.ai/v2beta/audio/stable-audio/audio-to-audio";
+        const referenceAudioUrl =
+            "https://media.pollinations.ai/test-reference-audio";
+        let sentForm: FormData | undefined;
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+
+                if (request.url === referenceAudioUrl) {
+                    return new Response(new Uint8Array([82, 73, 70, 70]), {
+                        headers: { "Content-Type": "audio/wav" },
+                    });
+                }
+
+                if (request.url === a2aEndpoint) {
+                    sentForm = await request.formData();
+                    return Response.json({ id: generationId }, { status: 202 });
+                }
+
+                if (
+                    request.url ===
+                    `https://api.stability.ai/v2beta/results/${generationId}`
+                ) {
+                    return new Response(new Uint8Array([73, 68, 51, 4]), {
+                        headers: { "Content-Type": "audio/mpeg" },
+                    });
+                }
+
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "stable-audio-3-large",
+                    input: "warm pads",
+                    reference_audio: referenceAudioUrl,
+                    duration: 35.5,
+                    strength: 0.3,
+                }),
+            }),
+            withInlineGenerationCoordinator({
+                ...env,
+                STABILITY_API_KEY: "test-stability-key",
+            } as unknown as CloudflareBindings),
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        await response.arrayBuffer();
+
+        await waitOnExecutionContext(ctx);
+        expect(sentForm?.get("audio")).toBeInstanceOf(File);
+        expect(sentForm?.get("duration")).toBe("35.5");
+        expect(sentForm?.get("strength")).toBe("0.3");
+    },
+    20_000,
+);
+
+fixtureTest(
+    "rejects strength without reference_audio or on other models",
+    async ({ paidApiKey }) => {
+        const calls: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+                return Response.json({ data: [] });
+            },
+        );
+
+        const referenceAudioUrl =
+            "https://media.pollinations.ai/test-reference-audio";
+        const multipartBody = new FormData();
+        multipartBody.append("model", "stable-audio-3-large");
+        multipartBody.append("input", "warm pads");
+        multipartBody.append("strength", "0.5");
+
+        for (const [body, message] of [
+            [
+                JSON.stringify({
+                    model: "stable-audio-3-medium",
+                    input: "warm pads",
+                    strength: 0.5,
+                }),
+                "strength requires reference_audio",
+            ],
+            // multipart parses strength too.
+            [multipartBody, "strength requires reference_audio"],
+            [
+                JSON.stringify({
+                    model: "elevenmusic",
+                    input: "warm pads",
+                    reference_audio: referenceAudioUrl,
+                    strength: 0.5,
+                }),
+                "strength is only supported with model=stability-ai/stable-audio-3-medium or stability-ai/stable-audio-3",
+            ],
+        ] as const) {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    "https://staging.gen.pollinations.ai/v1/audio/speech",
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${paidApiKey}`,
+                            ...(typeof body === "string"
+                                ? { "Content-Type": "application/json" }
+                                : {}),
+                        },
+                        body,
+                    },
+                ),
+                withInlineGenerationCoordinator({
+                    ...env,
+                    FAL_KEY: "test-fal-key",
+                    STABILITY_API_KEY: "test-stability-key",
+                    ELEVENLABS_API_KEY: "test-eleven-key",
+                } as unknown as CloudflareBindings),
+                ctx,
+            );
+
+            const responseText = await response.text();
+            await waitOnExecutionContext(ctx);
+            expect(response.status).toBe(400);
+            expect(JSON.parse(responseText)).toMatchObject({
+                error: { message: expect.stringContaining(message) },
+            });
+        }
+
+        // Rejected before the clip is fetched or any provider is called.
+        expect(
+            calls.some((url) =>
+                [
+                    "media.pollinations.ai",
+                    "queue.fal.run",
+                    "api.stability.ai",
+                    "api.elevenlabs.io",
+                ].includes(new URL(url).hostname),
+            ),
+        ).toBe(false);
+    },
 );
 
 it("lists stable-audio-3-large in audio models", async () => {

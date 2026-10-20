@@ -338,3 +338,45 @@ test("H3 Max bills reference provider units without inflating video duration", a
         isBilledUsage: true,
     });
 });
+
+test("FLUX 3 Max bills 1080p at the 1080p cost variant", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "fal", "media");
+    const response = await generate(
+        `/image/flux-3-max-1080p?model=black-forest-labs/flux-3-max&seed=15392&duration=5&resolution=1080p`,
+        paidApiKey,
+    );
+    expect(response.status).toBe(200);
+    expect(mocks.fal.state.submissions).toBe(1);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelUsed: "black-forest-labs/flux-3-max",
+        costVariant: "1080p",
+        tokenCountCompletionVideoSeconds: 21.28,
+        tokenPriceCompletionVideoSeconds: 0.0725,
+        totalCost: expect.closeTo(21.28 * 0.0725, 8),
+        isBilledUsage: true,
+    });
+});
+
+test("FLUX 3 Max bills the 720p rate when no resolution is requested", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "fal", "media");
+    const response = await generate(
+        `/image/flux-3-max-720p?model=black-forest-labs/flux-3-max&seed=15392&duration=5`,
+        paidApiKey,
+    );
+    expect(response.status).toBe(200);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelUsed: "black-forest-labs/flux-3-max",
+        tokenCountCompletionVideoSeconds: 21.28,
+        tokenPriceCompletionVideoSeconds: 0.0425,
+        totalCost: expect.closeTo(21.28 * 0.0425, 8),
+        isBilledUsage: true,
+    });
+});

@@ -76,11 +76,14 @@ Each P&L category has one declared source (`pnlSource` in
 `web/src/lib/categories.ts`). Compute and Infrastructure are ledger-based:
 their actual columns come from the vendor ledger by service month, paid and
 credit-funded usage both count as expense, and the bank payments that settle
-those invoices stay in cash only (the balance-sheet lines "vendor invoice
-timing" and "credit-funded usage" carry the difference). A ledger category
+those invoices stay in cash only. Cash adjustments explain the difference
+between revenue and expenses and actual bank movements. A ledger category
 never falls back to cash: a vendor with bank payments and no ledger rows is
 shown as a warning line without an amount. Every other category is
-bank-based. Forecast columns remain cash projections.
+bank-based. A reviewed `expense_month=YYYY-MM` annotation in a Bank row's
+semicolon-delimited evidence assigns that expense to its service month without
+changing the payment date, amount or USD valuation. Revenue and balance-sheet
+movements ignore this annotation. Forecast columns remain cash projections.
 
 Corrections in the bank and vendor ledgers are append-only: publishers reuse
 the stable `entry_id` with a newer `recorded_at`. Vendor tombstones use the

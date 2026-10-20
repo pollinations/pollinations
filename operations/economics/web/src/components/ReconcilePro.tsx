@@ -18,14 +18,18 @@ export function useAmountDisplay() {
     return {
         pro,
         fmtUsd: usd,
-        fmtRateUsd: pro ? fmtRateUsd : fmtUsd,
+        fmtRateUsd,
         fmtPct: (value: number | null) => fmtPct(value, pro ? 2 : 0),
         fmtMarginPct: (value: number | null) =>
             fmtMarginPct(value, pro ? 2 : 0),
         fmtUnsignedPct: (value: number | null | undefined) =>
             fmtUnsignedPct(value, pro ? 2 : 0),
         fmtNumber: pro ? fmtExactNumber : fmtNumber,
-        fmtSignedUsd: (value: number | null) =>
-            value != null && value > 0 ? `+${usd(value)}` : usd(value),
+        fmtSignedUsd: (value: number | null) => {
+            const formatted = usd(value);
+            return formatted && value != null && value > 0
+                ? `+${formatted}`
+                : formatted;
+        },
     };
 }

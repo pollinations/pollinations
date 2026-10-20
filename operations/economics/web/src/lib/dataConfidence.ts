@@ -1,6 +1,6 @@
 import type { OpTransactionRow } from "../types";
 import { hasReconciledTransactionEvidence } from "./documents";
-import { fmtUsd } from "./format";
+import { fmtExactUsd as fmtUsd } from "./format";
 import { toUsd } from "./fx";
 import type { ReconciliationIssue } from "./reconciliation";
 import type { unitEconomicsReport } from "./unitEconomics";

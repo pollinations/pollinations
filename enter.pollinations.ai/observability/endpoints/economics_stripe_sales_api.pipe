@@ -26,6 +26,7 @@ SQL >
         -sumIf(amount, reporting_category IN ('refund', 'refund_failure')) AS refund_minor,
         -sumIf(amount, reporting_category IN ('dispute', 'dispute_reversal', 'charge_failure', 'partial_capture_reversal')) AS reversal_minor,
         sum(fee) - sumIf(amount, reporting_category = 'fee') AS fees,
+        sumIf(fee, reporting_category IN ('dispute', 'dispute_reversal')) AS dispute_fees,
         countIf(reporting_category = 'charge') AS payments,
         countIf(reporting_category = 'refund') AS refund_count,
         countIf(reporting_category = 'charge' AND revenue_stream = 'pollen'
@@ -45,7 +46,7 @@ NODE account_facts
 SQL >
     SELECT s.account_id AS account_id, s.month AS month, s.revenue_stream AS revenue_stream,
         if(f.currency = '', s.default_currency, f.currency) AS currency,
-        f.gross AS gross, f.refund_minor AS refund_minor, f.reversal_minor AS reversal_minor, f.fees AS fees,
+        f.gross AS gross, f.refund_minor AS refund_minor, f.reversal_minor AS reversal_minor, f.fees AS fees, f.dispute_fees AS dispute_fees,
         f.payments AS payments, f.refund_count AS refund_count,
         f.enter_unmatched_payments AS enter_unmatched_payments,
         f.fraud_refunds_minor AS fraud_refunds_minor, f.fraud_reversals_minor AS fraud_reversals_minor,
@@ -82,6 +83,7 @@ SQL >
         sum(reversal_minor) / 100 AS reversals,
         (sum(gross) - sum(refund_minor) - sum(reversal_minor)) / 100 AS net_sales,
         sum(fees) / 100 AS stripe_fees,
+        sum(dispute_fees) / 100 AS dispute_fees,
         (sum(gross) - sum(refund_minor) - sum(reversal_minor) - sum(fees)) / 100 AS net_after_fees,
         sum(payments) AS payments, sum(refund_count) AS refund_count,
         sum(enter_unmatched_payments) AS enter_unmatched_payments,

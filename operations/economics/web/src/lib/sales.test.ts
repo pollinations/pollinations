@@ -11,6 +11,7 @@ const row: StripeSalesRow = {
     refunds: 0,
     reversals: 0,
     stripe_fees: 3,
+    dispute_fees: 0,
     net_sales: 100,
     net_after_fees: 97,
     payments: 1,
@@ -69,27 +70,27 @@ describe("financial source reconciliation", () => {
     });
 });
 
-it("stops Ko-fi projections on closure while retaining recorded October activity and historical inputs", () => {
+it("stops Ko-fi projections without mixing recorded current activity into the plan", () => {
     const kofi = {
         ...row,
         revenue_stream: "kofi" as const,
         gross_sales: 5,
         stripe_fees: 0.7,
+        dispute_fees: 0,
     };
-    const actual = { ...kofi, month: "2026-10", coverage_complete: 0 };
     const latest = [row, kofi];
     expect(
-        salesForecastRows(latest, [actual], "2026-10", now, {
-            kofi: "2026-10-16",
-        }),
-    ).toEqual([row, actual]);
-    expect(
-        salesForecastRows(latest, [actual], "2026-11", now, {
+        salesForecastRows(latest, "2026-10", now, {
             kofi: "2026-10-16",
         }),
     ).toEqual([row]);
     expect(
-        salesForecastRows(latest, [], "2026-09", new Date("2026-09-15")),
+        salesForecastRows(latest, "2026-11", now, {
+            kofi: "2026-10-16",
+        }),
+    ).toEqual([row]);
+    expect(
+        salesForecastRows(latest, "2026-09", new Date("2026-09-15")),
     ).toEqual(latest);
     expect(latest).toEqual([row, kofi]);
 });

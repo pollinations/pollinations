@@ -11,8 +11,28 @@ import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
 import type { LoggerVariables } from "@/middleware/logger.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { generateCacheKey } from "@/utils/text-cache.ts";
+
+it("includes arbitrary agent metadata in cache identity", async () => {
+    const request = new Request(
+        "https://gen.pollinations.ai/v1/chat/completions",
+        { method: "POST" },
+    );
+    const key = (metadata: Record<string, string>) =>
+        generateCacheKey(
+            request,
+            JSON.stringify({ model: "owner/agent", messages: [], metadata }),
+        );
+    expect(await key({ model: "one" })).not.toBe(await key({ model: "two" }));
+    expect(await key({ custom_key: "one" })).not.toBe(
+        await key({ custom_key: "two" }),
+    );
+    expect(await key({ model: "one", custom_key: "two" })).toBe(
+        await key({ custom_key: "two", model: "one" }),
+    );
+});
 
 const testLog = {
     getChild: () => testLog,
@@ -24,7 +44,7 @@ const testLog = {
 
 type TestEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables;
+    Variables: LoggerVariables & RequestIdVariables & Partial<ModelVariables>;
 };
 
 function createTextCacheApp() {
@@ -51,11 +71,33 @@ function createTextCacheApp() {
                             "Content-Type": "application/json; charset=utf-8",
                             "x-model-used": "openai-fast",
                             "x-fallback-target": "openai",
+                            "x-pollinations-response-format":
+                                "audio-with-timestamps",
+                            "x-tts-voice": "nova",
                             "x-usage-prompt-text-tokens": "12",
                             "x-moderation-hate-severity": "safe",
                         },
                     },
                 );
+            },
+        )
+        .post(
+            "/v1/chat/completions/agent",
+            (c, next) => {
+                // resolveModel scopes agents; each request has its own id.
+                c.set("model", {
+                    definition: {},
+                    cacheScope: "agent:agent-id",
+                } as ModelVariables["model"]);
+                c.set("requestId", crypto.randomUUID());
+                return next();
+            },
+            textCache,
+            async () => {
+                originHits += 1;
+                return new Response(`agent-hit:${originHits}`, {
+                    headers: { "Content-Type": "text/plain" },
+                });
             },
         )
         .get("/text/:prompt", textCache, async (c) => {
@@ -259,6 +301,10 @@ describe("text cache", () => {
         );
         expect(second.headers.get("x-model-used")).toBe("openai-fast");
         expect(second.headers.get("x-fallback-target")).toBe("openai");
+        expect(second.headers.get("x-pollinations-response-format")).toBe(
+            "audio-with-timestamps",
+        );
+        expect(second.headers.get("x-tts-voice")).toBe("nova");
         expect(second.headers.get("x-usage-prompt-text-tokens")).toBe("12");
         expect(second.headers.get("x-moderation-hate-severity")).toBe("safe");
         expect(await second.json()).toMatchObject({ originHits: 1 });
@@ -320,6 +366,38 @@ describe("text cache", () => {
         expect(second.response.status).toBe(202);
         expect(second.response.headers.get("X-Cache")).not.toBe("HIT");
         expect(originHits).toBe(2);
+    });
+
+    it("runs an agent again when the same request repeats", async () => {
+        const cache = createTextCacheApp();
+        const { app } = cache;
+        const env = createTextCacheEnv();
+        const init = chatInit({
+            model: "owner/agent",
+            messages: [{ role: "user", content: "same question" }],
+        });
+
+        const first = await dispatch(
+            app,
+            "/v1/chat/completions/agent",
+            init,
+            env,
+        );
+        await consumeAndWait(first);
+        const second = await dispatch(
+            app,
+            "/v1/chat/completions/agent",
+            chatInit({
+                model: "owner/agent",
+                messages: [{ role: "user", content: "same question" }],
+            }),
+            env,
+        );
+        await consumeAndWait(second);
+
+        expect(first.response.headers.get("X-Cache")).toBe("MISS");
+        expect(second.response.headers.get("X-Cache")).not.toBe("HIT");
+        expect(cache.originHits).toBe(2);
     });
 
     it("treats different POST bodies as different cache entries", async () => {
@@ -582,6 +660,80 @@ describe("text cache", () => {
             expect(second.response.headers.get("X-Cache")).toBe("MISS");
         }
         expect(originHits).toBe(4);
+    });
+
+    it("does not cache chat streams without output", async () => {
+        const body = [
+            '{"choices":[{"delta":{"role":"assistant","content":""}}]}',
+            '{"choices":[{"delta":{"reasoning_content":"thinking"}}]}',
+            '{"choices":[{"delta":{"content_blocks":[{"delta":{"thinking":"more"}}]}}]}',
+            '{"choices":[{"delta":{},"finish_reason":"length"}]}',
+            '{"choices":[],"usage":{"completion_tokens":16}}',
+            "[DONE]",
+        ]
+            .map((data) => `data: ${data}\n\n`)
+            .join("");
+        let originHits = 0;
+        const app = new Hono<TestEnv>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "test-request");
+                await next();
+            })
+            .get("/empty", textCache, () => {
+                originHits += 1;
+                return new Response(body, {
+                    headers: { "Content-Type": "text/event-stream" },
+                });
+            });
+        const env = createTextCacheEnv();
+
+        const first = await dispatch(app, "/empty", undefined, env);
+        expect(await consumeAndWait(first)).toBe(body);
+        const second = await dispatch(app, "/empty", undefined, env);
+        await consumeAndWait(second);
+        expect(first.response.headers.get("X-Cache")).toBe("MISS");
+        expect(second.response.headers.get("X-Cache")).toBe("MISS");
+        expect(originHits).toBe(2);
+    });
+
+    it("caches chat streams whose output is text, tool calls or a refusal", async () => {
+        const bodies: Record<string, string> = {
+            content:
+                'data: {"choices":[{"delta":{"content":""}}]}\n\n' +
+                'data: {"choices":[{"delta":{"content":"hi"}}]}\n\n' +
+                "data: [DONE]\n\n",
+            tools:
+                'data: {"choices":[{"delta":{"content":null,"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"lookup","arguments":"{}"}}]}}]}\n\n' +
+                "data: [DONE]\n\n",
+            refusal:
+                'data: {"choices":[{"delta":{"refusal":"I can\'t help with that."}}]}\n\n' +
+                "data: [DONE]\n\n",
+        };
+        let originHits = 0;
+        const app = new Hono<TestEnv>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "test-request");
+                await next();
+            })
+            .get("/full/:kind", textCache, (c) => {
+                originHits += 1;
+                return new Response(bodies[c.req.param("kind")], {
+                    headers: { "Content-Type": "text/event-stream" },
+                });
+            });
+        const env = createTextCacheEnv();
+
+        for (const kind of Object.keys(bodies)) {
+            const first = await dispatch(app, `/full/${kind}`, undefined, env);
+            await consumeAndWait(first);
+            const second = await dispatch(app, `/full/${kind}`, undefined, env);
+            expect(await consumeAndWait(second)).toBe(bodies[kind]);
+            expect(first.response.headers.get("X-Cache")).toBe("MISS");
+            expect(second.response.headers.get("X-Cache")).toBe("HIT");
+        }
+        expect(originHits).toBe(3);
     });
 
     it("does not add text cache headers to routes without cache middleware", async () => {

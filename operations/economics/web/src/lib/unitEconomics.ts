@@ -1,10 +1,23 @@
+import type { Data } from "../types";
+import {
+    computeModeIndex,
+    directDeliveryData,
+    managedInferenceData,
+    pollenComputeMode,
+} from "./computeModes";
+import { fmtExactUsd as fmtUsd } from "./format";
 import type {
     ModelAllocationRow,
     ModelAllocationStatus,
     ModelReconcileRow,
     ModelReconcileStatus,
 } from "./modelReconcile";
-import { type MeteringBasis, providerMeteringBasis } from "./providerRegistry";
+import { modelReconcileRows, modelReconcileSummary } from "./modelReconcile";
+import {
+    type MeteringBasis,
+    providerMeteringBasis,
+    resolveProvider,
+} from "./providerRegistry";
 import {
     CALIB_DRIFT_ABS_ALARM_USD,
     hasCalibDrift,
@@ -37,6 +50,9 @@ export type UnitEconomicsRow = EconomicsValues & {
     economicContributionUsd: number | null;
     sourceStatus: ModelReconcileStatus;
     allocationStatus: ModelAllocationStatus | null;
+    // Grouped-row detail, present on model-grain rows only.
+    members?: string[] | null;
+    lines?: { label: string; usd: number }[] | null;
 };
 
 export type ProviderCostCheckKind =
@@ -97,9 +113,8 @@ export function meterMatchPct(
     return (Math.min(pollen, provider) / total) * 100;
 }
 
-// Provider-month is the only authoritative cost-check grain. Model rows inherit
-// an allocation of the provider total, so repeating a pass/fail status on every
-// model would imply independent evidence that does not exist.
+// The reconciliation status compares the full provider month. Exact model costs
+// can be shown independently, but do not certify that the whole invoice matches.
 export function providerCostCheck(
     row: Pick<
         UnitEconomicsRow,
@@ -163,23 +178,35 @@ export function providerCostCheck(
     };
 }
 
+// Rows that carry provider cost no Pollen model owns.
+const RESIDUAL_STATUSES = new Set<ModelAllocationStatus>([
+    "unallocated",
+    "needs mapping",
+    "missing breakdown",
+    "provider only",
+]);
+
+function isResidual(model: ModelAllocationRow): boolean {
+    return RESIDUAL_STATUSES.has(model.status);
+}
+
 function modelNetCash(
     parent: ModelReconcileRow,
     model: ModelAllocationRow,
 ): number | null {
+    if (
+        model.status === "missing usage" ||
+        model.status === "ambiguous allocation"
+    )
+        return null;
     if (model.netCashContributionUsd != null) {
         return model.netCashContributionUsd;
     }
-    if (parent.status !== "both sources" || model.status !== "unallocated") {
+    if (parent.status !== "both sources" || !isResidual(model)) {
         return null;
     }
 
-    // When provider spend cannot be allocated by model, keep both known sides
-    // visible: retained Pollen stays with its model and cash stays on the
-    // explicit unallocated row. Their sum still reconciles to the provider.
-    if (model.retainedPaidUsd != null && model.providerCashUsd == null) {
-        return model.retainedPaidUsd;
-    }
+    // Unknown model cost is not zero cost or a 100% margin.
     if (model.retainedPaidUsd == null && model.providerCashUsd != null) {
         return -model.providerCashUsd;
     }
@@ -190,18 +217,19 @@ function modelEconomicContribution(
     parent: ModelReconcileRow,
     model: ModelAllocationRow,
 ): number | null {
+    if (
+        model.status === "missing usage" ||
+        model.status === "ambiguous allocation"
+    )
+        return null;
     if (model.retainedPaidUsd != null && model.providerUsageUsd != null) {
         return model.retainedPaidUsd - model.providerUsageUsd;
     }
-    if (parent.status !== "both sources" || model.status !== "unallocated") {
+    if (parent.status !== "both sources" || !isResidual(model)) {
         return null;
     }
 
-    // Preserve both known sides when a mixed provider-month cannot allocate
-    // cost by model. The model and explicit unallocated rows remain additive.
-    if (model.retainedPaidUsd != null && model.providerUsageUsd == null) {
-        return model.retainedPaidUsd;
-    }
+    // Only the residual cost itself is known; unmatched model profit is not.
     if (model.retainedPaidUsd == null && model.providerUsageUsd != null) {
         return -model.providerUsageUsd;
     }
@@ -212,10 +240,15 @@ function modelMeterGap(
     parent: ModelReconcileRow,
     model: ModelAllocationRow,
 ): number | null {
+    if (
+        model.status === "missing usage" ||
+        model.status === "ambiguous allocation"
+    )
+        return null;
     if (model.meterGapUsd != null) return model.meterGapUsd;
     if (
         parent.status === "both sources" &&
-        model.status === "unallocated" &&
+        isResidual(model) &&
         model.providerUsageUsd != null &&
         model.paidPollenUsd == null &&
         model.questPollenUsd == null
@@ -223,6 +256,37 @@ function modelMeterGap(
         return model.providerUsageUsd;
     }
     return null;
+}
+
+// The situation chips above the inference table double as row filters.
+export type Situation =
+    | "all"
+    | "assigned"
+    | "grouped"
+    | "missing breakdown"
+    | "needs mapping"
+    | "no Pollen model";
+
+export function matchesSituation(
+    row: Pick<UnitEconomicsRow, "allocationStatus" | "members">,
+    situation: Situation,
+): boolean {
+    switch (situation) {
+        case "all":
+            return true;
+        case "assigned":
+            return row.allocationStatus === "allocated";
+        case "grouped":
+            return (
+                row.allocationStatus === "allocated" &&
+                (row.members?.length ?? 0) > 0
+            );
+        case "missing breakdown":
+        case "needs mapping":
+            return row.allocationStatus === situation;
+        case "no Pollen model":
+            return row.allocationStatus === "provider only";
+    }
 }
 
 export function unitEconomicsRows(
@@ -237,6 +301,8 @@ export function unitEconomicsRows(
             model: "All models",
             sourceStatus: provider.status,
             allocationStatus: null,
+            members: null,
+            lines: null,
             economicContributionUsd:
                 provider.status === "both sources" &&
                 provider.retainedPaidUsd != null &&
@@ -256,6 +322,8 @@ export function unitEconomicsRows(
                 model: model.model,
                 sourceStatus: provider.status,
                 allocationStatus: model.status,
+                members: model.members ?? null,
+                lines: model.lines ?? null,
                 ...economicsValues(model),
                 economicContributionUsd: modelEconomicContribution(
                     provider,
@@ -275,4 +343,123 @@ export function unitEconomicsRows(
                 a.vendor.localeCompare(b.vendor) ||
                 a.model.localeCompare(b.model),
         );
+}
+
+export type UnitEconomicsView = "vendors" | "inference";
+export type ResultBlocker = {
+    month: string;
+    vendor: string;
+    kind: "costs" | "usage" | "delivery" | "period";
+    message: string;
+    amountUsd: number | null;
+};
+
+// Cards and reconciliation consume this same provider/month join. Model-level
+// allocation and document checks do not decide whether the totals are known.
+export function unitEconomicsReport(
+    data: Data,
+    month: string,
+    view: UnitEconomicsView,
+) {
+    const modeIndex = computeModeIndex(data);
+    const vendorMonths = modelReconcileRows(
+        view === "vendors"
+            ? directDeliveryData(data)
+            : managedInferenceData(data, modeIndex),
+    ).filter((row) => {
+        if (row.month !== month) return false;
+        const amounts = [
+            row.paidPollenUsd,
+            row.questPollenUsd,
+            row.pollenMeterUsd,
+            row.providerUsageUsd,
+        ];
+        // Keep the existing activity threshold, plus explicit zero witnesses.
+        return (
+            amounts.some(
+                (value) => value != null && Math.abs(value) > 0.0001,
+            ) ||
+            (row.status === "both sources" &&
+                amounts.every((value) => value === 0))
+        );
+    });
+    const summary = modelReconcileSummary(vendorMonths);
+    const blockers: ResultBlocker[] = [];
+    if (view === "inference") {
+        for (const row of data.opPollen ?? []) {
+            if (
+                row.month !== month ||
+                row.vendor === "community" ||
+                resolveProvider(row.vendor)?.category === "infrastructure" ||
+                (row.price_paid === 0 && row.price_quests === 0)
+            )
+                continue;
+            const mode = pollenComputeMode(
+                modeIndex,
+                month,
+                row.vendor,
+                row.model,
+            );
+            if (mode !== "mixed" && mode !== "unclassified") continue;
+            blockers.push({
+                month,
+                vendor: row.vendor,
+                kind: "delivery",
+                amountUsd: null,
+                message: `Pollen usage cannot yet be assigned to inference or GPU: ${row.model}.`,
+            });
+        }
+    }
+    for (const row of vendorMonths) {
+        if (row.status === "both sources") continue;
+        // Usage awaiting a delivery split is present, not missing.
+        if (
+            row.status === "provider only" &&
+            blockers.some(
+                (blocker) =>
+                    blocker.vendor === row.vendor &&
+                    blocker.kind === "delivery",
+            )
+        )
+            continue;
+        const missingCosts = row.status === "pollen only";
+        blockers.push({
+            month,
+            vendor: row.vendor,
+            kind: missingCosts ? "costs" : "usage",
+            message: missingCosts
+                ? "Provider costs and cash/credit split are missing for recorded Pollen usage."
+                : `Provider costs of ${fmtUsd(row.providerUsageUsd)} are recorded, but Pollen usage is missing. Import the usage or record verified zero activity; missing usage is not zero.`,
+            amountUsd: missingCosts ? row.pollenMeterUsd : row.providerUsageUsd,
+        });
+    }
+    if (vendorMonths.length === 0 && blockers.length === 0) {
+        blockers.push({
+            month,
+            vendor: view === "inference" ? "Inference" : "Providers",
+            kind: "period",
+            amountUsd: null,
+            message:
+                "No provider costs or Pollen usage are recorded for this period. Import the records or record verified zero activity.",
+        });
+    }
+    // A recorded-figures result includes every recorded cost. Absent usage
+    // stays missing in the join; it is never replaced with a zero-usage row.
+    const canCalculate =
+        vendorMonths.some((row) => row.status === "both sources") &&
+        blockers.every((blocker) => blocker.kind === "usage");
+    const provisional = canCalculate && blockers.length > 0;
+    return {
+        modeIndex,
+        vendorMonths,
+        summary,
+        blockers,
+        provisional,
+        currentResultUsd: canCalculate
+            ? summary.retainedPaidUsd - summary.providerCashUsd
+            : null,
+        fullCostResultUsd: canCalculate
+            ? summary.retainedPaidUsd - summary.providerUsageUsd
+            : null,
+    };
 }

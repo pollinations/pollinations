@@ -17,7 +17,7 @@ Primary evidence sources:
 
 Collection steps:
 
-1. For invoices, place PDFs/receipts in `data/inbox/`.
+1. For invoices, place PDFs/receipts in `<collection-dir>/evidence/`.
 2. For API usage, use an admin key with organization read access. Query a bounded period only:
 
    ```bash
@@ -26,7 +26,7 @@ Collection steps:
      -H "Content-Type: application/json"
    ```
 
-   Save raw JSON to `data/inbox/openai-<period>-costs.json`.
+   Save raw JSON to `<collection-dir>/evidence/openai-<period>-costs.json`.
 
 3. Use UTC Unix seconds. `start_time` is inclusive; `end_time` is exclusive. For a calendar month, use the first day of the month through the first day of the next month.
 4. If the response has `has_more: true`, repeat with `page=<next_page>` and append all buckets before extraction.
@@ -34,15 +34,33 @@ Collection steps:
    OpenAI line items contain the model plus billed SKU (for example input,
    output, cached input, audio, image, or embedding). Preserve the full line
    item in `resource_sku` and extract its model prefix into `model`.
-6. For dashboard evidence, save screenshots or exports to `data/inbox/`.
+6. For dashboard evidence, save screenshots or exports to `<collection-dir>/evidence/`.
 7. Use this skill for saved raw evidence.
 
 Known traps:
 
 - OpenAI org costs API is paginated with `has_more` and `next_page`.
 - Use day buckets for month attribution.
-- Sum `results[].amount.value` across buckets for `amount`.
+- Sum `results[].amount.value` within each project/line-item group; reconcile
+  the sum to the organization total without adding a duplicate total row.
 - Convert API currency values such as `usd` to schema/reporting currency `USD`.
-- If using `group_by`, put project/model/line-item breakdowns in `cost_details`.
+- Write one Compute row per group: `account_id` identifies the organization,
+  `resource_id` the project, and `resource_sku` the raw line item. Apply the
+  central skill's signed `paid`/`credit` convention with funding evidence.
 - Credits/grants can pay usage before cash transactions appear.
-- Historical local note: a grant starting 2025-12-04 expires 2026-08-01; credit burn may not map to cash transactions.
+
+## Verified — 2026-10-05
+
+- In the verified organization, Billing → Overview shows the current API
+  balance. Credit grants shows each remaining lot and its displayed expiry;
+  the page title does not establish promotional funding. Match a lot to its
+  original purchase invoice before classifying it as purchased or promotional.
+- Billing history → View opens the original Stripe-hosted invoice. Download
+  both invoice and receipt, verify the billing identity, payment date,
+  currency and card suffix, then archive them before leaving the account.
+- An API-credit purchase is a top-up, not usage expense. Keep the Bank
+  payment, current balance and calendar-month Costs API usage separate.
+- Sum every returned bucket's `results[].amount.value` before declaring a
+  month empty. Early buckets and individual SKUs can be zero while later
+  buckets contain billed usage. Compare the complete export with the
+  effective vendor ledger so collected usage cannot remain unposted unnoticed.

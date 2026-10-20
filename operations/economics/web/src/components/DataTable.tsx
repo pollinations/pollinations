@@ -1,5 +1,5 @@
 import { cn, ScrollArea, Surface, Table, Tooltip } from "@pollinations/ui";
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { useMemo, useState } from "react";
 
 type SortDirection = "asc" | "desc";
@@ -22,14 +22,24 @@ type ColumnHint = {
     formula?: string;
 };
 
-// First cell of a column group gets a hairline left rule.
-export const GROUP_BORDER = "border-l border-theme-border/60";
-
-export function TableScroller({ children }: { children: ReactNode }) {
+export function TableScroller({
+    children,
+    scrollRef,
+}: {
+    children: ReactNode;
+    scrollRef?: Ref<HTMLDivElement>;
+}) {
     return (
         <section className="w-full max-w-full">
             <Surface className="overflow-hidden p-0">
-                <ScrollArea axis="x" className="pb-3">
+                <ScrollArea
+                    ref={scrollRef}
+                    axis="both"
+                    tabIndex={0}
+                    role="region"
+                    aria-label="Scrollable data table"
+                    className="max-h-[70dvh] pb-3 [&_thead]:sticky [&_thead]:top-0 [&_thead]:z-20 [&_thead]:bg-surface-opaque [&_tbody>tr>td:first-child:not([colspan])]:sticky [&_tbody>tr>td:first-child:not([colspan])]:left-0 [&_tbody>tr>td:first-child:not([colspan])]:z-10 [&_tbody>tr>td:first-child:not([colspan])]:bg-surface-opaque [&_thead>tr:first-child>th:first-child]:sticky [&_thead>tr:first-child>th:first-child]:left-0 [&_thead>tr:first-child>th:first-child]:z-30 [&_thead>tr:first-child>th:first-child]:bg-surface-opaque"
+                >
                     {children}
                 </ScrollArea>
             </Surface>
@@ -44,7 +54,11 @@ export function DataTable({
     children: ReactNode;
     className?: string;
 }) {
-    return <Table className={cn("min-w-full", className)}>{children}</Table>;
+    return (
+        <Table className={cn("economics-table min-w-full", className)}>
+            {children}
+        </Table>
+    );
 }
 
 // Column-header label with a how-is-this-computed hover. Only calculated

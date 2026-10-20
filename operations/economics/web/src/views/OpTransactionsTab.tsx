@@ -1,5 +1,4 @@
 import {
-    Chip,
     TableBody,
     TableCell,
     TableDisclosureButton,
@@ -10,8 +9,6 @@ import {
 import { Fragment, useMemo, useState } from "react";
 import {
     DataTable,
-    GROUP_BORDER,
-    HeaderHint,
     type SortColumn,
     TableScroller,
     useSortableRows,
@@ -19,9 +16,10 @@ import {
 } from "../components/DataTable";
 import { EvidenceAction, EvidencePreview } from "../components/Evidence";
 import { SourceCell } from "../components/Provenance";
-import { categoryLabel, transactionCategory } from "../lib/categories";
+import { useAmountDisplay } from "../components/ReconcilePro";
+import { categoryLabel } from "../lib/categories";
 import type { DriveDocumentLink } from "../lib/documents";
-import { fmtNumber, fmtUtcDateTime } from "../lib/format";
+import { fmtUtcDateTime } from "../lib/format";
 import {
     type MonthFilterValue,
     matchesMonth,
@@ -29,6 +27,7 @@ import {
     type ValueFilter,
     WINDOW_START,
 } from "../lib/months";
+import { transactionCategory } from "../lib/providerRegistry";
 import type { Data, OpTransactionRow } from "../types";
 
 export function OpTransactionsTab({
@@ -42,6 +41,7 @@ export function OpTransactionsTab({
     month?: MonthFilterValue;
     vendor?: ValueFilter;
 }) {
+    const { fmtNumber } = useAmountDisplay();
     const [previewDocument, setPreviewDocument] =
         useState<DriveDocumentLink | null>(null);
     const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
@@ -88,18 +88,10 @@ export function OpTransactionsTab({
                         <TableHeaderCell colSpan={3} align="center">
                             Transaction
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={2}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
+                        <TableHeaderCell colSpan={2} align="center">
                             Cash
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={2}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
+                        <TableHeaderCell colSpan={2} align="center">
                             Evidence
                         </TableHeaderCell>
                         <TableHeaderCell rowSpan={2}>Details</TableHeaderCell>
@@ -116,33 +108,18 @@ export function OpTransactionsTab({
                         </TableHeaderCell>
                         <TableHeaderCell
                             align="right"
-                            className={GROUP_BORDER}
                             {...headerProps("amount")}
                         >
-                            <HeaderHint
-                                hint={{
-                                    meaning:
-                                        "Signed Wise value. Ordinary rows are cash movements; the opening-balance row is a non-movement anchor used only to reconstruct cash.",
-                                    tables: "economics_bank_ledger_api",
-                                    sources: "WISE",
-                                }}
-                            >
-                                Amount
-                            </HeaderHint>
+                            Amount
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("currency")}>
                             Currency
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            className={GROUP_BORDER}
-                            {...headerProps("description")}
-                        >
+                        <TableHeaderCell {...headerProps("description")}>
                             Description
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("evidence")}>
-                            <HeaderHint hint="Supporting document matched to this Wise cash movement. The transaction is the source of truth; Close reuses this same link when verifying vendor payments.">
-                                Document
-                            </HeaderHint>
+                            Document
                         </TableHeaderCell>
                     </TableRow>
                 </TableHead>
@@ -157,30 +134,18 @@ export function OpTransactionsTab({
                                             {Number(row.date.slice(8, 10))}
                                         </TableCell>
                                         <TableCell>
-                                            {row.vendor || (
-                                                <Chip
-                                                    intent="warning"
-                                                    size="sm"
-                                                >
-                                                    unmatched
-                                                </Chip>
-                                            )}
+                                            {row.vendor || "–"}
                                         </TableCell>
                                         <TableCell>
                                             {categoryLabel(
                                                 transactionCategory(row),
                                             )}
                                         </TableCell>
-                                        <TableCell
-                                            align="right"
-                                            className={GROUP_BORDER}
-                                        >
+                                        <TableCell align="right">
                                             {fmtNumber(row.amount)}
                                         </TableCell>
                                         <TableCell>{row.currency}</TableCell>
-                                        <TableCell className={GROUP_BORDER}>
-                                            {row.description}
-                                        </TableCell>
+                                        <TableCell>{row.description}</TableCell>
                                         <TableCell>
                                             <EvidenceAction
                                                 evidence={row.evidence}
@@ -200,7 +165,7 @@ export function OpTransactionsTab({
                                         <TableRow>
                                             <TableCell
                                                 colSpan={8}
-                                                className="bg-theme-bg-active/40"
+                                                className="pl-6"
                                             >
                                                 <dl className="grid gap-4 p-2 sm:grid-cols-3">
                                                     <div>

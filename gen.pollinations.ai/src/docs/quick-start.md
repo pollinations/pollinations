@@ -5,14 +5,14 @@
 ```python
 from openai import OpenAI
 client = OpenAI(base_url="https://gen.pollinations.ai/v1", api_key="YOUR_API_KEY")
-response = client.chat.completions.create(model="openai", messages=[{"role": "user", "content": "Hello!"}])
+response = client.chat.completions.create(model="openai/gpt-5.4-nano", messages=[{"role": "user", "content": "Hello!"}])
 print(response.choices[0].message.content)
 ```
 
 ### Image (URL — no code needed)
 
 ```plaintext
-https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux
+https://gen.pollinations.ai/image/a%20cat%20in%20space?model=black-forest-labs/flux.1-schnell
 ```
 
 ### Audio (cURL)
@@ -25,7 +25,7 @@ curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \
 ### 3D (cURL)
 
 ```bash
-curl "https://gen.pollinations.ai/3d/no_prompt_for_trellis_needed?image=https://inferenceport.ai/img/trellis.jpg&model=trellis-2&resolution=low" \
+curl "https://gen.pollinations.ai/3d/no_prompt_for_trellis_needed?image=https://inferenceport.ai/img/trellis.jpg&model=microsoft%2Ftrellis-2&resolution=low" \
   -H "Authorization: Bearer YOUR_API_KEY" -o model.glb
 ```
 
@@ -35,7 +35,7 @@ curl "https://gen.pollinations.ai/3d/no_prompt_for_trellis_needed?image=https://
 curl https://gen.pollinations.ai/v1/embeddings \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"model":"openai-3-small","input":"Hello world","dimensions":512}'
+  -d '{"model":"openai/text-embedding-3-small","input":"Hello world","dimensions":512}'
 ```
 
 See `GET /v1/models` for every text, image, audio, video, and embedding model available.

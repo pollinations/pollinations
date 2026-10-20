@@ -1,14 +1,12 @@
-import type { BalanceCheckResult } from "@shared/billing/balance.ts";
 import { handleError } from "@shared/error.ts";
 import { Hono } from "hono";
 import type { Env } from "@/env.ts";
-import {
-    authFromSnapshot,
-    type GenerationAuthSnapshot,
-} from "@/middleware/auth.ts";
+import { authFromSnapshot } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
 import type {
     GenerationErrorSnapshot,
+    GenerationJob,
+    GenerationJobHead,
     GenerationOutcome,
 } from "@/middleware/generation-deduplication.ts";
 import { logger } from "@/middleware/logger.ts";
@@ -54,29 +52,31 @@ export type DetachedGeneration = {
 };
 
 function generationExecutor(
-    auth: GenerationAuthSnapshot,
-    requestId: string,
-    balanceCheckResult: BalanceCheckResult,
-    apiKeyBudgetEstimate: number | undefined,
-    registerGenerationCacheWrite: (promise: Promise<void>) => void,
+    job: GenerationJob,
+    registerCacheWrite: (promise: Promise<void>) => void,
 ): Hono<Env> {
     const executor = new Hono<Env>()
         .use("*", async (c, next) => {
-            c.set("requestId", requestId);
-            c.header("X-Request-Id", requestId);
+            c.set("requestId", job.requestId);
+            c.header("X-Request-Id", job.requestId);
             await next();
         })
         .use("*", logger)
-        .use("*", authFromSnapshot(auth))
+        .use("*", authFromSnapshot(job.auth))
         .use("*", async (c, next) => {
-            c.set("registerGenerationCacheWrite", registerGenerationCacheWrite);
+            c.set("generationExecution", {
+                cacheKey: job.cache.key,
+                originalPath: job.request.originalPath,
+                originalModel: job.request.originalModel,
+                registerCacheWrite,
+            });
             await next();
         })
         .use("*", frontendKeyBilling)
         .use("*", balance)
         .use("*", async (c, next) => {
-            c.var.balance.balanceCheckResult = balanceCheckResult;
-            c.var.balance.apiKeyBudgetEstimate = apiKeyBudgetEstimate;
+            c.var.balance.balanceCheckResult = job.balanceCheckResult;
+            c.var.balance.apiKeyBudgetEstimate = job.apiKeyBudgetEstimate;
             await next();
         })
         .route("/", generationExecutorRoutes);
@@ -84,13 +84,9 @@ function generationExecutor(
     return executor;
 }
 
-/** Runs a provider handler under the Durable Object alarm's lifetime. */
+/** Runs a provider handler for the coordinator alarm that owns the job. */
 export async function executeGeneration(
-    request: Request,
-    auth: GenerationAuthSnapshot,
-    requestId: string,
-    balanceCheckResult: BalanceCheckResult,
-    apiKeyBudgetEstimate: number | undefined,
+    job: GenerationJob,
     env: CloudflareBindings,
 ): Promise<DetachedGeneration> {
     const promises: Promise<unknown>[] = [];
@@ -102,15 +98,14 @@ export async function executeGeneration(
         passThroughOnException() {},
     } as ExecutionContext;
 
-    const response = await generationExecutor(
-        auth,
-        requestId,
-        balanceCheckResult,
-        apiKeyBudgetEstimate,
-        (promise) => {
-            cacheWrite = promise;
-        },
-    ).fetch(request, env, executionCtx);
+    const request = new Request(job.request.url, {
+        method: job.request.method,
+        headers: job.request.headers,
+        body: job.request.body?.slice().buffer,
+    });
+    const response = await generationExecutor(job, (promise) => {
+        cacheWrite = promise;
+    }).fetch(request, env, executionCtx);
     const settlement = Promise.allSettled(promises).then(() => {});
 
     try {
@@ -135,3 +130,66 @@ export async function executeGeneration(
         throw error;
     }
 }
+
+export const GENERATION_HANDOFF_PATH = "/internal/generation";
+export const GENERATION_HANDOFF_HEADER = "x-generation-handoff";
+
+/** JSON form of an outcome; the error body travels as base64. */
+type HandoffOutcome =
+    | { status: "cached" }
+    | {
+          status: "failed";
+          error: Omit<GenerationErrorSnapshot, "body"> & { body: string };
+      };
+
+export async function readHandoffResponse(
+    response: Response,
+): Promise<GenerationOutcome> {
+    if (!response.ok) {
+        throw new Error(`Generation handoff returned HTTP ${response.status}`);
+    }
+    const outcome = await response.json<HandoffOutcome>();
+    if (outcome.status === "cached") return outcome;
+    const body = new Uint8Array(Buffer.from(outcome.error.body, "base64"));
+    return { status: "failed", error: { ...outcome.error, body } };
+}
+
+function handoffOutcome(outcome: GenerationOutcome): HandoffOutcome {
+    if (outcome.status === "cached") return outcome;
+    const body = Buffer.from(outcome.error.body).toString("base64");
+    return { status: "failed", error: { ...outcome.error, body } };
+}
+
+/** Runs a job handed off by a coordinator alarm, under this request's zone. */
+export const generationHandoffRoutes = new Hono<Env>().post(
+    "/:id{[0-9a-f]{64}}",
+    async (c) => {
+        const coordinators = c.env.GENERATION_COORDINATOR;
+        let id: DurableObjectId;
+        try {
+            id = coordinators.idFromString(c.req.param("id"));
+        } catch {
+            return c.notFound();
+        }
+        // RPC typing can't map the auth snapshot; the value is unchanged.
+        const job = (await coordinators
+            .get(id)
+            .takeHandoff(
+                c.req.header(GENERATION_HANDOFF_HEADER) ?? "",
+            )) as GenerationJobHead | null;
+        if (!job) return c.notFound();
+        const body = new Uint8Array(await c.req.arrayBuffer());
+        const { result, settlement } = await executeGeneration(
+            {
+                ...job,
+                request: {
+                    ...job.request,
+                    ...(body.byteLength > 0 && { body }),
+                },
+            },
+            c.env,
+        );
+        c.executionCtx.waitUntil(settlement);
+        return c.json(handoffOutcome(result));
+    },
+);

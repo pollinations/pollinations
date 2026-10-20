@@ -1,13 +1,13 @@
 import { env, SELF } from "cloudflare:test";
 import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
-    COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     parseListingPayload,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { describe, expect } from "vitest";
+import { describe, expect, vi } from "vitest";
 import { deriveCreateProxyPolicy } from "../../src/routes/community-endpoints/proxy-policy.ts";
 import { test } from "../fixtures.ts";
 
@@ -21,7 +21,7 @@ async function approveCommunityModels(): Promise<void> {
 }
 
 async function postModel(
-    sessionToken: string,
+    accountToken: string,
     path: string,
     body: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
@@ -29,7 +29,7 @@ async function postModel(
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            Cookie: `better-auth.session_token=${sessionToken}`,
+            Authorization: `Bearer ${accountToken}`,
         },
         body: JSON.stringify(body),
     });
@@ -37,7 +37,7 @@ async function postModel(
     return response.json<Record<string, unknown>>();
 }
 
-async function advancePendingPast12Hours(id: string): Promise<void> {
+async function advancePendingPastDelay(id: string): Promise<void> {
     await drizzle(env.DB)
         .update(schema.communityEndpoint)
         .set({
@@ -49,33 +49,172 @@ async function advancePendingPast12Hours(id: string): Promise<void> {
 }
 
 async function publishPendingModel(
-    sessionToken: string,
+    accountToken: string,
     id: string,
 ): Promise<Record<string, unknown>> {
-    await advancePendingPast12Hours(id);
-    return postModel(sessionToken, `/${id}/update`, {});
+    await advancePendingPastDelay(id);
+    return postModel(accountToken, `/${id}/update`, {});
 }
 
 describe("community endpoint configuration policy", () => {
-    test("creates a private endpoint agent without proxy credentials or pricing", async ({
-        sessionToken,
+    test("lists no models for an account without GitHub", async ({
+        accountToken,
     }) => {
-        const created = await postModel(sessionToken, "/endpoint-agents", {
+        await drizzle(env.DB)
+            .update(schema.user)
+            .set({ githubId: null, githubUsername: null });
+
+        const response = await SELF.fetch(endpointUrl, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(response.status).toBe(200);
+        await expect(response.json()).resolves.toMatchObject({ data: [] });
+    });
+
+    test("creates, reads and edits endpoint-agent modalities without losing unrelated settings", async ({
+        accountToken,
+    }) => {
+        const payload = {
+            api: "chat_completions",
+            perUserRpm: null,
+            inputModalities: ["text", "image", "audio", "video"],
+            outputModalities: [
+                "text",
+                "image",
+                "audio",
+                "video",
+                "3d",
+                "embedding",
+            ],
+        };
+        const created = await postModel(accountToken, "/endpoint-agents", {
+            name: "multimodal-agent",
+            title: "Multimodal agent",
+            url: "https://agent.example.com/v1/chat/completions",
+            ...payload,
+        });
+        expect(created).toMatchObject(payload);
+        const listed = await SELF.fetch(endpointUrl, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(listed.status).toBe(200);
+        expect(await listed.json()).toMatchObject({
+            data: [expect.objectContaining({ id: created.id, ...payload })],
+        });
+        const rateUpdated = await postModel(
+            accountToken,
+            `/${created.id}/update`,
+            {
+                perUserRpm: 7,
+            },
+        );
+        expect(rateUpdated).toMatchObject({ ...payload, perUserRpm: 7 });
+        const outputUpdated = await postModel(
+            accountToken,
+            `/${created.id}/update`,
+            {
+                outputModalities: ["text", "3d"],
+            },
+        );
+        expect(outputUpdated).toMatchObject({
+            ...payload,
+            perUserRpm: 7,
+            outputModalities: ["text", "3d"],
+        });
+        const inputUpdated = await postModel(
+            accountToken,
+            `/${created.id}/update`,
+            {
+                inputModalities: ["text", "image"],
+            },
+        );
+        expect(inputUpdated).toMatchObject({
+            ...payload,
+            perUserRpm: 7,
+            inputModalities: ["text", "image"],
+            outputModalities: ["text", "3d"],
+        });
+        const stored = await drizzle(env.DB, {
+            schema,
+        }).query.communityEndpoint.findFirst({
+            where: eq(schema.communityEndpoint.id, created.id as string),
+        });
+        expect(
+            parseListingPayload("endpoint_agent", stored?.payload ?? null),
+        ).toEqual({
+            ...payload,
+            perUserRpm: 7,
+            inputModalities: ["text", "image"],
+            outputModalities: ["text", "3d"],
+        });
+    });
+
+    test("rejects exact bundled ID collisions without reserving the publisher namespace", async ({
+        accountToken,
+    }) => {
+        await drizzle(env.DB)
+            .update(schema.user)
+            .set({ githubUsername: "fish-audio" })
+            .where(eq(schema.user.githubUsername, "testuser"));
+        const create = (name: string) =>
+            SELF.fetch(`${endpointUrl}/endpoint-agents`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accountToken}`,
+                },
+                body: JSON.stringify({
+                    name,
+                    title: "Test agent",
+                    api: "responses",
+                    url: "https://agent.example.com/responses",
+                }),
+            });
+        const conflict = await create("s2.1-pro");
+        expect(conflict.status).toBe(400);
+        expect(await conflict.text()).toContain(
+            "conflicts with a bundled model or alias",
+        );
+        const available = await create("my-own-agent");
+        expect(available.status).toBe(200);
+        const created = await available.json<{ id: string }>();
+        const renamed = await SELF.fetch(
+            `${endpointUrl}/${created.id}/update`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accountToken}`,
+                },
+                body: JSON.stringify({ name: "s2.1-pro" }),
+            },
+        );
+        expect(renamed.status).toBe(400);
+        expect(await renamed.text()).toContain(
+            "conflicts with a bundled model or alias",
+        );
+    });
+    test("creates a private endpoint agent without proxy credentials or pricing", async ({
+        accountToken,
+    }) => {
+        const created = await postModel(accountToken, "/endpoint-agents", {
             name: "external-agent",
             title: "External agent",
             description: "Runs on its owner's server",
-            baseUrl: "https://agent.example.com/v1/?ignored=yes",
+            api: "responses",
+            url: "https://agent.example.com/custom/responses?version=1",
             requiredSafetyFeatures: ["sexual"],
         });
 
         expect(created).toMatchObject({
-            modelId: "testuser/external-agent",
+            modelId: "community/testuser/external-agent",
             type: "endpoint_agent",
             name: "external-agent",
             title: "External agent",
             description: "Runs on its owner's server",
             visibility: "private",
-            baseUrl: "https://agent.example.com/v1/?ignored=yes",
+            api: "responses",
+            url: "https://agent.example.com/custom/responses?version=1",
             upstreamModel: "external-agent",
             requiredSafetyFeatures: ["sexual"],
             perUserRpm: null,
@@ -91,39 +230,46 @@ describe("community endpoint configuration policy", () => {
         });
         expect(stored).toMatchObject({
             type: "endpoint_agent",
-            baseUrl: "https://agent.example.com/v1/?ignored=yes",
+            baseUrl: "https://agent.example.com/custom/responses?version=1",
             upstreamModel: "external-agent",
             requiredSafetyFeatures: ["sexual"],
             visibility: "private",
         });
         expect(
             parseListingPayload("endpoint_agent", stored?.payload ?? null),
-        ).toEqual({ perUserRpm: null });
+        ).toEqual({
+            perUserRpm: null,
+            api: "responses",
+        });
 
         const updated = await postModel(
-            sessionToken,
+            accountToken,
             `/${created.id as string}/update`,
             { requiredSafetyFeatures: ["violence"] },
         );
         expect(updated.requiredSafetyFeatures).toEqual(["violence"]);
+        expect(updated.url).toBe(
+            "https://agent.example.com/custom/responses?version=1",
+        );
     });
 
     test("rejects proxy-only fields and unapproved public endpoint agents", async ({
-        sessionToken,
+        accountToken,
     }) => {
         const request = (body: Record<string, unknown>) =>
             SELF.fetch(`${endpointUrl}/endpoint-agents`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: `better-auth.session_token=${sessionToken}`,
+                    Authorization: `Bearer ${accountToken}`,
                 },
                 body: JSON.stringify(body),
             });
         const input = {
             name: "external-agent",
             title: "External agent",
-            baseUrl: "https://agent.example.com/v1",
+            api: "chat_completions",
+            url: "https://agent.example.com/v1/chat/completions",
         };
 
         const proxyField = await request({
@@ -132,11 +278,56 @@ describe("community endpoint configuration policy", () => {
         });
         expect(proxyField.status).toBe(400);
 
+        for (const modalities of [
+            { inputModalities: ["3d"] },
+            { inputModalities: [] },
+            { outputModalities: [] },
+            { outputModalities: ["unknown"] },
+        ]) {
+            const invalid = await request({ ...input, ...modalities });
+            expect(invalid.status).toBe(400);
+        }
+
         const publicAgent = await request({
             ...input,
             visibility: "public",
         });
         expect(publicAgent.status).toBe(403);
+    });
+
+    test("accepts descriptions up to the limit and names it when rejecting", async ({
+        accountToken,
+    }) => {
+        const request = (description: string) =>
+            SELF.fetch("http://localhost:3000/api/account/agents", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accountToken}`,
+                },
+                body: JSON.stringify({
+                    name: "long-description-agent",
+                    title: "Long description",
+                    description,
+                    systemPrompt: "Answer briefly.",
+                    baseModel: "openai",
+                }),
+            });
+
+        const maxDescription = "d".repeat(
+            COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
+        );
+        const created = await request(maxDescription);
+        expect(created.status, await created.clone().text()).toBe(200);
+        expect(await created.json<{ description: string }>()).toMatchObject({
+            description: maxDescription,
+        });
+
+        const rejected = await request(`${maxDescription}d`);
+        expect(rejected.status).toBe(400);
+        expect(await rejected.text()).toContain(
+            `Description must be at most ${COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH} characters`,
+        );
     });
 
     test("preserves validation error precedence", () => {
@@ -158,10 +349,10 @@ describe("community endpoint configuration policy", () => {
     });
 
     test("derives image pricing transitions and private visibility", async ({
-        sessionToken,
+        accountToken,
     }) => {
         await approveCommunityModels();
-        const created = await postModel(sessionToken, "", {
+        const created = await postModel(accountToken, "", {
             name: "image-policy",
             title: "Image policy",
             visibility: "public",
@@ -176,7 +367,7 @@ describe("community endpoint configuration policy", () => {
             completionImagePrice: 0.2,
         });
         const published = await publishPendingModel(
-            sessionToken,
+            accountToken,
             created.id as string,
         );
 
@@ -191,7 +382,7 @@ describe("community endpoint configuration policy", () => {
         });
 
         const tokenPriced = await postModel(
-            sessionToken,
+            accountToken,
             `/${created.id as string}/update`,
             {
                 imagePricing: "tokens",
@@ -213,14 +404,14 @@ describe("community endpoint configuration policy", () => {
         });
 
         const safetyDisabled = await postModel(
-            sessionToken,
+            accountToken,
             `/${created.id as string}/update`,
             { requiredSafetyFeatures: [] },
         );
         expect(safetyDisabled.requiredSafetyFeatures).toEqual([]);
 
         const privateModel = await postModel(
-            sessionToken,
+            accountToken,
             `/${created.id as string}/update`,
             { visibility: "private" },
         );
@@ -228,54 +419,57 @@ describe("community endpoint configuration policy", () => {
             visibility: "private",
             inputModalities: ["text", "image"],
             perUserRpm: 2.5,
-            paidOnly: false,
+            paidOnly: true,
+            imagePricing: "tokens",
+            promptImagePrice: 0.000001,
+            completionImagePrice: 0,
         });
-        for (const { key } of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
-            expect(privateModel[key]).toBe(0);
-        }
     });
 
     test("keeps fallback writes and candidate discovery aligned", async ({
-        sessionToken,
+        accountToken,
     }) => {
         await approveCommunityModels();
-        const cheaper = await postModel(sessionToken, "", {
+        const cheaper = await postModel(accountToken, "", {
             name: "cheaper-fallback",
             title: "Cheaper fallback",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "test-provider-token",
             promptTextPrice: 0.000001,
         });
-        await advancePendingPast12Hours(cheaper.id as string);
-        const expensive = await postModel(sessionToken, "", {
+        await advancePendingPastDelay(cheaper.id as string);
+        const expensive = await postModel(accountToken, "", {
             name: "expensive-fallback",
             title: "Expensive fallback",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "test-provider-token",
             promptTextPrice: 0.000003,
         });
-        await publishPendingModel(sessionToken, expensive.id as string);
+        await publishPendingModel(accountToken, expensive.id as string);
         const cheaperModelId = cheaper.modelId as string;
         const expensiveModelId = expensive.modelId as string;
-        const primary = await postModel(sessionToken, "", {
+        const primary = await postModel(accountToken, "", {
             name: "primary-with-fallback",
             title: "Primary with fallback",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "test-provider-token",
             promptTextPrice: 0.000002,
             fallbacks: [cheaperModelId],
         });
         const resaved = await postModel(
-            sessionToken,
+            accountToken,
             `/${primary.id as string}/update`,
             { visibility: "public", fallbacks: [cheaperModelId] },
         );
         expect(resaved.pending).toMatchObject({ visibility: "public" });
         const publishedPrimary = await publishPendingModel(
-            sessionToken,
+            accountToken,
             primary.id as string,
         );
 
@@ -285,7 +479,7 @@ describe("community endpoint configuration policy", () => {
             `${endpointUrl}/${primary.id as string}/fallback-candidates`,
             {
                 headers: {
-                    Cookie: `better-auth.session_token=${sessionToken}`,
+                    Authorization: `Bearer ${accountToken}`,
                 },
             },
         );
@@ -297,14 +491,15 @@ describe("community endpoint configuration policy", () => {
     });
 
     test("clears advertised metadata without rewriting payload for listing-only changes", async ({
-        sessionToken,
+        accountToken,
     }) => {
         await approveCommunityModels();
-        const created = await postModel(sessionToken, "", {
+        const created = await postModel(accountToken, "", {
             name: "text-policy",
             title: "Text policy",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "test-provider-token",
             modality: "text",
             perUserRpm: 3,
@@ -314,10 +509,10 @@ describe("community endpoint configuration policy", () => {
             },
             promptTextPrice: 0.000001,
         });
-        await publishPendingModel(sessionToken, created.id as string);
+        await publishPendingModel(accountToken, created.id as string);
 
         const cleared = await postModel(
-            sessionToken,
+            accountToken,
             `/${created.id as string}/update`,
             { advertised: {}, perUserRpm: null },
         );
@@ -327,12 +522,135 @@ describe("community endpoint configuration policy", () => {
         const before = await db.query.communityEndpoint.findFirst({
             where: eq(schema.communityEndpoint.id, created.id as string),
         });
-        await postModel(sessionToken, `/${created.id as string}/update`, {
+        await postModel(accountToken, `/${created.id as string}/update`, {
             title: "Renamed listing",
         });
         const after = await db.query.communityEndpoint.findFirst({
             where: eq(schema.communityEndpoint.id, created.id as string),
         });
         expect(after?.payload).toBe(before?.payload);
+    });
+
+    test("tests a saved model with its stored token and reports its health", async ({
+        accountToken,
+        mocks,
+    }) => {
+        const created = await postModel(accountToken, "", {
+            name: "health-check",
+            title: "Health check",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
+            bearerToken: "saved-provider-token",
+            upstreamModel: "upstream-model",
+            modality: "text",
+        });
+        const id = created.id as string;
+
+        const upstreamCalls: RequestInit[] = [];
+        const mockedFetch = globalThis.fetch;
+        vi.stubGlobal(
+            "fetch",
+            (input: RequestInfo | URL, init?: RequestInit) => {
+                const url = input instanceof Request ? input.url : input;
+                if (new URL(url).host !== "text.example.com") {
+                    return mockedFetch(input, init);
+                }
+                upstreamCalls.push(init ?? {});
+                return Promise.resolve(
+                    Response.json({
+                        choices: [{ message: { content: "OK" } }],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 1,
+                            total_tokens: 3,
+                        },
+                    }),
+                );
+            },
+        );
+        const tested = await postModel(accountToken, `/${id}/test`, {});
+        vi.unstubAllGlobals();
+        expect(tested).toMatchObject({ ok: true, streaming: false });
+        expect(
+            new Headers(upstreamCalls[0]?.headers).get("Authorization"),
+        ).toBe("Bearer saved-provider-token");
+        expect(JSON.parse(String(upstreamCalls[0]?.body))).toMatchObject({
+            model: "upstream-model",
+        });
+
+        await mocks.enable("tinybird");
+        const daysAgo = (days: number) =>
+            new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+        const row = {
+            status: 0,
+            code: "",
+            host: "",
+            counted: 0,
+            from_pollinations: 0,
+            from_owner: 0,
+            message: "",
+        };
+        mocks.tinybird.state.modelHealthResponse = [
+            {
+                ...row,
+                day: daysAgo(0),
+                failure_group: 0,
+                succeeded: 15,
+                failed: 4,
+                last_at: "2026-10-15 17:06:15",
+            },
+            {
+                ...row,
+                day: "1970-01-01",
+                failure_group: 1,
+                status: 502,
+                code: "upstream_error",
+                host: "text.example.com",
+                succeeded: 0,
+                failed: 4,
+                counted: 1,
+                from_pollinations: 2,
+                last_at: "2026-10-15 17:06:15",
+                message: "402 Payment Required",
+            },
+        ];
+        const health = await SELF.fetch(`${endpointUrl}/${id}/health`, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(health.status).toBe(200);
+        const body = (await health.json()) as {
+            days: { day: string; succeeded: number; failed: number }[];
+            failures: unknown[];
+        };
+        expect(mocks.tinybird.state.pipeCalls.at(-1)?.query).toMatchObject({
+            model: created.modelId,
+        });
+        expect(body.days.map((day) => day.day)).toEqual(
+            [6, 5, 4, 3, 2, 1, 0].map(daysAgo),
+        );
+        expect(body.days.at(-1)).toEqual({
+            day: daysAgo(0),
+            succeeded: 15,
+            failed: 4,
+        });
+        expect(body.days[0]).toMatchObject({ succeeded: 0, failed: 0 });
+        expect(body.failures).toEqual([
+            {
+                status: 502,
+                code: "upstream_error",
+                host: "text.example.com",
+                failures: 4,
+                counted: 1,
+                fromPollinations: 2,
+                fromOwner: 0,
+                lastAt: "2026-10-15T17:06:15.000Z",
+                message: "402 Payment Required",
+            },
+        ]);
+
+        const missing = await SELF.fetch(`${endpointUrl}/missing/health`, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(missing.status).toBe(404);
     });
 });

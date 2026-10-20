@@ -8,19 +8,63 @@ Users stay in control of their balance, budgets, and revocation; your app never 
 
 An **App Key** (`pk_...`) is the publishable key your app sends users to Pollinations with. Without one, the consent screen falls back to the redirect hostname and traffic isn't attributed to your account.
 
-To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai/keys) → **Create New App Key**:
+To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai/keys) → **Create app key**:
 
-<p align="left"><img src="https://media.pollinations.ai/28716f8fb8677eff" alt="Edit App Key" width="420"></p>
+<p align="left"><img src="https://media.pollinations.ai/80a72314-b119-4017-a98d-17cd177802aa" alt="Create app key dialog with a name and redirect URL" width="560"></p>
 
 Set the **Name** (shows on the consent screen). For web apps, add at least one **Redirect URI** (your exact callback URL). The key you get back is your `client_id` (a `pk_...` publishable key; the legacy name `app_key` is still accepted).
 
 When a user lands on the consent screen signed-out, they're prompted to continue with GitHub:
 
-<p align="left"><img src="https://media.pollinations.ai/f9fd70e72156ddec" alt="Authorize — signed out" width="420"></p>
+<p align="left"><img src="https://media.pollinations.ai/19c61852-9481-4ec8-a3e0-bb33911f2651" alt="Allow this app, signed out: sign in with GitHub" width="360"></p>
 
 Once signed in, they review the requested access and confirm:
 
-<p align="left"><img src="https://media.pollinations.ai/2ab9b5e0a2408e93" alt="Authorize — signed in" width="420"></p>
+<p align="left"><img src="https://media.pollinations.ai/90c355a1-e7f5-4187-ab78-9b06007bbdd9" alt="Allow this app, signed in: budget, expiry and permissions" width="560"></p>
+
+## 🧩 Drop-in Button (No Build Step)
+
+One script tag adds a Connect button that runs the OAuth code flow below for you.
+Use one `<polli-connect>` per page; additional elements show an error instead of a sign-in button.
+
+```html
+<script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.19/dist/connect.js"></script>
+
+<polli-connect app-key="pk_yourkey" budget="10" expiry="7"></polli-connect>
+
+<script>
+  const connect = document.querySelector('polli-connect');
+  connect.addEventListener('change', () => {
+    // connect.apiKey: the user's sk_ key, or null after Disconnect
+  });
+</script>
+```
+
+Add the page URL, without query or fragment, as a Redirect URI on your App Key. Call Pollinations with `connect.apiKey` as in step 3 below.
+
+| Attribute | What it does |
+|-----------|-------------|
+| `app-key` | Your App Key (required) |
+| `budget` | Pollen cap, as `budget` below |
+| `expiry` | Key lifetime in days |
+| `models` | Comma-separated, as `models` below |
+| `permissions` | Comma-separated scopes: `profile`, `usage`, `keys` |
+| `hide-buy-pollen` | Hides the top-up menu item; the balance and Disconnect remain available (UI 0.1.0-alpha.20+) |
+| `menu-links` | JSON array of `{ "label": "Dashboard", "href": "https://example.com" }` links shown in the signed-in menu; optional `icon`: `app`, `discord`, or `bug`; only HTTP(S) links are accepted (UI 0.1.0-alpha.20+) |
+
+For custom menu links, use UI `0.1.0-alpha.20` or later and single quotes around the JSON attribute:
+
+```html
+<script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.20/dist/connect.js"></script>
+<polli-connect
+  app-key="pk_yourkey"
+  menu-links='[{"label":"Help","href":"https://example.com/help"}]'
+></polli-connect>
+```
+
+Invalid entries are ignored. Malformed JSON or a non-array value adds no custom links; sign-in still works.
+
+The key stays in `sessionStorage`, so it lasts until the tab closes.
 
 ## Developer Earnings
 
@@ -70,7 +114,7 @@ https://enter.pollinations.ai/authorize
 
 With restrictions:
 ```text
-https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://myapp.com/callback&client_id=pk_yourkey&scope=usage&models=flux,openai&expiry=7&budget=10&state=random&code_challenge=...&code_challenge_method=S256
+https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://myapp.com/callback&client_id=pk_yourkey&scope=usage&models=image,text&expiry=7&budget=10&state=random&code_challenge=...&code_challenge_method=S256
 ```
 
 | Param | What it does | Example |
@@ -82,7 +126,7 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://
 | `code_challenge` | Base64url SHA-256 of your PKCE verifier | `abc...` |
 | `code_challenge_method` | Must be `S256` | `S256` |
 | `scope` | Account access (space or comma separated) | `usage keys` |
-| `models` | Restrict to specific models | `flux,openai,gptimage` |
+| `models` | Models the key can use. A category (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`) allows every model in it, including models added later; a model ID from `/models` allows only that model. The user can remove entries on the consent screen. | `image,text` or `black-forest-labs/flux.1-schnell,tongyi-mai/z-image-turbo` |
 | `budget` | Numeric Pollen cap. Defaults to `5`; users can clear the budget field on the consent screen for unlimited. | `10` |
 | `expiry` | User-authorized key lifetime in days (default: 7) | `7` |
 
@@ -141,8 +185,8 @@ Use the returned `access_token` as the API key:
 ```javascript
 fetch('https://gen.pollinations.ai/v1/chat/completions', {
   method: 'POST',
-  headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-  body: JSON.stringify({ model: 'openai', messages: [{ role: 'user', content: 'yo' }] })
+  headers: { 'Authorization': `Bearer ${access_token}`, 'Content-Type': 'application/json' },
+  body: JSON.stringify({ model: 'openai/gpt-5.4-nano', messages: [{ role: 'user', content: 'yo' }] })
 });
 ```
 
@@ -182,7 +226,7 @@ const apiKey = new URLSearchParams(location.hash.slice(1)).get('api_key');
 fetch('https://gen.pollinations.ai/v1/chat/completions', {
   method: 'POST',
   headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-  body: JSON.stringify({ model: 'openai', messages: [{ role: 'user', content: 'yo' }] })
+  body: JSON.stringify({ model: 'openai/gpt-5.4-nano', messages: [{ role: 'user', content: 'yo' }] })
 });
 ```
 
@@ -190,21 +234,20 @@ fetch('https://gen.pollinations.ai/v1/chat/completions', {
 
 Same authorize screen, but the user opens a browser separately. Your CLI polls for the key.
 
-**Where this fits:**
-- **Discord / Telegram / WhatsApp bots** — bot DMs the code, user approves in browser, bot gets their key
-- **CLI tools** — `pollinations login` opens a browser, CLI waits for approval
-- **MCP servers** — AI agent requests access, user approves from their browser
-- **Raspberry Pi / IoT** — headless device displays a code, user approves on their phone
-- **VS Code extensions** — extension shows the code, user approves in browser
+Use this for CLIs, bots, extensions, and other apps that cannot show the authorization page themselves.
 
 ```bash
 # 1. request a device code (pass your app_key as client_id for attribution)
 curl -X POST https://enter.pollinations.ai/api/device/code \
   -H 'Content-Type: application/json' \
   -d '{"client_id": "pk_yourkey"}'
-# → { "device_code": "...", "user_code": "ABCD-1234", "verification_uri": "/device" }
+# → { "device_code": "...", "user_code": "ABCD-1234",
+#     "verification_uri": "https://enter.pollinations.ai/device",
+#     "verification_uri_complete": "https://enter.pollinations.ai/device?user_code=ABCD-1234",
+#     "expires_in": 1800, "interval": 5 }
 
-# 2. tell user: "go to enter.pollinations.ai/device and enter ABCD-1234"
+# 2. give the user verification_uri_complete to open directly,
+#    or show verification_uri and user_code
 
 # 3. poll for the key (every 5s)
 curl -X POST https://enter.pollinations.ai/api/device/token \

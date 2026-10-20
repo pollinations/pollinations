@@ -14,7 +14,7 @@ Read live code before relying on this map; paths evolve.
 | Audio and speech | `gen.pollinations.ai/src/routes/audio.ts` and transcription/realtime routes |
 | Embeddings | `gen.pollinations.ai/src/embeddings/` |
 | Billing and observability | `gen.pollinations.ai/src/middleware/track.ts`, `enter.pollinations.ai/observability/` |
-| Catalog logo | model-info/brand mapping under the Enter frontend and `frontend/public/brand-logos/` |
+| Catalog logo | model-info/publisher mapping under the Enter frontend and `frontend/public/brand-logos/` |
 | Provider secrets | encrypted files under `gen.pollinations.ai/secrets/`; mutations follow `AGENTS.md` |
 
 Search for the canonical slug, aliases, provider model ID, registry key, and handler before adding code. Reuse existing provider clients, request transforms, polling, upload, response, error, billing, and fallback utilities.
@@ -41,6 +41,8 @@ Use `npm run dev`, not a bare Worker command, so the current bundle and persiste
 
 Test tokens are references in `_local/.env`; provider credentials are not. Never print secret values. Any provider-secret mutation requires the separate approval and PR process in `AGENTS.md`.
 
+In an isolated worktree, locate the primary checkout with `git worktree list` and use its existing `POLLINATIONS_TOKEN_LOCAL` directly at execution time without copying it into the worktree or printing it. This is read-only use of an already-authorized credential, so it does not require secret-mutation approval. If the token is absent or invalid, do not create, replace, or deploy one without the separate approval required by `AGENTS.md`.
+
 ## Minimum smoke
 
 Call the public route shape through local Gen with the canonical model ID and authenticated local token. A successful direct-provider probe is not a substitute for this test: local E2E must prove registry resolution, request transforms, handler behavior, permissions, billing, and response mapping together.
@@ -52,5 +54,5 @@ Also inspect `/v1/models` or the modality-specific catalog endpoint to verify th
 - Run the existing alias, pricing, permission, usage-header, cache, billing, tracking, safety, and modality-specific tests touched by the change.
 - Extend existing tests rather than introducing mock infrastructure.
 - Run type checks for every touched worker/package.
-- Run `npx biome check --write <changed-files>` before committing.
+- Run `npx @biomejs/biome check --write <changed-files>` before committing.
 - Do not edit tests merely to bless incorrect behavior; fix the implementation.

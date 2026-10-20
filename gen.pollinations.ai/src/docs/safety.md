@@ -2,6 +2,8 @@
 
 Optional safety checking runs on text input before generation. Omitted, `false`, or `0` means off.
 
+Checks read the request's text only. Generated images, video, and audio are not inspected: `X-Safety-Applied` means the checks ran on the input, not that the output was reviewed. A prompt can pass `sexual` and still produce nudity, for example when nudity is asked for in an artistic framing. If your app must exclude all nudity, moderate the generated output before showing it.
+
 For community models, enabled checks run before text is sent to the provider or a configured fallback.
 
 Models may require specific checks. Required checks are listed as `required_safety` in the model catalog and cannot be disabled by callers.
@@ -18,9 +20,9 @@ curl https://gen.pollinations.ai/v1/chat/completions \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -H "Pollinations-Safe: privacy" \
-  -d '{"model":"openai","messages":[{"role":"user","content":"email me at a@example.com"}]}'
+  -d '{"model":"openai/gpt-5.4-nano","messages":[{"role":"user","content":"email me at a@example.com"}]}'
 ```
 
 Large requests check the latest 50,000 text characters, across up to 25 text parts, in one safety call.
 
-Blocked requests return `400` with `error.type: "safety_error"`. Safety service failures return `503`. Check `X-Safety-Applied`, `X-Safety-Redacted`, and `X-Safety-Status` headers.
+Blocked requests return `400` with `error.code: "content_blocked"`; the message names the triggered categories. Safety service failures return `503`. Check `X-Safety-Applied`, `X-Safety-Redacted`, and `X-Safety-Status` headers.

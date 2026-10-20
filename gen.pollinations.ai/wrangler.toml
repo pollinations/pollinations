@@ -1,16 +1,29 @@
 name = "pollinations-gen"
 main = "src/index.ts"
 compatibility_date = "2025-11-01"
-compatibility_flags = ["nodejs_compat", "nodejs_als"]
+# Managed-agent model and MCP calls loop through the public Gen routes so each
+# child request receives its own authentication, billing, and tracking.
+# Defer rejection reporting until all microtasks settle: AI SDK tracing creates
+# handled promise chains that older Workers semantics report as unhandled.
+compatibility_flags = [
+    "nodejs_compat",
+    "nodejs_als",
+    "global_fetch_strictly_public",
+    "unhandled_rejection_after_microtask_checkpoint"
+]
 account_id = "b6ec751c0862027ba269faf7029b2501"
 
 # Service binding to enter worker (zero latency - same V8 isolate)
 services = [
     { binding = "ENTER", service = "pollinations-enter" },
     { binding = "POLLINATIONS_MCP", service = "pollinations-mcp" },
+    { binding = "ASK_JEV_MCP", service = "ask-jev-mcp" },
     { binding = "FFMPEG_MCP", service = "pollinations-ffmpeg-mcp" },
     { binding = "EXA_MCP", service = "pollinations-exa-mcp" },
-    { binding = "COMPOSIO_MCP", service = "pollinations-composio-mcp" }
+    { binding = "COMPOSIO_MCP", service = "pollinations-composio-mcp" },
+    { binding = "COMPUTER_MCP", service = "pollinations-computer-mcp" },
+    { binding = "MACHINES_MCP", service = "pollinations-machines-mcp" },
+    { binding = "MEDIA", service = "pollinations-media", entrypoint = "MediaUpload" }
 ]
 
 [images]
@@ -25,10 +38,6 @@ migrations_dir = "../enter.pollinations.ai/drizzle"
 [[kv_namespaces]]
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
-
-[[r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
 
 [[r2_buckets]]
 binding = "TEXT_BUCKET"
@@ -62,7 +71,6 @@ new_classes = ["CommunityModelRateLimiter"]
 ENVIRONMENT = "development"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
-AGENT_RUNTIME_BASE_URL = "https://dev.enter.myceli.ai/api/agent-runtime/v1"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
@@ -83,6 +91,10 @@ run_worker_first = ["/", "/manifest.webmanifest"]
 [env.production.images]
 binding = "IMAGES"
 
+# Renews kept sandboxes (src/routes/e2b.ts).
+[env.production.triggers]
+crons = ["*/5 * * * *"]
+
 [[env.production.routes]]
 pattern = "gen.myceli.ai"
 zone_name = "myceli.ai"
@@ -102,6 +114,10 @@ binding = "POLLINATIONS_MCP"
 service = "pollinations-mcp"
 
 [[env.production.services]]
+binding = "ASK_JEV_MCP"
+service = "ask-jev-mcp"
+
+[[env.production.services]]
 binding = "FFMPEG_MCP"
 service = "pollinations-ffmpeg-mcp"
 
@@ -112,6 +128,22 @@ service = "pollinations-exa-mcp"
 [[env.production.services]]
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp"
+
+[[env.production.services]]
+binding = "COMPUTER_MCP"
+service = "pollinations-computer-mcp"
+
+[[env.production.services]]
+binding = "MACHINES_MCP"
+service = "pollinations-machines-mcp"
+
+[[env.production.dispatch_namespaces]]
+binding = "CODE_AGENTS"
+namespace = "pollinations-code-agents-production"
+
+[env.production.dispatch_namespaces.outbound]
+service = "pollinations-enter-production"
+parameters = ["CODE_AGENT_CONTEXT"]
 
 [[env.production.vpc_networks]]
 binding = "KLEIN_VPC"
@@ -129,9 +161,10 @@ migrations_dir = "../enter.pollinations.ai/drizzle"
 binding = "KV"
 id = "a621f17ad3e34000971cffa616675c5b"
 
-[[env.production.r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
+[[env.production.services]]
+binding = "MEDIA"
+service = "pollinations-media-prod"
+entrypoint = "MediaUpload"
 
 [[env.production.r2_buckets]]
 binding = "TEXT_BUCKET"
@@ -168,7 +201,11 @@ new_classes = ["CommunityModelRateLimiter"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
-AGENT_RUNTIME_BASE_URL = "https://enter.myceli.ai/api/agent-runtime/v1"
+# Public OAuth app identifier; user credentials stay in their browser tab.
+DOCS_APP_KEY = "pk_zM4Wvtd1rgWXRmLP"
+# Durable Object fetches get a 125 s proxy read timeout; requests through
+# this origin get the zone's 300 s (src/durable-objects/GenerationCoordinator.ts).
+GENERATION_EXECUTION_ORIGIN = "https://gen.pollinations.ai"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
@@ -181,6 +218,10 @@ BEDROCK_GUARDRAIL_VERSION = "2"
 
 [env.staging.images]
 binding = "IMAGES"
+
+# Renews kept sandboxes (src/routes/e2b.ts).
+[env.staging.triggers]
+crons = ["*/5 * * * *"]
 
 [[env.staging.routes]]
 pattern = "staging.gen.myceli.ai"
@@ -198,7 +239,11 @@ service = "pollinations-enter-staging"
 
 [[env.staging.services]]
 binding = "POLLINATIONS_MCP"
-service = "pollinations-mcp"
+service = "pollinations-mcp-staging"
+
+[[env.staging.services]]
+binding = "ASK_JEV_MCP"
+service = "ask-jev-mcp-staging"
 
 [[env.staging.services]]
 binding = "FFMPEG_MCP"
@@ -212,6 +257,22 @@ service = "pollinations-exa-mcp-staging"
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp-staging"
 
+[[env.staging.services]]
+binding = "COMPUTER_MCP"
+service = "pollinations-computer-mcp-staging"
+
+[[env.staging.services]]
+binding = "MACHINES_MCP"
+service = "pollinations-machines-mcp-staging"
+
+[[env.staging.dispatch_namespaces]]
+binding = "CODE_AGENTS"
+namespace = "pollinations-code-agents-staging"
+
+[env.staging.dispatch_namespaces.outbound]
+service = "pollinations-enter-staging"
+parameters = ["CODE_AGENT_CONTEXT"]
+
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "staging-pollinations-enter-db"
@@ -222,9 +283,10 @@ migrations_dir = "../enter.pollinations.ai/drizzle"
 binding = "KV"
 id = "ba22195551794751b9792e4e67eb074a"
 
-[[env.staging.r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
+[[env.staging.services]]
+binding = "MEDIA"
+service = "pollinations-media-staging"
+entrypoint = "MediaUpload"
 
 [[env.staging.r2_buckets]]
 binding = "TEXT_BUCKET"
@@ -261,7 +323,7 @@ new_classes = ["CommunityModelRateLimiter"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
-AGENT_RUNTIME_BASE_URL = "https://staging.enter.myceli.ai/api/agent-runtime/v1"
+GENERATION_EXECUTION_ORIGIN = "https://staging.gen.pollinations.ai"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
@@ -271,7 +333,7 @@ BEDROCK_GUARDRAIL_VERSION = "2"
 # Staging OAuth lockdown — must match enter.pollinations.ai staging allowlist.
 # Request-time gate in shared/auth/api-key.ts fails closed without it. Issue #11137.
 STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015"
-STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai"
+STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai,thomash@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid"
 [env.test]
 
 [env.test.images]
@@ -286,6 +348,10 @@ binding = "POLLINATIONS_MCP"
 service = "pollinations-mcp"
 
 [[env.test.services]]
+binding = "ASK_JEV_MCP"
+service = "ask-jev-mcp"
+
+[[env.test.services]]
 binding = "FFMPEG_MCP"
 service = "pollinations-ffmpeg-mcp"
 
@@ -297,6 +363,14 @@ service = "pollinations-exa-mcp"
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp"
 
+[[env.test.services]]
+binding = "COMPUTER_MCP"
+service = "pollinations-computer-mcp"
+
+[[env.test.services]]
+binding = "MACHINES_MCP"
+service = "pollinations-machines-mcp"
+
 [[env.test.d1_databases]]
 binding = "DB"
 database_name = "development-pollinations-enter-db"
@@ -307,9 +381,10 @@ migrations_dir = "../enter.pollinations.ai/drizzle"
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
-[[env.test.r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
+[[env.test.services]]
+binding = "MEDIA"
+service = "pollinations-media-dev"
+entrypoint = "MediaUpload"
 
 [[env.test.r2_buckets]]
 binding = "TEXT_BUCKET"
@@ -346,7 +421,6 @@ new_classes = ["CommunityModelRateLimiter"]
 
 [env.test.vars]
 ENVIRONMENT = "test"
-AGENT_RUNTIME_BASE_URL = "https://enter-runtime.test/api/agent-runtime/v1"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
 BETTER_AUTH_SECRET = "not-a-secret-workers-test-only"
@@ -354,6 +428,7 @@ TINYBIRD_INGEST_TOKEN = "not-a-secret-workers-test-only"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event_v2"
 PORTKEY_GATEWAY_URL = "https://portkey.test"
 AI_GATEWAY_API_KEY = "not-a-secret-workers-test-only"
+E2B_API_KEY = "not-a-secret-workers-test-only"
 AWS_ACCESS_KEY_ID = "not-a-secret-workers-test-only"
 AWS_SECRET_ACCESS_KEY = "not-a-secret-workers-test-only"
 AWS_REGION = "us-east-1"

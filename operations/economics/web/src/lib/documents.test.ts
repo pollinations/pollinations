@@ -1,12 +1,83 @@
 import { describe, expect, it } from "vitest";
 import {
+    documentDownloadLink,
     driveDocumentLink,
     hasArchivedEvidence,
     hasReconciledTransactionEvidence,
     isAcknowledgedLostTransactionEvidence,
+    supplierInvoiceLinks,
 } from "./documents";
 
 describe("driveDocumentLink", () => {
+    it("does not certify an unqualified file link as a supplier document", () => {
+        const evidence =
+            "https://drive.google.com/file/d/shared-statement/view";
+        expect(hasArchivedEvidence(evidence)).toBe(true);
+        expect(
+            hasReconciledTransactionEvidence({
+                description: "Supplier payment",
+                evidence,
+            }),
+        ).toBe(false);
+        expect(
+            hasReconciledTransactionEvidence({
+                description: "Supplier payment",
+                evidence: `evidence_type=unknown ${evidence}`,
+            }),
+        ).toBe(false);
+        expect(
+            hasReconciledTransactionEvidence({
+                description: "Supplier payment",
+                evidence: `evidence_requirement=payment ${evidence}`,
+            }),
+        ).toBe(false);
+    });
+    it("finds the exact document even when the folder is linked first", () => {
+        const evidence =
+            "evidence_type=supplier_document https://drive.google.com/drive/folders/folder https://drive.google.com/file/d/invoice/view";
+        expect(driveDocumentLink(evidence)?.href).toBe(
+            "https://drive.google.com/file/d/invoice/view",
+        );
+        expect(
+            hasReconciledTransactionEvidence({
+                description: "Supplier payment",
+                evidence,
+            }),
+        ).toBe(true);
+    });
+    it("distinguishes supplier evidence from payment-only statements", () => {
+        const statement =
+            "evidence_type=payment_statement https://drive.google.com/file/d/statement/view";
+        expect(
+            hasReconciledTransactionEvidence({
+                description: "Supplier payment",
+                evidence: statement,
+            }),
+        ).toBe(false);
+        expect(
+            hasReconciledTransactionEvidence({
+                description: "Wise cashback",
+                evidence: `${statement} evidence_requirement=payment`,
+            }),
+        ).toBe(true);
+        expect(
+            hasReconciledTransactionEvidence({
+                description: "Supplier payment",
+                evidence:
+                    "evidence_type=supplier_document https://drive.google.com/file/d/invoice/view",
+            }),
+        ).toBe(true);
+        expect(
+            hasArchivedEvidence(
+                "https://drive.google.com/drive/folders/folder",
+            ),
+        ).toBe(false);
+        expect(
+            hasArchivedEvidence(
+                "https://docs.google.com/forms/d/form/viewform",
+            ),
+        ).toBe(false);
+    });
     it("recognizes Drive folders", () => {
         expect(
             driveDocumentLink(
@@ -120,4 +191,66 @@ describe("driveDocumentLink", () => {
             }),
         ).toBe(false);
     });
+});
+
+describe("document downloads", () => {
+    it("downloads the same retained file and preserves its resource key", () => {
+        const document = driveDocumentLink(
+            "https://drive.google.com/open?id=file-id&resourcekey=resource-id",
+        );
+        expect(
+            documentDownloadLink(
+                document ?? { href: "", label: "Open document" },
+            ),
+        ).toBe(
+            "https://drive.google.com/uc?export=download&id=file-id&resourcekey=resource-id",
+        );
+    });
+    it("exports native documents as PDF and does not label folders as downloads", () => {
+        for (const [type, path] of [
+            ["document", "export?format=pdf"],
+            ["spreadsheets", "export?format=pdf"],
+            ["presentation", "export/pdf"],
+        ]) {
+            expect(
+                documentDownloadLink(
+                    driveDocumentLink(
+                        `https://docs.google.com/${type}/d/file-id/edit`,
+                    ) ?? { href: "", label: "Open document" },
+                ),
+            ).toBe(`https://docs.google.com/${type}/d/file-id/${path}`);
+        }
+        expect(
+            documentDownloadLink(
+                driveDocumentLink(
+                    "https://drive.google.com/drive/folders/folder",
+                ) ?? { href: "", label: "Open document" },
+            ),
+        ).toBeNull();
+    });
+});
+
+it("selects reviewed invoice references while excluding receipts and bank statements", () => {
+    const invoices = supplierInvoiceLinks(
+        "evidence_type=supplier_document; invoice=ONE https://drive.google.com/file/d/first/view; invoice=TWO https://drive.google.com/file/d/second/view; bank_payment_evidence: https://drive.google.com/file/d/statement/view",
+    );
+    expect(invoices).toEqual([
+        "https://drive.google.com/file/d/first/view",
+        "https://drive.google.com/file/d/second/view",
+    ]);
+    expect(
+        supplierInvoiceLinks(
+            "evidence_type=supplier_document receipt=ONE https://drive.google.com/file/d/receipt/view",
+        ),
+    ).toEqual([]);
+    expect(
+        supplierInvoiceLinks(
+            "evidence_type=payment_statement invoice=ONE https://drive.google.com/file/d/statement/view",
+        ),
+    ).toEqual([]);
+    expect(
+        supplierInvoiceLinks(
+            "https://drive.google.com/file/d/unclassified/view",
+        ),
+    ).toEqual([]);
 });

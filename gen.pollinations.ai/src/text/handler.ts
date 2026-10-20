@@ -4,8 +4,10 @@ import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
+    hasExplicitPromptCacheHit,
     MODEL_USED_HEADER,
     openaiUsageToUsage,
+    PROMPT_CACHE_TYPE_HEADER,
 } from "@shared/registry/usage-headers.ts";
 import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
@@ -19,6 +21,14 @@ import {
 import { fixWavHeader } from "../routes/audio.js";
 import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { createPromptAgentResponsesClient } from "./agents/client.ts";
+import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
+import {
+    publicChatChoices,
+    publicChatStream,
+    withoutPayg,
+} from "./chat/public.ts";
+import { completionToChatStream } from "./chat/stream.ts";
 import {
     requireChatCompletionUsage,
     requireChatStreamUsage,
@@ -26,6 +36,10 @@ import {
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { syncTextEnvironment } from "./environment.js";
 import { throwTextError } from "./errors.js";
+import {
+    supportsTextFallbackRequest,
+    textCapabilityError,
+} from "./fallbackCompatibility.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import {
     getChatRequestData,
@@ -73,11 +87,11 @@ function prepareRequestParameters(
  * Built per attempt rather than once up front, so a delegating fallback mints
  * its own run token and no attempt ever carries another endpoint's credential.
  */
-function gatewayContext(
+async function gatewayContext(
     c: TextContext,
     requestData: RequestData,
     candidate: FallbackCandidate,
-): Promise<TransformOptions> | TransformOptions {
+): Promise<TransformOptions> {
     const { communityEndpoint, definition } = candidate;
     // A fallback must resolve transforms from the model that will actually run.
     const candidateRequest = candidate.entry
@@ -89,7 +103,7 @@ function gatewayContext(
     if (!communityEndpoint || !definition) {
         return withGatewayContext(c, candidateRequest);
     }
-    return communityEndpointGatewayContext({
+    const context = await communityEndpointGatewayContext({
         endpoint: communityEndpoint,
         modelDefinition: definition,
         requestData: candidateRequest,
@@ -99,6 +113,56 @@ function gatewayContext(
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
     });
+    if (
+        communityEndpoint.type !== "prompt_agent" &&
+        communityEndpoint.type !== "code_agent"
+    )
+        return context;
+
+    const apiKey = context.modelConfig?.authKey;
+    if (typeof apiKey !== "string" || !apiKey) {
+        throw new Error("Managed agent request has no agent run token");
+    }
+    const client =
+        communityEndpoint.type === "prompt_agent"
+            ? await createPromptAgentResponsesClient(
+                  c,
+                  communityEndpoint,
+                  apiKey,
+              )
+            : createCodeAgentResponsesClient(c, communityEndpoint, apiKey);
+    return {
+        ...context,
+        responsesFetcher: client.fetcher,
+        modelConfig: {
+            ...context.modelConfig,
+            responsesEndpoint: client.target.endpoint,
+        },
+    };
+}
+
+/** One Chat provider call for one candidate, shared by Chat and adapted Responses. */
+export async function generateChatAttempt(
+    c: TextContext,
+    requestData: RequestData,
+    candidate: FallbackCandidate,
+): Promise<ChatCompletion> {
+    const portkey = c.env.PORTKEY;
+    // An upstream without SSE is asked for JSON, then its answer is replayed
+    // as a stream.
+    const buffered =
+        requestData.stream === true &&
+        candidate.definition?.supportsStreaming === false;
+    const attemptData = buffered
+        ? { ...requestData, stream: false }
+        : requestData;
+    const result = await generateTextPortkey(
+        attemptData.messages,
+        await gatewayContext(c, attemptData, candidate),
+        portkey ? (input, init) => portkey.fetch(input, init) : undefined,
+    );
+    if (!attemptData.stream) requireChatCompletionUsage(result);
+    return buffered ? completionToChatStream(result) : result;
 }
 
 function withGatewayContext(c: TextContext, requestData: RequestData) {
@@ -136,6 +200,9 @@ function usageHeaders(
         )) {
             headers.set(key, String(value));
         }
+        if (hasExplicitPromptCacheHit(usage)) {
+            headers.set(PROMPT_CACHE_TYPE_HEADER, "ephemeral");
+        }
     }
     if (completion?.fallbackTarget) {
         headers.set(FALLBACK_TARGET_HEADER, completion.fallbackTarget);
@@ -143,29 +210,44 @@ function usageHeaders(
     return headers;
 }
 
+// Provider billing fields stay internal. InferencePort's `payg_*` fields hold
+// its ledger entry, including our account balance.
+function isPrivateUsageKey(key: string): boolean {
+    return (
+        key === "cost" ||
+        key === "search_context_size" ||
+        key.startsWith("payg_")
+    );
+}
+
 function publicCompletionUsage(
     usage: ChatCompletion["usage"],
 ): ChatCompletion["usage"] {
-    if (!usage || (!("cost" in usage) && !("search_context_size" in usage))) {
-        return usage;
-    }
-
-    const {
-        cost: _cost,
-        search_context_size: _searchContextSize,
-        ...publicUsage
-    } = usage;
-    return publicUsage;
+    if (!usage || !Object.keys(usage).some(isPrivateUsageKey)) return usage;
+    return Object.fromEntries(
+        Object.entries(usage).filter(([key]) => !isPrivateUsageKey(key)),
+    ) as ChatCompletion["usage"];
 }
 
-function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
+function publicChatCompletion(
+    completion: ChatCompletion,
+    isVercel: boolean,
+): ChatCompletion {
     const usage = publicCompletionUsage(completion.usage);
-    if (usage === completion.usage) return completion;
-
-    const publicCompletion = {
+    // InferencePort also attaches its `payg_*` ledger to the top level of
+    // non-streaming responses; the stream path strips it in public.ts.
+    const hasPaygTopLevel = Object.keys(completion).some((key) =>
+        key.startsWith("payg_"),
+    );
+    if (!isVercel && !hasPaygTopLevel && usage === completion.usage)
+        return completion;
+    const publicCompletion = withoutPayg({
         ...completion,
         usage,
-    };
+        choices: isVercel
+            ? publicChatChoices(completion.choices)
+            : completion.choices,
+    });
     if (completion.fallbackTarget !== undefined) {
         Object.defineProperty(publicCompletion, "fallbackTarget", {
             value: completion.fallbackTarget,
@@ -304,31 +386,29 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
-        const normalization = normalizeSearchContext(c, requestData);
-        if ("errorResponse" in normalization) {
-            return normalization.errorResponse;
-        }
-        const normalizedRequestData = normalization.requestData;
-        const portkey = c.env.PORTKEY;
-        const {
-            result: completion,
-            candidate,
-            index,
-        } = await withModelFallback(
-            fallbackCandidates(c.var.model),
-            async (attempt) => {
-                const result = await generateTextPortkey(
-                    normalizedRequestData.messages,
-                    await gatewayContext(c, normalizedRequestData, attempt),
-                    portkey
-                        ? (input, init) => portkey.fetch(input, init)
-                        : undefined,
-                );
-                if (!normalizedRequestData.stream) {
-                    requireChatCompletionUsage(result);
-                }
-                return result;
-            },
+        const capabilityError = textCapabilityError(
+            c.var.model?.definition,
+            requestData,
+            c.var.model?.communityEndpoint,
+        );
+        if (capabilityError)
+            throw new UpstreamError(400, { message: capabilityError });
+        const candidates = fallbackCandidates(c.var.model)
+            .map((candidate, originalIndex) => ({
+                ...candidate,
+                originalIndex,
+            }))
+            .filter(
+                (candidate) =>
+                    candidate.originalIndex === 0 ||
+                    supportsTextFallbackRequest(
+                        candidate.definition,
+                        requestData,
+                    ),
+            );
+        const { result: completion, candidate } = await withModelFallback(
+            candidates,
+            (attempt) => generateChatAttempt(c, requestData, attempt),
             c.var.track?.attempts,
             (attempt) => enforceModelRateLimit(c, attempt),
         );
@@ -337,17 +417,26 @@ async function generateTextResponse(
         // Keep the internal "config.targets[N]" marker stable for response
         // headers and cached tracking data. Non-enumerable so JSON.stringify /
         // R2 cache snapshots never leak the field.
-        attachFallbackTarget(completion, index);
+        attachFallbackTarget(completion, candidate.originalIndex);
 
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.
         const servedModelId = candidate.id || undefined;
-        if (normalizedRequestData.stream) {
+        const isVercel = candidate.definition?.provider === "vercel";
+        // InferencePort ends its streams with a PAYG ledger chunk.
+        const filtersStream =
+            isVercel || candidate.definition?.provider === "inferenceport";
+        if (requestData.stream) {
             if (!completion.responseStream) {
                 return sendTextStreamResponse(completion, servedModelId);
             }
-            const [clientBody, trackingBody] = completion.responseStream.tee();
-            completion.responseStream = requireChatStreamUsage(clientBody);
+            // Client and billing must see the same validation errors.
+            const [clientBody, trackingBody] = requireChatStreamUsage(
+                completion.responseStream,
+            ).tee();
+            completion.responseStream = filtersStream
+                ? publicChatStream(clientBody)
+                : clientBody;
             const response = sendTextStreamResponse(completion, servedModelId);
             c.var.track?.overrideResponseTracking(
                 new Response(trackingBody, { headers: response.headers }),
@@ -357,7 +446,7 @@ async function generateTextResponse(
         // Provider-reported cost is read post-response in track (clamp-and-alert
         // in the registry) — malformed/absent cost never fails the request.
         const trackingResponse = sendOpenAIResponse(completion, servedModelId);
-        const publicCompletion = publicChatCompletion(completion);
+        const publicCompletion = publicChatCompletion(completion, isVercel);
         if (contentResponse) {
             c.var.track?.overrideResponseTracking(trackingResponse.clone());
             return sendTextContentResponse(
@@ -371,53 +460,6 @@ async function generateTextResponse(
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError);
     }
-}
-
-function normalizeSearchContext(
-    c: TextContext,
-    requestData: RequestData,
-): { requestData: RequestData } | { errorResponse: Response } {
-    const { web_search_options, ...requestWithoutSearchOptions } = requestData;
-    const model = c.var.model;
-    if (!model) return { requestData: requestWithoutSearchOptions };
-    const supported = model.definition.searchContextSizes;
-    if (!supported?.length) {
-        return { requestData: requestWithoutSearchOptions };
-    }
-
-    const requested = web_search_options?.search_context_size;
-    if (
-        supported.length > 1 &&
-        requested !== undefined &&
-        !supported.includes(requested as "low" | "high")
-    ) {
-        return {
-            errorResponse: c.json(
-                {
-                    error: {
-                        message: `Unsupported web_search_options.search_context_size. Use ${supported.map((size) => `"${size}"`).join(" or ")}.`,
-                    },
-                },
-                400,
-            ),
-        };
-    }
-
-    if (supported.length > 1 && requested === undefined) {
-        return { requestData: requestWithoutSearchOptions };
-    }
-
-    const searchContextSize =
-        supported.length > 1 && requested
-            ? (requested as "low" | "high")
-            : supported[0];
-    c.var.track.setPricingInput({ searchContextSize });
-    return {
-        requestData: {
-            ...requestWithoutSearchOptions,
-            web_search_options: { search_context_size: searchContextSize },
-        },
-    };
 }
 
 export async function handleChatCompletionLocal(

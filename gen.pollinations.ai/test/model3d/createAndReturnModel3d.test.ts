@@ -46,19 +46,23 @@ function baseParams(
 // upstream host is hit first for each model id.
 describe("createAndReturnModel3d dispatch", () => {
     it.each([
-        ["trellis-2", "api.inferenceport.ai"],
-        ["hyper3d-rodin", "queue.fal.run"],
-    ])("routes %s to the expected primary provider host", async (model, expectedHost) => {
-        const fetchSpy = vi
-            .spyOn(globalThis, "fetch")
-            .mockResolvedValue(new Response("{}", { status: 500 }));
+        ["microsoft/trellis-2", "api.inferenceport.ai"],
+        ["nvidia/asset-harvester", "api.inferenceport.ai"],
+        ["hyper3d/rodin-2.5", "queue.fal.run"],
+    ])(
+        "routes %s to the expected primary provider host",
+        async (model, expectedHost) => {
+            const fetchSpy = vi
+                .spyOn(globalThis, "fetch")
+                .mockResolvedValue(new Response("{}", { status: 500 }));
 
-        await expect(
-            createAndReturnModel3d("a test prompt", baseParams(model)),
-        ).rejects.toBeTruthy();
+            await expect(
+                createAndReturnModel3d("a test prompt", baseParams(model)),
+            ).rejects.toBeTruthy();
 
-        expect(fetchSpy.mock.calls[0]?.[0]).toContain(expectedHost);
-    });
+            expect(fetchSpy.mock.calls[0]?.[0]).toContain(expectedHost);
+        },
+    );
 
     it("throws for an unrecognized model id", async () => {
         await expect(
@@ -71,11 +75,11 @@ describe("createAndReturnModel3d dispatch", () => {
 });
 
 workerTest("uses the shared fallback loop for 3D", async ({ paidApiKey }) => {
-    const source = getRegistryModelDefinition("hyper3d-rodin");
+    const source = getRegistryModelDefinition("hyper3d/rodin-2.5");
     const previousFallbacks = source.fallbacks;
     try {
-        source.fallbacks = ["trellis-2"];
-        resetGenerationModelRegistryCache();
+        source.fallbacks = ["microsoft/trellis-2"];
+        await resetGenerationModelRegistryCache(env);
 
         const upstreams: string[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -90,7 +94,7 @@ workerTest("uses the shared fallback loop for 3D", async ({ paidApiKey }) => {
                     return new Response("", { status: 202 });
                 }
                 if (request.url.includes("queue.fal.run")) {
-                    upstreams.push("hyper3d-rodin");
+                    upstreams.push("hyper3d/rodin-2.5");
                     return new Response("rate limited", { status: 429 });
                 }
                 if (request.url.includes("/v1/3d/jobs/")) {
@@ -101,7 +105,7 @@ workerTest("uses the shared fallback loop for 3D", async ({ paidApiKey }) => {
                     });
                 }
                 if (request.url.includes("api.inferenceport.ai")) {
-                    upstreams.push("trellis-2");
+                    upstreams.push("microsoft/trellis-2");
                     return Response.json(
                         { job_id: "job_123", status: "pending" },
                         { status: 202 },
@@ -120,20 +124,22 @@ workerTest("uses the shared fallback loop for 3D", async ({ paidApiKey }) => {
         expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
             "config.targets[1]",
         );
-        expect(response.headers.get("x-model-used")).toBe("trellis-2");
+        expect(response.headers.get("x-model-used")).toBe(
+            "microsoft/trellis-2",
+        );
         expect(await response.text()).toBe("glTF");
-        expect(upstreams).toEqual(["hyper3d-rodin", "trellis-2"]);
+        expect(upstreams).toEqual(["hyper3d/rodin-2.5", "microsoft/trellis-2"]);
     } finally {
         source.fallbacks = previousFallbacks;
-        resetGenerationModelRegistryCache();
+        await resetGenerationModelRegistryCache(env);
     }
 });
 
 workerTest(
     "legacy Trellis IDs use the canonical resolution default",
     async ({ paidApiKey }) => {
-        getRegistryModelDefinition("trellis-2");
-        resetGenerationModelRegistryCache();
+        getRegistryModelDefinition("microsoft/trellis-2");
+        await resetGenerationModelRegistryCache(env);
         try {
             const resolutions: unknown[] = [];
             vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -174,7 +180,9 @@ workerTest(
                 );
                 expect(response.status).toBe(200);
                 expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBeNull();
-                expect(response.headers.get("x-model-used")).toBe("trellis-2");
+                expect(response.headers.get("x-model-used")).toBe(
+                    "microsoft/trellis-2",
+                );
                 expect(await response.text()).toBe("glTF");
             }
 
@@ -204,7 +212,7 @@ workerTest(
                 "high",
             ]);
         } finally {
-            resetGenerationModelRegistryCache();
+            await resetGenerationModelRegistryCache(env);
         }
     },
 );

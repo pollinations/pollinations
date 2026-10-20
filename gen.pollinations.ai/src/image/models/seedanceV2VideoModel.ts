@@ -6,7 +6,6 @@
  * Replicate's native multimodal input fields and remains URL-based.
  */
 
-import { HttpError } from "@shared/http-error.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import debug from "debug";
@@ -16,60 +15,33 @@ import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
     runReplicatePrediction,
-    toReplicateHttpError,
+    toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:seedance2:ops");
 const logError = debug("pollinations:seedance2:error");
 
 const MODELS = {
-    "seedance-2.0": {
+    "bytedance/seedance-2.0": {
         upstream: "bytedance/seedance-2.0",
         maxDuration: 15,
     },
-    "seedance-2.0-mini": {
+    "bytedance/seedance-2.0-mini": {
         upstream: "bytedance/seedance-2.0-mini",
         maxDuration: 10,
     },
-    "seedance-2.0-fast": {
+    "bytedance/seedance-2.0-fast": {
         upstream: "bytedance/seedance-2.0-fast",
         maxDuration: 5,
     },
 } as const;
 type SeedanceV2ModelName = keyof typeof MODELS;
 
-// Pollinations currently exposes this validated subset. Adding 9:21 requires
-// a separate live probe before expanding the public contract.
-const SEEDANCE_V2_ASPECT_RATIOS = [
-    "16:9",
-    "4:3",
-    "1:1",
-    "3:4",
-    "9:16",
-    "21:9",
-    "adaptive",
-] as const;
-type SeedanceV2AspectRatio = (typeof SEEDANCE_V2_ASPECT_RATIOS)[number];
-
-export function resolveSeedanceV2AspectRatio(
-    requested: ImageParams["aspectRatio"] | undefined,
-    modelTitle = "Seedance 2.0",
-): SeedanceV2AspectRatio {
-    if (!requested) return "16:9";
-    if ((SEEDANCE_V2_ASPECT_RATIOS as readonly string[]).includes(requested)) {
-        return requested as SeedanceV2AspectRatio;
-    }
-    throw new HttpError(
-        `aspectRatio "${requested}" is not supported by ${modelTitle}. Supported: ${SEEDANCE_V2_ASPECT_RATIOS.join(", ")}.`,
-        400,
-    );
-}
-
 interface SeedanceV2Input {
     prompt: string;
     duration: number;
     resolution: "480p" | "720p";
-    aspect_ratio: SeedanceV2AspectRatio;
+    aspect_ratio: string;
     generate_audio: boolean;
     seed?: number;
     image?: string;
@@ -103,11 +75,8 @@ export async function callSeedanceV2API(
         prompt,
         duration,
         resolution,
-        aspect_ratio: resolveSeedanceV2AspectRatio(
-            safeParams.aspectRatio,
-            definition.title,
-        ),
-        generate_audio: safeParams.audio,
+        aspect_ratio: safeParams.aspectRatio ?? "16:9",
+        generate_audio: safeParams.audio ?? true,
     };
     if (safeParams.seed !== undefined) {
         input.seed = safeParams.seed;
@@ -154,7 +123,7 @@ export async function callSeedanceV2API(
         });
     } catch (err) {
         logError(`${definition.title} prediction call failed:`, err);
-        throw toReplicateHttpError(
+        throw toReplicateUpstreamError(
             err,
             `${definition.title} generation failed`,
         );

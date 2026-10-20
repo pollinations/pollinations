@@ -1,13 +1,18 @@
+import { hasAccountPermission } from "@shared/auth/account-permissions.ts";
+import { apiKeyExpiresInSchema } from "@shared/auth/api-key-expires-in.ts";
+import { USER_CODE_LENGTH } from "@shared/auth/device-code.ts";
 import * as schema from "@shared/db/better-auth.ts";
+import { validator } from "@shared/middleware/validator.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { z } from "zod";
 import type { Env } from "../env.ts";
 import { type AuthVariables, auth } from "../middleware/auth.ts";
-import { hasAccountPermission } from "./account-permissions.ts";
+import { captureFromRequest } from "../utils/product-analytics.ts";
 
 type AuthedContext = Context<{
     Bindings: Env["Bindings"];
@@ -16,10 +21,22 @@ type AuthedContext = Context<{
 
 const KV_TTL = 600; // 10 minutes
 const DEVICE_CODE_LENGTH = 40;
-const USER_CODE_LENGTH = 8;
 const DEFAULT_EXPIRES_IN = 1800; // 30 minutes
 
 type DeviceStatus = "pending" | "approved" | "denied";
+
+/**
+ * Body sent by the consent page once it has minted the key. expiresIn is the
+ * key's lifetime and is echoed to the CLI as the token's expires_in, so it
+ * gets the same validation as key creation and the OAuth code grant.
+ */
+const ApproveDeviceSchema = z.object({
+    userCode: z.string().min(1),
+    apiKey: z.string().min(1),
+    apiKeyId: z.string().min(1),
+    expiresIn: apiKeyExpiresInSchema.nullish(),
+    scope: z.string().optional(),
+});
 
 function isExpired(device: { expiresAt: Date }) {
     return device.expiresAt < new Date();
@@ -64,13 +81,15 @@ function generateUserCode(length: number): string {
  * RFC 8628 §3.1); JSON is accepted for the pre-discovery clients that have
  * always sent it — including without a content-type header.
  */
-export async function parseFormOrJsonBody(
-    c: Context<Env>,
+export async function parseFormOrJsonBody<TEnv extends Env>(
+    c: Context<TEnv>,
 ): Promise<Record<string, string>> {
     const contentType = c.req.header("content-type") ?? "";
     const body = contentType.includes("form")
         ? await c.req.parseBody().catch(() => ({}))
         : await c.req.json<Record<string, unknown>>().catch(() => ({}));
+    // Valid JSON can still be null, a primitive or an array: no fields.
+    if (!body || typeof body !== "object" || Array.isArray(body)) return {};
     return Object.fromEntries(
         Object.entries(body).filter(
             (entry): entry is [string, string] => typeof entry[1] === "string",
@@ -97,14 +116,19 @@ export const deviceRoutes = new Hono<Env>()
         const expiresAt = new Date(Date.now() + DEFAULT_EXPIRES_IN * 1000);
 
         const db = drizzle(c.env.DB, { schema });
+        const id = crypto.randomUUID();
         await db.insert(schema.deviceCode).values({
-            id: crypto.randomUUID(),
+            id,
             deviceCode,
             userCode,
             status: "pending" satisfies DeviceStatus,
             expiresAt,
             clientId: body.client_id || null,
             scope: body.scope || null,
+        });
+        captureFromRequest(c, "device_code_issued", "", {
+            flow_id: id,
+            client_id: (body.client_id ?? "").slice(0, 100),
         });
 
         const baseUrl = getPublicOrigin(c);
@@ -151,21 +175,10 @@ export const deviceRoutes = new Hono<Env>()
     .post(
         "/approve",
         auth({ allowApiKey: false, allowSessionCookie: true }),
+        validator("json", ApproveDeviceSchema),
         async (c) => {
             const user = c.var.auth.requireUser();
-            const body = await c.req.json<{
-                userCode: string;
-                apiKey: string;
-                apiKeyId: string;
-                expiresIn?: number;
-                scope?: string;
-            }>();
-
-            if (!body.userCode || !body.apiKey || !body.apiKeyId) {
-                throw new HTTPException(400, {
-                    message: "userCode, apiKey, and apiKeyId are required",
-                });
-            }
+            const body = c.req.valid("json");
 
             const db = drizzle(c.env.DB, { schema });
             const device = await requirePendingDevice(db, body.userCode);
@@ -176,6 +189,7 @@ export const deviceRoutes = new Hono<Env>()
                     `device-key:${device.deviceCode}`,
                     JSON.stringify({
                         key: body.apiKey,
+                        keyId: body.apiKeyId,
                         expiresIn: body.expiresIn ?? null,
                         // Granted scope — may be narrower than what the row
                         // stored at issuance ("" = narrowed to zero)
@@ -191,6 +205,10 @@ export const deviceRoutes = new Hono<Env>()
                     })
                     .where(eq(schema.deviceCode.id, device.id)),
             ]);
+            captureFromRequest(c, "device_approved", user.id, {
+                flow_id: device.id,
+                client_id: device.clientId ?? "",
+            });
 
             return c.json({ success: true });
         },
@@ -199,7 +217,7 @@ export const deviceRoutes = new Hono<Env>()
         "/deny",
         auth({ allowApiKey: false, allowSessionCookie: true }),
         async (c) => {
-            const body = await c.req.json<{ userCode: string }>();
+            const body = await parseFormOrJsonBody(c);
 
             if (!body.userCode) {
                 throw new HTTPException(400, {
@@ -214,13 +232,17 @@ export const deviceRoutes = new Hono<Env>()
                 .update(schema.deviceCode)
                 .set({ status: "denied" satisfies DeviceStatus })
                 .where(eq(schema.deviceCode.id, device.id));
+            captureFromRequest(c, "device_denied", c.var.auth.user?.id ?? "", {
+                flow_id: device.id,
+                client_id: device.clientId ?? "",
+            });
 
             return c.json({ success: true });
         },
     )
     .post("/token", async (c) => {
-        const body = await c.req.json<DeviceTokenRequest>();
-        return await exchangeDeviceCode(c, body);
+        const body = await parseFormOrJsonBody(c);
+        return await exchangeDeviceCode(c, body as DeviceTokenRequest);
     })
     .get(
         "/userinfo",
@@ -300,6 +322,7 @@ export async function exchangeDeviceCode(
                 "json",
             )) as {
                 key: string;
+                keyId?: string;
                 expiresIn: number | null;
                 scope?: string | null;
             } | null;
@@ -315,6 +338,11 @@ export async function exchangeDeviceCode(
                     .where(eq(schema.deviceCode.id, device.id)),
                 c.env.KV.delete(`device-key:${device.deviceCode}`),
             ]);
+            captureFromRequest(c, "device_token_issued", device.userId ?? "", {
+                flow_id: device.id,
+                client_id: device.clientId ?? "",
+                key_id: stored.keyId ?? "",
+            });
 
             return c.json({
                 access_token: stored.key,

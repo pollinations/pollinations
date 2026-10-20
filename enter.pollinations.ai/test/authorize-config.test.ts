@@ -1,36 +1,28 @@
-import { normalizeAllowedModelSelection } from "@frontend/components/keys/model-selection.ts";
+import {
+    readModelSelection,
+    writeModelSelection,
+} from "@frontend/components/keys/model-selection.ts";
 import {
     DEFAULT_CONSENT_BUDGET,
     DEFAULT_CONSENT_EXPIRY_DAYS,
     expiryDaysToExpiresIn,
     getAuthorizeInitialPermissions,
+    getGrantedOAuthScope,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
 import { describe, expect, it } from "vitest";
 
-describe("normalizeAllowedModelSelection", () => {
-    it("collapses fully selected model lists back to null", () => {
-        const allModelIds = ["a", "b", "c"];
-
-        expect(
-            normalizeAllowedModelSelection(["a", "b", "c"], allModelIds),
-        ).toBeNull();
-    });
-
-    it("keeps partial selections as explicit arrays", () => {
-        const allModelIds = ["a", "b", "c"];
-
-        expect(normalizeAllowedModelSelection(["a", "b"], allModelIds)).toEqual(
-            ["a", "b"],
+describe("getGrantedOAuthScope", () => {
+    it.each([
+        [[], [], undefined],
+        [["generate"], [], "generate"],
+        [["generate", "usage", "keys"], ["usage"], "generate usage"],
+        [["usage"], [], ""],
+        [["unknown"], [], ""],
+    ])("echoes granted scopes for %j", (requested, granted, expected) => {
+        expect(getGrantedOAuthScope(new Set(requested), granted)).toBe(
+            expected,
         );
-    });
-
-    it("does not collapse to null when selections include stale model ids", () => {
-        const allModelIds = ["a", "b", "c"];
-
-        expect(
-            normalizeAllowedModelSelection(["a", "b", "x"], allModelIds),
-        ).toEqual(["a", "b", "x"]);
     });
 });
 
@@ -47,13 +39,13 @@ describe("getAuthorizeInitialPermissions", () => {
     it("keeps optional permissions from the url in state", () => {
         expect(
             getAuthorizeInitialPermissions({
-                models: ["flux"],
+                models: ["black-forest-labs/flux.1-schnell"],
                 budget: 2,
                 expiry: 3,
                 permissions: ["usage", "profile"],
             }),
         ).toEqual({
-            allowedModels: ["flux"],
+            allowedModels: ["black-forest-labs/flux.1-schnell"],
             pollenBudget: 2,
             expiryDays: 3,
             accountPermissions: ["usage", "profile"],
@@ -153,5 +145,36 @@ describe("sanitizeAuthorizeAccountPermissions", () => {
         expect(
             sanitizeAuthorizeAccountPermissions(["admin", "offline_access"]),
         ).toBeNull();
+    });
+});
+
+describe("model category selection", () => {
+    it("keeps model IDs beside categories so a save never widens them", () => {
+        const selection = readModelSelection([
+            "flux-schnell",
+            "audio",
+            "community/alice/private",
+        ]);
+        expect([...selection.categories]).toEqual(["audio"]);
+        expect(selection.models).toEqual([
+            "flux-schnell",
+            "community/alice/private",
+        ]);
+        selection.categories.add("text");
+        expect(writeModelSelection(selection)).toEqual([
+            "text",
+            "audio",
+            "flux-schnell",
+            "community/alice/private",
+        ]);
+    });
+
+    it("stores every category as all models and keeps none distinct", () => {
+        const all = readModelSelection(null);
+        expect(all.categories.size).toBe(7);
+        expect(writeModelSelection(all)).toBeNull();
+        expect(
+            writeModelSelection({ categories: new Set(), models: [] }),
+        ).toEqual([]);
     });
 });

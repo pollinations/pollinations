@@ -13,6 +13,18 @@ For every real cache-miss request:
 5. Confirm the `generation_event_v2` row contains the same units, provider attribution, cost, multiplier, and final price.
 6. Confirm logs contain no `Missing conversion rate` warning.
 
+Look for the provider's own count before writing usage math. Check the
+response body and headers for a usage block or billed quantity, such as fal's
+`x-fal-billable-units`, and bill from it. Derive units from request parameters
+only when the route reports none. Then compare real requests with the
+provider's billing records before merging: providers round, apply minimums,
+and multiply by parameters in ways their docs may not show.
+
+Media bodies never reach the billing parser. An image or video handler returns
+the provider's quantity in `trackingData.usage`, or in
+`trackingData.pricingInput` when it refines a pricing input, such as a fallback
+that pays per megapixel while the caller pays per image.
+
 If upstream returns a new numeric billing field, extend the usage contract and observability path or document why the provider bundles it into an existing billed field. Never silently discard a separately billed field.
 
 ## Price calculation
@@ -22,6 +34,10 @@ If upstream returns a new numeric billing field, extend the usage contract and o
 - Calculate expected price from observed usage and compare it with response headers/body and Tinybird. Allow only the repository's normal rounding.
 - Do not change the multiplier to hide incomplete usage accounting.
 - Do not guess unposted units or derive a price from an unrelated provider.
+- To check whether a past pricing change really shipped, read the code deployed at that
+  revision and the billed `generation_event_v2` events around it. A PR title or
+  announcement is not evidence; a same-day multiplier or promotion change can cancel the
+  advertised effect.
 
 ## Provider and fallback attribution
 
@@ -41,7 +57,13 @@ If upstream returns a new numeric billing field, extend the usage contract and o
 
 - Local/dev and staging traffic use the staging workspace; production traffic uses production.
 - Query `generation_event_v2` for the exact model and request time. `model_health` is for health/latency, not billing detail.
+- For production SQL, use `enter.pollinations.ai/observability/scripts/tb-prod.sh` with `FORMAT JSON`; it rejects failed queries. Enable `set -o pipefail` when piping its output so the failure reaches the caller.
 - Confirm every non-zero unit has a corresponding count and price column and that total cost/price reconcile.
+- A provider's account usage also counts staging and manual probes that share
+  the key. Compare request count and quantity for a short isolated window
+  before trusting a whole-period ratio.
+- Attribute cost to a provider by `model_provider_used`. `model_used` can omit
+  a fallback's provider suffix.
 - Tail the worker during the probe. Any missing conversion warning means a billable line may be priced at zero and blocks merge.
 
 ## Acceptance

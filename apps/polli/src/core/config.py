@@ -96,7 +96,7 @@ class AIConfig:
     token: str
 
     def model_for(self, task: str) -> str:
-        """Model override for a specific task (web_search, data_viz), else the default."""
+        """Model override for a specific task, else the default."""
         return self.task_models.get(task, self.model)
 
     @property
@@ -143,6 +143,7 @@ class CodeSearchConfig:
 @dataclass(frozen=True)
 class ServerConfig:
     enabled: bool
+    bind: str
     port: int
     cors_origins: tuple[str, ...]
 
@@ -306,6 +307,7 @@ def load_config() -> Config:
         ),
         api=ServerConfig(
             enabled=raw["api"]["enabled"],
+            bind=os.getenv("POLLI_API_BIND", raw["api"].get("bind", "127.0.0.1")),
             port=raw["api"]["port"],
             cors_origins=tuple(raw["api"]["cors_origins"]),
         ),

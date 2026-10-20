@@ -1,0 +1,20 @@
+[Unit]
+Description=Pollinations CatGPT Discord Bot
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/discord-bots/apps/catgpt-bot
+ExecStart=/usr/bin/node --require /home/ubuntu/discord-bots/apps/catgpt-bot/node_modules/tsx/dist/preflight.cjs --import file:///home/ubuntu/discord-bots/apps/catgpt-bot/node_modules/tsx/dist/loader.mjs bot.ts
+Restart=always
+RestartSec=30
+EnvironmentFile=/home/ubuntu/discord-bots/apps/catgpt-bot/.env
+Environment=PATH=/usr/bin:/usr/local/bin
+Environment=HOME=/home/ubuntu
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=catgpt-bot
+
+[Install]
+WantedBy=multi-user.target

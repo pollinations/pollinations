@@ -29,7 +29,17 @@ SQL >
                 total_price,
                 0
             )
-        ) AS gross_consumption
+        ) AS gross_consumption,
+        sumState(
+            if(
+                response_status >= 200
+                AND response_status < 300
+                AND is_billed_usage
+                AND selected_meter_slug IN ('v1:meter:pack', 'local:pack'),
+                total_price,
+                0
+            )
+        ) AS paid_consumption
     FROM generation_event_v2
     WHERE
         environment IN ('production', 'debug-prod-copy')

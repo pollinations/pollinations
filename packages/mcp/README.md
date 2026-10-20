@@ -34,16 +34,26 @@ For all Pollinations-hosted MCP servers, see the
 | `transcribeAudio` | Transcribe a public HTTPS audio URL | `/v1/audio/transcriptions` |
 | `generate3D` | Generate a GLB model | `/3d/{prompt}` |
 | `createEmbeddings` | Create text or multimodal embeddings | `/v1/embeddings` |
-| `listModels` | List live models, capabilities, voices, and pricing | Model registry routes |
-| `getModelStatus` | Inspect recent requests, errors, and latency | `/v1/models/status` |
+| `listModels` | Search and list live models, capabilities, voices, and pricing; narrow with `query`, `capabilities`, `agent`, `community`, `limit` | Model registry routes |
+| `getModelStatus` | Inspect recent requests, errors, and latency | `/models/status` |
 | `getBalance` | Check remaining Pollen; requires `account:usage` | `/account/balance` |
+| `getUsage` | Request history or daily summary; requires `account:usage` | `/account/usage`, `/account/usage/daily` |
+| `getEarnings` | Developer earnings from BYOP apps and community models; requires `account:usage` | `/account/earnings` |
+| `listQuests` | Quests with reward and claim state; requires `account:usage` | `/account/quests` |
+| `listKeys` | List API keys; requires `account:keys` | `/account/keys` |
+| `createKey` | Create a secret or publishable app key; requires `account:keys` | `POST /account/keys` |
+| `revokeKey` | Revoke a key by id; requires `account:keys` | `DELETE /account/keys/{id}` |
 
-Generated media is uploaded unlisted to `media.pollinations.ai` and returned as
-an MCP resource link, so binary data does not consume model context. Anyone
-with the link can access it, and it expires after 30 days.
+Generated media is returned as an MCP resource link using the API's existing
+public Media URL. No download or re-upload is needed, and binary data does not
+consume model context. Anyone with the link can access it; expired files return 404.
 
 Models, voices, capabilities, and pricing come from the live registry. Use
 `listModels` before selecting a model or voice.
+
+Agents (`agent: true`) bill the caller for each model and tool call they make;
+`getUsage` lists those charges under the models the agent called. An agent
+without `base_model` lists only `currency` in `pricing`.
 
 ## Development
 
@@ -53,11 +63,15 @@ Requires Node.js 20 or newer. Run the tests with:
 npm test
 ```
 
-Set `POLLINATIONS_API_KEY` to add live model, authentication, generation, and
-balance checks.
-
 The hosted Cloudflare Worker lives in [`apps/mcp/`](../../apps/mcp/) and is
 routed through Gen.
+
+## Previous stdio server
+
+The discontinued local stdio server is preserved in
+[`@pollinations/mcp@2.5.0`](https://www.npmjs.com/package/@pollinations/mcp/v/2.5.0)
+and in the
+[`packages/mcp` source at its final commit](https://github.com/pollinations/pollinations/tree/f7809a98877e2e34455b0799952ab5267e37e58d/packages/mcp).
 
 Issues: [GitHub](https://github.com/pollinations/pollinations/issues) · License:
 MIT

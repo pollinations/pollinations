@@ -40,10 +40,9 @@ const ASSET_PATHS = new Set([
     "/favicon-16x16.png",
     "/favicon-32x32.png",
     "/apple-touch-icon.png",
-    "/android-chrome-192x192.png",
-    "/android-chrome-512x512.png",
     "/icon-192.png",
     "/icon-512.png",
+    "/icon-maskable-512.png",
     "/manifest.json",
     "/og-image.png",
 ]);
@@ -81,9 +80,9 @@ const HTML = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Quests — Live</title>
+<title>Quests</title>
 <meta name="description" content="Pollinations operations dashboards">
-<meta property="og:title" content="pollinations.ai">
+<meta property="og:title" content="Quests">
 <meta property="og:description" content="Pollinations operations dashboards">
 <meta property="og:image" content="/og-image.png">
 <meta property="og:type" content="website">

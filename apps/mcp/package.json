@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node --test worker.test.js",
     "check": "wrangler deploy --dry-run",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging"
   },
   "devDependencies": {
     "@modelcontextprotocol/client": "^2.0.0",

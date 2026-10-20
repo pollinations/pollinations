@@ -1,5 +1,8 @@
 import type { CreateResponseRequest } from "@shared/schemas/openai.ts";
-import { cleanNullAndUndefined } from "../utils/objectCleaners.js";
+import {
+    cleanNullAndUndefined,
+    isPlainObject,
+} from "../utils/objectCleaners.js";
 import type { DirectResponsesTarget } from "./client.js";
 
 export class ResponsesInvalidRequestError extends Error {
@@ -37,9 +40,9 @@ export function validateDirectResponsesRequest(
         }
         if (!value || typeof value !== "object") continue;
         const item = value as Record<string, unknown>;
-        if ("encrypted_content" in item || item.type === "item_reference") {
+        if (item.type === "item_reference") {
             throw new ResponsesInvalidRequestError(
-                "Encrypted or reusable response state is not supported by the stateless Responses endpoint",
+                "Stored response items are not supported by the stateless Responses endpoint",
                 "input",
             );
         }
@@ -58,6 +61,18 @@ export function buildDirectResponsesRequestBody(
         store: false,
     };
     delete body.safe;
+    delete body.client_metadata;
+
+    const toolChoice = body.tool_choice;
+    if (
+        target.disableReasoningForForcedTools &&
+        (toolChoice === "required" || isPlainObject(toolChoice))
+    ) {
+        body.reasoning = {
+            ...(isPlainObject(body.reasoning) ? body.reasoning : {}),
+            effort: "none",
+        };
+    }
 
     // SDKs often serialize inert state fields. Do not forward them because
     // this endpoint has no Pollinations or provider-side response state.

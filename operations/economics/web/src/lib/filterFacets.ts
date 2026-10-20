@@ -1,5 +1,5 @@
 import type { Data } from "../types";
-import { categoryLabel, transactionCategory } from "./categories";
+import { categoryLabel } from "./categories";
 import {
     type MonthFilterValue,
     matchesMonth,
@@ -7,9 +7,9 @@ import {
     type ValueFilter,
     WINDOW_START,
 } from "./months";
-import { resolveProvider } from "./providerRegistry";
+import { resolveProvider, transactionCategory } from "./providerRegistry";
 
-export type LedgerTab = "op-transactions" | "op-pollen" | "op-cloud";
+export type LedgerTab = "op-transactions" | "op-pollen" | "vendor-ledger";
 
 export type FacetOption = {
     value: string;
@@ -93,8 +93,8 @@ export function ledgerFacets(
         };
     }
 
-    if (tab === "op-cloud") {
-        const rows = (data.opCloud ?? []).filter(
+    if (tab === "vendor-ledger") {
+        const rows = (data.vendorLedger ?? []).filter(
             (row) =>
                 row.start.slice(0, 7) >= WINDOW_START &&
                 matchesMonth(row.start, selection.month),

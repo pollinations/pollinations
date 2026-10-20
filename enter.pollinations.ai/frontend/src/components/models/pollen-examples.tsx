@@ -86,10 +86,7 @@ const CategorySection: FC<{
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {models.map((model) => (
-                    <div
-                        key={model.name}
-                        className="bg-theme-bg-pale rounded-lg px-3 py-2"
-                    >
+                    <div key={model.name} className="py-1">
                         <span className="font-medium text-theme-text-soft capitalize">
                             {model.name}
                         </span>
@@ -138,7 +135,7 @@ export const PollenExamples: FC = () => {
     }
 
     return (
-        <div className="mt-4 bg-surface-opaque/80 rounded-xl p-4 space-y-4">
+        <div className="mt-4 space-y-4 border-t border-divider pt-4">
             <div className="text-sm text-theme-text-muted mb-3">
                 <strong>$1 ≈ 1 pollen</strong> — here's what you can create:
             </div>

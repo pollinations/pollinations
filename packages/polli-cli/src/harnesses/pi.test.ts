@@ -59,9 +59,9 @@ describe("pi harness", () => {
             .pollinations as Record<string, unknown>;
         expect(provider).toMatchObject({
             api: "openai-completions",
-            apiKey: "pollinations",
             baseUrl: "https://gen.pollinations.ai/v1",
         });
+        expect(provider.apiKey).toBeUndefined();
         expect((provider.models as { id: string }[]).map((m) => m.id)).toEqual([
             "deepseek",
             "kimi",
@@ -182,6 +182,21 @@ describe("pi harness", () => {
         expect(existsSync(modelsFile())).toBe(false);
     });
 
+    it("keeps edits made between repeated on runs", () => {
+        configurePi(ctx, settings);
+        const auth = readJson(authFile());
+        auth.anthropic = { type: "api_key", key: "sk-added" };
+        writeFileSync(authFile(), JSON.stringify(auth));
+        configurePi(ctx, { ...settings, model: "kimi" });
+        configurePi(ctx, settings);
+
+        expect(disablePi(ctx).outcome).toBe("stripped");
+        expect(readJson(authFile())).toEqual({
+            anthropic: { type: "api_key", key: "sk-added" },
+        });
+        expect(snapshotFiles()).toHaveLength(0);
+    });
+
     it("honors PI_CODING_AGENT_DIR", () => {
         const custom = join(home, "custom-pi-agent");
         configurePi({ home, env: { PI_CODING_AGENT_DIR: custom } }, settings);
@@ -212,13 +227,13 @@ describe("pi harness", () => {
         expect(pi.status(ctx).configured).toBe(false);
     });
 
-    it("reports unconfigured when the provider API key marker is missing", () => {
+    it("reports unconfigured when the provider config is incomplete", () => {
         configurePi(ctx, settings);
         const data = readJson(modelsFile());
         const provider = (
             data.providers as Record<string, Record<string, unknown>>
         ).pollinations;
-        delete provider.apiKey;
+        delete provider.api;
         writeFileSync(modelsFile(), `${JSON.stringify(data, null, 2)}\n`);
         expect(pi.status(ctx).configured).toBe(false);
     });
@@ -235,6 +250,38 @@ describe("pi harness", () => {
         expect(() => disablePi(ctx)).toThrow();
         expect(snapshotFiles()).toHaveLength(1);
         expect(pi.status(ctx).configured).toBe(true);
+    });
+
+    it("keeps the snapshot when stripping edited config fails", () => {
+        configurePi(ctx, settings);
+        writeFileSync(modelsFile(), "{");
+
+        expect(() => disablePi(ctx)).toThrow();
+        expect(snapshotFiles()).toHaveLength(1);
+        expect(read(modelsFile())).toBe("{");
+        expect(existsSync(authFile())).toBe(true);
+    });
+
+    it("restores an incomplete setup snapshot without checking hashes", () => {
+        mkdirSync(agentDir(), { recursive: true });
+        const original = '{"providers":{}}\n';
+        writeFileSync(modelsFile(), original);
+        configurePi(ctx, settings);
+        const path = join(
+            home,
+            ".pollinations",
+            "harnesses",
+            snapshotFiles()[0],
+        );
+        const snapshot = readJson(path);
+        snapshot.complete = false;
+        writeFileSync(path, JSON.stringify(snapshot));
+        writeFileSync(modelsFile(), "partially written config");
+
+        expect(disablePi(ctx).outcome).toBe("restored");
+        expect(read(modelsFile())).toBe(original);
+        expect(existsSync(authFile())).toBe(false);
+        expect(snapshotFiles()).toHaveLength(0);
     });
 
     it("keeps one backup per harness home", () => {

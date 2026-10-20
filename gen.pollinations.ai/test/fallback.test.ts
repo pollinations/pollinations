@@ -1,11 +1,14 @@
 import { communityEndpointPrices } from "@shared/community-endpoints.ts";
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import {
     getVisibleImageModels,
     type ModelDefinition,
 } from "@shared/registry/registry.ts";
-import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
+import {
+    FALLBACK_TARGET_HEADER,
+    MODEL_USED_HEADER,
+} from "@shared/registry/usage-headers.ts";
 import { describe, expect, it, vi } from "vitest";
 import {
     attachFallbackTarget,
@@ -29,10 +32,11 @@ function registryEntry(
         aliases: [],
         provider: "test",
         fallbacks,
-        brand: "Test",
+        publisher: "Test",
         category: "text",
         cost: { completionTextTokens: rate },
         priceMultiplier: 1,
+        paidOnly: false,
         addedDate: 0,
         title: id,
     };
@@ -60,10 +64,20 @@ function communityEntry(
     entry.visible = visibility === "public" && hiddenAt === null;
     entry.definition.hidden = hiddenAt !== null;
     entry.communityEndpoint = {
+        id,
+        modelId: id,
+        name: id,
+        title: id,
+        description: null,
         type: "proxy",
         ownerUserId,
         visibility,
-        hiddenAt,
+        baseUrl: "https://example.com/v1/chat/completions",
+        api: "chat_completions",
+        upstreamModel: id,
+        bearerTokenCiphertext: "test",
+        inputModalities: ["text"],
+        perUserRpm: null,
         paidOnly,
         imagePricing: "request",
         fallbacks,
@@ -77,14 +91,42 @@ function communityEntry(
 
 describe("registry fallback linking", () => {
     it("marks provider routes as hidden, fallback-only registry entries", () => {
-        expect(IMAGE_SERVICES.zimage.fallbacks).toContain("zimage-fal");
-        expect(IMAGE_SERVICES["zimage-fal"]).toMatchObject({
+        expect(IMAGE_SERVICES["tongyi-mai/z-image-turbo"].fallbacks).toContain(
+            "tongyi-mai/z-image-turbo:fal",
+        );
+        expect(IMAGE_SERVICES["tongyi-mai/z-image-turbo:fal"]).toMatchObject({
             aliases: [],
             hidden: true,
             fallbackOnly: true,
             provider: "fal",
         });
-        expect(getVisibleImageModels()).not.toContain("zimage-fal");
+        expect(getVisibleImageModels()).not.toContain(
+            "tongyi-mai/z-image-turbo:fal",
+        );
+    });
+
+    it("declares direct OpenAI fallbacks for every GPT Image model", () => {
+        const pairs = [
+            ["openai/gpt-image-1-mini", "openai/gpt-image-1-mini:openai"],
+            ["openai/gpt-image-1.5", "openai/gpt-image-1.5:openai"],
+            ["openai/gpt-image-2", "openai/gpt-image-2:openai"],
+            ["openai/gpt-image-2.5-flare", "openai/gpt-image-2.5-flare:openai"],
+            [
+                "openai/gpt-image-2.5-sunburst",
+                "openai/gpt-image-2.5-sunburst:openai",
+            ],
+        ] as const;
+
+        for (const [primary, fallback] of pairs) {
+            expect(IMAGE_SERVICES[primary].fallbacks).toEqual([fallback]);
+            expect(IMAGE_SERVICES[fallback]).toMatchObject({
+                aliases: [],
+                hidden: true,
+                fallbackOnly: true,
+                provider: "openai",
+            });
+            expect(getVisibleImageModels()).not.toContain(fallback);
+        }
     });
 
     it("uses registry declarations without applying community price rules", () => {
@@ -175,6 +217,7 @@ describe("registry fallback linking", () => {
 
         expect(ownPrimary.fallbackEntries?.map((entry) => entry.id)).toEqual([
             "owner/private",
+            "owner/disabled",
         ]);
         expect(
             registryPrimary.fallbackEntries?.map((entry) => entry.id),
@@ -397,6 +440,56 @@ describe("formatFallbackTarget", () => {
     });
 });
 
+describe("fallback response model attribution", () => {
+    const publicId = "qwen/qwen-image-3";
+    const backupId = "qwen/qwen-image-3:openrouter";
+    const model = {
+        resolved: publicId,
+        definition: IMAGE_SERVICES[publicId],
+        fallbackEntries: [
+            {
+                ...registryEntry(backupId),
+                definition: IMAGE_SERVICES[backupId],
+            },
+        ],
+    };
+
+    it("preserves the primary handler's model header without adding a provider suffix", async () => {
+        const response = await withModelFallbackResponse(
+            model,
+            async () =>
+                new Response("ok", {
+                    headers: { [MODEL_USED_HEADER]: publicId },
+                }),
+        );
+        expect(response.headers.get(MODEL_USED_HEADER)).toBe(publicId);
+        expect(response.headers.has(FALLBACK_TARGET_HEADER)).toBe(false);
+    });
+
+    it("keeps provider-qualified fallback IDs and per-attempt dispatch attribution", async () => {
+        const attempts: FallbackAttempt[] = [];
+        const response = await withModelFallbackResponse(
+            model,
+            async (candidate) => {
+                if (candidate.id === publicId)
+                    throw Object.assign(new Error("busy"), { status: 429 });
+                return new Response("ok", {
+                    headers: { [MODEL_USED_HEADER]: candidate.id },
+                });
+            },
+            attempts,
+        );
+        expect(attempts.map((attempt) => attempt.candidate.id)).toEqual([
+            publicId,
+            backupId,
+        ]);
+        expect(response.headers.get(MODEL_USED_HEADER)).toBe(backupId);
+        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+            formatFallbackTarget(1),
+        );
+    });
+});
+
 describe("attachFallbackTarget", () => {
     it("stores the target marker without making it enumerable", () => {
         const completion = { id: "chatcmpl_test", model: "openai" };
@@ -443,10 +536,29 @@ describe("isRetryableFallbackError", () => {
         expect(isRetryableFallbackError(textFailure(503))).toBe(true);
         expect(isRetryableFallbackError(textFailure(524))).toBe(true);
         expect(isRetryableFallbackError(textFailure(599))).toBe(true);
-        expect(isRetryableFallbackError(new HttpError("down", 500))).toBe(true);
-        expect(isRetryableFallbackError(new HttpError("no quota", 402))).toBe(
-            true,
-        );
+        expect(
+            isRetryableFallbackError(
+                UpstreamError.fromProvider(500, { message: "down" }),
+            ),
+        ).toBe(true);
+        expect(
+            isRetryableFallbackError(
+                UpstreamError.fromProvider(402, { message: "no quota" }),
+            ),
+        ).toBe(true);
+    });
+
+    it("fails over when the provider rejects our egress region", () => {
+        const region = UpstreamError.fromProvider(400, {
+            message: "User location is not supported for the API use.",
+        });
+        expect(isRetryableFallbackError(region)).toBe(true);
+        // An ordinary caller 400 still does not fail over.
+        expect(
+            isRetryableFallbackError(
+                UpstreamError.fromProvider(400, { message: "Invalid voice" }),
+            ),
+        ).toBe(false);
     });
 
     it("uses the wrapper status for a malformed successful response", () => {
@@ -478,10 +590,25 @@ describe("isRetryableFallbackError", () => {
     });
 
     it("does not fail over on caller errors", () => {
+        for (const [status, upstreamStatus] of [
+            [400, 500],
+            [422, 403],
+        ]) {
+            expect(
+                isRetryableFallbackError(
+                    Object.assign(new Error("Provider returned error"), {
+                        status,
+                        upstreamStatus,
+                    }),
+                ),
+            ).toBe(false);
+        }
         expect(isRetryableFallbackError(textFailure(400))).toBe(false);
-        expect(isRetryableFallbackError(new HttpError("bad input", 422))).toBe(
-            false,
-        );
+        expect(
+            isRetryableFallbackError(
+                UpstreamError.fromProvider(422, { message: "bad input" }),
+            ),
+        ).toBe(false);
     });
 
     // Verified against staging: a community endpoint whose host is unreachable
@@ -525,6 +652,16 @@ describe("isRetryableFallbackError", () => {
     it("does not shop a content-policy refusal to a laxer endpoint", () => {
         expect(
             isRetryableFallbackError(
+                textFailure(403, {
+                    error: {
+                        message:
+                            "Gemini blocked the request: PROHIBITED_CONTENT",
+                    },
+                }),
+            ),
+        ).toBe(false);
+        expect(
+            isRetryableFallbackError(
                 textFailure(500, {
                     error: { message: "content policy violation" },
                 }),
@@ -532,8 +669,11 @@ describe("isRetryableFallbackError", () => {
         ).toBe(false);
         expect(
             isRetryableFallbackError(
-                new HttpError("upstream failed", 502, {
-                    body: JSON.stringify({ detail: "flagged as sensitive" }),
+                UpstreamError.fromProvider(502, {
+                    message: "upstream failed",
+                    responseBody: JSON.stringify({
+                        detail: "flagged as sensitive",
+                    }),
                 }),
             ),
         ).toBe(false);
@@ -644,6 +784,27 @@ describe("withModelFallback", () => {
         expect(seen(attempts)).toEqual(["primary!"]);
     });
 
+    it("supports a route-specific fallback policy", async () => {
+        const attempt = vi.fn(async () => "served");
+        attempt.mockRejectedValueOnce(
+            UpstreamError.fromProvider(524, { message: "ambiguous timeout" }),
+        );
+        const shouldFallback = vi.fn(() => false);
+
+        await expect(
+            withModelFallback(
+                [candidate("primary"), candidate("second")],
+                attempt,
+                undefined,
+                undefined,
+                shouldFallback,
+            ),
+        ).rejects.toThrow("ambiguous timeout");
+
+        expect(attempt).toHaveBeenCalledOnce();
+        expect(shouldFallback).toHaveBeenCalledOnce();
+    });
+
     it("tries the next model for any upstream 5xx", async () => {
         const primary = registryEntry("primary", ["second"]);
         const second = registryEntry("second");
@@ -654,7 +815,9 @@ describe("withModelFallback", () => {
             fallbackEntries: primary.fallbackEntries,
         });
         const attempt = vi.fn(async () => "served");
-        attempt.mockRejectedValueOnce(new HttpError("gateway timeout", 524));
+        attempt.mockRejectedValueOnce(
+            UpstreamError.fromProvider(524, { message: "gateway timeout" }),
+        );
 
         await expect(withModelFallback(candidates, attempt)).resolves.toEqual({
             result: "served",

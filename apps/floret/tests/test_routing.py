@@ -1,11 +1,10 @@
 import asyncio
 
-from pydantic import ValidationError
 import pytest
+from pydantic import ValidationError
 
-from floret import registry
+from floret import knowledge, registry, routing
 from floret.config import _api_key_override, _current_api_key
-import floret.routing as routing
 from floret.routing import (
     RoutingInput,
     RoutingPreferences,
@@ -100,11 +99,23 @@ def _use_catalog(monkeypatch, catalog=None):
     monkeypatch.setattr(routing, "fetch_model_catalog", fetch_model_catalog)
 
 
+def test_curated_model_notes_resolve_available_aliases(monkeypatch):
+    monkeypatch.setattr(
+        knowledge,
+        "get_model_catalog",
+        lambda: {"openai/gpt-audio-mini": {"aliases": ["openai-audio"]}},
+    )
+
+    assert "openai/gpt-audio-mini: default TTS" in knowledge._best_at_block()
+    assert "openai-audio: default TTS" not in knowledge._best_at_block()
+    assert "flux: fast general-purpose image" not in knowledge._best_at_block()
+
+
 def test_omitted_and_auto_values_normalize_to_none():
     assert RoutingInput().to_preferences() == RoutingPreferences()
     assert (
         RoutingInput(
-            text="auto",
+            model="auto",
             image_generation="auto",
             audio="auto",
         ).to_preferences()
@@ -114,7 +125,7 @@ def test_omitted_and_auto_values_normalize_to_none():
 
 def test_explicit_values_are_preserved_and_frozen():
     preferences = RoutingInput(
-        text="glm",
+        model="glm",
         image_generation="opaque-image-model-7",
     ).to_preferences()
     assert preferences.text == "glm"
@@ -124,13 +135,13 @@ def test_explicit_values_are_preserved_and_frozen():
 
 
 def test_uppercase_auto_is_preserved_as_an_explicit_model_id():
-    assert RoutingInput(text="AUTO").to_preferences().text == "AUTO"
+    assert RoutingInput(model="AUTO").to_preferences().text == "AUTO"
 
 
 @pytest.mark.parametrize("value", ["", " ", 123, None])
 def test_explicit_invalid_preference_values_are_rejected(value):
     with pytest.raises(ValidationError):
-        RoutingInput.model_validate({"text": value})
+        RoutingInput.model_validate({"model": value})
 
 
 def test_unknown_routing_fields_are_rejected():
@@ -199,7 +210,7 @@ async def test_validate_routing_accepts_all_capability_overrides(monkeypatch):
 
     preferences = await validate_routing(
         RoutingInput(
-            text="glm",
+            model="glm",
             web_search="gemini-search",
             image_generation="opaque-image-model-7",
             image_editing="nanobanana",
@@ -215,6 +226,7 @@ async def test_validate_routing_accepts_all_capability_overrides(monkeypatch):
         image_editing="nanobanana",
         video="wan-fast",
         audio="openai-audio",
+        audio_endpoint="/v1/chat/completions",
     )
 
 
@@ -235,7 +247,7 @@ async def test_validate_routing_rejects_unknown_models(monkeypatch, model):
     _use_catalog(monkeypatch)
 
     with pytest.raises(RoutingValidationError) as error:
-        await validate_routing(RoutingInput(text=model))
+        await validate_routing(RoutingInput(model=model))
 
     assert error.value.field == "text"
     assert error.value.model == model
@@ -252,7 +264,16 @@ async def test_validate_routing_rejects_unknown_models(monkeypatch, model):
             "nanobanana",
             "requires endpoint '/image/{prompt}'",
         ),
-        ("image_editing", "opaque-image-model-7", "requires input modality 'image'"),
+        (
+            "image_editing",
+            "opaque-image-model-7",
+            "requires input modality 'image'",
+        ),
+        (
+            "image_editing",
+            "image-without-edit-endpoint",
+            "requires endpoint '/v1/images/edits'",
+        ),
         ("video", "opaque-image-model-7", "requires category 'video'"),
         ("audio", "glm", "requires output modality 'audio'"),
     ],
@@ -261,19 +282,77 @@ async def test_validate_routing_rejects_capability_mismatches(
     monkeypatch, field, model, reason
 ):
     catalog = {
-        key: ({**value, "supported_endpoints": ["/v1/images/edits"]})
-        if key == "nanobanana"
-        else value
+        key: (
+            ({**value, "supported_endpoints": ["/v1/images/edits"]})
+            if key == "nanobanana"
+            else value
+        )
         for key, value in _RICH_CATALOG.items()
+    }
+    catalog["image-without-edit-endpoint"] = {
+        **_RICH_CATALOG["nanobanana"],
+        "name": "image-without-edit-endpoint",
+        "supported_endpoints": ["/image/{prompt}"],
     }
     _use_catalog(monkeypatch, catalog)
 
     with pytest.raises(RoutingValidationError) as error:
-        await validate_routing(RoutingInput.model_validate({field: model}))
+        await validate_routing(
+            RoutingInput.model_validate({"model" if field == "text" else field: model})
+        )
 
     assert error.value.field == field
     assert error.value.model == model
     assert error.value.reason == reason
+
+
+async def test_audio_routing_accepts_canonical_chat_audio_alias(monkeypatch):
+    catalog = {
+        "openai/gpt-audio-mini": {
+            **_RICH_CATALOG["openai-audio"],
+            "name": "openai/gpt-audio-mini",
+            "aliases": ["openai-audio"],
+        }
+    }
+    _use_catalog(monkeypatch, catalog)
+
+    preferences = await validate_routing(RoutingInput(audio="openai-audio"))
+
+    assert preferences.audio == "openai-audio"
+
+
+async def test_audio_routing_rejects_models_without_an_audio_endpoint(monkeypatch):
+    catalog = {
+        "invalid-audio": {
+            "category": "audio",
+            "input_modalities": ["text"],
+            "output_modalities": ["audio"],
+            "supported_endpoints": ["/image/{prompt}"],
+        }
+    }
+    _use_catalog(monkeypatch, catalog)
+
+    with pytest.raises(RoutingValidationError) as error:
+        await validate_routing(RoutingInput(audio="invalid-audio"))
+
+    assert error.value.reason == "requires an audio generation endpoint"
+
+
+async def test_validated_audio_endpoint_survives_cold_shared_registry(monkeypatch):
+    catalog = {
+        "openai/gpt-audio-mini": {
+            **_RICH_CATALOG["openai-audio"],
+            "name": "openai/gpt-audio-mini",
+            "aliases": ["openai-audio"],
+        }
+    }
+    _use_catalog(monkeypatch, catalog)
+    monkeypatch.setattr(registry, "_registry_cache", None)
+
+    preferences = await validate_routing(RoutingInput(audio="openai/gpt-audio-mini"))
+
+    assert preferences.audio_endpoint == "/v1/chat/completions"
+    assert registry._registry_cache is None
 
 
 async def test_explicit_validation_fetches_every_time_and_sees_catalog_changes(
@@ -288,9 +367,9 @@ async def test_explicit_validation_fetches_every_time_and_sees_catalog_changes(
 
     monkeypatch.setattr(routing, "fetch_model_catalog", fetch_model_catalog)
 
-    assert (await validate_routing(RoutingInput(text="glm"))).text == "glm"
+    assert (await validate_routing(RoutingInput(model="glm"))).text == "glm"
     with pytest.raises(RoutingValidationError, match="unknown model"):
-        await validate_routing(RoutingInput(text="glm"))
+        await validate_routing(RoutingInput(model="glm"))
     assert calls == 2
 
 
@@ -307,7 +386,7 @@ async def test_explicit_validation_isolates_caller_catalogs(monkeypatch):
     async def validate_for(key, model):
         token = _api_key_override.set(key)
         try:
-            return await validate_routing(RoutingInput(text=model))
+            return await validate_routing(RoutingInput(model=model))
         finally:
             _api_key_override.reset(token)
 
@@ -330,7 +409,7 @@ async def test_explicit_validation_neither_reads_nor_mutates_shared_cache(monkey
     monkeypatch.setattr(registry, "_registry_cache", shared_cache)
     _use_catalog(monkeypatch)
 
-    preferences = await validate_routing(RoutingInput(text="glm"))
+    preferences = await validate_routing(RoutingInput(model="glm"))
 
     assert preferences.text == "glm"
     assert registry._registry_cache is shared_cache
@@ -345,12 +424,12 @@ async def test_validate_routing_reports_registry_fetch_failure(monkeypatch):
     monkeypatch.setattr(routing, "fetch_model_catalog", fetch_model_catalog)
 
     with pytest.raises(RoutingRegistryUnavailable) as error:
-        await validate_routing(RoutingInput(text="glm"))
+        await validate_routing(RoutingInput(model="glm"))
 
     assert error.value.__cause__ is failure
 
 
-@pytest.mark.parametrize("value", [None, RoutingInput(), RoutingInput(text="auto")])
+@pytest.mark.parametrize("value", [None, RoutingInput(), RoutingInput(model="auto")])
 async def test_validate_routing_skips_registry_without_explicit_preferences(
     monkeypatch, value
 ):
@@ -375,7 +454,7 @@ async def test_validate_routing_allows_omitted_endpoint_metadata(
     }
     _use_catalog(monkeypatch, catalog)
 
-    preferences = await validate_routing(RoutingInput(text="text-without-endpoints"))
+    preferences = await validate_routing(RoutingInput(model="text-without-endpoints"))
 
     assert preferences.text == "text-without-endpoints"
 

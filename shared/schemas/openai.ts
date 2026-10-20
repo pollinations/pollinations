@@ -1,6 +1,11 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
+import {
+    AGENT_FIELD_DESCRIPTIONS,
+    ModelHealthSchema,
+} from "../registry/model-info.ts";
+import { MODEL_CATEGORIES } from "../registry/registry.ts";
 import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
 import { SafeSchema } from "./safety.ts";
 
@@ -59,6 +64,24 @@ const ChatCompletionToolChoiceOptionSchema = z.union([
     ChatCompletionNamedToolChoiceSchema,
 ]);
 
+const PromptCacheBreakpointSchema = z
+    .object({ mode: z.literal("explicit") })
+    .strict()
+    .optional()
+    .describe(
+        "Marks the end of a static prompt prefix when prompt_cache_options.mode is explicit.",
+    )
+    .meta({ $id: "PromptCacheBreakpoint" });
+
+const PromptCacheOptionsSchema = z
+    .object({
+        mode: z.enum(["implicit", "explicit"]).optional(),
+        ttl: z.literal("30m").optional(),
+    })
+    .strict()
+    .optional()
+    .meta({ $id: "PromptCacheOptions" });
+
 const ChatCompletionRequestMessageContentPartImageSchema = z.object({
     type: z.literal("image_url"),
     image_url: z.object({
@@ -66,10 +89,12 @@ const ChatCompletionRequestMessageContentPartImageSchema = z.object({
         detail: z.enum(["auto", "low", "high"]).optional(),
         mime_type: z.string().optional(), // For explicit MIME type (e.g., "image/jpeg")
     }),
+    prompt_cache_breakpoint: PromptCacheBreakpointSchema,
 });
 
-// Video URL content type - currently supported by Gemini models only
-// Enables native YouTube video analysis (visual frames + audio) without manual extraction
+// Video URL content type. Gemini models accept YouTube/gs:// URLs natively;
+// OpenRouter video-capable models (e.g. inclusionai/ling-3.0-flash-vl) accept
+// https:// and data: URIs.
 const ChatCompletionRequestMessageContentPartVideoSchema = z.object({
     type: z.literal("video_url"),
     video_url: z.object({
@@ -93,6 +118,7 @@ const ChatCompletionRequestMessageContentPartTextSchema = z.object({
     type: z.literal("text"),
     text: z.string(),
     cache_control: CacheControlSchema,
+    prompt_cache_breakpoint: PromptCacheBreakpointSchema,
 });
 
 const ChatCompletionRequestMessageContentPartAudioSchema = z.object({
@@ -102,6 +128,7 @@ const ChatCompletionRequestMessageContentPartAudioSchema = z.object({
         format: z.enum(["wav", "mp3", "flac", "opus", "pcm16"]),
     }),
     cache_control: CacheControlSchema,
+    prompt_cache_breakpoint: PromptCacheBreakpointSchema,
 });
 
 // File content for document/file uploads
@@ -112,9 +139,11 @@ const ChatCompletionRequestMessageContentPartFileSchema = z.object({
         file_id: z.string().optional(),
         file_name: z.string().optional(),
         file_url: z.string().optional(),
+        filename: z.string().optional(),
         mime_type: z.string().optional(),
     }),
     cache_control: CacheControlSchema,
+    prompt_cache_breakpoint: PromptCacheBreakpointSchema,
 });
 
 const ChatCompletionRequestMessageContentPartSchema = z
@@ -125,9 +154,7 @@ const ChatCompletionRequestMessageContentPartSchema = z
         ChatCompletionRequestMessageContentPartAudioSchema,
         ChatCompletionRequestMessageContentPartFileSchema,
         // Allow any other content types for provider-specific extensions
-        z
-            .object({ type: z.string() })
-            .passthrough(),
+        z.object({ type: z.string() }).passthrough(),
     ])
     .meta({ $id: "MessageContentPart" });
 
@@ -139,6 +166,7 @@ export type MessageContentPart = z.infer<
 const ChatCompletionMessageContentPartThinkingSchema = z.object({
     type: z.literal("thinking"),
     thinking: z.string(),
+    signature: z.string().optional(),
 });
 
 const ChatCompletionMessageContentPartRedactedThinkingSchema = z.object({
@@ -187,6 +215,7 @@ const ChatCompletionMessageToolCallSchema = z.object({
     function: z.object({
         name: z.string(),
         arguments: z.string(),
+        thought_signature: z.string().optional(),
     }),
 });
 
@@ -287,6 +316,18 @@ export const CreateChatCompletionRequestSchema = z
             description:
                 "AI model for text generation. See /v1/models for full list.",
         }),
+        system: z
+            .string()
+            .nullish()
+            .describe(
+                "Optional system prompt prepended before `messages` (same extension as GET /text).",
+            ),
+        metadata: z
+            .record(z.string(), z.string())
+            .nullish()
+            .describe(
+                "Passed unchanged to endpoint agents. Each agent documents the metadata keys it accepts.",
+            ),
         modalities: z.array(z.enum(["text", "audio"])).optional(),
         audio: z
             .object({
@@ -324,15 +365,26 @@ export const CreateChatCompletionRequestSchema = z
                 search_context_size: z.enum(["low", "medium", "high"]),
             })
             .describe(
-                "Controls Perplexity Sonar search context. Pollinations currently supports low and high.",
+                "Perplexity Sonar search context size: how much page content each web search reads. Larger sizes use more input tokens.",
             )
             .optional(),
-        temperature: z.number().min(0).max(2).nullable().optional(),
+        temperature: z
+            .number()
+            .min(0)
+            .max(2)
+            .nullable()
+            .optional()
+            .describe(
+                "Sampling controls are ignored for model families that do not consistently support them, regardless of reasoning mode.",
+            ),
         top_p: z.number().min(0).max(1).nullable().optional(),
         tools: z.array(ChatCompletionToolSchema).optional(),
         tool_choice: ChatCompletionToolChoiceOptionSchema.optional(),
-        parallel_tool_calls: z.boolean().optional().default(true),
+        parallel_tool_calls: z.boolean().optional(),
         user: z.string().optional(),
+        prompt_cache_key: z.string().optional(),
+        prompt_cache_options: PromptCacheOptionsSchema,
+        prompt_cache_retention: z.enum(["in_memory", "24h"]).optional(),
         function_call: z
             .union([
                 z.enum(["none", "auto"]),
@@ -352,6 +404,7 @@ export type CreateChatCompletionRequest = z.infer<
 >;
 
 const StatelessResponseIncludeSchema = z.enum([
+    "reasoning.encrypted_content",
     "web_search_call.action.sources",
     "code_interpreter_call.outputs",
     "computer_call_output.output.image_url",
@@ -383,6 +436,7 @@ export const CreateResponseRequestSchema = z
         instructions: z.string().nullish(),
         reasoning: z.record(z.string(), z.any()).nullish(),
         max_output_tokens: z.number().int().positive().nullish(),
+        max_tool_calls: z.number().int().positive().nullish(),
         stream: z.boolean().optional().default(false),
         stream_options: z
             .object({ include_obfuscation: z.boolean().optional() })
@@ -399,17 +453,13 @@ export const CreateResponseRequestSchema = z
         tools: z.array(ResponseFunctionToolSchema).optional(),
         tool_choice: z.any().optional(),
         parallel_tool_calls: z.boolean().optional(),
-        metadata: z.record(z.string(), z.string()).optional(),
+        metadata: z.record(z.string(), z.string()).nullish(),
+        // Codex session telemetry; accepted, never sent upstream.
+        client_metadata: z.record(z.string(), z.string()).nullish(),
         user: z.string().optional(),
         safety_identifier: z.string().max(64).optional(),
         prompt_cache_key: z.string().optional(),
-        prompt_cache_options: z
-            .object({
-                mode: z.enum(["implicit", "explicit"]).optional(),
-                ttl: z.literal("30m").optional(),
-            })
-            .strict()
-            .optional(),
+        prompt_cache_options: PromptCacheOptionsSchema,
         prompt_cache_retention: z.enum(["in_memory", "24h"]).optional(),
         service_tier: z.string().optional(),
         temperature: z.number().min(0).max(2).nullish(),
@@ -477,9 +527,22 @@ export const CreateResponseResponseSchema = z
             "incomplete",
         ]),
         output: z.array(z.object({ type: z.string() }).passthrough()),
-        usage: ResponseUsageSchema,
+        usage: ResponseUsageSchema.nullable(),
     })
     .passthrough()
+    .superRefine((response, context) => {
+        if (
+            (response.status === "completed" ||
+                response.status === "incomplete") &&
+            response.usage === null
+        ) {
+            context.addIssue({
+                code: "custom",
+                path: ["usage"],
+                message: "Successful Responses must include valid usage",
+            });
+        }
+    })
     .meta({ $id: "CreateResponseResponse" });
 
 export type CreateResponseResponse = z.infer<
@@ -496,11 +559,20 @@ export const ResponseTerminalEventSchema = z
         response: z
             .object({
                 model: z.string().optional(),
-                usage: ResponseUsageSchema,
+                usage: ResponseUsageSchema.nullable(),
             })
             .passthrough(),
     })
-    .passthrough();
+    .passthrough()
+    .superRefine((event, context) => {
+        if (event.type !== "response.failed" && event.response.usage === null) {
+            context.addIssue({
+                code: "custom",
+                path: ["response", "usage"],
+                message: "Successful Responses must include valid usage",
+            });
+        }
+    });
 
 const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionRequestMessageContentPartTextSchema,
@@ -508,9 +580,7 @@ const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionMessageContentPartThinkingSchema,
     ChatCompletionMessageContentPartRedactedThinkingSchema,
     // Allow any other content types for provider-specific extensions (video, audio, file, etc.)
-    z
-        .object({ type: z.string() })
-        .passthrough(),
+    z.object({ type: z.string() }).passthrough(),
 ]);
 
 const ChatCompletionResponseMessageSchema = z.object({
@@ -583,6 +653,12 @@ export const CompletionUsageSchema = z
                 audio_tokens: z.number().int().nonnegative().nullish(),
                 cache_write_tokens: z.number().int().nonnegative().nullish(),
                 cached_tokens: z.number().int().nonnegative().nullish(),
+                cache_creation_input_tokens: z
+                    .number()
+                    .int()
+                    .nonnegative()
+                    .nullish(),
+                cache_type: z.string().nullish(),
                 image_tokens: z.number().int().nonnegative().nullish(),
             })
             .nullish(),
@@ -672,18 +748,52 @@ export const OpenAIModelSchema = z
         id: z.string(),
         object: z.literal("model"),
         created: z.number(),
-        owned_by: z.string().optional(),
+        owned_by: z.string(),
+        aliases: z.array(z.string()),
+        category: z.enum(MODEL_CATEGORIES),
+        community: z.boolean(),
+        tags: z
+            .array(z.object({ name: z.string() }))
+            .describe(
+                "Filter tags in Open WebUI's model tag format: the model category, plus `community` for community models and `agent` for agents.",
+            ),
+        title: z.string(),
+        description: z.string().optional(),
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),
-        agent: z.boolean().optional(),
-        base_model: z.string().optional(),
-        pricing: z.record(z.string(), z.string()).optional(),
+        agent: z.boolean().optional().describe(AGENT_FIELD_DESCRIPTIONS.agent),
+        base_model: z
+            .string()
+            .optional()
+            .describe(AGENT_FIELD_DESCRIPTIONS.base_model),
+        paid_only: z
+            .boolean()
+            .describe(
+                "True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`.",
+            ),
+        pricing: z
+            .record(z.string(), z.string())
+            .optional()
+            .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
         capabilities: z.array(z.string()).optional(),
+        supported_parameters: z
+            .array(z.string())
+            .optional()
+            .describe(
+                "Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`.",
+            ),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
+        supports_streaming: z
+            .boolean()
+            .optional()
+            .describe(
+                "False when the upstream does not stream. `stream: true` still returns a valid event stream, but the whole answer arrives at once when generation finishes. Omitted when the model streams.",
+            ),
         context_length: z.number().optional(),
         per_user_rpm: z.number().positive().nullable().optional(),
+        health: ModelHealthSchema.optional(),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",
@@ -703,9 +813,13 @@ export const GetModelsResponseSchema = z
 // OpenAI Images API Schemas
 
 // Shared fields between image generation and editing requests
-const imageModelField = z.string().optional().default("flux").meta({
-    description: "The model to use for image generation",
-});
+const imageModelField = z
+    .string()
+    .optional()
+    .default("black-forest-labs/flux.1-schnell")
+    .meta({
+        description: "The model to use for image generation",
+    });
 const imageNField = z
     .number()
     .int()
@@ -723,6 +837,20 @@ const imageSizeField = z
     .default("1024x1024")
     .meta(imageSizeMeta);
 const imageEditSizeField = z.string().optional().meta(imageSizeMeta);
+// Same bounds as the GET image route and the chat route: out-of-range seeds
+// are rejected here instead of being silently replaced with seed 42 by the
+// generation pipeline.
+const imageSeedField = z
+    .number()
+    .int()
+    .min(-1)
+    .max(2147483647)
+    .nullable()
+    .optional()
+    .meta({
+        description:
+            "Seed for reproducible results. -1 maps to the stable compatibility seed.",
+    });
 const imageQualityField = z
     .enum(["standard", "hd", "low", "medium", "high"])
     .optional()
@@ -738,6 +866,14 @@ const imageResolutionField = z
         description:
             "Output resolution for resolution-priced image and video models (Pollinations extension)",
     });
+const imageResponseFormatField = z
+    .enum(["url", "b64_json"])
+    .optional()
+    .default("b64_json")
+    .meta({
+        description:
+            'Return format. "url" returns a stored media.pollinations.ai URL, "b64_json" returns base64-encoded image data',
+    });
 
 export const CreateImageRequestSchema = z
     .object({
@@ -748,14 +884,8 @@ export const CreateImageRequestSchema = z
         n: imageNField,
         size: imageSizeField,
         quality: imageQualityField,
-        response_format: z
-            .enum(["url", "b64_json"])
-            .optional()
-            .default("b64_json")
-            .meta({
-                description:
-                    'Return format. "url" returns a pollinations.ai URL, "b64_json" returns base64-encoded image data',
-            }),
+        seed: imageSeedField,
+        response_format: imageResponseFormatField,
         user: z.string().optional().meta({
             description: "End-user identifier for abuse tracking",
         }),
@@ -784,7 +914,8 @@ const ImageDataSchema = z.object({
     url: z.string().optional(),
     b64_json: z.string().optional(),
     media_type: z.string().optional().meta({
-        description: "MIME type for non-raster output such as image/svg+xml",
+        description:
+            "MIME type, included for URL responses and non-raster output",
     }),
     revised_prompt: z.string().optional(),
 });
@@ -834,6 +965,8 @@ export const CreateImageEditRequestSchema = z
         n: imageNField,
         size: imageEditSizeField,
         quality: imageQualityField,
+        seed: imageSeedField,
+        response_format: imageResponseFormatField,
         resolution: imageResolutionField,
         safe: SafeSchema,
     })

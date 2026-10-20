@@ -2,11 +2,11 @@
 
 Canonical vendor: `anthropic`
 
-## Verified — 2026-08-21
+## Verified — 2026-10-14
 
 - Status: API authentication and bounded cost-report collection work.
-- The committed collector retrieves seven-day windows without exposing the
-  encrypted admin key. Group by `description`; the Cost API then returns parsed
+- Retrieve seven-day windows with the existing admin key. Group by
+  `description`; the Cost API then returns parsed
   provider model and token-cost dimensions.
 - A zero here is a scoped API result, not proof that every Anthropic account
   or Claude subscription had zero cost; cross-check the console and Wise.
@@ -30,27 +30,33 @@ Live validation:
 
 Collection steps:
 
-1. Query bounded UTC windows. Prefer weekly chunks for month collection:
+1. Verify `GET /v1/organizations/me` matches the visible Console organization
+   and the organization linked from Team billing. Query bounded UTC windows.
+   Prefer weekly chunks for month collection:
 
    ```bash
-   curl "https://api.anthropic.com/v1/organizations/cost_report?starting_at=<start_rfc3339>&ending_at=<end_rfc3339>&limit=31" \
+   curl --globoff "https://api.anthropic.com/v1/organizations/cost_report?starting_at=<start_rfc3339>&ending_at=<end_rfc3339>&limit=31&group_by[]=description&group_by[]=workspace_id" \
      -H "x-api-key: $ANTHROPIC_ADMIN_KEY" \
      -H "anthropic-version: 2023-06-01"
    ```
 
-   Save raw JSON chunks to `data/inbox/anthropic-<period>-cost-report-<chunk>.json`.
+   Save raw JSON chunks to `<collection-dir>/evidence/anthropic-<period>-cost-report-<chunk>.json`.
 
    To explain a cost mismatch by API key, provider model, service tier, and
    context band, query the matching usage report:
 
    ```bash
-   curl "https://api.anthropic.com/v1/organizations/usage_report/messages?starting_at=<start_rfc3339>&ending_at=<end_rfc3339>&group_by[]=api_key_id&group_by[]=model&group_by[]=service_tier&group_by[]=context_window" \
+   curl --globoff "https://api.anthropic.com/v1/organizations/usage_report/messages?starting_at=<start_rfc3339>&ending_at=<end_rfc3339>&group_by[]=api_key_id&group_by[]=model&group_by[]=service_tier&group_by[]=context_window" \
      -H "x-api-key: $ANTHROPIC_ADMIN_KEY" \
      -H "anthropic-version: 2023-06-01"
    ```
 
-2. Sum `data[].results[].amount` across buckets. The API reports amount in cents; divide by 100 for USD.
-3. Preserve daily buckets and any result dimensions in `cost_details`.
+2. Follow `next_page` with `page=<next_page>` while `has_more` is true, for
+   both reports. Sum `data[].results[].amount` within each group; divide cents
+   by 100 for USD.
+3. Preserve bucket coverage and raw dimensions in the archived export. Write
+   one Compute row per workspace/model/description group, with the raw model
+   in `model` and description in `resource_sku`; do not add the total again.
 4. For grant/cash attribution, use dashboard grant details and card/Wise transactions as separate evidence.
 5. Use this skill for saved raw evidence.
 
@@ -66,3 +72,39 @@ Known traps:
 - Amounts are cents, not dollars.
 - Admin key organization scope matters; zero cost can mean no usage or the wrong org.
 - Grant waterfall assumptions must be backed by dashboard or transaction evidence, not inferred from the API alone.
+
+API contract: https://platform.claude.com/docs/en/api/http/admin/cost_report/retrieve
+
+
+## Console, Team and personal subscriptions
+
+- API balances: https://platform.claude.com/settings/billing. Verify Myceli.AI
+  and the registry login. Read purchased credits separately from promotional
+  lots. Record each lot's scope, granted date and UTC expiry. Use the detailed
+  billing balance; preserve any discrepancy with the rounded sidebar badge.
+- Team plan: https://claude.ai/admin-settings/billing. Select Pollinations in
+  the workspace menu. Verify seat type/count, invoice discount and its end,
+  renewal date, linked Console organization, next API grant and grant amount.
+  Organization access: https://claude.ai/admin-settings/organization.
+- Personal Max: switch to Personal in the same login, then open
+  https://claude.ai/settings/billing. Its renewal and cancellation are separate
+  from the Team seats. Removing the personal subscription must not remove the
+  Team primary-owner seat. A planned cancellation is not a confirmed one.
+- Download original Team invoices through View and the hosted invoice's
+  Download invoice control. Use the PDF issue/service dates when the Team
+  list differs. Separate invoice total, applied balance, amount due and cash
+  paid; a Paid badge does not prove a card debit. Check company legal name and
+  VAT identity against the business invoice details before changing billing.
+- Subscriber API credits renew by billing cycle and do not roll over. They
+  apply to the directly linked Console organization, not AWS Bedrock charges.
+  One Console organization cannot stack Team and personal-plan allocations.
+  Record observed grants and snapshots, not future grants as actual ledger
+  entries. Keep seat-dependent future allocations as planning assumptions;
+  recheck them each cycle and after a subscription change.
+- Record API payment/auto-reload status without changing it. A zero API cost
+  excludes neither Team nor personal subscription charges.
+
+Subscriber-credit terms:
+https://platform.claude.com/docs/en/about-claude/api-credits-for-subscribers
+Organization identity:
+https://platform.claude.com/docs/en/api/organization

@@ -1,9 +1,11 @@
 import type {
     EconomicsPrivateConfig,
-    EconomicsPrivateConfigRow,
-    OpCloudRow,
     OpPollenRow,
     OpTransactionRow,
+    RevenueShareSourceRow,
+    StripeSalesRow,
+    UserBalanceSummaryRow,
+    VendorLedgerRow,
 } from "./types";
 
 export const PRIVATE_CONFIG_FIXTURE: EconomicsPrivateConfig = {
@@ -12,12 +14,13 @@ export const PRIVATE_CONFIG_FIXTURE: EconomicsPrivateConfig = {
             fixedAmounts: [{ amount: -90, currency: "USD" }],
         },
     },
-    reconciliation: {
+    reviewNotes: {
         providerCheckExplanations: [
             {
                 month: "2026-03",
                 provider: "pruna",
                 reason: "unverifiable_history",
+                decision: "known_limitation",
                 explanation: "Example reviewed limitation.",
                 evidence: [
                     "https://drive.google.com/file/d/example-check/view",
@@ -38,7 +41,7 @@ export const PRIVATE_CONFIG_FIXTURE: EconomicsPrivateConfig = {
         pollenWitnessExplanations: [
             {
                 month: "2026-02",
-                provider: "vast.ai",
+                provider: "vast",
                 reason: "provider_attribution_transition",
                 explanation: "Example reviewed transition.",
                 evidence: [
@@ -125,7 +128,8 @@ const opTransactions: OpTransactionRow[] = [
         amount: -150,
         currency: "EUR",
         description: "Example Alibaba Cloud charge",
-        evidence: "https://drive.google.com/file/d/example-invoice/view",
+        evidence:
+            "evidence_type=supplier_document https://drive.google.com/file/d/example-invoice/view",
         recorded_at: "2026-07-09 00:00:00.000",
     },
     {
@@ -246,7 +250,7 @@ const opTransactions: OpTransactionRow[] = [
         recorded_at: "2026-03-01 00:00:00.000",
     },
 ];
-const opCloud: OpCloudRow[] = [
+const vendorLedger: VendorLedgerRow[] = [
     {
         entry_id: "cloud-example-openai-inference-2026-07",
         source: "dashboard",
@@ -522,15 +526,196 @@ const opPollen: OpPollenRow[] = [
         requests_quests: 250,
     },
 ];
-const privateConfig: EconomicsPrivateConfigRow[] = [
+const revenueShare: RevenueShareSourceRow[] = [
     {
-        config: JSON.stringify(PRIVATE_CONFIG_FIXTURE),
-        recorded_at: "2026-01-01 00:00:00.000",
+        row_type: "summary",
+        month: "2026-07",
+        recipient_id: "",
+        github_username: "",
+        recipient_name: "",
+        sources_json: "[]",
+        paid_usage: 225,
+        paid_creator_earnings: 105,
+        paid_pollinations_profit: 100,
+        paid_community_usage: 0,
+        paid_model_creator_earnings: 0,
+        quest_usage: 75,
+        quest_creator_earnings: 45,
+        quest_community_usage: 0,
+        quest_model_creator_earnings: 0,
+        paid_requests: 900,
+        quest_requests: 350,
+    },
+    {
+        row_type: "creator",
+        month: "2026-07",
+        recipient_id: "example-publisher",
+        github_username: "example-publisher",
+        recipient_name: "Example publisher",
+        sources_json: JSON.stringify([
+            [
+                "model",
+                "example-community-model",
+                "Example community model",
+                "example-community-model",
+            ],
+        ]),
+        paid_usage: 100,
+        paid_creator_earnings: 80,
+        paid_pollinations_profit: 20,
+        paid_community_usage: 0,
+        paid_model_creator_earnings: 0,
+        quest_usage: 50,
+        quest_creator_earnings: 40,
+        quest_community_usage: 0,
+        quest_model_creator_earnings: 0,
+        paid_requests: 500,
+        quest_requests: 250,
+    },
+    {
+        row_type: "creator",
+        month: "2026-07",
+        recipient_id: "example-developer",
+        github_username: "example-developer",
+        recipient_name: "Example developer",
+        sources_json: JSON.stringify([
+            ["app", "example-app", "Example app", "example-inference-model"],
+        ]),
+        paid_usage: 125,
+        paid_creator_earnings: 25,
+        paid_pollinations_profit: 80,
+        paid_community_usage: 0,
+        paid_model_creator_earnings: 0,
+        quest_usage: 25,
+        quest_creator_earnings: 5,
+        quest_community_usage: 0,
+        quest_model_creator_earnings: 0,
+        paid_requests: 400,
+        quest_requests: 100,
+    },
+    {
+        row_type: "source",
+        month: "2026-07",
+        recipient_id: "example-publisher",
+        github_username: "example-publisher",
+        recipient_name: "Example publisher",
+        sources_json: JSON.stringify([
+            [
+                "model",
+                "example-community-model",
+                "Example community model",
+                "example-community-model",
+            ],
+        ]),
+        paid_usage: 100,
+        paid_creator_earnings: 80,
+        paid_pollinations_profit: 0,
+        paid_community_usage: 0,
+        paid_model_creator_earnings: 0,
+        quest_usage: 50,
+        quest_creator_earnings: 40,
+        quest_community_usage: 0,
+        quest_model_creator_earnings: 0,
+        paid_requests: 500,
+        quest_requests: 250,
+    },
+    {
+        row_type: "source",
+        month: "2026-07",
+        recipient_id: "example-developer",
+        github_username: "example-developer",
+        recipient_name: "Example developer",
+        sources_json: JSON.stringify([
+            ["app", "example-app", "Example app", "example-inference-model"],
+        ]),
+        paid_usage: 125,
+        paid_creator_earnings: 25,
+        paid_pollinations_profit: 0,
+        paid_community_usage: 0,
+        paid_model_creator_earnings: 0,
+        quest_usage: 25,
+        quest_creator_earnings: 5,
+        quest_community_usage: 0,
+        quest_model_creator_earnings: 0,
+        paid_requests: 400,
+        quest_requests: 100,
     },
 ];
+const stripeSales: StripeSalesRow[] = [
+    {
+        revenue_stream: "pollen",
+        reversals: 0,
+        coverage_complete: 1,
+        month: "2026-07",
+        currency: "USD",
+        gross_sales: 10_000,
+        refunds: 200,
+        net_sales: 9_800,
+        stripe_fees: 500,
+        dispute_fees: 0,
+        net_after_fees: 9_300,
+        payments: 500,
+        refund_count: 2,
+    },
+    {
+        month: "2026-08",
+        revenue_stream: "pollen",
+        reversals: 0,
+        coverage_complete: 0,
+        currency: "USD",
+        gross_sales: 2_500,
+        refunds: 100,
+        net_sales: 2_400,
+        stripe_fees: 120,
+        dispute_fees: 0,
+        net_after_fees: 2_280,
+        payments: 120,
+        refund_count: 1,
+    },
+];
+const userBalances: UserBalanceSummaryRow[] = [
+    {
+        users: 1_000,
+        paid_users: 40,
+        quest_users: 500,
+        paid_balance: 12_000,
+        quest_balance: 6_000,
+        synced_at: "2026-08-31 03:00:00",
+    },
+];
+export const PLANNING_DOCUMENT_FIXTURE: EconomicsPrivateConfig = {
+    ...PRIVATE_CONFIG_FIXTURE,
+    forecastRules: {},
+    recordedAt: "2026-10-16T00:00:00Z",
+};
+const examplePlan: VendorLedgerRow = {
+    entry_id: "example-openai-plan",
+    source: "reviewed-plan",
+    vendor: "openai",
+    type: "planned",
+    start: "",
+    end: "",
+    paid: 0,
+    credit: 0,
+    currency: "USD",
+    resource_id: "",
+    resource_name: "Development subscription",
+    resource_sku: "",
+    resource_count: 0,
+    model: "",
+    evidence: "Example plan",
+    recorded_at: "2026-10-16 00:00:00.000",
+    plan_amount: -90,
+    plan_category: "development",
+    plan_cadence: "monthly",
+    settled_by_entry_ids: [],
+};
+
 export const FIXTURES: Record<string, unknown[]> = {
     economics_bank_ledger_api: opTransactions,
-    economics_compute_ledger_api: opCloud,
+    economics_vendor_ledger_api: [...vendorLedger, examplePlan],
     economics_pollen_usage_api: opPollen,
-    economics_private_config_api: privateConfig,
+    economics_revenue_share_api: revenueShare,
+    economics_stripe_sales_api: stripeSales,
+    economics_user_balances_api: userBalances,
 };

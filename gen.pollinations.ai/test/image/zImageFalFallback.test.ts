@@ -42,18 +42,21 @@ function createZImageFallbackMocks() {
                     state.falRequests.push(
                         (await request.json()) as Record<string, unknown>,
                     );
-                    return Response.json({
-                        images: [
-                            {
-                                url: `https://${falMediaHost}/output.png`,
-                                content_type: "image/png",
-                                width: 1024,
-                                height: 1024,
-                            },
-                        ],
-                        seed: 42,
-                        has_nsfw_concepts: [false],
-                    });
+                    return Response.json(
+                        {
+                            images: [
+                                {
+                                    url: `https://${falMediaHost}/output.png`,
+                                    content_type: "image/png",
+                                    width: 1024,
+                                    height: 1024,
+                                },
+                            ],
+                            seed: 42,
+                            has_nsfw_concepts: [false],
+                        },
+                        { headers: { "x-fal-billable-units": "1" } },
+                    );
                 },
                 [falMediaHost]: async () =>
                     new Response(Buffer.from(png1x1Base64, "base64"), {
@@ -117,8 +120,12 @@ test("uses Fal only after the Vast Z-Image pool exhausts its 503s", async ({
     const failureBody =
         response.status === 200 ? "" : await response.clone().text();
     expect(response.status, failureBody).toBe(200);
-    expect(response.headers.get("x-model-requested")).toBe("zimage");
-    expect(response.headers.get("x-model-used")).toBe("zimage-fal");
+    expect(response.headers.get("x-model-requested")).toBe(
+        "tongyi-mai/z-image-turbo",
+    );
+    expect(response.headers.get("x-model-used")).toBe(
+        "tongyi-mai/z-image-turbo:fal",
+    );
     expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
     await response.arrayBuffer();
     expect(mocks.fal.state.falRequests).toEqual([
@@ -137,7 +144,8 @@ test("uses Fal only after the Vast Z-Image pool exhausts its 503s", async ({
     expect(mocks.tinybird.state.events).toHaveLength(2);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelRequested: "zimage",
-        modelUsed: "zimage",
+        resolvedModelRequested: "tongyi-mai/z-image-turbo",
+        modelUsed: "tongyi-mai/z-image-turbo",
         modelProviderUsed: "vast",
         responseStatus: 503,
         isFinal: false,
@@ -145,7 +153,8 @@ test("uses Fal only after the Vast Z-Image pool exhausts its 503s", async ({
     });
     expect(mocks.tinybird.state.events[1]).toMatchObject({
         modelRequested: "zimage",
-        modelUsed: "zimage-fal",
+        resolvedModelRequested: "tongyi-mai/z-image-turbo",
+        modelUsed: "tongyi-mai/z-image-turbo:fal",
         modelProviderUsed: "fal",
         responseStatus: 200,
         fallbackUsed: true,
@@ -153,10 +162,8 @@ test("uses Fal only after the Vast Z-Image pool exhausts its 503s", async ({
         isFinal: true,
         isBilledUsage: true,
     });
-    expect(mocks.tinybird.state.events[1].totalCost).toBeCloseTo(
-        1.048576 * 0.005,
-        10,
-    );
+    // Cost follows fal's billed megapixels, not the requested 1.048576 MP.
+    expect(mocks.tinybird.state.events[1].totalCost).toBeCloseTo(0.005, 10);
 });
 
 test("rejects direct calls to the internal Fal route", async ({

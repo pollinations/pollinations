@@ -1,21 +1,5 @@
 {
-  "held": {
-    "14386": {
-      "merge_sha": "0e40640472c71ace102b592c3ab4a016cf810dee",
-      "merged_at": "2026-10-20T17:37:52Z",
-      "required": []
-    },
-    "17231": {
-      "merge_sha": "97d1ffbec3ab19952b24f38d236183f49ec0c03b",
-      "merged_at": "2026-10-20T22:18:15Z",
-      "required": []
-    },
-    "17978": {
-      "merge_sha": "7c9acfc0e3e9c1ba58a6bf0d478459c7836878d7",
-      "merged_at": "2026-10-20T23:19:06Z",
-      "required": []
-    }
-  },
+  "held": {},
   "production": "a777fa7c9f63f4ed11f3147efa3b86942beef15b",
   "master": "02b0575f1ae6daad402bb2782119d7752403ad01"
 }

@@ -5,7 +5,7 @@ import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
 export const DEFAULT_IMAGE_MODEL = "tongyi-mai/z-image-turbo" as const;
-const FLUX3_LAUNCH_DISCOUNT_END = Date.parse("2026-10-08T15:00:00Z");
+export const FLUX3_LAUNCH_DISCOUNT_END = Date.parse("2026-10-08T15:00:00Z");
 
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 

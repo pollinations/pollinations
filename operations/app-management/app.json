@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "✍️",
+    "name": "TaleCrafter AI",
+    "url": "https://www.talecrafterai.com",
+    "description": "TaleCrafter AI turns ideas into illustrated, narration-first storybooks. Users choose a genre, audience age group, and art style, then create either a complete Classic story or a Plot Twist adventure ",
+    "language": "en",
+    "category": "writing",
+    "platform": "web",
+    "githubUsername": "talecrafterai",
+    "githubUserId": "334401825",
+    "repositoryUrl": "https://github.com/adityashriwas/TaleCrafter-AI",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-19",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17917",
+    "approvedDate": "2026-10-20",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/802fb43f-24af-4b32-a609-a4ac7618aafb"
+  },
+  {
     "emoji": "🖼️",
     "name": "FX Trade Setup Studio",
     "url": "https://fxmacrodata.github.io/examples/pollinations/fx-trade-setup-studio",

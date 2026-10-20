@@ -170,8 +170,6 @@ export function ModelListingFields({
                                     ? "Research assistant with web tools"
                                     : "Fast coding model, long context"
                             }
-                            rows={1}
-                            style={{ minHeight: "2.625rem" }}
                             autoComplete="off"
                             maxLength={
                                 COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH

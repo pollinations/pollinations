@@ -3,6 +3,7 @@ import {
     hasAccountPermission,
     requireAccountPermission,
 } from "@shared/auth/account-permissions.ts";
+import { verifyGrantAgent } from "@shared/auth/agent-run-token.ts";
 import {
     type ApiKeyType,
     createApiKeyForUser,
@@ -22,7 +23,7 @@ import {
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { toModelCategories } from "@shared/registry/model-permissions.ts";
+import { toModelPermissions } from "@shared/registry/model-permissions.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -46,6 +47,7 @@ import {
 import { captureFromRequest } from "../utils/product-analytics.ts";
 import { agentsRoutes } from "./agents.ts";
 import { communityEndpointsRoutes } from "./community-endpoints.ts";
+import { promoCodeRedeemRoutes } from "./promo-codes.ts";
 
 const DEFAULT_USAGE_DAYS = 30;
 const DEFAULT_DAILY_USAGE_DAYS = 90;
@@ -115,7 +117,7 @@ const CreateKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "Model categories this key can use: text, image, video, audio, 3d, embedding, realtime. A model ID from /models allows its whole category. null = all models",
+            "Models this key can use. A category (text, image, video, audio, 3d, embedding, realtime) allows every model in it, including models added later; a model ID or alias from /models allows only that model and is stored as its canonical ID. null = all models",
         ),
     pollenBudget: z
         .number()
@@ -182,6 +184,17 @@ const UpdateKeySchema = CreateKeySchema.pick({
         .transform((val) => (val == null ? val : new Date(val)))
         .describe("Expiry as an ISO 8601 timestamp. null = never expires"),
 });
+
+// A grant link from an agent run names the agent, signed by gen over the key
+// and the one category, model or account permission it asks for.
+const GrantAgentSchema = z.intersection(
+    z.union([
+        z.object({ category: z.string().min(1) }),
+        z.object({ model: z.string().min(1) }),
+        z.object({ permission: z.string().min(1) }),
+    ]),
+    z.object({ agent: z.string().min(1), sig: z.string().min(1) }),
+);
 
 function parsePermissions(
     raw: string | null | undefined,
@@ -956,6 +969,7 @@ export const accountRoutes = new Hono<Env>()
     })
     .route("/agents", agentsRoutes)
     .route("/my-models", communityEndpointsRoutes)
+    .route("/promo-codes", promoCodeRedeemRoutes)
     .get(
         "/profile",
         describeRoute({
@@ -1774,7 +1788,7 @@ export const accountRoutes = new Hono<Env>()
             const permissions = parsePermissions(key.permissions) ?? {};
             if (allowedModels !== undefined) {
                 if (allowedModels) {
-                    permissions.models = await toModelCategories(
+                    permissions.models = await toModelPermissions(
                         c.env.DB,
                         allowedModels,
                     );
@@ -1822,6 +1836,32 @@ export const accountRoutes = new Hono<Env>()
                 .returning();
 
             return c.json(formatKey(updated));
+        },
+    )
+    .get(
+        "/keys/:id/grant-agent",
+        describeRoute({
+            tags: ["👤 Account"],
+            description:
+                "Confirm which agent a grant link says asked for the grant.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        validator("query", GrantAgentSchema),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            c.var.auth.requireUser();
+            const { agent, sig, ...grant } = c.req.valid("query");
+            // The link reached the owner through the agent, so only gen's
+            // signature makes the name trustworthy. This reads nothing from
+            // the key, so it needs no ownership check.
+            const signed = verifyGrantAgent({
+                secret: c.env.BETTER_AUTH_SECRET,
+                apiKeyId: c.req.param("id"),
+                grant,
+                agent,
+                sig,
+            });
+            return c.json({ agent: signed ? agent : null });
         },
     )
     .post(
@@ -1947,7 +1987,7 @@ export const accountRoutes = new Hono<Env>()
                                                 .array(z.string())
                                                 .nullable()
                                                 .describe(
-                                                    "Model categories this key can use (text, image, video, audio, 3d, embedding, realtime), null = all models allowed",
+                                                    "Model categories (text, image, video, audio, 3d, embedding, realtime) and model IDs this key can use, null = all models allowed",
                                                 ),
                                             account: z
                                                 .array(z.string())

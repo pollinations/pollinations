@@ -1,9 +1,11 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { basename, dirname } from "node:path";
+import { readFileSync, writeFileSync } from "node:fs";
+import { basename } from "node:path";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
+import { requireFile } from "../../lib/input-file.js";
 import { mimeTypeFor } from "../../lib/mime.js";
-import { fail, getOutputMode, printInfo, printMeta } from "../../lib/output.js";
+import { getOutputMode, printInfo, printMeta } from "../../lib/output.js";
+import { prepareOutputPath } from "../../lib/output-file.js";
 
 export function createVoiceChangeCommand() {
     return new Command("voice-change")
@@ -21,9 +23,7 @@ export function createVoiceChangeCommand() {
             const isHuman = getOutputMode() === "human";
             const output = opts.output ?? `voice.${opts.format}`;
 
-            if (!existsSync(file)) {
-                fail(`File not found: ${file}`);
-            }
+            requireFile(file);
 
             const formData = new FormData();
             formData.append(
@@ -37,7 +37,7 @@ export function createVoiceChangeCommand() {
                 formData.append("response_format", opts.format);
 
             // Before the paid request, so a bad --output folder costs nothing.
-            mkdirSync(dirname(output), { recursive: true });
+            prepareOutputPath(output);
             if (isHuman) printInfo("Transforming voice...");
 
             try {

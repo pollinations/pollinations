@@ -9,9 +9,11 @@ import { routeTree } from "./routeTree.gen";
 const ref = new URLSearchParams(window.location.search).get("ref");
 if (
     ref === "image" ||
+    ref === "text" ||
     ref === "agent_low_balance_topup" ||
     ref === "agent_low_balance_quests" ||
-    ref === "agent_key_budget"
+    ref === "agent_key_budget" ||
+    ref === "agent_grant"
 ) {
     navigator.sendBeacon(`${config.apiBaseUrl}/referral?ref=${ref}`);
 }

@@ -1,6 +1,6 @@
-import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import spawn from "cross-spawn";
 import { BASE_URL } from "../lib/config.js";
 import {
     commandExists,
@@ -66,7 +66,7 @@ const status = (ctx: HarnessContext): HarnessResult => {
 
 // Runs Claude Code itself with the written settings, so ready means it works.
 const smokeTest = (ctx: HarnessContext) => {
-    const run = spawnSync(
+    const run = spawn.sync(
         "claude",
         [
             "-p",

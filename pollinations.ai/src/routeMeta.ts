@@ -9,7 +9,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     "/play": {
         title: "Play | pollinations.ai",
         description:
-            "Chat with agents or generate images, video and audio in your browser using your own Pollen.",
+            "Chat with agents or generate images, video and audio in your browser using your own pollen.",
     },
     "/apps": {
         title: "Apps | pollinations.ai",
@@ -31,8 +31,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     },
     "/subprocessors": {
         title: "Service Providers | pollinations.ai",
-        description:
-            "Pollinations.ai service providers and processing locations",
+        description: "Pollinations.ai service providers",
     },
     "/refunds": {
         title: "Refunds | pollinations.ai",
@@ -44,6 +43,17 @@ export const NOT_FOUND_META: RouteMeta = {
     title: "Page not found | pollinations.ai",
     description: "The requested page could not be found.",
 };
+
+// The known page a URL path shows, or undefined for the 404 page. The router
+// matches paths in any case and with a trailing slash, so this must too.
+export function knownPage(pathname: string): string | undefined {
+    const path = (
+        pathname !== "/" && pathname.endsWith("/")
+            ? pathname.slice(0, -1)
+            : pathname
+    ).toLowerCase();
+    return path in ROUTE_META ? path : undefined;
+}
 
 export function routeHead(path?: string) {
     const known = path ? ROUTE_META[path] : undefined;
@@ -79,7 +89,7 @@ export function getJsonLd(path: string): string | null {
             logo: "https://pollinations.ai/icon-512.png",
             sameAs: [
                 "https://github.com/pollinations",
-                "https://discord.gg/pollinations-ai-885844321461485618",
+                "https://discord.gg/k9F7SyTgqn",
                 "https://x.com/pollinations_ai",
             ],
             description: ROUTE_META["/"].description,

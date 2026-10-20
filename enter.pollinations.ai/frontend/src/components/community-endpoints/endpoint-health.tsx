@@ -16,9 +16,10 @@ type TestResult = { ok: boolean; message?: string };
 const percent = new Intl.NumberFormat("en", { maximumFractionDigits: 1 });
 
 // Owner-only health. The closed row shows the listing verdict for public
-// proxies, from the catalog health the card already has, or the week's success
-// for other models, plus a 7-day sparkline. Expanding lists failed calls and,
-// for proxies, a live upstream test with the saved token.
+// proxies, from the catalog health the card already has. Expanding loads the
+// week (one Tinybird scan per load, so only on demand): the success rate for
+// other models, a 7-day sparkline, failed calls and, for proxies, a live
+// upstream test with the saved token.
 export function EndpointHealth({
     id,
     proxy,
@@ -35,7 +36,9 @@ export function EndpointHealth({
     const [testResult, setTestResult] = useState<TestResult | null>(null);
 
     useEffect(() => {
+        if (!expanded || health) return;
         const loadHealth = async () => {
+            setLoadError(null);
             try {
                 const response = await accountClient["my-models"][
                     ":id"
@@ -47,7 +50,7 @@ export function EndpointHealth({
             }
         };
         void loadHealth();
-    }, [id]);
+    }, [expanded, health, id]);
 
     const runTest = async () => {
         setTesting(true);

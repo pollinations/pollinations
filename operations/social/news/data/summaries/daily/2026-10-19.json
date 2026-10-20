@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-19",
+  "period_start": "2026-10-19",
+  "period_end": "2026-10-19",
+  "title": "Scout gets another recovery route",
+  "summary": "Scout and Economics got recovery fixes, two community apps joined the catalog, and the image API reference gained a model ID.\n\nLlama 4 Scout now tries a pinned DeepInfra route before Novita when its primary provider fails. The fallback applies to both chat completions and Responses requests; pricing and capabilities are unchanged.\n\nThe Economics dashboard no longer lets a stalled journal request block later loads. Completed snapshots are cached, failed refreshes preserve the previous snapshot until it expires, and prolonged loads lead to a Retry screen.\n\nCommunity submissions added Complimentik, a Russian-language compliment generator, and FX Trade Setup Studio, which turns currency trade details into visual cards.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 17905,
+      "date": "2026-10-19"
+    },
+    {
+      "number": 17906,
+      "date": "2026-10-19"
+    },
+    {
+      "number": 17907,
+      "date": "2026-10-19"
+    },
+    {
+      "number": 17915,
+      "date": "2026-10-19"
+    },
+    {
+      "number": 17919,
+      "date": "2026-10-19"
+    }
+  ],
+  "generated_at": "2026-10-20T06:08:57.639458+00:00",
+  "daily": [],
+  "changelog": []
+}

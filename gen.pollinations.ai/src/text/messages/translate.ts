@@ -228,19 +228,6 @@ function tools(request: CreateMessageRequest) {
     };
 }
 
-function imageCount(blocks: MessagesContentBlock[]): number {
-    return blocks.reduce(
-        (count, block) =>
-            count +
-            (block.type === "image"
-                ? 1
-                : block.type === "tool_result" && Array.isArray(block.content)
-                  ? imageCount(block.content)
-                  : 0),
-        0,
-    );
-}
-
 /**
  * Replaces the oldest images, including screenshots inside tool results, with
  * a short note once the conversation holds more than the model accepts.
@@ -251,39 +238,40 @@ function omitOldestImages(
     messages: CreateMessageRequest["messages"],
     maxImages: number,
 ): CreateMessageRequest["messages"] {
-    let omit =
-        imageCount(
-            messages.flatMap((message) =>
-                typeof message.content === "string" ? [] : message.content,
-            ),
-        ) - maxImages;
-    if (omit <= 0) return messages;
+    const images = messages
+        .flatMap((message) =>
+            typeof message.content === "string" ? [] : message.content,
+        )
+        .flatMap((block) =>
+            block.type === "tool_result" && Array.isArray(block.content)
+                ? block.content
+                : [block],
+        )
+        .filter((block) => block.type === "image");
+    const omitted = new Set<MessagesContentBlock>(
+        images.slice(0, images.length - maxImages),
+    );
     const note = `[image omitted: over the ${maxImages}-image limit]`;
-    const replace = <T extends MessagesContentBlock>(content: T[]): T[] =>
-        content.map((block) => {
-            if (block.type === "image" && omit > 0) {
-                omit--;
-                return { type: "text", text: note, ...cacheControl(block) };
-            }
-            if (block.type === "tool_result" && Array.isArray(block.content)) {
-                return { ...block, content: replace(block.content) };
-            }
-            return block;
-        }) as T[];
+    const replace = <T extends MessagesContentBlock>(block: T): T =>
+        (block.type === "image" && omitted.has(block)
+            ? { type: "text", text: note, ...cacheControl(block) }
+            : block.type === "tool_result" && Array.isArray(block.content)
+              ? { ...block, content: block.content.map(replace) }
+              : block) as T;
     return messages.map((message) =>
         typeof message.content === "string"
             ? message
-            : { ...message, content: replace(message.content) },
+            : { ...message, content: message.content.map(replace) },
     );
 }
 
 /**
  * Translate a Messages request into the Chat Completions request it runs as.
- * `maxImages` is the model's declared image limit, if it has one.
+ * `maxImages` is the model's declared image limit.
  */
 export function messagesToChatRequest(
     request: CreateMessageRequest,
-    maxImages?: number,
+    maxImages = Number.POSITIVE_INFINITY,
 ): CreateChatCompletionRequest {
     const system =
         request.system === undefined
@@ -298,13 +286,14 @@ export function messagesToChatRequest(
                   } as ChatMessage,
               ];
     const effort = reasoningEffort(request);
-    const messages =
-        maxImages === undefined
-            ? request.messages
-            : omitOldestImages(request.messages, maxImages);
     return {
         model: request.model,
-        messages: [...system, ...messages.flatMap(chatMessages)],
+        messages: [
+            ...system,
+            ...omitOldestImages(request.messages, maxImages).flatMap(
+                chatMessages,
+            ),
+        ],
         max_tokens: request.max_tokens,
         stream: request.stream ?? false,
         ...(request.stop_sequences?.length && {

@@ -1094,24 +1094,11 @@ describe("POST /v1/messages", () => {
             caller.key,
         );
         expect(response.status, text).toBe(200);
-        const sent = providerBodies[0].messages as {
-            role: string;
-            content: unknown;
-        }[];
-        const note = {
-            type: "text",
-            text: `[image omitted: over the ${limit}-image limit]`,
-        };
-        expect(
-            sent
-                .filter((message) => message.role === "tool")
-                .slice(0, 3)
-                .map((message) => message.content),
-        ).toEqual([[note], [note], ""]);
-        const images = JSON.stringify(sent).match(
-            /data:image\/png;base64,\d+/g,
-        );
-        expect(images).toEqual(
+        // The two oldest become notes; the newest `limit` stay, in order.
+        const sent = JSON.stringify(providerBodies[0].messages);
+        const note = `[image omitted: over the ${limit}-image limit]`;
+        expect(sent.split(note)).toHaveLength(3);
+        expect(sent.match(/data:image\/png;base64,\d+/g)).toEqual(
             Array.from(
                 { length: limit },
                 (_, n) => `data:image/png;base64,${n + 2}`,

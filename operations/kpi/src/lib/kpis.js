@@ -29,6 +29,24 @@ export const KPIS = [
             "Count of new user accounts created during the week. Source: D1 database (user.created_at)",
     },
     {
+        key: "googleSignups",
+        category: "Acquisition",
+        views: [
+            {
+                name: "Google signups",
+                tooltip:
+                    "New registrations whose first account is Google: they signed up with Google, not GitHub. Discord can only be connected later. Google sign-in launched 2026-10-20. Source: D1 (account) via Tinybird (kpi_registrations).",
+            },
+            {
+                name: "Google signup share",
+                format: "percent",
+                calc: (w) => (w.googleSignups / w.registrations) * 100,
+                tooltip:
+                    "Google signups / new registrations × 100. The rest signed up with GitHub.",
+            },
+        ],
+    },
+    {
         key: "activations",
         category: "Acquisition",
         views: [

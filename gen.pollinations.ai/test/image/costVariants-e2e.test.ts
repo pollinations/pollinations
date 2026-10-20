@@ -355,8 +355,8 @@ test("FLUX 3 Max bills 1080p at the 1080p cost variant", async ({
         modelUsed: "black-forest-labs/flux-3-max",
         costVariant: "1080p",
         tokenCountCompletionVideoSeconds: 21.28,
-        tokenPriceCompletionVideoSeconds: 0.0725,
-        totalCost: expect.closeTo(21.28 * 0.0725, 8),
+        tokenPriceCompletionVideoSeconds: 0.29,
+        totalCost: expect.closeTo(21.28 * 0.29, 8),
         isBilledUsage: true,
     });
 });
@@ -375,8 +375,8 @@ test("FLUX 3 Max bills the 720p rate when no resolution is requested", async ({
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelUsed: "black-forest-labs/flux-3-max",
         tokenCountCompletionVideoSeconds: 21.28,
-        tokenPriceCompletionVideoSeconds: 0.0425,
-        totalCost: expect.closeTo(21.28 * 0.0425, 8),
+        tokenPriceCompletionVideoSeconds: 0.17,
+        totalCost: expect.closeTo(21.28 * 0.17, 8),
         isBilledUsage: true,
     });
 });

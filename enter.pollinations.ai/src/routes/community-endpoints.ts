@@ -13,12 +13,17 @@ import {
     parseListingPayload,
     pendingCommunityEndpointChangeIsReady,
     resolveEffectiveProxyListing,
+    staticFallbackRejection,
 } from "@shared/community-endpoints.ts";
 import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { resolveModelName } from "@shared/registry/registry.ts";
-import { encryptSecret } from "@shared/secret-encryption.ts";
+import {
+    getModels,
+    getRegistryModelDefinition,
+    resolveModelName,
+} from "@shared/registry/registry.ts";
+import { decryptSecret, encryptSecret } from "@shared/secret-encryption.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -39,6 +44,10 @@ import {
     testCommunityVideoEndpoint,
 } from "../services/community-endpoint-openai.ts";
 import {
+    fetchTinybirdRows,
+    requireTinybirdReadToken,
+} from "../services/tinybird.ts";
+import {
     type FallbackPrimary,
     fallbackTargetRejection,
     resolveFallbacks,
@@ -55,6 +64,7 @@ import {
 import {
     assertValidUpdate,
     CommunityEndpointDeleteResponseSchema,
+    CommunityEndpointHealthResponseSchema,
     CommunityEndpointListResponseSchema,
     CommunityEndpointModelsResponseSchema,
     CommunityEndpointResponseSchema,
@@ -66,6 +76,7 @@ import {
     EndpointAgentResponseSchema,
     FallbackCandidatesResponseSchema,
     ModelListSchema,
+    type TestEndpointInput,
     TestEndpointSchema,
     UpdateEndpointSchema,
 } from "./community-endpoints/schemas.ts";
@@ -137,7 +148,7 @@ async function requireOwnerGithubUsername(
     if (owner?.githubUsername) return owner.githubUsername;
     throw new HTTPException(400, {
         message:
-            "A GitHub username is required to register community endpoints",
+            "Connect GitHub on your account page to register community models.",
     });
 }
 
@@ -200,6 +211,80 @@ function throwEndpointTestError(error: unknown): never {
             error instanceof Error ? error.message : "Endpoint test failed",
     });
 }
+
+async function runEndpointTest(input: TestEndpointInput) {
+    try {
+        const endpointInput = {
+            ...input,
+            baseUrl: validateInputEndpointUrl(
+                input.modality === "text" ? input.url : input.baseUrl,
+            ),
+        };
+        let result: CommunityEndpointTestResult;
+        if (input.modality === "text") {
+            result = await testCommunityEndpoint({
+                api: input.api,
+                url: endpointInput.baseUrl,
+                bearerToken: input.bearerToken,
+                model: input.model,
+            });
+        } else if (input.modality === "video") {
+            result = await testCommunityVideoEndpoint(endpointInput);
+        } else {
+            if (!input.model) {
+                throw new HTTPException(400, {
+                    message: "model is required unless modality is video",
+                });
+            }
+            const modelInput = { ...endpointInput, model: input.model };
+            result =
+                input.modality === "image"
+                    ? await testCommunityImageEndpoint(modelInput)
+                    : input.modality === "transcription"
+                      ? await testCommunityTranscriptionEndpoint(modelInput)
+                      : input.modality === "speech"
+                        ? await testCommunitySpeechEndpoint(modelInput)
+                        : await testCommunityEmbeddingEndpoint(modelInput);
+        }
+        return {
+            ok: true,
+            message:
+                input.modality === "image"
+                    ? result.inputModalities?.includes("image")
+                        ? "Generation and editing endpoints responded with image data"
+                        : `Generation endpoint responded; editing test failed: ${result.imageEditError}`
+                    : input.modality === "video"
+                      ? "Endpoint responded with playable video"
+                      : input.modality === "transcription"
+                        ? "Endpoint responded with transcription text"
+                        : input.modality === "speech"
+                          ? "Endpoint responded with audio data"
+                          : input.modality === "embedding"
+                            ? "Endpoint responded with embedding data"
+                            : result.streaming === false
+                              ? "JSON request returned valid token usage. The endpoint does not stream, so stream: true calls will get the whole answer as one event stream"
+                              : "JSON and streaming requests returned valid token usage",
+            ...result,
+        };
+    } catch (error) {
+        throwEndpointTestError(error);
+    }
+}
+
+type HealthRow = {
+    day: string;
+    status: number;
+    code: string;
+    host: string;
+    failure_group: number;
+    succeeded: number;
+    failed: number;
+    counted: number;
+    from_pollinations: number;
+    from_owner: number;
+    last_at: string;
+    message: string;
+};
 
 type EndpointProbeKind = "models" | "test";
 
@@ -271,15 +356,15 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
             requireAccountPermission(c.var.auth.apiKey, "keys");
-            const ownerGithubUsername = await requireOwnerGithubUsername(
-                db,
-                user.id,
-            );
             const rows = await db
                 .select()
                 .from(schema.communityEndpoint)
                 .where(eq(schema.communityEndpoint.ownerUserId, user.id))
                 .orderBy(desc(schema.communityEndpoint.createdAt));
+            // Registering needs GitHub, so users without it have no rows.
+            const ownerGithubUsername = rows.length
+                ? await requireOwnerGithubUsername(db, user.id)
+                : "";
             const owner = await db.query.user.findFirst({
                 columns: {
                     id: true,
@@ -386,7 +471,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "List Fallback Candidates",
             description:
-                "Community models this model may declare as fallbacks: registered, public or owned by you, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
+                "Models this model may declare as fallbacks: community models that are public or owned by you, and Pollinations models, with the same modality and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
             responses: {
                 200: {
                     description: "Eligible fallback model ids",
@@ -455,15 +540,24 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     schema.user,
                     eq(schema.communityEndpoint.ownerUserId, schema.user.id),
                 );
-            const data = candidates
-                .flatMap(({ endpoint: row, ownerGithubUsername: owner }) => {
-                    if (!owner) return [];
-                    const modelId = communityModelId(owner, row.name);
-                    return fallbackTargetRejection(primary, modelId, row)
-                        ? []
-                        : [modelId];
-                })
-                .sort();
+            const data = [
+                ...candidates.flatMap(
+                    ({ endpoint: row, ownerGithubUsername: owner }) => {
+                        if (!owner) return [];
+                        const modelId = communityModelId(owner, row.name);
+                        return fallbackTargetRejection(primary, modelId, row)
+                            ? []
+                            : [modelId];
+                    },
+                ),
+                ...getModels().filter(
+                    (modelId) =>
+                        !staticFallbackRejection(
+                            primary,
+                            getRegistryModelDefinition(modelId),
+                        ),
+                ),
+            ].sort();
             return c.json({ data });
         },
     )
@@ -714,67 +808,166 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 "test",
             );
             if (throttled) return throttled;
-            try {
-                const endpointInput = {
-                    ...input,
-                    baseUrl: validateInputEndpointUrl(
-                        input.modality === "text" ? input.url : input.baseUrl,
-                    ),
-                };
-                let result: CommunityEndpointTestResult;
-                if (input.modality === "text") {
-                    result = await testCommunityEndpoint({
-                        api: input.api,
-                        url: endpointInput.baseUrl,
-                        bearerToken: input.bearerToken,
-                        model: input.model,
-                    });
-                } else if (input.modality === "video") {
-                    result = await testCommunityVideoEndpoint(endpointInput);
-                } else {
-                    if (!input.model) {
-                        throw new HTTPException(400, {
-                            message:
-                                "model is required unless modality is video",
-                        });
-                    }
-                    const modelInput = { ...endpointInput, model: input.model };
-                    result =
-                        input.modality === "image"
-                            ? await testCommunityImageEndpoint(modelInput)
-                            : input.modality === "transcription"
-                              ? await testCommunityTranscriptionEndpoint(
-                                    modelInput,
-                                )
-                              : input.modality === "speech"
-                                ? await testCommunitySpeechEndpoint(modelInput)
-                                : await testCommunityEmbeddingEndpoint(
-                                      modelInput,
-                                  );
-                }
-                return c.json({
-                    ok: true,
-                    message:
-                        input.modality === "image"
-                            ? result.inputModalities?.includes("image")
-                                ? "Generation and editing endpoints responded with image data"
-                                : `Generation endpoint responded; editing test failed: ${result.imageEditError}`
-                            : input.modality === "video"
-                              ? "Endpoint responded with playable video"
-                              : input.modality === "transcription"
-                                ? "Endpoint responded with transcription text"
-                                : input.modality === "speech"
-                                  ? "Endpoint responded with audio data"
-                                  : input.modality === "embedding"
-                                    ? "Endpoint responded with embedding data"
-                                    : result.streaming === false
-                                      ? "JSON request returned valid token usage. The endpoint does not stream, so stream: true calls will get the whole answer as one event stream"
-                                      : "JSON and streaming requests returned valid token usage",
-                    ...result,
+            return c.json(await runEndpointTest(input));
+        },
+    )
+    .post(
+        "/:id/test",
+        describeRoute({
+            tags: ["🧩 Community Models"],
+            summary: "Test Saved Model",
+            description:
+                "Run the same upstream test as `POST /test` against a saved model, using its stored endpoint, upstream model and API token. Shares the one-probe-every-30-seconds limit. API keys require `account:keys`.",
+            responses: {
+                200: {
+                    description: "Endpoint test result",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                CommunityEndpointTestResponseSchema,
+                            ),
+                        },
+                    },
+                },
+                400: { description: "Endpoint test failed" },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+                404: { description: "Community endpoint not found" },
+                429: { description: "Probe rate limited" },
+            },
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const db = drizzle(c.env.DB, { schema });
+            requireAccountPermission(c.var.auth.apiKey, "keys");
+            const endpoint = await requireOwnedEndpoint(
+                db,
+                c.req.param("id"),
+                user.id,
+            );
+            // Only a proxy stores an upstream token; agents get run tokens.
+            const payload =
+                endpoint.type === "proxy"
+                    ? parseListingPayload("proxy", endpoint.payload)
+                    : null;
+            if (!payload) {
+                throw new HTTPException(400, {
+                    message: "Only models can be tested, not agents",
                 });
-            } catch (error) {
-                throwEndpointTestError(error);
             }
+            const throttled = await enforceEndpointProbeThrottle(
+                c,
+                user.id,
+                "test",
+            );
+            if (throttled) return throttled;
+            const bearerToken = normalizeCommunityEndpointBearerToken(
+                await decryptSecret(
+                    payload.bearerTokenCiphertext,
+                    c.env.BETTER_AUTH_SECRET,
+                ),
+            );
+            return c.json(
+                await runEndpointTest(
+                    payload.modality === "text"
+                        ? {
+                              modality: "text",
+                              // Gen routes anything but "responses" to Chat Completions.
+                              api: payload.api ?? "chat_completions",
+                              url: endpoint.baseUrl,
+                              bearerToken,
+                              model: endpoint.upstreamModel,
+                          }
+                        : {
+                              modality: payload.modality,
+                              baseUrl: endpoint.baseUrl,
+                              bearerToken,
+                              model: endpoint.upstreamModel || undefined,
+                          },
+                ),
+            );
+        },
+    )
+    .get(
+        "/:id/health",
+        describeRoute({
+            tags: ["🧩 Community Models"],
+            summary: "Get Model Health",
+            description:
+                "Calls a model's own upstream answered in the last seven UTC days: 2xx and 5xx per day, and the 5xx grouped by status, error code and host, newest first, with the latest message of each group. Fallback attempts and caller identities are left out. API keys require `account:keys`.",
+            responses: {
+                200: {
+                    description: "Model health",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                CommunityEndpointHealthResponseSchema,
+                            ),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+                404: { description: "Community endpoint not found" },
+            },
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const db = drizzle(c.env.DB, { schema });
+            requireAccountPermission(c.var.auth.apiKey, "keys");
+            const endpoint = await requireOwnedEndpoint(
+                db,
+                c.req.param("id"),
+                user.id,
+            );
+            const ownerGithubUsername = await requireOwnerGithubUsername(
+                db,
+                user.id,
+            );
+            const rows = await fetchTinybirdRows<HealthRow>(
+                new URL(c.env.TINYBIRD_INGEST_URL).origin,
+                "/v0/pipes/my_model_health.json",
+                requireTinybirdReadToken(c.env),
+                {
+                    model: communityModelId(ownerGithubUsername, endpoint.name),
+                    owner_user_id: user.id,
+                },
+            );
+            const byDay = new Map(
+                rows
+                    .filter((row) => !row.failure_group)
+                    .map((row) => [row.day, row]),
+            );
+            const days = Array.from({ length: 7 }, (_, index) => {
+                const day = new Date(Date.now() - (6 - index) * 86_400_000)
+                    .toISOString()
+                    .slice(0, 10);
+                const row = byDay.get(day);
+                return {
+                    day,
+                    succeeded: row?.succeeded ?? 0,
+                    failed: row?.failed ?? 0,
+                };
+            });
+            return c.json({
+                days,
+                failures: rows
+                    .filter((row) => row.failure_group)
+                    .slice(0, 10)
+                    .map((row) => ({
+                        status: row.status,
+                        code: row.code,
+                        host: row.host,
+                        failures: row.failed,
+                        counted: row.counted,
+                        fromPollinations: row.from_pollinations,
+                        fromOwner: row.from_owner,
+                        lastAt: new Date(
+                            `${row.last_at.replace(" ", "T")}Z`,
+                        ).toISOString(),
+                        message: row.message,
+                    })),
+            });
         },
     )
     .post(

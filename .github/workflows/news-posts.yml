@@ -112,13 +112,6 @@ jobs:
           for job, day in posts:
               check_date(job, day)
           print("posts=" + " ".join(f"{job} {day}" for job, day in posts))
-          print("folders<<FOLDERS")
-          for job, day in posts:
-              # The catalog record and the posts compared from it read models/snapshots.
-              folders = {"catalog": ["models"], "models": ["models"], "community": ["models", "community"]}
-              for folder in folders.get(job, [f"{job}/{day}"]):
-                  print(f"/operations/social/news/{folder}/")
-          print("FOLDERS")
           EOF
 
       - name: Checkout news
@@ -129,14 +122,22 @@ jobs:
           filter: blob:none
           sparse-checkout-cone-mode: false
           sparse-checkout: |
-            operations/social/news/gists/**/*.json
-            operations/social/news/*/*/summary.json
-            ${{ steps.posts.outputs.folders }}
+            /operations/social/news/data/
+            /operations/social/news/posts/
+
+      - name: Pollinations bot token
+        # Reads each PR's Area, Work type and Source from the Dev project.
+        id: bot
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+          owner: pollinations
 
       - name: Write and save
         env:
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
-          GITHUB_TOKEN: ${{ github.token }}  # the monthly job counts the month's merged PRs
+          GITHUB_TOKEN: ${{ steps.bot.outputs.token }}  # the day's PRs and the month's merged PRs
           POSTS: ${{ steps.posts.outputs.posts }}
           OVERWRITE: ${{ inputs.overwrite || env.RUN == 'preview' }}
         # Each post is saved and pushed before the next is written. A preview
@@ -150,11 +151,11 @@ jobs:
           [ "$OVERWRITE" = true ] && flag=--overwrite
           set -- $POSTS
           while [ $# -gt 0 ]; do
-            saved="news/operations/social/news/$1/$2/summary.json"
+            saved="news/operations/social/news/data/summaries/$1/$2.json"
             commands="write save"
-            [ "$1" = catalog ] && saved="news/operations/social/news/models/snapshots/$2.json"
+            [ "$1" = catalog ] && saved="news/operations/social/news/data/models/$2.json"
             if [ "$1" = models ] || [ "$1" = community ]; then
-              saved="news/operations/social/news/$1/$2/discord.json"
+              saved="news/operations/social/news/posts/discord/$1/$2.json"
               [ "$RUN" != preview ] && commands=write
             fi
             if [ -z "$flag" ] && [ -e "$saved" ]; then
@@ -284,8 +285,8 @@ jobs:
           filter: blob:none
           sparse-checkout-cone-mode: false
           sparse-checkout: |
-            /operations/social/news/models/
-            /operations/social/news/community/
+            /operations/social/news/data/
+            /operations/social/news/posts/discord/
 
       - name: Save the model and community posts
         if: ${{ contains(fromJSON('["models", "community", "wednesday"]'), env.JOB) }}
@@ -300,7 +301,7 @@ jobs:
           jobs=$JOB
           [ "$JOB" = wednesday ] && jobs="models community"
           for job in $jobs; do
-            if [ -e "news/operations/social/news/$job/$DATE/discord.json" ]; then
+            if [ -e "news/operations/social/news/posts/discord/$job/$DATE.json" ]; then
               echo "$job $DATE is already saved"
             else
               python operations/social/scripts/posts.py save "$job" "$DATE" --news news --work "work/$job"

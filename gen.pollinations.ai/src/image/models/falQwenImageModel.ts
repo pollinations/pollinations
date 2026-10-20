@@ -9,22 +9,34 @@ import { toDataUri } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:fal-qwen-image:ops");
 
+// Fal reports the units it billed. Usage counts millionths of them because the
+// usage columns hold whole numbers.
+const falUnitUsage = (response: Response) => ({
+    completionImageTokens: Math.round(falBillableUnits(response) * 1_000_000),
+});
+
 const FAL_QWEN_MODELS = {
     "qwen/qwen-image-2.1": {
         label: "Qwen Image 2.1",
         endpoint: "alibaba/qwen-image-2.1",
+        editPath: "edit",
         promptExpansion: { prompt_expander: "none" },
         // Fal defaults to no guidance, which leaves edits noisy and
         // oversharpened. Guidance doubles the edit price (measured 2026-09-25).
         editOptions: { guidance_scale: 4 },
         resolveSize: resolveQwenImageSize,
-        // Fal reports the megapixels it billed. Usage counts millionths of
-        // them because the usage columns hold whole numbers.
-        usage: (response: Response) => ({
-            completionImageTokens: Math.round(
-                falBillableUnits(response) * 1_000_000,
-            ),
-        }),
+        usage: falUnitUsage,
+    },
+    // Fal bills BFL's per-image tiers as $0.009 units: 768 = 0.8889, 1K = 1,
+    // 2K = 1.5556, 4K = 4 (measured 2026-10-18).
+    "black-forest-labs/flux-3-image-klein": {
+        label: "FLUX.3 Image Klein",
+        endpoint: "blackforestlabs/flux-3/klein",
+        editPath: "edit-image",
+        promptExpansion: { enable_prompt_expansion: false },
+        editOptions: {},
+        resolveSize: resolveQwenImage3Size,
+        usage: falUnitUsage,
     },
 } as const;
 
@@ -80,7 +92,7 @@ export async function callFalQwenImageAPI(
     const size = config.resolveSize(safeParams);
     const references = await Promise.all(images.map(toDataUri));
     const isEdit = references.length > 0;
-    const upstreamUrl = `https://fal.run/${config.endpoint}/${isEdit ? "edit" : "text-to-image"}`;
+    const upstreamUrl = `https://fal.run/${config.endpoint}/${isEdit ? config.editPath : "text-to-image"}`;
     const requestBody = {
         prompt,
         ...(isEdit ? { image_urls: references, ...config.editOptions } : {}),

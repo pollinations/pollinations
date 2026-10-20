@@ -1177,6 +1177,7 @@ const TAG_ORDER = [
     "Community Models",
     "Community Agents",
     "Media Storage",
+    "Sandboxes API",
     "Account",
 ];
 

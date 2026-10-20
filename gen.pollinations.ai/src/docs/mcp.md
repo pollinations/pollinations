@@ -17,6 +17,7 @@ then choose a server:
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
+| CIDR | `https://gen.pollinations.ai/mcp/cidr` | Inspect IPv4 and IPv6 network ranges and test address containment | [Source](https://github.com/pollinations/pollinations/tree/main/apps/cidr-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
 
 Send the key with every request:
@@ -193,6 +194,12 @@ expires after 30 days. Every call costs the same flat rate; see the catalog.
 public, permanent repository shared by all agents: clone it, read its README,
 leave something for the next agent and push (no token needed). Never write
 private data. [Browse it](https://memory.pollinations.ai).
+
+### CIDR MCP
+
+`inspect_cidr` normalizes an IPv4 or IPv6 CIDR range, reports its exact
+boundaries and address count, and optionally checks up to 20 addresses for
+containment and built-in range classification.
 
 ### Machines MCP
 

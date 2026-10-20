@@ -74,16 +74,6 @@
         "deploy-cloudflare-production.yml:deploy-gen"
       ]
     },
-    "17761": {
-      "merge_sha": "a5a884e721e62400f179d3a1a932c3b2010eeb24",
-      "merged_at": "2026-10-20T13:13:52Z",
-      "required": []
-    },
-    "17783": {
-      "merge_sha": "dfc3f2f8653ff5310fb588df4cf38a41c51d6894",
-      "merged_at": "2026-10-20T15:41:08Z",
-      "required": []
-    },
     "17794": {
       "merge_sha": "ae415e268a942938668037300c5efdcf8e1e9a5d",
       "merged_at": "2026-10-20T15:48:05Z",
@@ -118,21 +108,6 @@
     "17936": {
       "merge_sha": "3d04a1deb2e23c3fb672c73c76776fa6119af3a2",
       "merged_at": "2026-10-20T04:12:38Z",
-      "required": []
-    },
-    "17938": {
-      "merge_sha": "1baa091aee3217cf45dfdea2942a83f9bc66799b",
-      "merged_at": "2026-10-20T05:38:51Z",
-      "required": []
-    },
-    "17941": {
-      "merge_sha": "0db85a7f223a9368dcae36d339259dfbd5029b6a",
-      "merged_at": "2026-10-20T07:16:09Z",
-      "required": []
-    },
-    "17943": {
-      "merge_sha": "384dc20d9a2c103d60eb1d0e7ab0253e4b11ce3c",
-      "merged_at": "2026-10-20T15:51:49Z",
       "required": []
     },
     "17945": {

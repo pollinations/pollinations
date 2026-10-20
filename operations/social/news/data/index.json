@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-19T06:14:06.110599+00:00",
+  "generated_at": "2026-10-20T06:10:08.162164+00:00",
   "models": [
     {
       "id": "2026-09-22:anthropic/claude-opus-5.5",
@@ -9189,17 +9189,6 @@
       "prs": [
         15217,
         15243
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-09-19",
-      "emoji": "🎯",
-      "title": "Check model health",
-      "text": "Model listings now include `health` by default, with a status, success rate, and request count from the last 24 hours. Models without measurements show `unknown`. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        15157,
-        15165
       ],
       "kind": "api"
     }

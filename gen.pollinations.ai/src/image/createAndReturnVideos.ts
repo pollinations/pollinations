@@ -6,8 +6,12 @@
 import { getVideoModelIds } from "@shared/registry/image.ts";
 import debug from "debug";
 import { callAlibabaVideo } from "./models/alibabaVideoModel.ts";
-import { callFalFallbackVideo } from "./models/falFallbackMediaModel.ts";
+import {
+    callFalFallbackVideo,
+    callMireloSfxAPI,
+} from "./models/falFallbackMediaModel.ts";
 import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
+import { callKlingVideoAPI } from "./models/klingVideoModel.ts";
 import {
     callMinimaxH3API,
     callMinimaxH3MaxAPI,
@@ -69,6 +73,9 @@ export async function createAndReturnVideo(
         case "kandinskylab/kandinsky-6.0-lite":
             result = await callFalFallbackVideo(prompt, safeParams);
             break;
+        case "mirelo/sfx-2.0":
+            result = await callMireloSfxAPI(prompt, safeParams);
+            break;
         case "bytedance/seedance-2.0":
         case "bytedance/seedance-2.0-mini":
         case "bytedance/seedance-2.0-fast":
@@ -99,6 +106,9 @@ export async function createAndReturnVideo(
         case "x-ai/grok-imagine-video-1.5":
         case "x-ai/grok-imagine-video-1.5-lite:openrouter":
             result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
+            break;
+        case "kwaivgi/kling-v3.0-std":
+            result = await callKlingVideoAPI(prompt, safeParams);
             break;
         case "x-ai/grok-imagine-video-1.5-lite":
             result = await callXaiVideoAPI(prompt, safeParams);

@@ -165,6 +165,9 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Maintain project skills in `.claude/skills/`. Expose them to Codex through
   relative directory links in `.agents/skills/`; keep command adapters as
   pointers to their maintained instructions, never copied workflows.
+- Skills from other repos (`grill-me`, `grilling`) stay unedited and pinned in
+  `skills-lock.json`; refresh them with `npx -y skills@1.7.2 add
+  mattpocock/skills --skill grill-me --skill grilling --agent claude-code --copy -y`.
 
 - Don't use `cd` in bash; use `cwd` parameter.
 - Don't create `.md` docs unless asked.
@@ -221,12 +224,12 @@ npx vitest run test/file.test.ts
 - After a correction, check whether existing guidance already covers it. Propose a narrow update for a repeated pattern or material safety failure; keep one-off product decisions in the relevant issue/PR. Replace superseded guidance instead of adding another rule.
 - Fix reported bugs and failing CI; use logs, errors, or failing tests as evidence.
 
-### Design Questions
+### Grill Plans Before Building
 
-- Before committing to a design, surface unresolved choices that could materially change the user outcome, scope, UX, constraints, or architecture. Ask even when the request is executable if the answer could improve it.
-- Investigate facts available in the codebase or documentation yourself. Ask the user about intent and tradeoffs. Prefer one consequential question at a time; group up to three only when their answers are independent. Give a recommendation and its tradeoff, while allowing another answer.
-- Use each answer to revise the design and subsequent questions. Stop when consequential choices are settled; handle routine, reversible details autonomously. Briefly reflect the resulting design before building.
-- Avoid repeating answered questions or asking for permission already given. Existing safety approval requirements still apply.
+- Use the `grilling` skill often (`.claude/skills/grilling/`; users start it with `/grill-me`). Grill every non-trivial feature, design, API or pricing change, quest, and any plan with open choices, even when the request already looks executable.
+- Look facts up yourself in the code, docs, issues and PRs; ask the user only about intent and tradeoffs. Ask every question that is unblocked now in one numbered round, each with your recommended answer, then let the answers shape the next round.
+- Keep working on parts that don't depend on the answers. Decide routine, reversible details yourself, and briefly restate the settled design before building.
+- Don't repeat answered questions or ask for permission already given. Existing approval and safety rules still apply.
 
 ## Compact Instructions
 

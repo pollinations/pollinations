@@ -458,7 +458,9 @@ export function CommunityEndpointDialog({
                             <>
                                 {isEndpointAgent
                                     ? "Update its listing and connection."
-                                    : "Register an OpenAI-compatible endpoint as a community/{username}/{model-id} model."}
+                                    : "Register an OpenAI-compatible endpoint as a community/{username}/{model-id} model."}{" "}
+                                Saved changes take a minute or two to become
+                                callable.
                                 {!isEdit && (
                                     <>
                                         {" "}

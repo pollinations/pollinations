@@ -6,7 +6,12 @@ import type {
     GenerationJobHead,
     GenerationOutcome,
 } from "@/middleware/generation-deduplication.ts";
-import { executeGeneration } from "@/utils/execute-generation.ts";
+import {
+    executeGeneration,
+    GENERATION_HANDOFF_HEADER,
+    GENERATION_HANDOFF_PATH,
+    readHandoffResponse,
+} from "@/utils/execute-generation.ts";
 
 const JOB_KEY = "job";
 const ASYNC_KEY = "async";
@@ -79,6 +84,7 @@ function unavailable(message: string): GenerationOutcome {
 
 export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     private readonly waiters = new Set<(outcome: GenerationOutcome) => void>();
+    private handoff?: { nonce: string; job: GenerationJobHead };
 
     /**
      * The body arrives as a stream: RPC streams it with flow control, while
@@ -99,6 +105,9 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 await body?.cancel();
                 if (stored) {
                     await this.clear(stored.bodyChunks, true);
+                    // The alarm cancelled above may have died after writing
+                    // the cache, so settle its pending async record here.
+                    await this.settleCacheHitRecord();
                 }
                 immediate = { status: "cached" };
                 return;
@@ -132,15 +141,12 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             const stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
             const previous = await this.readRecord();
             const sameRun = stored && previous?.status === "pending";
-            const ownerIds =
-                sameRun || cachePresent
-                    ? [
-                          ...new Set([
-                              ...(previous?.ownerIds ?? []),
-                              job.auth.user.id,
-                          ]),
-                      ]
-                    : [job.auth.user.id];
+            // Every account that submitted this identical request keeps
+            // reading the shared record, including when a new run replaces
+            // a terminal one.
+            const ownerIds = [
+                ...new Set([...(previous?.ownerIds ?? []), job.auth.user.id]),
+            ];
             status = cachePresent ? "succeeded" : "pending";
             if (cachePresent) {
                 await body?.cancel();
@@ -183,6 +189,14 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         return record;
     }
 
+    /** The public execution route claims the job this alarm handed off. */
+    async takeHandoff(nonce: string): Promise<GenerationJobHead | null> {
+        if (!this.handoff || this.handoff.nonce !== nonce) return null;
+        const { job } = this.handoff;
+        this.handoff = undefined;
+        return job;
+    }
+
     async alarm(): Promise<void> {
         let stored: PersistedJob | undefined;
         let interrupted: PersistedJob | undefined;
@@ -222,6 +236,14 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             }
 
             const job = await this.restore(stored);
+            const origin = this.env.GENERATION_EXECUTION_ORIGIN;
+            if (origin) {
+                await this.finish(
+                    await this.executeAtOrigin(origin, job),
+                    stored.bodyChunks,
+                );
+                return;
+            }
             const execution = await executeGeneration(job, this.env);
             settlement = execution.settlement;
             await this.finish(execution.result, stored.bodyChunks);
@@ -233,6 +255,37 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             );
         } finally {
             if (settlement) await settlement;
+        }
+    }
+
+    /**
+     * Fetches made by a Durable Object get Cloudflare's default 125 s proxy
+     * read timeout, whatever the zone sets. Running the job behind the public
+     * origin gives provider fetches the zone's timeout instead; the
+     * global_fetch_strictly_public flag is what sends this fetch through the
+     * zone. The nonce proves the request came from this alarm; the job itself
+     * never leaves the Durable Object except through takeHandoff.
+     */
+    private async executeAtOrigin(
+        origin: string,
+        job: GenerationJob,
+    ): Promise<GenerationOutcome> {
+        const { body, ...request } = job.request;
+        const nonce = crypto.randomUUID();
+        this.handoff = { nonce, job: { ...job, request } };
+        try {
+            return await readHandoffResponse(
+                await fetch(
+                    `${origin}${GENERATION_HANDOFF_PATH}/${this.ctx.id}`,
+                    {
+                        method: "POST",
+                        headers: { [GENERATION_HANDOFF_HEADER]: nonce },
+                        body: body as Uint8Array<ArrayBuffer> | undefined,
+                    },
+                ),
+            );
+        } finally {
+            this.handoff = undefined;
         }
     }
 
@@ -322,6 +375,18 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             for (const resolve of this.waiters) resolve(outcome);
             this.waiters.clear();
         });
+    }
+
+    /** A cache-hit join settles the pending record when the alarm cannot. */
+    private async settleCacheHitRecord(): Promise<void> {
+        const record = await this.readRecord();
+        if (record?.status !== "pending") return;
+        await this.ctx.storage.put<AsyncJobRecord>(ASYNC_KEY, {
+            ...record,
+            status: "succeeded",
+            completedAt: Date.now(),
+        });
+        await this.ctx.storage.setAlarm(Date.now() + ASYNC_TTL_MS);
     }
 
     private async clear(

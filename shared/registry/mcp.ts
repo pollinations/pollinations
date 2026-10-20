@@ -47,6 +47,7 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
+    | "CRON_MCP"
     | "MACHINES_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
@@ -212,6 +213,19 @@ export const MCP_SERVERS = [
         provider: "cloudflare",
         userScoped: true,
         pricing: COMPUTER_MCP_PRICING,
+    },
+    {
+        id: "cron",
+        name: "Cron",
+        description:
+            "Validate Unix cron expressions and calculate future runs across time zones.",
+        binding: "CRON_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Free. Cron schedules are evaluated in the Worker with no external API.",
+            rates: [],
+        },
     },
     {
         id: "machines",

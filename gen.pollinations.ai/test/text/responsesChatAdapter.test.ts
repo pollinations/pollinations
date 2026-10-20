@@ -1034,6 +1034,16 @@ describe("Chat Completions over Responses", () => {
         expect(options.seed).toBe(42);
     });
 
+    it("raises a token limit below the Responses minimum of 16", () => {
+        // Claude Code's /model check sends max_tokens 1.
+        expect(
+            chatToResponsesRequest([{ role: "user", content: "Hi" }], {
+                model: "provider-model",
+                max_tokens: 1,
+            }).max_output_tokens,
+        ).toBe(16);
+    });
+
     it("accepts named messages and drops the unsupported name field", () => {
         expect(
             chatToResponsesRequest(

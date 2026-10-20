@@ -442,7 +442,11 @@ export function chatToResponsesRequest(
                 : { summary: "auto" }),
         };
     }
-    if (maxOutputTokens != null) request.max_output_tokens = maxOutputTokens;
+    // Chat accepts any limit, but Responses rejects one below 16. Claude Code
+    // checks a model with max_tokens 1 when the user switches to it.
+    if (maxOutputTokens != null) {
+        request.max_output_tokens = Math.max(maxOutputTokens, 16);
+    }
     if (options.temperature != null) request.temperature = options.temperature;
     if (options.top_p != null) request.top_p = options.top_p;
     if (options.frequency_penalty != null) {

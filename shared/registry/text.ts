@@ -601,6 +601,7 @@ const TEXT_BASE_SERVICES = {
         description: "Reasoning for complex coding and agentic workflows",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
         tools: true,
         reasoning: true,
         contextLength: 1050000,
@@ -659,6 +660,7 @@ const TEXT_BASE_SERVICES = {
             "Faster near-Astra reasoning for coding, agents, and professional work",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
         tools: true,
         reasoning: true,
         contextLength: 1050000,
@@ -715,6 +717,7 @@ const TEXT_BASE_SERVICES = {
         description: "Efficient reasoning for focused, high-volume tasks",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
         tools: true,
         reasoning: true,
         contextLength: 1050000,

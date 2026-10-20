@@ -504,7 +504,7 @@ export const CommunityEndpointHealthResponseSchema = z.object({
                 counted: z
                     .number()
                     .describe(
-                        "Failures that were the final answer to a caller. Listing health counts these; the rest were retried.",
+                        "Failures that were the final answer to a caller; the rest were retried. Listing health uses only the latest 50 final calls.",
                     ),
                 fromPollinations: z
                     .number()

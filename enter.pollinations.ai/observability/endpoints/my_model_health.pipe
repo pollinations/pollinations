@@ -7,9 +7,9 @@ One GROUPING SETS pass returns two kinds of row:
 - `failure_group` 0: one row per day with the 2xx (`succeeded`) and 5xx
   (`failed`) calls the model's upstream answered.
 - `failure_group` 1: one row per 5xx status, error code and host, with
-  `counted` (failures that were the final answer to a caller, which listing
-  health counts; the rest were retried), calls from Pollinations checks and
-  from the owner, and the latest message.
+  `counted` (failures that were the final answer to a caller; the rest were
+  retried), calls from Pollinations checks and from the owner, and the latest
+  message.
 
 Fallback attempts are excluded: they ran on another owner's model, whose host
 and errors are not this owner's to see. `host` is the upstream hostname Gen

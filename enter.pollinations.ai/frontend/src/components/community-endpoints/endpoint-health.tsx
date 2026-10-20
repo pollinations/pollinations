@@ -131,8 +131,9 @@ export function EndpointHealth({
                 ) : (
                     <>
                         <p className="text-xs text-theme-text-muted">
-                            Counted failures were the final answer to a caller
-                            and lower your listing score. The rest were retried.
+                            Final failures were the answer a caller got; the
+                            rest were retried. Listing health uses the latest 50
+                            final calls.
                         </p>
                         <ul className="grid gap-2">
                             {health.failures.map((failure) => (
@@ -180,7 +181,7 @@ function HealthSummary({
                         <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                         {percent.format(rate)}% success
                         {listingRate !== null &&
-                            ` · ${reliable ? "above" : "below"} the 80% listing bar`}
+                            ` · ${reliable ? "listed" : "hidden"} (listing needs over 80%)`}
                     </span>
                     <span className="text-xs text-theme-text-muted">
                         {listingRate !== null
@@ -258,7 +259,7 @@ function FailureRow({ failure }: { failure: Health["failures"][number] }) {
                 </span>
                 <span className="text-xs text-theme-text-muted">
                     {failure.failures.toLocaleString()} failed ·{" "}
-                    {failure.counted.toLocaleString()} counted
+                    {failure.counted.toLocaleString()} final
                 </span>
             </div>
             {failure.message && (

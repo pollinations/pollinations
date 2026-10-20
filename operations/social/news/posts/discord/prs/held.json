@@ -4,8 +4,16 @@
       "merge_sha": "3d04a1deb2e23c3fb672c73c76776fa6119af3a2",
       "merged_at": "2026-10-20T04:12:38Z",
       "required": []
+    },
+    "17955": {
+      "merge_sha": "d0dd221d4b0941a22a973987cc33f3addaad3276",
+      "merged_at": "2026-10-20T16:50:08Z",
+      "required": [
+        "deploy-applications.yml:Deploy operations/kpi",
+        "deploy-cloudflare-production.yml:deploy-enter"
+      ]
     }
   },
-  "production": "40fb6987c79e4078f1f9a2cdba5ed6d66cc78070",
+  "production": "340381ad0c6452ef1c61e2a87c009ff5de7f1a0a",
   "master": "02b0575f1ae6daad402bb2782119d7752403ad01"
 }

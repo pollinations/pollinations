@@ -186,6 +186,11 @@ describe("against a local fake gen", () => {
                         choices: [{ message: { content: "OK" } }],
                     });
                 if (model === "vendor/cut-off") return reply("O", "length");
+                if (model === "vendor/zero-usage")
+                    return send(200, {
+                        choices: [{ message: { content: "No credits left." } }],
+                        usage: { prompt_tokens: 0, completion_tokens: 0 },
+                    });
                 const found = PROBES.find((p) => p.prompt === prompt);
                 if (!found) return reply("OK");
                 if (model === "vendor/chatty")
@@ -290,6 +295,7 @@ describe("against a local fake gen", () => {
             "vendor/broken": "http_500",
             "vendor/no-usage": "missing_usage",
             "vendor/cut-off": "truncated",
+            "vendor/zero-usage": "zero_usage",
         };
         for (const [candidate, reason] of Object.entries(expected)) {
             const report = await compare(candidate);

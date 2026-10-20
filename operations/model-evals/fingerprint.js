@@ -160,6 +160,9 @@ export async function checkHealth({ model, seed, api }) {
             throw new Error(`${reply.error}: fingerprinting cannot continue`);
         return { ok: false, reason: reply.error };
     }
+    // A canned notice (e.g. the upstream account is out of credits) bills no tokens.
+    if (!reply.usage.completion_tokens)
+        return { ok: false, reason: "zero_usage" };
     const read = readAnswer(reply.text, reply.finishReason, {
         pattern: /[\s\S]/,
     });
@@ -184,7 +187,6 @@ export async function buildReference({
         api,
     });
     return {
-        version: 1,
         probeSet: PROBE_SET_VERSION,
         model,
         status: "reference",

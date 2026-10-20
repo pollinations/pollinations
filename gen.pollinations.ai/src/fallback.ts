@@ -1,14 +1,12 @@
 import {
     type CommunityEndpointRuntime,
     isCommunityFallbackBalanceAllowed,
+    isCommunityFallbackPricingAllowed,
     MAX_FALLBACK_TARGETS,
+    staticFallbackRejection,
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
-import {
-    getPriceDefinitionForModel,
-    isFallbackPricingAllowed,
-    type ModelDefinition,
-} from "@shared/registry/registry.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import {
     firstContentPolicyMessage,
@@ -283,18 +281,6 @@ export function fallbackCandidates(
     return candidates;
 }
 
-/**
- * Whether `target` can serve as a fallback for a community-owned `from`.
- *
- * `from` is always a community endpoint here — a registry-declared (static)
- * primary is maintainer-authored and skips this check entirely (see the
- * `entry.communityEndpoint` gate in linkFallbackEntries). `target` may be
- * either a community endpoint or a static Pollinations model: either way,
- * `getPriceDefinitionForModel(target.definition)` is what it is billed at —
- * a community definition's `cost` is already its resolved
- * `communityPriceDefinition` (see `communityModelDefinition`) — so the same
- * pricing and balance rule applies whichever kind serves.
- */
 function isUsableCommunityFallback(
     from: GenerationModelEntry,
     target: GenerationModelEntry,
@@ -302,16 +288,6 @@ function isUsableCommunityFallback(
     if (target.eventType !== from.eventType) return false;
     const primary = from.communityEndpoint;
     if (!primary) return false;
-    const candidate = target.communityEndpoint;
-    if (candidate) {
-        if (usesAgentRunToken(candidate)) return false;
-        if (primary.modality !== candidate.modality) return false;
-        if (primary.imagePricing !== candidate.imagePricing) return false;
-    } else if (from.definition.category !== target.definition.category) {
-        // No community-side modality/imagePricing to compare against a
-        // static target; the resolved registry category is the equivalent.
-        return false;
-    }
     if (
         !from.supportedEndpoints.every((endpoint) =>
             target.supportedEndpoints.includes(endpoint),
@@ -319,20 +295,20 @@ function isUsableCommunityFallback(
     ) {
         return false;
     }
-    const targetPaidOnly = candidate
-        ? candidate.paidOnly
-        : (target.definition.paidOnly ?? false);
-    if (
-        !isCommunityFallbackBalanceAllowed(primary, {
-            paidOnly: targetPaidOnly,
-        })
-    ) {
-        return false;
+    const candidate = target.communityEndpoint;
+    if (!candidate) {
+        return (
+            staticFallbackRejection(
+                { ...primary, prices: primary },
+                target.definition,
+            ) === null
+        );
     }
-    return isFallbackPricingAllowed(
-        getPriceDefinitionForModel(from.definition),
-        getPriceDefinitionForModel(target.definition),
-    );
+    if (primary.modality !== candidate.modality) return false;
+    if (usesAgentRunToken(candidate)) return false;
+    if (primary.imagePricing !== candidate.imagePricing) return false;
+    if (!isCommunityFallbackBalanceAllowed(primary, candidate)) return false;
+    return isCommunityFallbackPricingAllowed(primary, candidate);
 }
 
 /** Resolves every model's declared ids once, before the request hot path. */
@@ -351,12 +327,6 @@ export function linkFallbackEntries(
             const target = byIdOrAlias.get(targetId);
             if (!target || target === entry) continue;
             if (entry.communityEndpoint) {
-                // A community owner's declared targets are validated below.
-                // A registry (static) primary's declared targets are not:
-                // they are maintainer-authored config, not user input, and
-                // are trusted the same way regardless of what kind of model
-                // they point at (see "trusts registry declarations" in
-                // fallback.test.ts).
                 const targetEndpoint = target.communityEndpoint;
                 if (
                     targetEndpoint?.visibility === "private" &&

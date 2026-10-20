@@ -39,6 +39,8 @@ function registryEntry(
         paidOnly: false,
         addedDate: 0,
         title: id,
+        inputModalities: ["text"],
+        outputModalities: ["text"],
     };
     return {
         id,
@@ -76,6 +78,7 @@ function communityEntry(
         api: "chat_completions",
         upstreamModel: id,
         bearerTokenCiphertext: "test",
+        modality: "text",
         inputModalities: ["text"],
         perUserRpm: null,
         paidOnly,
@@ -428,6 +431,61 @@ describe("registry fallback linking", () => {
             expect(
                 paidPrimary.fallbackEntries?.map((entry) => entry.id),
             ).toEqual(["static-paid"]);
+        });
+
+        it("rejects a static target that bills beyond its cheap base rate", () => {
+            // The caller pays the primary's rates for the target's usage, so a
+            // dearer variant, extra charges, other units or a cost above the
+            // discounted price cost us the gap.
+            const variant = registryEntry("static-variant", [], 5);
+            variant.definition.costVariants = {
+                long: { completionTextTokens: 20 },
+            };
+            const extras = registryEntry("static-extras", [], 5);
+            extras.definition.billing = { adjustments: [] };
+            const units = registryEntry("static-units", [], 1e-9);
+            units.definition.priceUnits = {
+                completionTextTokens: { unit: "megapixel", quantity: 1e6 },
+            };
+            const discounted = registryEntry("static-discounted", [], 12);
+            discounted.definition.priceMultiplier = 0.5;
+            // Enter must refuse what gen will not route, such as a model
+            // without the /text endpoints every community text model serves.
+            const chatOnly = registryEntry("static-chat-only", [], 5);
+            chatOnly.definition.supportedEndpoints = ["/v1/chat/completions"];
+            const primary = communityEntry(
+                "owner/primary",
+                "owner",
+                "public",
+                null,
+                ["static-variant", "static-extras", "static-units"],
+                10,
+            );
+            const second = communityEntry(
+                "owner/second",
+                "owner",
+                "public",
+                null,
+                ["static-discounted", "static-chat-only"],
+                10,
+            );
+            const entries = [
+                primary,
+                second,
+                variant,
+                extras,
+                units,
+                discounted,
+                chatOnly,
+            ];
+
+            linkFallbackEntries(
+                entries,
+                new Map(entries.map((entry) => [entry.id, entry])),
+            );
+
+            expect(primary.fallbackEntries).toBeUndefined();
+            expect(second.fallbackEntries).toBeUndefined();
         });
     });
 });

@@ -1,4 +1,4 @@
-import { GEMINI_TTS_VOICES } from "../../audio.ts";
+import { GEMINI_TTS_VOICES } from "../../audio/constants.ts";
 import type { ModelDefinition } from "../../registry";
 
 export const id = "google/gemini-3.8-flash-lite-tts";

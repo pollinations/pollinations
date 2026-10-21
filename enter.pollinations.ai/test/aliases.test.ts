@@ -1,4 +1,5 @@
-import { AUDIO_SERVICES, DEFAULT_AUDIO_MODEL } from "@shared/registry/audio";
+import { AUDIO_SERVICES } from "@shared/registry/audio";
+import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio/constants";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings";
 import { IMAGE_SERVICES } from "@shared/registry/image";
 import { MODEL3D_SERVICES } from "@shared/registry/model3d";

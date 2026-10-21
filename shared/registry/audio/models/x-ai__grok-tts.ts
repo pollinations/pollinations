@@ -1,4 +1,4 @@
-import { XAI_TTS_VOICES } from "../../audio.ts";
+import { XAI_TTS_VOICES } from "../../audio/constants.ts";
 import type { ModelDefinition } from "../../registry";
 
 export const id = "x-ai/grok-tts";

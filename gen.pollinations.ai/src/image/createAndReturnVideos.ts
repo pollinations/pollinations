@@ -3,7 +3,7 @@
  * Separate from image logic - no logo processing, no JPEG conversion, no EXIF metadata
  */
 
-import { getVideoModelIds } from "@shared/registry/image.ts";
+import { getVideoModelIds } from "@shared/registry/image/index.ts";
 import debug from "debug";
 import { callAlibabaVideo } from "./models/alibabaVideoModel.ts";
 import {

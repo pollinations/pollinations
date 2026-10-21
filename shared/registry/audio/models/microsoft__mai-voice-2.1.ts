@@ -1,4 +1,4 @@
-import { MAI_VOICE_21_VOICES } from "../../audio.ts";
+import { MAI_VOICE_21_VOICES } from "../../audio/constants.ts";
 import type { ModelDefinition } from "../../registry";
 
 export const id = "microsoft/mai-voice-2.1";

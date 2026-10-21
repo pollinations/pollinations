@@ -1,19 +1,29 @@
 import { z } from "zod";
 import { SAFETY_FEATURES } from "../schemas/safety";
-import type { ModelDefinition } from "./registry";
 import {
     MODEL_CATEGORIES,
     MODEL_INPUT_MODALITIES,
     MODEL_OUTPUT_MODALITIES,
     PRICE_UNITS,
     VIDEO_CAPABILITIES,
-} from "./registry";
+} from "./model-constants";
+import type { ModelDefinition } from "./registry";
 
 // Runtime contract for one-model-per-file registry entries. The per-file
 // `satisfies ModelDefinition` checks authoring against the static type; this
 // schema checks the loaded object at build/startup (typos fail the loader,
 // not production traffic).
-const costSchema = z.record(z.string(), z.number());
+// A cost record may price from getters (FLUX.3 quotes a dated launch
+// discount), so validate without copying: `z.record` would read each getter
+// once at module load and freeze that rate for the life of the isolate.
+const costSchema = z.custom<Record<string, number>>(
+    (value) =>
+        Object.prototype.toString.call(value) === "[object Object]" &&
+        Object.values(value as object).every(
+            (entry) => typeof entry === "number" && Number.isFinite(entry),
+        ),
+    { message: "expected a record of finite numbers" },
+);
 
 export const ModelFileSchema = z.strictObject({
     aliases: z.array(z.string()),
@@ -85,7 +95,8 @@ export const ModelFileSchema = z.strictObject({
 
 // Compile-time drift guard: everything the schema accepts must be a valid
 // ModelDefinition. The reverse (schema not rejecting a valid definition) is
-// enforced at runtime: the equivalence test parses every legacy entry.
+// enforced at runtime: the loaders parse every model file at startup, so a
+// schema that is too strict fails the catalog, not production traffic.
 type SchemaMatchesDefinition<
     TSchema = z.output<typeof ModelFileSchema>,
     TDef = ModelDefinition,

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { XAI_TTS_VOICES } from "../../shared/registry/audio.ts";
+import { XAI_TTS_VOICES } from "../../shared/registry/audio/constants.ts";
 import { generateXaiSpeech } from "../src/routes/audio.ts";
 
 const log = {

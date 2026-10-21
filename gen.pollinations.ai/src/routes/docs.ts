@@ -1,13 +1,14 @@
 import { Scalar } from "@scalar/hono-api-reference";
 import { getPublicUrl } from "@shared/public-origin.ts";
-import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
+import { ELEVENLABS_VOICES } from "@shared/registry/audio/constants.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings/index.ts";
-import { getImageModelIds, getVideoModelIds } from "@shared/registry/image.ts";
-import { getModel3dModelsInfo } from "@shared/registry/model-info.ts";
 import {
-    DEFAULT_REALTIME_MODEL,
-    REALTIME_MODEL_NAMES,
-} from "@shared/registry/realtime.ts";
+    getImageModelIds,
+    getVideoModelIds,
+} from "@shared/registry/image/index.ts";
+import { getModel3dModelsInfo } from "@shared/registry/model-info.ts";
+import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime/constants.ts";
+import { REALTIME_MODEL_NAMES } from "@shared/registry/realtime/index.ts";
 import {
     getVisibleAudioModels,
     getVisibleImageModels,

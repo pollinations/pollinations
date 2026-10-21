@@ -1,6 +1,5 @@
 /// <reference types="vite/client" />
 import { z } from "zod";
-import type { EMBEDDING_SERVICES as LegacyEmbeddingServices } from "../embeddings.ts";
 import {
     type FallbackDefinition,
     type FallbackMap,
@@ -107,8 +106,5 @@ for (const [parent, list] of Object.entries(pending)) {
     routes[parent] = Object.fromEntries(list.map((r) => [r.id, r.def]));
 }
 
-export const EMBEDDING_SERVICES = mergeFallbacks(
-    base,
-    routes,
-) as unknown as typeof LegacyEmbeddingServices;
+export const EMBEDDING_SERVICES = mergeFallbacks(base, routes);
 export type EmbeddingServiceId = keyof typeof EMBEDDING_SERVICES;

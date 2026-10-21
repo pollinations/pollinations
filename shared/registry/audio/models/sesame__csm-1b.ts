@@ -1,4 +1,4 @@
-import { CSM_VOICES } from "../../audio.ts";
+import { CSM_VOICES } from "../../audio/constants.ts";
 import type { ModelDefinition } from "../../registry";
 
 export const id = "sesame/csm-1b";

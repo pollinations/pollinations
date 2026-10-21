@@ -1,5 +1,5 @@
 import { defineCostVariants, matchResolution } from "../../cost-variants";
-import { FLUX3_LAUNCH_DISCOUNT_END } from "../../image.ts";
+import { FLUX3_LAUNCH_DISCOUNT_END } from "../../image/constants.ts";
 import type { ModelDefinition } from "../../registry";
 
 export const id = "black-forest-labs/flux-3-image";

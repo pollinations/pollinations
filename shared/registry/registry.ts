@@ -17,42 +17,34 @@ export {
 
 import { EMBEDDING_SERVICES, type EmbeddingServiceId } from "./embeddings";
 import { IMAGE_SERVICES, type ImageModelName } from "./image";
+import type {
+    Category,
+    ModelInputModality,
+    ModelOutputModality,
+    PRICE_UNITS,
+    VideoCapability,
+} from "./model-constants";
 import { MODEL3D_SERVICES, type Model3dName } from "./model3d";
 import type { BillingRateDefinition, PricingDimension } from "./public-pricing";
 import { REALTIME_SERVICES, type RealtimeModelName } from "./realtime";
 import { TEXT_SERVICES, type TextModelName } from "./text";
 
-export const MODEL_CATEGORIES = [
-    "text",
-    "image",
-    "audio",
-    "video",
-    "3d",
-    "embedding",
-    "realtime",
-] as const;
-
-export type Category = (typeof MODEL_CATEGORIES)[number];
-
-export const MODEL_INPUT_MODALITIES = [
-    "text",
-    "image",
-    "audio",
-    "video",
-] as const;
-
-export type ModelInputModality = (typeof MODEL_INPUT_MODALITIES)[number];
-
-export const MODEL_OUTPUT_MODALITIES = [
-    "text",
-    "image",
-    "audio",
-    "video",
-    "embedding",
-    "3d",
-] as const;
-
-export type ModelOutputModality = (typeof MODEL_OUTPUT_MODALITIES)[number];
+export type {
+    Category,
+    ModelInputModality,
+    ModelOutputModality,
+    VideoCapability,
+} from "./model-constants";
+// The shared model vocabulary lives in a glob-free module so schema consumers
+// (and the code-agent bundle) can validate against it without loading the
+// catalogs. Re-exported here to keep the registry entry point complete.
+export {
+    MODEL_CATEGORIES,
+    MODEL_INPUT_MODALITIES,
+    MODEL_OUTPUT_MODALITIES,
+    PRICE_UNITS,
+    VIDEO_CAPABILITIES,
+} from "./model-constants";
 
 export type UsageType =
     | "promptTextTokens"
@@ -73,8 +65,6 @@ export type UsageType =
 
 // Usage represents raw usage metrics (tokens, seconds, etc.)
 export type Usage = { [K in UsageType]?: number };
-
-export const PRICE_UNITS = ["megapixel", "token", "byte"] as const;
 
 // Billed unit for a usage field whose name or category default misdescribes
 // it. `quantity` usage units make one billed unit. Display-only.
@@ -110,18 +100,6 @@ export type ModelName =
     | EmbeddingServiceId
     | RealtimeModelName
     | Model3dName;
-
-export const VIDEO_CAPABILITIES = [
-    "start_frame",
-    "end_frame",
-    "keyframes",
-    "reference_images",
-    "reference_videos",
-    "reference_audios",
-    "audio_output",
-] as const;
-
-export type VideoCapability = (typeof VIDEO_CAPABILITIES)[number];
 
 export type BillingAdjustmentRule = BillingRateDefinition & {
     // Counts billable units from the response output (stream outputs carry a

@@ -1,4 +1,4 @@
-import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import { DEFAULT_TEXT_MODEL } from "@shared/registry/text/constants.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { z } from "zod";
 import { parseBooleanLike } from "@/util.ts";

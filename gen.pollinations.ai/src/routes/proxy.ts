@@ -38,22 +38,18 @@ const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
     baseResolver(schema, { reused: "ref" });
 
 import { validator } from "@shared/middleware/validator.ts";
-import { AUDIO_VOICES } from "@shared/registry/audio.ts";
+import { AUDIO_VOICES } from "@shared/registry/audio/constants.ts";
+import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image/constants.ts";
 import {
-    DEFAULT_IMAGE_MODEL,
     getImageModelIds,
     getVideoModelIds,
-} from "@shared/registry/image.ts";
+} from "@shared/registry/image/index.ts";
 import { ModelInfoSchema } from "@shared/registry/model-info.ts";
 import { keyAllowsModel } from "@shared/registry/model-permissions.ts";
-import {
-    DEFAULT_3D_MODEL,
-    getModel3dModelIds,
-} from "@shared/registry/model3d.ts";
-import {
-    DEFAULT_REALTIME_MODEL,
-    REALTIME_MODEL_NAMES,
-} from "@shared/registry/realtime.ts";
+import { DEFAULT_3D_MODEL } from "@shared/registry/model3d/constants.ts";
+import { getModel3dModelIds } from "@shared/registry/model3d/index.ts";
+import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime/constants.ts";
+import { REALTIME_MODEL_NAMES } from "@shared/registry/realtime/index.ts";
 import {
     CreateDecisionRequestSchema,
     CreateDecisionResponseSchema,

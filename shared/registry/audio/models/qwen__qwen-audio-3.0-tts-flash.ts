@@ -1,4 +1,4 @@
-import { QWEN_AUDIO_TTS_VOICES } from "../../audio.ts";
+import { QWEN_AUDIO_TTS_VOICES } from "../../audio/constants.ts";
 import type { ModelDefinition } from "../../registry";
 
 export const id = "qwen/qwen-audio-3.0-tts-flash";

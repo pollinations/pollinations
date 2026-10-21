@@ -1,4 +1,4 @@
-import { ELEVENLABS_VOICES } from "../../audio.ts";
+import { ELEVENLABS_VOICES } from "../../audio/constants.ts";
 import type { ModelDefinition } from "../../registry";
 
 export const id = "elevenlabs/eleven-v3";

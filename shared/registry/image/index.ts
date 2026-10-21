@@ -1,6 +1,5 @@
 /// <reference types="vite/client" />
 import { z } from "zod";
-import type { IMAGE_SERVICES as LegacyImageServices } from "../image.ts";
 import {
     type FallbackDefinition,
     type FallbackMap,
@@ -105,8 +104,19 @@ for (const [parent, list] of Object.entries(pending)) {
     routes[parent] = Object.fromEntries(list.map((r) => [r.id, r.def]));
 }
 
-export const IMAGE_SERVICES = mergeFallbacks(
-    base,
-    routes,
-) as unknown as typeof LegacyImageServices;
+export const IMAGE_SERVICES = mergeFallbacks(base, routes);
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
+
+const isVideoService = (svc: {
+    outputModalities?: readonly string[];
+}): boolean => svc.outputModalities?.includes("video") ?? false;
+
+export const getVideoModelIds = (): string[] =>
+    Object.keys(IMAGE_SERVICES).filter((id) =>
+        isVideoService(IMAGE_SERVICES[id as ImageModelName]),
+    );
+
+export const getImageModelIds = (): string[] =>
+    Object.keys(IMAGE_SERVICES).filter(
+        (id) => !isVideoService(IMAGE_SERVICES[id as ImageModelName]),
+    );

@@ -1,15 +1,17 @@
 import { z } from "zod";
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
 import { MCP_SERVER_IDS } from "./registry/mcp.ts";
-import type { ModelCapability } from "./registry/model-info.ts";
 import {
-    type Category,
     MODEL_INPUT_MODALITIES,
     MODEL_OUTPUT_MODALITIES,
-    type ModelDefinition,
-    type ModelInputModality,
-    type ModelOutputModality,
-    type PriceDefinition,
+} from "./registry/model-constants.ts";
+import type { ModelCapability } from "./registry/model-info.ts";
+import type {
+    Category,
+    ModelDefinition,
+    ModelInputModality,
+    ModelOutputModality,
+    PriceDefinition,
 } from "./registry/registry.ts";
 import {
     OPENAI_CHAT_USAGE_PATHS,

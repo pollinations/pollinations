@@ -1,5 +1,5 @@
 import { validator } from "@shared/middleware/validator.ts";
-import { DEFAULT_3D_MODEL } from "@shared/registry/model3d.ts";
+import { DEFAULT_3D_MODEL } from "@shared/registry/model3d/constants.ts";
 import {
     CreateDecisionRequestSchema,
     DEFAULT_DECISION_MODEL,

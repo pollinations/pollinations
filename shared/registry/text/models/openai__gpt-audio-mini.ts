@@ -1,6 +1,6 @@
 import { perMillion } from "../../price-helpers";
 import type { ModelDefinition } from "../../registry";
-import { AUDIO_VOICES } from "../../text.ts";
+import { AUDIO_VOICES } from "../../text/constants.ts";
 import { CHAT_PARAMETERS } from "../../text-parameters";
 
 export const id = "openai/gpt-audio-mini";

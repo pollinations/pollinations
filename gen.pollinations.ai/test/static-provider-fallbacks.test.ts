@@ -1,8 +1,7 @@
+/// <reference types="vite/client" />
 import { env } from "cloudflare:test";
 import { AUDIO_SERVICES } from "@shared/registry/audio/index.ts";
-import { AUDIO_FALLBACKS } from "@shared/registry/audio-fallbacks.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image/index.ts";
-import { IMAGE_FALLBACKS } from "@shared/registry/image-fallbacks.ts";
 import { mergeFallbacks } from "@shared/registry/merge-fallbacks.ts";
 import { MODEL3D_SERVICES } from "@shared/registry/model3d/index.ts";
 import {
@@ -13,7 +12,6 @@ import {
     type ModelDefinition,
 } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text/index.ts";
-import { TEXT_FALLBACKS } from "@shared/registry/text-fallbacks.ts";
 import { describe, expect, it } from "vitest";
 import { findModelByName } from "../src/text/availableModels.ts";
 import { createBedrockNativeConfig } from "../src/text/configs/providerConfigs.ts";
@@ -121,6 +119,48 @@ const OPENROUTER_ROUTES = [
     ],
     ["tencent/hy3:openrouter:phala", "tencent/hy3", "phala"],
 ] as const;
+
+// Rebuild the parent→routes maps from the one-model-per-file route
+// declarations the loaders merge, so these checks do not depend on the
+// loader's merge output.
+type RouteFile = { id: string; parent: string; order: number };
+
+function routeFallbackMap(
+    modules: Record<string, RouteFile>,
+): Record<string, Record<string, unknown>> {
+    const byParent = new Map<string, RouteFile[]>();
+    for (const mod of Object.values(modules)) {
+        const list = byParent.get(mod.parent) ?? [];
+        list.push(mod);
+        byParent.set(mod.parent, list);
+    }
+    return Object.fromEntries(
+        [...byParent].map(([parent, list]) => [
+            parent,
+            Object.fromEntries(
+                list
+                    .sort((a, b) => a.order - b.order)
+                    .map((route) => [route.id, {}]),
+            ),
+        ]),
+    );
+}
+
+const TEXT_FALLBACKS = routeFallbackMap(
+    import.meta.glob("../../shared/registry/text/routes/*.ts", {
+        eager: true,
+    }) as Record<string, RouteFile>,
+);
+const IMAGE_FALLBACKS = routeFallbackMap(
+    import.meta.glob("../../shared/registry/image/routes/*.ts", {
+        eager: true,
+    }) as Record<string, RouteFile>,
+);
+const AUDIO_FALLBACKS = routeFallbackMap(
+    import.meta.glob("../../shared/registry/audio/routes/*.ts", {
+        eager: true,
+    }) as Record<string, RouteFile>,
+);
 
 function fallbackRoutes(fallbacks: Record<string, Record<string, unknown>>) {
     return Object.fromEntries(
@@ -1505,7 +1545,9 @@ describe("static provider fallbacks", () => {
         });
         const { promptTextTokens, completionTextTokens } =
             TEXT_SERVICES[primary].cost;
-        const quoted = 1000 * promptTextTokens + 100 * completionTextTokens;
+        const quoted =
+            1000 * (promptTextTokens as number) +
+            100 * (completionTextTokens as number);
         expect(billed.cost.totalCost).toBeCloseTo(quoted, 12);
         expect(billed.price.totalPrice).toBeCloseTo(quoted, 12);
     });

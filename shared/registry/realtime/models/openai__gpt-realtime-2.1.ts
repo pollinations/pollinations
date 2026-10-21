@@ -1,4 +1,7 @@
-import { OPENAI_REALTIME_BASE, OPENAI_REALTIME_COST } from "../../realtime.ts";
+import {
+    OPENAI_REALTIME_BASE,
+    OPENAI_REALTIME_COST,
+} from "../../realtime/constants.ts";
 import { OPENAI_REALTIME_CACHE_BILLING } from "../../realtime-billing";
 import type { ModelDefinition } from "../../registry";
 

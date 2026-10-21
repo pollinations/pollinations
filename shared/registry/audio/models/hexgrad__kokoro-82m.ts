@@ -1,4 +1,4 @@
-import { KOKORO_VOICES } from "../../audio.ts";
+import { KOKORO_VOICES } from "../../audio/constants.ts";
 import type { ModelDefinition } from "../../registry";
 
 export const id = "hexgrad/kokoro-82m";

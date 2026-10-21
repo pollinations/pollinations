@@ -1,12 +1,15 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
+import { MODEL_CATEGORIES } from "../registry/model-constants.ts";
 import {
     AGENT_FIELD_DESCRIPTIONS,
     ModelHealthSchema,
-} from "../registry/model-info.ts";
-import { MODEL_CATEGORIES } from "../registry/registry.ts";
-import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
+} from "../registry/model-metadata.ts";
+import {
+    AUDIO_VOICES,
+    DEFAULT_TEXT_MODEL,
+} from "../registry/text/constants.ts";
 import { SafeSchema } from "./safety.ts";
 
 const FunctionParametersSchema = z.record(z.string(), z.any());

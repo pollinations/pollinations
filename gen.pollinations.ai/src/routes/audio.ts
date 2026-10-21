@@ -5,15 +5,15 @@ import {
     UpstreamError,
 } from "@shared/error.ts";
 import {
-    AUDIO_SERVICES,
-    type AudioModelName,
-} from "@shared/registry/audio/index.ts";
-import {
     AUDIO_VOICES,
     GEMINI_TTS_VOICES,
     MAI_VOICE_21_VOICES,
     resolveElevenLabsVoiceId,
-} from "@shared/registry/audio.ts";
+} from "@shared/registry/audio/constants.ts";
+import {
+    AUDIO_SERVICES,
+    type AudioModelName,
+} from "@shared/registry/audio/index.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,

@@ -1,8 +1,9 @@
 import {
+    getImageModelIds,
+    getVideoModelIds,
     IMAGE_SERVICES,
     type ImageModelName,
 } from "@shared/registry/image/index.ts";
-import { getImageModelIds, getVideoModelIds } from "@shared/registry/image.ts";
 import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
 import { describe, expect, it } from "vitest";
 

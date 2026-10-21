@@ -2,12 +2,12 @@ import {
     type CommunityEndpointRuntime,
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
-import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
-import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
-import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
-import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
+import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio/constants.ts";
+import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings/constants.ts";
+import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image/constants.ts";
+import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime/constants.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
-import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import { DEFAULT_TEXT_MODEL } from "@shared/registry/text/constants.ts";
 import { MODEL_REQUESTED_HEADER } from "@shared/registry/usage-headers.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import type { SafetyFeature } from "@shared/schemas/safety.ts";

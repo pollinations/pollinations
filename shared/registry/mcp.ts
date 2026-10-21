@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "WIKIPEDIA_MCP";
+    | "WIKIPEDIA_MCP"
+    | "MACHINES_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -222,6 +223,19 @@ export const MCP_SERVERS = [
         billing: "downstream",
         pricing: {
             description: "Wikipedia lookups are free. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "machines",
+        name: "Machines",
+        description:
+            "Start, pause, resume, and run commands and file operations in Linux sandboxes.",
+        binding: "MACHINES_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
             rates: [],
         },
     },

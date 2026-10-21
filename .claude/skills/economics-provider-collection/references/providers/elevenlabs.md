@@ -50,7 +50,9 @@ Collection steps:
 2. Verify the response includes `columns` with `timestamp`, `product_type`,
    `model`, and `total_cost`.
 3. Sum `total_cost` by month, product, and model. Preserve the raw provider
-   model identifier in `model` and the product type in `resource_sku`.
+   model identifier in `model` and the product type in `resource_sku`. Keep
+   only rows with `timestamp` before the exclusive end: the API can include
+   zero-cost rows stamped exactly at that end boundary.
 4. Save invoice/top-up/subscription evidence separately when reconciling cash.
 5. Use this skill for saved raw evidence.
 

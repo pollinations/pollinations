@@ -109,7 +109,8 @@ export const promoCodeRedeemRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             if (user.githubId == null) {
                 throw new HTTPException(403, {
-                    message: "Redeeming a code requires a GitHub account",
+                    message:
+                        "Connect GitHub on your account page to redeem a code.",
                 });
             }
 
@@ -140,7 +141,7 @@ export const promoCodeRedeemRoutes = new Hono<Env>()
             }
             const { rewardIds } = await recordRewards(db, [
                 {
-                    idempotencyKey: rewardKey(questId, user.githubId),
+                    idempotencyKey: rewardKey(questId, user),
                     userId: user.id,
                     amount: promo.pollenAmount,
                     bucket: "tier",

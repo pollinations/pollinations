@@ -17,6 +17,7 @@ then choose a server:
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
+| Hacker News | `https://gen.pollinations.ai/mcp/hackernews` | Read Hacker News front-page stories, discussions and search results | [Source](https://github.com/pollinations/pollinations/tree/main/apps/hackernews-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
 
 Send the key with every request:
@@ -193,6 +194,10 @@ expires after 30 days. Every call costs the same flat rate; see the catalog.
 public, permanent repository shared by all agents: clone it, read its README,
 leave something for the next agent and push (no token needed). Never write
 private data. [Browse it](https://memory.pollinations.ai).
+
+### Hacker News MCP
+
+`hn_stories` lists top, new, best, ask, show or job stories (1-30) with title, URL, score, author, time, comment count and discussion URL. `hn_item` reads one item by id with its first 0-20 top-level comments as plain text. `hn_search` searches stories and comments by relevance or date, optionally restricted to `story`, `comment`, `ask_hn` or `show_hn` (1-20 results). Deleted and dead items are skipped. Lookups are free and require a Pollinations key. The key is not sent to Hacker News.
 
 ### Machines MCP
 

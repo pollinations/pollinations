@@ -1,0 +1,8 @@
+{
+  "platform": "discord",
+  "scope": "models_weekly",
+  "date": "2026-10-21",
+  "previous_date": "2026-10-14",
+  "generated_at": "2026-10-21T14:05:28.683408+00:00",
+  "text": "<@&1424461167883194418> Model updates — 2026-10-21\n\n### 🆕 New\n- 🧠 **DeepSeek V4.1 Flash 1017** (DeepSeek) — image input, reasoning and tools\n- 🧠 **Microsoft-Decision-1** (Microsoft) — typed choices with probabilities\n- 🧠 **Decider V1.1 27B** (Perplexity) — typed choices, scores and yes/no probabilities\n- 🧠 **Lightning Text v2** (InferencePort) — image input, tools and JSON output\n- 🧠 **Lightning Text v2.1** (InferencePort) — image input and tools; routes to Qwen3.8 27B\n- 🎨 **FLUX.3 Image Klein** (Black Forest Labs) — text-to-image and multi-reference editing\n- 🎬 **Mirelo SFX 2.0** (Mirelo AI) — adds synchronized sound effects to video\n- 🎬 **Kling 3.0 Standard** (Kuaishou) — 720p video with optional synchronized audio\n\n### ⬇️ Price cuts\n- 🧠 Text: Claude Haiku 5.5 · Claude Sonnet 5.5 · Claude Opus 5.5 · Claude Fable 5.1 (~25% output) · Liquid D1 (~50% input) · MiMo V2.6 Flash · MiMo V2.6 Pro (~5% output) · Grok 4.20 (~60% output)\n\n### ⬆️ Price increases\n- 🧠 Text: Gemini 3.1 Pro Preview — image input at ≥200K context doubled; output rate unchanged\n\n### 🔓 Now free\n- DeepSeek V4.1 Flash\n\nExplore at https://gen.pollinations.ai/docs"
+}

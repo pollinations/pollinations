@@ -85,8 +85,4 @@ test("session tokens are refused in the query string, expired, forged or for a b
         .bind(userId)
         .run();
     expect((await profile(bearer(token))).status).toBe(403);
-    // Six workerd round-trips plus a fixture sign-in, against the 5s default:
-    // it passes in well under a second, but the CI runner starves the worker
-    // once the whole suite is loaded, and the same budget covers device-auth
-    // and oauth-code, which set 30s for the same reason.
-}, 30000);
+});

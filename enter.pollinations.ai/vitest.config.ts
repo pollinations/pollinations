@@ -48,6 +48,13 @@ export default defineWorkersConfig(async ({ mode }) => {
             ],
             reporters: ["default"],
             teardownTimeout: 5000,
+            // The pool runs every file in one worker (singleWorker), so the
+            // 342-module registry graph and every fixture share one runtime.
+            // Multi-step auth tests (session-token, fraud-ban, device-auth,
+            // oauth-code) fit in well under a second in isolation but blow
+            // past vitest's 5s default once the suite has loaded the runner.
+            // 30s is the budget those tests already set individually.
+            testTimeout: 30000,
             poolOptions: {
                 workers: {
                     singleWorker: true,

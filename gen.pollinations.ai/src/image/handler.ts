@@ -502,11 +502,14 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
             directUrl ||
             (ip ? `${scheme}://${ip}${port ? `:${port}` : ""}` : "");
 
-        if (!url) return handleListRegisteredServers(c);
-
+        // The listing discloses every contributor GPU endpoint, so it needs
+        // the same backend token as writes.
         if (!(await isAuthorizedRegisterWrite(c, {}))) {
             return c.json({ success: false, message: "Unauthorized" }, 401);
         }
+
+        if (!url) return handleListRegisteredServers(c);
+
         if (!isValidType(typeParam)) {
             return c.json(
                 { success: false, message: `Invalid type "${typeParam}"` },

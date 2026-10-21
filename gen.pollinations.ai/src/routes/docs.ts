@@ -1,4 +1,5 @@
 import { Scalar } from "@scalar/hono-api-reference";
+import { getPublicUrl } from "@shared/public-origin.ts";
 import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import { getImageModelIds, getVideoModelIds } from "@shared/registry/image.ts";
@@ -12,17 +13,24 @@ import {
     getVisibleImageModels,
     getVisibleTextModels,
 } from "@shared/registry/registry.ts";
+import {
+    isPublicEnterPath,
+    isPublicQuestCatalogPath,
+    isX402KeyPath,
+    publicEnterPath,
+} from "@shared/utils/public-docs.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { generateSpecs } from "hono-openapi";
 import { stringify as yamlStringify } from "yaml";
 import type { Env } from "@/env.ts";
+import BRAND_LOCKUP_SVG from "../../../packages/ui/src/brand/lockup-horizontal.svg?raw";
 import LOGO_WHITE_SVG from "../../../packages/ui/src/brand/lockup-horizontal-white.svg?raw";
+import { authenticateDocsRequest } from "../docs-client/request-auth.ts";
 import { CODE_SAMPLES, RESPONSE_EXAMPLES } from "./docs-samples.ts";
 import {
     API_REFERENCE_CUSTOM_CSS,
-    POLLINATIONS_HEADER_CSS,
-    POLLINATIONS_HEADER_SCALAR_CSS,
+    POLLINATIONS_DOCS_CSS,
 } from "./docs-styles.ts";
 import { injectDocsSocialHead, SEO_TITLE } from "./seo.ts";
 
@@ -41,6 +49,7 @@ import CLI_SKILL from "../../../packages/polli-cli/SKILL.md?raw";
 import CLI_TASKS from "../../../packages/polli-cli/TASKS.md?raw";
 import MODEL3D_GENERATION_MD from "../docs/3d-generation.md?raw";
 import ACCOUNT_MD from "../docs/account.md?raw";
+import ASYNC_JOBS_MD from "../docs/async-jobs.md?raw";
 import AUDIO_GENERATION_MD from "../docs/audio-generation.md?raw";
 import AUTHENTICATION_MD from "../docs/authentication.md?raw";
 import EMBEDDINGS_MD from "../docs/embeddings.md?raw";
@@ -54,14 +63,17 @@ import PUBLIC_STATS_MD from "../docs/public-stats.md?raw";
 import QUICK_START_MD from "../docs/quick-start.md?raw";
 import SAFETY_MD from "../docs/safety.md?raw";
 import SANDBOXES_MD from "../docs/sandboxes.md?raw";
+import SANDBOXES_API_MD from "../docs/sandboxes-api.md?raw";
 import TEXT_GENERATION_MD from "../docs/text-generation.md?raw";
 import VIDEO_GENERATION_MD from "../docs/video-generation.md?raw";
+import X402_PREPAID_KEYS_MD from "../docs/x402-prepaid-keys.md?raw";
 
 type OpenApiSchema = Record<string, unknown>;
 
 const DOC_TAGS = {
     quickStart: "Quick Start",
     authentication: "Authentication",
+    x402PrepaidKeys: "x402 Prepaid Keys",
     userWallets: "Connect User Wallets",
     publishModel: "Publish a Model",
     communityModels: "Community Models",
@@ -71,11 +83,13 @@ const DOC_TAGS = {
     codingHarnesses: "Coding Harnesses",
     mcpServers: "MCP Servers",
     sandboxes: "Sandboxes",
+    sandboxesApi: "Sandboxes API",
     errors: "Errors",
     safety: "Safety",
     text: "Text",
     image: "Image",
     video: "Video",
+    jobs: "Jobs",
     realtime: "Realtime",
     model3d: "3D",
     audio: "Audio",
@@ -98,6 +112,7 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
     "✍️ Text": DOC_TAGS.text,
     "🖼️ Image": DOC_TAGS.image,
     "🎬 Video": DOC_TAGS.video,
+    "🧰 Jobs": DOC_TAGS.jobs,
     "🎙️ Realtime": DOC_TAGS.realtime,
     "🧊 3D": DOC_TAGS.model3d,
     "🔊 Audio": DOC_TAGS.audio,
@@ -111,12 +126,22 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
 const docsIcon = (body: string): string =>
     `<svg class="ph-doc-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
 
+const terminalIcon = docsIcon(
+    '<polyline points="4 8 8 12 4 16" /><line x1="12" y1="20" x2="20" y2="20" />',
+);
+
 const DOC_TAG_ICON_HTML: Record<string, string> = {
+    Introduction: docsIcon(
+        '<path d="M12 7v14" /><path d="M3 3h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5v17h-5a4 4 0 0 0-4 1 4 4 0 0 0-4-1H3z" />',
+    ),
     [DOC_TAGS.quickStart]: docsIcon(
         '<path d="M7 20h10" /><path d="M10 20c5.5-2.5.8-6.4 3-10" /><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z" /><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z" />',
     ),
     [DOC_TAGS.authentication]: docsIcon(
         '<rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />',
+    ),
+    [DOC_TAGS.x402PrepaidKeys]: docsIcon(
+        '<rect x="3" y="7" width="18" height="10" rx="2" /><path d="M7 12h10" /><path d="m13 9 3 3-3 3" />',
     ),
     [DOC_TAGS.userWallets]: docsIcon(
         '<path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v2H5a2 2 0 0 0-2 2V7Z" /><path d="M3 11a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6Z" /><circle cx="17" cy="14" r="1.25" fill="currentColor" />',
@@ -133,18 +158,15 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     [DOC_TAGS.publishAgent]: docsIcon(
         '<rect x="4" y="7" width="16" height="13" rx="2" /><path d="M9 3h6" /><path d="M12 3v4" /><circle cx="9" cy="13" r="1" fill="currentColor" /><circle cx="15" cy="13" r="1" fill="currentColor" /><path d="M9 17h6" />',
     ),
-    [DOC_TAGS.cli]: docsIcon(
-        '<polyline points="4 8 8 12 4 16" /><line x1="12" y1="20" x2="20" y2="20" />',
-    ),
+    [DOC_TAGS.cli]: terminalIcon,
     [DOC_TAGS.codingHarnesses]: docsIcon(
         '<path d="M4 7h16" /><path d="M4 17h16" /><circle cx="9" cy="7" r="2" fill="currentColor" /><circle cx="15" cy="17" r="2" fill="currentColor" />',
     ),
     [DOC_TAGS.mcpServers]: docsIcon(
         '<rect x="2" y="7" width="8" height="10" rx="1.5" /><rect x="14" y="7" width="8" height="10" rx="1.5" /><path d="M10 12h4" />',
     ),
-    [DOC_TAGS.sandboxes]: docsIcon(
-        '<rect x="3" y="4" width="18" height="16" rx="2" /><polyline points="7 9 10 12 7 15" /><line x1="13" y1="15" x2="17" y2="15" />',
-    ),
+    [DOC_TAGS.sandboxes]: terminalIcon,
+    [DOC_TAGS.sandboxesApi]: terminalIcon,
     [DOC_TAGS.errors]: docsIcon('<path d="M18 6 6 18M6 6l12 12" />'),
     [DOC_TAGS.safety]: docsIcon('<polyline points="20 6 9 17 4 12" />'),
     [DOC_TAGS.text]: docsIcon(
@@ -155,6 +177,9 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     ),
     [DOC_TAGS.video]: docsIcon(
         '<path d="m22 8-6 4 6 4V8z" /><rect x="2" y="6" width="14" height="12" rx="2" />',
+    ),
+    [DOC_TAGS.jobs]: docsIcon(
+        '<path d="M3 6h18v15H3z" /><path d="M8 6V3h8v3" /><path d="M3 12h18" />',
     ),
     [DOC_TAGS.realtime]: docsIcon(
         '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><path d="M12 19v3" />',
@@ -184,6 +209,32 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
         '<polyline points="3 17 9 11 13 15 21 7" /><polyline points="15 7 21 7 21 13" />',
     ),
 };
+
+// Support stays available before sign-in; the avatar links to the dashboard.
+const DOCS_MENU_LINKS = [
+    {
+        href: "https://discord.com/channels/885844321461485618/889573359111774329",
+        label: "Need help?",
+        icon: "discord",
+    },
+    {
+        href: "https://github.com/pollinations/pollinations/issues",
+        label: "Found a bug?",
+        icon: "bug",
+    },
+];
+
+const DOCS_SUPPORT_ICONS: Record<string, string> = {
+    discord: `<svg class="ph-doc-icon" aria-hidden="true" viewBox="0 0 24 24"><path fill="currentColor" d="M20.32 4.37A19.8 19.8 0 0 0 15.36 2.83a.07.07 0 0 0-.08.04c-.21.38-.45.88-.62 1.27a18.27 18.27 0 0 0-5.52 0 12.84 12.84 0 0 0-.63-1.27.08.08 0 0 0-.08-.04A19.74 19.74 0 0 0 3.47 4.37a.07.07 0 0 0-.03.03C.31 9.07-.55 13.61-.13 18.1a.08.08 0 0 0 .03.06 19.9 19.9 0 0 0 6.08 3.07.08.08 0 0 0 .09-.03c.47-.64.88-1.31 1.24-2.02a.08.08 0 0 0-.04-.1 13.08 13.08 0 0 1-1.9-.91.08.08 0 0 1-.01-.13c.13-.1.25-.2.37-.29a.07.07 0 0 1 .08-.01 14.24 14.24 0 0 0 12.38 0 .07.07 0 0 1 .08.01c.12.1.25.2.38.3a.08.08 0 0 1-.01.12 12.22 12.22 0 0 1-1.9.9.08.08 0 0 0-.04.11c.36.7.77 1.38 1.23 2.02a.08.08 0 0 0 .1.03 19.84 19.84 0 0 0 6.08-3.07.08.08 0 0 0 .03-.05c.5-5.2-.84-9.7-3.77-13.71a.06.06 0 0 0-.03-.03ZM8.02 15.37c-1.18 0-2.16-1.08-2.16-2.4 0-1.32.96-2.4 2.16-2.4 1.2 0 2.18 1.09 2.16 2.4 0 1.32-.96 2.4-2.16 2.4Zm7.96 0c-1.18 0-2.16-1.08-2.16-2.4 0-1.32.96-2.4 2.16-2.4 1.2 0 2.18 1.09 2.16 2.4 0 1.32-.95 2.4-2.16 2.4Z" /></svg>`,
+    bug: docsIcon(
+        '<path d="m8 2 1.9 1.9M14.1 3.9 16 2" /><path d="M9 7V6a3 3 0 0 1 6 0v1" /><path d="M12 20c-3.3 0-6-2.7-6-6v-3a6 6 0 0 1 12 0v3c0 3.3-2.7 6-6 6Z" /><path d="M12 20v-9M6.5 9C4.6 8.8 3 7.1 3 5M6 13H2M3 21c0-2.1 1.7-3.9 3.8-4M17.5 9C19.4 8.8 21 7.1 21 5M18 13h4M21 21c0-2.1-1.7-3.9-3.8-4" />',
+    ),
+};
+
+const DOCS_SUPPORT_LINKS_HTML = `<nav class="ph-docs-links" aria-label="Support">${DOCS_MENU_LINKS.map(
+    ({ href, label, icon }) =>
+        `<a class="ph-docs-link" href="${href}" target="_blank" rel="noopener noreferrer">${DOCS_SUPPORT_ICONS[icon]}<span>${label}</span>${docsIcon('<path d="M7 17 17 7M9 7h8v8" />').replace('class="ph-doc-icon"', 'class="ph-doc-icon ph-docs-link-arrow"')}</a>`,
+).join("")}</nav>`;
 
 const DOC_TAG_NAV_ICON_HTML: Record<string, string> = Object.fromEntries(
     Object.entries(DOC_TAG_ICON_HTML).map(([tag, icon]) => [
@@ -218,9 +269,11 @@ const interpolate = (md: string, vars: Record<string, string>): string =>
 const INTRODUCTION_DOCS = INTRODUCTION_MD.trim();
 const QUICK_START_DOCS = QUICK_START_MD.trim();
 const AUTHENTICATION_DOCS = AUTHENTICATION_MD.trim();
+const X402_PREPAID_KEYS_DOCS = X402_PREPAID_KEYS_MD.trim();
 const MODELS_DOCS = MODELS_MD.trim();
 const MEDIA_STORAGE_DOCS = MEDIA_STORAGE_MD.trim();
 const ACCOUNT_DOCS = ACCOUNT_MD.trim();
+const ASYNC_JOBS_DOCS = ASYNC_JOBS_MD.trim();
 const PUBLIC_STATS_DOCS = PUBLIC_STATS_MD.trim();
 const SAFETY_DOCS = SAFETY_MD.trim();
 const ERRORS_DOCS = ERRORS_MD.trim();
@@ -279,7 +332,7 @@ const REALTIME_DOCS = [
     `| \`GET /realtime\` | Pollinations Realtime session (\`model=${DEFAULT_REALTIME_MODEL}\`) |`,
     `| \`GET /v1/realtime\` | WebSocket Realtime session (\`model=${DEFAULT_REALTIME_MODEL}\`) |`,
     "",
-    "Requires an API key with positive balance. Server clients can use `Authorization: Bearer <key>`; browser WebSocket clients can use `?key=pk_...`.",
+    "Use a secret key with positive balance. Server clients can use `Authorization: Bearer <key>`. Browser WebSocket clients pass their user-authorized secret key (`sk_`) in `?key=`.",
     "",
     "The WebSocket settles one billing event when the session closes. Selecting `elevenlabs/scribe-v2-realtime` creates a transcription session automatically; other realtime models create voice and multimodal sessions.",
     "",
@@ -288,7 +341,6 @@ const REALTIME_DOCS = [
     "```js",
     'import WebSocket from "ws";',
     "",
-    "// Server: Bearer auth. Browser: append `&key=pk_...` instead (headers aren't settable).",
     "const ws = new WebSocket(",
     `    "wss://gen.pollinations.ai/v1/realtime?model=${DEFAULT_REALTIME_MODEL}",`,
     // biome-ignore lint/suspicious/noTemplateCurlyInString: literal JS snippet shown in docs
@@ -302,7 +354,7 @@ const REALTIME_DOCS = [
     'ws.on("message", (m) => console.log(JSON.parse(m.toString())));',
     "```",
     "",
-    "**Browser audio:** play the model's audio through an `<audio>` element (e.g. a Web Audio `MediaStreamDestination` set as the element's `srcObject`), not straight to the Web Audio output. The browser only uses audio-element output as the echo-cancellation reference, so without it the mic re-captures the model's voice and it starts replying to itself. The WebRTC transport handles this automatically; on the WebSocket transport it's the client's responsibility.",
+    "**Browser audio:** play the model's audio through an `<audio>` element (e.g. a Web Audio `MediaStreamDestination` set as the element's `srcObject`), not straight to the Web Audio output. The browser only uses audio-element output as the echo-cancellation reference, so without it the mic re-captures the model's voice and it starts replying to itself.",
     "",
     `**Realtime models:** ${realtimeModelDisplayNames}`,
 ].join("\n");
@@ -315,12 +367,14 @@ const GEN_API_DOCS = [
     INTRODUCTION_DOCS,
     QUICK_START_DOCS,
     AUTHENTICATION_DOCS,
+    X402_PREPAID_KEYS_DOCS,
     TEXT_GENERATION_DOCS,
     IMAGE_GENERATION_DOCS,
     VIDEO_GENERATION_DOCS,
     REALTIME_DOCS,
     MODEL3D_GENERATION_DOCS,
     AUDIO_GENERATION_DOCS,
+    ASYNC_JOBS_DOCS,
     EMBEDDINGS_DOCS,
     MODELS_DOCS,
     MEDIA_STORAGE_DOCS,
@@ -336,7 +390,7 @@ const PUBLISH_AGENT_SECTION = `## Publish an Agent\n\n${PUBLISH_AGENT_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
 const CODING_HARNESSES_SECTION = `## Coding Harnesses\n\n${CODING_HARNESSES_DOCS}`;
 const MCP_SECTION = `## MCP Servers\n\n${MCP_DOCS}`;
-const SANDBOXES_SECTION = `## Sandboxes\n\n${SANDBOXES_DOCS}`;
+const SANDBOXES_SECTION = `## Sandboxes\n\n${SANDBOXES_DOCS}\n\n### Sandboxes API\n\n${SANDBOXES_API_MD.trim()}`;
 
 const LLM_DOC_TEXT = [
     GEN_API_DOCS,
@@ -358,7 +412,19 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
     "coding-harnesses": CODING_HARNESSES_SECTION,
     mcp: MCP_SECTION,
     sandboxes: SANDBOXES_SECTION,
+    x402: X402_PREPAID_KEYS_DOCS,
 };
+
+// llms-full.txt: a common companion to llms.txt (https://llmstxt.org) that
+// inlines the docs so an agent gets them in one request instead of following
+// the index. The llms.txt spec itself doesn't define it.
+export const LLMS_FULL_TEXT = [
+    "# Pollinations",
+    "> Full Pollinations docs for agents in one file: the API guide, the polli CLI skill, and the CLI task recipes. Index: /llms.txt",
+    LLM_DOC_TEXT,
+    `## Polli CLI Skill\n\n${stripLeadingHeading(CLI_SKILL.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n+/, ""))}`,
+    `## Polli CLI Tasks\n\n${stripLeadingHeading(CLI_TASKS)}`,
+].join("\n\n");
 
 // Scalar tag anchors for the retired /docs/guides/:id pages.
 const GUIDE_REDIRECT_TAGS: Record<string, string> = {
@@ -371,18 +437,31 @@ const GUIDE_REDIRECT_TAGS: Record<string, string> = {
     mcp: "mcp-servers",
 };
 
-function pollinationsHeaderHtml(): string {
+function pollinationsDocsHtml(appKey: string): string {
     const navIcons = JSON.stringify(DOC_TAG_NAV_ICON_HTML);
-    return `<style>${POLLINATIONS_HEADER_CSS}${POLLINATIONS_HEADER_SCALAR_CSS}</style>
-<header class="ph-bar">
-  <a href="/" class="ph-brand"><img src="/docs/logo.svg" alt="Pollinations" /></a>
-</header>
+    const sidebarBrand = JSON.stringify(
+        `<a href="/docs" class="ph-docs-brand" aria-label="Pollinations Docs"><span class="ph-docs-lockup" aria-hidden="true">${BRAND_LOCKUP_SVG}</span><span class="ph-docs-divider" aria-hidden="true"></span><span class="ph-docs-label">Docs</span></a>`,
+    );
+    const sidebarLinks = JSON.stringify(DOCS_SUPPORT_LINKS_HTML);
+    const menuLinks = JSON.stringify(DOCS_MENU_LINKS)
+        .replaceAll("&", "&amp;")
+        .replaceAll('"', "&quot;");
+    // Sign-in is the published <polli-connect> drop-in, pinned like Scalar.
+    const connect = appKey
+        ? `<div class="ph-docs-account"><polli-connect app-key="${appKey}" budget="5" expiry="7" hide-buy-pollen menu-links="${menuLinks}"></polli-connect></div>`
+        : "";
+    const connectScript = appKey
+        ? `<script defer src="${CONNECT_CDN}" integrity="${CONNECT_INTEGRITY}" crossorigin="anonymous"></script>`
+        : "";
+    return `<style>${POLLINATIONS_DOCS_CSS}</style>
 <div class="ph-fab-cluster">
-  <button class="ph-fab ph-fab-copy" type="button">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-    <span>Copy for LLMs</span>
+  <button class="ph-fab ph-fab-copy" type="button" aria-label="Copy full docs as Markdown" title="Copy the full docs as Markdown">
+    <span class="ph-fab-face ph-fab-idle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy for LLM</span>
+    <span class="ph-fab-face ph-fab-done" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Copied</span>
   </button>
 </div>
+${connect}
+${connectScript}
 <script>
 (function () {
   function normalizeLegacyHash() {
@@ -393,36 +472,90 @@ function pollinationsHeaderHtml(): string {
   normalizeLegacyHash();
   window.addEventListener('hashchange', normalizeLegacyHash);
 
-  // Copy for LLMs — always copies the full doc (api + integrations).
+  // Copy for LLM — always copies the full doc (api + integrations).
   var copy = document.querySelector('.ph-fab-copy');
   if (copy) {
-    var label = copy.querySelector('span');
     copy.addEventListener('click', async function () {
       var res = await fetch('/docs/llm.txt');
-      var text = await res.text();
-      await navigator.clipboard.writeText(text);
-      var prev = label.textContent;
-      label.textContent = 'Copied';
-      setTimeout(function () { label.textContent = prev; }, 1200);
+      await navigator.clipboard.writeText(await res.text());
+      copy.classList.add('is-copied');
+      setTimeout(function () { copy.classList.remove('is-copied'); }, 1500);
+    });
+  }
+  // Rebuild the reference whenever the connected key changes, so Scalar's
+  // manually edited credentials are cleared on Disconnect too.
+  var connect = document.querySelector('polli-connect');
+  var account = document.querySelector('.ph-docs-account');
+  var docsKey = null;
+  if (connect) {
+    var authenticate = (${authenticateDocsRequest});
+    connect.addEventListener('change', function () {
+      var apiKey = connect.apiKey;
+      document.body.classList.toggle('ph-docs-connected', !!apiKey);
+      // Moving the element into a rebuilt drawer rehydrates the same key.
+      if (apiKey === docsKey) return;
+      docsKey = apiKey;
+      if (!window.pollinationsDocsReference) return;
+      window.pollinationsDocsReference.destroy();
+      window.pollinationsDocsReference = Scalar.createApiReference('#app', Object.assign({}, window.pollinationsDocsConfiguration, {
+        authentication: {
+          preferredSecurityScheme: 'bearerAuth',
+          securitySchemes: { bearerAuth: { token: apiKey ? 'YOUR_API_KEY' : '' } },
+        },
+        // Pinned Scalar 1.74 calls this with the actual outbound Request.
+        onRequestBuilt: function (event) { authenticate(event.request, apiKey); },
+      }));
     });
   }
   // Text-based DOM scan for Scalar buttons whose class names get hashed
   // by the CDN bundle — we tag them by their stable label so our CSS can
-  // hide ("Ask AI") or style ("Show more") them in amber.
+  // hide ("Ask AI") or style ("Show more") them.
   var navIcons = ${navIcons};
   function normalizeScalarNavLabel(text) {
     return text.replace(/\\s+/g, ' ').trim().replace(/\\s*(Open|Close)\\s*Group$/i, '').trim();
   }
+  // Scalar 1.74 folds the drawer's groups (Get Started, Guides, ...). Open
+  // each once on load so every page is listed, as before; readers can still
+  // fold them.
+  var openedGroups = new WeakSet();
+  function openDrawerGroups() {
+    var groups = document.querySelectorAll('.scalar-app [data-sidebar-id^="api/tag-group/"]');
+    for (var g = 0; g < groups.length; g++) {
+      if (openedGroups.has(groups[g])) continue;
+      var toggle = groups[g].firstElementChild && groups[g].firstElementChild.querySelector('button[aria-expanded="false"]');
+      openedGroups.add(groups[g]);
+      if (toggle) toggle.click();
+    }
+  }
   function scanScalarButtons() {
+    openDrawerGroups();
+    var sidebars = document.querySelectorAll('.scalar-app .t-doc__sidebar');
+    for (var s = 0; s < sidebars.length; s++) {
+      if (!sidebars[s].querySelector('.ph-docs-brand')) {
+        sidebars[s].insertAdjacentHTML('afterbegin', ${sidebarBrand});
+      }
+      if (!sidebars[s].querySelector('.ph-docs-links')) {
+        sidebars[s].insertAdjacentHTML('beforeend', ${sidebarLinks});
+      }
+    }
+    var accountSidebar = Array.from(sidebars).find(function (sidebar) {
+      return sidebar.getClientRects().length > 0;
+    }) || sidebars[0];
+    if (account && accountSidebar && account.parentElement !== accountSidebar) {
+      accountSidebar.appendChild(account);
+    }
     var nodes = document.querySelectorAll('button, a, [role="button"]');
     for (var i = 0; i < nodes.length; i++) {
       var text = (nodes[i].textContent || '').trim();
       var navText = normalizeScalarNavLabel(text);
+      if (text === 'Open Menu' || text === 'Close Menu') nodes[i].setAttribute('aria-label', text);
       if (/^ask ai\\b/i.test(text)) nodes[i].style.display = 'none';
       else if (/^show more\\b/i.test(text)) nodes[i].classList.add('ph-show-more');
       else if (navIcons[navText] && !nodes[i].querySelector('.ph-doc-icon')) {
         nodes[i].classList.add('ph-doc-nav-item');
-        nodes[i].insertAdjacentHTML('afterbegin', navIcons[navText]);
+        var indent = nodes[i].querySelector('.scalar-sidebar-indent');
+        if (indent) indent.insertAdjacentHTML('afterend', navIcons[navText]);
+        else nodes[i].insertAdjacentHTML('afterbegin', navIcons[navText]);
       }
     }
   }
@@ -460,9 +593,9 @@ function generationDocumentation(): OpenApiSchema {
                 bearerAuth: {
                     type: "http",
                     scheme: "bearer",
-                    bearerFormat: "API Key",
+                    bearerFormat: "Secret key",
                     description:
-                        "API key from [enter.pollinations.ai](https://enter.pollinations.ai/keys)",
+                        "Secret key from [enter.pollinations.ai](https://enter.pollinations.ai/keys)",
                 },
             },
         },
@@ -473,15 +606,15 @@ function generationDocumentation(): OpenApiSchema {
                 tags: [DOC_TAGS.quickStart, DOC_TAGS.authentication],
             },
             {
-                name: "Integrations",
+                name: "Guides",
                 tags: [
                     DOC_TAGS.userWallets,
-                    DOC_TAGS.publishModel,
                     DOC_TAGS.publishAgent,
+                    DOC_TAGS.publishModel,
+                    DOC_TAGS.sandboxes,
+                    DOC_TAGS.codingHarnesses,
                     DOC_TAGS.mcpServers,
                     DOC_TAGS.cli,
-                    DOC_TAGS.codingHarnesses,
-                    DOC_TAGS.sandboxes,
                 ],
             },
             {
@@ -490,6 +623,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.text,
                     DOC_TAGS.image,
                     DOC_TAGS.video,
+                    DOC_TAGS.jobs,
                     DOC_TAGS.realtime,
                     DOC_TAGS.model3d,
                     DOC_TAGS.audio,
@@ -504,7 +638,9 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.communityAgents,
                     DOC_TAGS.quests,
                     DOC_TAGS.mediaStorage,
+                    DOC_TAGS.sandboxesApi,
                     DOC_TAGS.account,
+                    DOC_TAGS.x402PrepaidKeys,
                     DOC_TAGS.safety,
                     DOC_TAGS.errors,
                     DOC_TAGS.publicStats,
@@ -519,6 +655,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.authentication,
                 description: stripLeadingHeading(AUTHENTICATION_DOCS),
+            },
+            {
+                name: DOC_TAGS.x402PrepaidKeys,
+                description: stripLeadingHeading(X402_PREPAID_KEYS_DOCS),
             },
             {
                 name: DOC_TAGS.userWallets,
@@ -559,6 +699,10 @@ function generationDocumentation(): OpenApiSchema {
                 description: SANDBOXES_DOCS,
             },
             {
+                name: DOC_TAGS.sandboxesApi,
+                description: SANDBOXES_API_MD.trim(),
+            },
+            {
                 name: DOC_TAGS.errors,
                 description: stripLeadingHeading(ERRORS_DOCS),
             },
@@ -577,6 +721,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.video,
                 description: stripLeadingHeading(VIDEO_GENERATION_DOCS),
+            },
+            {
+                name: DOC_TAGS.jobs,
+                description: stripLeadingHeading(ASYNC_JOBS_DOCS),
             },
             {
                 name: DOC_TAGS.realtime,
@@ -726,9 +874,28 @@ function transformEnterSchema(schema: OpenApiSchema): OpenApiSchema {
     for (const [path, value] of Object.entries(asRecord(schema.paths))) {
         if (!isPublicEnterPath(path)) continue;
         const publicPath = publicEnterPath(path);
-        paths[publicPath] = withOperationTag(value, enterDocTag(publicPath));
+        paths[publicPath] = isX402KeyPath(path)
+            ? x402KeyPathItem(value)
+            : withOperationTag(value, enterDocTag(publicPath));
     }
     return { ...schema, paths };
+}
+
+// x402 key purchases are served by enter itself and need no API key.
+function x402KeyPathItem(pathItem: unknown): unknown {
+    const tagged = asRecord(
+        withOperationTag(pathItem, DOC_TAGS.x402PrepaidKeys),
+    );
+    for (const operation of Object.values(tagged)) {
+        if (
+            operation &&
+            typeof operation === "object" &&
+            !Array.isArray(operation)
+        ) {
+            (operation as OpenApiSchema).security = [];
+        }
+    }
+    return { ...tagged, servers: [{ url: "https://enter.pollinations.ai" }] };
 }
 
 function enterDocTag(path: string): string {
@@ -761,31 +928,6 @@ function withOperationTag(pathItem: unknown, tag: string): unknown {
                 : operation;
     }
     return tagged;
-}
-
-function isPublicEnterPath(path: string): boolean {
-    return isPublicAccountPath(path) || isPublicQuestCatalogPath(path);
-}
-
-function isPublicAccountPath(path: string): boolean {
-    return (
-        path === "/account" ||
-        path.startsWith("/account/") ||
-        path === "/api/account" ||
-        path.startsWith("/api/account/")
-    );
-}
-
-// Only the catalog is part of the public gen API. Session-only dashboard quest
-// actions stay on enter and are omitted from the merged gen docs.
-function isPublicQuestCatalogPath(path: string): boolean {
-    return path === "/quests/catalog" || path === "/api/quests/catalog";
-}
-
-function publicEnterPath(path: string): string {
-    return path
-        .replace(/^\/api\/account(?=\/|$)/, "/account")
-        .replace(/^\/api\/quests(?=\/|$)/, "/quests");
 }
 
 function stripGenerationPaths(schema: OpenApiSchema): OpenApiSchema {
@@ -920,6 +1062,20 @@ function asRecord(value: unknown): OpenApiSchema {
     return value as OpenApiSchema;
 }
 
+function hasPublicOperations(schema?: OpenApiSchema): boolean {
+    return Object.values(asRecord(schema?.paths)).some((pathItem) =>
+        Object.entries(asRecord(pathItem)).some(
+            ([method, operation]) =>
+                /^(get|put|post|delete|patch|options|head|trace)$/.test(
+                    method,
+                ) &&
+                operation !== null &&
+                typeof operation === "object" &&
+                !Array.isArray(operation),
+        ),
+    );
+}
+
 /**
  * Build the merged OpenAPI spec (generation + public account + media storage,
  * with code samples injected). Single source of truth for both the docs
@@ -934,14 +1090,37 @@ export async function buildMergedOpenApiSpec(
         fetchEnterSchema(c),
         fetchMediaSchema(c).catch(() => undefined),
     ]);
-    return injectSamples(
-        mergeSchemas(generationSchema, enterSchema, mediaSchema),
-    );
+    return {
+        ...injectSamples(
+            mergeSchemas(generationSchema, enterSchema, mediaSchema),
+        ),
+        // Keep contributor identity after merging so publication can reject a
+        // partial reference without changing the live endpoint's availability.
+        "x-schema-sources": {
+            gen: hasPublicOperations(generationSchema),
+            enter: hasPublicOperations(enterSchema),
+            media: hasPublicOperations(mediaSchema),
+        },
+    };
 }
+
+const SCALAR_CDN =
+    "https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.74.0/dist/browser/standalone.js";
+const SCALAR_INTEGRITY =
+    "sha384-VXnKAz61Xwc3tbw1P+KKrUP7YbcsSl1Ik4is5UnogJyw9XEYZ5Ay/T1i0zPYtSZH";
+const CONNECT_CDN =
+    "https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.20/dist/connect.js";
+const CONNECT_INTEGRITY =
+    "sha384-9e0ucXSJrvLUvlRtPQ2N/j41OJx/5ob+9qk9CaJK9PaY477QIQiQFWE+l/RofoSi";
 
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     const routes = new Hono<Env>()
         .get("/", async (c, next) => {
+            const publicUrl = getPublicUrl(c);
+            if (publicUrl.hostname === "gen.myceli.ai") {
+                publicUrl.hostname = "gen.pollinations.ai";
+                return c.redirect(publicUrl.href, 302);
+            }
             c.header("Vary", "Accept", { append: true });
             if (c.req.header("accept")?.includes("text/markdown")) {
                 // Cloudflare ignores Vary on cached responses: keep it private.
@@ -951,9 +1130,8 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 });
             }
             const response = await Scalar<Env>({
-                // Pinned: the unversioned CDN URL serves every new release, and
-                // 1.74.0 broke the sidebar our CSS and nav script target.
-                cdn: "https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.73.1",
+                // Pin the CDN bundle so sidebar changes are verified before upgrading.
+                cdn: SCALAR_CDN,
                 pageTitle: SEO_TITLE,
                 title: SEO_TITLE,
                 favicon: FAVICON_DATA_URI,
@@ -965,6 +1143,18 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 customCss: API_REFERENCE_CUSTOM_CSS,
                 hideModels: true,
                 hideClientButton: true,
+                persistAuth: false,
+                telemetry: false,
+                onSidebarClick: () => {
+                    // Let Scalar finish navigation before closing a guide's drawer.
+                    requestAnimationFrame(() => {
+                        const close = document.querySelector<HTMLButtonElement>(
+                            '.references-sidebar-mobile-open .t-doc__header button[aria-label="Close Menu"]',
+                        );
+                        close?.click();
+                        close?.focus({ preventScroll: true });
+                    });
+                },
                 sources: [
                     { url: "/docs/open-api/generate-schema", title: "API" },
                 ],
@@ -978,7 +1168,16 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 },
             })(c, next);
             if (!response) return;
-            const html = await response.text();
+            // Expose the reference and its config so sign-in can rebuild it.
+            const html = (await response.text())
+                .replace(
+                    `<script src="${SCALAR_CDN}">`,
+                    `<script src="${SCALAR_CDN}" integrity="${SCALAR_INTEGRITY}" crossorigin="anonymous">`,
+                )
+                .replace(
+                    "Scalar.createApiReference('#app',",
+                    "window.pollinationsDocsReference = Scalar.createApiReference('#app', window.pollinationsDocsConfiguration =",
+                );
             const htmlWithMeta = withHtmlClass(
                 injectDocsSocialHead(html, c),
                 "dark",
@@ -990,7 +1189,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             const insertAt = bodyOpenMatch.index + bodyOpenMatch[0].length;
             return c.html(
                 htmlWithMeta.slice(0, insertAt) +
-                    pollinationsHeaderHtml() +
+                    pollinationsDocsHtml(c.env.DOCS_APP_KEY ?? "") +
                     htmlWithMeta.slice(insertAt),
             );
         })

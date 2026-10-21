@@ -51,7 +51,7 @@ export type AuthEnv = {
 };
 
 const AUTHENTICATION_REQUIRED_MESSAGE =
-    "A valid API key is required. Get one at https://enter.pollinations.ai/keys";
+    "A valid API key is required. Get one at https://enter.pollinations.ai/keys, or buy one with USDC (x402) at https://enter.pollinations.ai/api/x402/keys";
 
 function installAuth(
     c: Context<AuthEnv>,

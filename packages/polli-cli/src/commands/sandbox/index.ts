@@ -19,7 +19,7 @@ import {
     pauseSandbox,
     sandboxLogs,
 } from "./e2b.js";
-import { proxy, setupSsh } from "./ssh.js";
+import { proxy, setupSsh, stderrToTerminal } from "./ssh.js";
 
 // Whole seconds, as in E2B's `timeout`. 0 never expires, like Daytona's
 // `autoStopInterval: 0`; E2B has no such value, so polli asks for its largest.
@@ -120,6 +120,7 @@ export const sandboxCommand = new Command("sandbox")
                         // A paused sandbox's endAt is when it paused.
                         sandboxes.map((sandbox) => ({
                             id: sandbox.sandboxID,
+                            name: sandbox.metadata?.name,
                             template: sandbox.alias ?? sandbox.templateID,
                             size: `${sandbox.cpuCount} vCPU, ${sandbox.memoryMB} MB`,
                             state:
@@ -232,6 +233,7 @@ export const sandboxCommand = new Command("sandbox")
             .description("ssh ProxyCommand for <sandbox-id>.polli")
             .argument("<host>")
             .action(async (host: string) => {
+                stderrToTerminal();
                 requireKey();
                 try {
                     await proxy(host);

@@ -105,18 +105,23 @@ describe("client gateway metadata", () => {
     });
 });
 
-afterEach(() => vi.restoreAllMocks());
-it("passes non-Vercel stream bytes through the real handler unchanged", async () => {
-    const model = "google/gemini-2.5-flash-lite:search";
+afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+});
+
+async function streamThroughHandler(model: string, host: string, wire: string) {
     const { key } = await createTestApiKey({
         expiresIn: 600,
         user: { packBalance: 100 },
     });
-    const wire = `retry: 001500\n\ndata: { "custom_number": 1e+2, "choices": [{"delta":{"content":"🌼"}}] }\n\ndata: { "choices": [], "usage": ${JSON.stringify(usage)} }\n\ndata: [DONE]\n\n`;
     let calls = 0;
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
         const request = new Request(input, init);
-        if (new URL(request.url).host === "openrouter.ai") {
+        // Custom-host providers go out through the Portkey gateway.
+        const target =
+            request.headers.get("x-portkey-custom-host") ?? request.url;
+        if (new URL(target).host === host) {
             calls++;
             return new Response(wire, {
                 headers: { "content-type": "text/event-stream" },
@@ -145,8 +150,114 @@ it("passes non-Vercel stream bytes through the real handler unchanged", async ()
     );
     const text = await response.text();
     await waitOnExecutionContext(context);
+    return { response, text, calls };
+}
+
+it("passes non-Vercel stream bytes through the real handler unchanged", async () => {
+    const model = "google/gemini-2.5-flash-lite:search";
+    const wire = `retry: 001500\n\ndata: { "custom_number": 1e+2, "choices": [{"delta":{"content":"🌼"}}] }\n\ndata: { "choices": [], "usage": ${JSON.stringify(usage)} }\n\ndata: [DONE]\n\n`;
+    const { response, text, calls } = await streamThroughHandler(
+        model,
+        "openrouter.ai",
+        wire,
+    );
     expect(response.status, text).toBe(200);
     expect(response.headers.get("x-model-used")).toBe(model);
     expect(calls).toBe(1);
     expect(text).toBe(wire);
+});
+
+it("drops InferencePort's PAYG ledger chunk from client streams", async () => {
+    vi.stubEnv("INFERENCEPORT_API_KEY", "test-ip-key");
+    const streamUsage = {
+        prompt_tokens: 3,
+        completion_tokens: 1,
+        total_tokens: 4,
+    };
+    const ledger = {
+        payg_credits_charged: 0.0001,
+        payg_ledger_entry: { balance_after: 38.9 },
+    };
+    const wire = `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: "🌼" } }] })}\n\ndata: ${JSON.stringify({ choices: [], usage: { ...streamUsage, payg_credits_charged: 0.0001 } })}\n\ndata: ${JSON.stringify({ id: "chatcmpl-proxy-meta", choices: [], payg_usage: ledger })}\n\ndata: [DONE]\n\n`;
+    const { response, text, calls } = await streamThroughHandler(
+        "inferenceport-ai/lightning-text-v2.1",
+        "api.inferenceport.ai",
+        wire,
+    );
+    expect(response.status, text).toBe(200);
+    expect(calls).toBe(1);
+    expect(text).toContain("🌼");
+    expect(text).toContain(JSON.stringify(streamUsage));
+    expect(text).toContain("data: [DONE]\n\n");
+    expect(text).not.toContain("payg");
+});
+
+it("drops InferencePort's PAYG ledger entry from non-streaming completions", async () => {
+    vi.stubEnv("INFERENCEPORT_API_KEY", "test-ip-key");
+    const { key } = await createTestApiKey({
+        expiresIn: 600,
+        user: { packBalance: 100 },
+    });
+    let calls = 0;
+    const wire = JSON.stringify({
+        id: "chatcmpl-nonstream",
+        object: "chat.completion",
+        created: 1760000000,
+        model: "inferenceport-ai/lightning-text-v2.1",
+        choices: [
+            {
+                index: 0,
+                message: { role: "assistant", content: "🌼 hello" },
+                finish_reason: "stop",
+            },
+        ],
+        usage: {
+            prompt_tokens: 3,
+            completion_tokens: 1,
+            total_tokens: 4,
+            payg_credits_charged: 0.0001,
+        },
+        // Top-level ledger entry, same shape the stream test strips.
+        payg_usage: {
+            payg_credits_charged: 0.0001,
+            payg_ledger_entry: { balance_after: 38.9 },
+        },
+    });
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const request = new Request(input, init);
+        const target =
+            request.headers.get("x-portkey-custom-host") ?? request.url;
+        if (new URL(target).host === "api.inferenceport.ai") {
+            calls++;
+            return new Response(wire, {
+                headers: { "content-type": "application/json" },
+            });
+        }
+        return Response.json({ data: [] });
+    });
+    const context = createExecutionContext();
+    const response = await worker.fetch(
+        new Request("https://gen.pollinations.ai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                authorization: `Bearer ${key}`,
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({
+                model: "inferenceport-ai/lightning-text-v2.1",
+                messages: [
+                    { role: "user", content: `Hello ${crypto.randomUUID()}` },
+                ],
+            }),
+        }),
+        withInlineGenerationCoordinator(env),
+        context,
+    );
+    const text = await response.text();
+    await waitOnExecutionContext(context);
+    expect(response.status, text).toBe(200);
+    expect(calls).toBe(1);
+    expect(text).toContain("🌼 hello");
+    expect(text).not.toContain("payg");
+    expect(text).not.toContain("balance_after");
 });

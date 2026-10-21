@@ -95,6 +95,28 @@ const grokTransform: TransformFn = (messages, options) =>
         ? { messages, options }
         : stripReasoning(messages, options);
 
+// Novita reasoning controls: keep chain-of-thought out of answer content.
+const separateNovitaReasoning: TransformFn = (messages, options) => {
+    const { reasoning_effort, ...rest } = options;
+    const { reasoning } = options;
+    const control = reasoning as
+        | { enabled?: boolean; effort?: string; exclude?: boolean }
+        | undefined;
+    const effort = control?.effort ?? reasoning_effort;
+    return {
+        messages,
+        options: {
+            ...rest,
+            enable_thinking:
+                control?.enabled ??
+                (effort === undefined ? undefined : effort !== "none"),
+            // Keep reasoning separate from answer content; the shared client
+            // enforces the caller's visibility controls.
+            separate_reasoning: true,
+        },
+    };
+};
+
 // Alibaba and DeepInfra Kimi reject (or garble) forced tool selection while
 // thinking is enabled.
 const forcedToolWithoutReasoning: TransformFn = (messages, options) => {
@@ -424,13 +446,25 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek/deepseek-v4.1-flash",
-        config: portkeyConfig["deepseek-ai/DeepSeek-V4.1-Flash"],
+        config: portkeyConfig["DeepSeek-V4.1-Flash"],
         transform: fireworksThinking,
     },
     {
         name: "deepseek/deepseek-v4.1-flash:fireworks",
         config: portkeyConfig["accounts/fireworks/models/deepseek-v4p1-flash"],
         transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "deepseek/deepseek-v4.1-flash-1017",
+        config: portkeyConfig[
+            "accounts/fireworks/models/deepseek-v4p1-flash-1017"
+        ],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "deepseek/deepseek-v4.1-flash-1017:deepinfra",
+        config: portkeyConfig["deepseek-ai/DeepSeek-V4.1-Flash-1017"],
+        transform: fireworksThinking,
     },
     {
         name: "deepseek/deepseek-v4-flash:deepinfra",
@@ -537,9 +571,9 @@ const models: ModelDefinition[] = [
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
-        name: "anthropic/claude-haiku-5.5:vercel",
-        config: portkeyConfig["anthropic/claude-haiku-5.5:vercel"],
-        transform: omitClaudeSampling,
+        name: "anthropic/claude-haiku-5.5:aws",
+        config: portkeyConfig["anthropic/claude-haiku-5.5:aws"],
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
         name: "anthropic/claude-sonnet-4.6",
@@ -555,6 +589,11 @@ const models: ModelDefinition[] = [
         name: "anthropic/claude-sonnet-5.5",
         config: portkeyConfig["anthropic/claude-sonnet-5.5"],
         // Reasoning is mandatory on this route and sampling params are rejected.
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-sonnet-5.5:aws",
+        config: portkeyConfig["anthropic/claude-sonnet-5.5:aws"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
@@ -581,13 +620,13 @@ const models: ModelDefinition[] = [
     {
         name: "anthropic/claude-opus-5.5",
         config: portkeyConfig["anthropic/claude-opus-5.5"],
-        // Bedrock rejects thinking.type=disabled for this model.
+        // Adaptive thinking is always enabled for this model.
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
-        name: "anthropic/claude-opus-5.5:openrouter:anthropic",
-        config: portkeyConfig["claude-opus-5.5-openrouter-anthropic"],
-        transform: pipe(mandatoryReasoning, omitClaudeSampling),
+        name: "anthropic/claude-opus-5.5:aws",
+        config: portkeyConfig["anthropic/claude-opus-5.5:aws"],
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
         name: "anthropic/claude-opus-5.5:fast",
@@ -607,6 +646,11 @@ const models: ModelDefinition[] = [
     {
         name: "anthropic/claude-fable-5.1",
         config: portkeyConfig["anthropic/claude-fable-5.1"],
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-fable-5.1:aws",
+        config: portkeyConfig["anthropic/claude-fable-5.1:aws"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
@@ -779,6 +823,16 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "perplexity/pplx-decider-v1.1-27b",
+        config: portkeyConfig["pplx-decider-v1.1-27b"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "perplexity/pplx-decider-v1.1-27b:openrouter",
+        config: portkeyConfig["perplexity/pplx-decider-v1.1-27b:openrouter"],
+        useSystemOneApi: true,
+    },
+    {
         name: "liquid/d1",
         config: portkeyConfig["liquid-d1"],
         useSystemOneApi: true,
@@ -789,6 +843,14 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "inferenceport-ai/lightning-text-v2.1",
+        config: portkeyConfig["inferenceport-lightning-text-v2.1"],
+    },
+    {
+        name: "inferenceport-ai/lightning-text-v2",
+        config: portkeyConfig["inferenceport-lightning-text-v2"],
+    },
+    {
         name: "openai/gpt-6-luna-decisions",
         config: portkeyConfig["gpt-6-luna-decisions"],
         useSystemOneApi: true,
@@ -796,6 +858,16 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6-luna-decisions:openrouter",
         config: portkeyConfig["openai/gpt-6-luna-decisions:openrouter"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "microsoft/microsoft-decision-1",
+        config: portkeyConfig["microsoft-decision-1"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "microsoft/microsoft-decision-1:openrouter",
+        config: portkeyConfig["microsoft/microsoft-decision-1:openrouter"],
         useSystemOneApi: true,
     },
     {
@@ -917,10 +989,20 @@ const models: ModelDefinition[] = [
     {
         name: "xiaomi/mimo-v2.6-flash",
         config: portkeyConfig["xiaomi/mimo-v2.6-flash"],
+        transform: separateNovitaReasoning,
+    },
+    {
+        name: "xiaomi/mimo-v2.6-flash:deepinfra",
+        config: portkeyConfig["xiaomi/mimo-v2.6-flash:deepinfra"],
     },
     {
         name: "xiaomi/mimo-v2.6-pro",
         config: portkeyConfig["xiaomi/mimo-v2.6-pro"],
+        transform: separateNovitaReasoning,
+    },
+    {
+        name: "xiaomi/mimo-v2.6-pro:deepinfra",
+        config: portkeyConfig["xiaomi/mimo-v2.6-pro:deepinfra"],
     },
     {
         name: "google/gemini-3.1-pro-preview",
@@ -968,6 +1050,11 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoningWithoutCacheControl,
     },
     {
+        name: "z-ai/glm-5.3:deepinfra",
+        config: portkeyConfig["zai-org/GLM-5.3"],
+        transform: mandatoryReasoningWithoutCacheControl,
+    },
+    {
         name: "z-ai/glm-5.3:openrouter:friendli",
         config: portkeyConfig["glm-5.3-openrouter-friendli"],
         transform: mandatoryReasoning,
@@ -1009,26 +1096,7 @@ const models: ModelDefinition[] = [
     {
         name: "inclusionai/ling-3.1-flash",
         config: portkeyConfig["inclusionai/ling-3.1-flash"],
-        transform: (messages, options) => {
-            const { reasoning_effort, ...rest } = options;
-            const { reasoning } = options;
-            const control = reasoning as
-                | { enabled?: boolean; effort?: string; exclude?: boolean }
-                | undefined;
-            const effort = control?.effort ?? reasoning_effort;
-            return {
-                messages,
-                options: {
-                    ...rest,
-                    enable_thinking:
-                        control?.enabled ??
-                        (effort === undefined ? undefined : effort !== "none"),
-                    // Keep reasoning separate from answer content; the shared client
-                    // enforces the caller's visibility controls.
-                    separate_reasoning: true,
-                },
-            };
-        },
+        transform: separateNovitaReasoning,
     },
     {
         name: "inclusionai/ling-3.1-flash:vercel:novita",
@@ -1104,6 +1172,11 @@ const models: ModelDefinition[] = [
         name: "meta/llama-4-scout",
         config: portkeyConfig["meta/llama-4-scout"],
         // No reasoning mode.
+        transform: stripReasoning,
+    },
+    {
+        name: "meta/llama-4-scout:openrouter:deepinfra-fp8-priority",
+        config: portkeyConfig["llama-scout-openrouter-deepinfra-priority"],
         transform: stripReasoning,
     },
     {

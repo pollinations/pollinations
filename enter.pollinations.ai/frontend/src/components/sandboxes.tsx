@@ -33,6 +33,7 @@ import { WalletKindIcon } from "@pollinations/ui/wallet";
 import { useCallback, useEffect, useState } from "react";
 import { genFetch } from "../api.ts";
 import { genDocsUrl } from "../config.ts";
+import { generateFunName } from "../lib/fun-name.ts";
 import { ModelFormRow } from "./community-endpoints/model-form-row.tsx";
 import { ResourceConfirmationContent } from "./community-endpoints/resource-confirmation-content.tsx";
 import { readError } from "./community-endpoints/types.ts";
@@ -48,6 +49,8 @@ type Sandbox = Size & {
     sandboxID: string;
     templateID: string;
     alias?: string;
+    // E2B's metadata; `name` is the name given at create.
+    metadata?: Record<string, string>;
     state: "running" | "paused";
     // When its current run started: at the create or the last resume.
     startedAt: string;
@@ -86,6 +89,7 @@ type Pending =
     // notFound: E2B answered the create that it has no such template.
     | {
           action: "create";
+          name: string;
           template: string;
           custom?: boolean;
           notFound?: boolean;
@@ -116,7 +120,10 @@ const perSecond = (pricing: Pricing, size: Size) =>
 const pollen = (amount: number) => `${Number(amount.toPrecision(2))} Pollen`;
 
 const sizeLabel = ({ cpuCount, memoryMB }: Size) =>
-    `${cpuCount} vCPU, ${memoryMB / 1024} GB`;
+    `${cpuCount} vCPU, ${memoryMB / 1024} GB memory`;
+
+// An always-on sandbox runs about 720 hours a month.
+const HOURS_PER_MONTH = 720;
 
 const templateLabel = (id: string) =>
     id === "pollinations"
@@ -292,9 +299,13 @@ function SandboxCard({
                     <Text
                         tone="strong"
                         weight="semibold"
-                        className="break-all font-mono"
+                        className={
+                            sandbox.metadata?.name
+                                ? "break-all"
+                                : "break-all font-mono"
+                        }
                     >
-                        {sandbox.sandboxID}
+                        {sandbox.metadata?.name ?? sandbox.sandboxID}
                     </Text>
                     <Text size="sm" tone="muted">
                         {templateLabel(sandbox.alias ?? sandbox.templateID)} ·{" "}
@@ -455,6 +466,9 @@ export function Sandboxes() {
                     templateID: pending.template.trim(),
                     timeout,
                     autoPause: true,
+                    ...(pending.name.trim() && {
+                        metadata: { name: pending.name.trim() },
+                    }),
                 }).then(
                     () => setPending(null),
                     (error: Error) => {
@@ -496,7 +510,11 @@ export function Sandboxes() {
             aria-haspopup="dialog"
             disabled={full || busyId === "new"}
             onClick={() =>
-                setPending({ action: "create", template: "pollinations" })
+                setPending({
+                    action: "create",
+                    name: generateFunName(),
+                    template: "pollinations",
+                })
             }
         >
             {busyId === "new" ? (
@@ -515,6 +533,7 @@ export function Sandboxes() {
     return (
         <Section
             title="Sandboxes"
+            intro="A sandbox is a Linux computer in the cloud. Open it with ssh or VS Code. Its files stay while it’s paused, and you pay only while it runs."
             action={
                 <ButtonGroup>
                     <Button
@@ -612,14 +631,27 @@ export function Sandboxes() {
                     {pricing && (
                         <>
                             {" "}
-                            {pollen(pricing.vcpuSecond * 3600)} per vCPU +{" "}
-                            {pollen(pricing.gibSecond * 3600)} per GB each hour.
+                            {Object.entries(pricing.templates).map(
+                                ([template, size]) => {
+                                    const hourly =
+                                        perSecond(pricing, size) * 3600;
+                                    return (
+                                        <span key={template}>
+                                            {templateLabel(template)} (
+                                            {sizeLabel(size)}): {pollen(hourly)}{" "}
+                                            an hour, about{" "}
+                                            {pollen(hourly * HOURS_PER_MONTH)} a
+                                            month if always on.{" "}
+                                        </span>
+                                    );
+                                },
+                            )}
                             Up to {pricing.maxRunning} running at once; pause or
                             kill one to free a slot.
                         </>
                     )}{" "}
-                    Sandboxes pause when time runs out and keep their files for
-                    free. Unused time isn’t refunded.
+                    Sandboxes pause when time runs out. A paused sandbox costs
+                    nothing and keeps its files. Unused time isn’t refunded.
                 </span>
             </p>
             <div className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
@@ -737,6 +769,16 @@ export function Sandboxes() {
                         {spends && pending.action !== "create" && (
                             <Surface>
                                 <dl className="grid gap-2 text-sm sm:grid-cols-[11rem_minmax(0,1fr)]">
+                                    {pending.sandbox.metadata?.name && (
+                                        <>
+                                            <dt className="font-semibold text-theme-text-strong">
+                                                Name
+                                            </dt>
+                                            <dd className="break-all">
+                                                {pending.sandbox.metadata.name}
+                                            </dd>
+                                        </>
+                                    )}
                                     <dt className="font-semibold text-theme-text-strong">
                                         ID
                                     </dt>
@@ -796,19 +838,41 @@ export function Sandboxes() {
                             <>
                                 <Surface className="space-y-4">
                                     {pending.action === "create" && (
-                                        <TemplatePicker
-                                            pricing={pricing}
-                                            template={template}
-                                            custom={!!pending.custom}
-                                            error={templateError}
-                                            onChange={(template, custom) =>
-                                                setPending({
-                                                    action: "create",
-                                                    template,
-                                                    custom,
-                                                })
-                                            }
-                                        />
+                                        <>
+                                            <ModelFormRow
+                                                label="Name"
+                                                help="Shown in your sandbox list. It can’t be changed later."
+                                            >
+                                                <Field.Input asChild>
+                                                    <Input
+                                                        className="w-full"
+                                                        value={pending.name}
+                                                        onChange={(event) =>
+                                                            setPending({
+                                                                ...pending,
+                                                                name: event
+                                                                    .currentTarget
+                                                                    .value,
+                                                            })
+                                                        }
+                                                    />
+                                                </Field.Input>
+                                            </ModelFormRow>
+                                            <TemplatePicker
+                                                pricing={pricing}
+                                                template={template}
+                                                custom={!!pending.custom}
+                                                error={templateError}
+                                                onChange={(template, custom) =>
+                                                    setPending({
+                                                        action: "create",
+                                                        name: pending.name,
+                                                        template,
+                                                        custom,
+                                                    })
+                                                }
+                                            />
+                                        </>
                                     )}
                                     <ModelFormRow
                                         label={

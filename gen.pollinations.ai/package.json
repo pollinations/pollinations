@@ -27,6 +27,8 @@
         "@scalar/openapi-to-markdown": "0.3.23",
         "@types/debug": "^4.1.13",
         "@types/node": "24.10.1",
+        "ajv": "^8.20.0",
+        "ajv-formats": "^3.0.1",
         "esbuild": "0.25.12",
         "openai": "6.34.0",
         "tsx": "4.20.6",

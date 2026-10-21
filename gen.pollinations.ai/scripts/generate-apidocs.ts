@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT_PATH = join(__dirname, "..", "..", "APIDOCS.md");
+// The README's guide table; the docs website lists guides in its sidebar.
+const README_PATH = join(__dirname, "..", "..", "README.md");
 const INTRODUCTION_PATH = join(
     __dirname,
     "..",
@@ -21,13 +23,14 @@ const OPENAPI_URL =
 type Json = Record<string, unknown>;
 type Schema = Json;
 type Operation = Json;
-type Spec = {
+export type Spec = {
     info: { title: string; description: string; version: string };
     openapi: string;
     servers: { url: string }[];
     tags?: { name: string; description?: string }[];
     paths: Record<string, Record<string, Operation>>;
     components: { schemas: Record<string, Schema> };
+    "x-schema-sources"?: Record<string, boolean>;
 };
 
 const BASE_URL = "https://gen.pollinations.ai";
@@ -381,7 +384,7 @@ function operationBaseUrl(spec: Spec, path: string, op: Operation): string {
 // Curl example
 // ────────────────────────────────────────────────────────────────────────────
 
-function buildCurl(
+export function buildCurl(
     spec: Spec,
     method: string,
     path: string,
@@ -392,43 +395,36 @@ function buildCurl(
     const queryParams = params.filter((p) => asObj(p).in === "query");
     const pathParams = params.filter((p) => asObj(p).in === "path");
     let url = `${operationBaseUrl(spec, path, op)}${path}`;
-    // Substitute path placeholders with real, URL-encoded sample values so
-    // curl examples are copy-pasteable. Falls back to `:name` only when the
-    // spec provides no example for the parameter.
+    // Prefer schema examples; resource IDs need a fallback for their route.
+    // Unresolved required values remain visible for the example guard.
     url = url.replace(/{(\w+)}/g, (_match, name: string) => {
-        const override =
-            name === "id" && MEDIA_ID_PATHS.has(path)
-                ? MEDIA_ID_EXAMPLE
-                : PATH_PARAM_OVERRIDES[name];
-        if (override !== undefined) return encodeURIComponent(override);
         const param = pathParams.find((p) => asStr(asObj(p).name) === name);
-        if (param) {
-            const ex = pickExample(spec, asObj(asObj(param).schema));
-            if (ex !== undefined) return encodeURIComponent(String(ex));
-        }
-        return `:${name}`;
+        const ex =
+            pickExample(spec, asObj(asObj(param).schema)) ??
+            PATH_PARAM_EXAMPLES[path]?.[name];
+        return ex !== undefined ? encodeURIComponent(String(ex)) : `:${name}`;
     });
     // The /image and /video routes share a query schema whose `model` default
     // is an image model. Override so the video example uses a video model.
     const queryOverrides: Record<string, string> = path.startsWith("/video/")
         ? { model: "google/veo-3.1-fast" }
-        : {};
-    if (queryParams.length) {
-        const queryStr = queryParams
-            .slice(0, 2)
-            .map((p) => {
-                const obj = asObj(p);
-                const name = asStr(obj.name);
-                const override = queryOverrides[name];
-                if (override !== undefined) {
-                    return `${name}=${encodeURIComponent(override)}`;
-                }
-                const ex = pickExample(spec, asObj(obj.schema));
-                return `${name}=${ex !== undefined ? encodeURIComponent(String(ex)) : `:${name}`}`;
-            })
-            .join("&");
-        url = `${url}?${queryStr}`;
-    }
+        : path === "/media"
+          ? { tag: "my-gallery" }
+          : {};
+    // Keep examples short, but never drop a required parameter because of
+    // its position or fill an optional one with an unusable placeholder.
+    let optionalCount = 0;
+    const queryStr = queryParams
+        .flatMap((p) => {
+            const name = asStr(p.name);
+            const ex =
+                queryOverrides[name] ?? pickExample(spec, asObj(p.schema));
+            if (ex === undefined || ex === null) return [];
+            if (p.required !== true && optionalCount++ >= 2) return [];
+            return [`${name}=${encodeURIComponent(String(ex))}`];
+        })
+        .join("&");
+    if (queryStr) url = `${url}?${queryStr}`;
 
     // An empty `security: []` on an operation overrides the global auth
     // requirement — public endpoints (e.g. media retrieval) must not show an
@@ -529,7 +525,7 @@ function guessFileExtension(fieldName: string, mediaType: string): string {
 // Endpoint rendering
 // ────────────────────────────────────────────────────────────────────────────
 
-function renderEndpoint(
+export function renderEndpoint(
     spec: Spec,
     method: string,
     path: string,
@@ -573,17 +569,57 @@ function renderEndpoint(
     if (bodyContent && bodyMime) {
         out.push(`${CALLOUT.body} · \`${bodyMime}\``);
         out.push("");
-        const rows = collectRows(spec, asObj(bodyContent.schema));
+        const schema = deref(spec, asObj(bodyContent.schema));
+        const variants = asArr(schema.oneOf ?? schema.anyOf).map((variant) =>
+            deref(spec, asObj(variant)),
+        );
+        const tables = variants.map((variant) => collectRows(spec, variant));
+        const shared = (tables[0] ?? []).filter((row) =>
+            tables.every((table) =>
+                table.some(
+                    (other) => JSON.stringify(other) === JSON.stringify(row),
+                ),
+            ),
+        );
+        const sharedNames = new Set(shared.map((row) => row.name));
+        const rows = [...collectRows(spec, schema), ...shared];
         if (rows.length) {
             out.push(renderRowsTable(rows));
             out.push("");
         }
+        const discriminator = Object.keys(asObj(variants[0]?.properties)).find(
+            (name) => {
+                const values = variants.map((variant) => {
+                    const prop = asObj(asObj(variant.properties)[name]);
+                    return prop.const === undefined
+                        ? asArr(prop.enum)
+                        : [prop.const];
+                });
+                const all = values.flat().map((value) => JSON.stringify(value));
+                return (
+                    values.every((group) => group.length > 0) &&
+                    new Set(all).size === all.length
+                );
+            },
+        );
+        for (const [index, variant] of variants.entries()) {
+            const label = discriminator
+                ? ` · \`${discriminator}\`: ${formatType(asObj(asObj(variant.properties)[discriminator]))}`
+                : "";
+            out.push(`**Alternative ${index + 1}**${label}`, "");
+            out.push(
+                renderRowsTable(
+                    tables[index].filter((row) => !sharedNames.has(row.name)),
+                ),
+                "",
+            );
+        }
     }
 
-    // Responses — render 2xx only (errors are in dedicated section)
+    // Responses — render 2xx and protocol upgrades (errors have their own section)
     const responses = asObj(op.responses);
-    const successCodes = Object.keys(responses).filter((c) =>
-        /^2\d{2}$/.test(c),
+    const successCodes = Object.keys(responses).filter(
+        (c) => c === "101" || /^2\d{2}$/.test(c),
     );
     for (const code of successCodes) {
         const r = asObj(responses[code]);
@@ -630,7 +666,7 @@ function renderEndpoint(
 
     // Response example: prefer the media-type example injected by
     // injectSamples() (RESPONSE_EXAMPLES), fall back to schema synthesis.
-    const firstOk = successCodes[0];
+    const firstOk = successCodes.find((code) => code !== "101");
     if (firstOk) {
         const r = asObj(responses[firstOk]);
         const jsonResp = asObj(asObj(r.content)["application/json"]);
@@ -755,6 +791,11 @@ function loadIntroductionTagline(): string {
 }
 
 function renderGettingStarted(): string {
+    const guides = readFileSync(README_PATH, "utf8")
+        .split("\n## Guides\n")[1]
+        ?.split("\n## ")[0]
+        .trim();
+    if (!guides) throw new Error(`Missing Guides section in ${README_PATH}`);
     return `## ${sectionHeading(SECTIONS.start)}
 
 **1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai/keys). Use the key type for your environment:
@@ -771,7 +812,9 @@ curl ${BASE_URL}/v1/models \\
 
 **3. Pick an endpoint** from the [${sectionHeading(SECTIONS.contents)}](#${sectionAnchor(SECTIONS.contents)}) below.
 
-**Integration guides:** [Connect User Wallets](https://gen.pollinations.ai/docs#tag/connect-user-wallets) · [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) · [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) · [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers) · [CLI](https://gen.pollinations.ai/docs#tag/cli)`;
+## Guides
+
+${guides}`;
 }
 
 function renderTableOfContents(
@@ -785,6 +828,7 @@ function renderTableOfContents(
     out.push(
         `- [${sectionHeading(SECTIONS.start)}](#${sectionAnchor(SECTIONS.start)})`,
     );
+    out.push("- [Guides](#guides)");
     for (const heading of recipeHeadings) {
         out.push(`- [${heading}](#${slug(heading)})`);
     }
@@ -921,7 +965,7 @@ All endpoints return errors in this envelope:
 // ────────────────────────────────────────────────────────────────────────────
 
 /** Replace long enum arrays with a description pointing to /models. */
-function simplifyModelEnums(spec: Spec): void {
+export function simplifyModelEnums(spec: Spec): void {
     for (const methods of Object.values(asObj(spec.paths))) {
         for (const op of Object.values(asObj(methods))) {
             const operation = asObj(op);
@@ -939,6 +983,17 @@ function simplifyModelEnums(spec: Spec): void {
     }
 }
 
+// `/alpha/decisions` and its alias `/v1/systemone` take the same body.
+const DECISION_EXAMPLE: Json = {
+    state: "My payouts have been failing for 3 days.",
+    questions: {
+        is_urgent: {
+            type: "noul",
+            instructions: "Does this convey urgency?",
+        },
+    },
+};
+
 /**
  * Curated request-body examples for operations whose schemas are too complex
  * to synthesize a meaningful sample from (deeply nested unions, oneOf variants).
@@ -953,6 +1008,13 @@ const CURATED_BODIES: Record<string, Json> = {
         model: "openai/gpt-5.4-nano",
         input: "Hello!",
     },
+    postV1Messages: {
+        model: "openai/gpt-5.4-nano",
+        max_tokens: 1024,
+        messages: [{ role: "user", content: "Hello" }],
+    },
+    postAlphaDecisions: DECISION_EXAMPLE,
+    postV1Systemone: DECISION_EXAMPLE,
     postV1ImagesGenerations: {
         prompt: "a serene mountain landscape at sunset",
         model: "black-forest-labs/flux.1-schnell",
@@ -982,7 +1044,9 @@ const CURATED_BODIES: Record<string, Json> = {
     },
     postAccountMyModels: {
         name: "my-community-model",
-        baseUrl: "https://api.example.com/v1",
+        title: "My Community Model",
+        api: "chat_completions",
+        url: "https://api.example.com/v1/chat/completions",
         bearerToken: "sk-upstream-token",
     },
     postAccountMyModelsProvider: {
@@ -994,7 +1058,8 @@ const CURATED_BODIES: Record<string, Json> = {
         bearerToken: "sk-upstream-token",
     },
     postAccountMyModelsTest: {
-        baseUrl: "https://api.example.com/v1",
+        api: "chat_completions",
+        url: "https://api.example.com/v1/chat/completions",
         bearerToken: "sk-upstream-token",
         model: "llama-3.3-70b",
     },
@@ -1004,7 +1069,8 @@ const CURATED_BODIES: Record<string, Json> = {
     postAccountMyModelsEndpointAgents: {
         name: "my-agent",
         title: "My Agent",
-        baseUrl: "https://agent.example.com/v1",
+        api: "responses",
+        url: "https://agent.example.com/v1/responses",
     },
     postAccountAgents: {
         name: "my-agent",
@@ -1028,14 +1094,25 @@ const CURATED_BODIES: Record<string, Json> = {
 
 /**
  * Curated path-parameter values for parameters whose schemas don't carry a
- * useful `example`. Used to make every curl example copy-pasteable rather
- * than falling back to `:name`-style placeholders. Keyed by parameter name.
+ * useful `example`. Resource IDs are illustrative and must be replaced with
+ * an ID returned by the matching create/list operation. Keyed by path.
  */
-const MEDIA_ID_EXAMPLE = "550e8400-e29b-41d4-a716-446655440000";
-const MEDIA_ID_PATHS = new Set(["/{id}", "/{id}/metadata", "/media/{id}"]);
-
-const PATH_PARAM_OVERRIDES: Record<string, string> = {
-    id: "key_abc123",
+const RESOURCE_ID_EXAMPLE = "550e8400-e29b-41d4-a716-446655440000";
+const PATH_PARAM_EXAMPLES: Record<string, Record<string, string>> = {
+    "/{id}": { id: RESOURCE_ID_EXAMPLE },
+    "/{id}/metadata": { id: RESOURCE_ID_EXAMPLE },
+    "/media/{id}": { id: RESOURCE_ID_EXAMPLE },
+    "/account/keys/{id}": { id: "key_abc123" },
+    "/api/x402/keys/{packKey}": { packKey: "0.50" },
+    "/account/integrations/{id}": { id: "ca_abc123" },
+    "/account/agents/{id}": { id: RESOURCE_ID_EXAMPLE },
+    "/account/agents/{id}/sync": { id: RESOURCE_ID_EXAMPLE },
+    "/account/my-models/{id}": { id: RESOURCE_ID_EXAMPLE },
+    "/account/my-models/{id}/update": { id: RESOURCE_ID_EXAMPLE },
+    "/account/my-models/{id}/fallback-candidates": { id: RESOURCE_ID_EXAMPLE },
+    "/account/my-models/{id}/test": { id: RESOURCE_ID_EXAMPLE },
+    "/account/my-models/{id}/health": { id: RESOURCE_ID_EXAMPLE },
+    "/v1/models/{model}": { model: "openai/gpt-5.4-nano" },
 };
 
 /**
@@ -1102,22 +1179,26 @@ const TAG_ORDER = [
     "Community Models",
     "Community Agents",
     "Media Storage",
+    "Sandboxes API",
     "Account",
 ];
 
-const REQUIRED_PATHS = [
-    "/account/profile",
-    "/account/my-models",
-    "/account/agents",
-];
-
-function requireMergedPaths(spec: Spec): void {
-    const missing = REQUIRED_PATHS.filter((path) => !spec.paths[path]);
+export async function fetchOpenApiSpec(url: string): Promise<Spec> {
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`OpenAPI schema fetch failed: HTTP ${response.status}`);
+    }
+    const spec = (await response.json()) as Spec;
+    const sources = asObj(spec?.["x-schema-sources"]);
+    const missing = ["gen", "enter", "media"].filter(
+        (source) => sources[source] !== true,
+    );
     if (missing.length > 0) {
         throw new Error(
-            `OpenAPI schema is incomplete; missing required paths: ${missing.join(", ")}`,
+            `OpenAPI schema is incomplete; missing public operations or completeness metadata from: ${missing.join(", ")}`,
         );
     }
+    return spec;
 }
 
 /** Group operations by tag, then re-key the map to follow TAG_ORDER. */
@@ -1169,8 +1250,7 @@ function groupByTag(
 
 async function main() {
     console.log(`Fetching OpenAPI spec from ${OPENAPI_URL}...`);
-    const spec = (await fetch(OPENAPI_URL).then((r) => r.json())) as Spec;
-    requireMergedPaths(spec);
+    const spec = await fetchOpenApiSpec(OPENAPI_URL);
     simplifyModelEnums(spec);
 
     const byTag = groupByTag(spec);
@@ -1198,7 +1278,9 @@ async function main() {
     );
 }
 
-main().catch((err) => {
-    console.error("❌ Error:", err.message);
-    process.exit(1);
-});
+if (import.meta.main) {
+    main().catch((err) => {
+        console.error("❌ Error:", err.message);
+        process.exit(1);
+    });
+}

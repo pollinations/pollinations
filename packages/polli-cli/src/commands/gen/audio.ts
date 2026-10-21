@@ -1,5 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { writeFileSync } from "node:fs";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
 import {
@@ -10,6 +9,7 @@ import {
     printInfo,
     printMeta,
 } from "../../lib/output.js";
+import { prepareOutputPath } from "../../lib/output-file.js";
 import { playAudio } from "../../lib/play.js";
 import { readStdin } from "../../lib/stdin.js";
 
@@ -25,7 +25,7 @@ interface AudioOptions {
 async function generateSimple(
     text: string,
     opts: AudioOptions,
-): Promise<Buffer> {
+): Promise<Response> {
     const params = new URLSearchParams();
     if (opts.voice) params.set("voice", opts.voice);
     if (opts.format !== "mp3") params.set("response_format", opts.format);
@@ -34,8 +34,7 @@ async function generateSimple(
     if (opts.instrumental) params.set("instrumental", "true");
     if (opts.seed) params.set("seed", opts.seed);
 
-    const res = await fetchGen(`/audio/${encodeURIComponent(text)}?${params}`);
-    return Buffer.from(await res.arrayBuffer());
+    return fetchGen(`/audio/${encodeURIComponent(text)}?${params}`);
 }
 
 /** Character-level timing needs the JSON+base64 endpoint; writes the
@@ -106,7 +105,7 @@ export function createAudioCommand() {
             }
 
             const isHuman = getOutputMode() === "human";
-            const output = opts.output ?? `speech.${opts.format}`;
+            let output = opts.output ?? `speech.${opts.format}`;
             const inputText = textArg || (await readStdin()).trim();
             if (!inputText) {
                 printError(
@@ -116,20 +115,31 @@ export function createAudioCommand() {
             }
 
             // Before the paid request, so a bad --output folder costs nothing.
-            mkdirSync(dirname(output), { recursive: true });
+            prepareOutputPath(output);
             if (isHuman) printInfo("Generating audio...");
 
             try {
                 const alignmentPath = opts.timestamps
                     ? `${output}.json`
                     : undefined;
-                const buffer = alignmentPath
-                    ? await generateWithTimestamps(
-                          inputText,
-                          opts,
-                          alignmentPath,
-                      )
-                    : await generateSimple(inputText, opts);
+                let buffer: Buffer;
+                if (alignmentPath) {
+                    buffer = await generateWithTimestamps(
+                        inputText,
+                        opts,
+                        alignmentPath,
+                    );
+                } else {
+                    const res = await generateSimple(inputText, opts);
+                    const contentType = (res.headers.get("content-type") ?? "")
+                        .split(";")[0]
+                        .trim()
+                        .toLowerCase();
+                    if (!opts.output && contentType === "audio/wav") {
+                        output = "speech.wav";
+                    }
+                    buffer = Buffer.from(await res.arrayBuffer());
+                }
 
                 writeFileSync(output, buffer);
                 printMeta({

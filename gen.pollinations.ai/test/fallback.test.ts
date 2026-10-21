@@ -139,18 +139,14 @@ describe("registry fallback linking", () => {
             provider: "fal",
             fallbacks: ["alibaba/wan-2.2-fast:replicate"],
         });
-        expect(
-            IMAGE_SERVICES["alibaba/wan-2.2-fast:replicate"],
-        ).toMatchObject({
+        expect(IMAGE_SERVICES["alibaba/wan-2.2-fast:replicate"]).toMatchObject({
             aliases: [],
             hidden: true,
             fallbackOnly: true,
             provider: "replicate",
         });
         // No same-endpoint auto-retry: primary is already Fal.
-        expect(
-            "alibaba/wan-2.2-fast:fal" in IMAGE_SERVICES,
-        ).toBe(false);
+        expect("alibaba/wan-2.2-fast:fal" in IMAGE_SERVICES).toBe(false);
         expect(getVisibleImageModels()).not.toContain(
             "alibaba/wan-2.2-fast:replicate",
         );

@@ -360,6 +360,12 @@ function Contributors() {
                     </LinkCard>
                 ))}
             </div>
+            <Text size="sm">
+                Like the project?{" "}
+                <InlineLink href={SOCIAL_LINKS.github.url}>
+                    Star it on GitHub
+                </InlineLink>
+            </Text>
         </section>
     );
 }

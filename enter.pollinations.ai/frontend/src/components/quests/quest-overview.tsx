@@ -608,6 +608,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
 function QuestOverviewContent({ userId }: { userId: string | null }) {
     const router = useRouter();
     const [claimError, setClaimError] = useState<string | null>(null);
+    const [claimed, setClaimed] = useState(false);
     const [state, setState] = useState<FetchState>({
         ...INITIAL_STATE,
         anonymous: userId === null,
@@ -724,6 +725,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                 ),
             }));
             window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
+            setClaimed(true);
         } catch (error) {
             setState((current) => ({
                 ...current,
@@ -950,6 +952,14 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                 <SectionContent loading={state.loading}>
                     {state.error && <LoadError>{state.error}</LoadError>}
                     {claimError && <Alert intent="danger">{claimError}</Alert>}
+                    {claimed && (
+                        <Text size="sm" tone="muted">
+                            Like Pollinations?{" "}
+                            <InlineLink href="https://github.com/pollinations/pollinations">
+                                Star it on GitHub
+                            </InlineLink>
+                        </Text>
+                    )}
                     {showSummary && !state.anonymous && (
                         <QuestSummary
                             quests={claimedStats.quests}

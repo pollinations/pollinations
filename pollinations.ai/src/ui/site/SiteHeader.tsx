@@ -223,9 +223,13 @@ export function SiteHeader() {
                                     {item.label}
                                 </TabButton>
                             ))}
-                            {/* Its own small group, at the colour toggle's height. */}
-                            <div className="hidden items-center gap-1.5 pl-1 min-[1120px]:flex">
-                                <DiscordLiveButton online={discordOnline} />
+                            {/* Its own small group, at the colour toggle's height.
+                                GitHub from 980px, where it clears Docs; Discord
+                                from 1120px. */}
+                            <div className="hidden items-center gap-1.5 pl-1 min-[980px]:flex">
+                                <span className="hidden min-[1120px]:contents">
+                                    <DiscordLiveButton online={discordOnline} />
+                                </span>
                                 <GitHubStarsButton stars={repoStars} />
                             </div>
                         </nav>
@@ -247,6 +251,9 @@ export function SiteHeader() {
                         )}
                         <div className="hidden h-9 items-center min-[880px]:flex">
                             <ColorModeToggle />
+                        </div>
+                        <div className="mt-2 min-[880px]:hidden">
+                            <GitHubStarsButton stars={repoStars} />
                         </div>
                         <Button
                             aria-label="Open menu"

@@ -294,7 +294,9 @@ export function messagesToChatRequest(
                 chatMessages,
             ),
         ],
-        max_tokens: request.max_tokens,
+        // Claude Code checks a model with max_tokens 1 (start-up, /model, key
+        // and quota checks), but OpenAI Responses models reject fewer than 16.
+        max_tokens: Math.max(request.max_tokens, 16),
         stream: request.stream ?? false,
         ...(request.stop_sequences?.length && {
             stop: request.stop_sequences,

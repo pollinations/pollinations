@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "QRCODE_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -65,6 +66,24 @@ const EXA_SEARCH_PRICE_PER_REQUEST = 0.007;
 const EXA_CONTENTS_PRICE_PER_PAGE = 0.001;
 export const COMPOSIO_TOOL_CALL_PRICE = 0.0002;
 export const COMPUTER_TOOL_CALL_PRICE = 0.0002;
+const QRCODE_MCP_PRICE_PER_CALL = 0.00002;
+const QRCODE_MCP_PRICING = {
+    description: "Preview price",
+    rates: [
+        {
+            id: "qrcode.tool_call.v1",
+            description: "QR code tool call",
+            kind: "tool_call",
+            unit: "call",
+            unitCost: QRCODE_MCP_PRICE_PER_CALL,
+            publicPricing: {
+                label: "QR code",
+                quantity: 1,
+                unit: "call",
+            },
+        },
+    ],
+} as const;
 const COMPUTER_MCP_PRICING = {
     description: "Preview price",
     rates: [
@@ -212,6 +231,16 @@ export const MCP_SERVERS = [
         provider: "cloudflare",
         userScoped: true,
         pricing: COMPUTER_MCP_PRICING,
+    },
+    {
+        id: "qrcode",
+        name: "QR Code",
+        description:
+            "Create QR codes for links and short text as SVG markup and PNG data URIs. Runs without any other service.",
+        binding: "QRCODE_MCP",
+        billing: "usage_receipt",
+        provider: "cloudflare",
+        pricing: QRCODE_MCP_PRICING,
     },
     {
         id: "machines",

@@ -39,9 +39,7 @@ export type MockTinybirdState = {
     appUsageResponse: UsageRow[];
     modelModalitiesResponse: UsageRow[];
     agentUsageResponse: UsageRow[];
-    modelFailuresResponse: UsageRow[];
     modelHealthResponse: UsageRow[];
-    modelRunsResponse: UsageRow[];
     pipeCalls: PipeCall[];
 };
 
@@ -60,9 +58,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         appUsageResponse: [],
         modelModalitiesResponse: [],
         agentUsageResponse: [],
-        modelFailuresResponse: [],
         modelHealthResponse: [],
-        modelRunsResponse: [],
         pipeCalls: [],
     };
 
@@ -138,17 +134,9 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.agentUsageResponse }, 200);
         })
-        .get("/v0/pipes/my_model_failures.json", (c) => {
-            state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
-            return c.json({ data: state.modelFailuresResponse }, 200);
-        })
         .get("/v0/pipes/my_model_health.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.modelHealthResponse }, 200);
-        })
-        .get("/v0/pipes/my_model_runs.json", (c) => {
-            state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
-            return c.json({ data: state.modelRunsResponse }, 200);
         })
         .post("/v0/datasources/:datasource/delete", (c) => {
             return c.json({ delete_id: "mock-delete" }, 200);
@@ -175,9 +163,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         state.appUsageResponse = [];
         state.modelModalitiesResponse = [];
         state.agentUsageResponse = [];
-        state.modelFailuresResponse = [];
         state.modelHealthResponse = [];
-        state.modelRunsResponse = [];
         state.pipeCalls = [];
     };
 

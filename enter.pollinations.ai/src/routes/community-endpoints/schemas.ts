@@ -73,7 +73,7 @@ const FallbacksSchema = z
     .array(z.string().trim().min(1))
     .max(MAX_FALLBACK_TARGETS)
     .describe(
-        'Community model ids ("community/<owner>/<name>") tried in order when this model\'s upstream fails, or an empty array to clear them. Each must be another registered community model of the same modality, public or owned by you, and priced at or below this model on every price field.',
+        'Model ids tried in order when this model\'s upstream fails, or an empty array to clear them. Each must be a Pollinations model id or another registered community model ("community/<owner>/<name>") that is public or owned by you, with the same modality and priced at or below this model on every price field.',
     );
 const VisibilitySchema = z
     .enum(COMMUNITY_ENDPOINT_VISIBILITIES)
@@ -480,87 +480,45 @@ export const CommunityEndpointTestResponseSchema = z
             ),
     })
     .passthrough();
-export const CommunityEndpointFailuresResponseSchema = z.object({
-    data: z.array(
-        z.object({
-            status: z.number().describe("HTTP status of the failed call."),
-            code: z.string().describe("Pollinations error code."),
-            host: z
-                .string()
-                .describe(
-                    "Upstream hostname Gen recorded, or empty when the failure has none.",
-                ),
-            failures: z.number(),
-            counted: z
-                .number()
-                .describe(
-                    "Failures that were the final answer to a caller. Listing health counts these; the rest were retried.",
-                ),
-            fromPollinations: z
-                .number()
-                .describe(
-                    "Failures on calls from Pollinations monitors and bots.",
-                ),
-            fromOwner: z.number().describe("Failures on your own calls."),
-            lastAt: z.string().describe("Latest failure, ISO 8601."),
-            message: z
-                .string()
-                .describe("Latest error message, up to 300 characters."),
-        }),
-    ),
-});
 export const CommunityEndpointHealthResponseSchema = z.object({
-    successRate: z
-        .number()
-        .nullable()
-        .describe(
-            "Percent of 2xx in the sample the 80% listing rule uses, or null without requests.",
-        ),
-    requests: z
-        .number()
-        .describe(
-            "Eligible final requests in that sample: the latest 50 within seven days.",
-        ),
     days: z
         .array(
             z.object({
                 day: z.string().describe("UTC date, YYYY-MM-DD."),
-                succeeded: z.number(),
-                failed: z.number().describe("Final 5xx."),
+                succeeded: z.number().describe("2xx answers."),
+                failed: z.number().describe("5xx answers."),
             }),
         )
         .describe("The last seven UTC days, oldest first."),
-});
-
-export const CommunityEndpointRunsResponseSchema = z.object({
-    data: z.array(
-        z.object({
-            id: z.string().describe("Request ID of the call."),
-            startedAt: z.string().describe("ISO 8601."),
-            status: z.number().describe("HTTP status returned to you."),
-            durationMs: z.number(),
-            keyName: z
-                .string()
-                .describe(
-                    "Name of the API key used, or empty for the dashboard.",
-                ),
-            cost: z
-                .number()
-                .describe("Pollen charged for the call and everything it ran."),
-            modelCalls: z
-                .number()
-                .describe("Text and media generations an agent made."),
-            toolCalls: z.number().describe("MCP tool calls an agent made."),
-            failedCalls: z
-                .number()
-                .describe("Generations and tool calls that failed."),
-            error: z
-                .string()
-                .describe(
-                    "The call's error, or else the latest failed step's, up to 300 characters.",
-                ),
-        }),
-    ),
+    failures: z
+        .array(
+            z.object({
+                status: z.number().describe("HTTP status of the failed call."),
+                code: z.string().describe("Pollinations error code."),
+                host: z
+                    .string()
+                    .describe(
+                        "Upstream hostname Gen recorded, or empty when the failure has none.",
+                    ),
+                failures: z.number(),
+                counted: z
+                    .number()
+                    .describe(
+                        "Failures that were the final answer to a caller; the rest were retried. Listing health uses only the latest 50 final calls.",
+                    ),
+                fromPollinations: z
+                    .number()
+                    .describe(
+                        "Failures on calls from Pollinations monitors and bots.",
+                    ),
+                fromOwner: z.number().describe("Failures on your own calls."),
+                lastAt: z.string().describe("Latest failure, ISO 8601."),
+                message: z
+                    .string()
+                    .describe("Latest error message, up to 300 characters."),
+            }),
+        )
+        .describe("Up to 10 failure groups, newest first."),
 });
 export const CommunityEndpointDeleteResponseSchema = z.object({
     id: z.string(),

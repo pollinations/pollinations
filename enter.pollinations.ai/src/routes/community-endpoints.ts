@@ -13,11 +13,16 @@ import {
     parseListingPayload,
     pendingCommunityEndpointChangeIsReady,
     resolveEffectiveProxyListing,
+    staticFallbackRejection,
 } from "@shared/community-endpoints.ts";
 import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { resolveModelName } from "@shared/registry/registry.ts";
+import {
+    getModels,
+    getRegistryModelDefinition,
+    resolveModelName,
+} from "@shared/registry/registry.ts";
 import { decryptSecret, encryptSecret } from "@shared/secret-encryption.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -59,12 +64,10 @@ import {
 import {
     assertValidUpdate,
     CommunityEndpointDeleteResponseSchema,
-    CommunityEndpointFailuresResponseSchema,
     CommunityEndpointHealthResponseSchema,
     CommunityEndpointListResponseSchema,
     CommunityEndpointModelsResponseSchema,
     CommunityEndpointResponseSchema,
-    CommunityEndpointRunsResponseSchema,
     CommunityEndpointTestResponseSchema,
     CommunityProviderProfileInputSchema,
     CommunityProviderProfileResponseSchema,
@@ -145,7 +148,7 @@ async function requireOwnerGithubUsername(
     if (owner?.githubUsername) return owner.githubUsername;
     throw new HTTPException(400, {
         message:
-            "A GitHub username is required to register community endpoints",
+            "Connect GitHub on your account page to register community models.",
     });
 }
 
@@ -268,42 +271,20 @@ async function runEndpointTest(input: TestEndpointInput) {
     }
 }
 
-type FailureRow = {
+type HealthRow = {
+    day: string;
     status: number;
     code: string;
     host: string;
-    failures: number;
+    failure_group: number;
+    succeeded: number;
+    failed: number;
     counted: number;
     from_pollinations: number;
     from_owner: number;
     last_at: string;
     message: string;
 };
-
-type HealthRow = {
-    day: string;
-    succeeded: number;
-    failed: number;
-    sample_succeeded: number | null;
-    sample_failed: number | null;
-};
-
-type RunRow = {
-    run_id: string;
-    started_at: string;
-    status: number;
-    duration_ms: number;
-    key_name: string;
-    cost: number;
-    model_calls: number;
-    tool_calls: number;
-    failed_calls: number;
-    error: string;
-};
-
-// Tinybird returns DateTime as "YYYY-MM-DD hh:mm:ss" in UTC.
-const tinybirdTimeToIso = (value: string) =>
-    new Date(`${value.replace(" ", "T")}Z`).toISOString();
 
 type EndpointProbeKind = "models" | "test";
 
@@ -375,15 +356,15 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
             requireAccountPermission(c.var.auth.apiKey, "keys");
-            const ownerGithubUsername = await requireOwnerGithubUsername(
-                db,
-                user.id,
-            );
             const rows = await db
                 .select()
                 .from(schema.communityEndpoint)
                 .where(eq(schema.communityEndpoint.ownerUserId, user.id))
                 .orderBy(desc(schema.communityEndpoint.createdAt));
+            // Registering needs GitHub, so users without it have no rows.
+            const ownerGithubUsername = rows.length
+                ? await requireOwnerGithubUsername(db, user.id)
+                : "";
             const owner = await db.query.user.findFirst({
                 columns: {
                     id: true,
@@ -490,7 +471,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "List Fallback Candidates",
             description:
-                "Community models this model may declare as fallbacks: registered, public or owned by you, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
+                "Models this model may declare as fallbacks: community models that are public or owned by you, and Pollinations models, with the same modality and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
             responses: {
                 200: {
                     description: "Eligible fallback model ids",
@@ -559,15 +540,24 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     schema.user,
                     eq(schema.communityEndpoint.ownerUserId, schema.user.id),
                 );
-            const data = candidates
-                .flatMap(({ endpoint: row, ownerGithubUsername: owner }) => {
-                    if (!owner) return [];
-                    const modelId = communityModelId(owner, row.name);
-                    return fallbackTargetRejection(primary, modelId, row)
-                        ? []
-                        : [modelId];
-                })
-                .sort();
+            const data = [
+                ...candidates.flatMap(
+                    ({ endpoint: row, ownerGithubUsername: owner }) => {
+                        if (!owner) return [];
+                        const modelId = communityModelId(owner, row.name);
+                        return fallbackTargetRejection(primary, modelId, row)
+                            ? []
+                            : [modelId];
+                    },
+                ),
+                ...getModels().filter(
+                    (modelId) =>
+                        !staticFallbackRejection(
+                            primary,
+                            getRegistryModelDefinition(modelId),
+                        ),
+                ),
+            ].sort();
             return c.json({ data });
         },
     )
@@ -899,72 +889,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
         },
     )
     .get(
-        "/:id/failures",
-        describeRoute({
-            tags: ["🧩 Community Models"],
-            summary: "List Model Failures",
-            description:
-                "Failed calls to a model's own upstream in the last 7 days, grouped by status, error code and host, newest first, with the latest message of each group. Fallback attempts and caller identities are left out. API keys require `account:keys`.",
-            responses: {
-                200: {
-                    description: "Failure groups",
-                    content: {
-                        "application/json": {
-                            schema: resolver(
-                                CommunityEndpointFailuresResponseSchema,
-                            ),
-                        },
-                    },
-                },
-                401: { description: "Unauthorized" },
-                403: { description: "Permission denied" },
-                404: { description: "Community endpoint not found" },
-            },
-        }),
-        async (c) => {
-            const user = c.var.auth.requireUser();
-            const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
-            const endpoint = await requireOwnedEndpoint(
-                db,
-                c.req.param("id"),
-                user.id,
-            );
-            const ownerGithubUsername = await requireOwnerGithubUsername(
-                db,
-                user.id,
-            );
-            const rows = await fetchTinybirdRows<FailureRow>(
-                new URL(c.env.TINYBIRD_INGEST_URL).origin,
-                "/v0/pipes/my_model_failures.json",
-                requireTinybirdReadToken(c.env),
-                {
-                    model: communityModelId(ownerGithubUsername, endpoint.name),
-                    owner_user_id: user.id,
-                },
-            );
-            return c.json({
-                data: rows.map((row) => ({
-                    status: row.status,
-                    code: row.code,
-                    host: row.host,
-                    failures: row.failures,
-                    counted: row.counted,
-                    fromPollinations: row.from_pollinations,
-                    fromOwner: row.from_owner,
-                    lastAt: tinybirdTimeToIso(row.last_at),
-                    message: row.message,
-                })),
-            });
-        },
-    )
-    .get(
         "/:id/health",
         describeRoute({
             tags: ["🧩 Community Models"],
             summary: "Get Model Health",
             description:
-                "Success rate in the sample the 80% listing rule uses (the latest 50 eligible final requests within seven days), plus final successes and 5xx per day for the last seven UTC days. API keys require `account:keys`.",
+                "Calls a model's own upstream answered in the last seven UTC days: 2xx and 5xx per day, and the 5xx grouped by status, error code and host, newest first, with the latest message of each group. Fallback attempts and caller identities are left out. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Model health",
@@ -998,12 +928,16 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 new URL(c.env.TINYBIRD_INGEST_URL).origin,
                 "/v0/pipes/my_model_health.json",
                 requireTinybirdReadToken(c.env),
-                { model: communityModelId(ownerGithubUsername, endpoint.name) },
+                {
+                    model: communityModelId(ownerGithubUsername, endpoint.name),
+                    owner_user_id: user.id,
+                },
             );
-            const succeeded = rows[0]?.sample_succeeded ?? 0;
-            const requests = succeeded + (rows[0]?.sample_failed ?? 0);
-            const byDay = new Map(rows.map((row) => [row.day, row]));
-            // The pipe's hour-aligned window can include part of an eighth day.
+            const byDay = new Map(
+                rows
+                    .filter((row) => !row.failure_group)
+                    .map((row) => [row.day, row]),
+            );
             const days = Array.from({ length: 7 }, (_, index) => {
                 const day = new Date(Date.now() - (6 - index) * 86_400_000)
                     .toISOString()
@@ -1016,70 +950,23 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 };
             });
             return c.json({
-                successRate: requests ? (succeeded / requests) * 100 : null,
-                requests,
                 days,
-            });
-        },
-    )
-    .get(
-        "/:id/runs",
-        describeRoute({
-            tags: ["🧩 Community Models"],
-            summary: "List My Runs",
-            description:
-                "Your own calls to a model in the last 7 days, newest first, up to 50. For an agent, each run includes the generations and tool calls it made, with their total cost and the error if one failed. Other callers' runs are left out. API keys require `account:keys`.",
-            responses: {
-                200: {
-                    description: "Runs",
-                    content: {
-                        "application/json": {
-                            schema: resolver(
-                                CommunityEndpointRunsResponseSchema,
-                            ),
-                        },
-                    },
-                },
-                401: { description: "Unauthorized" },
-                403: { description: "Permission denied" },
-                404: { description: "Community endpoint not found" },
-            },
-        }),
-        async (c) => {
-            const user = c.var.auth.requireUser();
-            const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
-            const endpoint = await requireOwnedEndpoint(
-                db,
-                c.req.param("id"),
-                user.id,
-            );
-            const ownerGithubUsername = await requireOwnerGithubUsername(
-                db,
-                user.id,
-            );
-            const rows = await fetchTinybirdRows<RunRow>(
-                new URL(c.env.TINYBIRD_INGEST_URL).origin,
-                "/v0/pipes/my_model_runs.json",
-                requireTinybirdReadToken(c.env),
-                {
-                    model: communityModelId(ownerGithubUsername, endpoint.name),
-                    owner_user_id: user.id,
-                },
-            );
-            return c.json({
-                data: rows.map((row) => ({
-                    id: row.run_id,
-                    startedAt: tinybirdTimeToIso(row.started_at),
-                    status: row.status,
-                    durationMs: row.duration_ms,
-                    keyName: row.key_name === "undefined" ? "" : row.key_name,
-                    cost: row.cost,
-                    modelCalls: row.model_calls,
-                    toolCalls: row.tool_calls,
-                    failedCalls: row.failed_calls,
-                    error: row.error === "undefined" ? "" : row.error,
-                })),
+                failures: rows
+                    .filter((row) => row.failure_group)
+                    .slice(0, 10)
+                    .map((row) => ({
+                        status: row.status,
+                        code: row.code,
+                        host: row.host,
+                        failures: row.failed,
+                        counted: row.counted,
+                        fromPollinations: row.from_pollinations,
+                        fromOwner: row.from_owner,
+                        lastAt: new Date(
+                            `${row.last_at.replace(" ", "T")}Z`,
+                        ).toISOString(),
+                        message: row.message,
+                    })),
             });
         },
     )

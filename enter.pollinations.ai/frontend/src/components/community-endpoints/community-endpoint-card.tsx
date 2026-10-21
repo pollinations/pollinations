@@ -29,7 +29,6 @@ import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
 import { ResourceCardHeader } from "../resource-card-header.tsx";
 import { EndpointHealth } from "./endpoint-health.tsx";
-import { EndpointRuns } from "./endpoint-runs.tsx";
 import {
     type CommunityEndpoint,
     type ManagedAgent,
@@ -253,8 +252,10 @@ export function CommunityEndpointCard({
             <EndpointHealth
                 id={endpoint.id}
                 proxy={endpoint.type === "proxy"}
+                listing={
+                    isPublic && endpoint.type === "proxy" ? health : undefined
+                }
             />
-            {endpoint.type !== "proxy" && <EndpointRuns id={endpoint.id} />}
         </Surface>
     );
 }

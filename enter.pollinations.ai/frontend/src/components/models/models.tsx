@@ -431,6 +431,10 @@ export const Models: FC = () => {
         if (draftFilter) {
             removeDraftFilter();
         } else if (lastFilter) {
+            // Auto-repeat is the tail of a held key that just cleared the
+            // text. It must not arm removal, or clearing a search would
+            // select the last filter.
+            if (event.repeat) return;
             setSearchOpen(false);
             if (pendingRemovalIndex === lastFilter.index) {
                 removeFilter(lastFilter);

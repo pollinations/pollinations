@@ -196,7 +196,11 @@ export function useModelQuerySearch({
                 event.preventDefault();
                 return;
             }
-            if (event.key !== "Backspace" || visibleSearch !== "") {
+            if (event.key !== "Backspace") {
+                setPendingRemoval(undefined);
+                return;
+            }
+            if (visibleSearch !== "") {
                 setPendingRemoval(undefined);
                 return;
             }
@@ -208,6 +212,10 @@ export function useModelQuerySearch({
                 setSearch(cancelledDraft());
                 resetDraft();
             } else if (last) {
+                // Auto-repeat is the tail of a held key that just cleared the
+                // text. It must not arm removal, or clearing a search would
+                // select the last filter.
+                if (event.repeat) return;
                 if (pendingRemoval === last.index) {
                     setSearch(removeModelQueryFilterToken(search, last.index));
                     resetDraft();

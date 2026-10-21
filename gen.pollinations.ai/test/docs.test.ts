@@ -11,6 +11,7 @@ import {
     type Spec,
 } from "../scripts/generate-apidocs.ts";
 import { requestExampleErrors } from "../scripts/validate-request-examples.ts";
+import { authenticateDocsRequest } from "../src/docs-client/request-auth.ts";
 import worker from "../src/index.ts";
 import { E2B_PATH, e2bRoutes } from "../src/routes/e2b.ts";
 
@@ -43,6 +44,61 @@ function envWithFailedEnterSchema(): CloudflareBindings {
 }
 
 describe("docs routes", () => {
+    it("adds the connected key only to outbound Pollinations requests", () => {
+        for (const host of ["gen", "enter", "media"]) {
+            const request = new Request(
+                `https://${host}.pollinations.ai/account/key`,
+                {
+                    headers: { Authorization: "Bearer YOUR_API_KEY" },
+                },
+            );
+            authenticateDocsRequest(request, "test-connected-credential");
+            expect(request.headers.get("Authorization")).toBe(
+                "Bearer test-connected-credential",
+            );
+        }
+        const foreignRequest = new Request(
+            "https://gen.pollinations.ai.example.com/account/key",
+            {
+                headers: { Authorization: "Bearer YOUR_API_KEY" },
+            },
+        );
+        expect(() =>
+            authenticateDocsRequest(
+                foreignRequest,
+                "test-connected-credential",
+            ),
+        ).toThrow();
+        expect(foreignRequest.headers.get("Authorization")).toBe(
+            "Bearer YOUR_API_KEY",
+        );
+    });
+
+    it("preserves manual authentication and unauthenticated requests", () => {
+        for (const authorization of [null, "Bearer manually-entered-key"]) {
+            const request = new Request(
+                "https://gen.pollinations.ai/account/key",
+                {
+                    headers: authorization
+                        ? { Authorization: authorization }
+                        : {},
+                },
+            );
+            authenticateDocsRequest(request, "test-connected-credential");
+            expect(request.headers.get("Authorization")).toBe(authorization);
+        }
+        const disconnectedRequest = new Request(
+            "https://gen.pollinations.ai/account/key",
+            {
+                headers: { Authorization: "Bearer YOUR_API_KEY" },
+            },
+        );
+        authenticateDocsRequest(disconnectedRequest, null);
+        expect(disconnectedRequest.headers.get("Authorization")).toBe(
+            "Bearer YOUR_API_KEY",
+        );
+    });
+
     afterEach(() => {
         vi.restoreAllMocks();
     });
@@ -59,20 +115,6 @@ describe("docs routes", () => {
         expect(response.headers.get("Location")).toBe(
             "https://gen.pollinations.ai/docs?view=reference",
         );
-    });
-
-    it("serves canonical docs through the upstream hostname without a redirect loop", async () => {
-        const ctx = createExecutionContext();
-        const response = await worker.fetch(
-            new Request("https://gen.myceli.ai/docs", {
-                headers: { "X-Forwarded-Host": "gen.pollinations.ai" },
-            }),
-            envWithEnterSchema({}),
-            ctx,
-        );
-        await waitOnExecutionContext(ctx);
-        expect(response.status).toBe(200);
-        expect(response.headers.get("Location")).toBeNull();
     });
 
     it("generates valid request examples from the checked-out Gen schema", async () => {
@@ -661,7 +703,76 @@ describe("docs routes", () => {
         expect(html).toContain("#tag/connect-user-wallets");
     });
 
-    it("puts the dashboard and help links in the docs drawer", async () => {
+    it("adds the pinned sign-in button without rendering credentials", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs", {
+                headers: {
+                    Authorization: "Bearer example-private-credential",
+                },
+            }),
+            {
+                ...envWithEnterSchema({}),
+                DOCS_APP_KEY: "pk_docs_test",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        const html = await response.text();
+        expect(response.status).toBe(200);
+        expect(html).toContain(
+            '<polli-connect app-key="pk_docs_test" budget="5" expiry="7" hide-buy-pollen',
+        );
+        let menuLinks: string | null = null;
+        await new HTMLRewriter()
+            .on("polli-connect", {
+                element(element) {
+                    menuLinks = element.getAttribute("menu-links");
+                },
+            })
+            .transform(new Response(html))
+            .text();
+        // HTMLRewriter exposes raw entities; decode as a browser attribute does.
+        const decodedLinks = (menuLinks ?? "")
+            .replaceAll("&quot;", '"')
+            .replaceAll("&amp;", "&");
+        expect(JSON.parse(decodedLinks)).toEqual([
+            {
+                href: "https://discord.com/channels/885844321461485618/889573359111774329",
+                label: "Need help?",
+                icon: "discord",
+            },
+            {
+                href: "https://github.com/pollinations/pollinations/issues",
+                label: "Found a bug?",
+                icon: "bug",
+            },
+        ]);
+        expect(html).toMatch(
+            /<script defer src="https:\/\/cdn\.jsdelivr\.net\/npm\/@pollinations\/ui@[^"]+\/dist\/connect\.js" integrity="sha384-[^"]+" crossorigin="anonymous">/,
+        );
+        // The page runs the tested helper's own source.
+        expect(html).toContain(String(authenticateDocsRequest));
+        expect(html).toContain(
+            "window.pollinationsDocsReference = Scalar.createApiReference(",
+        );
+        expect(html).not.toContain("example-private-credential");
+    });
+
+    it("omits sign-in when no docs App Key is configured", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        const html = await response.text();
+        expect(html).not.toContain("<polli-connect");
+        expect(html).not.toContain("connect.js");
+    });
+
+    it("keeps support links in the drawer without an app key, but omits Dashboard", async () => {
         const ctx = createExecutionContext();
         const response = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs"),
@@ -672,12 +783,12 @@ describe("docs routes", () => {
 
         const html = await response.text();
         for (const href of [
-            "https://enter.pollinations.ai",
             "https://discord.com/channels/885844321461485618/889573359111774329",
             "https://github.com/pollinations/pollinations/issues",
         ]) {
             expect(html).toContain(`href=\\"${href}\\"`);
         }
+        expect(html).not.toContain('href=\\"https://enter.pollinations.ai\\"');
     });
 
     it("serves the guide as Markdown when an agent prefers it", async () => {

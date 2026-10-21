@@ -46,6 +46,8 @@ export type ProviderDefinition = {
     // adjustment line (a reimbursement of pre-window costs, for example).
     cashOnly?: boolean;
     meteringBasis: MeteringBasis;
+    // Pollen routing scope for cloud vendors that also sell infrastructure.
+    pollenComputeMode?: "managed-inference";
     aliases: string[];
     connector: string | null;
     monthlyReview: boolean;
@@ -107,32 +109,200 @@ export type PollenVendorOverride = {
     evidence: string;
 };
 
+export type PollenComputeModeOverride = {
+    vendor: string;
+    model: string;
+    from: string;
+    until: string;
+    mode: "managed-inference" | "gpu-capacity";
+    evidence: string;
+};
+
+export type CanonicalModelRule = {
+    provider?: string;
+    from: string;
+    until?: string;
+    model: string;
+    evidence: string;
+};
+export type CanonicalModelTarget = string | CanonicalModelRule[];
+
 type ProviderRegistryFile = {
     version: number;
-    canonicalModelRenames: Record<string, string>;
+    canonicalModelRenames: Record<string, CanonicalModelTarget>;
     pollenVendorOverrides: PollenVendorOverride[];
+    pollenComputeModeOverrides: PollenComputeModeOverride[];
     // Pollen model ids that no longer exist in the shared registry but still
     // identify historical costs. Removing a model from the product does not
     // invalidate what it cost.
     retiredModels: string[];
-    providers: ProviderDefinition[];
+    providers: Pick<
+        ProviderDefinition,
+        "id" | "aliases" | "modelLabels" | "pollenComputeMode"
+    >[];
 };
 
 export type ProviderReconciliationExplanation =
     | PollenWitnessExplanation
     | MeterDriftExplanation;
 
-export const PROVIDER_REGISTRY = (registryJson as ProviderRegistryFile)
-    .providers;
-// Frozen public-ID promotions from #13076, not today's mutable alias table.
-export const CANONICAL_MODEL_RENAMES: Readonly<Record<string, string>> =
-    registryJson.canonicalModelRenames;
+export let PROVIDER_REGISTRY: ProviderDefinition[] = [];
+let providerResolver:
+    | ReturnType<typeof createProviderResolver<ProviderDefinition>>
+    | undefined;
+
+// One immutable source snapshot per dashboard load. Never calculate with an
+// empty catalog or silently fall back to a second repository copy.
+export function initializeProviderRegistry(value: unknown): void {
+    const document = value as {
+        version?: unknown;
+        providers?: ProviderDefinition[];
+    } | null;
+    if (document?.version !== 1 || !Array.isArray(document.providers))
+        throw new Error("Vendor details: invalid document");
+    const mappings = new Map(
+        (registryJson as ProviderRegistryFile).providers.map((provider) => [
+            provider.id,
+            provider,
+        ]),
+    );
+    const seen = new Set<string>();
+    const text = (value: unknown): value is string =>
+        typeof value === "string" && value.trim().length > 0;
+    const month = (value: unknown) =>
+        value == null ||
+        (typeof value === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(value));
+    const providers = document.providers.map((provider) => {
+        if (
+            !provider ||
+            !text(provider.id) ||
+            seen.has(provider.id) ||
+            !mappings.has(provider.id) ||
+            !text(provider.label) ||
+            !(
+                provider.category === "uncategorized" ||
+                isCategory(provider.category)
+            ) ||
+            ![
+                "direct",
+                "capacity",
+                "mixed",
+                "internal",
+                "not_applicable",
+            ].includes(provider.meteringBasis) ||
+            typeof provider.monthlyReview !== "boolean" ||
+            typeof provider.balanceTracking !== "boolean" ||
+            !month(provider.activeFrom) ||
+            !month(provider.activeTo) ||
+            (provider.cashOnly !== undefined &&
+                typeof provider.cashOnly !== "boolean") ||
+            (provider.runwayLine !== undefined && !text(provider.runwayLine)) ||
+            !(provider.connector === null || text(provider.connector)) ||
+            !(
+                provider.collectionMethod === null ||
+                ["api", "cli", "dashboard", "internal"].includes(
+                    provider.collectionMethod,
+                )
+            ) ||
+            ["aliases", "modelLabels", "pollenComputeMode"].some((key) =>
+                Object.hasOwn(provider, key),
+            )
+        )
+            throw new Error(
+                `Vendor details: invalid definition ${provider?.id ?? ""}`,
+            );
+        for (const key of ["cashRules", "accounts", "access"] as const)
+            if (provider[key] !== undefined && !Array.isArray(provider[key]))
+                throw new Error(
+                    `Vendor details: invalid ${key} for ${provider.id}`,
+                );
+        for (const rule of provider.cashRules ?? []) {
+            if (
+                !rule ||
+                !isCategory(rule.category) ||
+                [rule.match, rule.equals].some(
+                    (values) =>
+                        values !== undefined &&
+                        (!Array.isArray(values) ||
+                            values.some(
+                                (v) => !text(v) || v !== v.trim().toLowerCase(),
+                            )),
+                ) ||
+                (rule.inflow !== undefined &&
+                    typeof rule.inflow !== "boolean") ||
+                (rule.cashOnly !== undefined &&
+                    typeof rule.cashOnly !== "boolean") ||
+                !(rule.match?.length || rule.equals?.length || rule.inflow)
+            )
+                throw new Error(
+                    `Vendor details: invalid cash rule for ${provider.id}`,
+                );
+        }
+        const accounts = new Set<string>();
+        for (const account of provider.accounts ?? []) {
+            if (
+                !account ||
+                !text(account.id) ||
+                !text(account.label) ||
+                !text(account.activeFrom) ||
+                !month(account.activeFrom) ||
+                !month(account.activeTo) ||
+                (account.activeTo != null &&
+                    account.activeTo < account.activeFrom) ||
+                (account.aliases !== undefined &&
+                    (!Array.isArray(account.aliases) ||
+                        account.aliases.some((alias) => !text(alias))))
+            )
+                throw new Error(
+                    `Vendor details: invalid account for ${provider.id}`,
+                );
+            for (const name of new Set(
+                [account.id, ...(account.aliases ?? [])].map(
+                    normalizeProviderName,
+                ),
+            )) {
+                if (accounts.has(name))
+                    throw new Error(
+                        `Vendor details: duplicate account for ${provider.id}`,
+                    );
+                accounts.add(name);
+            }
+        }
+        for (const access of provider.access ?? [])
+            if (
+                !access ||
+                !text(access.workspace) ||
+                !text(access.url) ||
+                !/^https?:\/\//.test(access.url)
+            )
+                throw new Error(
+                    `Vendor details: invalid access link for ${provider.id}`,
+                );
+        seen.add(provider.id);
+        return { ...provider, ...mappings.get(provider.id) };
+    });
+    if (seen.size !== mappings.size)
+        throw new Error("Vendor details: incomplete vendor catalog");
+    if (providerResolver)
+        throw new Error(
+            "Vendor details already loaded; reload to use a new revision",
+        );
+    PROVIDER_REGISTRY = providers;
+    providerResolver = createProviderResolver(PROVIDER_REGISTRY);
+}
+// Exact historical identities, with dated rules for aliases that changed model.
+export const CANONICAL_MODEL_RENAMES: Readonly<
+    Record<string, CanonicalModelTarget>
+> = registryJson.canonicalModelRenames;
 export const RETIRED_MODELS: readonly string[] = (
     registryJson as ProviderRegistryFile
 ).retiredModels;
 export const POLLEN_VENDOR_OVERRIDES: readonly PollenVendorOverride[] = (
     registryJson as ProviderRegistryFile
 ).pollenVendorOverrides;
+
+export const POLLEN_COMPUTE_MODE_OVERRIDES: readonly PollenComputeModeOverride[] =
+    (registryJson as ProviderRegistryFile).pollenComputeModeOverrides;
 
 export function pollenVendorOverride(
     month: string,
@@ -147,7 +317,10 @@ export function pollenVendorOverride(
             month <= override.until,
     )?.to;
 }
-export const resolveProvider = createProviderResolver(PROVIDER_REGISTRY);
+export function resolveProvider(value: string): ProviderDefinition | undefined {
+    if (!providerResolver) throw new Error("Vendor details have not loaded");
+    return providerResolver(value);
+}
 
 export function normalizeProviderName(value: string): string {
     return value.trim().toLowerCase();
@@ -282,7 +455,9 @@ function providerRequiresReview(
     return (
         provider.monthlyReview &&
         (provider.activeFrom == null || provider.activeFrom <= month) &&
-        (provider.activeTo == null || provider.activeTo >= month)
+        (provider.activeTo == null || provider.activeTo >= month) &&
+        (!provider.accounts?.length ||
+            activeProviderAccounts(provider, month).length > 0)
     );
 }
 
@@ -310,7 +485,7 @@ export function meterDriftExplanation(
     privateConfig?: EconomicsPrivateConfig,
 ): MeterDriftExplanation | undefined {
     return explanationByKey(
-        privateConfig?.reconciliation.meterDriftExplanations ?? [],
+        privateConfig?.reviewNotes.meterDriftExplanations ?? [],
     ).get(`${month}|${canonicalProvider(provider)}`);
 }
 
@@ -320,7 +495,7 @@ export function providerCheckExplanation(
     privateConfig?: EconomicsPrivateConfig,
 ): ProviderCheckExplanation | undefined {
     return explanationByKey(
-        privateConfig?.reconciliation.providerCheckExplanations ?? [],
+        privateConfig?.reviewNotes.providerCheckExplanations ?? [],
     ).get(`${month}|${canonicalProvider(provider)}`);
 }
 
@@ -330,7 +505,7 @@ export function pollenWitnessExplanation(
     privateConfig?: EconomicsPrivateConfig,
 ): PollenWitnessExplanation | undefined {
     return explanationByKey(
-        privateConfig?.reconciliation.pollenWitnessExplanations ?? [],
+        privateConfig?.reviewNotes.pollenWitnessExplanations ?? [],
     ).get(`${month}|${canonicalProvider(provider)}`);
 }
 
@@ -345,7 +520,7 @@ function nextMonth(month: string): string {
     return `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
-function cloudObservationMonths(row: VendorLedgerRow): string[] {
+export function cloudObservationMonths(row: VendorLedgerRow): string[] {
     const startMonth = row.start.slice(0, 7);
     const isVerifiedZeroRange =
         row.resource_sku === "verified-zero" &&
@@ -358,7 +533,8 @@ function cloudObservationMonths(row: VendorLedgerRow): string[] {
     if (!/^\d{4}-\d{2}$/.test(endMonth) || endMonth < startMonth) {
         return [startMonth];
     }
-    const endIsMonthBoundary = row.end.startsWith(`${endMonth}-01 00:00:00`);
+    const endIsMonthBoundary =
+        /^\d{4}-\d{2}-01[ T]00:00:00(?:\.0+)?(?:Z|\+00:00)?$/.test(row.end);
     const exclusiveEnd = endIsMonthBoundary ? endMonth : nextMonth(endMonth);
     const months: string[] = [];
     for (

@@ -289,6 +289,21 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it.each([
+        ["xiaomi/mimo-v2.6-flash", "xiaomimimo/mimo-v2.6-flash"],
+        ["xiaomi/mimo-v2.6-pro", "xiaomimimo/mimo-v2.6-pro"],
+    ])("routes %s directly to Novita as %s", (model, upstream) => {
+        const result = resolveModelConfig(messages, { model });
+
+        expect(result.options.model).toBe(upstream);
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            directEndpoint: "https://api.novita.ai/openai/v1/chat/completions",
+            model: upstream,
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it("routes Opus 5.5 fast mode through OpenRouter's Anthropic fast endpoint", () => {
         const result = resolveModelConfig(messages, {
             model: "anthropic/claude-opus-5.5:fast",
@@ -323,14 +338,14 @@ describe("resolveModelConfig", () => {
         },
     );
 
-    it("pins Inkling to Together on OpenRouter without fallback", () => {
+    it("pins Inkling to DeepInfra on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "thinkingmachines/inkling-small",
         });
 
         expect(result.options.model).toBe("thinkingmachines/inkling-small");
         expect(result.options.provider).toEqual({
-            only: ["Together"],
+            only: ["deepinfra"],
             allow_fallbacks: false,
         });
     });
@@ -649,6 +664,31 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("routes DeepSeek V4.1 Flash 1017 directly to Fireworks with a DeepInfra fallback", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "deepseek/deepseek-v4.1-flash-1017",
+        });
+        const fallback = resolveModelConfig(messages, {
+            model: "deepseek/deepseek-v4.1-flash-1017:deepinfra",
+        });
+
+        expect(primary.options.model).toBe(
+            "accounts/fireworks/models/deepseek-v4p1-flash-1017",
+        );
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(primary.options.provider).toBeUndefined();
+        expect(fallback.options.model).toBe(
+            "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+        );
+        expect(fallback.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+    });
+
     it("routes Muse Glimmer directly to DeepInfra", () => {
         const result = resolveModelConfig(messages, { model: "muse-glimmer" });
 
@@ -752,8 +792,6 @@ describe("resolveModelConfig", () => {
         ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
-        ["xiaomi/mimo-v2.6-flash", "xiaomi/mimo-v2.6-flash", "xiaomi/fp8"],
-        ["xiaomi/mimo-v2.6-pro", "xiaomi/mimo-v2.6-pro", "xiaomi/fp8"],
         ["minimax-m2.7", "minimax/minimax-m2.7", "novita/fp8"],
         [
             "minimax/minimax-m2.7:openrouter:minimax",

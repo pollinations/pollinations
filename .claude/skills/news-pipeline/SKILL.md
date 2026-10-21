@@ -48,14 +48,14 @@ A day is saved once its summary in `data/summaries/daily/` is; a daily rerun wit
 
 ## A missing deploy post
 
-Production pushes discover new main PRs; every completed Cloudflare, website, Applications, E2B and Portkey run checks them again. `posts/discord/prs/held.json` keeps the production scan cursor and pending PRs with their remaining deployment jobs. Each PR waits until every affected service/app has a successful deployment job containing its merge commit; another job failing in the same run doesn't hold it back. A PR with no deployment target can post at promotion. There is no age cutoff.
+Production pushes discover new main PRs, and every run discovers new master PRs; every completed Cloudflare, website, Applications, E2B, Portkey and legacy cache run checks them again. `posts/discord/prs/held.json` keeps the production and master scan cursors and pending PRs with their remaining deployment jobs. A master PR waits for the hand-run `deploy-legacy-caches.yml` job of each cache Worker it changes, started after its merge. Each PR waits until every affected service/app has a successful deployment job containing its merge commit; another job failing in the same run doesn't hold it back. A PR with no deployment target can post at promotion. There is no age cutoff.
 
-Successful target checks are saved so they do not expire with Actions history. The workflow reads its path rules from the scanned production revision's deployment workflows and reuses application discovery. `none` posts are recorded as `done` with `skipped: none`, without a picture or Discord send. Delivery entries are `pr-<number>` in `posts/discord/prs/<merge month>/delivery.json`.
+Successful target checks are saved so they do not expire with Actions history. The workflow reads its path rules from the scanned production revision's deployment workflows and reuses application discovery. Every PR merged into `main` or `master` gets one post; production promotions get none. Delivery entries are `pr-<number>` in `posts/discord/prs/<merge month>/delivery.json`.
 
 - Preview readiness first: `gh workflow run news-deploy-posts.yml -f preview=true` (the manual default). It reads live GitHub state but never saves or sends.
 - A red run: rerun it (`gh run rerun <id>`) or `gh workflow run news-deploy-posts.yml -f preview=false`. PRs already `done` are skipped.
 - `attempt`: look in the Discord channel. Found it: `GITHUB_TOKEN=$(gh auth token) python operations/social/scripts/deliver.py mark prs <merge month> <PR> done`. Certainly not there: `… failed`, then rerun.
-- No post at all: check `posts/discord/prs/held.json` and the required deployment jobs, then the delivery record for a `none` skip. PRs merged before #17666 were posted at merge; `master` PRs get no deploy post. Never advance the scan cursor or delete a held PR to clear a failure.
+- No post at all: check `posts/discord/prs/held.json` and the required deployment jobs, then the delivery record. PRs merged before #17666 were posted at merge. Never advance the scan cursor or delete a held PR to clear a failure.
 
 ## Settle a stuck send (`attempt`)
 
@@ -71,9 +71,9 @@ Each is written, sent to Discord and saved in one run; the run saves only if its
 Check in order:
 1. **Changelog, models:** the `/models` record (`data/models/`) shows the change between two recorded days; it is dated the day before the morning record that first shows it (the day it went live). A scheduled retirement needs a `RETIRE` row with an `Effective` date in the PR description; the daily of its merge day keeps it in its `changelog`.
 2. **Changelog, API:** only the post-deploy docs PR that regenerates `APIDOCS.md` records API changes, kept in the `changelog` of its merge day's daily.
-3. **Updates:** a daily highlight with `kind: product`. `model` and `api` belong to the Changelog; a PR its note rates other than `daily` never reaches a daily.
-4. **Window:** `index.json` keeps the last 30 days (at least 10 highlights). It is rebuilt after every `news-posts.yml` run and at 06:30; raw GitHub files are cached for about 5 minutes.
-5. **README:** the 07:00 README pull request (`repo-update-readme.yml`) lists the 10 newest highlights except apps; they show once that PR merges.
+3. **Updates:** a daily item with `kind: product`. `model` and `api` belong to the Changelog; a PR its note rates other than `daily` never reaches a daily.
+4. **Window:** `index.json` keeps the last 30 days (at least 10 daily items). It is rebuilt after every `news-posts.yml` run and at 06:30; raw GitHub files are cached for about 5 minutes.
+5. **README:** the 07:00 README pull request (`repo-update-readme.yml`) lists the 10 newest daily items except apps; they show once that PR merges.
 
 ## Check locally
 

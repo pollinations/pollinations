@@ -23,7 +23,11 @@ import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { createPromptAgentResponsesClient } from "./agents/client.ts";
 import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
-import { publicChatChoices, publicChatStream } from "./chat/public.ts";
+import {
+    publicChatChoices,
+    publicChatStream,
+    withoutPayg,
+} from "./chat/public.ts";
 import { completionToChatStream } from "./chat/stream.ts";
 import {
     requireChatCompletionUsage,
@@ -230,14 +234,20 @@ function publicChatCompletion(
     isVercel: boolean,
 ): ChatCompletion {
     const usage = publicCompletionUsage(completion.usage);
-    if (!isVercel && usage === completion.usage) return completion;
-    const publicCompletion = {
+    // InferencePort also attaches its `payg_*` ledger to the top level of
+    // non-streaming responses; the stream path strips it in public.ts.
+    const hasPaygTopLevel = Object.keys(completion).some((key) =>
+        key.startsWith("payg_"),
+    );
+    if (!isVercel && !hasPaygTopLevel && usage === completion.usage)
+        return completion;
+    const publicCompletion = withoutPayg({
         ...completion,
         usage,
         choices: isVercel
             ? publicChatChoices(completion.choices)
             : completion.choices,
-    };
+    });
     if (completion.fallbackTarget !== undefined) {
         Object.defineProperty(publicCompletion, "fallbackTarget", {
             value: completion.fallbackTarget,

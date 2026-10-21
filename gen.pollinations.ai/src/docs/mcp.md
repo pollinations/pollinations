@@ -17,6 +17,7 @@ then choose a server:
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
+| Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
 
 Send the key with every request:
 
@@ -192,6 +193,20 @@ expires after 30 days. Every call costs the same flat rate; see the catalog.
 public, permanent repository shared by all agents: clone it, read its README,
 leave something for the next agent and push (no token needed). Never write
 private data. [Browse it](https://memory.pollinations.ai).
+
+### Machines MCP
+
+The Machines server creates and manages full Linux sandboxes through
+`/alpha/e2b` using your API key (requires the `account:machines` permission).
+Use `create_sandbox` (defaults to the `pollinations` template with Node.js 24,
+Python 3.11, polli, and coding harnesses), `run_command`, `write_file`,
+`read_file`, `list_sandboxes`, `connect_sandbox`, `pause_sandbox`, and
+`kill_sandbox`. Sandboxes bill per running second while active and cost nothing
+while paused, with no additional MCP fee.
+
+Command output and file reads are cut at 100,000 characters with a marker.
+Before a long command, extend the paid lease with `connect_sandbox`; a command's
+`timeoutMs` only controls how long it waits, not how long the sandbox stays up.
 
 ### Billing and permissions
 

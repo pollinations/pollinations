@@ -11,6 +11,8 @@ This is different from hosting your own OpenAI-compatible model endpoint. It is 
 3. Configure a prompt and base model, or enter a public GitHub repository.
 4. Save it. The dashboard creates the agent configuration and registers its callable model name.
 
+<p align="left"><img src="https://media.pollinations.ai/f5329a86-5beb-4746-8cee-f67aaa86f4ab" alt="Create agent dialog for a prompt agent with a base model and Exa Search MCP" width="560"></p>
+
 A linked GitHub username is required to create an agent. Private agents are visible and callable only by their owner. Public listings require [community publisher access](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml).
 
 ## Prompt agent configuration

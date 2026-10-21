@@ -35,6 +35,7 @@ import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
 import { requireAccountFunds } from "@/utils/generation-access.ts";
 import { permissionRequired } from "@/utils/refusals.ts";
+import { sandboxDocs } from "./e2b-docs.ts";
 
 // E2B's control API, forwarded under Pollinations keys. The SDKs talk to the
 // sandboxes themselves (commands, files, ports) directly at E2B with the
@@ -445,6 +446,8 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
         .use("*", ...authenticate, requireSandboxAccess)
         // E2B's CLI still creates and connects through the deprecated v1 paths,
         // which take the same bodies as v2.
+        .post("/sandboxes", sandboxDocs.createV1)
+        .post("/v2/sandboxes", sandboxDocs.create)
         .on("POST", ["/sandboxes", "/v2/sandboxes"], async (c) => {
             const startTime = new Date();
             const body = await readJson<NewSandbox>(c);
@@ -530,7 +533,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             }
             return c.json(created, 201);
         })
-        .get("/v2/sandboxes", async (c) => {
+        .get("/v2/sandboxes", sandboxDocs.list, async (c) => {
             // Listing is scoped to the caller's sandboxes, whatever they filter.
             const url = new URL(c.req.url);
             const metadata = new URLSearchParams(
@@ -548,26 +551,26 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 { status: response.status, headers },
             );
         })
-        .get("/sandboxes/:id", async (c) => {
+        .get("/sandboxes/:id", sandboxDocs.get, async (c) => {
             const [sandbox] = await showKeeps(c.env, [await ownedSandbox(c)]);
             return c.json(sandbox);
         })
-        .delete("/sandboxes/:id", ownerOnly)
-        .get("/sandboxes/:id/metrics", ownerOnly)
+        .delete("/sandboxes/:id", sandboxDocs.delete, ownerOnly)
+        .get("/sandboxes/:id/metrics", sandboxDocs.metrics, ownerOnly)
         // `e2b sandbox logs` reads this deprecated v1 path.
-        .get("/sandboxes/:id/logs", ownerOnly)
+        .get("/sandboxes/:id/logs", sandboxDocs.logs, ownerOnly)
         // A pause ends a keep, as E2B's timeout would; a timeout or connect
         // longer than 10 minutes starts it again.
-        .post("/sandboxes/:id/pause", async (c) => {
+        .post("/sandboxes/:id/pause", sandboxDocs.pause, async (c) => {
             const response = await ownerOnly(c);
             if (response.ok && !keeper) {
                 await setKeep(c, c.req.param("id"), null);
             }
             return response;
         })
-        .put("/sandboxes/:id/network", ownerOnly)
+        .put("/sandboxes/:id/network", sandboxDocs.network, ownerOnly)
         // Like E2B's, a new timeout replaces the old one, kept or not.
-        .post("/sandboxes/:id/timeout", async (c) => {
+        .post("/sandboxes/:id/timeout", sandboxDocs.timeout, async (c) => {
             const sandbox = await ownedSandbox(c);
             const { timeout } = await readJson<{ timeout: number }>(c);
             const until = keepUntil(timeout);
@@ -581,6 +584,8 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             }
             return response;
         })
+        .post("/sandboxes/:id/connect", sandboxDocs.connectV1)
+        .post("/v2/sandboxes/:id/connect", sandboxDocs.connect)
         .on(
             "POST",
             ["/sandboxes/:id/connect", "/v2/sandboxes/:id/connect"],
@@ -626,7 +631,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
 export const e2bRoutes = new Hono<Env>()
     // Not E2B's: the fixed rates callers pay, public so the docs, the
     // dashboard and Polli can show prices before anyone signs in.
-    .get("/pricing", (c) =>
+    .get("/pricing", sandboxDocs.pricing, (c) =>
         c.json({
             maxRunning: MAX_RUNNING_PER_USER,
             vcpuSecond: VCPU_SECOND * PRICE_MULTIPLIER,

@@ -196,11 +196,7 @@ export function useModelQuerySearch({
                 event.preventDefault();
                 return;
             }
-            if (event.key !== "Backspace") {
-                setPendingRemoval(undefined);
-                return;
-            }
-            if (visibleSearch !== "") {
+            if (event.key !== "Backspace" || visibleSearch !== "") {
                 setPendingRemoval(undefined);
                 return;
             }

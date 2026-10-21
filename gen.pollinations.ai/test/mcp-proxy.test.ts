@@ -96,6 +96,69 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
+                id: "council",
+                name: "Council of LLMs",
+                description:
+                    "Ask several models in parallel, then have a judge model synthesize one answer.",
+                url: "https://gen.pollinations.ai/mcp/council",
+                pricing: {
+                    description:
+                        "Model calls are billed at InferencePort rates, plus a flat fee per run by tier.",
+                    rates: [
+                        {
+                            name: "inferenceport.council.basic.v1",
+                            label: "Basic council",
+                            kind: "tool_call",
+                            price: "0.1",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "run",
+                            suffix: "plus model usage",
+                        },
+                        {
+                            name: "inferenceport.council.standard.v1",
+                            label: "Standard council",
+                            kind: "tool_call",
+                            price: "0.15",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "run",
+                            suffix: "plus model usage",
+                        },
+                        {
+                            name: "inferenceport.council.advanced.v1",
+                            label: "Advanced council",
+                            kind: "tool_call",
+                            price: "0.5",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "run",
+                            suffix: "plus model usage",
+                        },
+                        {
+                            name: "inferenceport.council.ultra.v1",
+                            label: "Ultra council",
+                            kind: "tool_call",
+                            price: "2",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "run",
+                            suffix: "plus model usage",
+                        },
+                        {
+                            name: "inferenceport.council.elite.v1",
+                            label: "Elite council",
+                            kind: "tool_call",
+                            price: "5",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "run",
+                            suffix: "plus model usage",
+                        },
+                    ],
+                },
+            },
+            {
                 id: "composio",
                 name: "Connectors",
                 description:
@@ -338,6 +401,48 @@ test("proxies Exa without caller credentials and bills reported usage", async ()
     }
     expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
         tierBalance: 0.993,
+        packBalance: 0,
+    });
+});
+
+test("bills the Council run from its usage receipt", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/council",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                id: 1,
+                method: "tools/call",
+                params: {
+                    name: "council_reason",
+                    arguments: { problem: "Is 17 prime?" },
+                },
+            }),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+            content: [{ type: "text", text: "council proxied" }],
+        },
+    });
+    for (const header of Object.values(MCP_USAGE_HEADERS)) {
+        expect(response.headers.has(header)).toBe(false);
+    }
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 0.894,
         packBalance: 0,
     });
 });

@@ -149,7 +149,7 @@ test("POST /3d caches distinct JSON Trellis parameter sets", async () => {
         });
 
         expect(response.status).toBe(200);
-        expect(response.headers.get("X-Cache")).toBe("HIT");
+        expect(response.headers.get("X-Cache")).toBe("MISS");
         expect(await response.text()).toBe("glTF");
     }
 
@@ -348,7 +348,7 @@ test("GET /3d keeps query behavior and Trellis resolution", async ({
     );
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("X-Cache")).toBe("HIT");
+    expect(response.headers.get("X-Cache")).toBe("MISS");
     expect(mocks.inferenceport.state.bodies[0]).toMatchObject({
         resolution: "medium",
     });

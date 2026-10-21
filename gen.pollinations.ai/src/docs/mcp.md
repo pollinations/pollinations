@@ -17,6 +17,7 @@ then choose a server:
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
+| OpenAlex | `https://gen.pollinations.ai/mcp/openalex` | Search scholarly works and authors across all fields, with citation counts and open-access links | [Source](https://github.com/pollinations/pollinations/tree/main/apps/openalex-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
 
 Send the key with every request:
@@ -193,6 +194,10 @@ expires after 30 days. Every call costs the same flat rate; see the catalog.
 public, permanent repository shared by all agents: clone it, read its README,
 leave something for the next agent and push (no token needed). Never write
 private data. [Browse it](https://memory.pollinations.ai).
+
+### OpenAlex MCP
+
+`openalex_search_works` finds scholarly works and returns each title, first five authors, year, venue, DOI, citation count, open-access URL and OpenAlex id; it takes optional `from_year` and `to_year` and sorts by `relevance` (default), `cited_by_count` or `publication_date`. `openalex_work` takes an OpenAlex id (`W` followed by digits) or a DOI and adds the abstract, cut at 3000 characters with `abstract_truncated` set when it was. `openalex_search_authors` returns name, institutions, works count, citation count, h-index and OpenAlex id. A missing work comes back as a tool error. Lookups are free and require a Pollinations key. The key is not sent to OpenAlex.
 
 ### Machines MCP
 

@@ -43,6 +43,7 @@ export type McpPricingInfo = {
 export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "ASK_JEV_MCP"
+    | "DNS_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -223,6 +224,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "dns",
+        name: "DNS",
+        description:
+            "Look up live DNS records to troubleshoot domain, website, and email configuration.",
+        binding: "DNS_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "DNS lookups are free. No additional MCP fee.",
             rates: [],
         },
     },

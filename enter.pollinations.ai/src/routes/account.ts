@@ -952,6 +952,42 @@ const usageResponseSchema = z.object({
     count: z.number().describe("Number of records returned"),
 });
 
+// One row of the public app directory (app.json synced to Tinybird). All
+// columns are strings on the wire, including counts and booleans.
+const myAppSchema = z.object({
+    emoji: z.string().describe("App emoji"),
+    name: z.string().describe("App name"),
+    web_url: z.string().describe("Live app URL"),
+    screenshot_url: z.string().describe("Screenshot URL"),
+    description: z.string().describe("App description"),
+    language: z.string().describe("BCP 47 tags, comma-separated"),
+    category: z.string().describe("App category"),
+    platform: z.string().describe("Platforms, comma-separated"),
+    github_username: z.string().describe("Submitter GitHub username"),
+    github_user_id: z.string().describe("Submitter GitHub user id"),
+    github_repository_url: z.string().describe("Repository URL"),
+    github_repository_stars: z
+        .string()
+        .describe("Repository stars, as published"),
+    discord_username: z
+        .string()
+        .nullable()
+        .describe("Submitter Discord username"),
+    submitted_date: z.string().describe("Submission date (YYYY-MM-DD)"),
+    issue_url: z.string().describe("Submission issue URL"),
+    approved_date: z.string().describe("Approval date (YYYY-MM-DD)"),
+    byop: z.string().describe("Whether the app connects user wallets (BYOP)"),
+    requests_24h: z.string().describe("Requests in the last 24 hours"),
+});
+
+export type MyApp = z.infer<typeof myAppSchema>;
+
+const myAppsResponseSchema = z.object({
+    data: z.array(myAppSchema).describe("Apps owned by the account"),
+});
+
+export type MyAppsResponse = z.infer<typeof myAppsResponseSchema>;
+
 /**
  * Account routes - profile, balance and usage endpoints, served publicly as
  * gen.pollinations.ai/account. Bearer-only: apps use API keys with permission
@@ -1023,6 +1059,46 @@ export const accountRoutes = new Hono<Env>()
                     name: profile.name ?? null,
                     email: profile.email ?? null,
                 }),
+            });
+        },
+    )
+    .get(
+        "/my-apps",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "List My Apps",
+            description:
+                "Returns the community catalog apps owned by the authenticated GitHub account, matched by GitHub user id against the public app directory. Empty for accounts without a linked GitHub identity or without listed apps. API keys require the read-only `account:usage` permission.",
+            responses: {
+                200: {
+                    description: "Apps owned by the account",
+                    content: {
+                        "application/json": {
+                            schema: resolver(myAppsResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            requireAccountPermission(c.var.auth.apiKey, "usage");
+
+            if (user.githubId === null) return c.json({ data: [] });
+
+            const githubUserId = String(user.githubId);
+            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+            const rows = await fetchTinybirdRows<MyApp>(
+                tinybirdOrigin,
+                "/v0/pipes/app_directory_public.json",
+                requireTinybirdReadToken(c.env),
+                { limit: "5000" },
+            );
+            return c.json({
+                data: rows.filter((row) => row.github_user_id === githubUserId),
             });
         },
     )

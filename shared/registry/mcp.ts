@@ -47,6 +47,7 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
+    | "CIDR_MCP"
     | "MACHINES_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
@@ -212,6 +213,19 @@ export const MCP_SERVERS = [
         provider: "cloudflare",
         userScoped: true,
         pricing: COMPUTER_MCP_PRICING,
+    },
+    {
+        id: "cidr",
+        name: "CIDR",
+        description:
+            "Inspect IPv4/IPv6 CIDR ranges and test addresses for containment.",
+        binding: "CIDR_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Free. Network ranges are calculated in the Worker with no external API.",
+            rates: [],
+        },
     },
     {
         id: "machines",

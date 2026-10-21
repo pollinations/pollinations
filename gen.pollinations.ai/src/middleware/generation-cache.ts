@@ -219,12 +219,15 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
     return createMiddleware<GenerationCacheEnv>(async (c, next) => {
         const log = c.get("log").getChild(adapter.label);
         const cacheKey = await adapter.getKey(c);
-        const streamRequested = (
+        const track = (
             c.var as GenerationCacheEnv["Variables"] & {
-                track?: { streamRequested?: boolean };
+                track?: {
+                    streamRequested?: boolean;
+                    detachedExecutionTracked?: boolean;
+                };
             }
-        ).track?.streamRequested;
-        const coordinate = streamRequested !== true;
+        ).track;
+        const coordinate = track?.streamRequested !== true;
 
         try {
             const cached = await lookup(c, adapter, cacheKey);
@@ -244,6 +247,9 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
         }
 
         await next();
+        // The detached executor already handled this request and saved
+        // anything cacheable; never save its response a second time.
+        if (track?.detachedExecutionTracked) return;
 
         const cacheWrite = capture(c, adapter, cacheKey);
         if (cacheWrite) {

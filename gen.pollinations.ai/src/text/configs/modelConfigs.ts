@@ -351,6 +351,16 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/DeepSeek-V4-Flash-0731/chat/completions?api-version=2024-12-01-preview",
             { defaultOptions: { reasoning_effort: "high" } },
         ),
+    // Azure DeepSeek V4.1 rejects remote image URLs.
+    "DeepSeek-V4.1-Flash": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/DeepSeek-V4.1-Flash/chat/completions?api-version=2024-12-01-preview",
+            {
+                defaultOptions: { reasoning_effort: "high" },
+                requiresBase64ImageUrls: true,
+            },
+        ),
     // Azure Kimi rejects remote image URLs.
     "Kimi-K2.6": () =>
         createAzureModelConfig(
@@ -378,14 +388,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "xiaomi/mimo-v2.5-pro",
         "xiaomi/fp8",
     ),
-    "xiaomi/mimo-v2.6-flash": createPinnedOpenRouterConfig(
-        "xiaomi/mimo-v2.6-flash",
-        "xiaomi/fp8",
-    ),
-    "xiaomi/mimo-v2.6-pro": createPinnedOpenRouterConfig(
-        "xiaomi/mimo-v2.6-pro",
-        "xiaomi/fp8",
-    ),
     "minimax/minimax-m2.7": createPinnedOpenRouterConfig(
         "minimax/minimax-m2.7",
         "novita/fp8",
@@ -395,6 +397,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         "minimax/fp8",
     ),
     "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
+    "xiaomi/mimo-v2.6-flash": () =>
+        createNovitaModelConfig({ model: "xiaomimimo/mimo-v2.6-flash" }),
+    "xiaomi/mimo-v2.6-pro": () =>
+        createNovitaModelConfig({ model: "xiaomimimo/mimo-v2.6-pro" }),
+    "xiaomi/mimo-v2.6-flash:deepinfra": () =>
+        createDeepInfraModelConfig({ model: "XiaomiMiMo/MiMo-V2.6-Flash" }),
+    "xiaomi/mimo-v2.6-pro:deepinfra": () =>
+        createDeepInfraModelConfig({ model: "XiaomiMiMo/MiMo-V2.6-Pro" }),
     "inclusionai/ling-3.1-flash": () =>
         createNovitaModelConfig({ model: "inclusionai/ling-3.1-flash" }),
     "inclusionai/ling-3.1-flash:vercel:novita": () =>
@@ -583,12 +593,13 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    // OpenRouter serves Inkling Small only through DeepInfra (fp8).
     "thinkingmachines/inkling-small": () =>
         createOpenRouterModelConfig({
             model: "thinkingmachines/inkling-small",
             defaultOptions: {
                 provider: {
-                    only: ["Together"],
+                    only: ["deepinfra"],
                     allow_fallbacks: false,
                 },
             },
@@ -631,15 +642,15 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
 
     // -- Exact-checkpoint text fallbacks -------------------------------------
-    "deepseek-ai/DeepSeek-V4.1-Flash": () =>
-        createDeepInfraModelConfig({
-            model: "deepseek-ai/DeepSeek-V4.1-Flash",
-            // Reasons only when asked; keep the model's reasoning default.
-            defaultOptions: { reasoning_effort: "high" },
-        }),
     "deepseek-ai/DeepSeek-V4-Flash-0731": () =>
         createDeepInfraModelConfig({
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",
+            // Reasons only when asked; keep the model's reasoning default.
+            defaultOptions: { reasoning_effort: "high" },
+        }),
+    "deepseek-ai/DeepSeek-V4.1-Flash-1017": () =>
+        createDeepInfraModelConfig({
+            model: "deepseek-ai/DeepSeek-V4.1-Flash-1017",
             // Reasons only when asked; keep the model's reasoning default.
             defaultOptions: { reasoning_effort: "high" },
         }),
@@ -677,6 +688,11 @@ export const portkeyConfig: PortkeyConfigMap = {
     "claude-opus-4.7-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
+    ),
+    "llama-scout-openrouter-deepinfra-priority": createPinnedOpenRouterConfig(
+        "meta-llama/llama-4-scout",
+        "deepinfra/fp8/priority",
+        16384,
     ),
     "llama-scout-openrouter-novita": createPinnedOpenRouterConfig(
         "meta-llama/llama-4-scout",
@@ -871,6 +887,12 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "accounts/fireworks/models/deepseek-v4p1-flash",
         }),
 
+    // -- Fireworks AI (DeepSeek V4.1 Flash 1017) -----------------------------
+    "accounts/fireworks/models/deepseek-v4p1-flash-1017": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/deepseek-v4p1-flash-1017",
+        }),
+
     // -- Fireworks AI (Kimi, GLM, Qwen) --------------------------------------
     "accounts/fireworks/models/kimi-k3": () =>
         createFireworksModelConfig({
@@ -947,11 +969,9 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-opus-4-6-v1",
             defaultOptions: { max_tokens: 128000 },
         }),
-    // global.* inference profiles for Opus 4.7/4.8 return Bedrock-side
-    // Internal/ServiceUnavailable errors; the us.* profiles are healthy.
     "claude-opus-4-7": () =>
         createBedrockNativeConfig({
-            model: "us.anthropic.claude-opus-4-7",
+            model: "global.anthropic.claude-opus-4-7",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-opus-5": () =>

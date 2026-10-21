@@ -32,7 +32,7 @@ jobs:
           python-version: '3.11'
       - name: Install dependencies
         if: steps.changes.outputs.changed == 'true'
-        run: pip install requests
+        run: pip install requests pyyaml
       - name: Test PR classification and gist enrichment
         if: steps.changes.outputs.changed == 'true'
         run: python3 -m unittest operations/github/test_project_manager.py operations/social/scripts/test_news.py operations/app-management/ingestion/test_review_agent.py
@@ -149,6 +149,9 @@ jobs:
           operations/model-evals/*.test.js
           operations/model-monitor/src/*.test.js
 
+      - name: Build UI for accounting and package export tests
+        run: npm run build:js --workspace @pollinations/ui
+
       - name: Test model catalog and accounting compatibility
         run: npx vitest run --config apps/model-compatibility.vitest.config.ts
 
@@ -167,10 +170,6 @@ jobs:
         if: steps.enter-frontend.outputs.any_changed == 'true'
         working-directory: enter.pollinations.ai
         run: npm run build:frontend
-
-      - name: Build UI for package export tests
-        if: steps.enter-frontend.outputs.any_changed != 'true'
-        run: npm run build:js --workspace @pollinations/ui
 
       - name: Test UI package exports
         run: node --test packages/ui/scripts/package-exports.test.mjs

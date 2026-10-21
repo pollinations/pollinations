@@ -32,6 +32,9 @@ SQL >
         requests_24h
     FROM app_directory
     WHERE name != ''
+    {% if defined(github_user_id) %}
+    AND github_user_id = {{String(github_user_id)}}
+    {% end %}
     {% if defined(category) %}
     AND category = {{String(category)}}
     {% end %}

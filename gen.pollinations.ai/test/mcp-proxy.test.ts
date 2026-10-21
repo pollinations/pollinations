@@ -406,6 +406,44 @@ test("routes Computer with the authenticated user and bills the flat call rate",
     });
 });
 
+test("returns the tool result instead of a 500 when a usage receipt is malformed", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/ffmpeg",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                id: 1,
+                method: "tools/call",
+                params: { name: "brokenReceipt", arguments: {} },
+            }),
+        },
+    );
+
+    // The tool already executed on the worker; a broken settlement receipt
+    // must not discard its (already-paid-for) result or 500 the caller.
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+            content: [{ type: "text", text: "ffmpeg proxied" }],
+        },
+    });
+    // The unparseable receipt must not charge anything.
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
+});
+
 test("refuses receipt-billed tool calls from an empty wallet but keeps initialization free", async () => {
     const { key } = await createTestApiKey();
     const callFfmpeg = (body: unknown) =>

@@ -180,7 +180,10 @@ export const mcpRoutes = new Hono<Env>()
             c.req.method === "POST"
                 ? await c.req.raw
                       .clone()
-                      .json<{ method?: unknown } | null>()
+                      .json<{
+                          method?: unknown;
+                          params?: { name?: unknown };
+                      } | null>()
                       .catch(() => null)
                 : null;
         if (Array.isArray(message)) {
@@ -208,19 +211,25 @@ export const mcpRoutes = new Hono<Env>()
             requestForMcp(c.req.raw, server, user),
         );
         if (server.billing === "usage_receipt") {
-            const usage = parseMcpUsageHeaders(response.headers);
-            if (usage) {
-                try {
+            // The tool has already run, so the (already-paid-for) result must
+            // reach the caller even when settlement fails. Receipt problems
+            // are logged, never thrown past this point.
+            try {
+                const usage = parseMcpUsageHeaders(response.headers);
+                if (usage) {
                     await settleUsage(c, server, usage, startedAt);
                     await c.var.frontendKeyRateLimit?.consumePollen(usage.cost);
-                } catch (error) {
-                    c.var.log.error("MCP billing failed: {error}", {
-                        error:
-                            error instanceof Error
-                                ? error.message
-                                : String(error),
+                } else if (message?.method === "tools/call") {
+                    c.var.log.error("MCP usage receipt missing on tools/call", {
+                        server: server.id,
+                        tool: message?.params?.name,
                     });
                 }
+            } catch (error) {
+                c.var.log.error("MCP billing failed: {error}", {
+                    error:
+                        error instanceof Error ? error.message : String(error),
+                });
             }
         }
         return responseForCaller(response);

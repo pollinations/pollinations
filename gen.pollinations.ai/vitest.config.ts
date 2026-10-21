@@ -261,26 +261,56 @@ export default defineConfig(async ({ mode }) => {
                                     "Content-Type": "application/json",
                                 });
                                 if (payload.method === "tools/call") {
-                                    headers.set(
-                                        "x-pollinations-mcp-cost",
-                                        "0.25",
-                                    );
-                                    headers.set(
-                                        "x-pollinations-mcp-tool",
-                                        "runFfmpeg",
-                                    );
-                                    headers.set(
-                                        "x-pollinations-mcp-status",
-                                        "200",
-                                    );
-                                    headers.set(
-                                        "x-pollinations-mcp-adjustment-id",
-                                        "cloudflare.container.basic_runtime.v1",
-                                    );
-                                    headers.set(
-                                        "x-pollinations-mcp-adjustment-units",
-                                        "1",
-                                    );
+                                    if (
+                                        (payload.params as
+                                            | { name?: string }
+                                            | undefined)?.name ===
+                                        "brokenReceipt"
+                                    ) {
+                                        // A worker bug emitting an invalid
+                                        // receipt header on a successful call.
+                                        headers.set(
+                                            "x-pollinations-mcp-cost",
+                                            "not-a-number",
+                                        );
+                                        headers.set(
+                                            "x-pollinations-mcp-tool",
+                                            "brokenReceipt",
+                                        );
+                                        headers.set(
+                                            "x-pollinations-mcp-status",
+                                            "200",
+                                        );
+                                        headers.set(
+                                            "x-pollinations-mcp-adjustment-id",
+                                            "cloudflare.container.basic_runtime.v1",
+                                        );
+                                        headers.set(
+                                            "x-pollinations-mcp-adjustment-units",
+                                            "1",
+                                        );
+                                    } else {
+                                        headers.set(
+                                            "x-pollinations-mcp-cost",
+                                            "0.25",
+                                        );
+                                        headers.set(
+                                            "x-pollinations-mcp-tool",
+                                            "runFfmpeg",
+                                        );
+                                        headers.set(
+                                            "x-pollinations-mcp-status",
+                                            "200",
+                                        );
+                                        headers.set(
+                                            "x-pollinations-mcp-adjustment-id",
+                                            "cloudflare.container.basic_runtime.v1",
+                                        );
+                                        headers.set(
+                                            "x-pollinations-mcp-adjustment-units",
+                                            "1",
+                                        );
+                                    }
                                 }
                                 return Response.json(
                                     {

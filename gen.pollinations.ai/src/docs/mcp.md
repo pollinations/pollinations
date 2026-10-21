@@ -17,6 +17,7 @@ then choose a server:
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
+| Wikipedia | `https://gen.pollinations.ai/mcp/wikipedia` | Search Wikipedia and read page summaries or full articles in any language edition | [Source](https://github.com/pollinations/pollinations/tree/main/apps/wikipedia-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
 
 Send the key with every request:
@@ -193,6 +194,10 @@ expires after 30 days. Every call costs the same flat rate; see the catalog.
 public, permanent repository shared by all agents: clone it, read its README,
 leave something for the next agent and push (no token needed). Never write
 private data. [Browse it](https://memory.pollinations.ai).
+
+### Wikipedia MCP
+
+`wikipedia_search` finds pages and returns each title, short description, snippet and URL. `wikipedia_page` returns a page's summary, or with `full: true` the whole article as plain text, cut at 20000 characters. Both take an optional `language` edition such as `de` or `simple` (default `en`). A missing page comes back as a tool error. Lookups are free and require a Pollinations key. The key is not sent to Wikipedia.
 
 ### Machines MCP
 

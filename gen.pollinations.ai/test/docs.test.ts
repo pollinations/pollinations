@@ -1044,6 +1044,10 @@ describe("docs routes", () => {
         expect(mcpBody).toContain("### Exa Search MCP");
         expect(mcpBody).toContain("### Connectors MCP");
         expect(mcpBody).toContain("### Computer MCP");
+        expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/qr");
+        expect(mcpBody).toContain("### QR Codes MCP");
+        expect(mcpBody).toContain("`generate_qr`");
+        expect(mcpBody).toContain("`read_qr`");
         expect(mcpBody).toContain("https://enter.pollinations.ai/my-models");
         expect(mcpBody).not.toContain("## Other built-in MCPs");
         expect(mcpBody).toContain("`generateImage`");

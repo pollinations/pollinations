@@ -444,6 +444,51 @@ export default defineConfig(async ({ mode }) => {
                                     { headers },
                                 );
                             },
+                            QR_MCP: async (request: Request) => {
+                                const payload = (await request.json()) as {
+                                    jsonrpc: string;
+                                    id?: string | number;
+                                    method?: string;
+                                };
+                                const headers = new Headers();
+                                if (payload.method === "tools/call") {
+                                    headers.set(
+                                        "x-pollinations-mcp-cost",
+                                        "0.0001",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-tool",
+                                        "generate_qr",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-status",
+                                        "200",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-adjustment-id",
+                                        "qr.tool_call.v1",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-adjustment-units",
+                                        "1",
+                                    );
+                                }
+                                return Response.json(
+                                    {
+                                        jsonrpc: payload.jsonrpc,
+                                        id: payload.id,
+                                        result: {
+                                            content: [
+                                                {
+                                                    type: "text",
+                                                    text: "qr proxied",
+                                                },
+                                            ],
+                                        },
+                                    },
+                                    { headers },
+                                );
+                            },
                         },
                     },
                 },

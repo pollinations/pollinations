@@ -47,6 +47,7 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
+    | "QR_MCP"
     | "MACHINES_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
@@ -65,6 +66,7 @@ const EXA_SEARCH_PRICE_PER_REQUEST = 0.007;
 const EXA_CONTENTS_PRICE_PER_PAGE = 0.001;
 export const COMPOSIO_TOOL_CALL_PRICE = 0.0002;
 export const COMPUTER_TOOL_CALL_PRICE = 0.0002;
+export const QR_TOOL_CALL_PRICE = 0.0001;
 const COMPUTER_MCP_PRICING = {
     description: "Preview price",
     rates: [
@@ -91,6 +93,23 @@ const COMPOSIO_MCP_PRICING = {
             kind: "tool_call",
             unit: "call",
             unitCost: COMPOSIO_TOOL_CALL_PRICE,
+            publicPricing: {
+                label: "Tool call",
+                quantity: 1,
+                unit: "call",
+            },
+        },
+    ],
+} as const;
+const QR_MCP_PRICING = {
+    description: "One tiny fee per QR call, covering the worker's compute.",
+    rates: [
+        {
+            id: "qr.tool_call.v1",
+            description: "QR tool call",
+            kind: "tool_call",
+            unit: "call",
+            unitCost: QR_TOOL_CALL_PRICE,
             publicPricing: {
                 label: "Tool call",
                 quantity: 1,
@@ -212,6 +231,16 @@ export const MCP_SERVERS = [
         provider: "cloudflare",
         userScoped: true,
         pricing: COMPUTER_MCP_PRICING,
+    },
+    {
+        id: "qr",
+        name: "QR Codes",
+        description:
+            "Generate scannable QR codes as PNG images and read the text behind QR codes in images.",
+        binding: "QR_MCP",
+        billing: "usage_receipt",
+        provider: "cloudflare",
+        pricing: QR_MCP_PRICING,
     },
     {
         id: "machines",

@@ -17,6 +17,7 @@ then choose a server:
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
+| Open Library | `https://gen.pollinations.ai/mcp/openlibrary` | Search Open Library books and read work, author and subject details | [Source](https://github.com/pollinations/pollinations/tree/main/apps/openlibrary-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
 
 Send the key with every request:
@@ -193,6 +194,10 @@ expires after 30 days. Every call costs the same flat rate; see the catalog.
 public, permanent repository shared by all agents: clone it, read its README,
 leave something for the next agent and push (no token needed). Never write
 private data. [Browse it](https://memory.pollinations.ai).
+
+### Open Library MCP
+
+`openlibrary_search` finds books and returns each title, authors (name and author ID), first publish year, edition count, work ID and cover URL. `openlibrary_work` returns a work's title, description, first 10 subjects and first publish date. `openlibrary_author` returns an author's name, birth and death dates and bio. Lookups are free and require a Pollinations key. The key is not sent to Open Library.
 
 ### Machines MCP
 

@@ -47,6 +47,7 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
+    | "OPENLIBRARY_MCP"
     | "MACHINES_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
@@ -212,6 +213,19 @@ export const MCP_SERVERS = [
         provider: "cloudflare",
         userScoped: true,
         pricing: COMPUTER_MCP_PRICING,
+    },
+    {
+        id: "openlibrary",
+        name: "Open Library",
+        description:
+            "Search books and read works, authors and subjects from Open Library.",
+        binding: "OPENLIBRARY_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Open Library lookups are free. No additional MCP fee.",
+            rates: [],
+        },
     },
     {
         id: "machines",

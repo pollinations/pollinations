@@ -217,13 +217,15 @@ test("a JSON-mode request past the free limit gets gen's error body and the VM's
     );
 });
 
-test("the facilitator sees the VM's seller identity, once per isolate", async () => {
+test("/supported carries no seller key, so it makes no handshake", async () => {
     await call("/identity", { ip: await limitedIp(), headers: CURL });
 
     expect(facilitatorHeaders["/supported"]).toHaveLength(1);
     const [headers] = facilitatorHeaders["/supported"];
-    expect(headers.get("authorization")).toBe("Bearer test-seller-key");
-    expect(headers.get("user-agent")).toBe("weft-sdk-express/0.27.1");
+    // The seller key travels only on /verify and /settle (X-API-Key)
+    expect(headers.get("authorization")).toBeNull();
+    expect(headers.get("x-api-key")).toBeNull();
+    expect(headers.get("user-agent")).toBe("weft-sdk-hono/0.27.1");
     const declared = JSON.stringify({
         name: "Pollinations legacy text",
         type: "api",

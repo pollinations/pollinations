@@ -11,9 +11,8 @@ import { expressPage, VM_CORS } from "./origin.ts";
 // The VM's payment challenges name its origin host and the /prompt path,
 // without the caller's host or query (which can hold a token)
 const RESOURCE_ORIGIN = "https://image-origin.pollinations.ai";
-// The User-Agent the facilitator saw from the VM: the Express middleware's on
-// /supported, Node 22 fetch's default on /verify and /settle
-const SUPPORTED_HEADERS = { "User-Agent": "weft-sdk-express/0.27.1" };
+// The User-Agent the facilitator saw from the VM on /verify and /settle
+// (Node 22 fetch's default)
 const PAYMENT_HEADERS = { "User-Agent": "node" };
 // Statuses the payment middleware answers itself: the challenge, a failed
 // verify or settlement, and an unavailable facilitator
@@ -43,14 +42,19 @@ function paywallApp(env: Record<string, any>) {
             },
         },
         {
-            apiKey: env.WEFT_SELLER_API_KEY,
+            // No apiKey: with it the SDK sends the seller key as a bearer on
+            // /supported, and the facilitator logs one sdk_handshake per
+            // call, i.e. per isolate and per 30 s retry. The key goes on
+            // /verify and /settle below instead.
             facilitator: {
                 url: env.WEFT_FACILITATOR_URL,
-                createAuthHeaders: () => ({
-                    supported: SUPPORTED_HEADERS,
-                    verify: PAYMENT_HEADERS,
-                    settle: PAYMENT_HEADERS,
-                }),
+                createAuthHeaders: () => {
+                    const headers = {
+                        ...PAYMENT_HEADERS,
+                        "X-API-Key": env.WEFT_SELLER_API_KEY,
+                    };
+                    return { verify: headers, settle: headers };
+                },
             },
             name: "Pollinations legacy image",
             type: "api",

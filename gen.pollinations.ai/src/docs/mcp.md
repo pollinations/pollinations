@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Hugging Face | `https://gen.pollinations.ai/mcp/huggingface` | Search models and read their details, and inspect Spaces on the Hugging Face Hub | [Source](https://github.com/pollinations/pollinations/tree/main/apps/huggingface-mcp) |
 
 Send the key with every request:
 
@@ -207,6 +208,19 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### Hugging Face MCP
+
+The Hugging Face server reads the public Hugging Face Hub with no provider
+key: `search_models` finds models by keyword with an optional pipeline-task
+filter, sorted by downloads; `model_info` returns a model's pipeline task,
+downloads, likes, license, library, last modified date, and up to 20 tags;
+`space_info` reports a Space's SDK, likes, runtime stage, and tags. Outputs
+are bounded field selections, so a huge model card never floods the context.
+
+The Hub API is anonymous and rate-limited; failures come back as structured
+`status` and `error` facts instead of tool errors, and Hub responses are
+capped at 1 MB.
 
 ### Billing and permissions
 

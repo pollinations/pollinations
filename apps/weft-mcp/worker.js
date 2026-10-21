@@ -1,4 +1,5 @@
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
+import { WeftClient, WeftError } from "@weftlabs/sdk";
 import { z } from "zod";
 import { withMcpUsageHeaders } from "../../shared/mcp-usage.ts";
 import { WEFT_MCP_MAX_COST_USD } from "../../shared/registry/mcp.ts";
@@ -12,8 +13,8 @@ class WeftFailure extends Error {
 }
 
 function paymentCost(body) {
-    const paid = Number(body?.paid_usd ?? 0);
-    const held = Number(body?.held_usd ?? 0);
+    const paid = Number(body.paidUsd ?? 0);
+    const held = Number(body.heldUsd ?? 0);
     if (
         !Number.isFinite(paid) ||
         !Number.isFinite(held) ||
@@ -22,46 +23,29 @@ function paymentCost(body) {
     ) {
         throw new WeftFailure(502, "Weft returned invalid payment amounts");
     }
-    if (body?.payment_status === undefined && body?.held_usd != null) {
+    if (body.paymentStatus === undefined && body.heldUsd != null) {
         throw new WeftFailure(502, "Weft returned no payment status", held);
     }
     // Prototype: pending holds are charged provisionally. Reconcile reversals
-    // before this worker is deployed with a real buyer key.
-    return ["pending", "declined-pending"].includes(body?.payment_status)
+    // before this worker is deployed with a real buyer key: the fetch
+    // response's purchaseId reads the final status from Weft's purchases API.
+    return ["pending", "declined-pending"].includes(body.paymentStatus)
         ? Math.max(paid, held)
         : paid;
 }
 
-async function callWeft(path, payload, env, fetchImpl, idempotencyKey) {
+function weftClient(env, fetchImpl) {
     if (!env.WEFT_BUYER_API_KEY) {
         throw new WeftFailure(503, "Weft buyer key is not configured");
     }
-    if (!env.WEFT_API_URL) {
-        throw new WeftFailure(503, "Weft API URL is not configured");
+    if (!env.WEFT_BASE_URL) {
+        throw new WeftFailure(503, "Weft base URL is not configured");
     }
-    const response = await fetchImpl(`${env.WEFT_API_URL}${path}`, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${env.WEFT_BUYER_API_KEY}`,
-            "Content-Type": "application/json",
-            ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
-        },
-        body: JSON.stringify(payload),
+    return new WeftClient({
+        apiKey: env.WEFT_BUYER_API_KEY,
+        baseUrl: env.WEFT_BASE_URL,
+        fetchApi: fetchImpl,
     });
-    const body = await response.json().catch(() => null);
-    if (!response.ok) {
-        throw new WeftFailure(
-            response.status >= 500 ? 502 : response.status,
-            body?.message ||
-                body?.error?.message ||
-                `Weft returned HTTP ${response.status}`,
-            paymentCost(body),
-        );
-    }
-    if (!body || typeof body !== "object") {
-        throw new WeftFailure(502, "Weft returned an invalid response");
-    }
-    return body;
 }
 
 function textResult(text) {
@@ -72,7 +56,14 @@ function reportFailure(reportUsage, tool, error) {
     const failure =
         error instanceof WeftFailure
             ? error
-            : new WeftFailure(502, "Weft request failed");
+            : error instanceof WeftError
+              ? new WeftFailure(
+                    error.status >= 400 && error.status < 500
+                        ? error.status
+                        : 502,
+                    `Weft ${error.code}: ${error.message}`,
+                )
+              : new WeftFailure(502, "Weft request failed");
     reportUsage({
         cost: failure.cost,
         tool,
@@ -85,26 +76,27 @@ function reportFailure(reportUsage, tool, error) {
 }
 
 function formatFetch(body) {
-    if (typeof body.body_base64 !== "string") {
+    if (typeof body.bodyBase64 !== "string") {
         return textResult(
-            `Weft returned no content. Payment status: ${body.payment_status}`,
+            `Weft returned no content. Payment status: ${body.paymentStatus}`,
         );
     }
     const contentType =
         body.headers?.["content-type"] || body.headers?.["Content-Type"] || "";
-    const metadata = `HTTP ${body.status}; payment ${body.payment_status}; cost ${body.paid_usd} USD; held ${body.held_usd ?? "0"} USD`;
+    const purchase = body.purchaseId ? `; purchase ${body.purchaseId}` : "";
+    const metadata = `HTTP ${body.status}; payment ${body.paymentStatus}; cost ${body.paidUsd} USD; held ${body.heldUsd ?? "0"} USD${purchase}`;
     if (!/^(text\/|application\/(json|[^;]+\+json))/.test(contentType)) {
         return textResult(
-            `${metadata}\nContent-Type: ${contentType || "unknown"}\nBase64: ${body.body_base64}`,
+            `${metadata}\nContent-Type: ${contentType || "unknown"}\nBase64: ${body.bodyBase64}`,
         );
     }
     try {
-        const bytes = Uint8Array.from(atob(body.body_base64), (char) =>
+        const bytes = Uint8Array.from(atob(body.bodyBase64), (char) =>
             char.charCodeAt(0),
         );
         return textResult(`${metadata}\n\n${new TextDecoder().decode(bytes)}`);
     } catch {
-        return textResult(`${metadata}\nBase64: ${body.body_base64}`);
+        return textResult(`${metadata}\nBase64: ${body.bodyBase64}`);
     }
 }
 
@@ -122,7 +114,7 @@ function buildServer(env, fetchImpl, reportUsage) {
         "weft_search",
         {
             description:
-                "Find Weft APIs that support read-only paid fetches. Search is free.",
+                "Find Weft APIs that support read-only paid fetches within the $0.05 cap. Search is free. Pass the result's queryTraceId to weft_fetch as searchId.",
             inputSchema: z.object({
                 query: z.string().min(1),
                 maxResults: z.number().int().min(1).max(10).optional(),
@@ -130,19 +122,16 @@ function buildServer(env, fetchImpl, reportUsage) {
         },
         async ({ query, maxResults }) => {
             try {
-                const body = await callWeft(
-                    "/search",
-                    {
-                        query,
-                        max_results: maxResults ?? 5,
-                        filters: {
-                            method: { eq: "GET" },
-                            weft_fetch_compatible: true,
-                        },
+                const body = await weftClient(env, fetchImpl).search({
+                    query,
+                    maxResults: maxResults ?? 5,
+                    filters: {
+                        method: { eq: "GET" },
+                        weftFetchCompatible: true,
+                        // List only APIs that weft_fetch's hard cap can buy.
+                        price: { lte: String(WEFT_MCP_MAX_COST_USD) },
                     },
-                    env,
-                    fetchImpl,
-                );
+                });
                 return textResult(JSON.stringify(body));
             } catch (error) {
                 return reportFailure(reportUsage, "weft_search", error);
@@ -154,27 +143,28 @@ function buildServer(env, fetchImpl, reportUsage) {
         "weft_fetch",
         {
             description:
-                "Fetch a public HTTPS URL through Weft. maxCostUsd caps merchant price, not network fees. Uses Paid Pollen; maximum merchant price $0.05.",
+                "Fetch a public HTTPS URL through Weft. maxCostUsd caps merchant price, not network fees. Uses Paid Pollen; maximum merchant price $0.05. Pass searchId (the queryTraceId from weft_search) when a search found the URL.",
             inputSchema: z.object({
                 url: z.url().startsWith("https://"),
                 maxCostUsd: z.number().positive().max(WEFT_MCP_MAX_COST_USD),
+                // Weft ignores a malformed id rather than failing the purchase.
+                searchId: z.string().optional(),
             }),
         },
-        async ({ url, maxCostUsd }) => {
+        async ({ url, maxCostUsd, searchId }) => {
+            const idempotencyKey = crypto.randomUUID();
             try {
-                const body = await callWeft(
-                    "/fetch",
+                const body = await weftClient(env, fetchImpl).fetch(
                     {
                         url,
-                        max_cost_usd: String(maxCostUsd),
+                        maxCostUsd: String(maxCostUsd),
                         method: "GET",
-                        allow_tempo_refill: false,
+                        allowTempoRefill: false,
+                        searchId,
                     },
-                    env,
-                    fetchImpl,
-                    crypto.randomUUID(),
+                    { idempotencyKey },
                 );
-                if (typeof body.paid_usd !== "string") {
+                if (typeof body.paidUsd !== "string") {
                     throw new WeftFailure(
                         502,
                         "Weft fetch response is missing payment amount",
@@ -203,6 +193,13 @@ function buildServer(env, fetchImpl, reportUsage) {
                 });
                 return result;
             } catch (error) {
+                if (error instanceof WeftError && error.charge === "possible") {
+                    // Billed at 0, but Weft may have paid the merchant.
+                    console.warn("Weft fetch failed after a possible charge", {
+                        code: error.code,
+                        idempotencyKey,
+                    });
+                }
                 return reportFailure(reportUsage, "weft_fetch", error);
             }
         },

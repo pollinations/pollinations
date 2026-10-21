@@ -1,21 +1,11 @@
 {
   "held": {
-    "16906": {
-      "merge_sha": "cb365b6a7c5cae4aa072dab854dfd80a4638cd93",
-      "merged_at": "2026-10-21T09:27:49Z",
-      "required": []
-    },
     "17450": {
       "merge_sha": "0072e1229dab0ab213832b4f78b046c3ed920a57",
       "merged_at": "2026-10-21T15:21:24Z",
       "required": [
         "deploy-cloudflare-production.yml:deploy-gen"
       ]
-    },
-    "17650": {
-      "merge_sha": "40bd0ee89cb4a23b20165d5ac86759c821b40dd7",
-      "merged_at": "2026-10-21T16:23:24Z",
-      "required": []
     },
     "17686": {
       "merge_sha": "f19f9af23e7d1a0cf794910a1b950522e809084c",
@@ -39,27 +29,12 @@
         "deploy-cloudflare-production.yml:deploy-gen"
       ]
     },
-    "17960": {
-      "merge_sha": "660792e0b845b84d9860bfefdb86c9cf929ffb90",
-      "merged_at": "2026-10-21T16:09:10Z",
-      "required": []
-    },
     "17962": {
       "merge_sha": "bad8c9eb76cfa8ca36685ce506822a9cf18abf0c",
       "merged_at": "2026-10-21T15:50:12Z",
       "required": [
         "deploy-website-cloudflare.yml:deploy"
       ]
-    },
-    "17968": {
-      "merge_sha": "0f33204d231d686390e0b08d6bbf8bdb46aa121b",
-      "merged_at": "2026-10-21T16:06:45Z",
-      "required": []
-    },
-    "17982": {
-      "merge_sha": "86fd4b0d82838c4e59500b363d4776505c8b23cd",
-      "merged_at": "2026-10-21T04:13:00Z",
-      "required": []
     },
     "17983": {
       "merge_sha": "8a9d7cdf27b60ee4c333013bb958f4433faaba3a",
@@ -74,21 +49,6 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter"
       ]
-    },
-    "17989": {
-      "merge_sha": "6f90f95882877ad65fd53a4c5f26d4ffe1dbaf31",
-      "merged_at": "2026-10-21T07:17:34Z",
-      "required": []
-    },
-    "17990": {
-      "merge_sha": "cc081ffc9f221a316b364496fedf262e04b545ea",
-      "merged_at": "2026-10-21T15:53:32Z",
-      "required": []
-    },
-    "17991": {
-      "merge_sha": "729116c68ae1a7fcb54589db4aef4501ba9d4d58",
-      "merged_at": "2026-10-21T09:37:10Z",
-      "required": []
     },
     "17996": {
       "merge_sha": "15ccd4defceb775efc43f4ef4ede71f43e6803aa",

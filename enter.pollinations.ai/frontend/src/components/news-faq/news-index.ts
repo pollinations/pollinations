@@ -7,11 +7,11 @@ import type { BalanceAccess } from "../models/model-status-chips.tsx";
 import { formatPriceLine } from "../models/price-badge.tsx";
 
 const NEWS_INDEX_URL =
-    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/index.json";
+    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/data/index.json";
 
 type Change = { before: unknown; after: unknown };
 
-/** One official model change, built from PR gists by news_index.py. */
+/** One official model change, from the /models record or a PR description, built by news_index.py. */
 export type ModelNews = {
     id: string;
     model_id: string;
@@ -22,8 +22,9 @@ export type ModelNews = {
     /** Retirements announced in a PR description (#16818). */
     status?: "scheduled" | "cancelled";
     previous_date?: string;
-    pr: number;
-    url: string;
+    /** The PR that announced it; a change seen in the live model list has none. */
+    pr?: number;
+    url?: string;
     pricing_units?: {
         before?: ApiModelInfo["pricing_units"];
         after?: ApiModelInfo["pricing_units"];
@@ -42,29 +43,29 @@ export function formatNewsDate(date: string): string {
     });
 }
 
-export type Highlight = {
+export type DailyItem = {
     date: string;
     title: string;
     text: string;
-    /** PRs the highlight comes from; older backfilled highlights have none. */
+    /** PRs the item comes from; a few older items have none. */
     prs?: number[];
     /** Set by the daily summary: models and API changes belong to the Changelog, apps to the README. */
     kind?: "model" | "api" | "app" | "product";
 };
 
-/** Highlights for Updates: product news only. */
-export function newsHighlights(index: NewsIndex): Highlight[] {
-    return index.highlights.filter(({ kind }) => kind === "product");
+/** Daily items for Updates: product news only. */
+export function newsDaily(index: NewsIndex): DailyItem[] {
+    return index.daily.filter(({ kind }) => kind === "product");
 }
 
 const LINK = /\[([^\]]+)\]\(([^)\s]+)\)/;
 const CLOSING_LINK = /(^|[.!?]\s+)\[[^\]]+\]\([^)\s]+\)\.?\s*$/;
 
 /**
- * Moves a highlight's link under its title: a closing call to action
+ * Moves a daily item's link under its title: a closing call to action
  * ("… [Explore the SDK](url).") leaves the text, an inline one stays as words.
  */
-export function highlightLink(text: string): {
+export function itemLink(text: string): {
     text: string;
     link?: { label: string; href: string };
 } {
@@ -103,7 +104,7 @@ export type ApiNews = {
 export type NewsIndex = {
     models: ModelNews[];
     api: ApiNews[];
-    highlights: Highlight[];
+    daily: DailyItem[];
 };
 
 export type CardDetail = {

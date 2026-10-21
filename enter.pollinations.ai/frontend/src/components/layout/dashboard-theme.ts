@@ -2,6 +2,7 @@
 // `danger`; Chip supports generic label intents (news/alpha/neutral).
 // See each component's file for its own ChipIntent / SurfaceIntent / etc.
 import {
+    AppIcon,
     BeakerIcon,
     CloudUploadIcon,
     LockIcon,
@@ -28,6 +29,12 @@ export const DASHBOARD_NAV_ITEMS = [
         icon: CloudUploadIcon,
     },
     {
+        id: "my-apps",
+        to: "/my-apps",
+        label: "My Apps",
+        icon: AppIcon,
+    },
+    {
         id: "sandboxes",
         to: "/sandboxes",
         label: "Sandboxes",
@@ -51,6 +58,12 @@ export const DASHBOARD_NAV_ITEMS = [
 
 export type DashboardPage = (typeof DASHBOARD_NAV_ITEMS)[number]["id"];
 export type DashboardPath = (typeof DASHBOARD_NAV_ITEMS)[number]["to"];
+
+export function dashboardNavItems(hasApps = false) {
+    return DASHBOARD_NAV_ITEMS.filter(
+        (item) => item.id !== "my-apps" || hasApps,
+    );
+}
 
 export function isDashboardPath(path: string): path is DashboardPath {
     return DASHBOARD_NAV_ITEMS.some((item) => item.to === path);

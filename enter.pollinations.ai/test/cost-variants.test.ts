@@ -343,7 +343,7 @@ describe("long-context cost variants", () => {
             promptCachedTokens: 0.4 / 1e6,
             promptCacheWriteTokens: 4 / 1e6,
             promptAudioTokens: 4 / 1e6,
-            promptImageTokens: 2 / 1e6,
+            promptImageTokens: 4 / 1e6,
             promptVideoTokens: 4 / 1e6,
             completionTextTokens: 18 / 1e6,
         });

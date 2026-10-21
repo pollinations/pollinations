@@ -81,6 +81,8 @@ Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen ea
 5. Save the model as private, then call its `community/owner/model` id through the normal Pollinations endpoint.
 6. If your account has publisher access, change visibility to public and set prices when it is ready for other users.
 
+<p align="left"><img src="https://media.pollinations.ai/9fca3b83-ecce-406f-867d-7883ec988e9f" alt="Create model dialog for a Chat Completions endpoint" width="560"></p>
+
 ### Model names
 
 Choose a short, stable slug for the model ID (`owner/slug`) and a clear title for the catalog. Keep details that may change, such as price, hosting provider, routing, or context size, out of the slug. Use the description to identify the upstream model or explain what a router or rebranded model does. For example, use `owner/llama-3.1-8b` with the title `Llama 3.1 8B` and the description `Direct proxy to Meta Llama 3.1 8B via Groq`, or `owner/fast-router` with the title `Fast Chat Router` and the description `Routes between Llama and Mistral based on latency`.
@@ -153,6 +155,8 @@ Each text registration declares one upstream API with `{ "api": "responses" | "c
 A model registered with `advertised.streaming: false` is listed in `/models` and `/v1/models` with `supports_streaming: false`. `stream: false` calls work and are billed like any other community model, from the usage your endpoint returns. Pollinations never sends `stream: true` to it. A `stream: true` call on Chat Completions or Responses is sent to your endpoint as `stream: false`, and the finished answer comes back to the caller as a valid event stream in one go, with the terminal usage billing needs. Clients that stream by default, such as Open WebUI, keep working without any setting; they just see the whole answer arrive at once instead of token by token.
 
 Endpoint agents also select one upstream API and exact URL. Managed prompt agents use Pollinations' Responses runtime and have no publisher-configured endpoint URL. Both kinds of agent use the outer request ID to group child model and tool calls: the outer wrapper is free, and each completed child operation is billed once even if a later step fails.
+
+Gen calls an endpoint agent with a short-lived `ag_` run token (up to 30 minutes) instead of the caller's key. The token carries that key's permissions and budget, so call third-party agents with a key limited to what they need. The agent's server can check the token with `GET /account/key`.
 
 ## Fallbacks and Health
 

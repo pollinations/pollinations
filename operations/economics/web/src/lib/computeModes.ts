@@ -1,4 +1,9 @@
 import type { Data, VendorLedgerRow } from "../types";
+import { ledgerModelResolver } from "./modelIdentity";
+import {
+    POLLEN_COMPUTE_MODE_OVERRIDES,
+    resolveProvider,
+} from "./providerRegistry";
 import { canonicalVendor } from "./tb";
 
 export type ComputeMode =
@@ -16,6 +21,8 @@ export type ComputeModeProviderMonth = {
 export type ComputeModeIndex = {
     providerMonths: ComputeModeProviderMonth[];
     modeByProviderMonth: Map<string, ComputeMode>;
+    modeByModel: Map<string, ComputeMode>;
+    model: ReturnType<typeof ledgerModelResolver>["model"];
 };
 
 function providerMonthKey(month: string, provider: string): string {
@@ -37,6 +44,8 @@ function carriesComputeCost(row: VendorLedgerRow) {
 
 export function computeModeIndex(data: Data): ComputeModeIndex {
     const typesByProviderMonth = new Map<string, Set<string>>();
+    const typesByModel = new Map<string, Set<string>>();
+    const identity = ledgerModelResolver(data);
 
     for (const row of data.vendorLedger ?? []) {
         const type = row.type.trim().toLowerCase();
@@ -44,6 +53,19 @@ export function computeModeIndex(data: Data): ComputeModeIndex {
         if (!carriesComputeCost(row)) continue;
         const month = row.start.slice(0, 7);
         const provider = canonicalVendor(row.vendor);
+        const resolution = identity.ledger(row);
+        const models =
+            resolution.kind === "model"
+                ? [resolution.model]
+                : resolution.kind === "shared"
+                  ? resolution.models
+                  : [];
+        for (const model of models) {
+            const key = `${providerMonthKey(month, provider)}|${model}`;
+            const types = typesByModel.get(key) ?? new Set<string>();
+            types.add(type);
+            typesByModel.set(key, types);
+        }
         const monthTypes = typesByProviderMonth.get(
             providerMonthKey(month, provider),
         );
@@ -72,7 +94,17 @@ export function computeModeIndex(data: Data): ComputeModeIndex {
                 a.provider.localeCompare(b.provider),
         );
 
-    return { modeByProviderMonth, providerMonths };
+    return {
+        modeByProviderMonth,
+        providerMonths,
+        modeByModel: new Map(
+            [...typesByModel].map(([key, types]) => [
+                key,
+                classifiedMode(types),
+            ]),
+        ),
+        model: identity.model,
+    };
 }
 
 export function providerMonthComputeMode(
@@ -84,6 +116,44 @@ export function providerMonthComputeMode(
     return (
         index.modeByProviderMonth.get(providerMonthKey(month, canonical)) ??
         "unclassified"
+    );
+}
+
+// Missing bills do not erase usage from a known API provider. Keep observed
+// mixed/GPU months authoritative; use reviewed routing only when costs are absent.
+export function pollenComputeMode(
+    index: ComputeModeIndex,
+    month: string,
+    provider: string,
+    model?: string,
+): ComputeMode {
+    const observed = providerMonthComputeMode(index, month, provider);
+    // Reviewed routing can resolve delivery without inventing a GPU cost split.
+    const reviewed = POLLEN_COMPUTE_MODE_OVERRIDES.find(
+        (rule) =>
+            rule.vendor === canonicalVendor(provider) &&
+            rule.model === model &&
+            rule.from <= month &&
+            month <= rule.until,
+    )?.mode;
+    if (observed === "mixed" && model !== undefined) {
+        return (
+            index.modeByModel.get(
+                `${providerMonthKey(month, provider)}|${index.model(month, provider, model)}`,
+            ) ??
+            reviewed ??
+            "mixed"
+        );
+    }
+    if (observed !== "unclassified") return observed;
+    const definition = resolveProvider(provider);
+    return (
+        reviewed ??
+        definition?.pollenComputeMode ??
+        (definition?.category === "compute" &&
+        definition.meteringBasis === "direct"
+            ? "managed-inference"
+            : "unclassified")
     );
 }
 
@@ -101,14 +171,15 @@ export function directDeliveryData(data: Data): Data {
                 canonicalVendor(row.vendor) !== "community",
         ),
         opPollen: (data.opPollen ?? []).filter(
-            (row) => canonicalVendor(row.vendor) !== "community",
+            (row) =>
+                canonicalVendor(row.vendor) !== "community" &&
+                resolveProvider(row.vendor)?.category !== "infrastructure",
         ),
     };
 }
 
-// Managed inference gets only inference provider costs. Pollen stays out of a
-// mixed provider-month so it cannot be counted again in the GPU view; the
-// resulting provider-only row keeps the unresolved cost visible.
+// In mixed months, include only usage matched to inference costs. Ambiguous
+// models remain unallocated instead of appearing in both delivery views.
 export function managedInferenceData(
     data: Data,
     index: ComputeModeIndex = computeModeIndex(data),
@@ -123,7 +194,7 @@ export function managedInferenceData(
         opPollen: (data.opPollen ?? []).filter(
             (row) =>
                 canonicalVendor(row.vendor) !== "community" &&
-                providerMonthComputeMode(index, row.month, row.vendor) ===
+                pollenComputeMode(index, row.month, row.vendor, row.model) ===
                     "managed-inference",
         ),
     };

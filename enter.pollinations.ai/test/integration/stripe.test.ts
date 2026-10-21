@@ -998,6 +998,130 @@ test("GET /api/stripe/billing returns default card billing address", async ({
     });
 });
 
+// Stripe Tax uses the customer's address when it has any field (failing if
+// it is invalid) and the default card's otherwise: never a mix of both.
+const cardAddress = {
+    line1: "1 Market St",
+    line2: null,
+    city: "San Francisco",
+    state: "CA",
+    postal_code: "94105",
+    country: "US",
+};
+const blankAddress = {
+    line1: null,
+    line2: null,
+    city: null,
+    state: null,
+    postal_code: null,
+    country: null,
+};
+test.for([
+    {
+        name: "a partial customer address stays whole",
+        customerAddress: {
+            ...blankAddress,
+            postal_code: "10001",
+            country: "US",
+        },
+        expected: { ...blankAddress, postal_code: "10001", country: "US" },
+        complete: true,
+    },
+    {
+        name: "no customer address uses the card's",
+        customerAddress: null,
+        expected: cardAddress,
+        complete: true,
+    },
+    {
+        name: "a customer address without a country is incomplete",
+        customerAddress: { ...blankAddress, postal_code: "10001" },
+        expected: { ...blankAddress, postal_code: "10001" },
+        complete: false,
+    },
+    {
+        name: "a customer address of empty fields counts as none",
+        customerAddress: { ...blankAddress, line1: "" },
+        expected: cardAddress,
+        complete: true,
+    },
+])(
+    "GET /api/stripe/billing: $name",
+    async (testCase, { sessionToken, mocks }) => {
+        await mocks.enable("stripe", "tinybird");
+
+        const db = drizzle(env.DB);
+        const [user] = await db
+            .select({ id: userTable.id })
+            .from(userTable)
+            .limit(1);
+        if (!user) throw new Error("Expected seeded test user");
+
+        const customer = mockCustomer("cus_billing_address_source");
+        customer.address = testCase.customerAddress;
+        customer.invoice_settings.default_payment_method = "pm_billing_address";
+        const paymentMethod = mockCardPaymentMethod(
+            "pm_billing_address",
+            customer.id,
+        );
+        paymentMethod.billing_details.address = cardAddress;
+        mocks.stripe.state.customers.push(customer);
+        mocks.stripe.state.paymentMethods.push(paymentMethod);
+        await db
+            .update(userTable)
+            .set({ stripeCustomerId: customer.id })
+            .where(eq(userTable.id, user.id));
+
+        const response = await SELF.fetch(`${base}/billing`, {
+            headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        });
+        expect(response.status).toBe(200);
+        const data = (await response.json()) as {
+            billingDetails: Record<string, unknown>;
+            billingDetailsComplete: boolean;
+        };
+        const { postal_code, ...rest } = testCase.expected;
+        expect(data.billingDetails).toMatchObject({
+            ...rest,
+            postalCode: postal_code,
+        });
+        expect(data.billingDetailsComplete).toBe(testCase.complete);
+    },
+);
+
+test("GET /api/stripe/billing returns the last pack bought", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+    if (!user) throw new Error("Expected seeded test user");
+
+    const lastPack = async () => {
+        const response = await SELF.fetch(`${base}/billing`, {
+            headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        });
+        expect(response.status).toBe(200);
+        const data = (await response.json()) as {
+            lastPackPollen: number | null;
+        };
+        return data.lastPackPollen;
+    };
+
+    expect(await lastPack()).toBeNull();
+
+    await env.DB.prepare("UPDATE user SET last_pack_pollen = 10 WHERE id = ?")
+        .bind(user.id)
+        .run();
+
+    expect(await lastPack()).toBe(10);
+});
+
 test("GET /api/stripe/billing shows auto top-up unavailable without changing its setting", async ({
     sessionToken,
     mocks,
@@ -1725,11 +1849,16 @@ test("POST /api/stripe/auto-top-up/trigger followed by webhook credits once", as
     expect(webhookResponse.status).toBe(200);
 
     const afterWebhook = await env.DB.prepare(
-        `SELECT pack_balance AS packBalance FROM user WHERE id = ?`,
+        `SELECT pack_balance AS packBalance,
+            last_pack_pollen AS lastPackPollen
+        FROM user WHERE id = ?`,
     )
         .bind(user.id)
-        .first<{ packBalance: number | null }>();
-    expect(afterWebhook?.packBalance).toBe(11);
+        .first<{
+            packBalance: number | null;
+            lastPackPollen: number | null;
+        }>();
+    expect(afterWebhook).toEqual({ packBalance: 11, lastPackPollen: 10 });
 
     const duplicateResponse = await postSignedStripeWebhook(
         createAutoTopUpInvoiceEvent("invoice.paid", "in_mock_1", user.id),
@@ -3508,6 +3637,12 @@ test("POST /api/webhooks/stripe emits paid checkout.session.completed to Tinybir
     expect(pack).toBeDefined();
     if (!pack) throw new Error("Expected $10 pollen pack");
 
+    await env.DB.prepare(
+        "UPDATE user SET low_balance_notified_at = 1 WHERE id = ?",
+    )
+        .bind(user.id)
+        .run();
+
     const response = await postSignedStripeWebhook({
         id: "evt_test_checkout_paid_emit",
         type: "checkout.session.completed",
@@ -3527,6 +3662,15 @@ test("POST /api/webhooks/stripe emits paid checkout.session.completed to Tinybir
         },
     });
     expect(response.status).toBe(200);
+    // Buying a pack records it and re-arms the running-low email.
+    const credited = await env.DB.prepare(
+        `SELECT last_pack_pollen AS lastPackPollen,
+            low_balance_notified_at AS notifiedAt
+        FROM user WHERE id = ?`,
+    )
+        .bind(user.id)
+        .first<{ lastPackPollen: number | null; notifiedAt: number | null }>();
+    expect(credited).toEqual({ lastPackPollen: 10, notifiedAt: null });
 
     expect(mocks.tinybird.state.stripeEvents).toHaveLength(1);
     expect(mocks.tinybird.state.stripeEvents[0]).toMatchObject({

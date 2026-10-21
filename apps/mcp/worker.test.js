@@ -111,7 +111,10 @@ test("links generateImage to its MCP Apps card", async () => {
         const [card] = (await client.readResource({ uri })).contents;
         assert.equal(card.mimeType, "text/html;profile=mcp-app");
         assert.deepEqual(card._meta.ui.csp, {
-            resourceDomains: ["https://media.pollinations.ai"],
+            resourceDomains: [
+                "https://cdn.jsdelivr.net",
+                "https://media.pollinations.ai",
+            ],
         });
         assert.match(card.text, /^<!doctype html>/);
         assert.match(card.text, /name: "generateImage"/);

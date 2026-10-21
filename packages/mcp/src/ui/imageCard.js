@@ -1,17 +1,22 @@
-import { EXT_APPS_SCRIPT } from "./extApps.generated.js";
-
 // MCP Apps view for generateImage results:
 // https://github.com/modelcontextprotocol/ext-apps/blob/main/specification/2026-01-26/apps.mdx
 export const IMAGE_CARD_URI = "ui://pollinations/image-card.html";
 
-// The host sandboxes the card; it only loads the generated image.
+// The upstream browser SDK, pinned so the card never changes under us.
+const EXT_APPS_URL =
+    "https://cdn.jsdelivr.net/npm/@modelcontextprotocol/ext-apps@2.0.3/dist/src/app-with-deps.js";
+
+// The host sandboxes the card; it only loads the SDK and the generated image.
 export const IMAGE_CARD_CSP = {
-    resourceDomains: ["https://media.pollinations.ai"],
+    resourceDomains: [
+        "https://cdn.jsdelivr.net",
+        "https://media.pollinations.ai",
+    ],
 };
 
-// Browser code. It runs after the inlined SDK, which defines ExtApps.
+// Browser code.
 const CARD_SCRIPT = `
-const { App, applyDocumentTheme, applyHostStyleVariables } = ExtApps;
+import { App, applyDocumentTheme, applyHostStyleVariables } from "${EXT_APPS_URL}";
 const $ = (id) => document.getElementById(id);
 const app = new App({ name: "Pollinations image card", version: "1.0.0" });
 let args = {};
@@ -91,7 +96,6 @@ button:disabled { opacity: 0.6; cursor: progress; }
 </footer>
 <p id="status" role="status"></p>
 <script type="module">
-${EXT_APPS_SCRIPT}
 ${CARD_SCRIPT}
 </script>
 </body>

@@ -5,9 +5,10 @@ import {
     Outlet,
     useRouter,
 } from "@tanstack/react-router";
-import { Suspense, useDeferredValue, useState } from "react";
+import { Suspense, useDeferredValue, useEffect, useState } from "react";
 import { accountClient, forgetSessionToken } from "../api.ts";
 import { authClient, type User } from "../auth.ts";
+import type { ListedApp } from "../backend-types.ts";
 import type { DeveloperEarningsRow } from "../components/activity/use-earnings-data.ts";
 import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
 import type { ApiKey } from "../components/keys";
@@ -16,7 +17,10 @@ import {
     PageStatus,
 } from "../components/layout/dashboard-loading.tsx";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
-import { SIGNED_OUT_NAV_ITEMS } from "../components/layout/dashboard-theme.ts";
+import {
+    dashboardNavItems,
+    SIGNED_OUT_NAV_ITEMS,
+} from "../components/layout/dashboard-theme.ts";
 import { SidebarWallet } from "../components/pollen";
 import { fetchAccountBalance } from "../hooks/use-account-balance.ts";
 import { useSocialSignIn } from "../hooks/use-social-sign-in.ts";
@@ -78,6 +82,12 @@ export const Route = createFileRoute("/_dashboard")({
                   .then((r) => (r.ok ? r.json() : null))
                   .catch(() => null)
             : Promise.resolve(null);
+        const apps = user
+            ? accountClient.apps
+                  .$get()
+                  .then(async (r) => (r.ok ? (await r.json()).apps : null))
+                  .catch(() => null)
+            : Promise.resolve([] as ListedApp[]);
         // Developer earnings over the last 7 days, split by which balance
         // the spending users paid from.
         const earnings = user
@@ -107,13 +117,14 @@ export const Route = createFileRoute("/_dashboard")({
             apiKeys,
             balance,
             profile,
+            apps,
             earnings,
         };
     },
     component: DashboardLayout,
 });
 
-export function useDashboardRetry(resource: "balance" | "profile") {
+export function useDashboardRetry(resource: "balance" | "profile" | "apps") {
     const router = useRouter();
     return async () => {
         await router.invalidate({
@@ -125,10 +136,31 @@ export function useDashboardRetry(resource: "balance" | "profile") {
     };
 }
 
+// Share the loader request between navigation and page without blocking the shell.
+export function useDashboardApps() {
+    const { apps: promise, user } = Route.useLoaderData();
+    const userId = user?.id;
+    const [resolved, setResolved] = useState<{
+        userId: typeof userId;
+        apps: ListedApp[] | null;
+    }>();
+    useEffect(() => {
+        let active = true;
+        void promise.then((apps) => {
+            if (active) setResolved({ userId, apps });
+        });
+        return () => {
+            active = false;
+        };
+    }, [promise, userId]);
+    return resolved?.userId === userId ? resolved?.apps : undefined;
+}
+
 function DashboardLayout() {
     const retry = useDashboardRetry("balance");
     const data = useDeferredValue(Route.useLoaderData());
     const [isSigningOut, setIsSigningOut] = useState(false);
+    const apps = useDashboardApps();
 
     async function handleSignOut(): Promise<void> {
         if (isSigningOut) return;
@@ -144,7 +176,11 @@ function DashboardLayout() {
 
     return (
         <DashboardShell
-            navItems={data.user ? undefined : SIGNED_OUT_NAV_ITEMS}
+            navItems={
+                data.user
+                    ? dashboardNavItems(Boolean(apps?.length))
+                    : SIGNED_OUT_NAV_ITEMS
+            }
             accountName={data.user?.name || data.githubUsername}
             githubAvatarUrl={data.user?.image || ""}
             onSignOut={data.user ? handleSignOut : undefined}

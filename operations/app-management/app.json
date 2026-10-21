@@ -66,7 +66,7 @@
     "emoji": "✍️",
     "name": "Vibe Trip Planner",
     "url": "https://arpent.in/vibe",
-    "description": "Pick a handful of pictogram \"vibe\" blocks (ocean, monastic, cheap eats, slow mornings) and get back a composed trip: a region, day-by-day prose, the route on a map, where to sleep and eat, and real ph",
+    "description": "Pick a few pictogram vibe blocks and get a real trip: one route off the guidebook, places named by locals, a day-by-day map, honest unknowns. Share it or remix it.",
     "language": "en",
     "category": "writing",
     "platform": "web",
@@ -79,7 +79,7 @@
     "submittedDate": "2026-10-17",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/17827",
     "approvedDate": "2026-10-20",
-    "byop": false,
+    "byop": true,
     "requests24h": 210,
     "screenshotUrl": "https://media.pollinations.ai/76b4168f-f8c7-41b3-856f-35ef485b2cba"
   },
@@ -2837,7 +2837,7 @@
   {
     "emoji": "✍️",
     "name": "Tessera Lumen - Oracle of Sophia Tarot",
-    "url": "https://app.963.co.za",
+    "url": "https://sophia.sae963.com",
     "description": "Personalised oracle readings with card draws, guidance, reflection, and daily insight.",
     "language": "en",
     "category": "chat",

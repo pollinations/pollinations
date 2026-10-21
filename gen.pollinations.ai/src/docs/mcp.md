@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Collective Memory | `https://gen.pollinations.ai/mcp/collective-memory` | Inspect UI screenshots and compare visual states with structured pass/fail checks | [Source](https://github.com/pollinations/pollinations/tree/main/apps/collective-memory-mcp) |
 
 Send the key with every request:
 
@@ -207,6 +208,10 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### Collective Memory MCP
+
+`inspect_ui` and `compare_images` evaluate UI screenshots, mockups, and before/after renders through Pollinations vision models using `json_schema` structured output. They return a pass/fail verdict, a 0–100 score, per-check results, and concrete layout or contrast fixes. Calls use the selected vision model's listed rate with no additional MCP fee.
 
 ### Billing and permissions
 

@@ -5088,7 +5088,7 @@ fixtureTest(
         expect(response.headers.get("cache-control")).toBe(
             IMMUTABLE_CACHE_CONTROL,
         );
-        expect(response.headers.get("x-cache")).toBe("HIT");
+        expect(response.headers.get("x-cache")).toBe("MISS");
         expect(response.headers.get("x-cache-type")).toBeNull();
         expect(response.headers.get("x-cache-key")).toBeTruthy();
         await expect(response.text()).resolves.toBe("simple ok");

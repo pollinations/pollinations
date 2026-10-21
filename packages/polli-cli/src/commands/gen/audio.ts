@@ -1,5 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { writeFileSync } from "node:fs";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
 import {
@@ -10,6 +9,7 @@ import {
     printInfo,
     printMeta,
 } from "../../lib/output.js";
+import { prepareOutputPath } from "../../lib/output-file.js";
 import { playAudio } from "../../lib/play.js";
 import { readStdin } from "../../lib/stdin.js";
 
@@ -115,7 +115,7 @@ export function createAudioCommand() {
             }
 
             // Before the paid request, so a bad --output folder costs nothing.
-            mkdirSync(dirname(output), { recursive: true });
+            prepareOutputPath(output);
             if (isHuman) printInfo("Generating audio...");
 
             try {

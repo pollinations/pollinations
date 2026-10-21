@@ -11,7 +11,10 @@ DESCRIPTION >
     key. Browser events carry where the visit came from: referrer_host
     (hostname only) and utm_* from the landing URL. country is the ISO code
     Cloudflare derives from the connection (CF-IPCountry), never the IP; empty
-    before it was recorded. No backfill; rows expire after 24 months.
+    before it was recorded. provider (github, google, discord) is set on
+    sign_in_*, signup_completed and link_* events; empty before it was
+    recorded and for other sign-in flows. No backfill; rows expire after 24
+    months.
 
 SCHEMA >
     `timestamp` DateTime64(3) `json:$.timestamp`,
@@ -29,7 +32,8 @@ SCHEMA >
     `utm_medium` String `json:$.utm_medium` DEFAULT '',
     `utm_campaign` String `json:$.utm_campaign` DEFAULT '',
     `country` LowCardinality(String) `json:$.country` DEFAULT '',
-    `amount_usd` Float64 `json:$.amount_usd` DEFAULT 0
+    `amount_usd` Float64 `json:$.amount_usd` DEFAULT 0,
+    `provider` LowCardinality(String) `json:$.provider` DEFAULT ''
 
 ENGINE "MergeTree"
 ENGINE_SORTING_KEY "environment, timestamp, event, user_id"

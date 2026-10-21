@@ -9,4 +9,4 @@ export E2B_API_URL=https://gen.pollinations.ai/alpha/e2b
 export E2B_API_KEY=sk_...
 ```
 
-Setup with polli, credits and runtime: [Sandboxes](#tag/sandboxes).
+Setup with polli, credits and runtime: [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes).

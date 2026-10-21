@@ -1,17 +1,13 @@
 import { getLogger } from "@logtape/logtape";
-import { rewardKey } from "@shared/billing/rewards.ts";
-import * as schema from "@shared/db/better-auth.ts";
-import { eq } from "drizzle-orm";
 import { githubApiHeaders } from "../../github-api.ts";
 import { type QuestDefinition, rewardableQuests } from "../definitions.ts";
 import type {
     QuestCard,
     QuestEvaluation,
     QuestEvaluationContext,
-    QuestProgress,
     QuestUser,
 } from "../types.ts";
-import { questToCard, toQuestProgress } from "../types.ts";
+import { questToCard } from "../types.ts";
 
 /**
  * GitHub profile quests fetch the current user's linked GitHub profile, then
@@ -21,11 +17,9 @@ import { questToCard, toQuestProgress } from "../types.ts";
 const log = getLogger(["enter", "quest", "github-profile"]);
 
 const PUBLIC_REPO_STAR_THRESHOLD = 20;
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 type GitHubProfileResponse = {
     login?: string;
-    created_at?: string;
 };
 
 type GitHubRepoResponse = {
@@ -37,7 +31,7 @@ type GitHubRepoResponse = {
 async function fetchGitHubProfile(
     env: CloudflareBindings,
     githubId: number,
-): Promise<{ login: string | null; createdAt: Date | null } | null> {
+): Promise<{ login: string | null } | null> {
     log.info("GITHUB_PROFILE_FETCH_START: githubId={githubId}", { githubId });
     const response = await fetch(`https://api.github.com/user/${githubId}`, {
         headers: await githubApiHeaders(env),
@@ -58,23 +52,16 @@ async function fetchGitHubProfile(
     }
 
     const profile = (await response.json()) as GitHubProfileResponse;
-    let createdAt: Date | null = null;
-    if (profile.created_at) {
-        const parsed = new Date(profile.created_at);
-        createdAt = Number.isNaN(parsed.getTime()) ? null : parsed;
-    }
     log.info(
-        "GITHUB_PROFILE_FETCH_OK: githubId={githubId} login={login} createdAtRaw={createdAtRaw} createdAt={createdAt} rateLimitRemaining={rateLimitRemaining} rateLimitReset={rateLimitReset}",
+        "GITHUB_PROFILE_FETCH_OK: githubId={githubId} login={login} rateLimitRemaining={rateLimitRemaining} rateLimitReset={rateLimitReset}",
         {
             githubId,
             login: profile.login ?? null,
-            createdAtRaw: profile.created_at ?? null,
-            createdAt: createdAt?.toISOString() ?? null,
             rateLimitRemaining,
             rateLimitReset,
         },
     );
-    return { login: profile.login ?? null, createdAt };
+    return { login: profile.login ?? null };
 }
 
 async function fetchPublicRepoStars(
@@ -147,22 +134,18 @@ async function fetchPublicRepoStars(
     }
 }
 
-function accountAgeDays(createdAt: Date | null, now: Date): number {
-    if (!createdAt) return -1;
-    return Math.floor((now.getTime() - createdAt.getTime()) / MS_PER_DAY);
-}
-
-const establishedGitHubAccountQuest = {
+const establishedGitHubAccountQuest: QuestDefinition = {
     id: "github_established",
     title: "Senior dev",
     description:
         "Sign in with a GitHub account that is at least three years old.",
     category: "contribute",
     scope: "perUser",
-    rewardAmount: 2,
+    rewardAmount: 1,
     balanceBucket: "tier",
-    goal: { target: 1095, unit: "days" },
-} satisfies QuestDefinition;
+    // Retained only so existing rewards remain visible and claimable.
+    state: "completed",
+};
 
 const publicRepoStarsQuest: QuestDefinition = {
     id: "github_stars",
@@ -179,6 +162,8 @@ const publicRepoStarsQuest: QuestDefinition = {
 
 const QUESTS = [establishedGitHubAccountQuest, publicRepoStarsQuest];
 
+const EVALUATED_QUESTS = [publicRepoStarsQuest];
+
 export async function listQuestCards(
     _ctx: QuestEvaluationContext,
 ): Promise<QuestCard[]> {
@@ -190,7 +175,7 @@ export async function evaluateUser(
     user: QuestUser,
 ): Promise<QuestEvaluation> {
     const rewardableQuestIds = new Set(
-        rewardableQuests(QUESTS).map((quest) => quest.id),
+        rewardableQuests(EVALUATED_QUESTS).map((quest) => quest.id),
     );
     if (rewardableQuestIds.size === 0) {
         log.info(
@@ -210,66 +195,14 @@ export async function evaluateUser(
         return { proposals: [] };
     }
 
-    if (rewardableQuestIds.has(establishedGitHubAccountQuest.id)) {
-        const existingReward = await ctx.db
-            .select({ id: schema.rewards.id })
-            .from(schema.rewards)
-            .where(
-                eq(
-                    schema.rewards.idempotencyKey,
-                    rewardKey(establishedGitHubAccountQuest.id, user.githubId),
-                ),
-            )
-            .limit(1);
-        if (existingReward.length > 0) {
-            rewardableQuestIds.delete(establishedGitHubAccountQuest.id);
-        }
-    }
-
-    if (rewardableQuestIds.size === 0) {
-        return { proposals: [] };
-    }
-
-    const now = new Date();
     const proposals: QuestEvaluation["proposals"] = [];
-    const progress: QuestProgress[] = [];
     const profile = await fetchGitHubProfile(ctx.env, user.githubId);
     if (!profile) {
         log.info(
             "GITHUB_PROFILE_NO_ACTIVITY: userId={userId} githubId={githubId}",
             { userId: user.id, githubId: user.githubId },
         );
-        return { proposals, progress };
-    }
-
-    if (rewardableQuestIds.has(establishedGitHubAccountQuest.id)) {
-        const ageDays = accountAgeDays(profile.createdAt, now);
-        const qualifies =
-            profile.createdAt !== null &&
-            ageDays >= establishedGitHubAccountQuest.goal.target;
-        if (profile.createdAt !== null) {
-            progress.push(
-                toQuestProgress(establishedGitHubAccountQuest, ageDays),
-            );
-        }
-        log.info(
-            "GITHUB_PROFILE_QUEST_DECISION: userId={userId} githubId={githubId} createdAt={createdAt} ageDays={ageDays} thresholdDays={thresholdDays} qualifies={qualifies}",
-            {
-                userId: user.id,
-                githubId: user.githubId,
-                createdAt: profile.createdAt?.toISOString() ?? null,
-                ageDays,
-                thresholdDays: establishedGitHubAccountQuest.goal.target,
-                qualifies,
-            },
-        );
-
-        if (qualifies) {
-            proposals.push({
-                quest: establishedGitHubAccountQuest,
-                userId: user.id,
-            });
-        }
+        return { proposals };
     }
 
     if (rewardableQuestIds.has(publicRepoStarsQuest.id)) {
@@ -299,5 +232,5 @@ export async function evaluateUser(
         }
     }
 
-    return { proposals, progress };
+    return { proposals };
 }

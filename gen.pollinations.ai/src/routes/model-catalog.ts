@@ -5,9 +5,10 @@ import {
 } from "@shared/model-health.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
-import type {
-    ModelListHeaders,
-    ModelListQueryParams,
+import {
+    type ModelListHeaders,
+    type ModelListQueryParams,
+    splitList,
 } from "@/schemas/models.ts";
 import type { GenerationModelEntry } from "../model-registry.ts";
 import {
@@ -83,18 +84,34 @@ export async function filterCatalogEntries(
               : "official";
     const source =
         query.source ?? communitySource ?? headers["pollinations-model-source"];
-    const filtered = entries.filter(
-        (entry) =>
-            source === undefined ||
-            entry.info.community === (source === "community"),
-    );
+    const words = query.query?.toLowerCase().split(/\s+/).filter(Boolean) ?? [];
+    const capabilities = splitList(query.capabilities ?? "");
+    const agent = query.agent === "true" || query.agent === "1";
+    const filtered = entries.filter(({ info }) => {
+        if (source !== undefined && info.community !== (source === "community"))
+            return false;
+        if (query.agent !== undefined && Boolean(info.agent) !== agent)
+            return false;
+        const have: string[] = info.capabilities ?? [];
+        if (!capabilities.every((item) => have.includes(item))) return false;
+        const text = [
+            info.name,
+            ...info.aliases,
+            info.title,
+            info.description,
+            info.publisher,
+        ]
+            .join(" ")
+            .toLowerCase();
+        return words.every((word) => text.includes(word));
+    });
 
     const lookup = await getModelHealthLookup(filtered);
     const reliability =
         query.reliability ??
         headers["pollinations-model-reliability"] ??
         "reliable";
-    return filtered
+    const reliable = filtered
         .map((entry) => attachModelHealth(entry, lookup))
         .filter(
             (entry) =>
@@ -103,4 +120,7 @@ export async function filterCatalogEntries(
                 entry.communityEndpoint?.visibility === "private" ||
                 isModelReliable(entry.info.health?.success_rate),
         );
+    return query.limit === undefined
+        ? reliable
+        : reliable.slice(0, query.limit);
 }

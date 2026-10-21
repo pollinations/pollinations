@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { Fragment, type ReactNode, useState } from "react";
 import { cn } from "../lib/cn.ts";
 import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
 import { InlineLink } from "../primitives/InlineLink.tsx";
@@ -42,15 +42,31 @@ function linkedValue(value: unknown): ReactNode[] {
     const formatted = formattedValue(value);
     const segments = formatted.split(/(https:\/\/[^\s"\\]+)/g);
     let offset = 0;
-    return segments.map((segment) => {
+    return segments.map((segment, index) => {
         const key = `${offset}:${segment}`;
         offset += segment.length;
-        return segment.startsWith("https://") ? (
-            <InlineLink key={key} href={segment}>
-                {segment}
-            </InlineLink>
-        ) : (
-            segment
+        if (!segment.startsWith("https://")) return segment;
+
+        let href = segment;
+        const quotedUrl =
+            segments[index - 1]?.endsWith('"') &&
+            segments[index + 1]?.startsWith('"');
+        let extraClosingParens =
+            (href.match(/\)/g)?.length ?? 0) - (href.match(/\(/g)?.length ?? 0);
+        // Keep balanced URL parentheses, but leave prose delimiters outside the link.
+        while (
+            !quotedUrl &&
+            (/[.,!?;:]$/.test(href) ||
+                (href.endsWith(")") && extraClosingParens > 0))
+        ) {
+            if (href.endsWith(")")) extraClosingParens--;
+            href = href.slice(0, -1);
+        }
+        return (
+            <Fragment key={key}>
+                <InlineLink href={href}>{href}</InlineLink>
+                {segment.slice(href.length)}
+            </Fragment>
         );
     });
 }
@@ -134,7 +150,7 @@ export function ToolCallDetails({
         <div
             data-tool-status={status}
             className={cn(
-                "polli:overflow-hidden polli:rounded-xl polli:border polli:border-theme-border/35 polli:bg-surface-opaque polli:shadow-well",
+                "polli:overflow-hidden polli:rounded-xl polli:border polli:border-theme-border/35 polli:bg-surface-opaque",
                 className,
             )}
         >

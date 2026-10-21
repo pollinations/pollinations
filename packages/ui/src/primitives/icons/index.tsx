@@ -1,3 +1,4 @@
+import googleLogoUrl from "../../assets/google.svg";
 import type { IconProps } from "./types.ts";
 
 const strokeProps = {
@@ -266,6 +267,18 @@ export function GitHubIcon(props: IconProps) {
     );
 }
 
+/** Multicolor Google "G" brand asset; it keeps its colors instead of currentColor. */
+export function GoogleIcon({ className }: IconProps) {
+    return (
+        <img
+            src={googleLogoUrl}
+            alt=""
+            aria-hidden="true"
+            className={className}
+        />
+    );
+}
+
 export function ImageIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -454,6 +467,16 @@ export function WalletIcon(props: IconProps) {
             <path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v2H5a2 2 0 0 0-2 2V7Z" />
             <path d="M3 11a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6Z" />
             <circle cx="17" cy="14" r="1.25" fill="currentColor" />
+        </svg>
+    );
+}
+
+/** A paper receipt: what a price includes. */
+export function ReceiptIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21Z" />
+            <path d="M9 8h6M9 12h6M9 16h3" />
         </svg>
     );
 }

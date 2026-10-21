@@ -13,9 +13,9 @@ import {
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import { type FC, useEffect, useState } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "../activity/format-activity-pollen.ts";
-import { LoadError } from "../layout/dashboard-loading.tsx";
+import { LoadError, PageStatus } from "../layout/dashboard-loading.tsx";
 
 const PAGE_SIZE = 15;
 const RECENT_WINDOW_DAYS = 90;
@@ -182,8 +182,8 @@ async function fetchLastEvents(
         days: RECENT_WINDOW_DAYS.toString(),
     };
     const [usageResponse, earningsResponse] = await Promise.all([
-        apiClient.account.usage.$get({ query }),
-        apiClient.account.earnings.transactions.$get({ query }),
+        accountClient.usage.$get({ query }),
+        accountClient.earnings.transactions.$get({ query }),
     ]);
     if (!usageResponse.ok || !earningsResponse.ok) {
         throw new Error("Failed to load last events");
@@ -225,7 +225,7 @@ export const LastEventsPanel: FC = () => {
     const loadingMore = state.loading && state.rows.length > 0;
 
     if (state.loading && state.rows.length === 0) {
-        return null;
+        return <PageStatus />;
     }
 
     if (state.error && state.rows.length === 0) {

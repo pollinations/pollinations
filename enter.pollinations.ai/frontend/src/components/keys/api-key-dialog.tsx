@@ -1,12 +1,8 @@
+import { Dialog } from "@pollinations/ui";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
-import {
-    adjectives,
-    animals,
-    uniqueNamesGenerator,
-} from "unique-names-generator";
+import { generateFunName } from "../../lib/fun-name.ts";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
-import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import { KeyDialogContent } from "./key-dialog-content.tsx";
 import { useKeyPermissions } from "./key-permissions.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
@@ -25,15 +21,6 @@ type ApiKeyDialogProps = {
     /** Simplified mode: hides key type selector, permissions, budget, expiry. Shows only app key settings. */
     simplified?: boolean;
 };
-
-function generateFunName(): string {
-    return uniqueNamesGenerator({
-        dictionaries: [adjectives, animals],
-        separator: "-",
-        length: 2,
-        style: "lowerCase",
-    });
-}
 
 export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     onSubmit,
@@ -67,6 +54,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         setAccountPermissions,
         setPollenBudget,
         setExpiryDays,
+        setQuestPollenOnly,
     } = keyPermissions;
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
         null,
@@ -119,6 +107,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 setAccountPermissions([]);
                 setPollenBudget(null);
                 setExpiryDays(null);
+                setQuestPollenOnly(false);
             }
             return;
         }
@@ -141,10 +130,17 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         setAccountPermissions,
         setPollenBudget,
         setExpiryDays,
+        setQuestPollenOnly,
     ]);
 
     return (
-        <ResourceDialog open={isOpen} onOpenChange={setIsOpen} size="lg">
+        <Dialog
+            open={isOpen}
+            onOpenChange={setIsOpen}
+            size="lg"
+            // Keep the expanding form stable; center the completed result.
+            contentClassName={createdKey ? undefined : "resource-dialog"}
+        >
             <KeyDialogContent
                 mode="create"
                 app={simplified}
@@ -169,6 +165,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     )
                 }
             />
-        </ResourceDialog>
+        </Dialog>
     );
 };

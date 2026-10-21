@@ -26,7 +26,7 @@ class ComplexityRoutingTests(unittest.TestCase):
         async def run():
             with patch("src.ai.client.pollinations_client.generate_text", new=AsyncMock(return_value="{}")) as generate:
                 await _pollinations_extract("source", "extract fields", None, "low")
-            self.assertEqual(generate.await_args.kwargs["model"], "openai/gpt-5.6-luna")
+            self.assertEqual(generate.await_args.kwargs["model"], "openai/gpt-6-luna")
 
         asyncio.run(run())
 
@@ -59,7 +59,7 @@ class ComplexityRoutingTests(unittest.TestCase):
                 )
             self.assertTrue(response["success"])
             self.assertEqual(generate.await_count, 1)
-            self.assertEqual(generate.await_args.kwargs["model"], "openai/gpt-5.6-luna")
+            self.assertEqual(generate.await_args.kwargs["model"], "openai/gpt-6-luna")
 
         asyncio.run(run())
 
@@ -69,7 +69,7 @@ class ComplexityRoutingTests(unittest.TestCase):
                 "src.ai.client.pollinations_client.generate_text", new=AsyncMock(return_value="facts")
             ) as generate:
                 await _llm_extract("source", "extract fields", "mid")
-            self.assertEqual(generate.await_args.kwargs["model"], "openai/gpt-5.6-terra")
+            self.assertEqual(generate.await_args.kwargs["model"], "openai/gpt-6-sol")
 
         asyncio.run(run())
 
@@ -85,7 +85,7 @@ class ComplexityRoutingTests(unittest.TestCase):
                     await harness._review_files_concurrently(files)
             finally:
                 _review_complexity.reset(token)
-            self.assertEqual(generate.await_args.kwargs["model"], "openai/gpt-5.6-terra")
+            self.assertEqual(generate.await_args.kwargs["model"], "openai/gpt-6-sol")
 
         asyncio.run(run())
 
@@ -102,7 +102,7 @@ class ComplexityRoutingTests(unittest.TestCase):
                     await harness._synthesize_review(pr, findings, [])
             finally:
                 _review_complexity.reset(token)
-            self.assertEqual(generate.await_args.kwargs["model"], "openai/gpt-5.6-sol")
+            self.assertEqual(generate.await_args.kwargs["model"], "openai/gpt-6-sol")
 
         asyncio.run(run())
 

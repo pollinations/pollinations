@@ -1,3 +1,4 @@
+import { POLLI_CLIENT } from "./client.js";
 import { BASE_URL, resolveApiKey } from "./config.js";
 import { fail, printError } from "./output.js";
 
@@ -5,6 +6,7 @@ export class ApiError extends Error {
     constructor(
         public readonly status: number,
         message: string,
+        public readonly body = "",
     ) {
         super(message);
         this.name = "ApiError";
@@ -38,6 +40,7 @@ const send = async (
 
     const headers: Record<string, string> = {
         "Content-Type": "application/json",
+        "X-Polli-Client": POLLI_CLIENT,
     };
     if (key) headers.Authorization = `Bearer ${key}`;
 
@@ -52,6 +55,7 @@ const send = async (
         throw new ApiError(
             res.status,
             `${res.status} ${res.statusText}: ${text}`,
+            text,
         );
     }
 

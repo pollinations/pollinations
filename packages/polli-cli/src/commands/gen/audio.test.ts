@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { setKeyOverride } from "../../lib/config.js";
-import { setOutputMode } from "../../lib/output.js";
+import { ExitSignal, setOutputMode } from "../../lib/output.js";
 import { createAudioCommand } from "./audio.js";
 
 const originalStdinTTY = process.stdin.isTTY;
@@ -22,13 +22,91 @@ afterEach(() => {
 });
 
 describe("gen audio output", () => {
+    it("names Gemini TTS default WAV output with a wav extension", async () => {
+        const folder = mkdtempSync(join(tmpdir(), "polli-audio-test-"));
+        try {
+            process.chdir(folder);
+            setKeyOverride("sk_test");
+            setOutputMode("json");
+            const output: string[] = [];
+            vi.spyOn(process.stdout, "write").mockImplementation((value) => {
+                output.push(String(value));
+                return true;
+            });
+            // Gemini TTS defaults to WAV when response_format is omitted.
+            vi.stubGlobal(
+                "fetch",
+                async () =>
+                    new Response(
+                        Buffer.from("RIFF\u0000\u0000\u0000\u0000WAVE"),
+                        {
+                            headers: { "Content-Type": "audio/wav" },
+                        },
+                    ),
+            );
+
+            await createAudioCommand().parseAsync(
+                ["Hello", "--model", "google/gemini-3.8-flash-tts"],
+                { from: "user" },
+            );
+
+            const meta = JSON.parse(output.join(""));
+            expect(meta.path).toBe("speech.wav");
+            expect(readFileSync("speech.wav").subarray(0, 4).toString()).toBe(
+                "RIFF",
+            );
+        } finally {
+            process.chdir(originalCwd);
+            rmSync(folder, { recursive: true });
+        }
+    });
+
+    it.each(["mp3", "opus", "aac", "flac", "wav"])(
+        "uses the requested %s format for the default filename",
+        async (format) => {
+            const folder = mkdtempSync(join(tmpdir(), "polli-audio-test-"));
+            try {
+                process.chdir(folder);
+                Object.defineProperty(process.stdin, "isTTY", {
+                    configurable: true,
+                    value: true,
+                });
+                setKeyOverride("sk_test");
+                setOutputMode("json");
+                const output: string[] = [];
+                vi.spyOn(process.stdout, "write").mockImplementation(
+                    (value) => {
+                        output.push(String(value));
+                        return true;
+                    },
+                );
+                vi.stubGlobal(
+                    "fetch",
+                    async (_url: string, _init: RequestInit) =>
+                        new Response(new Uint8Array([1, 2, 3])),
+                );
+
+                await createAudioCommand().parseAsync(
+                    ["hi", "--format", format],
+                    {
+                        from: "user",
+                    },
+                );
+
+                const file = `speech.${format}`;
+                expect([...readFileSync(file)]).toEqual([1, 2, 3]);
+                expect(JSON.parse(output.join("")).path).toBe(file);
+            } finally {
+                process.chdir(originalCwd);
+                rmSync(folder, { recursive: true });
+            }
+        },
+    );
+
     it.each([
-        "mp3",
-        "opus",
-        "aac",
-        "flac",
-        "wav",
-    ])("uses the requested %s format for the default filename", async (format) => {
+        [[], null],
+        [["--voice", "alloy"], "alloy"],
+    ])("sends voice only when --voice is passed (%j)", async (args, voice) => {
         const folder = mkdtempSync(join(tmpdir(), "polli-audio-test-"));
         try {
             process.chdir(folder);
@@ -43,22 +121,146 @@ describe("gen audio output", () => {
                 output.push(String(value));
                 return true;
             });
-            vi.stubGlobal(
-                "fetch",
-                async (_url: string, _init: RequestInit) =>
-                    new Response(new Uint8Array([1, 2, 3])),
-            );
+            let requestUrl = "";
+            vi.stubGlobal("fetch", async (url: string) => {
+                requestUrl = url;
+                return new Response(new Uint8Array([1, 2, 3]));
+            });
 
-            await createAudioCommand().parseAsync(["hi", "--format", format], {
+            await createAudioCommand().parseAsync(["hi", ...args], {
                 from: "user",
             });
 
-            const file = `speech.${format}`;
-            expect([...readFileSync(file)]).toEqual([1, 2, 3]);
-            expect(JSON.parse(output.join("")).path).toBe(file);
+            expect(new URL(requestUrl).searchParams.get("voice")).toBe(voice);
+            expect(JSON.parse(output.join("")).voice).toBe(voice ?? undefined);
         } finally {
             process.chdir(originalCwd);
             rmSync(folder, { recursive: true });
         }
     });
+
+    it("saves character timings alongside the audio with --timestamps", async () => {
+        const folder = mkdtempSync(join(tmpdir(), "polli-audio-test-"));
+        try {
+            process.chdir(folder);
+            Object.defineProperty(process.stdin, "isTTY", {
+                configurable: true,
+                value: true,
+            });
+            setKeyOverride("sk_test");
+            setOutputMode("json");
+            const output: string[] = [];
+            vi.spyOn(process.stdout, "write").mockImplementation((value) => {
+                output.push(String(value));
+                return true;
+            });
+            let requestPath: string | undefined;
+            let requestBody: Record<string, unknown> | undefined;
+            vi.stubGlobal("fetch", async (url: string, init: RequestInit) => {
+                requestPath = url;
+                requestBody = JSON.parse(String(init.body));
+                return Response.json({
+                    audio_base64: Buffer.from([1, 2, 3]).toString("base64"),
+                    alignment: { characters: ["h", "i"] },
+                    normalized_alignment: { characters: ["h", "i"] },
+                });
+            });
+
+            await createAudioCommand().parseAsync(["hi", "--timestamps"], {
+                from: "user",
+            });
+
+            expect(requestPath).toContain("/v1/audio/speech/with-timestamps");
+            expect(requestBody?.input).toBe("hi");
+            expect(requestBody).not.toHaveProperty("voice");
+            expect([...readFileSync("speech.mp3")]).toEqual([1, 2, 3]);
+            const alignment = JSON.parse(
+                readFileSync("speech.mp3.json", "utf-8"),
+            );
+            expect(alignment.alignment.characters).toEqual(["h", "i"]);
+            const meta = JSON.parse(output.join(""));
+            expect(meta.timestamps).toBe("speech.mp3.json");
+        } finally {
+            process.chdir(originalCwd);
+            rmSync(folder, { recursive: true });
+        }
+    });
+
+    it.each(["speech", "speech.json"])(
+        "keeps alignment separate from --output %s",
+        async (outputPath) => {
+            const folder = mkdtempSync(join(tmpdir(), "polli-audio-test-"));
+            try {
+                process.chdir(folder);
+                Object.defineProperty(process.stdin, "isTTY", {
+                    configurable: true,
+                    value: true,
+                });
+                setKeyOverride("sk_test");
+                setOutputMode("json");
+                vi.spyOn(process.stdout, "write").mockImplementation(
+                    () => true,
+                );
+                vi.stubGlobal("fetch", async () =>
+                    Response.json({
+                        audio_base64: Buffer.from([1, 2, 3]).toString("base64"),
+                        alignment: { characters: ["h", "i"] },
+                        normalized_alignment: { characters: ["h", "i"] },
+                    }),
+                );
+
+                await createAudioCommand().parseAsync(
+                    ["hi", "--timestamps", "--output", outputPath],
+                    { from: "user" },
+                );
+
+                expect([...readFileSync(outputPath)]).toEqual([1, 2, 3]);
+                const alignment = JSON.parse(
+                    readFileSync(`${outputPath}.json`, "utf-8"),
+                );
+                expect(alignment.alignment.characters).toEqual(["h", "i"]);
+            } finally {
+                process.chdir(originalCwd);
+                rmSync(folder, { recursive: true });
+            }
+        },
+    );
+    it("rejects --speed instead of sending a parameter the API ignores", async () => {
+        const fetchMock = vi.fn();
+        vi.stubGlobal("fetch", fetchMock);
+        vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+
+        await expect(
+            createAudioCommand()
+                .exitOverride()
+                .parseAsync(["hi", "--speed", "4"], { from: "user" }),
+        ).rejects.toMatchObject({ code: "commander.unknownOption" });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        [["hi", "--timestamps", "--duration", "30"]],
+        [["hi", "--timestamps", "--instrumental"]],
+        [["hi", "--timestamps", "--duration", "30", "--instrumental"]],
+    ])(
+        "rejects --timestamps combined with music options (%j)",
+        async (args) => {
+            const fetchMock = vi.fn();
+            vi.stubGlobal("fetch", fetchMock);
+            const stderr: string[] = [];
+            vi.spyOn(process.stderr, "write").mockImplementation((str) => {
+                stderr.push(String(str));
+                return true;
+            });
+
+            await expect(
+                createAudioCommand().parseAsync(args, { from: "user" }),
+            ).rejects.toThrow(ExitSignal);
+
+            expect(fetchMock).not.toHaveBeenCalled();
+            expect(stderr.join("")).toContain(
+                "--timestamps cannot be combined with --duration or --instrumental",
+            );
+        },
+    );
 });

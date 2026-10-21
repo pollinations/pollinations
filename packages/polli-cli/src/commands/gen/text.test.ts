@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -38,7 +38,12 @@ afterEach(() => {
     for (const folder of folders.splice(0)) rmSync(folder, { recursive: true });
 });
 
-async function run(args: string[], tty: boolean, json = true) {
+async function run(
+    args: string[],
+    tty: boolean,
+    json = true,
+    fixtures: { completion?: unknown; stream?: string } = {},
+) {
     Object.defineProperty(process.stdout, "isTTY", {
         configurable: true,
         value: tty,
@@ -54,19 +59,27 @@ async function run(args: string[], tty: boolean, json = true) {
         output.push(String(value));
         return true;
     });
-    vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const errors: string[] = [];
+    vi.spyOn(process.stderr, "write").mockImplementation((value) => {
+        errors.push(String(value));
+        return true;
+    });
     const requests: Record<string, unknown>[] = [];
     vi.stubGlobal("fetch", async (_url: string, init: RequestInit) => {
         const body = JSON.parse(String(init.body));
         requests.push(body);
         return body.stream
-            ? new Response(stream, {
+            ? new Response(fixtures.stream ?? stream, {
                   headers: { "content-type": "text/event-stream" },
               })
-            : Response.json(completion);
+            : Response.json(fixtures.completion ?? completion);
     });
     await createTextCommand().parseAsync(["hi", ...args], { from: "user" });
-    return { request: requests[0], output: output.join("") };
+    return {
+        request: requests[0],
+        output: output.join(""),
+        stderr: errors.join(""),
+    };
 }
 
 describe("gen text output", () => {
@@ -108,5 +121,76 @@ describe("gen text output", () => {
             model: "server-model",
             tokens: 7,
         });
+    });
+
+    it("rejects an existing directory as --output before the request is sent", async () => {
+        const folder = mkdtempSync(join(tmpdir(), "polli-text-test-"));
+        folders.push(folder);
+        const directory = join(folder, "existing-directory");
+        mkdirSync(directory);
+
+        setKeyOverride("sk_test");
+        setOutputMode("json");
+        const errors: string[] = [];
+        vi.spyOn(process.stderr, "write").mockImplementation((value) => {
+            errors.push(String(value));
+            return true;
+        });
+        // The command must stop before fetchGen: generation is billed before the
+        // response is saved, so reaching the network would already cost Pollen.
+        const fetchSpy = vi.fn();
+        vi.stubGlobal("fetch", fetchSpy);
+
+        await expect(
+            createTextCommand().parseAsync(["hi", "--output", directory], {
+                from: "user",
+            }),
+        ).rejects.toThrow();
+
+        expect(fetchSpy).not.toHaveBeenCalled();
+        expect(errors.join("")).toContain("it is a directory, not a file");
+    });
+});
+
+describe("gen text truncation warning", () => {
+    const sse = (events: unknown[]) =>
+        [
+            ...events.map((event) => `data: ${JSON.stringify(event)}`),
+            "data: [DONE]",
+            "",
+        ].join("\n\n");
+
+    it.each([
+        ["length", true],
+        ["stop", false],
+    ])("warns only when finish_reason is %s", async (reason, warns) => {
+        const buffered = await run([], false, true, {
+            completion: {
+                ...completion,
+                choices: [
+                    { message: { content: "partial" }, finish_reason: reason },
+                ],
+            },
+        });
+        const streamed = await run(["--stream"], false, true, {
+            stream: sse([
+                {
+                    model: "server-model",
+                    choices: [
+                        {
+                            delta: { content: "partial" },
+                            finish_reason: reason,
+                        },
+                    ],
+                },
+                // Usage and empty choices can follow the finish reason.
+                { choices: [], usage: { total_tokens: 7 } },
+                { choices: [{ delta: {}, finish_reason: null }] },
+            ]),
+        });
+        for (const { output, stderr } of [buffered, streamed]) {
+            expect(JSON.parse(output).content).toBe("partial");
+            expect(stderr.includes("output token limit")).toBe(warns);
+        }
     });
 });

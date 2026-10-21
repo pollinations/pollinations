@@ -34,6 +34,7 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     198414737, // AkshayCoder48
     205307392, // chirag-gamer
     240205932, // pollinations-router
+    314960022, // pollinations-ai
     57826942, // guus6457
     36392751, // chigwell
     228795921, //novastardev
@@ -51,11 +52,32 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     286385677, // Creatneworld
     156744205, // tsgabrielle
     243879765, // fadyabohamza-netizen
+    77214872, // aadirajuthup
+    11493034, // Jonakss
+    334253163, // suniyintellekt998114-star
     128448668, // Saauf
     319410519, // afanasevmylife
     133474899, // Marcus-Mok-GH
     117812547, // kreggscode
     202215077, // Guest453
+    181748869, // Apollohzl
+    293850242, // muhamedsohaib
+    311195727, // massafizidane21-ux
+    321230251, // vathsothary72-source
+    222464478, // achraf2011achraf
+    336811879, // helicopterbrr
+    118121166, // murderszn
+    228286415, // samueltargino0567-ux
+    140301069, // Derlifed
+    248852494, // floxygit
+    50811139, // KT-Society
+    197048004, // sonofstrange
+    125762682, // connor11016
+    197126260, // Maliot100X
+    337741234, // papa-pichita
+    320197033, // specrz
+    3012542, // danhquach
+    17449478, // pavanyellow
 ] as const;
 
 const COMMUNITY_MODEL_ALLOWED_GITHUB_ID_SET = new Set<number>(

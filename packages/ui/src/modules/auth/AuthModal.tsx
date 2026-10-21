@@ -1,8 +1,8 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { useId } from "react";
-import logoUrl from "../../brand/mark.svg";
 import { Alert } from "../../compositions/Alert.tsx";
 import { cn } from "../../lib/cn.ts";
+import { BrandMark } from "../../primitives/BrandMark.tsx";
 import {
     Dialog,
     DialogBody,
@@ -13,19 +13,6 @@ import { CheckIcon } from "../../primitives/icons/index.tsx";
 import { LoadingStatus } from "../../primitives/LoadingStatus.tsx";
 import { Surface } from "../../primitives/Surface.tsx";
 import { Heading, Text } from "../../primitives/Typography.tsx";
-
-const brandMask = (url: string): CSSProperties => ({
-    WebkitMaskImage: `url('${url}')`,
-    WebkitMaskPosition: "left center",
-    WebkitMaskRepeat: "no-repeat",
-    WebkitMaskSize: "contain",
-    maskImage: `url('${url}')`,
-    maskPosition: "left center",
-    maskRepeat: "no-repeat",
-    maskSize: "contain",
-});
-
-const authMarkMask = brandMask(logoUrl);
 
 export type AuthModalProps = {
     children: ReactNode;
@@ -81,9 +68,19 @@ export type AuthFlowLayoutProps = {
 const legalFootnote = (
     <>
         By continuing, you agree to the{" "}
-        <InlineLink href="https://pollinations.ai/terms">Terms</InlineLink> and
-        acknowledge the{" "}
-        <InlineLink href="https://pollinations.ai/privacy">
+        <InlineLink
+            href="https://pollinations.ai/terms"
+            tone="quiet"
+            showIcon={false}
+        >
+            Terms
+        </InlineLink>{" "}
+        and acknowledge the{" "}
+        <InlineLink
+            href="https://pollinations.ai/privacy"
+            tone="quiet"
+            showIcon={false}
+        >
             Privacy Policy
         </InlineLink>
         .
@@ -102,7 +99,8 @@ export function AuthFlowLayout({
     actions,
     footnote = legalFootnote,
     dialog,
-    size,
+    // Most auth steps are a title, a line and one action; busy steps opt into more width.
+    size = "sm",
     onClose,
 }: AuthFlowLayoutProps) {
     const generatedId = useId();
@@ -119,7 +117,7 @@ export function AuthFlowLayout({
                 bodyClassName="polli:space-y-0 polli:p-0"
             >
                 <AuthModalHeader>{headerAction}</AuthModalHeader>
-                <div className="polli:space-y-4 polli:px-6 polli:py-4">
+                <div className="polli:space-y-3 polli:px-(--polli-dialog-gutter) polli:py-4">
                     {title && (
                         <div className="polli:space-y-3">
                             <Heading as="h1" size="section" id={headingId}>
@@ -129,7 +127,11 @@ export function AuthFlowLayout({
                             {description && (
                                 // The step instruction: body tone, so it reads as
                                 // the sentence's second half rather than a caption.
-                                <Text size="body" tone="base">
+                                <Text
+                                    size="body"
+                                    tone="base"
+                                    className="polli:text-pretty"
+                                >
                                     {description}
                                 </Text>
                             )}
@@ -143,13 +145,16 @@ export function AuthFlowLayout({
     );
 }
 
-/** The one line under the actions: legal, dashboard, back or help. */
+/**
+ * The quiet line under the actions: legal, dashboard, back or help. Its links
+ * use the quiet tone without arrows, and wrapped text splits into even lines.
+ */
 export function AuthModalFootnote({ children }: { children: ReactNode }) {
     return (
         <Text
             size="xs"
             tone="muted"
-            className="polli:shrink-0 polli:px-6 polli:pb-5 polli:text-center polli:text-[13px]"
+            className="polli:shrink-0 polli:px-(--polli-dialog-gutter) polli:pb-5 polli:text-center polli:text-[13px] polli:text-balance"
         >
             {children}
         </Text>
@@ -166,15 +171,11 @@ export function AuthModalHeader({ children }: AuthModalHeaderProps) {
             aria-label="pollinations.ai"
         >
             <span className="polli:sr-only">pollinations.ai</span>
-            <span
-                aria-hidden="true"
-                className="polli:block polli:h-8 polli:w-8 polli:bg-current"
-                style={authMarkMask}
-            />
+            <BrandMark className="polli:h-8 polli:w-8" />
         </a>
     );
     return (
-        <div className="polli:shrink-0 polli:p-6 polli:pb-4">
+        <div className="polli:shrink-0 polli:px-(--polli-dialog-gutter) polli:pt-4 polli:pb-4 polli:sm:pt-6">
             <div className="polli:flex polli:min-h-10 polli:items-start polli:justify-between polli:gap-3">
                 {logo}
                 {children}
@@ -195,7 +196,10 @@ export function AuthModalLoading({
 }) {
     return (
         <AuthFlowLayout title={title} subject={subject}>
-            <LoadingStatus>{message}</LoadingStatus>
+            {/* Centred with room around it, so a short wait reads as one. */}
+            <div className="polli:flex polli:justify-center polli:py-10">
+                <LoadingStatus>{message}</LoadingStatus>
+            </div>
         </AuthFlowLayout>
     );
 }
@@ -205,7 +209,7 @@ export function ErrorBanner({ children }: { children: ReactNode }) {
 }
 
 export type AuthInfoCardProps = {
-    title?: string | null;
+    title?: ReactNode;
     children: ReactNode;
 };
 
@@ -213,7 +217,7 @@ export function AuthInfoCard({ title, children }: AuthInfoCardProps) {
     return (
         <Surface className="polli:space-y-3 polli:font-body">
             {title != null && (
-                <p className="polli:font-body polli:text-sm polli:font-semibold polli:leading-5 polli:text-theme-text-strong">
+                <p className="polli:flex polli:items-center polli:font-body polli:text-xs polli:font-medium polli:leading-5 polli:text-theme-text-muted">
                     {title}
                 </p>
             )}
@@ -237,6 +241,8 @@ export function AuthAccessItem({
     onChange,
     ariaLabel,
     disabled = false,
+    inputRef,
+    rowClassName,
 }: {
     children: ReactNode;
     control?: ReactNode;
@@ -249,23 +255,29 @@ export function AuthAccessItem({
     onChange?: (checked: boolean) => void;
     ariaLabel?: string;
     disabled?: boolean;
+    inputRef?: Ref<HTMLInputElement>;
+    rowClassName?: string;
 }) {
+    const inputId = useId();
     // A required row has no input to label.
-    const Row = icon != null ? "div" : "label";
+    const Row = icon != null || info != null ? "div" : "label";
+    const CheckboxLabel = info != null ? "label" : "span";
+    const Label = icon == null && info != null ? "label" : "span";
     return (
-        <li
-            className={cn(
-                info != null && "polli:flex polli:flex-wrap polli:items-center",
-            )}
-        >
+        <li>
             <Row
                 className={cn(
-                    "polli:flex polli:min-h-8 polli:items-center polli:gap-3 polli:font-body polli:text-sm polli:font-semibold polli:leading-5",
+                    "polli:flex polli:min-h-8 polli:items-center polli:font-body polli:text-sm polli:font-semibold polli:leading-5",
+                    info != null && icon == null
+                        ? "polli:gap-0"
+                        : "polli:gap-3",
                     info != null && "polli:min-w-0",
                     onChange &&
+                        Row === "label" &&
                         (disabled
                             ? "polli:cursor-not-allowed"
                             : "polli:cursor-pointer"),
+                    rowClassName,
                 )}
             >
                 {icon != null ? (
@@ -276,8 +288,19 @@ export function AuthAccessItem({
                         {icon}
                     </span>
                 ) : (
-                    <span className="polli:relative polli:flex polli:h-5 polli:w-5 polli:shrink-0">
+                    <CheckboxLabel
+                        className={cn(
+                            "polli:relative polli:flex polli:h-5 polli:shrink-0",
+                            info != null ? "polli:w-8 polli:pr-3" : "polli:w-5",
+                            onChange &&
+                                (disabled
+                                    ? "polli:cursor-not-allowed"
+                                    : "polli:cursor-pointer"),
+                        )}
+                    >
                         <input
+                            ref={inputRef}
+                            id={inputId}
                             type="checkbox"
                             aria-label={ariaLabel}
                             checked={checked}
@@ -295,28 +318,30 @@ export function AuthAccessItem({
                                 <CheckIcon className="polli:h-3.5 polli:w-3.5" />
                             )}
                         </span>
-                    </span>
+                    </CheckboxLabel>
                 )}
-                <span
-                    className={cn(
-                        "polli:min-w-0 polli:flex-1 polli:transition-opacity",
-                        !!onChange && !checked && "polli:opacity-60",
-                    )}
-                >
-                    {children}
+                <span className="polli:min-w-0 polli:flex-1">
+                    <Label
+                        htmlFor={Label === "label" ? inputId : undefined}
+                        className={cn(
+                            "polli:transition-opacity",
+                            !!onChange && !checked && "polli:opacity-60",
+                            onChange &&
+                                (disabled
+                                    ? "polli:cursor-not-allowed"
+                                    : "polli:cursor-pointer"),
+                        )}
+                    >
+                        {children}
+                    </Label>
+                    {info}
                 </span>
                 {control != null && (
                     <span className="polli:shrink-0">{control}</span>
                 )}
             </Row>
-            {info}
             {details && (
-                <div
-                    className={cn(
-                        "polli:pl-8 polli:font-body polli:text-xs polli:font-normal polli:leading-normal polli:text-theme-text-muted",
-                        info != null && "polli:basis-full",
-                    )}
-                >
+                <div className="polli:pl-8 polli:font-body polli:text-xs polli:font-normal polli:leading-normal polli:text-theme-text-muted">
                     {details}
                 </div>
             )}

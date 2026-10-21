@@ -1,6 +1,7 @@
 import { InlineLink, Surface, Tooltip } from "@pollinations/ui";
 import { type FC, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { CopyValue } from "./copy-value.tsx";
+import { ModelDescription } from "./model-description.tsx";
 import {
     CAPABILITY_ICON,
     getCommunityModelIcon,
@@ -12,6 +13,7 @@ import {
     getModelBrandLogoPath,
     getModelCapabilities,
     getModelCapabilityLabel,
+    getModelDescriptionWithoutName,
     getModelInputModalities,
     getModelModalityLabel,
     getRetirementDays,
@@ -161,6 +163,7 @@ type MobileModelRowProps = {
 };
 
 const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
+    const modelDescription = getModelDescriptionWithoutName(model);
     const brandLogoPath = getModelBrandLogoPath(model);
     const CommunityModelIcon = getCommunityModelIcon(model);
     const hasLeadingIcon = Boolean(brandLogoPath || CommunityModelIcon);
@@ -204,6 +207,9 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             showCopyIcon
                         />
                     </div>
+                    {modelDescription && (
+                        <ModelDescription text={modelDescription} />
+                    )}
                     {model.brandUrl && model.publisher && (
                         <InlineLink
                             href={model.brandUrl}
@@ -264,7 +270,9 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         }
                         hasTools={pollinationsTools}
                         requestEstimate={
-                            <PerPollenEstimate model={model} ledger />
+                            !model.agent && (
+                                <PerPollenEstimate model={model} ledger />
+                            )
                         }
                     />
                 </div>

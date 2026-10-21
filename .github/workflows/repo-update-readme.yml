@@ -1,0 +1,88 @@
+name: Repo / Update README
+
+# Each morning: the star history chart and the 10 newest non-app daily items, in one
+# auto-merged pull request.
+
+on:
+  schedule:
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Generate Pollinations AI Token
+        id: pollinations-ai
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Update star history chart
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+        run: node .github/scripts/star-history-chart.mjs
+
+      - name: Update the latest news
+        # The news index on the news branch, rebuilt after every News / Posts run.
+        run: |
+          git fetch --depth=1 origin news
+          git show FETCH_HEAD:operations/social/news/data/index.json > "$RUNNER_TEMP/index.json"
+          python3 operations/social/scripts/readme.py "$RUNNER_TEMP/index.json" README.md
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet -- .github/assets/star-history-*.svg README.md; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create PR
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          BRANCH="readme-${DATE}"
+
+          git config user.name "pollinations-ai[bot]"
+          git config user.email "pollinations-ai[bot]@users.noreply.github.com"
+
+          # Create branch, commit, push
+          git checkout -b "$BRANCH"
+          git add .github/assets/star-history-*.svg README.md
+          git commit -m "docs: update README — ${DATE}"
+          git push -u origin "$BRANCH"
+
+          # Create PR with auto-merge
+          PR_URL=$(gh pr create \
+            --title "docs: update README — ${DATE}" \
+            --body "Daily README update: the star history chart and the latest news." \
+            --base main)
+          echo "Created PR: $PR_URL"
+
+          # Enable auto-merge
+          gh pr merge "$PR_URL" --auto --squash || echo "Auto-merge not available"
+
+      - name: Report failure as an issue
+        if: failure()
+        uses: ./.github/actions/failure-issue
+        with:
+          token: ${{ github.token }}

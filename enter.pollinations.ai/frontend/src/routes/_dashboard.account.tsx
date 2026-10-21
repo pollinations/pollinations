@@ -22,7 +22,10 @@ import { Await, createFileRoute, redirect } from "@tanstack/react-router";
 import { useDeferredValue, useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
 import { ConnectedApps } from "../components/account/connected-apps.tsx";
-import { LoadError } from "../components/layout/dashboard-loading.tsx";
+import {
+    LoadError,
+    PageStatus,
+} from "../components/layout/dashboard-loading.tsx";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
 const DELETE_CONFIRMATION = "DELETE";
@@ -76,7 +79,7 @@ function AccountPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6">
+        <>
             <Section title="Profile">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-4">
@@ -121,11 +124,21 @@ function AccountPage() {
 
             {signOutError && <Alert intent="danger">{signOutError}</Alert>}
 
-            <Await promise={profile} fallback={null}>
+            <Await
+                promise={profile}
+                fallback={
+                    <Section title="Community">
+                        <PageStatus />
+                    </Section>
+                }
+            >
                 {(details) =>
                     details ? (
                         <CommunityConnections
                             discordAvailable={details.discordAvailable}
+                            githubUsername={
+                                user.githubId ? githubUsername : null
+                            }
                         />
                     ) : (
                         <Section title="Community">
@@ -201,7 +214,7 @@ function AccountPage() {
                         type="button"
                         intent="danger"
                         icon={<TrashIcon />}
-                        className="shrink-0"
+                        className="shrink-0 self-start sm:self-center"
                         onClick={() => setDeleteDialogOpen(true)}
                     >
                         Delete account
@@ -209,7 +222,7 @@ function AccountPage() {
                 </div>
             </Section>
 
-            <footer className="flex flex-wrap items-center gap-x-5 gap-y-2 px-1 text-[13px] text-theme-text-muted">
+            <footer className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 text-[13px] text-theme-text-muted sm:px-1">
                 <span>© 2026 Myceli.AI OÜ</span>
                 <InlineLink
                     href="https://pollinations.ai/terms"
@@ -238,7 +251,7 @@ function AccountPage() {
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
             />
-        </div>
+        </>
     );
 }
 
@@ -322,7 +335,7 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
                     <p>Deleting your Pollinations account removes:</p>
                     <ul className="list-disc space-y-1 pl-5">
                         <li>
-                            Profile, sessions, GitHub connection, and API keys
+                            Profile, sessions, connected accounts, and API keys
                         </li>
                         <li>
                             Pollen balances, access to reward history, agents,
@@ -331,9 +344,9 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
                         <li>Published media listings and tags</li>
                     </ul>
                     <p>
-                        We retain only your immutable GitHub user ID with
-                        records of rewards already issued to prevent duplicate
-                        quest payouts.
+                        We retain only your immutable GitHub or Google user ID
+                        with records of rewards already issued to prevent
+                        duplicate quest payouts.
                     </p>
                     <p>
                         Cached copies of uploaded and generated media may remain
@@ -373,8 +386,10 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
 
 function CommunityConnections({
     discordAvailable,
+    githubUsername,
 }: {
     discordAvailable: boolean;
+    githubUsername: string | null;
 }) {
     const [discordConnection, setDiscordConnection] = useState<
         DiscordConnection | null | undefined
@@ -455,8 +470,50 @@ function CommunityConnections({
         }
     }
 
+    // GitHub stays connected once linked: quests and community models key on it.
+    async function connectGitHub(): Promise<void> {
+        setConnectionPending(true);
+        setConnectionError(null);
+        const { error } = await authClient
+            .linkSocial({ provider: "github", callbackURL: "/account" })
+            .catch(() => ({ error: true }));
+        if (error) {
+            setConnectionError("Could not connect GitHub.");
+            setConnectionPending(false);
+        }
+    }
+
     return (
         <Section title="Community">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                    <GitHubIcon className="h-6 w-6 shrink-0" />
+                    <div>
+                        <Text tone="strong" weight="semibold">
+                            GitHub
+                        </Text>
+                        <Text size="sm" tone="muted">
+                            {githubUsername === null
+                                ? "Connect GitHub for GitHub quests, community models, and agents."
+                                : githubUsername
+                                  ? `@${githubUsername}`
+                                  : "Connected"}
+                        </Text>
+                    </div>
+                </div>
+                {githubUsername === null && (
+                    <Button
+                        type="button"
+                        intent="commit"
+                        icon={<GitHubIcon />}
+                        className="shrink-0 self-start sm:self-center"
+                        disabled={connectionPending}
+                        onClick={() => void connectGitHub()}
+                    >
+                        {connectionPending ? "Working..." : "Connect GitHub"}
+                    </Button>
+                )}
+            </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
                     {discordConnection?.avatarUrl ? (

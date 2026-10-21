@@ -36,6 +36,7 @@ import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { generateDecision } from "@/text/decisions/handler.ts";
 import { generateCreateResponse } from "@/text/responses/handler.ts";
 import { apiKeyBudgetReservation } from "@/utils/generation-access.ts";
+import { handleStemSeparation } from "../audio/stem-separation.ts";
 import {
     handleSimpleAudio,
     handleSpeech,
@@ -77,7 +78,33 @@ const model3dHandlers = factory.createHandlers(
     generateModel3d,
 );
 
+const decisionHandlers = factory.createHandlers(
+    textBodyLimit,
+    validator("json", CreateDecisionRequestSchema),
+    resolveModel("generate.text", {
+        defaultModel: DEFAULT_DECISION_MODEL,
+        supportedEndpoint: "/alpha/decisions",
+    }),
+    track("generate.text"),
+    textExecutionCache,
+    apiKeyBudgetReservation,
+    generateDecision,
+);
+
 export const generationExecutorRoutes = new Hono<Env>();
+
+generationExecutorRoutes.post(
+    "/alpha/audio/stem-separation",
+    resolveModel("generate.audio", {
+        defaultModel: "elevenlabs/stem-separation",
+        supportedEndpoint: "/alpha/audio/stem-separation",
+    }),
+    track("generate.audio"),
+    prepareGenerationRequest,
+    audioExecutionCache,
+    apiKeyBudgetReservation,
+    handleStemSeparation,
+);
 
 generationExecutorRoutes.post(
     "/v1/chat/completions",
@@ -92,19 +119,9 @@ generationExecutorRoutes.post(
     generateChatCompletion,
 );
 
-generationExecutorRoutes.post(
-    "/alpha/decisions",
-    textBodyLimit,
-    validator("json", CreateDecisionRequestSchema),
-    resolveModel("generate.text", {
-        defaultModel: DEFAULT_DECISION_MODEL,
-        supportedEndpoint: "/alpha/decisions",
-    }),
-    track("generate.text"),
-    textExecutionCache,
-    apiKeyBudgetReservation,
-    generateDecision,
-);
+generationExecutorRoutes.post("/alpha/decisions", ...decisionHandlers);
+// TypeSafe's own path for the same decisions request.
+generationExecutorRoutes.post("/v1/systemone", ...decisionHandlers);
 
 generationExecutorRoutes.post(
     "/v1/responses",

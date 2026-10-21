@@ -25,7 +25,7 @@
         "wrangler": "^4.147.0"
     },
     "dependencies": {
-        "@weftlabs/sdk": "0.27.1",
+        "@weftlabs/sdk": "0.32.4",
         "@x402/core": "2.27.0",
         "@x402/evm": "2.27.0",
         "content-type": "1.0.5",

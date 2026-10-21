@@ -88,6 +88,8 @@ async function gen(req, res) {
 export default defineWorkersConfig({
     test: {
         restoreMocks: true,
+        // vi.resetModules() must also reset the SDK's per-isolate /supported memo
+        server: { deps: { inline: ["@weftlabs/sdk"] } },
         poolOptions: {
             workers: {
                 wrangler: {

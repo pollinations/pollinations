@@ -43,6 +43,8 @@ export default defineWorkersConfig({
     test: {
         include: ["test/**/*.test.ts"],
         restoreMocks: true,
+        // vi.resetModules() must also reset the SDK's per-isolate /supported memo
+        server: { deps: { inline: ["@weftlabs/sdk"] } },
         poolOptions: {
             workers: {
                 wrangler: {

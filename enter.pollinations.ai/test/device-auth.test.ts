@@ -227,6 +227,23 @@ describe("Device Authorization Flow", () => {
         expect(body.error).toBe("authorization_pending");
     });
 
+    test("concurrent polls of an approved code: only one gets the key", async () => {
+        const device = await insertDeviceCode({ status: "approved" });
+        await env.KV.put(
+            `device-key:${device.deviceCode}`,
+            JSON.stringify({ key: "sk_device_key", expiresIn: null }),
+            { expirationTtl: 600 },
+        );
+        const poll = () =>
+            SELF.fetch(`${BASE}/api/device/token`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ device_code: device.deviceCode }),
+            });
+        const responses = await Promise.all([poll(), poll()]);
+        expect(responses.map((res) => res.status).sort()).toEqual([200, 400]);
+    });
+
     test("malformed token bodies return 400 invalid_request, never 500 or SQL", async () => {
         const bodies = [
             "not json",

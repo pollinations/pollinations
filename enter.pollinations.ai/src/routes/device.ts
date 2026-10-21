@@ -331,13 +331,25 @@ export async function exchangeDeviceCode(
                 return c.json({ error: "authorization_pending" }, 400);
             }
 
-            // Delete device code row and KV entry concurrently
-            await Promise.all([
+            // Delete device code row and KV entry concurrently. Single use: of
+            // concurrent polls that read the approved row, only the one whose
+            // DELETE removes it gets the key.
+            const [consumed] = await Promise.all([
                 db
                     .delete(schema.deviceCode)
-                    .where(eq(schema.deviceCode.id, device.id)),
+                    .where(eq(schema.deviceCode.id, device.id))
+                    .returning({ id: schema.deviceCode.id }),
                 c.env.KV.delete(`device-key:${device.deviceCode}`),
             ]);
+            if (consumed.length === 0) {
+                return c.json(
+                    {
+                        error: "invalid_grant",
+                        error_description: "Unknown device code",
+                    },
+                    400,
+                );
+            }
             captureFromRequest(c, "device_token_issued", device.userId ?? "", {
                 flow_id: device.id,
                 client_id: device.clientId ?? "",

@@ -5,7 +5,10 @@ import {
     PKCE_S256_CHALLENGE_REGEX,
 } from "@shared/auth/authorize-config.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
+import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -138,9 +141,22 @@ export const oauthRoutes = new Hono<Env>()
                 codeChallenge: body.codeChallenge,
                 expiresIn: body.expiresIn ?? null,
             };
-            await c.env.KV.put(`oauth-code:${code}`, JSON.stringify(stored), {
-                expirationTtl: KV_TTL,
-            });
+            // KV holds the key; the D1 row is the single-use claim that
+            // POST /token deletes atomically (KV has no get-and-delete).
+            const codeKey = `oauth-code:${code}`;
+            await Promise.all([
+                c.env.KV.put(codeKey, JSON.stringify(stored), {
+                    expirationTtl: KV_TTL,
+                }),
+                drizzle(c.env.DB, { schema })
+                    .insert(schema.verification)
+                    .values({
+                        id: crypto.randomUUID(),
+                        identifier: codeKey,
+                        value: "",
+                        expiresAt: new Date(Date.now() + KV_TTL * 1000),
+                    }),
+            ]);
             captureFromRequest(c, "authorize_granted", user.id, {
                 client_id: body.clientId,
             });
@@ -182,8 +198,11 @@ export const oauthRoutes = new Hono<Env>()
             );
         }
 
-        const kvKey = `oauth-code:${body.code}`;
-        const stored = (await c.env.KV.get(kvKey, "json")) as StoredCode | null;
+        const codeKey = `oauth-code:${body.code}`;
+        const stored = (await c.env.KV.get(
+            codeKey,
+            "json",
+        )) as StoredCode | null;
         if (!stored) {
             return tokenError(
                 c,
@@ -191,9 +210,23 @@ export const oauthRoutes = new Hono<Env>()
                 "Code unknown, expired, or already used.",
             );
         }
-        // Single use (OAuth 2.1 §4.1.3): burn the code before validating so a
-        // failed attempt can't be retried against the same code.
-        await c.env.KV.delete(kvKey);
+        // Single use (OAuth 2.1 §4.1.3): of concurrent requests that read the
+        // code, only the one whose DELETE removes the D1 claim goes on. Burn
+        // it before validating so a failed attempt can't be retried.
+        const [claimed] = await Promise.all([
+            drizzle(c.env.DB, { schema })
+                .delete(schema.verification)
+                .where(eq(schema.verification.identifier, codeKey))
+                .returning({ id: schema.verification.id }),
+            c.env.KV.delete(codeKey),
+        ]);
+        if (claimed.length === 0) {
+            return tokenError(
+                c,
+                "invalid_grant",
+                "Code unknown, expired, or already used.",
+            );
+        }
 
         if (body.client_id !== stored.clientId) {
             // Public clients never authenticate here (token auth "none"), so

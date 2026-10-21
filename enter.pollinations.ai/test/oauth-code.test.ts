@@ -22,7 +22,10 @@ async function s256(verifier: string): Promise<string> {
         .replace(/=+$/, "");
 }
 
-/** Park an authorization code in KV the way POST /api/oauth/code does. */
+/**
+ * Park an authorization code the way POST /api/oauth/code does: the key in
+ * KV, the single-use claim in D1.
+ */
 async function putCode(
     code: string,
     overrides: Record<string, unknown> = {},
@@ -39,6 +42,14 @@ async function putCode(
     await env.KV.put(`oauth-code:${code}`, JSON.stringify(stored), {
         expirationTtl: 600,
     });
+    await drizzle(env.DB, { schema })
+        .insert(schema.verification)
+        .values({
+            id: crypto.randomUUID(),
+            identifier: `oauth-code:${code}`,
+            value: "",
+            expiresAt: new Date(Date.now() + 600_000),
+        });
 }
 
 function formPost(params: Record<string, string>): RequestInit {
@@ -118,6 +129,18 @@ describe("POST /api/oauth/token (authorization_code + PKCE)", () => {
         expect(replay.status).toBe(400);
         const replayBody = (await replay.json()) as { error: string };
         expect(replayBody.error).toBe("invalid_grant");
+    });
+
+    test("concurrent exchanges of one code: only one gets the token", async () => {
+        const code = crypto.randomUUID();
+        await putCode(code);
+        const exchange = () =>
+            SELF.fetch(
+                `${BASE}/api/oauth/token`,
+                formPost(validTokenParams(code)),
+            );
+        const responses = await Promise.all([exchange(), exchange()]);
+        expect(responses.map((res) => res.status).sort()).toEqual([200, 400]);
     });
 
     test("accepts a JSON body as well as form encoding", async () => {

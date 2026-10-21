@@ -319,6 +319,9 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             },
         },
         advanced: {
+            // Cloudflare sets CF-Connecting-IP. A client-sent X-Forwarded-For
+            // makes the chain ambiguous and drops it into one shared bucket.
+            ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] },
             // Configure background tasks for Cloudflare Workers
             // Required for deferUpdates to work properly
             backgroundTasks: ctx

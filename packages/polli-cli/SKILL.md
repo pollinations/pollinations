@@ -129,6 +129,13 @@ polli gen audio "Bonjour, ceci est un test" --model elevenlabs/eleven-multilingu
 ```
 Stable, lifelike TTS across 29 languages (aliases: `multilingual-v2`, `eleven-v2`) — a non-alpha alternative to the default v3.
 
+### Estimate the cost before generating
+```bash
+polli gen image "a fox" --model flux --estimate
+polli gen video "a spacecraft landing on mars" --model veo --duration 8 --audio --estimate
+```
+`--estimate` reads the public model list (`/image/models`), prints the estimated Pollen for that request and exits without generating. Per-image, per-megapixel and per-second rates give a number; token-billed models (e.g. `gpt-image-2`, `nanobanana`) print `estimate: unknown` with their rates, because the charge depends on usage the provider reports afterwards. `--json` adds `pollen` (null when unknown) and the per-rate `lines`.
+
 ### Generate video
 ```bash
 polli gen video "a spacecraft landing on mars" --model alibaba/wan-2.2-fast --duration 5 --output mars.mp4
@@ -263,8 +270,8 @@ polli harness dsh off               # restore the config backed up before "on"
 polli harness hermes on             # login if needed, mint key "polli-harness-hermes", add provider + Polli skill
 polli harness hermes on --model deepseek/deepseek-v4-flash # use the model ID from `polli models`
 polli harness hermes off            # restore the config backed up before "on"
-polli harness opencode on           # enable the Pollinations OpenCode plugin
-polli harness opencode off          # remove the plugin setup and stored key
+polli harness opencode on           # add the Pollinations provider (OpenCode 1.x and 2.x)
+polli harness opencode off          # remove the provider setup and stored key
 polli harness pi on                 # login if needed, mint key "polli-harness-pi", configure Pi with Pollinations
 polli harness pi on --model moonshotai/kimi-k2.6 # use the model ID from `polli models`
 polli harness pi off                # restore the Pi config backed up before "on"
@@ -275,7 +282,7 @@ polli harness tgpt off              # restore tgpt's previous configuration
 ```
 Each adapter checks that its harness can be launched before login, key creation, or configuration. DSH's official launch uses `npx`, so its adapter checks for `npx`; Bloom, Hermes Agent, OpenCode, OpenClaw, Pi, and tgpt require their installed commands.
 
-Bloom already uses Pollinations and only needs a dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`). tgpt's existing Pollinations provider is selected in `~/.config/tgpt/config.conf` with a dedicated key and model. The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). OpenCode enables the existing Pollinations plugin and stores its dedicated key in the plugin config. OpenClaw adds a `pollinations` provider to `~/.openclaw/openclaw.json`, stores a dedicated key in `env.vars`, and installs this skill under `~/.openclaw/skills/polli/`. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
+Bloom already uses Pollinations and only needs a dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`). tgpt's existing Pollinations provider is selected in `~/.config/tgpt/config.conf` with a dedicated key and model. The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). OpenCode adds a `pollinations` provider (read by both 1.x and 2.x) and stores its dedicated key in the provider's options. OpenClaw adds a `pollinations` provider to `~/.openclaw/openclaw.json`, stores a dedicated key in `env.vars`, and installs this skill under `~/.openclaw/skills/polli/`. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
 
 ### Read API docs
 ```bash

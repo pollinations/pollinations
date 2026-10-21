@@ -242,6 +242,7 @@ describe("GenerationCoordinator", () => {
                 response.status,
                 response.status === 200 ? "" : await response.text(),
             ).toBe(200);
+            expect(response.headers.get("x-cache")).toBe("MISS");
             const result = (
                 await response.json<{
                     data: { url?: string; b64_json?: string }[];

@@ -83,6 +83,47 @@ export function driveDocumentLink(evidence: string): DriveDocumentLink | null {
     return location;
 }
 
+export function documentDownloadLink(
+    document: DriveDocumentLink,
+): string | null {
+    if (!document.previewHref) return null;
+    const preview = new URL(document.previewHref);
+    const match = preview.pathname.match(
+        /^\/(file|document|spreadsheets|presentation)\/d\/([^/]+)\/preview$/,
+    );
+    if (!match) return null;
+    const [, type, id] = match;
+    const url =
+        type === "file"
+            ? new URL("https://drive.google.com/uc")
+            : new URL(
+                  `/${type}/d/${id}/${type === "presentation" ? "export/pdf" : "export"}`,
+                  preview.origin,
+              );
+    if (type === "file") {
+        url.searchParams.set("export", "download");
+        url.searchParams.set("id", id);
+    } else if (type !== "presentation") {
+        url.searchParams.set("format", "pdf");
+    }
+    const resourceKey = preview.searchParams.get("resourcekey");
+    if (resourceKey) url.searchParams.set("resourcekey", resourceKey);
+    return url.toString();
+}
+
+// Supplier invoice references are reviewed collection metadata. A generic Drive
+// file, receipt or payment statement does not establish an invoice.
+export function supplierInvoiceLinks(evidence: string): string[] {
+    if (!/\bevidence_type=supplier_document\b/u.test(evidence)) return [];
+    return evidence
+        .split(/;|\bbank_payment_evidence:/u)
+        .filter((part) => /\binvoice=\S+/u.test(part))
+        .flatMap((part) => {
+            const document = driveDocumentLink(part);
+            return document?.previewHref ? [document.href] : [];
+        });
+}
+
 export function hasArchivedEvidence(evidence: string): boolean {
     // A folder or a form is a location, not a retained document proving a fact.
     return driveDocumentLink(evidence)?.previewHref != null;

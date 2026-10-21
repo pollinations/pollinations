@@ -23,6 +23,7 @@ services = [
     { binding = "COMPOSIO_MCP", service = "pollinations-composio-mcp" },
     { binding = "COMPUTER_MCP", service = "pollinations-computer-mcp" },
     { binding = "EARTHQUAKES_MCP", service = "earthquakes-mcp" },
+    { binding = "MACHINES_MCP", service = "pollinations-machines-mcp" },
     { binding = "MEDIA", service = "pollinations-media", entrypoint = "MediaUpload" }
 ]
 
@@ -137,6 +138,10 @@ service = "pollinations-computer-mcp"
 binding = "EARTHQUAKES_MCP"
 service = "earthquakes-mcp"
 
+[[env.production.services]]
+binding = "MACHINES_MCP"
+service = "pollinations-machines-mcp"
+
 [[env.production.dispatch_namespaces]]
 binding = "CODE_AGENTS"
 namespace = "pollinations-code-agents-production"
@@ -201,6 +206,8 @@ new_classes = ["CommunityModelRateLimiter"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
+# Public OAuth app identifier; user credentials stay in their browser tab.
+DOCS_APP_KEY = "pk_zM4Wvtd1rgWXRmLP"
 # Durable Object fetches get a 125 s proxy read timeout; requests through
 # this origin get the zone's 300 s (src/durable-objects/GenerationCoordinator.ts).
 GENERATION_EXECUTION_ORIGIN = "https://gen.pollinations.ai"
@@ -262,6 +269,10 @@ service = "pollinations-computer-mcp-staging"
 [[env.staging.services]]
 binding = "EARTHQUAKES_MCP"
 service = "earthquakes-mcp-staging"
+
+[[env.staging.services]]
+binding = "MACHINES_MCP"
+service = "pollinations-machines-mcp-staging"
 
 [[env.staging.dispatch_namespaces]]
 binding = "CODE_AGENTS"
@@ -331,7 +342,7 @@ BEDROCK_GUARDRAIL_VERSION = "2"
 # Staging OAuth lockdown — must match enter.pollinations.ai staging allowlist.
 # Request-time gate in shared/auth/api-key.ts fails closed without it. Issue #11137.
 STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015"
-STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid"
+STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai,thomash@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid"
 [env.test]
 
 [env.test.images]
@@ -368,6 +379,10 @@ service = "pollinations-computer-mcp"
 [[env.test.services]]
 binding = "EARTHQUAKES_MCP"
 service = "earthquakes-mcp"
+
+[[env.test.services]]
+binding = "MACHINES_MCP"
+service = "pollinations-machines-mcp"
 
 [[env.test.d1_databases]]
 binding = "DB"

@@ -11,6 +11,7 @@ import {
     callMireloSfxAPI,
 } from "./models/falFallbackMediaModel.ts";
 import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
+import { callKlingVideoAPI } from "./models/klingVideoModel.ts";
 import {
     callMinimaxH3API,
     callMinimaxH3MaxAPI,
@@ -105,6 +106,9 @@ export async function createAndReturnVideo(
         case "x-ai/grok-imagine-video-1.5":
         case "x-ai/grok-imagine-video-1.5-lite:openrouter":
             result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
+            break;
+        case "kwaivgi/kling-v3.0-std":
+            result = await callKlingVideoAPI(prompt, safeParams);
             break;
         case "x-ai/grok-imagine-video-1.5-lite":
             result = await callXaiVideoAPI(prompt, safeParams);

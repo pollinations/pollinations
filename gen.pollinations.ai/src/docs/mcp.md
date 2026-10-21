@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Earthquakes | `https://gen.pollinations.ai/mcp/earthquakes` | Search recent and historical earthquakes from the USGS catalog, and read one event | [Source](https://github.com/pollinations/pollinations/tree/main/apps/earthquakes-mcp) |
+| Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
 
 Send the key with every request:
 
@@ -197,6 +198,20 @@ private data. [Browse it](https://memory.pollinations.ai).
 ### Earthquakes MCP
 
 `earthquake_search` lists USGS events, newest or largest first. It filters by `min_magnitude` (default 4.5), a UTC `start_date` and `end_date` (both inclusive, at most 366 days apart), and an optional `near` point with `radius_km` (default 300). Without dates it covers the last 7 days. `earthquake_event` returns one event by `id` with its status, alert level and significance. An empty search returns an empty list, and an unknown `id` comes back as a tool error. Lookups are free and require a Pollinations key. The key is not sent to USGS.
+
+### Machines MCP
+
+The Machines server creates and manages full Linux sandboxes through
+`/alpha/e2b` using your API key (requires the `account:machines` permission).
+Use `create_sandbox` (defaults to the `pollinations` template with Node.js 24,
+Python 3.11, polli, and coding harnesses), `run_command`, `write_file`,
+`read_file`, `list_sandboxes`, `connect_sandbox`, `pause_sandbox`, and
+`kill_sandbox`. Sandboxes bill per running second while active and cost nothing
+while paused, with no additional MCP fee.
+
+Command output and file reads are cut at 100,000 characters with a marker.
+Before a long command, extend the paid lease with `connect_sandbox`; a command's
+`timeoutMs` only controls how long it waits, not how long the sandbox stays up.
 
 ### Billing and permissions
 

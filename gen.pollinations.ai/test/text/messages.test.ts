@@ -4,6 +4,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { TinybirdEvent } from "@shared/schemas/generation-event.ts";
 import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
@@ -351,6 +352,17 @@ describe("Messages request translation", () => {
             expect(chat.reasoning_effort).toBe(effort);
         },
     );
+
+    it("raises Claude Code's 1-token model check to the 16 every provider accepts", () => {
+        expect(
+            messagesToChatRequest(
+                request({
+                    max_tokens: 1,
+                    messages: [{ role: "user", content: "Hi" }],
+                }),
+            ).max_tokens,
+        ).toBe(16);
+    });
 
     it("rejects server tools with the tag Claude Code recognizes", () => {
         expect(() =>
@@ -1040,6 +1052,69 @@ describe("POST /v1/messages", () => {
                 ],
             },
         ]);
+    });
+
+    it("replaces the oldest images over the model's limit, tool results included", async () => {
+        const caller = await createTestApiKey({ user: { tierBalance: 100 } });
+        const { providerBodies } = mockUpstream();
+        const limit = TEXT_SERVICES[model].maxReferenceImages as number;
+        const image = (n: number) => ({
+            type: "image",
+            source: { type: "base64", media_type: "image/png", data: `${n}` },
+        });
+        // Claude Code opens screenshots with its Read tool, then one is pasted.
+        const reads = Array.from({ length: limit + 1 }, (_, n) => [
+            {
+                role: "assistant",
+                content: [
+                    {
+                        type: "tool_use",
+                        id: `toolu_${n}`,
+                        name: "Read",
+                        input: { file_path: `shot${n}.png` },
+                    },
+                ],
+            },
+            {
+                role: "user",
+                content: [
+                    {
+                        type: "tool_result",
+                        tool_use_id: `toolu_${n}`,
+                        content: [image(n)],
+                    },
+                ],
+            },
+        ]).flat();
+        const { response, text } = await call(
+            "/v1/messages",
+            {
+                model,
+                max_tokens: 32,
+                messages: [
+                    ...reads,
+                    {
+                        role: "user",
+                        content: [
+                            image(limit + 1),
+                            { type: "text", text: "Compare them." },
+                        ],
+                    },
+                ],
+            },
+            caller.key,
+        );
+        expect(response.status, text).toBe(200);
+        // The two oldest become notes; the newest `limit` stay, in order.
+        const sent = JSON.stringify(providerBodies[0].messages);
+        const note = `[image omitted: over the ${limit}-image limit]`;
+        expect(sent.split(note)).toHaveLength(3);
+        expect(sent.match(/data:image\/png;base64,\d+/g)).toEqual(
+            Array.from(
+                { length: limit },
+                (_, n) => `data:image/png;base64,${n + 2}`,
+            ),
+        );
     });
 
     it("preserves thinking signatures through response validation", async () => {

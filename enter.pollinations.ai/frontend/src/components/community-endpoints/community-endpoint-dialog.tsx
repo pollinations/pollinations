@@ -1006,7 +1006,7 @@ export function CommunityEndpointDialog({
                         <AuthInfoCard>
                             <ModelFormRow
                                 label="Fallback models"
-                                help={`Optional. Tried in order when this model's upstream fails, up to ${MAX_FALLBACK_TARGETS}. Each must be another public community model of the same modality, priced at or below this one.`}
+                                help={`Optional. Tried in order when this model's upstream fails, up to ${MAX_FALLBACK_TARGETS}. Each must be a Pollinations model or another public community model of the same modality, priced at or below this one.`}
                             >
                                 <div className="flex flex-col gap-2">
                                     {fallbackRows.map((selected, index) => (

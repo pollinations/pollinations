@@ -27,7 +27,7 @@
     },
     "dependencies": {
         "@cf-wasm/photon": "0.4.0",
-        "@weftlabs/sdk": "0.27.1",
+        "@weftlabs/sdk": "0.32.4",
         "@x402/core": "2.27.0",
         "@x402/evm": "2.27.0",
         "dotenv": "^17.0.1",

@@ -4,6 +4,7 @@ import {
 } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { parse as yamlParse } from "yaml";
+import ENTER_LLMS_TXT from "../../enter.pollinations.ai/frontend/public/llms.txt?raw";
 import {
     buildCurl,
     fetchOpenApiSpec,
@@ -1067,6 +1068,34 @@ describe("docs routes", () => {
         expect(harnessBody).toContain("## Coding Harnesses");
         expect(harnessBody).toContain("polli harness dsh on");
 
+        const x402Res = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/llm.txt?section=x402",
+            ),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(x402Res.status).toBe(200);
+        expect(x402Res.headers.get("Cache-Control")).toBe(
+            "public, max-age=3600",
+        );
+        const x402Body = await x402Res.text();
+        expect(x402Body).toContain("## x402 Prepaid Keys");
+
+        // Agents copy section names by hand, so case and the long-form
+        // labels from the docs index resolve to the same section (#17788).
+        for (const section of ["X402", "x402-prepaid-keys", "prepaid-keys"]) {
+            const aliasRes = await worker.fetch(
+                new Request(
+                    `https://gen.pollinations.ai/docs/llm.txt?section=${section}`,
+                ),
+                envWithEnterSchema({}),
+                ctx,
+            );
+            expect(aliasRes.status, section).toBe(200);
+            expect(await aliasRes.text(), section).toBe(x402Body);
+        }
+
         const badRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/llm.txt?section=bad"),
             envWithEnterSchema({}),
@@ -1074,5 +1103,38 @@ describe("docs routes", () => {
         );
         await waitOnExecutionContext(ctx);
         expect(badRes.status).toBe(404);
+        // A cached miss outlives the deploy that adds a section.
+        expect(badRes.headers.get("Cache-Control")).toBe("no-store");
+        const badBody = await badRes.text();
+        expect(badBody).toContain("Section not found");
+        expect(badBody).toContain("x402");
+    });
+
+    it("serves every section advertised in llms.txt", async () => {
+        const ctx = createExecutionContext();
+        const indexRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/llms.txt"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        const advertised = new Set(
+            [
+                ...`${await indexRes.text()}\n${ENTER_LLMS_TXT}`.matchAll(
+                    /\/docs\/llm\.txt\?section=([\w-]+)/g,
+                ),
+            ].map((match) => match[1]),
+        );
+        expect(advertised.size).toBeGreaterThan(5);
+        for (const section of advertised) {
+            const res = await worker.fetch(
+                new Request(
+                    `https://gen.pollinations.ai/docs/llm.txt?section=${section}`,
+                ),
+                envWithEnterSchema({}),
+                ctx,
+            );
+            expect(res.status, section).toBe(200);
+        }
+        await waitOnExecutionContext(ctx);
     });
 });

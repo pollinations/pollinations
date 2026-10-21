@@ -1,6 +1,6 @@
 import { cn } from "@pollinations/ui";
 import { formatPollen } from "@pollinations/ui/wallet";
-import type { FormatDistanceToken } from "date-fns";
+import { type FormatDistanceToken, formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 
 const shortFormatDistance: Record<FormatDistanceToken, string> = {
@@ -59,10 +59,10 @@ export const LimitsBadge: FC<{
 function formatExpiry(expiresAt: Date | null | undefined): string {
     if (!expiresAt) return "∞";
 
-    const daysLeft =
-        (new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+    const expiry = new Date(expiresAt);
+    if (expiry.getTime() <= Date.now()) return "expired";
 
-    return daysLeft <= 0 ? "expired" : `${daysLeft}d`;
+    return formatDistanceToNowStrict(expiry, { locale: shortLocale });
 }
 
 function formatBudget(pollenBudget: number | null | undefined): string {

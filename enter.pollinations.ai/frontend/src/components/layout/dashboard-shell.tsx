@@ -47,6 +47,7 @@ import {
     DASHBOARD_NAV_ITEMS,
     type DashboardPage,
     type DashboardPath,
+    dashboardNavItems,
 } from "./dashboard-theme.ts";
 
 /** Counts what the page still waits for; the shell shows one status while > 0. */
@@ -149,7 +150,7 @@ const accountMenuLinks: readonly AccountMenuLink[] = [
 ];
 
 export const DashboardShell: FC<DashboardShellProps> = ({
-    navItems = DASHBOARD_NAV_ITEMS,
+    navItems = dashboardNavItems(),
     accountName,
     githubAvatarUrl,
     onSignOut,

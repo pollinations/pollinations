@@ -7,6 +7,7 @@ Self-service endpoints for the authenticated user. Endpoints require authenticat
 | Endpoint | Description |
 |----------|-------------|
 | `GET /account/profile` | GitHub username, image, and community model access |
+| `GET /account/apps` | The account's listings in the community app directory |
 | `GET /account/balance` | Current pollen balance |
 | `GET /account/quests` | Read-only quest status |
 | `GET /account/usage` | Per-request usage history with costs (account-wide) |
@@ -19,6 +20,10 @@ Self-service endpoints for the authenticated user. Endpoints require authenticat
 ### GET /account/profile
 
 Returns user profile. `githubUsername`, `image`, and `communityEndpointsAllowed` are always included. `name` and `email` are included only when the API key has `account:profile`.
+
+### GET /account/apps
+
+The account's listings in the public community app directory, matched by the linked GitHub user id, newest approval first. The catalog is public, so no extra scope is needed. `apps` is an empty array when no GitHub account is linked or nothing is listed yet.
 
 ### GET /account/balance
 

@@ -3,9 +3,9 @@ import {
     apiDetails,
     apiDocsAnchor,
     cardDetails,
-    highlightLink,
+    itemLink,
     type ModelNews,
-    newsHighlights,
+    newsDaily,
     visibleModelNews,
 } from "../frontend/src/components/news-faq/news-index.ts";
 
@@ -189,30 +189,30 @@ describe("model news cards", () => {
     });
 
     it("leaves models and API changes to the Changelog", () => {
-        const highlight = (title: string, extra = {}) => ({
+        const item = (title: string, extra = {}) => ({
             date: "2026-10-07",
             title,
             text: "",
             ...extra,
         });
         expect(
-            newsHighlights({
+            newsDaily({
                 models: [],
                 api: [],
-                highlights: [
-                    highlight("model launch", { kind: "model" }),
-                    highlight("new endpoint", { kind: "api" }),
-                    highlight("feature", { kind: "product" }),
-                    highlight("app", { kind: "app" }),
-                    highlight("unlabelled"),
+                daily: [
+                    item("model launch", { kind: "model" }),
+                    item("new endpoint", { kind: "api" }),
+                    item("feature", { kind: "product" }),
+                    item("app", { kind: "app" }),
+                    item("unlabelled"),
                 ],
             }).map(({ title }) => title),
         ).toEqual(["feature"]);
     });
 
-    it("moves a highlight's link under its title", () => {
+    it("moves a daily item's link under its title", () => {
         expect(
-            highlightLink(
+            itemLink(
                 "Pass arrays of URLs. [Explore the SDK](https://example.com/sdk).",
             ),
         ).toEqual({
@@ -221,7 +221,7 @@ describe("model news cards", () => {
         });
         // An inline link keeps its words in the sentence.
         expect(
-            highlightLink(
+            itemLink(
                 "Upload up to 400 MiB through [the media store](https://example.com).",
             ),
         ).toEqual({

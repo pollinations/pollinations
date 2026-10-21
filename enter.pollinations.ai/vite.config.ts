@@ -1,8 +1,11 @@
+import { Buffer } from "node:buffer";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
+import { createElement } from "react";
 import { defineConfig } from "vite";
 import { codeAgentSdk } from "./scripts/code-agent-sdk.mjs";
 
@@ -23,6 +26,14 @@ const publicOrigin = (mode: string) =>
     mode === "staging"
         ? "https://staging.enter.myceli.ai"
         : "https://enter.pollinations.ai";
+
+// Account emails load these from fixed URLs, so the build copies them from the
+// brand kit unhashed. ponytail: build only, `vite dev` serves no email images.
+const EMAIL_BRAND = {
+    "email/polli-lockup.png":
+        "@pollinations/ui/brand/polli/polli-lockup-horizontal-black.png",
+    "email/mark.png": "@pollinations/ui/brand/mark-black.png",
+};
 
 export default defineConfig(({ mode }) => ({
     root: "frontend",
@@ -70,6 +81,54 @@ export default defineConfig(({ mode }) => ({
             name: "enter-public-origin",
             transformIndexHtml: (html) =>
                 html.replaceAll("%PUBLIC_ORIGIN%", publicOrigin(mode)),
+        },
+        {
+            name: "enter-email-brand",
+            applyToEnvironment: (environment) => environment.name === "client",
+            async generateBundle() {
+                for (const [fileName, asset] of Object.entries(EMAIL_BRAND)) {
+                    this.emitFile({
+                        type: "asset",
+                        fileName,
+                        source: readFileSync(
+                            fileURLToPath(import.meta.resolve(asset)),
+                        ),
+                    });
+                }
+                // The UI kit's icons the emails show, in their text colour, as
+                // PNGs because email clients drop SVG.
+                const [ui, { renderToStaticMarkup }, sharp] = await Promise.all(
+                    [
+                        import("@pollinations/ui"),
+                        import("react-dom/server"),
+                        import("sharp").then((m) => m.default),
+                    ],
+                );
+                // Ink, and the wallet's --polli-color-paid-deep as hex for the
+                // paid card.
+                const icons = [
+                    ["email/card.png", ui.CardIcon, "#6c4800"],
+                    ["email/website.png", ui.GlobeIcon, "#1d1420"],
+                    ["email/dashboard.png", ui.AppIcon, "#1d1420"],
+                    ["email/github.png", ui.GitHubIcon, "#1d1420"],
+                    ["email/discord.png", ui.DiscordIcon, "#1d1420"],
+                ] as const;
+                for (const [fileName, Icon, color] of icons) {
+                    const svg = renderToStaticMarkup(
+                        createElement(Icon, {
+                            color,
+                            width: 64,
+                            height: 64,
+                            xmlns: "http://www.w3.org/2000/svg",
+                        }),
+                    );
+                    this.emitFile({
+                        type: "asset",
+                        fileName,
+                        source: await sharp(Buffer.from(svg)).png().toBuffer(),
+                    });
+                }
+            },
         },
     ],
     optimizeDeps: {

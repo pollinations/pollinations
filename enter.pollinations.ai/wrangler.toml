@@ -54,6 +54,9 @@ database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "drizzle"
 
+[[send_email]]
+name = "EMAIL"
+
 [[kv_namespaces]]
 # development-pollinations-enter-kv
 binding = "KV"
@@ -95,6 +98,9 @@ binding = "DB"
 database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "drizzle"
+
+[[env.local.send_email]]
+name = "EMAIL"
 
 [[env.local.kv_namespaces]]
 # development-pollinations-enter-kv
@@ -153,6 +159,9 @@ database_name = "production-pollinations-enter-db"
 database_id = "fc771b05-4e24-48bf-980c-d09f21279bd1"
 migrations_dir = "drizzle"
 
+[[env.production.send_email]]
+name = "EMAIL"
+
 [[env.production.kv_namespaces]]
 binding = "KV"
 id = "a621f17ad3e34000971cffa616675c5b"
@@ -206,6 +215,9 @@ database_name = "staging-pollinations-enter-db"
 database_id = "2cb1cf1a-a18a-4cad-a4bb-be64e3c0e39f"
 migrations_dir = "drizzle"
 
+[[env.staging.send_email]]
+name = "EMAIL"
+
 [[env.staging.kv_namespaces]]
 # staging-pollinations-enter-kv
 binding = "KV"
@@ -236,7 +248,7 @@ STRIPE_PUBLISHABLE_KEY = "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUG
 # Staging OAuth lockdown — GitHub IDs are immutable; emails allow one-off
 # team access when the exact GitHub account is unknown. Issue #11137.
 STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015"
-STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid"
+STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai,thomash@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid"
 [env.dev]
 
 [[env.dev.services]]
@@ -253,6 +265,9 @@ binding = "DB"
 database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "drizzle"
+
+[[env.dev.send_email]]
+name = "EMAIL"
 
 [[env.dev.kv_namespaces]]
 # development-pollinations-enter-kv
@@ -292,6 +307,9 @@ database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "drizzle"
 
+[[env.test.send_email]]
+name = "EMAIL"
+
 [[env.test.kv_namespaces]]
 # development-pollinations-enter-kv
 binding = "KV"
@@ -305,6 +323,8 @@ LOG_FORMAT = "text"
 D1_EXPORT_TOKEN_SHA256 = "93b05a64761af544d325ac158513bef41959e8777a7375981ec7ae41f84cb05d"
 GITHUB_CLIENT_ID = "test_github_client_id"
 GITHUB_CLIENT_SECRET = "test_github_client_secret"
+GOOGLE_CLIENT_ID = "test_google_client_id"
+GOOGLE_CLIENT_SECRET = "test_google_client_secret"
 DISCORD_CLIENT_ID = "test_discord_client_id"
 DISCORD_CLIENT_SECRET = "test_discord_client_secret"
 DISCORD_BOT_TOKEN = "test_discord_bot_token"

@@ -9,7 +9,7 @@ import unittest
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 import requests
 
@@ -21,7 +21,7 @@ import readme
 from common import (NEWS_REL_DIR, build_daily_summary_artifact, call_pollinations_api, daily_summary_input,
                     fetch_all_snapshots, monthly_digest_input, post_recap, weekly_digest_input)
 from contributors import github_account, rank_contributors
-from news_index import api_entries, build_index, highlight_entries, model_changes, model_entries
+from news_index import api_entries, build_index, daily_entries, model_changes, model_entries
 from prs import announced_retirements, api_changes, api_changes_for_pr, api_surface, changes_text
 import prs
 
@@ -135,21 +135,21 @@ class NotesAndIndexTest(unittest.TestCase):
         self.assertEqual(daily.count("https://example.com/app"), 1)
         self.assertNotIn("secret-detail", daily)  # API changes reach Enter, not the posts
         summary = {"date": "2026-10-07", "title": "Speech", "summary": "Eleven v4 added.", "pr_count": 2,
-                   "highlights": [{"title": "Eleven v4", "text": "Generate speech.", "kind": "model"}],
+                   "daily": [{"title": "Eleven v4", "text": "Generate speech.", "kind": "model"}],
                    "changelog": [{"pr_number": 1, "api_changes": [{"endpoint": "GET /secret-detail"}]}]}
         weekly = weekly_digest_input([summary], "2026-10-01", "2026-10-07")
         for fact in ("Eleven v4 added.", "Generate speech.", "PRs selected for daily recaps: 2"):
             self.assertIn(fact, weekly)
         self.assertNotIn("secret-detail", weekly)
 
-    def test_daily_summary_stores_its_highlights_for_the_index(self):
+    def test_daily_summary_stores_its_daily_items_for_the_index(self):
         summary = {"arcs": [{"headline": "New speech", "summary": "Eleven v4 added."}],
-                   "highlights": [{"emoji": "🎵", "title": "Eleven v4", "text": "Generate speech.", "prs": [1]},
+                   "daily": [{"emoji": "🎵", "title": "Eleven v4", "text": "Generate speech.", "prs": [1]},
                                   {"title": "No text"}, "not an item"]}
         artifact = build_daily_summary_artifact(summary, [{"pr_number": 1}], "2026-10-06", "now")
-        self.assertEqual(artifact["highlights"], [summary["highlights"][0]])
+        self.assertEqual(artifact["daily"], [summary["daily"][0]])
         quiet = build_daily_summary_artifact({"arcs": []}, [{"pr_number": 2}], "2026-10-07", "now")
-        self.assertEqual(quiet["highlights"], [])
+        self.assertEqual(quiet["daily"], [])
 
     def test_index_model_news_comes_from_the_record_dated_the_day_before(self):
         def snapshot(*models, **categories):
@@ -318,13 +318,13 @@ class NotesAndIndexTest(unittest.TestCase):
         self.assertNotIn("overdue", entries)
         self.assertNotIn("status", entries["gone"])  # the removal itself, not the announcement
 
-    def test_index_highlights_keep_a_full_page(self):
-        summaries = [{"date": f"2026-09-{day:02d}", "highlights": [
+    def test_index_daily_items_keep_a_full_page(self):
+        summaries = [{"date": f"2026-09-{day:02d}", "daily": [
             {"emoji": "🎨", "title": f"Item {day}", "text": "Try it.", **({"kind": "app"} if day == 3 else {})}]}
             for day in range(1, 13)]
-        self.assertEqual(len(highlight_entries(summaries, "2026-09-11")), 10)
-        self.assertEqual(highlight_entries(summaries, "2026-09-11")[0]["title"], "Item 12")
-        self.assertEqual(len(highlight_entries(summaries, "2026-09-01")), 12)
+        self.assertEqual(len(daily_entries(summaries, "2026-09-11")), 10)
+        self.assertEqual(daily_entries(summaries, "2026-09-11")[0]["title"], "Item 12")
+        self.assertEqual(len(daily_entries(summaries, "2026-09-01")), 12)
         with tempfile.TemporaryDirectory() as directory:
             news = Path(directory)
             (news / "data/summaries/daily").mkdir(parents=True)
@@ -335,7 +335,7 @@ class NotesAndIndexTest(unittest.TestCase):
                  "merged_at": "2026-09-11T10:00:00Z", "api_changes": [{"endpoint": "GET /v1/x", "action": "ADD"}]}]}))
             index = build_index(news, "2026-09-13")
         self.assertEqual(index["models"], [])
-        self.assertEqual(index["highlights"][0]["title"], "Item 12")
+        self.assertEqual(index["daily"][0]["title"], "Item 12")
         self.assertEqual([(entry["endpoint"], entry["date"], entry["pr"]) for entry in index["api"]],
                          [("GET /v1/x", "2026-09-11", 9)])
 
@@ -364,7 +364,7 @@ EMPTY_CATALOG = {"text": [], "image": [], "video": [], "audio": [], "embeddings"
 REPLY = {
     "pr_summary": "#1: Larger media inputs", "pr_count": 2, "one_liner": "Uploads grow.", "theme": "Bigger inputs.",
     "arcs": [{"headline": "Larger uploads", "summary": "Uploads increase from 32 MiB to 100 MiB — größer."}],
-    "highlights": [{"emoji": "🚀", "title": "Larger uploads", "text": "Upload up to 100 MiB.", "prs": [1]}],
+    "daily": [{"emoji": "🚀", "title": "Larger uploads", "text": "Upload up to 100 MiB.", "prs": [1]}],
     "tweet": "Uploads now take 100 MiB.", "title": "Larger uploads", "body": "Uploads grow to 100 MiB.",
     "hook": "Uploads grew.", "closing": "The repo is public.", "hashtags": ["#AI", "#OpenSource"],
     "message": "Hi <@&1424461167883194418>", "caption": "Bigger boxes.", "image_prompt": "Bee carrying a big box",
@@ -382,16 +382,16 @@ def note(number, merged_at, tier="daily"):
 
 
 class ReadmeTest(unittest.TestCase):
-    def test_the_readme_lists_the_10_newest_highlights_but_apps_with_badge_date_and_text(self):
-        highlights = [{"date": "2026-10-06", "emoji": "🎵", "title": f"Item {n}", "kind": "model",
+    def test_the_readme_lists_the_10_newest_daily_items_but_apps_with_badge_date_and_text(self):
+        items = [{"date": "2026-10-06", "emoji": "🎵", "title": f"Item {n}", "kind": "model",
                        "text": f"Try it. [Open it](https://example.com/{n})."} for n in range(14)]
-        highlights[1] = {"date": "2026-10-16", "title": "No link", "text": "Plain.", "kind": "product"}
-        highlights[2] = {**highlights[2], "kind": "api", "text": "Use [the store](https://example.com/s) now."}
-        highlights[3] = {**highlights[3], "kind": "app"}
-        del highlights[4]["kind"]
+        items[1] = {"date": "2026-10-16", "title": "No link", "text": "Plain.", "kind": "product"}
+        items[2] = {**items[2], "kind": "api", "text": "Use [the store](https://example.com/s) now."}
+        items[3] = {**items[3], "kind": "app"}
+        del items[4]["kind"]
         with tempfile.TemporaryDirectory() as directory:
             index, readme_file = Path(directory, "index.json"), Path(directory, "README.md")
-            index.write_text(json.dumps({"highlights": highlights}))
+            index.write_text(json.dumps({"daily": items}))
             readme_file.write_text("intro\n<!-- news:start -->\n- old\n<!-- news:end -->\noutro\n")
             with patch("sys.argv", ["readme.py", str(index), str(readme_file)]):
                 readme.main()
@@ -1066,7 +1066,7 @@ class DeliverTest(unittest.TestCase):
         def pr(number, merged_at="2026-10-21T10:00:00Z", base="main"):
             return {"number": number, "title": f"PR {number}", "body": "", "merged_at": merged_at,
                     "merge_commit_sha": f"pr{number}", "base": {"ref": base},
-                    "head": {"ref": "feature"}, "user": {"login": "bee"},
+                    "head": {"ref": "feature"}, "user": {"login": "bee"}, "labels": [],
                     "html_url": f"https://github.com/pollinations/pollinations/pull/{number}"}
         workflow = "deploy-cloudflare-production.yml"
         api = {
@@ -1087,6 +1087,9 @@ class DeliverTest(unittest.TestCase):
                                            {"name": "deploy-gen", "conclusion": "skipped"}]},
             "compare/pr2...production": {"status": "ahead"},
             "compare/pr3...production": {"status": "ahead"},
+            # Nothing merged into master since the cutover.
+            "branches/master": {"commit": {"sha": "master"}},
+            "commits": [{"sha": "master"}],
         }
         changes = {"1": ("docs", ["README.md"]), "2": ("gen", ["gen.pollinations.ai/src/x.ts"]),
                    "3": ("media", ["media.pollinations.ai/src/x.ts"])}
@@ -1097,9 +1100,12 @@ class DeliverTest(unittest.TestCase):
             response.raise_for_status = lambda: None
             response.json = lambda: {"content": {"sha": hashlib.sha1(self.store[path]).hexdigest()}}
             return response
-        def output(system, context, *args, **kwargs):
-            tier = "none" if "PR #3:" in context else "daily"
-            return json.dumps({"publish_tier": tier, "text": "Faster images", "image_prompt": "bee"})
+        # The note writes the picture prompt, as the PR gist did; the post is written from the note.
+        note = json.dumps({"summary": "Images render faster.", "image_prompt": "a bee racing a snail"})
+        def output(system, task, *args, **kwargs):
+            self.assertIn("Discord Voice", system)
+            self.assertIn('"summary": "Images render faster."', task)
+            return "Faster images"
         env = {"GITHUB_REPOSITORY": "pollinations/pollinations", "POLLINATIONS_TOKEN": "test",
                "DISCORD_REALTIME_WEBHOOK_URL": "https://discord.test/realtime"}
         def answer(path, **params):
@@ -1110,6 +1116,7 @@ class DeliverTest(unittest.TestCase):
              patch("deploy_posts.github", side_effect=answer), \
              patch("deploy_posts.write_news", side_effect=write), \
              patch("deploy_posts.fetch_pr_files", side_effect=lambda repo, n, token: changes[n]), \
+             patch("prs.call_pollinations_api", return_value=note), \
              patch("deploy_posts.call_pollinations_api", side_effect=output), \
              patch("deploy_posts.generate_image", return_value=(b"jpeg", "https://media.pollinations.ai/abc")) as picture, \
              patch("deploy_posts.subprocess.check_output", return_value="production"), \
@@ -1124,14 +1131,14 @@ class DeliverTest(unittest.TestCase):
                 with self.assertRaises(requests.HTTPError):
                     deploy_posts.main()
             self.assertEqual(self.calls, [])
-            # A docs-only promotion can post; media's none-tier PR is recorded without a picture.
+            # A docs-only promotion can post, and every shipped PR gets its own post.
             deploy_posts.main()
             state = json.loads(self.store[deploy_posts.HELD_PATH])
             self.assertEqual(list(state["held"]), ["2"])
-            self.assertEqual(state["production"], "production")
-            self.assertEqual(picture.call_count, 1)
+            self.assertEqual((state["production"], state["master"]), ("production", "master"))
+            self.assertEqual(picture.call_args_list, [call("a bee racing a snail", "test")] * 2)
             record = json.loads(self.store[f"{NEWS_REL_DIR}/posts/discord/prs/2026-10/delivery.json"])
-            self.assertEqual(record["pr-3"]["skipped"], "none")
+            self.assertEqual((record["pr-1"]["state"], record["pr-3"]["state"]), ("done", "done"))
             deploy_posts.main()  # no new deploy: Gen stays held, docs are not sent twice
             # More than 14 days later, Gen succeeds at a descendant SHA, in a run where Enter failed.
             api[f"actions/workflows/{workflow}/runs"]["workflow_runs"].insert(0,
@@ -1150,7 +1157,7 @@ class DeliverTest(unittest.TestCase):
             deploy_posts.main()
             self.assertEqual(json.loads(self.store[deploy_posts.HELD_PATH])["held"], {})
         sent = self.sent("https://discord.test/realtime?wait=true")
-        self.assertEqual(len(sent), 2)
+        self.assertEqual(len(sent), 3)
         payload = json.loads(sent[0][2]["payload_json"][1])
         self.assertIn("[PR #1]", payload["content"])
         self.assertEqual((payload["allowed_mentions"], sent[0][2]["files[0]"][1]), ({"parse": []}, b"jpeg"))
@@ -1218,6 +1225,47 @@ class DeploymentReadinessTest(unittest.TestCase):
             runs[web][0]["head_sha"] = "new"
             jobs[3][0]["steps"].append({"name": "Deploy apps/mcp", "conclusion": "success"})
             self.assertEqual(deploy_posts.waiting_for(held)["7"], [])
+
+    def test_master_prs_wait_for_the_legacy_cache_deploy(self):
+        def pr(number, merged_at, base="master"):
+            return {"number": number, "merged_at": merged_at, "merge_commit_sha": f"m{number}", "base": {"ref": base}}
+        api = {
+            "commits": [{"sha": "start"}],  # master's last commit before the cutover
+            "compare/start...master": {"status": "ahead", "commits": [{"sha": "c8"}, {"sha": "c9"}]},
+            "commits/c8/pulls": [pr(8, "2026-10-21T10:00:00Z")],
+            "commits/c9/pulls": [pr(9, "2026-10-21T12:00:00Z")],
+            "pulls/8": pr(8, "2026-10-21T10:00:00Z"), "pulls/9": pr(9, "2026-10-21T12:00:00Z"),
+        }
+        files = {"8": ("", ["text.pollinations.ai/cloudflare-cache/src/index.js"]),
+                 "9": ("", ["shared/messages.js", ".github/workflows/backend-tests.yml"])}
+        cutover = {"merged_at": "2026-10-20T00:00:00Z", "merge_commit_sha": "cutover"}
+        state = {"held": {}}
+        with patch.dict(os.environ, {"GITHUB_REPOSITORY": "pollinations/pollinations", "GITHUB_TOKEN": "test"}), \
+             patch("deploy_posts.github", side_effect=lambda path, **params: api[path]), \
+             patch("deploy_posts.fetch_pr_files", side_effect=lambda repo, n, token: files[n]):
+            deploy_posts.discover(state, "master", "master", "master", "start", cutover, deploy_posts.legacy_targets)
+        legacy = deploy_posts.LEGACY
+        self.assertEqual(state["master"], "master")
+        self.assertEqual({n: pr["required"] for n, pr in state["held"].items()},
+                         {"8": [f"{legacy}:deploy (text)"],
+                          "9": [f"{legacy}:deploy (image)", f"{legacy}:deploy (text)"]})  # shared/ is in both
+        # Each job checks out master when it starts: a deploy started before a merge does not
+        # ship it, and a rollback (no "Deploy master") ships nothing.
+        def job(worker, started, deploy="success"):
+            return {"name": f"deploy ({worker})", "conclusion": "success", "started_at": started,
+                    "steps": [{"name": "Deploy master", "conclusion": deploy}]}
+        runs = [{"id": 2, "head_sha": "main", "created_at": "2026-10-21T13:00:00Z"},
+                {"id": 1, "head_sha": "main", "created_at": "2026-10-21T11:00:00Z"}]
+        jobs = {1: [job("text", "2026-10-21T11:00:05Z"), job("image", "2026-10-21T11:00:05Z")],
+                2: [job("text", "2026-10-21T13:00:05Z", deploy="skipped"), job("image", "2026-10-21T13:00:05Z")]}
+        def runs_api(path, **params):
+            if path.endswith("/runs"):
+                self.assertNotIn("branch", params)  # dispatched from main or production
+                return {"workflow_runs": runs}
+            return {"jobs": jobs[int(path.split("/")[2])]}
+        with patch("deploy_posts.github", side_effect=runs_api):
+            self.assertEqual(deploy_posts.waiting_for(state["held"]),
+                             {"8": [], "9": [f"{legacy}:deploy (text)"]})
 
     def test_runs_and_jobs_are_paginated_without_expiring_held_prs(self):
         workflow = "deploy-cloudflare-production.yml"

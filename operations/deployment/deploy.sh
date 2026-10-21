@@ -32,16 +32,17 @@ run_command() {
 verify_url() {
     local url=$1
     echo "Verifying $url"
-    local code
+    local result expected="200 "
+    [[ -z "$VERIFY_REDIRECT" ]] || expected="301 $VERIFY_REDIRECT"
     for _ in $(seq 1 30); do
-        code=$(curl --silent --show-error --output /dev/null \
-            --write-out '%{http_code}' "$url" || true)
-        if [[ "$code" == "200" ]]; then
+        result=$(curl --silent --show-error --output /dev/null \
+            --write-out '%{http_code} %{redirect_url}' "$url" || true)
+        if [[ "$result" == "$expected" ]]; then
             return
         fi
         sleep 10
     done
-    echo "$url did not return HTTP 200 (last: $code)" >&2
+    echo "$url did not return HTTP $expected (last: $result)" >&2
     return 1
 }
 
@@ -94,6 +95,7 @@ BUILD=$(field build)
 DEPLOY=$(field deploy)
 OUTPUT=$(field output)
 SUBDOMAIN=$(field subdomain)
+VERIFY_REDIRECT=$(field verify_redirect)
 
 echo "Deploying $APP_PATH ($TARGET)"
 

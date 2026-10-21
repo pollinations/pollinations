@@ -30,6 +30,15 @@ export type VendorLedgerRow = {
     resource_count: number;
     model: string;
     evidence: string;
+    // Planned cash movements are non-posting: paid and credit remain zero.
+    plan_amount?: number | null;
+    plan_category?: string;
+    plan_cadence?: "monthly" | "once" | "";
+    settled_by_entry_ids?: string[];
+    statement_amount?: number | null;
+    compared_entry_ids?: string[];
+    comparison_month?: string;
+    comparison_basis?: string;
     recorded_at: string;
 };
 
@@ -63,8 +72,13 @@ export type RevenueShareSourceRow = {
     paid_usage: number;
     paid_creator_earnings: number;
     paid_pollinations_profit: number;
+    // App source rows only: community usage and owner earnings already included.
+    paid_community_usage: number;
+    paid_model_creator_earnings: number;
     quest_usage: number;
     quest_creator_earnings: number;
+    quest_community_usage: number;
+    quest_model_creator_earnings: number;
     paid_requests: number;
     quest_requests: number;
 };
@@ -72,14 +86,25 @@ export type RevenueShareSourceRow = {
 export type StripeSalesRow = {
     revenue_stream: "pollen" | "kofi";
     reversals: number;
+    fraud_refunds?: number;
+    fraud_reversals?: number;
+    fraud_fees?: number;
+    fraud_transactions?: number;
+    fraud_evidence?: string[];
     // Absent coverage is unknown, never a completed month.
     coverage_complete?: number;
+    coverage_end?: string;
+    collected_at?: string;
+    missing_accounts?: string;
+    count_mismatches?: number;
+    enter_unmatched_payments?: number;
     month: string;
     currency: string;
     gross_sales: number;
     refunds: number;
     net_sales: number;
     stripe_fees: number;
+    dispute_fees: number;
     net_after_fees: number;
     payments: number;
     refund_count: number;
@@ -120,6 +145,9 @@ export type ScheduledForecastAmount = ForecastAmount & {
 };
 
 export type PrivateForecastRule = {
+    salesStoppedFrom?: Partial<
+        Record<StripeSalesRow["revenue_stream"], string>
+    >;
     fixedAmounts?: ForecastAmount[];
     activeFrom?: string;
     activeThrough?: string;
@@ -130,6 +158,7 @@ export type ProviderCheckExplanation = {
     month: string;
     provider: string;
     reason: "unverifiable_history";
+    decision?: "known_limitation";
     explanation: string;
     evidence: string[];
 };
@@ -154,9 +183,23 @@ export type MeterDriftExplanation = {
     evidence: string[];
 };
 
+export type ArchiveCheck = {
+    month: string;
+    provider: string;
+    account: string;
+    checkedAt: string;
+    status: "found" | "partial" | "not_found" | "blocked";
+    note: string;
+    evidence: string[];
+};
+
 export type EconomicsPrivateConfig = {
+    recordedAt?: string;
     forecastRules: Record<string, PrivateForecastRule>;
-    reconciliation: {
+    vendorDocuments?: Record<string, string>;
+    reviewNotes: {
+        planNotes?: { entryId: string; explanation: string }[];
+        archiveChecks?: ArchiveCheck[];
         providerCheckExplanations: ProviderCheckExplanation[];
         meterDriftExplanations: MeterDriftExplanation[];
         pollenWitnessExplanations: PollenWitnessExplanation[];
@@ -171,10 +214,14 @@ export type EconomicsPrivateConfigRow = {
 export type Data = {
     opTransactions?: OpTransactionRow[];
     vendorLedger?: VendorLedgerRow[];
+    // Non-posting source totals from the same Vendor ledger endpoint.
+    vendorStatements?: VendorLedgerRow[];
+    vendorPlans?: VendorLedgerRow[];
     opPollen?: OpPollenRow[];
     revenueShare?: RevenueShareSourceRow[];
     stripeSales?: StripeSalesRow[];
     userBalances?: UserBalanceSummaryRow[];
     providerObservations?: ProviderObservation[];
     privateConfig?: EconomicsPrivateConfig;
+    planningError?: string;
 };

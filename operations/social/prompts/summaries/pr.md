@@ -4,6 +4,8 @@ You read one merged pull request and write a structured JSON note. The daily and
 
 {about}
 
+{visual_style}
+
 ## Your Task
 
 Given a PR's title, description, labels, Area/Type/Source and changed files with their diff, produce a JSON object with:
@@ -15,21 +17,22 @@ Given a PR's title, description, labels, Area/Type/Source and changed files with
   "publish_tier": "daily",
   "importance": "major",
   "summary": "A factual account of every meaningful change and its practical effect.",
-  "keywords": ["billing", "api", "models"]
+  "keywords": ["billing", "api", "models"],
+  "image_prompt": "1-2 sentence pixel art scene description for the PR image."
 }
 ```
 
 ## The diff decides
 
-The diff is what the PR does. The title and description are the author's account of it: they can describe an earlier plan, more or less than the diff, or the work instead of its result. Write `summary` from what the diff changes. Keep a claim from the description only when the diff supports it, leave out plans and steps the diff does not contain, and include a change users would notice even when the description does not mention it. Long diffs are cut, and lockfiles and test snapshots are listed without one: judge those files by their path and line counts.
+The diff is what the PR does. The title and description are the author's account of it: they can describe an earlier plan, more or less than the diff, or the work instead of its result. Write `summary` and `image_prompt` from what the diff changes. Keep a claim from the description only when the diff supports it, leave out plans and steps the diff does not contain, and include a change users would notice even when the description does not mention it. Long diffs are cut, and lockfiles and test snapshots are listed without one: judge those files by their path and line counts.
 
 ## Costs stay internal
 
-What Pollinations pays providers (costs, credit fees, margins) and how it records them are internal, even when the PR or the code says "bills" or "billing" for them. Never put them in `summary`. Mention what users pay only when the diff changes the price users are charged, and say it in their terms, e.g. "Ling 3.1 Flash now costs 0.1 pollen per 1M input tokens".
+What Pollinations pays providers (costs, credit fees, margins) and how it records them are internal, even when the PR or the code says "bills" or "billing" for them. Never put them in `summary` or `image_prompt`. Mention what users pay only when the diff changes the price users are charged, and say it in their terms, e.g. "Ling 3.1 Flash now costs 0.1 pollen per 1M input tokens".
 
 ## Availability
 
-The PR has just merged; a merge alone does not establish production availability. Describe what the change does ("Enter's rail gets a bolder lotus") without claiming it is live or visible now unless verified. Routine deployment caveats (verification or activation status, uncertain release cutoffs) belong in metadata. Omit them from `summary`, even if the PR body mentions them. Include announced effective dates for scheduled changes when relevant.
+The PR has just merged; a merge alone does not establish production availability. Describe what the change does ("Enter's rail gets a bolder lotus") without claiming it is live or visible now unless verified. Routine deployment caveats (verification or activation status, uncertain release cutoffs) belong in metadata. Omit them from `summary` and `image_prompt`, even if the PR body mentions them. Include announced effective dates for scheduled changes when relevant.
 
 ## File Path Classification
 
@@ -107,6 +110,12 @@ Examples — vague vs. specific:
 
 ### `keywords`
 3-7 relevant keywords for clustering related PRs in the daily summary.
+
+### `image_prompt`
+A short (1-2 sentence) pixel art scene description for the PR image. Identify the project/tool's visual symbols, logo or mascot from the PR context, then describe the scene directly. The prompt is stored once in `image.prompt`.
+
+- Include project-specific characters/mascots (e.g. OpenClaw = crab mascot, not a claw machine).
+- Lean into cuteness, coziness and friendship. The bee should feel emotionally connected to the scene.
 
 ## Social Selection
 

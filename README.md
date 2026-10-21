@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Pollen Postcard](https://pollen-postcard.jm716111.chatgpt.site) | Turns a small memory into a polished illustrated postcard. Pollinations writes the title and short note, then generates a matching square image. Visitors connect with BYOP and approve a 1 Pollen budge | [@ismailbanouigu](https://github.com/ismailbanouigu) |
 | [💬 Shimi Bechor (Firstborn Greeter)](https://aidoor.shimi.land/greeter.html) | A greeter agent that welcomes visitors and explains a small agent network (its charter, public board and API). It uses the current Pollinations integration: browser-only Connect User Wallets (BYOP) wi | [@sunraz2](https://github.com/sunraz2) |
 | [🛠️ SimBox](https://simbox.cesustheteapot.dpdns.org) | SimBox is a web sim builder: describe a page, a toy or a tiny game, and an AI agent builds it live in a sandboxed preview. You keep changing it by chatting, and every turn saves a version. How it uses | [@Guest453](https://github.com/Guest453) |
 | [✍️ Vibe Trip Planner](https://arpent.in/vibe) | Pick a handful of pictogram "vibe" blocks (ocean, monastic, cheap eats, slow mornings) and get back a composed trip: a region, day-by-day prose, the route on a map, where to sleep and eat, and real ph | [@FriendsCoin](https://github.com/FriendsCoin) |
@@ -30,7 +31,6 @@
 | [🖼️ Pollinations Demo](https://huggingface.co/spaces/spitfire4794/pollinations-demo) | Pollinations Postcard Starter turns one prompt into a postcard: an image, a caption, and spoken narration. Visitors sign in with their own Pollen using the device flow (approve a short code, the key s | [@Spit-fires](https://github.com/Spit-fires) |
 | [🖼️ Comic Page from One Prompt](https://huggingface.co/spaces/tomdacatto1/pollinations-comic-maker) | A Hugging Face Space people duplicate: type one idea and get a four-panel comic page. The text model writes the script as JSON (title, fixed character looks, one caption per panel), the image model dr | [@tomdacatto](https://github.com/tomdacatto) |
 | [🖼️ CastSheet](https://fi8vni13.github.io/castsheet) | Character reference boards for AI production. Describe a character, pick a style, and CastSheet generates a three-view sheet (front · side · back) and a 2×2 expression grid with the free Pollinations | [@fi8vni13](https://github.com/fi8vni13) |
-| [🖼️ Pollen Art Lab](https://ovalprint1-sketch.github.io/pollen-app) | Pollen Art Lab turns a text idea into artwork using the Pollinations image API. Choose a style and aspect ratio, sign in with your Pollinations account (BYOP) and generate an image; each visitor spend | [@ovalprint1-sketch](https://github.com/ovalprint1-sketch) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

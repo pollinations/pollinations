@@ -100,6 +100,20 @@ export type CostVariantMetadata = {
     description: string;
 };
 
+/**
+ * Model names are `string` at the type level. The per-model files load through
+ * `import.meta.glob`, whose keys TypeScript cannot narrow to literals, so
+ * `keyof typeof <catalog>` is `string` rather than a literal-id union.
+ *
+ * What load-time validation still protects: every id a *catalog declaration*
+ * uses — the loader rejects duplicate ids, unknown parents, and ids that
+ * collide anywhere in the catalog (see mergeFallbacks).
+ *
+ * What it does not: an id a *consumer* passes in — a request body, a config, a
+ * test. Those arrive as arbitrary strings and must be checked at the runtime
+ * boundary that receives them; `getRegistryModelDefinition` throws on an
+ * unknown id, and the generation routes resolve and 404.
+ */
 export type ModelName =
     | ImageModelName
     | TextModelName

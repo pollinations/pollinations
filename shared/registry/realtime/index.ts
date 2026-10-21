@@ -107,6 +107,8 @@ for (const [parent, list] of Object.entries(pending)) {
 }
 
 export const REALTIME_SERVICES = mergeFallbacks(base, routes);
+// Names are `string` at the type level: glob keys are not literals. See the
+// ModelName note in registry.ts for what load-time validation still protects.
 export type RealtimeModelName = keyof typeof REALTIME_SERVICES;
 export const REALTIME_MODEL_NAMES = Object.keys(
     REALTIME_SERVICES,

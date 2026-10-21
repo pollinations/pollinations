@@ -107,4 +107,6 @@ for (const [parent, list] of Object.entries(pending)) {
 }
 
 export const EMBEDDING_SERVICES = mergeFallbacks(base, routes);
+// Names are `string` at the type level: glob keys are not literals. See the
+// ModelName note in registry.ts for what load-time validation still protects.
 export type EmbeddingServiceId = keyof typeof EMBEDDING_SERVICES;

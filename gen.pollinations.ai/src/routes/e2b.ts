@@ -35,16 +35,28 @@ import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
 import { requireAccountFunds } from "@/utils/generation-access.ts";
 import { permissionRequired } from "@/utils/refusals.ts";
+import {
+    AZURE_GIB_SECOND,
+    AZURE_TEMPLATES,
+    AZURE_VCPU_SECOND,
+    azureConfigured,
+    azureE2b,
+    azureLeaseEnd,
+    isAzurePath,
+    isAzureSandbox,
+    OWNER_KEY,
+    proxyEnvd,
+    sandboxHost,
+} from "./azure-sandboxes.ts";
 import { sandboxDocs } from "./e2b-docs.ts";
 
 // E2B's control API, forwarded under Pollinations keys. The SDKs talk to the
 // sandboxes themselves (commands, files, ports) directly at E2B with the
-// per-sandbox tokens these responses carry.
+// per-sandbox tokens these responses carry. Sandboxes of the Azure templates
+// run on Azure instead, which answers the same calls (azure-sandboxes.ts).
 const E2B_API = "https://api.e2b.app";
 // Gen serves E2B's API under this experimental path; the rest of each path is E2B's.
 export const E2B_PATH = "/alpha/e2b";
-// One E2B team runs every user's sandboxes; this metadata key names the owner.
-const OWNER_KEY = "pollinations_user";
 const MAX_RUNNING_PER_USER = 8;
 // E2B ends a sandbox's run 24 hours after it starts or resumes.
 const MAX_RUN_MS = 24 * 60 * 60_000;
@@ -64,7 +76,10 @@ const TEMPLATE_SIZES: Record<string, { cpuCount: number; memoryMB: number }> = {
     pollinations: { cpuCount: 2, memoryMB: 2048 },
     "pollinations-large": { cpuCount: 4, memoryMB: 8192 },
 };
-const LOGGED_IN_TEMPLATES = Object.keys(TEMPLATE_SIZES);
+const LOGGED_IN_TEMPLATES = [
+    ...Object.keys(TEMPLATE_SIZES),
+    ...Object.keys(AZURE_TEMPLATES),
+];
 // What `polli auth login` asks for, except `keys`: every process in the box can
 // read the login, and `keys` would let it raise any key's budget. polli's
 // harnesses then use the login itself instead of keys of their own.
@@ -106,6 +121,7 @@ type CreatedSandbox = {
 type E2bContext = Context<Env>;
 
 function e2b(env: CloudflareBindings, path: string, init: RequestInit = {}) {
+    if (isAzurePath(path)) return azureE2b(env, path, init);
     const headers = new Headers(init.headers);
     headers.set("x-api-key", env.E2B_API_KEY ?? "");
     return fetch(`${E2B_API}${path}`, { ...init, headers });
@@ -192,37 +208,53 @@ async function showKeeps(env: CloudflareBindings, sandboxes: SandboxDetail[]) {
     });
 }
 
-// E2B's concurrency limit is per team, so each user may hold only a few.
+// E2B's concurrency limit is per team, so each user may hold only a few, on
+// E2B and Azure together.
 async function requireCapacity(c: E2bContext) {
-    const query = new URLSearchParams({
+    const path = `/v2/sandboxes?${new URLSearchParams({
         metadata: `${OWNER_KEY}=${c.var.auth.requireUser().id}`,
         state: "running",
         limit: String(MAX_RUNNING_PER_USER),
-    });
-    const response = await e2b(c.env, `/v2/sandboxes?${query}`);
-    if (!response.ok) throw await upstreamError(response);
-    if ((await response.json<unknown[]>()).length >= MAX_RUNNING_PER_USER) {
+    })}`;
+    let running = 0;
+    for (const response of await Promise.all([
+        e2b(c.env, path),
+        azureE2b(c.env, path),
+    ])) {
+        if (!response.ok) throw await upstreamError(response);
+        running += (await response.json<unknown[]>()).length;
+    }
+    if (running >= MAX_RUNNING_PER_USER) {
         throw new HTTPException(429, {
             message: `At most ${MAX_RUNNING_PER_USER} sandboxes can run at once. Kill or pause one first.`,
         });
     }
 }
 
-type Lease = { cost: number; price: number };
+type Lease = { cost: number; price: number; provider: "e2b" | "azure" };
 
-// E2B's list cost for `seconds` of this sandbox, and what the caller pays.
+// What `seconds` of this sandbox costs us, and what the caller pays: E2B's
+// list price on either provider.
 function lease(sandbox: SandboxDetail, seconds: number): Lease {
-    const cost =
-        seconds *
-        (sandbox.cpuCount * VCPU_SECOND +
-            (sandbox.memoryMB / 1024) * GIB_SECOND);
+    const gib = sandbox.memoryMB / 1024;
+    const list = seconds * (sandbox.cpuCount * VCPU_SECOND + gib * GIB_SECOND);
+    const azure = isAzureSandbox(sandbox.sandboxID);
+    const cost = azure
+        ? seconds *
+          (sandbox.cpuCount * AZURE_VCPU_SECOND + gib * AZURE_GIB_SECOND)
+        : list;
     return {
         cost: roundPollenLedgerAmount(cost),
-        price: roundPollenLedgerAmount(cost * PRICE_MULTIPLIER),
+        price: roundPollenLedgerAmount(list * PRICE_MULTIPLIER),
+        provider: azure ? "azure" : "e2b",
     };
 }
 
-async function charge(c: E2bContext, { cost, price }: Lease, startTime: Date) {
+async function charge(
+    c: E2bContext,
+    { cost, price, provider }: Lease,
+    startTime: Date,
+) {
     let deduction: Awaited<ReturnType<typeof handleBalanceDeduction>> | null =
         null;
     try {
@@ -266,7 +298,7 @@ async function charge(c: E2bContext, { cost, price }: Lease, startTime: Date) {
                 modelRequested: "sandbox",
                 resolvedModelRequested: "sandbox",
                 modelUsed: "sandbox",
-                modelProviderUsed: "e2b",
+                modelProviderUsed: provider,
                 fallbackUsed: false,
                 isFinal: true,
                 isBilledUsage: true,
@@ -305,8 +337,11 @@ async function extendLease(
             ? Math.max(Date.parse(sandbox.endAt), now)
             : now;
     // E2B silently shortens a lease past the end of the run, so pay only up
-    // to it.
-    const endAt = Math.min(now + timeout * 1000, runEnd(sandbox, now));
+    // to it; Azure's runs on to gen's next cron.
+    const until = now + timeout * 1000;
+    const endAt = isAzureSandbox(sandbox.sandboxID)
+        ? azureLeaseEnd(until)
+        : Math.min(until, runEnd(sandbox, now));
     const bill = lease(sandbox, Math.max(0, endAt - paidUntil) / 1000);
     if (bill.price > 0) await requireAccountFunds(c, bill.price);
     const response = await e2b(c.env, c.req.path.slice(E2B_PATH.length), {
@@ -319,8 +354,9 @@ async function extendLease(
 }
 
 // When E2B ends the sandbox's run: 24 hours after it started, or from now for
-// a resume, which starts a new run.
+// a resume, which starts a new run. Azure's runs never end.
 function runEnd(sandbox: SandboxDetail, now: number) {
+    if (isAzureSandbox(sandbox.sandboxID)) return Number.POSITIVE_INFINITY;
     const running = sandbox.state === "running";
     return (running ? Date.parse(sandbox.startedAt) : now) + MAX_RUN_MS;
 }
@@ -405,7 +441,7 @@ async function logIn(c: E2bContext, sandbox: CreatedSandbox) {
         username: "user",
     });
     const response = await fetch(
-        `https://49983-${sandbox.sandboxID}.${sandbox.domain || "e2b.app"}/files?${query}`,
+        `https://${sandboxHost(sandbox.sandboxID, 49983, sandbox.domain)}/files?${query}`,
         {
             method: "POST",
             headers: { "x-access-token": sandbox.envdAccessToken ?? "" },
@@ -467,7 +503,10 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             await requireAccountFunds(c, 0);
             await requireCapacity(c);
 
-            const response = await e2b(
+            const upstream = AZURE_TEMPLATES[body.templateID ?? ""]
+                ? azureE2b
+                : e2b;
+            const response = await upstream(
                 c.env,
                 c.req.path.slice(E2B_PATH.length),
                 {
@@ -541,9 +580,19 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             );
             metadata.set(OWNER_KEY, c.var.auth.requireUser().id);
             url.searchParams.set("metadata", metadata.toString());
-            const response = await forward(c, url.search);
+            // Azure's sandboxes come with the first page.
+            const [response, azure] = await Promise.all([
+                forward(c, url.search),
+                url.searchParams.has("nextToken")
+                    ? null
+                    : azureE2b(c.env, `/v2/sandboxes${url.search}`),
+            ]);
             if (!response.ok) return response;
-            const sandboxes = await response.json<SandboxDetail[]>();
+            if (azure && !azure.ok) throw await upstreamError(azure);
+            const sandboxes = [
+                ...(await response.json<SandboxDetail[]>()),
+                ...(azure ? await azure.json<SandboxDetail[]>() : []),
+            ];
             const headers = new Headers(response.headers);
             headers.delete("content-length");
             return new Response(
@@ -636,9 +685,14 @@ export const e2bRoutes = new Hono<Env>()
             maxRunning: MAX_RUNNING_PER_USER,
             vcpuSecond: VCPU_SECOND * PRICE_MULTIPLIER,
             gibSecond: GIB_SECOND * PRICE_MULTIPLIER,
-            templates: TEMPLATE_SIZES,
+            // Azure's only once they can start.
+            templates: {
+                ...TEMPLATE_SIZES,
+                ...(azureConfigured(c.env) && AZURE_TEMPLATES),
+            },
         }),
     )
+    .all("/sandbox/*", (c) => proxyEnvd(c, `${E2B_PATH}/sandbox`))
     .route("/", sandboxApi(false, edgeRateLimit, auth()));
 
 // Read again for every renewal, so deleting the key, letting it expire,
@@ -737,9 +791,7 @@ export async function keepSandboxes(
                 ctx,
             );
         const timeout = Math.ceil((renewTo - now) / 1000);
-        const restart =
-            !paused &&
-            Date.parse(sandbox.startedAt) + MAX_RUN_MS < now + timeout * 1000;
+        const restart = !paused && runEnd(sandbox, now) < now + timeout * 1000;
         const responses = [
             ...(restart ? [await post("pause")] : []),
             await post(paused || restart ? "connect" : "timeout", { timeout }),

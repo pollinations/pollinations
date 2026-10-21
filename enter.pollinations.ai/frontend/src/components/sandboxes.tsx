@@ -125,12 +125,14 @@ const sizeLabel = ({ cpuCount, memoryMB }: Size) =>
 // An always-on sandbox runs about 720 hours a month.
 const HOURS_PER_MONTH = 720;
 
-const templateLabel = (id: string) =>
-    id === "pollinations"
-        ? "Pollinations"
-        : id === "pollinations-large"
-          ? "Pollinations Large"
-          : id;
+const TEMPLATE_LABELS: Record<string, string> = {
+    pollinations: "Pollinations",
+    "pollinations-large": "Pollinations Large",
+    "pollinations-azure": "Pollinations on Azure",
+    "pollinations-azure-large": "Pollinations Large on Azure",
+};
+
+const templateLabel = (id: string) => TEMPLATE_LABELS[id] ?? id;
 
 // Past half of E2B's longest timeout, it runs until it's stopped.
 const forever = (until: string) =>

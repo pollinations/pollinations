@@ -31,6 +31,7 @@ import {
     generationHandoffRoutes,
 } from "@/utils/execute-generation.ts";
 import { audioRoutes } from "./routes/audio.ts";
+import { stopExpiredAzureSandboxes } from "./routes/azure-sandboxes.ts";
 import {
     buildMergedOpenApiSpec,
     createDocsRoutes,
@@ -308,6 +309,10 @@ app.onError(handleError);
 
 export default {
     fetch: app.fetch,
-    // The only cron, every 10 minutes (wrangler.toml).
-    scheduled: (_controller, env, ctx) => keepSandboxes(env, ctx),
+    // The only cron, every 5 minutes (wrangler.toml). Leases end only after
+    // the keeper has renewed the kept sandboxes.
+    scheduled: async (_controller, env, ctx) => {
+        await keepSandboxes(env, ctx);
+        await stopExpiredAzureSandboxes(env);
+    },
 } satisfies ExportedHandler<CloudflareBindings>;

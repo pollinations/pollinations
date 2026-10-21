@@ -149,6 +149,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "time",
+                name: "Time",
+                description:
+                    "Read the current time and do timezone-correct conversion and date arithmetic.",
+                url: "https://gen.pollinations.ai/mcp/time",
+                pricing: {
+                    description:
+                        "Free. Runs no model calls and adds no MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

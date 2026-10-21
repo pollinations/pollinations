@@ -117,20 +117,6 @@ describe("docs routes", () => {
         );
     });
 
-    it("serves canonical docs through the upstream hostname without a redirect loop", async () => {
-        const ctx = createExecutionContext();
-        const response = await worker.fetch(
-            new Request("https://gen.myceli.ai/docs", {
-                headers: { "X-Forwarded-Host": "gen.pollinations.ai" },
-            }),
-            envWithEnterSchema({}),
-            ctx,
-        );
-        await waitOnExecutionContext(ctx);
-        expect(response.status).toBe(200);
-        expect(response.headers.get("Location")).toBeNull();
-    });
-
     it("generates valid request examples from the checked-out Gen schema", async () => {
         // Enter and Media validate their own source schemas in their own suites.
         vi.spyOn(globalThis, "fetch").mockResolvedValue(

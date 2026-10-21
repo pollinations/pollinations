@@ -258,8 +258,8 @@ describe("text cache", () => {
         expect(originHits).toBe(1);
     });
 
-    it("does not serve a cached response to a key that may not use the model", async () => {
-        const keyApp = (models?: string[]) => {
+    it("shares cached responses across users, but not with a key that may not use the model", async () => {
+        const keyApp = (user: string, models?: string[]) => {
             const app = new Hono<TestEnv>().use("*", async (c, next) => {
                 c.set("log", testLog);
                 c.set("requestId", "test-request");
@@ -273,8 +273,11 @@ describe("text cache", () => {
             app.use(
                 "*",
                 authFromSnapshot({
-                    user: { id: "user", tier: "seed" },
-                    apiKey: { id: "key", permissions: models && { models } },
+                    user: { id: user, tier: "seed" },
+                    apiKey: {
+                        id: `${user}-key`,
+                        permissions: models && { models },
+                    },
                 }),
             );
             return app.post(
@@ -291,7 +294,7 @@ describe("text cache", () => {
         });
 
         const warm = await dispatch(
-            keyApp(),
+            keyApp("alice"),
             "/v1/chat/completions",
             init,
             env,
@@ -300,7 +303,7 @@ describe("text cache", () => {
         expect(warm.response.headers.get("X-Cache")).toBe("MISS");
 
         const allowed = await dispatch(
-            keyApp(["text"]),
+            keyApp("bob", ["text"]),
             "/v1/chat/completions",
             init,
             env,
@@ -309,7 +312,7 @@ describe("text cache", () => {
         expect(allowed.response.headers.get("X-Cache")).toBe("HIT");
 
         const denied = await dispatch(
-            keyApp(["image"]),
+            keyApp("carol", ["image"]),
             "/v1/chat/completions",
             init,
             env,

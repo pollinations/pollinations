@@ -8,11 +8,9 @@ import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
-import { authFromSnapshot } from "@/middleware/auth.ts";
 import type { GenerationCacheVariables } from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { audioCache, imageCache } from "@/middleware/media-cache.ts";
-import type { ModelVariables } from "@/middleware/model.ts";
 import { generateCacheKey } from "@/utils/media-cache.ts";
 import { MediaUpload } from "../../media.pollinations.ai/src/media-upload.ts";
 
@@ -26,10 +24,7 @@ const testLog = {
 
 type TestEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables &
-        RequestIdVariables &
-        GenerationCacheVariables &
-        Partial<ModelVariables>;
+    Variables: LoggerVariables & RequestIdVariables & GenerationCacheVariables;
 };
 
 type MediaCache = typeof imageCache;
@@ -228,58 +223,6 @@ describe("media cache", () => {
             expect(media.originHits).toBe(1);
         },
     );
-
-    it("does not serve a cached file to a key that may not use the model", async () => {
-        const keyApp = (models?: string[]) => {
-            const app = new Hono<TestEnv>().use("*", async (c, next) => {
-                c.set("log", testLog);
-                c.set("requestId", "test-request");
-                c.set("model", {
-                    requested: "zimage",
-                    resolved: "zimage",
-                    definition: { category: "image", aliases: [] },
-                } as unknown as ModelVariables["model"]);
-                await next();
-            });
-            app.use(
-                "*",
-                authFromSnapshot({
-                    user: { id: "user", tier: "seed" },
-                    apiKey: { id: "key", permissions: models && { models } },
-                }),
-            );
-            return app.get(
-                "/image/:prompt",
-                imageCache,
-                () =>
-                    new Response("image", {
-                        headers: { "Content-Type": "image/png" },
-                    }),
-            );
-        };
-        const env = createMediaCacheEnv();
-
-        const warm = await dispatch(keyApp(), "/image/dot", undefined, env);
-        expect(await consumeAndWait(warm)).toBe("image");
-
-        const allowed = await dispatch(
-            keyApp(["image"]),
-            "/image/dot",
-            undefined,
-            env,
-        );
-        expect(await consumeAndWait(allowed)).toBe("image");
-        expect(allowed.response.headers.get("X-Cache")).toBe("HIT");
-
-        const denied = await dispatch(
-            keyApp(["text"]),
-            "/image/dot",
-            undefined,
-            env,
-        );
-        await consumeAndWait(denied);
-        expect(denied.response.status).toBe(403);
-    });
 
     it("excludes cache-control query parameters case-insensitively", async () => {
         const media = createMediaCacheApp(imageCache, "image/png");

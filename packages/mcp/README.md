@@ -47,6 +47,8 @@ For all Pollinations-hosted MCP servers, see the
 Generated media is returned as an MCP resource link using the API's existing
 public Media URL. No download or re-upload is needed, and binary data does not
 consume model context. Anyone with the link can access it; expired files return 404.
+Hosts that support [MCP Apps](https://github.com/modelcontextprotocol/ext-apps)
+show `generateImage` results as a card with the prompt and a Variation button.
 
 Models, voices, capabilities, and pricing come from the live registry. Use
 `listModels` before selecting a model or voice.

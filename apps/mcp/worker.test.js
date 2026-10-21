@@ -96,6 +96,29 @@ test("serves current and 2025 Streamable HTTP without sessions", async () => {
     await legacy.close();
 });
 
+test("links generateImage to its MCP Apps card", async () => {
+    for (const options of [{ versionNegotiation: { mode: "auto" } }, {}]) {
+        const client = await connectClient(options);
+        assert.ok(client.getServerCapabilities().resources);
+
+        const { _meta } = (await client.listTools()).tools.find(
+            ({ name }) => name === "generateImage",
+        );
+        const uri = "ui://pollinations/image-card.html";
+        assert.equal(_meta.ui.resourceUri, uri);
+        assert.equal(_meta["ui/resourceUri"], uri);
+
+        const [card] = (await client.readResource({ uri })).contents;
+        assert.equal(card.mimeType, "text/html;profile=mcp-app");
+        assert.deepEqual(card._meta.ui.csp, {
+            resourceDomains: ["https://media.pollinations.ai"],
+        });
+        assert.match(card.text, /^<!doctype html>/);
+        assert.match(card.text, /name: "generateImage"/);
+        await client.close();
+    }
+});
+
 test("rejects JSON-RPC batches", async () => {
     const response = await worker.fetch(
         new Request("https://mcp.pollinations.ai", {

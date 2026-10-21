@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { IMAGE_CARD_URI } from "../ui/imageCard.js";
 import { requireApiKey } from "../utils/authUtils.js";
 import {
     buildUrl,
@@ -194,6 +195,7 @@ export const imageTools = [
         "Generate or edit one image using any image model in the live Pollinations registry and return an unlisted media.pollinations.ai resource link. If the user requests a named model or provider, call listModels with type=image first and pass the matched canonical model name. To edit, provide an HTTP(S) reference in image.",
         imageParamsSchema,
         generateImage,
+        { ui: { resourceUri: IMAGE_CARD_URI } },
     ],
     [
         "generateVideo",

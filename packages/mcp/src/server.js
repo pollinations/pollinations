@@ -1,3 +1,8 @@
+import {
+    RESOURCE_MIME_TYPE,
+    registerAppResource,
+    registerAppTool,
+} from "@modelcontextprotocol/ext-apps/server";
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { accountTools } from "./services/accountService.js";
@@ -7,6 +12,11 @@ import { embeddingTools } from "./services/embeddingService.js";
 import { imageTools } from "./services/imageService.js";
 import { model3dTools } from "./services/model3dService.js";
 import { textTools } from "./services/textService.js";
+import {
+    IMAGE_CARD_CSP,
+    IMAGE_CARD_HTML,
+    IMAGE_CARD_URI,
+} from "./ui/imageCard.js";
 import { validateApiBaseUrl } from "./utils/coreUtils.js";
 
 const SERVER_VERSION = "2.5.1";
@@ -67,14 +77,31 @@ export function buildServer() {
         },
     );
 
-    for (const tool of tools) {
-        const [name, description, inputSchema, handler] = tool;
-        server.registerTool(
-            name,
-            { description, inputSchema: z.object(inputSchema) },
-            handler,
-        );
+    for (const [name, description, inputSchema, handler, _meta] of tools) {
+        const config = { description, inputSchema: z.object(inputSchema) };
+        if (_meta) {
+            registerAppTool(server, name, { ...config, _meta }, handler);
+        } else {
+            server.registerTool(name, config, handler);
+        }
     }
+
+    registerAppResource(
+        server,
+        "Image card",
+        IMAGE_CARD_URI,
+        { description: "Shows a generated image with its prompt" },
+        () => ({
+            contents: [
+                {
+                    uri: IMAGE_CARD_URI,
+                    mimeType: RESOURCE_MIME_TYPE,
+                    text: IMAGE_CARD_HTML,
+                    _meta: { ui: { csp: IMAGE_CARD_CSP } },
+                },
+            ],
+        }),
+    );
 
     server.onerror = (error) => {
         console.error(`Server error: ${error.message}`);

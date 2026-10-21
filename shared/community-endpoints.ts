@@ -6,19 +6,22 @@ import {
     MODEL_OUTPUT_MODALITIES,
 } from "./registry/model-constants.ts";
 import type { ModelCapability } from "./registry/model-info.ts";
-import type {
-    Category,
-    ModelDefinition,
-    ModelInputModality,
-    ModelOutputModality,
-    PriceDefinition,
-} from "./registry/registry.ts";
+// Priced from public-pricing, not registry.ts: registry.ts serves the catalog
+// loaders (`import.meta.glob`), which the enter code-agent bundle cannot build
+// without Vite. Only types may come from registry.ts here.
 import {
     derivePrice,
     getCostSheetsForModel,
     isFallbackPricingAllowed,
     isFlatRateModel,
     isVisibleModelDefinition,
+} from "./registry/public-pricing.ts";
+import type {
+    Category,
+    ModelDefinition,
+    ModelInputModality,
+    ModelOutputModality,
+    PriceDefinition,
 } from "./registry/registry.ts";
 import {
     OPENAI_CHAT_USAGE_PATHS,

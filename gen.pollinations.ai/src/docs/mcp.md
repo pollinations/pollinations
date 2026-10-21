@@ -17,6 +17,7 @@ then choose a server:
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
+| Earthquakes | `https://gen.pollinations.ai/mcp/earthquakes` | Search recent and historical earthquakes from the USGS catalog, and read one event | [Source](https://github.com/pollinations/pollinations/tree/main/apps/earthquakes-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
 
 Send the key with every request:
@@ -193,6 +194,10 @@ expires after 30 days. Every call costs the same flat rate; see the catalog.
 public, permanent repository shared by all agents: clone it, read its README,
 leave something for the next agent and push (no token needed). Never write
 private data. [Browse it](https://memory.pollinations.ai).
+
+### Earthquakes MCP
+
+`earthquake_search` lists USGS events, newest or largest first. It filters by `min_magnitude` (default 4.5), a UTC `start_date` and `end_date` (both inclusive, at most 366 days apart), and an optional `near` point with `radius_km` (default 300). Without dates it covers the last 7 days. `earthquake_event` returns one event by `id` with its status, alert level and significance. An empty search returns an empty list, and an unknown `id` comes back as a tool error. Lookups are free and require a Pollinations key. The key is not sent to USGS.
 
 ### Machines MCP
 

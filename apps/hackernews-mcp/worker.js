@@ -39,14 +39,17 @@ const failure = (message) => ({
     content: [{ type: "text", text: message }],
 });
 
-/** Removes tags until none are left, so nested input such as `<<b>b>` cannot leave one behind. */
+/** Removes tags, including nested ones such as `<<b>b>`. Text after an unclosed `<` is kept. */
 function stripTags(text) {
-    let previous;
-    do {
-        previous = text;
-        text = text.replace(/<[^>]*>/g, "");
-    } while (text !== previous);
-    return text;
+    let stripped = "";
+    let rest = text;
+    for (let open = rest.indexOf("<"); open !== -1; open = rest.indexOf("<")) {
+        const close = rest.indexOf(">", open);
+        if (close === -1) break;
+        stripped += rest.slice(0, open);
+        rest = rest.slice(close + 1);
+    }
+    return stripped + rest;
 }
 
 /** HN comment HTML to plain text: paragraphs become blank lines, links keep their URL. */

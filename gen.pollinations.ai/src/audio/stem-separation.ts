@@ -62,9 +62,17 @@ function mp3DecodedSeconds(
         if (!["LAME", "Lavc", "Lavf"].includes(name)) return;
         const delay = (bytes[encoder + 21] << 4) | (bytes[encoder + 22] >> 4);
         const padding = ((bytes[encoder + 22] & 15) << 8) | bytes[encoder + 23];
-        return (
+        // The Xing frames field is client-controlled; a forged header can
+        // claim arbitrarily few frames while the real stream still decodes
+        // (and is billed by the provider) for its full length. Bound the
+        // duration from below by the audio payload at Layer III's maximum
+        // bitrate — an honest file can never be shorter than that.
+        const audioBytes = bytes.length - start;
+        const floor = (audioBytes * 8) / 320_000;
+        return Math.max(
             (frames * (version === 3 ? 1152 : 576) - delay - padding) /
-            sampleRate
+                sampleRate,
+            floor,
         );
     }
 }

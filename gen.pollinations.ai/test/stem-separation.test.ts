@@ -37,6 +37,19 @@ it("meters decoded MP3 samples without charging encoder padding", async () => {
     expect(await stemInputSeconds(input())).toBe(0.25);
 });
 
+it("bills the size floor when the Xing frame count under-reports a large file", async () => {
+    // Same fixture with 1 MiB appended: the Xing header still claims 0.25 s,
+    // but no MP3 can be smaller than its audio payload at Layer III's
+    // 320 kbps ceiling, so the billed duration must follow the size.
+    const padded = new Uint8Array(input().size + 1024 * 1024);
+    padded.set(Uint8Array.from(atob(fixture.mp3), (c) => c.charCodeAt(0)));
+    const seconds = await stemInputSeconds(
+        new File([padded], "tone.mp3", { type: "audio/mpeg" }),
+    );
+    expect(seconds).toBeGreaterThan(26);
+    expect(seconds).toBeLessThan(27);
+});
+
 it("rejects invalid uploaded audio before provider execution", async () => {
     await expect(
         stemInputSeconds(new File(["invalid"], "bad.mp3")),

@@ -10,6 +10,7 @@ import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
+import { authFromSnapshot } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import { textCache } from "@/middleware/text-cache.ts";
@@ -255,6 +256,66 @@ describe("text cache", () => {
         await consumeAndWait(missNoAuth);
         expect(missNoAuth.response.status).toBe(401);
         expect(originHits).toBe(1);
+    });
+
+    it("does not serve a cached response to a key that may not use the model", async () => {
+        const keyApp = (models?: string[]) => {
+            const app = new Hono<TestEnv>().use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "test-request");
+                c.set("model", {
+                    requested: "openai-fast",
+                    resolved: "openai-fast",
+                    definition: { category: "text", aliases: [] },
+                } as unknown as ModelVariables["model"]);
+                await next();
+            });
+            app.use(
+                "*",
+                authFromSnapshot({
+                    user: { id: "user", tier: "seed" },
+                    apiKey: { id: "key", permissions: models && { models } },
+                }),
+            );
+            return app.post(
+                "/v1/chat/completions",
+                validator("json", CreateChatCompletionRequestSchema),
+                textCache,
+                async () => Response.json({ generated: true }),
+            );
+        };
+        const env = createTextCacheEnv();
+        const init = chatInit({
+            model: "openai-fast",
+            messages: [{ role: "user", content: "cached for every key" }],
+        });
+
+        const warm = await dispatch(
+            keyApp(),
+            "/v1/chat/completions",
+            init,
+            env,
+        );
+        await consumeAndWait(warm);
+        expect(warm.response.headers.get("X-Cache")).toBe("MISS");
+
+        const allowed = await dispatch(
+            keyApp(["text"]),
+            "/v1/chat/completions",
+            init,
+            env,
+        );
+        await consumeAndWait(allowed);
+        expect(allowed.response.headers.get("X-Cache")).toBe("HIT");
+
+        const denied = await dispatch(
+            keyApp(["image"]),
+            "/v1/chat/completions",
+            init,
+            env,
+        );
+        await consumeAndWait(denied);
+        expect(denied.response.status).toBe(403);
     });
 
     it("caches chat completions after JSON validation consumed the body", async () => {

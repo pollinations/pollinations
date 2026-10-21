@@ -4,6 +4,7 @@ import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { RequestIdVariables } from "hono/request-id";
+import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 
 export type GenerationCacheStorage = "media" | "text";
@@ -217,6 +218,9 @@ function capture(
 /** Shared cache lifecycle; storage and serialization stay adapter-owned. */
 export function createGenerationCache(adapter: GenerationCacheAdapter) {
     return createMiddleware<GenerationCacheEnv>(async (c, next) => {
+        // Hits stay public, but a key limited to some models must not read
+        // another model's cached result.
+        (c.var as Partial<AuthVariables>).auth?.requireModelAccess();
         const log = c.get("log").getChild(adapter.label);
         const cacheKey = await adapter.getKey(c);
         const streamRequested = (

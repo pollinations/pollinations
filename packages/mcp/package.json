@@ -8,6 +8,7 @@
         "test": "node --test test/*.test.js"
     },
     "dependencies": {
+        "@modelcontextprotocol/ext-apps": "^2.0.3",
         "@modelcontextprotocol/server": "^2.0.0",
         "zod": "^4.2.0"
     },

@@ -3967,12 +3967,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionTextTokens": 0.000001266,
       "promptCachedTokens": 0.0000001055,
-      "promptTextTokens": 0.0000005275,
+      "promptTextTokens": 0.00000047475,
     },
     "price": {
       "completionTextTokens": 0.000001266,
       "promptCachedTokens": 0.0000001055,
-      "promptTextTokens": 0.0000005275,
+      "promptTextTokens": 0.00000047475,
     },
   },
   "tongyi-mai/z-image-turbo": {

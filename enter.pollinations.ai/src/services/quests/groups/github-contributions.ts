@@ -131,6 +131,10 @@ const honeyCensusQuest: QuestDefinition = {
     rewardAmount: 5,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new?template=honey-census.yml`,
+    // Paused on 2026-10-21 after 183 respondents: the form is removed and the
+    // card is off the board; answers already given still pay. To reopen,
+    // restore .github/ISSUE_TEMPLATE/honey-census.yml and delete this line.
+    state: "completed",
 };
 
 // A quest-shaped projection of one POLLEN-QUEST issue, computed from GitHub.

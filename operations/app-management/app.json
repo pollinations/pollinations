@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Pollen Postcard",
+    "url": "https://pollen-postcard.jm716111.chatgpt.site",
+    "description": "Turns a small memory into a polished illustrated postcard. Pollinations writes the title and short note, then generates a matching square image. Visitors connect with BYOP and approve a 1 Pollen budge",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "ismailbanouigu",
+    "githubUserId": "20683163",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-15",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17627",
+    "approvedDate": "2026-10-21",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/6f61966e-bc16-4963-b97b-e34ae7af519f"
+  },
+  {
     "emoji": "💬",
     "name": "Shimi Bechor (Firstborn Greeter)",
     "url": "https://aidoor.shimi.land/greeter.html",

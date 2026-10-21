@@ -1,6 +1,6 @@
-import { ACCOUNT_RESTRICTED_MESSAGE } from "@shared/auth/ban.ts";
 import { defaultParseSearch } from "@tanstack/react-router";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
+import { preferredReturnUrl } from "../frontend/src/lib/return-to-app.tsx";
 import {
     checkoutNotice,
     checkoutReturnSearch,
@@ -37,15 +37,14 @@ test.each(["false", "0", "anything", ""])(
 );
 
 // Hosted checkout's link sends the buyer back with why it didn't open.
-test.each([
-    ["restricted", ACCOUNT_RESTRICTED_MESSAGE],
-    ["failed", "Couldn’t load checkout. Choose an amount to try again."],
-])("says why checkout didn't open: %s", (code, notice) => {
+test("says when checkout didn't open", () => {
     const search = validateTopUpSearch(
-        defaultParseSearch(`?pack=p5&checkout_error=${code}`),
+        defaultParseSearch("?pack=p5&checkout_error=failed"),
     );
-    expect(search).toMatchObject({ pack: "p5", checkout_error: code });
-    expect(checkoutNotice(search)).toBe(notice);
+    expect(search).toMatchObject({ pack: "p5", checkout_error: "failed" });
+    expect(checkoutNotice(search)).toBe(
+        "Couldn’t load checkout. Choose an amount to try again.",
+    );
 });
 
 test("ignores an unknown checkout error", () => {
@@ -66,18 +65,45 @@ test("the wallet reads a cancel on Stripe's page", () => {
     );
 });
 
-test("a reason to stop wins over a cancel", () => {
-    const search = checkoutReturnSearch(
-        defaultParseSearch("?stripe_canceled=true&checkout_error=restricted"),
-    );
-    expect(checkoutNotice(search)).toBe(ACCOUNT_RESTRICTED_MESSAGE);
-});
-
 test.each(["", "?pack=p5", "?stripe_success=true&session_id=cs_test_1"])(
     "shows no checkout notice for %j",
     (query) => {
         expect(
             checkoutNotice(checkoutReturnSearch(defaultParseSearch(query))),
         ).toBeUndefined();
+    },
+);
+
+test("preserves an explicit app chat URL when the browser only sends an origin referrer", () => {
+    // /top-up replaces redirect only for a non-null result; an origin-only
+    // referrer must not erase the Back link's explicit path, query or fragment.
+    vi.stubGlobal("document", { referrer: "https://app.example/" });
+    vi.stubGlobal("window", {
+        location: { origin: "https://enter.pollinations.ai" },
+    });
+    try {
+        expect(
+            preferredReturnUrl(
+                "https://app.example/chat/123?model=openai#latest",
+            ),
+        ).toBeNull();
+    } finally {
+        vi.unstubAllGlobals();
+    }
+});
+
+test.each(["https://github.com/", "https://accounts.google.com/"])(
+    "never takes the sign-in page %s for the app",
+    (referrer) => {
+        // Back from signing in, a link without an app has no Back link.
+        vi.stubGlobal("document", { referrer });
+        vi.stubGlobal("window", {
+            location: { origin: "https://enter.pollinations.ai" },
+        });
+        try {
+            expect(preferredReturnUrl(undefined)).toBeNull();
+        } finally {
+            vi.unstubAllGlobals();
+        }
     },
 );

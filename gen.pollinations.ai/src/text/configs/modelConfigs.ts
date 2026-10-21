@@ -593,12 +593,13 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    // OpenRouter serves Inkling Small only through DeepInfra (fp8).
     "thinkingmachines/inkling-small": () =>
         createOpenRouterModelConfig({
             model: "thinkingmachines/inkling-small",
             defaultOptions: {
                 provider: {
-                    only: ["Together"],
+                    only: ["deepinfra"],
                     allow_fallbacks: false,
                 },
             },
@@ -687,6 +688,11 @@ export const portkeyConfig: PortkeyConfigMap = {
     "claude-opus-4.7-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
+    ),
+    "llama-scout-openrouter-deepinfra-priority": createPinnedOpenRouterConfig(
+        "meta-llama/llama-4-scout",
+        "deepinfra/fp8/priority",
+        16384,
     ),
     "llama-scout-openrouter-novita": createPinnedOpenRouterConfig(
         "meta-llama/llama-4-scout",

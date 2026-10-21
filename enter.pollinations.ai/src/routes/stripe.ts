@@ -55,16 +55,13 @@ export const stripeRoutes = new Hono<Env>()
         if (session instanceof Response) {
             // A link the buyer followed, so never a JSON error: back to the
             // page they came from, which asks a signed-out buyer to sign in
-            // and tells everyone else why checkout didn't open.
+            // and tells everyone else that checkout didn't open.
             const back = walletReturnUrl(c);
             const packKey = c.req.param("packKey");
             if (isPollenPackKey(packKey))
                 back.searchParams.set("pack", packKey);
             if (session.status !== 401)
-                back.searchParams.set(
-                    "checkout_error",
-                    session.status === 403 ? "restricted" : "failed",
-                );
+                back.searchParams.set("checkout_error", "failed");
             return c.redirect(back.toString());
         }
         // Redirect to Stripe Checkout (will use checkout.pollinations.ai custom domain)

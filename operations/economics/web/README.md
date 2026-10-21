@@ -71,10 +71,14 @@ build and deploy the Economics Worker through GitHub Actions.
 `http://localhost:4180/?fixtures=1` renders bundled sample data after admin sign-in,
 without fetching live ledger data.
 
-Vendor journals are cached in private Worker memory for up to 24 hours;
-concurrent reads share one fetch. Admin authentication still runs before every
-API request, and HTTP responses remain `private, no-store`. Failed reads are
-not cached. A cold Worker still reads Drive normally.
+Completed vendor journal snapshots are cached in private Worker memory for up
+to 24 hours. Pending reads stay within their own request, so an interrupted
+load cannot block later requests. Loads have a one-minute deadline; the browser
+offers Retry journals after 75 seconds if the request does not complete.
+An older load cannot replace a newer refresh. Admin authentication still runs
+before every API request, and HTTP responses remain `private, no-store`.
+Failed reads are not cached; a failed refresh preserves the previous snapshot
+until its original expiry. A cold Worker still reads Drive normally.
 
 Within an open dashboard, tabs reuse a complete financial snapshot for up to
 one hour. The small Updated timestamp records when that financial snapshot was

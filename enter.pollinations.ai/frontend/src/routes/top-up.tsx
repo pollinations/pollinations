@@ -156,9 +156,7 @@ function TopUpPage() {
             <AuthFlowScreen
                 footnote="help"
                 title="Top-up"
-                // Why checkout stopped comes first: a restricted buyer's
-                // wallet never loads, so this is where they read why.
-                error={checkoutNotice(search) ?? "Couldn’t load your wallet."}
+                error="Couldn’t load your wallet."
                 balance={wallet}
                 topUpHref={null}
                 actions={

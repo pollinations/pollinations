@@ -41,11 +41,11 @@ test("checkout created during a ban is expired instead of redirected", async ({
             redirect: "manual",
         },
     );
-    // Back to the wallet with the reason, never on to Stripe.
+    // Back to the wallet, never on to Stripe.
     expect(response.status).toBe(302);
     const back = new URL(response.headers.get("location") ?? "");
     expect(back.pathname).toBe("/pollen");
-    expect(back.searchParams.get("checkout_error")).toBe("restricted");
+    expect(back.searchParams.get("checkout_error")).toBe("failed");
     expect(mocks.stripe.state.checkoutSessions).toHaveLength(1);
     expect(mocks.stripe.state.checkoutSessions[0].status).toBe("expired");
 });

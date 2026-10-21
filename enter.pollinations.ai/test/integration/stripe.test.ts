@@ -397,7 +397,6 @@ test.for([
         name: "signed out",
         query: `?return=top-up&redirect=${encodeURIComponent("https://app.example/chat")}`,
         signedIn: false,
-        banned: false,
         stripeDown: false,
         expected: {
             pathname: "/top-up",
@@ -407,23 +406,9 @@ test.for([
         },
     },
     {
-        name: "restricted",
-        query: "",
-        signedIn: true,
-        banned: true,
-        stripeDown: false,
-        expected: {
-            pathname: "/pollen",
-            pack: "p5",
-            checkoutError: "restricted",
-            redirect: null,
-        },
-    },
-    {
         name: "Stripe fails",
         query: "?return=top-up",
         signedIn: true,
-        banned: false,
         stripeDown: true,
         expected: {
             pathname: "/top-up",
@@ -436,11 +421,6 @@ test.for([
     "GET /api/stripe/checkout/p5 sends the buyer back when $name",
     async (testCase, { sessionToken, mocks }) => {
         await mocks.enable("stripe", "tinybird");
-        if (testCase.banned)
-            await drizzle(env.DB)
-                .update(userTable)
-                .set({ banned: true })
-                .where(eq(userTable.id, await getSeededUserId()));
         if (testCase.stripeDown)
             mocks.stripe.state.onCheckoutSessionCreated = async () => {
                 throw new Error("Stripe unavailable");
@@ -1176,7 +1156,7 @@ test.for([
     },
 );
 
-test("GET /api/stripe/billing returns the pack of the last checkout purchase", async ({
+test("GET /api/stripe/billing returns the last pack bought", async ({
     sessionToken,
     mocks,
 }) => {
@@ -1195,22 +1175,16 @@ test("GET /api/stripe/billing returns the pack of the last checkout purchase", a
         });
         expect(response.status).toBe(200);
         const data = (await response.json()) as {
-            lastPackAmountUsd: number | null;
+            lastPackPollen: number | null;
         };
-        return data.lastPackAmountUsd;
+        return data.lastPackPollen;
     };
 
     expect(await lastPack()).toBeNull();
 
-    const credit = env.DB.prepare(
-        `INSERT INTO stripe_checkout_credits
-            (session_id, event_id, event_type, user_id, pollen_credited, created_at)
-            VALUES (?, ?, 'checkout.session.completed', ?, ?, ?)`,
-    );
-    await env.DB.batch([
-        credit.bind("cs_last_pack_new", "evt_new", user.id, 10, 2_000),
-        credit.bind("cs_last_pack_old", "evt_old", user.id, 5, 1_000),
-    ]);
+    await env.DB.prepare("UPDATE user SET last_pack_pollen = 10 WHERE id = ?")
+        .bind(user.id)
+        .run();
 
     expect(await lastPack()).toBe(10);
 });
@@ -1942,11 +1916,16 @@ test("POST /api/stripe/auto-top-up/trigger followed by webhook credits once", as
     expect(webhookResponse.status).toBe(200);
 
     const afterWebhook = await env.DB.prepare(
-        `SELECT pack_balance AS packBalance FROM user WHERE id = ?`,
+        `SELECT pack_balance AS packBalance,
+            last_pack_pollen AS lastPackPollen
+        FROM user WHERE id = ?`,
     )
         .bind(user.id)
-        .first<{ packBalance: number | null }>();
-    expect(afterWebhook?.packBalance).toBe(11);
+        .first<{
+            packBalance: number | null;
+            lastPackPollen: number | null;
+        }>();
+    expect(afterWebhook).toEqual({ packBalance: 11, lastPackPollen: 10 });
 
     const duplicateResponse = await postSignedStripeWebhook(
         createAutoTopUpInvoiceEvent("invoice.paid", "in_mock_1", user.id),
@@ -3725,6 +3704,12 @@ test("POST /api/webhooks/stripe emits paid checkout.session.completed to Tinybir
     expect(pack).toBeDefined();
     if (!pack) throw new Error("Expected $10 pollen pack");
 
+    await env.DB.prepare(
+        "UPDATE user SET low_balance_notified_at = 1 WHERE id = ?",
+    )
+        .bind(user.id)
+        .run();
+
     const response = await postSignedStripeWebhook({
         id: "evt_test_checkout_paid_emit",
         type: "checkout.session.completed",
@@ -3744,6 +3729,15 @@ test("POST /api/webhooks/stripe emits paid checkout.session.completed to Tinybir
         },
     });
     expect(response.status).toBe(200);
+    // Buying a pack records it and re-arms the running-low email.
+    const credited = await env.DB.prepare(
+        `SELECT last_pack_pollen AS lastPackPollen,
+            low_balance_notified_at AS notifiedAt
+        FROM user WHERE id = ?`,
+    )
+        .bind(user.id)
+        .first<{ lastPackPollen: number | null; notifiedAt: number | null }>();
+    expect(credited).toEqual({ lastPackPollen: 10, notifiedAt: null });
 
     expect(mocks.tinybird.state.stripeEvents).toHaveLength(1);
     expect(mocks.tinybird.state.stripeEvents[0]).toMatchObject({

@@ -9,7 +9,7 @@ import type { Env } from "./env";
 // Fixed private folder: callers cannot choose another Drive source or URL.
 type DriveEnv = Pick<Env["Bindings"], "ECONOMICS_GOOGLE_DRIVE_CREDENTIALS">;
 
-async function driveToken(env: DriveEnv): Promise<string> {
+async function driveToken(env: DriveEnv, signal: AbortSignal): Promise<string> {
     if (!env.ECONOMICS_GOOGLE_DRIVE_CREDENTIALS)
         throw new HTTPException(503, {
             message: "Vendor journal connection is not configured",
@@ -65,7 +65,7 @@ async function driveToken(env: DriveEnv): Promise<string> {
             grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
             assertion,
         }),
-        signal: AbortSignal.timeout(15_000),
+        signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]),
     });
     if (!tokenResponse.ok)
         throw new HTTPException(502, {
@@ -84,11 +84,12 @@ let journalCache:
     | {
           credentials: string | undefined;
           expiresAt: number;
-          value: Promise<ReturnType<typeof assembleVendorJournals>>;
+          value: ReturnType<typeof assembleVendorJournals>;
       }
     | undefined;
+let journalLoad = 0;
 
-export function readVendorJournals(env: DriveEnv, refresh = false) {
+export async function readVendorJournals(env: DriveEnv, refresh = false) {
     if (
         !refresh &&
         journalCache &&
@@ -96,26 +97,21 @@ export function readVendorJournals(env: DriveEnv, refresh = false) {
         Date.now() < journalCache.expiresAt
     )
         return journalCache.value;
-    const entry = {
-        credentials: env.ECONOMICS_GOOGLE_DRIVE_CREDENTIALS,
-        expiresAt: Number.POSITIVE_INFINITY,
-        value: loadVendorJournals(env),
-    };
-    journalCache = entry;
-    entry.value = entry.value
-        .then((snapshot) => {
-            entry.expiresAt = Date.now() + 24 * 60 * 60_000;
-            return snapshot;
-        })
-        .catch((error) => {
-            if (journalCache === entry) journalCache = undefined;
-            throw error;
-        });
-    return entry.value;
+    // Cache data only: pending I/O belongs to its original Worker request.
+    const load = ++journalLoad;
+    const value = await loadVendorJournals(env, AbortSignal.timeout(60_000));
+    // A slower, older load must not overwrite a newer refresh.
+    if (load === journalLoad)
+        journalCache = {
+            credentials: env.ECONOMICS_GOOGLE_DRIVE_CREDENTIALS,
+            expiresAt: Date.now() + 24 * 60 * 60_000,
+            value,
+        };
+    return value;
 }
 
-async function loadVendorJournals(env: DriveEnv) {
-    const token = await driveToken(env);
+async function loadVendorJournals(env: DriveEnv, signal: AbortSignal) {
+    const token = await driveToken(env, signal);
     const headers = { Authorization: `Bearer ${token}` };
     const files: { id: string; name: string }[] = [];
     let pageToken = "";
@@ -131,7 +127,10 @@ async function loadVendorJournals(env: DriveEnv) {
         if (pageToken) query.set("pageToken", pageToken);
         const response = await fetch(
             `https://www.googleapis.com/drive/v3/files?${query}`,
-            { headers, signal: AbortSignal.timeout(15_000) },
+            {
+                headers,
+                signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]),
+            },
         );
         if (!response.ok)
             throw new HTTPException(502, {
@@ -157,7 +156,13 @@ async function loadVendorJournals(env: DriveEnv) {
                 files.slice(offset, offset + 8).map(async (file) => {
                     const response = await fetch(
                         `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&supportsAllDrives=true`,
-                        { headers, signal: AbortSignal.timeout(15_000) },
+                        {
+                            headers,
+                            signal: AbortSignal.any([
+                                signal,
+                                AbortSignal.timeout(15_000),
+                            ]),
+                        },
                     );
                     if (!response.ok)
                         throw new HTTPException(502, {

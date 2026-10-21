@@ -1,9 +1,5 @@
-import { ACCOUNT_RESTRICTED_MESSAGE } from "@shared/auth/ban.ts";
 import { isPollenPackKey, type PollenPackKey } from "@shared/pollen-packs.ts";
 import { parseAppUrl } from "./return-to-app.tsx";
-
-/** Why hosted Checkout didn't open; set by its link's redirect back. */
-type CheckoutError = "restricted" | "failed";
 
 const isTrue = (value: unknown) => value === true || value === "true";
 
@@ -11,12 +7,12 @@ const isTrue = (value: unknown) => value === true || value === "true";
  * Stripe's return after hosted Checkout or a redirect-based method:
  * stripe_success=true&session_id=cs_…, read so the page can confirm the
  * credit instead of trusting the flag. A buyer who left without paying
- * comes back canceled, or with why checkout never opened.
+ * comes back canceled, or failed when hosted Checkout never opened.
  */
 export function checkoutReturnSearch(search: Record<string, unknown>): {
     session_id?: string;
     stripe_canceled?: boolean;
-    checkout_error?: CheckoutError;
+    checkout_error?: "failed";
 } {
     return {
         ...(isTrue(search.stripe_success) &&
@@ -26,20 +22,15 @@ export function checkoutReturnSearch(search: Record<string, unknown>): {
             : {}),
         stripe_canceled: isTrue(search.stripe_canceled) || undefined,
         checkout_error:
-            search.checkout_error === "restricted" ||
-            search.checkout_error === "failed"
-                ? search.checkout_error
-                : undefined,
+            search.checkout_error === "failed" ? "failed" : undefined,
     };
 }
 
 /** The line a page shows when the buyer is back without a purchase. */
 export function checkoutNotice(search: {
     stripe_canceled?: boolean;
-    checkout_error?: CheckoutError;
+    checkout_error?: "failed";
 }): string | undefined {
-    if (search.checkout_error === "restricted")
-        return ACCOUNT_RESTRICTED_MESSAGE;
     if (search.checkout_error === "failed")
         return "Couldn’t load checkout. Choose an amount to try again.";
     if (search.stripe_canceled)

@@ -47,6 +47,7 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
+    | "CONTRAST_MCP"
     | "MACHINES_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
@@ -212,6 +213,19 @@ export const MCP_SERVERS = [
         provider: "cloudflare",
         userScoped: true,
         pricing: COMPUTER_MCP_PRICING,
+    },
+    {
+        id: "contrast",
+        name: "Contrast",
+        description:
+            "Check color pairs and rank palettes against WCAG 2.2 contrast thresholds.",
+        binding: "CONTRAST_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Free. Contrast is calculated in the Worker with no external API.",
+            rates: [],
+        },
     },
     {
         id: "machines",

@@ -21,6 +21,8 @@ export default defineWorkersConfig(async ({ mode }) => {
     // pool refuses to start when it is missing, and backend tests do not need
     // a frontend build, so make sure the directory exists.
     mkdirSync(path.join(__dirname, "dist", "client"), { recursive: true });
+    // Deployed Workers run in UTC; local workerd follows the host timezone.
+    process.env.TZ = "UTC";
     const env = loadEnv(mode, process.cwd(), "");
 
     return {
@@ -121,8 +123,11 @@ export default defineWorkersConfig(async ({ mode }) => {
                 optimizer: {
                     ssr: {
                         enabled: true,
+                        // better-auth/api with better-auth, so its request
+                        // state (getOAuthState) is the one the handlers set.
                         include: [
                             "better-auth",
+                            "better-auth/api",
                             "kysely",
                             "drizzle-orm",
                             "hono-openapi",

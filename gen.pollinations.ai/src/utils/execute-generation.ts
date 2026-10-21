@@ -124,7 +124,9 @@ export async function executeGeneration(
         }
 
         await cacheWrite;
-        return { result: { status: "cached" }, settlement };
+        // This execution produced a fresh cache entry (the R2 has() pre-check
+        // inside missed), so the requester experienced a MISS, not a HIT.
+        return { result: { status: "generated" }, settlement };
     } catch (error) {
         await settlement;
         throw error;
@@ -137,6 +139,7 @@ export const GENERATION_HANDOFF_HEADER = "x-generation-handoff";
 /** JSON form of an outcome; the error body travels as base64. */
 type HandoffOutcome =
     | { status: "cached" }
+    | { status: "generated" }
     | {
           status: "failed";
           error: Omit<GenerationErrorSnapshot, "body"> & { body: string };
@@ -149,13 +152,13 @@ export async function readHandoffResponse(
         throw new Error(`Generation handoff returned HTTP ${response.status}`);
     }
     const outcome = await response.json<HandoffOutcome>();
-    if (outcome.status === "cached") return outcome;
+    if (outcome.status !== "failed") return outcome;
     const body = new Uint8Array(Buffer.from(outcome.error.body, "base64"));
     return { status: "failed", error: { ...outcome.error, body } };
 }
 
 function handoffOutcome(outcome: GenerationOutcome): HandoffOutcome {
-    if (outcome.status === "cached") return outcome;
+    if (outcome.status !== "failed") return outcome;
     const body = Buffer.from(outcome.error.body).toString("base64");
     return { status: "failed", error: { ...outcome.error, body } };
 }

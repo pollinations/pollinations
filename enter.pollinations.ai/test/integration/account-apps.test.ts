@@ -86,4 +86,19 @@ describe("GET /api/account/apps", () => {
         expect(response.status).toBe(200);
         expect(await response.json()).toEqual({ apps: [] });
     });
+
+    test("reports a directory rate limit instead of an empty catalog", async ({
+        accountToken,
+        mocks,
+    }) => {
+        mocks.tinybird.handlerMap["localhost:7181"] = async () =>
+            new Response("Rate limited", { status: 429 });
+        await mocks.enable("tinybird");
+        const response = await SELF.fetch(
+            "http://localhost:3000/api/account/apps",
+            { headers: { Authorization: `Bearer ${accountToken}` } },
+        );
+        expect(response.status).toBe(503);
+        expect(response.headers.get("Retry-After")).toBe("60");
+    });
 });

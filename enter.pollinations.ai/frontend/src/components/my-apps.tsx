@@ -8,8 +8,6 @@ import {
     Surface,
     Text,
 } from "@pollinations/ui";
-import { useCallback, useEffect, useState } from "react";
-import { accountClient } from "../api.ts";
 import type { ListedApp } from "../backend-types.ts";
 import { LoadError, PageStatus } from "./layout/dashboard-loading.tsx";
 
@@ -17,14 +15,6 @@ import { LoadError, PageStatus } from "./layout/dashboard-loading.tsx";
 const SUBMIT_APP_URL =
     "https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml";
 const CATALOG_URL = "https://pollinations.ai/apps";
-
-type State = {
-    loading: boolean;
-    error: string | null;
-    apps: ListedApp[];
-};
-
-const INITIAL: State = { loading: true, error: null, apps: [] };
 
 function formatDate(value: string | null): string | null {
     if (!value) return null;
@@ -34,6 +24,7 @@ function formatDate(value: string | null): string | null {
         day: "numeric",
         month: "short",
         year: "numeric",
+        timeZone: "UTC",
     });
 }
 
@@ -158,44 +149,19 @@ function EmptyState() {
     );
 }
 
-export function MyApps() {
-    const [state, setState] = useState<State>(INITIAL);
-
-    const load = useCallback(async () => {
-        setState((current) => ({ ...current, loading: true, error: null }));
-        try {
-            const response = await accountClient.apps.$get();
-            if (!response.ok) {
-                throw new Error(
-                    response.status === 503
-                        ? "The app directory is temporarily unavailable. Please try again."
-                        : `Couldn’t load your apps (${response.status}).`,
-                );
-            }
-            const { apps } = await response.json();
-            setState({ loading: false, error: null, apps });
-        } catch (error) {
-            setState({
-                loading: false,
-                error:
-                    error instanceof Error
-                        ? error.message
-                        : "Couldn’t load your apps.",
-                apps: [],
-            });
-        }
-    }, []);
-
-    useEffect(() => {
-        void load();
-    }, [load]);
-
+export function MyApps({
+    apps,
+    onRetry,
+}: {
+    apps: ListedApp[] | null | undefined;
+    onRetry: () => Promise<void>;
+}) {
     return (
         <Section
             title="My Apps"
             intro="Your apps in the community catalog, matched to the GitHub account you signed in with."
             action={
-                state.apps.length > 0 ? (
+                apps && apps.length > 0 ? (
                     <Button
                         as="a"
                         href={SUBMIT_APP_URL}
@@ -210,15 +176,17 @@ export function MyApps() {
                 ) : undefined
             }
         >
-            {state.loading ? (
+            {apps === undefined ? (
                 <PageStatus />
-            ) : state.error ? (
-                <LoadError onRetry={load}>{state.error}</LoadError>
-            ) : state.apps.length === 0 ? (
+            ) : apps === null ? (
+                <LoadError onRetry={onRetry}>
+                    Couldn’t load your apps. Please try again.
+                </LoadError>
+            ) : apps.length === 0 ? (
                 <EmptyState />
             ) : (
                 <div className="grid gap-2 sm:grid-cols-2">
-                    {state.apps.map((app) => (
+                    {apps.map((app) => (
                         <AppCard key={`${app.name}|${app.webUrl}`} app={app} />
                     ))}
                 </div>

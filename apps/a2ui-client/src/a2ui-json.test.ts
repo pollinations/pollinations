@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { splitReply } from "./a2ui-json.ts";
+import { MessageProcessor } from "@a2ui/web_core/v0_9";
+import { basicCatalog } from "@a2ui/web_core/v0_9/basic_catalog";
+import { applyBlock, splitReply } from "./a2ui-json.ts";
 
 test("separates prose from a closed block", () => {
     const reply =
@@ -39,4 +41,50 @@ test("returns every block in order", () => {
         blocks.map((block) => block.json),
         ["[1]", "[2]"],
     );
+});
+
+const CATALOG =
+    "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json";
+const surface = (...texts: string[]) =>
+    JSON.stringify([
+        {
+            version: "v0.9",
+            createSurface: { surfaceId: "main", catalogId: CATALOG },
+        },
+        {
+            version: "v0.9",
+            updateComponents: {
+                surfaceId: "main",
+                components: texts.map((text) => ({
+                    id: "root",
+                    component: "Text",
+                    text,
+                })),
+            },
+        },
+    ]);
+
+test("replaces a surface that is created again", () => {
+    const processor = new MessageProcessor([basicCatalog]);
+    assert.equal(applyBlock(processor, surface("one")), undefined);
+    assert.equal(applyBlock(processor, surface("two")), undefined);
+    assert.equal(processor.getSurfaces().size, 1);
+});
+
+test("reports JSON that does not parse as INVALID_JSON", () => {
+    const error = applyBlock(
+        new MessageProcessor([basicCatalog]),
+        surface("cut off").slice(0, -20),
+    );
+    assert.equal(error?.code, "INVALID_JSON");
+    assert.equal(error?.surfaceId, "main");
+});
+
+test("reports A2UI errors with their code", () => {
+    const error = applyBlock(
+        new MessageProcessor([basicCatalog]),
+        surface("a", "b"),
+    );
+    assert.equal(error?.code, "INTEGRITY_ERROR");
+    assert.match(error?.message ?? "", /Duplicate component ID/);
 });

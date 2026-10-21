@@ -5,6 +5,8 @@ streams a chat reply from `gen.pollinations.ai`, renders each
 `<a2ui-json>…</a2ui-json>` block with `@a2ui/react` and the basic catalog, and
 sends button clicks back to the agent as the next user message
 (`{"version":"v0.9","action":{…}}`).
+If a block fails to render, the client sends the A2UI error back once
+(`{"version":"v0.9","error":{…}}`) so the agent can fix its JSON.
 
 The agent it talks to is defined in
 [`../agent-a2ui-demo/agent.json`](../agent-a2ui-demo/agent.json).

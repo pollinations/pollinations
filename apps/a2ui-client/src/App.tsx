@@ -12,7 +12,7 @@ import {
 import { basicCatalog } from "@a2ui/web_core/v0_9/basic_catalog";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import agent from "../../agent-a2ui-demo/agent.json";
-import { splitReply } from "./a2ui-json";
+import { applyBlock, type RenderError, splitReply } from "./a2ui-json";
 
 const API_URL = "https://gen.pollinations.ai/v1/chat/completions";
 // Hosted agents are callable as community/<owner>/<name>; a private one only with its owner's key.
@@ -71,22 +71,6 @@ async function* streamChat(apiKey: string, body: object) {
     }
 }
 
-/** Feeds one <a2ui-json> block to the processor; returns an error message if it fails. */
-function applyBlock(processor: Processor, json: string) {
-    try {
-        const messages = JSON.parse(json);
-        // A full re-render may create an existing surface again: replace it.
-        for (const message of [messages].flat()) {
-            const id = message?.createSurface?.surfaceId;
-            if (id && processor.getSurface(id))
-                processor.model.deleteSurface(id);
-        }
-        processor.processMessages(messages);
-    } catch (error) {
-        return `Invalid A2UI: ${error instanceof Error ? error.message : error}`;
-    }
-}
-
 export function App() {
     const [apiKey, setApiKey] = useState(loadKey);
     const [model, setModel] = useState(AGENT_MODEL);
@@ -116,23 +100,47 @@ export function App() {
         };
     }, [processor]);
 
-    send.current = async (content: string) => {
-        if (busy || !content.trim()) return;
-        const history: Message[] = [...messages, { role: "user", content }];
+    // Streams the agent's reply to `content`. When its A2UI fails to render,
+    // the first error goes back to the agent once, so it can fix the JSON.
+    const reply = async (
+        previous: Message[],
+        content: string,
+        retry: boolean,
+    ) => {
+        const history: Message[] = [...previous, { role: "user", content }];
         const system = sendPrompt
             ? [{ role: "system", content: agent.systemPrompt }]
             : [];
         let text = "";
         let rendered = 0;
-        const errors: string[] = [];
-        const show = () =>
-            setMessages([
-                ...history,
-                { role: "assistant", content: text, error: errors.join("\n") },
-            ]);
+        let failure = "";
+        const renderErrors: RenderError[] = [];
+        // Render each block once: when its closing tag arrives, or at the end.
+        const render = (final: boolean) => {
+            const { blocks } = splitReply(text);
+            for (
+                ;
+                blocks[rendered] && (final || blocks[rendered].closed);
+                rendered++
+            ) {
+                const error = applyBlock(processor, blocks[rendered].json);
+                if (error) renderErrors.push(error);
+            }
+        };
+        const thread = (): Message[] => [
+            ...history,
+            {
+                role: "assistant",
+                content: text,
+                error: [
+                    ...renderErrors.map((e) => `${e.code}: ${e.message}`),
+                    failure,
+                ]
+                    .filter(Boolean)
+                    .join("\n"),
+            },
+        ];
         setMessages(history);
-        setInput("");
-        setBusy(true);
         try {
             const chat = history.map(({ role, content }) => ({
                 role,
@@ -143,21 +151,26 @@ export function App() {
                 messages: [...system, ...chat],
             })) {
                 text += delta;
-                // Render each block once, as soon as its closing tag arrives.
-                const { blocks } = splitReply(text);
-                for (; blocks[rendered]?.closed; rendered++) {
-                    const error = applyBlock(processor, blocks[rendered].json);
-                    if (error) errors.push(error);
-                }
-                show();
+                render(false);
+                setMessages(thread());
             }
-            if (splitReply(text).blocks.some((block) => !block.closed)) {
-                errors.push("Invalid A2UI: <a2ui-json> block was not closed");
-            }
+            render(true);
         } catch (error) {
-            errors.push(String(error));
+            failure = String(error);
         }
-        show();
+        const done = thread();
+        setMessages(done);
+        if (retry && renderErrors[0]) {
+            const error = { version: "v0.9", error: renderErrors[0] };
+            await reply(done, JSON.stringify(error), false);
+        }
+    };
+
+    send.current = async (content: string) => {
+        if (busy || !content.trim()) return;
+        setInput("");
+        setBusy(true);
+        await reply(messages, content, true);
         setBusy(false);
     };
 

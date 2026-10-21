@@ -1,0 +1,29 @@
+{
+    "name": "a2ui-client",
+    "private": true,
+    "version": "0.0.0",
+    "description": "Test client that renders A2UI surfaces from Pollinations agent replies.",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview",
+        "typecheck": "tsc --noEmit",
+        "test": "node --test src/*.test.ts"
+    },
+    "dependencies": {
+        "@a2ui/markdown-it": "0.2.2",
+        "@a2ui/react": "0.14.0",
+        "@a2ui/web_core": "0.14.0",
+        "react": "19.3.0",
+        "react-dom": "19.3.0",
+        "zod": "3.25.76"
+    },
+    "devDependencies": {
+        "@types/react": "19.3.0",
+        "@types/react-dom": "19.3.0",
+        "@vitejs/plugin-react": "5.2.0",
+        "typescript": "5.9.3",
+        "vite": "7.3.6"
+    }
+}

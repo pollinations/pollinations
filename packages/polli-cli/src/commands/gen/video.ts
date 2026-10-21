@@ -1,7 +1,7 @@
-import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { writeFileSync } from "node:fs";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
+import { printEstimate } from "../../lib/estimate.js";
 import {
     ExitSignal,
     getOutputMode,
@@ -9,6 +9,10 @@ import {
     printInfo,
     printMeta,
 } from "../../lib/output.js";
+import { prepareOutputPath } from "../../lib/output-file.js";
+
+// The API default when --model is omitted (gen.pollinations.ai video schema).
+const DEFAULT_VIDEO_MODEL = "google/veo-3.1-fast";
 
 export function createVideoCommand() {
     return new Command("video")
@@ -26,6 +30,7 @@ export function createVideoCommand() {
             "Reference frame URL(s) for start/end frames (repeatable)",
         )
         .option("--output <path>", "Save to file", "video.mp4")
+        .option("--estimate", "Show the estimated Pollen cost; don't generate")
         .action(async (prompt, opts) => {
             const isHuman = getOutputMode() === "human";
 
@@ -50,11 +55,21 @@ export function createVideoCommand() {
                 params.set("image", opts.image.join("|"));
             }
 
+            if (opts.estimate)
+                return printEstimate(opts.model ?? DEFAULT_VIDEO_MODEL, {
+                    kind: "video",
+                    width: Number(opts.width),
+                    height: Number(opts.height),
+                    references: opts.image ? 1 : 0,
+                    duration: opts.duration ? Number(opts.duration) : undefined,
+                    audio: !!opts.audio,
+                });
+
             const encodedPrompt = encodeURIComponent(prompt);
             const path = `/video/${encodedPrompt}?${params}`;
 
             // Before the paid request, so a bad --output folder costs nothing.
-            mkdirSync(dirname(opts.output), { recursive: true });
+            prepareOutputPath(opts.output);
             if (isHuman)
                 printInfo("Generating video (this can take up to 60s)...");
 

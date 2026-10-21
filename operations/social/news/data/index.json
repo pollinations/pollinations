@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-20T06:10:08.162164+00:00",
+  "generated_at": "2026-10-21T06:12:02.590360+00:00",
   "models": [
     {
       "id": "2026-09-22:anthropic/claude-opus-5.5",
@@ -5908,6 +5908,63 @@
           }
         }
       }
+    },
+    {
+      "id": "2026-10-20:openai/gpt-6-luna",
+      "model_id": "openai/gpt-6-luna",
+      "title": "GPT-6 Luna",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-20",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "max_reference_images": {
+          "before": null,
+          "after": 50
+        }
+      }
+    },
+    {
+      "id": "2026-10-20:openai/gpt-6-sol",
+      "model_id": "openai/gpt-6-sol",
+      "title": "GPT-6 Sol",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-20",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "max_reference_images": {
+          "before": null,
+          "after": 50
+        }
+      }
+    },
+    {
+      "id": "2026-10-20:openai/gpt-6.1-sol",
+      "model_id": "openai/gpt-6.1-sol",
+      "title": "GPT-6.1 Sol",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-20",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "max_reference_images": {
+          "before": null,
+          "after": 50
+        }
+      }
     }
   ],
   "api": [
@@ -9180,17 +9237,6 @@
         15141
       ],
       "kind": "product"
-    },
-    {
-      "date": "2026-09-20",
-      "emoji": "🎯",
-      "title": "Typed decisions with Jev",
-      "text": "Send a state and named choice, score, or noul questions as JSON to `POST /alpha/decisions`. Get native answers and token usage back without packing the request into a chat message. [Read the API docs](https://gen.pollinations.ai/docs).",
-      "prs": [
-        15217,
-        15243
-      ],
-      "kind": "api"
     }
   ]
 }

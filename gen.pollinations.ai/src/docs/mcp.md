@@ -11,6 +11,7 @@ then choose a server:
 
 | Server | Endpoint | Use it for | Details |
 | --- | --- | --- | --- |
+| Image Budget | `https://gen.pollinations.ai/mcp/image-budget` | Compare live fixed per-image prices, batch totals and affordable image counts without generating | [Source](https://github.com/pollinations/pollinations/tree/main/apps/image-budget-mcp) |
 | Pollinations | `https://gen.pollinations.ai/mcp/pollinations` | Discover and use models, generate text and media, create embeddings and 3D models, and inspect model status and account balance | [README](https://github.com/pollinations/pollinations/blob/main/packages/mcp/README.md) |
 | Ask Jev | `https://gen.pollinations.ai/mcp/ask-jev` | Evaluate state with typed choice, score, and probability questions | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ask-jev-mcp) |
 | FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ffmpeg-mcp) |
@@ -30,6 +31,16 @@ Get current endpoints and pricing from the live catalog:
 ```bash
 curl https://gen.pollinations.ai/mcp
 ```
+
+### Plan image batches without generating
+
+The Image Budget server's `image_budget` tool accepts, for example,
+`{"images":100,"budget":1,"questOnly":true}`. It reads live catalog rates and
+returns per-image prices, batch totals and affordable image counts, sorted by
+price. Token-based, megapixel-based, variant-priced models and agents are
+excluded rather than quoted as free. The budget is caller-supplied; the tool
+does not read wallet balances, reserve funds or generate images. Check model
+capabilities before generating; catalog rates and availability can change.
 
 ### Install into coding agents with the Polli CLI
 

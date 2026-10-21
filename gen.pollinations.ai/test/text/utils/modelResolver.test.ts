@@ -338,14 +338,14 @@ describe("resolveModelConfig", () => {
         },
     );
 
-    it("pins Inkling to Together on OpenRouter without fallback", () => {
+    it("pins Inkling to DeepInfra on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "thinkingmachines/inkling-small",
         });
 
         expect(result.options.model).toBe("thinkingmachines/inkling-small");
         expect(result.options.provider).toEqual({
-            only: ["Together"],
+            only: ["deepinfra"],
             allow_fallbacks: false,
         });
     });

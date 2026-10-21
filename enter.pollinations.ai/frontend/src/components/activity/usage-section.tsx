@@ -20,7 +20,11 @@ import {
     downloadFile,
     PollenUsageBadges,
 } from "./activity-helpers";
-import { type ActivityPeriod, toggleActivityBucket } from "./activity-period";
+import {
+    type ActivityPeriod,
+    activityTimezone,
+    toggleActivityBucket,
+} from "./activity-period";
 import { ActivityToolbar } from "./activity-toolbar";
 import { Chart } from "./chart";
 import type { FilterState, Metric, UsageGroupBy } from "./types";
@@ -95,6 +99,7 @@ export const UsageSection: FC<UsageSectionProps> = ({
                     format: "csv",
                     granularity: period.granularity,
                     period: period.period,
+                    timezone: activityTimezone(),
                     limit: DETAILED_USAGE_DOWNLOAD_LIMIT.toString(),
                 },
             })

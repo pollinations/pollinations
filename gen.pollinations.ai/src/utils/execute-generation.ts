@@ -139,6 +139,7 @@ export const GENERATION_HANDOFF_HEADER = "x-generation-handoff";
 /** JSON form of an outcome; the error body travels as base64. */
 type HandoffOutcome =
     | { status: "cached" }
+    | { status: "generated" }
     | {
           status: "failed";
           error: Omit<GenerationErrorSnapshot, "body"> & { body: string };
@@ -151,13 +152,13 @@ export async function readHandoffResponse(
         throw new Error(`Generation handoff returned HTTP ${response.status}`);
     }
     const outcome = await response.json<HandoffOutcome>();
-    if (outcome.status === "cached") return outcome;
+    if (outcome.status !== "failed") return outcome;
     const body = new Uint8Array(Buffer.from(outcome.error.body, "base64"));
     return { status: "failed", error: { ...outcome.error, body } };
 }
 
 function handoffOutcome(outcome: GenerationOutcome): HandoffOutcome {
-    if (outcome.status === "cached") return outcome;
+    if (outcome.status !== "failed") return outcome;
     const body = Buffer.from(outcome.error.body).toString("base64");
     return { status: "failed", error: { ...outcome.error, body } };
 }

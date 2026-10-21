@@ -244,6 +244,9 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
         }
 
         await next();
+        // A coordinated response is read back from the entry the detached
+        // executor already saved; capturing it again would rewrite it.
+        if (coordinate) return;
 
         const cacheWrite = capture(c, adapter, cacheKey);
         if (cacheWrite) {

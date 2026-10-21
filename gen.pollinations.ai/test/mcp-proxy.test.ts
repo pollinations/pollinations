@@ -149,6 +149,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "digest",
+                name: "Digest",
+                description:
+                    "Read a page as clean text and summarise long documents or articles in parts.",
+                url: "https://gen.pollinations.ai/mcp/digest",
+                pricing: {
+                    description:
+                        "Summary tools use the selected text model's listed rate. No additional MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });
@@ -239,6 +251,41 @@ test("routes Machines with caller authorization without an extra MCP debit", asy
     };
     const response = await SELF.fetch(
         "https://gen.pollinations.ai/mcp/machines",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        pathname: "/",
+        authorization: `Bearer ${key}`,
+        cookie: null,
+        payload,
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
+});
+
+test("routes Digest with caller authorization without an extra MCP debit", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const payload = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: { name: "read_url", arguments: { url: "https://example.com" } },
+    };
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/digest",
         {
             method: "POST",
             headers: {

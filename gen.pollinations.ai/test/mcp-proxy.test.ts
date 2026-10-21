@@ -138,6 +138,28 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
+                id: "qr",
+                name: "QR Codes",
+                description:
+                    "Generate scannable QR codes as PNG images and read the text behind QR codes in images.",
+                url: "https://gen.pollinations.ai/mcp/qr",
+                pricing: {
+                    description:
+                        "One tiny fee per QR call, covering the worker's compute.",
+                    rates: [
+                        {
+                            name: "qr.tool_call.v1",
+                            label: "Tool call",
+                            kind: "tool_call",
+                            price: "0.0001",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "call",
+                        },
+                    ],
+                },
+            },
+            {
                 id: "machines",
                 name: "Machines",
                 description:
@@ -311,6 +333,37 @@ test("proxies FFmpeg without caller credentials and bills reported usage", async
     });
 });
 
+test("proxies QR without caller credentials and bills reported usage", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const response = await SELF.fetch("https://gen.pollinations.ai/mcp/qr", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${key}`,
+            Cookie: "session=private",
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(MCP_REQUEST),
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+            content: [{ type: "text", text: "qr proxied" }],
+        },
+    });
+    for (const header of Object.values(MCP_USAGE_HEADERS)) {
+        expect(response.headers.has(header)).toBe(false);
+    }
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 0.9999,
+        packBalance: 0,
+    });
+});
+
 test("proxies Exa without caller credentials and bills reported usage", async () => {
     const { key, userId } = await createTestApiKey({
         user: { tierBalance: 1 },
@@ -424,6 +477,34 @@ test("refuses receipt-billed tool calls from an empty wallet but keeps initializ
         error: { code: "INSUFFICIENT_BALANCE" },
     });
     const initialized = await callFfmpeg({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "initialize",
+        params: {},
+    });
+    expect(initialized.status).toBe(200);
+});
+
+// QR is receipt-billed like FFmpeg; the credential gate above must also keep
+// its tool calls behind a spendable balance.
+test("refuses QR tool calls from an empty wallet but keeps initialization free", async () => {
+    const { key } = await createTestApiKey();
+    const callQr = (body: unknown) =>
+        SELF.fetch("https://gen.pollinations.ai/mcp/qr", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+        });
+
+    const refused = await callQr(MCP_REQUEST);
+    expect(refused.status).toBe(402);
+    expect(await refused.json()).toMatchObject({
+        error: { code: "INSUFFICIENT_BALANCE" },
+    });
+    const initialized = await callQr({
         jsonrpc: "2.0",
         id: 1,
         method: "initialize",

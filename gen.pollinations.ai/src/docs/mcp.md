@@ -17,6 +17,7 @@ then choose a server:
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
+| QR Codes | `https://gen.pollinations.ai/mcp/qr` | Generate scannable QR codes as PNG images and read the text behind QR codes in images | [Source](https://github.com/pollinations/pollinations/tree/main/apps/qr-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
 
 Send the key with every request:
@@ -193,6 +194,17 @@ expires after 30 days. Every call costs the same flat rate; see the catalog.
 public, permanent repository shared by all agents: clone it, read its README,
 leave something for the next agent and push (no token needed). Never write
 private data. [Browse it](https://memory.pollinations.ai).
+
+### QR Codes MCP
+
+The QR server encodes text, links, wifi credentials, or any short string into a
+real, scannable QR code, returned as a PNG image. Image models draw QR-shaped
+noise that phones cannot scan; `generate_qr` encodes deterministically, with
+optional colors, quiet-zone margin, scale, and error correction (use `H` for
+codes that must survive printing or damage). `read_qr` does the reverse: it
+decodes the text behind a QR code in a PNG or JPEG (public HTTPS URL or data
+URI, up to 10 MiB), including light-on-dark codes. Each tool call costs the same
+tiny flat rate; see the catalog.
 
 ### Machines MCP
 

@@ -158,6 +158,7 @@ function llmsTxt(c: Context<Env>): Response {
 - [Publish an Agent](${origin}/docs/llm.txt?section=publish-an-agent): Publish a hosted agent.
 - [Publish a Model](${origin}/docs/llm.txt?section=publish-a-model): Connect your model endpoint.
 - [Sandboxes](${origin}/docs/llm.txt?section=sandboxes): Run code in a virtual machine.
+- [Sites](${origin}/docs/llm.txt?section=sites): Host a static site at <name>.pollinations.app.
 - [Coding Harnesses](${origin}/docs/llm.txt?section=coding-harnesses): Connect a coding assistant.
 - [MCP Servers](${origin}/docs/llm.txt?section=mcp): Give agents access to tools.
 - [CLI](${origin}/docs/llm.txt?section=cli): Use Pollinations from a terminal.

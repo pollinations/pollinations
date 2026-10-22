@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "SEC_EDGAR_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "sec-edgar",
+        name: "SEC EDGAR",
+        description:
+            "Search SEC filings and read reported financial concepts for US public companies.",
+        binding: "SEC_EDGAR_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "SEC EDGAR lookups are free. No additional MCP fee.",
             rates: [],
         },
     },

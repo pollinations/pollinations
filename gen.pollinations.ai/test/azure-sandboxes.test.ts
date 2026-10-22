@@ -223,8 +223,8 @@ test("an Azure template runs on Azure behind E2B's API, paid at 25% of Azure's r
         templates: Record<string, { vcpuSecond: number; gibSecond: number }>;
     }>();
     const rates = pricing.templates["pollinations-azure"];
-    expect(seconds * (2 * rates.vcpuSecond + 2 * rates.gibSecond)).toBeCloseTo(
-        azure.leases()[0].totalPrice,
+    expect(azure.leases()[0].totalPrice).toBeCloseTo(
+        seconds * (2 * rates.vcpuSecond + 2 * rates.gibSecond),
         8,
     );
 

@@ -33,6 +33,7 @@ import { admin, openAPI } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { discordConfigFromEnv } from "./services/discord.ts";
+import { removeUserSites } from "./services/sites.ts";
 import {
     captureProductEvent,
     referringSource,
@@ -265,6 +266,19 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         }),
         databaseHooks: {
             user: {
+                // Admin removal skips deleteUser.beforeDelete. Sessions and
+                // logins are already gone here, so a failure is logged rather
+                // than leaving the account half-deleted.
+                delete: {
+                    before: async (user) => {
+                        await removeUserSites(env, user.id).catch((error) =>
+                            console.error(
+                                `Failed to remove sites of user ${user.id}`,
+                                error,
+                            ),
+                        );
+                    },
+                },
                 create: {
                     after: async (user, context) => {
                         ctx?.waitUntil(
@@ -319,6 +333,9 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             },
         },
         advanced: {
+            // Cloudflare sets CF-Connecting-IP. A client-sent X-Forwarded-For
+            // makes the chain ambiguous and drops it into one shared bucket.
+            ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] },
             // Configure background tasks for Cloudflare Workers
             // Required for deferUpdates to work properly
             backgroundTasks: ctx
@@ -352,6 +369,9 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             additionalFields: authAdditionalFields.user,
             deleteUser: {
                 enabled: true,
+                // Runs before anything is deleted, so a Cloudflare failure
+                // aborts the deletion cleanly.
+                beforeDelete: (user) => removeUserSites(env, user.id),
             },
         },
         account: {

@@ -59,7 +59,8 @@ const IMAGE_BASE_SERVICES = {
             completionImageTokens: 0.04, // per image
         },
         title: "FLUX.1 Kontext Pro",
-        description: "Edits an existing image using your instructions",
+        description:
+            "Edits an existing image from instructions: swap, restyle or refine",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 1, // Azure FLUX.1 Kontext edit route forwards one input image.

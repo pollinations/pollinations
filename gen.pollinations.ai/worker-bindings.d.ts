@@ -1,4 +1,5 @@
 interface CloudflareBindings {
+    ASSETS: Fetcher;
     ENTER: Fetcher;
     POLLINATIONS_MCP: Fetcher;
     ASK_JEV_MCP: Fetcher;

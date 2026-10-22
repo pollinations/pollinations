@@ -3,11 +3,7 @@
     "18119": {
       "merge_sha": "5e07b12a6e02fb856f18c060aa67a35e8445fcdd",
       "merged_at": "2026-10-22T12:25:37Z",
-      "required": [
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
-      ]
+      "required": []
     }
   },
   "production": "f1ae3e97c18d4f15658c18d3c065b42299e20881",

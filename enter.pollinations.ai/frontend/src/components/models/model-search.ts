@@ -9,6 +9,7 @@ export const MODEL_CATEGORIES = [
     "embedding",
     "agent",
     "mcp",
+    "sandbox",
 ] as const;
 
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
@@ -30,6 +31,7 @@ export type ModelSearch = {
     q?: string;
     agentQ?: string;
     mcpQ?: string;
+    sandboxQ?: string;
     sort?: ModelSort;
 };
 
@@ -51,12 +53,15 @@ export function validateModelSearch(
     const agentQuery =
         typeof search.agentQ === "string" ? search.agentQ.trim() : "";
     const mcpQuery = typeof search.mcpQ === "string" ? search.mcpQ.trim() : "";
+    const sandboxQuery =
+        typeof search.sandboxQ === "string" ? search.sandboxQ.trim() : "";
 
     return {
         category: category === "all" ? undefined : category,
         q: query || undefined,
         agentQ: agentQuery || undefined,
         mcpQ: mcpQuery || undefined,
+        sandboxQ: sandboxQuery || undefined,
         sort: sort === "popular" ? undefined : sort,
     };
 }

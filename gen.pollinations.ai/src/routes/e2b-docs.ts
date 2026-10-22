@@ -183,7 +183,7 @@ export const sandboxDocs = {
         tags: ["Sandboxes API"],
         summary: "Get sandbox pricing",
         description:
-            "Pollinations' rates in credits per vCPU-second and per GiB-second of memory, each template's size and rates, and how many sandboxes an account can run at once. The top-level rates apply to other E2B templates. No key needed.",
+            "Pollinations' rates in credits per vCPU-second and per GiB-second of memory, each Pollinations template's name, provider (`e2b` or `azure`), size, disk and rates, and how many sandboxes an account can run at once. The top-level rates apply to other E2B templates. No key needed.",
         security: [],
         responses: {
             200: {

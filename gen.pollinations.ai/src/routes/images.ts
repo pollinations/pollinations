@@ -254,7 +254,6 @@ export async function prepareImageEditRequest(
     c.set("generationRequestBody", identity);
     c.set("generationCacheBody", identity);
     c.set("generationRequestContentType", "application/json");
-    if (c.var.track) c.var.track.streamRequested = false;
     return body;
 }
 
@@ -292,9 +291,6 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
         const body = c.req.valid("json" as never) as CreateImageRequest &
             Record<string, unknown>;
 
-        // This endpoint returns a complete image/JSON, never an SSE stream.
-        // A passthrough stream flag must not bypass durable media storage.
-        if (c.var.track) c.var.track.streamRequested = false;
         const resolved = resolveParams(body);
         const safePrompt = await applySafetyToInput(
             c,

@@ -717,6 +717,8 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Metadata is passed unchanged to endpoint agents; see the agent’s documentation for supported keys.",
                 "",
+                "Identical requests may be answered from a shared cache, also for callers without an API key. Change the prompt or `seed` to get a new answer.",
+                "",
                 mediaResponseDescription,
             ].join("\n"),
             responses: {
@@ -896,6 +898,8 @@ export const proxyRoutes = new Hono<Env>()
                 "Generate text from an OpenAI-style messages array and return the assistant content directly.",
                 "",
                 "Use `/v1/chat/completions` when you need the full OpenAI-compatible JSON response.",
+                "",
+                "Identical requests may be answered from a shared cache, also for callers without an API key. Change the prompt or `seed` to get a new answer.",
             ].join("\n"),
             responses: {
                 200: {
@@ -924,6 +928,8 @@ export const proxyRoutes = new Hono<Env>()
                 "Generate text from a prompt via a simple GET request. Returns plain text.",
                 "",
                 "This is a simplified alternative to the OpenAI-compatible `/v1/chat/completions` endpoint — ideal for quick prototyping or simple integrations.",
+                "",
+                "Identical requests may be answered from a shared cache, also for callers without an API key. Change the prompt or `seed` to get a new answer.",
             ].join("\n"),
             responses: {
                 200: {

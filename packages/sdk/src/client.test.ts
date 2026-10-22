@@ -1851,6 +1851,39 @@ describe("Pollinations.accountQuests", () => {
     });
 });
 
+describe("Pollinations sites", () => {
+    it("deploys inline files, lists and deletes sites", async () => {
+        const client = newClient();
+        const site = {
+            name: "my-app",
+            url: "https://my-app.pollinations.app",
+            createdAt: "2026-10-22T00:00:00.000Z",
+            publishedAt: "2026-10-22T00:00:00.000Z",
+            blocked: false,
+        };
+        fetchMock
+            .mockResolvedValueOnce(makeResponse(site))
+            .mockResolvedValueOnce(makeResponse({ data: [site], limits: {} }))
+            .mockResolvedValueOnce(makeResponse({ name: "my-app" }));
+        const files = [{ file: "index.html", data: "<h1>Hi</h1>" }];
+
+        await expect(client.deploySite("my-app", files)).resolves.toEqual(site);
+        await expect(client.listSites()).resolves.toMatchObject({
+            data: [site],
+        });
+        await client.deleteSite("my-app");
+
+        const [deploy, list, remove] = fetchMock.mock.calls;
+        expect(deploy?.[0]).toBe("https://example.test/account/sites/my-app");
+        expect(deploy?.[1]).toMatchObject({
+            method: "PUT",
+            body: JSON.stringify({ files }),
+        });
+        expect(list?.[0]).toBe("https://example.test/account/sites");
+        expect(remove?.[1]).toMatchObject({ method: "DELETE" });
+    });
+});
+
 describe("usage CSV export", () => {
     const csv = "timestamp,model\n2026-10-08,openai\n";
     const csvResponse = () =>

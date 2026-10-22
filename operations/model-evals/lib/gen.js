@@ -99,9 +99,14 @@ export async function ask({
                 !Number.isFinite(body.usage?.completion_tokens)
             )
                 return { error: "missing_usage", fatal: true };
-            const text = replyText(body.choices?.[0]?.message);
+            const choice = body.choices?.[0];
+            const text = replyText(choice?.message);
             return text
-                ? { text, usage: body.usage }
+                ? {
+                      text,
+                      usage: body.usage,
+                      finishReason: choice.finish_reason ?? null,
+                  }
                 : { error: "empty", usage: body.usage };
         } catch (error) {
             return {

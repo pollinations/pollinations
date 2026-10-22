@@ -601,6 +601,7 @@ const TEXT_BASE_SERVICES = {
         description: "Reasoning for complex coding and agentic workflows",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
         tools: true,
         reasoning: true,
         contextLength: 1050000,
@@ -659,6 +660,7 @@ const TEXT_BASE_SERVICES = {
             "Faster near-Astra reasoning for coding, agents, and professional work",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
         tools: true,
         reasoning: true,
         contextLength: 1050000,
@@ -715,6 +717,7 @@ const TEXT_BASE_SERVICES = {
         description: "Efficient reasoning for focused, high-volume tasks",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
         tools: true,
         reasoning: true,
         contextLength: 1050000,
@@ -2644,10 +2647,10 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Together route rates (2026-08-01). Image and audio
+            // OpenRouter DeepInfra route rates (2026-10-21). Image and audio
             // inputs are tokenized into promptTextTokens; no separate usage is
             // reported or billed for either modality.
-            promptTextTokens: perMillion(0.5) * 1.055,
+            promptTextTokens: perMillion(0.45) * 1.055,
             promptCachedTokens: perMillion(0.1) * 1.055,
             completionTextTokens: perMillion(1.2) * 1.055,
         },

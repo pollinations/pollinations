@@ -62,17 +62,9 @@ function mp3DecodedSeconds(
         if (!["LAME", "Lavc", "Lavf"].includes(name)) return;
         const delay = (bytes[encoder + 21] << 4) | (bytes[encoder + 22] >> 4);
         const padding = ((bytes[encoder + 22] & 15) << 8) | bytes[encoder + 23];
-        // The Xing frames field is client-controlled; a forged header can
-        // claim arbitrarily few frames while the real stream still decodes
-        // (and is billed by the provider) for its full length. Bound the
-        // duration from below by the audio payload at Layer III's maximum
-        // bitrate — an honest file can never be shorter than that.
-        const audioBytes = bytes.length - start;
-        const floor = (audioBytes * 8) / 320_000;
-        return Math.max(
+        return (
             (frames * (version === 3 ? 1152 : 576) - delay - padding) /
-                sampleRate,
-            floor,
+            sampleRate
         );
     }
 }
@@ -161,14 +153,21 @@ export async function handleStemSeparation(c: Context<Env>): Promise<Response> {
         });
     }
     // No usage headers are returned; bill the decoded input duration, which
-    // matches workspace analytics.
+    // matches workspace analytics. Upload headers (MP3 Xing, FLAC, Ogg, M4A)
+    // can under-report it, so never bill less than the output: one 128 kbps
+    // MP3 per stem, 16,000 bytes a second plus under 1 KB of headers.
+    const stems = variation === "two_stems_v1" ? 2 : 6;
+    const outputSeconds =
+        (Number(response.headers.get("content-length")) - stems * 1000) /
+        (stems * 16_000);
+    const billedSeconds = Math.max(inputSeconds, outputSeconds || 0);
     return new Response(response.body, {
         headers: {
             "Content-Type": "application/zip",
             "Content-Disposition": 'attachment; filename="stems.zip"',
             ...buildUsageHeaders(
                 c.var.model.resolved,
-                createAudioSecondsUsage(inputSeconds),
+                createAudioSecondsUsage(billedSeconds),
             ),
         },
     });

@@ -37,19 +37,6 @@ it("meters decoded MP3 samples without charging encoder padding", async () => {
     expect(await stemInputSeconds(input())).toBe(0.25);
 });
 
-it("bills the size floor when the Xing frame count under-reports a large file", async () => {
-    // Same fixture with 1 MiB appended: the Xing header still claims 0.25 s,
-    // but no MP3 can be smaller than its audio payload at Layer III's
-    // 320 kbps ceiling, so the billed duration must follow the size.
-    const padded = new Uint8Array(input().size + 1024 * 1024);
-    padded.set(Uint8Array.from(atob(fixture.mp3), (c) => c.charCodeAt(0)));
-    const seconds = await stemInputSeconds(
-        new File([padded], "tone.mp3", { type: "audio/mpeg" }),
-    );
-    expect(seconds).toBeGreaterThan(26);
-    expect(seconds).toBeLessThan(27);
-});
-
 it("rejects invalid uploaded audio before provider execution", async () => {
     await expect(
         stemInputSeconds(new File(["invalid"], "bad.mp3")),
@@ -148,6 +135,48 @@ for (const variation of ["two_stems_v1", "six_stems_v1", undefined]) {
         expect(balance.packBalance).toBeCloseTo(1 - rate * 0.25, 10);
     });
 }
+
+test("never bills less than the stems ElevenLabs returns", async () => {
+    // 10 s of two 128 kbps stems plus headers, whatever the upload claims.
+    const mocks = createFetchMock({
+        tinybird: createMockTinybird(),
+        elevenlabs: {
+            state: {},
+            reset() {},
+            handlerMap: {
+                "api.elevenlabs.io": async () =>
+                    new Response(zip, {
+                        headers: {
+                            "content-type": "application/zip",
+                            "content-length": String(2 * 1000 + 10 * 32_000),
+                        },
+                    }),
+            },
+        },
+    });
+    await mocks.enable("elevenlabs", "tinybird");
+    const { key } = await createTestApiKey({
+        user: { packBalance: 1 },
+        allowedModels: ["elevenlabs/stem-separation"],
+    });
+    const form = new FormData();
+    form.set("file", input());
+    form.set("stem_variation_id", "two_stems_v1");
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
+        new Request("https://gen.pollinations.ai/alpha/audio/stem-separation", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${key}` },
+            body: form,
+        }),
+        withInlineGenerationCoordinator({ ...env, ELEVENLABS_API_KEY: "test" }),
+        ctx,
+    );
+    await response.arrayBuffer();
+    await waitOnExecutionContext(ctx);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("10");
+});
 
 test("requires purchased balance", async ({ apiKey }) => {
     const form = new FormData();

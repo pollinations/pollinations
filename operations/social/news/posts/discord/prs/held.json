@@ -3,11 +3,7 @@
     "18072": {
       "merge_sha": "d7ee6de875b7e7ba6cf9b4e8a485482372fe39b2",
       "merged_at": "2026-10-22T07:50:39Z",
-      "required": [
-        "deploy-cloudflare-production.yml:Deploy apps/ask-jev-mcp",
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen"
-      ]
+      "required": []
     }
   },
   "production": "5a4bf8154c8e139803138a49597f1e18c6835db9",

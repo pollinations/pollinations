@@ -275,7 +275,7 @@ describe("/api/account/sites", () => {
         });
         const form = calls[1].body as FormData;
         const html = form.get(manifest["/index.html"].hash) as Blob;
-        expect(html.type).toBe("text/html; charset=utf-8");
+        expect(html.type).toBe("text/html");
         expect(await html.text()).toBe(btoa("<h1>Hi</h1>"));
         const logo = form.get(manifest["/img/logo.png"].hash) as Blob;
         expect(logo.type).toBe("image/png");

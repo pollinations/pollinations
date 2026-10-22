@@ -71,12 +71,11 @@ export function collectSiteFiles(dir: string): SiteFile[] {
     return files;
 }
 
-/** As wrangler uploads assets: text is UTF-8, and an unknown type is sent as
- * "application/null", which tells Cloudflare to serve no Content-Type. */
+/** As wrangler uploads assets, an unknown type is sent as "application/null",
+ * which serves no Content-Type instead of forcing a download. */
 export function assetType(file: string) {
     const type = mimeTypeFor(file);
-    if (type === "application/octet-stream") return "application/null";
-    return type.startsWith("text/") ? `${type}; charset=utf-8` : type;
+    return type === "application/octet-stream" ? "application/null" : type;
 }
 
 /** Uploads each bucket straight to Cloudflare and returns the completion JWT. */

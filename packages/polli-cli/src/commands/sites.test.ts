@@ -47,8 +47,8 @@ describe("collectSiteFiles", () => {
 });
 
 describe("assetType", () => {
-    it("uploads types as wrangler does", () => {
-        expect(assetType("index.html")).toBe("text/html; charset=utf-8");
+    it("sends unknown types without a Content-Type", () => {
+        expect(assetType("index.html")).toBe("text/html");
         expect(assetType("logo.PNG")).toBe("image/png");
         expect(assetType("data.unknown")).toBe("application/null");
     });

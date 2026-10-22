@@ -820,6 +820,15 @@ const imageModelField = z
     .meta({
         description: "The model to use for image generation",
     });
+// Edits need a model that reads the source image; schnell is text-only.
+const imageEditModelField = z
+    .string()
+    .optional()
+    .default("openai/gpt-image-1-mini")
+    .meta({
+        description:
+            "The model to use for image editing. It must list image in input_modalities.",
+    });
 const imageNField = z
     .number()
     .int()
@@ -961,7 +970,7 @@ export const CreateImageEditRequestSchema = z
                 description:
                     "Source image(s). A URL string, or an array of {image_url} objects (OpenAI format)",
             }),
-        model: imageModelField,
+        model: imageEditModelField,
         n: imageNField,
         size: imageEditSizeField,
         quality: imageQualityField,

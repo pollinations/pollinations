@@ -261,9 +261,19 @@ jobs:
           fi
 
   gen:
-    name: Test gen.pollinations.ai
+    name: Test gen.pollinations.ai (${{ matrix.shard }}/${{ matrix.total }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # TEMPORARY measurement matrix: 2, 3 and 4 shards side by side.
+    strategy:
+      fail-fast: false
+      matrix:
+        total: [2, 3, 4]
+        shard: [1, 2, 3, 4]
+        exclude:
+          - { total: 2, shard: 3 }
+          - { total: 2, shard: 4 }
+          - { total: 3, shard: 4 }
 
     steps:
       - name: Checkout code
@@ -300,10 +310,10 @@ jobs:
 
       - name: Test gen.pollinations.ai
         if: steps.gen-files.outputs.any_changed == 'true'
-        run: npm test --workspace pollinations-gen
+        run: npm test --workspace pollinations-gen -- --shard=${{ matrix.shard }}/${{ matrix.total }}
 
       - name: Typecheck gen.pollinations.ai
-        if: steps.gen-files.outputs.any_changed == 'true'
+        if: steps.gen-files.outputs.any_changed == 'true' && matrix.shard == 1
         run: npm run typecheck --workspace pollinations-gen
 
   media-docs:

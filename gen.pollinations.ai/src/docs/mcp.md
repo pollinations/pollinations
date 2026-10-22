@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Steam | `https://gen.pollinations.ai/mcp/steam` | Search the Steam store, read game details, and check player review scores | [Source](https://github.com/pollinations/pollinations/tree/main/apps/steam-mcp) |
 
 Send the key with every request:
 
@@ -207,6 +208,16 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### Steam MCP
+
+Search the Steam store, read game details, and check player review scores.
+`search_games` finds titles with app ids and current USD prices,
+`game_details` returns the short description, developers, publishers,
+platforms, release date, genres, categories, and price for one app id, and
+`game_reviews` returns recent reviews with vote and score summaries. Steam
+lookups are free. No additional MCP fee. The caller's key is never forwarded
+to Steam.
 
 ### Billing and permissions
 

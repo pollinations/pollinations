@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "STEAM_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "steam",
+        name: "Steam",
+        description:
+            "Search the Steam store, read game details, and check player review scores.",
+        binding: "STEAM_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Steam lookups are free. No additional MCP fee.",
             rates: [],
         },
     },

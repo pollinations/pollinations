@@ -23,10 +23,13 @@ export async function budgetHint(
             `Server said: ${bodyText}`,
         ].join("\n");
     }
-    const balance = await gen<{ balance?: number }>("/account/balance", {
-        apiKey: requireKey(),
-    })
-        .then((r) => r.balance)
+    const balance = await gen<{ accountBalance?: { total: number } }>(
+        "/account/balance",
+        {
+            apiKey: requireKey(),
+        },
+    )
+        .then((r) => r.accountBalance?.total)
         .catch(() => null);
     const lines = [
         code === "INSUFFICIENT_BALANCE"

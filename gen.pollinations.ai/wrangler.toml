@@ -80,10 +80,11 @@ port = 8788
 
 [assets]
 directory = "public"
-# Static assets are only icons/images. Keep dynamic SEO routes Worker-owned:
-# `/manifest.webmanifest` is generated from src/routes/seo.ts, and `/` is the
-# docs SEO landing page. No public/index.html is intentionally shipped.
-run_worker_first = ["/", "/manifest.webmanifest"]
+binding = "ASSETS"
+# Static assets are only icons/images, served from the app's notFound handler.
+# The Worker runs first so site hosts (src/sites.ts) serve their own
+# /favicon.ico and other files with the same paths.
+run_worker_first = true
 
 # Production routes
 [env.production]
@@ -104,6 +105,12 @@ custom_domain = true
 pattern = "gen.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
+
+# User sites (src/sites.ts). Cloudflare picks the most specific matching
+# route, so *--staging hosts stay on staging.
+[[env.production.routes]]
+pattern = "*.pollinations.app/*"
+zone_name = "pollinations.app"
 
 [[env.production.services]]
 binding = "ENTER"
@@ -144,6 +151,11 @@ namespace = "pollinations-code-agents-production"
 [env.production.dispatch_namespaces.outbound]
 service = "pollinations-enter-production"
 parameters = ["CODE_AGENT_CONTEXT"]
+
+# User sites (src/sites.ts): enter uploads them, gen serves their hosts.
+[[env.production.dispatch_namespaces]]
+binding = "SITES"
+namespace = "pollinations-hosting"
 
 [[env.production.vpc_networks]]
 binding = "KLEIN_VPC"
@@ -201,6 +213,7 @@ new_classes = ["CommunityModelRateLimiter"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
+SITES_HOST_SUFFIX = ".pollinations.app"
 # Public OAuth app identifier; user credentials stay in their browser tab.
 DOCS_APP_KEY = "pk_zM4Wvtd1rgWXRmLP"
 # Durable Object fetches get a 125 s proxy read timeout; requests through
@@ -232,6 +245,11 @@ custom_domain = true
 pattern = "staging.gen.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
+
+# User sites (src/sites.ts). Hosts starting with a digit stay with sandbox ports.
+[[env.staging.routes]]
+pattern = "*--staging.pollinations.app/*"
+zone_name = "pollinations.app"
 
 [[env.staging.services]]
 binding = "ENTER"
@@ -272,6 +290,11 @@ namespace = "pollinations-code-agents-staging"
 [env.staging.dispatch_namespaces.outbound]
 service = "pollinations-enter-staging"
 parameters = ["CODE_AGENT_CONTEXT"]
+
+# User sites (src/sites.ts): enter uploads them, gen serves their hosts.
+[[env.staging.dispatch_namespaces]]
+binding = "SITES"
+namespace = "pollinations-hosting-staging"
 
 [[env.staging.d1_databases]]
 binding = "DB"
@@ -323,6 +346,7 @@ new_classes = ["CommunityModelRateLimiter"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
+SITES_HOST_SUFFIX = "--staging.pollinations.app"
 GENERATION_EXECUTION_ORIGIN = "https://staging.gen.pollinations.ai"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"

@@ -330,17 +330,9 @@ jobs:
         with:
           node-version: '24'
           cache: 'npm'
-          cache-dependency-path: |
-            package-lock.json
-            media.pollinations.ai/package-lock.json
 
       - name: Install workspace dependencies
         if: steps.changes.outputs.changed == 'true'
-        run: npm ci
-
-      - name: Install Media dependencies
-        if: steps.changes.outputs.changed == 'true'
-        working-directory: media.pollinations.ai
         run: npm ci
 
       - name: Validate Media API request examples

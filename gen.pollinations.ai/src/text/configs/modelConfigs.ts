@@ -632,9 +632,9 @@ export const portkeyConfig: PortkeyConfigMap = {
 
     // -- OpenRouter (Gemma) ---------------------------------------------------
     // Novita's Gemma deployments regressed: 26B rejected most requests with
-    // 4xx and 31B's endpoint was degraded. 26B keeps DeepInfra, the provider
-    // its direct fallback already uses for image requests; 31B moves to
-    // Crusoe BF16 at Novita's former per-token rate.
+    // 4xx and 31B's endpoint was degraded. 26B pins DeepInfra FP8, which is
+    // text-only on OpenRouter: image requests 404 there and fall back to the
+    // direct DeepInfra route. 31B moves to Crusoe BF16 at Novita's former rate.
     "google/gemma-4-26b-a4b-it": createPinnedOpenRouterConfig(
         "google/gemma-4-26b-a4b-it",
         "deepinfra/fp8",

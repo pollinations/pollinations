@@ -23,6 +23,40 @@ const earningsRow = (overrides: Record<string, unknown> = {}) => ({
     ...overrides,
 });
 
+test("earnings charts and transactions use the selected calendar timezone", async ({
+    accountToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    for (const path of ["earnings", "earnings/transactions"]) {
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/account/${path}?granularity=month&period=2026-10&timezone=Australia/Lord_Howe`,
+            { headers: authHeaders(accountToken) },
+        );
+        expect(response.status).toBe(200);
+        expect(mocks.tinybird.state.pipeCalls.at(-1)?.query).toMatchObject({
+            timezone: "Australia/Lord_Howe",
+            since: "2026-10-01 00:00:00",
+            until: "2026-11-01 00:00:00",
+        });
+    }
+});
+
+test("earnings rejects invalid timezones before calling Tinybird", async ({
+    accountToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    for (const path of ["earnings", "earnings/transactions"]) {
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/account/${path}?timezone=Invalid/Zone`,
+            { headers: authHeaders(accountToken) },
+        );
+        expect(response.status).toBe(400);
+    }
+    expect(mocks.tinybird.state.pipeCalls).toHaveLength(0);
+});
+
 test("GET /api/account/earnings returns daily buckets and derived entity rollups", async ({
     accountToken,
     mocks,

@@ -134,6 +134,18 @@ describe("Claude Code harness", () => {
         expect(existsSync(join(home, ".claude"))).toBe(false);
     });
 
+    it("writes the canonical model ID when --model is an alias", async () => {
+        mocks.fetchHarnessModels.mockResolvedValueOnce({
+            model: "deepseek/deepseek-v4-flash",
+            models: [],
+        });
+        const result = await claudeCode.on(ctx, { model: "deepseek" });
+        expect(mocks.fetchHarnessModels).toHaveBeenLastCalledWith("deepseek");
+        expect(result.model).toBe("deepseek/deepseek-v4-flash");
+        const { env } = JSON.parse(readFileSync(settingsFile(), "utf-8"));
+        expect(env.ANTHROPIC_MODEL).toBe("deepseek/deepseek-v4-flash");
+    });
+
     it("reuses the key stored in its settings file", async () => {
         await claudeCode.on(ctx, { model: "openai/gpt-5.4-nano" });
         mocks.resolveHarnessKey.mockClear();

@@ -32,9 +32,10 @@ export const fetchHarnessModels = async (
             !m.agent &&
             m.community !== true,
     );
-    const selected = usable.find(
-        (m) => m.id === selectedModel || m.aliases?.includes(selectedModel),
-    );
+    // An exact ID wins over another model's alias.
+    const selected =
+        usable.find((m) => m.id === selectedModel) ??
+        usable.find((m) => m.aliases?.includes(selectedModel));
     if (!selected) {
         throw new Error(
             `Model "${selectedModel}" is not a tool-calling text model. Run: polli models`,

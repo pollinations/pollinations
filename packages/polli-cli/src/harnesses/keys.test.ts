@@ -18,6 +18,8 @@ beforeAll(async () => {
                     data: [
                         {
                             id: "chat",
+                            // Collides with the next model's exact ID.
+                            aliases: ["publisher/chat"],
                             input_modalities: ["text"],
                             output_modalities: ["text"],
                             supported_endpoints: ["/v1/chat/completions"],
@@ -157,6 +159,12 @@ describe("harness models", () => {
         await expect(fetchHarnessModels("chat-alias")).resolves.toMatchObject({
             model: "publisher/chat",
         });
+    });
+
+    it("prefers an exact ID over another model's alias", async () => {
+        await expect(
+            fetchHarnessModels("publisher/chat"),
+        ).resolves.toMatchObject({ model: "publisher/chat" });
     });
 
     it.each(["missing", "realtime", "owner/community-chat"])(

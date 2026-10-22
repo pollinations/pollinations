@@ -15,6 +15,17 @@ export class Mama extends DurableObject<Env> {
     update(update: Update) {
         this.ctx.waitUntil(onUpdate(update));
     }
+
+    // One-time move of the users Mama kept on the Mac (~/.mama-barbara.json).
+    // Remove after the cutover.
+    async import(users: Record<string, { key?: string }>) {
+        const stored: typeof users =
+            (await this.ctx.storage.get("users")) ?? {};
+        if (Object.values(stored).some((u) => u.key))
+            throw new Error("Mama already has signed-in users");
+        await this.ctx.storage.put("users", users);
+        await load(this.ctx.storage);
+    }
 }
 
 export default {
@@ -26,7 +37,12 @@ export default {
         ) {
             return new Response("Not found", { status: 404 });
         }
-        await env.MAMA.getByName("mama").update(await request.json());
+        const mama = env.MAMA.getByName("mama");
+        if (new URL(request.url).pathname === "/import") {
+            await mama.import(await request.json());
+            return new Response("imported");
+        }
+        await mama.update(await request.json());
         return new Response("ok");
     },
 };

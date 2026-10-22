@@ -12,11 +12,6 @@
       "merge_sha": "59cbf8b33fc0b907ed982dc189468310c504538d",
       "merged_at": "2026-10-22T00:39:38Z",
       "required": [
-        "deploy-applications.yml:Deploy apps/websim",
-        "deploy-applications.yml:Deploy operations/economics",
-        "deploy-applications.yml:Deploy operations/kpi",
-        "deploy-applications.yml:Deploy operations/model-monitor",
-        "deploy-applications.yml:Deploy operations/observability",
         "deploy-cloudflare-production.yml:Deploy apps/computer-mcp",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
@@ -28,11 +23,6 @@
       "merge_sha": "c18ab61b2f4fca458c2639e539f14728ad4ce14c",
       "merged_at": "2026-10-22T02:36:03Z",
       "required": [
-        "deploy-applications.yml:Deploy apps/websim",
-        "deploy-applications.yml:Deploy operations/economics",
-        "deploy-applications.yml:Deploy operations/kpi",
-        "deploy-applications.yml:Deploy operations/model-monitor",
-        "deploy-applications.yml:Deploy operations/observability",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
         "deploy-cloudflare-production.yml:deploy-media"

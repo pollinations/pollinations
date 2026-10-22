@@ -7,6 +7,8 @@ E2B's SDKs and CLI work unchanged:
 ```bash
 export E2B_API_URL=https://gen.pollinations.ai/alpha/e2b
 export E2B_API_KEY=sk_...
+# Sandboxes on Azure (pollinations-azure, pollinations-azure-large) also need this; it serves E2B's too:
+export E2B_SANDBOX_URL=https://gen.pollinations.ai/alpha/e2b/sandbox
 ```
 
 Setup with polli, credits and runtime: [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes).

@@ -20,16 +20,13 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "18062": {
       "merge_sha": "f8d44945a0358337523b4aa3975a20eec1cdcd47",
       "merged_at": "2026-10-22T03:29:26Z",
-      "required": [
-        "deploy-applications.yml:Deploy apps/mama-barbara"
-      ]
+      "required": []
     }
   },
   "production": "cb4a57969f34a1a039fd8760d1d5592cc4b95c2d",

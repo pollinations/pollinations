@@ -18,7 +18,7 @@ const modelSchema = (defaultModel: string) =>
                 "Model to use. See /image/models for the current canonical IDs and aliases.",
         });
 
-const GenerateImageRequestQueryParamsBaseSchema = z.object({
+export const GenerateImageRequestQueryParamsSchema = z.object({
     // Image model params
     model: modelSchema(DEFAULT_IMAGE_MODEL),
     width: z.coerce.number().int().positive().optional().default(1024).meta({
@@ -142,23 +142,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     }),
 });
 
-const validateDuration = (
-    params: z.infer<typeof GenerateImageRequestQueryParamsBaseSchema>,
-    ctx: z.RefinementCtx,
-) => {
-    if (params.duration !== undefined && params.duration > 30) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["duration"],
-            message: "Duration above 30 seconds is not supported.",
-        });
-    }
-};
-
-export const GenerateImageRequestQueryParamsSchema =
-    GenerateImageRequestQueryParamsBaseSchema.superRefine(validateDuration);
-
 export const GenerateVideoRequestQueryParamsSchema =
-    GenerateImageRequestQueryParamsBaseSchema.extend({
+    GenerateImageRequestQueryParamsSchema.extend({
         model: modelSchema("google/veo-3.1-fast"),
-    }).superRefine(validateDuration);
+    });

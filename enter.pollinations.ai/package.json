@@ -81,8 +81,8 @@
     "devDependencies": {
         "@ai-sdk/openai-compatible": "3.0.30",
         "@better-auth/cli": "^1.4.1",
-        "@cloudflare/vite-plugin": "^1.62.5",
-        "@cloudflare/vitest-pool-workers": "^0.12.21",
+        "@cloudflare/vite-plugin": "^1.64.0",
+        "@cloudflare/vitest-plugin": "^1.4.3",
         "@drizzle-team/brocli": "^0.11.0",
         "@hono/node-server": "^1.19.6",
         "@tailwindcss/vite": "^4.1.17",
@@ -95,14 +95,15 @@
         "ai": "7.0.66",
         "drizzle-kit": "^0.31.7",
         "esbuild": "0.25.12",
-        "miniflare": "4.20260424.0",
+        "miniflare": "^5.20261012.0-beta",
         "openai": "^6.29.0",
         "react-test-renderer": "19.2.5",
+        "sharp": "^0.34.5",
         "tsx": "^4.20.6",
         "typescript": "^5.9.3",
         "vite": "^7.2.4",
         "vite-tsconfig-paths": "^5.1.4",
-        "vitest": "^3.2.4",
-        "wrangler": "^4.147.0"
+        "vitest": "^4.1.12",
+        "wrangler": "^4.151.0"
     }
 }

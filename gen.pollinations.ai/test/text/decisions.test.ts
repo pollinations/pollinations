@@ -337,13 +337,13 @@ test("routes Liquid D1 under its own id and bills input tokens", async ({
         tokenCountCompletionText: 73,
         isBilledUsage: true,
     });
-    expect(event.totalCost).toBeCloseTo((452 * 0.04 * 1.055) / 1_000_000, 12);
+    expect(event.totalCost).toBeCloseTo((452 * 0.02 * 1.055) / 1_000_000, 12);
     const { tierBalance, packBalance } = await getUserBalance(
         drizzle(env.DB),
         userId,
     );
     expect(tierBalance).toBe(0);
-    expect(packBalance).toBeCloseTo(1 - (452 * 0.04 * 1.055) / 1_000_000, 7);
+    expect(packBalance).toBeCloseTo(1 - (452 * 0.02 * 1.055) / 1_000_000, 7);
 });
 
 test("falls back native D1 decisions and records Vercel cost with the public quote", async ({
@@ -387,8 +387,8 @@ test("falls back native D1 decisions and records Vercel cost with the public quo
         modelProviderUsed: "vercel",
         isFinal: true,
     });
-    expect(billed?.totalCost).toBeCloseTo((452 * 0.04) / 1_000_000, 12);
-    expect(billed?.totalPrice).toBeCloseTo((452 * 0.04 * 1.055) / 1_000_000, 8);
+    expect(billed?.totalCost).toBeCloseTo((452 * 0.02) / 1_000_000, 12);
+    expect(billed?.totalPrice).toBeCloseTo((452 * 0.02 * 1.055) / 1_000_000, 8);
     expect(events).toContainEqual(
         expect.objectContaining({
             modelUsed: "liquid/d1",

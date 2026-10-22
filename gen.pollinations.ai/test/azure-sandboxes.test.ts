@@ -23,10 +23,10 @@ const azureEnv = {
     AZURE_SANDBOX_GROUP_URL: GROUP,
     AZURE_SANDBOX_IMAGE: "image",
 };
-// A second of the 2 vCPU, 2 GiB template: what Azure charges us, and what the
-// caller pays, E2B's list price during the 25% launch promo.
+// A second of the 2 vCPU, 2 GiB template: what Azure charges us, and the 25%
+// of it the caller pays.
 const COST_SECOND = 2 * 0.000024 + 2 * 0.000003;
-const PRICE_SECOND = (2 * 0.000014 + 2 * 0.0000045) * 0.25;
+const PRICE_SECOND = COST_SECOND * 0.25;
 
 type Box = {
     id: string;
@@ -154,7 +154,7 @@ afterEach(() => {
     vi.unstubAllGlobals();
 });
 
-test("an Azure template runs on Azure behind E2B's API, paid like an E2B sandbox", async () => {
+test("an Azure template runs on Azure behind E2B's API, paid at 25% of Azure's rates", async () => {
     const azure = stubAzure();
     const owner = await sandboxKey();
     const other = await sandboxKey();
@@ -218,6 +218,15 @@ test("an Azure template runs on Azure behind E2B's API, paid like an E2B sandbox
     expect(
         (await getUserBalance(drizzle(env.DB), owner.userId)).tierBalance,
     ).toBeCloseTo(10 - seconds * PRICE_SECOND, 8);
+    // The template's listed rates are the ones it was charged.
+    const pricing = await (await fetchGen("", "/pricing")).json<{
+        templates: Record<string, { vcpuSecond: number; gibSecond: number }>;
+    }>();
+    const rates = pricing.templates["pollinations-azure"];
+    expect(seconds * (2 * rates.vcpuSecond + 2 * rates.gibSecond)).toBeCloseTo(
+        azure.leases()[0].totalPrice,
+        8,
+    );
 
     // It comes logged in, through envd at Azure's port URL.
     const login = azure.envd.find((call) =>

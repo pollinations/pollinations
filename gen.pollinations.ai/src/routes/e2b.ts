@@ -60,12 +60,32 @@ export const E2B_PATH = "/alpha/e2b";
 const MAX_RUNNING_PER_USER = 8;
 // E2B ends a sandbox's run 24 hours after it starts or resumes.
 const MAX_RUN_MS = 24 * 60 * 60_000;
-// E2B list prices per second, in pollen (1 pollen ≈ $1).
-const VCPU_SECOND = 0.000014;
-const GIB_SECOND = 0.0000045;
-// Launch promo: callers pay 25% of E2B's list price. Set back to 1 when the
-// promo week ends.
+type Rates = { vcpuSecond: number; gibSecond: number };
+// What each provider charges us per second, in pollen (1 pollen ≈ $1): E2B's
+// list prices, and Azure's for a running box.
+const RATES: Record<"e2b" | "azure", Rates> = {
+    e2b: { vcpuSecond: 0.000014, gibSecond: 0.0000045 },
+    azure: { vcpuSecond: AZURE_VCPU_SECOND, gibSecond: AZURE_GIB_SECOND },
+};
+// Callers pay 25% of their provider's rate.
 const PRICE_MULTIPLIER = 0.25;
+const perSecond = (
+    rates: Rates,
+    size: { cpuCount: number; memoryMB: number },
+) =>
+    size.cpuCount * rates.vcpuSecond + (size.memoryMB / 1024) * rates.gibSecond;
+// The rates callers pay, and each template's size with them.
+const callerRates = ({ vcpuSecond, gibSecond }: Rates) => ({
+    vcpuSecond: vcpuSecond * PRICE_MULTIPLIER,
+    gibSecond: gibSecond * PRICE_MULTIPLIER,
+});
+const priced = (sizes: typeof TEMPLATE_SIZES, rates: Rates) =>
+    Object.fromEntries(
+        Object.entries(sizes).map(([id, size]) => [
+            id,
+            { ...size, ...callerRates(rates) },
+        ]),
+    );
 // E2B's lease when connect omits `timeout`.
 const DEFAULT_TIMEOUT_SECONDS = 300;
 // Gen logs polli in inside these templates, one image with polli and the
@@ -233,20 +253,15 @@ async function requireCapacity(c: E2bContext) {
 
 type Lease = { cost: number; price: number; provider: "e2b" | "azure" };
 
-// What `seconds` of this sandbox costs us, and what the caller pays: E2B's
-// list price on either provider.
+// What `seconds` of this sandbox costs us at its provider's rates, and what
+// the caller pays.
 function lease(sandbox: SandboxDetail, seconds: number): Lease {
-    const gib = sandbox.memoryMB / 1024;
-    const list = seconds * (sandbox.cpuCount * VCPU_SECOND + gib * GIB_SECOND);
-    const azure = isAzureSandbox(sandbox.sandboxID);
-    const cost = azure
-        ? seconds *
-          (sandbox.cpuCount * AZURE_VCPU_SECOND + gib * AZURE_GIB_SECOND)
-        : list;
+    const provider = isAzureSandbox(sandbox.sandboxID) ? "azure" : "e2b";
+    const cost = seconds * perSecond(RATES[provider], sandbox);
     return {
         cost: roundPollenLedgerAmount(cost),
-        price: roundPollenLedgerAmount(list * PRICE_MULTIPLIER),
-        provider: azure ? "azure" : "e2b",
+        price: roundPollenLedgerAmount(cost * PRICE_MULTIPLIER),
+        provider,
     };
 }
 
@@ -683,12 +698,13 @@ export const e2bRoutes = new Hono<Env>()
     .get("/pricing", sandboxDocs.pricing, (c) =>
         c.json({
             maxRunning: MAX_RUNNING_PER_USER,
-            vcpuSecond: VCPU_SECOND * PRICE_MULTIPLIER,
-            gibSecond: GIB_SECOND * PRICE_MULTIPLIER,
+            // Other E2B templates' rates.
+            ...callerRates(RATES.e2b),
             // Azure's only once they can start.
             templates: {
-                ...TEMPLATE_SIZES,
-                ...(azureConfigured(c.env) && AZURE_TEMPLATES),
+                ...priced(TEMPLATE_SIZES, RATES.e2b),
+                ...(azureConfigured(c.env) &&
+                    priced(AZURE_TEMPLATES, RATES.azure)),
             },
         }),
     )

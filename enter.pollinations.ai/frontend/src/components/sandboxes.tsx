@@ -58,11 +58,13 @@ type Sandbox = Size & {
     endAt: string;
 };
 
-type Pricing = {
+type Rates = { vcpuSecond: number; gibSecond: number };
+
+// Each template has its provider's rates; the top level's are other E2B
+// templates'.
+type Pricing = Rates & {
     maxRunning: number;
-    vcpuSecond: number;
-    gibSecond: number;
-    templates: Record<string, Size>;
+    templates: Record<string, Size & Rates>;
 };
 
 // E2B's longest timeout, about 68 years: gen keeps the sandbox running until
@@ -113,9 +115,13 @@ async function e2b<T>(path: string, method = "GET", body?: unknown) {
     return (text ? JSON.parse(text) : undefined) as T;
 }
 
-const perSecond = (pricing: Pricing, size: Size) =>
-    size.cpuCount * pricing.vcpuSecond +
-    (size.memoryMB / 1024) * pricing.gibSecond;
+// E2B names a sandbox's template by id, and by name in `alias`.
+const templateOf = (sandbox: Sandbox) => sandbox.alias ?? sandbox.templateID;
+
+const perSecond = (pricing: Pricing, template: string, size: Size) => {
+    const { vcpuSecond, gibSecond } = pricing.templates[template] ?? pricing;
+    return size.cpuCount * vcpuSecond + (size.memoryMB / 1024) * gibSecond;
+};
 
 const pollen = (amount: number) => `${Number(amount.toPrecision(2))} Pollen`;
 
@@ -162,7 +168,8 @@ function TemplatePicker({
         <span className="flex min-w-0 flex-1 flex-col gap-1 text-left">
             <span className="font-semibold">{templateLabel(id)}</span>
             <span className="text-xs font-normal text-theme-text-muted">
-                {sizeLabel(size)} · {pollen(perSecond(pricing, size) * 3600)}
+                {sizeLabel(size)} ·{" "}
+                {pollen(perSecond(pricing, id, size) * 3600)}
                 /hour
             </span>
         </span>
@@ -201,6 +208,7 @@ function TemplatePicker({
                                     {pollen(
                                         perSecond(
                                             pricing,
+                                            template,
                                             pricing.templates[template],
                                         ) * 3600,
                                     )}
@@ -310,10 +318,13 @@ function SandboxCard({
                         {sandbox.metadata?.name ?? sandbox.sandboxID}
                     </Text>
                     <Text size="sm" tone="muted">
-                        {templateLabel(sandbox.alias ?? sandbox.templateID)} ·{" "}
+                        {templateLabel(templateOf(sandbox))} ·{" "}
                         {sizeLabel(sandbox)} ·{" "}
-                        {pollen(perSecond(pricing, sandbox) * 3600)} an hour
-                        while running
+                        {pollen(
+                            perSecond(pricing, templateOf(sandbox), sandbox) *
+                                3600,
+                        )}{" "}
+                        an hour while running
                     </Text>
                 </div>
                 <Chip intent={running ? "success" : "neutral"} size="md">
@@ -636,7 +647,8 @@ export function Sandboxes() {
                             {Object.entries(pricing.templates).map(
                                 ([template, size]) => {
                                     const hourly =
-                                        perSecond(pricing, size) * 3600;
+                                        perSecond(pricing, template, size) *
+                                        3600;
                                     return (
                                         <span key={template}>
                                             {templateLabel(template)} (
@@ -810,8 +822,7 @@ export function Sandboxes() {
                                     </dt>
                                     <dd>
                                         {templateLabel(
-                                            pending.sandbox.alias ??
-                                                pending.sandbox.templateID,
+                                            templateOf(pending.sandbox),
                                         )}
                                         <span className="text-theme-text-muted">
                                             {" "}
@@ -827,6 +838,9 @@ export function Sandboxes() {
                                                 {pollen(
                                                     perSecond(
                                                         pricing,
+                                                        templateOf(
+                                                            pending.sandbox,
+                                                        ),
                                                         pending.sandbox,
                                                     ) * 3600,
                                                 )}

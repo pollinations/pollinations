@@ -261,19 +261,15 @@ jobs:
           fi
 
   gen:
-    name: Test gen.pollinations.ai (${{ matrix.shard }}/${{ matrix.total }})
+    name: Test gen.pollinations.ai (${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # TEMPORARY measurement matrix: 2, 3 and 4 shards side by side.
+    # Every test file starts its own Workers runtime, so the files are split
+    # across three runners. A fourth runner saved only ~20 s (#18135).
     strategy:
       fail-fast: false
       matrix:
-        total: [2, 3, 4]
-        shard: [1, 2, 3, 4]
-        exclude:
-          - { total: 2, shard: 3 }
-          - { total: 2, shard: 4 }
-          - { total: 3, shard: 4 }
+        shard: [1, 2, 3]
 
     steps:
       - name: Checkout code
@@ -310,7 +306,7 @@ jobs:
 
       - name: Test gen.pollinations.ai
         if: steps.gen-files.outputs.any_changed == 'true'
-        run: npm test --workspace pollinations-gen -- --shard=${{ matrix.shard }}/${{ matrix.total }}
+        run: npm test --workspace pollinations-gen -- --shard=${{ matrix.shard }}/3
 
       - name: Typecheck gen.pollinations.ai
         if: steps.gen-files.outputs.any_changed == 'true' && matrix.shard == 1

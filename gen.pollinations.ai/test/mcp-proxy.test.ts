@@ -149,6 +149,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "call-shapes",
+                name: "Call Shapes",
+                description:
+                    "Plan a correct call to a Pollinations model: the endpoint it supports, the parameters it accepts, what it costs, and cheaper models that fit.",
+                url: "https://gen.pollinations.ai/mcp/call-shapes",
+                pricing: {
+                    description:
+                        "Model catalog lookups are free. The planned call itself uses the chosen model's listed rate. No additional MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });
@@ -262,7 +274,42 @@ test("routes Machines with caller authorization without an extra MCP debit", asy
     });
 });
 
-test.for(["pollinations", "ask-jev", "machines"])(
+test("routes Call Shapes with caller authorization without an extra MCP debit", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const payload = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: { name: "plan_request", arguments: { model: "openai" } },
+    };
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/call-shapes",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        pathname: "/",
+        authorization: `Bearer ${key}`,
+        cookie: null,
+        payload,
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
+});
+
+test.for(["pollinations", "ask-jev", "machines", "call-shapes"])(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(

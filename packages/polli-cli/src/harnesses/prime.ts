@@ -205,7 +205,7 @@ export const disablePrime = (ctx: HarnessContext): HarnessResult => {
     return { ...result(ctx), configured: false, outcome };
 };
 
-export const prime: HarnessAdapter = {
+export const prime = {
     id: ID,
     label: LABEL,
     description: "Add Pollinations as a custom provider in Prime Agent",
@@ -230,4 +230,4 @@ export const prime: HarnessAdapter = {
 
     off: disablePrime,
     status: result,
-};
+} satisfies HarnessAdapter;

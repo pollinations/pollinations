@@ -271,7 +271,7 @@ const openCodeInstalled = (ctx: HarnessContext) =>
         join(ctx.home, ".opencode", "bin", "opencode"),
     ]);
 
-export const opencode: HarnessAdapter = {
+export const opencode = {
     id: ID,
     label: LABEL,
     description: "Configure OpenCode to use Pollinations",
@@ -299,4 +299,4 @@ export const opencode: HarnessAdapter = {
 
     off: disableOpenCode,
     status: result,
-};
+} satisfies HarnessAdapter;

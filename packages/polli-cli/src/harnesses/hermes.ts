@@ -231,7 +231,7 @@ const hermesInstalled = (ctx: HarnessContext) =>
         join(hermesHome(ctx), "bin", "hermes"),
     ]);
 
-export const hermes: HarnessAdapter = {
+export const hermes = {
     id: ID,
     label: LABEL,
     description: "Configure Hermes Agent to use Pollinations",
@@ -255,4 +255,4 @@ export const hermes: HarnessAdapter = {
 
     off: disableHermes,
     status: result,
-};
+} satisfies HarnessAdapter;

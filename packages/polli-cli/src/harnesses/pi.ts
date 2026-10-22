@@ -215,7 +215,7 @@ export const disablePi = (ctx: HarnessContext): HarnessResult => {
     return { ...result(ctx), configured: false, outcome };
 };
 
-export const pi: HarnessAdapter = {
+export const pi = {
     id: ID,
     label: LABEL,
     description: "Configure Pi as a Pollinations provider",
@@ -239,4 +239,4 @@ export const pi: HarnessAdapter = {
 
     off: disablePi,
     status: result,
-};
+} satisfies HarnessAdapter;

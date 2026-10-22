@@ -71,6 +71,13 @@ export function collectSiteFiles(dir: string): SiteFile[] {
     return files;
 }
 
+/** As wrangler uploads assets, an unknown type is sent as "application/null",
+ * which serves no Content-Type instead of forcing a download. */
+export function assetType(file: string) {
+    const type = mimeTypeFor(file);
+    return type === "application/octet-stream" ? "application/null" : type;
+}
+
 /** Uploads each bucket straight to Cloudflare and returns the completion JWT. */
 async function uploadBuckets(session: UploadSession, files: SiteFile[]) {
     const byHash = new Map(files.map((file) => [file.hash, file]));
@@ -84,7 +91,7 @@ async function uploadBuckets(session: UploadSession, files: SiteFile[]) {
             form.append(
                 hash,
                 new Blob([readFileSync(file.file).toString("base64")], {
-                    type: mimeTypeFor(file.file),
+                    type: assetType(file.file),
                 }),
                 hash,
             );

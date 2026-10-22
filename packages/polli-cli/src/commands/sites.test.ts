@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { collectSiteFiles } from "./sites.js";
+import { assetType, collectSiteFiles } from "./sites.js";
 
 describe("collectSiteFiles", () => {
     let dir: string;
@@ -43,5 +43,13 @@ describe("collectSiteFiles", () => {
         const hashes = new Set(collectSiteFiles(dir).map((file) => file.hash));
 
         expect(hashes.size).toBe(3);
+    });
+});
+
+describe("assetType", () => {
+    it("sends unknown types without a Content-Type", () => {
+        expect(assetType("index.html")).toBe("text/html");
+        expect(assetType("logo.PNG")).toBe("image/png");
+        expect(assetType("data.unknown")).toBe("application/null");
     });
 });

@@ -389,6 +389,26 @@ await revokeKey(created.id);
 
 Without `accountPermissions`, scoped keys can generate media but cannot read account state (balance, usage).
 
+### Hosting static sites
+
+Publish files at `https://<name>.pollinations.app`. Send every file inline, up to 5 MB per request; `index.html` is required. The key needs the `machines` account permission.
+
+```javascript
+import { deploySite, listSites, deleteSite } from '@pollinations/sdk';
+
+const site = await deploySite('my-app', [
+  { file: 'index.html', data: '<h1>Hello</h1><script src="app.js"></script>' },
+  { file: 'app.js', data: 'console.log("hi")' },
+  { file: 'logo.png', data: pngBase64, encoding: 'base64' },
+]);
+console.log(site.url); // https://my-app.pollinations.app
+
+const { data } = await listSites();
+await deleteSite('my-app');
+```
+
+For bigger sites, use `polli sites deploy ./dist --name my-app`.
+
 ## Image Generation
 
 ```javascript

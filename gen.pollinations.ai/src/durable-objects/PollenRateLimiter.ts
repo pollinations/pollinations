@@ -16,7 +16,7 @@ import { getLogger } from "@logtape/logtape";
  * - Idle users get burst (time accumulates)
  * - No timeout: consumePollen(0) must be called for cache hits
  */
-export class PollenRateLimiter extends DurableObject {
+export class PollenRateLimiter extends DurableObject<CloudflareBindings> {
     private nextAllowedTime: number = 0;
     private readonly refillRate: number;
     private readonly log = getLogger(["durable", "rate-limiter"]);

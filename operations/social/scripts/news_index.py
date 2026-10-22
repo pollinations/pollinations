@@ -6,7 +6,7 @@ Reads the news branch checkout and keeps:
   morning record that first shows them), and the retirements PR descriptions schedule, from
   each daily's `changelog`
 - `api`: API changes from the post-deploy docs PRs, from each daily's `changelog`
-- `highlights`: the items each daily summary picked for users
+- `daily`: the items each daily summary picked for users
 
     python news_index.py --news-dir <checkout>/operations/social/news [--publish]
 
@@ -26,7 +26,7 @@ from common import (DATA_REL_DIR, NEWS_BRANCH, NEWS_REL_DIR, OWNER, REPO, commit
 
 INDEX_PATH = f"{DATA_REL_DIR}/index.json"
 RECENT_DAYS = 30
-MIN_HIGHLIGHTS = 10
+MIN_DAILY = 10
 # Changes the model cards show; everything else stays in the record.
 CARD_FIELDS = ("pricing", "paid_only", "capabilities", "input_modalities", "output_modalities",
                "context_length", "per_user_rpm", "max_reference_images", "model_id", "voices")
@@ -148,14 +148,14 @@ def api_entries(notes: List[Dict], since: str) -> List[Dict]:
     )
 
 
-def highlight_entries(summaries: List[Dict], since: str) -> List[Dict]:
+def daily_entries(summaries: List[Dict], since: str) -> List[Dict]:
     items = [
         {"date": summary["date"], **item}
         for summary in sorted(summaries, key=lambda s: s["date"], reverse=True)
-        for item in summary.get("highlights") or []
+        for item in summary.get("daily") or []
     ]
     recent = [item for item in items if item["date"] >= since]
-    return items[:MIN_HIGHLIGHTS] if len(recent) < MIN_HIGHLIGHTS else recent
+    return items[:MIN_DAILY] if len(recent) < MIN_DAILY else recent
 
 
 def build_index(news_dir: Path, today: str) -> Dict:
@@ -172,7 +172,7 @@ def build_index(news_dir: Path, today: str) -> Dict:
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "models": model_entries(snapshots, notes, since, today),
         "api": api_entries(notes, since),
-        "highlights": highlight_entries(summaries, since),
+        "daily": daily_entries(summaries, since),
     }
 
 
@@ -188,7 +188,7 @@ def main():
     index_file = args.news_dir / "data" / "index.json"
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     index = build_index(args.news_dir, today)
-    print(f"Index: {len(index['models'])} model announcements, {len(index['highlights'])} highlights")
+    print(f"Index: {len(index['models'])} model announcements, {len(index['daily'])} daily items")
 
     previous = json.loads(index_file.read_text()) if index_file.exists() else {}
     if {**previous, "generated_at": None} == {**index, "generated_at": None}:

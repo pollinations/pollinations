@@ -34,12 +34,12 @@ commands from `enter.pollinations.ai/`, using the Wrangler bundled with Vite's
 Cloudflare plugin so the CLI and dev server use the same database format:
 
 ```bash
-node ../node_modules/@cloudflare/vite-plugin/node_modules/wrangler/bin/wrangler.js d1 migrations apply DB --local --env local --persist-to frontend/.wrangler/state
-node ../node_modules/@cloudflare/vite-plugin/node_modules/wrangler/bin/wrangler.js d1 execute DB --local --env local --persist-to frontend/.wrangler/state --command "UPDATE oauth_client SET redirect_uris='[\"http://localhost:4180/auth/callback\"]' WHERE id='internal-economics';"
+node ../node_modules/wrangler/bin/wrangler.js d1 migrations apply DB --local --env local --persist-to .wrangler/state
+node ../node_modules/wrangler/bin/wrangler.js d1 execute DB --local --env local --persist-to .wrangler/state --command "UPDATE oauth_client SET redirect_uris='[\"http://localhost:4180/auth/callback\"]' WHERE id='internal-economics';"
 ```
 
-Vite's root is `frontend/`; migrating the service-root `.wrangler/state`
-database does not initialize the running sign-in service. These commands affect
+Enter's Vite configuration explicitly persists the database at the service-root
+`.wrangler/state`, regardless of its frontend root. These commands affect
 only the disposable local database and reuse the existing public OAuth client.
 
 A first GitHub sign-in creates a new local user with the default `user` role;
@@ -58,7 +58,11 @@ app's session. Protected requests recheck current admin status with Enter once p
 next check. Temporary Enter failures return 503 without clearing the session. Sessions expire after 12 hours.
 The identity token is encrypted inside the HttpOnly cookie.
 `npm run decrypt-vars` preserves the separately approved app signing secret and
-loads only the staging reader; it never reads production secrets.
+loads the staging reader and approved read-only Drive credential from encrypted
+`../secrets/web.dev.json`; it does not decrypt the production configuration.
+The approved read-only Drive service account is shared with production; the
+Tinybird reader remains staging-only. Missing Drive
+configuration stops startup before replacing the existing local configuration.
 Deploy Enter's client registration first, provision approved app secrets, then
 build and deploy the Economics Worker through GitHub Actions.
 
@@ -66,6 +70,22 @@ build and deploy the Economics Worker through GitHub Actions.
 
 `http://localhost:4180/?fixtures=1` renders bundled sample data after admin sign-in,
 without fetching live ledger data.
+
+Completed vendor journal snapshots are cached in private Worker memory for up
+to 24 hours. Pending reads stay within their own request, so an interrupted
+load cannot block later requests. Loads have a one-minute deadline; the browser
+offers Retry journals after 75 seconds if the request does not complete.
+An older load cannot replace a newer refresh. Admin authentication still runs
+before every API request, and HTTP responses remain `private, no-store`.
+Failed reads are not cached; a failed refresh preserves the previous snapshot
+until its original expiry. A cold Worker still reads Drive normally.
+
+Within an open dashboard, tabs reuse a complete financial snapshot for up to
+one hour. The small Updated timestamp records when that financial snapshot was
+fetched, not the accounting period it covers. Refresh data reloads the dashboard,
+bypassing the journal cache and fetching fresh Tinybird data so vendor rules and
+calculations are rebuilt together. Ordinary reloads fetch fresh Tinybird data
+but reuse cached journals. No private data is cached in browser storage.
 
 ## Data Contract
 

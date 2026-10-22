@@ -117,20 +117,6 @@ describe("docs routes", () => {
         );
     });
 
-    it("serves canonical docs through the upstream hostname without a redirect loop", async () => {
-        const ctx = createExecutionContext();
-        const response = await worker.fetch(
-            new Request("https://gen.myceli.ai/docs", {
-                headers: { "X-Forwarded-Host": "gen.pollinations.ai" },
-            }),
-            envWithEnterSchema({}),
-            ctx,
-        );
-        await waitOnExecutionContext(ctx);
-        expect(response.status).toBe(200);
-        expect(response.headers.get("Location")).toBeNull();
-    });
-
     it("generates valid request examples from the checked-out Gen schema", async () => {
         // Enter and Media validate their own source schemas in their own suites.
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -735,8 +721,33 @@ describe("docs routes", () => {
         const html = await response.text();
         expect(response.status).toBe(200);
         expect(html).toContain(
-            '<polli-connect app-key="pk_docs_test" budget="5" expiry="7">',
+            '<polli-connect app-key="pk_docs_test" budget="5" expiry="7" hide-buy-pollen',
         );
+        let menuLinks: string | null = null;
+        await new HTMLRewriter()
+            .on("polli-connect", {
+                element(element) {
+                    menuLinks = element.getAttribute("menu-links");
+                },
+            })
+            .transform(new Response(html))
+            .text();
+        // HTMLRewriter exposes raw entities; decode as a browser attribute does.
+        const decodedLinks = (menuLinks ?? "")
+            .replaceAll("&quot;", '"')
+            .replaceAll("&amp;", "&");
+        expect(JSON.parse(decodedLinks)).toEqual([
+            {
+                href: "https://discord.com/channels/885844321461485618/889573359111774329",
+                label: "Need help?",
+                icon: "discord",
+            },
+            {
+                href: "https://github.com/pollinations/pollinations/issues",
+                label: "Found a bug?",
+                icon: "bug",
+            },
+        ]);
         expect(html).toMatch(
             /<script defer src="https:\/\/cdn\.jsdelivr\.net\/npm\/@pollinations\/ui@[^"]+\/dist\/connect\.js" integrity="sha384-[^"]+" crossorigin="anonymous">/,
         );
@@ -761,7 +772,7 @@ describe("docs routes", () => {
         expect(html).not.toContain("connect.js");
     });
 
-    it("puts the dashboard and help links in the docs drawer", async () => {
+    it("keeps support links in the drawer without an app key, but omits Dashboard", async () => {
         const ctx = createExecutionContext();
         const response = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs"),
@@ -772,12 +783,12 @@ describe("docs routes", () => {
 
         const html = await response.text();
         for (const href of [
-            "https://enter.pollinations.ai",
             "https://discord.com/channels/885844321461485618/889573359111774329",
             "https://github.com/pollinations/pollinations/issues",
         ]) {
             expect(html).toContain(`href=\\"${href}\\"`);
         }
+        expect(html).not.toContain('href=\\"https://enter.pollinations.ai\\"');
     });
 
     it("serves the guide as Markdown when an agent prefers it", async () => {

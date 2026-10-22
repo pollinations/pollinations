@@ -357,8 +357,10 @@ test("game_reviews reads the appreviews endpoint without caller credentials", as
 });
 
 test("maps upstream error bodies into tool errors", async (t) => {
-    t.mock.method(globalThis, "fetch", async () =>
-        new Response("Service Unavailable", { status: 503 }),
+    t.mock.method(
+        globalThis,
+        "fetch",
+        async () => new Response("Service Unavailable", { status: 503 }),
     );
     const client = await connectClient();
     t.after(() => client.close());

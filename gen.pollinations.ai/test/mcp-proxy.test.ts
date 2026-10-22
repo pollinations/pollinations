@@ -287,18 +287,15 @@ test("routes Steam with caller authorization without an extra MCP debit", async 
             arguments: { query: "witcher", limit: 2 },
         },
     };
-    const response = await SELF.fetch(
-        "https://gen.pollinations.ai/mcp/steam",
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${key}`,
-                Cookie: "session=private",
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
+    const response = await SELF.fetch("https://gen.pollinations.ai/mcp/steam", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${key}`,
+            Cookie: "session=private",
+            "Content-Type": "application/json",
         },
-    );
+        body: JSON.stringify(payload),
+    });
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
         pathname: "/",

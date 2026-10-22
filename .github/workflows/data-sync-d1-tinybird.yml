@@ -2,9 +2,9 @@ name: Data / Sync D1 to Tinybird
 
 on:
   schedule:
-    # Hourly: KPI signups read d1_user, so they lag D1 by at most about an
-    # hour plus the KPI Worker's 30-minute cache.
-    - cron: "23 * * * *"
+    # Every 4 hours (00:23, 04:23, ... UTC): KPI signups read d1_user, so they
+    # lag D1 by at most about 4 hours plus the KPI Worker's 30-minute cache.
+    - cron: "23 */4 * * *"
   workflow_dispatch:
 
 permissions: {}

@@ -698,11 +698,22 @@ describe("Messages stream translation", () => {
                                 {
                                     index: 0,
                                     id: "call_a",
-                                    function: {
-                                        name: "Read",
-                                        arguments: "{}",
-                                        thought_signature: "AY8/+=",
-                                    },
+                                    function: { name: "Read", arguments: "{}" },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+            // The signature may arrive in a later chunk than the call.
+            {
+                choices: [
+                    {
+                        delta: {
+                            tool_calls: [
+                                {
+                                    index: 0,
+                                    function: { thought_signature: "AY8/+=" },
                                 },
                             ],
                         },

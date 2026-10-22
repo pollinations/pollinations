@@ -13,8 +13,30 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-gen"
       ]
+    },
+    "18051": {
+      "merge_sha": "445941ae4084129d3cabe95a33d58892acb471d9",
+      "merged_at": "2026-10-22T03:21:35Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-cloudflare-production.yml:deploy-media",
+        "deploy-website-cloudflare.yml:deploy"
+      ]
+    },
+    "18062": {
+      "merge_sha": "f8d44945a0358337523b4aa3975a20eec1cdcd47",
+      "merged_at": "2026-10-22T03:29:26Z",
+      "required": [
+        "deploy-applications.yml:Deploy apps/mama-barbara"
+      ]
+    },
+    "18063": {
+      "merge_sha": "0003f637a32d2ea8bf80ea1897294eacc9052795",
+      "merged_at": "2026-10-22T04:12:33Z",
+      "required": []
     }
   },
-  "production": "d1d0fbd2a4d478c50d682fca5dbb32907c11ee2f",
+  "production": "cb4a57969f34a1a039fd8760d1d5592cc4b95c2d",
   "master": "02b0575f1ae6daad402bb2782119d7752403ad01"
 }

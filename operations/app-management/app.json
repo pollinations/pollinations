@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🖼️",
+    "name": "Teapot Art",
+    "url": "https://svirepyibambr.github.io/teapot-art",
+    "description": "A one-page image generator: describe what you want in words — get a picture. Single static HTML file, no build step, no dependencies. Generation goes through the Pollinations image API; a user key is ",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "SvirepyiBambr",
+    "githubUserId": "326900716",
+    "repositoryUrl": "https://github.com/SvirepyiBambr/teapot-art",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-27",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15596",
+    "approvedDate": "2026-10-22",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/df2c707a-75bb-46ee-92f0-beee7be9ddf9"
+  },
+  {
+    "emoji": "🖼️",
     "name": "StyleLens AI",
     "url": "https://pollination-studio.base44.app",
     "description": "Transform your images instantly with AI-powered style conversion and custom artistic edits using POLLINATIONS AI. Restyle — a dark, single-page studio: drop a photo, pick one of 12 styles or describe ",

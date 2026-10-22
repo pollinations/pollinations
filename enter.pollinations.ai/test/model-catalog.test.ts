@@ -5,8 +5,6 @@ import {
 } from "@frontend/components/models/model-catalog.ts";
 import { getRetirementDays } from "@frontend/components/models/model-info.ts";
 import { ModelStatusChips } from "@frontend/components/models/model-status-chips.tsx";
-import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
-import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -62,16 +60,15 @@ it("keeps catalog health for filtering and status display", () => {
 });
 
 it("shows a compact retirement countdown only in the final 14 days", () => {
-    const name = "amazon/nova-canvas-v1";
-    const info = modelInfoFromDefinition(
-        name,
-        getRegistryModelDefinition(name),
-    );
-    const retirementDate = info.retirement_date;
-    if (retirementDate === undefined)
-        throw new Error("Missing retirement date");
+    const retirementDate = Date.parse("2030-01-01T00:00:00Z");
     const now = retirementDate - 14 * 24 * 60 * 60 * 1000;
-    const [model] = getModelPricesFromCatalog([info]);
+    const [model] = getModelPricesFromCatalog([
+        {
+            name: "example/retiring",
+            category: "image",
+            retirement_date: retirementDate,
+        },
+    ]);
 
     expect(model.retirementDate).toBe(retirementDate);
     expect(getRetirementDays(model, now - 1)).toBeNull();

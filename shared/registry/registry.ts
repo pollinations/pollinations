@@ -199,6 +199,9 @@ export type ModelDefinition = {
     billing?: BillingRules;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
+    // Date we retire the model (ms epoch); the catalog shows a countdown in
+    // its last 14 days. Provider route deadlines stay code comments (#16816).
+    retirementDate?: number;
     // User-facing metadata
     title: string; // Human display name, e.g. "FLUX.1 Kontext"
     brandUrl?: string;

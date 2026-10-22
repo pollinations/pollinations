@@ -31,6 +31,7 @@ The template sets where a sandbox runs: `pollinations` and `pollinations-large` 
 - E2B pauses and resumes long runs once a day; Azure runs them without that break.
 - Each provider has its own rates; see [current rates](https://gen.pollinations.ai/alpha/e2b/pricing).
 - On Azure, a sandbox stops at the first 5-minute mark after its timeout, and that time is billed.
+- ssh into sandboxes on Azure needs polli 0.1.59 or newer: update with `npm i -g @pollinations/cli && polli sandbox ssh-config`.
 - E2B's SDKs reach sandboxes on Azure only with `E2B_SANDBOX_URL` set; see [Sandboxes API](#tag/sandboxes-api).
 
 ### Use E2B SDKs or the API

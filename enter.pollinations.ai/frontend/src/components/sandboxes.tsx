@@ -132,10 +132,10 @@ const sizeLabel = ({ cpuCount, memoryMB }: Size) =>
 const HOURS_PER_MONTH = 720;
 
 const TEMPLATE_LABELS: Record<string, string> = {
-    pollinations: "Pollinations",
-    "pollinations-large": "Pollinations Large",
-    "pollinations-azure": "Pollinations on Azure",
-    "pollinations-azure-large": "Pollinations Large on Azure",
+    pollinations: "Pollinations (E2B)",
+    "pollinations-large": "Pollinations Large (E2B)",
+    "pollinations-azure": "Pollinations (Azure)",
+    "pollinations-azure-large": "Pollinations Large (Azure)",
 };
 
 const templateLabel = (id: string) => TEMPLATE_LABELS[id] ?? id;

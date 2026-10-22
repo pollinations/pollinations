@@ -3,11 +3,13 @@ import { textEnvironmentValue } from "../environment.js";
 import type { TransformOptions } from "../types.js";
 import {
     createAlibabaModelConfig,
+    createAnthropicConfig,
     createAzureModelConfig,
     createAzureResponsesModelConfig,
     createBedrockNativeConfig,
     createDeepInfraModelConfig,
     createFireworksModelConfig,
+    createInferencePortModelConfig,
     createMistralModelConfig,
     createNovitaModelConfig,
     createOpenRouterModelConfig,
@@ -96,6 +98,18 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "jaredpalmer/kev-4b",
     }),
+    "pplx-decider-v1.1-27b": () =>
+        createVercelAIGatewayModelConfig({
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+            model: "perplexity/pplx-decider-v1.1-27b",
+        }),
+    "perplexity/pplx-decider-v1.1-27b:openrouter": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "perplexity/pplx-decider-v1.1-27b",
+    }),
     "liquid-d1": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
@@ -120,6 +134,18 @@ export const portkeyConfig: PortkeyConfigMap = {
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "openai/gpt-6-luna-decisions",
+    }),
+    "microsoft-decision-1": () =>
+        createVercelAIGatewayModelConfig({
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+            model: "microsoft/microsoft-decision-1",
+        }),
+    "microsoft/microsoft-decision-1:openrouter": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "microsoft/microsoft-decision-1",
     }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
@@ -309,13 +335,12 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("XAI_API_KEY"),
         model: "grok-4.6",
     }),
-
-    // -- Azure (Myceli Prod — eastus, Cohere) --------------------------------
-    "Cohere-command-a-plus-05-2026": () =>
-        createAzureResponsesModelConfig(
-            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
-            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Cohere-command-a-plus-05-2026/chat/completions?api-version=2024-12-01-preview",
-        ),
+    "grok-4.7-xai": () => ({
+        provider: "openai",
+        directEndpoint: "https://api.x.ai/v1/chat/completions",
+        authKey: textEnvironmentValue("XAI_API_KEY"),
+        model: "grok-4.7",
+    }),
 
     // -- Azure (Myceli Prod — DeepSeek, Moonshot) ----------------------------
     // Azure DeepSeek reasons only when asked, unlike the Fireworks route it
@@ -325,6 +350,16 @@ export const portkeyConfig: PortkeyConfigMap = {
             textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
             "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/DeepSeek-V4-Flash-0731/chat/completions?api-version=2024-12-01-preview",
             { defaultOptions: { reasoning_effort: "high" } },
+        ),
+    // Azure DeepSeek V4.1 rejects remote image URLs.
+    "DeepSeek-V4.1-Flash": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/DeepSeek-V4.1-Flash/chat/completions?api-version=2024-12-01-preview",
+            {
+                defaultOptions: { reasoning_effort: "high" },
+                requiresBase64ImageUrls: true,
+            },
         ),
     // Azure Kimi rejects remote image URLs.
     "Kimi-K2.6": () =>
@@ -341,20 +376,16 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- OpenRouter (frontier models) ----------------------------------------
+    "cohere/command-a-plus": createPinnedOpenRouterConfig(
+        "cohere/command-a-plus",
+        "Cohere",
+    ),
     "xiaomi/mimo-v2.5": createPinnedOpenRouterConfig(
         "xiaomi/mimo-v2.5",
         "xiaomi/fp8",
     ),
     "xiaomi/mimo-v2.5-pro": createPinnedOpenRouterConfig(
         "xiaomi/mimo-v2.5-pro",
-        "xiaomi/fp8",
-    ),
-    "xiaomi/mimo-v2.6-flash": createPinnedOpenRouterConfig(
-        "xiaomi/mimo-v2.6-flash",
-        "xiaomi/fp8",
-    ),
-    "xiaomi/mimo-v2.6-pro": createPinnedOpenRouterConfig(
-        "xiaomi/mimo-v2.6-pro",
         "xiaomi/fp8",
     ),
     "minimax/minimax-m2.7": createPinnedOpenRouterConfig(
@@ -366,10 +397,16 @@ export const portkeyConfig: PortkeyConfigMap = {
         "minimax/fp8",
     ),
     "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
+    "xiaomi/mimo-v2.6-flash": () =>
+        createNovitaModelConfig({ model: "xiaomimimo/mimo-v2.6-flash" }),
+    "xiaomi/mimo-v2.6-pro": () =>
+        createNovitaModelConfig({ model: "xiaomimimo/mimo-v2.6-pro" }),
+    "xiaomi/mimo-v2.6-flash:deepinfra": () =>
+        createDeepInfraModelConfig({ model: "XiaomiMiMo/MiMo-V2.6-Flash" }),
+    "xiaomi/mimo-v2.6-pro:deepinfra": () =>
+        createDeepInfraModelConfig({ model: "XiaomiMiMo/MiMo-V2.6-Pro" }),
     "inclusionai/ling-3.1-flash": () =>
         createNovitaModelConfig({ model: "inclusionai/ling-3.1-flash" }),
-    "inclusionai/ling-3.1-flash:openrouter:novita":
-        createPinnedOpenRouterConfig("inclusionai/ling-3.1-flash", "novita"),
     "inclusionai/ling-3.1-flash:vercel:novita": () =>
         createVercelAIGatewayModelConfig({
             model: "inclusionai/ling-3.1-flash",
@@ -445,9 +482,9 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    "qwen3.8-27b-openrouter-akashml": createPinnedOpenRouterConfig(
+    "qwen3.8-27b-openrouter-reka": createPinnedOpenRouterConfig(
         "qwen/qwen3.8-27b",
-        "akashml/fp8",
+        "reka/fp8",
         64000,
     ),
     "qwen/qwen3.8-max": () =>
@@ -556,12 +593,13 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    // OpenRouter serves Inkling Small only through DeepInfra (fp8).
     "thinkingmachines/inkling-small": () =>
         createOpenRouterModelConfig({
             model: "thinkingmachines/inkling-small",
             defaultOptions: {
                 provider: {
-                    only: ["Together"],
+                    only: ["deepinfra"],
                     allow_fallbacks: false,
                 },
             },
@@ -610,12 +648,25 @@ export const portkeyConfig: PortkeyConfigMap = {
             // Reasons only when asked; keep the model's reasoning default.
             defaultOptions: { reasoning_effort: "high" },
         }),
+    "deepseek-ai/DeepSeek-V4.1-Flash-1017": () =>
+        createDeepInfraModelConfig({
+            model: "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+            // Reasons only when asked; keep the model's reasoning default.
+            defaultOptions: { reasoning_effort: "high" },
+        }),
     "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp": () =>
         createDeepInfraModelConfig({
             model: "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
         }),
     "zai-org/GLM-5.2": () =>
         createDeepInfraModelConfig({ model: "zai-org/GLM-5.2" }),
+    "zai-org/GLM-5.3": () =>
+        createDeepInfraModelConfig({
+            model: "zai-org/GLM-5.3",
+            directEndpoint:
+                "https://api.deepinfra.com/v1/openai/chat/completions",
+            defaultOptions: { max_tokens: 64000 },
+        }),
     "meta-models/Muse-Glimmer-30B": () =>
         createDeepInfraModelConfig({ model: "meta-models/Muse-Glimmer-30B" }),
     "Qwen/Qwen3.8-2.4T-A95B": () =>
@@ -638,12 +689,29 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
     ),
+    "llama-scout-openrouter-deepinfra-priority": createPinnedOpenRouterConfig(
+        "meta-llama/llama-4-scout",
+        "deepinfra/fp8/priority",
+        16384,
+    ),
     "llama-scout-openrouter-novita": createPinnedOpenRouterConfig(
         "meta-llama/llama-4-scout",
         "novita/bf16",
         16384,
     ),
-    "x-ai/grok-4.7": createPinnedOpenRouterConfig("x-ai/grok-4.7", "xai"),
+    // The base slug "xai" also matches xai/zdr/us and the priority tiers,
+    // which bill above the quoted rate, so they are excluded explicitly.
+    "grok-4.7-openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "x-ai/grok-4.7",
+            defaultOptions: {
+                provider: {
+                    only: ["xai"],
+                    ignore: ["xai/zdr/us", "xai/priority", "xai/zdr/priority"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "grok-openrouter-xai-zdr": createPinnedOpenRouterConfig(
         "x-ai/grok-4.20",
         "xai/zdr",
@@ -655,10 +723,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     "claude-fast-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-haiku-4.5",
         "google-vertex/global",
-    ),
-    "claude-opus-5.5-openrouter-anthropic": createPinnedOpenRouterConfig(
-        "anthropic/claude-opus-5.5",
-        "anthropic",
     ),
     "claude-opus-5.5-fast-openrouter-anthropic-fast":
         createPinnedOpenRouterConfig(
@@ -672,6 +736,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "muse-glimmer-openrouter-together": createPinnedOpenRouterConfig(
         "meta/muse-glimmer-30b",
         "together",
+    ),
+    "meta/muse-wonder-1.0": createPinnedOpenRouterConfig(
+        "meta/muse-wonder",
+        "meta",
     ),
     "nemotron-3.5-lightning-openrouter-coreweave": createPinnedOpenRouterConfig(
         "nvidia/nemotron-3.5-lightning",
@@ -690,6 +758,22 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.8-flash",
         "google-vertex/global",
     ),
+    // The base slug "google-ai-studio" also matches its priority tier (1.8x the
+    // rate) and its flex tier, so both are excluded explicitly.
+    "gemini-4-argon-openrouter-ai-studio": () =>
+        createOpenRouterModelConfig({
+            model: "google/gemini-4-argon",
+            defaultOptions: {
+                provider: {
+                    only: ["google-ai-studio"],
+                    ignore: [
+                        "google-ai-studio/priority",
+                        "google-ai-studio/flex",
+                    ],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "gemini-fast-openrouter-ai-studio": createPinnedOpenRouterGeminiConfig(
         "gemini-2.5-flash-lite",
         "google-ai-studio",
@@ -758,10 +842,19 @@ export const portkeyConfig: PortkeyConfigMap = {
         "z-ai/glm-5.2",
         "z-ai/fp8",
     ),
-    "deepseek-v4-pro-openrouter-alibaba": createPinnedOpenRouterConfig(
-        "deepseek/deepseek-v4-pro-0813",
-        "alibaba",
-    ),
+    // The base slug "alibaba" also matches alibaba/us-east-1, whose peak rate
+    // is above the quoted one, so it is excluded explicitly.
+    "deepseek-v4-pro-openrouter-alibaba": () =>
+        createOpenRouterModelConfig({
+            model: "deepseek/deepseek-v4-pro-0813",
+            defaultOptions: {
+                provider: {
+                    only: ["alibaba"],
+                    ignore: ["alibaba/us-east-1"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "deepseek-v4-pro-openrouter-streamlake": createPinnedOpenRouterConfig(
         "deepseek/deepseek-v4-pro-0813",
         "streamlake",
@@ -793,10 +886,12 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v4p1-flash",
         }),
-    "deepseek-v41-flash-openrouter-deepinfra": createPinnedOpenRouterConfig(
-        "deepseek/deepseek-v4.1-flash",
-        "deepinfra/fp8",
-    ),
+
+    // -- Fireworks AI (DeepSeek V4.1 Flash 1017) -----------------------------
+    "accounts/fireworks/models/deepseek-v4p1-flash-1017": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/deepseek-v4p1-flash-1017",
+        }),
 
     // -- Fireworks AI (Kimi, GLM, Qwen) --------------------------------------
     "accounts/fireworks/models/kimi-k3": () =>
@@ -838,26 +933,30 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Mistral-Large-3/chat/completions?api-version=2024-12-01-preview",
         ),
 
-    // -- Claude via AWS Bedrock -----------------------------------------------
+    // -- Claude via Anthropic and AWS Bedrock ---------------------------------
     "claude-sonnet-4-6": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
         }),
     "anthropic/claude-sonnet-5.5": () =>
+        createAnthropicConfig({
+            model: "claude-sonnet-5-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-sonnet-5.5:aws": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-sonnet-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-haiku-5.5": () =>
-        createBedrockNativeConfig({
-            model: "global.anthropic.claude-haiku-5-5",
+        createAnthropicConfig({
+            model: "claude-haiku-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
-    "anthropic/claude-haiku-5.5:vercel": () =>
-        createVercelAIGatewayModelConfig({
-            model: "anthropic/claude-haiku-5.5",
-            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+    "anthropic/claude-haiku-5.5:aws": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-haiku-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-sonnet-5": () =>
@@ -870,11 +969,9 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-opus-4-6-v1",
             defaultOptions: { max_tokens: 128000 },
         }),
-    // global.* inference profiles for Opus 4.7/4.8 return Bedrock-side
-    // Internal/ServiceUnavailable errors; the us.* profiles are healthy.
     "claude-opus-4-7": () =>
         createBedrockNativeConfig({
-            model: "us.anthropic.claude-opus-4-7",
+            model: "global.anthropic.claude-opus-4-7",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-opus-5": () =>
@@ -883,6 +980,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-opus-5.5": () =>
+        createAnthropicConfig({
+            model: "claude-opus-5-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-opus-5.5:aws": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-5-5",
             defaultOptions: { max_tokens: 128000 },
@@ -893,6 +995,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-fable-5.1": () =>
+        createAnthropicConfig({
+            model: "claude-fable-5-1",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-fable-5.1:aws": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-fable-5-1",
             defaultOptions: { max_tokens: 128000 },
@@ -943,6 +1050,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     "google/gemini-3.8-flash": createVertexGeminiConfig(
         "gemini-3.8-flash",
+        "global",
+    ),
+    "google/gemini-4-argon": createVertexGeminiConfig(
+        "gemini-4-argon",
         "global",
     ),
 
@@ -1008,6 +1119,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createVercelAIGatewayModelConfig({
             model: "meta/muse-spark-1.2",
         }),
+    "meta/muse-wonder-1.0:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "meta/muse-wonder-1.0",
+        }),
 
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------
     "Llama-3.3-70B-Instruct": () =>
@@ -1055,6 +1170,13 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({
             model: "stepfun-ai/Step-3.7-Flash",
         }),
+
+    // -- InferencePort (Lightning routers) ------------------------------------
+    // "lightning" is the router id that `lightning-text-v2` aliases.
+    "inferenceport-lightning-text-v2": () =>
+        createInferencePortModelConfig({ model: "lightning" }),
+    "inferenceport-lightning-text-v2.1": () =>
+        createInferencePortModelConfig({ model: "lightning-text-v2.1" }),
 
     // -- OVHcloud -------------------------------------------------------------
     "gpt-oss-20b": () =>

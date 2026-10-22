@@ -8,6 +8,7 @@ import SERVICE_PROVIDERS_PAGE from "../../pollinations.ai/public/legal/SUBPROCES
 // Registry `provider` ids as named on the public Service Providers page.
 const PROVIDER_NAMES: Record<string, string> = {
     alibaba: "Alibaba Cloud",
+    anthropic: "Anthropic",
     assemblyai: "AssemblyAI",
     aws: "Amazon Bedrock",
     azure: "Microsoft Azure",

@@ -124,7 +124,10 @@ export function createMessagesRoutes(dispatch: Dispatch) {
             }
             let chatRequest: ReturnType<typeof messagesToChatRequest>;
             try {
-                chatRequest = messagesToChatRequest(request);
+                chatRequest = messagesToChatRequest(
+                    request,
+                    entry?.definition.maxReferenceImages,
+                );
             } catch (error) {
                 if (error instanceof MessagesRequestError) {
                     return errorResponse(400, error.message);

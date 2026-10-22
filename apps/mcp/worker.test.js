@@ -10,6 +10,8 @@ const TOKEN = "sk_test_request_scoped";
 const EXPECTED_TOOLS = [
     "createEmbeddings",
     "createKey",
+    "deleteSite",
+    "deploySite",
     "generate3D",
     "generateAudio",
     "generateImage",
@@ -22,6 +24,7 @@ const EXPECTED_TOOLS = [
     "listKeys",
     "listModels",
     "listQuests",
+    "listSites",
     "revokeKey",
     "transcribeAudio",
 ];

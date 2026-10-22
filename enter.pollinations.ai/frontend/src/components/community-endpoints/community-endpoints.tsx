@@ -354,7 +354,7 @@ export function CommunityEndpoints({
             for models, agents, or both, submit a {publisherAccessRequestLink}.
             You can register, probe, and test private models without approval.
             For questions, ask in{" "}
-            <InlineLink href="https://discord.gg/pollinations-ai-885844321461485618">
+            <InlineLink href="https://discord.gg/k9F7SyTgqn">
                 Discord
             </InlineLink>
             .

@@ -228,9 +228,50 @@ function tools(request: CreateMessageRequest) {
     };
 }
 
-/** Translate a Messages request into the Chat Completions request it runs as. */
+/**
+ * Replaces the oldest images, including screenshots inside tool results, with
+ * a short note once the conversation holds more than the model accepts.
+ * Claude Code keeps every image it reads and assumes Anthropic's limit, so
+ * otherwise every later request fails, its own /compact included.
+ */
+function omitOldestImages(
+    messages: CreateMessageRequest["messages"],
+    maxImages: number,
+): CreateMessageRequest["messages"] {
+    const images = messages
+        .flatMap((message) =>
+            typeof message.content === "string" ? [] : message.content,
+        )
+        .flatMap((block) =>
+            block.type === "tool_result" && Array.isArray(block.content)
+                ? block.content
+                : [block],
+        )
+        .filter((block) => block.type === "image");
+    const omitted = new Set<MessagesContentBlock>(
+        images.slice(0, images.length - maxImages),
+    );
+    const note = `[image omitted: over the ${maxImages}-image limit]`;
+    const replace = <T extends MessagesContentBlock>(block: T): T =>
+        (block.type === "image" && omitted.has(block)
+            ? { type: "text", text: note, ...cacheControl(block) }
+            : block.type === "tool_result" && Array.isArray(block.content)
+              ? { ...block, content: block.content.map(replace) }
+              : block) as T;
+    return messages.map((message) =>
+        typeof message.content === "string"
+            ? message
+            : { ...message, content: message.content.map(replace) },
+    );
+}
+
+/**
+ * Translate a Messages request into the Chat Completions request it runs as.
+ * `maxImages` is the model's declared image limit.
+ */
 export function messagesToChatRequest(
     request: CreateMessageRequest,
+    maxImages = Number.POSITIVE_INFINITY,
 ): CreateChatCompletionRequest {
     const system =
         request.system === undefined
@@ -247,8 +288,15 @@ export function messagesToChatRequest(
     const effort = reasoningEffort(request);
     return {
         model: request.model,
-        messages: [...system, ...request.messages.flatMap(chatMessages)],
-        max_tokens: request.max_tokens,
+        messages: [
+            ...system,
+            ...omitOldestImages(request.messages, maxImages).flatMap(
+                chatMessages,
+            ),
+        ],
+        // Claude Code checks a model with max_tokens 1 (start-up, /model, key
+        // and quota checks), but OpenAI Responses models reject fewer than 16.
+        max_tokens: Math.max(request.max_tokens, 16),
         stream: request.stream ?? false,
         ...(request.stop_sequences?.length && {
             stop: request.stop_sequences,

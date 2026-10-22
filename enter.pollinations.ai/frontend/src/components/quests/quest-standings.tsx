@@ -205,13 +205,13 @@ export function QuestStandings({
                         })}
                     </ol>
                 )}
-                {line && (
-                    <p className="flex items-start gap-1.5 border-theme-border border-t px-3 pt-3 font-medium text-sm leading-snug text-theme-text-strong">
-                        <TargetIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>{line}</span>
-                    </p>
-                )}
             </Surface>
+            {line && (
+                <p className="flex items-start gap-1.5 text-[13px] leading-snug text-theme-text-muted">
+                    <TargetIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>{line}</span>
+                </p>
+            )}
         </Section>
     );
 }

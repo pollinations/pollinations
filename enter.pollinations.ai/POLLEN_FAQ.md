@@ -105,4 +105,4 @@ You can also configure automatic top-up from the Pollen dashboard after adding a
 
 ## 🆘 Where can I get help?
 
-Use [Discord](https://discord.gg/pollinations-ai-885844321461485618) for community help, email [hello@pollinations.ai](mailto:hello@pollinations.ai) for general support, or email [billing@pollinations.ai](mailto:billing@pollinations.ai) for billing questions.
+Use [Discord](https://discord.gg/k9F7SyTgqn) for community help, email [hello@pollinations.ai](mailto:hello@pollinations.ai) for general support, or email [billing@pollinations.ai](mailto:billing@pollinations.ai) for billing questions.

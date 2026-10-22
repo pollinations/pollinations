@@ -1,3 +1,4 @@
+import type { FileRouteTypes } from "@frontend/routeTree.gen.ts";
 import { handleError } from "@shared/error.ts";
 import { requestId } from "@shared/middleware/request-id.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
@@ -20,32 +21,40 @@ function isApiDocsPath(path: string): boolean {
     return path === "/api/docs" || path.startsWith("/api/docs/");
 }
 
-// SPA dashboard routes mirrored from the TanStack router routeTree.gen.ts
-// (frontend/src/routeTree.gen.ts). Used by the catch-all below to decide
-// whether a missing path should fall back to /index.html or to a real 404.
-const SPA_ROUTES: ReadonlySet<string> = new Set([
-    "/",
-    "/authorize",
-    "/device",
-    "/edit-key",
-    "/error",
-    "/grant",
-    "/privacy",
-    "/refunds",
-    "/terms",
-    "/top-up",
-    "/account",
-    "/activity",
-    "/keys",
-    "/models",
-    "/my-models",
-    "/news",
-    "/pollen",
-    "/quests",
-    "/sandboxes",
-    "/sign-in",
-    "/app/sign-in",
-]);
+// Every dashboard page. Typed by the router's route tree, so tsc fails when a
+// page is added to the frontend but not here.
+const DASHBOARD_PAGES: Record<FileRouteTypes["fullPaths"], true> = {
+    "/": true,
+    "/account": true,
+    "/activity": true,
+    "/app/sign-in": true,
+    "/authorize": true,
+    "/device": true,
+    "/edit-key": true,
+    "/error": true,
+    "/grant": true,
+    "/keys": true,
+    "/models": true,
+    "/my-apps": true,
+    "/my-models": true,
+    "/news": true,
+    "/pollen": true,
+    "/privacy": true,
+    "/quests": true,
+    "/refunds": true,
+    "/sandboxes": true,
+    "/sign-in": true,
+    "/terms": true,
+    "/top-up": true,
+};
+
+// The router matches paths in any case and with a trailing slash.
+function isDashboardPage(path: string): boolean {
+    return Object.hasOwn(
+        DASHBOARD_PAGES,
+        stripTrailingSlash(path).toLowerCase(),
+    );
+}
 
 function redirectLegacyDocs(c: Context<Env>): Response {
     const reqUrl = new URL(c.req.url);
@@ -98,24 +107,15 @@ const app = new Hono<Env>()
     })
     .route("/.well-known", wellKnownRoutes)
     .route("/api", api)
-    // Issue #17787: SPA fallback (not_found_handling = "single-page-application")
-    // currently rewrites every unknown path to /index.html with 200 text/html,
-    // so an agent that GETs /auth.md or /llms-full.txt sees the dashboard shell.
-    // wrangler.toml routes everything except real asset files to the Worker;
-    // the Worker forwards the request to the assets binding, falls back to
-    // /index.html only for known SPA routes, and 404s the rest (matches
-    // gen.pollinations.ai and the main site after #15261).
+    // Asset files and dashboard pages come from the asset layer. Anything else
+    // got the dashboard shell from its SPA fallback, so it is a real 404 and
+    // agents can tell a missing file such as /auth.md from a page (#17787).
     .get("*", async (c) => {
-        const path = c.req.path;
-        const wantsIndex = path === "/" || SPA_ROUTES.has(path);
-        const assetResponse = await c.env.ASSETS.fetch(c.req.raw);
-        if (assetResponse.status !== 404) return assetResponse;
-        if (wantsIndex) {
-            const indexResponse = await c.env.ASSETS.fetch(
-                new Request(new URL("/index.html", c.req.url), c.req.raw),
-            );
-            if (indexResponse.status === 200) return indexResponse;
-        }
+        const response = await c.env.ASSETS.fetch(c.req.raw);
+        const isShell = response.headers
+            .get("content-type")
+            ?.includes("text/html");
+        if (!isShell || isDashboardPage(c.req.path)) return response;
         return c.notFound();
     });
 

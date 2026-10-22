@@ -50,7 +50,7 @@ export type AuthEnv = {
     Variables: LoggerVariables & AuthVariables & Partial<ModelVariables>;
 };
 
-const AUTHENTICATION_REQUIRED_MESSAGE =
+export const AUTHENTICATION_REQUIRED_MESSAGE =
     "A valid API key is required. Get one at https://enter.pollinations.ai/keys, or buy one with USDC (x402) at https://enter.pollinations.ai/api/x402/keys";
 
 function installAuth(

@@ -196,7 +196,7 @@ Linux VMs on E2B or Azure, paid from your wallet (alpha).
 polli sandbox create              # prints the id and sets up ssh
 polli sandbox create --timeout 0  # runs until you pause or kill it
 polli sandbox create pollinations-large  # 4 vCPU, 8 GB
-polli sandbox create pollinations-azure  # on Azure; pollinations-azure-large too
+polli sandbox create pollinations-azure  # on Azure; pollinations-azure-large and pollinations-azure-xl (8 vCPU, 16 GB) too
 ssh <id>.polli                    # scp and rsync work too
 polli sandbox timeout <id> 14400  # keep it running 4 hours without ssh
 polli sandbox pause <id>

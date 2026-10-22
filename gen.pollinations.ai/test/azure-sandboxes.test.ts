@@ -23,10 +23,10 @@ const azureEnv = {
     AZURE_SANDBOX_GROUP_URL: GROUP,
     AZURE_SANDBOX_IMAGE: "image",
 };
-// A second of the 2 vCPU, 2 GiB template: what Azure charges us, and the 25%
+// A second of the 2 vCPU, 2 GiB template: what Azure charges us, and the 15%
 // of it the caller pays.
 const COST_SECOND = 2 * 0.000024 + 2 * 0.000003;
-const PRICE_SECOND = COST_SECOND * 0.25;
+const PRICE_SECOND = COST_SECOND * 0.15;
 
 type Box = {
     id: string;
@@ -154,7 +154,7 @@ afterEach(() => {
     vi.unstubAllGlobals();
 });
 
-test("an Azure template runs on Azure behind E2B's API, paid at 25% of Azure's rates", async () => {
+test("an Azure template runs on Azure behind E2B's API, paid at 15% of Azure's rates", async () => {
     const azure = stubAzure();
     const owner = await sandboxKey();
     const other = await sandboxKey();

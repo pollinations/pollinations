@@ -20,6 +20,7 @@ export const AZURE_TEMPLATES: Record<
 > = {
     "pollinations-azure": { cpuCount: 2, memoryMB: 2048 },
     "pollinations-azure-large": { cpuCount: 4, memoryMB: 8192 },
+    "pollinations-azure-xl": { cpuCount: 8, memoryMB: 16384 },
 };
 // Azure's rates for a running box, per second, in pollen (1 pollen ≈ $1).
 // Azure credits pay them.

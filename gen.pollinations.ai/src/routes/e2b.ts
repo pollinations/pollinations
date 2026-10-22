@@ -69,8 +69,9 @@ const RATES: Record<Provider, Rates> = {
     azure: { vcpuSecond: AZURE_VCPU_SECOND, gibSecond: AZURE_GIB_SECOND },
 };
 // The share of its provider's rate a caller pays. E2B's is a launch promo: set
-// it back to 1 when the promo week ends.
-const PRICE_MULTIPLIER: Record<Provider, number> = { e2b: 0.25, azure: 0.25 };
+// it back to 1 when the promo week ends. Azure's is low because our Azure
+// credits pay for it.
+const PRICE_MULTIPLIER: Record<Provider, number> = { e2b: 0.25, azure: 0.15 };
 const perSecond = (
     rates: Rates,
     size: { cpuCount: number; memoryMB: number },

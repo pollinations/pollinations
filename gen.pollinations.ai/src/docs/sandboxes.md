@@ -26,7 +26,7 @@ For dashboard-created sandboxes, run `polli sandbox ssh-config` first. VS Code's
 
 ### E2B or Azure
 
-The template sets where a sandbox runs: `pollinations` and `pollinations-large` on E2B, `pollinations-azure` and `pollinations-azure-large` on Azure, with the same software and sizes. The differences:
+The template sets where a sandbox runs: `pollinations` and `pollinations-large` on E2B, `pollinations-azure` and `pollinations-azure-large` on Azure with the same software and sizes, and `pollinations-azure-xl` (8 vCPU, 16 GB) on Azure only. The differences:
 
 - E2B pauses and resumes long runs once a day; Azure runs them without that break.
 - Each provider has its own rates; see [current rates](https://gen.pollinations.ai/alpha/e2b/pricing).

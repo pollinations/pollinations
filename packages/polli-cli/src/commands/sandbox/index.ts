@@ -65,7 +65,7 @@ export const sandboxCommand = new Command("sandbox")
             .description("Start a sandbox you can ssh into")
             .argument(
                 "[template]",
-                "pollinations-large has 4 vCPU and 8 GB; pollinations-azure and pollinations-azure-large run on Azure",
+                "pollinations-large has 4 vCPU and 8 GB; pollinations-azure, pollinations-azure-large and pollinations-azure-xl (8 vCPU, 16 GB) run on Azure",
                 "pollinations",
             )
             .option(

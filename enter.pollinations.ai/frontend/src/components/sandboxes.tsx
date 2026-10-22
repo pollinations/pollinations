@@ -136,6 +136,7 @@ const TEMPLATE_LABELS: Record<string, string> = {
     "pollinations-large": "Pollinations Large (E2B)",
     "pollinations-azure": "Pollinations (Azure)",
     "pollinations-azure-large": "Pollinations Large (Azure)",
+    "pollinations-azure-xl": "Pollinations XL (Azure)",
 };
 
 const templateLabel = (id: string) => TEMPLATE_LABELS[id] ?? id;

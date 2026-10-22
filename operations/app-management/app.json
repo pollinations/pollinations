@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🖼️",
+    "name": "StyleLens AI",
+    "url": "https://pollination-studio.base44.app",
+    "description": "Transform your images instantly with AI-powered style conversion and custom artistic edits using POLLINATIONS AI. Restyle — a dark, single-page studio: drop a photo, pick one of 12 styles or describe ",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "nalnd1",
+    "githubUserId": "279032117",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-22",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/18099",
+    "approvedDate": "2026-10-22",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/0bdd2055-decc-4499-9728-bc9389bfe990"
+  },
+  {
+    "emoji": "🖼️",
     "name": "Pollen Postcard",
     "url": "https://pollen-postcard.jm716111.chatgpt.site",
     "description": "Turns a small memory into a polished illustrated postcard. Pollinations writes the title and short note, then generates a matching square image. Visitors connect with BYOP and approve a 1 Pollen budge",

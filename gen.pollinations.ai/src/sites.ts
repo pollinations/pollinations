@@ -23,7 +23,9 @@ const notFound = () =>
     });
 
 // A name with no script throws "Worker not found", as in Cloudflare's
-// dispatch Worker example.
+// dispatch Worker example; a deleted site throws "this worker has been deleted".
+const MISSING_SCRIPT = /^(Worker not found|this worker has been deleted)/;
+
 async function dispatch(
     sites: DispatchNamespace,
     name: string,
@@ -32,7 +34,7 @@ async function dispatch(
     try {
         return await sites.get(name).fetch(request);
     } catch (error) {
-        if ((error as Error).message?.startsWith("Worker not found")) {
+        if (MISSING_SCRIPT.test((error as Error).message)) {
             return notFound();
         }
         console.error(`Site ${name} failed`, error);

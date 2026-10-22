@@ -33,15 +33,20 @@ describe("serveSite", () => {
         expect(get).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for an unknown site", async () => {
-        const { env } = sitesEnv(async () => {
-            throw new Error("Worker not found.");
-        });
-        const response = await serveSite(
-            new Request("https://missing.pollinations.app/"),
-            env,
-        );
-        expect(response?.status).toBe(404);
+    it("returns 404 for an unknown or deleted site", async () => {
+        for (const message of [
+            "Worker not found.",
+            "this worker has been deleted",
+        ]) {
+            const { env } = sitesEnv(async () => {
+                throw new Error(message);
+            });
+            const response = await serveSite(
+                new Request("https://missing.pollinations.app/"),
+                env,
+            );
+            expect(response?.status, message).toBe(404);
+        }
     });
 
     it("returns 404 for a host that can't be a site, without dispatching", async () => {

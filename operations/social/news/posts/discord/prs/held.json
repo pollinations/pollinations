@@ -1,10 +1,5 @@
 {
   "held": {
-    "18017": {
-      "merge_sha": "a5ad4da98b606aa28fa6e4ec8c7d017da4533a03",
-      "merged_at": "2026-10-22T01:06:05Z",
-      "required": []
-    },
     "18049": {
       "merge_sha": "59cbf8b33fc0b907ed982dc189468310c504538d",
       "merged_at": "2026-10-22T00:39:38Z",

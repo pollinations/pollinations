@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-21T06:12:02.590360+00:00",
+  "generated_at": "2026-10-22T06:08:28.437346+00:00",
   "models": [
     {
       "id": "2026-09-22:anthropic/claude-opus-5.5",
@@ -5969,17 +5969,6 @@
   ],
   "api": [
     {
-      "id": "pr-15258:POST /alpha/decisions",
-      "endpoint": "POST /alpha/decisions",
-      "summary": "Create Decision",
-      "action": "ADD",
-      "breaking": false,
-      "changes": [],
-      "date": "2026-09-21",
-      "pr": 15258,
-      "url": "https://github.com/pollinations/pollinations/pull/15258"
-    },
-    {
       "id": "pr-15346:GET /3d/models",
       "endpoint": "GET /3d/models",
       "summary": "List 3D Models",
@@ -9185,56 +9174,6 @@
       "text": "Search and filter models while setting key permissions, and browse the restored Models, Agents, and MCP tabs. Sign-in and authorization screens now give clearer guidance too. [Open Enter](https://enter.pollinations.ai/keys).",
       "prs": [
         15271
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-21",
-      "emoji": "🤖",
-      "title": "Grok 4.7 joins the catalog",
-      "text": "Use `x-ai/grok-4.7` for reasoning, tools, structured outputs, and prompts with up to 10 reference images. It has a 500,000-token context window and requires paid access. [View the model](https://enter.pollinations.ai/models?q=x-ai/grok-4.7).",
-      "prs": [
-        15278
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-09-21",
-      "emoji": "🔗",
-      "title": "MCP setup from Polli",
-      "text": "Use `polli mcp` to browse MCP servers and install, inspect, or remove them in 13 coding clients, including Claude Code, Cursor, VS Code, and Zed. [Explore the CLI](https://www.npmjs.com/package/@pollinations/cli).",
-      "prs": [
-        15032
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-21",
-      "emoji": "🤖",
-      "title": "Polyrouter picks a model",
-      "text": "Call `afanasevmylife/polyrouter` through the Responses API to route a request by complexity, model capabilities, price, and recent health. Its `polyrouter_trace` field shows the choice in Responses API results. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        15041
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-21",
-      "emoji": "🤖",
-      "title": "Triage-router handles fallback",
-      "text": "Try `community/xiaotian1171/triage-router` for capability-aware routing across fast, balanced, and deep model pools. It accepts Responses and Chat Completions requests and can choose another tier after certain model errors. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        15069
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-21",
-      "emoji": "🤖",
-      "title": "Tiered routing with health checks",
-      "text": "Try `community/tomdacatto/tiered-health-router` to classify a request as fast, balanced, or deep, then select a compatible model using catalog prices and recent health. It preserves image, audio, video, and tool-calling requirements. [Browse models](https://enter.pollinations.ai/models).",
-      "prs": [
-        15141
       ],
       "kind": "product"
     }

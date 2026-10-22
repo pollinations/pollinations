@@ -18,9 +18,7 @@
       "merge_sha": "445941ae4084129d3cabe95a33d58892acb471d9",
       "merged_at": "2026-10-22T03:21:35Z",
       "required": [
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media"
+        "deploy-cloudflare-production.yml:deploy-gen"
       ]
     }
   },

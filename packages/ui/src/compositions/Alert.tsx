@@ -43,8 +43,8 @@ export const Alert: FC<AlertProps> = ({
                     <>
                         <strong className="polli:font-semibold polli:text-theme-text-strong">
                             {title}
-                        </strong>{" "}
-                        —{" "}
+                        </strong>
+                        :{" "}
                     </>
                 ) : (
                     <Text

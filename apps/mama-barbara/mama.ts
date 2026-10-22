@@ -16,7 +16,8 @@ const GEN = "https://gen.pollinations.ai";
 // `keys` lets gen give each new box a key of its own (see logIn in
 // gen.pollinations.ai/src/routes/e2b.ts); `machines` creates the boxes.
 const SCOPE = "generate machines keys";
-const TEMPLATE = process.env.MAMA_TEMPLATE ?? "pollinations";
+// 4 vCPU, 8 GB: about 2 Pollen a day while she runs.
+const TEMPLATE = "pollinations-large";
 // E2B's largest timeout: gen keeps the box running and bills the key.
 const KEEP_SECONDS = 2 ** 31 - 1;
 // What a new Barbara's key may spend, and the amounts her settings offer.

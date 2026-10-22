@@ -112,6 +112,11 @@ custom_domain = true
 pattern = "*.pollinations.app/*"
 zone_name = "pollinations.app"
 
+# The bare domain's landing page (src/sites-landing.html).
+[[env.production.routes]]
+pattern = "pollinations.app/*"
+zone_name = "pollinations.app"
+
 [[env.production.services]]
 binding = "ENTER"
 service = "pollinations-enter-production"

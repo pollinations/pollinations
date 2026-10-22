@@ -516,10 +516,6 @@ export function Sandboxes() {
         <Button
             type="button"
             className="dashboard-add-button"
-            aria-label={
-                busyId === "new" ? "Creating sandbox…" : "Create sandbox"
-            }
-            title={busyId === "new" ? "Creating sandbox…" : "Create sandbox"}
             aria-busy={busyId === "new"}
             aria-haspopup="dialog"
             disabled={full || busyId === "new"}
@@ -532,13 +528,12 @@ export function Sandboxes() {
             }
         >
             {busyId === "new" ? (
-                <LoadingStatus>
-                    <span className="sr-only">Creating sandbox…</span>
-                </LoadingStatus>
+                <LoadingStatus>Creating sandbox…</LoadingStatus>
             ) : (
                 <>
                     <PlusIcon className="h-4 w-4" />
                     <TerminalIcon className="h-5 w-5" />
+                    <span className="ml-1">Create sandbox</span>
                 </>
             )}
         </Button>

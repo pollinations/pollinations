@@ -16,5 +16,15 @@
   ],
   "observability": {
     "enabled": true
+  },
+  "env": {
+    "staging": {
+      "name": "usage-mcp-staging",
+      // Keep direct staging access alongside the Gen service binding.
+      "workers_dev": true,
+      "routes": [],
+      "vars": { "POLLINATIONS_BASE_URL": "https://staging.gen.pollinations.ai" },
+      "observability": { "enabled": true }
+    }
   }
 }

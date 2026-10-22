@@ -80,8 +80,11 @@ function buildServer() {
         },
         async ({ model_name }, context) => {
             const token = context.http.authInfo.token;
+            // OpenAI-compatible retrieve route. `/models/<id>` is not a route;
+            // the single-model endpoint is `/v1/models/<id>` (ids contain a
+            // slash, hence the encoding).
             const res = await fetch(
-                `${GEN_BASE}/models/${encodeURIComponent(model_name)}`,
+                `${GEN_BASE}/v1/models/${encodeURIComponent(model_name)}`,
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 },

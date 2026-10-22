@@ -164,7 +164,14 @@ test("URL-encodes the model name in get_model_info", async (t) => {
             new Headers(init.headers).get("authorization"),
             `Bearer ${TOKEN}`,
         );
-        return Response.json({ name: "openai/gpt-5-nano" });
+        return Response.json({
+            id: "openai/gpt-5.4-nano",
+            object: "model",
+            owned_by: "OpenAI",
+            category: "text",
+            title: "GPT-5.4 Nano",
+            pricing: { currency: "pollen" },
+        });
     });
     const client = await connectClient({
         versionNegotiation: { mode: "auto" },
@@ -172,11 +179,11 @@ test("URL-encodes the model name in get_model_info", async (t) => {
     t.after(() => client.close());
     const result = await client.callTool({
         name: "get_model_info",
-        arguments: { model_name: "openai/gpt-5-nano" },
+        arguments: { model_name: "openai/gpt-5.4-nano" },
     });
     assert.notEqual(result.isError, true);
     assert.deepEqual(seen, [
-        "https://gen.pollinations.ai/models/openai%2Fgpt-5-nano",
+        "https://gen.pollinations.ai/v1/models/openai%2Fgpt-5.4-nano",
     ]);
 });
 
@@ -244,10 +251,19 @@ test("reports upstream failures as tool errors", async (t) => {
     t.mock.method(globalThis, "fetch", async (input) => {
         assert.equal(
             String(input),
-            "https://gen.pollinations.ai/models/does-not-exist",
+            "https://gen.pollinations.ai/v1/models/does-not-exist",
         );
+        // Real envelope of the retrieve route: `{success, error, status}`, not
+        // a bare `{error: {message}}`.
         return Response.json(
-            { error: { message: "Model not found" } },
+            {
+                success: false,
+                error: {
+                    message: "Model 'does-not-exist' not found",
+                    code: "NOT_FOUND",
+                },
+                status: 404,
+            },
             { status: 404 },
         );
     });
@@ -261,5 +277,5 @@ test("reports upstream failures as tool errors", async (t) => {
     });
     assert.equal(result.isError, true);
     assert.match(result.content[0].text, /HTTP 404/);
-    assert.match(result.content[0].text, /Model not found/);
+    assert.match(result.content[0].text, /not found/);
 });

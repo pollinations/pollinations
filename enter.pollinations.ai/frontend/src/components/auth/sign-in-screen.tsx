@@ -1,10 +1,10 @@
 import { Button, XIcon } from "@pollinations/ui";
-import { GitHubSignInButton } from "@pollinations/ui/auth";
+import { GitHubSignInButton, GoogleSignInButton } from "@pollinations/ui/auth";
 import type { ReactNode } from "react";
-import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
+import { useSocialSignIn } from "../../hooks/use-social-sign-in.ts";
 import { AuthFlowScreen } from "./auth-flow-screen.tsx";
 
-/** The same GitHub sign-in step for Enter's standalone flows. */
+/** The same GitHub or Google sign-in step for Enter's standalone flows. */
 export function SignInScreen({
     title,
     subject,
@@ -20,7 +20,7 @@ export function SignInScreen({
     onCancel?: () => void;
     callbackURL?: string;
 }) {
-    const { signIn, isSigningIn, error } = useGitHubSignIn(callbackURL);
+    const { signIn, signingInWith, error } = useSocialSignIn(callbackURL);
     return (
         <AuthFlowScreen
             title={title}
@@ -30,20 +30,28 @@ export function SignInScreen({
             onClose={onCancel}
             actions={
                 <>
+                    <GitHubSignInButton
+                        className="w-full"
+                        onClick={() => void signIn("github")}
+                        isSigningIn={signingInWith === "github"}
+                        disabled={signingInWith === "google"}
+                    />
+                    <GoogleSignInButton
+                        className="w-full"
+                        onClick={() => void signIn("google")}
+                        isSigningIn={signingInWith === "google"}
+                        disabled={signingInWith === "github"}
+                    />
                     {onCancel && (
                         <Button
                             intent="neutral"
                             icon={<XIcon />}
                             onClick={onCancel}
-                            disabled={isSigningIn}
+                            disabled={signingInWith !== null}
                         >
                             Cancel
                         </Button>
                     )}
-                    <GitHubSignInButton
-                        onClick={signIn}
-                        isSigningIn={isSigningIn}
-                    />
                 </>
             }
         >

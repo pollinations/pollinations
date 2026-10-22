@@ -58,15 +58,15 @@ describe("fmtSmartNumber", () => {
         expect(fmtSmartNumber(20.74)).toBe("21");
         expect(fmtSmartNumber(20.725)).toBe("21");
         expect(fmtSmartNumber(1.234567)).toBe("1");
-        expect(fmtSmartNumber(0.137)).toBe("<1");
-        expect(fmtSmartNumber(0.06011)).toBe("<1");
-        expect(fmtSmartNumber(0.05667)).toBe("<1");
-        expect(fmtSmartNumber(0.03609)).toBe("<1");
-        expect(fmtSmartNumber(0.005732)).toBe("<1");
-        expect(fmtSmartNumber(0.00123456)).toBe("<1");
-        expect(fmtSmartNumber(0.2061)).toBe("<1");
-        expect(fmtSmartNumber(0.2499)).toBe("<1");
-        expect(fmtSmartNumber(0.2515)).toBe("<1");
+        expect(fmtSmartNumber(0.137)).toBe("");
+        expect(fmtSmartNumber(0.06011)).toBe("");
+        expect(fmtSmartNumber(0.05667)).toBe("");
+        expect(fmtSmartNumber(0.03609)).toBe("");
+        expect(fmtSmartNumber(0.005732)).toBe("");
+        expect(fmtSmartNumber(0.00123456)).toBe("");
+        expect(fmtSmartNumber(0.2061)).toBe("");
+        expect(fmtSmartNumber(0.2499)).toBe("");
+        expect(fmtSmartNumber(0.2515)).toBe("");
     });
 
     it("uses comma separators for large whole numbers", () => {
@@ -76,9 +76,9 @@ describe("fmtSmartNumber", () => {
         expect(fmtSmartNumber(1234567890123)).toBe("1,234,567,890,123");
     });
 
-    it("uses a readable floor for tiny nonzero values", () => {
-        expect(fmtSmartNumber(0.000000000000000444)).toBe("<1");
-        expect(fmtSmartNumber(0.0009)).toBe("<1");
+    it("hides tiny nonzero values", () => {
+        expect(fmtSmartNumber(0.000000000000000444)).toBe("");
+        expect(fmtSmartNumber(0.0009)).toBe("");
     });
 });
 
@@ -107,11 +107,19 @@ describe("fmtUsd", () => {
         expect(fmtUsd(-13921.4)).toBe("−$13,921");
     });
 
-    it("renders tiny dollars with a less-than floor", () => {
-        expect(fmtUsd(0.000000000000000444)).toBe("<$1");
-        expect(fmtUsd(-0.0009)).toBe("−<$1");
-        expect(fmtUsd(-0.05667)).toBe("−<$1");
-        expect(fmtUsd(-0.03609)).toBe("−<$1");
+    it("hides amounts below one dollar in either direction", () => {
+        expect(fmtUsd(0.000000000000000444)).toBe("");
+        expect(fmtUsd(-0.0009)).toBe("");
+        expect(fmtUsd(-0.05667)).toBe("");
+        expect(fmtUsd(-0.03609)).toBe("");
+        for (const value of [-0.99, 0.99]) {
+            expect(fmtUsd(value)).toBe("");
+            expect(fmtNumber(value)).toBe("");
+        }
+        expect(fmtUsd(0)).toBe("$0");
+        expect(fmtNumber(0)).toBe("0");
+        expect(fmtUsd(1)).toBe("$1");
+        expect(fmtNumber(-1)).toBe("−1");
     });
 
     it("renders missing values as an en dash", () => {

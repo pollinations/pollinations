@@ -1,8 +1,65 @@
 import { describe, expect, test } from "vitest";
-import { connectOptions } from "./connect-options.ts";
+import { connectMenuOptions, connectOptions } from "./connect-options.ts";
 
 const element = (attributes: Record<string, string>) => ({
     getAttribute: (name: string) => attributes[name] ?? null,
+});
+
+describe("connectMenuOptions", () => {
+    test("keeps the default menu and accepts a docs footer configuration", () => {
+        expect(connectMenuOptions(element({}))).toEqual({
+            showBuyPollen: true,
+            menuLinks: [],
+        });
+        const links = [
+            {
+                label: "Dashboard",
+                href: "https://enter.pollinations.ai",
+                icon: "app",
+            },
+        ];
+        expect(
+            connectMenuOptions(
+                element({
+                    "hide-buy-pollen": "",
+                    "menu-links": JSON.stringify(links),
+                }),
+            ),
+        ).toEqual({ showBuyPollen: false, menuLinks: links });
+    });
+
+    test("ignores malformed menu configuration without blocking sign-in", () => {
+        for (const value of [
+            "{",
+            "{}",
+            "[null]",
+            '[{"label":"Help","href":"/help"}]',
+            '[{"label":"Bad","href":"https://example.com","icon":"unknown"}]',
+            '[{"label":"Bad","href":"javascript:alert(1)"}]',
+        ]) {
+            expect(
+                connectMenuOptions(element({ "menu-links": value })),
+            ).toEqual({
+                showBuyPollen: true,
+                menuLinks: [],
+            });
+        }
+    });
+
+    test("preserves valid links when other entries are invalid", () => {
+        const valid = { label: "Help", href: "https://example.com/help" };
+        expect(
+            connectMenuOptions(
+                element({
+                    "menu-links": JSON.stringify([
+                        null,
+                        { label: "Bad", href: "javascript:alert(1)" },
+                        valid,
+                    ]),
+                }),
+            ).menuLinks,
+        ).toEqual([valid]);
+    });
 });
 
 describe("connectOptions", () => {

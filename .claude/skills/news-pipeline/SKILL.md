@@ -71,9 +71,9 @@ Each is written, sent to Discord and saved in one run; the run saves only if its
 Check in order:
 1. **Changelog, models:** the `/models` record (`data/models/`) shows the change between two recorded days; it is dated the day before the morning record that first shows it (the day it went live). A scheduled retirement needs a `RETIRE` row with an `Effective` date in the PR description; the daily of its merge day keeps it in its `changelog`.
 2. **Changelog, API:** only the post-deploy docs PR that regenerates `APIDOCS.md` records API changes, kept in the `changelog` of its merge day's daily.
-3. **Updates:** a daily highlight with `kind: product`. `model` and `api` belong to the Changelog; a PR its note rates other than `daily` never reaches a daily.
-4. **Window:** `index.json` keeps the last 30 days (at least 10 highlights). It is rebuilt after every `news-posts.yml` run and at 06:30; raw GitHub files are cached for about 5 minutes.
-5. **README:** the 07:00 README pull request (`repo-update-readme.yml`) lists the 10 newest highlights except apps; they show once that PR merges.
+3. **Updates:** a daily item with `kind: product`. `model` and `api` belong to the Changelog; a PR its note rates other than `daily` never reaches a daily.
+4. **Window:** `index.json` keeps the last 30 days (at least 10 daily items). It is rebuilt after every `news-posts.yml` run and at 06:30; raw GitHub files are cached for about 5 minutes.
+5. **README:** the 07:00 README pull request (`repo-update-readme.yml`) lists the 10 newest daily items except apps; they show once that PR merges.
 
 ## Check locally
 

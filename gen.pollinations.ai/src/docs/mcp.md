@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Stack Exchange | `https://gen.pollinations.ai/mcp/stackexchange` | Search Stack Overflow and the Stack Exchange network and read questions with their top answers | [Source](https://github.com/pollinations/pollinations/tree/main/apps/stackexchange-mcp) |
 
 Send the key with every request:
 
@@ -207,6 +208,16 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### Stack Exchange MCP
+
+The Stack Exchange server searches Stack Overflow and the rest of the Stack
+Exchange network through the public API. `search_questions` takes free-text
+`query`, `tags`, or both, plus `site` (default `stackoverflow`), `sort`, and
+`limit`. `get_question` fetches one question with its highest-voted answers,
+converted to plain text with code blocks fenced. Both tools are free and need no
+provider key; the caller's key is only checked at the proxy and is never sent
+upstream.
 
 ### Billing and permissions
 

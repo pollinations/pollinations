@@ -113,7 +113,10 @@ const RADIOHEAD = {
             "sort-name": "Radiohead",
             type: "Group",
             country: "GB",
-            area: { id: "8a754a16-0027-3a29-b6d7-2b40ea0481ed", name: "United Kingdom" },
+            area: {
+                id: "8a754a16-0027-3a29-b6d7-2b40ea0481ed",
+                name: "United Kingdom",
+            },
             "life-span": { begin: "1985", end: null, ended: false },
             disambiguation: "",
             score: 100,
@@ -190,7 +193,12 @@ test("search_artists defaults the limit to 5", async (t) => {
 
 test("search_artists reports empty results as a tool error", async (t) => {
     t.mock.method(globalThis, "fetch", async () =>
-        Response.json({ created: "2026-10-22", count: 0, offset: 0, artists: [] }),
+        Response.json({
+            created: "2026-10-22",
+            count: 0,
+            offset: 0,
+            artists: [],
+        }),
     );
     const client = await connectClient();
     t.after(() => client.close());
@@ -238,8 +246,18 @@ const RELEASES = {
                     format: "CD",
                     "track-count": 2,
                     track: [
-                        { id: "t1", number: "1", title: "Airbag", length: 284000 },
-                        { id: "t2", number: "2", title: "Paranoid Android", length: 383000 },
+                        {
+                            id: "t1",
+                            number: "1",
+                            title: "Airbag",
+                            length: 284000,
+                        },
+                        {
+                            id: "t2",
+                            number: "2",
+                            title: "Paranoid Android",
+                            length: 383000,
+                        },
                     ],
                 },
             ],
@@ -291,10 +309,7 @@ test("artist_releases queries MusicBrainz without forwarding caller credentials"
     assert.notEqual(result.isError, true);
     assert.equal(calls, 1);
     const report = JSON.parse(result.content[0].text);
-    assert.equal(
-        report.artist_id,
-        "a74b1b7f-71a5-4011-9441-d0b5e4122711",
-    );
+    assert.equal(report.artist_id, "a74b1b7f-71a5-4011-9441-d0b5e4122711");
     assert.equal(report.count, 1);
     const release = report.results[0];
     assert.equal(release.title, "OK Computer");
@@ -325,9 +340,7 @@ test("artist_releases maps empty label-info to null label fields", async (t) => 
                         {
                             format: "Digital Media",
                             "track-count": 1,
-                            track: [
-                                { id: "t1", number: "1", title: "Airbag" },
-                            ],
+                            track: [{ id: "t1", number: "1", title: "Airbag" }],
                         },
                     ],
                 },

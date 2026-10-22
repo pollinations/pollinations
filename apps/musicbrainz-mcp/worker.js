@@ -47,7 +47,9 @@ function buildServer() {
                     .min(1)
                     .max(10)
                     .optional()
-                    .describe("Maximum number of artists to return (default 5)"),
+                    .describe(
+                        "Maximum number of artists to return (default 5)",
+                    ),
             },
         },
         async ({ query, limit }) => {
@@ -101,7 +103,9 @@ function buildServer() {
                     .min(1)
                     .max(25)
                     .optional()
-                    .describe("Maximum number of releases to return (default 10)"),
+                    .describe(
+                        "Maximum number of releases to return (default 10)",
+                    ),
             },
         },
         async ({ artist_id, limit }) => {

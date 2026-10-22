@@ -1,6 +1,6 @@
 ---
 name: polli
-description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage agents or my-models, or run polli commands.
+description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage agents or my-models, publish a static site, or run polli commands.
 allowed-tools: Bash(polli *)
 ---
 
@@ -19,6 +19,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 - User wants to **browse or filter available models**
 - User wants to inspect **quests** or manage invite-only **my-models**
 - User wants to create or update a hosted prompt **agent**
+- User wants to **publish a website or web app** they built
 
 For agent-assisted login, use `polli --json auth login --no-browser`. Read stderr while the command runs and show the user the verification URL and user code so they can review access. On approval, stdout contains one JSON result: `{"authenticated":true}`. Tokens are stored locally and never included in that result.
 
@@ -55,6 +56,7 @@ For agent-assisted login, use `polli --json auth login --no-browser`. Read stder
 | Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|hermes\|opencode\|openclaw\|pi\|prime\|tgpt> on` (available adapters: `polli harness --help`) |
 | Start a Linux sandbox (alpha) | `polli sandbox create` (`--timeout <seconds>` to keep it running without ssh, `0` until you pause or kill it; `pollinations-large` as the template for 4 vCPU and 8 GB; then `list`, `logs <id>`, `timeout <id> <seconds>`, `pause <id>`, `kill <id>`); the default template comes logged in, with the coding harnesses |
 | ssh / scp / rsync into a sandbox | `ssh <sandbox-id>.polli`. Port forwarding (`ssh -L 3000:localhost:3000 <sandbox-id>.polli`) and VS Code Remote-SSH work. An open connection keeps the sandbox running and paid; it pauses 15–20 minutes after the last one closes (5–10 on Windows) |
+| Publish a static site | `polli sites deploy ./dist --name my-app` (prints `https://my-app.pollinations.app`; then `list`, `delete <name>`) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -243,6 +245,15 @@ polli agents delete <id>
 Prompt-agent config contains `systemPrompt`, `baseModel`, and optional `mcpServers` (add `composio` to act in the caller's own accounts, such as a GitHub commit; callers connect apps at https://enter.pollinations.ai/account#connectors); create also requires `--name` and `--title`. Code-agent config contains `type: "code_agent"` and a public GitHub `repository` with `agent.ts` at its root; its model ID, title, and description come from GitHub. Use server IDs from the MCP catalog. Updates are partial: send only the fields to change; the rest keep their values. `sync` deploys the latest GitHub revision of a code agent.
 
 Creating an agent also creates its callable model listing. Managed agents are text-only and free, with no fallbacks or per-user RPM. Deleting the agent also deletes its model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md).
+
+### Publish a static site
+```bash
+npm run build
+polli sites deploy ./dist --name my-app   # → https://my-app.pollinations.app
+polli sites list
+polli sites delete my-app
+```
+Publishes a folder of static files with an `index.html`; unknown paths serve `index.html`, so single-page apps route on the client. Deploying the same name again replaces the site and uploads only changed files. Names are 3–32 lowercase letters, digits and hyphens, starting with a letter; the first deploy claims the name. Limits: 5 sites per account, 200 MB and 1,000 files per site, 25 MiB per file. Dotfiles and `node_modules` are not uploaded. Sites are public: never put an API key in them. To call Pollinations from a site, let visitors sign in with their own Pollen (see [Connect User Wallets](https://gen.pollinations.ai/docs/llm.txt?section=byop)). Share the URL the command prints rather than composing one from the name.
 
 ### Manage API keys
 ```bash

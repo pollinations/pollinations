@@ -19,7 +19,7 @@ function publicMessage<T extends Record<string, unknown>>(
 
 // InferencePort's `payg_*` fields hold its ledger entry, including our account
 // balance.
-function withoutPayg<T extends object>(value: T): T {
+export function withoutPayg<T extends object>(value: T): T {
     return Object.fromEntries(
         Object.entries(value).filter(([key]) => !key.startsWith("payg_")),
     ) as T;

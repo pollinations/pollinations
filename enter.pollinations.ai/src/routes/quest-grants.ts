@@ -72,7 +72,7 @@ export const questGrantAdminRoutes = new Hono<Env>().post(
         const result = await recordRewards(
             db,
             matched.map((user) => ({
-                idempotencyKey: rewardKey(questId, user.githubId),
+                idempotencyKey: rewardKey(questId, user),
                 userId: user.id,
                 amount: input.pollenAmount,
                 bucket: input.balanceBucket,

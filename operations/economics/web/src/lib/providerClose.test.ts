@@ -393,6 +393,52 @@ describe("providerCloseRows", () => {
         expect(row.closeStatus).toBe("ready");
     });
 
+    it("uses archived multi-month zero statements without extending their final partial month", () => {
+        const rows = providerCloseRows(
+            data({
+                vendorLedger: [
+                    ...["2026-07", "2026-08"].map((month) =>
+                        cloud({
+                            entry_id: `modal-${month}`,
+                            vendor: "modal",
+                            account_id: "myceli-ai",
+                            start: `${month}-01 00:00:00`,
+                            end:
+                                month === "2026-07"
+                                    ? "2026-08-01 00:00:00"
+                                    : "2026-09-01 00:00:00",
+                            paid: -10,
+                        }),
+                    ),
+                    ...["myceli-ai2", "elliot-4"].map((account) =>
+                        cloud({
+                            entry_id: `zero-${account}`,
+                            vendor: "modal",
+                            account_id: account,
+                            start: "2026-01-01 00:00:00",
+                            end: "2026-08-21 00:00:00",
+                            resource_sku: "verified-zero",
+                            resource_count: 0,
+                        }),
+                    ),
+                ],
+            }),
+            "2026-09",
+        ).filter((row) => row.vendor === "modal");
+        expect(rows.find((row) => row.month === "2026-07")).toMatchObject({
+            coverageStatus: "complete",
+            closeStatus: "ready",
+            billedUsd: 10,
+            missingAccounts: [],
+        });
+        expect(rows.find((row) => row.month === "2026-08")).toMatchObject({
+            coverageStatus: "partial",
+            closeStatus: "needs provider check",
+            billedUsd: 10,
+            missingAccounts: ["myceli-ai2", "elliot-4"],
+        });
+    });
+
     it("resolves a known project alias to its active billing account", () => {
         const [row] = providerCloseRows(
             data({
@@ -416,6 +462,27 @@ describe("providerCloseRows", () => {
         );
 
         expect(row.closeStatus).toBe("ready");
+    });
+
+    it("recognizes historical Vast team IDs as the same checked account", () => {
+        const rows = providerCloseRows(
+            data({
+                vendorLedger: [
+                    cloud({
+                        vendor: "vast",
+                        account_id: "396700",
+                        type: "gpu",
+                        paid: -120,
+                    }),
+                ],
+            }),
+            "2026-07",
+        );
+        expect(rows.find((row) => row.vendor === "vast")).toMatchObject({
+            coverageStatus: "complete",
+            missingAccounts: [],
+            billedUsd: 120,
+        });
     });
 
     it("flags incomplete active-account coverage", () => {

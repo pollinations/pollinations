@@ -1,4 +1,5 @@
 interface CloudflareBindings {
+    ASSETS: Fetcher;
     ENTER: Fetcher;
     POLLINATIONS_MCP: Fetcher;
     ASK_JEV_MCP: Fetcher;
@@ -6,6 +7,7 @@ interface CloudflareBindings {
     EXA_MCP: Fetcher;
     COMPOSIO_MCP: Fetcher;
     COMPUTER_MCP: Fetcher;
+    MACHINES_MCP: Fetcher;
     PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;

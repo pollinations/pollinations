@@ -24,7 +24,15 @@ SQL >
         tupleElement(latest, 13) AS resource_sku,
         tupleElement(latest, 14) AS resource_count,
         tupleElement(latest, 15) AS resource_id,
-        tupleElement(latest, 16) AS resource_name
+        tupleElement(latest, 16) AS resource_name,
+        tupleElement(latest, 18) AS statement_amount,
+        tupleElement(latest, 19) AS compared_entry_ids,
+        tupleElement(latest, 20) AS comparison_month,
+        tupleElement(latest, 21) AS comparison_basis,
+        tupleElement(latest, 22) AS plan_amount,
+        tupleElement(latest, 23) AS plan_category,
+        tupleElement(latest, 24) AS plan_cadence,
+        tupleElement(latest, 25) AS settled_by_entry_ids
     FROM
     (
         SELECT
@@ -47,7 +55,15 @@ SQL >
                     resource_count,
                     resource_id,
                     resource_name,
-                    recorded_at
+                    recorded_at,
+                    statement_amount,
+                    compared_entry_ids,
+                    comparison_month,
+                    comparison_basis,
+                    plan_amount,
+                    plan_category,
+                    plan_cadence,
+                    settled_by_entry_ids
                 ),
                 recorded_at
             ) AS latest

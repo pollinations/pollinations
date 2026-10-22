@@ -10,8 +10,7 @@
         "deploy-applications.yml:Deploy operations/model-monitor",
         "deploy-cloudflare-production.yml:Deploy apps/ask-jev-mcp",
         "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-gen"
       ]
     }
   },

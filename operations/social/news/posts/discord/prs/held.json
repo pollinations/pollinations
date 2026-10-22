@@ -1,36 +1,5 @@
 {
-  "held": {
-    "16277": {
-      "merge_sha": "e12f25ad252a326084689881f29122d34dfd02c1",
-      "merged_at": "2026-10-22T13:30:43Z",
-      "required": []
-    },
-    "17205": {
-      "merge_sha": "80b1f1c9027da32012aa6f38b528ed0505cf1474",
-      "merged_at": "2026-10-22T14:41:03Z",
-      "required": []
-    },
-    "18040": {
-      "merge_sha": "4a6cd83f0e6560d961fe93cb2120aa7afe13e2e5",
-      "merged_at": "2026-10-22T13:48:59Z",
-      "required": []
-    },
-    "18056": {
-      "merge_sha": "48e6fbdb362edcbc5f8fab13eb2c270d7e7ebee1",
-      "merged_at": "2026-10-22T14:25:48Z",
-      "required": []
-    },
-    "18069": {
-      "merge_sha": "4d843bcc8ebf31e0fbda4f28ce46bb76ebdab299",
-      "merged_at": "2026-10-22T15:08:35Z",
-      "required": []
-    },
-    "18131": {
-      "merge_sha": "e8ca84351d1fa5225b450b39beb1e6c58ebbe113",
-      "merged_at": "2026-10-22T14:59:12Z",
-      "required": []
-    }
-  },
+  "held": {},
   "production": "3e045d33aa5c1ba7b5f21924e247f517ee71eea0",
   "master": "02b0575f1ae6daad402bb2782119d7752403ad01"
 }

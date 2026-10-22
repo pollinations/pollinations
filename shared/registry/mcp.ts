@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "HOLIDAYS_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "holidays",
+        name: "Holidays",
+        description:
+            "List public holidays for any country and year, for planning and scheduling.",
+        binding: "HOLIDAYS_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Holiday lookups are free. No additional MCP fee.",
             rates: [],
         },
     },

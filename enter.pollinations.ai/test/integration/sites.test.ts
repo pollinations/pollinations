@@ -15,9 +15,14 @@ const manifest = {
     "/app.js": { hash: "b".repeat(32), size: 2048 },
 };
 
+type Manifest = Record<string, { hash: string; size: number }>;
+
 // Answers the Cloudflare API calls the sites routes make and records them.
-// Other hosts still reach the fixture's fetch mock.
-function fakeCloudflare() {
+// Other hosts still reach the fixture's fetch mock. `missing` picks the
+// buckets Cloudflare asks for.
+function fakeCloudflare(
+    missing: (manifest: Manifest) => string[][] = () => [["b".repeat(32)]],
+) {
     const calls: { method: string; url: string; body: string | FormData }[] =
         [];
     const routed = globalThis.fetch;
@@ -36,9 +41,16 @@ function fakeCloudflare() {
             : await request.text();
         calls.push({ method: request.method, url: request.url, body });
         if (request.url.endsWith("/assets-upload-session")) {
+            const { manifest } = JSON.parse(body as string);
             return Response.json({
                 success: true,
-                result: { jwt: "upload-jwt", buckets: [["b".repeat(32)]] },
+                result: { jwt: "upload-jwt", buckets: missing(manifest) },
+            });
+        }
+        if (request.url.includes("/workers/assets/upload")) {
+            return Response.json({
+                success: true,
+                result: { jwt: "completion-jwt" },
             });
         }
         return Response.json({ success: true, result: {} });
@@ -236,6 +248,58 @@ describe("/api/account/sites", () => {
         expect(await list.json()).toMatchObject({
             data: [{ name: "bad-site", blocked: true }],
         });
+    });
+
+    test("publishes inline files in one request", async ({ accountToken }) => {
+        const calls = fakeCloudflare((manifest) => [
+            Object.values(manifest).map((file) => file.hash),
+        ]);
+        const png = btoa("\x89PNG fake");
+
+        const response = await sites(accountToken, "PUT", "/inline-site", {
+            files: [
+                { file: "index.html", data: "<h1>Hi</h1>" },
+                { file: "/img/logo.png", data: png, encoding: "base64" },
+            ],
+        });
+        expect(response.status).toBe(200);
+        expect(await response.json()).toMatchObject({
+            url: "https://inline-site.pollinations.app",
+            publishedAt: expect.any(String),
+        });
+
+        const manifest = JSON.parse(calls[0].body as string).manifest;
+        expect(manifest).toEqual({
+            "/index.html": { hash: expect.any(String), size: 11 },
+            "/img/logo.png": { hash: expect.any(String), size: 9 },
+        });
+        const form = calls[1].body as FormData;
+        const html = form.get(manifest["/index.html"].hash) as Blob;
+        expect(html.type).toBe("text/html");
+        expect(await html.text()).toBe(btoa("<h1>Hi</h1>"));
+        const logo = form.get(manifest["/img/logo.png"].hash) as Blob;
+        expect(logo.type).toBe("image/png");
+        expect(await logo.text()).toBe(png);
+        const metadata = JSON.parse(
+            await ((calls[2].body as FormData).get("metadata") as Blob).text(),
+        );
+        expect(metadata.assets.jwt).toBe("completion-jwt");
+    });
+
+    test("checks inline files before claiming the name", async ({
+        accountToken,
+    }) => {
+        const calls = fakeCloudflare();
+        const noIndex = await sites(accountToken, "PUT", "/inline-site", {
+            files: [{ file: "app.js", data: "1" }],
+        });
+        expect(noIndex.status).toBe(400);
+        const tooBig = await sites(accountToken, "PUT", "/inline-site", {
+            files: [{ file: "index.html", data: "x".repeat(10 * MiB) }],
+        });
+        expect(tooBig.status).toBe(413);
+        expect(calls).toEqual([]);
+        expect(await drizzle(env.DB).select().from(siteTable)).toEqual([]);
     });
 
     test("API keys need account:machines", async ({ apiKey }) => {

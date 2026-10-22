@@ -4,6 +4,11 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- `deploySite()`, `listSites()` and `deleteSite()` publish static sites at
+  `https://<name>.pollinations.app` with inline files (up to 10 MB per
+  request). Keys need the `machines` account permission.
+
 ## [5.1.0-alpha.19] - 2026-10-14
 
 ### Fixed

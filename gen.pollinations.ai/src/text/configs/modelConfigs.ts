@@ -631,14 +631,17 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- OpenRouter (Gemma) ---------------------------------------------------
-    // Novita preserves remote image URLs; NextBit rejects that public input form.
+    // Novita's Gemma deployments regressed: 26B rejected most requests with
+    // 4xx and 31B's endpoint was degraded. 26B keeps DeepInfra, the provider
+    // its direct fallback already uses for image requests; 31B moves to
+    // Crusoe BF16 at Novita's former per-token rate.
     "google/gemma-4-26b-a4b-it": createPinnedOpenRouterConfig(
         "google/gemma-4-26b-a4b-it",
-        "novita/bf16",
+        "deepinfra/fp8",
     ),
     "google/gemma-4-31b-it": createPinnedOpenRouterConfig(
         "google/gemma-4-31b-it",
-        "novita/bf16",
+        "crusoe/bf16",
     ),
 
     // -- Exact-checkpoint text fallbacks -------------------------------------

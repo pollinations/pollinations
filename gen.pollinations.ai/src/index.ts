@@ -30,6 +30,7 @@ import {
     GENERATION_HANDOFF_PATH,
     generationHandoffRoutes,
 } from "@/utils/execute-generation.ts";
+import { agentsTxtRoutes } from "./routes/agents-txt.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import {
     buildMergedOpenApiSpec,
@@ -86,6 +87,10 @@ function robotsTxt(c: Context<Env>): Response {
             "User-agent: *",
             "Allow: /docs",
             "Allow: /docs/llm.txt",
+            // Agent-facing discovery files: agents-txt.com §4.3 asks for an
+            // explicit Allow so crawlers reading robots.txt see they exist.
+            "Allow: /llms.txt",
+            "Allow: /agents.txt",
             "Disallow: /image/",
             "Disallow: /text/",
             "Disallow: /video/",
@@ -230,6 +235,8 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     )
     .get("/manifest.webmanifest", () => manifestResponse())
     .route("/.well-known", wellKnownRoutes)
+    // agents-txt.com v1.0 capability declaration for agents.
+    .route("/", agentsTxtRoutes)
     // Coordinator alarms run generations here, under the zone's timeout.
     .route(GENERATION_HANDOFF_PATH, generationHandoffRoutes)
     .get("/", async (c) => {

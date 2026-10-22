@@ -17,7 +17,9 @@ const SKILLS_SCHEMA =
     "https://schemas.agentskills.io/discovery/0.2.0/schema.json";
 
 // One entry per published skill; served at /agent-skills/<name>/SKILL.md.
-const AGENT_SKILLS = [
+// Exported so the agents.txt declaration (routes/agents-txt.ts) advertises the
+// same skill set as this index — agents-txt.com §7.5 requires the two to agree.
+export const AGENT_SKILLS = [
     { name: "polli", markdown: CLI_SKILL },
     { name: "pollinations-api", markdown: API_SKILL },
     { name: "bring-your-own-pollen", markdown: BYOP_SKILL },

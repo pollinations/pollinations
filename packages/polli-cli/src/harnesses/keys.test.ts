@@ -26,6 +26,7 @@ beforeAll(async () => {
                         },
                         {
                             id: "publisher/chat",
+                            aliases: ["chat-alias"],
                             input_modalities: ["text"],
                             output_modalities: ["text"],
                             supported_endpoints: ["/v1/chat/completions"],
@@ -139,14 +140,23 @@ describe("harness keys", () => {
 
 describe("harness models", () => {
     it("only includes models supporting chat completions", async () => {
-        await expect(fetchHarnessModels("chat")).resolves.toEqual([
-            { id: "chat", contextWindow: 100, input: ["text"] },
-            {
-                id: "publisher/chat",
-                contextWindow: 200,
-                input: ["text"],
-            },
-        ]);
+        await expect(fetchHarnessModels("chat")).resolves.toEqual({
+            model: "chat",
+            models: [
+                { id: "chat", contextWindow: 100, input: ["text"] },
+                {
+                    id: "publisher/chat",
+                    contextWindow: 200,
+                    input: ["text"],
+                },
+            ],
+        });
+    });
+
+    it("resolves an alias to the canonical model ID", async () => {
+        await expect(fetchHarnessModels("chat-alias")).resolves.toMatchObject({
+            model: "publisher/chat",
+        });
     });
 
     it.each(["missing", "realtime", "owner/community-chat"])(

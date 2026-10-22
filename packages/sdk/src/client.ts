@@ -48,6 +48,9 @@ import type {
     ModelStatusResponse,
     PollinationsConfig,
     RequestOptions,
+    Site,
+    SiteFile,
+    SitesResponse,
     SpeechWordTiming,
     TextGenerateOptions,
     TranscribeOptions,
@@ -2155,6 +2158,81 @@ export class Pollinations {
             async (response) => {
                 if (!response.ok) await this.handleErrorResponse(response);
                 return response.json() as Promise<CreatedKey>;
+            },
+        );
+    }
+
+    /**
+     * List your static sites and the account's site limits.
+     * Needs a key with the `machines` account permission.
+     *
+     * @example
+     * ```ts
+     * const { data } = await pollinations.listSites();
+     * data.forEach(site => console.log(site.url));
+     * ```
+     */
+    async listSites(options: RequestOptions = {}): Promise<SitesResponse> {
+        return this.getJson<SitesResponse>(
+            `${this.baseUrl}/account/sites`,
+            options.signal,
+        );
+    }
+
+    /**
+     * Publish a static site at `https://<name>.pollinations.app`, replacing
+     * what was there. Files are sent inline (up to 5 MB per request);
+     * `index.html` is required. The first deploy claims the name.
+     *
+     * @example
+     * ```ts
+     * const site = await pollinations.deploySite('my-app', [
+     *   { file: 'index.html', data: '<h1>Hello</h1>' },
+     *   { file: 'logo.png', data: pngBase64, encoding: 'base64' },
+     * ]);
+     * console.log(site.url); // https://my-app.pollinations.app
+     * ```
+     */
+    async deploySite(
+        name: string,
+        files: SiteFile[],
+        options: RequestOptions = {},
+    ): Promise<Site> {
+        return fetchWithTimeout(
+            `${this.baseUrl}/account/sites/${encodeURIComponent(name)}`,
+            {
+                method: "PUT",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify({ files }),
+            },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                return response.json() as Promise<Site>;
+            },
+        );
+    }
+
+    /**
+     * Take a site offline and free its name.
+     *
+     * @example
+     * ```ts
+     * await pollinations.deleteSite('my-app');
+     * ```
+     */
+    async deleteSite(
+        name: string,
+        options: RequestOptions = {},
+    ): Promise<void> {
+        return fetchWithTimeout(
+            `${this.baseUrl}/account/sites/${encodeURIComponent(name)}`,
+            { method: "DELETE", headers: this.getHeaders() },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
             },
         );
     }

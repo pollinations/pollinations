@@ -60,6 +60,8 @@ declare namespace Cloudflare {
 		BETTER_AUTH_URL: "https://enter.pollinations.ai";
 		GEN_BASE_URL: "https://gen.pollinations.ai";
 		CODE_AGENT_DISPATCH_NAMESPACE: "pollinations-code-agents-production";
+		SITES_DISPATCH_NAMESPACE: "pollinations-hosting";
+		SITES_HOST_SUFFIX: ".pollinations.app";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TVU4T7rcjS3l7trqtBuve71";
 		STRIPE_PMC: "pmc_1SrY4O7rcjS3l7trnGXDTuat";
 		STRIPE_PUBLISHABLE_KEY: "pk_live_51SrY3q7rcjS3l7trHGtfzyEb63kpEdfwZJQQifMVcLVS75PHDAbCXMXuem6MyUz89SaF8rXsBopXEOMGz6HVxwAa009lrHccxE";
@@ -100,6 +102,8 @@ declare namespace Cloudflare {
 		BETTER_AUTH_URL: "https://staging.enter.pollinations.ai";
 		GEN_BASE_URL: "https://staging.gen.pollinations.ai";
 		CODE_AGENT_DISPATCH_NAMESPACE: "pollinations-code-agents-staging";
+		SITES_DISPATCH_NAMESPACE: "pollinations-hosting-staging";
+		SITES_HOST_SUFFIX: "--staging.pollinations.app";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU";
 		STRIPE_PUBLISHABLE_KEY: "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUGgUdV2Rl8YPNW25UOy4Oj7I3tMnHqwZmncIu9vSMKa3V00munj0lUE";
@@ -187,6 +191,8 @@ declare namespace Cloudflare {
 		BETTER_AUTH_URL: "http://localhost:3000";
 		GEN_BASE_URL: "https://gen.pollinations.ai";
 		CODE_AGENT_DISPATCH_NAMESPACE: "pollinations-code-agents-production";
+		SITES_DISPATCH_NAMESPACE: "pollinations-hosting-test";
+		SITES_HOST_SUFFIX: ".pollinations.app";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU";
 		STRIPE_PUBLISHABLE_KEY: "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUGgUdV2Rl8YPNW25UOy4Oj7I3tMnHqwZmncIu9vSMKa3V00munj0lUE";
@@ -227,6 +233,8 @@ declare namespace Cloudflare {
 		BETTER_AUTH_URL: "http://localhost:3000" | "https://enter.pollinations.ai" | "https://staging.enter.pollinations.ai" | "https://dev.enter.pollinations.ai";
 		GEN_BASE_URL: "http://localhost:8788" | "https://gen.pollinations.ai" | "https://staging.gen.pollinations.ai" | "https://dev.gen.pollinations.ai";
 		CODE_AGENT_DISPATCH_NAMESPACE: "pollinations-code-agents-development" | "pollinations-code-agents-production" | "pollinations-code-agents-staging";
+		SITES_DISPATCH_NAMESPACE?: "pollinations-hosting-staging" | "pollinations-hosting" | "pollinations-hosting-test";
+		SITES_HOST_SUFFIX?: "--staging.pollinations.app" | ".pollinations.app";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg" | "pmc_1TVU4T7rcjS3l7trqtBuve71";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU" | "pmc_1SrY4O7rcjS3l7trnGXDTuat";
 		STRIPE_PUBLISHABLE_KEY: "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUGgUdV2Rl8YPNW25UOy4Oj7I3tMnHqwZmncIu9vSMKa3V00munj0lUE" | "pk_live_51SrY3q7rcjS3l7trHGtfzyEb63kpEdfwZJQQifMVcLVS75PHDAbCXMXuem6MyUz89SaF8rXsBopXEOMGz6HVxwAa009lrHccxE";
@@ -264,5 +272,5 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ENVIRONMENT" | "CLOUDFLARE_ACCOUNT_ID" | "LOG_LEVEL" | "LOG_FORMAT" | "D1_EXPORT_TOKEN_SHA256" | "TINYBIRD_INGEST_URL" | "TINYBIRD_STRIPE_INGEST_URL" | "STRIPE_MODE" | "STRIPE_SUCCESS_URL" | "BETTER_AUTH_URL" | "GEN_BASE_URL" | "CODE_AGENT_DISPATCH_NAMESPACE" | "STRIPE_AUTO_TOP_UP_PMC_ID" | "STRIPE_PMC" | "STRIPE_PUBLISHABLE_KEY" | "BETTER_AUTH_SECRET" | "GITHUB_CLIENT_ID" | "GITHUB_CLIENT_SECRET" | "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET" | "PLN_ENTER_TOKEN" | "TINYBIRD_READ_TOKEN" | "STRIPE_SECRET_KEY" | "STRIPE_WEBHOOK_SECRET" | "ELEVENLABS_API_KEY" | "OVHCLOUD_API_KEY" | "PLN_GPU_TOKEN" | "SSH_RUNPOD_KLEIN" | "SSH_RUNPOD_FLUX_ZIMAGE" | "SSH_LAMBDA_SANA_LTX2_ACESTEP" | "TINYBIRD_INGEST_TOKEN" | "DASHSCOPE_API_KEY" | "GITHUB_APP_ID" | "GITHUB_APP_PRIVATE_KEY" | "STAGING_ALLOWED_GITHUB_IDS" | "STAGING_ALLOWED_EMAILS" | "USAGE_DEBUG_USER_ID" | "DISCORD_CLIENT_ID" | "DISCORD_CLIENT_SECRET" | "DISCORD_BOT_TOKEN" | "TINYBIRD_ECONOMICS_READ_TOKEN">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ENVIRONMENT" | "CLOUDFLARE_ACCOUNT_ID" | "LOG_LEVEL" | "LOG_FORMAT" | "D1_EXPORT_TOKEN_SHA256" | "TINYBIRD_INGEST_URL" | "TINYBIRD_STRIPE_INGEST_URL" | "STRIPE_MODE" | "STRIPE_SUCCESS_URL" | "BETTER_AUTH_URL" | "GEN_BASE_URL" | "CODE_AGENT_DISPATCH_NAMESPACE" | "SITES_DISPATCH_NAMESPACE" | "SITES_HOST_SUFFIX" | "STRIPE_AUTO_TOP_UP_PMC_ID" | "STRIPE_PMC" | "STRIPE_PUBLISHABLE_KEY" | "BETTER_AUTH_SECRET" | "GITHUB_CLIENT_ID" | "GITHUB_CLIENT_SECRET" | "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET" | "PLN_ENTER_TOKEN" | "TINYBIRD_READ_TOKEN" | "STRIPE_SECRET_KEY" | "STRIPE_WEBHOOK_SECRET" | "ELEVENLABS_API_KEY" | "OVHCLOUD_API_KEY" | "PLN_GPU_TOKEN" | "SSH_RUNPOD_KLEIN" | "SSH_RUNPOD_FLUX_ZIMAGE" | "SSH_LAMBDA_SANA_LTX2_ACESTEP" | "TINYBIRD_INGEST_TOKEN" | "DASHSCOPE_API_KEY" | "GITHUB_APP_ID" | "GITHUB_APP_PRIVATE_KEY" | "STAGING_ALLOWED_GITHUB_IDS" | "STAGING_ALLOWED_EMAILS" | "USAGE_DEBUG_USER_ID" | "DISCORD_CLIENT_ID" | "DISCORD_CLIENT_SECRET" | "DISCORD_BOT_TOKEN" | "TINYBIRD_ECONOMICS_READ_TOKEN">> {}
 }

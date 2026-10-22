@@ -287,18 +287,15 @@ test("routes Geo with caller authorization without an extra MCP debit", async ()
             arguments: { query: "Moradabad, India", limit: 1 },
         },
     };
-    const response = await SELF.fetch(
-        "https://gen.pollinations.ai/mcp/geo",
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${key}`,
-                Cookie: "session=private",
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
+    const response = await SELF.fetch("https://gen.pollinations.ai/mcp/geo", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${key}`,
+            Cookie: "session=private",
+            "Content-Type": "application/json",
         },
-    );
+        body: JSON.stringify(payload),
+    });
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
         pathname: "/",

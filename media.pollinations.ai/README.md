@@ -212,11 +212,9 @@ curl -X POST https://media.pollinations.ai/upload \
 ## 🏗️ Development
 
 ```bash
-# Install dependencies (media is a root workspace; run at the repository root)
+# From the repository root (media is a root workspace)
 npm install
-
-# Run locally
-npm run dev
+npm run dev --workspace media.pollinations.ai
 ```
 
 Production deploys run through the `Deploy / Cloudflare production` workflow.

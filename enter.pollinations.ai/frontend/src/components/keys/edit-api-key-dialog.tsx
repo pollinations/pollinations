@@ -7,6 +7,10 @@ import { KeyDialogContent } from "./key-dialog-content.tsx";
 import { initialKeyEditValues, keyEditUpdates } from "./key-edit-values.ts";
 import { useKeyPermissions } from "./key-permissions.tsx";
 import { isAppKey, isPublishableKey } from "./key-type.ts";
+import {
+    findInvalidRedirectUri,
+    invalidRedirectUriMessage,
+} from "./publishable-key-settings.tsx";
 import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
 
 interface EditApiKeyDialogProps {
@@ -51,6 +55,13 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const keyPermissions = useKeyPermissions(initialValues);
 
     async function handleSave() {
+        const invalidUri = isPublishable
+            ? findInvalidRedirectUri(redirectUris)
+            : null;
+        if (invalidUri) {
+            setError(invalidRedirectUriMessage(invalidUri));
+            return;
+        }
         setIsSubmitting(true);
         setError(null);
         try {

@@ -31,6 +31,8 @@ type User = {
     barbaras: Barbara[];
     // What Mama waits for after a settings button: a name, a photo or people.
     asking?: { kind: "name" | "photo" | "people"; botId: number };
+    // A bot whose setup failed before her box existed, for Try again.
+    unfinished?: TgUser;
 };
 type TgUser = { id: number; first_name: string; username?: string };
 
@@ -228,7 +230,7 @@ const askForBot = async (from: TgUser) => {
         : `barbara_${from.id}_bot`;
     return say(
         from.id,
-        "Signed in. Now tap Create my Barbara: Telegram asks you for her name and username.",
+        "Tap Create my Barbara: Telegram asks you for her name and username.",
         {
             reply_markup: {
                 inline_keyboard: [
@@ -303,6 +305,7 @@ async function setUp(owner: TgUser, bot: TgUser) {
             created: new Date().toISOString(),
         };
         user.barbaras.push(b);
+        delete user.unfinished;
         save();
         await setBudget(user.key, b, BUDGET);
         await runInBox(box, SETUP, {
@@ -334,10 +337,28 @@ async function setUp(owner: TgUser, bot: TgUser) {
         );
     } catch (error) {
         console.error(`setUp @${bot.username}:`, error);
+        const early = !user.barbaras.some((b) => b.botId === bot.id);
+        if (early) {
+            user.unfinished = bot;
+            save();
+        }
         await say(
             owner.id,
             `Setting up @${bot.username} failed: ${error instanceof Error ? error.message : error}`,
-            MENU,
+            early
+                ? {
+                      reply_markup: {
+                          inline_keyboard: [
+                              [
+                                  {
+                                      text: "🔁 Try again",
+                                      callback_data: `retry:${bot.id}`,
+                                  },
+                              ],
+                          ],
+                      },
+                  }
+                : MENU,
         );
     }
 }
@@ -533,12 +554,72 @@ async function cardView(owner: TgUser, b: Barbara): Promise<View> {
                     },
                 ],
                 [
+                    box.state === "paused"
+                        ? {
+                              text: "▶️ Resume",
+                              callback_data: `resume:${b.botId}`,
+                              style: "success",
+                          }
+                        : {
+                              text: "⏸️ Pause",
+                              callback_data: `pause:${b.botId}`,
+                          },
+                    {
+                        text: "🗑️ Delete",
+                        callback_data: `delete:${b.botId}`,
+                        style: "danger",
+                    },
+                ],
+                [
                     { text: "💬 Open chat", url: `https://t.me/${b.bot}` },
                     { text: "‹ All Barbaras", callback_data: "list" },
                 ],
             ],
         },
     };
+}
+
+const pauseView = (b: Barbara): View => ({
+    text: `<b>Pause @${b.bot}?</b>\nHer box stops and costs nothing until you resume her. She doesn't answer meanwhile; messages sent to her wait up to a day.`,
+    reply_markup: {
+        inline_keyboard: [
+            [
+                { text: "⏸️ Pause her", callback_data: `paused:${b.botId}` },
+                { text: "‹ Back", callback_data: `open:${b.botId}` },
+            ],
+        ],
+    },
+});
+
+const deleteView = (b: Barbara): View => ({
+    text: `<b>Delete @${b.bot}?</b>\nHer box goes away with everything in it: her memory, files and setup. Her key is revoked. Apps you connected stay on your Pollinations account.`,
+    reply_markup: {
+        inline_keyboard: [
+            [
+                {
+                    text: "🗑️ Delete her",
+                    callback_data: `deleted:${b.botId}`,
+                    style: "danger",
+                },
+                { text: "‹ Back", callback_data: `open:${b.botId}` },
+            ],
+        ],
+    },
+});
+
+// Deletes her box and revokes its key; the bot stays the owner's.
+async function deleteBarbara(owner: TgUser, b: Barbara, key: string) {
+    const boxKey = keyOf(await keysOf(key), b);
+    await gen(key, `/alpha/e2b/sandboxes/${b.box}`, {
+        method: "DELETE",
+    }).catch((error) => {
+        if (!String(error).includes("404")) throw error;
+    });
+    if (boxKey)
+        await gen(key, `/account/keys/${boxKey.id}`, { method: "DELETE" });
+    const user = userOf(owner.id);
+    user.barbaras = user.barbaras.filter((x) => x.botId !== b.botId);
+    save();
 }
 
 async function budgetView(owner: TgUser, b: Barbara): Promise<View> {
@@ -653,6 +734,9 @@ async function onButton(q: Callback) {
     await tg("answerCallbackQuery", { callback_query_id: q.id });
     if (action === "list")
         return show(owner.id, await listView(owner), messageId);
+    const unfinished = userOf(owner.id).unfinished;
+    if (action === "retry" && unfinished?.id === Number(botId))
+        return setUp(owner, unfinished);
     if (!b) return;
     if (action === "open")
         return show(owner.id, await cardView(owner, b), messageId);
@@ -710,6 +794,44 @@ async function onButton(q: Callback) {
     if (action === "setbudget" && key) {
         await setBudget(key, b, arg === "none" ? null : Number(arg));
         return show(owner.id, await cardView(owner, b), messageId);
+    }
+    if (action === "pause") return show(owner.id, pauseView(b), messageId);
+    if (action === "paused" && key) {
+        await gen(key, `/alpha/e2b/sandboxes/${b.box}/pause`, {
+            method: "POST",
+        });
+        return show(owner.id, await cardView(owner, b), messageId);
+    }
+    // Connect resumes a paused box, and a long timeout keeps it running.
+    if (action === "resume" && key) {
+        await gen(key, `/alpha/e2b/sandboxes/${b.box}/connect`, {
+            method: "POST",
+            body: { timeout: KEEP_SECONDS },
+        });
+        return show(owner.id, await cardView(owner, b), messageId);
+    }
+    if (action === "delete") return show(owner.id, deleteView(b), messageId);
+    if (action === "deleted" && key) {
+        await deleteBarbara(owner, b, key);
+        return show(
+            owner.id,
+            {
+                text: `@${b.bot} is deleted. Her bot still counts toward Telegram's 20 bots per account: delete it in @BotFather to free the slot.`,
+                reply_markup: userOf(owner.id).barbaras.length
+                    ? {
+                          inline_keyboard: [
+                              [
+                                  {
+                                      text: "‹ All Barbaras",
+                                      callback_data: "list",
+                                  },
+                              ],
+                          ],
+                      }
+                    : undefined,
+            },
+            messageId,
+        );
     }
 }
 

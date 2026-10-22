@@ -7,6 +7,7 @@ Self-service endpoints for the authenticated user. Endpoints require authenticat
 | Endpoint | Description |
 |----------|-------------|
 | `GET /account/profile` | GitHub username, image, and community model access |
+| `GET /account/apps` | Community app directory listings owned by the account |
 | `GET /account/balance` | Current pollen balance |
 | `GET /account/quests` | Read-only quest status |
 | `GET /account/usage` | Per-request usage history with costs (account-wide) |
@@ -19,6 +20,12 @@ Self-service endpoints for the authenticated user. Endpoints require authenticat
 ### GET /account/profile
 
 Returns user profile. `githubUsername`, `image`, and `communityEndpointsAllowed` are always included. `name` and `email` are included only when the API key has `account:profile`.
+
+### GET /account/apps
+
+App directory listings whose `github_user_id` matches the account's linked GitHub user, newest approval first: name, description, links, screenshot, category, platforms, approval date, and whether it supports Pollen Pay. `requests24h` is reported only for Pollen Pay apps, where traffic belongs to that listing.
+
+The directory is public, so no extra permission is required (the same as `/account/profile`). An account without a linked GitHub user, or one that has not listed an app, gets an empty `apps` array. A temporarily unavailable directory answers `503` with a `Retry-After` header rather than an empty list, so a caller can tell "no listings" from "could not read".
 
 ### GET /account/balance
 

@@ -102,6 +102,7 @@ const PIPE_CONTRACTS: Record<string, PipeContract> = {
             "reversals",
             "net_sales",
             "stripe_fees",
+            "dispute_fees",
             "net_after_fees",
             "payments",
             "refund_count",

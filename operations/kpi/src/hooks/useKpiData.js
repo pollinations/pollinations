@@ -154,6 +154,7 @@ export function useKpiData(weeks = DEFAULT_WEEKS) {
                 );
                 mergeInto(weekMap, raw.registrations, (row) => ({
                     registrations: row.registrations,
+                    googleSignups: row.google,
                 }));
                 // WAU counts users we actually served. A 402 is an out-of-Pollen
                 // rejection — no provider ran, nothing was billed — so counting it

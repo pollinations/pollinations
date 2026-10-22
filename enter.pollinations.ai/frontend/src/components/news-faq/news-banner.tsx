@@ -24,9 +24,9 @@ import {
     apiDocsAnchor,
     type CardDetail,
     cardDetails,
+    type DailyItem,
     formatNewsDate,
-    type Highlight,
-    highlightLink,
+    itemLink,
     type ModelNews,
     type NewsIndex,
     visibleModelNews,
@@ -349,8 +349,8 @@ export const Announcements: FC<{ items: Announcement[] }> = ({ items }) => (
     </ul>
 );
 
-/** The daily highlights as a grid of cards, newest first. */
-export const Updates: FC<{ items: Highlight[] }> = ({ items }) => {
+/** The daily items as a grid of cards, newest first. */
+export const Updates: FC<{ items: DailyItem[] }> = ({ items }) => {
     const [visible, setVisible] = useState(PAGE_SIZE);
     const updates = items.slice(0, visible);
     if (updates.length === 0) return null;
@@ -359,7 +359,7 @@ export const Updates: FC<{ items: Highlight[] }> = ({ items }) => {
         <>
             <ul className="grid gap-3 sm:grid-cols-2">
                 {updates.map((item) => {
-                    const { text, link } = highlightLink(item.text);
+                    const { text, link } = itemLink(item.text);
                     return (
                         <Surface
                             as="li"

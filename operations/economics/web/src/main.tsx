@@ -9,9 +9,15 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 // Read the private vendor journals before importing any calculations.
 const Dashboard = lazy(async () => {
     try {
-        const response = await fetch("/api/economics/vendor-journals", {
-            credentials: "same-origin",
-        });
+        const url = new URL(window.location.href);
+        const refresh = url.searchParams.get("refresh") === "1";
+        const response = await fetch(
+            `/api/economics/vendor-journals${refresh ? "?refresh=1" : ""}`,
+            {
+                credentials: "same-origin",
+                signal: AbortSignal.timeout(75_000),
+            },
+        );
         if (!response.ok)
             throw new Error(
                 "Vendor journals could not be loaded from Drive. Reload to retry.",
@@ -27,6 +33,10 @@ const Dashboard = lazy(async () => {
         const { parsePlanningDocument } = await import("./lib/planning");
         const planningDocument = parsePlanningDocument(snapshot.planning);
         const { default: Economics } = await import("./App");
+        if (refresh) {
+            url.searchParams.delete("refresh");
+            window.history.replaceState(null, "", url);
+        }
         return {
             default: (
                 props: Omit<
@@ -38,9 +48,11 @@ const Dashboard = lazy(async () => {
     } catch (error) {
         const { SourceRecovery } = await import("./components/SourceRecovery");
         const reason =
-            error instanceof Error
-                ? error.message
-                : "Vendor journals are unavailable.";
+            error instanceof Error && error.name === "TimeoutError"
+                ? "Vendor journals took too long to load. Retry journals."
+                : error instanceof Error
+                  ? error.message
+                  : "Vendor journals are unavailable.";
         return { default: () => <SourceRecovery reason={reason} /> };
     }
 });

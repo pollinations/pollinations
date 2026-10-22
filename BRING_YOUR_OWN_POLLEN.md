@@ -49,6 +49,20 @@ Add the page URL, without query or fragment, as a Redirect URI on your App Key. 
 | `expiry` | Key lifetime in days |
 | `models` | Comma-separated, as `models` below |
 | `permissions` | Comma-separated scopes: `profile`, `usage`, `keys` |
+| `hide-buy-pollen` | Hides the top-up menu item; the balance and Disconnect remain available (UI 0.1.0-alpha.20+) |
+| `menu-links` | JSON array of `{ "label": "Dashboard", "href": "https://example.com" }` links shown in the signed-in menu; optional `icon`: `app`, `discord`, or `bug`; only HTTP(S) links are accepted (UI 0.1.0-alpha.20+) |
+
+For custom menu links, use UI `0.1.0-alpha.20` or later and single quotes around the JSON attribute:
+
+```html
+<script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.20/dist/connect.js"></script>
+<polli-connect
+  app-key="pk_yourkey"
+  menu-links='[{"label":"Help","href":"https://example.com/help"}]'
+></polli-connect>
+```
+
+Invalid entries are ignored. Malformed JSON or a non-array value adds no custom links; sign-in still works.
 
 The key stays in `sessionStorage`, so it lasts until the tab closes.
 

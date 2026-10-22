@@ -30,11 +30,6 @@
       "required": [
         "deploy-applications.yml:Deploy apps/mama-barbara"
       ]
-    },
-    "18063": {
-      "merge_sha": "0003f637a32d2ea8bf80ea1897294eacc9052795",
-      "merged_at": "2026-10-22T04:12:33Z",
-      "required": []
     }
   },
   "production": "cb4a57969f34a1a039fd8760d1d5592cc4b95c2d",

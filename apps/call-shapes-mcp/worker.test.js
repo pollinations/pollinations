@@ -68,7 +68,183 @@ const CATALOG = {
                 completionTextTokens: "0.00000002",
             },
         },
+        {
+            id: "tongyi-mai/z-image-turbo",
+            object: "model",
+            owned_by: "Alibaba",
+            aliases: ["z-image"],
+            category: "image",
+            community: false,
+            title: "Z-Image Turbo",
+            input_modalities: ["text"],
+            output_modalities: ["image"],
+            supported_endpoints: ["/v1/images/generations", "/image/{prompt}"],
+            health: { status: "healthy" },
+            pricing: { currency: "pollen", completionImageTokens: "0.004" },
+        },
+        {
+            id: "openai/tts-1",
+            object: "model",
+            owned_by: "OpenAI",
+            aliases: ["tts"],
+            category: "audio",
+            community: false,
+            title: "OpenAI TTS",
+            input_modalities: ["text"],
+            output_modalities: ["audio"],
+            supported_endpoints: ["/v1/audio/speech", "/audio/{text}"],
+            health: { status: "healthy" },
+            pricing: { currency: "pollen", completionAudioTokens: "0.000015" },
+        },
+        {
+            id: "openai/text-embedding-3-small",
+            object: "model",
+            owned_by: "OpenAI",
+            aliases: ["embedding-small"],
+            category: "embedding",
+            community: false,
+            title: "Text Embedding 3 Small",
+            input_modalities: ["text"],
+            output_modalities: ["embedding"],
+            supported_endpoints: ["/v1/embeddings"],
+            context_length: 8192,
+            health: { status: "healthy" },
+            pricing: { currency: "pollen", promptTextTokens: "0.000000015" },
+        },
     ],
+};
+
+// The category catalogs carry the same models plus the fields /v1/models
+// leaves out.
+const CATEGORY_CATALOGS = {
+    "/text/models": {
+        data: [
+            {
+                name: "openai/gpt-5.4-nano",
+                aliases: ["gpt-5.4-nano", "openai"],
+                category: "text",
+                community: false,
+                title: "GPT-5.4 Nano",
+                input_modalities: ["text", "image"],
+                output_modalities: ["text"],
+                supported_endpoints: [
+                    "/v1/chat/completions",
+                    "/text",
+                    "/v1/responses",
+                ],
+                supported_parameters: [
+                    "max_tokens",
+                    "stream",
+                    "tools",
+                    "tool_choice",
+                    "response_format",
+                    "reasoning_effort",
+                ],
+                tools: true,
+                reasoning: true,
+                context_length: 400000,
+                health: { status: "healthy" },
+                pricing: {
+                    currency: "pollen",
+                    promptTextTokens: "0.00000015",
+                    completionTextTokens: "0.0000009375",
+                },
+            },
+            {
+                name: "community/cheap-model",
+                aliases: ["cheap-model"],
+                category: "text",
+                community: true,
+                title: "Cheap Model",
+                input_modalities: ["text"],
+                output_modalities: ["text"],
+                supported_endpoints: ["/v1/chat/completions"],
+                supported_parameters: ["max_tokens", "stream"],
+                tools: false,
+                reasoning: false,
+                context_length: 8000,
+                health: { status: "degraded" },
+                pricing: {
+                    currency: "pollen",
+                    promptTextTokens: "0.00000001",
+                    completionTextTokens: "0.00000002",
+                },
+            },
+        ],
+    },
+    "/image/models": {
+        data: [
+            {
+                name: "tongyi-mai/z-image-turbo",
+                aliases: ["z-image"],
+                category: "image",
+                community: false,
+                title: "Z-Image Turbo",
+                input_modalities: ["text"],
+                output_modalities: ["image"],
+                supported_endpoints: [
+                    "/v1/images/generations",
+                    "/image/{prompt}",
+                ],
+                flat_rate: true,
+                health: { status: "healthy" },
+                pricing: { currency: "pollen", completionImageTokens: "0.004" },
+            },
+            {
+                name: "community/cheap-image",
+                aliases: [],
+                category: "image",
+                community: true,
+                title: "Cheap Image",
+                input_modalities: ["text"],
+                output_modalities: ["image"],
+                supported_endpoints: ["/v1/images/generations"],
+                flat_rate: true,
+                health: { status: "healthy" },
+                pricing: { currency: "pollen", completionImageTokens: "0.001" },
+            },
+        ],
+    },
+    "/audio/models": {
+        data: [
+            {
+                name: "openai/tts-1",
+                aliases: ["tts"],
+                category: "audio",
+                community: false,
+                title: "OpenAI TTS",
+                input_modalities: ["text"],
+                output_modalities: ["audio"],
+                supported_endpoints: ["/v1/audio/speech", "/audio/{text}"],
+                voices: ["alloy", "nova"],
+                health: { status: "healthy" },
+                pricing: {
+                    currency: "pollen",
+                    completionAudioTokens: "0.000015",
+                },
+            },
+        ],
+    },
+    "/embeddings/models": {
+        data: [
+            {
+                name: "openai/text-embedding-3-small",
+                aliases: ["embedding-small"],
+                category: "embedding",
+                community: false,
+                title: "Text Embedding 3 Small",
+                input_modalities: ["text"],
+                output_modalities: ["embedding"],
+                supported_endpoints: ["/v1/embeddings"],
+                context_length: 8192,
+                health: { status: "healthy" },
+                pricing: {
+                    currency: "pollen",
+                    promptTextTokens: "0.000000015",
+                },
+            },
+        ],
+    },
 };
 
 function localFetch(input, init) {
@@ -96,12 +272,15 @@ async function connectClient(options = {}, token = TOKEN) {
 
 function mockCatalog(t, catalog = CATALOG) {
     return t.mock.method(globalThis, "fetch", async (input, init) => {
-        assert.equal(String(input), "https://gen.pollinations.ai/v1/models");
+        const url = new URL(String(input));
         assert.equal(
             new Headers(init.headers).get("authorization"),
             `Bearer ${TOKEN}`,
         );
-        return Response.json(catalog);
+        if (url.pathname === "/v1/models") return Response.json(catalog);
+        const categoryCatalog = CATEGORY_CATALOGS[url.pathname];
+        if (categoryCatalog) return Response.json(categoryCatalog);
+        throw new Error(`Unexpected catalog request: ${url.pathname}`);
     });
 }
 
@@ -175,7 +354,10 @@ test("plans a request with only supported parameters", async (t) => {
     assert.deepEqual(plan.request_body.messages, [
         { role: "user", content: "Summarise this" },
     ]);
-    assert.equal(plan.estimated_cost.prompt_tokens, 100);
+    const promptLine = plan.estimated_cost.lines.find(
+        (line) => line.field === "promptTextTokens",
+    );
+    assert.equal(promptLine.quantity, 100);
     assert.equal(plan.estimated_cost.currency, "pollen");
     assert.ok(plan.estimated_cost.total_cost > 0);
 });
@@ -195,11 +377,75 @@ test("uses the responses endpoint when tools are required", async (t) => {
     assert.notEqual(result.isError, true);
     const plan = JSON.parse(result.content[0].text);
     assert.equal(plan.endpoint, "/v1/responses");
-    assert.ok(plan.request_body.input);
+    assert.equal(plan.request_body.input, "Your prompt");
+    assert.equal(plan.request_body.max_output_tokens, 500);
     assert.deepEqual(plan.request_body.tools, [
         { type: "function", name: "ping" },
     ]);
     assert.equal(plan.request_body.tool_choice, "auto");
+});
+
+test("plans an image call on the image endpoint", async (t) => {
+    mockCatalog(t);
+    const client = await connectClient();
+    t.after(() => client.close());
+    const result = await client.callTool({
+        name: "plan_request",
+        arguments: { model: "z-image", prompt: "a red bicycle" },
+    });
+    assert.notEqual(result.isError, true);
+    const plan = JSON.parse(result.content[0].text);
+    assert.equal(plan.endpoint, "/v1/images/generations");
+    assert.equal(plan.request_body.prompt, "a red bicycle");
+    assert.equal(plan.request_body.n, 1);
+    assert.equal(plan.estimated_cost.total_cost, 0.004);
+    assert.deepEqual(
+        plan.cheaper_models_with_same_needs.map(({ id }) => id),
+        ["community/cheap-image"],
+    );
+});
+
+test("plans a speech call on the audio endpoint", async (t) => {
+    mockCatalog(t);
+    const client = await connectClient();
+    t.after(() => client.close());
+    const result = await client.callTool({
+        name: "plan_request",
+        arguments: { model: "tts", prompt: "hello there", voice: "nova" },
+    });
+    assert.notEqual(result.isError, true);
+    const plan = JSON.parse(result.content[0].text);
+    assert.equal(plan.endpoint, "/v1/audio/speech");
+    assert.equal(plan.request_body.input, "hello there");
+    assert.equal(plan.request_body.voice, "nova");
+    // The audio token count is only known after the call.
+    assert.equal(plan.estimated_cost.total_cost, null);
+    assert.deepEqual(plan.estimated_cost.unpriced, ["completionAudioTokens"]);
+});
+
+test("plans an embedding call on the embeddings endpoint", async (t) => {
+    mockCatalog(t);
+    const client = await connectClient();
+    t.after(() => client.close());
+    const result = await client.callTool({
+        name: "plan_request",
+        arguments: {
+            model: "embedding-small",
+            prompt: "a red bicycle",
+            promptChars: 40,
+        },
+    });
+    assert.notEqual(result.isError, true);
+    const plan = JSON.parse(result.content[0].text);
+    assert.equal(plan.endpoint, "/v1/embeddings");
+    assert.equal(plan.request_body.input, "a red bicycle");
+    assert.equal(
+        plan.estimated_cost.lines.find(
+            (line) => line.field === "promptTextTokens",
+        ).quantity,
+        10,
+    );
+    assert.ok(plan.estimated_cost.total_cost > 0);
 });
 
 test("warns when the model cannot do what the caller needs", async (t) => {
@@ -269,9 +515,11 @@ test("model_report returns the full single-model facts", async (t) => {
 
 test("keeps bearer tokens scoped to concurrent requests", async (t) => {
     const seen = new Set();
-    t.mock.method(globalThis, "fetch", async (_input, init) => {
+    t.mock.method(globalThis, "fetch", async (input, init) => {
         seen.add(new Headers(init.headers).get("authorization"));
-        return Response.json(CATALOG);
+        const url = new URL(String(input));
+        if (url.pathname === "/v1/models") return Response.json(CATALOG);
+        return Response.json(CATEGORY_CATALOGS[url.pathname]);
     });
     const options = { versionNegotiation: { mode: "auto" } };
     const first = await connectClient(options, "pk_first");

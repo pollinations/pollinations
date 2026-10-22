@@ -1,6 +1,8 @@
 {
-  "target": "script",
+  "target": "worker",
+  "credentials": "myceli",
   "sops": "default",
-  "deploy": "sops exec-env secrets/env.json 'node deploy.ts'",
+  "install": "npm ci",
+  "deploy": "npm run check && npm run deploy",
   "watch": ["apps/telegram-agent/"]
 }

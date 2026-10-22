@@ -4,15 +4,8 @@
 // user's account. A fixed program, not an agent: she holds every user's key.
 //
 // The bot needs Bot Management Mode, switched on in BotFather's Mini App. She
-// runs in a sandbox of her own (start.sh, deploy.ts), or anywhere with
-//
-//   bun --env-file ~/.mamabarbarabot.env apps/mama-barbara/mama.ts
-//
-// and keeps her users in ~/.mama-barbara.json.
+// runs as a Worker (index.ts) and keeps her users in its Durable Object.
 
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
-import { join } from "node:path";
 import { runInBox } from "./envd.ts";
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -29,18 +22,27 @@ const KEEP_SECONDS = 2 ** 31 - 1;
 // What a new Barbara's key may spend, and the amounts her settings offer.
 const BUDGET = 10;
 const BUDGETS = [5, 10, 25, 50];
-const KIT = join(import.meta.dir, "..", "telegram-agent");
-const STATE_FILE = join(homedir(), ".mama-barbara.json");
+// The commit whose kit new Barbaras get; CI deploys with its own.
+const KIT_REF = process.env.KIT_REF || "main";
 
 type Barbara = { bot: string; botId: number; box: string; created: string };
-type User = { key?: string; barbaras: Barbara[] };
+type User = {
+    key?: string;
+    barbaras: Barbara[];
+    // What Mama waits for after a settings button: a name, a photo or people.
+    asking?: { kind: "name" | "photo" | "people"; botId: number };
+};
 type TgUser = { id: number; first_name: string; username?: string };
 
-const state: Record<string, User> = existsSync(STATE_FILE)
-    ? JSON.parse(readFileSync(STATE_FILE, "utf-8"))
-    : {};
-const save = () =>
-    writeFileSync(STATE_FILE, JSON.stringify(state, null, 2), { mode: 0o600 });
+let storage: DurableObjectStorage;
+let state: Record<string, User> = {};
+export async function load(from: DurableObjectStorage) {
+    storage = from;
+    state = (await storage.get("users")) ?? {};
+}
+// The Durable Object holds back replies until the write is stored.
+const save = () => storage.put("users", state);
+const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
 const userOf = (id: number) => (state[id] ??= { barbaras: [] });
 
 // Bots created before their owner finished signing in.
@@ -74,7 +76,11 @@ async function tg<T = unknown>(
 const say = (chatId: number, text: string, extra: object = {}) =>
     tg("sendMessage", { chat_id: chatId, text, ...extra });
 
-const ME = await tg<TgUser>("getMe");
+let me: TgUser | undefined;
+async function myUsername() {
+    me ??= await tg<TgUser>("getMe");
+    return me.username;
+}
 
 const MENU = {
     reply_markup: {
@@ -138,7 +144,7 @@ async function signIn(from: TgUser) {
         let wait = code.interval;
         const until = Date.now() + code.expires_in * 1000;
         while (Date.now() < until) {
-            await Bun.sleep(wait * 1000);
+            await sleep(wait * 1000);
             const token = await fetch(`${ENTER}/api/device/token`, {
                 method: "POST",
                 headers: { "content-type": "application/json" },
@@ -212,7 +218,7 @@ async function moveBoxes(from: TgUser) {
 // Telegram's own dialog creates the bot from this link; the user owns it and
 // we manage it. A link under the message, unlike a keyboard button, can't be
 // hidden.
-const askForBot = (from: TgUser) => {
+const askForBot = async (from: TgUser) => {
     // Usernames are Latin letters, digits and _, starting with a letter.
     const name = (from.username ?? from.first_name)
         .replace(/\W/g, "")
@@ -229,7 +235,7 @@ const askForBot = (from: TgUser) => {
                     [
                         {
                             text: "Create my Barbara",
-                            url: `https://t.me/newbot/${ME.username}/${username}?name=Barbara`,
+                            url: `https://t.me/newbot/${await myUsername()}/${username}?name=Barbara`,
                         },
                     ],
                 ],
@@ -238,28 +244,16 @@ const askForBot = (from: TgUser) => {
     );
 };
 
-// The kit next door: setup.sh, start.sh, the bridge and AGENTS.md.
-const kitArchive = () => {
-    const tar = Bun.spawnSync(
-        [
-            "tar",
-            "czf",
-            "-",
-            "--exclude=node_modules",
-            "--exclude=./state",
-            "-C",
-            KIT,
-            ".",
-        ],
-        { env: { ...process.env, COPYFILE_DISABLE: "1" } },
-    );
-    if (tar.exitCode !== 0) throw new Error(`tar: ${tar.stderr.toString()}`);
-    return Buffer.from(tar.stdout).toString("base64");
-};
-
+// The kit, apps/telegram-agent at KIT_REF: setup.sh, start.sh, the bridge and
+// AGENTS.md.
 const SETUP = `set -euo pipefail
-mkdir -p ~/agent && cd ~/agent
-echo "$KIT" | base64 -d | tar xzf - 2>/dev/null
+git clone --quiet --depth 1 --filter=blob:none --no-checkout --sparse https://github.com/pollinations/pollinations ~/kit
+cd ~/kit
+git sparse-checkout set apps/telegram-agent
+git fetch --quiet --depth 1 origin "$REF"
+git checkout --quiet FETCH_HEAD
+mkdir -p ~/agent && cp -r apps/telegram-agent/. ~/agent/
+cd ~/agent && rm -rf ~/kit
 printf 'TELEGRAM_BOT_TOKEN=%s\\nOWNER_IDS=%s\\n' "$BOT_TOKEN" "$OWNER" > .env
 chmod 600 .env
 bash setup.sh
@@ -312,7 +306,7 @@ async function setUp(owner: TgUser, bot: TgUser) {
         save();
         await setBudget(user.key, b, BUDGET);
         await runInBox(box, SETUP, {
-            KIT: kitArchive(),
+            REF: KIT_REF,
             BOT_TOKEN: token,
             OWNER: String(owner.id),
         });
@@ -639,17 +633,16 @@ const CANCEL = {
     },
 };
 
-// What Mama waits for after a settings button: a name, a photo or people.
-const awaiting = new Map<
-    number,
-    { kind: "name" | "photo" | "people"; b: Barbara }
->();
-
 type Callback = {
     id: string;
     from: TgUser;
     data?: string;
     message?: { message_id: number };
+};
+
+const ask = (owner: TgUser, asking: User["asking"]) => {
+    userOf(owner.id).asking = asking;
+    save();
 };
 
 async function onButton(q: Callback) {
@@ -664,7 +657,7 @@ async function onButton(q: Callback) {
     if (action === "open")
         return show(owner.id, await cardView(owner, b), messageId);
     if (action === "name") {
-        awaiting.set(owner.id, { kind: "name", b });
+        ask(owner, { kind: "name", botId: b.botId });
         return say(owner.id, `What should @${b.bot} be called?`, {
             reply_markup: {
                 force_reply: true,
@@ -673,12 +666,12 @@ async function onButton(q: Callback) {
         });
     }
     if (action === "photo") {
-        awaiting.set(owner.id, { kind: "photo", b });
+        ask(owner, { kind: "photo", botId: b.botId });
         return say(owner.id, `Send me a photo for @${b.bot}.`, CANCEL);
     }
     if (action === "people") {
         const left = 10 - ((await accessOf(b)).added_users?.length ?? 0);
-        awaiting.set(owner.id, { kind: "people", b });
+        ask(owner, { kind: "people", botId: b.botId });
         return say(
             owner.id,
             `Choose up to ${left} people who can talk to @${b.bot}. They can use everything she can, including your connected apps and your Pollen.`,
@@ -728,7 +721,7 @@ type Message = {
     users_shared?: { users: { user_id: number }[] };
 };
 
-type Update = {
+export type Update = {
     update_id: number;
     message?: Message;
     managed_bot?: { user: TgUser; bot: TgUser };
@@ -740,10 +733,11 @@ const COMMANDS = new Set(["New Barbara", "My Barbaras", "Cancel"]);
 // The answer to a settings question; anything else drops the question.
 async function answer(message: Message) {
     const from = message.from;
-    const wait = awaiting.get(from.id);
-    if (!wait) return false;
-    awaiting.delete(from.id);
-    const { kind, b } = wait;
+    const user = userOf(from.id);
+    const { kind, botId } = user.asking ?? {};
+    const b = user.barbaras.find((x) => x.botId === botId);
+    if (!b) return false;
+    ask(from, undefined);
     if (kind === "people" && message.users_shared) {
         await addPeople(
             from,
@@ -782,7 +776,7 @@ async function handle(update: Update) {
         return setUp(update.managed_bot.user, update.managed_bot.bot);
     if (update.callback_query) return onButton(update.callback_query);
     const message = update.message;
-    if (!message || message.chat.type !== "private") return;
+    if (message?.chat.type !== "private") return;
     if (await answer(message)) return;
     // Service messages, such as "bot created", have no text.
     const text = message.text;
@@ -801,38 +795,27 @@ async function handle(update: Update) {
     );
 }
 
-await tg("setMyCommands", {
-    commands: [
-        { command: "new", description: "Make a new Barbara" },
-        { command: "list", description: "Your Barbaras and their settings" },
-        { command: "signin", description: "Sign in to Pollinations again" },
-    ],
-});
-console.log("Mama Barbara is listening");
-let offset = 0;
-for (;;) {
+// Telegram checks this against the secret the webhook was set with
+// (webhook.ts), derived from the token so there's no second secret.
+export async function webhookSecret() {
+    const hash = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(`webhook:${TOKEN}`),
+    );
+    return Buffer.from(hash).toString("hex");
+}
+
+export async function onUpdate(update: Update) {
     try {
-        const updates = await tg<Update[]>("getUpdates", {
-            offset,
-            timeout: 50,
-            allowed_updates: ["message", "managed_bot", "callback_query"],
-        });
-        for (const update of updates) {
-            offset = update.update_id + 1;
-            handle(update).catch((error) => {
-                console.error("update", update.update_id, error);
-                const chat =
-                    update.message?.from.id ?? update.callback_query?.from.id;
-                if (chat)
-                    say(
-                        chat,
-                        `That didn't work: ${error instanceof Error ? error.message : error}`,
-                        MENU,
-                    ).catch(() => {});
-            });
-        }
+        await handle(update);
     } catch (error) {
-        console.error(error);
-        await Bun.sleep(5000);
+        console.error("update", update.update_id, error);
+        const chat = update.message?.from.id ?? update.callback_query?.from.id;
+        if (chat)
+            await say(
+                chat,
+                `That didn't work: ${error instanceof Error ? error.message : error}`,
+                MENU,
+            ).catch(() => {});
     }
 }

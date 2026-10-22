@@ -3,6 +3,5 @@
   "credentials": "myceli",
   "sops": "default",
   "install": "npm ci",
-  "deploy": "npm run check && npm run deploy",
-  "watch": ["apps/telegram-agent/"]
+  "deploy": "npm run check && npm run deploy"
 }

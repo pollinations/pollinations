@@ -246,15 +246,15 @@ const askForBot = async (from: TgUser) => {
     );
 };
 
-// The kit, apps/telegram-agent at KIT_REF: setup.sh, start.sh, the bridge and
+// Her kit, apps/mama-barbara/barbara at KIT_REF: setup.sh, start.sh, the bridge and
 // AGENTS.md.
 const SETUP = `set -euo pipefail
 git clone --quiet --depth 1 --filter=blob:none --no-checkout --sparse https://github.com/pollinations/pollinations ~/kit
 cd ~/kit
-git sparse-checkout set apps/telegram-agent
+git sparse-checkout set apps/mama-barbara/barbara
 git fetch --quiet --depth 1 origin "$REF"
 git checkout --quiet FETCH_HEAD
-mkdir -p ~/agent && cp -r apps/telegram-agent/. ~/agent/
+mkdir -p ~/agent && cp -r apps/mama-barbara/barbara/. ~/agent/
 cd ~/agent && rm -rf ~/kit
 printf 'TELEGRAM_BOT_TOKEN=%s\\nOWNER_IDS=%s\\n' "$BOT_TOKEN" "$OWNER" > .env
 chmod 600 .env

@@ -51,7 +51,7 @@
             "!packages/ui/src/licenses/**",
             // exclude the fork of Anthropic's Telegram plugin, kept in its
             // upstream formatting so it can be compared with upstream
-            "!apps/telegram-agent/telegram/server.ts"
+            "!apps/mama-barbara/barbara/telegram/server.ts"
         ]
     },
     "overrides": [

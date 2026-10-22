@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Excalidraw | `https://gen.pollinations.ai/mcp/excalidraw` | Draw hand-drawn diagrams in chat and open them on excalidraw.com | [Source](https://github.com/pollinations/pollinations/tree/main/apps/excalidraw-mcp) |
 
 Send the key with every request:
 
@@ -207,6 +208,17 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### Excalidraw MCP
+
+The Excalidraw server runs the
+[Excalidraw MCP App](https://github.com/excalidraw/excalidraw-mcp) at a pinned
+commit. Call `read_me` once for the element format, then `create_view` to draw.
+Hosts that support [MCP Apps](https://github.com/modelcontextprotocol/ext-apps)
+show the diagram as it is drawn, let the user edit it full screen, and can open
+a copy on excalidraw.com. To change a diagram, start the next `create_view` call
+from the checkpoint id it returned; checkpoints are kept for 30 days. Free, with
+no MCP fee.
 
 ### Billing and permissions
 

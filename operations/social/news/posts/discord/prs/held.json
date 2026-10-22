@@ -1,5 +1,25 @@
 {
-  "held": {},
-  "production": "cb4a57969f34a1a039fd8760d1d5592cc4b95c2d",
+  "held": {
+    "18072": {
+      "merge_sha": "d7ee6de875b7e7ba6cf9b4e8a485482372fe39b2",
+      "merged_at": "2026-10-22T07:50:39Z",
+      "required": [
+        "deploy-applications.yml:Deploy apps/mcp",
+        "deploy-applications.yml:Deploy apps/websim",
+        "deploy-applications.yml:Deploy operations/economics",
+        "deploy-applications.yml:Deploy operations/model-monitor",
+        "deploy-cloudflare-production.yml:Deploy apps/ask-jev-mcp",
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-website-cloudflare.yml:deploy"
+      ]
+    },
+    "18073": {
+      "merge_sha": "d7eaf0f3d168464135f11c1787bea3994af967e5",
+      "merged_at": "2026-10-22T07:17:36Z",
+      "required": []
+    }
+  },
+  "production": "5a4bf8154c8e139803138a49597f1e18c6835db9",
   "master": "02b0575f1ae6daad402bb2782119d7752403ad01"
 }

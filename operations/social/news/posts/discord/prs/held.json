@@ -4,8 +4,7 @@
       "merge_sha": "a5ad4da98b606aa28fa6e4ec8c7d017da4533a03",
       "merged_at": "2026-10-22T01:06:05Z",
       "required": [
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-enter"
       ]
     },
     "18049": {
@@ -15,8 +14,7 @@
         "deploy-cloudflare-production.yml:Deploy apps/computer-mcp",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "18052": {

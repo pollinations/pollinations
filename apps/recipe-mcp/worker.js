@@ -38,7 +38,7 @@ function toDetails(meal) {
     const ingredients = [];
     for (let i = 1; i <= 20; i++) {
         const name = meal[`strIngredient${i}`];
-        if (name && name.trim()) {
+        if (name?.trim()) {
             ingredients.push({
                 name,
                 measure: meal[`strMeasure${i}`] || null,
@@ -106,7 +106,10 @@ function buildServer() {
             }
             const results = body.meals.slice(0, limit ?? 5).map(toSummary);
             return createMCPResponse([
-                createTextContent({ query, count: results.length, results }, true),
+                createTextContent(
+                    { query, count: results.length, results },
+                    true,
+                ),
             ]);
         },
     );
@@ -154,9 +157,13 @@ function buildServer() {
                 if (!body.meals) {
                     throw new Error("No random recipe available");
                 }
-                const pick = body.meals[Math.floor(Math.random() * body.meals.length)];
+                const pick =
+                    body.meals[Math.floor(Math.random() * body.meals.length)];
                 return createMCPResponse([
-                    createTextContent(await fetchRecipeDetails(pick.idMeal), true),
+                    createTextContent(
+                        await fetchRecipeDetails(pick.idMeal),
+                        true,
+                    ),
                 ]);
             }
             const body = await fetchJson(new URL(`${MEALDB}/random.php`));

@@ -275,7 +275,10 @@ test("recipe_details returns the full recipe with paired ingredients", async (t)
         name: "Chicken Breasts",
         measure: "500g",
     });
-    assert.deepEqual(recipe.ingredients[3], { name: "Ginger", measure: "1 tbsp" });
+    assert.deepEqual(recipe.ingredients[3], {
+        name: "Ginger",
+        measure: "1 tbsp",
+    });
 });
 
 test("random_recipe serves a fully random meal", async (t) => {

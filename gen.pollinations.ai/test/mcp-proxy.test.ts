@@ -287,15 +287,18 @@ test("routes Recipe with caller authorization without an extra MCP debit", async
             arguments: { query: "chicken", limit: 2 },
         },
     };
-    const response = await SELF.fetch("https://gen.pollinations.ai/mcp/recipe", {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${key}`,
-            Cookie: "session=private",
-            "Content-Type": "application/json",
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/recipe",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-    });
+    );
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
         pathname: "/",

@@ -1,3 +1,6 @@
+import { site } from "@shared/db/sites.ts";
+import { and, eq, isNull } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
 import {
     cloudflareAccountUrl,
@@ -12,6 +15,7 @@ import {
 // https://developers.cloudflare.com/workers-for-platforms/configuration/static-assets/
 
 type SitesEnv = {
+    DB: D1Database;
     CLOUDFLARE_ACCOUNT_ID: string;
     CODE_AGENT_DEPLOY_API_TOKEN?: string;
     SITES_DISPATCH_NAMESPACE?: string;
@@ -109,7 +113,17 @@ export async function deleteSite(env: SitesEnv, name: string) {
     }
 }
 
-export async function deleteUserSites(env: SitesEnv, userId: string) {
+/** Takes the user's sites offline and frees their names. Blocked rows stay,
+ * and lose their owner when the user is deleted, so the names stay reserved. */
+export async function removeUserSites(env: SitesEnv, userId: string) {
+    const db = drizzle(env.DB);
+    const live = and(eq(site.userId, userId), isNull(site.blockedAt));
+    const [owned] = await db
+        .select({ name: site.name })
+        .from(site)
+        .where(live)
+        .limit(1);
+    if (!owned) return;
     const { token, namespace } = sitesConfig(env);
     const tags = encodeURIComponent(`${ownerTag(userId)}:yes`);
     const response = await fetch(
@@ -120,4 +134,5 @@ export async function deleteUserSites(env: SitesEnv, userId: string) {
         { method: "DELETE", headers: { Authorization: `Bearer ${token}` } },
     );
     await requireCloudflareSuccess(env, response, "Site delete");
+    await db.delete(site).where(live);
 }

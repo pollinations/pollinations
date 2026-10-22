@@ -11,7 +11,6 @@ import {
     account as accountTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
-import { site } from "@shared/db/sites.ts";
 import {
     getInstallationToken,
     githubAppCredentialsFromEnv,
@@ -31,10 +30,10 @@ import {
     getSessionFromCtx,
 } from "better-auth/api";
 import { admin, openAPI } from "better-auth/plugins";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { discordConfigFromEnv } from "./services/discord.ts";
-import { deleteUserSites } from "./services/sites.ts";
+import { removeUserSites } from "./services/sites.ts";
 import {
     captureProductEvent,
     referringSource,
@@ -267,26 +266,17 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         }),
         databaseHooks: {
             user: {
-                // Runs for self-service and admin deletion alike. Takes the
-                // user's sites offline and frees their names, except blocked
-                // ones, which stay reserved with no owner.
+                // Admin removal skips deleteUser.beforeDelete. Sessions and
+                // logins are already gone here, so a failure is logged rather
+                // than leaving the account half-deleted.
                 delete: {
                     before: async (user) => {
-                        const [owned] = await db
-                            .select({ name: site.name })
-                            .from(site)
-                            .where(eq(site.userId, user.id))
-                            .limit(1);
-                        if (!owned) return;
-                        await deleteUserSites(env, user.id);
-                        await db
-                            .delete(site)
-                            .where(
-                                and(
-                                    eq(site.userId, user.id),
-                                    isNull(site.blockedAt),
-                                ),
-                            );
+                        await removeUserSites(env, user.id).catch((error) =>
+                            console.error(
+                                `Failed to remove sites of user ${user.id}`,
+                                error,
+                            ),
+                        );
                     },
                 },
                 create: {
@@ -379,6 +369,9 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             additionalFields: authAdditionalFields.user,
             deleteUser: {
                 enabled: true,
+                // Runs before anything is deleted, so a Cloudflare failure
+                // aborts the deletion cleanly.
+                beforeDelete: (user) => removeUserSites(env, user.id),
             },
         },
         account: {

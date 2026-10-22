@@ -1,5 +1,8 @@
 import { env, SELF } from "cloudflare:test";
-import { user as userTable } from "@shared/db/better-auth.ts";
+import {
+    account as accountTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
 import { site as siteTable } from "@shared/db/sites.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -60,6 +63,17 @@ const sites = (
 
 const upload = (token: string, name: string, files: unknown = manifest) =>
     sites(token, "POST", `/${name}/upload`, { manifest: files });
+
+const deleteAccount = (sessionToken: string) =>
+    SELF.fetch("http://localhost:3000/api/auth/delete-user", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Cookie: `better-auth.session_token=${sessionToken}`,
+            Origin: "http://localhost:3000",
+        },
+        body: JSON.stringify({}),
+    });
 
 async function fixtureUserId() {
     const user = await drizzle(env.DB)
@@ -244,18 +258,7 @@ describe("/api/account/sites", () => {
             },
         );
 
-        const response = await SELF.fetch(
-            "http://localhost:3000/api/auth/delete-user",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Cookie: `better-auth.session_token=${sessionToken}`,
-                    Origin: "http://localhost:3000",
-                },
-                body: JSON.stringify({}),
-            },
-        );
+        const response = await deleteAccount(sessionToken);
         expect(response.status).toBe(200);
         expect(calls.at(-1)).toMatchObject({
             method: "DELETE",
@@ -270,6 +273,30 @@ describe("/api/account/sites", () => {
                 .select({ name: siteTable.name, userId: siteTable.userId })
                 .from(siteTable),
         ).toEqual([{ name: "bad-site", userId: null }]);
+    });
+
+    test("a failed site cleanup keeps the account", async ({
+        accountToken,
+        sessionToken,
+    }) => {
+        fakeCloudflare();
+        await upload(accountToken, "my-site");
+        const routed = globalThis.fetch;
+        globalThis.fetch = (async (
+            input: RequestInfo | URL,
+            init?: RequestInit,
+        ) =>
+            new Request(input, init).url.startsWith(
+                "https://api.cloudflare.com/",
+            )
+                ? Response.json({ success: false }, { status: 500 })
+                : routed(input, init)) as typeof fetch;
+
+        expect((await deleteAccount(sessionToken)).ok).toBe(false);
+
+        const db = drizzle(env.DB);
+        expect(await db.select().from(accountTable)).not.toEqual([]);
+        expect(await db.select().from(siteTable)).toHaveLength(1);
     });
 
     test("an admin removing a user deletes their sites", async ({

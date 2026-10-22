@@ -186,11 +186,14 @@ describe("gen worker routing", () => {
     });
 
     it("serves gen's icons after the routes", async () => {
+        // Like Cloudflare's asset server: 405 for methods other than GET/HEAD.
         const ASSETS = {
             fetch: async (request: Request) =>
-                new URL(request.url).pathname === "/favicon.ico"
-                    ? new Response("icon")
-                    : new Response("missing", { status: 404 }),
+                request.method !== "GET" && request.method !== "HEAD"
+                    ? new Response("Method Not Allowed", { status: 405 })
+                    : new URL(request.url).pathname === "/favicon.ico"
+                      ? new Response("icon")
+                      : new Response("missing", { status: 404 }),
         } as unknown as Fetcher;
         const env = { ...envWithEnter(), ASSETS };
 
@@ -198,6 +201,10 @@ describe("gen worker routing", () => {
             "icon",
         );
         expect((await fetchWorker("/missing.png", env)).status).toBe(404);
+        const post = await fetchWorker("/v1/chat/completion", env, {
+            method: "POST",
+        });
+        expect(post.status).toBe(404);
     });
 
     it("serves the docs web app manifest", async () => {

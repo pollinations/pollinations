@@ -54,7 +54,8 @@ const SiteNameSchema = z
         "Site names are 3-32 lowercase letters, digits and hyphens, starting with a letter",
     )
     .refine((name) => !name.includes("--"), "Site names cannot contain --")
-    .refine((name) => !RESERVED_NAMES.has(name), "This site name is reserved");
+    .refine((name) => !RESERVED_NAMES.has(name), "This site name is reserved")
+    .meta({ example: "my-site" });
 
 const megabytes = (bytes: number) => `${Math.round(bytes / 1024 / 1024)} MB`;
 
@@ -172,7 +173,7 @@ export const sitesRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "List Sites",
             description:
-                "List the static sites owned by the authenticated account, with the account's limits. API keys require `account:machines`.",
+                "Your sites at `https://<name>.pollinations.app`, and the account's limits. API keys need `account:machines`.",
             responses: {
                 200: {
                     description: "Owned sites and limits",
@@ -215,11 +216,9 @@ export const sitesRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Start Site Upload",
             description: [
-                "Step 1 of a deploy. Send a manifest of every file in the site (`path` -> `{hash, size}`, the hash being 32 hex characters, such as the first 32 of the SHA-256 of the file's base64 content plus its extension; files with the same bytes but different types need different hashes). The first upload claims the name.",
+                "Step 1 of 2. Send each file's path, hash and size; the first upload claims the name. The hash is the first 32 hex characters of the SHA-256 of the file's base64 content plus its extension (`polli sites deploy` does all of this).",
                 "",
-                "Upload each bucket of hashes to `uploadUrl` with `Authorization: Bearer <jwt>`, as `multipart/form-data` with one part per file, named by its hash and holding its base64 content. The last upload returns the completion JWT. Empty `buckets` means every file is already uploaded and `jwt` is the completion JWT.",
-                "",
-                "Then publish with `PUT /account/sites/{name}`. API keys require `account:machines`.",
+                "`buckets` lists the hashes Cloudflare doesn't have yet. POST each bucket to `uploadUrl` with `Authorization: Bearer <jwt>` as multipart form data, one field per file: the hash as name, the base64 content as value. The last upload returns the JWT for step 2. If `buckets` is empty, use `jwt` as is.",
             ].join("\n"),
             responses: {
                 200: {
@@ -242,7 +241,19 @@ export const sitesRoutes = new Hono<Env>()
             },
         }),
         validator("param", z.object({ name: SiteNameSchema })),
-        validator("json", z.object({ manifest: ManifestSchema })),
+        validator(
+            "json",
+            z.object({ manifest: ManifestSchema }).meta({
+                example: {
+                    manifest: {
+                        "/index.html": {
+                            hash: "3f8a1c2e9b7d4f60a1e2c3d4b5f6a7e8",
+                            size: 1024,
+                        },
+                    },
+                },
+            }),
+        ),
         async (c) => {
             const user = c.var.auth.requireUser();
             requireAccountPermission(c.var.auth.apiKey, "machines");
@@ -263,7 +274,7 @@ export const sitesRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Publish Site",
             description:
-                "Step 2 of a deploy. Publish the uploaded files with the completion JWT from `POST /account/sites/{name}/upload`. The site is live at `url` when this returns. API keys require `account:machines`.",
+                "Step 2 of 2. Publishes the uploaded files with the JWT from step 1. The site is live at `url` when this returns.",
             responses: {
                 200: {
                     description: "Published site",
@@ -278,7 +289,15 @@ export const sitesRoutes = new Hono<Env>()
             },
         }),
         validator("param", z.object({ name: SiteNameSchema })),
-        validator("json", z.object({ jwt: z.string().min(1) })),
+        validator(
+            "json",
+            z.object({
+                jwt: z
+                    .string()
+                    .min(1)
+                    .meta({ example: "eyJhbGciOiJIUzI1NiJ9" }),
+            }),
+        ),
         async (c) => {
             const user = c.var.auth.requireUser();
             requireAccountPermission(c.var.auth.apiKey, "machines");
@@ -299,8 +318,7 @@ export const sitesRoutes = new Hono<Env>()
         describeRoute({
             tags: ["👤 Account"],
             summary: "Delete Site",
-            description:
-                "Take a site offline and free its name. API keys require `account:machines`.",
+            description: "Takes the site offline and frees its name.",
             responses: {
                 200: {
                     description: "Deleted site",
@@ -314,10 +332,14 @@ export const sitesRoutes = new Hono<Env>()
                 404: { description: "Site not found" },
             },
         }),
+        validator(
+            "param",
+            z.object({ name: z.string().meta({ example: "my-site" }) }),
+        ),
         async (c) => {
             const user = c.var.auth.requireUser();
             requireAccountPermission(c.var.auth.apiKey, "machines");
-            const name = c.req.param("name");
+            const { name } = c.req.valid("param");
             const db = drizzle(c.env.DB);
             const row = await findSite(db, name);
             if (row?.userId !== user.id) {

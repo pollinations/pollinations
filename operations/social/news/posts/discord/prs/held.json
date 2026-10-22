@@ -1,5 +1,56 @@
 {
-  "held": {},
-  "production": "a02b0e2d7aa75f7b0295d23ebde621bc7240c595",
+  "held": {
+    "18017": {
+      "merge_sha": "a5ad4da98b606aa28fa6e4ec8c7d017da4533a03",
+      "merged_at": "2026-10-22T01:06:05Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-website-cloudflare.yml:deploy"
+      ]
+    },
+    "18049": {
+      "merge_sha": "59cbf8b33fc0b907ed982dc189468310c504538d",
+      "merged_at": "2026-10-22T00:39:38Z",
+      "required": [
+        "deploy-applications.yml:Deploy apps/websim",
+        "deploy-applications.yml:Deploy operations/economics",
+        "deploy-applications.yml:Deploy operations/kpi",
+        "deploy-applications.yml:Deploy operations/model-monitor",
+        "deploy-applications.yml:Deploy operations/observability",
+        "deploy-cloudflare-production.yml:Deploy apps/computer-mcp",
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-cloudflare-production.yml:deploy-media",
+        "deploy-website-cloudflare.yml:deploy"
+      ]
+    },
+    "18052": {
+      "merge_sha": "c18ab61b2f4fca458c2639e539f14728ad4ce14c",
+      "merged_at": "2026-10-22T02:36:03Z",
+      "required": [
+        "deploy-applications.yml:Deploy apps/websim",
+        "deploy-applications.yml:Deploy operations/economics",
+        "deploy-applications.yml:Deploy operations/kpi",
+        "deploy-applications.yml:Deploy operations/model-monitor",
+        "deploy-applications.yml:Deploy operations/observability",
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-cloudflare-production.yml:deploy-media"
+      ]
+    },
+    "18054": {
+      "merge_sha": "ba7d5a4217cdaa5c629d8d72f6c7408c3ffba71b",
+      "merged_at": "2026-10-22T01:12:30Z",
+      "required": []
+    },
+    "18057": {
+      "merge_sha": "cb403989d4f5c1a064ca6d4cf14f3912603b61d2",
+      "merged_at": "2026-10-22T03:11:05Z",
+      "required": [
+        "deploy-applications.yml:Deploy apps/mama-barbara"
+      ]
+    }
+  },
+  "production": "d1d0fbd2a4d478c50d682fca5dbb32907c11ee2f",
   "master": "02b0575f1ae6daad402bb2782119d7752403ad01"
 }

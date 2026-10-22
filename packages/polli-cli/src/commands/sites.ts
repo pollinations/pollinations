@@ -71,6 +71,14 @@ export function collectSiteFiles(dir: string): SiteFile[] {
     return files;
 }
 
+/** As wrangler uploads assets: text is UTF-8, and an unknown type is sent as
+ * "application/null", which tells Cloudflare to serve no Content-Type. */
+export function assetType(file: string) {
+    const type = mimeTypeFor(file);
+    if (type === "application/octet-stream") return "application/null";
+    return type.startsWith("text/") ? `${type}; charset=utf-8` : type;
+}
+
 /** Uploads each bucket straight to Cloudflare and returns the completion JWT. */
 async function uploadBuckets(session: UploadSession, files: SiteFile[]) {
     const byHash = new Map(files.map((file) => [file.hash, file]));
@@ -84,7 +92,7 @@ async function uploadBuckets(session: UploadSession, files: SiteFile[]) {
             form.append(
                 hash,
                 new Blob([readFileSync(file.file).toString("base64")], {
-                    type: mimeTypeFor(file.file),
+                    type: assetType(file.file),
                 }),
                 hash,
             );

@@ -75,6 +75,14 @@ const CONTENT_TYPES: Record<string, string> = {
     otf: "font/otf",
 };
 
+// As wrangler uploads assets: text is UTF-8, and an unknown type is sent as
+// "application/null", which tells Cloudflare to serve no Content-Type.
+function contentType(extension: string) {
+    const type = CONTENT_TYPES[extension.toLowerCase()];
+    if (!type) return "application/null";
+    return type.startsWith("text/") ? `${type}; charset=utf-8` : type;
+}
+
 function sitesConfig(env: SitesEnv) {
     const token = env.CODE_AGENT_DEPLOY_API_TOKEN;
     const namespace = env.SITES_DISPATCH_NAMESPACE;
@@ -146,11 +154,7 @@ export async function prepareInlineFiles(files: InlineSiteFile[]) {
         manifest[path] = { hash, size: bytes.length };
         contents.set(
             hash,
-            new Blob([base64], {
-                type:
-                    CONTENT_TYPES[extension.toLowerCase()] ??
-                    "application/octet-stream",
-            }),
+            new Blob([base64], { type: contentType(extension) }),
         );
     }
     return { manifest, contents };

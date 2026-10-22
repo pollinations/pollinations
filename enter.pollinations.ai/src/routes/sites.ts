@@ -1,7 +1,7 @@
 import { requireAccountPermission } from "@shared/auth/account-permissions.ts";
 import { site } from "@shared/db/sites.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -59,8 +59,8 @@ const SiteNameSchema = z
 const megabytes = (bytes: number) => `${Math.round(bytes / 1024 / 1024)} MB`;
 
 // Cloudflare's direct upload manifest: path -> { hash, size }. The hash is
-// any 32 hex characters that identify the content; our CLI uses the first 32
-// of the SHA-256.
+// any 32 hex characters that identify the content and its type; our CLI uses
+// Cloudflare's example (SHA-256 of the base64 content plus the extension).
 const ManifestSchema = z
     .record(
         z
@@ -132,30 +132,29 @@ async function findSite(db: ReturnType<typeof drizzle>, name: string) {
     return row;
 }
 
-// The first upload claims the name, within the per-account limit.
-async function claimSite(
-    db: ReturnType<typeof drizzle>,
-    name: string,
-    userId: string,
-) {
+// The first upload claims the name. One statement checks the per-account
+// limit and inserts, so parallel claims can't exceed it.
+async function claimSite(d1: D1Database, name: string, userId: string) {
+    const db = drizzle(d1);
     const existing = await findSite(db, name);
     if (existing) return requireUsable(existing, userId);
-    const [{ owned }] = await db
-        .select({ owned: count() })
-        .from(site)
-        .where(eq(site.userId, userId));
-    if (owned >= SITE_LIMITS.sites) {
+    await d1
+        .prepare(
+            `INSERT INTO site (name, user_id, created_at)
+             SELECT ?, ?, unixepoch()
+             WHERE (SELECT count(*) FROM site WHERE user_id = ?) < ?
+             ON CONFLICT DO NOTHING`,
+        )
+        .bind(name, userId, userId, SITE_LIMITS.sites)
+        .run();
+    const row = await findSite(db, name);
+    if (!row) {
         throw new HTTPException(403, {
             message: `You can have at most ${SITE_LIMITS.sites} sites. Delete one with DELETE /account/sites/{name} first.`,
         });
     }
-    const [row] = await db
-        .insert(site)
-        .values({ name, userId, createdAt: new Date() })
-        .onConflictDoNothing()
-        .returning();
-    // Someone else claimed it between the read and the insert.
-    return row ?? requireUsable(await findSite(db, name), userId);
+    // Someone else may have claimed it between the read and the insert.
+    return requireUsable(row, userId);
 }
 
 const errors = {
@@ -216,7 +215,7 @@ export const sitesRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Start Site Upload",
             description: [
-                "Step 1 of a deploy. Send a manifest of every file in the site (`path` -> `{hash, size}`, the hash being 32 hex characters such as the first 32 of the file's SHA-256). The first upload claims the name.",
+                "Step 1 of a deploy. Send a manifest of every file in the site (`path` -> `{hash, size}`, the hash being 32 hex characters, such as the first 32 of the SHA-256 of the file's base64 content plus its extension; files with the same bytes but different types need different hashes). The first upload claims the name.",
                 "",
                 "Upload each bucket of hashes to `uploadUrl` with `Authorization: Bearer <jwt>`, as `multipart/form-data` with one part per file, named by its hash and holding its base64 content. The last upload returns the completion JWT. Empty `buckets` means every file is already uploaded and `jwt` is the completion JWT.",
                 "",
@@ -248,7 +247,7 @@ export const sitesRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             requireAccountPermission(c.var.auth.apiKey, "machines");
             const { name } = c.req.valid("param");
-            await claimSite(drizzle(c.env.DB), name, user.id);
+            await claimSite(c.env.DB, name, user.id);
             return c.json(
                 await startSiteUpload(
                     c.env,
@@ -326,7 +325,9 @@ export const sitesRoutes = new Hono<Env>()
             }
             requireUsable(row, user.id);
             await deleteSite(c.env, name);
-            await db.delete(site).where(eq(site.name, name));
+            await db
+                .delete(site)
+                .where(and(eq(site.name, name), eq(site.userId, user.id)));
             return c.json({ name });
         },
     );

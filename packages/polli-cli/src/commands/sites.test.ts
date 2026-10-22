@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -31,13 +30,18 @@ describe("collectSiteFiles", () => {
             "/index.html",
         ]);
         expect(files.find((file) => file.path === "/index.html")).toMatchObject(
-            {
-                hash: createHash("sha256")
-                    .update("<h1>hi</h1>")
-                    .digest("hex")
-                    .slice(0, 32),
-                size: 11,
-            },
+            { hash: expect.stringMatching(/^[0-9a-f]{32}$/), size: 11 },
         );
+    });
+
+    it("hashes the same bytes apart when the file types differ", () => {
+        dir = mkdtempSync(join(tmpdir(), "polli-site-"));
+        write("index.html", "same");
+        write("app.js", "same");
+        write("app.txt", "same");
+
+        const hashes = new Set(collectSiteFiles(dir).map((file) => file.hash));
+
+        expect(hashes.size).toBe(3);
     });
 });

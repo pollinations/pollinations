@@ -28,6 +28,9 @@ function envWithEnter(
     fetch: Fetcher["fetch"] = async () => new Response("enter"),
 ): CloudflareBindings {
     return {
+        ASSETS: {
+            fetch: async () => new Response("Not Found", { status: 404 }),
+        } as unknown as Fetcher,
         ENTER: { fetch } as unknown as Fetcher,
         ENVIRONMENT: "test",
         LOG_LEVEL: "debug",
@@ -180,6 +183,21 @@ describe("gen worker routing", () => {
             'property="og:image" content="https://staging.gen.pollinations.ai/og-image.png"',
         );
         expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
+    });
+
+    it("serves gen's icons after the routes", async () => {
+        const ASSETS = {
+            fetch: async (request: Request) =>
+                new URL(request.url).pathname === "/favicon.ico"
+                    ? new Response("icon")
+                    : new Response("missing", { status: 404 }),
+        } as unknown as Fetcher;
+        const env = { ...envWithEnter(), ASSETS };
+
+        expect(await (await fetchWorker("/favicon.ico", env)).text()).toBe(
+            "icon",
+        );
+        expect((await fetchWorker("/missing.png", env)).status).toBe(404);
     });
 
     it("serves the docs web app manifest", async () => {

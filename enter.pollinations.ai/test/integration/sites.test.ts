@@ -1,6 +1,7 @@
 import { env, SELF } from "cloudflare:test";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { site as siteTable } from "@shared/db/sites.ts";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
 import { test } from "../fixtures.ts";
@@ -227,13 +228,21 @@ describe("/api/account/sites", () => {
         expect((await sites(apiKey, "GET")).status).toBe(403);
     });
 
-    test("deleting the account deletes its sites", async ({
+    test("deleting the account deletes its sites but keeps takedowns reserved", async ({
         accountToken,
         sessionToken,
     }) => {
         const calls = fakeCloudflare();
         const userId = await fixtureUserId();
         await upload(accountToken, "my-site");
+        await upload(accountToken, "bad-site");
+        await SELF.fetch(
+            "http://localhost:3000/api/admin/sites/bad-site/block",
+            {
+                method: "POST",
+                headers: { Authorization: `Bearer ${env.PLN_ENTER_TOKEN}` },
+            },
+        );
 
         const response = await SELF.fetch(
             "http://localhost:3000/api/auth/delete-user",
@@ -256,5 +265,47 @@ describe("/api/account/sites", () => {
                 ),
             ),
         });
+        expect(
+            await drizzle(env.DB)
+                .select({ name: siteTable.name, userId: siteTable.userId })
+                .from(siteTable),
+        ).toEqual([{ name: "bad-site", userId: null }]);
+    });
+
+    test("an admin removing a user deletes their sites", async ({
+        sessionToken,
+    }) => {
+        const calls = fakeCloudflare();
+        const db = drizzle(env.DB);
+        await db
+            .update(userTable)
+            .set({ role: "admin" })
+            .where(eq(userTable.id, await fixtureUserId()));
+        await db.insert(userTable).values({
+            id: "other-user",
+            name: "Other",
+            email: "other@example.com",
+        });
+        await db.insert(siteTable).values({
+            name: "their-site",
+            userId: "other-user",
+            createdAt: new Date(),
+        });
+
+        const response = await SELF.fetch(
+            "http://localhost:3000/api/auth/admin/remove-user",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                    Origin: "http://localhost:3000",
+                },
+                body: JSON.stringify({ userId: "other-user" }),
+            },
+        );
+        expect(response.status).toBe(200);
+        expect(calls.at(-1)?.url).toMatch(/\?tags=user-other-user%3Ayes$/);
+        expect(await db.select().from(siteTable)).toEqual([]);
     });
 });

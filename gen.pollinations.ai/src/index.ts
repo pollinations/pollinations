@@ -302,6 +302,9 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .route("/", proxyRoutes);
 
 app.notFound(async (c: Context<Env>) => {
+    // Gen's icons and images in public/.
+    const asset = await c.env.ASSETS.fetch(c.req.raw);
+    if (asset.status !== 404) return asset;
     return handleError(new HTTPException(404), c);
 });
 

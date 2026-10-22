@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
-import { join, relative, resolve, sep } from "node:path";
+import { extname, join, relative, resolve, sep } from "node:path";
 import chalk from "chalk";
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
@@ -37,8 +37,10 @@ export type SiteFile = {
 };
 
 /** Every file under `dir` as Cloudflare's upload manifest describes it: the
- * URL path, the first 32 hex characters of its SHA-256, and its size. Dotfiles
- * (.env, .git) and node_modules stay local; .well-known is published. */
+ * URL path, a hash and the size. As in Cloudflare's example, the hash covers
+ * the base64 content plus the extension, so the same bytes as .js and .txt
+ * upload separately with their own types. Dotfiles (.env, .git) and
+ * node_modules stay local; .well-known is published. */
 export function collectSiteFiles(dir: string): SiteFile[] {
     const files: SiteFile[] = [];
     const walk = (current: string) => {
@@ -55,7 +57,9 @@ export function collectSiteFiles(dir: string): SiteFile[] {
                     path: `/${relative(dir, file).split(sep).join("/")}`,
                     file,
                     hash: createHash("sha256")
-                        .update(content)
+                        .update(
+                            content.toString("base64") + extname(file).slice(1),
+                        )
                         .digest("hex")
                         .slice(0, 32),
                     size: content.length,

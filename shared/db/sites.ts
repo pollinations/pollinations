@@ -9,9 +9,11 @@ export const site = sqliteTable(
     "site",
     {
         name: text("name").primaryKey(),
-        userId: text("user_id")
-            .notNull()
-            .references(() => user.id, { onDelete: "cascade" }),
+        // Null once the owner's account is deleted. Only blocked rows outlive
+        // the account (see auth.ts), so their names stay reserved.
+        userId: text("user_id").references(() => user.id, {
+            onDelete: "set null",
+        }),
         createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
         // Null until the first upload is published.
         publishedAt: integer("published_at", { mode: "timestamp" }),

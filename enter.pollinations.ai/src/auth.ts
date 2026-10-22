@@ -31,7 +31,7 @@ import {
     getSessionFromCtx,
 } from "better-auth/api";
 import { admin, openAPI } from "better-auth/plugins";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { discordConfigFromEnv } from "./services/discord.ts";
 import { deleteUserSites } from "./services/sites.ts";
@@ -267,6 +267,28 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         }),
         databaseHooks: {
             user: {
+                // Runs for self-service and admin deletion alike. Takes the
+                // user's sites offline and frees their names, except blocked
+                // ones, which stay reserved with no owner.
+                delete: {
+                    before: async (user) => {
+                        const [owned] = await db
+                            .select({ name: site.name })
+                            .from(site)
+                            .where(eq(site.userId, user.id))
+                            .limit(1);
+                        if (!owned) return;
+                        await deleteUserSites(env, user.id);
+                        await db
+                            .delete(site)
+                            .where(
+                                and(
+                                    eq(site.userId, user.id),
+                                    isNull(site.blockedAt),
+                                ),
+                            );
+                    },
+                },
                 create: {
                     after: async (user, context) => {
                         ctx?.waitUntil(
@@ -357,16 +379,6 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             additionalFields: authAdditionalFields.user,
             deleteUser: {
                 enabled: true,
-                // Site rows cascade with the user, but their scripts would
-                // stay online.
-                beforeDelete: async (user) => {
-                    const [owned] = await db
-                        .select({ name: site.name })
-                        .from(site)
-                        .where(eq(site.userId, user.id))
-                        .limit(1);
-                    if (owned) await deleteUserSites(env, user.id);
-                },
             },
         },
         account: {

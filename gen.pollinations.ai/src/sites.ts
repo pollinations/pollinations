@@ -35,7 +35,11 @@ async function dispatch(
         if ((error as Error).message?.startsWith("Worker not found")) {
             return notFound();
         }
-        throw error;
+        console.error(`Site ${name} failed`, error);
+        return new Response("Site unavailable", {
+            status: 502,
+            headers: { "Content-Type": "text/plain; charset=utf-8" },
+        });
     }
 }
 

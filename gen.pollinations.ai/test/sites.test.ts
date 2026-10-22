@@ -33,15 +33,37 @@ describe("serveSite", () => {
         expect(get).not.toHaveBeenCalled();
     });
 
-    it.each([
-        ["an unknown site", "https://missing.pollinations.app/"],
-        ["a host that can't be a site", "https://8080-abc.pollinations.app/"],
-    ])("returns 404 for %s", async (_case, url) => {
+    it("returns 404 for an unknown site", async () => {
         const { env } = sitesEnv(async () => {
             throw new Error("Worker not found.");
         });
-        const response = await serveSite(new Request(url), env);
+        const response = await serveSite(
+            new Request("https://missing.pollinations.app/"),
+            env,
+        );
         expect(response?.status).toBe(404);
+    });
+
+    it("returns 404 for a host that can't be a site, without dispatching", async () => {
+        const { env, get } = sitesEnv(async () => new Response("hello"));
+        const response = await serveSite(
+            new Request("https://8080-abc.pollinations.app/"),
+            env,
+        );
+        expect(response?.status).toBe(404);
+        expect(get).not.toHaveBeenCalled();
+    });
+
+    it("returns 502 when the site fails", async () => {
+        const { env } = sitesEnv(async () => {
+            throw new Error("internal error");
+        });
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        const response = await serveSite(
+            new Request("https://my-site.pollinations.app/"),
+            env,
+        );
+        expect(response?.status).toBe(502);
     });
 
     it("uses the staging suffix on staging", async () => {

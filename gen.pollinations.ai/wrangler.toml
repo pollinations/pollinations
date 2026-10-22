@@ -80,10 +80,11 @@ port = 8788
 
 [assets]
 directory = "public"
-# Static assets are only icons/images. Keep dynamic SEO routes Worker-owned:
-# `/manifest.webmanifest` is generated from src/routes/seo.ts, and `/` is the
-# docs SEO landing page. No public/index.html is intentionally shipped.
-run_worker_first = ["/", "/manifest.webmanifest"]
+binding = "ASSETS"
+# Static assets are only icons/images, served from the app's notFound handler.
+# The Worker runs first so site hosts (src/sites.ts) serve their own
+# /favicon.ico and other files with the same paths.
+run_worker_first = true
 
 # Production routes
 [env.production]
@@ -104,6 +105,12 @@ custom_domain = true
 pattern = "gen.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
+
+# User sites (src/sites.ts). Cloudflare picks the most specific matching
+# route, so *--staging hosts stay on staging.
+[[env.production.routes]]
+pattern = "*.pollinations.app/*"
+zone_name = "pollinations.app"
 
 [[env.production.services]]
 binding = "ENTER"

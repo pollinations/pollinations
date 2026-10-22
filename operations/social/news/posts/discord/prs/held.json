@@ -17,9 +17,7 @@
     "18057": {
       "merge_sha": "cb403989d4f5c1a064ca6d4cf14f3912603b61d2",
       "merged_at": "2026-10-22T03:11:05Z",
-      "required": [
-        "deploy-applications.yml:Deploy apps/mama-barbara"
-      ]
+      "required": []
     }
   },
   "production": "d1d0fbd2a4d478c50d682fca5dbb32907c11ee2f",

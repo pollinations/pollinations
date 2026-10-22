@@ -838,7 +838,7 @@ export interface DecisionResponse {
 // ============================================================================
 
 /** Account permission scopes */
-export type AccountPermission = "profile" | "usage" | "keys";
+export type AccountPermission = "profile" | "usage" | "keys" | "machines";
 
 /** Options for building a BYOP authorization URL */
 export interface AuthorizeOptions {
@@ -1106,6 +1106,37 @@ export interface CreateKeyOptions {
      * `false` server-side; only meaningful on `type: "publishable"` keys.
      */
     earningsEnabled?: boolean;
+}
+
+/** A static site at `https://<name>.pollinations.app` */
+export interface Site {
+    name: string;
+    url: string;
+    createdAt: string;
+    publishedAt: string | null;
+    /** Taken down for breaking the terms; the name stays reserved */
+    blocked: boolean;
+}
+
+/** One file of an inline site deploy, in Vercel's deployment shape */
+export interface SiteFile {
+    /** Path, e.g. `index.html` (required) or `assets/app.js` */
+    file: string;
+    data: string;
+    /** Default `utf-8`; use `base64` for images and other binary files */
+    encoding?: "utf-8" | "base64";
+}
+
+/** Response from GET /account/sites */
+export interface SitesResponse {
+    data: Site[];
+    limits: {
+        sites: number;
+        bytesPerSite: number;
+        filesPerSite: number;
+        bytesPerFile: number;
+        bytesPerInlineDeploy: number;
+    };
 }
 
 /**

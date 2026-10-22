@@ -1,15 +1,23 @@
 import { requireAccountPermission } from "@shared/auth/account-permissions.ts";
 import { site } from "@shared/db/sites.ts";
+import { ValidationError } from "@shared/http/validation-error.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
-import { deleteSite, publishSite, startSiteUpload } from "../services/sites.ts";
+import {
+    deleteSite,
+    prepareInlineFiles,
+    publishSite,
+    startSiteUpload,
+    uploadSiteFiles,
+} from "../services/sites.ts";
 
 export const SITE_LIMITS = {
     sites: 5,
@@ -17,6 +25,9 @@ export const SITE_LIMITS = {
     filesPerSite: 1000,
     // Cloudflare's own limit for one static asset.
     bytesPerFile: 25 * 1024 * 1024,
+    // Request body of a deploy with inline files. Enter holds several copies
+    // of them in memory (128 MB per isolate), so bigger sites use the upload.
+    bytesPerInlineDeploy: 5 * 1024 * 1024,
 };
 
 // Names are one DNS label under the sites domain. They start with a letter:
@@ -90,6 +101,22 @@ const ManifestSchema = z
             SITE_LIMITS.bytesPerSite,
         `A site can be at most ${megabytes(SITE_LIMITS.bytesPerSite)}`,
     );
+
+// Vercel's inline file shape (POST /v13/deployments).
+const InlineFileSchema = z.object({
+    file: z.string().min(1).meta({ description: "Path, e.g. `index.html`" }),
+    data: z.string(),
+    encoding: z.enum(["utf-8", "base64"]).optional(),
+});
+
+const inlineBodyLimit = bodyLimit({
+    maxSize: SITE_LIMITS.bytesPerInlineDeploy,
+    onError: () => {
+        throw new HTTPException(413, {
+            message: `A request with inline files can be at most ${megabytes(SITE_LIMITS.bytesPerInlineDeploy)}. Upload bigger sites with POST /account/sites/{name}/upload.`,
+        });
+    },
+});
 
 const SiteSchema = z.object({
     name: z.string(),
@@ -187,6 +214,7 @@ export const sitesRoutes = new Hono<Env>()
                                         bytesPerSite: z.number(),
                                         filesPerSite: z.number(),
                                         bytesPerFile: z.number(),
+                                        bytesPerInlineDeploy: z.number(),
                                     }),
                                 }),
                             ),
@@ -273,8 +301,13 @@ export const sitesRoutes = new Hono<Env>()
         describeRoute({
             tags: ["👤 Account"],
             summary: "Publish Site",
-            description:
+            description: [
                 "Step 2 of 2. Publishes the uploaded files with the JWT from step 1. The site is live at `url` when this returns.",
+                "",
+                "Small sites can skip step 1 and send `files` instead of `jwt`, as Vercel's deployment API takes them: `file` is the path (`index.html` is required), `encoding` is `utf-8` (default) or `base64`. The request body can be up to " +
+                    megabytes(SITE_LIMITS.bytesPerInlineDeploy) +
+                    ", and the first deploy claims the name.",
+            ].join("\n"),
             responses: {
                 200: {
                     description: "Published site",
@@ -282,29 +315,63 @@ export const sitesRoutes = new Hono<Env>()
                         "application/json": { schema: resolver(SiteSchema) },
                     },
                 },
-                400: { description: "Invalid or expired upload JWT" },
+                400: { description: "Invalid files or expired upload JWT" },
                 ...errors,
                 404: { description: "Site not found" },
                 409: { description: "Site name is taken" },
+                413: {
+                    description: `Request body over ${megabytes(SITE_LIMITS.bytesPerInlineDeploy)}`,
+                },
             },
         }),
+        inlineBodyLimit,
         validator("param", z.object({ name: SiteNameSchema })),
         validator(
             "json",
-            z.object({
-                jwt: z
-                    .string()
-                    .min(1)
-                    .meta({ example: "eyJhbGciOiJIUzI1NiJ9" }),
-            }),
+            z
+                .union([
+                    z.object({
+                        jwt: z
+                            .string()
+                            .min(1)
+                            .meta({ example: "eyJhbGciOiJIUzI1NiJ9" }),
+                    }),
+                    z.object({
+                        files: z
+                            .array(InlineFileSchema)
+                            .min(1)
+                            .max(SITE_LIMITS.filesPerSite),
+                    }),
+                ])
+                .meta({
+                    example: {
+                        files: [{ file: "index.html", data: "<h1>Hello</h1>" }],
+                    },
+                }),
         ),
         async (c) => {
             const user = c.var.auth.requireUser();
             requireAccountPermission(c.var.auth.apiKey, "machines");
             const { name } = c.req.valid("param");
+            const body = c.req.valid("json");
             const db = drizzle(c.env.DB);
-            requireUsable(await findSite(db, name), user.id);
-            await publishSite(c.env, name, user.id, c.req.valid("json").jwt);
+            let jwt: string;
+            if ("jwt" in body) {
+                requireUsable(await findSite(db, name), user.id);
+                jwt = body.jwt;
+            } else {
+                const { manifest, contents } = await prepareInlineFiles(
+                    body.files,
+                );
+                const checked = ManifestSchema.safeParse(manifest);
+                if (!checked.success) {
+                    throw new ValidationError(checked.error, "json");
+                }
+                await claimSite(c.env.DB, name, user.id);
+                const session = await startSiteUpload(c.env, name, manifest);
+                jwt = await uploadSiteFiles(c.env, session, contents);
+            }
+            await publishSite(c.env, name, user.id, jwt);
             const [row] = await db
                 .update(site)
                 .set({ publishedAt: new Date() })

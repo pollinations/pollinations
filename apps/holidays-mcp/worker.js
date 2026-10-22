@@ -114,7 +114,8 @@ function buildServer() {
         },
         async ({ country_code, year }) => {
             const currentYear = new Date().getUTCFullYear();
-            const years = year == null ? [currentYear, currentYear + 1] : [year];
+            const years =
+                year == null ? [currentYear, currentYear + 1] : [year];
             const perYear = await Promise.all(
                 years.map((y) =>
                     fetchJson(`${NAGER_DATE_URL}/${y}/${country_code}`),

@@ -134,7 +134,10 @@ test("holidays_for_year maps and sorts without forwarding caller credentials", a
             null,
             "caller credentials must not reach Nager.Date",
         );
-        assert.equal(new Headers(init.headers).get("accept"), "application/json");
+        assert.equal(
+            new Headers(init.headers).get("accept"),
+            "application/json",
+        );
         return Response.json(DE_2026);
     });
     const client = await connectClient({

@@ -1,5 +1,21 @@
 {
-  "held": {},
-  "production": "5a4bf8154c8e139803138a49597f1e18c6835db9",
+  "held": {
+    "18101": {
+      "merge_sha": "26f15d7400e5660ae7e3e811f15cfe1df133f2b7",
+      "merged_at": "2026-10-22T08:33:09Z",
+      "required": []
+    },
+    "18119": {
+      "merge_sha": "5e07b12a6e02fb856f18c060aa67a35e8445fcdd",
+      "merged_at": "2026-10-22T12:25:37Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-cloudflare-production.yml:deploy-media",
+        "deploy-website-cloudflare.yml:deploy"
+      ]
+    }
+  },
+  "production": "f1ae3e97c18d4f15658c18d3c065b42299e20881",
   "master": "02b0575f1ae6daad402bb2782119d7752403ad01"
 }

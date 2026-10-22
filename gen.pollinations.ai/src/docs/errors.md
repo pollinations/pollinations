@@ -19,7 +19,7 @@ All errors return JSON with a consistent shape:
 | `401` | Missing or invalid API key |
 | `402` | Insufficient pollen balance, key budget exhausted, or model needs paid Pollen (`INSUFFICIENT_BALANCE`, `KEY_BUDGET_EXHAUSTED`, `QUEST_POLLEN_ONLY`) |
 | `403` | API key lacks required permission |
-| `404` | Model or resource not found |
+| `404` | Unknown path or resource, such as a file or sandbox (an unknown model returns `400`) |
 | `422` | Content policy violation |
 | `429` | Rate limited; wait for `Retry-After` when present |
 | `500` | Internal server error |

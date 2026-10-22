@@ -49,6 +49,7 @@ Pollinations is a live multi-model gateway. Never decide that a requested model 
 
 - getBalance, getUsage (request history, or daily=true for a daily summary), getEarnings, and listQuests read the account and need the \`account:usage\` permission.
 - listKeys, createKey, and revokeKey manage API keys and need the \`account:keys\` permission. createKey returns the full key once; pass it to the user and do not store it.
+- deploySite publishes static files at https://<name>.pollinations.app; listSites and deleteSite manage them. They need the \`account:machines\` permission.
 
 ## API Endpoint
 All requests go through: ${validateApiBaseUrl()}`;

@@ -1,6 +1,6 @@
 {
     "name": "@pollinations/ui",
-    "version": "0.1.0-alpha.21",
+    "version": "0.1.0-alpha.22",
     "description": "Design primitives and UI modules for Pollinations apps.",
     "license": "MIT",
     "type": "module",
@@ -54,11 +54,11 @@
     "scripts": {
         "build": "npm run build:palette && npm run build:js && npm run build:css && npm run build:fonts && npm run build:brand && npm run build:licenses",
         "build:palette": "node scripts/gen-theme-palette.mjs",
-        "build:fonts": "mkdir -p dist/fonts && cp src/fonts/*.woff2 dist/fonts/",
-        "build:brand": "mkdir -p dist/brand && cp -R src/brand/. dist/brand/",
-        "build:licenses": "mkdir -p dist/licenses && cp src/licenses/*.txt dist/licenses/",
+        "build:fonts": "node -e \"require('fs').cpSync('src/fonts','dist/fonts',{recursive:true})\"",
+        "build:brand": "node -e \"require('fs').cpSync('src/brand','dist/brand',{recursive:true})\"",
+        "build:licenses": "node -e \"require('fs').cpSync('src/licenses','dist/licenses',{recursive:true})\"",
         "build:js": "tsup",
-        "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify && cp src/styles/theme.css dist/theme.css && sed 's|@pollinations/ui/styles.css|./styles.css|' src/styles/app.css > dist/app.css",
+        "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify && node -e \"const fs=require('fs');fs.cpSync('src/styles/theme.css','dist/theme.css');fs.writeFileSync('dist/app.css',fs.readFileSync('src/styles/app.css','utf8').replaceAll('@pollinations/ui/styles.css','./styles.css'))\"",
         "brand": "node scripts/brand/generate.mjs",
         "prepublishOnly": "npm run build",
         "typecheck": "tsc --noEmit",

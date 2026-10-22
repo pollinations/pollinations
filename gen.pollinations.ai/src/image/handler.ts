@@ -171,9 +171,11 @@ function parseImageParams(
     }
     // A reference image the model cannot consume used to be dropped silently,
     // billing a fresh generation that ignored the caller's picture. Reject it
-    // like the text protocols already do (docs/text-generation.md).
+    // like the text protocols already do (docs/text-generation.md). Community
+    // endpoints get the image and decide for themselves.
     if (
         parseResult.data.image.length > 0 &&
+        !c.var.model.communityEndpoint &&
         !c.var.model.definition.inputModalities?.includes("image")
     ) {
         throw new UpstreamError(400, {

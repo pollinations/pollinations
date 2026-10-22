@@ -234,9 +234,7 @@ generationExecutorRoutes.post(
 
 generationExecutorRoutes.post(
     "/v1/images/edits",
-    resolveModel("generate.image", {
-        defaultModel: "black-forest-labs/flux.1-kontext-pro",
-    }),
+    resolveModel("generate.image", { defaultModel: "openai/gpt-image-1-mini" }),
     track("generate.image"),
     prepareOpenAIImageEditReplay,
     prepareGenerationRequest,

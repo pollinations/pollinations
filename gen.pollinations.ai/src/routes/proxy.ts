@@ -1295,10 +1295,10 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
-        // Editing defaults to a model that reads the source image; the
+        // Editing defaults to a cheap model that reads the source image; the
         // generation default (schnell) is text-only and would drop it.
         resolveModel("generate.image", {
-            defaultModel: "black-forest-labs/flux.1-kontext-pro",
+            defaultModel: "openai/gpt-image-1-mini",
         }),
         track("generate.image"),
         every(prepareOpenAIImageEdit, formatOpenAIImageResponse),

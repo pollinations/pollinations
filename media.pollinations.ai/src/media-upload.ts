@@ -4,6 +4,11 @@ import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 
 const DEFAULT_MAX_SIZE = 100 * 1024 * 1024;
 
+// R2 caps customMetadata at ~2 KB per object, so an unbounded upload filename
+// makes the put throw and the client sees an opaque 500. The service-binding
+// path always sliced to 253; the HTTP paths now share the same cap.
+export const MAX_ORIGINAL_NAME_LENGTH = 253;
+
 type MediaStorageEnv = {
     MEDIA_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
@@ -83,7 +88,7 @@ export async function uploadUnlistedMedia(
                 },
                 customMetadata: {
                     uploadedAt: new Date().toISOString(),
-                    originalName: input.fileName?.slice(0, 253) || "",
+                    originalName: input.fileName?.slice(0, MAX_ORIGINAL_NAME_LENGTH) || "",
                     uploadedBy: input.uploadedBy || "pollinations-service",
                     keyType: input.keyType || "service",
                 },

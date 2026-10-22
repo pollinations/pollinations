@@ -31,6 +31,7 @@ import {
     tagsForItems,
 } from "./catalog.ts";
 import {
+    MAX_ORIGINAL_NAME_LENGTH,
     rawUploadFileName,
     readMedia,
     uploadUnlistedMedia,
@@ -738,7 +739,7 @@ api.post(
                 },
                 customMetadata: {
                     uploadedAt: new Date().toISOString(),
-                    originalName: fileName || "",
+                    originalName: fileName?.slice(0, MAX_ORIGINAL_NAME_LENGTH) || "",
                     uploadedBy: authResult.name || "",
                     keyType: authResult.type,
                 },

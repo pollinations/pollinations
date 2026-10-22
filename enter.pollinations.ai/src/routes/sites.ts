@@ -25,8 +25,9 @@ export const SITE_LIMITS = {
     filesPerSite: 1000,
     // Cloudflare's own limit for one static asset.
     bytesPerFile: 25 * 1024 * 1024,
-    // Request body of a deploy with inline files; enter holds them in memory.
-    bytesPerInlineDeploy: 10 * 1024 * 1024,
+    // Request body of a deploy with inline files. Enter holds several copies
+    // of them in memory (128 MB per isolate), so bigger sites use the upload.
+    bytesPerInlineDeploy: 5 * 1024 * 1024,
 };
 
 // Names are one DNS label under the sites domain. They start with a letter:
@@ -112,7 +113,7 @@ const inlineBodyLimit = bodyLimit({
     maxSize: SITE_LIMITS.bytesPerInlineDeploy,
     onError: () => {
         throw new HTTPException(413, {
-            message: `Inline files can be at most ${megabytes(SITE_LIMITS.bytesPerInlineDeploy)} per request. Upload bigger sites with POST /account/sites/{name}/upload.`,
+            message: `A request with inline files can be at most ${megabytes(SITE_LIMITS.bytesPerInlineDeploy)}. Upload bigger sites with POST /account/sites/{name}/upload.`,
         });
     },
 });
@@ -303,7 +304,9 @@ export const sitesRoutes = new Hono<Env>()
             description: [
                 "Step 2 of 2. Publishes the uploaded files with the JWT from step 1. The site is live at `url` when this returns.",
                 "",
-                "Small sites can skip step 1 and send `files` instead of `jwt`, as Vercel's deployment API takes them: `file` is the path (`index.html` is required), `encoding` is `utf-8` (default) or `base64`. The request body can be up to 10 MB, and the first deploy claims the name.",
+                "Small sites can skip step 1 and send `files` instead of `jwt`, as Vercel's deployment API takes them: `file` is the path (`index.html` is required), `encoding` is `utf-8` (default) or `base64`. The request body can be up to " +
+                    megabytes(SITE_LIMITS.bytesPerInlineDeploy) +
+                    ", and the first deploy claims the name.",
             ].join("\n"),
             responses: {
                 200: {
@@ -316,7 +319,9 @@ export const sitesRoutes = new Hono<Env>()
                 ...errors,
                 404: { description: "Site not found" },
                 409: { description: "Site name is taken" },
-                413: { description: "Inline files over 10 MB" },
+                413: {
+                    description: `Request body over ${megabytes(SITE_LIMITS.bytesPerInlineDeploy)}`,
+                },
             },
         }),
         inlineBodyLimit,
@@ -331,7 +336,12 @@ export const sitesRoutes = new Hono<Env>()
                             .min(1)
                             .meta({ example: "eyJhbGciOiJIUzI1NiJ9" }),
                     }),
-                    z.object({ files: z.array(InlineFileSchema).min(1) }),
+                    z.object({
+                        files: z
+                            .array(InlineFileSchema)
+                            .min(1)
+                            .max(SITE_LIMITS.filesPerSite),
+                    }),
                 ])
                 .meta({
                     example: {

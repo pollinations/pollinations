@@ -258,7 +258,7 @@ export const accountTools = [
     [
         "deploySite",
         "Publish a static site at https://<name>.pollinations.app, replacing what was there (`polli sites deploy`). " +
-            "Send every file inline; index.html is required, up to 10 MB per request. The first deploy claims the name. " +
+            "Send every file inline; index.html is required, up to 5 MB per request. The first deploy claims the name. " +
             "Requires 'account:machines' permission.",
         {
             name: siteName,

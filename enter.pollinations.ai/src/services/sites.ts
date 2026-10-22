@@ -34,9 +34,8 @@ export type InlineSiteFile = {
     encoding?: "utf-8" | "base64";
 };
 
-type SiteContent = { base64: string; type: string };
-
-// Cloudflare serves each file with the type it was uploaded with.
+// Cloudflare serves each file with the type it was uploaded with. Same table
+// as the CLI's (packages/polli-cli/src/lib/mime.ts).
 const CONTENT_TYPES: Record<string, string> = {
     html: "text/html",
     htm: "text/html",
@@ -58,11 +57,18 @@ const CONTENT_TYPES: Record<string, string> = {
     webp: "image/webp",
     avif: "image/avif",
     ico: "image/x-icon",
+    bmp: "image/bmp",
     mp3: "audio/mpeg",
     wav: "audio/wav",
     ogg: "audio/ogg",
+    opus: "audio/ogg",
+    m4a: "audio/mp4",
+    flac: "audio/flac",
+    aac: "audio/aac",
     mp4: "video/mp4",
+    mkv: "video/x-matroska",
     webm: "video/webm",
+    mov: "video/quicktime",
     woff: "font/woff",
     woff2: "font/woff2",
     ttf: "font/ttf",
@@ -122,7 +128,8 @@ export async function startSiteUpload(
  * plus the extension, first 32 hex characters. */
 export async function prepareInlineFiles(files: InlineSiteFile[]) {
     const manifest: SiteManifest = {};
-    const contents = new Map<string, SiteContent>();
+    // Blobs, so only one copy of each file stays in memory until upload.
+    const contents = new Map<string, Blob>();
     for (const { file, data, encoding } of files) {
         const bytes = Buffer.from(
             data,
@@ -137,12 +144,14 @@ export async function prepareInlineFiles(files: InlineSiteFile[]) {
         );
         const hash = Buffer.from(digest).toString("hex").slice(0, 32);
         manifest[path] = { hash, size: bytes.length };
-        contents.set(hash, {
-            base64,
-            type:
-                CONTENT_TYPES[extension.toLowerCase()] ??
-                "application/octet-stream",
-        });
+        contents.set(
+            hash,
+            new Blob([base64], {
+                type:
+                    CONTENT_TYPES[extension.toLowerCase()] ??
+                    "application/octet-stream",
+            }),
+        );
     }
     return { manifest, contents };
 }
@@ -152,19 +161,14 @@ export async function prepareInlineFiles(files: InlineSiteFile[]) {
 export async function uploadSiteFiles(
     env: SitesEnv,
     session: UploadSession,
-    contents: Map<string, SiteContent>,
+    contents: Map<string, Blob>,
 ) {
     let jwt = session.jwt;
     for (const bucket of session.buckets) {
         const form = new FormData();
         for (const hash of bucket) {
             const content = contents.get(hash);
-            if (!content) continue;
-            form.append(
-                hash,
-                new Blob([content.base64], { type: content.type }),
-                hash,
-            );
+            if (content) form.append(hash, content, hash);
         }
         const response = await fetch(session.uploadUrl, {
             method: "POST",

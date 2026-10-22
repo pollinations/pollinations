@@ -838,7 +838,7 @@ export interface DecisionResponse {
 // ============================================================================
 
 /** Account permission scopes */
-export type AccountPermission = "profile" | "usage" | "keys";
+export type AccountPermission = "profile" | "usage" | "keys" | "machines";
 
 /** Options for building a BYOP authorization URL */
 export interface AuthorizeOptions {

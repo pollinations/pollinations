@@ -601,7 +601,7 @@ export async function listSites(): Promise<SitesResponse> {
 
 /**
  * Publish a static site at `https://<name>.pollinations.app` with inline
- * files (up to 10 MB per request); `index.html` is required.
+ * files (up to 5 MB per request); `index.html` is required.
  *
  * @example
  * ```ts

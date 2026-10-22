@@ -2181,7 +2181,7 @@ export class Pollinations {
 
     /**
      * Publish a static site at `https://<name>.pollinations.app`, replacing
-     * what was there. Files are sent inline (up to 10 MB per request);
+     * what was there. Files are sent inline (up to 5 MB per request);
      * `index.html` is required. The first deploy claims the name.
      *
      * @example

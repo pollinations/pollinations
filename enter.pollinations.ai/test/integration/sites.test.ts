@@ -294,8 +294,16 @@ describe("/api/account/sites", () => {
             files: [{ file: "app.js", data: "1" }],
         });
         expect(noIndex.status).toBe(400);
+        // Rejected before any file is hashed.
+        const tooMany = await sites(accountToken, "PUT", "/inline-site", {
+            files: Array.from({ length: 1001 }, (_, i) => ({
+                file: i ? `${i}.txt` : "index.html",
+                data: "1",
+            })),
+        });
+        expect(tooMany.status).toBe(400);
         const tooBig = await sites(accountToken, "PUT", "/inline-site", {
-            files: [{ file: "index.html", data: "x".repeat(10 * MiB) }],
+            files: [{ file: "index.html", data: "x".repeat(6 * MiB) }],
         });
         expect(tooBig.status).toBe(413);
         expect(calls).toEqual([]);

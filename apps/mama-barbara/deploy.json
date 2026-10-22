@@ -1,0 +1,6 @@
+{
+  "target": "script",
+  "sops": "default",
+  "deploy": "sops exec-env secrets/env.json 'node deploy.ts'",
+  "watch": ["apps/telegram-agent/"]
+}

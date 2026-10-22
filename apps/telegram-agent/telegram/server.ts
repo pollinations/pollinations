@@ -11,8 +11,9 @@
  *    says "Channels are not currently available". Typed input reaches the
  *    session the same way, mid-turn included. Without BARBARA_INJECT it
  *    behaves like upstream.
- *  - BARBARA_OWNER_IDS: the first group an owner writes in is added to
- *    access.json, so a new Barbara binds to her group without terminal work.
+ *  - BARBARA_OWNER_IDS: she works in any group an owner is in, and only
+ *    while they're in it (answering mentions and replies), so groups need no
+ *    terminal work. Each message says whether its sender is the owner.
  *  - Instructions: access follows the team's rules in AGENTS.md.
  *  - BARBARA_APPS: Mini App sites (kit/miniapp) polled for what group members
  *    did in them; each event arrives as <channel source="app" ...>.
@@ -292,12 +293,10 @@ function gate(ctx: Context): GateResult {
 
   if (chatType === 'group' || chatType === 'supergroup') {
     const groupId = String(ctx.chat!.id)
-    let policy = access.groups[groupId]
-    if (!policy && OWNER_IDS.has(senderId) && Object.keys(access.groups).length === 0) {
-      policy = access.groups[groupId] = { requireMention: false, allowFrom: [] }
-      saveAccess(access)
-      process.stderr.write(`telegram channel: bound to group ${groupId} by owner ${senderId}\n`)
-    }
+    // With owners, handleInbound has already checked that one is in the group.
+    const policy =
+      access.groups[groupId] ??
+      (OWNER_IDS.size > 0 ? { requireMention: true, allowFrom: [] } : undefined)
     if (!policy) return { action: 'drop' }
     const groupAllowFrom = policy.allowFrom ?? []
     const requireMention = policy.requireMention ?? true
@@ -713,7 +712,14 @@ setInterval(() => {
 // the gate's behavior for unrecognized groups.
 
 bot.command('start', async ctx => {
-  if (!dmCommandGate(ctx)) return
+  const gated = dmCommandGate(ctx)
+  if (!gated) return
+  // Telegram sends /start when someone first opens the chat. Allowed users
+  // need no pairing, and a /start sent during setup arrives once she's up.
+  if (gated.access.allowFrom.includes(gated.senderId)) {
+    await ctx.reply(`Hi, I'm here. What can I help you with?`)
+    return
+  }
   await ctx.reply(
     `This bot bridges Telegram to a Claude Code session.\n\n` +
     `To pair:\n` +
@@ -813,6 +819,54 @@ bot.on('callback_query:data', async ctx => {
   if (msg && 'text' in msg && msg.text) {
     await ctx.editMessageText(`${msg.text}\n\n${label}`).catch(() => {})
   }
+})
+
+// Whether an owner is in a group, asked at most every 10 minutes; leaving
+// clears it right away.
+const ownerSeen = new Map<string, { present: boolean; at: number }>()
+async function ownerInGroup(chatId: string): Promise<boolean> {
+  const seen = ownerSeen.get(chatId)
+  if (seen && Date.now() - seen.at < 10 * 60_000) return seen.present
+  let present = false
+  for (const id of OWNER_IDS) {
+    const member = await bot.api.getChatMember(chatId, Number(id)).catch(() => null)
+    if (
+      member &&
+      (['creator', 'administrator', 'member'].includes(member.status) ||
+        (member.status === 'restricted' && member.is_member))
+    ) {
+      present = true
+      break
+    }
+  }
+  ownerSeen.set(chatId, { present, at: Date.now() })
+  return present
+}
+
+// Added to a group: stay only if an owner is in it.
+bot.on('my_chat_member', async ctx => {
+  const chat = ctx.chat
+  const status = ctx.myChatMember.new_chat_member.status
+  if (chat.type === 'private' || OWNER_IDS.size === 0) return
+  if (status !== 'member' && status !== 'administrator') return
+  ownerSeen.delete(String(chat.id))
+  if (await ownerInGroup(String(chat.id))) {
+    await ctx
+      .reply(`Hi! Mention me (@${botUsername}) or reply to one of my messages, and I'll help.`)
+      .catch(() => {})
+  } else {
+    await ctx.reply(`I only work in groups my owner is in.`).catch(() => {})
+    await ctx.leaveChat().catch(() => {})
+  }
+})
+
+bot.on('message:left_chat_member', async ctx => {
+  const chatId = String(ctx.chat.id)
+  if (!OWNER_IDS.has(String(ctx.message.left_chat_member.id))) return
+  ownerSeen.delete(chatId)
+  if (await ownerInGroup(chatId)) return
+  await ctx.reply(`My owner left, so I'm leaving too.`).catch(() => {})
+  await ctx.leaveChat().catch(() => {})
 })
 
 bot.on('message:text', async ctx => {
@@ -934,6 +988,14 @@ async function handleInbound(
   downloadImage: (() => Promise<string | undefined>) | undefined,
   attachment?: AttachmentMeta,
 ): Promise<void> {
+  const chatType = ctx.chat?.type
+  if (
+    (chatType === 'group' || chatType === 'supergroup') &&
+    OWNER_IDS.size > 0 &&
+    !(await ownerInGroup(String(ctx.chat!.id)))
+  )
+    return
+
   const result = gate(ctx)
 
   if (result.action === 'drop') return
@@ -996,6 +1058,12 @@ async function handleInbound(
     ...(msgId != null ? { message_id: String(msgId) } : {}),
     user: from.username ?? String(from.id),
     user_id: String(from.id),
+    // owner, someone they allowed, or anyone else in one of their groups
+    role: OWNER_IDS.has(String(from.id))
+      ? 'owner'
+      : access.allowFrom.includes(String(from.id))
+        ? 'allowed'
+        : 'group member',
     ts: new Date((ctx.message?.date ?? 0) * 1000).toISOString(),
     ...(imagePath ? { image_path: imagePath } : {}),
     ...(attachment ? {

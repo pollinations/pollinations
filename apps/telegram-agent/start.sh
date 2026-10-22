@@ -73,9 +73,14 @@ fi
 pkill -f "$ROOT/telegram/server.ts" || true
 tmux new-session -d -s agent -n claude -x 200 -y 50 "bash $ROOT/loop.sh"
 
-for _ in $(seq 30); do
-  pgrep -f "$ROOT/telegram/server.ts" >/dev/null && { echo "agent is running (tmux attach -t agent)"; exit 0; }
+# Ready once the bridge runs and Claude Code takes input: it shows its
+# permission mode under the prompt.
+for _ in $(seq 60); do
+  if pgrep -f "$ROOT/telegram/server.ts" >/dev/null &&
+    tmux capture-pane -p -t agent:claude | grep -q "bypass permissions on"; then
+    echo "agent is running (tmux attach -t agent)"; exit 0
+  fi
   sleep 2
 done
-echo "Telegram bridge did not start; tmux attach -t agent" >&2
+echo "agent did not start; tmux attach -t agent" >&2
 exit 1

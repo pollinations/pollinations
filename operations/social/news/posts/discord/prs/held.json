@@ -4,10 +4,6 @@
       "merge_sha": "d7ee6de875b7e7ba6cf9b4e8a485482372fe39b2",
       "merged_at": "2026-10-22T07:50:39Z",
       "required": [
-        "deploy-applications.yml:Deploy apps/mcp",
-        "deploy-applications.yml:Deploy apps/websim",
-        "deploy-applications.yml:Deploy operations/economics",
-        "deploy-applications.yml:Deploy operations/model-monitor",
         "deploy-cloudflare-production.yml:Deploy apps/ask-jev-mcp",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen"

@@ -33,6 +33,8 @@ type User = {
     asking?: { kind: "name" | "photo" | "people"; botId: number };
     // A bot whose setup failed before her box existed, for Try again.
     unfinished?: TgUser;
+    // The Create my Barbara message, until her bot arrives.
+    botLink?: number;
 };
 type TgUser = { id: number; first_name: string; username?: string };
 
@@ -220,6 +222,13 @@ async function moveBoxes(from: TgUser) {
 // Telegram's own dialog creates the bot from this link; the user owns it and
 // we manage it. A link under the message, unlike a keyboard button, can't be
 // hidden.
+const ASK_FOR_BOT =
+    "Tap Create my Barbara: Telegram asks you for her name and username.";
+// Telegram doesn't tell Mama when it refuses to create a bot; its dialog just
+// spins. Usually that's its limit on new bots per account.
+const NO_BOT_YET =
+    "\n\nNo bot yet. If Telegram's Create keeps spinning, it's limiting how many bots your account can make right now. That can last up to a day; send /new again later.";
+
 const askForBot = async (from: TgUser) => {
     // Usernames are Latin letters, digits and _, starting with a letter.
     const name = (from.username ?? from.first_name)
@@ -228,22 +237,32 @@ const askForBot = async (from: TgUser) => {
     const username = /^[a-z]/i.test(name)
         ? `${name}_barbara_bot`
         : `barbara_${from.id}_bot`;
-    return say(
-        from.id,
-        "Tap Create my Barbara: Telegram asks you for her name and username.",
-        {
-            reply_markup: {
-                inline_keyboard: [
-                    [
-                        {
-                            text: "Create my Barbara",
-                            url: `https://t.me/newbot/${await myUsername()}/${username}?name=Barbara`,
-                        },
-                    ],
-                ],
-            },
-        },
-    );
+    const reply_markup = {
+        inline_keyboard: [
+            [
+                {
+                    text: "Create my Barbara",
+                    url: `https://t.me/newbot/${await myUsername()}/${username}?name=Barbara`,
+                },
+            ],
+        ],
+    };
+    const sent = await tg<{ message_id: number }>("sendMessage", {
+        chat_id: from.id,
+        text: ASK_FOR_BOT,
+        reply_markup,
+    });
+    const user = userOf(from.id);
+    user.botLink = sent.message_id;
+    save();
+    await sleep(2 * 60 * 1000);
+    if (user.botLink !== sent.message_id) return;
+    await tg("editMessageText", {
+        chat_id: from.id,
+        message_id: sent.message_id,
+        text: ASK_FOR_BOT + NO_BOT_YET,
+        reply_markup,
+    });
 };
 
 // Her kit, apps/mama-barbara/barbara at KIT_REF: setup.sh, start.sh, the bridge and
@@ -268,6 +287,7 @@ const READY =
 
 async function setUp(owner: TgUser, bot: TgUser) {
     const user = userOf(owner.id);
+    delete user.botLink;
     if (user.barbaras.some((b) => b.botId === bot.id)) return;
     if (!user.key) {
         waitingBots.set(owner.id, bot);

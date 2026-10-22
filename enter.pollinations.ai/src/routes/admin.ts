@@ -1,6 +1,7 @@
 import { bytesToHex } from "@shared/client-ip.ts";
 import { parseListingPayload } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
+import { site } from "@shared/db/sites.ts";
 import { secretEquals } from "@shared/secret-equal.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -15,6 +16,7 @@ import {
     exportD1TinybirdPage,
     isD1TinybirdDatasource,
 } from "../services/d1-tinybird-sync.ts";
+import { deleteSite } from "../services/sites.ts";
 import { promoCodeAdminRoutes } from "./promo-codes.ts";
 import { questGrantAdminRoutes } from "./quest-grants.ts";
 import { statusNoticeAdminRoutes } from "./status-notice.ts";
@@ -120,6 +122,19 @@ export const adminRoutes = new Hono<Env>()
             }
         }
         return c.json({ redeployed: rows.length - failed.length, failed });
+    })
+    // Takes an abusive site offline. The row stays, so the owner can neither
+    // redeploy the name nor free it.
+    .post("/sites/:name/block", async (c) => {
+        const name = c.req.param("name");
+        const [row] = await drizzle(c.env.DB)
+            .update(site)
+            .set({ blockedAt: new Date() })
+            .where(eq(site.name, name))
+            .returning();
+        if (!row) throw new HTTPException(404, { message: "Site not found" });
+        await deleteSite(c.env, name);
+        return c.json({ name, userId: row.userId });
     })
     .route("/status-notice", statusNoticeAdminRoutes)
     .route("/quest-grants", questGrantAdminRoutes)

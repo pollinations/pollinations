@@ -408,26 +408,24 @@ export function CommunityEndpoints({
         <Button
             type="button"
             className="dashboard-add-button"
-            aria-label="Create agent"
-            title="Create agent"
             aria-haspopup="dialog"
             onClick={() => setAgentCreateOpen(true)}
         >
             <PlusIcon className="h-4 w-4" />
             <BotIcon className="h-5 w-5" />
+            <span className="ml-1">Create agent</span>
         </Button>
     );
     const modelAction = (
         <Button
             type="button"
             className="dashboard-add-button"
-            aria-label="Create model"
-            title="Create model"
             aria-haspopup="dialog"
             onClick={() => setCreateOpen(true)}
         >
             <PlusIcon className="h-4 w-4" />
             <BeakerIcon className="h-5 w-5" />
+            <span className="ml-1">Create model</span>
         </Button>
     );
 

@@ -46,6 +46,7 @@ import { proxyRoutes } from "./routes/proxy.ts";
 import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
 import { stemSeparationRoutes } from "./routes/stem-separation.ts";
 import { wellKnownRoutes } from "./routes/well-known.ts";
+import { serveSite } from "./sites.ts";
 
 export { CommunityModelRateLimiter } from "./durable-objects/CommunityModelRateLimiter.ts";
 export { GenerationCoordinator } from "./durable-objects/GenerationCoordinator.ts";
@@ -307,7 +308,8 @@ app.notFound(async (c: Context<Env>) => {
 app.onError(handleError);
 
 export default {
-    fetch: app.fetch,
+    fetch: (request: Request, env, ctx) =>
+        serveSite(request, env) ?? app.fetch(request, env, ctx),
     // The only cron, every 10 minutes (wrangler.toml).
     scheduled: (_controller, env, ctx) => keepSandboxes(env, ctx),
 } satisfies ExportedHandler<CloudflareBindings>;

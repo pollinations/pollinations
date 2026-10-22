@@ -11,6 +11,7 @@ import {
     account as accountTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
+import { site } from "@shared/db/sites.ts";
 import {
     getInstallationToken,
     githubAppCredentialsFromEnv,
@@ -33,6 +34,7 @@ import { admin, openAPI } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { discordConfigFromEnv } from "./services/discord.ts";
+import { deleteUserSites } from "./services/sites.ts";
 import {
     captureProductEvent,
     referringSource,
@@ -355,6 +357,16 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             additionalFields: authAdditionalFields.user,
             deleteUser: {
                 enabled: true,
+                // Site rows cascade with the user, but their scripts would
+                // stay online.
+                beforeDelete: async (user) => {
+                    const [owned] = await db
+                        .select({ name: site.name })
+                        .from(site)
+                        .where(eq(site.userId, user.id))
+                        .limit(1);
+                    if (owned) await deleteUserSites(env, user.id);
+                },
             },
         },
         account: {

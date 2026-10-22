@@ -415,6 +415,21 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
     x402: X402_PREPAID_KEYS_DOCS,
 };
 
+// Agents copy these names by hand; normalize case and the longer labels that
+// appear in prose so a near miss still resolves (#17788).
+const LLM_DOC_SECTION_ALIASES: Record<string, string> = {
+    "x402-prepaid-keys": "x402",
+    "prepaid-keys": "x402",
+};
+
+function findLlmDocSection(rawSection: string): string | undefined {
+    const section = rawSection.trim().toLowerCase();
+    return (
+        LLM_DOC_SECTIONS[section] ??
+        LLM_DOC_SECTIONS[LLM_DOC_SECTION_ALIASES[section]]
+    );
+}
+
 // llms-full.txt: a common companion to llms.txt (https://llmstxt.org) that
 // inlines the docs so an agent gets them in one request instead of following
 // the index. The llms.txt spec itself doesn't define it.
@@ -1199,11 +1214,22 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             return c.body(LOGO_WHITE_SVG);
         })
         .get("/llm.txt", (c) => {
-            c.header("Cache-Control", "public, max-age=3600");
             const section = c.req.query("section");
-            if (!section) return c.text(LLM_DOC_TEXT);
-            const content = LLM_DOC_SECTIONS[section];
-            if (!content) return c.text("Section not found", 404);
+            if (!section) {
+                c.header("Cache-Control", "public, max-age=3600");
+                return c.text(LLM_DOC_TEXT);
+            }
+            const content = findLlmDocSection(section);
+            if (!content) {
+                // Never cache a miss: an edge-cached 404 kept an advertised
+                // section broken after the deploy that added it (#17788).
+                c.header("Cache-Control", "no-store");
+                return c.text(
+                    `Section not found: ${section}. Available sections: ${Object.keys(LLM_DOC_SECTIONS).join(", ")}`,
+                    404,
+                );
+            }
+            c.header("Cache-Control", "public, max-age=3600");
             return c.text(content);
         })
         .get("/polli-skill.md", (c) => c.text(CLI_SKILL))

@@ -13,6 +13,9 @@ import type { TextVariables } from "./text/types.ts";
 export type Env = {
     Bindings: CloudflareBindings & {
         CODE_AGENTS?: DispatchNamespace;
+        SITES?: DispatchNamespace;
+        SITES_HOST_SUFFIX?: string;
+        DOCS_APP_KEY?: string;
     };
     Variables: RequestIdVariables &
         LoggerVariables &

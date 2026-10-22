@@ -120,7 +120,10 @@ const perSecond = (pricing: Pricing, size: Size) =>
 const pollen = (amount: number) => `${Number(amount.toPrecision(2))} Pollen`;
 
 const sizeLabel = ({ cpuCount, memoryMB }: Size) =>
-    `${cpuCount} vCPU, ${memoryMB / 1024} GB`;
+    `${cpuCount} vCPU, ${memoryMB / 1024} GB memory`;
+
+// An always-on sandbox runs about 720 hours a month.
+const HOURS_PER_MONTH = 720;
 
 const templateLabel = (id: string) =>
     id === "pollinations"
@@ -525,6 +528,7 @@ export function Sandboxes() {
     return (
         <Section
             title="Sandboxes"
+            intro="A sandbox is a Linux computer in the cloud. Open it with ssh or VS Code. Its files stay while it’s paused, and you pay only while it runs."
             action={
                 <ButtonGroup>
                     <Button
@@ -622,14 +626,27 @@ export function Sandboxes() {
                     {pricing && (
                         <>
                             {" "}
-                            {pollen(pricing.vcpuSecond * 3600)} per vCPU +{" "}
-                            {pollen(pricing.gibSecond * 3600)} per GB each hour.
+                            {Object.entries(pricing.templates).map(
+                                ([template, size]) => {
+                                    const hourly =
+                                        perSecond(pricing, size) * 3600;
+                                    return (
+                                        <span key={template}>
+                                            {templateLabel(template)} (
+                                            {sizeLabel(size)}): {pollen(hourly)}{" "}
+                                            an hour, about{" "}
+                                            {pollen(hourly * HOURS_PER_MONTH)} a
+                                            month if always on.{" "}
+                                        </span>
+                                    );
+                                },
+                            )}
                             Up to {pricing.maxRunning} running at once; pause or
                             kill one to free a slot.
                         </>
                     )}{" "}
-                    Sandboxes pause when time runs out and keep their files for
-                    free. Unused time isn’t refunded.
+                    Sandboxes pause when time runs out. A paused sandbox costs
+                    nothing and keeps its files. Unused time isn’t refunded.
                 </span>
             </p>
             <div className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">

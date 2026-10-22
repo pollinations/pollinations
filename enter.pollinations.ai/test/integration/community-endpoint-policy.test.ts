@@ -2,12 +2,21 @@ import { env, SELF } from "cloudflare:test";
 import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
+    communityEndpointPriceFieldsForModality,
+    communityEndpointPrices,
+    MAX_COMMUNITY_PRICE_PER_TOKEN,
     parseListingPayload,
+    staticFallbackRejection,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
+import {
+    getModels,
+    getRegistryModelDefinition,
+    type ModelName,
+} from "@shared/registry/registry.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { describe, expect } from "vitest";
+import { describe, expect, vi } from "vitest";
 import { deriveCreateProxyPolicy } from "../../src/routes/community-endpoints/proxy-policy.ts";
 import { test } from "../fixtures.ts";
 
@@ -57,6 +66,20 @@ async function publishPendingModel(
 }
 
 describe("community endpoint configuration policy", () => {
+    test("lists no models for an account without GitHub", async ({
+        accountToken,
+    }) => {
+        await drizzle(env.DB)
+            .update(schema.user)
+            .set({ githubId: null, githubUsername: null });
+
+        const response = await SELF.fetch(endpointUrl, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(response.status).toBe(200);
+        await expect(response.json()).resolves.toMatchObject({ data: [] });
+    });
+
     test("creates, reads and edits endpoint-agent modalities without losing unrelated settings", async ({
         accountToken,
     }) => {
@@ -476,6 +499,80 @@ describe("community endpoint configuration policy", () => {
         expect(candidates.data).not.toContain(primary.modelId as string);
     });
 
+    test("accepts a Pollinations model as a fallback only when it costs no more", async ({
+        accountToken,
+    }) => {
+        await approveCommunityModels();
+        const textPrices = Object.fromEntries(
+            communityEndpointPriceFieldsForModality("text").map((field) => [
+                field.key,
+                MAX_COMMUNITY_PRICE_PER_TOKEN,
+            ]),
+        );
+        const cheaperPrices = { promptTextPrice: 0.000001 };
+        const rejectionAt = (
+            prices: Record<string, number>,
+            modelId: ModelName,
+        ) =>
+            staticFallbackRejection(
+                {
+                    modality: "text",
+                    imagePricing: "request",
+                    paidOnly: false,
+                    prices: communityEndpointPrices(prices),
+                },
+                getRegistryModelDefinition(modelId),
+            );
+        // Picked with the shared rule, so no catalog id is hardcoded.
+        const target = getModels().find(
+            (modelId) =>
+                !rejectionAt(textPrices, modelId) &&
+                rejectionAt(cheaperPrices, modelId),
+        );
+        expect(target).toBeDefined();
+        const primary = await postModel(accountToken, "", {
+            name: "primary-with-static-fallback",
+            title: "Primary with a Pollinations fallback",
+            visibility: "public",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
+            bearerToken: "test-provider-token",
+            ...textPrices,
+            fallbacks: [target],
+        });
+        const published = await publishPendingModel(
+            accountToken,
+            primary.id as string,
+        );
+        expect(published.fallbacks).toEqual([target]);
+        const response = await SELF.fetch(
+            `${endpointUrl}/${primary.id as string}/fallback-candidates`,
+            { headers: { Authorization: `Bearer ${accountToken}` } },
+        );
+        const candidates = await response.json<{ data: string[] }>();
+        expect(candidates.data).toContain(target);
+
+        const cheaper = await SELF.fetch(endpointUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accountToken}`,
+            },
+            body: JSON.stringify({
+                name: "cheaper-than-static",
+                title: "Cheaper than its fallback",
+                visibility: "public",
+                api: "chat_completions",
+                url: "https://text.example.com/v1/chat/completions",
+                bearerToken: "test-provider-token",
+                ...cheaperPrices,
+                fallbacks: [target],
+            }),
+        });
+        expect(cheaper.status).toBe(400);
+        expect(await cheaper.text()).toContain("costs more than this model");
+    });
+
     test("clears advertised metadata without rewriting payload for listing-only changes", async ({
         accountToken,
     }) => {
@@ -515,5 +612,128 @@ describe("community endpoint configuration policy", () => {
             where: eq(schema.communityEndpoint.id, created.id as string),
         });
         expect(after?.payload).toBe(before?.payload);
+    });
+
+    test("tests a saved model with its stored token and reports its health", async ({
+        accountToken,
+        mocks,
+    }) => {
+        const created = await postModel(accountToken, "", {
+            name: "health-check",
+            title: "Health check",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
+            bearerToken: "saved-provider-token",
+            upstreamModel: "upstream-model",
+            modality: "text",
+        });
+        const id = created.id as string;
+
+        const upstreamCalls: RequestInit[] = [];
+        const mockedFetch = globalThis.fetch;
+        vi.stubGlobal(
+            "fetch",
+            (input: RequestInfo | URL, init?: RequestInit) => {
+                const url = input instanceof Request ? input.url : input;
+                if (new URL(url).host !== "text.example.com") {
+                    return mockedFetch(input, init);
+                }
+                upstreamCalls.push(init ?? {});
+                return Promise.resolve(
+                    Response.json({
+                        choices: [{ message: { content: "OK" } }],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 1,
+                            total_tokens: 3,
+                        },
+                    }),
+                );
+            },
+        );
+        const tested = await postModel(accountToken, `/${id}/test`, {});
+        vi.unstubAllGlobals();
+        expect(tested).toMatchObject({ ok: true, streaming: false });
+        expect(
+            new Headers(upstreamCalls[0]?.headers).get("Authorization"),
+        ).toBe("Bearer saved-provider-token");
+        expect(JSON.parse(String(upstreamCalls[0]?.body))).toMatchObject({
+            model: "upstream-model",
+        });
+
+        await mocks.enable("tinybird");
+        const daysAgo = (days: number) =>
+            new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+        const row = {
+            status: 0,
+            code: "",
+            host: "",
+            counted: 0,
+            from_pollinations: 0,
+            from_owner: 0,
+            message: "",
+        };
+        mocks.tinybird.state.modelHealthResponse = [
+            {
+                ...row,
+                day: daysAgo(0),
+                failure_group: 0,
+                succeeded: 15,
+                failed: 4,
+                last_at: "2026-10-15 17:06:15",
+            },
+            {
+                ...row,
+                day: "1970-01-01",
+                failure_group: 1,
+                status: 502,
+                code: "upstream_error",
+                host: "text.example.com",
+                succeeded: 0,
+                failed: 4,
+                counted: 1,
+                from_pollinations: 2,
+                last_at: "2026-10-15 17:06:15",
+                message: "402 Payment Required",
+            },
+        ];
+        const health = await SELF.fetch(`${endpointUrl}/${id}/health`, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(health.status).toBe(200);
+        const body = (await health.json()) as {
+            days: { day: string; succeeded: number; failed: number }[];
+            failures: unknown[];
+        };
+        expect(mocks.tinybird.state.pipeCalls.at(-1)?.query).toMatchObject({
+            model: created.modelId,
+        });
+        expect(body.days.map((day) => day.day)).toEqual(
+            [6, 5, 4, 3, 2, 1, 0].map(daysAgo),
+        );
+        expect(body.days.at(-1)).toEqual({
+            day: daysAgo(0),
+            succeeded: 15,
+            failed: 4,
+        });
+        expect(body.days[0]).toMatchObject({ succeeded: 0, failed: 0 });
+        expect(body.failures).toEqual([
+            {
+                status: 502,
+                code: "upstream_error",
+                host: "text.example.com",
+                failures: 4,
+                counted: 1,
+                fromPollinations: 2,
+                fromOwner: 0,
+                lastAt: "2026-10-15T17:06:15.000Z",
+                message: "402 Payment Required",
+            },
+        ]);
+
+        const missing = await SELF.fetch(`${endpointUrl}/missing/health`, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(missing.status).toBe(404);
     });
 });

@@ -2,7 +2,7 @@ import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { accountClient } from "../../api.ts";
 import { formatActivityChartDate } from "./activity-helpers";
-import { isInActivityBucket } from "./activity-period";
+import { activityTimezone, isInActivityBucket } from "./activity-period";
 import type {
     DailyUsageRecord,
     DataPoint,
@@ -74,7 +74,13 @@ export function useUsageData(
         setStatus({ key: requestKey, pending: true, error: null });
         return accountClient.usage.daily
             .$get(
-                { query: { granularity, period } },
+                {
+                    query: {
+                        granularity,
+                        period,
+                        timezone: activityTimezone(),
+                    },
+                },
                 { init: { signal: controller.signal } },
             )
             .then((r) => {

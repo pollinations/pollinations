@@ -1,7 +1,10 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
-import { ModelHealthSchema } from "../registry/model-info.ts";
+import {
+    AGENT_FIELD_DESCRIPTIONS,
+    ModelHealthSchema,
+} from "../registry/model-info.ts";
 import { MODEL_CATEGORIES } from "../registry/registry.ts";
 import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
 import { SafeSchema } from "./safety.ts";
@@ -313,6 +316,12 @@ export const CreateChatCompletionRequestSchema = z
             description:
                 "AI model for text generation. See /v1/models for full list.",
         }),
+        system: z
+            .string()
+            .nullish()
+            .describe(
+                "Optional system prompt prepended before `messages` (same extension as GET /text).",
+            ),
         metadata: z
             .record(z.string(), z.string())
             .nullish()
@@ -753,14 +762,20 @@ export const OpenAIModelSchema = z
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),
-        agent: z.boolean().optional(),
-        base_model: z.string().optional(),
+        agent: z.boolean().optional().describe(AGENT_FIELD_DESCRIPTIONS.agent),
+        base_model: z
+            .string()
+            .optional()
+            .describe(AGENT_FIELD_DESCRIPTIONS.base_model),
         paid_only: z
             .boolean()
             .describe(
                 "True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`.",
             ),
-        pricing: z.record(z.string(), z.string()).optional(),
+        pricing: z
+            .record(z.string(), z.string())
+            .optional()
+            .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
         capabilities: z.array(z.string()).optional(),
         supported_parameters: z
             .array(z.string())

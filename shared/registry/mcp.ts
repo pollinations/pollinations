@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "WORLDBANK_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "worldbank",
+        name: "World Bank",
+        description:
+            "Search World Bank indicators and read development data for countries.",
+        binding: "WORLDBANK_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "World Bank lookups are free. No additional MCP fee.",
             rates: [],
         },
     },

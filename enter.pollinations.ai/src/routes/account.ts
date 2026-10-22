@@ -50,6 +50,7 @@ import { captureFromRequest } from "../utils/product-analytics.ts";
 import { agentsRoutes } from "./agents.ts";
 import { communityEndpointsRoutes } from "./community-endpoints.ts";
 import { promoCodeRedeemRoutes } from "./promo-codes.ts";
+import { sitesRoutes } from "./sites.ts";
 
 const listedAppsResponseSchema = z.object({
     apps: z.array(listedAppSchema).describe("The caller's listed apps"),
@@ -1017,6 +1018,7 @@ export const accountRoutes = new Hono<Env>()
         c.header("Pragma", "no-cache");
     })
     .route("/agents", agentsRoutes)
+    .route("/sites", sitesRoutes)
     .route("/my-models", communityEndpointsRoutes)
     .route("/promo-codes", promoCodeRedeemRoutes)
     .get(

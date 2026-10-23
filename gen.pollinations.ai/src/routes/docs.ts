@@ -66,6 +66,7 @@ import QUICK_START_MD from "../docs/quick-start.md?raw";
 import SAFETY_MD from "../docs/safety.md?raw";
 import SANDBOXES_MD from "../docs/sandboxes.md?raw";
 import SANDBOXES_API_MD from "../docs/sandboxes-api.md?raw";
+import SITES_MD from "../docs/sites.md?raw";
 import TEXT_GENERATION_MD from "../docs/text-generation.md?raw";
 import VIDEO_GENERATION_MD from "../docs/video-generation.md?raw";
 import X402_PREPAID_KEYS_MD from "../docs/x402-prepaid-keys.md?raw";
@@ -86,6 +87,7 @@ const DOC_TAGS = {
     mcpServers: "MCP Servers",
     sandboxes: "Sandboxes",
     sandboxesApi: "Sandboxes API",
+    sites: "Sites",
     errors: "Errors",
     safety: "Safety",
     text: "Text",
@@ -171,6 +173,9 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     ),
     [DOC_TAGS.sandboxes]: terminalIcon,
     [DOC_TAGS.sandboxesApi]: terminalIcon,
+    [DOC_TAGS.sites]: docsIcon(
+        '<circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18" />',
+    ),
     [DOC_TAGS.errors]: docsIcon('<path d="M18 6 6 18M6 6l12 12" />'),
     [DOC_TAGS.safety]: docsIcon('<polyline points="20 6 9 17 4 12" />'),
     [DOC_TAGS.text]: docsIcon(
@@ -262,6 +267,7 @@ const stripLeadingHeading = (md: string) =>
 
 const MCP_DOCS = stripLeadingHeading(MCP_MD.trim());
 const SANDBOXES_DOCS = stripLeadingHeading(SANDBOXES_MD.trim());
+const SITES_DOCS = stripLeadingHeading(SITES_MD.trim());
 const USER_WALLETS_DOCS = stripLeadingHeading(BYOP_MD.trim());
 const PUBLISH_MODEL_DOCS = stripLeadingHeading(COMMUNITY_MODELS_MD.trim());
 const PUBLISH_AGENT_DOCS = stripLeadingHeading(AGENTS_MD.trim());
@@ -402,6 +408,7 @@ const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
 const CODING_HARNESSES_SECTION = `## Coding Harnesses\n\n${CODING_HARNESSES_DOCS}`;
 const MCP_SECTION = `## MCP Servers\n\n${MCP_DOCS}`;
 const SANDBOXES_SECTION = `## Sandboxes\n\n${SANDBOXES_DOCS}\n\n### Sandboxes API\n\n${SANDBOXES_API_MD.trim()}`;
+const SITES_SECTION = `## Sites\n\n${SITES_DOCS}`;
 
 const LLM_DOC_TEXT = [
     GEN_API_DOCS,
@@ -412,6 +419,7 @@ const LLM_DOC_TEXT = [
     CODING_HARNESSES_SECTION,
     MCP_SECTION,
     SANDBOXES_SECTION,
+    SITES_SECTION,
 ].join("\n\n");
 
 const LLM_DOC_SECTIONS: Record<string, string> = {
@@ -423,6 +431,7 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
     "coding-harnesses": CODING_HARNESSES_SECTION,
     mcp: MCP_SECTION,
     sandboxes: SANDBOXES_SECTION,
+    sites: SITES_SECTION,
     x402: X402_PREPAID_KEYS_DOCS,
 };
 
@@ -433,7 +442,7 @@ export const LLMS_FULL_TEXT = [
     "# Pollinations",
     "> Full Pollinations docs for agents in one file: the API guide, the polli CLI skill, and the CLI task recipes. Index: /llms.txt",
     LLM_DOC_TEXT,
-    `## Polli CLI Skill\n\n${stripLeadingHeading(CLI_SKILL.replace(/^---\n[\s\S]*?\n---\n+/, ""))}`,
+    `## Polli CLI Skill\n\n${stripLeadingHeading(CLI_SKILL.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n+/, ""))}`,
     `## Polli CLI Tasks\n\n${stripLeadingHeading(CLI_TASKS)}`,
 ].join("\n\n");
 
@@ -623,6 +632,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.publishAgent,
                     DOC_TAGS.publishModel,
                     DOC_TAGS.sandboxes,
+                    DOC_TAGS.sites,
                     DOC_TAGS.codingHarnesses,
                     DOC_TAGS.mcpServers,
                     DOC_TAGS.cli,
@@ -713,6 +723,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.sandboxesApi,
                 description: SANDBOXES_API_MD.trim(),
+            },
+            {
+                name: DOC_TAGS.sites,
+                description: SITES_DOCS,
             },
             {
                 name: DOC_TAGS.errors,

@@ -121,9 +121,15 @@ function supportedEndpointsForEventType(eventType: EventType): string[] {
 const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
     const definition = getRegistryModelDefinition(modelName);
     const eventType = eventTypeForCategory(definition.category);
-    const supportedEndpoints =
+    const endpoints =
         definition.supportedEndpoints ??
         supportedEndpointsForEventType(eventType);
+    // Image and video models share one default endpoint list, so a text-only
+    // model used to advertise `/v1/images/edits` — an endpoint whose source
+    // image it cannot consume.
+    const supportedEndpoints = definition.inputModalities?.includes("image")
+        ? endpoints
+        : endpoints.filter((endpoint) => endpoint !== "/v1/images/edits");
     const info = modelInfoFromDefinition(modelName, definition);
     return {
         id: modelName,

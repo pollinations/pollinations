@@ -63,6 +63,15 @@ async function runAlarmJob(): Promise<GenerationOutcome> {
     });
 }
 
+// Durable Objects outlive a test within its file, so look only at the
+// coordinators a test created.
+async function newCoordinatorIds(existing: DurableObjectId[]) {
+    const known = new Set(existing.map((id) => id.toString()));
+    return (await listDurableObjectIds(env.GENERATION_COORDINATOR)).filter(
+        (id) => !known.has(id.toString()),
+    );
+}
+
 afterEach(() => {
     vi.restoreAllMocks();
 });
@@ -183,6 +192,9 @@ describe("GenerationCoordinator", () => {
                 );
             };
             const before = await getUserBalance(drizzle(env.DB), userId);
+            const existingIds = await listDurableObjectIds(
+                env.GENERATION_COORDINATOR,
+            );
             const abort = new AbortController();
             const first = SELF.fetch(
                 new Request(request(), { signal: abort.signal }),
@@ -196,7 +208,7 @@ describe("GenerationCoordinator", () => {
                         );
                 }),
             ]);
-            const ids = await listDurableObjectIds(env.GENERATION_COORDINATOR);
+            const ids = await newCoordinatorIds(existingIds);
             expect(ids).toHaveLength(1);
             const stub = env.GENERATION_COORDINATOR.get(ids[0]);
             const stored = await runInDurableObject(
@@ -242,6 +254,7 @@ describe("GenerationCoordinator", () => {
                 response.status,
                 response.status === 200 ? "" : await response.text(),
             ).toBe(200);
+            expect(response.headers.get("x-cache")).toBe("MISS");
             const result = (
                 await response.json<{
                     data: { url?: string; b64_json?: string }[];
@@ -337,10 +350,6 @@ describe("GenerationCoordinator", () => {
         const providerWaiting = new Promise<void>((resolve) => {
             release = resolve;
         });
-        let started!: () => void;
-        const providerStarted = new Promise<void>((resolve) => {
-            started = resolve;
-        });
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
                 const url = new URL(
@@ -359,7 +368,6 @@ describe("GenerationCoordinator", () => {
                         "SHA-256",
                         await audio.arrayBuffer(),
                     );
-                    started();
                     await providerWaiting;
                     return new Response(new Uint8Array(2048), {
                         headers: {
@@ -395,23 +403,19 @@ describe("GenerationCoordinator", () => {
             );
         };
         const before = await getUserBalance(drizzle(env.DB), userId);
+        const existingIds = await listDurableObjectIds(
+            env.GENERATION_COORDINATOR,
+        );
         const firstContext = createExecutionContext();
         const first = Promise.resolve(
             worker.fetch(request(), env, firstContext),
         );
-        await Promise.race([
-            providerStarted,
-            first.then(async (response) => {
-                if (executions === 0)
-                    throw new Error(
-                        `Owner returned before provider: ${response.status} ${await response.text()}`,
-                    );
-            }),
-        ]);
+        // The provider mock runs inside the coordinator. Awaiting a promise it
+        // resolves would continue this test in the coordinator's I/O context,
+        // where the first response can no longer be read, so poll instead.
+        await vi.waitFor(() => expect(executions).toBe(1), { timeout: 30_000 });
         let stub: DurableObjectStub | undefined;
-        for (const id of await listDurableObjectIds(
-            env.GENERATION_COORDINATOR,
-        )) {
+        for (const id of await newCoordinatorIds(existingIds)) {
             const candidate = env.GENERATION_COORDINATOR.get(id);
             const stored = await runInDurableObject(
                 candidate,

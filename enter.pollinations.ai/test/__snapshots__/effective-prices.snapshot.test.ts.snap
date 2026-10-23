@@ -1574,14 +1574,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "google/gemma-4-26b-a4b-it": {
     "cost": {
-      "completionTextTokens": 0.000000422,
-      "promptImageTokens": 0.00000013715,
-      "promptTextTokens": 0.00000013715,
+      "completionTextTokens": 0.0000003587,
+      "promptImageTokens": 0.00000007385,
+      "promptTextTokens": 0.00000007385,
     },
     "price": {
-      "completionTextTokens": 0.000000422,
-      "promptImageTokens": 0.00000013715,
-      "promptTextTokens": 0.00000013715,
+      "completionTextTokens": 0.0000003587,
+      "promptImageTokens": 0.00000007385,
+      "promptTextTokens": 0.00000007385,
     },
   },
   "google/gemma-4-26b-a4b-it:deepinfra": {
@@ -3977,12 +3977,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionTextTokens": 0.000001266,
       "promptCachedTokens": 0.0000001055,
-      "promptTextTokens": 0.0000005275,
+      "promptTextTokens": 0.00000047475,
     },
     "price": {
       "completionTextTokens": 0.000001266,
       "promptCachedTokens": 0.0000001055,
-      "promptTextTokens": 0.0000005275,
+      "promptTextTokens": 0.00000047475,
     },
   },
   "tongyi-mai/z-image-turbo": {

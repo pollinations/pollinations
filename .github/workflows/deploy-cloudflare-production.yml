@@ -112,6 +112,8 @@ jobs:
               # move together.
               - 'shared/**'
               - 'enter.pollinations.ai/drizzle/**'
+              - 'package.json'
+              - 'package-lock.json'
               - '.github/workflows/deploy-cloudflare-production.yml'
 
       - name: Detect changed MCP applications
@@ -334,10 +336,6 @@ jobs:
 
       - name: Install workspace dependencies
         run: npm ci
-
-      - name: Install media dependencies
-        run: npm install
-        working-directory: ./media.pollinations.ai
 
       - name: Test
         run: npm test

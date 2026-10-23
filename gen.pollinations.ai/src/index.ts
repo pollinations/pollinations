@@ -32,6 +32,7 @@ import {
     generationHandoffRoutes,
 } from "@/utils/execute-generation.ts";
 import { audioRoutes } from "./routes/audio.ts";
+import { stopExpiredAzureSandboxes } from "./routes/azure-sandboxes.ts";
 import {
     buildMergedOpenApiSpec,
     createDocsRoutes,
@@ -47,6 +48,7 @@ import { proxyRoutes } from "./routes/proxy.ts";
 import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
 import { stemSeparationRoutes } from "./routes/stem-separation.ts";
 import { wellKnownRoutes } from "./routes/well-known.ts";
+import { serveSite } from "./sites.ts";
 
 export { CommunityModelRateLimiter } from "./durable-objects/CommunityModelRateLimiter.ts";
 export { GenerationCoordinator } from "./durable-objects/GenerationCoordinator.ts";
@@ -158,6 +160,7 @@ function llmsTxt(c: Context<Env>): Response {
 - [Publish an Agent](${origin}/docs/llm.txt?section=publish-an-agent): Publish a hosted agent.
 - [Publish a Model](${origin}/docs/llm.txt?section=publish-a-model): Connect your model endpoint.
 - [Sandboxes](${origin}/docs/llm.txt?section=sandboxes): Run code in a virtual machine.
+- [Sites](${origin}/docs/llm.txt?section=sites): Host a static site at <name>.pollinations.app.
 - [Coding Harnesses](${origin}/docs/llm.txt?section=coding-harnesses): Connect a coding assistant.
 - [MCP Servers](${origin}/docs/llm.txt?section=mcp): Give agents access to tools.
 - [CLI](${origin}/docs/llm.txt?section=cli): Use Pollinations from a terminal.
@@ -302,13 +305,23 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .route("/", proxyRoutes);
 
 app.notFound(async (c: Context<Env>) => {
+    // Gen's icons and images in public/.
+    if (c.req.method === "GET" || c.req.method === "HEAD") {
+        const asset = await c.env.ASSETS.fetch(c.req.raw);
+        if (asset.status !== 404) return asset;
+    }
     return handleError(new HTTPException(404), c);
 });
 
 app.onError(handleError);
 
 export default {
-    fetch: app.fetch,
-    // The only cron, every 10 minutes (wrangler.toml).
-    scheduled: (_controller, env, ctx) => keepSandboxes(env, ctx),
+    fetch: (request: Request, env, ctx) =>
+        serveSite(request, env) ?? app.fetch(request, env, ctx),
+    // The only cron, every 5 minutes (wrangler.toml). Leases end only after
+    // the keeper has renewed the kept sandboxes.
+    scheduled: async (_controller, env, ctx) => {
+        await keepSandboxes(env, ctx);
+        await stopExpiredAzureSandboxes(env);
+    },
 } satisfies ExportedHandler<CloudflareBindings>;

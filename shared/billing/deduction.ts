@@ -44,7 +44,7 @@ export async function atomicDeductUserBalance(
     lastPackPollen: number | null;
     postDeductionBalance: number | null;
 }> {
-    if (amount <= 0) {
+    if (!Number.isFinite(amount) || amount <= 0) {
         return {
             ok: true,
             bucket: null,
@@ -114,7 +114,7 @@ export async function atomicReserveApiKeyBalance(
     apiKeyId: string,
     amount: number,
 ): Promise<{ ok: boolean; reserved: number }> {
-    if (amount <= 0) return { ok: true, reserved: 0 };
+    if (!Number.isFinite(amount) || amount <= 0) return { ok: true, reserved: 0 };
 
     const result = await db.run(sql`
 			UPDATE ${apiKeyTable}
@@ -137,7 +137,7 @@ export async function atomicAdjustApiKeyBalance(
     apiKeyId: string,
     amount: number,
 ): Promise<{ ok: boolean }> {
-    if (amount === 0) return { ok: true };
+    if (!Number.isFinite(amount) || amount === 0) return { ok: true };
 
     const result = await db.run(sql`
 			UPDATE ${apiKeyTable}
@@ -160,7 +160,7 @@ export async function atomicCreditUserBalance(
     bucket: Bucket,
     amount: number,
 ): Promise<{ ok: boolean; newBalance: number | null }> {
-    if (amount <= 0) return { ok: true, newBalance: null };
+    if (!Number.isFinite(amount) || amount <= 0) return { ok: true, newBalance: null };
 
     const column = BUCKET_COLUMNS[bucket];
     const rows = await db

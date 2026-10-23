@@ -350,7 +350,10 @@ export function openaiImageUsageToUsage(usage: OpenAIImageUsage): Usage {
 
 function isTokenCount(value: unknown): value is number {
     return (
-        typeof value === "number" && Number.isSafeInteger(value) && value >= 0
+        typeof value === "number" &&
+        Number.isFinite(value) &&
+        Number.isSafeInteger(value) &&
+        value >= 0
     );
 }
 
@@ -463,10 +466,9 @@ export function parseUsageHeaders(
     for (const [usageType, headerName] of Object.entries(USAGE_TYPE_HEADERS)) {
         const value = getHeader(headerName);
         if (value) {
-            // buildUsageHeaders writes String(number), and Number() is its
-            // exact inverse: integer token counts and fractional units
-            // (seconds, megapixels) parse alike.
-            usage[usageType as UsageType] = Number(value);
+            const n = Number(value);
+            if (!Number.isFinite(n) || n < 0) continue;
+            usage[usageType as UsageType] = n;
         }
     }
 

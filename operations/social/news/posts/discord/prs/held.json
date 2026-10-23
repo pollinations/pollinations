@@ -9,8 +9,7 @@
         "deploy-applications.yml:Deploy operations/model-monitor",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "18026": {
@@ -19,8 +18,7 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "18086": {
@@ -39,8 +37,7 @@
         "deploy-applications.yml:Deploy operations/kpi",
         "deploy-applications.yml:Deploy operations/model-monitor",
         "deploy-applications.yml:Deploy operations/observability",
-        "deploy-cloudflare-production.yml:deploy-enter",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-enter"
       ]
     },
     "18130": {
@@ -80,8 +77,7 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
-        "deploy-cloudflare-production.yml:deploy-media",
-        "deploy-website-cloudflare.yml:deploy"
+        "deploy-cloudflare-production.yml:deploy-media"
       ]
     },
     "18172": {

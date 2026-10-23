@@ -2328,6 +2328,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000068,
     },
   },
+  "mistralai/mistral-ocr-4.1": {
+    "cost": {
+      "promptImageTokens": 0.004,
+    },
+    "price": {
+      "promptImageTokens": 0.004,
+    },
+  },
   "mistralai/mistral-small-3.2": {
     "cost": {
       "completionTextTokens": 0.000000211,

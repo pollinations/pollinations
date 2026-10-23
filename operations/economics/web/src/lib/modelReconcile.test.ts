@@ -528,15 +528,15 @@ describe("modelReconcileRows", () => {
             data({
                 vendorLedger: [
                     cloud({
-                        vendor: "mistral",
-                        model: "mistral-ocr",
+                        vendor: "anthropic",
+                        model: "claude-legacy",
                         paid: -9,
                     }),
                 ],
                 opPollen: [
                     pollen({
-                        vendor: "mistral",
-                        model: "mistral-ocr",
+                        vendor: "anthropic",
+                        model: "claude-legacy",
                         cost_paid: 8,
                     }),
                 ],
@@ -545,7 +545,7 @@ describe("modelReconcileRows", () => {
 
         expect(row.models).toEqual([
             expect.objectContaining({
-                model: "mistral-ocr",
+                model: "claude-legacy",
                 status: "allocated",
                 providerCashUsd: 9,
             }),

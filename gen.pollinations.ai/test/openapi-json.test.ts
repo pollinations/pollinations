@@ -279,6 +279,7 @@ describe("/openapi.json", () => {
             "3d",
             "embedding",
             "realtime",
+            "ocr",
         ]);
         expect(
             (

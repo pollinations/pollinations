@@ -8,7 +8,8 @@ export type EventType =
     | "generate.image"
     | "generate.audio"
     | "generate.embedding"
-    | "generate.realtime";
+    | "generate.realtime"
+    | "generate.ocr";
 
 export type TinybirdEventType = EventType | "mcp.call" | "sandbox.lease";
 

@@ -10,7 +10,6 @@ import {
     InfoTip,
     InlineLink,
     Input,
-    PlusIcon,
     Section,
     Surface,
     TokensIcon,
@@ -407,25 +406,21 @@ export function CommunityEndpoints({
     const agentAction = (
         <Button
             type="button"
-            className="dashboard-add-button"
+            icon={<BotIcon />}
             aria-haspopup="dialog"
             onClick={() => setAgentCreateOpen(true)}
         >
-            <PlusIcon className="h-4 w-4" />
-            <BotIcon className="h-5 w-5" />
-            <span className="ml-1">Create agent</span>
+            Create
         </Button>
     );
     const modelAction = (
         <Button
             type="button"
-            className="dashboard-add-button"
+            icon={<BeakerIcon />}
             aria-haspopup="dialog"
             onClick={() => setCreateOpen(true)}
         >
-            <PlusIcon className="h-4 w-4" />
-            <BeakerIcon className="h-5 w-5" />
-            <span className="ml-1">Create model</span>
+            Create
         </Button>
     );
 

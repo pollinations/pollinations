@@ -65,6 +65,16 @@ it.each([true, false])(
         const html = renderToStaticMarkup(
             createElement(RunwayTab, { data, year: "2026" }),
         );
+        const headers = html.match(/<th\b[^>]*>[\s\S]*?<\/th>/g) ?? [];
+        const october = headers.filter((header) => header.includes("October"));
+        expect(october).toHaveLength(1);
+        expect(october[0]).toContain("Plan");
+        expect(october[0]).not.toContain("Provisional");
+        expect(html).not.toContain("To date");
+        if (unknown)
+            expect(
+                headers.find((header) => header.includes("September")),
+            ).toContain("Provisional");
         const rows = html.match(/<tr\b[^>]*>[\s\S]*?<\/tr>/g) ?? [];
         for (const label of ["Expenses", "Compute"]) {
             const row = rows.find((item) =>
@@ -72,9 +82,10 @@ it.each([true, false])(
             );
             const cell = row
                 ?.match(/<td\b[^>]*>[\s\S]*?<\/td>/g)
-                ?.find((item) => item.includes("(−300)"));
+                ?.find((item) => item.includes("−300"));
             const shown = cell?.replace(/<[^>]+>/g, "").replace(/\s+/g, "");
-            expect(shown).toBe(unknown ? "(−300)*" : "(−300)");
+            expect(shown).toBe(unknown ? "*−300" : "−300");
+            expect(cell).toContain("text-xs font-normal text-theme-text-muted");
         }
     },
 );

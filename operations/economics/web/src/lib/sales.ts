@@ -83,7 +83,6 @@ export function salesSourceIssues(
 // A sales stop ends projections, not coverage for trailing Stripe activity.
 export function salesForecastRows(
     latest: readonly StripeSalesRow[],
-    recorded: readonly StripeSalesRow[],
     month: string,
     now: Date,
     stoppedFrom: PrivateForecastRule["salesStoppedFrom"] = {},
@@ -97,13 +96,5 @@ export function salesForecastRows(
                 (month === end.slice(0, 7) && today >= end))
         );
     };
-    return [
-        ...latest.filter((row) => !stopped(row)),
-        ...recorded.filter(
-            (row) =>
-                stopped(row) &&
-                row.month === month &&
-                month === today.slice(0, 7),
-        ),
-    ];
+    return latest.filter((row) => !stopped(row));
 }

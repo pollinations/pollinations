@@ -63,6 +63,7 @@ const sales: StripeSalesRow = {
     refunds: 0,
     reversals: 0,
     stripe_fees: 5,
+    dispute_fees: 0,
     net_sales: 100,
     net_after_fees: 95,
     payments: 1,
@@ -71,6 +72,34 @@ const sales: StripeSalesRow = {
 };
 
 describe("Runway source coverage", () => {
+    it("keeps reviewed prepaid funding in cash without requiring same-month service costs", () => {
+        const prepaid = bank({ category: "balance_sheet", amount: -100 });
+        const laterPayment = bank({
+            entry_id: "later-payment",
+            date: "2026-10-01",
+            amount: -50,
+        });
+        const result = buildRunway(
+            [opening, prepaid, laterPayment],
+            now,
+            [vendor()],
+            undefined,
+            [sales],
+        );
+        const september = result.columns.find((c) => c.id === "2026-09:actual");
+        expect(september?.provisional).toBe(false);
+        expect(september?.runningCashUsd).toBe(9900);
+        expect(result.currentCashUsd).toBe(9850);
+        expect(
+            result.rows.find((r) => r.category === "infrastructure")
+                ?.actualIssues?.["2026-10:current"],
+        ).toContain("Service-month costs unavailable");
+        expect(
+            result.rows.find((r) => r.category === "infrastructure")?.values[
+                "2026-09:actual"
+            ],
+        ).toBeNull();
+    });
     it("does not use an adjacent invoice as proof of September service cost", () => {
         const rows = [vendor()];
         const result = buildRunway([opening, bank()], now, rows, undefined, [

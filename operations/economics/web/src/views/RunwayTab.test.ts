@@ -3,12 +3,16 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
 import { automaticForecastRule, forecastLineRule } from "../lib/forecastTerms";
-import { buildRunway } from "../lib/runway";
+import { buildRunway, type RunwayMatrixRow } from "../lib/runway";
 import type { Data, StripeSalesRow } from "../types";
 import {
+    CashAdjustmentRows,
+    cashAdjustmentValue,
     fmtRunwayTableValue,
     fmtRunwayUsd,
+    groupRunwayVendors,
     RunwayTab,
+    runwayDetailRows,
     runwayMonthLabel,
     runwayPeriodText,
     runwayValueClass,
@@ -19,6 +23,126 @@ afterEach(() => {
 });
 
 describe("RunwayTab labels", () => {
+    it("sorts by last month's spending and collapses small vendors without changing the source", () => {
+        const base: RunwayMatrixRow = {
+            vendor: "example",
+            category: "development",
+            values: {},
+            assumptions: {},
+            forecastMethod: null,
+            forecastPaymentTiming: null,
+        };
+        const rows: RunwayMatrixRow[] = [
+            { ...base, vendor: "small", values: { "2026-09:actual": -9.99 } },
+            { ...base, vendor: "boundary", values: { "2026-09:actual": -10 } },
+            { ...base, vendor: "old", values: { "2026-08:actual": -500 } },
+            { ...base, vendor: "largest", values: { "2026-09:actual": -100 } },
+            {
+                ...base,
+                vendor: "credits",
+                values: { "2026-09:actual": -5 },
+                creditValues: { "2026-09:actual": -20 },
+            },
+            {
+                ...base,
+                vendor: "upcoming",
+                values: { "2027-01:forecast": -10 },
+            },
+            {
+                ...base,
+                vendor: "small-plan",
+                values: { "2026-11:forecast": -9.99 },
+            },
+            {
+                ...base,
+                vendor: "unknown",
+                actualIssues: { "2026-09:actual": "Missing usage" },
+            },
+            {
+                ...base,
+                vendor: "unknown-plan",
+                forecastIssue: "Missing balance",
+            },
+        ];
+        const original = structuredClone(rows);
+        const { primary, more } = groupRunwayVendors(rows, "2026-10");
+        expect(primary.map((row) => row.vendor)).toEqual([
+            "largest",
+            "credits",
+            "boundary",
+            "upcoming",
+            "unknown",
+            "unknown-plan",
+        ]);
+        expect(more.map((row) => row.vendor)).toEqual([
+            "small",
+            "old",
+            "small-plan",
+        ]);
+        expect([...primary, ...more]).toHaveLength(rows.length);
+        expect(rows).toEqual(original);
+        expect(
+            groupRunwayVendors(
+                [{ ...base, values: { "2025-12:actual": -10 } }],
+                "2026-01",
+            ).primary,
+        ).toHaveLength(1);
+    });
+
+    it("combines Polar receipts with customer payments without changing totals or sources", () => {
+        const base = {
+            category: "revenue",
+            forecastMethod: null,
+            forecastPaymentTiming: null,
+            assumptions: {},
+        } as const;
+        const rows: RunwayMatrixRow[] = [
+            {
+                ...base,
+                vendor: "stripe sales",
+                values: { january: 95, february: null, plan: 190 },
+                details: [
+                    {
+                        label: "Gross customer payments",
+                        values: { january: 100, plan: 200 },
+                    },
+                    {
+                        label: "Stripe fees",
+                        values: { january: -5, plan: -10 },
+                    },
+                ],
+            },
+            {
+                ...base,
+                vendor: "polar",
+                values: { january: 40, february: null, plan: 0 },
+                actualIssues: { january: "Historical settlement basis" },
+            },
+        ];
+        const original = structuredClone(rows);
+        const displayed = runwayDetailRows(rows);
+        expect(displayed.map((row) => row.vendor).sort()).toEqual([
+            "Customer payments",
+            "Stripe fees",
+        ]);
+        expect(displayed[0].values.january).toBe(140);
+        expect(displayed[0].values.february).toBeNull();
+        expect(displayed[0].actualIssues?.january).toBe(
+            "Historical settlement basis",
+        );
+        for (const column of ["january", "plan"])
+            expect(
+                displayed.reduce(
+                    (sum, row) => sum + (row.values[column] ?? 0),
+                    0,
+                ),
+            ).toBe(
+                rows.reduce((sum, row) => sum + (row.values[column] ?? 0), 0),
+            );
+        expect(rows).toEqual(original);
+        expect(runwayDetailRows([rows[1]])[0].values).toEqual(rows[1].values);
+    });
+
     it("exposes calendar-month gross and deductions without double-counting cash or forecasts", () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date("2026-10-14T12:00:00Z"));
@@ -31,6 +155,7 @@ describe("RunwayTab labels", () => {
                 refunds: 100,
                 reversals: 20,
                 stripe_fees: 80,
+                dispute_fees: 60,
                 net_sales: 880,
                 net_after_fees: 800,
                 payments: 10,
@@ -45,6 +170,7 @@ describe("RunwayTab labels", () => {
                 refunds: 10,
                 reversals: 5,
                 stripe_fees: 5,
+                dispute_fees: 2,
                 net_sales: 85,
                 net_after_fees: 80,
                 payments: 2,
@@ -68,11 +194,9 @@ describe("RunwayTab labels", () => {
             ),
         ).toEqual({
             "Gross customer payments": 1115.13,
-            "Stripe fees (including dispute fees)": -85.7565,
-            Refunds: -111.513,
-            "Chargebacks / other reversals": -25.7565,
+            "Stripe fees": -23.4539,
         });
-        for (const row of revenue) {
+        for (const row of revenue.filter((row) => row.details?.length)) {
             expect(
                 row.details?.reduce((sum, d) => sum + d.values[actual.id], 0),
             ).toBeCloseTo(row.values[actual.id] ?? Number.NaN, 8);
@@ -100,8 +224,104 @@ describe("RunwayTab labels", () => {
             }),
         );
         expect(html).toContain("Revenue calculation info");
+        expect(html).not.toContain("Plan baseline:");
+        expect(html).not.toContain("Provisional runway —");
+        expect(html).toMatch(/aria-expanded="false"[^>]*>.*?Cash adjustments/s);
+        expect(html).not.toMatch(/<button[^>]*>Cash change<\/button>/);
+        const bridgeHtml = renderToStaticMarkup(
+            createElement(
+                "table",
+                {},
+                createElement(
+                    "tbody",
+                    {},
+                    createElement(CashAdjustmentRows, {
+                        plannedValues: { [forecast.id]: 45 },
+                        columns: [
+                            {
+                                ...actual,
+                                cashBridge: {
+                                    revenue: 120,
+                                    expenses: -50,
+                                    receiptsDifference: 30,
+                                    paymentsDifference: -10,
+                                    otherCash: 5,
+                                    exchangeRates: 2,
+                                },
+                            },
+                            forecast,
+                        ],
+                    }),
+                ),
+            ),
+        );
+        expect(bridgeHtml).toContain("Revenue timing &amp; other receipts");
+        expect(bridgeHtml).toContain("Expense timing &amp; prepayments");
+        expect(bridgeHtml).not.toContain("Revenue after fees");
+        expect(bridgeHtml).not.toContain("Cash-funded expenses");
+        expect(
+            cashAdjustmentValue(
+                {
+                    ...actual,
+                    cashBridge: {
+                        revenue: 120,
+                        expenses: -50,
+                        receiptsDifference: 30,
+                        paymentsDifference: -10,
+                        otherCash: 5,
+                        exchangeRates: 2,
+                    },
+                },
+                999,
+            ),
+        ).toBe(27);
+        expect(cashAdjustmentValue(forecast, 45)).toBe(45);
+        expect(
+            cashAdjustmentValue({ ...forecast, forecastComplete: false }, 45),
+        ).toBeNull();
+        expect(
+            cashAdjustmentValue({ ...actual, cashBridge: undefined }, 999),
+        ).toBeNull();
+        expect(bridgeHtml).toContain("Other cash movements");
+        expect(bridgeHtml).toContain("Exchange-rate changes");
         expect(html).not.toContain("Revenue · net after deductions");
-        for (const detail of details) expect(html).toContain(detail.label);
+        expect(html).toContain("Customer payments");
+        expect(html).toContain("Stripe fees");
+        expect(html).toContain("Refunds, disputes &amp; chargebacks");
+        expect(html).not.toContain('aria-label="Refunds calculation info"');
+        expect(html).not.toContain(
+            'aria-label="Disputes &amp; chargebacks calculation info"',
+        );
+        const displayed = runwayDetailRows(revenue);
+        expect(displayed.map((row) => row.vendor).sort()).toEqual([
+            "Customer payments",
+            "Refunds, disputes & chargebacks",
+            "Stripe fees",
+        ]);
+        for (const column of result.columns) {
+            expect(
+                displayed.find(
+                    (row) => row.vendor === "Refunds, disputes & chargebacks",
+                )?.values[column.id],
+            ).toBe(
+                revenue.find((row) => row.vendor === "stripe refunds")?.values[
+                    column.id
+                ],
+            );
+            expect(
+                displayed.reduce(
+                    (sum, row) => sum + (row.values[column.id] ?? 0),
+                    0,
+                ),
+            ).toBeCloseTo(
+                revenue.reduce(
+                    (sum, row) => sum + (row.values[column.id] ?? 0),
+                    0,
+                ),
+                8,
+            );
+        }
+        expect(html).not.toContain("Gross customer payments");
         expect(html).not.toContain("not transfers to Wise");
         expect(html).not.toContain("Stripe sales after fees");
         expect(html).not.toContain("Refunds and reversals");
@@ -120,10 +340,8 @@ describe("RunwayTab labels", () => {
             (r) => r.vendor === "stripe refunds",
         );
         expect(refundPlan?.values[forecast.id]).toBe(0);
-        expect(
-            refundPlan?.details?.every((d) => d.values[forecast.id] === 0),
-        ).toBe(true);
-        expect(refundPlan?.values[actual.id]).toBeCloseTo(-137.2695, 8);
+        expect(refundPlan?.details).toBeUndefined();
+        expect(refundPlan?.values[actual.id]).toBeCloseTo(-199.5721, 8);
         const invalid = buildRunway([], new Date(), [], undefined, [
             { ...sales[0], net_after_fees: 1 },
         ]);
@@ -320,6 +538,7 @@ describe("RunwayTab labels", () => {
                     refunds: 20,
                     net_sales: 100,
                     stripe_fees: 5,
+                    dispute_fees: 0,
                     net_after_fees: 95,
                     payments: 3,
                     refund_count: 1,
@@ -362,7 +581,7 @@ describe("RunwayTab labels", () => {
         expect(html).toContain('aria-label="Revenue calculation info"');
         expect(html).toContain('aria-label="Compute calculation info"');
         expect(html).toContain(
-            'aria-label="Gross customer payments calculation info"',
+            'aria-label="Customer payments calculation info"',
         );
         expect(html).toContain('class="sr-only">Line item</span>');
         expect(html).not.toContain(">Actual</span>");

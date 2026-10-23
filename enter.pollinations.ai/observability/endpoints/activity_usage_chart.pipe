@@ -9,8 +9,8 @@ SQL >
     SELECT
         if(
             {{ String(grain, 'day') }} = 'hour',
-            formatDateTime(toStartOfHour(event_timestamp), '%F %T'),
-            formatDateTime(toStartOfDay(event_timestamp), '%F')
+            formatDateTime(event_timestamp, '%F %H:00:00', {{ String(timezone, 'UTC') }}),
+            formatDateTime(event_timestamp, '%F', {{ String(timezone, 'UTC') }})
         ) as date,
         api_key_id,
         nullIf(nullIf(api_key, ''), 'undefined') as api_key,
@@ -29,8 +29,8 @@ SQL >
         FROM activity_usage_events
         WHERE
             user_id = {{ String(user_id, '') }}
-            {% if defined(since) %} AND timestamp >= {{ DateTime(since) }} {% end %}
-            {% if defined(until) %} AND timestamp < {{ DateTime(until) }} {% end %}
+            {% if defined(since) %} AND timestamp >= toDateTime({{ String(since) }}, {{ String(timezone, 'UTC') }}) {% end %}
+            {% if defined(until) %} AND timestamp < toDateTime({{ String(until) }}, {{ String(timezone, 'UTC') }}) {% end %}
             {% if defined(api_key_ids) %} AND activity_usage_events.api_key_id IN {{ Array(api_key_ids, 'String') }} {% end %}
         GROUP BY user_id, event_id
     )

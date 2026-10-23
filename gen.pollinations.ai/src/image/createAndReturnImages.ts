@@ -914,6 +914,13 @@ const generateImage = async (
         case "black-forest-labs/flux-3-image":
             return await callOpenRouterFlux3API(prompt, safeParams);
 
+        case "black-forest-labs/flux-3-image-klein":
+            return await callFalQwenImageAPI(
+                prompt,
+                safeParams,
+                "black-forest-labs/flux-3-image-klein",
+            );
+
         case "microsoft/mai-image-2.6-flash":
         case "microsoft/mai-image-2.6": {
             try {

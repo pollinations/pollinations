@@ -627,6 +627,7 @@ describe("Account Key Management API", () => {
                 pollenBudget: 4,
             });
             expect(within.status).toBe(200);
+            expect((await within.json()).pollenBalance).toBe(4);
             expect(await budgetOf(caller.key)).toBe(2);
         });
     });

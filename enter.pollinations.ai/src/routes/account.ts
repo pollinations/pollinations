@@ -2074,24 +2074,35 @@ export const accountRoutes = new Hono<Env>()
                     earningsEnabled,
                 }).filter(([, value]) => value !== undefined),
             );
+            // Raising a budget takes the difference; giving an unlimited key a
+            // budget takes nothing.
+            const budgetChange =
+                pollenBudget != null && key.pollenBalance != null
+                    ? pollenBudget - key.pollenBalance
+                    : 0;
             await grantFromCallerKey(
                 c.env.DB,
                 callerKey,
                 { accountPermissions, allowedModels, expiresAt, pollenBudget },
-                // Raising a budget takes the difference; giving an unlimited
-                // key a budget takes nothing.
-                pollenBudget != null && key.pollenBalance != null
-                    ? pollenBudget - key.pollenBalance
-                    : 0,
+                budgetChange,
             );
+            // A budgeted key moves budget onto what the key has left now
+            // rather than overwriting it, so spending during the update isn't
+            // refilled for free.
+            const movesBudget =
+                typeof callerKey?.pollenBalance === "number" &&
+                pollenBudget != null &&
+                key.pollenBalance != null;
+            if (movesBudget) {
+                await atomicAdjustApiKeyBalance(db, id, -budgetChange);
+            }
 
             const [updated] = await db
                 .update(apikeyTable)
                 .set({
                     ...(name !== undefined && { name }),
-                    ...(pollenBudget !== undefined && {
-                        pollenBalance: pollenBudget,
-                    }),
+                    ...(pollenBudget !== undefined &&
+                        !movesBudget && { pollenBalance: pollenBudget }),
                     ...(questPollenOnly !== undefined && { questPollenOnly }),
                     ...(expiresAt !== undefined && { expiresAt }),
                     ...((allowedModels !== undefined ||

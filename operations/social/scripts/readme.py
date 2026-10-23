@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Write the newest news highlights into README.md, between its news markers.
+"""Write the newest daily items into README.md, between its news markers.
 
     python readme.py INDEX README
 
-INDEX is the news branch's data/index.json. The list is the 10 newest highlights, each with a
-category badge, its title linked where the highlight links, its date, and its text below without
+INDEX is the news branch's data/index.json. The list is the 10 newest daily items, each with a
+category badge, its title linked where the item links, its date, and its text below without
 the closing link the title already carries. Apps are left out: the README's Recent Apps table,
 built from the app catalog, already lists them.
 """
@@ -25,7 +25,7 @@ BADGE = '<img src="https://img.shields.io/badge/{0}-{1}?style=flat-square" alt="
 
 def news_lines(index: dict) -> list[str]:
     lines = []
-    for item in [item for item in index["highlights"] if item.get("kind") in BADGES][:ITEMS]:  # newest first
+    for item in [item for item in index["daily"] if item.get("kind") in BADGES][:ITEMS]:  # newest first
         title = f"{BADGE.format(*BADGES[item['kind']])} **{item['title']}**"
         link = LINK.search(item["text"])
         day = date.fromisoformat(item["date"])

@@ -7,6 +7,14 @@ import type {
 
 export type ForecastMethod = "fixed" | "funded" | "last" | "one_off";
 
+// Explicit review selection. Advancing the calendar or importing current
+// activity does not select a new baseline or a newer funding snapshot.
+export const RUNWAY_REVIEW = {
+    baselineMonth: "2026-09",
+    asOf: "2026-10-18",
+};
+export type RunwayReview = typeof RUNWAY_REVIEW;
+
 export type { ForecastPaymentTiming } from "../types";
 
 export type ForecastLineRule = {
@@ -340,7 +348,10 @@ export function forecastLineRule(
     }
     const rule = FORECAST_RULE_BY_LINE[key(vendor, category)];
     if (!rule) return null;
-    return { ...rule, ...privateRule(vendor, category, privateRules) };
+    const result = { ...rule, ...privateRule(vendor, category, privateRules) };
+    if (result.fixedAmounts?.length)
+        return { ...result, method: "fixed", automaticUsage: false };
+    return result;
 }
 
 export function forecastRuleEntries(
@@ -350,15 +361,12 @@ export function forecastRuleEntries(
     category: string;
     rule: ForecastLineRule;
 }[] {
-    return Object.entries(FORECAST_RULE_BY_LINE).map(([line, rule]) => {
+    return Object.keys(FORECAST_RULE_BY_LINE).flatMap((line) => {
         const separator = line.indexOf("|");
         const vendor = line.slice(0, separator);
         const category = line.slice(separator + 1);
-        return {
-            vendor,
-            category,
-            rule: { ...rule, ...privateRule(vendor, category, privateRules) },
-        };
+        const rule = forecastLineRule(vendor, category, privateRules);
+        return rule ? [{ vendor, category, rule }] : [];
     });
 }
 
@@ -372,8 +380,9 @@ export function forecastPaymentTiming(
 export function automaticForecastRule(
     vendor: string,
     category: string,
+    privateRules?: Readonly<Record<string, PrivateForecastRule>>,
 ): AutomaticForecastRule | null {
-    const rule = forecastLineRule(vendor, category);
+    const rule = forecastLineRule(vendor, category, privateRules);
     if (
         !rule?.automaticUsage ||
         rule.method !== "last" ||

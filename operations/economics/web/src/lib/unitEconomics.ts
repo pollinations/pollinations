@@ -5,7 +5,7 @@ import {
     managedInferenceData,
     pollenComputeMode,
 } from "./computeModes";
-import { fmtUsd } from "./format";
+import { fmtExactUsd as fmtUsd } from "./format";
 import type {
     ModelAllocationRow,
     ModelAllocationStatus,

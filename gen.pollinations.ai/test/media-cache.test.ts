@@ -230,7 +230,7 @@ describe("media cache", () => {
 
         const warm = await dispatch(
             media.app,
-            "/media/case-insensitive?Key=secret&NoFeed=true",
+            "/media/case-insensitive?Key=secret&NoFeed=true&Stream=true",
             { headers: { Authorization: "Bearer test-key" } },
             env,
         );

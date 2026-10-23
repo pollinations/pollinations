@@ -43,29 +43,29 @@ export function formatNewsDate(date: string): string {
     });
 }
 
-export type Highlight = {
+export type DailyItem = {
     date: string;
     title: string;
     text: string;
-    /** PRs the highlight comes from; older backfilled highlights have none. */
+    /** PRs the item comes from; a few older items have none. */
     prs?: number[];
     /** Set by the daily summary: models and API changes belong to the Changelog, apps to the README. */
     kind?: "model" | "api" | "app" | "product";
 };
 
-/** Highlights for Updates: product news only. */
-export function newsHighlights(index: NewsIndex): Highlight[] {
-    return index.highlights.filter(({ kind }) => kind === "product");
+/** Daily items for Updates: product news only. */
+export function newsDaily(index: NewsIndex): DailyItem[] {
+    return index.daily.filter(({ kind }) => kind === "product");
 }
 
 const LINK = /\[([^\]]+)\]\(([^)\s]+)\)/;
 const CLOSING_LINK = /(^|[.!?]\s+)\[[^\]]+\]\([^)\s]+\)\.?\s*$/;
 
 /**
- * Moves a highlight's link under its title: a closing call to action
+ * Moves a daily item's link under its title: a closing call to action
  * ("… [Explore the SDK](url).") leaves the text, an inline one stays as words.
  */
-export function highlightLink(text: string): {
+export function itemLink(text: string): {
     text: string;
     link?: { label: string; href: string };
 } {
@@ -104,7 +104,7 @@ export type ApiNews = {
 export type NewsIndex = {
     models: ModelNews[];
     api: ApiNews[];
-    highlights: Highlight[];
+    daily: DailyItem[];
 };
 
 export type CardDetail = {

@@ -71,6 +71,30 @@ describe("serveSite", () => {
         expect(response?.status).toBe(502);
     });
 
+    it("serves the landing page on the bare domain, never a site", async () => {
+        const { env, get } = sitesEnv(async () => new Response("hello"));
+        const assets = vi.fn(async () => new Response("font"));
+        env.ASSETS = { fetch: assets } as unknown as Fetcher;
+
+        const page = await serveSite(
+            new Request("https://pollinations.app/"),
+            env,
+        );
+        expect(page?.headers.get("Content-Type")).toBe(
+            "text/html; charset=utf-8",
+        );
+        const html = await page?.text();
+        expect(html).toContain("polli sites deploy");
+        expect(html).toContain("<svg");
+
+        const font = await serveSite(
+            new Request("https://pollinations.app/fonts/lct-mogi-a.woff2"),
+            env,
+        );
+        expect(await font?.text()).toBe("font");
+        expect(get).not.toHaveBeenCalled();
+    });
+
     it("uses the staging suffix on staging", async () => {
         const { env, get } = sitesEnv(async () => new Response("hello"));
         env.SITES_HOST_SUFFIX = "--staging.pollinations.app";

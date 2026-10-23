@@ -11,7 +11,7 @@
     },
     "next_price": {
         "per_audio_hour": 0.36,
-        "source": "Microsoft model-release capsule: standard pricing $0.36/hour, checked 2026-10-23"
+        "source": "Azure Retail Prices: Azure Speech 'Fast Transcription Speech To Text' $0.36/hour; the route bills 'Fast Transcription Promo Speech To Text' at $0.10/hour today (checked 2026-10-23)"
     },
     "merge_on": "2027-01-01",
     "merge_date_confirmed": false,
@@ -23,14 +23,12 @@
     },
     "unknowns": [
         "Exact promotion cutoff time and timezone",
-        "Vercel's rate after the offer ends",
-        "Azure Retail Prices lists the MAI-Transcribe-2 meter at $0.54/hour (effective 2026-10-01)"
+        "Vercel's rate after the offer ends"
     ],
     "sources": [
-        "https://github.com/microsoft-foundry/model-releases/blob/main/models/microsoft-ai/mai-transcribe-2/README.md",
+        "https://prices.azure.com/api/retail/prices?$filter=contains(meterName, 'Fast Transcription')",
         "https://microsoft.ai/news/mai-transcribe-2-is-the-fastest-most-accurate-and-cheapest-speech-recognition-model-in-the-world/",
-        "https://microsoft.ai/models/mai-transcribe-2/",
-        "https://prices.azure.com/api/retail/prices?$filter=productName eq 'MAI Models'",
+        "https://github.com/microsoft-foundry/model-releases/blob/main/models/microsoft-ai/mai-transcribe-2/README.md",
         "https://ai-gateway.vercel.sh/v1/models"
     ],
     "required_changes": [

@@ -418,8 +418,8 @@ function AppsPage() {
                     title="Apps"
                     subtitle={
                         <>
-                            Explore what the community builds with
-                            Pollinations—from{" "}
+                            Explore what the community builds with Pollinations,
+                            from{" "}
                             <strong>
                                 creative weekend experiments to apps used at
                                 scale

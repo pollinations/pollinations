@@ -6,6 +6,7 @@ requires-python = ">=3.10"
 dependencies = [
     "openai>=1.0",
     "httpx>=0.25",
+    "mcp>=1.29,<2",
     "pydantic>=2.0",
     "python-dotenv>=1.0",
     "aiofiles>=23.0",

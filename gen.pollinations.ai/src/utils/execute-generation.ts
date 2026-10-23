@@ -6,6 +6,7 @@ import { balance } from "@/middleware/balance.ts";
 import type {
     GenerationErrorSnapshot,
     GenerationJob,
+    GenerationJobHead,
     GenerationOutcome,
 } from "@/middleware/generation-deduplication.ts";
 import { logger } from "@/middleware/logger.ts";
@@ -83,7 +84,7 @@ function generationExecutor(
     return executor;
 }
 
-/** Runs a provider handler under the Durable Object alarm's lifetime. */
+/** Runs a provider handler for the coordinator alarm that owns the job. */
 export async function executeGeneration(
     job: GenerationJob,
     env: CloudflareBindings,
@@ -123,9 +124,75 @@ export async function executeGeneration(
         }
 
         await cacheWrite;
-        return { result: { status: "cached" }, settlement };
+        // This execution produced a fresh cache entry (the R2 has() pre-check
+        // inside missed), so the requester experienced a MISS, not a HIT.
+        return { result: { status: "generated" }, settlement };
     } catch (error) {
         await settlement;
         throw error;
     }
 }
+
+export const GENERATION_HANDOFF_PATH = "/internal/generation";
+export const GENERATION_HANDOFF_HEADER = "x-generation-handoff";
+
+/** JSON form of an outcome; the error body travels as base64. */
+type HandoffOutcome =
+    | { status: "cached" }
+    | { status: "generated" }
+    | {
+          status: "failed";
+          error: Omit<GenerationErrorSnapshot, "body"> & { body: string };
+      };
+
+export async function readHandoffResponse(
+    response: Response,
+): Promise<GenerationOutcome> {
+    if (!response.ok) {
+        throw new Error(`Generation handoff returned HTTP ${response.status}`);
+    }
+    const outcome = await response.json<HandoffOutcome>();
+    if (outcome.status !== "failed") return outcome;
+    const body = new Uint8Array(Buffer.from(outcome.error.body, "base64"));
+    return { status: "failed", error: { ...outcome.error, body } };
+}
+
+function handoffOutcome(outcome: GenerationOutcome): HandoffOutcome {
+    if (outcome.status !== "failed") return outcome;
+    const body = Buffer.from(outcome.error.body).toString("base64");
+    return { status: "failed", error: { ...outcome.error, body } };
+}
+
+/** Runs a job handed off by a coordinator alarm, under this request's zone. */
+export const generationHandoffRoutes = new Hono<Env>().post(
+    "/:id{[0-9a-f]{64}}",
+    async (c) => {
+        const coordinators = c.env.GENERATION_COORDINATOR;
+        let id: DurableObjectId;
+        try {
+            id = coordinators.idFromString(c.req.param("id"));
+        } catch {
+            return c.notFound();
+        }
+        // RPC typing can't map the auth snapshot; the value is unchanged.
+        const job = (await coordinators
+            .get(id)
+            .takeHandoff(
+                c.req.header(GENERATION_HANDOFF_HEADER) ?? "",
+            )) as GenerationJobHead | null;
+        if (!job) return c.notFound();
+        const body = new Uint8Array(await c.req.arrayBuffer());
+        const { result, settlement } = await executeGeneration(
+            {
+                ...job,
+                request: {
+                    ...job.request,
+                    ...(body.byteLength > 0 && { body }),
+                },
+            },
+            c.env,
+        );
+        c.executionCtx.waitUntil(settlement);
+        return c.json(handoffOutcome(result));
+    },
+);

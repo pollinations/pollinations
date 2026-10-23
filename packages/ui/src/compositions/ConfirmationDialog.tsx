@@ -8,10 +8,11 @@ import {
 } from "../primitives/Dialog.tsx";
 import { CheckIcon, TrashIcon, XIcon } from "../primitives/icons/index.tsx";
 
-type ConfirmIntent = "danger" | "info" | "neutral";
+type ConfirmIntent = "danger" | "info" | "neutral" | "commit";
 
 const defaultIcons: Record<ConfirmIntent, ReactNode> = {
     danger: <TrashIcon />,
+    commit: <CheckIcon />,
     info: <CheckIcon />,
     neutral: <CheckIcon />,
 };
@@ -76,7 +77,7 @@ export function ConfirmationDialog({
     return (
         <Dialog
             open={open}
-            onOpenChange={(next) => !next && onCancel()}
+            onOpenChange={(next) => !next && !cancelDisabled && onCancel()}
             size={size}
             contentClassName="polli:overflow-hidden"
         >

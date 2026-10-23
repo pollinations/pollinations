@@ -120,19 +120,22 @@ describe("runInferenceport", () => {
     it.each([
         ["submission", 524, 1],
         ["poll", 401, 2],
-    ] as const)("does not retry a %s HTTP %i error", async (_stage, status, calls) => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-        if (calls === 2) fetchSpy.mockResolvedValueOnce(submitResponse());
-        fetchSpy.mockResolvedValue(new Response("Failed", { status }));
+    ] as const)(
+        "does not retry a %s HTTP %i error",
+        async (_stage, status, calls) => {
+            const fetchSpy = vi.spyOn(globalThis, "fetch");
+            if (calls === 2) fetchSpy.mockResolvedValueOnce(submitResponse());
+            fetchSpy.mockResolvedValue(new Response("Failed", { status }));
 
-        await expect(
-            runInferenceport({
-                model: "asset-harvester",
-                imageUrls: ["https://example.com/a.jpg"],
-            }),
-        ).rejects.toBeInstanceOf(InferenceportError);
-        expect(fetchSpy).toHaveBeenCalledTimes(calls);
-    });
+            await expect(
+                runInferenceport({
+                    model: "asset-harvester",
+                    imageUrls: ["https://example.com/a.jpg"],
+                }),
+            ).rejects.toBeInstanceOf(InferenceportError);
+            expect(fetchSpy).toHaveBeenCalledTimes(calls);
+        },
+    );
 
     it("does not extend the deadline after a polling error", async () => {
         let now = 0;
@@ -262,26 +265,27 @@ describe("runInferenceport", () => {
         ).rejects.toMatchObject({ name: "InferenceportError", status: 429 });
     });
 
-    it.each([
-        400, 422,
-    ])("maps upstream %i validation errors to 400", async (status) => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response(
-                JSON.stringify({ detail: "Invalid image dimensions" }),
-                { status },
-            ),
-        );
+    it.each([400, 422])(
+        "maps upstream %i validation errors to 400",
+        async (status) => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                new Response(
+                    JSON.stringify({ detail: "Invalid image dimensions" }),
+                    { status },
+                ),
+            );
 
-        await expect(
-            runInferenceport({
-                model: "trellis2",
-                imageUrls: ["https://example.com/a.jpg"],
-            }),
-        ).rejects.toMatchObject({
-            name: "InferenceportError",
-            status: 400,
-        });
-    });
+            await expect(
+                runInferenceport({
+                    model: "trellis2",
+                    imageUrls: ["https://example.com/a.jpg"],
+                }),
+            ).rejects.toMatchObject({
+                name: "InferenceportError",
+                status: 400,
+            });
+        },
+    );
 
     it("maps other HTTP errors to 502", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(

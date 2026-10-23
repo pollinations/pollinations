@@ -11,12 +11,14 @@ import {
     type TinybirdErrorEvent,
 } from "./events.ts";
 import { PaymentRequiredError } from "./http/payment-required-error.ts";
+import { PermissionRequiredError } from "./http/permission-required-error.ts";
 import { ValidationError } from "./http/validation-error.ts";
 import {
     collectRequestInputs,
     type RequestInputs,
     stringifyRequestInputs,
 } from "./observability/request-inputs.ts";
+import type { Usage } from "./registry/registry.ts";
 import { getRoutePath } from "./util.ts";
 
 export type ErrorVariables = {
@@ -49,6 +51,11 @@ type UpstreamErrorOptions = {
      * that callers can detect regardless of the HTTP status.
      */
     errorCode?: string;
+    /**
+     * Usage the provider billed even though the request failed, such as an
+     * xAI video rejected after generation. Tracking charges it.
+     */
+    billedUsage?: Usage;
 };
 
 /** Public HTTP failure plus original provider diagnostics. Bodies are not redacted or truncated. */
@@ -60,6 +67,7 @@ export class UpstreamError extends HTTPException {
     public readonly responseBody?: string;
     public readonly upstreamHeaders?: UpstreamHeaders;
     public readonly errorCode?: string;
+    public readonly billedUsage?: Usage;
 
     constructor(status: ContentfulStatusCode, options?: UpstreamErrorOptions) {
         super(status, options);
@@ -69,6 +77,7 @@ export class UpstreamError extends HTTPException {
         this.responseBody = options?.responseBody;
         this.upstreamHeaders = options?.upstreamHeaders;
         this.errorCode = options?.errorCode;
+        this.billedUsage = options?.billedUsage;
     }
 
     /** Keep the provider status for diagnostics and retries; expose gateway failures as 5xx. */
@@ -156,8 +165,9 @@ export type ImageInputErrorCode =
  * `getErrorCode(status)`, and the published schema must say so.
  */
 const OVERRIDE_ERROR_CODES: Record<number, readonly string[]> = {
-    402: ["KEY_BUDGET_EXHAUSTED", "INSUFFICIENT_BALANCE"],
+    402: ["KEY_BUDGET_EXHAUSTED", "INSUFFICIENT_BALANCE", "QUEST_POLLEN_ONLY"],
     400: [
+        "content_blocked",
         "failed_to_download_image",
         "invalid_image_url",
         "image_too_large",
@@ -192,6 +202,13 @@ const ValidationErrorDetailsSchema = z
     })
     .meta({ $id: "ValidationErrorDetails" });
 
+const FixUrlSchema = z
+    .string()
+    .describe(
+        "Page where the API key's owner can fix this error, such as allowing a model, raising the key budget or topping up.",
+    )
+    .optional();
+
 export function createErrorResponseSchema(
     status: ContentfulStatusCode,
 ): z.ZodObject {
@@ -209,8 +226,10 @@ export function createErrorResponseSchema(
                 z.string(),
             ]),
             timestamp: z.string(),
-            details: errorDetailsSchema,
+            // Only sent when there are details, e.g. validation or upstream errors.
+            details: errorDetailsSchema.optional(),
             requestId: z.string().optional(),
+            fixUrl: FixUrlSchema,
         }),
     });
 }
@@ -224,6 +243,7 @@ export const GenericErrorResponseSchema = z.object({
         timestamp: z.string(),
         details: GenericErrorDetailsSchema.optional(),
         requestId: z.string().optional(),
+        fixUrl: FixUrlSchema,
     }),
 });
 
@@ -303,13 +323,17 @@ export async function handleError<TEnv extends ErrorHandlerEnv>(
             });
         }
         return c.json(
-            createErrorResponse(
-                err,
-                status,
-                timestamp,
-                undefined,
-                err instanceof PaymentRequiredError ? err.errorCode : undefined,
-            ),
+            createErrorResponse(err, status, timestamp, {
+                code:
+                    err instanceof PaymentRequiredError
+                        ? err.errorCode
+                        : undefined,
+                fixUrl:
+                    err instanceof PaymentRequiredError ||
+                    err instanceof PermissionRequiredError
+                        ? err.fixUrl
+                        : undefined,
+            }),
             status,
         );
     }
@@ -342,8 +366,15 @@ function createErrorResponse(
     error: Error,
     status: ContentfulStatusCode,
     timestamp: string,
-    details?: Record<string, unknown>,
-    code?: string,
+    {
+        details,
+        code,
+        fixUrl,
+    }: {
+        details?: Record<string, unknown>;
+        code?: string;
+        fixUrl?: string;
+    } = {},
 ): ErrorResponse {
     return {
         success: false,
@@ -352,6 +383,7 @@ function createErrorResponse(
             code: code ?? getErrorCode(status),
             timestamp,
             ...(details && { details }),
+            ...(fixUrl && { fixUrl }),
         },
         status,
     };
@@ -364,8 +396,7 @@ function createValidationErrorResponse(
 ): ErrorResponse {
     const flatErrors = z.flattenError(error.zodError);
     return createErrorResponse(error, status, timestamp, {
-        name: error.name,
-        ...flatErrors,
+        details: { name: error.name, ...flatErrors },
     });
 }
 
@@ -375,7 +406,7 @@ function createInternalErrorResponse(
     timestamp: string,
 ): ErrorResponse {
     return createErrorResponse(error, status, timestamp, {
-        name: error.name,
+        details: { name: error.name },
     });
 }
 
@@ -384,18 +415,15 @@ function createUpstreamErrorResponse(
     status: ContentfulStatusCode,
     timestamp: string,
 ): ErrorResponse {
-    return createErrorResponse(
-        error,
-        status,
-        timestamp,
-        {
+    return createErrorResponse(error, status, timestamp, {
+        details: {
             name: error.name,
             upstreamStatus: error.upstreamStatus,
             upstreamHost: error.requestUrl?.hostname,
             upstreamBody: error.responseBody,
         },
-        error.errorCode,
-    );
+        code: error.errorCode,
+    });
 }
 
 /**

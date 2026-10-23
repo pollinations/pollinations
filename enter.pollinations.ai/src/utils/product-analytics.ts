@@ -4,17 +4,20 @@ import type { Context } from "hono";
 
 export type ProductEvent =
     | "page_viewed"
+    // A pollinations.ai website page, so its "/" never counts as Enter's.
+    | "website_page_viewed"
     | "checkout_started"
     | "auto_top_up_enabled"
     | "auto_top_up_disabled"
     // Sign-in is two server-side counts, so the drop-off is measured without
-    // any browser identifier: started when GitHub is requested, completed when
-    // the session exists. flow_id is only the device_code row id, never a
-    // code, token or email.
+    // any browser identifier: started when GitHub or Google is requested,
+    // completed when the session exists. flow_id is only the device_code row
+    // id, never a code, token or email.
     | "sign_in_started"
-    // GitHub sent the user back with a code, so they reached GitHub and
-    // approved. Starts that never reach this are lost on GitHub's side; this
-    // that never reach sign_in_completed are lost on ours.
+    // The provider sent the user back with a code, so they reached it and
+    // approved. Starts that never reach this are lost on the provider's side;
+    // returns that never reach sign_in_completed are lost on ours. Connect
+    // callbacks land here too; subtract link_completed for the same provider.
     | "sign_in_returned"
     | "sign_in_completed"
     // A user row was created, so this sign-in was also a signup. Counting it
@@ -25,6 +28,7 @@ export type ProductEvent =
     | "device_approved"
     | "device_denied"
     | "device_token_issued"
+    | "polli_harness_on"
     | "link_started"
     | "link_completed";
 
@@ -43,11 +47,16 @@ export async function captureProductEvent(
         pack_key?: string;
         flow_id?: string;
         client_id?: string;
+        key_id?: string;
+        harness?: string;
         referrer_host?: string;
         utm_source?: string;
         utm_medium?: string;
         utm_campaign?: string;
+        country?: string;
         amount_usd?: number;
+        // github, google or discord on sign-in, signup and link events.
+        provider?: string;
     } = {},
 ): Promise<void> {
     try {
@@ -115,6 +124,18 @@ export function referringSource(
     }
 }
 
+/**
+ * The visitor's country as Cloudflare derives it from the connection
+ * (CF-IPCountry: ISO 3166 alpha-2, XX unknown, T1 Tor). Only the code is
+ * recorded, never the IP. Absent outside Cloudflare, e.g. in tests.
+ */
+export function visitorCountry(headers: Headers | null | undefined): {
+    country?: string;
+} {
+    const country = headers?.get("cf-ipcountry");
+    return country ? { country: country.slice(0, 2) } : {};
+}
+
 /** Fire-and-forget capture from a request handler. */
 export function captureFromRequest(
     // biome-ignore lint/suspicious/noExplicitAny: every route shape may capture
@@ -124,6 +145,9 @@ export function captureFromRequest(
     properties?: Parameters<typeof captureProductEvent>[3],
 ): void {
     c.executionCtx.waitUntil(
-        captureProductEvent(c.env, event, userId, properties),
+        captureProductEvent(c.env, event, userId, {
+            ...visitorCountry(c.req.raw.headers),
+            ...properties,
+        }),
     );
 }

@@ -1,6 +1,9 @@
 import { getLogger } from "@logtape/logtape";
 import type { ApiKeyType } from "@shared/auth/api-key-creation.ts";
-import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
+import {
+    AUTO_TOP_UP_THRESHOLD_POLLEN,
+    LOW_BALANCE_SHARE,
+} from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
     type CommunityModelRewardResolution,
@@ -51,6 +54,7 @@ import {
     MODEL_USED_HEADER,
     openaiUsageToUsage,
     PROMPT_CACHE_TYPE_HEADER,
+    PROVIDER_BILLING_HEADERS,
     parseUsageHeaders,
     USAGE_MISSING_HEADER,
 } from "@shared/registry/usage-headers.ts";
@@ -195,13 +199,27 @@ export const track = (eventType: EventType) =>
         const requestTracking = await trackRequest(modelInfo, c.req);
         requestTracking.modelRequested =
             c.var.generationExecution?.originalModel ?? modelInfo.requested;
+        // Only generate.text answers with an SSE stream. Every other event
+        // type returns a file or a JSON envelope, so a stray stream flag
+        // (query or body) must never mark the request as streaming — that
+        // would skip durable generation coordination and double-generate
+        // the identical request.
+        if (eventType !== "generate.text") {
+            requestTracking.streamRequested = false;
+        }
 
         const rawIp = getRealClientIp(c);
         const clientIp =
             rawIp !== "unknown" ? stripIPv4MappedPrefix(rawIp) : undefined;
         const ipSubnet = truncateIpToSubnet(clientIp);
 
-        const userTracking = requestIdentity(c.var.auth);
+        const polliClient = c.req
+            .header("x-polli-client")
+            ?.match(/^cli\/(\d+\.\d+\.\d+)$/);
+        const userTracking = {
+            ...requestIdentity(c.var.auth),
+            polliClientVersion: polliClient?.[1],
+        };
 
         let responseOverride: Response | null = null;
         // What the caller asked for; a provider's response may refine it.
@@ -365,6 +383,7 @@ export const track = (eventType: EventType) =>
                     response,
                     finalCandidate,
                     pricingInput,
+                    c.get("error"),
                 );
                 if (responseTracking.cacheHit) {
                     await releaseApiKeyBudgetReservation(c.var, c.env);
@@ -407,6 +426,7 @@ export const track = (eventType: EventType) =>
                             c.var.balance.apiKeyReservation?.amount,
                         byopClientKeyId: c.var.auth?.apiKey?.byopClientKeyId,
                         modelPaidOnly: c.var.model?.definition.paidOnly,
+                        questPollenOnly: c.var.auth?.apiKey?.questPollenOnly,
                         // A private endpoint only earns a reward when it backs
                         // its owner's public listing. Cross-owner private
                         // fallbacks are rejected when the fallback is linked.
@@ -422,13 +442,23 @@ export const track = (eventType: EventType) =>
                     payerBucket = deduction.payerBucket;
                     billedPrice = deduction.billedPrice;
                     const totalPrice = responseTracking.price?.totalPrice ?? 0;
+                    const packBalance = deduction.postDeductionPackBalance;
+                    const lowBalanceThreshold =
+                        deduction.lastPackPollen == null
+                            ? null
+                            : LOW_BALANCE_SHARE * deduction.lastPackPollen;
+                    // Enter refills the balance when auto top-up is on. Without
+                    // it, Enter emails the user, so also call it on the charge
+                    // that takes the balance below a share of their last pack.
                     if (
                         totalPrice > 0 &&
                         payerBucket === "pack" &&
-                        deduction.postDeductionPackBalance != null &&
-                        deduction.postDeductionPackBalance <=
-                            AUTO_TOP_UP_THRESHOLD_POLLEN &&
-                        (await isAutoTopUpConfigured(db, userId))
+                        packBalance != null &&
+                        ((lowBalanceThreshold != null &&
+                            packBalance < lowBalanceThreshold &&
+                            packBalance + billedPrice >= lowBalanceThreshold) ||
+                            (packBalance <= AUTO_TOP_UP_THRESHOLD_POLLEN &&
+                                (await isAutoTopUpConfigured(db, userId))))
                     ) {
                         shouldRunAutoTopUp = true;
                     }
@@ -672,6 +702,7 @@ export async function trackResponse(
     response: Response,
     candidate: FallbackCandidate,
     pricingInput?: PricingInput,
+    error?: unknown,
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
@@ -698,9 +729,32 @@ export async function trackResponse(
         return notBilled();
     }
     if (!response.ok) {
-        return notBilled({
+        // A failure is billed only when the provider charged for it, which the
+        // handler reports on the error (an xAI video rejected after generation).
+        const usage =
+            error instanceof UpstreamError ? error.billedUsage : undefined;
+        if (!usage) {
+            return notBilled({
+                modelUsed,
+            });
+        }
+        return {
+            responseStatus: response.status,
+            cacheHit,
+            isBilledUsage: true,
+            fallbackUsed,
+            ...calculateUsageBilling({
+                model: resolvedModelRequested,
+                usage,
+                servedBy:
+                    candidate.definition ?? requestTracking.modelDefinition,
+                quotedBy: requestTracking.modelDefinition,
+                input: pricingInput,
+            }),
             modelUsed,
-        });
+            modelProviderUsed,
+            usage,
+        };
     }
 
     // Verify the response content-type matches the expected output before
@@ -983,10 +1037,16 @@ function getContentTypeGuard(
         const isTimestampedTts =
             response.headers.get("x-pollinations-response-format") ===
             "audio-with-timestamps";
+        const isStemSeparation =
+            requestTracking.modelDefinition.supportedEndpoints?.includes(
+                "/alpha/audio/stem-separation",
+            );
         return {
             kind: "audio",
             isExpected: (contentType) =>
                 contentType.startsWith("audio/") ||
+                (isStemSeparation &&
+                    contentType.startsWith("application/zip")) ||
                 (isSTTModel &&
                     (contentType.startsWith("application/json") ||
                         contentType.startsWith("text/plain"))) ||
@@ -1066,6 +1126,8 @@ export type UserData = {
     apiKeyCreatedForApp?: string;
     apiKeyCreatedForUserId?: string;
     apiKeyClientId?: string;
+    apiKeyCreatedById?: string;
+    apiKeyOriginAppId?: string;
 };
 
 export function requestIdentity(auth: AuthVariables["auth"]): UserData {
@@ -1088,6 +1150,10 @@ export function requestIdentity(auth: AuthVariables["auth"]): UserData {
             ? "redirect-auth"
             : (apiKeyMetadata?.createdVia as string | undefined),
         apiKeyClientId: byopClientKeyId ?? undefined,
+        apiKeyCreatedById: apiKeyMetadata?.createdByApiKeyId as
+            | string
+            | undefined,
+        apiKeyOriginAppId: apiKeyMetadata?.originAppKeyId as string | undefined,
         apiKeyCreatedForApp: auth.apiKey?.byopClientName ?? undefined,
         apiKeyCreatedForUserId: auth.apiKey?.byopClientUserId ?? undefined,
     };
@@ -1280,11 +1346,30 @@ function extractUsageHeaders(response: Response): ModelUsage | null {
             "Failed to determine model: x-model-used header was missing",
         );
     }
+    const unitsHeader = response.headers.get(PROVIDER_BILLING_HEADERS.units);
+    const unitCostHeader = response.headers.get(
+        PROVIDER_BILLING_HEADERS.unitCost,
+    );
+    let providerBilling: PricingInput["providerBilling"];
+    if (unitsHeader !== null || unitCostHeader !== null) {
+        const units = Number(unitsHeader);
+        const unitCost = Number(unitCostHeader);
+        if (
+            !Number.isFinite(units) ||
+            units <= 0 ||
+            !Number.isFinite(unitCost) ||
+            unitCost <= 0
+        ) {
+            throw new Error("Invalid provider billing receipt");
+        }
+        providerBilling = { units, unitCost };
+    }
     const usage = parseUsageHeaders(response.headers);
     return {
         model: modelUsed,
         usage,
         pricingInput: {
+            providerBilling,
             hasExplicitCacheHit:
                 response.headers.get(PROMPT_CACHE_TYPE_HEADER) === "ephemeral",
         },

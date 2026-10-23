@@ -109,8 +109,8 @@ export const CHAT_PARAMETERS = {
     // Haiku 4.5 / Sonnet & Opus 4.6: sampling only without thinking; JSON schema only.
     bedrockClaudeSampling: [...SAMPLED_CHAT, "top_k", "reasoning_effort"],
     bedrockClaudeNoSampling: [...CHAT, ...TOOLS, "reasoning_effort", "stop"],
-    // Fable 5.1 rejects forced tool choice; auto alone is not an adjustable control.
-    bedrockFable51: [...CHAT, "reasoning_effort", "tools", "stop"],
+    // Fable 5.1 and Opus 5.5 reject forced tool choice.
+    bedrockClaudeNoForcedTools: [...CHAT, "reasoning_effort", "tools", "stop"],
     openRouterHaiku: [
         ...CHAT,
         ...SAMPLING,
@@ -167,8 +167,18 @@ export const CHAT_PARAMETERS = {
         "stop",
     ],
     azureOpenModels: [...CHAT, ...SAMPLING, ...PENALTIES, "seed", "stop"],
-    // Exact OVH model OpenAPI confirms these; top_k is rejected, not honored.
-    ovhQwenCoder: [...TOOL_CHAT, ...SAMPLING, ...LOGPROBS, "seed"],
+    openRouterCohere: [
+        ...SAMPLED_CHAT,
+        ...PENALTIES,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+        "seed",
+        "top_k",
+    ],
+    // Azure DeepSeek and Kimi deployments reject unknown fields such as `thinking`.
+    azureOpenReasoning: [...SAMPLED_CHAT, "reasoning_effort"],
+    // Bedrock Qwen3 Coder rejects stop and has no seed/logprobs controls.
+    bedrockQwenCoder: [...TOOL_CHAT, ...SAMPLING],
     openRouterMistralSmall32: [
         ...SAMPLED_CHAT,
         ...PENALTIES,
@@ -194,6 +204,9 @@ export const CHAT_PARAMETERS = {
         "n",
         "prediction",
     ],
+    // InferencePort Lightning routers: /v1/models lists temperature, stop and
+    // max_tokens as the sampling controls, plus tools and JSON mode.
+    inferenceportLightning: [...TOOL_CHAT, "temperature", "stop"],
     deepinfraReasoning: [...EXTENDED_CHAT, "reasoning_effort", "n"],
     openRouterGemma: [
         ...EXTENDED_CHAT,
@@ -207,21 +220,6 @@ export const CHAT_PARAMETERS = {
         "web_search_options",
         "search_domain_filter",
         "search_recency_filter",
-    ],
-    openRouterSonar: [
-        ...CHAT,
-        ...SAMPLING,
-        ...PENALTIES,
-        "top_k",
-        "web_search_options",
-    ],
-    openRouterSonarReasoning: [
-        ...CHAT,
-        ...SAMPLING,
-        ...PENALTIES,
-        ...OPENROUTER_REASONING,
-        "top_k",
-        "web_search_options",
     ],
     laguna: [...CHAT, ...TOOLS, ...OPENROUTER_REASONING, "temperature"],
     longcat: [
@@ -242,7 +240,6 @@ export const CHAT_PARAMETERS = {
         ...SAMPLING,
         ...TOOLS,
         ...PENALTIES,
-        ...LOGPROBS,
         ...OPENROUTER_REASONING,
         "top_k",
         "min_p",
@@ -288,10 +285,13 @@ export const CHAT_PARAMETERS = {
         ...PENALTIES,
         ...OPENROUTER_REASONING,
         "top_k",
-        "min_p",
         "repetition_penalty",
         "seed",
-        "logit_bias",
+    ],
+    openRouterMinimax27FirstParty: [
+        ...TOOL_CHAT,
+        ...SAMPLING,
+        ...OPENROUTER_REASONING,
     ],
     openRouterMuseGlimmer: [
         ...SAMPLED_CHAT,
@@ -300,27 +300,73 @@ export const CHAT_PARAMETERS = {
         "top_k",
         "min_p",
         "repetition_penalty",
-        "seed",
         "reasoning_effort",
         "logit_bias",
     ],
-    openRouterDeepseekV41Flash: [
-        ...CHAT,
-        ...SAMPLING,
-        ...TOOLS,
+    // OpenRouter endpoint parameters (2026-09-23) for Fireworks replacements.
+    openRouterDeepseekV4Pro: [
+        ...SAMPLED_CHAT,
         ...PENALTIES,
-        ...LOGPROBS,
         ...OPENROUTER_REASONING,
-        "logit_bias",
-        "min_p",
-        "repetition_penalty",
+        "reasoning_effort",
         "seed",
-        "stop",
         "structured_outputs",
         "top_k",
     ],
+    openRouterStreamLakeReasoning: [
+        ...SAMPLED_CHAT,
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
+    openRouterKimiMoonshot: [
+        ...TOOL_CHAT,
+        ...PENALTIES,
+        ...OPENROUTER_REASONING,
+        "stop",
+        "structured_outputs",
+    ],
+    openRouterKimiStreamLake: [
+        ...TOOL_CHAT,
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "stop",
+        "structured_outputs",
+        "top_p",
+    ],
     museSpark: [...CHAT, "temperature", "tools"],
+    // OpenRouter endpoint parameters (2026-10-12); Meta is its only endpoint.
+    openRouterMuseWonder: [
+        ...TOOL_CHAT,
+        ...SAMPLING,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+        "repetition_penalty",
+        "structured_outputs",
+        "top_k",
+    ],
+    // Vercel catalog parameters (2026-10-12): no top_p, top_k, or
+    // repetition_penalty.
+    vercelMuseWonder: [
+        ...TOOL_CHAT,
+        "temperature",
+        "stop",
+        "structured_outputs",
+        "reasoning",
+        "include_reasoning",
+        "reasoning_effort",
+    ],
     mistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
+    mistralLarge4: [...SAMPLED_CHAT, ...PENALTIES, "seed", "reasoning_effort"],
+    vercelMistralLarge4: [
+        ...TOOL_CHAT,
+        "temperature",
+        "stop",
+        "structured_outputs",
+        "reasoning",
+        "include_reasoning",
+        "reasoning_effort",
+    ],
     // Tencent's only OpenRouter endpoint (2026-09-12): no top_p, penalties,
     // seed or logprobs in supported_parameters. Forced tool_choice isn't
     // supported (only "auto"/"none"), so "tools" is declared alone.
@@ -368,6 +414,66 @@ export const CHAT_PARAMETERS = {
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],
+    // OpenRouter Novita tag for Ling 3.1 Flash (verified 2026-10-05): no
+    // response_format, structured outputs or logprobs; reasoning_effort
+    // "none" turns thinking off.
+    openRouterLing31: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "temperature",
+        "top_p",
+        "top_k",
+        ...PENALTIES,
+        "repetition_penalty",
+        "stop",
+        "seed",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
+    // OpenRouter Nex AGI bf16 tag for Nex-N2.5-Mini (2026-10-03); the endpoint has no tool support.
+    openRouterNexMini: [
+        "max_tokens",
+        "stream",
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
+    // OpenRouter Nex AGI fp8 tag for Nex-N2.5-Pro (2026-10-03).
+    openRouterNexPro: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
+    // OpenRouter DeepInfra fp16 tag for Ling 3.0 Flash VL (2026-09-19).
+    openRouterLing: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "response_format",
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        "min_p",
+        ...PENALTIES,
+        "repetition_penalty",
+        "logit_bias",
+        "stop",
+        "seed",
+        ...OPENROUTER_REASONING,
+    ],
     // OpenRouter Z.AI fp8 tag for GLM-5.3 FlashX (2026-09-19).
     openRouterGlmFlashx: [
         "max_tokens",
@@ -410,10 +516,10 @@ export const CHAT_PARAMETERS = {
         "seed",
         "reasoning_effort",
     ],
-    qwen38Akash: [
+    qwen38Reka: [
         ...EXTENDED_CHAT,
         ...OPENROUTER_REASONING,
-        "repetition_penalty",
+        "structured_outputs",
         "reasoning_effort",
     ],
     qwen38Max: [...EXTENDED_CHAT, ...OPENROUTER_REASONING, "reasoning_effort"],
@@ -473,6 +579,19 @@ export const CHAT_PARAMETERS = {
         ...OPENROUTER_REASONING,
         "top_k",
         "frequency_penalty",
+    ],
+    // OpenRouter's Step 5 Preview endpoint lists these parameters (2026-10-08).
+    step5: [
+        ...CHAT,
+        ...SAMPLING,
+        "tools",
+        "stop",
+        "frequency_penalty",
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "response_format",
+        "structured_outputs",
+        "reasoning_effort",
     ],
     qwenGuard: [...CHAT, ...SAMPLING, ...LOGPROBS, "seed"],
     // The System One adapter forwards the native request untouched, so token

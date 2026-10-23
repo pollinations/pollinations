@@ -71,9 +71,6 @@ This will enable comprehensive debug output to help troubleshoot issues during d
 
 Current-state architecture diagrams for pollinations.ai infrastructure and model routing.
 
-For the agent-specific request paths, credential delegation, MCP gateway, and
-billing model, see [Agents and MCP Architecture](./AGENTS_AND_MCP.md).
-
 ## Models & Providers
 
 ```mermaid
@@ -250,7 +247,6 @@ graph TD
 
     subgraph SOCIAL["📢 Social Automation"]
         BUFFER["Buffer\nX · LinkedIn · IG"]:::social
-        REDDIT["Reddit VPS\nSSH deploy"]:::social
         DISCORD_W["Discord\nWebhooks"]:::social
     end
 

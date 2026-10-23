@@ -1,0 +1,87 @@
+import {
+    Button,
+    CheckIcon,
+    ClockIcon,
+    LoadingStatus,
+    RefreshIcon,
+    WarningIcon,
+} from "@pollinations/ui";
+import { formatPollenPackValue } from "@shared/pollen-packs.ts";
+import type { FC, ReactNode } from "react";
+
+/**
+ * What the buyer sees after paying: waiting, added, an old expired link, a
+ * bank payment the bank refused, or one that takes longer (a bank payment
+ * still settling, a slow webhook).
+ */
+export type CheckoutConfirmationState =
+    | { status: "checking" }
+    | { status: "credited"; pollen: number }
+    | { status: "expired" }
+    | { status: "failed" }
+    | { status: "timeout" };
+
+export const CheckoutStatusMessage: FC<{
+    state: CheckoutConfirmationState;
+    onRetry?: () => void;
+}> = ({ state, onRetry }) => {
+    switch (state.status) {
+        case "checking":
+            return <LoadingStatus>Adding your Pollen…</LoadingStatus>;
+        case "credited":
+            return (
+                <StatusLine icon={<CheckIcon />}>
+                    <strong className="font-semibold text-theme-text-base">
+                        +{formatPollenPackValue(state.pollen)} Pollen added
+                    </strong>
+                </StatusLine>
+            );
+        case "expired":
+            return (
+                <div className="flex flex-col items-start gap-3">
+                    <StatusLine icon={<ClockIcon />}>
+                        Checkout expired.
+                    </StatusLine>
+                    {onRetry && (
+                        <Button icon={<RefreshIcon />} onClick={onRetry}>
+                            Buy again
+                        </Button>
+                    )}
+                </div>
+            );
+        case "failed":
+            return (
+                <div className="flex flex-col items-start gap-3">
+                    <StatusLine icon={<WarningIcon />}>
+                        The payment didn’t go through. No Pollen was added.
+                    </StatusLine>
+                    {onRetry && (
+                        <Button icon={<RefreshIcon />} onClick={onRetry}>
+                            Buy again
+                        </Button>
+                    )}
+                </div>
+            );
+        case "timeout":
+            return (
+                <StatusLine icon={<ClockIcon />}>
+                    Your Pollen will appear when Stripe confirms the payment.
+                </StatusLine>
+            );
+    }
+};
+
+const StatusLine: FC<{ icon: ReactNode; children: ReactNode }> = ({
+    icon,
+    children,
+}) => (
+    <p className="flex items-start gap-2 text-sm leading-5 text-theme-text-muted">
+        <span
+            aria-hidden="true"
+            className="mt-0.5 flex h-4 w-4 shrink-0 [&>svg]:h-full [&>svg]:w-full"
+        >
+            {icon}
+        </span>
+        <span>{children}</span>
+    </p>
+);

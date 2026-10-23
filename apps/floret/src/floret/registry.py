@@ -38,6 +38,7 @@ _METADATA_KEYS = {
     "supported_endpoints",
     "context_length",
     "category",
+    "paid_only",
     "hidden",
     "alpha",
     "fallback",
@@ -71,7 +72,7 @@ _TIER_COST_WEIGHT = {
 }
 
 _IMAGE_TEXT_PATTERNS = [
-    re.compile(p, re.I)
+    re.compile(p, re.IGNORECASE)
     for p in [
         r"\b(text|typo|font|letter|word|label|title|heading|caption|infographic|diagram|chart|graph|flowchart|mindmap|timeline|poster|banner|sign|badge|sticker|meme|comic|panel|speech.bubble|.subtitle|.overlay)\b",
         r"\b(render.*text|text.*render|legible|readable|typography)\b",
@@ -132,6 +133,8 @@ def _infer_meta(item: dict[str, Any]) -> dict[str, Any]:
         modalities.append("image")
     if category == "video" and "video" in declared_outputs:
         modalities.append("video")
+    if category == "3d" and "3d" in declared_outputs:
+        modalities.append("3d")
     if (
         category in {"text", "audio"}
         and "text" in declared_inputs
@@ -151,7 +154,7 @@ def _infer_meta(item: dict[str, Any]) -> dict[str, Any]:
         modalities.append("transcript")
     if category == "audio" and any(
         endpoint in declared_endpoints
-        for endpoint in {"/v1/audio/voice-changer", "/v1/audio/voice-isolator"}
+        for endpoint in ("/v1/audio/voice-changer", "/v1/audio/voice-isolator")
     ):
         modalities.append("audio_transform")
     if not category and (
@@ -297,6 +300,7 @@ def _infer_meta(item: dict[str, Any]) -> dict[str, Any]:
         "id": mid,
         "aliases": list(item.get("aliases") or []),
         "category": category,
+        "paid_only": item.get("paid_only", False),
         "modalities": modalities,
         "hidden": item.get("hidden", False),
         "alpha": item.get("alpha", False),
@@ -547,7 +551,6 @@ _IMAGE_TEXT_PRIORITY: list[str] = [
     "grok-imagine",
     "zimage",
     "p-image",
-    "nova-canvas",
     "klein",
     "wan-image",
     "wan-image-pro",

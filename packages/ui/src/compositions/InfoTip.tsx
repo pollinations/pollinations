@@ -5,6 +5,8 @@ type InfoTipProps = {
     text?: ReactNode;
     content?: ReactNode;
     label?: string;
+    /** Also opens on tap, for help that matters on phones. */
+    tapEnabled?: boolean;
 };
 
 /**
@@ -17,8 +19,17 @@ export const InfoTip: FC<InfoTipProps> = ({
     text,
     content,
     label = "More info",
+    tapEnabled,
 }) => (
-    <Tooltip content={content ?? text} ariaLabel={label} className="polli:ml-1">
+    // displayContents drops the inline wrapper so the badge centres on its row
+    // instead of sitting on the text baseline.
+    <Tooltip
+        content={content ?? text}
+        ariaLabel={label}
+        className="polli:ml-1"
+        displayContents
+        tapEnabled={tapEnabled}
+    >
         <span className="polli:inline-flex polli:h-4 polli:w-4 polli:items-center polli:justify-center polli:rounded-full polli:bg-surface-menu polli:font-bold polli:text-[10px] polli:leading-none polli:text-theme-text-muted polli:transition-colors polli:hover:text-theme-text-strong">
             i
         </span>

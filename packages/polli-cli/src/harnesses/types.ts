@@ -22,11 +22,21 @@ export type OffOutcome = "restored" | "stripped" | "unchanged";
 export interface HarnessResult {
     harness: string;
     label: string;
+    /** Whether the harness binary is present; adapters that can check report it. */
+    installed?: boolean;
     configured: boolean;
     model?: string;
     mcp?: boolean;
     files: string[];
     outcome?: OffOutcome;
+    routerInstalled?: boolean;
+    routerVersion?: string;
+    routerCompatible?: boolean;
+    clientInstalled?: boolean;
+    providerReady?: boolean;
+    keyReady?: boolean;
+    smokeVerified?: boolean;
+    next?: string;
 }
 
 /** One harness integration. Each adapter owns its setup strategy. */

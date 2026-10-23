@@ -24,6 +24,7 @@ const MODEL3D_BASE_SERVICES = {
         category: "3d",
         addedDate: new Date("2026-06-24").getTime(),
         priceMultiplier: 1,
+        paidOnly: true,
         flatRate: true,
 
         cost: {
@@ -46,6 +47,17 @@ const MODEL3D_BASE_SERVICES = {
                 },
             },
             "Low resolution",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "Low",
+                        "medium": "Medium",
+                        "high": "High",
+                    },
+                },
+            ],
         ),
         title: "Trellis 2",
         description: "Image-to-3D generation with selectable output detail",
@@ -64,7 +76,9 @@ const MODEL3D_BASE_SERVICES = {
         paidOnly: true,
         flatRate: true,
         cost: {
-            completionImageTokens: 0.07,
+            // InferencePort list price, $0.25 per generation (docs.inferenceport.ai
+            // p2g-api pricing table and the authenticated /v1/models catalog).
+            completionImageTokens: 0.25,
         },
         title: "NVIDIA Asset Harvester",
         description: "Image-to-3D Gaussian Splat (PLY)",

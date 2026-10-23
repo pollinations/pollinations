@@ -25,7 +25,7 @@ type PollenStatus = "limit-reached" | "no-pollen" | "unlimited";
 
 const labels: Record<PollenStatus, string> = {
     "limit-reached": "Limit reached",
-    "no-pollen": "No Pollen",
+    "no-pollen": "No pollen",
     unlimited: "Unlimited",
 };
 
@@ -54,10 +54,7 @@ function PollenStatusBadge({
                     <span aria-hidden="true">·</span>
                     <InlineLink
                         href={topUpHref}
-                        external
-                        showIcon={false}
-                        aria-label={`${label}. Top up (opens in a new tab)`}
-                        className="polli:text-current polli:hover:text-current"
+                        aria-label={`${label}. Top up`}
                     >
                         Top up
                     </InlineLink>
@@ -117,7 +114,7 @@ export function AccountPollen({
                             kind={kind === "paid" ? "paid" : "tier"}
                         />
                         <span className="polli:sr-only">
-                            {kind === "paid" ? "Paid" : "Quest"} Pollen:{" "}
+                            {kind === "paid" ? "Paid" : "Quest"} pollen:{" "}
                         </span>
                         {formatPollen(Math.max(0, amount))}
                     </span>

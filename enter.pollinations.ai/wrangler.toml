@@ -19,9 +19,9 @@ port = 3000
 directory = "dist/client"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
-# Run the Worker first so unknown paths get a 404 status (#17787); built
-# asset files are served straight from the asset layer.
-run_worker_first = ["/*", "!/assets/*"]
+# Run the Worker first so unknown paths get a 404 status (#17787).
+# The Worker forwards dashboard pages and files through ASSETS.
+run_worker_first = true
 
 [[d1_databases]]
 binding = "DB"

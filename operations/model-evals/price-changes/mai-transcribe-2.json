@@ -1,28 +1,41 @@
 {
-    "status": "blocked_pending_provider_confirmation",
-    "runtime_change": false,
+    "status": "price_applied",
+    "runtime_change": true,
     "currency": "USD",
     "price_multiplier": 0.75,
-    "merge_policy": "Keep draft. January 1, 2027 is a planning date inferred from the official offer through end of 2026, not an automatic cutover. Confirm exact cutoff/timezone, both serving-route rates and billing; add registry changes and validate before manual merge.",
+    "merge_policy": "Keep draft with MERGE-HOLD. Merge on January 1, 2027, after Microsoft's $0.10/hour offer ends with the year. Recheck the Azure and Vercel rates before merging.",
     "model": "microsoft/mai-transcribe-2",
     "feature_pr": "https://github.com/pollinations/pollinations/pull/16798",
     "current_price": {
         "per_audio_hour": 0.1
     },
     "next_price": {
-        "per_audio_hour": 0.36
+        "per_audio_hour": 0.36,
+        "source": "Microsoft model-release capsule: standard pricing $0.36/hour, checked 2026-10-23"
     },
     "merge_on": "2027-01-01",
+    "merge_date_confirmed": false,
+    "fallbacks": {
+        "microsoft/mai-transcribe-2:vercel": {
+            "per_audio_hour": 0.1,
+            "source": "https://ai-gateway.vercel.sh/v1/models lists $0.00002778/second on 2026-10-23; no post-offer rate published"
+        }
+    },
     "unknowns": [
         "Exact promotion cutoff time and timezone",
-        "Matching Vercel fallback rate on effective date"
+        "Vercel's rate after the offer ends",
+        "Azure Retail Prices lists the MAI-Transcribe-2 meter at $0.54/hour (effective 2026-10-01)"
     ],
     "sources": [
         "https://github.com/microsoft-foundry/model-releases/blob/main/models/microsoft-ai/mai-transcribe-2/README.md",
-        "https://microsoft.ai/news/mai-transcribe-2-is-the-fastest-most-accurate-and-cheapest-speech-recognition-model-in-the-world/"
+        "https://microsoft.ai/news/mai-transcribe-2-is-the-fastest-most-accurate-and-cheapest-speech-recognition-model-in-the-world/",
+        "https://microsoft.ai/models/mai-transcribe-2/",
+        "https://prices.azure.com/api/retail/prices?$filter=productName eq 'MAI Models'",
+        "https://ai-gateway.vercel.sh/v1/models"
     ],
     "required_changes": [
-        "Update Azure and Vercel route costs from confirmed provider rates",
+        "Azure route cost $0.10/hour to $0.36/hour (shared/registry/audio.ts)",
+        "Keep the Vercel fallback at $0.10/hour until Vercel publishes a new rate",
         "Retain paidOnly: false and priceMultiplier: 0.75"
     ],
     "paid_only": false

@@ -1118,6 +1118,10 @@ export const portkeyConfig: PortkeyConfigMap = {
                 providerOptions: { gateway: { only: ["deepinfra"] } },
             },
         }),
+    "moonshotai/kimi-k3.1-pro": () =>
+        createVercelAIGatewayModelConfig({
+            model: "moonshotai/kimi-k3.1-pro",
+        }),
     "meta/muse-spark-1.2": () =>
         createVercelAIGatewayModelConfig({
             model: "meta/muse-spark-1.2",

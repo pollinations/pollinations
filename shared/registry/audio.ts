@@ -1044,6 +1044,8 @@ const AUDIO_BASE_SERVICES = {
             // surcharge — the handler bills one flat completion audio unit.
             completionAudioTokens: 0.26,
         },
+        // Audio-to-audio used to omit `duration` and returned 190 s files.
+        cacheVersion: "2026-10-21-a2a-duration",
         title: "Stable Audio 3 Large",
         description:
             "Highest-quality long-form stereo music generation; priced per generation",

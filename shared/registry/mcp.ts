@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "JOBS_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "jobs",
+        name: "Jobs",
+        description:
+            "Run image, video, audio, and 3D generations as async jobs, then check, wait, and download results.",
+        binding: "JOBS_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Generation jobs use each selected model's listed rate; status polling and job downloads add no MCP fee.",
             rates: [],
         },
     },

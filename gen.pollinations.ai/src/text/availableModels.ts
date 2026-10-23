@@ -95,6 +95,28 @@ const grokTransform: TransformFn = (messages, options) =>
         ? { messages, options }
         : stripReasoning(messages, options);
 
+// Novita reasoning controls: keep chain-of-thought out of answer content.
+const separateNovitaReasoning: TransformFn = (messages, options) => {
+    const { reasoning_effort, ...rest } = options;
+    const { reasoning } = options;
+    const control = reasoning as
+        | { enabled?: boolean; effort?: string; exclude?: boolean }
+        | undefined;
+    const effort = control?.effort ?? reasoning_effort;
+    return {
+        messages,
+        options: {
+            ...rest,
+            enable_thinking:
+                control?.enabled ??
+                (effort === undefined ? undefined : effort !== "none"),
+            // Keep reasoning separate from answer content; the shared client
+            // enforces the caller's visibility controls.
+            separate_reasoning: true,
+        },
+    };
+};
+
 // Alibaba and DeepInfra Kimi reject (or garble) forced tool selection while
 // thinking is enabled.
 const forcedToolWithoutReasoning: TransformFn = (messages, options) => {
@@ -424,13 +446,25 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek/deepseek-v4.1-flash",
-        config: portkeyConfig["deepseek-ai/DeepSeek-V4.1-Flash"],
+        config: portkeyConfig["DeepSeek-V4.1-Flash"],
         transform: fireworksThinking,
     },
     {
         name: "deepseek/deepseek-v4.1-flash:fireworks",
         config: portkeyConfig["accounts/fireworks/models/deepseek-v4p1-flash"],
         transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "deepseek/deepseek-v4.1-flash-1017",
+        config: portkeyConfig[
+            "accounts/fireworks/models/deepseek-v4p1-flash-1017"
+        ],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "deepseek/deepseek-v4.1-flash-1017:deepinfra",
+        config: portkeyConfig["deepseek-ai/DeepSeek-V4.1-Flash-1017"],
+        transform: fireworksThinking,
     },
     {
         name: "deepseek/deepseek-v4-flash:deepinfra",
@@ -965,10 +999,20 @@ const models: ModelDefinition[] = [
     {
         name: "xiaomi/mimo-v2.6-flash",
         config: portkeyConfig["xiaomi/mimo-v2.6-flash"],
+        transform: separateNovitaReasoning,
+    },
+    {
+        name: "xiaomi/mimo-v2.6-flash:deepinfra",
+        config: portkeyConfig["xiaomi/mimo-v2.6-flash:deepinfra"],
     },
     {
         name: "xiaomi/mimo-v2.6-pro",
         config: portkeyConfig["xiaomi/mimo-v2.6-pro"],
+        transform: separateNovitaReasoning,
+    },
+    {
+        name: "xiaomi/mimo-v2.6-pro:deepinfra",
+        config: portkeyConfig["xiaomi/mimo-v2.6-pro:deepinfra"],
     },
     {
         name: "google/gemini-3.1-pro-preview",
@@ -1062,26 +1106,7 @@ const models: ModelDefinition[] = [
     {
         name: "inclusionai/ling-3.1-flash",
         config: portkeyConfig["inclusionai/ling-3.1-flash"],
-        transform: (messages, options) => {
-            const { reasoning_effort, ...rest } = options;
-            const { reasoning } = options;
-            const control = reasoning as
-                | { enabled?: boolean; effort?: string; exclude?: boolean }
-                | undefined;
-            const effort = control?.effort ?? reasoning_effort;
-            return {
-                messages,
-                options: {
-                    ...rest,
-                    enable_thinking:
-                        control?.enabled ??
-                        (effort === undefined ? undefined : effort !== "none"),
-                    // Keep reasoning separate from answer content; the shared client
-                    // enforces the caller's visibility controls.
-                    separate_reasoning: true,
-                },
-            };
-        },
+        transform: separateNovitaReasoning,
     },
     {
         name: "inclusionai/ling-3.1-flash:vercel:novita",
@@ -1157,6 +1182,11 @@ const models: ModelDefinition[] = [
         name: "meta/llama-4-scout",
         config: portkeyConfig["meta/llama-4-scout"],
         // No reasoning mode.
+        transform: stripReasoning,
+    },
+    {
+        name: "meta/llama-4-scout:openrouter:deepinfra-fp8-priority",
+        config: portkeyConfig["llama-scout-openrouter-deepinfra-priority"],
         transform: stripReasoning,
     },
     {

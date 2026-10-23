@@ -157,12 +157,29 @@ function parseImageParams(
         delete mergedParams.reference_images;
         delete mergedParams.reference_videos;
         delete mergedParams.reference_audios;
+        // Community video endpoints never receive a size, so the image-only
+        // 16 px floor must not reject an aspect ratio like 16x9.
+        delete mergedParams.width;
+        delete mergedParams.height;
     }
     const parseResult = ImageParamsSchema.safeParse(mergedParams);
     if (!parseResult.success) {
         throw new UpstreamError(400, {
             message: `Invalid parameters: ${parseResult.error.issues[0]?.message || "validation failed"}`,
             cause: parseResult.error.issues,
+        });
+    }
+    // A reference image the model cannot consume used to be dropped silently,
+    // billing a fresh generation that ignored the caller's picture. Reject it
+    // like the text protocols already do (docs/text-generation.md). Community
+    // endpoints get the image and decide for themselves.
+    if (
+        parseResult.data.image.length > 0 &&
+        !c.var.model.communityEndpoint &&
+        !c.var.model.definition.inputModalities?.includes("image")
+    ) {
+        throw new UpstreamError(400, {
+            message: `Invalid parameters: ${resolvedModel} does not accept image input. Choose a model that lists "image" under input_modalities.`,
         });
     }
     // Community endpoints receive the flag and decide for themselves.

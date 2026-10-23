@@ -166,6 +166,36 @@ describe("getGenerationModelRegistry", () => {
         expect(native.length).toBeLessThan(chat.length);
     });
 
+    it("advertises image edits only on models that accept image input", async () => {
+        const registry = await getGenerationModelRegistry(env);
+
+        // Text-only models cannot consume a source image, so the endpoint must
+        // not be listed where clients look up capabilities.
+        for (const id of [
+            "black-forest-labs/flux.1-schnell",
+            "tongyi-mai/z-image-turbo",
+        ]) {
+            const entry = registry.resolve(id);
+            expect(entry?.supportedEndpoints, id).not.toContain(
+                "/v1/images/edits",
+            );
+            expect(entry?.info.supported_endpoints, id).not.toContain(
+                "/v1/images/edits",
+            );
+        }
+        expect(
+            registry.resolve("black-forest-labs/flux.1-kontext-pro")
+                ?.supportedEndpoints,
+        ).toContain("/v1/images/edits");
+
+        for (const entry of registry.visibleEntries()) {
+            if (entry.definition.inputModalities?.includes("image")) continue;
+            expect(entry.supportedEndpoints, entry.id).not.toContain(
+                "/v1/images/edits",
+            );
+        }
+    });
+
     it("serves the community catalog from KV without querying D1", async () => {
         await resetGenerationModelRegistryCache(env);
         const healthy = await getGenerationModelRegistry(env);

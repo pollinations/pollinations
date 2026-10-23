@@ -227,6 +227,9 @@ const update = new Command("update")
             else {
                 printSuccess(`Agent updated: ${agent.id}`);
                 printAgents([agent]);
+                printInfo(
+                    "It can take a minute or two before this is callable.",
+                );
             }
         } catch (error) {
             printError(

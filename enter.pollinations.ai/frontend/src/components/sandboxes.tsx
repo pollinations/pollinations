@@ -58,11 +58,13 @@ type Sandbox = Size & {
     endAt: string;
 };
 
-type Pricing = {
+type Rates = { vcpuSecond: number; gibSecond: number };
+
+// Each template has its provider's rates; the top level's are other E2B
+// templates'.
+type Pricing = Rates & {
     maxRunning: number;
-    vcpuSecond: number;
-    gibSecond: number;
-    templates: Record<string, Size>;
+    templates: Record<string, Size & Rates>;
 };
 
 // E2B's longest timeout, about 68 years: gen keeps the sandbox running until
@@ -113,21 +115,31 @@ async function e2b<T>(path: string, method = "GET", body?: unknown) {
     return (text ? JSON.parse(text) : undefined) as T;
 }
 
-const perSecond = (pricing: Pricing, size: Size) =>
-    size.cpuCount * pricing.vcpuSecond +
-    (size.memoryMB / 1024) * pricing.gibSecond;
+// E2B names a sandbox's template by id, and by name in `alias`.
+const templateOf = (sandbox: Sandbox) => sandbox.alias ?? sandbox.templateID;
+
+const perSecond = (pricing: Pricing, template: string, size: Size) => {
+    const { vcpuSecond, gibSecond } = pricing.templates[template] ?? pricing;
+    return size.cpuCount * vcpuSecond + (size.memoryMB / 1024) * gibSecond;
+};
 
 const pollen = (amount: number) => `${Number(amount.toPrecision(2))} Pollen`;
 
 const sizeLabel = ({ cpuCount, memoryMB }: Size) =>
-    `${cpuCount} vCPU, ${memoryMB / 1024} GB`;
+    `${cpuCount} vCPU, ${memoryMB / 1024} GB memory`;
 
-const templateLabel = (id: string) =>
-    id === "pollinations"
-        ? "Pollinations"
-        : id === "pollinations-large"
-          ? "Pollinations Large"
-          : id;
+// An always-on sandbox runs about 720 hours a month.
+const HOURS_PER_MONTH = 720;
+
+const TEMPLATE_LABELS: Record<string, string> = {
+    pollinations: "Pollinations (E2B)",
+    "pollinations-large": "Pollinations Large (E2B)",
+    "pollinations-azure": "Pollinations (Azure)",
+    "pollinations-azure-large": "Pollinations Large (Azure)",
+    "pollinations-azure-xl": "Pollinations XL (Azure)",
+};
+
+const templateLabel = (id: string) => TEMPLATE_LABELS[id] ?? id;
 
 // Past half of E2B's longest timeout, it runs until it's stopped.
 const forever = (until: string) =>
@@ -157,7 +169,8 @@ function TemplatePicker({
         <span className="flex min-w-0 flex-1 flex-col gap-1 text-left">
             <span className="font-semibold">{templateLabel(id)}</span>
             <span className="text-xs font-normal text-theme-text-muted">
-                {sizeLabel(size)} · {pollen(perSecond(pricing, size) * 3600)}
+                {sizeLabel(size)} ·{" "}
+                {pollen(perSecond(pricing, id, size) * 3600)}
                 /hour
             </span>
         </span>
@@ -196,6 +209,7 @@ function TemplatePicker({
                                     {pollen(
                                         perSecond(
                                             pricing,
+                                            template,
                                             pricing.templates[template],
                                         ) * 3600,
                                     )}
@@ -305,10 +319,13 @@ function SandboxCard({
                         {sandbox.metadata?.name ?? sandbox.sandboxID}
                     </Text>
                     <Text size="sm" tone="muted">
-                        {templateLabel(sandbox.alias ?? sandbox.templateID)} ·{" "}
+                        {templateLabel(templateOf(sandbox))} ·{" "}
                         {sizeLabel(sandbox)} ·{" "}
-                        {pollen(perSecond(pricing, sandbox) * 3600)} an hour
-                        while running
+                        {pollen(
+                            perSecond(pricing, templateOf(sandbox), sandbox) *
+                                3600,
+                        )}{" "}
+                        an hour while running
                     </Text>
                 </div>
                 <Chip intent={running ? "success" : "neutral"} size="md">
@@ -499,10 +516,6 @@ export function Sandboxes() {
         <Button
             type="button"
             className="dashboard-add-button"
-            aria-label={
-                busyId === "new" ? "Creating sandbox…" : "Create sandbox"
-            }
-            title={busyId === "new" ? "Creating sandbox…" : "Create sandbox"}
             aria-busy={busyId === "new"}
             aria-haspopup="dialog"
             disabled={full || busyId === "new"}
@@ -515,13 +528,12 @@ export function Sandboxes() {
             }
         >
             {busyId === "new" ? (
-                <LoadingStatus>
-                    <span className="sr-only">Creating sandbox…</span>
-                </LoadingStatus>
+                <LoadingStatus>Creating sandbox…</LoadingStatus>
             ) : (
                 <>
                     <PlusIcon className="h-4 w-4" />
                     <TerminalIcon className="h-5 w-5" />
+                    <span className="ml-1">Create sandbox</span>
                 </>
             )}
         </Button>
@@ -530,6 +542,7 @@ export function Sandboxes() {
     return (
         <Section
             title="Sandboxes"
+            intro="A sandbox is a Linux computer in the cloud. Open it with ssh or VS Code. Its files stay while it’s paused, and you pay only while it runs."
             action={
                 <ButtonGroup>
                     <Button
@@ -627,14 +640,28 @@ export function Sandboxes() {
                     {pricing && (
                         <>
                             {" "}
-                            {pollen(pricing.vcpuSecond * 3600)} per vCPU +{" "}
-                            {pollen(pricing.gibSecond * 3600)} per GB each hour.
+                            {Object.entries(pricing.templates).map(
+                                ([template, size]) => {
+                                    const hourly =
+                                        perSecond(pricing, template, size) *
+                                        3600;
+                                    return (
+                                        <span key={template}>
+                                            {templateLabel(template)} (
+                                            {sizeLabel(size)}): {pollen(hourly)}{" "}
+                                            an hour, about{" "}
+                                            {pollen(hourly * HOURS_PER_MONTH)} a
+                                            month if always on.{" "}
+                                        </span>
+                                    );
+                                },
+                            )}
                             Up to {pricing.maxRunning} running at once; pause or
                             kill one to free a slot.
                         </>
                     )}{" "}
-                    Sandboxes pause when time runs out and keep their files for
-                    free. Unused time isn’t refunded.
+                    Sandboxes pause when time runs out. A paused sandbox costs
+                    nothing and keeps its files. Unused time isn’t refunded.
                 </span>
             </p>
             <div className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
@@ -791,8 +818,7 @@ export function Sandboxes() {
                                     </dt>
                                     <dd>
                                         {templateLabel(
-                                            pending.sandbox.alias ??
-                                                pending.sandbox.templateID,
+                                            templateOf(pending.sandbox),
                                         )}
                                         <span className="text-theme-text-muted">
                                             {" "}
@@ -808,6 +834,9 @@ export function Sandboxes() {
                                                 {pollen(
                                                     perSecond(
                                                         pricing,
+                                                        templateOf(
+                                                            pending.sandbox,
+                                                        ),
                                                         pending.sandbox,
                                                     ) * 3600,
                                                 )}

@@ -1,0 +1,88 @@
+name: News / Deploy posts
+
+# Hold each promoted main PR, and each master PR, until its affected deployment
+# jobs succeed. Docs-only promotions need no deploy. The delivery record
+# prevents duplicate sends.
+on:
+  push:
+    branches: [production]
+  workflow_run:
+    workflows:
+      - 'Deploy / Cloudflare production'
+      - 'Deploy / pollinations.ai'
+      - 'Deploy / Applications'
+      - 'Deploy / E2B templates'
+      - 'Deploy / Portkey gateway'
+      - 'Deploy / Legacy Cloudflare caches'
+    types: [completed]
+    branches: [production, main]  # the legacy cache deploy is dispatched from main
+  workflow_dispatch:
+    inputs:
+      preview:
+        description: 'Show held PRs and deployment readiness without saving or sending'
+        type: boolean
+        default: true
+
+permissions: {}
+
+# One run at a time, so the posts go out in deploy order; none is cancelled.
+concurrency:
+  group: news-deploy-posts
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  posts:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # the delivery record on the news branch
+      actions: read
+      pull-requests: read
+      issues: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || 'main' }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Checkout production deployment rules
+        uses: actions/checkout@v5
+        with:
+          ref: production
+          path: production-rules
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/workflows/
+            /operations/deployment/
+            /apps/*/deploy.json
+            /operations/*/deploy.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests pyyaml
+
+      - name: Post the shipped PRs
+        env:
+          PREVIEW: ${{ inputs.preview || false }}
+          GITHUB_TOKEN: ${{ github.token }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
+          DISCORD_REALTIME_WEBHOOK_URL: ${{ secrets.DISCORD_REALTIME_WEBHOOK_URL }}
+        run: |
+          flags=()
+          [ "$PREVIEW" = true ] && flags+=(--preview)
+          python operations/social/scripts/deploy_posts.py --production production-rules "${flags[@]}"
+
+      - name: Report failure as an issue
+        if: failure()
+        uses: ./.github/actions/failure-issue
+        with:
+          token: ${{ github.token }}

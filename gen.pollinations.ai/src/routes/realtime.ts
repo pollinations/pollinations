@@ -698,6 +698,25 @@ function validateUpstreamRealtimeEvent(
         : null;
 }
 
+/**
+ * The provider's session events name the deployment, not the model callers
+ * request ("gpt-realtime-2-1" is an Azure deployment id, not a name in
+ * /models). Rewrite the top-level session.model to the registry's public
+ * identity, as every other surface does.
+ */
+function rewriteSessionModel(
+    data: unknown,
+    deployment: string,
+    publicModel: string,
+): unknown {
+    const event = asRecord(parseEventData(data));
+    const session = asRecord(event.session);
+    if (typeof session.model !== "string") return data;
+    if (session.model !== deployment) return data;
+    session.model = publicModel;
+    return JSON.stringify(event);
+}
+
 function rewriteLiveTranscriptionModel(
     data: unknown,
     from: string | readonly string[],
@@ -1121,7 +1140,14 @@ function proxyRealtimeWebSockets(
                           transcriptionModel,
                       );
                   })()
-            : undefined,
+            : (data) =>
+                  rewriteSessionModel(
+                      data,
+                      REALTIME_ROUTES[
+                          c.var.model.resolved as AzureRealtimeModelName
+                      ].deployment,
+                      c.var.model.resolved,
+                  ),
     );
     wireClose(c, downstream, upstream, tracking);
     wireClose(c, upstream, downstream, tracking);

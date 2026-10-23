@@ -2306,26 +2306,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "mistralai/mistral-large-4": {
     "cost": {
-      "completionTextTokens": 0.00000209,
-      "promptCachedTokens": 0.00000007,
-      "promptTextTokens": 0.00000068,
+      "completionTextTokens": 0.00000418,
+      "promptCachedTokens": 0.00000014,
+      "promptTextTokens": 0.00000136,
     },
     "price": {
-      "completionTextTokens": 0.00000209,
-      "promptCachedTokens": 0.00000007,
-      "promptTextTokens": 0.00000068,
+      "completionTextTokens": 0.00000418,
+      "promptCachedTokens": 0.00000014,
+      "promptTextTokens": 0.00000136,
     },
   },
   "mistralai/mistral-large-4:vercel": {
     "cost": {
-      "completionTextTokens": 0.00000209,
-      "promptCachedTokens": 0.00000007,
-      "promptTextTokens": 0.00000068,
+      "completionTextTokens": 0.00000418,
+      "promptCachedTokens": 0.00000014,
+      "promptTextTokens": 0.00000136,
     },
     "price": {
-      "completionTextTokens": 0.00000209,
-      "promptCachedTokens": 0.00000007,
-      "promptTextTokens": 0.00000068,
+      "completionTextTokens": 0.00000418,
+      "promptCachedTokens": 0.00000014,
+      "promptTextTokens": 0.00000136,
     },
   },
   "mistralai/mistral-small-3.2": {
@@ -3876,6 +3876,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
   },
   "stepfun/step-3.7-flash": {
+    "cost": {
+      "completionTextTokens": 0.00000115,
+      "promptCachedTokens": 0.00000004,
+      "promptTextTokens": 0.0000002,
+    },
+    "price": {
+      "completionTextTokens": 0.00000115,
+      "promptCachedTokens": 0.00000004,
+      "promptTextTokens": 0.0000002,
+    },
+  },
+  "stepfun/step-3.7-flash:vercel": {
     "cost": {
       "completionTextTokens": 0.00000115,
       "promptCachedTokens": 0.00000004,

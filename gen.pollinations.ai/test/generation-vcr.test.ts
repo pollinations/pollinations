@@ -91,6 +91,7 @@ function createGenerationMocks() {
     env.OPENROUTER_API_KEY = "openrouter-test-key";
     env.AZURE_MYCELI_PROD_API_KEY = "azure-test-key";
     env.DEEPINFRA_API_KEY = "deepinfra-test-key";
+    env.NOVITA_API_KEY = "novita-test-key";
     env.REPLICATE_API_TOKEN = "replicate-test-key";
     const portkeyHost = new URL(env.PORTKEY_GATEWAY_URL).host;
     const portkeyState: {
@@ -99,6 +100,18 @@ function createGenerationMocks() {
     } = {
         requests: [],
         failStatus: null,
+    };
+    const fakeChatProvider = async (request: Request) => {
+        portkeyState.requests.push(
+            (await request.clone().json()) as Record<string, unknown>,
+        );
+        if (portkeyState.failStatus) {
+            return Response.json(
+                { error: { message: "chat provider unavailable" } },
+                { status: portkeyState.failStatus },
+            );
+        }
+        return fakePortkeyResponse(request);
     };
     const replicateState: {
         requests: Array<{
@@ -342,21 +355,9 @@ function createGenerationMocks() {
         portkeyDirect: {
             state: portkeyState,
             handlerMap: {
-                [portkeyHost]: async (request) => {
-                    portkeyState.requests.push(
-                        (await request.clone().json()) as Record<
-                            string,
-                            unknown
-                        >,
-                    );
-                    if (portkeyState.failStatus) {
-                        return Response.json(
-                            { error: { message: "chat provider unavailable" } },
-                            { status: portkeyState.failStatus },
-                        );
-                    }
-                    return fakePortkeyResponse(request);
-                },
+                [portkeyHost]: fakeChatProvider,
+                // Direct chat providers answer like the Portkey gateway.
+                "api.novita.ai": fakeChatProvider,
             },
             reset: () => {
                 portkeyState.requests = [];

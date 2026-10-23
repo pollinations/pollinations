@@ -1168,11 +1168,9 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "stepfun/step-5-preview",
         }),
 
-    // -- DeepInfra (StepFun) --------------------------------------------------
-    "stepfun-ai/Step-3.7-Flash": () =>
-        createDeepInfraModelConfig({
-            model: "stepfun-ai/Step-3.7-Flash",
-        }),
+    // -- Novita (StepFun) -----------------------------------------------------
+    "stepfun/step-3.7-flash": () =>
+        createNovitaModelConfig({ model: "stepfun/step-3.7-flash" }),
 
     // -- InferencePort (Lightning routers) ------------------------------------
     // "lightning" is the router id that `lightning-text-v2` aliases.

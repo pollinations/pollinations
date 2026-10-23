@@ -73,7 +73,7 @@ describe("serveSite", () => {
 
     it("serves the landing page on the bare domain, never a site", async () => {
         const { env, get } = sitesEnv(async () => new Response("hello"));
-        const assets = vi.fn(async () => new Response("font"));
+        const assets = vi.fn(async () => new Response("icon"));
         env.ASSETS = { fetch: assets } as unknown as Fetcher;
 
         const page = await serveSite(
@@ -85,13 +85,13 @@ describe("serveSite", () => {
         );
         const html = await page?.text();
         expect(html).toContain("polli sites deploy");
-        expect(html).toContain("<svg");
+        expect(html).toContain("@pollinations/ui@");
 
-        const font = await serveSite(
-            new Request("https://pollinations.app/fonts/lct-mogi-a.woff2"),
+        const icon = await serveSite(
+            new Request("https://pollinations.app/favicon.ico"),
             env,
         );
-        expect(await font?.text()).toBe("font");
+        expect(await icon?.text()).toBe("icon");
         expect(get).not.toHaveBeenCalled();
     });
 

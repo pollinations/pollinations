@@ -8,7 +8,8 @@ import {
 } from "../utils/coreUtils.js";
 
 // Permissions are enforced by the API: the read tools need `account:usage`, the
-// key tools `account:keys`. Its error message is returned unchanged.
+// key tools `account:keys`, the site tools `account:machines`. Its error
+// message is returned unchanged.
 async function callAccount(
     path,
     context,
@@ -101,6 +102,22 @@ const revokeKey = ({ id }, context) =>
     callAccount(`/account/keys/${encodeURIComponent(id)}`, context, {
         method: "DELETE",
     });
+
+const sitePath = (name) => `/account/sites/${encodeURIComponent(name)}`;
+
+const listSites = (_params, context) => callAccount("/account/sites", context);
+
+const deploySite = ({ name, files }, context) =>
+    callAccount(sitePath(name), context, { method: "PUT", body: { files } });
+
+const deleteSite = ({ name }, context) =>
+    callAccount(sitePath(name), context, { method: "DELETE" });
+
+const siteName = z
+    .string()
+    .describe(
+        "Site name: 3-32 lowercase letters, digits and hyphens, starting with a letter",
+    );
 
 export const accountTools = [
     [
@@ -230,5 +247,44 @@ export const accountTools = [
             "Requires 'account:keys' permission.",
         { id: z.string().describe("Key id from listKeys") },
         revokeKey,
+    ],
+    [
+        "listSites",
+        "List the account's static sites at https://<name>.pollinations.app and the site limits (`polli sites list`). " +
+            "Requires 'account:machines' permission.",
+        {},
+        listSites,
+    ],
+    [
+        "deploySite",
+        "Publish a static site at https://<name>.pollinations.app, replacing what was there (`polli sites deploy`). " +
+            "Send every file inline; index.html is required, up to 5 MB per request. The first deploy claims the name. " +
+            "Requires 'account:machines' permission.",
+        {
+            name: siteName,
+            files: z
+                .array(
+                    z.object({
+                        file: z
+                            .string()
+                            .describe("Path, e.g. index.html or assets/app.js"),
+                        data: z.string().describe("File content"),
+                        encoding: z
+                            .enum(["utf-8", "base64"])
+                            .optional()
+                            .describe(
+                                "utf-8 (default) for text, base64 for images and other binary files",
+                            ),
+                    }),
+                )
+                .min(1),
+        },
+        deploySite,
+    ],
+    [
+        "deleteSite",
+        "Take a site offline and free its name (`polli sites delete`). Requires 'account:machines' permission.",
+        { name: siteName },
+        deleteSite,
     ],
 ];

@@ -244,6 +244,19 @@ const decisionHandlers = factory.createHandlers(
     generateDecision,
 );
 
+// Shared by `/alpha/decisions` and its TypeSafe-path alias `/v1/systemone`.
+const decisionResponses = {
+    200: {
+        description: "Decision answers with token usage",
+        content: {
+            "application/json": {
+                schema: resolver(CreateDecisionResponseSchema),
+            },
+        },
+    },
+    ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
+};
+
 const responsesHandlers = factory.createHandlers(
     textBodyLimit,
     validator("json", CreateResponseRequestSchema),
@@ -560,7 +573,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Image & Video Models",
             description:
-                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `output_modalities` field to distinguish image vs video models. When authenticated: models are filtered by key permissions, and `paid_only` models are hidden if the account has no paid balance or the key only spends Quest Pollen. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here. Check the `output_modalities` field to distinguish image vs video models. When authenticated: models are filtered by key permissions, and `paid_only` models are hidden if the account has no paid balance or the key only spends Quest Pollen. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
@@ -695,7 +708,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["✍️ Text"],
             summary: "Chat Completions",
             description: [
-                "Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.",
+                "Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API. Use an OpenAI SDK by pointing it to `https://gen.pollinations.ai`.",
                 "",
                 "Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.",
                 "JSON request bodies may be up to 100 MiB when inline media use image_url.url, video_url.url, or file.file_url data URIs. Larger requests also accept PDF file_data on OpenRouter models (a PDF data URI or raw base64 with mime_type application/pdf) and base64 input_audio.data on thinkingmachines/inkling. For requests over 32 MiB, each inline media item may be up to 20 MiB and the chat JSON must shrink below 16 MiB after media are replaced with URLs. Stored media are unlisted but publicly readable for provider access; retention is 30 days.",
@@ -703,6 +716,8 @@ export const proxyRoutes = new Hono<Env>()
                 "Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.",
                 "",
                 "Metadata is passed unchanged to endpoint agents; see the agent’s documentation for supported keys.",
+                "",
+                "Identical requests may be answered from a shared cache, also for callers without an API key. Change the prompt or `seed` to get a new answer.",
                 "",
                 mediaResponseDescription,
             ].join("\n"),
@@ -751,7 +766,7 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "Answer typed questions about a state and get calibrated probabilities instead of free text. Request-compatible with the OpenRouter decisions API.",
                 "",
-                "Each question is one of three types. `choice` selects among named options and returns the chosen key with per-option probabilities. `score` rates on an ordered scale and returns a fractional position plus a `legend` mapping each index back to its rung — read the legend before interpreting the score. `noul` returns the probability that a yes/no proposition is true.",
+                "Each question is one of three types. `choice` selects among named options and returns the chosen key with per-option probabilities. `score` rates on an ordered scale and returns a fractional position plus a `legend` mapping each index back to its rung. Read the legend before interpreting the score. `noul` returns the probability that a yes/no proposition is true.",
                 "",
                 "Questions are answered independently and returned under the keys you supplied. `state`, `instructions`, and criteria values accept a string or arbitrary JSON.",
                 "",
@@ -759,17 +774,18 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Models that support this endpoint list `/alpha/decisions` in `supported_endpoints`. The response is JSON only; there is no streaming.",
             ].join("\n"),
-            responses: {
-                200: {
-                    description: "Decision answers with token usage",
-                    content: {
-                        "application/json": {
-                            schema: resolver(CreateDecisionResponseSchema),
-                        },
-                    },
-                },
-                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
-            },
+            responses: decisionResponses,
+        }),
+        ...decisionHandlers,
+    )
+    .post(
+        "/v1/systemone",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Create Decision (System One path)",
+            description:
+                "TypeSafe's System One path for clients that append `/v1/systemone` to a base URL. Same request, response, models, and billing as `POST /alpha/decisions`.",
+            responses: decisionResponses,
         }),
         ...decisionHandlers,
     )
@@ -882,6 +898,8 @@ export const proxyRoutes = new Hono<Env>()
                 "Generate text from an OpenAI-style messages array and return the assistant content directly.",
                 "",
                 "Use `/v1/chat/completions` when you need the full OpenAI-compatible JSON response.",
+                "",
+                "Identical requests may be answered from a shared cache, also for callers without an API key. Change the prompt or `seed` to get a new answer.",
             ].join("\n"),
             responses: {
                 200: {
@@ -909,7 +927,9 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "Generate text from a prompt via a simple GET request. Returns plain text.",
                 "",
-                "This is a simplified alternative to the OpenAI-compatible `/v1/chat/completions` endpoint — ideal for quick prototyping or simple integrations.",
+                "This is a simplified alternative to the OpenAI-compatible `/v1/chat/completions` endpoint for quick prototyping or simple integrations.",
+                "",
+                "Identical requests may be answered from a shared cache, also for callers without an API key. Change the prompt or `seed` to get a new answer.",
             ].join("\n"),
             responses: {
                 200: {
@@ -1256,6 +1276,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Edit images using a text prompt and one or more source images.",
                 "Accepts JSON with image URLs or multipart/form-data with file uploads.",
+                "Video models that advertise this endpoint in `/models` use the images as frame inputs. The Pollinations extensions `duration` (seconds) and `audio` (boolean) are forwarded in both JSON and multipart requests; supported values depend on the model.",
                 'Set response_format to "url" for a stored media URL, or "b64_json" for base64 image data (default).',
                 "Community image models forward edits to the registrant's OpenAI-compatible endpoint as multipart form data.",
                 "",
@@ -1274,8 +1295,10 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
+        // Editing defaults to a cheap model that reads the source image; the
+        // generation default (schnell) is text-only and would drop it.
         resolveModel("generate.image", {
-            defaultModel: "black-forest-labs/flux.1-schnell",
+            defaultModel: "openai/gpt-image-1-mini",
         }),
         track("generate.image"),
         every(prepareOpenAIImageEdit, formatOpenAIImageResponse),

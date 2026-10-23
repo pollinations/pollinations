@@ -247,6 +247,32 @@ describe("generation request deduplication", () => {
         );
     });
 
+    it("reports a fresh generation as a MISS and saves it only once", async () => {
+        const cache = new Map<string, string>();
+        const adapter = createAdapter(cache);
+        const capture = vi.spyOn(adapter, "capture");
+        const coordinator = {
+            async startAndWait() {
+                cache.set("same-request", "generated");
+                return { status: "generated" as const };
+            },
+        };
+        const bindings = {
+            GENERATION_COORDINATOR: { getByName: () => coordinator },
+        } as unknown as CloudflareBindings;
+
+        const response = await createApp(adapter).app.fetch(
+            new Request("https://gen.pollinations.ai/generate"),
+            bindings,
+            executionContext(),
+        );
+
+        expect(await response.text()).toBe("generated");
+        expect(response.headers.get("X-Cache")).toBe("MISS");
+        // The detached executor already saved it; the outer cache must not.
+        expect(capture).not.toHaveBeenCalled();
+    });
+
     it("preserves raw JSON and binary request bodies", async () => {
         for (const body of [
             new TextEncoder().encode(

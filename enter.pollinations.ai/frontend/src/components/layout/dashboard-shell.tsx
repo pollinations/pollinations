@@ -47,6 +47,7 @@ import {
     DASHBOARD_NAV_ITEMS,
     type DashboardPage,
     type DashboardPath,
+    dashboardNavItems,
 } from "./dashboard-theme.ts";
 
 /** Counts what the page still waits for; the shell shows one status while > 0. */
@@ -149,7 +150,7 @@ const accountMenuLinks: readonly AccountMenuLink[] = [
 ];
 
 export const DashboardShell: FC<DashboardShellProps> = ({
-    navItems = DASHBOARD_NAV_ITEMS,
+    navItems = dashboardNavItems(),
     accountName,
     githubAvatarUrl,
     onSignOut,
@@ -575,11 +576,13 @@ const BrandLinks: FC<{ links: readonly BrandLink[] }> = ({ links }) => (
     </div>
 );
 
+// No noreferrer: GitHub's traffic report credits enter.pollinations.ai only
+// when the referrer travels, and it is our only count of clicks to the repo.
 const BrandLinkRow: FC<BrandLink> = ({ href, label, icon, text, count }) => (
     <a
         href={href}
         target="_blank"
-        rel="noopener noreferrer"
+        rel="noopener"
         aria-label={label}
         className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-surface-opaque/55 py-[3px] pr-[10px] pl-[7px] text-micro font-medium leading-none text-theme-text-strong/80 transition-colors hover:border-theme-text-strong/15 hover:bg-surface-opaque hover:text-theme-text-strong"
     >

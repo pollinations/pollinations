@@ -56,10 +56,25 @@ export async function checkQuestsForUser(
     const sourceResults = await Promise.all(
         groups.map((group) => evaluateGroup(ctx, group, user)),
     );
-    const proposals = sourceResults.flatMap((entry) => entry.proposals);
-    const rewardInputs = proposals.map((proposal) =>
-        toReward(proposal, user.githubId),
+    // An account earns each per-user quest once, even when its reward
+    // identity changes (a Google user connecting GitHub).
+    const earned = new Set(
+        (
+            await db
+                .select({ questId: schema.rewards.questId })
+                .from(schema.rewards)
+                .where(eq(schema.rewards.userId, user.id))
+        ).map((reward) => reward.questId),
     );
+    const proposals = sourceResults
+        .flatMap((entry) => entry.proposals)
+        .filter(
+            (proposal) =>
+                proposal.idempotencyKey ||
+                proposal.quest.scope === "once" ||
+                !earned.has(proposal.quest.id),
+        );
+    const rewardInputs = proposals.map((proposal) => toReward(proposal, user));
     log.info(
         "QUEST_CHECK_PROPOSALS: userId={userId} count={count} proposals={proposals}",
         {
@@ -114,8 +129,16 @@ async function loadQuestUser(
             id: schema.user.id,
             githubId: schema.user.githubId,
             githubUsername: schema.user.githubUsername,
+            googleId: schema.account.accountId,
         })
         .from(schema.user)
+        .leftJoin(
+            schema.account,
+            and(
+                eq(schema.account.userId, schema.user.id),
+                eq(schema.account.providerId, "google"),
+            ),
+        )
         .where(eq(schema.user.id, userId))
         .limit(1);
 

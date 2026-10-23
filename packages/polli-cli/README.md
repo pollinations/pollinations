@@ -65,6 +65,7 @@ polli gen audio "Hello world" --voice nova --output speech.mp3
 polli gen audio "read it to me" --play                # plays back after saving (blocks until done)
 polli gen audio "Hello world" --timestamps            # also saves speech.mp3.json with character timings
 polli gen video "a waterfall in slow motion" --duration 5 --output clip.mp4
+polli gen video "a waterfall in slow motion" --duration 5 --estimate  # cost estimate only, nothing generated
 polli gen 3d "a red fox" --output fox.glb
 polli gen 3d --image https://media.pollinations.ai/abc --resolution high
 polli gen embeddings "first text" "second text"        # one vector per line
@@ -189,19 +190,20 @@ See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CO
 
 ## Sandboxes
 
-Linux VMs from E2B, paid from your wallet (alpha).
+Linux VMs on E2B or Azure, paid from your wallet (alpha).
 
 ```bash
 polli sandbox create              # prints the id and sets up ssh
 polli sandbox create --timeout 0  # runs until you pause or kill it
 polli sandbox create pollinations-large  # 4 vCPU, 8 GB
+polli sandbox create pollinations-azure  # on Azure; pollinations-azure-large and pollinations-azure-xl (8 vCPU, 16 GB) too
 ssh <id>.polli                    # scp and rsync work too
 polli sandbox timeout <id> 14400  # keep it running 4 hours without ssh
 polli sandbox pause <id>
 polli sandbox kill <id>
 ```
 
-The default template, and `pollinations-large`, come logged in with the coding harnesses installed; the first interactive `ssh` connects them. See [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) for cost, limits, and using E2B's own CLI and SDKs.
+The `pollinations` templates, on E2B or Azure, come logged in with the coding harnesses installed; the first interactive `ssh` connects them. See [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) for cost, limits, and using E2B's own CLI and SDKs.
 
 ## Links
 

@@ -19,8 +19,7 @@ const mocks = vi.hoisted(() => ({
     fetchHarnessModels: vi.fn(async (selected: string) => [
         { id: selected, contextWindow: 128000, input: ["text"] },
     ]),
-    keyUsageCount: vi.fn(async () => 0),
-    waitForKeyUsageIncrease: vi.fn(async () => 1),
+    gen: vi.fn(),
 }));
 
 vi.mock("./keys.js", () => ({
@@ -29,10 +28,7 @@ vi.mock("./keys.js", () => ({
 vi.mock("./models.js", () => ({
     fetchHarnessModels: mocks.fetchHarnessModels,
 }));
-vi.mock("./usage-proof.js", () => ({
-    keyUsageCount: mocks.keyUsageCount,
-    waitForKeyUsageIncrease: mocks.waitForKeyUsageIncrease,
-}));
+vi.mock("../lib/api.js", () => ({ gen: mocks.gen }));
 
 import {
     codex,
@@ -170,8 +166,7 @@ const readState = () =>
 beforeEach(() => {
     mocks.resolveHarnessKey.mockClear();
     mocks.fetchHarnessModels.mockClear();
-    mocks.keyUsageCount.mockClear();
-    mocks.waitForKeyUsageIncrease.mockClear();
+    mocks.gen.mockClear();
 
     home = mkdtempSync(join(tmpdir(), "polli-codex-harness-"));
     router = join(home, "router");
@@ -257,11 +252,8 @@ describe("Codex harness", () => {
         expect(mocks.fetchHarnessModels).toHaveBeenCalledWith(
             "z-ai/glm-5.3-flash",
         );
-        expect(mocks.waitForKeyUsageIncrease).toHaveBeenCalledWith(
-            "sk_new",
-            0,
-            expect.objectContaining({ afterMs: expect.any(Number) }),
-        );
+        // gen can answer the smoke test from its cache without a usage row (#18053).
+        expect(mocks.gen).not.toHaveBeenCalled();
     });
 
     it("reuses the child key already stored by Codex Router", async () => {

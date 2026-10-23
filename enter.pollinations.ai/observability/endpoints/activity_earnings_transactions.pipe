@@ -25,10 +25,10 @@ SQL >
         FROM activity_earnings_events
         WHERE
             dev_user_id = {{ String(dev_user_id, '') }}
-            {% if defined(since) %} AND timestamp >= {{ DateTime(since) }}
+            {% if defined(since) %} AND timestamp >= toDateTime({{ String(since) }}, {{ String(timezone, 'UTC') }})
             {% else %} AND timestamp >= now() - INTERVAL 30 DAY
             {% end %}
-            {% if defined(until) %} AND timestamp < {{ DateTime(until) }} {% end %}
+            {% if defined(until) %} AND timestamp < toDateTime({{ String(until) }}, {{ String(timezone, 'UTC') }}) {% end %}
         GROUP BY dev_user_id, source, entity_id, event_id
     )
     ORDER BY event_timestamp DESC, cursor_event_id DESC

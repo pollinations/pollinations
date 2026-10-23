@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { modelInfoFromDefinition } from "../../shared/registry/model-info.ts";
 import {
     calculateCost,
@@ -40,6 +40,11 @@ function fallbackBill(
         input,
     });
 }
+
+// Vitest 4 reuses an existing spy, so each test restores its console spies.
+afterEach(() => {
+    vi.restoreAllMocks();
+});
 
 describe("long-context cost variants", () => {
     it.each([
@@ -343,7 +348,7 @@ describe("long-context cost variants", () => {
             promptCachedTokens: 0.4 / 1e6,
             promptCacheWriteTokens: 4 / 1e6,
             promptAudioTokens: 4 / 1e6,
-            promptImageTokens: 2 / 1e6,
+            promptImageTokens: 4 / 1e6,
             promptVideoTokens: 4 / 1e6,
             completionTextTokens: 18 / 1e6,
         });

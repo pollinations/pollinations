@@ -1925,9 +1925,16 @@ export const accountRoutes = new Hono<Env>()
                 } else delete permissions.models;
             }
             if (accountPermissions !== undefined) {
+                // Publishable keys are public; they never hold account
+                // scopes (see createApiKeyForUser). An edit clears any a
+                // key somehow already has instead of setting new ones.
                 const account =
-                    accountPermissions &&
-                    sanitizeAuthorizeAccountPermissions(accountPermissions);
+                    key.prefix === "pk"
+                        ? null
+                        : accountPermissions &&
+                          sanitizeAuthorizeAccountPermissions(
+                              accountPermissions,
+                          );
                 if (account) permissions.account = account;
                 else delete permissions.account;
             }

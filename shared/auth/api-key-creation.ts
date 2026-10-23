@@ -244,8 +244,12 @@ export async function createApiKeyForUser({
         }
     }
 
-    const safeAccountPerms =
-        sanitizeAuthorizeAccountPermissions(accountPermissions);
+    // Publishable keys are public by design (embedded in frontends, stored
+    // retrievable), so account scopes on one would make it an account
+    // credential. Drop them; account permissions belong on secret keys.
+    const safeAccountPerms = isPublishable
+        ? null
+        : sanitizeAuthorizeAccountPermissions(accountPermissions);
 
     const permissions: Record<string, string[]> = {};
     if (allowedModels) {

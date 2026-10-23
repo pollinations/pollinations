@@ -2462,6 +2462,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000003,
     },
   },
+  "moonshotai/kimi-k3.1-pro-highspeed": {
+    "cost": {
+      "completionTextTokens": 0.00002,
+      "promptCachedTokens": 0.0000002,
+      "promptTextTokens": 0.000004,
+    },
+    "price": {
+      "completionTextTokens": 0.00002,
+      "promptCachedTokens": 0.0000002,
+      "promptTextTokens": 0.000004,
+    },
+  },
   "moonshotai/kimi-k3:deepinfra": {
     "cost": {
       "completionTextTokens": 0.00001425,

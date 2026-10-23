@@ -329,6 +329,14 @@ export const CHAT_PARAMETERS = {
         "top_p",
     ],
     museSpark: [...CHAT, "temperature", "tools"],
+    // Vercel AI Gateway Kimi K3.1 endpoint parameters (2026-10-23).
+    vercelKimiK31: [
+        ...TOOL_CHAT,
+        ...OPENROUTER_REASONING,
+        "temperature",
+        "stop",
+        "structured_outputs",
+    ],
     // OpenRouter endpoint parameters (2026-10-12); Meta is its only endpoint.
     openRouterMuseWonder: [
         ...TOOL_CHAT,

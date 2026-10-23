@@ -902,9 +902,9 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "Extract structured content from documents and images and get Markdown with layout and bounding boxes for embedded images. The request and response follow Mistral's OCR API, but `/alpha/ocr` is experimental and may change without a version bump.",
                 "",
-                "**Input:** Pass a document via `document_url` (PDF or image URL) or `image_url` (base64 data URL). Use `include_image_base64` to embed extracted images as base64. `document_url` must be a public https URL that the upstream can fetch; private hosts and embedded credentials are rejected.",
+                "**Input:** Pass a document via `document_url` (PDF or image URL) or `image_url` (base64 data URL). Use `include_image_base64` to embed extracted images as base64. `document_url` must be a public https URL that the upstream can fetch, or a base64 PDF data URL (`data:application/pdf;base64,...`); private hosts and embedded credentials are rejected. Requesting only pages the document does not have returns 400.",
                 "",
-                "**Models:** `mistralai/mistral-ocr` is the only listing today. Defaults to `mistralai/mistral-ocr`.",
+                "**Models:** `mistralai/mistral-ocr-4.1` is the only listing today. Defaults to `mistralai/mistral-ocr-4.1`.",
                 "",
                 "**Billing:** $0.004 per page reported in `usage_info.pages_processed`. The returned Markdown is included in that per-page price.",
             ].join("\n"),

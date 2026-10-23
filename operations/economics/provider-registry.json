@@ -3341,7 +3341,7 @@
       "id": "mistral",
       "aliases": [],
       "modelLabels": {
-        "mistral-ocr": "mistralai/mistral-ocr",
+        "mistral-ocr": "mistralai/mistral-ocr-4.1",
         "Mistral Small 2603": [
           {
             "from": "2026-09",

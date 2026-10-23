@@ -18,7 +18,7 @@ const PAGES_PROCESSED = 3;
 const PRICE_PER_PAGE = 0.004;
 
 const OCR_RESPONSE = {
-    model: "mistral-ocr-latest",
+    model: "mistral-ocr-4-1",
     pages: [
         {
             index: 0,
@@ -112,7 +112,7 @@ describe("POST /alpha/ocr", () => {
         expect(upstreamUrl).toBe(MISTRAL_OCR_URL);
         expect(upstreamAuth).toBe(`Bearer ${env.MISTRAL_API_KEY as string}`);
         expect(upstreamBody).toMatchObject({
-            model: "mistral-ocr-latest",
+            model: "mistral-ocr-4-1",
             document: {
                 type: "document_url",
                 document_url: "https://example.com/invoice.pdf",
@@ -120,7 +120,7 @@ describe("POST /alpha/ocr", () => {
             include_image_base64: false,
         });
         expect(response.headers.get("x-model-used")).toBe(
-            "mistralai/mistral-ocr",
+            "mistralai/mistral-ocr-4.1",
         );
         expect(response.headers.get("x-usage-prompt-image-tokens")).toBe(
             String(PAGES_PROCESSED),
@@ -135,7 +135,7 @@ describe("POST /alpha/ocr", () => {
         const billed = events.filter((event) => event.isBilledUsage === true);
         expect(billed).toHaveLength(1);
         expect(billed[0]).toMatchObject({
-            modelUsed: "mistralai/mistral-ocr",
+            modelUsed: "mistralai/mistral-ocr-4.1",
             tokenCountPromptImage: PAGES_PROCESSED,
         });
         expect(billed[0].totalPrice).toBeCloseTo(
@@ -149,6 +149,8 @@ describe("POST /alpha/ocr", () => {
         ["a file scheme", "file:///etc/passwd"],
         ["a private host", "https://169.254.169.254/latest/meta-data"],
         ["embedded credentials", "https://user:pass@example.com/invoice.pdf"],
+        ["a malformed URL", "not a url"],
+        ["a non-PDF data URL", "data:text/html;base64,PGgxPmhpPC9oMT4="],
     ])("rejects document_url with %s", async (_label, documentUrl) => {
         const caller = await createTestApiKey({
             user: { tierBalance: 0, packBalance: 10 },
@@ -176,6 +178,107 @@ describe("POST /alpha/ocr", () => {
         expect(response.status).toBe(400);
         expect(upstream).not.toHaveBeenCalled();
         expect(await getUserBalance(db, caller.userId)).toEqual(before);
+    });
+
+    it("forwards a base64 PDF data URL to the provider", async () => {
+        const caller = await createTestApiKey({
+            user: { tierBalance: 0, packBalance: 10 },
+        });
+        const dataUrl = "data:application/pdf;base64,JVBERi0xLjQK";
+        let upstreamBody: Record<string, unknown> | undefined;
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (request.url === MISTRAL_OCR_URL) {
+                    upstreamBody = (await request.json()) as Record<
+                        string,
+                        unknown
+                    >;
+                    return Response.json(OCR_RESPONSE);
+                }
+                if (request.url.startsWith("http://localhost:7181/")) {
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const response = await fetchGen(
+            new Request("https://gen.pollinations.ai/alpha/ocr", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${caller.key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    document: { type: "document_url", document_url: dataUrl },
+                }),
+            }),
+        );
+
+        expect(response.status).toBe(200);
+        expect(upstreamBody?.document).toEqual({
+            type: "document_url",
+            document_url: dataUrl,
+        });
+    });
+
+    it("returns a 400 and charges nothing when no requested page exists", async () => {
+        const caller = await createTestApiKey({
+            user: { tierBalance: 0, packBalance: 10 },
+        });
+        const before = await getUserBalance(db, caller.userId);
+        const events: TinybirdEvent[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (request.url === MISTRAL_OCR_URL) {
+                    return Response.json({
+                        model: "mistral-ocr-4-1",
+                        pages: [],
+                        usage_info: { pages_processed: 0, doc_size_bytes: 1 },
+                    });
+                }
+                if (request.url.startsWith("http://localhost:7181/")) {
+                    events.push(
+                        ...((await request.text())
+                            .split("\n")
+                            .filter((line) => line.trim().length > 0)
+                            .map((line) =>
+                                JSON.parse(line),
+                            ) as TinybirdEvent[]),
+                    );
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const response = await fetchGen(
+            new Request("https://gen.pollinations.ai/alpha/ocr", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${caller.key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    document: {
+                        type: "document_url",
+                        document_url: "https://example.com/invoice.pdf",
+                    },
+                    pages: [50],
+                }),
+            }),
+        );
+
+        expect(response.status).toBe(400);
+        expect(await response.text()).toContain("pages");
+        expect(await getUserBalance(db, caller.userId)).toEqual(before);
+        expect(events.filter((event) => event.isBilledUsage === true)).toEqual(
+            [],
+        );
     });
 
     it("rejects a Quest Pollen key because the Mistral route is paid-only", async () => {

@@ -58,7 +58,7 @@ it("keeps catalog health for filtering and status display", () => {
 it("buckets registry categories without a dashboard section by output modality", () => {
     const [model] = getModelPricesFromCatalog([
         {
-            name: "mistralai/mistral-ocr",
+            name: "mistralai/mistral-ocr-4.1",
             category: "ocr",
             output_modalities: ["text"],
         },

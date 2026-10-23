@@ -10,7 +10,8 @@ import type { CreateOcrRequest, CreateOcrResponse } from "../schemas/ocr.ts";
 // Mistral's wire contract for the one shipped OCR listing. The host/key come
 // from env so the binding — not the code — changes if the key rotates.
 const MISTRAL_OCR_URL = "https://api.mistral.ai/v1/ocr";
-const MISTRAL_OCR_MODEL = "mistral-ocr-latest";
+// Pinned so a new Mistral release cannot change output or price unreviewed.
+const MISTRAL_OCR_MODEL = "mistral-ocr-4-1";
 
 export async function generateOcr(
     env: CloudflareBindings,
@@ -47,7 +48,25 @@ export async function generateOcr(
     }
 
     const data = (await upstreamRes.json()) as CreateOcrResponse;
-    const usage = ocrUsageFromResponse(data);
+    const pagesProcessed = data.usage_info?.pages_processed;
+    if (!Number.isInteger(pagesProcessed)) {
+        throw new UpstreamError(502, {
+            message: `OCR upstream for "${responseModel}" returned no usage_info.pages_processed`,
+            requestUrl: new URL(MISTRAL_OCR_URL),
+        });
+    }
+    // Mistral answers 200 with nothing processed when no requested index
+    // exists in the document.
+    if (pagesProcessed === 0 && request.pages?.length) {
+        throw new UpstreamError(400, {
+            message:
+                "None of the requested pages exist in this document. `pages` takes 0-based page indices.",
+            requestUrl: new URL(MISTRAL_OCR_URL),
+        });
+    }
+    // One processed page is one input image token, rated in the registry at
+    // Mistral's per-page price.
+    const usage: Usage = { promptImageTokens: pagesProcessed };
 
     return new Response(JSON.stringify(data), {
         headers: {
@@ -70,21 +89,4 @@ export async function generateOcrResponse(c: Context<Env>): Promise<Response> {
             ),
         c.var.track?.attempts,
     );
-}
-
-// OCR billing: one input image token per processed page, rated in the registry
-// at Mistral's per-page price. `usage_info.pages_processed` is what the
-// provider reports, so it — not the response body — drives the charge; the
-// returned markdown is reported as completion tokens for telemetry only.
-function ocrUsageFromResponse(data: CreateOcrResponse): Usage {
-    const pagesProcessed =
-        data.usage_info?.pages_processed ?? data.pages.length;
-    const markdownChars = data.pages.reduce(
-        (sum, page) => sum + (page.markdown?.length ?? 0),
-        0,
-    );
-    return {
-        promptImageTokens: pagesProcessed,
-        completionTextTokens: Math.ceil(markdownChars / 4),
-    };
 }

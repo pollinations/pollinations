@@ -5,30 +5,37 @@ import { z } from "zod";
 // shapes mirror Mistral's `/v1/ocr`, but they are not a stability contract —
 // the alpha path may change without a version bump.
 
+const PDF_DATA_URL_PREFIX = "data:application/pdf;base64,";
+
+// The upstream fetches the URL itself, so only public https hosts without
+// credentials are forwarded. An inline base64 PDF is passed through as-is.
+function isAcceptedDocumentUrl(value: string): boolean {
+    if (value.startsWith(PDF_DATA_URL_PREFIX)) {
+        return value.length > PDF_DATA_URL_PREFIX.length;
+    }
+    if (!URL.canParse(value)) return false;
+    const url = new URL(value);
+    return (
+        url.protocol === "https:" &&
+        !url.username &&
+        !url.password &&
+        !isBlockedHostname(url.hostname)
+    );
+}
+
 const OcrDocumentUrlSchema = z
     .object({
         type: z.enum(["document_url"]),
         document_url: z
             .string()
             .url()
-            .refine(
-                (value) => {
-                    const url = new URL(value);
-                    return (
-                        url.protocol === "https:" &&
-                        !url.username &&
-                        !url.password &&
-                        !isBlockedHostname(url.hostname)
-                    );
-                },
-                {
-                    message:
-                        "document_url must be a public https URL without credentials",
-                },
-            )
+            .refine(isAcceptedDocumentUrl, {
+                message:
+                    "document_url must be a public https URL without credentials or a data:application/pdf;base64 URL",
+            })
             .meta({
                 description:
-                    "Public https URL of the document to process (PDF or image). The URL is fetched by the upstream, so private hosts and embedded credentials are rejected.",
+                    "Public https URL of the document to process (PDF or image), or a base64 PDF data URL (`data:application/pdf;base64,...`). The URL is fetched by the upstream, so private hosts and embedded credentials are rejected.",
                 example: "https://example.com/invoice.pdf",
             }),
     })
@@ -56,8 +63,8 @@ export const CreateOcrRequestSchema = z
     .object({
         model: z.string().optional().meta({
             description:
-                "OCR model id. Defaults to `mistralai/mistral-ocr`. Only the models served by this experimental endpoint are accepted.",
-            example: "mistralai/mistral-ocr",
+                "OCR model id. Defaults to `mistralai/mistral-ocr-4.1`. Only the models served by this experimental endpoint are accepted.",
+            example: "mistralai/mistral-ocr-4.1",
         }),
         document: OcrDocumentSchema,
         include_image_base64: z.boolean().optional().default(false).meta({

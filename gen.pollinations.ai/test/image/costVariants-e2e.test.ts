@@ -339,7 +339,9 @@ test("H3 Max bills reference provider units without inflating video duration", a
     });
 });
 
-test("FLUX 3 Max bills 1080p at the 1080p cost variant", async ({
+// fal's FLUX 3 Max units are resolution-weighted (about 2 per second at 720p,
+// 3.41 at 1080p), so charges use fal's units at fal's live unit price.
+test("FLUX 3 Max bills fal's units at fal's live unit price at 1080p", async ({
     paidApiKey,
     mocks,
 }) => {
@@ -349,19 +351,23 @@ test("FLUX 3 Max bills 1080p at the 1080p cost variant", async ({
         paidApiKey,
     );
     expect(response.status).toBe(200);
+    expect(response.headers.get("x-usage-provider-billable-units")).toBe(
+        "21.28",
+    );
+    expect(response.headers.get("x-usage-provider-unit-cost")).toBe("0.05");
     expect(mocks.fal.state.submissions).toBe(1);
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelUsed: "black-forest-labs/flux-3-max",
         costVariant: "1080p",
-        tokenCountCompletionVideoSeconds: 21.28,
-        tokenPriceCompletionVideoSeconds: 0.29,
-        totalCost: expect.closeTo(21.28 * 0.29, 8),
+        tokenCountCompletionVideoSeconds: 5,
+        totalCost: 1.064,
+        totalPrice: 1.064,
         isBilledUsage: true,
     });
 });
 
-test("FLUX 3 Max bills the 720p rate when no resolution is requested", async ({
+test("FLUX 3 Max bills fal's units at the default resolution", async ({
     paidApiKey,
     mocks,
 }) => {
@@ -374,9 +380,9 @@ test("FLUX 3 Max bills the 720p rate when no resolution is requested", async ({
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelUsed: "black-forest-labs/flux-3-max",
-        tokenCountCompletionVideoSeconds: 21.28,
-        tokenPriceCompletionVideoSeconds: 0.17,
-        totalCost: expect.closeTo(21.28 * 0.17, 8),
+        tokenCountCompletionVideoSeconds: 5,
+        totalCost: 1.064,
+        totalPrice: 1.064,
         isBilledUsage: true,
     });
 });

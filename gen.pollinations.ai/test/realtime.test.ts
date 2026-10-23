@@ -6,20 +6,28 @@ import {
 import { getLogger } from "@logtape/logtape";
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import {
+    communityEndpointPrices,
+    communityModelId,
+} from "@shared/community-endpoints.ts";
+import {
     apikey as apiKeyTable,
+    communityEndpoint as communityEndpointTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
+import { encryptSecret } from "@shared/secret-encryption.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, expect, vi } from "vitest";
 import worker from "../src/index.ts";
+import { resetGenerationModelRegistryCache } from "../src/model-registry.ts";
 
 type WebSocketResponse = Response & { webSocket?: WebSocket };
 type WebSocketResponseInit = ResponseInit & { webSocket?: WebSocket };
 
-afterEach(() => {
+afterEach(async () => {
     vi.restoreAllMocks();
+    await resetGenerationModelRegistryCache(env);
 });
 
 const scribeTestEnv = {
@@ -117,6 +125,12 @@ function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
                 tinybirdRequests.push(request);
                 return new Response("", { status: 202 });
             }
+            if (
+                /\/v0\/pipes\/model_(catalog_health|health_24h)\.json/.test(
+                    request.url,
+                )
+            )
+                return Response.json({ data: [] });
             // checkBalance fetches the model-stats pipe for estimated pricing.
             if (request.url.includes("public_model_stats.json")) {
                 return Response.json({
@@ -1827,4 +1841,472 @@ test("Tinybird event total equals actual wallet debit with BYOP markup and ledge
 
     expect(telemetry.markupRate).toBeGreaterThan(0);
     expect(telemetry.totalPrice).toBe(roundPollenLedgerAmount(actualDebit));
+});
+
+async function createRealtimeListing(
+    options: { visibility?: "public" | "private"; paidOnly?: boolean } = {},
+) {
+    const owner = await createTestApiKey({
+        user: {
+            githubId: 36901823,
+            githubUsername: "voicepublisher",
+            packBalance: 1,
+        },
+    });
+    const modelId = communityModelId("voicepublisher", "live-voice");
+    await drizzle(env.DB)
+        .insert(communityEndpointTable)
+        .values({
+            id: crypto.randomUUID(),
+            ownerUserId: owner.userId,
+            name: "live-voice",
+            title: "Live Voice",
+            type: "proxy",
+            visibility: options.visibility ?? "public",
+            baseUrl: "https://voice.example.com/v1",
+            upstreamModel: "provider-voice",
+            requiredSafetyFeatures: [],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            payload: JSON.stringify({
+                bearerTokenCiphertext: await encryptSecret(
+                    "provider-only-token",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                api: null,
+                modality: "realtime",
+                imagePricing: "request",
+                inputModalities: ["text", "audio"],
+                perUserRpm: null,
+                paidOnly: options.paidOnly ?? false,
+                fallbacks: [],
+                prices: communityEndpointPrices({
+                    promptTextPrice: 0.000002,
+                    promptCachedPrice: 0.000001,
+                    promptAudioPrice: 0.000004,
+                    completionTextPrice: 0.000006,
+                    completionAudioPrice: 0.000008,
+                }),
+            }),
+        });
+    await resetGenerationModelRegistryCache(env);
+    return { owner, modelId };
+}
+
+const communityRealtimeUsage = {
+    input_tokens: 20,
+    output_tokens: 10,
+    input_token_details: {
+        text_tokens: 10,
+        audio_tokens: 10,
+        cached_tokens: 6,
+        cached_tokens_details: { text_tokens: 4, audio_tokens: 2 },
+    },
+    output_token_details: { text_tokens: 3, audio_tokens: 7 },
+};
+
+test.for(["/realtime", "/v1/realtime"])(
+    "routes community voice through %s and settles one debit with its publisher reward",
+    async (path) => {
+        const { owner, modelId } = await createRealtimeListing();
+        const caller = await createTestApiKey({ user: { packBalance: 1 } });
+        const upstream = mockRealtimeProvider();
+        const { response, ctx } = await fetchWorkerWithContext(
+            `${path}?model=${encodeURIComponent(modelId)}`,
+            {
+                headers: {
+                    Upgrade: "websocket",
+                    Authorization: `Bearer ${caller.key}`,
+                    Cookie: "private-cookie=value",
+                },
+            },
+        );
+        expect(response.status).toBe(101);
+        const request = upstream.request;
+        expect(request.url).toBe(
+            "https://voice.example.com/v1/realtime?model=provider-voice",
+        );
+        expect(request.headers.get("Authorization")).toBe(
+            "Bearer provider-only-token",
+        );
+        expect(request.headers.has("cookie")).toBe(false);
+        expect(request.headers.has("api-key")).toBe(false);
+        const client = response.webSocket;
+        if (!client) throw new Error("Missing community client socket");
+        client.accept();
+        upstream.server.accept();
+        const created = nextJsonMessage(client);
+        upstream.server.send(
+            JSON.stringify({
+                type: "session.created",
+                session: { model: "provider-voice" },
+            }),
+        );
+        expect(await created).toMatchObject({ session: { model: modelId } });
+        const update = nextJsonMessage(upstream.server);
+        client.send(
+            JSON.stringify({
+                type: "session.update",
+                session: { model: modelId, type: "realtime" },
+            }),
+        );
+        expect(await update).toMatchObject({
+            session: { model: "provider-voice" },
+        });
+        const audio = nextJsonMessage(client);
+        upstream.server.send(
+            JSON.stringify({
+                type: "response.output_audio.delta",
+                delta: zeroAudioBase64(48),
+            }),
+        );
+        expect(await audio).toMatchObject({
+            type: "response.output_audio.delta",
+        });
+        const done = nextJsonMessage(client);
+        upstream.server.send(
+            JSON.stringify({
+                type: "response.done",
+                response: {
+                    status: "completed",
+                    usage: communityRealtimeUsage,
+                },
+            }),
+        );
+        expect(await done).toMatchObject({ type: "response.done" });
+        expect(upstream.tinybirdRequests).toHaveLength(0);
+        const closed = nextClose(upstream.server);
+        client.close(1000, "Done");
+        await closed;
+        await waitOnExecutionContext(ctx);
+        const db = drizzle(env.DB);
+        const payer = await db
+            .select()
+            .from(userTable)
+            .where(eq(userTable.id, caller.userId))
+            .get();
+        const publisher = await db
+            .select()
+            .from(userTable)
+            .where(eq(userTable.id, owner.userId))
+            .get();
+        expect(payer?.packBalance).toBeCloseTo(1 - 0.000124, 8);
+        expect(publisher?.packBalance).toBeCloseTo(1 + 0.000093, 8);
+        expect(upstream.tinybirdRequests).toHaveLength(1);
+        const telemetry = JSON.parse(
+            (await upstream.tinybirdRequests[0].text()).trim(),
+        );
+        expect(telemetry).toMatchObject({
+            eventType: "generate.realtime",
+            modelProviderUsed: "community",
+            communityEndpointType: "proxy",
+            communityModelRewardRate: 0.75,
+            communityModelRewardUserId: owner.userId,
+            isFinal: true,
+        });
+        expect(telemetry.communityModelRewardAmount).toBeCloseTo(0.000093, 8);
+    },
+);
+
+test("keeps private realtime models owner-only and rejects other modalities", async () => {
+    const { modelId } = await createRealtimeListing({ visibility: "private" });
+    const caller = await createTestApiKey({ user: { packBalance: 1 } });
+    const upstream = mockRealtimeProvider();
+    const response = await fetchWorker(
+        `/v1/realtime?model=${encodeURIComponent(modelId)}`,
+        {
+            headers: {
+                Upgrade: "websocket",
+                Authorization: `Bearer ${caller.key}`,
+            },
+        },
+    );
+    expect(response.status).toBe(400);
+    expect(upstream.maybeServer).toBeUndefined();
+    const wrongRoute = await fetchWorker(`/v1/chat/completions`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${caller.key}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ model: modelId, messages: [] }),
+    });
+    expect(wrongRoute.status).toBe(400);
+});
+
+test("does not debit or reward an owner using their public realtime model", async () => {
+    const { owner, modelId } = await createRealtimeListing();
+    const upstream = mockRealtimeProvider();
+    const { response, ctx } = await fetchWorkerWithContext(
+        `/realtime?model=${encodeURIComponent(modelId)}`,
+        {
+            headers: {
+                Upgrade: "websocket",
+                Authorization: `Bearer ${owner.key}`,
+            },
+        },
+    );
+    const client = response.webSocket;
+    if (!client) throw new Error("Missing client");
+    client.accept();
+    upstream.server.accept();
+    const done = nextJsonMessage(client);
+    upstream.server.send(
+        JSON.stringify({
+            type: "response.done",
+            response: { status: "completed", usage: communityRealtimeUsage },
+        }),
+    );
+    await done;
+    const closed = nextClose(upstream.server);
+    client.close(1000, "Done");
+    await closed;
+    await waitOnExecutionContext(ctx);
+    const user = await drizzle(env.DB)
+        .select()
+        .from(userTable)
+        .where(eq(userTable.id, owner.userId))
+        .get();
+    expect(user?.packBalance).toBe(1);
+    const telemetry = JSON.parse(
+        (await upstream.tinybirdRequests[0].text()).trim(),
+    );
+    expect(telemetry.totalPrice).toBe(0);
+    expect(telemetry.communityModelRewardAmount).toBe(0);
+});
+
+test.for([
+    "missing-usage",
+    "model-switch",
+    "image-input",
+    "response-image",
+    "binary",
+])("closes invalid community realtime traffic: %s", async (scenario) => {
+    const { modelId } = await createRealtimeListing();
+    const caller = await createTestApiKey({ user: { packBalance: 1 } });
+    const upstream = mockRealtimeProvider();
+    const { response, ctx } = await fetchWorkerWithContext(
+        `/realtime?model=${encodeURIComponent(modelId)}`,
+        {
+            headers: {
+                Upgrade: "websocket",
+                Authorization: `Bearer ${caller.key}`,
+            },
+        },
+    );
+    const client = response.webSocket;
+    if (!client) throw new Error("Missing client");
+    client.accept();
+    upstream.server.accept();
+    const closed = nextClose(upstream.server);
+    if (scenario === "missing-usage")
+        upstream.server.send(
+            JSON.stringify({
+                type: "response.done",
+                response: { status: "completed" },
+            }),
+        );
+    else if (scenario === "binary") client.send(new Uint8Array([1, 2]));
+    else if (scenario === "response-image")
+        client.send(
+            JSON.stringify({
+                type: "response.create",
+                response: {
+                    input: [
+                        {
+                            type: "message",
+                            role: "user",
+                            content: [
+                                {
+                                    type: "input_image",
+                                    image_url: "https://example.com/image.png",
+                                },
+                            ],
+                        },
+                    ],
+                },
+            }),
+        );
+    else
+        client.send(
+            JSON.stringify(
+                scenario === "model-switch"
+                    ? {
+                          type: "session.update",
+                          session: { model: "expensive-other-model" },
+                      }
+                    : {
+                          type: "conversation.item.create",
+                          item: {
+                              content: [
+                                  {
+                                      type: "input_image",
+                                      image_url:
+                                          "https://example.com/image.png",
+                                  },
+                              ],
+                          },
+                      },
+            ),
+        );
+    await closed;
+    await waitOnExecutionContext(ctx);
+    const payer = await drizzle(env.DB)
+        .select()
+        .from(userTable)
+        .where(eq(userTable.id, caller.userId))
+        .get();
+    expect(payer?.packBalance).toBe(1);
+});
+
+test("enforces permissions and Paid Pollen on community realtime before connecting", async () => {
+    const { modelId } = await createRealtimeListing({ paidOnly: true });
+    const upstream = mockRealtimeProvider();
+    const noPermission = await createTestApiKey({
+        allowedModels: [],
+        user: { packBalance: 1 },
+    });
+    const questOnly = await createTestApiKey({
+        user: { tierBalance: 1, packBalance: 0 },
+    });
+    for (const [key, status] of [
+        [noPermission.key, 403],
+        [questOnly.key, 402],
+    ] as const) {
+        const response = await fetchWorker(
+            `/realtime?model=${encodeURIComponent(modelId)}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    Upgrade: "websocket",
+                },
+            },
+        );
+        expect(response.status).toBe(status);
+    }
+    expect(upstream.maybeServer).toBeUndefined();
+});
+
+test.for([302, 401, 503])(
+    "refunds the key reservation on a failed community upgrade (HTTP %s)",
+    async (status) => {
+        const { modelId } = await createRealtimeListing();
+        const caller = await createTestApiKey({
+            pollenBudget: 1,
+            user: { packBalance: 1 },
+        });
+        const requests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                if (request.headers.get("upgrade") === "websocket") {
+                    requests.push(request);
+                    expect(init?.redirect).toBe("manual");
+                    return new Response("sensitive provider response", {
+                        status,
+                        headers: { Location: "https://other.example.com" },
+                    });
+                }
+                if (request.url.includes("public_model_stats.json"))
+                    return Response.json({
+                        data: [{ model: modelId, avg_cost_usd: 0.2 }],
+                    });
+                if (request.url.includes("/v0/events?name=generation_event_v2"))
+                    return new Response(null, { status: 202 });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+        const response = await fetchWorker(
+            `/realtime?model=${encodeURIComponent(modelId)}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${caller.key}`,
+                    Upgrade: "websocket",
+                },
+            },
+        );
+        expect(response.status).toBe(502);
+        expect(await response.text()).not.toContain(
+            "sensitive provider response",
+        );
+        expect(requests).toHaveLength(1);
+        expect(await getApiKeyBalance(caller.id)).toBeCloseTo(1, 8);
+        expect((await getUserBalances(caller.userId))?.packBalance).toBe(1);
+    },
+);
+
+test("discovers public realtime endpoints and excludes other generation routes", async () => {
+    const { modelId } = await createRealtimeListing();
+    const caller = await createTestApiKey({ user: { packBalance: 1 } });
+    mockRealtimeProvider();
+    const catalog = await fetchWorker("/models");
+    expect(await catalog.json()).toEqual(
+        expect.arrayContaining([
+            expect.objectContaining({
+                name: modelId,
+                category: "realtime",
+                input_modalities: ["text", "audio"],
+                output_modalities: ["text", "audio"],
+            }),
+        ]),
+    );
+    const wrongRoute = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${caller.key}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            model: modelId,
+            messages: [{ role: "user", content: "Hi" }],
+        }),
+    });
+    expect(wrongRoute.status).toBe(400);
+    expect(await wrongRoute.text()).toContain("realtime");
+});
+
+test("lets the private owner exchange audio without Pollinations charges", async () => {
+    const { owner, modelId } = await createRealtimeListing({
+        visibility: "private",
+    });
+    const upstream = mockRealtimeProvider();
+    const { response, ctx } = await fetchWorkerWithContext(
+        `/realtime?model=${encodeURIComponent(modelId)}`,
+        {
+            headers: {
+                Authorization: `Bearer ${owner.key}`,
+                Upgrade: "websocket",
+            },
+        },
+    );
+    expect(response.status).toBe(101);
+    const client = response.webSocket;
+    if (!client) throw new Error("Missing client socket");
+    client.accept();
+    upstream.server.accept();
+    const input = nextJsonMessage(upstream.server);
+    client.send(
+        JSON.stringify({
+            type: "input_audio_buffer.append",
+            audio: zeroAudioBase64(48),
+        }),
+    );
+    expect(await input).toMatchObject({
+        type: "input_audio_buffer.append",
+        audio: zeroAudioBase64(48),
+    });
+    const done = nextJsonMessage(client);
+    upstream.server.send(
+        JSON.stringify({
+            type: "response.done",
+            response: { status: "completed", usage: communityRealtimeUsage },
+        }),
+    );
+    await done;
+    const closed = nextClose(upstream.server);
+    client.close();
+    await closed;
+    await waitOnExecutionContext(ctx);
+    expect((await getUserBalances(owner.userId))?.packBalance).toBe(1);
+    expect(upstream.tinybirdRequests).toHaveLength(0);
 });

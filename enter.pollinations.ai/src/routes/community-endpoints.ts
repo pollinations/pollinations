@@ -39,6 +39,7 @@ import {
     testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
+    testCommunityRealtimeEndpoint,
     testCommunitySpeechEndpoint,
     testCommunityTranscriptionEndpoint,
     testCommunityVideoEndpoint,
@@ -212,6 +213,20 @@ function throwEndpointTestError(error: unknown): never {
     });
 }
 
+function assertRealtimeConfiguration(
+    modality: string,
+    requiredSafetyFeatures: readonly string[],
+    fallbacks: readonly string[],
+): void {
+    if (modality !== "realtime") return;
+    if (requiredSafetyFeatures.length || fallbacks.length) {
+        throw new HTTPException(400, {
+            message:
+                "Realtime models do not support prompt safety checks or fallback models",
+        });
+    }
+}
+
 async function runEndpointTest(input: TestEndpointInput) {
     try {
         const endpointInput = {
@@ -238,32 +253,36 @@ async function runEndpointTest(input: TestEndpointInput) {
             }
             const modelInput = { ...endpointInput, model: input.model };
             result =
-                input.modality === "image"
-                    ? await testCommunityImageEndpoint(modelInput)
-                    : input.modality === "transcription"
-                      ? await testCommunityTranscriptionEndpoint(modelInput)
-                      : input.modality === "speech"
-                        ? await testCommunitySpeechEndpoint(modelInput)
-                        : await testCommunityEmbeddingEndpoint(modelInput);
+                input.modality === "realtime"
+                    ? await testCommunityRealtimeEndpoint(modelInput)
+                    : input.modality === "image"
+                      ? await testCommunityImageEndpoint(modelInput)
+                      : input.modality === "transcription"
+                        ? await testCommunityTranscriptionEndpoint(modelInput)
+                        : input.modality === "speech"
+                          ? await testCommunitySpeechEndpoint(modelInput)
+                          : await testCommunityEmbeddingEndpoint(modelInput);
         }
         return {
             ok: true,
             message:
-                input.modality === "image"
-                    ? result.inputModalities?.includes("image")
-                        ? "Generation and editing endpoints responded with image data"
-                        : `Generation endpoint responded; editing test failed: ${result.imageEditError}`
-                    : input.modality === "video"
-                      ? "Endpoint responded with playable video"
-                      : input.modality === "transcription"
-                        ? "Endpoint responded with transcription text"
-                        : input.modality === "speech"
-                          ? "Endpoint responded with audio data"
-                          : input.modality === "embedding"
-                            ? "Endpoint responded with embedding data"
-                            : result.streaming === false
-                              ? "JSON request returned valid token usage. The endpoint does not stream, so stream: true calls will get the whole answer as one event stream"
-                              : "JSON and streaming requests returned valid token usage",
+                input.modality === "realtime"
+                    ? "Realtime endpoint returned PCM audio and token usage"
+                    : input.modality === "image"
+                      ? result.inputModalities?.includes("image")
+                          ? "Generation and editing endpoints responded with image data"
+                          : `Generation endpoint responded; editing test failed: ${result.imageEditError}`
+                      : input.modality === "video"
+                        ? "Endpoint responded with playable video"
+                        : input.modality === "transcription"
+                          ? "Endpoint responded with transcription text"
+                          : input.modality === "speech"
+                            ? "Endpoint responded with audio data"
+                            : input.modality === "embedding"
+                              ? "Endpoint responded with embedding data"
+                              : result.streaming === false
+                                ? "JSON request returned valid token usage. The endpoint does not stream, so stream: true calls will get the whole answer as one event stream"
+                                : "JSON and streaming requests returned valid token usage",
             ...result,
         };
     } catch (error) {
@@ -640,7 +659,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text, image, video, transcription, speech, or embedding model. Private is the default. Public models require an allowlisted account and become public after 3 hours. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text, image, video, transcription, speech, realtime, or embedding model. Private is the default. Public models require an allowlisted account and become public after 3 hours. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community model",
@@ -672,6 +691,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 input.name,
             );
             const targetPolicy = deriveCreateProxyPolicy(input);
+            assertRealtimeConfiguration(
+                input.modality,
+                input.requiredSafetyFeatures,
+                input.fallbacks ?? [],
+            );
             const queuesPublication = input.visibility === "public";
             const modelId = communityModelId(ownerGithubUsername, input.name);
             const bearerTokenCiphertext = await encryptSecret(
@@ -1136,6 +1160,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 const targetPolicy = deriveUpdatedProxyPolicy(
                     targetBase,
                     input,
+                );
+                assertRealtimeConfiguration(
+                    stored.modality,
+                    input.requiredSafetyFeatures ??
+                        endpoint.requiredSafetyFeatures,
+                    input.fallbacks ?? targetBase.fallbacks,
                 );
                 const delayPricing =
                     targetVisibility === "public" &&

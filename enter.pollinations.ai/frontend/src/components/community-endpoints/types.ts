@@ -634,13 +634,15 @@ export function nextFormState(
             ...current,
             modality,
             inputModalities: normalizeCommunityEndpointInputModalities(
-                current.inputModalities,
+                modality === "realtime" ? undefined : current.inputModalities,
                 modality,
             ),
             // Targets must match the modality; the old choices no longer can.
             fallbacks: [],
             capabilities: modality === "text" ? current.capabilities : [],
             contextLength: modality === "text" ? current.contextLength : "",
+            requiredSafetyFeatures:
+                modality === "realtime" ? [] : current.requiredSafetyFeatures,
         };
     }
     const next = { ...current, [key]: value };

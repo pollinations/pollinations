@@ -737,3 +737,91 @@ describe("community endpoint configuration policy", () => {
         expect(missing.status).toBe(404);
     });
 });
+
+describe("community realtime registration", () => {
+    test("retains voice capabilities and token prices through publication and edits", async ({
+        accountToken,
+    }) => {
+        await approveCommunityModels();
+        const created = await postModel(accountToken, "", {
+            name: "voice",
+            title: "Voice",
+            modality: "realtime",
+            baseUrl: "https://voice.example.com/v1",
+            upstreamModel: "upstream-voice",
+            bearerToken: "provider-token",
+            inputModalities: ["text", "audio"],
+            visibility: "public",
+            promptTextPrice: 0.000001,
+            promptCachedPrice: 0.0000005,
+            promptAudioPrice: 0.000002,
+            completionTextPrice: 0.000003,
+            completionAudioPrice: 0.000004,
+        });
+        expect(created).toMatchObject({
+            modality: "realtime",
+            visibility: "private",
+            pending: { visibility: "public" },
+            inputModalities: ["text", "audio"],
+        });
+        const published = await publishPendingModel(
+            accountToken,
+            created.id as string,
+        );
+        expect(published).toMatchObject({
+            modality: "realtime",
+            visibility: "public",
+            promptAudioPrice: 0.000002,
+            completionAudioPrice: 0.000004,
+        });
+        const edited = await postModel(accountToken, `/${created.id}/update`, {
+            title: "Live Voice",
+        });
+        expect(edited).toMatchObject({
+            title: "Live Voice",
+            modality: "realtime",
+            inputModalities: ["text", "audio"],
+            promptCachedPrice: 0.0000005,
+        });
+        expect(edited).not.toHaveProperty("bearerToken");
+    });
+
+    test("rejects realtime safety filters and fallbacks on creation and update", async ({
+        accountToken,
+    }) => {
+        const body = {
+            name: "voice",
+            title: "Voice",
+            modality: "realtime",
+            baseUrl: "https://voice.example.com/v1",
+            upstreamModel: "upstream-voice",
+            bearerToken: "provider-token",
+        };
+        const request = (path: string, input: Record<string, unknown>) =>
+            SELF.fetch(`${endpointUrl}${path}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accountToken}`,
+                },
+                body: JSON.stringify(input),
+            });
+        for (const policy of [
+            { requiredSafetyFeatures: ["sexual"] },
+            { fallbacks: ["openai/gpt-realtime-2.1"] },
+        ]) {
+            expect((await request("", { ...body, ...policy })).status).toBe(
+                400,
+            );
+        }
+        const created = await postModel(accountToken, "", body);
+        for (const policy of [
+            { requiredSafetyFeatures: ["sexual"] },
+            { fallbacks: ["openai/gpt-realtime-2.1"] },
+        ]) {
+            expect(
+                (await request(`/${created.id}/update`, policy)).status,
+            ).toBe(400);
+        }
+    });
+});

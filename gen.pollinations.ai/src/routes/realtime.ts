@@ -2,6 +2,7 @@ import { getUserBalance, payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
     handleBalanceDeduction,
     type MarkupResolution,
+    selectCommunityModelReward,
 } from "@shared/billing/track-helpers.ts";
 import {
     bytesToHex,
@@ -10,8 +11,15 @@ import {
     stripIPv4MappedPrefix,
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
+import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { sendToTinybird } from "@shared/events.ts";
 import { redactCredentialQueryParams } from "@shared/observability/request-inputs.ts";
+import {
+    connectCommunityRealtime,
+    type ParsedRealtimeUsage,
+    parseCommunityRealtimeUsage,
+    parseRealtimeUsage,
+} from "@shared/realtime.ts";
 import {
     type BillingAdjustment,
     type CostDefinition,
@@ -29,6 +37,7 @@ import {
     type TinybirdEvent,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
+import { decryptSecret } from "@shared/secret-encryption.ts";
 import { getRoutePath } from "@shared/util.ts";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -39,7 +48,6 @@ import {
     requestIdentity,
     type UserData,
 } from "@/middleware/track.ts";
-import { RealtimeUsageSchema } from "@/schemas/realtime.ts";
 import { generateRandomId } from "@/util.ts";
 import {
     releaseApiKeyBudgetReservation,
@@ -103,6 +111,7 @@ type RealtimeCacheUsage = {
     imageTokens: number;
 };
 type RealtimeBillingContext = {
+    communityEndpoint?: CommunityEndpointRuntime;
     // Spread verbatim into the event, so an identity column added to UserData
     // reaches a realtime row without touching this file.
     identity: UserData & { userId: string };
@@ -541,76 +550,6 @@ function addUsage(target: Usage, delta: Usage): void {
     }
 }
 
-type ParsedRealtimeUsage = {
-    usage: Usage;
-    cacheUsage: RealtimeCacheUsage;
-    cacheDetailsIncomplete: boolean;
-};
-
-function parseRealtimeUsage(rawUsage: unknown): ParsedRealtimeUsage | null {
-    const parsed = RealtimeUsageSchema.safeParse(rawUsage);
-    if (!parsed.success) return null;
-    const usage = parsed.data;
-    const inputDetails = usage.input_token_details ?? {};
-    const outputDetails = usage.output_token_details ?? {};
-    const cachedDetails = inputDetails.cached_tokens_details ?? {};
-
-    const cachedTextTokens = numeric(cachedDetails.text_tokens);
-    const cachedAudioTokens = numeric(cachedDetails.audio_tokens);
-    const cachedImageTokens = numeric(cachedDetails.image_tokens);
-    const reportedCachedTokens = numeric(inputDetails.cached_tokens);
-    const detailedCachedTokens =
-        cachedTextTokens + cachedAudioTokens + cachedImageTokens;
-    const cachedTokens = reportedCachedTokens || detailedCachedTokens;
-    const cacheDetailsIncomplete =
-        reportedCachedTokens > 0 &&
-        (inputDetails.cached_tokens_details == null ||
-            detailedCachedTokens !== reportedCachedTokens);
-
-    const promptAudioTokens = Math.max(
-        0,
-        numeric(inputDetails.audio_tokens) - cachedAudioTokens,
-    );
-    const promptImageTokens = Math.max(
-        0,
-        numeric(inputDetails.image_tokens) - cachedImageTokens,
-    );
-    const totalInputTokens =
-        numeric(usage.input_tokens) ||
-        numeric(inputDetails.text_tokens) +
-            numeric(inputDetails.audio_tokens) +
-            numeric(inputDetails.image_tokens);
-    const promptTextTokens = Math.max(
-        0,
-        totalInputTokens - cachedTokens - promptAudioTokens - promptImageTokens,
-    );
-    const completionAudioTokens = numeric(outputDetails.audio_tokens);
-    const outputTokenTotal = numeric(usage.output_tokens);
-    const totalOutputTokens =
-        outputTokenTotal ||
-        numeric(outputDetails.text_tokens) + completionAudioTokens;
-    const completionTextTokens = Math.max(
-        numeric(outputDetails.text_tokens),
-        totalOutputTokens - completionAudioTokens,
-    );
-
-    return {
-        usage: positiveEntries({
-            promptTextTokens,
-            promptCachedTokens: cachedTokens,
-            promptAudioTokens,
-            promptImageTokens,
-            completionTextTokens,
-            completionAudioTokens,
-        }),
-        cacheUsage: {
-            audioTokens: cachedAudioTokens,
-            imageTokens: cachedImageTokens,
-        },
-        cacheDetailsIncomplete,
-    };
-}
-
 function realtimeUsageToUsage(rawUsage: unknown): Usage {
     return parseRealtimeUsage(rawUsage)?.usage ?? {};
 }
@@ -782,6 +721,14 @@ function createRealtimeTrackingEvent(args: {
         resolvedModelRequested: args.tracking.resolvedModelRequested,
         modelUsed: args.tracking.resolvedModelRequested,
         modelProviderUsed: args.tracking.modelDefinition.provider,
+        communityEndpointType: args.tracking.communityEndpoint?.type,
+        isFinal: true,
+        communityModelRewardUserId:
+            args.tracking.deduction?.communityModelReward?.userId,
+        communityModelRewardRate:
+            args.tracking.deduction?.communityModelReward?.rewardRate ?? 0,
+        communityModelRewardAmount:
+            args.tracking.deduction?.communityModelReward?.credit ?? 0,
         isBilledUsage: true,
         ...getPostDeductionBalances(args.payerBucket, args.balances),
         ...priceToEventParams(args.tracking.modelPriceDefinition),
@@ -861,6 +808,11 @@ async function settleRealtimeSession(
             byopClientKeyId: tracking.byopClientKeyId,
             modelPaidOnly: tracking.modelDefinition.paidOnly,
             questPollenOnly: tracking.questPollenOnly,
+            communityModelReward: selectCommunityModelReward(
+                tracking.communityEndpoint,
+                tracking.communityEndpoint,
+                price.totalPrice,
+            ),
         });
         c.var.balance.apiKeyReservation = undefined;
     }
@@ -899,7 +851,11 @@ function collectBillingEvents(
     const log = c.get("log").getChild("realtime");
     upstream.addEventListener("message", (event) => {
         const eventData = parseEventData(event.data);
-        const responseBilling = extractResponseBilling(eventData);
+        const raw = asRecord(eventData);
+        const responseBilling =
+            billing.communityEndpoint && raw.type === "response.done"
+                ? parseCommunityRealtimeUsage(asRecord(raw.response).usage)
+                : extractResponseBilling(eventData);
         if (responseBilling) {
             addUsage(billing.usage, responseBilling.usage);
             billing.cacheUsage.audioTokens +=
@@ -919,6 +875,7 @@ function collectBillingEvents(
             return;
         }
 
+        if (billing.communityEndpoint) return;
         const transcriptionUsage = extractInputTranscriptionUsage(eventData);
         if (transcriptionUsage) addUsage(billing.usage, transcriptionUsage);
     });
@@ -1011,6 +968,27 @@ function wireClose(
     });
 }
 
+function rewriteCommunityRealtimeModel(
+    data: unknown,
+    tracking: RealtimeBillingContext,
+    upstream: boolean,
+): unknown {
+    const endpoint = tracking.communityEndpoint;
+    if (!endpoint) return data;
+    const event = asRecord(parseEventData(data));
+    let changed = false;
+    for (const value of [event.session, event.response]) {
+        const target = asRecord(value);
+        if (target.model !== undefined) {
+            target.model = upstream
+                ? endpoint.upstreamModel
+                : tracking.resolvedModelRequested;
+            changed = true;
+        }
+    }
+    return changed ? JSON.stringify(event) : data;
+}
+
 function proxyRealtimeWebSockets(
     c: Context<Env>,
     upstream: WebSocket,
@@ -1034,8 +1012,55 @@ function proxyRealtimeWebSockets(
         downstream,
         upstream,
         (data) => {
-            if (!mai)
-                return validateClientRealtimeEvent(data, allowTranscription);
+            if (!mai) {
+                const invalid = validateClientRealtimeEvent(
+                    data,
+                    allowTranscription,
+                );
+                if (invalid || !tracking.communityEndpoint) return invalid;
+                const event = asRecord(parseEventData(data));
+                if (typeof event.type !== "string")
+                    return "Realtime events must be JSON objects with a type.";
+                const endpoint = tracking.communityEndpoint;
+                const session = asRecord(event.session);
+                const requestedModel =
+                    session.model ?? asRecord(event.response).model;
+                if (
+                    requestedModel !== undefined &&
+                    ![
+                        endpoint.upstreamModel,
+                        tracking.modelRequested,
+                        tracking.resolvedModelRequested,
+                    ].includes(requestedModel as string)
+                ) {
+                    return "Realtime sessions cannot select another model.";
+                }
+                const inputs = endpoint.inputModalities ?? ["text", "audio"];
+                if (
+                    event.type === "input_audio_buffer.append" &&
+                    !inputs.includes("audio")
+                )
+                    return "This model does not accept audio input.";
+                const responseInput = asRecord(event.response).input;
+                const items = [
+                    event.item,
+                    ...(Array.isArray(responseInput) ? responseInput : []),
+                ];
+                for (const item of items) {
+                    const content = asRecord(item).content;
+                    if (!Array.isArray(content)) continue;
+                    for (const part of content) {
+                        const type = asRecord(part).type;
+                        if (type === "input_image")
+                            return "Community realtime models do not support image input.";
+                        if (type === "input_audio" && !inputs.includes("audio"))
+                            return "This model does not accept audio input.";
+                        if (type === "input_text" && !inputs.includes("text"))
+                            return "This model does not accept text input.";
+                    }
+                }
+                return null;
+            }
             const event = asRecord(parseEventData(data));
             if (event.type === "session.update") {
                 if (maiStarted)
@@ -1097,12 +1122,28 @@ function proxyRealtimeWebSockets(
                           deployment,
                       );
                   })()
-            : undefined,
+            : tracking.communityEndpoint
+              ? (data) => rewriteCommunityRealtimeModel(data, tracking, true)
+              : undefined,
     );
     forwardMessage(
         upstream,
         downstream,
-        (data) => validateUpstreamRealtimeEvent(data, allowTranscription),
+        (data) => {
+            const invalid = validateUpstreamRealtimeEvent(
+                data,
+                allowTranscription,
+            );
+            if (invalid || !tracking.communityEndpoint) return invalid;
+            const event = asRecord(parseEventData(data));
+            if (
+                event.type === "response.done" &&
+                !parseCommunityRealtimeUsage(asRecord(event.response).usage)
+            ) {
+                return "Community realtime response is missing complete token usage.";
+            }
+            return null;
+        },
         () => scheduleRealtimeSettlement(c, tracking),
         allowTranscription
             ? (data) =>
@@ -1121,7 +1162,9 @@ function proxyRealtimeWebSockets(
                           transcriptionModel,
                       );
                   })()
-            : undefined,
+            : tracking.communityEndpoint
+              ? (data) => rewriteCommunityRealtimeModel(data, tracking, false)
+              : undefined,
     );
     wireClose(c, downstream, upstream, tracking);
     wireClose(c, upstream, downstream, tracking);
@@ -1476,6 +1519,7 @@ async function createRealtimeBillingContext(
         apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
         questPollenOnly: c.var.auth.apiKey?.questPollenOnly,
         byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
+        communityEndpoint: modelInfo.communityEndpoint,
         modelRequested: modelInfo.requested,
         resolvedModelRequested: modelInfo.resolved,
         modelDefinition: modelInfo.definition,
@@ -1535,20 +1579,53 @@ export async function handleRealtimeWebSocket(
         }
     }
 
-    const upstream = await connectAzureRealtime(
-        c,
-        userId,
-        c.var.model.resolved as AzureRealtimeModelName,
-    );
-    if (upstream instanceof Response) return upstream;
-
     await reserveApiKeyBudget(c.var, c.env);
     tracking.apiKeyReservedAmount = c.var.balance.apiKeyReservation?.amount;
+    let upstream: WebSocket | Response | undefined;
     try {
+        const endpoint = c.var.model.communityEndpoint;
+        if (endpoint) {
+            if (
+                endpoint.type !== "proxy" ||
+                endpoint.modality !== "realtime" ||
+                endpoint.requiredSafetyFeatures?.length ||
+                endpoint.fallbacks.length
+            ) {
+                throw new HTTPException(400, {
+                    message: "Invalid community realtime configuration",
+                });
+            }
+            const response = await connectCommunityRealtime({
+                baseUrl: endpoint.baseUrl,
+                bearerToken: await decryptSecret(
+                    endpoint.bearerTokenCiphertext,
+                    c.env.BETTER_AUTH_SECRET,
+                ),
+                model: endpoint.upstreamModel,
+            });
+            if (response.status !== 101 || !response.webSocket) {
+                await response.body?.cancel();
+                throw new HTTPException(502, {
+                    message: `Community realtime endpoint did not upgrade (HTTP ${response.status})`,
+                });
+            }
+            upstream = response.webSocket;
+        } else {
+            upstream = await connectAzureRealtime(
+                c,
+                userId,
+                c.var.model.resolved as AzureRealtimeModelName,
+            );
+        }
+        if (upstream instanceof Response) {
+            await releaseApiKeyBudgetReservation(c.var, c.env);
+            return upstream;
+        }
         return proxyRealtimeWebSockets(c, upstream, tracking);
     } catch (error) {
         await releaseApiKeyBudgetReservation(c.var, c.env);
-        closeSocket(upstream, 1011, "Unable to start realtime session");
+        if (upstream && !(upstream instanceof Response))
+            closeSocket(upstream, 1011, "Unable to start realtime session");
         throw error;
     }
 }

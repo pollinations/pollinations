@@ -351,17 +351,25 @@ export const BASE_SPEECH_PRICE_KEYS: PriceFieldKey[] = ["completionAudioPrice"];
 export function basePriceKeysForModality(
     modality: CommunityEndpointModality,
 ): PriceFieldKey[] {
-    return modality === "image"
-        ? ["completionImagePrice"]
-        : modality === "video"
-          ? BASE_VIDEO_PRICE_KEYS
-          : modality === "transcription"
-            ? BASE_TRANSCRIPTION_PRICE_KEYS
-            : modality === "speech"
-              ? BASE_SPEECH_PRICE_KEYS
-              : modality === "embedding"
-                ? BASE_EMBEDDING_PRICE_KEYS
-                : BASE_TEXT_PRICE_KEYS;
+    return modality === "realtime"
+        ? [
+              "promptTextPrice",
+              "promptCachedPrice",
+              "promptAudioPrice",
+              "completionTextPrice",
+              "completionAudioPrice",
+          ]
+        : modality === "image"
+          ? ["completionImagePrice"]
+          : modality === "video"
+            ? BASE_VIDEO_PRICE_KEYS
+            : modality === "transcription"
+              ? BASE_TRANSCRIPTION_PRICE_KEYS
+              : modality === "speech"
+                ? BASE_SPEECH_PRICE_KEYS
+                : modality === "embedding"
+                  ? BASE_EMBEDDING_PRICE_KEYS
+                  : BASE_TEXT_PRICE_KEYS;
 }
 
 export function returnedPriceFields(

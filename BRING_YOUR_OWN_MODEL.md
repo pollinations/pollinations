@@ -15,6 +15,7 @@ Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve
 | Video | Exact endpoint URL entered at registration | `GET /video/{prompt}`, `GET /image/{prompt}`, or `POST /v1/images/generations` |
 | Speech to text | `POST /v1/audio/transcriptions` | `POST /v1/audio/transcriptions` |
 | Text to speech | `POST /v1/audio/speech` | `POST /v1/audio/speech` |
+| Live voice | OpenAI-compatible WebSocket at `/v1/realtime?model=...` | WebSocket `/realtime` or `/v1/realtime` |
 | Embeddings | `POST /v1/embeddings` | `POST /v1/embeddings` |
 
 Image providers must return `b64_json`. During testing, Pollinations checks whether an image provider supports edits and whether it reports OpenAI image-token usage.
@@ -51,7 +52,13 @@ Pollinations sends no upstream model id. Billing uses `usage.duration` when repo
 
 Text-to-speech is synchronous and OpenAI-shaped. Pollinations calls your `/v1/audio/speech` with `{ model, input, voice, response_format }` and streams the returned binary audio back to the caller with its content type preserved. Registration sends a short sample and accepts any non-empty `audio/*` response. Billing charges the input text by character against your per-1M completion-audio price. Voice cloning, speech-to-speech, and timestamps are out of scope.
 
-Realtime and 3D endpoints cannot currently be registered through this workflow.
+Live voice uses the OpenAI Realtime WebSocket protocol with text and audio input/output. Select **Realtime**, enter an HTTPS base URL or full `/v1/realtime` URL, upstream model ID, and bearer token. Pollinations upgrades the connection with the saved provider credential and rewrites the public model ID to the upstream ID. Caller credentials are never forwarded. Redirects are rejected.
+
+The registration test sends a spoken greeting as mono 16-bit PCM at 24 kHz and requires completed PCM audio plus text/audio token usage. Each `response.done` must include `input_tokens`, `output_tokens`, and matching `input_token_details` / `output_token_details`. Cached input must include its text/audio breakdown. Missing or inconsistent usage closes the session. Rates cover uncached input text/audio, cached input, and output text/audio; cached text and audio share one rate. Usage settles through the existing realtime billing flow and publisher reward rules.
+
+Realtime supports neither WebRTC nor SIP. Sessions cannot change models, use image input, enable input transcription, apply prompt safety filters, or switch to fallback models. Private realtime listings remain owner-only and free at the Pollinations layer. The provider may still charge the publisher.
+
+3D endpoints cannot currently be registered through this workflow.
 
 ## Private and Public Models
 
@@ -63,7 +70,7 @@ Publishing a model or changing its public prices takes effect after 3 hours.
 
 Public models appear in the model catalog and can be called by other Pollinations users. Owners set public pricing:
 
-- Text models use the token categories reported by the upstream endpoint.
+- Text and realtime models use the token categories reported by the upstream endpoint.
 - Image models use per-token pricing when the registration test finds valid OpenAI image usage; otherwise they use a fixed price per generated image.
 - Video models are priced from reported generated seconds, falling back to the requested duration when usage is missing.
 - Transcription models are priced from reported audio duration.

@@ -34,6 +34,7 @@ export const COMMUNITY_ENDPOINT_MODALITIES = [
     "transcription",
     "speech",
     "embedding",
+    "realtime",
 ] as const;
 // How a community image endpoint is billed. "request" charges the fixed
 // per-image price once per generation; "tokens" charges the provider-returned
@@ -320,6 +321,17 @@ const COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS = [
     },
 ] as const;
 
+const COMMUNITY_REALTIME_PRICE_FIELDS = COMMUNITY_TEXT_PRICE_FIELDS.filter(
+    (field) =>
+        [
+            "promptTextPrice",
+            "promptCachedPrice",
+            "promptAudioPrice",
+            "completionTextPrice",
+            "completionAudioPrice",
+        ].includes(field.key),
+).map((field) => ({ ...field, rawUsagePaths: [field.usageType] }));
+
 export type CommunityEndpointPriceField =
     | (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS)[number]
@@ -349,6 +361,14 @@ type CommunityModalitySpec = {
  * audio models with text output.
  */
 export const COMMUNITY_MODALITY_SPEC = {
+    realtime: {
+        category: "realtime",
+        inputModalities: ["text", "audio"],
+        outputModalities: ["text", "audio"],
+        supportedEndpoints: ["/realtime", "/v1/realtime"],
+        restrictDefinitionEndpoints: true,
+        priceFields: COMMUNITY_REALTIME_PRICE_FIELDS,
+    },
     text: {
         category: "text",
         inputModalities: MODEL_INPUT_MODALITIES,
@@ -538,6 +558,7 @@ export function staticFallbackRejection(
     // Static video models default to image routes without /video/{prompt}.
     if (
         primary.modality === "video" ||
+        primary.modality === "realtime" ||
         target.category !== spec.category ||
         (target.supportedEndpoints &&
             !communityEndpointSupportedEndpoints(
@@ -581,6 +602,7 @@ export function staticFallbackRejection(
 export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
+    if (value === "realtime") return "realtime";
     if (value === "transcription") return "transcription";
     if (value === "speech") return "speech";
     if (value === "video") return "video";
@@ -608,7 +630,11 @@ export function normalizeCommunityEndpointInputModalities(
     const permitted = COMMUNITY_MODALITY_SPEC[endpointModality].inputModalities;
     const declared = new Set(value ?? []);
     const normalized = permitted.filter((modality) => declared.has(modality));
-    return normalized.length ? [...normalized] : [permitted[0]];
+    return normalized.length
+        ? [...normalized]
+        : endpointModality === "realtime"
+          ? [...permitted]
+          : [permitted[0]];
 }
 
 // Access/visibility of a registered endpoint. Private is the default; choosing

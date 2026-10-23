@@ -1119,9 +1119,9 @@ describe("static provider fallbacks", () => {
         expect(
             TEXT_SERVICES["nvidia/nemotron-3.5-super-vl"].cost,
         ).toMatchObject({
-            promptTextTokens: 0.1 / 1_000_000,
-            promptCachedTokens: 0.08 / 1_000_000,
-            completionTextTokens: 0.4 / 1_000_000,
+            promptTextTokens: 0.15 / 1_000_000,
+            promptCachedTokens: 0.02 / 1_000_000,
+            completionTextTokens: 0.5 / 1_000_000,
         });
         expect(
             TEXT_SERVICES["nvidia/nemotron-3.5-super-vl:openrouter:together"]

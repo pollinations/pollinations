@@ -5415,10 +5415,13 @@ fixtureTest(
         const suffix = crypto.randomUUID().slice(0, 8);
         const textOwner = `filter-text-${suffix}`;
         const imageOwner = `filter-img-${suffix}`;
+        const videoOwner = `filter-vid-${suffix}`;
         const textName = `qp-text-${suffix}`;
         const imageName = `qp-img-${suffix}`;
+        const videoName = `qp-vid-${suffix}`;
         const textModelId = communityModelId(textOwner, textName);
         const imageModelId = communityModelId(imageOwner, imageName);
+        const videoModelId = communityModelId(videoOwner, videoName);
 
         const textUserId = await createTestUser({
             githubId: nextAllowedGithubId(),
@@ -5427,6 +5430,10 @@ fixtureTest(
         const imageUserId = await createTestUser({
             githubId: nextAllowedGithubId(),
             githubUsername: imageOwner,
+        });
+        const videoUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: videoOwner,
         });
 
         await insertCommunityEndpoints([
@@ -5463,6 +5470,26 @@ fixtureTest(
                 promptTextPrice: 0,
                 completionTextPrice: 0,
                 completionImagePrice: 0.01,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId: videoUserId,
+                visibility: "public",
+                name: videoName,
+                description: "Community video filter test model",
+                modality: "video",
+                inputModalities: ["text", "image", "audio", "video"],
+                baseUrl: "https://vid.example.com/v1",
+                upstreamModel: "wan-1",
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                completionVideoPrice: 0.01,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             },
@@ -5583,12 +5610,101 @@ fixtureTest(
             onlyModels.map((m) => m.name),
         );
 
+        const [
+            categoryVideo,
+            typeVideo,
+            modalityVideo,
+            outputModalityVideo,
+            inputModalityVideo,
+        ] = await Promise.all([
+            SELF.fetch("https://gen.pollinations.ai/v1/models?category=video"),
+            SELF.fetch("https://gen.pollinations.ai/v1/models?type=video"),
+            SELF.fetch("https://gen.pollinations.ai/models?modality=video"),
+            SELF.fetch(
+                "https://gen.pollinations.ai/models?output_modality=video",
+            ),
+            SELF.fetch(
+                "https://gen.pollinations.ai/models?input_modality=video",
+            ),
+        ]);
+        for (const r of [
+            categoryVideo,
+            typeVideo,
+            modalityVideo,
+            outputModalityVideo,
+            inputModalityVideo,
+        ]) {
+            expect(r.status).toBe(200);
+        }
+
+        type OpenAIModel = { id: string; category: string };
+        const categoryVideoData = (await categoryVideo.json()) as {
+            data: OpenAIModel[];
+        };
+        const typeVideoData = (await typeVideo.json()) as {
+            data: OpenAIModel[];
+        };
+        for (const data of [categoryVideoData.data, typeVideoData.data]) {
+            expect(data.every((m) => m.category === "video")).toBe(true);
+            expect(data.find((m) => m.id === videoModelId)).toBeDefined();
+            expect(data.find((m) => m.id === textModelId)).toBeUndefined();
+        }
+
+        type RichModel = {
+            name: string;
+            input_modalities?: string[];
+            output_modalities?: string[];
+        };
+        const modalityModels = (await modalityVideo.json()) as RichModel[];
+        const outputModalityModels =
+            (await outputModalityVideo.json()) as RichModel[];
+        const inputModalityModels =
+            (await inputModalityVideo.json()) as RichModel[];
+        expect(
+            modalityModels.every(
+                (m) =>
+                    m.input_modalities?.includes("video") ||
+                    m.output_modalities?.includes("video"),
+            ),
+        ).toBe(true);
+        expect(
+            modalityModels.find((m) => m.name === videoModelId),
+        ).toBeDefined();
+        expect(
+            modalityModels.find((m) => m.name === textModelId),
+        ).toBeUndefined();
+        expect(
+            outputModalityModels.every((m) =>
+                m.output_modalities?.includes("video"),
+            ),
+        ).toBe(true);
+        expect(
+            outputModalityModels.find((m) => m.name === videoModelId),
+        ).toBeDefined();
+        expect(
+            inputModalityModels.every((m) =>
+                m.input_modalities?.includes("video"),
+            ),
+        ).toBe(true);
+        expect(
+            inputModalityModels.find((m) => m.name === videoModelId),
+        ).toBeDefined();
+
         const invalidResponses = await Promise.all([
             SELF.fetch("https://gen.pollinations.ai/models?community=tru"),
             SELF.fetch("https://gen.pollinations.ai/models?community=yes"),
             SELF.fetch("https://gen.pollinations.ai/v1/models?community=2"),
             SELF.fetch(
                 "https://gen.pollinations.ai/image/models?community=nope",
+            ),
+            SELF.fetch("https://gen.pollinations.ai/v1/models?category=bad"),
+            SELF.fetch("https://gen.pollinations.ai/v1/models?type=bad"),
+            SELF.fetch("https://gen.pollinations.ai/models?modality=bad"),
+            SELF.fetch(
+                "https://gen.pollinations.ai/models?input_modality=embedding",
+            ),
+            SELF.fetch(
+                "https://gen.pollinations.ai/models?output_modality=bad",
             ),
         ]);
         for (const r of invalidResponses) {

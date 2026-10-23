@@ -1,4 +1,9 @@
 import { ModelCapabilitySchema } from "@shared/registry/model-info.ts";
+import {
+    MODEL_CATEGORIES,
+    MODEL_INPUT_MODALITIES,
+    MODEL_OUTPUT_MODALITIES,
+} from "@shared/registry/registry.ts";
 import { z } from "zod";
 
 export const splitList = (value: string) =>
@@ -23,6 +28,22 @@ export const ModelListQueryParamsSchema = z.object({
     query: z.string().optional().meta({
         description:
             "Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match.",
+    }),
+    category: z.enum(MODEL_CATEGORIES).optional().meta({
+        description: "Filter by model category.",
+    }),
+    type: z.enum(MODEL_CATEGORIES).optional().meta({
+        description: "Alias for category.",
+    }),
+    modality: z.enum(MODEL_OUTPUT_MODALITIES).optional().meta({
+        description:
+            "Filter by modality. A model must list it as an input or output modality.",
+    }),
+    input_modality: z.enum(MODEL_INPUT_MODALITIES).optional().meta({
+        description: "Filter by input modality.",
+    }),
+    output_modality: z.enum(MODEL_OUTPUT_MODALITIES).optional().meta({
+        description: "Filter by output modality.",
     }),
     capabilities: z
         .string()

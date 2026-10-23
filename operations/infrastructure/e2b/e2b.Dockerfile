@@ -67,6 +67,8 @@ RUN npx -y n@10.2.0 24.21.0 && rm -rf /usr/local/n \
     && npm install -g --ignore-scripts @earendil-works/pi-coding-agent@1.1.0
 
 COPY polli-harnesses.sh /etc/profile.d/
+# What to try first, shown at each interactive ssh login (Debian's pam_motd).
+COPY motd /etc/motd
 
 USER user
 WORKDIR /home/user

@@ -6,6 +6,7 @@ export class ApiError extends Error {
     constructor(
         public readonly status: number,
         message: string,
+        public readonly body = "",
     ) {
         super(message);
         this.name = "ApiError";
@@ -54,6 +55,7 @@ const send = async (
         throw new ApiError(
             res.status,
             `${res.status} ${res.statusText}: ${text}`,
+            text,
         );
     }
 

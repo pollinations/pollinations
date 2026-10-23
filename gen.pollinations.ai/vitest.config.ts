@@ -1,9 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-    defineWorkersConfig,
-    readD1Migrations,
-} from "@cloudflare/vitest-pool-workers/config";
+import { cloudflareTest, readD1Migrations } from "@cloudflare/vitest-plugin";
 import { buildSync } from "esbuild";
 import { loadEnv } from "vite";
 import { configDefaults, defineConfig } from "vitest/config";
@@ -57,41 +54,38 @@ const genAliases = [
     "utils/text-cache.ts",
 ];
 
-const baseConfig = defineWorkersConfig({
-    plugins: [codeAgentSdk()],
-    resolve: {
-        dedupe: ["hono", "hono-openapi"],
-        alias: [
-            ...genAliases.map((path) => ({
-                find: `@/${path}`,
-                replacement: `${genSrc}${path}`,
-            })),
-            {
-                find: /^@\/embeddings\/(.*)$/,
-                replacement: `${genSrc}embeddings/$1`,
-            },
-            {
-                find: /^@\/text\/(.*)$/,
-                replacement: `${genSrc}text/$1`,
-            },
-            {
-                find: /^@\/image\/(.*)$/,
-                replacement: `${genSrc}image/$1`,
-            },
-            {
-                find: /^@\/model3d\/(.*)$/,
-                replacement: `${genSrc}model3d/$1`,
-            },
-            {
-                find: /^@shared\/(.*)$/,
-                replacement: `${sharedSrc}$1`,
-            },
-            // piexif-ts package.json points "module"/"browser" at non-existent files;
-            // pin resolution to the published UMD bundle that actually ships.
-            { find: /^piexif-ts$/, replacement: "piexif-ts/dist/piexif.js" },
-        ],
-    },
-});
+const resolve = {
+    dedupe: ["hono", "hono-openapi"],
+    alias: [
+        ...genAliases.map((path) => ({
+            find: `@/${path}`,
+            replacement: `${genSrc}${path}`,
+        })),
+        {
+            find: /^@\/embeddings\/(.*)$/,
+            replacement: `${genSrc}embeddings/$1`,
+        },
+        {
+            find: /^@\/text\/(.*)$/,
+            replacement: `${genSrc}text/$1`,
+        },
+        {
+            find: /^@\/image\/(.*)$/,
+            replacement: `${genSrc}image/$1`,
+        },
+        {
+            find: /^@\/model3d\/(.*)$/,
+            replacement: `${genSrc}model3d/$1`,
+        },
+        {
+            find: /^@shared\/(.*)$/,
+            replacement: `${sharedSrc}$1`,
+        },
+        // piexif-ts package.json points "module"/"browser" at non-existent files;
+        // pin resolution to the published UMD bundle that actually ships.
+        { find: /^piexif-ts$/, replacement: "piexif-ts/dist/piexif.js" },
+    ],
+};
 
 export default defineConfig(async ({ mode }) => {
     const migrationsPath = path.join(
@@ -120,326 +114,301 @@ export default defineConfig(async ({ mode }) => {
     }).outputFiles[0].text;
 
     return {
-        ...baseConfig,
+        plugins: [
+            codeAgentSdk(),
+            cloudflareTest({
+                wrangler: {
+                    configPath: "./wrangler.toml",
+                    environment: env.TEST_ENV || "test",
+                },
+                miniflare: {
+                    workers: [
+                        {
+                            name: "media-test",
+                            modules: true,
+                            script: mediaScript,
+                            compatibilityDate: "2025-11-12",
+                            r2Buckets: ["MEDIA_BUCKET"],
+                            bindings: { MAX_FILE_SIZE: "104857600" },
+                        },
+                    ],
+                    bindings: {
+                        TEST_MIGRATIONS: migrations,
+                        TEST_VCR_MODE: env.TEST_VCR_MODE || "replay-or-record",
+                    },
+                    // The media Worker's bucket, so each test can reset it.
+                    r2Buckets: { TEST_MEDIA_BUCKET: "MEDIA_BUCKET" },
+                    serviceBindings: {
+                        MEDIA: {
+                            name: "media-test",
+                            entrypoint: "MediaUpload",
+                        },
+                        ENTER: async (request: Request) => {
+                            const url = new URL(request.url);
+                            if (
+                                url.pathname ===
+                                "/api/docs/open-api/generate-schema"
+                            ) {
+                                return Response.json({
+                                    openapi: "3.1.0",
+                                    info: {
+                                        title: "Enter",
+                                        version: "0.0.0",
+                                    },
+                                    paths: {},
+                                    components: {},
+                                });
+                            }
+                            // Answers key creation with the request it
+                            // got, so tests see what gen sent.
+                            if (url.pathname === "/api/account/keys") {
+                                return Response.json({
+                                    key: JSON.stringify({
+                                        authorization:
+                                            request.headers.get(
+                                                "authorization",
+                                            ),
+                                        body: await request.json(),
+                                    }),
+                                });
+                            }
+                            return new Response("enter test stub");
+                        },
+                        POLLINATIONS_MCP: async (request: Request) => {
+                            if (
+                                !request.headers.has("authorization") ||
+                                request.headers.has("cookie")
+                            ) {
+                                return new Response(
+                                    "Caller authorization was not forwarded safely",
+                                    { status: 500 },
+                                );
+                            }
+                            const payload = (await request.json()) as {
+                                jsonrpc: string;
+                                id?: string | number;
+                            };
+                            return Response.json({
+                                jsonrpc: payload.jsonrpc,
+                                id: payload.id,
+                                result: {
+                                    content: [
+                                        {
+                                            type: "text",
+                                            text: "pollinations proxied",
+                                        },
+                                    ],
+                                },
+                            });
+                        },
+                        ASK_JEV_MCP: async (request: Request) =>
+                            Response.json({
+                                pathname: new URL(request.url).pathname,
+                                authorization:
+                                    request.headers.get("authorization"),
+                                cookie: request.headers.get("cookie"),
+                                payload: await request.json(),
+                            }),
+                        MACHINES_MCP: async (request: Request) =>
+                            Response.json({
+                                pathname: new URL(request.url).pathname,
+                                authorization:
+                                    request.headers.get("authorization"),
+                                cookie: request.headers.get("cookie"),
+                                payload: await request.json(),
+                            }),
+                        FFMPEG_MCP: async (request: Request) => {
+                            if (
+                                request.headers.has("authorization") ||
+                                request.headers.has("cookie")
+                            ) {
+                                return new Response(
+                                    "Caller credentials reached MCP",
+                                    { status: 500 },
+                                );
+                            }
+                            const payload = (await request.json()) as {
+                                jsonrpc: string;
+                                id?: string | number;
+                                method?: string;
+                            };
+                            const headers = new Headers({
+                                "Content-Type": "application/json",
+                            });
+                            if (payload.method === "tools/call") {
+                                headers.set("x-pollinations-mcp-cost", "0.25");
+                                headers.set(
+                                    "x-pollinations-mcp-tool",
+                                    "runFfmpeg",
+                                );
+                                headers.set("x-pollinations-mcp-status", "200");
+                                headers.set(
+                                    "x-pollinations-mcp-adjustment-id",
+                                    "cloudflare.container.basic_runtime.v1",
+                                );
+                                headers.set(
+                                    "x-pollinations-mcp-adjustment-units",
+                                    "1",
+                                );
+                            }
+                            return Response.json(
+                                {
+                                    jsonrpc: payload.jsonrpc,
+                                    id: payload.id,
+                                    result: {
+                                        content: [
+                                            {
+                                                type: "text",
+                                                text: "ffmpeg proxied",
+                                            },
+                                        ],
+                                    },
+                                },
+                                { headers },
+                            );
+                        },
+                        EXA_MCP: async (request: Request) => {
+                            if (
+                                request.headers.has("authorization") ||
+                                request.headers.has("cookie")
+                            ) {
+                                return new Response(
+                                    "Caller credentials reached MCP",
+                                    { status: 500 },
+                                );
+                            }
+                            const payload = (await request.json()) as {
+                                jsonrpc: string;
+                                id?: string | number;
+                                method?: string;
+                            };
+                            const headers = new Headers({
+                                "Content-Type": "application/json",
+                            });
+                            if (payload.method === "tools/call") {
+                                headers.set("x-pollinations-mcp-cost", "0.007");
+                                headers.set(
+                                    "x-pollinations-mcp-tool",
+                                    "web_search_exa",
+                                );
+                                headers.set("x-pollinations-mcp-status", "200");
+                                headers.set(
+                                    "x-pollinations-mcp-adjustment-id",
+                                    "exa.search.v1",
+                                );
+                                headers.set(
+                                    "x-pollinations-mcp-adjustment-units",
+                                    "1",
+                                );
+                            }
+                            return Response.json(
+                                {
+                                    jsonrpc: payload.jsonrpc,
+                                    id: payload.id,
+                                    result: {
+                                        content: [
+                                            {
+                                                type: "text",
+                                                text: "exa proxied",
+                                            },
+                                        ],
+                                    },
+                                },
+                                { headers },
+                            );
+                        },
+                        COMPOSIO_MCP: async (request: Request) => {
+                            if (
+                                request.headers.has("authorization") ||
+                                request.headers.has("cookie") ||
+                                !request.headers.has("x-pollinations-user-id")
+                            ) {
+                                return new Response(
+                                    "Caller identity was not forwarded safely",
+                                    { status: 500 },
+                                );
+                            }
+                            const payload = (await request.json()) as {
+                                jsonrpc: string;
+                                id?: string | number;
+                            };
+                            const identity = request.headers.get(
+                                "x-pollinations-user-id",
+                            );
+                            return Response.json({
+                                jsonrpc: payload.jsonrpc,
+                                id: payload.id,
+                                result: {
+                                    content: [
+                                        {
+                                            type: "text",
+                                            text: identity,
+                                        },
+                                    ],
+                                },
+                            });
+                        },
+                        COMPUTER_MCP: async (request: Request) => {
+                            if (
+                                request.headers.has("authorization") ||
+                                request.headers.has("cookie") ||
+                                !request.headers.has("x-pollinations-user-id")
+                            ) {
+                                return new Response(
+                                    "Caller identity was not forwarded safely",
+                                    { status: 500 },
+                                );
+                            }
+                            const payload = (await request.json()) as {
+                                jsonrpc: string;
+                                id?: string | number;
+                                method?: string;
+                            };
+                            const headers = new Headers();
+                            if (payload.method === "tools/call") {
+                                headers.set(
+                                    "x-pollinations-mcp-cost",
+                                    "0.0002",
+                                );
+                                headers.set("x-pollinations-mcp-tool", "bash");
+                                headers.set("x-pollinations-mcp-status", "200");
+                                headers.set(
+                                    "x-pollinations-mcp-adjustment-id",
+                                    "computer.tool_call.v1",
+                                );
+                                headers.set(
+                                    "x-pollinations-mcp-adjustment-units",
+                                    "1",
+                                );
+                            }
+                            return Response.json(
+                                {
+                                    jsonrpc: payload.jsonrpc,
+                                    id: payload.id,
+                                    result: {
+                                        content: [
+                                            {
+                                                type: "text",
+                                                text: `computer:${request.headers.get("x-pollinations-user-id")}:${request.headers.get("x-pollinations-user-github")}`,
+                                            },
+                                        ],
+                                    },
+                                },
+                                { headers },
+                            );
+                        },
+                    },
+                },
+            }),
+        ],
+        resolve,
         test: {
-            // Use Gen's pool, not the older version hoisted for Enter.
-            pool: fileURLToPath(
-                import.meta.resolve("@cloudflare/vitest-pool-workers"),
-            ),
             globalSetup: ["./test/setup/snapshot-server.ts"],
             setupFiles: [
                 "./test/setup/apply-migrations.ts",
                 "./test/setup/public-tinybird-pipes.ts",
             ],
             exclude: [...configDefaults.exclude],
-            deps: {
-                optimizer: {
-                    ssr: {
-                        enabled: true,
-                        include: ["better-auth", "drizzle-orm"],
-                    },
-                },
-            },
-            poolOptions: {
-                workers: {
-                    singleWorker: true,
-                    wrangler: {
-                        configPath: "./wrangler.toml",
-                        environment: env.TEST_ENV || "test",
-                    },
-                    miniflare: {
-                        workers: [
-                            {
-                                name: "media-test",
-                                modules: true,
-                                script: mediaScript,
-                                compatibilityDate: "2025-11-12",
-                                r2Buckets: ["MEDIA_BUCKET"],
-                                bindings: { MAX_FILE_SIZE: "104857600" },
-                            },
-                        ],
-                        bindings: {
-                            TEST_MIGRATIONS: migrations,
-                            TEST_VCR_MODE:
-                                env.TEST_VCR_MODE || "replay-or-record",
-                        },
-                        serviceBindings: {
-                            MEDIA: {
-                                name: "media-test",
-                                entrypoint: "MediaUpload",
-                            },
-                            ENTER: async (request: Request) => {
-                                const url = new URL(request.url);
-                                if (
-                                    url.pathname ===
-                                    "/api/docs/open-api/generate-schema"
-                                ) {
-                                    return Response.json({
-                                        openapi: "3.1.0",
-                                        info: {
-                                            title: "Enter",
-                                            version: "0.0.0",
-                                        },
-                                        paths: {},
-                                        components: {},
-                                    });
-                                }
-                                // Answers key creation with the request it
-                                // got, so tests see what gen sent.
-                                if (url.pathname === "/api/account/keys") {
-                                    return Response.json({
-                                        key: JSON.stringify({
-                                            authorization:
-                                                request.headers.get(
-                                                    "authorization",
-                                                ),
-                                            body: await request.json(),
-                                        }),
-                                    });
-                                }
-                                return new Response("enter test stub");
-                            },
-                            POLLINATIONS_MCP: async (request: Request) => {
-                                if (
-                                    !request.headers.has("authorization") ||
-                                    request.headers.has("cookie")
-                                ) {
-                                    return new Response(
-                                        "Caller authorization was not forwarded safely",
-                                        { status: 500 },
-                                    );
-                                }
-                                const payload = (await request.json()) as {
-                                    jsonrpc: string;
-                                    id?: string | number;
-                                };
-                                return Response.json({
-                                    jsonrpc: payload.jsonrpc,
-                                    id: payload.id,
-                                    result: {
-                                        content: [
-                                            {
-                                                type: "text",
-                                                text: "pollinations proxied",
-                                            },
-                                        ],
-                                    },
-                                });
-                            },
-                            ASK_JEV_MCP: async (request: Request) =>
-                                Response.json({
-                                    pathname: new URL(request.url).pathname,
-                                    authorization:
-                                        request.headers.get("authorization"),
-                                    cookie: request.headers.get("cookie"),
-                                    payload: await request.json(),
-                                }),
-                            FFMPEG_MCP: async (request: Request) => {
-                                if (
-                                    request.headers.has("authorization") ||
-                                    request.headers.has("cookie")
-                                ) {
-                                    return new Response(
-                                        "Caller credentials reached MCP",
-                                        { status: 500 },
-                                    );
-                                }
-                                const payload = (await request.json()) as {
-                                    jsonrpc: string;
-                                    id?: string | number;
-                                    method?: string;
-                                };
-                                const headers = new Headers({
-                                    "Content-Type": "application/json",
-                                });
-                                if (payload.method === "tools/call") {
-                                    headers.set(
-                                        "x-pollinations-mcp-cost",
-                                        "0.25",
-                                    );
-                                    headers.set(
-                                        "x-pollinations-mcp-tool",
-                                        "runFfmpeg",
-                                    );
-                                    headers.set(
-                                        "x-pollinations-mcp-status",
-                                        "200",
-                                    );
-                                    headers.set(
-                                        "x-pollinations-mcp-adjustment-id",
-                                        "cloudflare.container.basic_runtime.v1",
-                                    );
-                                    headers.set(
-                                        "x-pollinations-mcp-adjustment-units",
-                                        "1",
-                                    );
-                                }
-                                return Response.json(
-                                    {
-                                        jsonrpc: payload.jsonrpc,
-                                        id: payload.id,
-                                        result: {
-                                            content: [
-                                                {
-                                                    type: "text",
-                                                    text: "ffmpeg proxied",
-                                                },
-                                            ],
-                                        },
-                                    },
-                                    { headers },
-                                );
-                            },
-                            EXA_MCP: async (request: Request) => {
-                                if (
-                                    request.headers.has("authorization") ||
-                                    request.headers.has("cookie")
-                                ) {
-                                    return new Response(
-                                        "Caller credentials reached MCP",
-                                        { status: 500 },
-                                    );
-                                }
-                                const payload = (await request.json()) as {
-                                    jsonrpc: string;
-                                    id?: string | number;
-                                    method?: string;
-                                };
-                                const headers = new Headers({
-                                    "Content-Type": "application/json",
-                                });
-                                if (payload.method === "tools/call") {
-                                    headers.set(
-                                        "x-pollinations-mcp-cost",
-                                        "0.007",
-                                    );
-                                    headers.set(
-                                        "x-pollinations-mcp-tool",
-                                        "web_search_exa",
-                                    );
-                                    headers.set(
-                                        "x-pollinations-mcp-status",
-                                        "200",
-                                    );
-                                    headers.set(
-                                        "x-pollinations-mcp-adjustment-id",
-                                        "exa.search.v1",
-                                    );
-                                    headers.set(
-                                        "x-pollinations-mcp-adjustment-units",
-                                        "1",
-                                    );
-                                }
-                                return Response.json(
-                                    {
-                                        jsonrpc: payload.jsonrpc,
-                                        id: payload.id,
-                                        result: {
-                                            content: [
-                                                {
-                                                    type: "text",
-                                                    text: "exa proxied",
-                                                },
-                                            ],
-                                        },
-                                    },
-                                    { headers },
-                                );
-                            },
-                            COMPOSIO_MCP: async (request: Request) => {
-                                if (
-                                    request.headers.has("authorization") ||
-                                    request.headers.has("cookie") ||
-                                    !request.headers.has(
-                                        "x-pollinations-user-id",
-                                    )
-                                ) {
-                                    return new Response(
-                                        "Caller identity was not forwarded safely",
-                                        { status: 500 },
-                                    );
-                                }
-                                const payload = (await request.json()) as {
-                                    jsonrpc: string;
-                                    id?: string | number;
-                                };
-                                const identity = request.headers.get(
-                                    "x-pollinations-user-id",
-                                );
-                                return Response.json({
-                                    jsonrpc: payload.jsonrpc,
-                                    id: payload.id,
-                                    result: {
-                                        content: [
-                                            {
-                                                type: "text",
-                                                text: identity,
-                                            },
-                                        ],
-                                    },
-                                });
-                            },
-                            COMPUTER_MCP: async (request: Request) => {
-                                if (
-                                    request.headers.has("authorization") ||
-                                    request.headers.has("cookie") ||
-                                    !request.headers.has(
-                                        "x-pollinations-user-id",
-                                    )
-                                ) {
-                                    return new Response(
-                                        "Caller identity was not forwarded safely",
-                                        { status: 500 },
-                                    );
-                                }
-                                const payload = (await request.json()) as {
-                                    jsonrpc: string;
-                                    id?: string | number;
-                                    method?: string;
-                                };
-                                const headers = new Headers();
-                                if (payload.method === "tools/call") {
-                                    headers.set(
-                                        "x-pollinations-mcp-cost",
-                                        "0.0002",
-                                    );
-                                    headers.set(
-                                        "x-pollinations-mcp-tool",
-                                        "bash",
-                                    );
-                                    headers.set(
-                                        "x-pollinations-mcp-status",
-                                        "200",
-                                    );
-                                    headers.set(
-                                        "x-pollinations-mcp-adjustment-id",
-                                        "computer.tool_call.v1",
-                                    );
-                                    headers.set(
-                                        "x-pollinations-mcp-adjustment-units",
-                                        "1",
-                                    );
-                                }
-                                return Response.json(
-                                    {
-                                        jsonrpc: payload.jsonrpc,
-                                        id: payload.id,
-                                        result: {
-                                            content: [
-                                                {
-                                                    type: "text",
-                                                    text: `computer:${request.headers.get("x-pollinations-user-id")}:${request.headers.get("x-pollinations-user-github")}`,
-                                                },
-                                            ],
-                                        },
-                                    },
-                                    { headers },
-                                );
-                            },
-                        },
-                    },
-                },
-            },
         },
     };
 });

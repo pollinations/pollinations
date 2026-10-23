@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pollinations.app</title>
+<meta name="description" content="Static site hosting at <name>.pollinations.app for Pollinations accounts.">
+<link rel="icon" type="image/png" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preload" href="/fonts/lct-mogi-a.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* Colors from packages/ui/src/styles/tokens.css. */
+@font-face {
+    font-family: "LCT Mogi";
+    src: url("/fonts/lct-mogi-a.woff2") format("woff2");
+    font-display: swap;
+}
+:root {
+    color-scheme: light dark;
+    --bg: oklch(0.902 0.013 80);
+    --block: oklch(0.96 0.02 85);
+    --code: oklch(0.996 0.004 85);
+    --strong: oklch(0.25 0.02 80);
+    --text: oklch(0.4 0.017 80);
+    --muted: oklch(0.49 0.013 80);
+    --divider: oklch(0.835 0.007 80);
+    --accent: oklch(0.9 0.135 85);
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: oklch(0.145 0.004 80);
+        --block: oklch(0.205 0.005 80);
+        --code: oklch(0.255 0.006 80);
+        --strong: oklch(0.93 0.004 80);
+        --text: oklch(0.85 0.007 80);
+        --muted: oklch(0.72 0.008 80);
+        --divider: oklch(0.33 0.006 80);
+    }
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    min-height: 100vh;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+main {
+    width: 100%;
+    min-width: 0;
+    max-width: 40rem;
+    padding: clamp(1.5rem, 6vw, 3rem);
+    border-radius: 1.75rem;
+    background: var(--block);
+}
+.logo { display: block; width: 11rem; color: var(--strong); }
+.logo svg { display: block; width: 100%; height: auto; }
+.eyebrow {
+    margin: 2.5rem 0 0.5rem;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+h1, h2 {
+    margin: 0;
+    color: var(--strong);
+    font-family: "LCT Mogi", ui-sans-serif, sans-serif;
+    font-weight: normal;
+    line-height: 1.05;
+}
+h1 { font-size: clamp(1.75rem, 7.5vw, 3rem); overflow-wrap: anywhere; }
+h2 { margin-top: 2rem; font-size: 1.5rem; }
+p, ul { margin: 0.75rem 0; }
+ul { padding-left: 1.25rem; }
+code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--strong); }
+pre {
+    margin: 0.75rem 0;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    border: 1px solid var(--divider);
+    border-radius: 1.25rem;
+    background: var(--code);
+    line-height: 1.6;
+}
+.comment { color: var(--muted); }
+nav { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 2rem; }
+nav a {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--divider);
+    border-radius: 999px;
+    color: var(--strong);
+    font-size: 15px;
+    text-decoration: none;
+}
+nav a:hover { border-color: var(--strong); }
+nav a:first-child { border-color: transparent; background: var(--accent); color: #110518; }
+</style>
+</head>
+<body>
+<main>
+    <a class="logo" href="https://pollinations.ai" aria-label="pollinations.ai"><!-- lockup --></a>
+    <p class="eyebrow">Static site hosting</p>
+    <h1>pollinations.app</h1>
+    <p>Free hosting for static sites, for anyone with a Pollinations account. Each site is served at <code>https://&lt;name&gt;.pollinations.app</code>.</p>
+
+    <h2>Publish</h2>
+    <pre><code>npm install -g @pollinations/cli
+polli auth login
+polli sites deploy ./dist --name my-app
+<span class="comment"># → https://my-app.pollinations.app</span></code></pre>
+    <p>From code or an agent: <code>deploySite</code> in <code>@pollinations/sdk</code>, the <code>deploySite</code> tool of the Pollinations MCP server, or <code>PUT /account/sites/{name}</code>.</p>
+
+    <h2>Limits</h2>
+    <ul>
+        <li>5 sites per account, 200 MB and 1,000 files per site.</li>
+        <li>A folder of static files with an <code>index.html</code>. Unknown paths serve it, so single-page apps work.</li>
+        <li>Sites are public: never put an API key in one.</li>
+    </ul>
+
+    <nav>
+        <a href="https://gen.pollinations.ai/docs#tag/sites">Docs</a>
+        <a href="https://www.npmjs.com/package/@pollinations/cli">CLI</a>
+        <a href="https://enter.pollinations.ai">Dashboard</a>
+        <a href="https://pollinations.ai">pollinations.ai</a>
+    </nav>
+</main>
+</body>
+</html>

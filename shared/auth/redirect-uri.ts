@@ -50,6 +50,31 @@ export function redirectUriMatchesAllowlistExact(
     return allowlist.some((entry) => matchesEntry(incoming, entry, true));
 }
 
+// Schemes the browser handles itself. Sending the consent page to one would
+// load or run it on this page instead of handing the result back to an app.
+const BROWSER_SCHEMES = new Set([
+    "javascript:",
+    "data:",
+    "vbscript:",
+    "file:",
+    "blob:",
+    "about:",
+    "filesystem:",
+]);
+
+/**
+ * Parse the redirect target of the consent screen: a website, a loopback
+ * server or a native app's own scheme (e.g. `myapp://callback`). Null when the
+ * URL is unparseable or uses a scheme the browser handles itself, so such a
+ * target never reaches window.location. The URL parser normalizes the scheme,
+ * and callers navigate to the parsed URL, so case or whitespace tricks in the
+ * raw string cannot slip past the check.
+ */
+export function parseAuthorizeRedirectUrl(url: string): URL | null {
+    const parsed = safeParse(url);
+    return parsed && !BROWSER_SCHEMES.has(parsed.protocol) ? parsed : null;
+}
+
 export function isAllowedRedirectUrl(url: URL): boolean {
     if (url.protocol === "https:") return true;
     return url.protocol === "http:" && isLoopbackHostname(url.hostname);

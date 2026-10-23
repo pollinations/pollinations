@@ -1,7 +1,10 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
-import { ModelHealthSchema } from "../registry/model-info.ts";
+import {
+    AGENT_FIELD_DESCRIPTIONS,
+    ModelHealthSchema,
+} from "../registry/model-info.ts";
 import { MODEL_CATEGORIES } from "../registry/registry.ts";
 import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
 import { SafeSchema } from "./safety.ts";
@@ -759,14 +762,20 @@ export const OpenAIModelSchema = z
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),
-        agent: z.boolean().optional(),
-        base_model: z.string().optional(),
+        agent: z.boolean().optional().describe(AGENT_FIELD_DESCRIPTIONS.agent),
+        base_model: z
+            .string()
+            .optional()
+            .describe(AGENT_FIELD_DESCRIPTIONS.base_model),
         paid_only: z
             .boolean()
             .describe(
                 "True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`.",
             ),
-        pricing: z.record(z.string(), z.string()).optional(),
+        pricing: z
+            .record(z.string(), z.string())
+            .optional()
+            .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
         capabilities: z.array(z.string()).optional(),
         supported_parameters: z
             .array(z.string())
@@ -810,6 +819,15 @@ const imageModelField = z
     .default("black-forest-labs/flux.1-schnell")
     .meta({
         description: "The model to use for image generation",
+    });
+// Edits need a model that reads the source image; schnell is text-only.
+const imageEditModelField = z
+    .string()
+    .optional()
+    .default("openai/gpt-image-1-mini")
+    .meta({
+        description:
+            "The model to use for image editing. It must list image in input_modalities.",
     });
 const imageNField = z
     .number()
@@ -952,7 +970,7 @@ export const CreateImageEditRequestSchema = z
                 description:
                     "Source image(s). A URL string, or an array of {image_url} objects (OpenAI format)",
             }),
-        model: imageModelField,
+        model: imageEditModelField,
         n: imageNField,
         size: imageEditSizeField,
         quality: imageQualityField,

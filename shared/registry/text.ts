@@ -52,6 +52,8 @@ const TEXT_BASE_SERVICES = {
             "include_reasoning",
         ],
         provider: "vercel",
+        // Vercel returned 429 bursts during light testing.
+        perUserRpm: 8,
         publisher: "Stealth",
         category: "text",
         addedDate: new Date("2026-10-08").getTime(),

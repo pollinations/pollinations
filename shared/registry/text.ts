@@ -780,13 +780,14 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-10-19").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter's Inception route list rates (2026-10-19), including the
-        // account's 5.5% credit-purchase fee. Mercury 3 is 50% off until the
-        // promotion ends (no end date published); this uses the list price.
+        // OpenRouter's Inception route launch rates (50% off, checked
+        // 2026-10-23), including the account's 5.5% credit-purchase fee. List
+        // is $0.20 / $0.02 cached / $0.70 per M; raise these when the launch
+        // offer ends (no end date published).
         cost: {
-            promptTextTokens: perMillion(0.2) * 1.055,
-            promptCachedTokens: perMillion(0.02) * 1.055,
-            completionTextTokens: perMillion(0.7) * 1.055,
+            promptTextTokens: perMillion(0.1) * 1.055,
+            promptCachedTokens: perMillion(0.01) * 1.055,
+            completionTextTokens: perMillion(0.35) * 1.055,
         },
         title: "Mercury 3",
         description:

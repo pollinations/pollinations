@@ -413,7 +413,7 @@ export function CommunityEndpoints({
         >
             <PlusIcon className="h-4 w-4" />
             <BotIcon className="h-5 w-5" />
-            <span className="ml-1">Create agent</span>
+            <span className="ml-1">Create</span>
         </Button>
     );
     const modelAction = (
@@ -425,7 +425,7 @@ export function CommunityEndpoints({
         >
             <PlusIcon className="h-4 w-4" />
             <BeakerIcon className="h-5 w-5" />
-            <span className="ml-1">Create model</span>
+            <span className="ml-1">Create</span>
         </Button>
     );
 

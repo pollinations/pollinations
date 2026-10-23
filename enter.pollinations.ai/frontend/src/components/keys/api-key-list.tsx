@@ -309,7 +309,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         >
             <PlusIcon className="h-4 w-4" />
             <KeyIcon className="h-5 w-5" />
-            <span className="ml-1">Create secret key</span>
+            <span className="ml-1">Create</span>
         </Button>
     );
     const appAction = (
@@ -321,7 +321,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         >
             <PlusIcon className="h-4 w-4" />
             <AppIcon className="h-5 w-5" />
-            <span className="ml-1">Create app key</span>
+            <span className="ml-1">Create</span>
         </Button>
     );
 

@@ -12,12 +12,14 @@ import { AuthModalLoading } from "@pollinations/ui/auth";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
+    getGrantedOAuthScope,
     isClientMetadataUrl,
     PKCE_S256_CHALLENGE_REGEX,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
 import {
     isLoopbackHostname,
+    parseAuthorizeRedirectUrl,
     redirectUriMatchesAllowlistExact,
 } from "@shared/auth/redirect-uri.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
@@ -50,14 +52,6 @@ type Attribution = {
 
 async function readAttribution(response: Response): Promise<Attribution> {
     return (await response.json()) as Attribution;
-}
-
-function safeParseUrl(url: string): URL | null {
-    try {
-        return new URL(url);
-    } catch {
-        return null;
-    }
 }
 
 export function Authorize() {
@@ -96,7 +90,9 @@ export function Authorize() {
         "pending" | "approved" | "denied"
     >("pending");
 
-    const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
+    const parsedRedirectUrl = redirect_url
+        ? parseAuthorizeRedirectUrl(redirect_url)
+        : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
 
     const keyPermissions = useKeyPermissions(
@@ -190,8 +186,10 @@ export function Authorize() {
                 setError("No redirect URL provided");
                 return;
             }
-            if (!safeParseUrl(redirect_url)) {
-                setError("Invalid redirect URL format");
+            if (!parseAuthorizeRedirectUrl(redirect_url)) {
+                setError(
+                    "Redirect URL must be a website or app address, such as https://… or myapp://…",
+                );
                 return;
             }
 
@@ -200,7 +198,7 @@ export function Authorize() {
             // alias it (RFC 6749 §4.1.2.1 unsupported_response_type).
             if (response_type && response_type !== "code") {
                 setError(
-                    'Unsupported response_type — only "code" is supported.',
+                    'Unsupported response_type. Only "code" is supported.',
                 );
                 return;
             }
@@ -324,6 +322,10 @@ export function Authorize() {
             } = keyPermissions.permissions;
             const grantedAccountPermissions =
                 sanitizeAuthorizeAccountPermissions(accountPermissions) ?? [];
+            const grantedScope = getGrantedOAuthScope(
+                requestedScopes,
+                grantedAccountPermissions,
+            );
             const appName = attribution?.clientHost
                 ? `${attribution.appName} (${attribution.clientHost})`
                 : attribution?.appName || redirectHostname;
@@ -364,9 +366,7 @@ export function Authorize() {
                         // Same convention as the code flow below: the token
                         // response must echo the granted scope when it
                         // differs from the requested one (RFC 6749 §5.1)
-                        scope: requestedScopes.size
-                            ? grantedAccountPermissions.join(" ")
-                            : undefined,
+                        scope: grantedScope,
                     },
                 });
                 if (!res.ok) {
@@ -398,9 +398,7 @@ export function Authorize() {
                                 // distinct from undefined (nothing requested)
                                 // — RFC 6749 §5.1 needs the token response to
                                 // echo the former
-                                scope: requestedScopes.size
-                                    ? grantedAccountPermissions.join(" ")
-                                    : undefined,
+                                scope: grantedScope,
                                 codeChallenge: code_challenge,
                                 codeChallengeMethod: "S256",
                                 expiresIn,

@@ -1119,6 +1119,32 @@ test("media text protocols share one edit generation with native edits", async (
     expect(mocks.deepInfra.state.requests).toHaveLength(1);
 });
 
+test("native image edits reject a text-only model instead of dropping the image", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "deepInfra");
+    const { key } = await createTestApiKey({ user: { packBalance: 100 } });
+    const { response, wait } = await fetchWorker("/v1/images/edits", {
+        method: "POST",
+        headers: {
+            authorization: `Bearer ${key}`,
+            "content-type": "application/json",
+        },
+        body: JSON.stringify({
+            model: "black-forest-labs/flux.1-schnell",
+            prompt: "make the sky purple",
+            image: `data:image/png;base64,${png1x1Base64}`,
+        }),
+    });
+
+    // The model declares text-only input, so a successful response would be an
+    // unrelated generation with the source image silently dropped.
+    expect(response.status, await response.clone().text()).toBe(400);
+    expect(await response.text()).toContain("does not accept image input");
+    await wait();
+    expect(mocks.deepInfra.state.requests).toHaveLength(0);
+});
+
 test("media Responses rejects invalid string input before generation", async ({
     mocks,
 }) => {
@@ -3286,7 +3312,7 @@ test("OpenAI image generation returns token usage", async ({
     });
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("x-cache")).toBe("HIT");
+    expect(response.headers.get("x-cache")).toBe("MISS");
     expect(response.headers.get("x-cache-type")).toBeNull();
     await expect(response.json()).resolves.toMatchObject({
         data: [{ b64_json: expect.any(String) }],

@@ -19,7 +19,7 @@ import {
     pauseSandbox,
     sandboxLogs,
 } from "./e2b.js";
-import { proxy, setupSsh } from "./ssh.js";
+import { proxy, setupSsh, stderrToTerminal } from "./ssh.js";
 
 // Whole seconds, as in E2B's `timeout`. 0 never expires, like Daytona's
 // `autoStopInterval: 0`; E2B has no such value, so polli asks for its largest.
@@ -65,7 +65,7 @@ export const sandboxCommand = new Command("sandbox")
             .description("Start a sandbox you can ssh into")
             .argument(
                 "[template]",
-                "E2B template; pollinations-large has 4 vCPU and 8 GB",
+                "pollinations-large has 4 vCPU and 8 GB; pollinations-azure, pollinations-azure-large and pollinations-azure-xl (8 vCPU, 16 GB) run on Azure",
                 "pollinations",
             )
             .option(
@@ -233,6 +233,7 @@ export const sandboxCommand = new Command("sandbox")
             .description("ssh ProxyCommand for <sandbox-id>.polli")
             .argument("<host>")
             .action(async (host: string) => {
+                stderrToTerminal();
                 requireKey();
                 try {
                     await proxy(host);

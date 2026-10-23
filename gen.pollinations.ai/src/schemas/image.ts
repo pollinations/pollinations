@@ -18,23 +18,17 @@ const modelSchema = (defaultModel: string) =>
                 "Model to use. See /image/models for the current canonical IDs and aliases.",
         });
 
-const GenerateImageRequestQueryParamsBaseSchema = z.object({
+export const GenerateImageRequestQueryParamsSchema = z.object({
     // Image model params
     model: modelSchema(DEFAULT_IMAGE_MODEL),
-    width: z.coerce.number().int().nonnegative().optional().default(1024).meta({
+    width: z.coerce.number().int().positive().optional().default(1024).meta({
         description:
             "Width in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
     }),
-    height: z.coerce
-        .number()
-        .int()
-        .nonnegative()
-        .optional()
-        .default(1024)
-        .meta({
-            description:
-                "Height in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
-        }),
+    height: z.coerce.number().int().positive().optional().default(1024).meta({
+        description:
+            "Height in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
+    }),
     seed: z.coerce
         .number()
         .int()
@@ -148,23 +142,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     }),
 });
 
-const validateDuration = (
-    params: z.infer<typeof GenerateImageRequestQueryParamsBaseSchema>,
-    ctx: z.RefinementCtx,
-) => {
-    if (params.duration !== undefined && params.duration > 30) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["duration"],
-            message: "Duration above 30 seconds is not supported.",
-        });
-    }
-};
-
-export const GenerateImageRequestQueryParamsSchema =
-    GenerateImageRequestQueryParamsBaseSchema.superRefine(validateDuration);
-
 export const GenerateVideoRequestQueryParamsSchema =
-    GenerateImageRequestQueryParamsBaseSchema.extend({
+    GenerateImageRequestQueryParamsSchema.extend({
         model: modelSchema("google/veo-3.1-fast"),
-    }).superRefine(validateDuration);
+    });

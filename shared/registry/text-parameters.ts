@@ -234,7 +234,6 @@ export const CHAT_PARAMETERS = {
         ...SAMPLING,
         ...TOOLS,
         ...PENALTIES,
-        ...LOGPROBS,
         ...OPENROUTER_REASONING,
         "top_k",
         "min_p",

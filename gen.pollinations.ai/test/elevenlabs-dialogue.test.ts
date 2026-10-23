@@ -26,11 +26,12 @@ async function fetchGen(input: RequestInfo | URL, init?: RequestInit) {
     );
 }
 
-describe("ElevenLabs Text to Dialogue", () => {
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
+// Vitest 4 reuses an existing spy, so every test restores its fetch spy.
+afterEach(() => {
+    vi.restoreAllMocks();
+});
 
+describe("ElevenLabs Text to Dialogue", () => {
     it("maps preset voices and bills all input characters", async () => {
         const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(new Uint8Array([1, 2, 3]), {

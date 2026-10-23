@@ -442,3 +442,70 @@ describe("ImageParamsSchema", () => {
         });
     });
 });
+
+describe("image dimensions", () => {
+    it("rejects zero and negative sides before any provider is contacted", () => {
+        for (const params of [
+            { width: 0 },
+            { height: 0 },
+            { width: 0, height: 0 },
+            { width: -100 },
+            { height: -50 },
+            { width: -100, height: -50 },
+        ]) {
+            const result = ImageParamsSchema.safeParse({
+                model: "black-forest-labs/flux.1-schnell",
+                ...params,
+            });
+            expect(result.success, JSON.stringify(params)).toBe(false);
+            expect(result.error?.issues[0]?.path).toEqual([
+                Object.hasOwn(params, "width") ? "width" : "height",
+            ]);
+        }
+    });
+
+    it("refuses image sides under 16 px", () => {
+        for (const side of ["width", "height"] as const) {
+            const result = ImageParamsSchema.safeParse({
+                model: "black-forest-labs/flux.1-schnell",
+                [side]: 8,
+            });
+            expect(result.success, side).toBe(false);
+            expect(result.error?.issues[0]?.path).toEqual([side]);
+        }
+    });
+
+    it("keeps small positive aspect-ratio sides for video models", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "google/veo-3.1-fast",
+                width: 16,
+                height: 9,
+            }).success,
+        ).toBe(true);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "google/veo-3.1-fast",
+                width: 0,
+                height: 9,
+            }).success,
+        ).toBe(false);
+    });
+
+    it("still accepts the 16px floor and ordinary sizes", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "black-forest-labs/flux.1-schnell",
+                width: 16,
+                height: 16,
+            }).success,
+        ).toBe(true);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "black-forest-labs/flux.1-schnell",
+                width: 1024,
+                height: 768,
+            }).success,
+        ).toBe(true);
+    });
+});

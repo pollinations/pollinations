@@ -28,6 +28,9 @@ function envWithEnter(
     fetch: Fetcher["fetch"] = async () => new Response("enter"),
 ): CloudflareBindings {
     return {
+        ASSETS: {
+            fetch: async () => new Response("Not Found", { status: 404 }),
+        } as unknown as Fetcher,
         ENTER: { fetch } as unknown as Fetcher,
         ENVIRONMENT: "test",
         LOG_LEVEL: "debug",
@@ -182,6 +185,28 @@ describe("gen worker routing", () => {
         expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
     });
 
+    it("serves gen's icons after the routes", async () => {
+        // Like Cloudflare's asset server: 405 for methods other than GET/HEAD.
+        const ASSETS = {
+            fetch: async (request: Request) =>
+                request.method !== "GET" && request.method !== "HEAD"
+                    ? new Response("Method Not Allowed", { status: 405 })
+                    : new URL(request.url).pathname === "/favicon.ico"
+                      ? new Response("icon")
+                      : new Response("missing", { status: 404 }),
+        } as unknown as Fetcher;
+        const env = { ...envWithEnter(), ASSETS };
+
+        expect(await (await fetchWorker("/favicon.ico", env)).text()).toBe(
+            "icon",
+        );
+        expect((await fetchWorker("/missing.png", env)).status).toBe(404);
+        const post = await fetchWorker("/v1/chat/completion", env, {
+            method: "POST",
+        });
+        expect(post.status).toBe(404);
+    });
+
     it("serves the docs web app manifest", async () => {
         const response = await fetchWorker("/manifest.webmanifest");
 
@@ -329,6 +354,7 @@ describe("gen worker routing", () => {
             "/docs/llm.txt?section=publish-an-agent",
             "/docs/llm.txt?section=publish-a-model",
             "/docs/llm.txt?section=sandboxes",
+            "/docs/llm.txt?section=sites",
             "/docs/llm.txt?section=coding-harnesses",
             "/docs/llm.txt?section=mcp",
             "/docs/llm.txt?section=cli",

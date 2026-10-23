@@ -1,11 +1,19 @@
+import {
+    createExecutionContext,
+    env,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
 import { calculateUsageBilling } from "@shared/registry/registry.ts";
 import {
     PROVIDER_BILLING_HEADERS,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
+import { test as fixtureTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { generateSoniloSfx, SONILO_MODEL } from "../../src/audio/sonilo.ts";
+import worker from "../../src/index.ts";
+import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
 
 const options = {
     prompt: "fire crackling, soft whoosh",
@@ -121,3 +129,37 @@ describe("Sonilo 1.1 SFX", () => {
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 });
+
+fixtureTest(
+    "reads reference_video from a multipart speech request",
+    async ({ paidApiKey }) => {
+        const formData = new FormData();
+        formData.append("model", SONILO_MODEL);
+        formData.append("input", "rain on a tin roof");
+        // A private URL stops the request before any fal job, so the message
+        // shows the multipart value reached Sonilo.
+        formData.append("reference_video", "http://127.0.0.1/clip.mp4");
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${paidApiKey}` },
+                body: formData,
+            }),
+            withInlineGenerationCoordinator(
+                env as unknown as CloudflareBindings,
+            ),
+            ctx,
+        );
+
+        expect(response.status).toBe(400);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                message:
+                    "reference_video must be a public HTTP(S) URL without credentials",
+            },
+        });
+        await waitOnExecutionContext(ctx);
+    },
+);

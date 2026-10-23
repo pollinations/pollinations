@@ -2292,6 +2292,8 @@ async function parseSpeechRequest(
                     ? parseJsonObject(rawCompositionPlan, "composition_plan")
                     : undefined,
             reference_audio: referenceAudio || undefined,
+            reference_video:
+                (formData.get("reference_video") as string | null) || undefined,
         };
 
         return parseCreateSpeechRequest(parsed);

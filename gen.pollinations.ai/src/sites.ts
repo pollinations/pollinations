@@ -1,4 +1,6 @@
 import type { Env } from "@/env.ts";
+import LOCKUP_SVG from "../../packages/ui/src/brand/lockup-horizontal.svg?raw";
+import LANDING_HTML from "./sites-landing.html?raw";
 
 // User sites at <name>.pollinations.app (<name>--staging.pollinations.app on
 // staging). Enter uploads each site as a static-assets script named <name>
@@ -45,12 +47,26 @@ async function dispatch(
     }
 }
 
+const LANDING_PAGE = LANDING_HTML.replace("<!-- lockup -->", LOCKUP_SVG);
+
 /** Serves a sites-domain request, or returns undefined for gen's own hosts. */
 export function serveSite(
     request: Request,
     env: Env["Bindings"],
 ): Promise<Response> | undefined {
-    const name = siteName(new URL(request.url).hostname, env.SITES_HOST_SUFFIX);
+    const { hostname, pathname } = new URL(request.url);
+    // The bare domain (production only) explains pollinations.app; its font
+    // and icons come from gen's public files. Site names are labels in front
+    // of the suffix, so no site can take it.
+    if (`.${hostname}` === env.SITES_HOST_SUFFIX) {
+        if (pathname !== "/") return env.ASSETS.fetch(request);
+        return Promise.resolve(
+            new Response(LANDING_PAGE, {
+                headers: { "Content-Type": "text/html; charset=utf-8" },
+            }),
+        );
+    }
+    const name = siteName(hostname, env.SITES_HOST_SUFFIX);
     if (name === undefined || !env.SITES) return undefined;
     if (name === null) return Promise.resolve(notFound());
     return dispatch(env.SITES, name, request);

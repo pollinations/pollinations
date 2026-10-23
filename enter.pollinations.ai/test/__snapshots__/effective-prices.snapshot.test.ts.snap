@@ -2496,14 +2496,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "nvidia/nemotron-3.5-super-vl": {
     "cost": {
-      "completionTextTokens": 0.0000004,
-      "promptCachedTokens": 0.00000008,
-      "promptTextTokens": 0.0000001,
+      "completionTextTokens": 0.0000005,
+      "promptCachedTokens": 0.00000002,
+      "promptTextTokens": 0.00000015,
     },
     "price": {
-      "completionTextTokens": 0.0000004,
-      "promptCachedTokens": 0.00000008,
-      "promptTextTokens": 0.0000001,
+      "completionTextTokens": 0.0000005,
+      "promptCachedTokens": 0.00000002,
+      "promptTextTokens": 0.00000015,
     },
   },
   "nvidia/nemotron-3.5-super-vl:openrouter:together": {

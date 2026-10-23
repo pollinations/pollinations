@@ -2721,10 +2721,10 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // DeepInfra direct fp4 list rates (2026-10-18). No gateway fee.
-            promptTextTokens: perMillion(0.1),
-            promptCachedTokens: perMillion(0.08),
-            completionTextTokens: perMillion(0.4),
+            // DeepInfra direct fp4 list rates (2026-10-23). No gateway fee.
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.02),
+            completionTextTokens: perMillion(0.5),
         },
         title: "NVIDIA Nemotron 3.5 Super VL",
         description:

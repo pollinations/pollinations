@@ -348,12 +348,12 @@ export function CommunityEndpoints({
 
     const privateModelGuidance = (
         <>
-            Your models are private — callable only by you and shown only when{" "}
-            <strong>/models</strong> is authenticated with your key. Public
-            publishing is allowlist-only. To request publishing access for
-            models, agents, or both, submit a {publisherAccessRequestLink}. You
-            can register, probe, and test private models without approval. For
-            questions, ask in{" "}
+            Your models are private. Only you can call them, and they appear in{" "}
+            <strong>/models</strong> only when you authenticate with your key.
+            Public publishing is allowlist-only. To request publishing access
+            for models, agents, or both, submit a {publisherAccessRequestLink}.
+            You can register, probe, and test private models without approval.
+            For questions, ask in{" "}
             <InlineLink href="https://discord.gg/k9F7SyTgqn">
                 Discord
             </InlineLink>
@@ -413,7 +413,7 @@ export function CommunityEndpoints({
         >
             <PlusIcon className="h-4 w-4" />
             <BotIcon className="h-5 w-5" />
-            <span className="ml-1">Create agent</span>
+            <span className="ml-1">Create</span>
         </Button>
     );
     const modelAction = (
@@ -425,7 +425,7 @@ export function CommunityEndpoints({
         >
             <PlusIcon className="h-4 w-4" />
             <BeakerIcon className="h-5 w-5" />
-            <span className="ml-1">Create model</span>
+            <span className="ml-1">Create</span>
         </Button>
     );
 

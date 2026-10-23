@@ -171,7 +171,7 @@ export function MyApps({
                         size="sm"
                         icon={<GitHubIcon />}
                     >
-                        Submit another app
+                        Submit
                     </Button>
                 ) : undefined
             }

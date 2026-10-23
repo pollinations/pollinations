@@ -69,4 +69,34 @@ describe("GET /api/account/key/usage", () => {
         );
         expect(res.status).toBe(401);
     });
+
+    test("uses local period bounds without changing UTC cursors", async ({
+        accountToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird");
+        const created = await createApiKeyViaApi(accountToken, {
+            name: "local-time-key",
+        });
+        const query = new URLSearchParams({
+            granularity: "day",
+            period: "2026-03-29",
+            timezone: "Europe/Berlin",
+            before: "2026-03-29T03:30:00+02:00",
+            before_event_id: "event-1",
+        });
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/account/key/usage?${query}`,
+            { headers: { Authorization: `Bearer ${created.key}` } },
+        );
+        expect(response.status).toBe(200);
+        expect(mocks.tinybird.state.pipeCalls.at(-1)?.query).toMatchObject({
+            api_key_ids: created.id,
+            timezone: "Europe/Berlin",
+            since: "2026-03-29 00:00:00",
+            until: "2026-03-30 00:00:00",
+            before: "2026-03-29 01:30:00",
+            before_event_id: "event-1",
+        });
+    });
 });

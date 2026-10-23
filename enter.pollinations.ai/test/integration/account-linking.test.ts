@@ -45,6 +45,280 @@ async function getDiscordReward(userId: string) {
     return reward ?? null;
 }
 
+async function finishOAuth(
+    start: Response,
+    provider: string,
+    sessionCookie?: string,
+): Promise<Response> {
+    const { url } = (await start.json()) as { url: string };
+    const state = new URL(url).searchParams.get("state");
+    const stateCookie = start.headers.get("Set-Cookie");
+    if (!state || !stateCookie) throw new Error("Expected OAuth state");
+    const callbackUrl = new URL(
+        `http://localhost:3000/api/auth/callback/${provider}`,
+    );
+    callbackUrl.searchParams.set("code", "test-code");
+    callbackUrl.searchParams.set("state", state);
+    return SELF.fetch(callbackUrl.toString(), {
+        headers: {
+            Accept: "text/html,application/xhtml+xml",
+            Cookie: [sessionCookie, stateCookie].filter(Boolean).join("; "),
+            "User-Agent": "Mozilla/5.0 (compatible; test-browser)",
+        },
+        redirect: "manual",
+    });
+}
+
+async function signIn(provider: "github" | "google"): Promise<Response> {
+    const start = await SELF.fetch(
+        "http://localhost:3000/api/auth/sign-in/social",
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ provider, callbackURL: "/" }),
+        },
+    );
+    expect(start.status).toBe(200);
+    return finishOAuth(start, provider);
+}
+
+function sessionCookieFrom(response: Response): string {
+    const token = response.headers
+        .get("Set-Cookie")
+        ?.match(/better-auth\.session_token=([^;]+)/)?.[1];
+    if (!token) throw new Error("Expected session cookie");
+    return `better-auth.session_token=${token}`;
+}
+
+function postWithSession(
+    sessionCookie: string,
+    path: string,
+    body: object,
+): Promise<Response> {
+    return SELF.fetch(`http://localhost:3000/api/auth${path}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Cookie: sessionCookie,
+            Origin: "http://localhost:3000",
+        },
+        body: JSON.stringify(body),
+    });
+}
+
+function startGitHubLink(sessionCookie: string): Promise<Response> {
+    return postWithSession(sessionCookie, "/link-social", {
+        provider: "github",
+        callbackURL: "/account",
+    });
+}
+
+async function providersByEmail(email: string) {
+    const db = drizzle(env.DB);
+    return db
+        .select({ userId: userTable.id, providerId: accountTable.providerId })
+        .from(userTable)
+        .innerJoin(accountTable, eq(accountTable.userId, userTable.id))
+        .where(eq(userTable.email, email))
+        .orderBy(accountTable.providerId);
+}
+
+test("signs up with Google without a GitHub identity", async ({ mocks }) => {
+    await mocks.enable("google", "tinybird");
+
+    const callback = await signIn("google");
+    expect(callback.status).toBe(302);
+    expect(callback.headers.get("Location")).toBe("/");
+
+    const [user] = await drizzle(env.DB).select().from(userTable);
+    expect(user).toMatchObject({
+        email: "test@example.com",
+        emailVerified: true,
+        githubId: null,
+        githubUsername: null,
+    });
+    expect(await providersByEmail("test@example.com")).toEqual([
+        { userId: user?.id, providerId: "google" },
+    ]);
+});
+
+test("Google opens the GitHub account with the same verified email", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    await mocks.enable("google", "tinybird");
+
+    const callback = await signIn("google");
+    expect(callback.headers.get("Location")).toBe("/");
+
+    const accounts = await providersByEmail("test@example.com");
+    expect(accounts.map((account) => account.providerId)).toEqual([
+        "github",
+        "google",
+    ]);
+    expect(new Set(accounts.map((account) => account.userId)).size).toBe(1);
+});
+
+test("Google never links on an unverified email", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    await mocks.enable("google", "tinybird");
+
+    // Google has not verified the address.
+    mocks.google.state.user.emailVerified = false;
+    const unverifiedGoogle = await signIn("google");
+    expect(unverifiedGoogle.headers.get("Location")).toContain(
+        "error=account_not_linked",
+    );
+
+    // Our account has not verified it.
+    mocks.google.state.user.emailVerified = true;
+    await drizzle(env.DB).update(userTable).set({ emailVerified: false });
+    const unverifiedLocal = await signIn("google");
+    expect(unverifiedLocal.headers.get("Location")).toContain(
+        "error=account_not_linked",
+    );
+
+    expect(
+        (await providersByEmail("test@example.com")).map(
+            (account) => account.providerId,
+        ),
+    ).toEqual(["github"]);
+});
+
+test("connects one GitHub account to a Google account", async ({ mocks }) => {
+    await mocks.enable("google", "github", "tinybird");
+    mocks.google.state.user.email = "google-user@example.com";
+    const sessionCookie = sessionCookieFrom(await signIn("google"));
+
+    const callback = await finishOAuth(
+        await startGitHubLink(sessionCookie),
+        "github",
+        sessionCookie,
+    );
+    expect(callback.headers.get("Location")).toBe("/account");
+
+    const [user] = await drizzle(env.DB).select().from(userTable);
+    expect(user).toMatchObject({
+        email: "google-user@example.com",
+        githubId: mocks.github.state.user.id,
+        githubUsername: mocks.github.state.user.login,
+    });
+
+    const secondLink = await startGitHubLink(sessionCookie);
+    expect(secondLink.status).toBe(400);
+    await expect(secondLink.json()).resolves.toMatchObject({
+        code: "GITHUB_ACCOUNT_ALREADY_CONNECTED",
+    });
+
+    const secondGoogle = await postWithSession(sessionCookie, "/link-social", {
+        provider: "google",
+        callbackURL: "/account",
+    });
+    expect(secondGoogle.status).toBe(400);
+    await expect(secondGoogle.json()).resolves.toMatchObject({
+        code: "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
+    });
+
+    const unlink = await postWithSession(sessionCookie, "/unlink-account", {
+        providerId: "github",
+    });
+    expect(unlink.status).toBe(400);
+    await expect(unlink.json()).resolves.toMatchObject({
+        code: "GITHUB_ACCOUNT_CANNOT_BE_DISCONNECTED",
+    });
+    expect(
+        (await providersByEmail("google-user@example.com")).map(
+            (account) => account.providerId,
+        ),
+    ).toEqual(["github", "google"]);
+
+    // A Google signup that later connected GitHub, for conversion analysis.
+    const events = mocks.tinybird.state.productEvents
+        .filter((row) =>
+            ["signup_completed", "link_started", "link_completed"].includes(
+                String(row.event),
+            ),
+        )
+        .map((row) => [row.event, row.provider, row.user_id]);
+    expect(events).toEqual([
+        ["signup_completed", "google", user?.id],
+        ["link_started", "github", user?.id],
+        ["link_completed", "github", user?.id],
+    ]);
+});
+
+test("GitHub opens the Google account with the same verified email", async ({
+    mocks,
+}) => {
+    await mocks.enable("google", "github", "tinybird");
+    await signIn("google");
+
+    const callback = await signIn("github");
+    expect(callback.headers.get("Location")).toBe("/");
+    // Joining by email at sign-in is not a connect.
+    expect(
+        mocks.tinybird.state.productEvents.filter((row) =>
+            String(row.event).startsWith("link_"),
+        ),
+    ).toEqual([]);
+
+    const users = await drizzle(env.DB).select().from(userTable);
+    expect(users).toHaveLength(1);
+    expect(users[0]).toMatchObject({
+        githubId: mocks.github.state.user.id,
+        githubUsername: mocks.github.state.user.login,
+    });
+    expect(
+        (await providersByEmail("test@example.com")).map(
+            (account) => account.providerId,
+        ),
+    ).toEqual(["github", "google"]);
+});
+
+test("never joins a second GitHub account on sign-in", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    await mocks.enable("github", "tinybird");
+    const firstGithubId = mocks.github.state.user.id;
+    mocks.github.state.user.id = firstGithubId + 1;
+    mocks.github.state.user.login = "second-github";
+
+    const callback = await signIn("github");
+    expect(callback.headers.get("Location")).toContain(
+        "error=unable_to_link_account",
+    );
+
+    const [user] = await drizzle(env.DB).select().from(userTable);
+    expect(user?.githubId).toBe(firstGithubId);
+    expect(await providersByEmail("test@example.com")).toMatchObject([
+        { providerId: "github" },
+    ]);
+});
+
+test("refuses a GitHub account that belongs to another user", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    await mocks.enable("google", "github", "tinybird");
+    mocks.google.state.user.email = "google-user@example.com";
+    const sessionCookie = sessionCookieFrom(await signIn("google"));
+
+    const callback = await finishOAuth(
+        await startGitHubLink(sessionCookie),
+        "github",
+        sessionCookie,
+    );
+    expect(callback.headers.get("Location")).toContain(
+        "error=account_already_linked_to_different_user",
+    );
+    expect(await providersByEmail("google-user@example.com")).toMatchObject([
+        { providerId: "google" },
+    ]);
+});
+
 test("requires complete Discord configuration", () => {
     expect(
         discordConfigFromEnv({
@@ -83,6 +357,22 @@ test("checks staging access against the verified GitHub profile", () => {
     expect(() =>
         mapProfile({ id: "99999", login: "denied", email: null } as never),
     ).toThrow("staging is invite-only");
+});
+
+test("checks staging access against the Google email", () => {
+    const auth = createAuth({
+        ...env,
+        ENVIRONMENT: "staging",
+        STAGING_ALLOWED_GITHUB_IDS: "",
+        STAGING_ALLOWED_EMAILS: "allowed@example.com",
+    } as unknown as Cloudflare.Env);
+    const mapProfile = auth.options.socialProviders?.google?.mapProfileToUser;
+    if (!mapProfile) throw new Error("Expected Google profile mapper");
+
+    expect(mapProfile({ email: "allowed@example.com" } as never)).toEqual({});
+    expect(() => mapProfile({ email: "denied@example.com" } as never)).toThrow(
+        "staging is invite-only",
+    );
 });
 
 test("links a Discord identity to the signed-in GitHub account", async ({

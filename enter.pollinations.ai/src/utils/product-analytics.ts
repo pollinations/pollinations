@@ -10,13 +10,14 @@ export type ProductEvent =
     | "auto_top_up_enabled"
     | "auto_top_up_disabled"
     // Sign-in is two server-side counts, so the drop-off is measured without
-    // any browser identifier: started when GitHub is requested, completed when
-    // the session exists. flow_id is only the device_code row id, never a
-    // code, token or email.
+    // any browser identifier: started when GitHub or Google is requested,
+    // completed when the session exists. flow_id is only the device_code row
+    // id, never a code, token or email.
     | "sign_in_started"
-    // GitHub sent the user back with a code, so they reached GitHub and
-    // approved. Starts that never reach this are lost on GitHub's side; this
-    // that never reach sign_in_completed are lost on ours.
+    // The provider sent the user back with a code, so they reached it and
+    // approved. Starts that never reach this are lost on the provider's side;
+    // returns that never reach sign_in_completed are lost on ours. Connect
+    // callbacks land here too; subtract link_completed for the same provider.
     | "sign_in_returned"
     | "sign_in_completed"
     // A user row was created, so this sign-in was also a signup. Counting it
@@ -54,6 +55,8 @@ export async function captureProductEvent(
         utm_campaign?: string;
         country?: string;
         amount_usd?: number;
+        // github, google or discord on sign-in, signup and link events.
+        provider?: string;
     } = {},
 ): Promise<void> {
     try {

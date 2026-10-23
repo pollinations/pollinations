@@ -1,6 +1,6 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
-import migrationSql from "../drizzle/0076_decision-model-permissions.sql?raw";
+import migrationSql from "../drizzle/0077_decision-model-permissions.sql?raw";
 
 const keyIds = [...migrationSql.matchAll(/'([A-Za-z0-9]{32})'/g)].map(
     (match) => match[1],

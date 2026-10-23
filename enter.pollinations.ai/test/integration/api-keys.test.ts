@@ -357,6 +357,69 @@ describe("API Key Management", () => {
             ]);
         });
 
+        test("publishable keys do not keep account permissions; secret keys do", async ({
+            accountToken,
+        }) => {
+            const headers = {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accountToken}`,
+            };
+            const create = async (type: string) => {
+                const response = await SELF.fetch(
+                    "http://localhost:3000/api/account/keys",
+                    {
+                        method: "POST",
+                        headers,
+                        body: JSON.stringify({
+                            name: `perms-${type}`,
+                            type,
+                            accountPermissions: ["keys", "usage"],
+                            ...(type === "publishable" && {
+                                redirectUris: [
+                                    "https://legit.example/callback",
+                                ],
+                            }),
+                        }),
+                    },
+                );
+                expect(response.status).toBe(200);
+                return response.json();
+            };
+
+            // A pk_ is public by design, so account scopes on it would make
+            // it an account credential. They are dropped at creation.
+            const publishable = await create("publishable");
+            expect(publishable.key.startsWith("pk_")).toBe(true);
+            expect(publishable.permissions?.account).toBeUndefined();
+
+            const secret = await create("secret");
+            expect(secret.key.startsWith("sk_")).toBe(true);
+            expect(secret.permissions?.account).toEqual(["keys", "usage"]);
+
+            // Same on edit: setting account permissions on the publishable
+            // key leaves it with none, while the secret key accepts them.
+            const patch = async (id: string) => {
+                const response = await SELF.fetch(
+                    `http://localhost:3000/api/account/keys/${id}`,
+                    {
+                        method: "PATCH",
+                        headers,
+                        body: JSON.stringify({
+                            accountPermissions: ["keys"],
+                        }),
+                    },
+                );
+                expect(response.status).toBe(200);
+                return response.json();
+            };
+
+            const patchedPublishable = await patch(publishable.id);
+            expect(patchedPublishable.permissions?.account).toBeUndefined();
+
+            const patchedSecret = await patch(secret.id);
+            expect(patchedSecret.permissions?.account).toEqual(["keys"]);
+        });
+
         test("allows unbranded redirect-auth key creation without client_id", async ({
             accountToken,
         }) => {

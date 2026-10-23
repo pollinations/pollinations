@@ -13,6 +13,7 @@ import {
     Dropdown,
     DropdownItem,
     Field,
+    IconButton,
     InlineLink,
     Input,
     LoadingStatus,
@@ -528,12 +529,12 @@ export function Sandboxes() {
             }
         >
             {busyId === "new" ? (
-                <LoadingStatus>Creating sandbox…</LoadingStatus>
+                <LoadingStatus>Creating…</LoadingStatus>
             ) : (
                 <>
                     <PlusIcon className="h-4 w-4" />
                     <TerminalIcon className="h-5 w-5" />
-                    <span className="ml-1">Create sandbox</span>
+                    <span className="ml-1">Create</span>
                 </>
             )}
         </Button>
@@ -545,15 +546,15 @@ export function Sandboxes() {
             intro="A sandbox is a Linux computer in the cloud. Open it with ssh or VS Code. Its files stay while it’s paused, and you pay only while it runs."
             action={
                 <ButtonGroup>
-                    <Button
-                        size="sm"
-                        intent="neutral"
-                        icon={<RefreshIcon />}
+                    <IconButton
+                        size="md"
+                        variant="ghost"
+                        title="Refresh"
                         disabled={loading}
                         onClick={() => void load()}
                     >
-                        Refresh
-                    </Button>
+                        <RefreshIcon className="h-4 w-4" />
+                    </IconButton>
                     {sandboxes.length > 0 && createAction}
                 </ButtonGroup>
             }
@@ -739,7 +740,7 @@ export function Sandboxes() {
                                     {!pending
                                         ? ""
                                         : pending.action === "create"
-                                          ? "Create sandbox"
+                                          ? "Create"
                                           : pending.action === "limit"
                                             ? "Set time limit"
                                             : addTo

@@ -143,15 +143,18 @@ export async function readMedia(
         "Content-Disposition": originalName
             ? `${disposition}; filename*=UTF-8''${encodeURIComponent(originalName)}`
             : disposition,
-        "X-Content-Type-Options": "nosniff",
-        "Content-Security-Policy":
-            "default-src 'none'; style-src 'unsafe-inline'; sandbox",
     });
     // Generated files replay the headers gen chose for them. Only the trusted
     // put() below writes header_* metadata; uploads never do.
     for (const [key, value] of Object.entries(object.customMetadata ?? {})) {
         if (key.startsWith("header_")) headers.set(key.slice(7), value);
     }
+    // Set last: no stored header may let a file run script.
+    headers.set("X-Content-Type-Options", "nosniff");
+    headers.set(
+        "Content-Security-Policy",
+        "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+    );
     if (!("body" in object)) {
         headers.set("Content-Length", object.size.toString());
         return new Response(null, { headers });

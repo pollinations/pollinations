@@ -239,8 +239,8 @@ describe("media.pollinations.ai", () => {
                         "Content-Type": contentType,
                         "X-Model-Used": "test-model",
                         "X-Usage-Completion-Audio-Tokens": "10",
-                        "Content-Security-Policy":
-                            "default-src 'none'; sandbox",
+                        // A stored header must not weaken the served policy.
+                        "Content-Security-Policy": "default-src *",
                         "Content-Disposition": 'inline; filename="generated"',
                         "X-Custom-File-Metadata": "caller-selected",
                     },
@@ -263,7 +263,7 @@ describe("media.pollinations.ai", () => {
                 "public, max-age=31536000, immutable",
             );
             expect(response.headers.get("content-security-policy")).toBe(
-                "default-src 'none'; sandbox",
+                "default-src 'none'; style-src 'unsafe-inline'; sandbox",
             );
             expect(response.headers.get("content-disposition")).toBe(
                 'inline; filename="generated"',

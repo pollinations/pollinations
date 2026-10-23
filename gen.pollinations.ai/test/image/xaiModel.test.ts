@@ -13,7 +13,7 @@ interface XaiRequest {
 }
 
 const baseParams: ImageParams = {
-    model: "grok-imagine",
+    model: "x-ai/grok-imagine-image",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
@@ -91,6 +91,31 @@ describe("xaiModel usage accounting", () => {
         expect(requests[0].url).toBe(XAI_EDITS_URL);
         expect(result.trackingData?.usage).toEqual({
             promptImageTokens: 1,
+            completionImageTokens: 1,
+        });
+    });
+
+    it("forwards and bills every reference image", async () => {
+        syncImageEnv({ XAI_API_KEY: "xai-test-key" } as CloudflareBindings, [
+            "XAI_API_KEY",
+        ]);
+        const requests: XaiRequest[] = [];
+        mockXaiFetch(requests);
+        const image = [
+            "https://example.com/a.png",
+            "https://example.com/b.png",
+        ];
+
+        const result = await callXaiImageAPI("test prompt", {
+            ...baseParams,
+            image,
+        });
+
+        expect(requests[0].body.images).toEqual(
+            image.map((url) => ({ url, type: "image_url" })),
+        );
+        expect(result.trackingData?.usage).toEqual({
+            promptImageTokens: 2,
             completionImageTokens: 1,
         });
     });

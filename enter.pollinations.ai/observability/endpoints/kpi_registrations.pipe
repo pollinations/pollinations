@@ -1,5 +1,8 @@
 DESCRIPTION >
-    Weekly user registration counts from d1_user snapshot.
+    User registration counts from the latest d1_user snapshot, weekly by default
+    or daily for the week-over-week comparison. `google` counts the users whose
+    first account (d1_account) is Google, i.e. who signed up with Google; the
+    rest signed up with GitHub.
 
 TOKEN tinybird_read READ
 
@@ -7,13 +10,30 @@ NODE registrations
 SQL >
     %
     SELECT
+        {% if String(granularity, 'week') == 'day' %}
+        formatDateTime(fromUnixTimestamp(assumeNotNull(created_at)), '%Y-%m-%d') AS date,
+        formatDateTime(max(synced_at), '%Y-%m-%dT%H:%i:%SZ') AS snapshot_at,
+        {% else %}
         formatDateTime(toStartOfWeek(fromUnixTimestamp(assumeNotNull(created_at)), 1), '%Y-%m-%d') AS week_start,
-        count() AS registrations
+        {% end %}
+        count() AS registrations,
+        countIf(id IN (
+            SELECT user_id
+            FROM d1_account
+            WHERE synced_at = (SELECT max(synced_at) FROM d1_account)
+            GROUP BY user_id
+            HAVING argMin(provider_id, created_at) = 'google'
+        )) AS google
     FROM d1_user
     WHERE synced_at = (SELECT max(synced_at) FROM d1_user)
         AND created_at IS NOT NULL
         AND created_at >= {{Int64(min_created_at, 0)}}
+    {% if String(granularity, 'week') == 'day' %}
+    GROUP BY date
+    ORDER BY date ASC
+    {% else %}
     GROUP BY week_start
     ORDER BY week_start ASC
+    {% end %}
 
 TYPE endpoint

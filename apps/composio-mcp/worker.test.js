@@ -6,7 +6,7 @@ import {
 } from "../../shared/registry/mcp.ts";
 import { createWorker } from "./worker.js";
 
-function createHarness() {
+function createHarness(toolStatus = 200) {
     const calls = [];
     const worker = createWorker({
         fetchImpl: async (url, init) => {
@@ -67,7 +67,7 @@ function createHarness() {
                             content: [{ type: "text", text: "executed" }],
                         },
                     },
-                    { headers },
+                    { headers, status: toolStatus },
                 );
             }
             return new Response("Not found", { status: 404 });
@@ -156,6 +156,71 @@ test("thin-proxies the generic Composio router and reports executed actions", as
     );
 });
 
+for (const [name, status] of [
+    ["COMPOSIO_SEARCH_TOOLS", 200],
+    ["COMPOSIO_MANAGE_CONNECTIONS", 200],
+    ["COMPOSIO_GET_TOOL_SCHEMAS", 200],
+    ["COMPOSIO_MULTI_EXECUTE_TOOL", 503],
+]) {
+    test(`records ${name} HTTP ${status} without charging`, async () => {
+        const { worker, env } = createHarness(status);
+        const response = await worker.fetch(
+            new Request("https://composio.internal", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    [MCP_USER_ID_HEADER]: "user-1",
+                    "mcp-session-id": btoa(
+                        JSON.stringify(["trs_user_1", "upstream-session"]),
+                    ),
+                },
+                body: JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: 2,
+                    method: "tools/call",
+                    params: { name, arguments: {} },
+                }),
+            }),
+            env,
+        );
+        assert.equal(response.status, status);
+        assert.equal(response.headers.get(MCP_USAGE_HEADERS.tool), name);
+        assert.equal(response.headers.get(MCP_USAGE_HEADERS.cost), "0");
+        assert.equal(
+            response.headers.get(MCP_USAGE_HEADERS.adjustmentUnits),
+            "0",
+        );
+        assert.equal(
+            response.headers.get(MCP_USAGE_HEADERS.status),
+            String(status),
+        );
+    });
+}
+
+test("records tool requests rejected before reaching Composio without charging", async () => {
+    const { worker, env, calls } = createHarness();
+    const response = await worker.fetch(
+        new Request("https://composio.internal", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                [MCP_USER_ID_HEADER]: "user-1",
+            },
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                id: 2,
+                method: "tools/call",
+                params: { name: "COMPOSIO_MULTI_EXECUTE_TOOL", arguments: {} },
+            }),
+        }),
+        env,
+    );
+    assert.equal(response.status, 400);
+    assert.equal(response.headers.get(MCP_USAGE_HEADERS.status), "400");
+    assert.equal(response.headers.get(MCP_USAGE_HEADERS.cost), "0");
+    assert.equal(calls.length, 0);
+});
+
 test("creates a hosted connection link with the current session contract", async () => {
     const requests = [];
     const worker = createWorker({
@@ -191,5 +256,67 @@ test("creates a hosted connection link with the current session contract", async
     });
     assert.deepEqual(await response.json(), {
         redirectUrl: "https://connect.example",
+    });
+});
+
+test("includes toolkit descriptions with connected accounts", async () => {
+    const requests = [];
+    const worker = createWorker({
+        fetchImpl: async (url, init) => {
+            const parsed = new URL(url);
+            requests.push({ url: parsed, init });
+            if (parsed.pathname.endsWith("/connected_accounts")) {
+                return Response.json({
+                    items: [
+                        {
+                            id: "ca_github",
+                            toolkit: { slug: "github" },
+                            alias: "octocat",
+                            status: "ACTIVE",
+                        },
+                    ],
+                });
+            }
+            if (parsed.pathname.endsWith("/toolkits/multi")) {
+                return Response.json({
+                    items: [
+                        {
+                            slug: "github",
+                            name: "GitHub",
+                            meta: {
+                                description: "Code hosting",
+                                logo: "https://logos.composio.test/github",
+                            },
+                        },
+                    ],
+                });
+            }
+            return new Response("Not found", { status: 404 });
+        },
+    });
+
+    const response = await worker.fetch(
+        new Request("https://composio.internal/connections", {
+            headers: { [MCP_USER_ID_HEADER]: "user-1" },
+        }),
+        { COMPOSIO_API_KEY: "test-key" },
+    );
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+        data: [
+            {
+                id: "ca_github",
+                toolkit: "github",
+                name: "GitHub",
+                description: "Code hosting",
+                logo: "https://logos.composio.test/github",
+                alias: "octocat",
+                status: "ACTIVE",
+            },
+        ],
+    });
+    assert.deepEqual(JSON.parse(requests[1].init.body), {
+        toolkits: ["github"],
     });
 });

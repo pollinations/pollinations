@@ -33,10 +33,10 @@ describe("buildUsageHeaders", () => {
             promptCacheWriteTokens: 4096,
             completionReasoningTokens: 150,
         };
-        const headers = buildUsageHeaders("openai-fast", usage);
+        const headers = buildUsageHeaders("openai/gpt-5-nano", usage);
 
         const expected: Record<string, string> = {
-            "x-model-used": "openai-fast",
+            "x-model-used": "openai/gpt-5-nano",
             "x-usage-prompt-text-tokens": "42",
             "x-usage-completion-text-tokens": "55",
             "x-usage-prompt-cached-tokens": "50",
@@ -66,7 +66,10 @@ describe("buildUsageHeaders", () => {
             completionAudioSeconds: 3.5,
             completionVideoSeconds: 10.2,
         };
-        const headers = buildUsageHeaders("gemini-large", usage);
+        const headers = buildUsageHeaders(
+            "google/gemini-3.1-pro-preview",
+            usage,
+        );
 
         expect(headers["x-usage-prompt-audio-tokens"]).toBe("500");
         expect(headers["x-usage-completion-audio-seconds"]).toBe("3.5");
@@ -242,6 +245,30 @@ describe("openaiUsageToUsage", () => {
         expect(usage.completionTextTokens).toBe(1);
     });
 
+    it("should handle video tokens in prompt_tokens_details", () => {
+        const openaiUsage = {
+            prompt_tokens: 20,
+            completion_tokens: 2,
+            total_tokens: 22,
+            prompt_tokens_details: {
+                audio_tokens: 0,
+                cached_tokens: 2,
+                image_tokens: 0,
+                video_tokens: 5,
+            },
+            completion_tokens_details: {
+                reasoning_tokens: 0,
+            },
+        };
+
+        const usage = openaiUsageToUsage(openaiUsage);
+
+        expect(usage.promptTextTokens).toBe(13);
+        expect(usage.promptVideoTokens).toBe(5);
+        expect(usage.promptCachedTokens).toBe(2);
+        expect(usage.completionTextTokens).toBe(2);
+    });
+
     // Grok via Azure reports reasoning as an additive counter:
     // total_tokens = prompt_tokens + completion_tokens + reasoning_tokens.
     it("handles additive reasoning convention when total_tokens proves it", () => {
@@ -408,9 +435,21 @@ describe("parseUsageHeaders", () => {
         expect(usage.completionVideoSeconds).toBe(15.75);
     });
 
+    it("should parse fractional megapixel image usage instead of truncating to zero", () => {
+        const headers = {
+            "x-usage-prompt-image-tokens": "0.3072",
+            "x-usage-completion-image-tokens": "1.048576",
+        };
+
+        const usage = parseUsageHeaders(headers);
+
+        expect(usage.promptImageTokens).toBe(0.3072);
+        expect(usage.completionImageTokens).toBe(1.048576);
+    });
+
     it("should handle Headers object (from Response)", () => {
         const headers = new Headers({
-            "x-model-used": "claude-large",
+            "x-model-used": "anthropic/claude-opus-5",
             "x-usage-prompt-text-tokens": "200",
             "x-usage-prompt-cached-tokens": "100",
             "x-usage-prompt-cache-write-tokens": "4096",

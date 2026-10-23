@@ -1,0 +1,20 @@
+[Unit]
+Description=Pollinations Opposite Prompt Bot
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/discord-bots/apps/opposite-prompt-bot
+ExecStart=/usr/bin/node --require /home/ubuntu/discord-bots/apps/opposite-prompt-bot/node_modules/tsx/dist/preflight.cjs --import file:///home/ubuntu/discord-bots/apps/opposite-prompt-bot/node_modules/tsx/dist/loader.mjs bot.ts
+Restart=always
+RestartSec=30
+EnvironmentFile=/home/ubuntu/discord-bots/apps/opposite-prompt-bot/.env
+Environment=PATH=/usr/bin:/usr/local/bin
+Environment=HOME=/home/ubuntu
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=opposite-prompt-bot
+
+[Install]
+WantedBy=multi-user.target

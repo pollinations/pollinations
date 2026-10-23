@@ -7,6 +7,14 @@ import type {
 
 export type ForecastMethod = "fixed" | "funded" | "last" | "one_off";
 
+// Explicit review selection. Advancing the calendar or importing current
+// activity does not select a new baseline or a newer funding snapshot.
+export const RUNWAY_REVIEW = {
+    baselineMonth: "2026-09",
+    asOf: "2026-10-18",
+};
+export type RunwayReview = typeof RUNWAY_REVIEW;
+
 export type { ForecastPaymentTiming } from "../types";
 
 export type ForecastLineRule = {
@@ -30,10 +38,11 @@ export type AutomaticForecastRule = ForecastLineRule & {
 // New lines remain visibly unmodeled until they are added here.
 const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     // Revenue
-    "github|revenue": { method: "one_off", paymentTiming: "direct" },
     "polar|revenue": { method: "one_off", paymentTiming: "direct" },
-    "stripe|revenue": { method: "last", paymentTiming: "direct" },
-    "wise|revenue": { method: "one_off", paymentTiming: "direct" },
+    // September API advance is a single receipt, not recurring pack sales.
+    "pollinations|revenue": { method: "one_off", paymentTiming: "direct" },
+    "stripe sales|revenue": { method: "last", paymentTiming: "direct" },
+    "stripe refunds|revenue": { method: "last", paymentTiming: "direct" },
 
     // Cash adjustments
     "deel|balance_sheet": {
@@ -53,16 +62,23 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         method: "one_off",
         paymentTiming: "direct",
     },
-    "self-issued|balance_sheet": {
-        method: "one_off",
-        paymentTiming: "direct",
-    },
-    "thomas-haferlach|balance_sheet": {
-        method: "one_off",
-        paymentTiming: "direct",
-    },
 
-    // Metered compute and infrastructure that should project from OP Cloud.
+    // Metered compute and infrastructure projected from the Compute ledger.
+    "e2b|infrastructure": {
+        method: "last",
+        paymentTiming: "prepaid",
+        automaticUsage: true,
+    },
+    "anthropic|compute": {
+        method: "last",
+        paymentTiming: "prepaid",
+        automaticUsage: true,
+    },
+    "assemblyai|compute": {
+        method: "last",
+        paymentTiming: "prepaid",
+        automaticUsage: true,
+    },
     "alibaba|compute": {
         method: "last",
         paymentTiming: "prepaid",
@@ -102,6 +118,13 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         method: "fixed",
         paymentTiming: "direct",
     },
+    // Exa search API on a promotional credit balance (lots with verified
+    // expiry); cash only once the credits are used up.
+    "exa|infrastructure": {
+        method: "last",
+        paymentTiming: "prepaid",
+        automaticUsage: true,
+    },
     "fal|compute": {
         method: "last",
         paymentTiming: "prepaid",
@@ -122,6 +145,11 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         paymentTiming: "postpaid",
         automaticUsage: true,
     },
+    "inception|compute": {
+        method: "last",
+        paymentTiming: "prepaid",
+        automaticUsage: true,
+    },
     "inferenceport|compute": {
         method: "last",
         paymentTiming: "prepaid",
@@ -132,9 +160,26 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         paymentTiming: "prepaid",
         automaticUsage: true,
     },
+    // Modal is no longer used; retain historical usage and any remaining credit.
+    "modal|compute": { method: "one_off", paymentTiming: "prepaid" },
     "openrouter|compute": {
         method: "last",
         paymentTiming: "prepaid",
+        automaticUsage: true,
+    },
+    "openai|compute": {
+        method: "last",
+        paymentTiming: "prepaid",
+        automaticUsage: true,
+    },
+    "ovhcloud|compute": {
+        method: "last",
+        paymentTiming: "postpaid",
+        automaticUsage: true,
+    },
+    "ovhcloud|infrastructure": {
+        method: "last",
+        paymentTiming: "postpaid",
         automaticUsage: true,
     },
     "perplexity|compute": {
@@ -153,7 +198,7 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         automaticUsage: true,
     },
     "runpod|compute": { method: "one_off", paymentTiming: "prepaid" },
-    "vast.ai|compute": {
+    "vast|compute": {
         method: "last",
         paymentTiming: "prepaid",
         automaticUsage: true,
@@ -171,15 +216,27 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
 
     // Reviewed historical or discontinued metered lines. One-time means their
     // observed cash stays historical and is never repeated automatically.
-    "anthropic|compute": { method: "one_off", paymentTiming: "prepaid" },
+    "airforce|compute": { method: "one_off", paymentTiming: null },
     "bytedance|compute": { method: "one_off", paymentTiming: "postpaid" },
     "daytona|infrastructure": {
         method: "one_off",
         paymentTiming: "direct",
     },
+    "digitalocean|infrastructure": {
+        method: "one_off",
+        paymentTiming: "postpaid",
+    },
     "io.net|compute": { method: "one_off", paymentTiming: "prepaid" },
     "lambda|compute": { method: "one_off", paymentTiming: "direct" },
+    "pointsflyer|compute": { method: "one_off", paymentTiming: null },
     "retell|compute": { method: "one_off", paymentTiming: "direct" },
+    // Scaleway stopped after February 2026: no invoices, no vouchers left.
+    "scaleway|compute": { method: "one_off", paymentTiming: "postpaid" },
+    "scaleway|infrastructure": {
+        method: "one_off",
+        paymentTiming: "postpaid",
+    },
+    "seraphyn|compute": { method: "one_off", paymentTiming: null },
     "stability|compute": { method: "one_off", paymentTiming: "prepaid" },
 
     // Development
@@ -188,6 +245,9 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         paymentTiming: "direct",
     },
     "github|development": { method: "last", paymentTiming: "direct" },
+    // Actions and Packages are covered by GitHub discounts. Enterprise seats
+    // remain Development; new cash-funded infrastructure must be reviewed.
+    "github|infrastructure": { method: "funded", paymentTiming: null },
     "openai|development": {
         method: "fixed",
         paymentTiming: "direct",
@@ -217,6 +277,12 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     "telecom|operations": { method: "fixed", paymentTiming: "direct" },
 
     // Office
+    "gaswerksiedlung|office": {
+        method: "fixed",
+        paymentTiming: "direct",
+        // Rent resumes only with a reviewed private budget, never old payments.
+        fixedAmounts: [],
+    },
     "barbara-khamouguinoff|office": {
         method: "one_off",
         paymentTiming: "direct",
@@ -231,6 +297,7 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     "rent & utilities|office": { method: "last", paymentTiming: "direct" },
 
     // Admin and payroll
+    "wise|admin": { method: "last", paymentTiming: "direct" },
     "accounting & filings|admin": {
         method: "fixed",
         paymentTiming: "direct",
@@ -244,7 +311,6 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         method: "fixed",
         paymentTiming: "direct",
     },
-    "tax office|admin": { method: "one_off", paymentTiming: "direct" },
     "taxes|admin": { method: "one_off", paymentTiming: "direct" },
     "ayushman|payroll": { method: "one_off", paymentTiming: "direct" },
     "deel|payroll": {
@@ -260,6 +326,7 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
 };
 
 function key(vendor: string, category: string): string {
+    // Callers supply canonical vendors or synthetic lines; parsePrivateConfig normalizes saved keys.
     return `${vendor.trim().toLowerCase()}|${category.trim().toLowerCase()}`;
 }
 
@@ -276,9 +343,15 @@ export function forecastLineRule(
     category: string,
     privateRules?: Readonly<Record<string, PrivateForecastRule>>,
 ): ForecastLineRule | null {
+    if (category.trim().toLowerCase() === "revenue_share") {
+        return { method: "one_off", paymentTiming: "direct" };
+    }
     const rule = FORECAST_RULE_BY_LINE[key(vendor, category)];
     if (!rule) return null;
-    return { ...rule, ...privateRule(vendor, category, privateRules) };
+    const result = { ...rule, ...privateRule(vendor, category, privateRules) };
+    if (result.fixedAmounts?.length)
+        return { ...result, method: "fixed", automaticUsage: false };
+    return result;
 }
 
 export function forecastRuleEntries(
@@ -288,15 +361,12 @@ export function forecastRuleEntries(
     category: string;
     rule: ForecastLineRule;
 }[] {
-    return Object.entries(FORECAST_RULE_BY_LINE).map(([line, rule]) => {
+    return Object.keys(FORECAST_RULE_BY_LINE).flatMap((line) => {
         const separator = line.indexOf("|");
         const vendor = line.slice(0, separator);
         const category = line.slice(separator + 1);
-        return {
-            vendor,
-            category,
-            rule: { ...rule, ...privateRule(vendor, category, privateRules) },
-        };
+        const rule = forecastLineRule(vendor, category, privateRules);
+        return rule ? [{ vendor, category, rule }] : [];
     });
 }
 
@@ -310,8 +380,9 @@ export function forecastPaymentTiming(
 export function automaticForecastRule(
     vendor: string,
     category: string,
+    privateRules?: Readonly<Record<string, PrivateForecastRule>>,
 ): AutomaticForecastRule | null {
-    const rule = forecastLineRule(vendor, category);
+    const rule = forecastLineRule(vendor, category, privateRules);
     if (
         !rule?.automaticUsage ||
         rule.method !== "last" ||

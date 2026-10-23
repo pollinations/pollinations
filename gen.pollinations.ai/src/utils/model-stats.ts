@@ -1,5 +1,6 @@
 import {
     getPriceDefinitionForModel,
+    isFlatRateModel,
     type ModelDefinition,
 } from "@shared/registry/registry.ts";
 import type { TinybirdModelStats } from "@shared/utils/model-stats.ts";
@@ -7,18 +8,11 @@ import type { TinybirdModelStats } from "@shared/utils/model-stats.ts";
 /**
  * Per-request estimate from the model definition, or null when the definition
  * is token-priced (Tinybird's historical average is the better preflight).
- *
- * Matches the catalog's flat-rate rule: an explicit `flatRate`, or an image
- * model with no prompt-token rate (per-image `completionImageTokens`).
  */
 export function getDefinedRequestEstimate(
     definition: ModelDefinition,
 ): number | null {
-    const isFlatRate =
-        definition.flatRate ??
-        (definition.category === "image" &&
-            definition.cost.promptTextTokens === undefined);
-    if (!isFlatRate) return null;
+    if (!isFlatRateModel(definition)) return null;
 
     const price = getPriceDefinitionForModel(definition);
     const requestPrice =
@@ -48,8 +42,12 @@ export function getEstimatedPrice(
     definition?: ModelDefinition,
 ): number {
     if (!model) return 0;
+    // Retain pre-rename history until Tinybird has data under the canonical ID.
     const tinybird =
-        stats.data?.find((r) => r.model === model)?.avg_cost_usd || 0;
+        (
+            stats.data?.find((r) => r.model === model) ??
+            stats.data?.find((r) => definition?.aliases.includes(r.model))
+        )?.avg_cost_usd || 0;
     const defined = definition ? getDefinedRequestEstimate(definition) : null;
     if (
         defined != null &&

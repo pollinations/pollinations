@@ -7,15 +7,22 @@ import {
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import {
+    isModelCategory,
+    keyAllowsModel,
+} from "@shared/registry/model-permissions.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
+import { appOrigin, permissionRequired } from "../utils/refusals.ts";
 import type { LoggerVariables } from "./logger.ts";
 
 type ModelVariables = {
     model: {
         requested: string;
         resolved: string;
+        definition: Pick<ModelDefinition, "category" | "aliases">;
         communityEndpoint?: CommunityEndpointRuntime;
     };
 };
@@ -27,6 +34,8 @@ export type AuthVariables = {
         requireUser: () => AuthUser;
         requireModelAccess: () => void;
         agentRun?: AgentRunClaims;
+        /** Where links that fix a refusal send the owner back to. */
+        appOrigin?: string;
     };
 };
 
@@ -42,7 +51,7 @@ export type AuthEnv = {
 };
 
 const AUTHENTICATION_REQUIRED_MESSAGE =
-    "A valid API key is required. Get one at https://enter.pollinations.ai/keys";
+    "A valid API key is required. Get one at https://enter.pollinations.ai/keys, or buy one with USDC (x402) at https://enter.pollinations.ai/api/x402/keys";
 
 function installAuth(
     c: Context<AuthEnv>,
@@ -67,12 +76,23 @@ function installAuth(
         const model = c.var.model;
         if (!model) return;
 
-        if (!apiKey?.permissions?.models) return;
+        if (!apiKey) return;
 
-        if (!apiKey.permissions.models.includes(model.resolved)) {
-            throw new HTTPException(403, {
-                message: `Model '${model.requested}' is not allowed for this API key`,
-            });
+        const models = apiKey.permissions?.models;
+        if (!keyAllowsModel(models, model.resolved, model.definition)) {
+            // A key limited to specific models asks for this one model; a key
+            // limited to categories asks for the model's category.
+            const grant = models?.some((value) => !isModelCategory(value))
+                ? { model: model.resolved }
+                : { category: model.definition.category };
+            const allowed = models?.length
+                ? `is limited to ${models.join(", ")}`
+                : "allows no models";
+            throw permissionRequired(
+                c,
+                grant,
+                `Model '${model.requested}' is not allowed for this API key, which ${allowed}.`,
+            );
         }
     }
 
@@ -82,6 +102,7 @@ function installAuth(
         requireUser,
         requireModelAccess,
         ...(agentRun && { agentRun }),
+        appOrigin: appOrigin(apiKey, c.req.header("referer")),
     });
 }
 

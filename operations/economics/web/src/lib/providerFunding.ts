@@ -1,5 +1,5 @@
 const PREPAID_VENDORS = new Set([
-    "vast.ai",
+    "vast",
     "deepinfra",
     "pruna",
     "fal",

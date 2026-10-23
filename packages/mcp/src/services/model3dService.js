@@ -4,7 +4,7 @@ import {
     buildUrl,
     createMCPResponse,
     createTextContent,
-    fetchAndUploadMedia,
+    fetchMediaLink,
 } from "../utils/coreUtils.js";
 import { validateModel3d } from "../utils/models.js";
 
@@ -22,9 +22,8 @@ async function generate3D(params, context) {
     }
 
     const { prompt, ...options } = params;
-    const { contentType, mediaUrl } = await fetchAndUploadMedia(
+    const { contentType, mediaUrl } = await fetchMediaLink(
         buildUrl(`/3d/${encodeURIComponent(prompt)}`, options),
-        {},
         context,
     );
     return createMCPResponse([
@@ -32,7 +31,7 @@ async function generate3D(params, context) {
             type: "resource_link",
             uri: mediaUrl,
             name: "Generated 3D model",
-            mimeType: contentType || "model/gltf-binary",
+            mimeType: contentType,
         },
         createTextContent({ url: mediaUrl, prompt, ...options }, true),
     ]);

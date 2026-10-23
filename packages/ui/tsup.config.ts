@@ -9,10 +9,12 @@ export default defineConfig([
             "app-user-menu/sdk": "src/modules/app-user-menu/sdk.ts",
             "gen/index": "src/modules/gen/index.ts",
             "wallet/index": "src/modules/wallet/index.ts",
+            markdown: "src/markdown.ts",
         },
-        format: ["esm", "cjs"],
+        format: ["esm"],
         dts: true,
-        splitting: false,
+        // Share stateful modules across the root and subpath entries.
+        splitting: true,
         sourcemap: true,
         // Scoped clean: remove tsup's own JS/dts outputs (incl. stale ones from
         // renamed modules) but PRESERVE the static files copied by the later build
@@ -27,8 +29,11 @@ export default defineConfig([
             "!licenses/**",
             "!styles.css",
             "!app.css",
+            "!theme.css",
             "!index.browser.min.js",
             "!index.browser.min.js.map",
+            "!connect.js",
+            "!connect.js.map",
         ],
         minify: false,
         external: [
@@ -67,6 +72,25 @@ export default defineConfig([
                 "react/jsx-dev-runtime":
                     "./src/browser/react-jsx-runtime-global.ts",
             };
+        },
+    },
+    // <polli-connect> as one script for any page: React, the SDK and the
+    // account menu are bundled in; the stylesheet loads from beside it.
+    {
+        entry: { connect: "src/browser/connect.tsx" },
+        format: ["iife"],
+        outDir: "dist",
+        platform: "browser",
+        splitting: false,
+        sourcemap: true,
+        minify: true,
+        dts: false,
+        clean: false,
+        noExternal: [/.*/],
+        outExtension: () => ({ js: ".js" }),
+        define: { "process.env.NODE_ENV": '"production"' },
+        loader: {
+            ".svg": "dataurl",
         },
     },
 ]);

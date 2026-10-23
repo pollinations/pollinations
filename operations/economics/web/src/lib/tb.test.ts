@@ -1,10 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { FIXTURES, PRIVATE_CONFIG_FIXTURE } from "../fixtures";
-import type { OpPollenRow } from "../types";
+import {
+    FIXTURES,
+    PLANNING_DOCUMENT_FIXTURE,
+    PRIVATE_CONFIG_FIXTURE,
+} from "../fixtures";
+import type { OpPollenRow, VendorLedgerRow } from "../types";
 import {
     canonicalPollenRows,
     canonicalVendor,
     loadAll,
+    TbError,
     validatePipeRows,
 } from "./tb";
 
@@ -35,7 +40,26 @@ describe("Tinybird pipe contracts", () => {
 });
 
 describe("loadAll", () => {
-    it("requires and parses the authenticated private configuration", async () => {
+    it("loads only the sources a view needs and does not invent absent datasets", async () => {
+        const fetch = vi.fn(() =>
+            Promise.resolve(
+                Response.json({ data: FIXTURES.economics_bank_ledger_api }),
+            ),
+        );
+        vi.stubGlobal("fetch", fetch);
+        const controller = new AbortController();
+        const result = await loadAll(["opTransactions"], controller.signal);
+        expect(fetch).toHaveBeenCalledExactlyOnceWith(
+            "/api/economics/pipes/economics_bank_ledger_api",
+            { credentials: "same-origin", signal: controller.signal },
+        );
+        expect(result.opTransactions).toHaveLength(
+            FIXTURES.economics_bank_ledger_api.length,
+        );
+        expect(result.revenueShare).toBeUndefined();
+        expect(result.privateConfig).toBeUndefined();
+    });
+    it("reuses the loaded Drive decisions with non-posting Vendor plans", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn((input: RequestInfo | URL) => {
@@ -46,12 +70,83 @@ describe("loadAll", () => {
             }),
         );
 
-        const result = await loadAll();
+        const result = await loadAll(
+            undefined,
+            undefined,
+            PLANNING_DOCUMENT_FIXTURE,
+        );
 
-        expect(result.privateConfig).toEqual(PRIVATE_CONFIG_FIXTURE);
+        for (const rows of [result.vendorLedger, result.opPollen]) {
+            expect(rows?.some((row) => row.vendor === "vast")).toBe(true);
+            expect(rows?.some((row) => row.vendor === "vast.ai")).toBe(false);
+        }
+        expect(result.privateConfig).toEqual({
+            ...PRIVATE_CONFIG_FIXTURE,
+            forecastRules: {
+                ...PRIVATE_CONFIG_FIXTURE.forecastRules,
+                "stripe refunds|revenue": {
+                    fixedAmounts: [{ amount: 0, currency: "USD" }],
+                },
+            },
+            recordedAt: PLANNING_DOCUMENT_FIXTURE.recordedAt,
+        });
+        expect(result.vendorPlans?.map((row) => row.plan_amount)).toEqual([
+            -90,
+        ]);
+        expect(result.vendorLedger?.some((row) => row.type === "planned")).toBe(
+            false,
+        );
+        expect(
+            result.providerObservations?.some(
+                (row) => row.vendor === "openai" && row.month === "",
+            ),
+        ).toBe(false);
+        expect(result.userBalances).toEqual(
+            FIXTURES.economics_user_balances_api,
+        );
     });
 
-    it("fails closed when the private configuration is absent", async () => {
+    it("keeps missing journal data explicit when no source snapshot is supplied", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn((input: RequestInfo | URL) => {
+                const pipe = decodeURIComponent(
+                    String(input).split("/").at(-1) ?? "",
+                );
+                return Promise.resolve(
+                    Response.json(
+                        pipe === "planning" ? null : { data: FIXTURES[pipe] },
+                    ),
+                );
+            }),
+        );
+
+        const result = await loadAll();
+        expect(result.opTransactions).toHaveLength(
+            FIXTURES.economics_bank_ledger_api.length,
+        );
+        expect(result.vendorLedger?.length).toBeGreaterThan(0);
+        expect(result.privateConfig).toBeUndefined();
+        expect(result.planningError).toBe("Planning document unavailable");
+    });
+
+    it("preserves dashboard authentication status", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(() =>
+                Promise.resolve(
+                    Response.json({ error: "Unauthorized" }, { status: 401 }),
+                ),
+            ),
+        );
+
+        const error = await loadAll().catch((caught: unknown) => caught);
+
+        expect(error).toBeInstanceOf(TbError);
+        expect((error as TbError).status).toBe(401);
+    });
+
+    it("fails closed when the D1 user snapshot is empty", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn((input: RequestInfo | URL) => {
@@ -61,8 +156,17 @@ describe("loadAll", () => {
                 return Promise.resolve(
                     Response.json({
                         data:
-                            pipe === "economics_private_config_api"
-                                ? []
+                            pipe === "economics_user_balances_api"
+                                ? [
+                                      {
+                                          users: 0,
+                                          paid_users: 0,
+                                          quest_users: 0,
+                                          paid_balance: 0,
+                                          quest_balance: 0,
+                                          synced_at: "1970-01-01 00:00:00",
+                                      },
+                                  ]
                                 : FIXTURES[pipe],
                     }),
                 );
@@ -70,14 +174,14 @@ describe("loadAll", () => {
         );
 
         await expect(loadAll()).rejects.toThrow(
-            "economics_private_config_api: expected one row, received 0",
+            "economics_user_balances_api: expected one populated D1 snapshot row",
         );
     });
 });
 
 describe("canonicalVendor", () => {
     it("normalizes the Vast Pollen alias", () => {
-        expect(canonicalVendor("vast")).toBe("vast.ai");
+        expect(canonicalVendor("vast.ai")).toBe("vast");
     });
 
     it("joins Bedrock usage to AWS billing", () => {
@@ -87,7 +191,7 @@ describe("canonicalVendor", () => {
 
     it("joins account-specific aliases to their provider", () => {
         expect(canonicalVendor("azure-2")).toBe("azure");
-        expect(canonicalVendor("vastai")).toBe("vast.ai");
+        expect(canonicalVendor("vastai")).toBe("vast");
     });
 
     it("leaves canonical vendors unchanged", () => {
@@ -117,19 +221,82 @@ describe("canonicalPollenRows", () => {
         ...overrides,
     });
 
-    it("aggregates aliases after canonicalization", () => {
-        const [row] = canonicalPollenRows([
-            pollen("aws"),
-            pollen("bedrock", { cost_paid: 10, requests_paid: 20 }),
+    it.each([
+        ["aws", "bedrock"],
+        ["vast", "vast.ai"],
+    ])(
+        "aggregates %s and historical %s usage together",
+        (canonical, historical) => {
+            const [row] = canonicalPollenRows([
+                pollen(canonical),
+                pollen(historical, { cost_paid: 10, requests_paid: 20 }),
+            ]);
+
+            expect(row).toMatchObject({
+                vendor: canonical,
+                cost_paid: 11,
+                cost_quests: 4,
+                requests_paid: 25,
+                requests_quests: 12,
+            });
+        },
+    );
+
+    it("re-attributes reviewed Pollen rows to the vendor whose bill carried them", () => {
+        // gptimage was tagged azure-2 (Pointflyer) through April 2026 while its
+        // gpt-image-1-mini deployments were billed on our own subscription.
+        const rows = canonicalPollenRows([
+            pollen("pointsflyer", { month: "2026-02", model: "gptimage" }),
+            pollen("pointsflyer", { month: "2026-02", model: "openai" }),
+            pollen("pointsflyer", { month: "2026-05", model: "gptimage" }),
         ]);
 
-        expect(row).toMatchObject({
-            vendor: "aws",
-            cost_paid: 11,
-            cost_quests: 4,
-            requests_paid: 25,
+        expect(
+            rows.map((row) => `${row.month}|${row.vendor}|${row.model}`),
+        ).toEqual([
+            "2026-05|pointsflyer|gptimage",
+            "2026-02|azure|gptimage",
+            "2026-02|pointsflyer|openai",
+        ]);
+    });
+
+    it("corrects the confirmed ACE-Step host only within the reviewed month", () => {
+        const source = [
+            pollen("self-hosted", { month: "2026-04", model: "acestep" }),
+            pollen("lambda", { month: "2026-04", model: "acestep" }),
+            pollen("self-hosted", { month: "2026-03", model: "acestep" }),
+            pollen("self-hosted", {
+                month: "2026-04",
+                model: "other-workload",
+            }),
+        ];
+        const before = JSON.stringify(source);
+        const rows = canonicalPollenRows(source);
+        const merged = rows.find(
+            (row) => row.month === "2026-04" && row.vendor === "lambda",
+        );
+        expect(merged).toMatchObject({
+            model: "acestep",
+            price_paid: 6,
+            price_quests: 8,
+            requests_paid: 10,
             requests_quests: 12,
         });
+        expect(rows).toContainEqual(
+            expect.objectContaining({
+                month: "2026-03",
+                vendor: "self-hosted",
+                model: "acestep",
+            }),
+        );
+        expect(rows).toContainEqual(
+            expect.objectContaining({
+                month: "2026-04",
+                vendor: "self-hosted",
+                model: "other-workload",
+            }),
+        );
+        expect(JSON.stringify(source)).toBe(before);
     });
 
     it("removes rows with no values or requests", () => {
@@ -150,4 +317,34 @@ describe("canonicalPollenRows", () => {
             ]),
         ).toEqual([]);
     });
+});
+
+it("loads non-posting statement facts from Vendor without treating them as usage", async () => {
+    const usage = FIXTURES.economics_vendor_ledger_api[0] as VendorLedgerRow;
+    const statement = {
+        ...usage,
+        entry_id: "source-statement",
+        type: "statement",
+        paid: 0,
+        credit: 0,
+        statement_amount: 55.8,
+        compared_entry_ids: [usage.entry_id],
+        comparison_basis: "cost",
+        comparison_month: "2026-09",
+    };
+    vi.stubGlobal(
+        "fetch",
+        vi.fn(() =>
+            Promise.resolve(Response.json({ data: [usage, statement] })),
+        ),
+    );
+    const result = await loadAll(["vendorLedger"]);
+    expect(result.vendorLedger).toHaveLength(1);
+    expect(result.vendorStatements).toHaveLength(1);
+    expect(result.vendorStatements?.[0].statement_amount).toBe(55.8);
+    expect(() =>
+        validatePipeRows("economics_vendor_ledger_api", [
+            { ...statement, paid: -55.8 },
+        ]),
+    ).toThrow("invalid source comparison");
 });

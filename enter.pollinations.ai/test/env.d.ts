@@ -1,6 +1,12 @@
-declare module "cloudflare:test" {
-    // ProvidedEnv controls the type of `import("cloudflare:test").env`
-    interface ProvidedEnv extends Cloudflare.Env {
-        TEST_MIGRATIONS: D1Migration[];
+// Test-only bindings from vitest.config.ts. `cloudflare:test` types `env` as
+// `Cloudflare.Env`.
+declare namespace Cloudflare {
+    interface Env {
+        TEST_MIGRATIONS: import("cloudflare:test").D1Migration[];
     }
+}
+
+declare module "*?raw" {
+    const content: string;
+    export default content;
 }

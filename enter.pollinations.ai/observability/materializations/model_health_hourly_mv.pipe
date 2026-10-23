@@ -1,0 +1,22 @@
+DESCRIPTION >
+    Materializes catalog health from final requests. Fallback rescues count as
+    successes for the requested model; caller 4xx are excluded. now() is
+    evaluated at ingest, so it only bounds the backfill to the table's TTL.
+
+NODE model_health_hourly_mv_node
+SQL >
+    SELECT
+        toStartOfHour(start_time) AS hour,
+        resolved_model_requested AS model,
+        event_type,
+        sumState(toUInt64(response_status >= 200 AND response_status < 300)) AS status_2xx,
+        sumState(toUInt64(response_status >= 500)) AS errors_5xx,
+        groupArraySortedState(50)(tuple(-toInt64(toUnixTimestamp(start_time)), request_id, response_status)) AS recent
+    FROM generation_event_v2
+    WHERE is_final
+        AND ((response_status >= 200 AND response_status < 300) OR response_status >= 500)
+        AND start_time >= now() - INTERVAL 8 DAY
+    GROUP BY hour, model, event_type
+
+TYPE MATERIALIZED
+DATASOURCE model_health_hourly

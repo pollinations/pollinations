@@ -1,12 +1,13 @@
+import { UpstreamError } from "@shared/error.ts";
 /**
  * Pruna image generation via DeepInfra and video generation via Replicate.
  *
  * DeepInfra hosts the exact PrunaAI/p-image and PrunaAI/p-image-Edit
- * checkpoints at the same prices as Replicate. p-video stays on Replicate and
- * uses one canonical model with request-selected resolution pricing.
+ * checkpoints behind the canonical prunaai/p-image and prunaai/p-image-edit
+ * IDs. p-video stays on Replicate and uses one canonical model with
+ * request-selected resolution pricing.
  */
 
-import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
@@ -16,7 +17,7 @@ import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { base64ToBuffer, toDataUri } from "../utils/imageDownload.ts";
 import {
     runReplicatePrediction,
-    toReplicateHttpError,
+    toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
@@ -26,13 +27,11 @@ const logError = debug("pollinations:pruna:error");
 const DEEPINFRA_INFERENCE_BASE = "https://api.deepinfra.com/v1/inference";
 const DEEPINFRA_TIMEOUT_MS = 120_000;
 const DEEPINFRA_IMAGE_MODELS = {
-    "p-image": "PrunaAI/p-image",
-    "p-image-edit": "PrunaAI/p-image-Edit",
-    "flux-deepinfra": "black-forest-labs/FLUX-1-schnell",
+    "prunaai/p-image": "PrunaAI/p-image",
+    "prunaai/p-image-edit": "PrunaAI/p-image-Edit",
+    "black-forest-labs/flux.1-schnell:deepinfra":
+        "black-forest-labs/FLUX-1-schnell",
 } as const;
-
-// p-image-edit / p-video accept up to this many reference images.
-const MAX_EDIT_IMAGES = 5;
 
 // Supported dimensions for prunaai/p-image (custom aspect_ratio mode).
 const SUPPORTED_DIMENSIONS = [
@@ -55,7 +54,6 @@ const PVIDEO_ASPECT_RATIOS = [
     "2:3",
     "1:1",
 ] as const;
-type PVideoAspectRatio = (typeof PVIDEO_ASPECT_RATIOS)[number];
 
 interface PImageInput {
     prompt: string;
@@ -84,7 +82,7 @@ interface PVideoInput {
     resolution: "720p" | "1080p";
     duration: number;
     image?: string;
-    aspect_ratio?: PVideoAspectRatio;
+    aspect_ratio?: string;
     fps?: 24 | 48;
     seed?: number;
 }
@@ -104,15 +102,14 @@ async function generateDeepInfraImage(
     input: PImageInput | PImageEditInput | FluxSchnellInput,
 ): Promise<ImageGenerationResult> {
     const displayName =
-        actualModel === "flux-deepinfra"
+        actualModel === "black-forest-labs/flux.1-schnell:deepinfra"
             ? "FLUX.1 Schnell"
             : `Pruna ${actualModel}`;
     const apiKey = getImageEnv("DEEPINFRA_API_KEY");
     if (!apiKey) {
-        throw new HttpError(
-            "DEEPINFRA_API_KEY environment variable is required",
-            500,
-        );
+        throw UpstreamError.fromProvider(500, {
+            message: "DEEPINFRA_API_KEY environment variable is required",
+        });
     }
 
     const url = `${DEEPINFRA_INFERENCE_BASE}/${DEEPINFRA_IMAGE_MODELS[actualModel]}`;
@@ -131,15 +128,16 @@ async function generateDeepInfraImage(
     try {
         result = (await response.json()) as DeepInfraImageOutput;
     } catch {
-        throw new HttpError(
-            `${displayName} returned invalid JSON`,
-            502,
-            undefined,
-            url,
-        );
+        throw UpstreamError.fromProvider(502, {
+            message: `${displayName} returned invalid JSON`,
+            requestUrl: new URL(url),
+        });
     }
     const image = result.images?.[0];
-    if (!image) throw new HttpError(`${displayName} returned no image`, 502);
+    if (!image)
+        throw UpstreamError.fromProvider(502, {
+            message: `${displayName} returned no image`,
+        });
 
     const buffer = base64ToBuffer(image);
     logOps(`Generated ${actualModel}:`, {
@@ -149,8 +147,6 @@ async function generateDeepInfraImage(
     });
     return {
         buffer,
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel,
             usage: {
@@ -173,12 +169,15 @@ export async function callFluxSchnellDeepInfraAPI(
         num_images: 1,
     };
     if (safeParams.seed !== undefined) input.seed = safeParams.seed;
-    return generateDeepInfraImage("flux-deepinfra", input);
+    return generateDeepInfraImage(
+        "black-forest-labs/flux.1-schnell:deepinfra",
+        input,
+    );
 }
 
 /**
  * Run a Pruna video prediction on Replicate.
- * Replicate failures are remapped to HttpError so the
+ * Replicate failures are remapped to UpstreamError so the
  * caller surfaces the right code (429/400/422/502) instead of a blanket 500.
  */
 async function runPrunaPrediction<TInput>(
@@ -196,7 +195,9 @@ async function runPrunaPrediction<TInput>(
             predict_time: result.predictTimeSeconds,
         });
         if (typeof result.output !== "string" || result.output.length === 0) {
-            throw new HttpError(`${displayName} returned no output`, 500);
+            throw UpstreamError.fromProvider(500, {
+                message: `${displayName} returned no output`,
+            });
         }
         return {
             output: result.output,
@@ -204,7 +205,7 @@ async function runPrunaPrediction<TInput>(
         };
     } catch (err) {
         logError(`${displayName} prediction failed:`, err);
-        throw toReplicateHttpError(err, `${displayName} generation failed`);
+        throw toReplicateUpstreamError(err, `${displayName} generation failed`);
     }
 }
 
@@ -243,7 +244,7 @@ export async function callPrunaImageAPI(
 
     logOps("p-image input:", { ...input, prompt: prompt.slice(0, 80) });
 
-    return generateDeepInfraImage("p-image", input);
+    return generateDeepInfraImage("prunaai/p-image", input);
 }
 
 // =============================================================================
@@ -260,16 +261,10 @@ export async function callPrunaImageEditAPI(
     // provided") and we'd report as a 500.
     const images = safeParams.image ?? [];
     if (images.length === 0) {
-        throw new HttpError(
-            "p-image-edit requires at least one input image. Provide one via the image parameter.",
-            400,
-        );
-    }
-    if (images.length > MAX_EDIT_IMAGES) {
-        throw new HttpError(
-            `p-image-edit supports at most ${MAX_EDIT_IMAGES} input images (received ${images.length}).`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message:
+                "p-image-edit requires at least one input image. Provide one via the image parameter.",
+        });
     }
 
     const input: PImageEditInput = { prompt, images };
@@ -280,7 +275,7 @@ export async function callPrunaImageEditAPI(
         images: `[${images.length} image references]`,
     });
 
-    return generateDeepInfraImage("p-image-edit", input);
+    return generateDeepInfraImage("prunaai/p-image-edit", input);
 }
 
 // =============================================================================
@@ -310,12 +305,15 @@ async function generatePrunaVideo(
         // ignored by the upstream in this mode.
         input.image = await toDataUri(images[0]);
     } else {
-        // Text-to-video: pick the closest supported aspect ratio.
-        input.aspect_ratio = closestRatioLogSpace(
-            safeParams.width || 1024,
-            safeParams.height || 1024,
-            PVIDEO_ASPECT_RATIOS,
-        );
+        // Text-to-video: the requested aspect ratio as-is (Replicate rejects
+        // unsupported ones), else the closest supported one to width/height.
+        input.aspect_ratio =
+            safeParams.aspectRatio ??
+            closestRatioLogSpace(
+                safeParams.width || 1024,
+                safeParams.height || 1024,
+                PVIDEO_ASPECT_RATIOS,
+            );
     }
 
     if (safeParams.fps) input.fps = safeParams.fps >= 36 ? 48 : 24;
@@ -348,7 +346,7 @@ async function generatePrunaVideo(
         mimeType: "video/mp4",
         durationSeconds: billedDuration,
         trackingData: {
-            actualModel: "p-video",
+            actualModel: "prunaai/p-video",
             usage: {
                 completionVideoSeconds: billedDuration,
             },

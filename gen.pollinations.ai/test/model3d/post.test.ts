@@ -106,11 +106,12 @@ afterEach(async () => {
 async function fetch3d(
     path: string,
     init: RequestInit = {},
+    bindings = withInlineGenerationCoordinator(env),
 ): Promise<Response> {
     const ctx = createExecutionContext();
     const response = await worker.fetch(
         new Request(`https://gen.pollinations.ai${path}`, init),
-        withInlineGenerationCoordinator(env),
+        bindings,
         ctx,
     );
     await response.clone().arrayBuffer();
@@ -125,7 +126,7 @@ test("POST /3d caches distinct JSON Trellis parameter sets", async () => {
     } as CloudflareBindings);
     await mocks.enable("tinybird", "inferenceport");
     const { key, userId } = await createTestApiKey({
-        user: { tierBalance: 2 },
+        user: { tierBalance: 2, packBalance: 2 },
     });
     const prompt = crypto.randomUUID();
 
@@ -148,7 +149,7 @@ test("POST /3d caches distinct JSON Trellis parameter sets", async () => {
         });
 
         expect(response.status).toBe(200);
-        expect(response.headers.get("X-Cache")).toBe("HIT");
+        expect(response.headers.get("X-Cache")).toBe("MISS");
         expect(await response.text()).toBe("glTF");
     }
 
@@ -168,20 +169,21 @@ test("POST /3d caches distinct JSON Trellis parameter sets", async () => {
     expect(mocks.tinybird.state.events).toEqual([
         expect.objectContaining({
             modelRequested: "trellis-2",
-            modelUsed: "trellis-2",
+            modelUsed: "microsoft/trellis-2",
             tokenPriceCompletionImage: 0.24,
             totalPrice: 0.24,
         }),
         expect.objectContaining({
             modelRequested: "trellis-2",
-            modelUsed: "trellis-2",
+            modelUsed: "microsoft/trellis-2",
             costVariant: "high",
             tokenPriceCompletionImage: 0.35,
             totalPrice: 0.35,
         }),
     ]);
     const balance = await getUserBalance(drizzle(env.DB), userId);
-    expect(balance.tierBalance).toBeCloseTo(1.41, 10);
+    expect(balance.tierBalance).toBe(2);
+    expect(balance.packBalance).toBeCloseTo(1.41, 10);
 });
 
 test("POST /3d sends JSON image and seed to the existing Rodin provider path", async () => {
@@ -217,14 +219,52 @@ test("POST /3d sends JSON image and seed to the existing Rodin provider path", a
     ]);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelRequested: "hyper3d-rodin",
-        modelUsed: "hyper3d-rodin",
+        modelUsed: "hyper3d/rodin-2.5",
         tokenPriceCompletionImage: 0.1,
         totalPrice: 0.1,
     });
 }, 10_000);
 
+test("media Responses and Chat reuse native text-to-3D generation", async () => {
+    const bindings = withInlineGenerationCoordinator({
+        ...env,
+        FAL_KEY: "fal_test_key",
+    });
+    await mocks.enable("tinybird", "fal");
+    const { key } = await createTestApiKey({ user: { packBalance: 1 } });
+    const prompt = `a model with literal %2F ${crypto.randomUUID()}`;
+    let link: string | null = null;
+    for (const protocol of ["responses", "chat/completions"]) {
+        const response = await fetch3d(
+            `/v1/${protocol}`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "hyper3d/rodin-2.5",
+                    ...(protocol === "responses"
+                        ? { input: prompt }
+                        : { messages: [{ role: "user", content: prompt }] }),
+                }),
+            },
+            bindings,
+        );
+        expect(response.status, await response.clone().text()).toBe(200);
+        expect(await response.text()).toContain("[3D model](https://media.");
+        if (link) expect(response.headers.get("Link")).toBe(link);
+        link = response.headers.get("Link");
+    }
+    expect(mocks.fal.state.bodies).toEqual([{ prompt }]);
+    expect(
+        mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+    ).toHaveLength(1);
+}, 10_000);
+
 test("POST /3d preserves authentication and rejects ignored parameters", async ({
-    apiKey,
+    paidApiKey,
 }) => {
     syncModel3dEnvironment({
         ...env,
@@ -245,7 +285,7 @@ test("POST /3d preserves authentication and rejects ignored parameters", async (
     expect(unauthenticated.status).toBe(401);
 
     const queryAuthenticated = await fetch3d(
-        `/3d/query-auth?key=${apiKey}&safe=false`,
+        `/3d/query-auth?key=${paidApiKey}&safe=false`,
         {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -265,7 +305,7 @@ test("POST /3d preserves authentication and rejects ignored parameters", async (
         const response = await fetch3d("/3d/validation-check", {
             method: "POST",
             headers: {
-                Authorization: `Bearer ${apiKey}`,
+                Authorization: `Bearer ${paidApiKey}`,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(invalidBody),
@@ -282,7 +322,7 @@ test("POST /3d preserves authentication and rejects ignored parameters", async (
         const response = await fetch3d(`/3d/query-validation?${query}`, {
             method: "POST",
             headers: {
-                Authorization: `Bearer ${apiKey}`,
+                Authorization: `Bearer ${paidApiKey}`,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(body),
@@ -294,7 +334,7 @@ test("POST /3d preserves authentication and rejects ignored parameters", async (
 });
 
 test("GET /3d keeps query behavior and Trellis resolution", async ({
-    apiKey,
+    paidApiKey,
 }) => {
     syncModel3dEnvironment({
         ...env,
@@ -304,11 +344,11 @@ test("GET /3d keeps query behavior and Trellis resolution", async ({
 
     const response = await fetch3d(
         `/3d/${crypto.randomUUID()}?model=trellis-2&image=${encodeURIComponent("https://example.com/reference.jpg")}&resolution=medium`,
-        { headers: { Authorization: `Bearer ${apiKey}` } },
+        { headers: { Authorization: `Bearer ${paidApiKey}` } },
     );
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("X-Cache")).toBe("HIT");
+    expect(response.headers.get("X-Cache")).toBe("MISS");
     expect(mocks.inferenceport.state.bodies[0]).toMatchObject({
         resolution: "medium",
     });

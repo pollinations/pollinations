@@ -36,7 +36,10 @@ import {
 
 const db = drizzle(env.DB);
 
-function fakeStatsEnv(price: number, model = "openai"): CloudflareBindings {
+function fakeStatsEnv(
+    price: number,
+    model = "openai/gpt-5.4-nano",
+): CloudflareBindings {
     return {
         DB: env.DB,
         KV: {
@@ -61,7 +64,7 @@ function fakeLog() {
     };
 }
 
-function testModel(model: ModelName = "openai") {
+function testModel(model: ModelName = "openai/gpt-5.4-nano") {
     return {
         requested: model,
         resolved: model,
@@ -98,7 +101,7 @@ async function setupPayerAndDev() {
 
     await db.insert(apikeyTable).values({
         id: pkId,
-        userId: devId,
+        referenceId: devId,
         name: "markup-app",
         prefix: "pk",
         key: `hashed-${pkId}`,
@@ -129,6 +132,55 @@ async function createBalanceUser(
 }
 
 describe("BYOP markup", () => {
+    it.each([
+        "amazon/nova-2-lite-v1",
+        "amazon/nova-micro-v1",
+        "jaredpalmer/kev-4b",
+        "typesafe/jev-1.13",
+        "assemblyai/universal-3.5-pro",
+        "assemblyai/universal-2",
+        "microsoft/trellis-2",
+    ] as const)(
+        "requires paid balance for %s and its fallback routes",
+        async (model) => {
+            const userId = await createBalanceUser("paid-model", {
+                tier: 100,
+                pack: 0,
+            });
+            const vars = {
+                auth: { user: { id: userId } },
+                balance: { getBalance: (id: string) => getUserBalance(db, id) },
+                model: testModel(model),
+                log: fakeLog(),
+            } as unknown as Parameters<typeof checkBalance>[0];
+
+            for (const route of [
+                model,
+                ...(vars.model.definition.fallbacks ?? []),
+            ]) {
+                vars.model = testModel(route as ModelName);
+                await expect(
+                    checkBalance(vars, fakeStatsEnv(0, route)),
+                ).rejects.toMatchObject({
+                    status: 402,
+                    errorCode: "INSUFFICIENT_BALANCE",
+                    paidOnly: true,
+                });
+                await db
+                    .update(userTable)
+                    .set({ packBalance: 1 })
+                    .where(sql`${userTable.id} = ${userId}`);
+                await expect(
+                    checkBalance(vars, fakeStatsEnv(0, route)),
+                ).resolves.toBeUndefined();
+                await db
+                    .update(userTable)
+                    .set({ packBalance: 0 })
+                    .where(sql`${userTable.id} = ${userId}`);
+            }
+        },
+    );
+
     it("computes the dev credit from the baseline price", () => {
         expect(computeDevCredit(0)).toBe(0);
         expect(computeDevCredit(-1)).toBe(0);
@@ -293,8 +345,54 @@ describe("BYOP markup", () => {
         await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
             {
                 status: 402,
+                errorCode: "INSUFFICIENT_BALANCE",
             },
         );
+    });
+
+    it("rejects a Quest Pollen only key when Quest Pollen can't cover the estimate", async () => {
+        const vars = {
+            auth: {
+                user: { id: "preflight-payer" },
+                apiKey: { id: "sk-test", questPollenOnly: true },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 0.5,
+                    packBalance: 100,
+                }),
+            },
+            model: testModel(),
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
+            { status: 402, errorCode: "QUEST_POLLEN_ONLY" },
+        );
+    });
+
+    it("rejects paid-only models for a Quest Pollen only key", async () => {
+        const vars = {
+            auth: {
+                user: { id: "preflight-payer" },
+                apiKey: { id: "sk-test", questPollenOnly: true },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 100,
+                    packBalance: 100,
+                }),
+            },
+            model: testModel("meta/llama-4-maverick"),
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        await expect(
+            checkBalance(vars, fakeStatsEnv(0.01, "meta/llama-4-maverick")),
+        ).rejects.toMatchObject({
+            status: 402,
+            errorCode: "QUEST_POLLEN_ONLY",
+        });
     });
 
     it("uses positive balance as the fallback when model estimate is zero", async () => {
@@ -398,12 +496,12 @@ describe("BYOP markup", () => {
                     packBalance: 1,
                 }),
             },
-            model: testModel("llama-maverick"),
+            model: testModel("meta/llama-4-maverick"),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
         await expect(
-            checkBalance(vars, fakeStatsEnv(1, "llama-maverick")),
+            checkBalance(vars, fakeStatsEnv(1, "meta/llama-4-maverick")),
         ).rejects.toMatchObject({
             status: 402,
         });
@@ -428,6 +526,7 @@ describe("BYOP markup", () => {
         await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
             {
                 status: 402,
+                errorCode: "KEY_BUDGET_EXHAUSTED",
             },
         );
     });
@@ -602,6 +701,7 @@ describe("BYOP markup", () => {
             modelId: "vendouple/zimage",
             title: "Z-Image",
             description: null,
+            paidOnly: false,
             modality: "image",
             imagePricing: "request",
             ...communityEndpointPrices({ completionImagePrice: 0.01 }),
@@ -656,6 +756,7 @@ describe("BYOP markup", () => {
             modelId: "vendouple/zimage",
             title: "Z-Image",
             description: null,
+            paidOnly: false,
             modality: "image",
             imagePricing: "request",
             ...communityEndpointPrices({ completionImagePrice: 0.01 }),
@@ -688,15 +789,45 @@ describe("BYOP markup", () => {
     });
 
     it("keeps Tinybird estimates for token-priced models", async () => {
-        const definition = getRegistryModelDefinition("openai");
+        const definition = getRegistryModelDefinition("openai/gpt-5.4-nano");
         expect(getDefinedRequestEstimate(definition)).toBeNull();
         expect(
             getEstimatedPrice(
-                { data: [{ model: "openai", avg_cost_usd: 1.25 }] },
-                "openai",
+                {
+                    data: [
+                        {
+                            model: "openai/gpt-5.4-nano",
+                            avg_cost_usd: 1.25,
+                        },
+                    ],
+                },
+                "openai/gpt-5.4-nano",
                 definition,
             ),
         ).toBe(1.25);
+    });
+
+    it("retains legacy price estimates after a canonical rename", () => {
+        const model = "openai/gpt-5.4-nano";
+        const definition = getRegistryModelDefinition(model);
+        const legacy = { model: "openai", avg_cost_usd: 1.25 };
+        expect(getEstimatedPrice({ data: [legacy] }, model, definition)).toBe(
+            1.25,
+        );
+        expect(
+            getEstimatedPrice(
+                { data: [legacy, { model, avg_cost_usd: 0.75 }] },
+                model,
+                definition,
+            ),
+        ).toBe(0.75);
+        expect(
+            getEstimatedPrice(
+                { data: [{ model: "owner/community-model", avg_cost_usd: 9 }] },
+                model,
+                definition,
+            ),
+        ).toBe(0);
     });
 
     it("does not credit or deduct for unbilled requests", async () => {

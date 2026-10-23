@@ -21,9 +21,10 @@ const BUCKET_COLUMNS = {
  * labels a meter for reporting. Neither is an authoritative write-path rule.
  *
  *   1. paid-only  → `pack` only (never Quest Pollen)
- *   2. tier       → Quest Pollen when it covers the full amount (`>=`)
- *   3. pack       → any positive paid balance when Quest Pollen can't cover
- *   4. tier       → fall back to Quest Pollen when pack is non-positive
+ *   2. quest-only → `tier` only, for keys that never spend paid Pollen
+ *   3. tier       → Quest Pollen when it covers the full amount (`>=`)
+ *   4. pack       → any positive paid balance when Quest Pollen can't cover
+ *   5. tier       → fall back to Quest Pollen when pack is non-positive
  *
  * The final `tier` fall-through is load-bearing: when Quest Pollen cannot cover
  * the charge and paid balance is non-positive, the charge accrues Quest-Pollen
@@ -35,10 +36,12 @@ export async function atomicDeductUserBalance(
     userId: string,
     amount: number,
     isPaidOnly = false,
+    questPollenOnly = false,
 ): Promise<{
     ok: boolean;
     bucket: Bucket | null;
     packBalance: number | null;
+    lastPackPollen: number | null;
     postDeductionBalance: number | null;
 }> {
     if (amount <= 0) {
@@ -46,6 +49,7 @@ export async function atomicDeductUserBalance(
             ok: true,
             bucket: null,
             packBalance: null,
+            lastPackPollen: null,
             postDeductionBalance: null,
         };
     }
@@ -54,6 +58,7 @@ export async function atomicDeductUserBalance(
         bucket: Bucket;
         tierBalance: number | null;
         packBalance: number | null;
+        lastPackPollen: number | null;
     }>(
         sql`
         WITH decision AS MATERIALIZED (
@@ -61,6 +66,7 @@ export async function atomicDeductUserBalance(
                 id,
                 CASE
                     WHEN ${isPaidOnly ? 1 : 0} = 1 THEN 'pack'
+                    WHEN ${questPollenOnly ? 1 : 0} = 1 THEN 'tier'
                     WHEN COALESCE(tier_balance, 0) >= ${amount} THEN 'tier'
                     WHEN COALESCE(pack_balance, 0) > 0 THEN 'pack'
                     ELSE 'tier'
@@ -84,7 +90,8 @@ export async function atomicDeductUserBalance(
         RETURNING
             (SELECT bucket FROM decision) AS bucket,
             tier_balance AS tierBalance,
-            pack_balance AS packBalance
+            pack_balance AS packBalance,
+            last_pack_pollen AS lastPackPollen
     `,
     );
 
@@ -92,6 +99,7 @@ export async function atomicDeductUserBalance(
         ok: !!row,
         bucket: row?.bucket ?? null,
         packBalance: row?.packBalance ?? null,
+        lastPackPollen: row?.lastPackPollen ?? null,
         postDeductionBalance: row
             ? row.bucket === "tier"
                 ? row.tierBalance

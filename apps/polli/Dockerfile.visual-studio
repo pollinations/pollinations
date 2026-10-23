@@ -1,0 +1,11 @@
+FROM mcr.microsoft.com/playwright:v1.62.0-noble
+
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY src/integrations/visual_studio_runtime.jsx src/integrations/visual_studio_runtime.jsx
+COPY scripts/render_visual_studio.mjs scripts/render_visual_studio.mjs
+COPY scripts/studio_worker.py scripts/studio_worker.py
+RUN install --directory --owner=1000 --group=1000 --mode=0770 /run/polli-studio
+USER 1000:1000
+ENTRYPOINT ["python3", "/app/scripts/studio_worker.py"]

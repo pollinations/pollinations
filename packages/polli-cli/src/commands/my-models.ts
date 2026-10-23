@@ -4,6 +4,7 @@ import { gen, requireKey } from "../lib/api.js";
 import {
     fail,
     getOutputMode,
+    printInfo,
     printResult,
     printSuccess,
     printTable,
@@ -43,15 +44,26 @@ const PRICE_OPTION_KEYS = [
 
 type PriceOptionKey = (typeof PRICE_OPTION_KEYS)[number];
 
+const PENDING_KEYS = [
+    "visibility",
+    "paidOnly",
+    "imagePricing",
+    ...PRICE_OPTION_KEYS,
+] as const;
+
 interface MyModelBase {
     id: string;
     modelId: string;
     name: string;
     title: string;
     description: string | null;
-    baseUrl: string;
-    upstreamModel: string;
+    api?: "chat_completions" | "responses";
+    url?: string;
+    baseUrl?: string;
+    upstreamModel?: string;
     visibility: "private" | "public";
+    // Queued visibility/pricing that only applies at effectiveAt.
+    pending: { effectiveAt: string; [key: string]: unknown } | null;
     createdAt: string;
     updatedAt: string;
     [key: string]: unknown;
@@ -74,12 +86,20 @@ interface PromptAgentMyModel extends MyModelBase {
     type: "prompt_agent";
 }
 
+interface CodeAgentMyModel extends MyModelBase {
+    type: "code_agent";
+}
+
 interface EndpointAgentMyModel extends MyModelBase {
     type: "endpoint_agent";
     perUserRpm: number | null;
 }
 
-type MyModel = ProxyMyModel | PromptAgentMyModel | EndpointAgentMyModel;
+type MyModel =
+    | ProxyMyModel
+    | PromptAgentMyModel
+    | CodeAgentMyModel
+    | EndpointAgentMyModel;
 
 function addPriceOptions(command: Command): Command {
     for (const [flag, description] of PRICE_FLAGS) {
@@ -110,16 +130,40 @@ function commaSeparatedList(value: unknown): string[] {
         .filter(Boolean);
 }
 
+function endpointTarget(opts: Record<string, unknown>, required: boolean) {
+    if (
+        opts.api !== undefined ||
+        opts.url !== undefined ||
+        (required && (opts.modality ?? "text") === "text")
+    ) {
+        if (opts.baseUrl !== undefined) {
+            fail("Text endpoints use --api and --url; omit --base-url");
+        }
+        if (opts.modality !== undefined && opts.modality !== "text") {
+            fail("--api and --url are only supported for text endpoints");
+        }
+        if (opts.api !== "chat_completions" && opts.api !== "responses") {
+            fail("--api must be 'chat_completions' or 'responses'");
+        }
+        if (!opts.url) fail("--api and --url must be provided together");
+        return { api: opts.api, url: opts.url };
+    }
+    if (required && !opts.baseUrl) fail("--base-url is required for media");
+    return opts.baseUrl !== undefined ? { baseUrl: opts.baseUrl } : {};
+}
+
 export function modelBody(
     opts: Record<string, unknown>,
     includeRequired: boolean,
 ) {
-    const body: Record<string, unknown> = readPriceOptions(opts);
+    const body: Record<string, unknown> = {
+        ...readPriceOptions(opts),
+        ...endpointTarget(opts, includeRequired),
+    };
     const fields = [
         ["name", "name"],
         ["title", "title"],
         ["description", "description"],
-        ["baseUrl", "baseUrl"],
         ["upstreamModel", "upstreamModel"],
         ["bearerToken", "bearerToken"],
         ["paidOnly", "paidOnly"],
@@ -144,10 +188,11 @@ export function modelBody(
             opts.modality !== "image" &&
             opts.modality !== "video" &&
             opts.modality !== "transcription" &&
+            opts.modality !== "speech" &&
             opts.modality !== "embedding"
         ) {
             fail(
-                "--modality must be 'text', 'image', 'video', 'transcription', or 'embedding'",
+                "--modality must be 'text', 'image', 'video', 'transcription', 'speech', or 'embedding'",
             );
         }
         body.modality = opts.modality;
@@ -177,6 +222,9 @@ export function modelBody(
                 : commaSeparatedList(opts.requiredSafety);
     }
 
+    // Commander sets `streaming: false` only for --no-streaming.
+    if (opts.streaming === false) body.advertised = { streaming: false };
+
     if (includeRequired) {
         for (const required of ["name", "title"]) {
             if (!body[required]) {
@@ -185,7 +233,6 @@ export function modelBody(
                 );
             }
         }
-        if (!body.baseUrl) fail("--base-url is required");
         if (!body.bearerToken) fail("--bearer-token is required");
     }
 
@@ -225,8 +272,12 @@ function printModels(models: MyModel[]) {
             upstream:
                 model.type === "proxy" && model.modality === "video"
                     ? "-"
-                    : model.upstreamModel,
-            base_url: model.baseUrl,
+                    : (model.upstreamModel ?? "-"),
+            api:
+                model.type === "prompt_agent" || model.type === "code_agent"
+                    ? "responses"
+                    : (model.api ?? "-"),
+            endpoint: model.url ?? model.baseUrl ?? "-",
             fallbacks:
                 model.type === "proxy"
                     ? model.fallbacks?.join(", ") || "-"
@@ -244,11 +295,23 @@ function printModels(models: MyModel[]) {
             "inputs",
             "visibility",
             "upstream",
-            "base_url",
+            "api",
+            "endpoint",
             "fallbacks",
             "description",
         ],
     );
+    // Below the table so last-column truncation cannot hide it.
+    for (const model of models) {
+        const pending = model.pending;
+        if (!pending) continue;
+        const changes = PENDING_KEYS.filter(
+            (key) => pending[key] !== undefined && pending[key] !== model[key],
+        ).map((key) => `${key} ${model[key] ?? "-"} → ${pending[key]}`);
+        printInfo(
+            `Changes queued for ${model.modelId}, effective ${pending.effectiveAt}${changes.length > 0 ? `: ${changes.join(", ")}` : ""}`,
+        );
+    }
 }
 
 const list = new Command("list")
@@ -273,8 +336,13 @@ const create = addPriceOptions(
         .option("--description <text>", "Model description")
         .option(
             "--base-url <url>",
-            "OpenAI-compatible base URL, or exact video endpoint URL",
+            "Media API base URL, or exact video endpoint URL",
         )
+        .option(
+            "--api <api>",
+            "Text upstream API: chat_completions or responses",
+        )
+        .option("--url <url>", "Exact text endpoint URL for the selected API")
         .option(
             "--upstream-model <model>",
             "Upstream model id (not used for video)",
@@ -308,6 +376,10 @@ const create = addPriceOptions(
         .option(
             "--image-pricing <mode>",
             "Image billing: request (per image, default) or tokens",
+        )
+        .option(
+            "--no-streaming",
+            "Text endpoint has no SSE (`my-models test` reports streaming: false); stream: true calls get the whole answer at once",
         ),
 ).action(async (opts) => {
     const key = requireKey();
@@ -321,6 +393,7 @@ const create = addPriceOptions(
         else {
             printSuccess(`Model registered: ${created.modelId}`);
             printModels([created]);
+            printInfo("It can take a minute or two before this is callable.");
         }
     } catch (err) {
         fail("Failed to create model", err);
@@ -336,8 +409,13 @@ const update = addPriceOptions(
         .option("--description <text>", "Model description")
         .option(
             "--base-url <url>",
-            "OpenAI-compatible base URL, or exact video endpoint URL",
+            "Media API base URL, or exact video endpoint URL",
         )
+        .option(
+            "--api <api>",
+            "Text upstream API: chat_completions or responses (requires --url)",
+        )
+        .option("--url <url>", "Exact text endpoint URL (requires --api)")
         .option(
             "--upstream-model <model>",
             "Upstream model id (not used for video)",
@@ -385,6 +463,7 @@ const update = addPriceOptions(
         else {
             printSuccess(`Model updated: ${updated.modelId}`);
             printModels([updated]);
+            printInfo("It can take a minute or two before this is callable.");
         }
     } catch (err) {
         fail("Failed to update model", err);
@@ -443,10 +522,12 @@ const models = new Command("models")
 
 const test = new Command("test")
     .description("Test an endpoint/model before registering it")
-    .requiredOption(
+    .option(
         "--base-url <url>",
-        "OpenAI-compatible base URL, or exact video endpoint URL",
+        "Media API base URL, or exact video endpoint URL",
     )
+    .option("--api <api>", "Text upstream API: chat_completions or responses")
+    .option("--url <url>", "Exact text endpoint URL for the selected API")
     .requiredOption("--bearer-token <token>", "Upstream bearer token")
     .option("--model <model>", "Upstream model id (not used for video)")
     .option(
@@ -461,13 +542,15 @@ const test = new Command("test")
             opts.modality !== "image" &&
             opts.modality !== "video" &&
             opts.modality !== "transcription" &&
+            opts.modality !== "speech" &&
             opts.modality !== "embedding"
         ) {
             fail(
-                "--modality must be 'text', 'image', 'video', 'transcription', or 'embedding'",
+                "--modality must be 'text', 'image', 'video', 'transcription', 'speech', or 'embedding'",
             );
         }
         const modality = opts.modality ?? "text";
+        const target = endpointTarget(opts, true);
         if (modality !== "video" && !opts.model) {
             fail("--model is required unless --modality is video");
         }
@@ -478,7 +561,7 @@ const test = new Command("test")
                     apiKey: key,
                     method: "POST",
                     body: {
-                        baseUrl: opts.baseUrl,
+                        ...target,
                         bearerToken: opts.bearerToken,
                         ...(opts.model && { model: opts.model }),
                         modality,

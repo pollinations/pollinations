@@ -1,11 +1,14 @@
 import { communityEndpointPrices } from "@shared/community-endpoints.ts";
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import {
     getVisibleImageModels,
     type ModelDefinition,
 } from "@shared/registry/registry.ts";
-import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
+import {
+    FALLBACK_TARGET_HEADER,
+    MODEL_USED_HEADER,
+} from "@shared/registry/usage-headers.ts";
 import { describe, expect, it, vi } from "vitest";
 import {
     attachFallbackTarget,
@@ -29,12 +32,15 @@ function registryEntry(
         aliases: [],
         provider: "test",
         fallbacks,
-        brand: "Test",
+        publisher: "Test",
         category: "text",
         cost: { completionTextTokens: rate },
         priceMultiplier: 1,
+        paidOnly: false,
         addedDate: 0,
         title: id,
+        inputModalities: ["text"],
+        outputModalities: ["text"],
     };
     return {
         id,
@@ -60,10 +66,21 @@ function communityEntry(
     entry.visible = visibility === "public" && hiddenAt === null;
     entry.definition.hidden = hiddenAt !== null;
     entry.communityEndpoint = {
+        id,
+        modelId: id,
+        name: id,
+        title: id,
+        description: null,
         type: "proxy",
         ownerUserId,
         visibility,
-        hiddenAt,
+        baseUrl: "https://example.com/v1/chat/completions",
+        api: "chat_completions",
+        upstreamModel: id,
+        bearerTokenCiphertext: "test",
+        modality: "text",
+        inputModalities: ["text"],
+        perUserRpm: null,
         paidOnly,
         imagePricing: "request",
         fallbacks,
@@ -77,21 +94,30 @@ function communityEntry(
 
 describe("registry fallback linking", () => {
     it("marks provider routes as hidden, fallback-only registry entries", () => {
-        expect(IMAGE_SERVICES.zimage.fallbacks).toContain("zimage-fal");
-        expect(IMAGE_SERVICES["zimage-fal"]).toMatchObject({
+        expect(IMAGE_SERVICES["tongyi-mai/z-image-turbo"].fallbacks).toContain(
+            "tongyi-mai/z-image-turbo:fal",
+        );
+        expect(IMAGE_SERVICES["tongyi-mai/z-image-turbo:fal"]).toMatchObject({
             aliases: [],
             hidden: true,
             fallbackOnly: true,
             provider: "fal",
         });
-        expect(getVisibleImageModels()).not.toContain("zimage-fal");
+        expect(getVisibleImageModels()).not.toContain(
+            "tongyi-mai/z-image-turbo:fal",
+        );
     });
 
     it("declares direct OpenAI fallbacks for every GPT Image model", () => {
         const pairs = [
-            ["gptimage", "gptimage-openai"],
-            ["gptimage-large", "gptimage-large-openai"],
-            ["gpt-image-2", "gpt-image-2-openai"],
+            ["openai/gpt-image-1-mini", "openai/gpt-image-1-mini:openai"],
+            ["openai/gpt-image-1.5", "openai/gpt-image-1.5:openai"],
+            ["openai/gpt-image-2", "openai/gpt-image-2:openai"],
+            ["openai/gpt-image-2.5-flare", "openai/gpt-image-2.5-flare:openai"],
+            [
+                "openai/gpt-image-2.5-sunburst",
+                "openai/gpt-image-2.5-sunburst:openai",
+            ],
         ] as const;
 
         for (const [primary, fallback] of pairs) {
@@ -194,6 +220,7 @@ describe("registry fallback linking", () => {
 
         expect(ownPrimary.fallbackEntries?.map((entry) => entry.id)).toEqual([
             "owner/private",
+            "owner/disabled",
         ]);
         expect(
             registryPrimary.fallbackEntries?.map((entry) => entry.id),
@@ -308,6 +335,159 @@ describe("registry fallback linking", () => {
 
         expect(primary.fallbackEntries).toBeUndefined();
     });
+
+    describe("community primary falling back to a static registry target", () => {
+        it("links a static target that costs no more than the primary", () => {
+            const primary = communityEntry(
+                "owner/primary",
+                "owner",
+                "public",
+                null,
+                ["static-cheap"],
+                20,
+            );
+            const target = registryEntry("static-cheap", [], 20);
+            const entries = [primary, target];
+
+            linkFallbackEntries(
+                entries,
+                new Map(entries.map((entry) => [entry.id, entry])),
+            );
+
+            expect(primary.fallbackEntries?.map((entry) => entry.id)).toEqual([
+                "static-cheap",
+            ]);
+        });
+
+        it("rejects a static target that costs more than the primary", () => {
+            const primary = communityEntry(
+                "owner/primary",
+                "owner",
+                "public",
+                null,
+                ["static-expensive"],
+                10,
+            );
+            const target = registryEntry("static-expensive", [], 20);
+            const entries = [primary, target];
+
+            linkFallbackEntries(
+                entries,
+                new Map(entries.map((entry) => [entry.id, entry])),
+            );
+
+            expect(primary.fallbackEntries).toBeUndefined();
+        });
+
+        it("rejects a static target in a different category", () => {
+            const primary = communityEntry(
+                "owner/primary",
+                "owner",
+                "public",
+                null,
+                ["static-image"],
+                10,
+            );
+            const target = registryEntry("static-image", [], 10);
+            target.definition.category = "image";
+            const entries = [primary, target];
+
+            linkFallbackEntries(
+                entries,
+                new Map(entries.map((entry) => [entry.id, entry])),
+            );
+
+            expect(primary.fallbackEntries).toBeUndefined();
+        });
+
+        it("rejects a paid-only static target for a primary that takes Quest Pollen", () => {
+            const anyPollen = communityEntry(
+                "owner/any",
+                "owner",
+                "public",
+                null,
+                ["static-paid"],
+                10,
+            );
+            const paidPrimary = communityEntry(
+                "owner/paid",
+                "owner",
+                "public",
+                null,
+                ["static-paid"],
+                10,
+                true,
+            );
+            const staticPaid = registryEntry("static-paid", [], 10);
+            staticPaid.definition.paidOnly = true;
+            const entries = [anyPollen, paidPrimary, staticPaid];
+
+            linkFallbackEntries(
+                entries,
+                new Map(entries.map((entry) => [entry.id, entry])),
+            );
+
+            expect(anyPollen.fallbackEntries).toBeUndefined();
+            expect(
+                paidPrimary.fallbackEntries?.map((entry) => entry.id),
+            ).toEqual(["static-paid"]);
+        });
+
+        it("rejects a static target that bills beyond its cheap base rate", () => {
+            // The caller pays the primary's rates for the target's usage, so a
+            // dearer variant, extra charges, other units or a cost above the
+            // discounted price cost us the gap.
+            const variant = registryEntry("static-variant", [], 5);
+            variant.definition.costVariants = {
+                long: { completionTextTokens: 20 },
+            };
+            const extras = registryEntry("static-extras", [], 5);
+            extras.definition.billing = { adjustments: [] };
+            const units = registryEntry("static-units", [], 1e-9);
+            units.definition.priceUnits = {
+                completionTextTokens: { unit: "megapixel", quantity: 1e6 },
+            };
+            const discounted = registryEntry("static-discounted", [], 12);
+            discounted.definition.priceMultiplier = 0.5;
+            // Enter must refuse what gen will not route, such as a model
+            // without the /text endpoints every community text model serves.
+            const chatOnly = registryEntry("static-chat-only", [], 5);
+            chatOnly.definition.supportedEndpoints = ["/v1/chat/completions"];
+            const primary = communityEntry(
+                "owner/primary",
+                "owner",
+                "public",
+                null,
+                ["static-variant", "static-extras", "static-units"],
+                10,
+            );
+            const second = communityEntry(
+                "owner/second",
+                "owner",
+                "public",
+                null,
+                ["static-discounted", "static-chat-only"],
+                10,
+            );
+            const entries = [
+                primary,
+                second,
+                variant,
+                extras,
+                units,
+                discounted,
+                chatOnly,
+            ];
+
+            linkFallbackEntries(
+                entries,
+                new Map(entries.map((entry) => [entry.id, entry])),
+            );
+
+            expect(primary.fallbackEntries).toBeUndefined();
+            expect(second.fallbackEntries).toBeUndefined();
+        });
+    });
 });
 
 describe("formatFallbackTarget", () => {
@@ -315,6 +495,56 @@ describe("formatFallbackTarget", () => {
         expect(formatFallbackTarget(1)).toBe("config.targets[1]");
         expect(formatFallbackTarget(2)).toBe("config.targets[2]");
         expect(formatFallbackTarget(10)).toBe("config.targets[10]");
+    });
+});
+
+describe("fallback response model attribution", () => {
+    const publicId = "qwen/qwen-image-3";
+    const backupId = "qwen/qwen-image-3:openrouter";
+    const model = {
+        resolved: publicId,
+        definition: IMAGE_SERVICES[publicId],
+        fallbackEntries: [
+            {
+                ...registryEntry(backupId),
+                definition: IMAGE_SERVICES[backupId],
+            },
+        ],
+    };
+
+    it("preserves the primary handler's model header without adding a provider suffix", async () => {
+        const response = await withModelFallbackResponse(
+            model,
+            async () =>
+                new Response("ok", {
+                    headers: { [MODEL_USED_HEADER]: publicId },
+                }),
+        );
+        expect(response.headers.get(MODEL_USED_HEADER)).toBe(publicId);
+        expect(response.headers.has(FALLBACK_TARGET_HEADER)).toBe(false);
+    });
+
+    it("keeps provider-qualified fallback IDs and per-attempt dispatch attribution", async () => {
+        const attempts: FallbackAttempt[] = [];
+        const response = await withModelFallbackResponse(
+            model,
+            async (candidate) => {
+                if (candidate.id === publicId)
+                    throw Object.assign(new Error("busy"), { status: 429 });
+                return new Response("ok", {
+                    headers: { [MODEL_USED_HEADER]: candidate.id },
+                });
+            },
+            attempts,
+        );
+        expect(attempts.map((attempt) => attempt.candidate.id)).toEqual([
+            publicId,
+            backupId,
+        ]);
+        expect(response.headers.get(MODEL_USED_HEADER)).toBe(backupId);
+        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+            formatFallbackTarget(1),
+        );
     });
 });
 
@@ -364,10 +594,29 @@ describe("isRetryableFallbackError", () => {
         expect(isRetryableFallbackError(textFailure(503))).toBe(true);
         expect(isRetryableFallbackError(textFailure(524))).toBe(true);
         expect(isRetryableFallbackError(textFailure(599))).toBe(true);
-        expect(isRetryableFallbackError(new HttpError("down", 500))).toBe(true);
-        expect(isRetryableFallbackError(new HttpError("no quota", 402))).toBe(
-            true,
-        );
+        expect(
+            isRetryableFallbackError(
+                UpstreamError.fromProvider(500, { message: "down" }),
+            ),
+        ).toBe(true);
+        expect(
+            isRetryableFallbackError(
+                UpstreamError.fromProvider(402, { message: "no quota" }),
+            ),
+        ).toBe(true);
+    });
+
+    it("fails over when the provider rejects our egress region", () => {
+        const region = UpstreamError.fromProvider(400, {
+            message: "User location is not supported for the API use.",
+        });
+        expect(isRetryableFallbackError(region)).toBe(true);
+        // An ordinary caller 400 still does not fail over.
+        expect(
+            isRetryableFallbackError(
+                UpstreamError.fromProvider(400, { message: "Invalid voice" }),
+            ),
+        ).toBe(false);
     });
 
     it("uses the wrapper status for a malformed successful response", () => {
@@ -399,10 +648,25 @@ describe("isRetryableFallbackError", () => {
     });
 
     it("does not fail over on caller errors", () => {
+        for (const [status, upstreamStatus] of [
+            [400, 500],
+            [422, 403],
+        ]) {
+            expect(
+                isRetryableFallbackError(
+                    Object.assign(new Error("Provider returned error"), {
+                        status,
+                        upstreamStatus,
+                    }),
+                ),
+            ).toBe(false);
+        }
         expect(isRetryableFallbackError(textFailure(400))).toBe(false);
-        expect(isRetryableFallbackError(new HttpError("bad input", 422))).toBe(
-            false,
-        );
+        expect(
+            isRetryableFallbackError(
+                UpstreamError.fromProvider(422, { message: "bad input" }),
+            ),
+        ).toBe(false);
     });
 
     // Verified against staging: a community endpoint whose host is unreachable
@@ -446,6 +710,16 @@ describe("isRetryableFallbackError", () => {
     it("does not shop a content-policy refusal to a laxer endpoint", () => {
         expect(
             isRetryableFallbackError(
+                textFailure(403, {
+                    error: {
+                        message:
+                            "Gemini blocked the request: PROHIBITED_CONTENT",
+                    },
+                }),
+            ),
+        ).toBe(false);
+        expect(
+            isRetryableFallbackError(
                 textFailure(500, {
                     error: { message: "content policy violation" },
                 }),
@@ -453,8 +727,11 @@ describe("isRetryableFallbackError", () => {
         ).toBe(false);
         expect(
             isRetryableFallbackError(
-                new HttpError("upstream failed", 502, {
-                    body: JSON.stringify({ detail: "flagged as sensitive" }),
+                UpstreamError.fromProvider(502, {
+                    message: "upstream failed",
+                    responseBody: JSON.stringify({
+                        detail: "flagged as sensitive",
+                    }),
                 }),
             ),
         ).toBe(false);
@@ -567,7 +844,9 @@ describe("withModelFallback", () => {
 
     it("supports a route-specific fallback policy", async () => {
         const attempt = vi.fn(async () => "served");
-        attempt.mockRejectedValueOnce(new HttpError("ambiguous timeout", 524));
+        attempt.mockRejectedValueOnce(
+            UpstreamError.fromProvider(524, { message: "ambiguous timeout" }),
+        );
         const shouldFallback = vi.fn(() => false);
 
         await expect(
@@ -594,7 +873,9 @@ describe("withModelFallback", () => {
             fallbackEntries: primary.fallbackEntries,
         });
         const attempt = vi.fn(async () => "served");
-        attempt.mockRejectedValueOnce(new HttpError("gateway timeout", 524));
+        attempt.mockRejectedValueOnce(
+            UpstreamError.fromProvider(524, { message: "gateway timeout" }),
+        );
 
         await expect(withModelFallback(candidates, attempt)).resolves.toEqual({
             result: "served",

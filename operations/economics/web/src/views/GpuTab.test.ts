@@ -1,20 +1,24 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import type { Data, OpCloudRow, OpPollenRow } from "../types";
+import { ReconcileProContext } from "../components/ReconcilePro";
 import {
     gpuResourceRows,
     gpuResourceSummary,
     gpuWorkloadRows,
     gpuWorkloadSummary,
     visibleGpuResourceRows,
-} from "./GpuTab";
+} from "../lib/gpu";
+import type { Data, OpPollenRow, VendorLedgerRow } from "../types";
+import { GpuTab } from "./GpuTab";
 
 const baseData: Data = {
     opTransactions: [],
-    opCloud: [],
+    vendorLedger: [],
     opPollen: [],
 };
 
-function cloud(overrides: Partial<OpCloudRow>): OpCloudRow {
+function cloud(overrides: Partial<VendorLedgerRow>): VendorLedgerRow {
     return {
         entry_id: "cloud-test",
         source: "api",
@@ -62,9 +66,9 @@ describe("gpuResourceRows", () => {
         const rows = gpuResourceRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
-                        vendor: "vast.ai",
+                        vendor: "vast",
                         entry_id: "gpu",
                         resource_id: "42",
                         resource_name: "Vast.ai instance 42 · gpu",
@@ -74,7 +78,7 @@ describe("gpuResourceRows", () => {
                         paid: -100,
                     }),
                     cloud({
-                        vendor: "vast.ai",
+                        vendor: "vast",
                         entry_id: "storage",
                         resource_id: "42",
                         resource_name: "Vast.ai instance 42 · storage",
@@ -84,7 +88,7 @@ describe("gpuResourceRows", () => {
                         paid: -10,
                     }),
                     cloud({
-                        vendor: "vast.ai",
+                        vendor: "vast",
                         entry_id: "network",
                         resource_id: "42",
                         resource_name: "Vast.ai instance 42 · download",
@@ -101,7 +105,7 @@ describe("gpuResourceRows", () => {
         expect(rows).toHaveLength(1);
         expect(rows[0]).toMatchObject({
             kind: "gpu",
-            vendor: "vast.ai",
+            vendor: "vast",
             resourceId: "42",
             resourceName: "#42",
             gpuHours: 10,
@@ -117,9 +121,9 @@ describe("gpuResourceRows", () => {
         const rows = gpuResourceRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
-                        vendor: "vast.ai",
+                        vendor: "vast",
                         entry_id: "gpu",
                         resource_id: "42",
                         resource_sku: "gpu-hours",
@@ -128,7 +132,7 @@ describe("gpuResourceRows", () => {
                         paid: -100,
                     }),
                     cloud({
-                        vendor: "vast.ai",
+                        vendor: "vast",
                         entry_id: "orphan-storage",
                         resource_id: "old-1",
                         resource_sku: "storage-hours",
@@ -143,7 +147,7 @@ describe("gpuResourceRows", () => {
 
         expect(rows).toHaveLength(2);
         expect(rows.find((row) => row.kind === "overhead")).toMatchObject({
-            vendor: "vast.ai",
+            vendor: "vast",
             resourceName: "Overhead & adjustments",
             storageHours: 2,
             paidCostUsd: 3,
@@ -161,7 +165,7 @@ describe("gpuResourceRows", () => {
         const rows = gpuResourceRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         entry_id: "runpod-storage",
                         resource_id: "_storage",
@@ -194,7 +198,7 @@ describe("gpuResourceRows", () => {
         const rows = gpuResourceRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "runpod",
                         resource_id: "pod-1",
@@ -221,7 +225,7 @@ describe("gpuResourceRows", () => {
         const rows = gpuResourceRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({ paid: -100 }),
                     cloud({
                         entry_id: "refund",
@@ -260,11 +264,14 @@ describe("gpuResourceRows", () => {
             paid: 5,
         });
 
-        for (const opCloud of [
+        for (const vendorLedger of [
             [usage, adjustment],
             [adjustment, usage],
         ]) {
-            const rows = gpuResourceRows({ ...baseData, opCloud }, "2026-06");
+            const rows = gpuResourceRows(
+                { ...baseData, vendorLedger },
+                "2026-06",
+            );
             expect(rows).toHaveLength(1);
             expect(rows[0]).toMatchObject({
                 kind: "gpu",
@@ -280,7 +287,7 @@ describe("gpuWorkloadRows", () => {
         const rows = gpuWorkloadRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "runpod",
                         resource_id: "runpod-zimage",
@@ -289,7 +296,7 @@ describe("gpuWorkloadRows", () => {
                         credit: -10,
                     }),
                     cloud({
-                        vendor: "vast.ai",
+                        vendor: "vast",
                         resource_id: "vast-zimage",
                         resource_sku: "gpu-hours",
                         resource_count: 24,
@@ -307,7 +314,7 @@ describe("gpuWorkloadRows", () => {
                         model_paid: 0,
                     }),
                     pollen({
-                        vendor: "vast.ai",
+                        vendor: "vast",
                         model: "zimage",
                         price_paid: 120,
                         price_quests: 30,
@@ -322,8 +329,8 @@ describe("gpuWorkloadRows", () => {
         expect(rows).toHaveLength(1);
         expect(rows[0]).toMatchObject({
             kind: "workload",
-            workload: "zimage",
-            vendors: "runpod, vast.ai",
+            workload: "tongyi-mai/z-image-turbo",
+            vendors: "runpod, vast",
             gpuCount: 2,
             paidUsd: 200,
             questUsd: 50,
@@ -340,11 +347,70 @@ describe("gpuWorkloadRows", () => {
         expect(rows[0].resources).toHaveLength(2);
     });
 
+    it.each([
+        ["flux", "black-forest-labs/flux.1-schnell"],
+        ["klein", "black-forest-labs/flux.2-klein-4b"],
+        ["dreamshaper", "lykon/dreamshaper-8-lcm"],
+        ["zimage", "tongyi-mai/z-image-turbo"],
+    ])(
+        "joins reviewed %s promotions without duplicating costs or usage",
+        (legacy, canonical) => {
+            const rows = gpuWorkloadRows(
+                {
+                    vendorLedger: [cloud({ vendor: "vast", model: legacy })],
+                    opPollen: [
+                        pollen({ vendor: "vast", model: legacy }),
+                        pollen({ vendor: "vast", model: canonical }),
+                    ],
+                },
+                "2026-06",
+            );
+            expect(rows).toHaveLength(1);
+            expect(rows[0]).toMatchObject({
+                workload: canonical,
+                gpuCount: 1,
+                retainedUsd: 260,
+                paidUsd: 320,
+                questUsd: 80,
+                totalCostUsd: 100,
+                currentResultUsd: 160,
+                flags: [],
+            });
+        },
+    );
+
+    it("does not borrow GPU coverage from a different vendor or month", () => {
+        for (const usage of [
+            pollen({ vendor: "vast" }),
+            pollen({ month: "2026-07" }),
+        ]) {
+            const rows = gpuWorkloadRows(
+                {
+                    vendorLedger: [
+                        cloud({}),
+                        cloud({
+                            vendor: usage.vendor,
+                            start: `${usage.month}-01 00:00:00`,
+                            model: "other-workload",
+                            resource_id: "other",
+                        }),
+                    ],
+                    opPollen: [usage],
+                },
+                "2026",
+            );
+            expect(
+                rows.some((row) => row.flags.includes("missing GPU cost")),
+            ).toBe(true);
+            expect(gpuWorkloadSummary(rows).currentResultUsd).toBeNull();
+        }
+    });
+
     it("keeps shared-model GPU pools as one workload", () => {
         const rows = gpuWorkloadRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "lambda",
                         resource_id: "shared-gpu",
@@ -388,9 +454,9 @@ describe("gpuWorkloadRows", () => {
         const rows = gpuWorkloadRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
-                        vendor: "vast.ai",
+                        vendor: "vast",
                         resource_id: "failed-start",
                         resource_sku: "gpu-hours",
                         resource_count: 0.5,
@@ -421,7 +487,7 @@ describe("gpuWorkloadRows", () => {
         const rows = gpuWorkloadRows(
             {
                 ...baseData,
-                opCloud: [cloud({ paid: -50, credit: -100 })],
+                vendorLedger: [cloud({ paid: -50, credit: -100 })],
                 opPollen: [pollen({})],
             },
             "2026-06",
@@ -446,7 +512,7 @@ describe("gpuWorkloadSummary", () => {
         const rows = gpuWorkloadRows(
             {
                 ...baseData,
-                opCloud: [cloud({ paid: -50, credit: -100 })],
+                vendorLedger: [cloud({ paid: -50, credit: -100 })],
                 opPollen: [pollen({})],
             },
             "2026-06",
@@ -462,4 +528,63 @@ describe("gpuWorkloadSummary", () => {
             fullCostResultUsd: -20,
         });
     });
+});
+
+it("pairs GPU usage and funding with shares and keeps results as amounts", () => {
+    const html = renderToStaticMarkup(
+        createElement(GpuTab, {
+            month: "2026-06",
+            data: {
+                ...baseData,
+                vendorLedger: [cloud({ credit: -30 })],
+                opPollen: [pollen({})],
+            },
+        }),
+    );
+    const cards = html.slice(0, html.indexOf("<table"));
+    expect(cards.match(/<\/section>/g)).toHaveLength(3);
+    expect(cards).toContain('aria-label="Pollen used"');
+    expect(cards).toContain('aria-label="GPU costs"');
+    expect(cards).toContain('aria-label="Result"');
+    expect(cards).toContain("$200 total");
+    expect(cards).not.toContain("Retained");
+    expect(cards).toContain("$160");
+    expect(cards).toContain("$40");
+    expect(cards).toContain('aria-label="Paid 80% · Quest 20%"');
+    expect(cards).toContain('aria-label="Cash 77% · Credits 23%"');
+    expect(cards).toContain("$130 total");
+    expect(cards).not.toContain("Actual");
+    expect(cards).toContain("+$30");
+    expect(cards.slice(cards.indexOf('aria-label="Result"'))).not.toContain(
+        "%",
+    );
+    expect(cards).toContain(">$0<");
+    expect(cards.match(/>Quest</g)).toHaveLength(1);
+    expect(cards).toContain("polli:text-paid-deep");
+    expect(cards).toContain("polli:text-tier-deep");
+});
+
+it("omits the whole total label for hidden sub-dollar amounts and restores it in Pro", () => {
+    const element = createElement(GpuTab, {
+        month: "2026-06",
+        data: {
+            ...baseData,
+            vendorLedger: [cloud({ paid: -0.2 })],
+            opPollen: [
+                pollen({
+                    price_paid: 0.3,
+                    price_quests: 0.2,
+                    byop_paid: 0,
+                    model_paid: 0,
+                }),
+            ],
+        },
+    });
+    const normal = renderToStaticMarkup(element);
+    expect(normal).not.toContain(" total");
+    const pro = renderToStaticMarkup(
+        createElement(ReconcileProContext.Provider, { value: true }, element),
+    );
+    expect(pro).toContain("$0.5 total");
+    expect(pro).toContain("$0.2 total");
 });

@@ -1,18 +1,28 @@
 import {
+    Alert,
+    AppIcon,
+    BotIcon,
     Button,
     InlineLink,
     Input,
+    LockIcon,
+    LogInIcon,
+    LogOutIcon,
     SearchIcon,
     Section,
     Surface,
     Text,
 } from "@pollinations/ui";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient } from "../../api.ts";
+import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 
 type Connection = {
     id: string;
     toolkit: string;
+    name: string | null;
+    description?: string;
+    logo: string | null;
     alias: string | null;
 };
 
@@ -39,34 +49,35 @@ type AppCardProps = {
     name: string;
     logo: string | null;
     details?: ReactNode;
-    actionLabel: string;
-    pendingLabel: string;
     pending: boolean;
     onAction: () => void;
+    connected?: boolean;
 };
 
 function AppCard({
     name,
     logo,
     details,
-    actionLabel,
-    pendingLabel,
     pending,
     onAction,
+    connected = false,
 }: AppCardProps) {
+    const actionLabel = connected ? "Disconnect" : "Connect";
     return (
-        <Surface
-            variant="card"
-            className="flex items-center justify-between gap-3"
-        >
+        <Surface className="flex min-h-16 items-center justify-between gap-3 p-4">
             <div className="flex min-w-0 items-center gap-3">
-                {logo && (
-                    <img
-                        src={logo}
-                        alt=""
-                        className="h-8 w-8 shrink-0 rounded-md"
-                    />
-                )}
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#fff] ring-1 ring-[rgba(0,0,0,0.18)]">
+                    {logo ? (
+                        <img
+                            src={logo}
+                            alt=""
+                            loading="lazy"
+                            className="h-7 w-7 object-contain"
+                        />
+                    ) : (
+                        <AppIcon className="h-5 w-5 text-black/50" />
+                    )}
+                </div>
                 <div className="min-w-0">
                     <Text tone="strong" weight="semibold">
                         {name}
@@ -74,8 +85,21 @@ function AppCard({
                     {details}
                 </div>
             </div>
-            <Button type="button" disabled={pending} onClick={onAction}>
-                {pending ? pendingLabel : actionLabel}
+            <Button
+                type="button"
+                size="sm"
+                intent={connected ? "danger" : "commit"}
+                className="inline-flex shrink-0 items-center gap-1.5"
+                disabled={pending}
+                aria-label={`${actionLabel} ${name}`}
+                onClick={onAction}
+            >
+                {connected ? (
+                    <LogOutIcon className="h-4 w-4" />
+                ) : (
+                    <LogInIcon className="h-4 w-4" />
+                )}
+                {pending ? `${actionLabel}ing...` : actionLabel}
             </Button>
         </Surface>
     );
@@ -84,16 +108,19 @@ function AppCard({
 export function ConnectedApps() {
     const [connections, setConnections] = useState<Connection[]>([]);
     const [toolkits, setToolkits] = useState<Toolkit[]>([]);
-    const [knownToolkits, setKnownToolkits] = useState<Record<string, Toolkit>>(
-        {},
-    );
+    const [loadedSearch, setLoadedSearch] = useState<string | null>(null);
     const [search, setSearch] = useState("");
     const [pendingId, setPendingId] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [connectionsLoading, setConnectionsLoading] = useState(true);
+    const [toolkitsLoading, setToolkitsLoading] = useState(true);
+    const [connectionsError, setConnectionsError] = useState<string | null>(
+        null,
+    );
+    const [toolkitsError, setToolkitsError] = useState<string | null>(null);
+    const [actionError, setActionError] = useState<string | null>(null);
 
     const loadConnections = useCallback(async () => {
-        const response = await apiClient.account.integrations.$get();
+        const response = await accountClient.integrations.$get();
         if (!response.ok) throw new Error("Could not load connected apps.");
         setConnections(
             ((await response.json()) as { data: Connection[] }).data,
@@ -101,7 +128,7 @@ export function ConnectedApps() {
     }, []);
 
     const loadToolkits = useCallback(async (query = "") => {
-        const response = await apiClient.account.integrations.toolkits.$get({
+        const response = await accountClient.integrations.toolkits.$get({
             query: query ? { search: query } : {},
         });
         if (!response.ok) throw new Error("Could not load available apps.");
@@ -109,38 +136,39 @@ export function ConnectedApps() {
     }, []);
 
     useEffect(() => {
-        void loadConnections().catch((loadError) =>
-            setError(errorMessage(loadError, "Could not load connected apps.")),
-        );
+        void loadConnections()
+            .catch((loadError) =>
+                setConnectionsError(
+                    errorMessage(loadError, "Could not load connected apps."),
+                ),
+            )
+            .finally(() => setConnectionsLoading(false));
     }, [loadConnections]);
 
     useEffect(() => {
         const query = search.trim();
         let cancelled = false;
         const timeout = window.setTimeout(() => {
-            setError(null);
-            setLoading(true);
+            setToolkitsError(null);
+            setToolkitsLoading(true);
             void loadToolkits(query)
                 .then((results) => {
                     if (cancelled) return;
                     setToolkits(results);
-                    setKnownToolkits((current) => {
-                        const next = { ...current };
-                        for (const toolkit of results) {
-                            next[toolkit.slug] = toolkit;
-                        }
-                        return next;
-                    });
                 })
                 .catch((searchError) => {
                     if (!cancelled) {
-                        setError(
+                        setToolkits([]);
+                        setToolkitsError(
                             errorMessage(searchError, "Could not search apps."),
                         );
                     }
                 })
                 .finally(() => {
-                    if (!cancelled) setLoading(false);
+                    if (!cancelled) {
+                        setLoadedSearch(query);
+                        setToolkitsLoading(false);
+                    }
                 });
         }, 200);
 
@@ -152,9 +180,9 @@ export function ConnectedApps() {
 
     async function connect(toolkit: string) {
         setPendingId(toolkit);
-        setError(null);
+        setActionError(null);
         try {
-            const response = await apiClient.account.integrations.$post({
+            const response = await accountClient.integrations.$post({
                 json: { toolkit },
             });
             if (!response.ok) throw new Error("Could not connect this app.");
@@ -163,18 +191,20 @@ export function ConnectedApps() {
                     .redirectUrl,
             );
         } catch (connectError) {
-            setError(errorMessage(connectError, "Could not connect this app."));
+            setActionError(
+                errorMessage(connectError, "Could not connect this app."),
+            );
             setPendingId(null);
         }
     }
 
     async function disconnect(connection: Connection) {
         setPendingId(connection.id);
-        setError(null);
+        setActionError(null);
         try {
-            const response = await apiClient.account.integrations[
-                ":id"
-            ].$delete({ param: { id: connection.id } });
+            const response = await accountClient.integrations[":id"].$delete({
+                param: { id: connection.id },
+            });
             if (!response.ok) {
                 throw new Error("Could not disconnect this app.");
             }
@@ -182,7 +212,7 @@ export function ConnectedApps() {
                 current.filter(({ id }) => id !== connection.id),
             );
         } catch (disconnectError) {
-            setError(
+            setActionError(
                 errorMessage(disconnectError, "Could not disconnect this app."),
             );
         } finally {
@@ -199,126 +229,164 @@ export function ConnectedApps() {
     const displayedToolkits = search.trim()
         ? availableToolkits
         : availableToolkits.slice(0, 6);
+    const searchQuery = search.trim();
+    const searching = toolkitsLoading || loadedSearch !== searchQuery;
+    const normalizedSearch = searchQuery.toLowerCase();
+    const displayedConnections = connections.filter((connection) =>
+        [connection.name, connection.alias, connection.toolkit]
+            .filter(Boolean)
+            .some((value) => value?.toLowerCase().includes(normalizedSearch)),
+    );
 
     return (
-        <Section title="MCP Connectors" framed>
-            <Text size="sm" tone="muted">
-                Connect apps for your agents. Supported by{" "}
-                <InlineLink href="https://composio.dev">Composio</InlineLink>.
-            </Text>
-
-            {connections.length > 0 && (
-                <div className="space-y-2">
-                    <Text tone="strong" weight="semibold">
-                        Connected
-                    </Text>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                        {connections.map((connection) => {
-                            const toolkit = knownToolkits[connection.toolkit];
-                            return (
-                                <AppCard
-                                    key={connection.id}
-                                    name={
-                                        toolkit?.name ||
-                                        readableSlug(connection.toolkit)
-                                    }
-                                    logo={toolkit?.logo || null}
-                                    details={
-                                        connection.alias ? (
-                                            <Text size="sm" tone="muted">
-                                                {connection.alias}
-                                            </Text>
-                                        ) : undefined
-                                    }
-                                    actionLabel="Disconnect"
-                                    pendingLabel="Disconnecting..."
-                                    pending={pendingId === connection.id}
-                                    onAction={() => void disconnect(connection)}
-                                />
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-
-            <div className="space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                    <Text tone="strong" weight="semibold">
-                        Add
-                    </Text>
-                    <InlineLink href="https://composio.dev/toolkits">
-                        View all connectors
-                    </InlineLink>
-                </div>
-                <div className="relative max-w-md">
+        <Section title="Connected apps">
+            <div className="flex flex-wrap items-center gap-2">
+                <div className="catalog-search relative min-w-64 flex-1">
                     <SearchIcon className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
                     <Input
                         value={search}
-                        placeholder="Search connectors…"
-                        aria-label="Search connectors"
+                        placeholder="Search apps…"
+                        aria-label="Search apps"
                         autoComplete="off"
-                        className="pl-9"
+                        className="w-full pl-9"
                         onChange={(event) =>
                             setSearch(event.currentTarget.value)
                         }
                         onBlur={() => setSearch(search.trim())}
                     />
                 </div>
+                <InlineLink
+                    href="https://composio.dev/toolkits"
+                    size="sm"
+                    className="shrink-0"
+                >
+                    Browse all apps
+                </InlineLink>
             </div>
 
-            {!loading && (
-                <div>
-                    {displayedToolkits.length > 0 ? (
-                        <div className="space-y-2">
-                            <div className="grid gap-2 sm:grid-cols-2">
-                                {displayedToolkits.map((toolkit) => (
-                                    <AppCard
-                                        key={toolkit.slug}
-                                        name={toolkit.name}
-                                        logo={toolkit.logo}
-                                        details={
-                                            <Text
-                                                size="sm"
-                                                tone="muted"
-                                                className="line-clamp-2"
-                                            >
-                                                {toolkit.description}
-                                            </Text>
-                                        }
-                                        actionLabel="Connect"
-                                        pendingLabel="Connecting..."
-                                        pending={pendingId === toolkit.slug}
-                                        onAction={() =>
-                                            void connect(toolkit.slug)
-                                        }
-                                    />
-                                ))}
-                            </div>
-                            {!search.trim() && (
-                                <Text size="sm" tone="muted">
-                                    Showing {displayedToolkits.length} popular
-                                    connectors.
-                                </Text>
-                            )}
-                        </div>
-                    ) : (
-                        <Text size="sm" tone="muted">
-                            No connectors found. Try another search.
-                        </Text>
-                    )}
-                </div>
-            )}
+            {actionError && <Alert intent="danger">{actionError}</Alert>}
+            {connectionsError && <LoadError>{connectionsError}</LoadError>}
 
-            {loading && (
-                <Text size="sm" tone="muted">
-                    Loading apps...
+            {toolkitsError && <LoadError>{toolkitsError}</LoadError>}
+
+            <SectionContent
+                loading={
+                    connectionsLoading ||
+                    (searching && displayedConnections.length === 0)
+                }
+            >
+                <div className="flex flex-col gap-2" aria-live="polite">
+                    {!connectionsLoading &&
+                        displayedConnections.map((connection) => (
+                            <AppCard
+                                key={connection.id}
+                                name={
+                                    connection.name ||
+                                    readableSlug(connection.toolkit)
+                                }
+                                logo={connection.logo}
+                                details={
+                                    <>
+                                        <Text
+                                            size="sm"
+                                            tone="muted"
+                                            className="line-clamp-2"
+                                        >
+                                            {connection.description ||
+                                                toolkits.find(
+                                                    ({ slug }) =>
+                                                        slug ===
+                                                        connection.toolkit,
+                                                )?.description ||
+                                                `Use ${connection.name || readableSlug(connection.toolkit)} with Pollinations agents.`}
+                                        </Text>
+                                        {connection.alias && (
+                                            <Text size="sm" tone="muted">
+                                                {connection.alias}
+                                            </Text>
+                                        )}
+                                    </>
+                                }
+                                pending={pendingId === connection.id}
+                                onAction={() => void disconnect(connection)}
+                                connected
+                            />
+                        ))}
+                    {!searching &&
+                        !connectionsLoading &&
+                        !connectionsError &&
+                        !toolkitsError &&
+                        displayedToolkits.map((toolkit) => (
+                            <AppCard
+                                key={toolkit.slug}
+                                name={toolkit.name}
+                                logo={toolkit.logo}
+                                details={
+                                    <Text
+                                        size="sm"
+                                        tone="muted"
+                                        className="line-clamp-2"
+                                    >
+                                        {toolkit.description}
+                                    </Text>
+                                }
+                                pending={pendingId === toolkit.slug}
+                                onAction={() => void connect(toolkit.slug)}
+                            />
+                        ))}
+                    {!connectionsLoading &&
+                        !searching &&
+                        !connectionsError &&
+                        !toolkitsError &&
+                        displayedConnections.length === 0 &&
+                        displayedToolkits.length === 0 && (
+                            <Text size="sm" tone="muted">
+                                {searchQuery
+                                    ? `No apps found for “${searchQuery}”. Try another search.`
+                                    : "No more apps to show. Search for another app to connect."}
+                            </Text>
+                        )}
+                </div>
+            </SectionContent>
+
+            <footer className="space-y-3">
+                <Text
+                    size="sm"
+                    tone="muted"
+                    className="flex items-start gap-1.5"
+                >
+                    <BotIcon
+                        className="mt-0.5 h-4 w-4 shrink-0"
+                        aria-hidden="true"
+                    />
+                    <span>
+                        Connect your apps so Pollinations agents can read Gmail,
+                        read and commit to GitHub, update Sheets, and post to
+                        Slack. Enable “Connectors” in your agent, then try
+                        “Summarize my unread Gmail.” Connections powered by{" "}
+                        <InlineLink href="https://composio.dev" size="sm">
+                            Composio
+                        </InlineLink>
+                        .
+                    </span>
                 </Text>
-            )}
-            {error && (
-                <Text size="sm" tone="muted">
-                    {error}
+                <Text
+                    size="sm"
+                    tone="muted"
+                    className="flex items-start gap-1.5"
+                >
+                    <LockIcon
+                        className="mt-0.5 h-4 w-4 shrink-0"
+                        aria-hidden="true"
+                    />
+                    <span>
+                        Review the access requested by each app before
+                        connecting. Sign-in links expire after 10 minutes. If
+                        yours expires or you leave before finishing, select
+                        “Connect” again for a fresh link.
+                    </span>
                 </Text>
-            )}
+            </footer>
         </Section>
     );
 }

@@ -11,7 +11,6 @@
  * and the registry cost variant.
  */
 
-import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import type { ImageParams } from "../params.ts";
@@ -20,14 +19,14 @@ import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
     runReplicatePrediction,
-    toReplicateHttpError,
+    toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:seedance:ops");
 const logError = debug("pollinations:seedance:error");
 
-// Replicate's seedance-1-lite/pro-fast accept these aspect ratios. Validate at
-// the boundary so users get 400 instead of a Replicate 422 round-trip.
+// Replicate's seedance-1-pro-fast accepts these aspect ratios; width/height
+// snap to one of them. A requested ratio goes through as-is.
 const SEEDANCE_ASPECT_RATIOS = [
     "16:9",
     "4:3",
@@ -37,21 +36,9 @@ const SEEDANCE_ASPECT_RATIOS = [
     "21:9",
     "9:21",
 ] as const;
-type SeedanceAspectRatio = (typeof SEEDANCE_ASPECT_RATIOS)[number];
 
-function resolveSeedanceAspectRatio(
-    safeParams: ImageParams,
-): SeedanceAspectRatio {
-    const requested = safeParams.aspectRatio;
-    if (requested) {
-        if ((SEEDANCE_ASPECT_RATIOS as readonly string[]).includes(requested)) {
-            return requested as SeedanceAspectRatio;
-        }
-        throw new HttpError(
-            `aspectRatio "${requested}" is not supported by Seedance. Supported: ${SEEDANCE_ASPECT_RATIOS.join(", ")}.`,
-            400,
-        );
-    }
+function resolveSeedanceAspectRatio(safeParams: ImageParams): string {
+    if (safeParams.aspectRatio) return safeParams.aspectRatio;
     if (safeParams.width && safeParams.height) {
         // Derive a supported ratio from width/height (documented schema
         // contract: "If not set, determined by width/height").
@@ -68,7 +55,7 @@ interface SeedanceInput {
     prompt: string;
     duration: number;
     resolution: "480p" | "720p" | "1080p";
-    aspect_ratio: SeedanceAspectRatio;
+    aspect_ratio: string;
     fps: 24;
     camera_fixed: boolean;
     seed?: number;
@@ -90,7 +77,7 @@ interface SeedanceModelConfig {
 
 const SEEDANCE_PRO_FAST_CONFIG: SeedanceModelConfig = {
     model: "bytedance/seedance-1-pro-fast",
-    trackingLabel: "seedance-pro",
+    trackingLabel: "bytedance/seedance-1-pro-fast",
     displayName: "Seedance 1.0 Pro Fast",
     defaultDuration: 5,
     maxDuration: 10,
@@ -152,7 +139,7 @@ async function generateSeedanceVideo(
         });
     } catch (err) {
         logError(`${config.displayName} prediction call failed:`, err);
-        throw toReplicateHttpError(
+        throw toReplicateUpstreamError(
             err,
             `${config.displayName} generation failed`,
         );

@@ -124,7 +124,7 @@ function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
                         estimatedCost > 0
                             ? [
                                   {
-                                      model: "gpt-realtime-2.1",
+                                      model: "openai/gpt-realtime-2.1",
                                       avg_cost_usd: estimatedCost,
                                   },
                               ]
@@ -627,7 +627,7 @@ test("serves GPT Live Transcribe through Azure and bills streamed duration", asy
         session: {
             audio: {
                 input: {
-                    transcription: { model: "gpt-live-transcribe" },
+                    transcription: { model: "openai/gpt-live-transcribe" },
                 },
             },
         },
@@ -661,7 +661,8 @@ test("serves GPT Live Transcribe through Azure and bills streamed duration", asy
     const expectedPrice = roundPollenLedgerAmount(expectedCost * 0.75);
     expect(balances?.tierBalance).toBeCloseTo(1 - expectedPrice, 8);
     expect(balances?.packBalance).toBe(0);
-    expect(telemetry.resolvedModelRequested).toBe("gpt-live-transcribe");
+    expect(telemetry.resolvedModelRequested).toBe("openai/gpt-live-transcribe");
+    expect(telemetry.modelUsed).toBe("openai/gpt-live-transcribe");
     expect(telemetry.modelProviderUsed).toBe("azure");
     expect(telemetry.tokenCountPromptAudioSeconds).toBe(60);
     expect(telemetry.totalCost).toBeCloseTo(expectedCost, 12);
@@ -692,30 +693,50 @@ test("accepts publishable keys through the query string for thin clients", async
     await waitOnExecutionContext(ctx);
 });
 
-test.each([
-    "/realtime",
-    "/v1/realtime",
-] as const)("serves Scribe through the OpenAI protocol on %s", async (path) => {
-    const session = await openPaidScribeSession({
-        name: `scribe-openai-${path}-key`,
-        path,
-    });
-    await expect(session.initialClientMessage).resolves.toMatchObject({
-        type: "session.created",
-        session: { type: "transcription" },
-    });
+test.each(["/realtime", "/v1/realtime"] as const)(
+    "serves Scribe through the OpenAI protocol on %s",
+    async (path) => {
+        const session = await openPaidScribeSession({
+            name: `scribe-openai-${path}-key`,
+            path,
+        });
+        await expect(session.initialClientMessage).resolves.toMatchObject({
+            type: "session.created",
+            session: { type: "transcription" },
+        });
 
-    const updated = nextJsonMessage(session.client);
-    session.client.send(
-        JSON.stringify({
-            type: "session.update",
+        const updated = nextJsonMessage(session.client);
+        session.client.send(
+            JSON.stringify({
+                type: "session.update",
+                session: {
+                    type: "transcription",
+                    audio: {
+                        input: {
+                            format: { type: "audio/pcm", rate: 24_000 },
+                            transcription: {
+                                model: "scribe-realtime",
+                                prompt: "contexte",
+                                languages: ["fr", "en"],
+                            },
+                            turn_detection: {
+                                type: "server_vad",
+                                threshold: 0.4,
+                                silence_duration_ms: 1500,
+                            },
+                        },
+                    },
+                },
+            }),
+        );
+        await expect(updated).resolves.toMatchObject({
+            type: "session.updated",
             session: {
                 type: "transcription",
                 audio: {
                     input: {
-                        format: { type: "audio/pcm", rate: 24_000 },
                         transcription: {
-                            model: "scribe-realtime",
+                            model: "elevenlabs/scribe-v2-realtime",
                             prompt: "contexte",
                             languages: ["fr", "en"],
                         },
@@ -727,96 +748,78 @@ test.each([
                     },
                 },
             },
-        }),
-    );
-    await expect(updated).resolves.toMatchObject({
-        type: "session.updated",
-        session: {
-            type: "transcription",
-            audio: {
-                input: {
-                    transcription: {
-                        model: "scribe-realtime",
-                        prompt: "contexte",
-                        languages: ["fr", "en"],
-                    },
-                    turn_detection: {
-                        type: "server_vad",
-                        threshold: 0.4,
-                        silence_duration_ms: 1500,
-                    },
-                },
-            },
-        },
-    });
+        });
 
-    session.client.send(
-        JSON.stringify({
-            type: "input_audio_buffer.append",
-            audio: zeroAudioBase64(4800),
-        }),
-    );
-    const server = await waitForUpstreamServer(session.upstream);
-    server.accept();
-    const upstreamMessage = nextMessage(server);
-    await expect(upstreamMessage).resolves.toBe(
-        JSON.stringify({
-            message_type: "input_audio_chunk",
-            audio_base_64: zeroAudioBase64(4800),
-            previous_text: "contexte",
-        }),
-    );
+        session.client.send(
+            JSON.stringify({
+                type: "input_audio_buffer.append",
+                audio: zeroAudioBase64(4800),
+            }),
+        );
+        const server = await waitForUpstreamServer(session.upstream);
+        server.accept();
+        const upstreamMessage = nextMessage(server);
+        await expect(upstreamMessage).resolves.toBe(
+            JSON.stringify({
+                message_type: "input_audio_chunk",
+                audio_base_64: zeroAudioBase64(4800),
+                previous_text: "contexte",
+            }),
+        );
 
-    const upstreamUrl = new URL(session.upstream.request.url);
-    expect(Object.fromEntries(upstreamUrl.searchParams)).toEqual({
-        model_id: "scribe_v2_realtime",
-        audio_format: "pcm_24000",
-        commit_strategy: "vad",
-        language_code: "fr",
-        secondary_languages: "en",
-        vad_threshold: "0.4",
-        vad_silence_threshold_secs: "1.5",
-    });
-    expect(session.upstream.request.headers.get("xi-api-key")).toBeTruthy();
-    expect(session.upstream.request.headers.get("Authorization")).toBeNull();
+        const upstreamUrl = new URL(session.upstream.request.url);
+        expect(Object.fromEntries(upstreamUrl.searchParams)).toEqual({
+            model_id: "scribe_v2_realtime",
+            audio_format: "pcm_24000",
+            commit_strategy: "vad",
+            language_code: "fr",
+            secondary_languages: "en",
+            vad_threshold: "0.4",
+            vad_silence_threshold_secs: "1.5",
+        });
+        expect(session.upstream.request.headers.get("xi-api-key")).toBeTruthy();
+        expect(
+            session.upstream.request.headers.get("Authorization"),
+        ).toBeNull();
 
-    const transcriptEvents = nextJsonMessages(session.client, 3);
-    server.send(
-        JSON.stringify({
-            message_type: "partial_transcript",
-            text: "bon",
-        }),
-    );
-    server.send(
-        JSON.stringify({
-            message_type: "partial_transcript",
-            text: "bonjour",
-        }),
-    );
-    server.send(
-        JSON.stringify({
-            message_type: "committed_transcript",
-            text: "bonjour",
-        }),
-    );
-    const [firstDelta, secondDelta, completed] = await transcriptEvents;
-    expect(firstDelta).toMatchObject({
-        type: "conversation.item.input_audio_transcription.delta",
-        delta: "bon",
-    });
-    expect(secondDelta).toMatchObject({
-        type: "conversation.item.input_audio_transcription.delta",
-        delta: "jour",
-    });
-    expect(completed).toMatchObject({
-        type: "conversation.item.input_audio_transcription.completed",
-        transcript: "bonjour",
-    });
+        const transcriptEvents = nextJsonMessages(session.client, 3);
+        server.send(
+            JSON.stringify({
+                message_type: "partial_transcript",
+                text: "bon",
+            }),
+        );
+        server.send(
+            JSON.stringify({
+                message_type: "partial_transcript",
+                text: "bonjour",
+            }),
+        );
+        server.send(
+            JSON.stringify({
+                message_type: "committed_transcript",
+                text: "bonjour",
+            }),
+        );
+        const [firstDelta, secondDelta, completed] = await transcriptEvents;
+        expect(firstDelta).toMatchObject({
+            type: "conversation.item.input_audio_transcription.delta",
+            delta: "bon",
+        });
+        expect(secondDelta).toMatchObject({
+            type: "conversation.item.input_audio_transcription.delta",
+            delta: "jour",
+        });
+        expect(completed).toMatchObject({
+            type: "conversation.item.input_audio_transcription.completed",
+            transcript: "bonjour",
+        });
 
-    const telemetry = await closeAndReadTelemetry(session);
-    expect(telemetry.requestPath).toBe(path);
-    expect(telemetry.tokenCountPromptAudioSeconds).toBeCloseTo(0.1, 8);
-});
+        const telemetry = await closeAndReadTelemetry(session);
+        expect(telemetry.requestPath).toBe(path);
+        expect(telemetry.tokenCountPromptAudioSeconds).toBeCloseTo(0.1, 8);
+    },
+);
 
 test("accepts compatible Scribe session updates after streaming starts", async () => {
     const session = await openPaidScribeSession({
@@ -858,7 +861,7 @@ test("accepts compatible Scribe session updates after streaming starts", async (
             audio: {
                 input: {
                     transcription: {
-                        model: "scribe-realtime",
+                        model: "elevenlabs/scribe-v2-realtime",
                         prompt: "new context",
                     },
                 },
@@ -908,53 +911,60 @@ test("accepts compatible Scribe session updates after streaming starts", async (
 test.each([
     [{ type: "audio/pcm", rate: 24_000 }, "pcm_24000", 48_000],
     [{ type: "audio/pcmu" }, "ulaw_8000", 8000],
-] as const)("bills one streamed second of OpenAI %j audio at the exact Scribe rate", async (format, upstreamFormat, bytesPerSecond) => {
-    const session = await openPaidScribeSession({
-        name: `scribe-realtime-${upstreamFormat}-key`,
-    });
-    await session.initialClientMessage;
-    const updated = nextMessage(session.client);
-    session.client.send(
-        JSON.stringify({
-            type: "session.update",
-            session: {
-                type: "transcription",
-                audio: {
-                    input: {
-                        format,
-                        transcription: { model: "scribe-realtime" },
-                        turn_detection: null,
+] as const)(
+    "bills one streamed second of OpenAI %j audio at the exact Scribe rate",
+    async (format, upstreamFormat, bytesPerSecond) => {
+        const session = await openPaidScribeSession({
+            name: `scribe-realtime-${upstreamFormat}-key`,
+        });
+        await session.initialClientMessage;
+        const updated = nextMessage(session.client);
+        session.client.send(
+            JSON.stringify({
+                type: "session.update",
+                session: {
+                    type: "transcription",
+                    audio: {
+                        input: {
+                            format,
+                            transcription: { model: "scribe-realtime" },
+                            turn_detection: null,
+                        },
                     },
                 },
-            },
-        }),
-    );
-    await updated;
-    session.client.send(
-        JSON.stringify({
-            type: "input_audio_buffer.append",
-            audio: zeroAudioBase64(bytesPerSecond),
-        }),
-    );
-    const server = await waitForUpstreamServer(session.upstream);
-    server.accept();
-    await nextMessage(server);
-    expect(
-        new URL(session.upstream.request.url).searchParams.get("audio_format"),
-    ).toBe(upstreamFormat);
+            }),
+        );
+        await updated;
+        session.client.send(
+            JSON.stringify({
+                type: "input_audio_buffer.append",
+                audio: zeroAudioBase64(bytesPerSecond),
+            }),
+        );
+        const server = await waitForUpstreamServer(session.upstream);
+        server.accept();
+        await nextMessage(server);
+        expect(
+            new URL(session.upstream.request.url).searchParams.get(
+                "audio_format",
+            ),
+        ).toBe(upstreamFormat);
 
-    const telemetry = await closeAndReadTelemetry(session);
-    const user = await waitForPackBalanceBelow(session.userId, 1);
-    const expectedCharge = 0.39 / 3600;
-    const expectedLedgerCharge = roundPollenLedgerAmount(expectedCharge);
-    expect(user?.packBalance).toBeCloseTo(1 - expectedLedgerCharge, 8);
-    expect(telemetry.eventType).toBe("generate.realtime");
-    expect(telemetry.resolvedModelRequested).toBe("scribe-realtime");
-    expect(telemetry.modelProviderUsed).toBe("elevenlabs");
-    expect(telemetry.tokenCountPromptAudioSeconds).toBe(1);
-    expect(telemetry.totalCost).toBeCloseTo(expectedCharge, 12);
-    expect(telemetry.totalPrice).toBeCloseTo(expectedLedgerCharge, 12);
-});
+        const telemetry = await closeAndReadTelemetry(session);
+        const user = await waitForPackBalanceBelow(session.userId, 1);
+        const expectedCharge = 0.39 / 3600;
+        const expectedLedgerCharge = roundPollenLedgerAmount(expectedCharge);
+        expect(user?.packBalance).toBeCloseTo(1 - expectedLedgerCharge, 8);
+        expect(telemetry.eventType).toBe("generate.realtime");
+        expect(telemetry.resolvedModelRequested).toBe(
+            "elevenlabs/scribe-v2-realtime",
+        );
+        expect(telemetry.modelProviderUsed).toBe("elevenlabs");
+        expect(telemetry.tokenCountPromptAudioSeconds).toBe(1);
+        expect(telemetry.totalCost).toBeCloseTo(expectedCharge, 12);
+        expect(telemetry.totalPrice).toBeCloseTo(expectedLedgerCharge, 12);
+    },
+);
 
 test("returns OpenAI errors for invalid Scribe events without billing", async () => {
     const session = await openPaidScribeSession({
@@ -1070,6 +1080,9 @@ test("enforces paid-only and model permissions for Scribe Realtime", async () =>
 
     expect(questResponse.status).toBe(402);
     expect(permissionResponse.status).toBe(403);
+    expect(await permissionResponse.text()).toContain(
+        `https://enter.pollinations.ai/grant?id=${emptyPermissions.id}&category=realtime`,
+    );
 });
 
 test("accepts a publishable key without forwarding it to ElevenLabs", async () => {
@@ -1291,7 +1304,7 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
     expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
     expect(telemetry.eventType).toBe("generate.realtime");
     expect(telemetry.responseStatus).toBe(200);
-    expect(telemetry.resolvedModelRequested).toBe("gpt-realtime-2.1");
+    expect(telemetry.resolvedModelRequested).toBe("openai/gpt-realtime-2.1");
     expect(telemetry.modelProviderUsed).toBe("azure");
     expect(telemetry.tokenCountPromptText).toBe(200);
     expect(telemetry.tokenCountPromptCached).toBe(40);
@@ -1381,47 +1394,60 @@ test("does not retry a partially completed realtime deduction", async () => {
         user?.packBalance ?? 0,
         8,
     );
-    expect(session.upstream.tinybirdRequests).toHaveLength(0);
+    await waitForTinybirdRequests(session.upstream, 1);
+    expect(session.upstream.tinybirdRequests).toHaveLength(1);
+    const event = (await session.upstream.tinybirdRequests[0].json()) as Record<
+        string,
+        unknown
+    >;
+    expect(event.totalPrice).toBeCloseTo(0.003553 * 0.75, 8);
 });
 
-test.each([
-    "gpt-realtime-2",
-    "gpt-realtime-2.1",
-] as const)("bills %s cached image tokens at $0.50/M", async (model) => {
-    const session = await openPaidRealtimeSession({
-        name: `${model}-cache-realtime-key`,
-        model,
-    });
+test.each(["gpt-realtime-2", "openai/gpt-realtime-2.1"] as const)(
+    "bills %s cached image tokens at $0.50/M",
+    async (model) => {
+        const session = await openPaidRealtimeSession({
+            name: `${model}-cache-realtime-key`,
+            model,
+        });
 
-    for (let eventCount = 0; eventCount < 2; eventCount++) {
-        const forwardedEvent = nextMessage(session.client);
-        session.upstream.server.send(cachedModalityUsageEvent);
-        await expect(forwardedEvent).resolves.toBe(cachedModalityUsageEvent);
-    }
+        for (let eventCount = 0; eventCount < 2; eventCount++) {
+            const forwardedEvent = nextMessage(session.client);
+            session.upstream.server.send(cachedModalityUsageEvent);
+            await expect(forwardedEvent).resolves.toBe(
+                cachedModalityUsageEvent,
+            );
+        }
 
-    const telemetry = await closeAndReadTelemetry(session);
+        const telemetry = await closeAndReadTelemetry(session);
 
-    const expectedCost = 0.0023975 * 2;
-    const expectedCharge = expectedCost * 0.75;
-    const user = await waitForPackBalanceBelow(session.userId, 1);
-    expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
-    expect(telemetry.resolvedModelRequested).toBe("gpt-realtime-2.1");
-    expect(telemetry.tokenCountPromptText).toBe(60);
-    expect(telemetry.tokenCountPromptCached).toBe(60);
-    expect(telemetry.tokenCountPromptAudio).toBe(70);
-    expect(telemetry.tokenCountPromptImage).toBe(10);
-    expect(telemetry.tokenCountCompletionText).toBe(40);
-    expect(telemetry.tokenCountCompletionAudio).toBe(20);
-    expect(telemetry.adjustmentUnits).toEqual({
-        "openai.realtime.cached_image_delta.v1": 10,
-    });
-    const adjustmentCosts = telemetry.adjustmentCosts as Record<string, number>;
-    expect(
-        adjustmentCosts["openai.realtime.cached_image_delta.v1"],
-    ).toBeCloseTo(0.000001, 12);
-    expect(telemetry.totalCost).toBeCloseTo(expectedCost, 10);
-    expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 10);
-});
+        const expectedCost = 0.0023975 * 2;
+        const expectedCharge = expectedCost * 0.75;
+        const user = await waitForPackBalanceBelow(session.userId, 1);
+        expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
+        expect(telemetry.resolvedModelRequested).toBe(
+            "openai/gpt-realtime-2.1",
+        );
+        expect(telemetry.tokenCountPromptText).toBe(60);
+        expect(telemetry.tokenCountPromptCached).toBe(60);
+        expect(telemetry.tokenCountPromptAudio).toBe(70);
+        expect(telemetry.tokenCountPromptImage).toBe(10);
+        expect(telemetry.tokenCountCompletionText).toBe(40);
+        expect(telemetry.tokenCountCompletionAudio).toBe(20);
+        expect(telemetry.adjustmentUnits).toEqual({
+            "openai.realtime.cached_image_delta.v1": 10,
+        });
+        const adjustmentCosts = telemetry.adjustmentCosts as Record<
+            string,
+            number
+        >;
+        expect(
+            adjustmentCosts["openai.realtime.cached_image_delta.v1"],
+        ).toBeCloseTo(0.000001, 12);
+        expect(telemetry.totalCost).toBeCloseTo(expectedCost, 10);
+        expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 10);
+    },
+);
 
 test("bills mini cached audio and image tokens at their exact rates", async () => {
     const session = await openPaidRealtimeSession({
@@ -1493,7 +1519,7 @@ test("uses the cached-text rate when cache details are absent", async () => {
     expect(warn).toHaveBeenCalledOnce();
     expect(warn).toHaveBeenCalledWith(
         "Realtime cached token modality details are missing or incomplete; unmatched cached tokens use the cached-text rate: model={model}",
-        { model: "gpt-realtime-2.1-mini" },
+        { model: "openai/gpt-realtime-2.1-mini" },
     );
 
     const telemetry = await closeAndReadTelemetry(session);
@@ -1626,9 +1652,9 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
     };
     const realtimeModels = publicBody.data.filter((model) =>
         [
-            "gpt-realtime-2.1",
-            "gpt-realtime-2.1-mini",
-            "gpt-live-transcribe",
+            "openai/gpt-realtime-2.1",
+            "openai/gpt-realtime-2.1-mini",
+            "openai/gpt-live-transcribe",
         ].includes(model.id),
     );
     expect(realtimeModels).toHaveLength(3);
@@ -1636,7 +1662,9 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
         expect(model.supported_endpoints).toContain("/v1/realtime");
     }
     expect(
-        publicBody.data.find((model) => model.id === "scribe-realtime"),
+        publicBody.data.find(
+            (model) => model.id === "elevenlabs/scribe-v2-realtime",
+        ),
     ).toMatchObject({
         supported_endpoints: ["/realtime", "/v1/realtime"],
     });
@@ -1645,7 +1673,7 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
     expect(richResponse.status).toBe(200);
     const richModels = (await richResponse.json()) as {
         name: string;
-        brand?: string;
+        publisher?: string;
         title?: string;
         description?: string;
         input_modalities?: string[];
@@ -1656,16 +1684,16 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
         pricing?: Record<string, string>;
     }[];
     const scribeRealtime = richModels.find(
-        (model) => model.name === "scribe-realtime",
+        (model) => model.name === "elevenlabs/scribe-v2-realtime",
     );
     expect(
-        richModels.find((model) => model.name === "gpt-realtime-2.1"),
+        richModels.find((model) => model.name === "openai/gpt-realtime-2.1"),
     ).toMatchObject({
-        aliases: ["openai/gpt-realtime-2.1", "gpt-realtime-2"],
+        aliases: ["gpt-realtime-2.1", "gpt-realtime-2"],
     });
     expect(scribeRealtime).toMatchObject({
-        aliases: ["elevenlabs/scribe-v2-realtime"],
-        brand: "ElevenLabs",
+        aliases: ["scribe-realtime"],
+        publisher: "ElevenLabs",
         title: "Scribe v2 Realtime",
         input_modalities: ["audio"],
         output_modalities: ["text"],
@@ -1680,11 +1708,11 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
         scribeRealtime?.title?.toLowerCase(),
     );
     const gptLiveTranscribe = richModels.find(
-        (model) => model.name === "gpt-live-transcribe",
+        (model) => model.name === "openai/gpt-live-transcribe",
     );
     expect(gptLiveTranscribe).toMatchObject({
-        aliases: ["openai/gpt-live-transcribe"],
-        brand: "OpenAI",
+        aliases: ["gpt-live-transcribe"],
+        publisher: "OpenAI",
         title: "GPT Live Transcribe",
         input_modalities: ["audio"],
         output_modalities: ["text"],
@@ -1707,16 +1735,16 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
         data: { id: string }[];
     };
     expect(restrictedBody.data.map((model) => model.id)).not.toContain(
-        "gpt-realtime-2",
+        "openai/gpt-realtime-2",
     );
     expect(restrictedBody.data.map((model) => model.id)).not.toContain(
-        "gpt-realtime-2.1",
+        "openai/gpt-realtime-2.1",
     );
     expect(restrictedBody.data.map((model) => model.id)).not.toContain(
-        "gpt-realtime-2.1-mini",
+        "openai/gpt-realtime-2.1-mini",
     );
     expect(restrictedBody.data.map((model) => model.id)).not.toContain(
-        "scribe-realtime",
+        "elevenlabs/scribe-v2-realtime",
     );
 });
 
@@ -1752,7 +1780,7 @@ test("Tinybird event total equals actual wallet debit with BYOP markup and ledge
     });
     await db.insert(apiKeyTable).values({
         id: pkId,
-        userId: devId,
+        referenceId: devId,
         name: "markup-app",
         prefix: "pk",
         key: `hashed-${pkId}`,

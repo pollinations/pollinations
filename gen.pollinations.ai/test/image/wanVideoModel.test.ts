@@ -27,7 +27,7 @@ interface ReplicateCall {
 }
 
 const baseParams: ImageParams = {
-    model: "wan-pro",
+    model: "alibaba/wan-2.7",
     width: 1280,
     height: 720,
     dimensionsExplicit: false,
@@ -126,7 +126,7 @@ describe("wanVideoModel billing usage", () => {
         expect(result.mimeType).toBe("video/mp4");
         // No separate completionAudioSeconds — audio is bundled into the rate.
         expect(result.trackingData).toEqual({
-            actualModel: "wan-pro",
+            actualModel: "alibaba/wan-2.7",
             usage: { completionVideoSeconds: 5 },
         });
     });
@@ -145,7 +145,7 @@ describe("wanVideoModel billing usage", () => {
         expect(calls[0].input.resolution).toBe("1080p");
         expect(calls[0].cancelAfter).toBe("15m");
         expect(result.trackingData).toEqual({
-            actualModel: "wan-pro",
+            actualModel: "alibaba/wan-2.7",
             usage: { completionVideoSeconds: 5 },
         });
     });
@@ -157,7 +157,7 @@ describe("wanVideoModel billing usage", () => {
 
         const result = await callWanAPI("a calm ocean at sunrise", {
             ...baseParams,
-            model: "wan",
+            model: "alibaba/wan-2.6",
             duration: 3, // snaps to nearest allowed (5)
         });
 
@@ -167,7 +167,7 @@ describe("wanVideoModel billing usage", () => {
         expect(calls[0].input.duration).toBe(5);
         expect(calls[0].cancelAfter).toBe("6m");
         expect(result.trackingData).toEqual({
-            actualModel: "wan",
+            actualModel: "alibaba/wan-2.6",
             usage: { completionVideoSeconds: 5 },
         });
     });
@@ -179,24 +179,24 @@ describe("wanVideoModel billing usage", () => {
 
         const result = await callWanFastAPI("a calm ocean at sunrise", {
             ...baseParams,
-            model: "wan-fast",
+            model: "alibaba/wan-2.2-fast",
         });
 
         expect(calls[0].model).toBe("wan-video/wan-2.2-t2v-fast");
         expect(calls[0].input.resolution).toBe("480p");
         expect(calls[0].cancelAfter).toBe("6m");
         expect(result.trackingData).toEqual({
-            actualModel: "wan-fast",
+            actualModel: "alibaba/wan-2.2-fast",
             usage: { completionVideoSeconds: 5 },
         });
     });
 
     it("uses the real cost selector for Wan 2.7 1080p T2V, I2V, and R2V", () => {
-        const service = IMAGE_SERVICES["wan-pro"];
+        const service = IMAGE_SERVICES["alibaba/wan-2.7"];
         const usage = { completionVideoSeconds: 5 };
         const bill = (hasImage: boolean, hasReferenceVideo = false) =>
             calculateUsageBilling({
-                model: "wan-pro",
+                model: "alibaba/wan-2.7",
                 usage,
                 servedBy: service,
                 input: {
@@ -232,7 +232,7 @@ describe("wanVideoModel image-to-video routing", () => {
 
         await callWanAPI("a cat walking", {
             ...baseParams,
-            model: "wan",
+            model: "alibaba/wan-2.6",
             image: [INPUT_IMAGE_URL],
         });
 
@@ -281,7 +281,7 @@ describe("wanVideoModel image-to-video routing", () => {
 
         await callWanFastAPI("a cat walking", {
             ...baseParams,
-            model: "wan-fast",
+            model: "alibaba/wan-2.2-fast",
             image: [INPUT_IMAGE_URL, LAST_IMAGE_URL],
         });
 
@@ -311,7 +311,7 @@ describe("wanVideoModel reference-to-video routing", () => {
         expect(calls[0].input.duration).toBe(5);
         expect(calls[0].cancelAfter).toBe("15m");
         expect(result.trackingData).toEqual({
-            actualModel: "wan-pro",
+            actualModel: "alibaba/wan-2.7",
             usage: { completionVideoSeconds: 5 },
         });
     });
@@ -333,7 +333,7 @@ describe("wanVideoModel reference-to-video routing", () => {
         expect(calls[0].input.reference_videos).toEqual([REF_VIDEO_URL]);
         expect(calls[0].input.duration).toBe(7);
         expect(result.trackingData).toEqual({
-            actualModel: "wan-pro",
+            actualModel: "alibaba/wan-2.7",
             usage: { completionVideoSeconds: 7 },
         });
     });

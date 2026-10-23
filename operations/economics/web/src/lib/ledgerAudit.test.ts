@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
+import type {
+    Data,
+    OpPollenRow,
+    OpTransactionRow,
+    VendorLedgerRow,
+} from "../types";
 import { monthlyLedgerAuditRows } from "./ledgerAudit";
 
 const transaction = (
@@ -15,12 +20,12 @@ const transaction = (
     currency: "USD",
     description: "AWS",
     evidence:
-        "https://drive.google.com/file/d/wise-statement/view?usp=drivesdk",
+        "evidence_type=supplier_document https://drive.google.com/file/d/supplier-invoice/view?usp=drivesdk",
     recorded_at: "2026-08-01 00:00:00",
     ...over,
 });
 
-const cloud = (over: Partial<OpCloudRow> = {}): OpCloudRow => ({
+const cloud = (over: Partial<VendorLedgerRow> = {}): VendorLedgerRow => ({
     entry_id: "cloud-1",
     source: "api",
     vendor: "aws",
@@ -61,17 +66,40 @@ const pollen = (over: Partial<OpPollenRow> = {}): OpPollenRow => ({
 
 const data = (over: Partial<Data> = {}): Data => ({
     opTransactions: [],
-    opCloud: [],
+    vendorLedger: [],
     opPollen: [],
     ...over,
 });
 
 describe("monthlyLedgerAuditRows", () => {
+    it("accepts invoice subscriptions and adjustments under the same categories as P&L", () => {
+        const [row] = monthlyLedgerAuditRows(
+            data({
+                vendorLedger: [
+                    cloud({
+                        entry_id: "phone-rental",
+                        vendor: "retell",
+                        type: "subscription",
+                        paid: -10,
+                    }),
+                    cloud({
+                        entry_id: "billing-refund",
+                        vendor: "google",
+                        type: "adjustment",
+                        paid: 5,
+                    }),
+                ],
+            }),
+            "2026-07",
+            "2026-08",
+        );
+        expect(row.invalidRows).toBe(0);
+    });
     it("reports a structurally clean, reconciled closed month", () => {
         const [row] = monthlyLedgerAuditRows(
             data({
                 opTransactions: [transaction()],
-                opCloud: [cloud()],
+                vendorLedger: [cloud()],
                 opPollen: [pollen()],
             }),
             "2026-07",
@@ -114,7 +142,7 @@ describe("monthlyLedgerAuditRows", () => {
                     transaction({ evidence: "" }),
                     transaction({ evidence: "" }),
                 ],
-                opCloud: [
+                vendorLedger: [
                     cloud({ type: "unknown" }),
                     cloud({ type: "unknown" }),
                 ],
@@ -157,7 +185,7 @@ describe("monthlyLedgerAuditRows", () => {
                     transaction({ entry_id: "wise-1" }),
                     transaction({ entry_id: "wise-2" }),
                 ],
-                opCloud: [
+                vendorLedger: [
                     cloud({ entry_id: "cloud-1" }),
                     cloud({ entry_id: "cloud-2" }),
                 ],
@@ -174,7 +202,7 @@ describe("monthlyLedgerAuditRows", () => {
         const [row] = monthlyLedgerAuditRows(
             data({
                 opTransactions: [transaction()],
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         entry_id: "cloud-model-a",
                         model: "model-a",
@@ -196,7 +224,7 @@ describe("monthlyLedgerAuditRows", () => {
 
     it("flags a closed month with no bank transactions", () => {
         const [row] = monthlyLedgerAuditRows(
-            data({ opCloud: [cloud()] }),
+            data({ vendorLedger: [cloud()] }),
             "2026-07",
             "2026-08",
         );
@@ -288,7 +316,7 @@ describe("monthlyLedgerAuditRows", () => {
         const [row] = monthlyLedgerAuditRows(
             data({
                 opTransactions: [transaction()],
-                opCloud: [cloud()],
+                vendorLedger: [cloud()],
                 opPollen: [pollen()],
             }),
             "2026-07",
@@ -302,7 +330,7 @@ describe("monthlyLedgerAuditRows", () => {
     it("still surfaces structural errors in the current month", () => {
         const [row] = monthlyLedgerAuditRows(
             data({
-                opCloud: [cloud({ source: "mystery", type: "unknown" })],
+                vendorLedger: [cloud({ source: "mystery", type: "unknown" })],
             }),
             "2026-07",
             "2026-07",
@@ -339,7 +367,7 @@ describe("monthlyLedgerAuditRows", () => {
         const rows = monthlyLedgerAuditRows(
             data({
                 opTransactions: [transaction({ date: "2026-02-31" })],
-                opCloud: [cloud({ start: "missing" })],
+                vendorLedger: [cloud({ start: "missing" })],
                 opPollen: [pollen({ month: "2026-99" })],
             }),
             "",

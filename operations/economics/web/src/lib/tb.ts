@@ -1,16 +1,27 @@
-import { FIXTURES } from "../fixtures";
+import { FIXTURES, PLANNING_DOCUMENT_FIXTURE } from "../fixtures";
 import type {
     Data,
     EconomicsPrivateConfig,
-    EconomicsPrivateConfigRow,
-    OpCloudRow,
     OpPollenRow,
     OpTransactionRow,
+    RevenueShareSourceRow,
+    StripeSalesRow,
+    UserBalanceSummaryRow,
+    VendorLedgerRow,
 } from "../types";
+import { validatePipeRows } from "./pipeContracts";
+import {
+    ledgerForecastRules,
+    parsePlanningDocument,
+    validateVendorPlan,
+} from "./planning";
 import {
     canonicalProvider,
     collectProviderObservations,
+    pollenVendorOverride,
 } from "./providerRegistry";
+
+export { validatePipeRows } from "./pipeContracts";
 
 export const fixturesMode = (): boolean =>
     typeof window !== "undefined" &&
@@ -27,112 +38,20 @@ export class TbError extends Error {
     }
 }
 
-type PipeContract = {
-    strings: readonly string[];
-    numbers: readonly string[];
-    enums?: Readonly<Record<string, readonly string[]>>;
-};
-
-const PIPE_CONTRACTS: Record<string, PipeContract> = {
-    economics_bank_ledger_api: {
-        strings: [
-            "entry_id",
-            "kind",
-            "source",
-            "date",
-            "vendor",
-            "category",
-            "currency",
-            "description",
-            "evidence",
-            "recorded_at",
-        ],
-        numbers: ["amount"],
-        enums: { kind: ["transaction", "opening_balance"] },
-    },
-    economics_compute_ledger_api: {
-        strings: [
-            "entry_id",
-            "source",
-            "vendor",
-            "type",
-            "start",
-            "end",
-            "currency",
-            "resource_id",
-            "resource_name",
-            "resource_sku",
-            "model",
-            "evidence",
-            "recorded_at",
-        ],
-        numbers: ["credit", "paid", "resource_count"],
-    },
-    economics_pollen_usage_api: {
-        strings: ["month", "vendor", "model", "currency"],
-        numbers: [
-            "cost_paid",
-            "cost_quests",
-            "price_paid",
-            "price_quests",
-            "byop_paid",
-            "byop_quests",
-            "model_paid",
-            "model_quests",
-            "requests_paid",
-            "requests_quests",
-        ],
-    },
-    economics_private_config_api: {
-        strings: ["config", "recorded_at"],
-        numbers: [],
-    },
-};
-
-export function validatePipeRows<T>(pipe: string, rows: unknown[]): T[] {
-    const contract = PIPE_CONTRACTS[pipe];
-    if (!contract) throw new Error(`Unknown pipe contract: ${pipe}`);
-
-    rows.forEach((value, index) => {
-        if (
-            value == null ||
-            typeof value !== "object" ||
-            Array.isArray(value)
-        ) {
-            throw new Error(`${pipe}[${index}]: row must be an object`);
-        }
-        const row = value as Record<string, unknown>;
-        for (const field of contract.strings) {
-            if (typeof row[field] !== "string") {
-                throw new Error(`${pipe}[${index}].${field}: expected string`);
-            }
-        }
-        for (const field of contract.numbers) {
-            if (
-                typeof row[field] !== "number" ||
-                !Number.isFinite(row[field])
-            ) {
-                throw new Error(`${pipe}[${index}].${field}: expected number`);
-            }
-        }
-        for (const [field, allowed] of Object.entries(contract.enums ?? {})) {
-            if (!allowed.includes(String(row[field]))) {
-                throw new Error(`${pipe}[${index}].${field}: unexpected value`);
-            }
-        }
-    });
-
-    return rows as T[];
-}
-
-async function fetchPipe<T>(pipe: string): Promise<T[]> {
+export async function fetchPipe<T>(
+    pipe: string,
+    signal?: AbortSignal,
+): Promise<T[]> {
     if (fixturesMode()) {
         const rows = FIXTURES[pipe];
         if (!rows) throw new Error(`Missing fixture for pipe ${pipe}`);
         return validatePipeRows<T>(pipe, rows);
     }
 
-    const res = await fetch(`/api/pipes/${encodeURIComponent(pipe)}`);
+    const res = await fetch(
+        `/api/economics/pipes/${encodeURIComponent(pipe)}`,
+        { credentials: "same-origin", signal },
+    );
     if (!res.ok) throw new TbError(pipe, res.status);
 
     const body = (await res.json()) as { data?: unknown[] };
@@ -140,29 +59,6 @@ async function fetchPipe<T>(pipe: string): Promise<T[]> {
         throw new Error(`${pipe}: response has no data array`);
     }
     return validatePipeRows<T>(pipe, body.data);
-}
-
-function parsePrivateConfig(
-    row: EconomicsPrivateConfigRow,
-): EconomicsPrivateConfig {
-    const value: unknown = JSON.parse(row.config);
-    if (value == null || typeof value !== "object" || Array.isArray(value)) {
-        throw new Error("economics_private_config_api.config: expected object");
-    }
-    const config = value as Partial<EconomicsPrivateConfig>;
-    if (
-        config.forecastRules == null ||
-        typeof config.forecastRules !== "object" ||
-        Array.isArray(config.forecastRules) ||
-        config.reconciliation == null ||
-        typeof config.reconciliation !== "object" ||
-        !Array.isArray(config.reconciliation.providerCheckExplanations) ||
-        !Array.isArray(config.reconciliation.meterDriftExplanations) ||
-        !Array.isArray(config.reconciliation.pollenWitnessExplanations)
-    ) {
-        throw new Error("economics_private_config_api.config: invalid shape");
-    }
-    return config as EconomicsPrivateConfig;
 }
 
 export function canonicalVendor(vendor: string): string {
@@ -192,9 +88,15 @@ export function canonicalPollenRows(
     const aggregated = new Map<string, OpPollenRow>();
 
     for (const sourceRow of rows) {
+        const vendor = canonicalVendor(sourceRow.vendor);
         const row = {
             ...sourceRow,
-            vendor: canonicalVendor(sourceRow.vendor),
+            vendor:
+                pollenVendorOverride(
+                    sourceRow.month,
+                    vendor,
+                    sourceRow.model.trim(),
+                ) ?? vendor,
         };
         if (POLLEN_VALUE_FIELDS.every((field) => Number(row[field]) === 0)) {
             continue;
@@ -219,41 +121,124 @@ export function canonicalPollenRows(
     );
 }
 
-export async function loadAll(): Promise<Data> {
-    // All three pipes are required contracts. A missing pipe (404) must surface
-    // as an error, never render as plausible-but-empty economics data.
-    const [opTransactions, opCloud, opPollen, privateConfigRows] =
-        await Promise.all([
-            fetchPipe<OpTransactionRow>("economics_bank_ledger_api"),
-            fetchPipe<OpCloudRow>("economics_compute_ledger_api"),
-            fetchPipe<OpPollenRow>("economics_pollen_usage_api"),
-            fetchPipe<EconomicsPrivateConfigRow>(
-                "economics_private_config_api",
-            ),
-        ]);
-    if (privateConfigRows.length !== 1) {
-        throw new Error(
-            `economics_private_config_api: expected one row, received ${privateConfigRows.length}`,
-        );
-    }
-    const privateConfig = parsePrivateConfig(privateConfigRows[0]);
+export type DataSource = Exclude<
+    keyof Data,
+    | "providerObservations"
+    | "vendorStatements"
+    | "vendorPlans"
+    | "planningError"
+>;
 
+export const DATA_SOURCES = [
+    "opTransactions",
+    "vendorLedger",
+    "opPollen",
+    "revenueShare",
+    "stripeSales",
+    "userBalances",
+    "privateConfig",
+] as const satisfies readonly DataSource[];
+
+export async function loadAll(
+    sources: readonly DataSource[] = DATA_SOURCES,
+    signal?: AbortSignal,
+    journal?: EconomicsPrivateConfig,
+): Promise<Data> {
+    // Every requested source remains required. Unrelated views do not wait
+    // for an expensive or unavailable endpoint they do not consume.
+    const wanted = new Set(sources);
+    let planningError: string | undefined;
+    if (wanted.has("privateConfig")) wanted.add("vendorLedger");
+    const [
+        opTransactions,
+        vendorLedger,
+        opPollen,
+        revenueShare,
+        stripeSales,
+        userBalances,
+        planningDocument,
+    ] = await Promise.all([
+        wanted.has("opTransactions")
+            ? fetchPipe<OpTransactionRow>("economics_bank_ledger_api", signal)
+            : undefined,
+        wanted.has("vendorLedger")
+            ? fetchPipe<VendorLedgerRow>("economics_vendor_ledger_api", signal)
+            : undefined,
+        wanted.has("opPollen")
+            ? fetchPipe<OpPollenRow>("economics_pollen_usage_api", signal)
+            : undefined,
+        wanted.has("revenueShare")
+            ? fetchPipe<RevenueShareSourceRow>(
+                  "economics_revenue_share_api",
+                  signal,
+              )
+            : undefined,
+        wanted.has("stripeSales")
+            ? fetchPipe<StripeSalesRow>("economics_stripe_sales_api", signal)
+            : undefined,
+        wanted.has("userBalances")
+            ? fetchPipe<UserBalanceSummaryRow>(
+                  "economics_user_balances_api",
+                  signal,
+              )
+            : undefined,
+        wanted.has("privateConfig")
+            ? fixturesMode()
+                ? parsePlanningDocument(PLANNING_DOCUMENT_FIXTURE)
+                : journal
+            : undefined,
+    ]);
+    if (wanted.has("privateConfig") && !planningDocument)
+        planningError = "Planning document unavailable";
     const canonicalize = <T extends { vendor: string }>(row: T): T => ({
         ...row,
         vendor: canonicalVendor(row.vendor),
     });
 
+    const vendorPlans = vendorLedger
+        ?.filter((row) => row.type === "planned")
+        .map(canonicalize);
+    let privateConfig: Data["privateConfig"];
+    if (planningDocument) {
+        try {
+            for (const row of vendorPlans ?? []) validateVendorPlan(row);
+            privateConfig = {
+                ...planningDocument,
+                forecastRules: ledgerForecastRules(
+                    vendorPlans ?? [],
+                    planningDocument,
+                ),
+            };
+        } catch {
+            planningError = "Vendor planning rows are invalid";
+        }
+    }
+
     const providerObservations = collectProviderObservations({
         opTransactions,
-        opCloud,
+        vendorLedger: vendorLedger?.filter(
+            (row) => row.type !== "statement" && row.type !== "planned",
+        ),
         opPollen,
     });
 
     return {
-        opTransactions: opTransactions.map(canonicalize),
-        opCloud: opCloud.map(canonicalize),
-        opPollen: canonicalPollenRows(opPollen),
+        opTransactions: opTransactions?.map(canonicalize),
+        vendorLedger: vendorLedger
+            ?.filter(
+                (row) => row.type !== "statement" && row.type !== "planned",
+            )
+            .map(canonicalize),
+        vendorPlans,
+        vendorStatements: vendorLedger
+            ?.filter((row) => row.type === "statement")
+            .map(canonicalize),
+        opPollen: opPollen ? canonicalPollenRows(opPollen) : undefined,
+        revenueShare,
+        stripeSales,
+        userBalances,
         providerObservations,
         privateConfig,
+        ...(planningError ? { planningError } : {}),
     };
 }

@@ -3,6 +3,8 @@
 ## Core Websites
 - **Main Website:** https://pollinations.ai
 - **Dashboard & API Keys:** https://enter.pollinations.ai/keys
+- **Browse Models (prices, capabilities):** https://enter.pollinations.ai/models
+- **One Model:** https://enter.pollinations.ai/models?q={model_id}
 - **Interactive Playground:** https://pollinations.ai/play
 
 ## API
@@ -11,14 +13,13 @@
 - **Text Generation (OpenAI-compatible):** https://gen.pollinations.ai/v1/chat/completions
 - **Simple Text:** https://gen.pollinations.ai/text/{prompt}
 - **Audio / TTS:** https://gen.pollinations.ai/audio/{text}
-- **Available Image Models:** https://gen.pollinations.ai/image/models
-- **Available Text Models:** https://gen.pollinations.ai/v1/models
 - **Media Store (uploads):** https://media.pollinations.ai
 
 ## Official Documentation
-- **API Docs (Swagger):** https://gen.pollinations.ai/docs
+- **API Docs:** https://gen.pollinations.ai/docs
 - **Contributor Guide:** https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md
-- **React SDK & UI:** https://react.pollinations.ai
+- **React SDK:** https://github.com/pollinations/pollinations/tree/main/packages/sdk#react-auth-provider
+- **React UI:** https://github.com/pollinations/pollinations/tree/main/packages/ui
 - **Connect User Wallets:** https://gen.pollinations.ai/docs#tag/connect-user-wallets
 - **MCP Servers Docs:** https://gen.pollinations.ai/docs#tag/mcp-servers
 - **MCP Protocol (contribute):** https://mcp.sequa.ai/v1/pollinations/contribute
@@ -36,11 +37,10 @@
 ## Packages
 - **NPM SDK (@pollinations/sdk):** https://www.npmjs.com/package/@pollinations/sdk
 - **NPM UI (@pollinations/ui):** https://www.npmjs.com/package/@pollinations/ui
-- **NPM MCP (@pollinations/mcp):** https://www.npmjs.com/package/@pollinations/mcp
 - **NPM CLI (@pollinations/cli):** https://www.npmjs.com/package/@pollinations/cli
 
 ## Socials
-- **Discord:** https://discord.gg/pollinations-ai-885844321461485618
+- **Discord:** https://discord.gg/k9F7SyTgqn
 - **Twitter/X:** https://x.com/pollinations_ai
 - **Reddit:** https://www.reddit.com/r/pollinations_ai/
 - **YouTube:** https://www.youtube.com/channel/UCk4yKnLnYfdOstmxYE_tmHFw

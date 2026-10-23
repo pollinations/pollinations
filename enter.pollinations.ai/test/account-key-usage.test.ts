@@ -4,12 +4,12 @@ import { createApiKeyViaApi, test } from "./fixtures.ts";
 
 describe("GET /api/account/key/usage", () => {
     test("forwards the calling key's id to the usage pipe (no scope needed)", async ({
-        sessionToken,
+        accountToken,
         mocks,
     }) => {
         await mocks.enable("tinybird");
 
-        const created = await createApiKeyViaApi(sessionToken, {
+        const created = await createApiKeyViaApi(accountToken, {
             name: "my-key",
         });
         const myKeyId = created.id;
@@ -19,7 +19,7 @@ describe("GET /api/account/key/usage", () => {
                 cursor_event_id: "event-1",
                 timestamp: "2026-04-14 12:10:00",
                 type: "generate.text",
-                model: "openai-fast",
+                model: "openai/gpt-5-nano",
                 api_key_id: myKeyId,
                 api_key: "my-key",
                 api_key_type: "secret",
@@ -58,15 +58,45 @@ describe("GET /api/account/key/usage", () => {
         expect(calls[0].query.api_key_ids).toBe(myKeyId);
     });
 
-    test("returns 401 without an API key", async ({ sessionToken }) => {
+    test("returns 401 without an API key", async ({ accountToken }) => {
         const res = await SELF.fetch(
             "http://localhost:3000/api/account/key/usage",
             {
                 headers: {
-                    Cookie: `better-auth.session_token=${sessionToken}`,
+                    Authorization: `Bearer ${accountToken}`,
                 },
             },
         );
         expect(res.status).toBe(401);
+    });
+
+    test("uses local period bounds without changing UTC cursors", async ({
+        accountToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird");
+        const created = await createApiKeyViaApi(accountToken, {
+            name: "local-time-key",
+        });
+        const query = new URLSearchParams({
+            granularity: "day",
+            period: "2026-03-29",
+            timezone: "Europe/Berlin",
+            before: "2026-03-29T03:30:00+02:00",
+            before_event_id: "event-1",
+        });
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/account/key/usage?${query}`,
+            { headers: { Authorization: `Bearer ${created.key}` } },
+        );
+        expect(response.status).toBe(200);
+        expect(mocks.tinybird.state.pipeCalls.at(-1)?.query).toMatchObject({
+            api_key_ids: created.id,
+            timezone: "Europe/Berlin",
+            since: "2026-03-29 00:00:00",
+            until: "2026-03-30 00:00:00",
+            before: "2026-03-29 01:30:00",
+            before_event_id: "event-1",
+        });
     });
 });

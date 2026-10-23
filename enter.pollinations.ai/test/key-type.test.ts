@@ -1,8 +1,8 @@
 import {
+    getKeyAccessContext,
     isAppKey,
     isPublishableKey,
     readRedirectUris,
-    shouldPostKeyMetadata,
 } from "@frontend/components/keys/key-type.ts";
 import type { ApiKey } from "@frontend/components/keys/types.ts";
 import { getRedirectUris } from "@shared/auth/api-key-metadata.ts";
@@ -17,71 +17,42 @@ function makeKey(metadata: Record<string, unknown> | null): ApiKey {
     };
 }
 
-// The edit dialog renders the redirect-URI / earnings fields when
-// isPublishableKey is true, so anything it renders must also pass
-// shouldPostKeyMetadata or the save silently drops the edit.
-describe("publishable key settings gate", () => {
-    it("renders and saves for a publishable key with no redirect URIs or earnings", () => {
-        const key = makeKey({ keyType: "publishable" });
-        expect(isPublishableKey(key)).toBe(true);
+describe("standalone key access context", () => {
+    it("keeps ordinary secrets and publisher app keys in the key editor", () => {
+        expect(getKeyAccessContext(makeKey(null))).toBeUndefined();
         expect(
-            shouldPostKeyMetadata(key, {
-                redirectUris: ["https://myapp.com/callback"],
-                earningsEnabled: false,
-            }),
-        ).toBe(true);
+            getKeyAccessContext(makeKey({ keyType: "secret" })),
+        ).toBeUndefined();
+        expect(
+            getKeyAccessContext(
+                makeKey({
+                    keyType: "publishable",
+                    redirectUris: ["https://app.example/cb"],
+                }),
+            ),
+        ).toBeUndefined();
     });
 
-    it("renders and saves for a publishable key that is also an app key", () => {
-        const key = makeKey({
-            keyType: "publishable",
-            redirectUris: ["https://myapp.com/callback"],
-        });
-        expect(isPublishableKey(key)).toBe(true);
+    it("recognizes registered and legacy app grants", () => {
         expect(
-            shouldPostKeyMetadata(key, {
-                redirectUris: ["https://myapp.com/other"],
-                earningsEnabled: false,
+            getKeyAccessContext({
+                ...makeKey(null),
+                byopClientKeyId: "app-id",
             }),
-        ).toBe(true);
+        ).toBe("app");
+        expect(
+            getKeyAccessContext(
+                makeKey({ redirectOrigin: "https://app.example" }),
+            ),
+        ).toBe("app");
     });
 
-    it("neither renders nor saves for a secret key", () => {
-        const key = makeKey({ keyType: "secret" });
-        expect(isPublishableKey(key)).toBe(false);
-        expect(
-            shouldPostKeyMetadata(key, {
-                redirectUris: ["https://myapp.com/callback"],
-                earningsEnabled: true,
-            }),
-        ).toBe(false);
-    });
-
-    it("neither renders nor saves for a key with no metadata", () => {
-        const key = makeKey(null);
-        expect(isPublishableKey(key)).toBe(false);
-    });
-});
-
-describe("shouldPostKeyMetadata", () => {
-    const plainPublishable = makeKey({ keyType: "publishable" });
-
-    it("posts enabled earnings on a publishable non-app key", () => {
-        expect(
-            shouldPostKeyMetadata(plainPublishable, {
-                redirectUris: [],
-                earningsEnabled: true,
-            }),
-        ).toBe(true);
-    });
-
-    it("skips the post when nothing changed", () => {
-        expect(
-            shouldPostKeyMetadata(plainPublishable, {
-                redirectUris: [],
-                earningsEnabled: false,
-            }),
-        ).toBe(false);
+    it("uses device wording even when the device belongs to an app", () => {
+        const key = makeKey({ deviceUserCode: "test-code" });
+        expect(getKeyAccessContext(key)).toBe("device");
+        expect(getKeyAccessContext({ ...key, byopClientKeyId: "app-id" })).toBe(
+            "device",
+        );
     });
 });
 

@@ -1,9 +1,11 @@
+import { oauthProvider } from "@better-auth/oauth-provider";
 import { authAdditionalFields } from "@shared/auth/additional-fields.ts";
 import {
     assertStagingAccess,
     createApiKeyPlugin,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
+import { ACCOUNT_RESTRICTED_MESSAGE } from "@shared/auth/ban.ts";
 import * as betterAuthSchema from "@shared/db/better-auth.ts";
 import {
     account as accountTable,
@@ -19,48 +21,113 @@ import {
     type BetterAuthPlugin,
     betterAuth,
     type GenericEndpointContext,
-    type User as GenericUser,
 } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import {
     APIError,
     createAuthMiddleware,
+    getOAuthState,
     getSessionFromCtx,
 } from "better-auth/api";
 import { admin, openAPI } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { discordConfigFromEnv } from "./services/discord.ts";
+import { removeUserSites } from "./services/sites.ts";
+import {
+    captureProductEvent,
+    referringSource,
+    visitorCountry,
+} from "./utils/product-analytics.ts";
 
 const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
+export const ADMIN_USER_IDS = ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"];
+
+export function isAdminUser(user: {
+    id: string;
+    role?: string | null;
+    banned?: boolean | null;
+}) {
+    return (
+        !user.banned &&
+        (ADMIN_USER_IDS.includes(user.id) ||
+            user.role
+                ?.split(",")
+                .map((role) => role.trim())
+                .includes("admin") === true)
+    );
+}
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
     const apiKeyPlugin = createApiKeyPlugin();
     const discordConfig = discordConfigFromEnv(env);
+    let githubProfile: { id: number; username: string } | undefined;
 
-    const hasDiscordAccount = async (userId: string) => {
+    // Connected accounts are one per provider: quests key their rewards on
+    // the Discord, GitHub and Google ids, so a second link would earn them
+    // again.
+    const connectableProviders: Record<string, string> = {
+        discord: "Discord",
+        github: "GitHub",
+        google: "Google",
+    };
+
+    const hasAccount = async (userId: string, providerId: string) => {
         const [account] = await db
             .select({ id: accountTable.id })
             .from(accountTable)
             .where(
                 and(
                     eq(accountTable.userId, userId),
-                    eq(accountTable.providerId, "discord"),
+                    eq(accountTable.providerId, providerId),
                 ),
             )
             .limit(1);
         return Boolean(account);
     };
 
-    const discordAccountAlreadyConnected = () =>
+    const accountAlreadyConnected = (providerId: string) =>
         new APIError("BAD_REQUEST", {
-            code: "DISCORD_ACCOUNT_ALREADY_CONNECTED",
-            message: "Only one Discord account can be connected.",
+            code: `${providerId.toUpperCase()}_ACCOUNT_ALREADY_CONNECTED`,
+            message: `Only one ${connectableProviders[providerId]} account can be connected.`,
         });
 
+    const assertStagingSignIn = (user: {
+        githubId?: number;
+        email?: string | null;
+    }) => {
+        try {
+            assertStagingAccess(env, user);
+        } catch (error) {
+            if (error instanceof StagingAccessDeniedError) {
+                throw new APIError("FORBIDDEN", { message: error.message });
+            }
+            throw error;
+        }
+    };
+
     const adminPlugin = admin({
-        adminUserIds: ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"],
+        adminUserIds: ADMIN_USER_IDS,
+        bannedUserMessage: ACCOUNT_RESTRICTED_MESSAGE,
+    });
+
+    const oauthProviderPlugin = oauthProvider({
+        loginPage: "/app/sign-in",
+        allowPublicClientPrelogin: true,
+        // Only trusted internal dashboard clients are registered, so
+        // consent is skipped. Explicit consent requests fail closed here.
+        consentPage: "/error",
+        // Clients are seeded by migrations, not managed through the public API.
+        clientPrivileges: () => false,
+        scopes: ["openid", "profile", "email"],
+        grantTypes: ["authorization_code"],
+        // Apps recheck UserInfo throughout their 12-hour session; no refresh grant.
+        accessTokenExpiresIn: 43_200,
+        disableJwtPlugin: true,
+        customUserInfoClaims: ({ user }) => ({
+            role: isAdminUser(user) ? "admin" : "user",
+        }),
     });
 
     const openAPIPlugin = openAPI({
@@ -82,23 +149,76 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             // scales freshAge by 1e3 twice (update-user.mjs), so the threshold
             // lands ~1000x too high and never fires. Enforce it here instead.
             before: createAuthMiddleware(async (authContext) => {
-                if (
-                    authContext.path === "/sign-in/social" &&
-                    authContext.body.provider === "discord"
-                ) {
-                    throw new APIError("BAD_REQUEST", {
-                        message:
-                            "Discord can only be connected to an existing Pollinations account.",
-                    });
+                if (authContext.path === "/sign-in/social") {
+                    if (authContext.body.provider === "discord")
+                        throw new APIError("BAD_REQUEST", {
+                            message:
+                                "Discord can only be connected to an existing Pollinations account.",
+                        });
+                    ctx?.waitUntil(
+                        captureProductEvent(env, "sign_in_started", "", {
+                            ...referringSource(
+                                authContext.headers,
+                                env.BETTER_AUTH_URL,
+                            ),
+                            ...visitorCountry(authContext.headers),
+                            provider: authContext.body.provider,
+                        }),
+                    );
                 }
+                // The path is the route pattern, not the resolved URL, so the
+                // provider comes from params. Only with a code: a denial at
+                // GitHub comes back without one and is a loss on their side,
+                // not a failure of our callback.
+                if (
+                    authContext.path === "/callback/:id" &&
+                    ["github", "google"].includes(
+                        authContext.params?.id ?? "",
+                    ) &&
+                    authContext.query?.code
+                ) {
+                    ctx?.waitUntil(
+                        captureProductEvent(env, "sign_in_returned", "", {
+                            ...visitorCountry(authContext.headers),
+                            provider: authContext.params?.id,
+                        }),
+                    );
+                }
+                const linkProvider = authContext.body?.provider;
                 if (
                     authContext.path === "/link-social" &&
-                    authContext.body.provider === "discord"
+                    Object.hasOwn(connectableProviders, linkProvider)
                 ) {
                     const session = await getSessionFromCtx(authContext);
-                    if (session && (await hasDiscordAccount(session.user.id))) {
-                        throw discordAccountAlreadyConnected();
+                    if (
+                        session &&
+                        (await hasAccount(session.user.id, linkProvider))
+                    ) {
+                        throw accountAlreadyConnected(linkProvider);
                     }
+                    if (session)
+                        ctx?.waitUntil(
+                            captureProductEvent(
+                                env,
+                                "link_started",
+                                session.user.id,
+                                {
+                                    ...visitorCountry(authContext.headers),
+                                    provider: linkProvider,
+                                },
+                            ),
+                        );
+                }
+                // GitHub stays connected once linked: quests and community
+                // models key on users.github_id.
+                if (
+                    authContext.path === "/unlink-account" &&
+                    authContext.body?.providerId === "github"
+                ) {
+                    throw new APIError("BAD_REQUEST", {
+                        code: "GITHUB_ACCOUNT_CANNOT_BE_DISCONNECTED",
+                        message: "GitHub can't be disconnected once connected.",
+                    });
                 }
                 if (authContext.path !== "/delete-user") return;
 
@@ -119,26 +239,103 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                     });
                 }
             }),
+            // Only an explicit connect carries link state; a sign-up or an
+            // implicit join at sign-in does not. Counted here because the
+            // account create hooks run after the request state is gone.
+            after: createAuthMiddleware(async (authContext) => {
+                if (authContext.path !== "/callback/:id") return;
+                const link = (await getOAuthState())?.link;
+                const provider = authContext.params?.id ?? "";
+                if (link && (await hasAccount(link.userId, provider)))
+                    ctx?.waitUntil(
+                        captureProductEvent(
+                            env,
+                            "link_completed",
+                            link.userId,
+                            {
+                                ...visitorCountry(authContext.headers),
+                                provider,
+                            },
+                        ),
+                    );
+            }),
         },
         database: drizzleAdapter(db, {
             schema: betterAuthSchema,
             provider: "sqlite",
         }),
         databaseHooks: {
+            user: {
+                // Admin removal skips deleteUser.beforeDelete. Sessions and
+                // logins are already gone here, so a failure is logged rather
+                // than leaving the account half-deleted.
+                delete: {
+                    before: async (user) => {
+                        await removeUserSites(env, user.id).catch((error) =>
+                            console.error(
+                                `Failed to remove sites of user ${user.id}`,
+                                error,
+                            ),
+                        );
+                    },
+                },
+                create: {
+                    after: async (user, context) => {
+                        ctx?.waitUntil(
+                            captureProductEvent(
+                                env,
+                                "signup_completed",
+                                user.id,
+                                {
+                                    ...visitorCountry(context?.headers),
+                                    provider: callbackProvider(context),
+                                },
+                            ),
+                        );
+                    },
+                },
+            },
             account: {
                 create: {
+                    // Also covers implicit links on sign-in, which skip
+                    // the /link-social check above.
                     before: async (account) => {
                         if (
-                            account.providerId === "discord" &&
-                            (await hasDiscordAccount(account.userId))
+                            Object.hasOwn(
+                                connectableProviders,
+                                account.providerId,
+                            ) &&
+                            (await hasAccount(
+                                account.userId,
+                                account.providerId,
+                            ))
                         ) {
-                            throw discordAccountAlreadyConnected();
+                            throw accountAlreadyConnected(account.providerId);
                         }
+                    },
+                    after: async (account) => {
+                        if (account.providerId !== "github") return;
+                        // These authorization fields stay read-only in Better
+                        // Auth, so persist the verified provider profile here.
+                        const githubId = Number(account.accountId);
+                        await db
+                            .update(userTable)
+                            .set({
+                                githubId,
+                                githubUsername:
+                                    githubProfile?.id === githubId
+                                        ? githubProfile.username
+                                        : undefined,
+                            })
+                            .where(eq(userTable.id, account.userId));
                     },
                 },
             },
         },
         advanced: {
+            // Cloudflare sets CF-Connecting-IP. A client-sent X-Forwarded-For
+            // makes the chain ambiguous and drops it into one shared bucket.
+            ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] },
             // Configure background tasks for Cloudflare Workers
             // Required for deferUpdates to work properly
             backgroundTasks: ctx
@@ -160,11 +357,21 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             ...AUTH_TRUSTED_ORIGINS,
             "http://localhost:3000",
             "http://127.0.0.1:3000",
+            ...(env.ENVIRONMENT === "production"
+                ? []
+                : [
+                      "http://localhost:3457",
+                      "http://localhost:4180",
+                      "http://localhost:4000",
+                  ]),
         ],
         user: {
             additionalFields: authAdditionalFields.user,
             deleteUser: {
                 enabled: true,
+                // Runs before anything is deleted, so a Cloudflare failure
+                // aborts the deletion cleanly.
+                beforeDelete: (user) => removeUserSites(env, user.id),
             },
         },
         account: {
@@ -180,10 +387,26 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             github: {
                 clientId: env.GITHUB_CLIENT_ID,
                 clientSecret: env.GITHUB_CLIENT_SECRET,
-                mapProfileToUser: (profile) => ({
-                    githubId: profile.id,
-                    githubUsername: profile.login,
-                }),
+                mapProfileToUser: (profile) => {
+                    assertStagingSignIn({
+                        githubId: Number(profile.id),
+                        email: profile.email,
+                    });
+                    githubProfile = {
+                        id: Number(profile.id),
+                        username: profile.login,
+                    };
+                    return {};
+                },
+            },
+            google: {
+                clientId: env.GOOGLE_CLIENT_ID,
+                clientSecret: env.GOOGLE_CLIENT_SECRET,
+                prompt: "select_account",
+                mapProfileToUser: (profile) => {
+                    assertStagingSignIn({ email: profile.email });
+                    return {};
+                },
             },
             ...(discordConfig && {
                 discord: {
@@ -200,9 +423,9 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         },
         plugins: [
             adminPlugin,
+            oauthProviderPlugin,
             apiKeyPlugin,
             githubProfileSyncPlugin(env, ctx),
-            stagingAccessPlugin(env),
             openAPIPlugin,
         ],
         telemetry: { enabled: false },
@@ -234,28 +457,41 @@ function githubProfileSyncPlugin(
 }
 
 /**
- * Sync github_username on every login.
- * GitHub usernames are mutable — users can rename their account.
- * We fetch the current username from GitHub API using the immutable github_id
+ * Sync platform name and github_username on every login.
+ * GitHub usernames and display names are mutable — users can rename their account.
+ * We fetch the current profile from GitHub API using the immutable github_id
  * and update D1 if it changed. Non-blocking via waitUntil.
  *
- * GitHub is the only auth provider, so every user row has a github_id; we skip
- * the sync defensively if it is ever missing.
+ * Users who signed in with Google and never connected GitHub have no
+ * github_id; they are skipped.
  */
-function onAfterSessionCreate(
+// The provider of an OAuth callback; "" for sessions from other flows, such
+// as the CLI device flow.
+function callbackProvider(context?: GenericEndpointContext | null): string {
+    return context?.path === "/callback/:id" ? (context.params?.id ?? "") : "";
+}
+
+export function onAfterSessionCreate(
     env: Cloudflare.Env,
     executionCtx?: ExecutionContext,
 ) {
     return async (
         session: { userId: string },
-        _ctx?: GenericEndpointContext | null,
+        ctx?: GenericEndpointContext | null,
     ) => {
+        executionCtx?.waitUntil(
+            captureProductEvent(env, "sign_in_completed", session.userId, {
+                ...visitorCountry(ctx?.headers),
+                provider: callbackProvider(ctx),
+            }),
+        );
         executionCtx?.waitUntil(
             (async () => {
                 try {
                     const db = drizzle(env.DB);
                     const [user] = await db
                         .select({
+                            name: userTable.name,
                             githubId: userTable.githubId,
                             githubUsername: userTable.githubUsername,
                         })
@@ -287,24 +523,33 @@ function onAfterSessionCreate(
                     );
                     if (!res.ok) {
                         console.error(
-                            `[username-sync] GitHub API ${res.status} for user ${githubId}`,
+                            `[github-profile-sync] GitHub API ${res.status} for user ${githubId}`,
                         );
                         return;
                     }
 
-                    const profile = (await res.json()) as { login: string };
+                    const profile = (await res.json()) as {
+                        login: string;
+                        name?: string | null;
+                    };
+                    const githubName = profile.name || profile.login;
+
                     if (
                         profile.login &&
-                        profile.login !== user?.githubUsername
+                        (profile.login !== user?.githubUsername ||
+                            githubName !== user?.name)
                     ) {
                         await db
                             .update(userTable)
-                            .set({ githubUsername: profile.login })
+                            .set({
+                                githubUsername: profile.login,
+                                name: githubName,
+                            })
                             .where(eq(userTable.id, session.userId));
                     }
                 } catch (e) {
                     console.error(
-                        "[username-sync] failed for session",
+                        "[github-profile-sync] failed for session",
                         session.userId,
                         e,
                     );
@@ -312,52 +557,4 @@ function onAfterSessionCreate(
             })(),
         );
     };
-}
-
-/**
- * Restricts new signups on staging to explicit GitHub ID or email allowlists.
- * GitHub IDs are immutable, unlike usernames. No-op outside staging.
- *
- * This is a thin UX layer only — it rejects disallowed users during OAuth
- * before a `user` row is created, so /error shows "staging is invite-only"
- * instead of a 403 after they think they're logged in. The actual security
- * boundary is {@link assertStagingAccess} called per-request in
- * `shared/auth/api-key.ts` and the per-service auth middleware, which is what
- * blocks spend on the production provider keys held by staging-gen. See #11137.
- */
-function stagingAccessPlugin(env: Cloudflare.Env): BetterAuthPlugin {
-    if (env.ENVIRONMENT !== "staging") {
-        return { id: "staging-access" };
-    }
-    return {
-        id: "staging-access",
-        init: () => ({
-            options: {
-                databaseHooks: {
-                    user: {
-                        create: {
-                            before: async (user: GenericUser) => {
-                                try {
-                                    assertStagingAccess(env, {
-                                        githubId: (
-                                            user as { githubId?: number }
-                                        ).githubId,
-                                        email: user.email,
-                                    });
-                                } catch (e) {
-                                    if (e instanceof StagingAccessDeniedError) {
-                                        throw new APIError("FORBIDDEN", {
-                                            message: e.message,
-                                        });
-                                    }
-                                    throw e;
-                                }
-                                return { data: user };
-                            },
-                        },
-                    },
-                },
-            } satisfies Partial<BetterAuthOptions>,
-        }),
-    } satisfies BetterAuthPlugin;
 }

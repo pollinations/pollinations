@@ -1,13 +1,16 @@
-import type { CSSProperties, ReactNode, RefObject } from "react";
+import type { ReactNode, RefObject } from "react";
 import { useEffect, useState } from "react";
-import logoWordmarkUrl from "../brand/lockup-horizontal.svg";
 import { cn } from "../lib/cn.ts";
+import { BrandMark } from "../primitives/BrandMark.tsx";
+import { AppBrand } from "./AppBrand.tsx";
 
 type ScrollTargetRef = RefObject<HTMLElement | null>;
 
 export type AppHeaderProps = {
     children?: ReactNode;
     navLabel: string;
+    /** Shows the lotus + this name instead of the pollinations.ai wordmark. */
+    appName?: string;
     autoHide?: boolean;
     scrollTargetRef?: ScrollTargetRef;
     brandHref?: string;
@@ -15,19 +18,6 @@ export type AppHeaderProps = {
     className?: string;
     innerClassName?: string;
     navClassName?: string;
-};
-
-const brandWordmarkMaskUrl = `url('${logoWordmarkUrl}')`;
-
-const brandWordmarkMask: CSSProperties = {
-    WebkitMaskImage: brandWordmarkMaskUrl,
-    WebkitMaskPosition: "center",
-    WebkitMaskRepeat: "no-repeat",
-    WebkitMaskSize: "contain",
-    maskImage: brandWordmarkMaskUrl,
-    maskPosition: "center",
-    maskRepeat: "no-repeat",
-    maskSize: "contain",
 };
 
 function scrollTopFor(target: HTMLElement | Window) {
@@ -39,9 +29,10 @@ function scrollTopFor(target: HTMLElement | Window) {
 export function AppHeader({
     children,
     navLabel,
+    appName,
     autoHide = false,
     scrollTargetRef,
-    brandHref = "https://pollinations.ai",
+    brandHref,
     brandLabel = "Pollinations",
     className,
     innerClassName,
@@ -104,24 +95,27 @@ export function AppHeader({
                     innerClassName,
                 )}
             >
-                <a
-                    href={brandHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="polli:inline-flex polli:shrink-0 polli:items-center polli:text-theme-text-strong"
-                >
-                    <span className="polli:sr-only">{brandLabel}</span>
-                    <span
-                        aria-hidden="true"
-                        className="polli:block polli:h-7 polli:w-[220px] polli:max-w-full polli:bg-current"
-                        style={brandWordmarkMask}
-                    />
-                </a>
+                {appName ? (
+                    <AppBrand appName={appName} href={brandHref} />
+                ) : (
+                    <a
+                        href={brandHref ?? "https://pollinations.ai"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="polli:inline-flex polli:shrink-0 polli:items-center polli:text-theme-text-strong"
+                    >
+                        <span className="polli:sr-only">{brandLabel}</span>
+                        <BrandMark
+                            variant="lockup"
+                            className="polli:h-7 polli:w-[220px] polli:max-w-full"
+                        />
+                    </a>
+                )}
                 {children ? (
                     <nav
                         aria-label={navLabel}
                         className={cn(
-                            "polli:flex polli:min-w-0 polli:flex-wrap polli:gap-2",
+                            "polli:flex polli:min-w-0 polli:flex-wrap polli:items-center polli:gap-2",
                             navClassName,
                         )}
                     >

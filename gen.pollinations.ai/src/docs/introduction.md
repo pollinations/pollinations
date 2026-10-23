@@ -1,4 +1,4 @@
-> Generate text, images, video, audio, realtime voice, and embeddings with a single API. OpenAI-compatible — use any OpenAI SDK by changing the base URL.
+> Generate text, images, video, audio, realtime voice, and embeddings with a single API. Use an OpenAI SDK by changing its base URL.
 
 **Base URL:** `https://gen.pollinations.ai`
 

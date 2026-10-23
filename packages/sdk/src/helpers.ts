@@ -52,6 +52,9 @@ import type {
     Message,
     ModelInfo,
     ModelKind,
+    Site,
+    SiteFile,
+    SitesResponse,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -587,4 +590,36 @@ export async function createKey(
  */
 export async function revokeKey(id: string): Promise<void> {
     return getClient().revokeKey(id);
+}
+
+/**
+ * List your static sites and the account's site limits.
+ */
+export async function listSites(): Promise<SitesResponse> {
+    return getClient().listSites();
+}
+
+/**
+ * Publish a static site at `https://<name>.pollinations.app` with inline
+ * files (up to 5 MB per request); `index.html` is required.
+ *
+ * @example
+ * ```ts
+ * const site = await deploySite('my-app', [
+ *   { file: 'index.html', data: '<h1>Hello</h1>' },
+ * ]);
+ * ```
+ */
+export async function deploySite(
+    name: string,
+    files: SiteFile[],
+): Promise<Site> {
+    return getClient().deploySite(name, files);
+}
+
+/**
+ * Take a site offline and free its name.
+ */
+export async function deleteSite(name: string): Promise<void> {
+    return getClient().deleteSite(name);
 }

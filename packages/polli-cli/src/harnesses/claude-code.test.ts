@@ -21,8 +21,7 @@ const mocks = vi.hoisted(() => ({
     fetchHarnessModels: vi.fn(async (selected: string) => [
         { id: selected, contextWindow: 128000, input: ["text"] },
     ]),
-    keyUsageCount: vi.fn(async () => 4),
-    waitForKeyUsageIncrease: vi.fn(async () => 5),
+    gen: vi.fn(),
 }));
 
 vi.mock("./keys.js", () => ({
@@ -31,10 +30,7 @@ vi.mock("./keys.js", () => ({
 vi.mock("./models.js", () => ({
     fetchHarnessModels: mocks.fetchHarnessModels,
 }));
-vi.mock("./usage-proof.js", () => ({
-    keyUsageCount: mocks.keyUsageCount,
-    waitForKeyUsageIncrease: mocks.waitForKeyUsageIncrease,
-}));
+vi.mock("../lib/api.js", () => ({ gen: mocks.gen }));
 
 import { claudeCode } from "./claude-code.js";
 
@@ -91,7 +87,7 @@ console.log("pong");
 
 beforeEach(() => {
     mocks.resolveHarnessKey.mockClear();
-    mocks.waitForKeyUsageIncrease.mockClear();
+    mocks.gen.mockClear();
     home = mkdtempSync(join(tmpdir(), "polli-claude-harness-"));
     ctx = { home, env: {} };
     installFakeClaude();
@@ -132,11 +128,8 @@ describe("Claude Code harness", () => {
                 settings: { env },
             }),
         ]);
-        expect(mocks.waitForKeyUsageIncrease).toHaveBeenCalledWith(
-            "sk_child",
-            4,
-            expect.objectContaining({ afterMs: expect.any(Number) }),
-        );
+        // gen can answer the pong from its cache without a usage row (#18053).
+        expect(mocks.gen).not.toHaveBeenCalled();
         expect(existsSync(join(home, ".claude"))).toBe(false);
     });
 

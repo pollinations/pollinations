@@ -338,14 +338,14 @@ describe("resolveModelConfig", () => {
         },
     );
 
-    it("pins Inkling to Together on OpenRouter without fallback", () => {
+    it("pins Inkling to DeepInfra on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "thinkingmachines/inkling-small",
         });
 
         expect(result.options.model).toBe("thinkingmachines/inkling-small");
         expect(result.options.provider).toEqual({
-            only: ["Together"],
+            only: ["deepinfra"],
             allow_fallbacks: false,
         });
     });
@@ -788,8 +788,8 @@ describe("resolveModelConfig", () => {
             "mistralai/mistral-small-3.2-24b-instruct",
             "deepinfra/fp8",
         ],
-        ["gemma", "google/gemma-4-26b-a4b-it", "novita/bf16"],
-        ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
+        ["gemma", "google/gemma-4-26b-a4b-it", "deepinfra/fp8"],
+        ["gemma-4-31b", "google/gemma-4-31b-it", "crusoe/bf16"],
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
         ["minimax-m2.7", "minimax/minimax-m2.7", "novita/fp8"],

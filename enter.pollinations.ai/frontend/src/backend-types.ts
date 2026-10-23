@@ -5,6 +5,7 @@
 export type { FrontendApiRoutes as ApiRoutes } from "../../src/frontend-api.ts";
 export type { QuestStandingsResponse } from "../../src/routes/quest-leaderboard.ts";
 export type { QuestCatalogResponse } from "../../src/routes/quests.ts";
+export type { ListedApp } from "../../src/services/listed-apps.ts";
 export type { QuestCheckResult } from "../../src/services/quest-checker.ts";
 export type {
     AutoTopUpIssue,

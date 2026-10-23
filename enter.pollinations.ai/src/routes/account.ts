@@ -3,6 +3,7 @@ import {
     hasAccountPermission,
     requireAccountPermission,
 } from "@shared/auth/account-permissions.ts";
+import { verifyGrantAgent } from "@shared/auth/agent-run-token.ts";
 import {
     type ApiKeyType,
     createApiKeyForUser,
@@ -22,7 +23,7 @@ import {
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { toModelCategories } from "@shared/registry/model-permissions.ts";
+import { toModelPermissions } from "@shared/registry/model-permissions.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -33,6 +34,7 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { discordConfigFromEnv } from "../services/discord.ts";
+import { listedAppSchema, listListedApps } from "../services/listed-apps.ts";
 import { checkQuestsForUser } from "../services/quest-checker.ts";
 import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
 import {
@@ -42,10 +44,17 @@ import {
 import {
     fetchTinybirdRows,
     requireTinybirdReadToken,
+    TinybirdRateLimitError,
 } from "../services/tinybird.ts";
 import { captureFromRequest } from "../utils/product-analytics.ts";
 import { agentsRoutes } from "./agents.ts";
 import { communityEndpointsRoutes } from "./community-endpoints.ts";
+import { promoCodeRedeemRoutes } from "./promo-codes.ts";
+import { sitesRoutes } from "./sites.ts";
+
+const listedAppsResponseSchema = z.object({
+    apps: z.array(listedAppSchema).describe("The caller's listed apps"),
+});
 
 const DEFAULT_USAGE_DAYS = 30;
 const DEFAULT_DAILY_USAGE_DAYS = 90;
@@ -115,7 +124,7 @@ const CreateKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "Model categories this key can use: text, image, video, audio, 3d, embedding, realtime. A model ID from /models allows its whole category. null = all models",
+            "Models this key can use. A category (text, image, video, audio, 3d, embedding, realtime) allows every model in it, including models added later; a model ID or alias from /models allows only that model and is stored as its canonical ID. null = all models",
         ),
     pollenBudget: z
         .number()
@@ -182,6 +191,17 @@ const UpdateKeySchema = CreateKeySchema.pick({
         .transform((val) => (val == null ? val : new Date(val)))
         .describe("Expiry as an ISO 8601 timestamp. null = never expires"),
 });
+
+// A grant link from an agent run names the agent, signed by gen over the key
+// and the one category, model or account permission it asks for.
+const GrantAgentSchema = z.intersection(
+    z.union([
+        z.object({ category: z.string().min(1) }),
+        z.object({ model: z.string().min(1) }),
+        z.object({ permission: z.string().min(1) }),
+    ]),
+    z.object({ agent: z.string().min(1), sig: z.string().min(1) }),
+);
 
 function parsePermissions(
     raw: string | null | undefined,
@@ -350,7 +370,11 @@ function buildUsageWindowFromPeriod({
 const toTinybirdDateTime = (date: Date) =>
     date.toISOString().slice(0, 19).replace("T", " ");
 
-function resolveUsageWindow(days: number, period: UsagePeriod): UsageWindow {
+function resolveUsageWindow(
+    days: number,
+    period: UsagePeriod,
+    timezone = "UTC",
+): UsageWindow {
     const hasPeriodParam = period.granularity || period.period;
     const periodWindow = buildUsageWindowFromPeriod(period);
     if (hasPeriodParam && !periodWindow) {
@@ -360,11 +384,22 @@ function resolveUsageWindow(days: number, period: UsagePeriod): UsageWindow {
         });
     }
 
-    const now = new Date();
+    // These dates carry wall-calendar values; Tinybird interprets the bounds
+    // in the requested zone, including its offset at each midnight.
+    const calendar = Object.fromEntries(
+        new Intl.DateTimeFormat("en-US", {
+            timeZone: timezone,
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+        })
+            .formatToParts(new Date())
+            .map(({ type, value }) => [type, value]),
+    );
     const today = startOfUtcDay(
-        now.getUTCFullYear(),
-        now.getUTCMonth(),
-        now.getUTCDate(),
+        Number(calendar.year),
+        Number(calendar.month) - 1,
+        Number(calendar.day),
     );
     if (periodWindow) {
         const minDate = new Date(`${USAGE_MIN_DATE}T00:00:00.000Z`);
@@ -410,6 +445,29 @@ const commaSeparatedQueryList = z
     .string()
     .optional()
     .transform(parseCommaSeparatedQueryList);
+
+const timezoneQuerySchema = z
+    .string()
+    .regex(/^[A-Za-z][A-Za-z0-9_./+-]*$/)
+    .refine((timezone) => {
+        try {
+            new Intl.DateTimeFormat("en-US", { timeZone: timezone });
+            return true;
+        } catch {
+            return false;
+        }
+    }, "Invalid IANA time zone")
+    .transform(
+        (timezone) =>
+            new Intl.DateTimeFormat("en-US", {
+                timeZone: timezone,
+            }).resolvedOptions().timeZone,
+    )
+    .default("UTC")
+    .describe(
+        "IANA time zone for calendar windows and date buckets. Defaults to UTC. Request timestamps remain UTC.",
+    );
+
 // Query params schema for usage
 const usageQuerySchema = z.object({
     format: z.enum(["json", "csv"]).optional().default("json"),
@@ -442,6 +500,7 @@ const usageQuerySchema = z.object({
         .default(DEFAULT_USAGE_DAYS),
     granularity: z.enum(PERIOD_GRANULARITIES).optional(),
     period: z.string().optional(),
+    timezone: timezoneQuerySchema,
     api_key_ids: commaSeparatedQueryList,
     models: commaSeparatedQueryList,
 });
@@ -458,6 +517,7 @@ const usageDailyQuerySchema = z.object({
         .default(DEFAULT_DAILY_USAGE_DAYS),
     granularity: z.enum(PERIOD_GRANULARITIES).optional(),
     period: z.string().optional(),
+    timezone: timezoneQuerySchema,
     api_key_ids: commaSeparatedQueryList,
 });
 
@@ -478,6 +538,7 @@ const earningsTransactionsQuerySchema = usageQuerySchema
         limit: true,
         granularity: true,
         period: true,
+        timezone: true,
     })
     .extend({
         days: z.coerce
@@ -494,7 +555,7 @@ const dailyUsageRecordSchema = z.object({
     date: z
         .string()
         .describe(
-            "Date bucket: YYYY-MM-DD, or hourly YYYY-MM-DD HH:MM:SS (UTC) when `granularity=day`",
+            "Date bucket in the requested timezone: YYYY-MM-DD, or the hour YYYY-MM-DD HH:00:00 when `granularity=day`",
         ),
     api_key_id: z.string().describe("API key id used for these requests"),
     api_key: z
@@ -572,7 +633,7 @@ const developerEarningsRowSchema = z.object({
     date: z
         .string()
         .describe(
-            "Date bucket (YYYY-MM-DD or hourly); empty string on rollup rows",
+            "Date bucket in the requested timezone: YYYY-MM-DD, or the hour YYYY-MM-DD HH:00:00 when `granularity=day`; empty string on rollup rows",
         ),
     entity_id: z
         .string()
@@ -622,7 +683,7 @@ const developerEarningsResponseSchema = z.object({
 const developerEarningsTransactionSchema = z.object({
     timestamp: z
         .string()
-        .describe("Request timestamp (YYYY-MM-DD HH:mm:ss format)"),
+        .describe("Request timestamp in UTC (YYYY-MM-DD HH:mm:ss format)"),
     cursor_event_id: z.string().describe("Stable event id"),
     entity_name: z.string().describe("Earning entity display name"),
     model: z.string().nullable().describe("Model used for generation"),
@@ -702,6 +763,7 @@ async function respondDetailedUsage(
         until: string;
         before?: string;
         beforeEventId?: string;
+        timezone: string;
     },
 ): Promise<Response> {
     const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
@@ -725,6 +787,7 @@ async function respondDetailedUsage(
                 limit: params.limit.toString(),
                 since: params.since,
                 until: params.until,
+                timezone: params.timezone,
                 before: params.before,
                 before_event_id: params.beforeEventId,
             },
@@ -864,7 +927,7 @@ function formatReward(
 const usageRecordSchema = z.object({
     timestamp: z
         .string()
-        .describe("Request timestamp (YYYY-MM-DD HH:mm:ss format)"),
+        .describe("Request timestamp in UTC (YYYY-MM-DD HH:mm:ss format)"),
     cursor_event_id: z
         .string()
         .describe("Event id used with `before_event_id` for stable pagination"),
@@ -955,7 +1018,9 @@ export const accountRoutes = new Hono<Env>()
         c.header("Pragma", "no-cache");
     })
     .route("/agents", agentsRoutes)
+    .route("/sites", sitesRoutes)
     .route("/my-models", communityEndpointsRoutes)
+    .route("/promo-codes", promoCodeRedeemRoutes)
     .get(
         "/profile",
         describeRoute({
@@ -1010,6 +1075,64 @@ export const accountRoutes = new Hono<Env>()
                     email: profile.email ?? null,
                 }),
             });
+        },
+    )
+    .get(
+        "/apps",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "List My Apps",
+            description:
+                "Community app directory listings owned by the account's linked GitHub user, newest approval first. The directory is public, so no extra permission is required (same as `/account/profile`). Returns an empty list when the account has no linked GitHub user or has not listed an app.",
+            responses: {
+                200: {
+                    description: "The caller's listed apps",
+                    content: {
+                        "application/json": {
+                            schema: resolver(listedAppsResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                503: {
+                    description:
+                        "The app directory is temporarily unavailable; retry after the `Retry-After` delay",
+                },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+
+            // githubId is written by the OAuth callback only, so read it from
+            // the row instead of trusting the session user.
+            const account = await drizzle(c.env.DB)
+                .select({ githubId: userTable.githubId })
+                .from(userTable)
+                .where(eq(userTable.id, user.id))
+                .limit(1)
+                .then((rows) => rows[0]);
+
+            try {
+                return c.json({
+                    apps: await listListedApps(
+                        c.env,
+                        account?.githubId ?? null,
+                    ),
+                });
+            } catch (error) {
+                // A rate-limited read must not look like "you have no apps",
+                // so the dashboard gets a retry signal instead of an empty list.
+                if (!(error instanceof TinybirdRateLimitError)) throw error;
+                c.header("Retry-After", "60");
+                return c.json(
+                    {
+                        apps: [],
+                        error: "The app directory is temporarily unavailable. Please try again.",
+                    },
+                    503,
+                );
+            }
         },
     )
     .get(
@@ -1287,15 +1410,17 @@ export const accountRoutes = new Hono<Env>()
                 days,
                 granularity,
                 period,
+                timezone,
                 api_key_ids: apiKeyIds,
                 models,
             } = c.req.valid("query");
             const { userId: usageUserId, overridden: usageUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
-            const usageWindow = resolveUsageWindow(days, {
-                granularity,
-                period,
-            });
+            const usageWindow = resolveUsageWindow(
+                days,
+                { granularity, period },
+                timezone,
+            );
 
             log.debug(
                 "Fetching usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} format={format} limit={limit} before={before} beforeEventId={beforeEventId} days={days}",
@@ -1321,6 +1446,7 @@ export const accountRoutes = new Hono<Env>()
                 models,
                 since: usageWindow.since,
                 until: usageWindow.until,
+                timezone,
                 before,
                 beforeEventId,
             });
@@ -1368,6 +1494,7 @@ export const accountRoutes = new Hono<Env>()
                 days,
                 granularity,
                 period,
+                timezone,
                 api_key_ids: apiKeyIds,
             } = c.req.valid("query");
             const grain = granularity === "day" ? "hour" : "day";
@@ -1375,7 +1502,11 @@ export const accountRoutes = new Hono<Env>()
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
-            const window = resolveUsageWindow(days, { granularity, period });
+            const window = resolveUsageWindow(
+                days,
+                { granularity, period },
+                timezone,
+            );
 
             try {
                 const usage = await fetchTinybirdRows<DailyUsageRecord>(
@@ -1386,6 +1517,7 @@ export const accountRoutes = new Hono<Env>()
                         user_id: usageUserId,
                         since: window.since,
                         until: window.until,
+                        timezone,
                         grain,
                         api_key_ids:
                             apiKeyIds.length > 0
@@ -1465,13 +1597,18 @@ export const accountRoutes = new Hono<Env>()
 
             requireAccountPermission(apiKey, "usage");
 
-            const { limit, days, granularity, period } = c.req.valid("query");
+            const { limit, days, granularity, period, timezone } =
+                c.req.valid("query");
             const { userId: devUserId } = resolveUsageTargetUserId(
                 c.env,
                 user.id,
                 apiKey,
             );
-            const window = resolveUsageWindow(days, { granularity, period });
+            const window = resolveUsageWindow(
+                days,
+                { granularity, period },
+                timezone,
+            );
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
 
@@ -1486,6 +1623,7 @@ export const accountRoutes = new Hono<Env>()
                             limit: limit.toString(),
                             since: window.since,
                             until: window.until,
+                            timezone,
                         },
                     );
 
@@ -1537,13 +1675,18 @@ export const accountRoutes = new Hono<Env>()
 
             requireAccountPermission(apiKey, "usage");
 
-            const { format, days, granularity, period } = c.req.valid("query");
+            const { format, days, granularity, period, timezone } =
+                c.req.valid("query");
             const grain = granularity === "day" ? "hour" : "day";
             const { userId: devUserId, overridden: devUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
-            const window = resolveUsageWindow(days, { granularity, period });
+            const window = resolveUsageWindow(
+                days,
+                { granularity, period },
+                timezone,
+            );
 
             try {
                 const daily = await fetchTinybirdRows<DeveloperEarningsRow>(
@@ -1554,6 +1697,7 @@ export const accountRoutes = new Hono<Env>()
                         dev_user_id: devUserId,
                         since: window.since,
                         until: window.until,
+                        timezone,
                         grain,
                     },
                 );
@@ -1774,7 +1918,7 @@ export const accountRoutes = new Hono<Env>()
             const permissions = parsePermissions(key.permissions) ?? {};
             if (allowedModels !== undefined) {
                 if (allowedModels) {
-                    permissions.models = await toModelCategories(
+                    permissions.models = await toModelPermissions(
                         c.env.DB,
                         allowedModels,
                     );
@@ -1822,6 +1966,32 @@ export const accountRoutes = new Hono<Env>()
                 .returning();
 
             return c.json(formatKey(updated));
+        },
+    )
+    .get(
+        "/keys/:id/grant-agent",
+        describeRoute({
+            tags: ["👤 Account"],
+            description:
+                "Confirm which agent a grant link says asked for the grant.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        validator("query", GrantAgentSchema),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            c.var.auth.requireUser();
+            const { agent, sig, ...grant } = c.req.valid("query");
+            // The link reached the owner through the agent, so only gen's
+            // signature makes the name trustworthy. This reads nothing from
+            // the key, so it needs no ownership check.
+            const signed = verifyGrantAgent({
+                secret: c.env.BETTER_AUTH_SECRET,
+                apiKeyId: c.req.param("id"),
+                grant,
+                agent,
+                sig,
+            });
+            return c.json({ agent: signed ? agent : null });
         },
     )
     .post(
@@ -1947,7 +2117,7 @@ export const accountRoutes = new Hono<Env>()
                                                 .array(z.string())
                                                 .nullable()
                                                 .describe(
-                                                    "Model categories this key can use (text, image, video, audio, 3d, embedding, realtime), null = all models allowed",
+                                                    "Model categories (text, image, video, audio, 3d, embedding, realtime) and model IDs this key can use, null = all models allowed",
                                                 ),
                                             account: z
                                                 .array(z.string())
@@ -2139,12 +2309,14 @@ export const accountRoutes = new Hono<Env>()
                 days,
                 granularity,
                 period,
+                timezone,
                 models,
             } = c.req.valid("query");
-            const usageWindow = resolveUsageWindow(days, {
-                granularity,
-                period,
-            });
+            const usageWindow = resolveUsageWindow(
+                days,
+                { granularity, period },
+                timezone,
+            );
 
             log.debug(
                 "Fetching key usage: userId={userId} keyId={keyId} days={days}",
@@ -2161,6 +2333,7 @@ export const accountRoutes = new Hono<Env>()
                 models,
                 since: usageWindow.since,
                 until: usageWindow.until,
+                timezone,
                 before,
                 beforeEventId,
             });

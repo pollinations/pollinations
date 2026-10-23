@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 import { MCP_SERVERS } from "../../shared/registry/mcp.ts";
-import { buildServerEntry } from "./generate-server-json.ts";
+import { buildServerEntry } from "../../shared/registry/mcp-server-json.ts";
 
 // Mirrors the registry's actual server.schema.json constraints (checked
 // against the live schema for all six entries — see the PR description).
@@ -52,7 +53,12 @@ test("CLI requires an explicit, nonblank version", () => {
         const result = spawnSync(
             process.execPath,
             [
-                new URL("./generate-server-json.ts", import.meta.url).pathname,
+                // URL.pathname keeps the drive-letter prefix on Windows
+                // (`/C:/...`), which node then resolves against the drive
+                // again; fileURLToPath returns the real filesystem path.
+                fileURLToPath(
+                    new URL("./generate-server-json.ts", import.meta.url),
+                ),
                 ...args,
             ],
             { encoding: "utf8" },

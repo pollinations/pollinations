@@ -3,9 +3,9 @@ import {
     apiDetails,
     apiDocsAnchor,
     cardDetails,
-    highlightLink,
+    itemLink,
     type ModelNews,
-    newsHighlights,
+    newsDaily,
     visibleModelNews,
 } from "../frontend/src/components/news-faq/news-index.ts";
 
@@ -188,30 +188,31 @@ describe("model news cards", () => {
         ]);
     });
 
-    it("leaves highlights the Changelog already lists out of News", () => {
-        const highlight = (title: string, extra = {}) => ({
+    it("leaves models and API changes to the Changelog", () => {
+        const item = (title: string, extra = {}) => ({
             date: "2026-10-07",
             title,
             text: "",
             ...extra,
         });
         expect(
-            newsHighlights({
-                models: [news({ pr: 10 })],
+            newsDaily({
+                models: [],
                 api: [],
-                highlights: [
-                    highlight("model launch", { prs: [10] }),
-                    highlight("feature", { prs: [11] }),
-                    highlight("app", { prs: [12], app: true }),
-                    highlight("older, no PR numbers"),
+                daily: [
+                    item("model launch", { kind: "model" }),
+                    item("new endpoint", { kind: "api" }),
+                    item("feature", { kind: "product" }),
+                    item("app", { kind: "app" }),
+                    item("unlabelled"),
                 ],
             }).map(({ title }) => title),
-        ).toEqual(["feature", "older, no PR numbers"]);
+        ).toEqual(["feature"]);
     });
 
-    it("moves a highlight's link under its title", () => {
+    it("moves a daily item's link under its title", () => {
         expect(
-            highlightLink(
+            itemLink(
                 "Pass arrays of URLs. [Explore the SDK](https://example.com/sdk).",
             ),
         ).toEqual({
@@ -220,7 +221,7 @@ describe("model news cards", () => {
         });
         // An inline link keeps its words in the sentence.
         expect(
-            highlightLink(
+            itemLink(
                 "Upload up to 400 MiB through [the media store](https://example.com).",
             ),
         ).toEqual({

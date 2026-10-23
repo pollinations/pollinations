@@ -102,6 +102,14 @@ const QUESTS = [
     appListedQuest,
 ];
 
+/** BYOP: rewards for users connecting to and spending through your app. */
+export const BYOP_QUEST_IDS = [
+    firstByopExternalUserQuest.id,
+    firstPaidSpendInAppQuest.id,
+    tenAppUsersQuest.id,
+    paidAppUsageQuest.id,
+];
+
 export async function listQuestCards(
     _ctx: QuestEvaluationContext,
 ): Promise<QuestCard[]> {

@@ -4,6 +4,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { TinybirdEvent } from "@shared/schemas/generation-event.ts";
 import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
@@ -338,15 +339,29 @@ describe("Messages request translation", () => {
         [{ type: "enabled", budget_tokens: 10_000 }, undefined, "xhigh"],
         [{ type: "adaptive", display: "omitted" }, { effort: "high" }, "high"],
         [{ type: "adaptive" }, undefined, undefined],
-    ])("maps thinking %j with output_config %j to reasoning_effort %s", (thinking, outputConfig, effort) => {
-        const chat = messagesToChatRequest(
-            request({
-                messages: [{ role: "user", content: "hi" }],
-                thinking,
-                ...(outputConfig && { output_config: outputConfig }),
-            }),
-        );
-        expect(chat.reasoning_effort).toBe(effort);
+    ])(
+        "maps thinking %j with output_config %j to reasoning_effort %s",
+        (thinking, outputConfig, effort) => {
+            const chat = messagesToChatRequest(
+                request({
+                    messages: [{ role: "user", content: "hi" }],
+                    thinking,
+                    ...(outputConfig && { output_config: outputConfig }),
+                }),
+            );
+            expect(chat.reasoning_effort).toBe(effort);
+        },
+    );
+
+    it("raises Claude Code's 1-token model check to the 16 every provider accepts", () => {
+        expect(
+            messagesToChatRequest(
+                request({
+                    max_tokens: 1,
+                    messages: [{ role: "user", content: "Hi" }],
+                }),
+            ).max_tokens,
+        ).toBe(16);
     });
 
     it("rejects server tools with the tag Claude Code recognizes", () => {
@@ -800,124 +815,124 @@ describe("POST /v1/messages", () => {
         return { response, text };
     }
 
-    it.each([
-        false,
-        true,
-    ])("bills like Chat Completions with stream=%s", async (stream) => {
-        const caller = await createTestApiKey({
-            user: { tierBalance: 100 },
-        });
-        const { events, providerBodies } = mockUpstream();
-        const db = drizzle(env.DB);
+    it.each([false, true])(
+        "bills like Chat Completions with stream=%s",
+        async (stream) => {
+            const caller = await createTestApiKey({
+                user: { tierBalance: 100 },
+            });
+            const { events, providerBodies } = mockUpstream();
+            const db = drizzle(env.DB);
 
-        const chat = await call(
-            "/v1/chat/completions",
-            {
-                model,
-                stream,
-                messages: [{ role: "user", content: `chat ${stream}` }],
-            },
-            caller.key,
-        );
-        expect(chat.response.status, chat.text).toBe(200);
-        const afterChat = await getUserBalance(db, caller.userId);
-
-        const messages = await call(
-            "/v1/messages",
-            {
-                model,
-                stream,
-                max_tokens: 256,
-                messages: [{ role: "user", content: `messages ${stream}` }],
-                thinking: { type: "adaptive" },
-                metadata: { user_id: "claude-code-user" },
-            },
-            caller.key,
-        );
-        expect(messages.response.status, messages.text).toBe(200);
-        const afterMessages = await getUserBalance(db, caller.userId);
-
-        const expectedUsage = {
-            input_tokens: 15,
-            output_tokens: 30,
-            cache_read_input_tokens: 100,
-            cache_creation_input_tokens: 5,
-        };
-        if (stream) {
-            expect(messages.response.headers.get("content-type")).toContain(
-                "text/event-stream",
+            const chat = await call(
+                "/v1/chat/completions",
+                {
+                    model,
+                    stream,
+                    messages: [{ role: "user", content: `chat ${stream}` }],
+                },
+                caller.key,
             );
-            const parsed = parseEvents(messages.text);
-            expect(parsed.at(-1)).toMatchObject({ type: "message_stop" });
-            expect(parsed.at(-2)).toMatchObject({
-                delta: { stop_reason: "end_turn" },
-                usage: expectedUsage,
-            });
-        } else {
-            expect(JSON.parse(messages.text)).toMatchObject({
-                type: "message",
-                model,
-                content: [{ type: "text", text: "Hello" }],
-                stop_reason: "end_turn",
-                usage: expectedUsage,
-            });
-        }
-        expect(providerBodies[1].messages).toEqual([
-            { role: "user", content: `messages ${stream}` },
-        ]);
-        expect(providerBodies[1]).not.toHaveProperty("metadata");
+            expect(chat.response.status, chat.text).toBe(200);
+            const afterChat = await getUserBalance(db, caller.userId);
 
-        // One billed event each, at the same price, charged once each.
-        const billed = events.filter((event) => event.isBilledUsage);
-        expect(billed).toHaveLength(2);
-        expect(billed[1].totalPrice).toBeGreaterThan(0);
-        expect(billed[1].totalPrice).toBe(billed[0].totalPrice);
-        expect(billed[1].tokenCountPromptCached).toBe(
-            billed[0].tokenCountPromptCached,
-        );
-        const chatCharge = 100 - afterChat.tierBalance;
-        expect(afterChat.tierBalance - afterMessages.tierBalance).toBeCloseTo(
-            chatCharge,
-            10,
-        );
-    });
+            const messages = await call(
+                "/v1/messages",
+                {
+                    model,
+                    stream,
+                    max_tokens: 256,
+                    messages: [{ role: "user", content: `messages ${stream}` }],
+                    thinking: { type: "adaptive" },
+                    metadata: { user_id: "claude-code-user" },
+                },
+                caller.key,
+            );
+            expect(messages.response.status, messages.text).toBe(200);
+            const afterMessages = await getUserBalance(db, caller.userId);
 
-    it.each([
-        false,
-        true,
-    ])("fails without provider usage and is not billed, stream=%s", async (stream) => {
-        const caller = await createTestApiKey({
-            user: { tierBalance: 100 },
-        });
-        const { events } = mockUpstream({ withUsage: false });
-        const { response, text } = await call(
-            "/v1/messages",
-            {
-                model,
-                stream,
-                max_tokens: 256,
-                messages: [{ role: "user", content: `no usage ${stream}` }],
-            },
-            caller.key,
-        );
-        if (stream) {
-            expect(response.status).toBe(200);
-            expect(parseEvents(text).at(-1)).toMatchObject({
-                type: "error",
-                error: { type: "api_error" },
+            const expectedUsage = {
+                input_tokens: 15,
+                output_tokens: 30,
+                cache_read_input_tokens: 100,
+                cache_creation_input_tokens: 5,
+            };
+            if (stream) {
+                expect(messages.response.headers.get("content-type")).toContain(
+                    "text/event-stream",
+                );
+                const parsed = parseEvents(messages.text);
+                expect(parsed.at(-1)).toMatchObject({ type: "message_stop" });
+                expect(parsed.at(-2)).toMatchObject({
+                    delta: { stop_reason: "end_turn" },
+                    usage: expectedUsage,
+                });
+            } else {
+                expect(JSON.parse(messages.text)).toMatchObject({
+                    type: "message",
+                    model,
+                    content: [{ type: "text", text: "Hello" }],
+                    stop_reason: "end_turn",
+                    usage: expectedUsage,
+                });
+            }
+            expect(providerBodies[1].messages).toEqual([
+                { role: "user", content: `messages ${stream}` },
+            ]);
+            expect(providerBodies[1]).not.toHaveProperty("metadata");
+
+            // One billed event each, at the same price, charged once each.
+            const billed = events.filter((event) => event.isBilledUsage);
+            expect(billed).toHaveLength(2);
+            expect(billed[1].totalPrice).toBeGreaterThan(0);
+            expect(billed[1].totalPrice).toBe(billed[0].totalPrice);
+            expect(billed[1].tokenCountPromptCached).toBe(
+                billed[0].tokenCountPromptCached,
+            );
+            const chatCharge = 100 - afterChat.tierBalance;
+            expect(
+                afterChat.tierBalance - afterMessages.tierBalance,
+            ).toBeCloseTo(chatCharge, 10);
+        },
+    );
+
+    it.each([false, true])(
+        "fails without provider usage and is not billed, stream=%s",
+        async (stream) => {
+            const caller = await createTestApiKey({
+                user: { tierBalance: 100 },
             });
-        } else {
-            expect(response.status).toBe(502);
-            expect(JSON.parse(text)).toMatchObject({
-                type: "error",
-                error: { type: "api_error" },
-            });
-        }
-        expect(events.filter((event) => event.isBilledUsage)).toEqual([]);
-        expect(
-            (await getUserBalance(drizzle(env.DB), caller.userId)).tierBalance,
-        ).toBe(100);
-    });
+            const { events } = mockUpstream({ withUsage: false });
+            const { response, text } = await call(
+                "/v1/messages",
+                {
+                    model,
+                    stream,
+                    max_tokens: 256,
+                    messages: [{ role: "user", content: `no usage ${stream}` }],
+                },
+                caller.key,
+            );
+            if (stream) {
+                expect(response.status).toBe(200);
+                expect(parseEvents(text).at(-1)).toMatchObject({
+                    type: "error",
+                    error: { type: "api_error" },
+                });
+            } else {
+                expect(response.status).toBe(502);
+                expect(JSON.parse(text)).toMatchObject({
+                    type: "error",
+                    error: { type: "api_error" },
+                });
+            }
+            expect(events.filter((event) => event.isBilledUsage)).toEqual([]);
+            expect(
+                (await getUserBalance(drizzle(env.DB), caller.userId))
+                    .tierBalance,
+            ).toBe(100);
+        },
+    );
 
     it.each([
         {
@@ -948,31 +963,29 @@ describe("POST /v1/messages", () => {
             status: 400,
             type: "invalid_request_error",
         },
-    ])("returns an Anthropic error for $name", async ({
-        body,
-        auth,
-        status,
-        type,
-    }) => {
-        const caller = await createTestApiKey({
-            user: { tierBalance: 100 },
-        });
-        mockUpstream();
-        const { response, text } = await call(
-            "/v1/messages",
-            {
-                max_tokens: 256,
-                messages: [{ role: "user", content: "hi" }],
-                ...body,
-            },
-            auth ? caller.key : undefined,
-        );
-        expect(response.status, text).toBe(status);
-        expect(JSON.parse(text)).toMatchObject({
-            type: "error",
-            error: { type },
-        });
-    });
+    ])(
+        "returns an Anthropic error for $name",
+        async ({ body, auth, status, type }) => {
+            const caller = await createTestApiKey({
+                user: { tierBalance: 100 },
+            });
+            mockUpstream();
+            const { response, text } = await call(
+                "/v1/messages",
+                {
+                    max_tokens: 256,
+                    messages: [{ role: "user", content: "hi" }],
+                    ...body,
+                },
+                auth ? caller.key : undefined,
+            );
+            expect(response.status, text).toBe(status);
+            expect(JSON.parse(text)).toMatchObject({
+                type: "error",
+                error: { type },
+            });
+        },
+    );
 
     it.each([
         { name: "malformed JSON", body: "{", status: 400 },
@@ -995,7 +1008,7 @@ describe("POST /v1/messages", () => {
         });
     });
 
-    it("sends a PDF document to the provider as a Chat file part", async () => {
+    it("sends a PDF document to Azure OpenAI as a Chat file part", async () => {
         const caller = await createTestApiKey({ user: { tierBalance: 100 } });
         const { providerBodies } = mockUpstream();
         const { response, text } = await call(
@@ -1031,12 +1044,77 @@ describe("POST /v1/messages", () => {
                         type: "file",
                         file: {
                             file_data: "data:application/pdf;base64,JVBERi0x",
+                            // Azure reports a missing file_id without it.
+                            filename: "document.pdf",
                         },
                     },
                     { type: "text", text: "What word is in this PDF?" },
                 ],
             },
         ]);
+    });
+
+    it("replaces the oldest images over the model's limit, tool results included", async () => {
+        const caller = await createTestApiKey({ user: { tierBalance: 100 } });
+        const { providerBodies } = mockUpstream();
+        const limit = TEXT_SERVICES[model].maxReferenceImages as number;
+        const image = (n: number) => ({
+            type: "image",
+            source: { type: "base64", media_type: "image/png", data: `${n}` },
+        });
+        // Claude Code opens screenshots with its Read tool, then one is pasted.
+        const reads = Array.from({ length: limit + 1 }, (_, n) => [
+            {
+                role: "assistant",
+                content: [
+                    {
+                        type: "tool_use",
+                        id: `toolu_${n}`,
+                        name: "Read",
+                        input: { file_path: `shot${n}.png` },
+                    },
+                ],
+            },
+            {
+                role: "user",
+                content: [
+                    {
+                        type: "tool_result",
+                        tool_use_id: `toolu_${n}`,
+                        content: [image(n)],
+                    },
+                ],
+            },
+        ]).flat();
+        const { response, text } = await call(
+            "/v1/messages",
+            {
+                model,
+                max_tokens: 32,
+                messages: [
+                    ...reads,
+                    {
+                        role: "user",
+                        content: [
+                            image(limit + 1),
+                            { type: "text", text: "Compare them." },
+                        ],
+                    },
+                ],
+            },
+            caller.key,
+        );
+        expect(response.status, text).toBe(200);
+        // The two oldest become notes; the newest `limit` stay, in order.
+        const sent = JSON.stringify(providerBodies[0].messages);
+        const note = `[image omitted: over the ${limit}-image limit]`;
+        expect(sent.split(note)).toHaveLength(3);
+        expect(sent.match(/data:image\/png;base64,\d+/g)).toEqual(
+            Array.from(
+                { length: limit },
+                (_, n) => `data:image/png;base64,${n + 2}`,
+            ),
+        );
     });
 
     it("preserves thinking signatures through response validation", async () => {

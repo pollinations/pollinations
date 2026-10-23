@@ -1,7 +1,9 @@
 import { getModels } from "../../../../../shared/registry/registry";
+import type { Data, VendorLedgerRow } from "../types";
 import {
     CANONICAL_MODEL_RENAMES,
     canonicalProvider,
+    RETIRED_MODELS,
     resolveProvider,
 } from "./providerRegistry";
 
@@ -19,6 +21,8 @@ export type LabelQualifiers = {
     name?: string;
     // Ledger month (YYYY-MM), for labels whose meaning changed over time.
     month?: string;
+    // Exact identity observed at this provider and month; reviewed labels win.
+    observedModel?: string;
 };
 
 // A dated rule pins a label to the Pollen id it billed during a period. Both
@@ -46,7 +50,13 @@ export function isDatedRules(
 // Arbitrary live aliases remain excluded: they can change meaning over time.
 const MODEL_IDS = new Set<string>([
     ...getModels(),
+    ...RETIRED_MODELS,
     ...Object.keys(CANONICAL_MODEL_RENAMES),
+    ...Object.values(CANONICAL_MODEL_RENAMES).flatMap((target) =>
+        typeof target === "string"
+            ? [target]
+            : target.map((rule) => rule.model),
+    ),
 ]);
 
 // Resolves a provider ledger label through that provider's reviewed label
@@ -81,8 +91,8 @@ export function resolveLedgerLabel(
         Object.hasOwn(table, candidate),
     );
     if (key === undefined) {
-        return MODEL_IDS.has(name)
-            ? { kind: "model", model: name }
+        return qualifiers.observedModel || MODEL_IDS.has(name)
+            ? { kind: "model", model: qualifiers.observedModel ?? name }
             : { kind: "unmapped", label: name };
     }
     let target: ModelLabelTarget = table[key];
@@ -103,4 +113,99 @@ export function resolveLedgerLabel(
         return { kind: "shared", models: target as string[] };
     }
     return { kind: "model", model: target };
+}
+
+// Source rows retain their original labels. Only reviewed exact identities are
+// normalized; uncovered dates keep their source name for reconciliation.
+export function canonicalModelName(
+    month: string,
+    vendor: string,
+    id: string,
+): string {
+    const name = id.trim();
+    const target = CANONICAL_MODEL_RENAMES[name];
+    if (typeof target === "string") return target;
+    return (
+        target?.find(
+            (rule) =>
+                (!rule.provider ||
+                    rule.provider === canonicalProvider(vendor)) &&
+                rule.from <= month &&
+                month <= (rule.until ?? "9999-12"),
+        )?.model ?? name
+    );
+}
+
+// One accounting identity resolver for provider, inference and GPU views.
+export function ledgerModelResolver(data: Data) {
+    const model = canonicalModelName;
+    const observed = new Set(
+        (data.opPollen ?? []).map(
+            (row) =>
+                `${row.month}|${canonicalProvider(row.vendor)}|${model(row.month, row.vendor, row.model)}`,
+        ),
+    );
+    const unresolved = (month: string, vendor: string, id: string) =>
+        !id.includes("/") && model(month, vendor, id) === id.trim();
+    const resolveOne = (
+        row: VendorLedgerRow,
+        label: string,
+    ): LabelResolution => {
+        const month = row.start.slice(0, 7);
+        const vendor = canonicalProvider(row.vendor);
+        const id = model(month, vendor, label);
+        let resolution = resolveLedgerLabel(vendor, label, {
+            month,
+            sku: row.resource_sku,
+            name: row.resource_name,
+            observedModel: observed.has(`${month}|${vendor}|${id}`)
+                ? id
+                : undefined,
+        });
+        if (resolution.kind === "model") {
+            return {
+                kind: "model",
+                model: model(month, vendor, resolution.model),
+            };
+        }
+        if (resolution.kind === "shared") {
+            let models = [
+                ...new Set(
+                    resolution.models.map((id) => model(month, vendor, id)),
+                ),
+            ];
+            const metered = models.filter((id) =>
+                observed.has(`${month}|${vendor}|${id}`),
+            );
+            if (metered.length) models = metered;
+            resolution =
+                models.length === 1
+                    ? { kind: "model", model: models[0] }
+                    : { kind: "shared", models };
+        }
+        return resolution;
+    };
+    const ledger = (row: VendorLedgerRow): LabelResolution => {
+        // GPU capacity may explicitly serve several workloads. Keep their cost
+        // shared; never assign an unknown member's share to a known one.
+        if (row.type === "gpu" && row.model.includes(",")) {
+            const models: string[] = [];
+            for (const label of row.model
+                .split(",")
+                .map((id) => id.trim())
+                .filter(Boolean)) {
+                const resolved = resolveOne(row, label);
+                if (resolved.kind === "model") models.push(resolved.model);
+                else if (resolved.kind === "shared")
+                    models.push(...resolved.models);
+                else return { kind: "unmapped", label: row.model };
+            }
+            const unique = [...new Set(models)].sort();
+            return unique.length === 1
+                ? { kind: "model", model: unique[0] }
+                : { kind: "shared", models: unique };
+        }
+        return resolveOne(row, row.model.trim());
+    };
+    return { model, ledger, unresolved };
 }

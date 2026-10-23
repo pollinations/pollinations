@@ -314,150 +314,160 @@ describe("PolliProvider", () => {
         });
     });
 
-    it.each([
-        false,
-        true,
-    ])("exchanges the callback code once and retains the key (storage full: %s)", async (storageFull) => {
-        const win = stubWindow(
-            "https://app.example/?code=single-use&state=expected",
-        );
-        const storage = memoryStorage({
-            "polli:pk_test:oauth_state": "expected",
-            "polli:pk_test:oauth_verifier": "v".repeat(64),
-            "polli:pk_test:oauth_return_path": "/?view=models#/details",
-        });
-        if (storageFull) {
-            vi.spyOn(storage, "setItem").mockImplementation(() => {
-                throw new Error("Storage full");
-            });
-        }
-        const fetchMock = vi.fn<typeof fetch>(async () =>
-            Response.json({
-                access_token: "sk_delegated",
-                token_type: "bearer",
-            }),
-        );
-        vi.stubGlobal("fetch", fetchMock);
-        const auth: { current: ReturnType<typeof useAuth> | null } = {
-            current: null,
-        };
-
-        function GrabAuth() {
-            auth.current = useAuth();
-            return null;
-        }
-
-        await act(async () => {
-            create(
-                <StrictMode>
-                    <PolliProvider appKey="pk_test" storage={storage}>
-                        <GrabAuth />
-                    </PolliProvider>
-                </StrictMode>,
+    it.each([false, true])(
+        "exchanges the callback code once and retains the key (storage full: %s)",
+        async (storageFull) => {
+            const win = stubWindow(
+                "https://app.example/?code=single-use&state=expected",
             );
-            await new Promise((resolve) => setTimeout(resolve, 0));
-        });
+            const storage = memoryStorage({
+                "polli:pk_test:oauth_state": "expected",
+                "polli:pk_test:oauth_verifier": "v".repeat(64),
+                "polli:pk_test:oauth_return_path": "/?view=models#/details",
+            });
+            if (storageFull) {
+                vi.spyOn(storage, "setItem").mockImplementation(() => {
+                    throw new Error("Storage full");
+                });
+            }
+            const fetchMock = vi.fn<typeof fetch>(async () =>
+                Response.json({
+                    access_token: "sk_delegated",
+                    token_type: "bearer",
+                }),
+            );
+            vi.stubGlobal("fetch", fetchMock);
+            const auth: { current: ReturnType<typeof useAuth> | null } = {
+                current: null,
+            };
 
-        expect(fetchMock).toHaveBeenCalledTimes(1);
-        const [, request] = fetchMock.mock.calls[0];
-        const form = new URLSearchParams(String(request?.body));
-        expect(form.get("grant_type")).toBe("authorization_code");
-        expect(form.get("code")).toBe("single-use");
-        expect(form.get("client_id")).toBe("pk_test");
-        expect(form.get("redirect_uri")).toBe("https://app.example/");
-        expect(form.get("code_verifier")).toBe("v".repeat(64));
-        expect(storage.snapshot()).toEqual(
-            storageFull ? {} : { "polli:pk_test:token": "sk_delegated" },
-        );
-        expect(
-            (win.history as { replaceState: ReturnType<typeof vi.fn> })
-                .replaceState,
-        ).toHaveBeenCalledWith({}, "", "/?view=models#/details");
-        expect(auth.current?.apiKey).toBe("sk_delegated");
-        expect(auth.current?.isLoggedIn).toBe(true);
-        expect(auth.current?.isHydrated).toBe(true);
-        expect(auth.current?.error?.message ?? null).toBe(
-            storageFull ? "Storage full" : null,
-        );
-    });
+            function GrabAuth() {
+                auth.current = useAuth();
+                return null;
+            }
+
+            await act(async () => {
+                create(
+                    <StrictMode>
+                        <PolliProvider appKey="pk_test" storage={storage}>
+                            <GrabAuth />
+                        </PolliProvider>
+                    </StrictMode>,
+                );
+                await new Promise((resolve) => setTimeout(resolve, 0));
+            });
+
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+            const [, request] = fetchMock.mock.calls[0];
+            const form = new URLSearchParams(String(request?.body));
+            expect(form.get("grant_type")).toBe("authorization_code");
+            expect(form.get("code")).toBe("single-use");
+            expect(form.get("client_id")).toBe("pk_test");
+            expect(form.get("redirect_uri")).toBe("https://app.example/");
+            expect(form.get("code_verifier")).toBe("v".repeat(64));
+            expect(storage.snapshot()).toEqual(
+                storageFull ? {} : { "polli:pk_test:token": "sk_delegated" },
+            );
+            expect(
+                (win.history as { replaceState: ReturnType<typeof vi.fn> })
+                    .replaceState,
+            ).toHaveBeenCalledWith({}, "", "/?view=models#/details");
+            expect(auth.current?.apiKey).toBe("sk_delegated");
+            expect(auth.current?.isLoggedIn).toBe(true);
+            expect(auth.current?.isHydrated).toBe(true);
+            expect(auth.current?.error?.message ?? null).toBe(
+                storageFull ? "Storage full" : null,
+            );
+        },
+    );
 
     it.each([
         ["?code=code&state=wrong", "verifier", "Invalid OAuth state"],
         ["?code=code&state=expected", null, "Missing PKCE verifier"],
         ["?error=access_denied&state=expected", "verifier", "access_denied"],
         ["?code=code&state=expected", "verifier", "Code expired"],
-    ])("keeps the saved key when a re-login fails: %s", async (query, verifier, expected) => {
-        stubWindow(`https://app.example/${query}`);
-        vi.spyOn(console, "warn").mockImplementation(() => {});
-        const storage = memoryStorage({
-            "polli:pk_test:token": "sk_stored",
-            "polli:pk_test:oauth_state": "expected",
-            ...(verifier ? { "polli:pk_test:oauth_verifier": verifier } : {}),
-        });
-        const fetchMock = vi.fn<typeof fetch>(async () =>
-            Response.json(
-                { error: "invalid_grant", error_description: "Code expired" },
-                { status: 400 },
-            ),
-        );
-        vi.stubGlobal("fetch", fetchMock);
-        const auth: { current: ReturnType<typeof useAuth> | null } = {
-            current: null,
-        };
-        function GrabAuth() {
-            auth.current = useAuth();
-            return null;
-        }
-        await act(async () => {
-            create(
-                <PolliProvider appKey="pk_test" storage={storage}>
-                    <GrabAuth />
-                </PolliProvider>,
+    ])(
+        "keeps the saved key when a re-login fails: %s",
+        async (query, verifier, expected) => {
+            stubWindow(`https://app.example/${query}`);
+            vi.spyOn(console, "warn").mockImplementation(() => {});
+            const storage = memoryStorage({
+                "polli:pk_test:token": "sk_stored",
+                "polli:pk_test:oauth_state": "expected",
+                ...(verifier
+                    ? { "polli:pk_test:oauth_verifier": verifier }
+                    : {}),
+            });
+            const fetchMock = vi.fn<typeof fetch>(async () =>
+                Response.json(
+                    {
+                        error: "invalid_grant",
+                        error_description: "Code expired",
+                    },
+                    { status: 400 },
+                ),
             );
-            await new Promise((resolve) => setTimeout(resolve, 0));
-        });
-        expect(auth.current?.error?.message).toBe(expected);
-        expect(auth.current?.apiKey).toBe("sk_stored");
-        expect(auth.current?.isHydrated).toBe(true);
-        expect(fetchMock).toHaveBeenCalledTimes(
-            expected === "Code expired" ? 1 : 0,
-        );
-        expect(storage.getItem("polli:pk_test:token")).toBe("sk_stored");
-    });
-
-    it.each([
-        null,
-        "sk_stored",
-    ])("restores the saved key (%s) without a network request", async (savedKey) => {
-        stubWindow("https://app.example/");
-        const storage = memoryStorage(
-            savedKey ? { "polli:pk_test:token": savedKey } : {},
-        );
-        const fetchMock = vi.fn().mockRejectedValue(new TypeError("Offline"));
-        vi.stubGlobal("fetch", fetchMock);
-        const auth: { current: ReturnType<typeof useAuth> | null } = {
-            current: null,
-        };
-        function Probe() {
-            auth.current = useAuth();
-            return null;
-        }
-        await act(async () => {
-            create(
-                <StrictMode>
+            vi.stubGlobal("fetch", fetchMock);
+            const auth: { current: ReturnType<typeof useAuth> | null } = {
+                current: null,
+            };
+            function GrabAuth() {
+                auth.current = useAuth();
+                return null;
+            }
+            await act(async () => {
+                create(
                     <PolliProvider appKey="pk_test" storage={storage}>
-                        <Probe />
-                    </PolliProvider>
-                </StrictMode>,
+                        <GrabAuth />
+                    </PolliProvider>,
+                );
+                await new Promise((resolve) => setTimeout(resolve, 0));
+            });
+            expect(auth.current?.error?.message).toBe(expected);
+            expect(auth.current?.apiKey).toBe("sk_stored");
+            expect(auth.current?.isHydrated).toBe(true);
+            expect(fetchMock).toHaveBeenCalledTimes(
+                expected === "Code expired" ? 1 : 0,
             );
-        });
-        expect(auth.current?.isHydrated).toBe(true);
-        expect(auth.current?.apiKey).toBe(savedKey);
-        expect(auth.current?.isLoggedIn).toBe(!!savedKey);
-        expect(auth.current?.error).toBeNull();
-        expect(storage.getItem("polli:pk_test:token")).toBe(savedKey);
-        expect(fetchMock).not.toHaveBeenCalled();
-    });
+            expect(storage.getItem("polli:pk_test:token")).toBe("sk_stored");
+        },
+    );
+
+    it.each([null, "sk_stored"])(
+        "restores the saved key (%s) without a network request",
+        async (savedKey) => {
+            stubWindow("https://app.example/");
+            const storage = memoryStorage(
+                savedKey ? { "polli:pk_test:token": savedKey } : {},
+            );
+            const fetchMock = vi
+                .fn()
+                .mockRejectedValue(new TypeError("Offline"));
+            vi.stubGlobal("fetch", fetchMock);
+            const auth: { current: ReturnType<typeof useAuth> | null } = {
+                current: null,
+            };
+            function Probe() {
+                auth.current = useAuth();
+                return null;
+            }
+            await act(async () => {
+                create(
+                    <StrictMode>
+                        <PolliProvider appKey="pk_test" storage={storage}>
+                            <Probe />
+                        </PolliProvider>
+                    </StrictMode>,
+                );
+            });
+            expect(auth.current?.isHydrated).toBe(true);
+            expect(auth.current?.apiKey).toBe(savedKey);
+            expect(auth.current?.isLoggedIn).toBe(!!savedKey);
+            expect(auth.current?.error).toBeNull();
+            expect(storage.getItem("polli:pk_test:token")).toBe(savedKey);
+            expect(fetchMock).not.toHaveBeenCalled();
+        },
+    );
 
     it("persists keys set by the host app", async () => {
         stubWindow("https://app.example/");

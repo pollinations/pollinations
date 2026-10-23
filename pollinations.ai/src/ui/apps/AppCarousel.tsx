@@ -1,4 +1,4 @@
-import { ArrowRightIcon, IconButton, ScrollArea } from "@pollinations/ui";
+import { ArrowRightIcon, Button, ScrollArea } from "@pollinations/ui";
 import { useEffect, useRef, useState } from "react";
 import { appIdentity, type DirectoryApp } from "../../data/publicStats";
 import { AppTile, SpotlightTile } from "./cards";
@@ -54,23 +54,23 @@ export function SpotlightCarousel({ apps }: { apps: DirectoryApp[] }) {
                 direction={direction === -1 ? "back" : "forward"}
                 action={
                     apps.length > 1 ? (
-                        <div className="flex items-center gap-1.5">
-                            <IconButton
-                                size="sm"
+                        <div className="flex items-center gap-2">
+                            <Button
+                                size="icon"
+                                intent="neutral"
                                 aria-label="Previous featured app"
                                 onClick={() => move(-1)}
-                                className="bg-theme-bg-subtle text-theme-text-strong shadow-none"
                             >
-                                <ArrowRightIcon className="size-3.5 rotate-180" />
-                            </IconButton>
-                            <IconButton
-                                size="sm"
+                                <ArrowRightIcon className="size-4 rotate-180" />
+                            </Button>
+                            <Button
+                                size="icon"
+                                intent="neutral"
                                 aria-label="Next featured app"
                                 onClick={() => move(1)}
-                                className="bg-theme-bg-subtle text-theme-text-strong shadow-none"
                             >
-                                <ArrowRightIcon className="size-3.5" />
-                            </IconButton>
+                                <ArrowRightIcon className="size-4" />
+                            </Button>
                         </div>
                     ) : undefined
                 }

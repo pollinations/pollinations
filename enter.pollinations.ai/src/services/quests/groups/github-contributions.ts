@@ -131,6 +131,10 @@ const honeyCensusQuest: QuestDefinition = {
     rewardAmount: 5,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new?template=honey-census.yml`,
+    // Paused on 2026-10-21 after 183 respondents: the form is removed and the
+    // card is off the board; answers already given still pay. To reopen,
+    // restore .github/ISSUE_TEMPLATE/honey-census.yml and delete this line.
+    state: "completed",
 };
 
 // A quest-shaped projection of one POLLEN-QUEST issue, computed from GitHub.
@@ -453,8 +457,6 @@ export async function listQuestCards(
 
 async function reportedIssueProposals(token: string, user: QuestUser) {
     if (!user.githubUsername || user.githubId === null) return [];
-    // The maintainer opted out of reporter rewards; keep other GitHub quests.
-    if (user.githubId === 5099901) return [];
 
     const proposals: QuestEvaluation["proposals"] = [];
     let after: string | null = null;

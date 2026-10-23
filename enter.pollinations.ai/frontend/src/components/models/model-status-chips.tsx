@@ -109,7 +109,7 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
 }) => {
     if (!showNew && !showAlpha && !health) return null;
 
-    const alphaTooltipLabel = "Alpha model — experimental, may be unstable";
+    const alphaTooltipLabel = "Alpha model. Experimental and may be unstable.";
 
     return (
         <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5">
@@ -132,8 +132,8 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
                             <span>
                                 <strong className="font-semibold text-theme-text-strong">
                                     Alpha model
-                                </strong>{" "}
-                                — experimental, may be unstable
+                                </strong>
+                                . Experimental and may be unstable.
                             </span>
                         }
                         ariaLabel={alphaTooltipLabel}

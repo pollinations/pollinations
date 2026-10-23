@@ -1,8 +1,10 @@
-import { createReadStream, existsSync, statSync } from "node:fs";
+import { createReadStream, statSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
 import { Command } from "commander";
 import { requireKey } from "../lib/api.js";
 import { MEDIA_URL } from "../lib/config.js";
+import { requireFile } from "../lib/input-file.js";
 import { mimeTypeFor } from "../lib/mime.js";
 import { fail, getOutputMode, printMeta } from "../lib/output.js";
 
@@ -44,22 +46,23 @@ export const uploadCommand = new Command("upload")
         const key = requireKey();
         const isHuman = getOutputMode() === "human";
 
-        if (!existsSync(file)) {
-            fail(`File not found: ${file}`);
-        }
-
+        const size = requireFile(file);
         const mime = mimeTypeFor(file);
-        const size = statSync(file).size;
+        const body = statSync(file).isFile()
+            ? createReadStream(file)
+            : await readFile(file);
 
         const uploadRequest: RequestInit & { duplex: "half" } = {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${key}`,
                 "Content-Type": mime,
-                "Content-Length": String(size),
+                "Content-Length": String(
+                    Buffer.isBuffer(body) ? body.byteLength : size,
+                ),
                 ...fileNameHeaders(basename(file)),
             },
-            body: createReadStream(file) as unknown as BodyInit,
+            body: body as unknown as BodyInit,
             duplex: "half",
         };
         const res = await fetch(`${MEDIA_URL}/upload`, uploadRequest);

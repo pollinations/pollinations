@@ -1,4 +1,8 @@
 import { env } from "cloudflare:test";
+import {
+    getModels,
+    getRegistryModelDefinition,
+} from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CommunityModelEnv } from "../src/community-models.ts";
 import {
@@ -44,6 +48,29 @@ function skewedDbBinding(): CloudflareBindings["DB"] {
 }
 
 describe("getGenerationModelRegistry", () => {
+    it("requires paid Pollen outside Azure and Fireworks except the approved exceptions", () => {
+        const exceptions = new Set([
+            "tongyi-mai/z-image-turbo",
+            "black-forest-labs/flux.1-schnell",
+            "black-forest-labs/flux.2-klein-4b",
+            "qwen/qwen3guard-gen-8b",
+            "openai/gpt-oss-20b",
+            "respan/span-01-lite",
+            "openai/whisper-large-v3",
+            "lykon/dreamshaper-8-lcm",
+        ]);
+        const questModels = [];
+        for (const id of getModels()) {
+            const definition = getRegistryModelDefinition(id);
+            // Access follows the requested public model, including its internal fallbacks.
+            if (definition.fallbackOnly) continue;
+            if (["azure", "fireworks"].includes(definition.provider)) continue;
+            expect(definition.paidOnly, id).toBe(!exceptions.has(id));
+            if (!definition.paidOnly) questModels.push(id);
+        }
+        expect(new Set(questModels)).toEqual(exceptions);
+    });
+
     it("declares unique Chat controls for every configured route", async () => {
         const registry = await getGenerationModelRegistry(env);
         for (const model of availableModels) {
@@ -133,6 +160,36 @@ describe("getGenerationModelRegistry", () => {
         );
         expect(native.length).toBeGreaterThan(0);
         expect(native.length).toBeLessThan(chat.length);
+    });
+
+    it("advertises image edits only on models that accept image input", async () => {
+        const registry = await getGenerationModelRegistry(env);
+
+        // Text-only models cannot consume a source image, so the endpoint must
+        // not be listed where clients look up capabilities.
+        for (const id of [
+            "black-forest-labs/flux.1-schnell",
+            "tongyi-mai/z-image-turbo",
+        ]) {
+            const entry = registry.resolve(id);
+            expect(entry?.supportedEndpoints, id).not.toContain(
+                "/v1/images/edits",
+            );
+            expect(entry?.info.supported_endpoints, id).not.toContain(
+                "/v1/images/edits",
+            );
+        }
+        expect(
+            registry.resolve("black-forest-labs/flux.1-kontext-pro")
+                ?.supportedEndpoints,
+        ).toContain("/v1/images/edits");
+
+        for (const entry of registry.visibleEntries()) {
+            if (entry.definition.inputModalities?.includes("image")) continue;
+            expect(entry.supportedEndpoints, entry.id).not.toContain(
+                "/v1/images/edits",
+            );
+        }
     });
 
     it("serves the community catalog from KV without querying D1", async () => {

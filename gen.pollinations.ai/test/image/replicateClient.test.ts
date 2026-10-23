@@ -181,6 +181,10 @@ describe("runReplicatePrediction", () => {
 
     it.each([
         [
+            "invalid Seedance input (E006)",
+            "ModelError: The input was invalid. (E006)",
+        ],
+        [
             "content filter rejection (E005)",
             "ModelError: The input or output was flagged as sensitive. Please try again with different inputs. (E005)",
         ],
@@ -215,13 +219,16 @@ describe("runReplicatePrediction", () => {
         });
     });
 
-    it("classifies provider capacity errors (E003) as 503", async () => {
+    it.each([
+        "ModelError: Service is currently unavailable due to high demand. Please try again later. (E003)",
+        "ModelError: Service is temporarily unavailable. (E004)",
+    ])("classifies provider capacity errors as 503: %s", async (message) => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(
                 JSON.stringify({
                     id: "pred_capacity",
                     status: "failed",
-                    error: "ModelError: Service is currently unavailable due to high demand. Please try again later. (E003) (1cah9wlWR9)",
+                    error: message,
                 }),
                 { status: 201 },
             ),
@@ -235,31 +242,31 @@ describe("runReplicatePrediction", () => {
         });
     });
 
-    it.each([
-        "aborted",
-        "canceled",
-    ] as const)("classifies deadline terminal status %s as 504", async (status) => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response(
-                JSON.stringify({
-                    id: `pred_${status}`,
-                    status,
-                    error: `Prediction ${status}`,
-                }),
-                { status: 201 },
-            ),
-        );
+    it.each(["aborted", "canceled"] as const)(
+        "classifies deadline terminal status %s as 504",
+        async (status) => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                new Response(
+                    JSON.stringify({
+                        id: `pred_${status}`,
+                        status,
+                        error: `Prediction ${status}`,
+                    }),
+                    { status: 201 },
+                ),
+            );
 
-        await expect(
-            runReplicatePrediction({
-                model: MODEL,
-                input: { prompt: "x" },
-            }),
-        ).rejects.toMatchObject({
-            name: "ReplicateError",
-            status: 504,
-        });
-    });
+            await expect(
+                runReplicatePrediction({
+                    model: MODEL,
+                    input: { prompt: "x" },
+                }),
+            ).rejects.toMatchObject({
+                name: "ReplicateError",
+                status: 504,
+            });
+        },
+    );
 
     it("classifies deadline failure messages as 504", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(

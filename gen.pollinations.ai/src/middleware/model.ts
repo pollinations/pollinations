@@ -5,6 +5,7 @@ import {
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { keyAllowsModel } from "@shared/registry/model-permissions.ts";
 import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
@@ -277,17 +278,13 @@ export function resolveModel(
             c.var.auth?.user?.id,
             options?.supportedEndpoint,
         );
-        // Fallback-only entries are provider implementations of the public
-        // model the caller selected, so they inherit that model's permission.
-        // Visible and community targets remain independently scoped: a key can
-        // never be served — or billed for — a model it could not call directly.
-        const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-        if (allowedModels && resolved.fallbackEntries) {
+        // Caller-selected alternatives need their own permission. Declared
+        // provider routes retain the public model's existing permission.
+        if (model.includes(",") && resolved.fallbackEntries) {
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             resolved.fallbackEntries = resolved.fallbackEntries.filter(
                 (entry) =>
-                    (entry.definition.fallbackOnly === true &&
-                        !entry.communityEndpoint) ||
-                    allowedModels.includes(entry.id),
+                    keyAllowsModel(allowedModels, entry.id, entry.definition),
             );
         }
         c.set("model", resolved);

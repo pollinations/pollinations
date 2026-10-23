@@ -15,6 +15,8 @@ const REQUIRED_SECRET_KEYS = [
     "AZURE_MYCELI_PROD_IMG_15_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY",
     "AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_25_FLARE_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_25_SUNBURST_SWEDEN_API_KEY",
     "AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY",
     "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY",
@@ -45,14 +47,21 @@ const REQUIRED_SECRET_KEYS = [
     "PLN_GPU_TOKEN",
     "PORTKEY_GATEWAY_URL",
     "REPLICATE_API_TOKEN",
+    "STABILITY_API_KEY",
     "TINYBIRD_INGEST_TOKEN",
     "XAI_API_KEY",
 ];
 
 const OPTIONAL_SECRET_KEYS = [
+    "ANTHROPIC_API_KEY",
+    "NOVITA_API_KEY",
     "AIRFORCE_API_KEY",
     "AI_GATEWAY_API_KEY",
     "ASSEMBLYAI_API_KEY",
+    "AZURE_SANDBOX_CLIENT_SECRET",
+    "E2B_API_KEY",
+    "GEMINI_API_KEY",
+    "WEFT_SELLER_API_KEY",
 ];
 
 const [sourcePath, environment] = process.argv.slice(2);
@@ -120,7 +129,6 @@ try {
     execFileSync(
         process.execPath,
         [
-            // Match deploy scripts; the test pool's workspace-local CLI is older.
             fileURLToPath(
                 new URL(
                     "../../node_modules/wrangler/bin/wrangler.js",

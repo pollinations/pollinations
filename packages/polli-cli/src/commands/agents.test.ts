@@ -5,6 +5,12 @@ import { describe, expect, it } from "vitest";
 import { agentBody, agentsCommand } from "./agents.js";
 
 describe("agentBody", () => {
+    it("sends only listing fields when update has no config", () => {
+        expect(agentBody(undefined, { title: "Renamed" })).toEqual({
+            title: "Renamed",
+        });
+    });
+
     it("combines prompt config with listing fields", () => {
         const directory = mkdtempSync(join(tmpdir(), "polli-agent-"));
         const config = join(directory, "agent.json");

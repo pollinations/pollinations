@@ -17,6 +17,8 @@ paid from the signed-in user's own wallet.
 | File | Role |
 |------|------|
 | `worker.js` | Container class with every Open WebUI setting as env vars, plus a keepalive cron |
+| `ui-defaults.js` | Pinned models, prompt suggestions and banner new users see first |
+| `scripts/apply-ui-defaults.mjs` | Write those defaults into an existing database through the admin API |
 | `wrangler.jsonc` | Container (pre-built image), custom domains, staging env |
 | `scripts/push-image.sh` | Mirror the upstream image into the Cloudflare registry |
 | `scripts/push-secrets.mjs` | Push `secrets/secrets.vars.json` (sops) to the Worker |
@@ -79,6 +81,33 @@ ssh community-monitor "sudo docker exec openwebui-postgres \
   \"select key, value::text from config where key = 'tool_server.connections';\""
 ```
 
+## What a new user sees
+
+The catalog behind the connection has 300+ entries, media and community models
+included, so the defaults in [`ui-defaults.js`](ui-defaults.js) shape the first
+minute:
+
+- Four everyday models that need no paid balance are pinned for users who have
+  not pinned any, and new chats open on `openai/gpt-5.4-nano`. The rest of the
+  picker keeps the order gen serves it in.
+- Four prompt suggestions replace the upstream ones.
+- A dismissible banner links directly to the user's balance and top-up pages.
+- No "share to Open WebUI Community" button (it uploads chats to openwebui.com)
+  and no arena models.
+
+Edit `ui-defaults.js` to change them. `worker.js` seeds them as env vars, which
+Open WebUI reads only while the setting is missing (see above), so a database
+that has already booted keeps the old values. Apply them with the admin API
+instead; an admin key or JWT is needed, and the script reads each form before
+changing it so `DEFAULT_MODEL_METADATA` (builtin tools off) is not reset:
+
+```bash
+OWUI_URL=https://openwebui.pollinations.ai OWUI_ENTER_URL=https://enter.pollinations.ai OWUI_TOKEN=<admin key> node scripts/apply-ui-defaults.mjs
+```
+
+No restart is needed; users see the change on their next page load. A user's
+own pins and settings are not overwritten.
+
 ## Restarting the container
 
 `envVars` on the Container class are applied when the container *starts*, and a
@@ -138,6 +167,16 @@ npm run deploy && npm run push-secrets   # production; CI does this on `producti
 ```
 
 Production deploys run through `.github/workflows/deploy-applications.yml`.
+
+## Placement
+
+The container is constrained to `ENAM` (`containers[].constraints.regions` in
+`wrangler.jsonc`) because Postgres is in AWS us-east-1. Unconstrained, Cloudflare
+starts the container nearest to whichever request woke it (it ran in Riga), and
+every DB session then costs ~3 transatlantic round trips (~0.45 s), which made
+each page load ~20 s. A deploy that changes the constraint rolls the single
+instance to the new region: expect ~5 min of 500/503 while the 1.5 GB image
+cold-starts. Verified on staging 2026-09-16: `/health/db` 0.9 s → 0.3 s.
 
 ## Login requirements on the Pollinations side
 

@@ -4,6 +4,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { describe, expect, it } from "vitest";
 import {
     MCP_USAGE_HEADERS,
+    MCP_USER_GITHUB_HEADER,
     MCP_USER_ID_HEADER,
 } from "../../../shared/registry/mcp.ts";
 
@@ -11,11 +12,12 @@ const MCP_URL = "https://mcp.internal/";
 
 let lastResponse: Response | undefined;
 
-async function connect(userId: string): Promise<Client> {
+async function connect(userId: string, github?: string): Promise<Client> {
     const transport = new StreamableHTTPClientTransport(new URL(MCP_URL), {
         fetch: async (input, init) => {
             const headers = new Headers(init?.headers);
             headers.set(MCP_USER_ID_HEADER, userId);
+            if (github) headers.set(MCP_USER_GITHUB_HEADER, github);
             lastResponse = await SELF.fetch(input, { ...init, headers });
             return lastResponse;
         },
@@ -25,16 +27,21 @@ async function connect(userId: string): Promise<Client> {
     return client;
 }
 
-async function bash(
+function bash(
     client: Client,
     command: string,
     stdin?: string,
     cwd?: string,
 ): Promise<{ text: string; isError: boolean }> {
-    const result = await client.callTool({
-        name: "bash",
-        arguments: { command, stdin, cwd },
-    });
+    return callTool(client, "bash", { command, stdin, cwd });
+}
+
+async function callTool(
+    client: Client,
+    name: string,
+    args: Record<string, unknown>,
+): Promise<{ text: string; isError: boolean }> {
+    const result = await client.callTool({ name, arguments: args });
     const content = result.content as { type: string; text?: string }[];
     const text = content
         .filter((part) => part.type === "text")
@@ -59,10 +66,10 @@ describe("computer MCP worker", () => {
         expect(response.status).toBe(401);
     });
 
-    it("exposes a single bash tool", async () => {
+    it("exposes bash and javascript tools", async () => {
         const client = await connect("user-tools");
         const { tools } = await client.listTools();
-        expect(tools.map((tool) => tool.name)).toEqual(["bash"]);
+        expect(tools.map((tool) => tool.name)).toEqual(["bash", "javascript"]);
         expect(lastResponse?.headers.has(MCP_USAGE_HEADERS.cost)).toBe(false);
         await client.close();
     });
@@ -112,6 +119,102 @@ describe("computer MCP worker", () => {
         await again.close();
     });
 
+    it("stores UTF-8 and binary bytes unchanged on every write path", async () => {
+        const client = await connect("user-bytes");
+        const line = "Notes — café · ✓"; // 22 bytes, 23 with the newline
+        const writes = [
+            ["cat > stdin.txt", `${line}\n`],
+            [`cat > heredoc.txt <<'EOF'\n${line}\nEOF`],
+            [`printf '%s\\n' '${line}' > printf.txt`],
+            ["cat stdin.txt | tee tee.txt > /dev/null"],
+            ["cat < heredoc.txt > redirect.txt"],
+            [
+                `printf 'Notes — ' > append.txt; printf 'café · ✓\\n' >> append.txt`,
+            ],
+            ["echo iVBORw0KGgoA/w== | base64 -d > image.bin"],
+        ];
+        for (const [command, stdin] of writes) {
+            const write = await bash(
+                client,
+                command,
+                stdin,
+                "/workspace/bytes",
+            );
+            expect(write.isError, command).toBe(false);
+        }
+        const sizes = await bash(
+            client,
+            "for f in stdin heredoc printf tee redirect append; do wc -c < $f.txt; done; wc -c < image.bin; base64 image.bin; cat heredoc.txt",
+            undefined,
+            "/workspace/bytes",
+        );
+        expect(sizes.text.split("\n").map((part) => part.trim())).toEqual([
+            ...Array(6).fill("23"),
+            "10",
+            "iVBORw0KGgoA/w==",
+            line,
+            "",
+        ]);
+        // git reads the stored bytes directly, as a push to GitHub would.
+        const git = await bash(
+            client,
+            "git init . >/dev/null && git add . && git commit -m bytes >/dev/null && git show HEAD:heredoc.txt | wc -c",
+            undefined,
+            "/workspace/bytes",
+        );
+        expect(git.text.trim()).toBe("23");
+        await client.close();
+    });
+
+    it("reads UTF-8 lines into variables unchanged", async () => {
+        const client = await connect("user-read");
+        const line = "Notes — café · ✓"; // 22 bytes, 23 with the newline
+        const reads = await bash(
+            client,
+            [
+                'read -r a; echo "$a" | wc -c',
+                `printf '%s\\n' '${line}' | { read -r b; echo "$b" | wc -c; }`,
+                `read -r c <<< '${line}'; echo "$c" | wc -c`,
+                `printf '%s\\n' '${line}' | { mapfile -t d; echo "\${d[0]}" | wc -c; }`,
+            ].join("\n"),
+            `${line}\n`,
+        );
+        expect(reads.text.split("\n").map((part) => part.trim())).toEqual([
+            ...Array(4).fill("23"),
+            "",
+        ]);
+        await client.close();
+    });
+
+    it("keeps UTF-8 intact through command substitution", async () => {
+        const client = await connect("user-substitution");
+        // "Época" is 6 bytes; each line prints the byte count of $x.
+        const count = '; printf "%s" "$x" | wc -c';
+        const result = await bash(
+            client,
+            [
+                `printf '{"t":"\\\\u00c9poca"}' > e.json`,
+                `x=$(printf '\\303\\211poca')${count}`,
+                `x=$(jq -r .t e.json)${count}`,
+                `x=$(jq -r .t e.json | cat)${count}`,
+                `x=$(base64 -d <<< w4lwb2Nh)${count}`,
+                `f() { printf 'Época'; }; x=$(f)${count}`,
+                `x=$(printf 'Época'; exit 3); echo "$?"`,
+                'echo "A $(jq -r .t e.json)" | jq -R .',
+            ].join("\n"),
+            undefined,
+            "/workspace/substitution",
+        );
+        expect(result.isError, result.text).toBe(false);
+        expect(result.text.split("\n").map((part) => part.trim())).toEqual([
+            ...Array(5).fill("6"),
+            "3",
+            '"A Época"',
+            "",
+        ]);
+        await client.close();
+    });
+
     it("empties /tmp after every call", async () => {
         const client = await connect("user-tmp");
         const write = await bash(
@@ -131,6 +234,48 @@ describe("computer MCP worker", () => {
         expect(result.isError).toBe(true);
         expect(result.text).toContain("[stderr]");
         expect(result.text).toContain("[exit code 1]");
+        await client.close();
+    });
+
+    it("runs JavaScript modules against the same files", async () => {
+        const client = await connect("user-javascript");
+        await bash(
+            client,
+            "cat > /workspace/js/lib.js",
+            "export const double = (n) => n * 2;\n",
+            "/workspace/js",
+        );
+        const run = await callTool(client, "javascript", {
+            cwd: "/workspace/js",
+            code: `
+                import fs from "node:fs/promises";
+                import { double } from "./lib.js";
+                export default async () => {
+                    console.log("hello");
+                    await fs.writeFile("/workspace/js/out.txt", String(double(21)));
+                    await fs.writeFile("/tmp/scratch.txt", "tmp");
+                    const scratch = await fs.readFile("/tmp/scratch.txt", "utf8");
+                    const page = await fetch("https://example.com/");
+                    return { doubled: double(21), scratch, status: page.status };
+                };
+            `,
+        });
+        expect(run.isError).toBe(false);
+        expect(run.text).toBe(
+            'hello\n\n[result]\n{"doubled":42,"scratch":"tmp","status":200}',
+        );
+        const read = await bash(client, "cat /workspace/js/out.txt");
+        expect(read.text).toBe("42");
+        await client.close();
+    });
+
+    it("reports thrown JavaScript errors", async () => {
+        const client = await connect("user-javascript-errors");
+        const run = await callTool(client, "javascript", {
+            code: 'export default () => { throw new Error("boom"); };',
+        });
+        expect(run.isError).toBe(true);
+        expect(run.text).toContain("boom");
         await client.close();
     });
 
@@ -210,6 +355,44 @@ describe("computer MCP worker", () => {
         await client.close();
     });
 
+    it("converts CSV and HTML and identifies files", async () => {
+        const client = await connect("user-data-commands");
+        const result = await bash(
+            client,
+            [
+                "printf 'a,b\\n1,2\\n' | xan select b",
+                "printf '<h1>Title</h1>' | html-to-markdown",
+                "printf '%s' '{}' > /workspace/x.json && file /workspace/x.json",
+            ].join(" && "),
+        );
+        expect(result.isError).toBe(false);
+        expect(result.text).toContain("b\n2");
+        expect(result.text).toContain("# Title");
+        expect(result.text).toContain("x.json:");
+        await client.close();
+    });
+
+    it("sends a User-Agent with curl unless one is given", async () => {
+        const client = await connect("user-curl-agent");
+        const result = await bash(
+            client,
+            "curl -sS https://postman-echo.com/headers | jq -r '.headers[\"user-agent\"]'; curl -sS -A custom/1 https://postman-echo.com/headers | jq -r '.headers[\"user-agent\"]'",
+        );
+        expect(result.text.trim().split("\n")).toEqual([
+            "pollinations-computer (+https://pollinations.ai)",
+            "custom/1",
+        ]);
+        await client.close();
+    });
+
+    it("tells clients about collective memory", async () => {
+        const client = await connect("user-instructions");
+        expect(client.getInstructions()).toContain(
+            "https://github.com/pollinations/collective-memory",
+        );
+        await client.close();
+    });
+
     it("runs pipelines, jq and git", async () => {
         const client = await connect("user-shell");
         const result = await bash(
@@ -229,6 +412,50 @@ describe("computer MCP worker", () => {
             "",
         ]);
         expect(result.isError).toBe(false);
+        await client.close();
+    });
+
+    it("authors commits as the caller's GitHub account unless configured", async () => {
+        const client = await connect("user-github", "583231+octocat");
+        const result = await bash(
+            client,
+            [
+                "echo 1 > a.txt && git init . >/dev/null && git add a.txt && git commit -m one >/dev/null",
+                "git config user.name Me && git config user.email me@example.com",
+                "echo 2 > a.txt && git add a.txt && git commit -m two >/dev/null",
+                "git log | grep Author",
+            ].join(" && "),
+            undefined,
+            "/workspace",
+        );
+        expect(result.text.trim().split("\n")).toEqual([
+            "Author: Me <me@example.com>",
+            "Author: octocat <583231+octocat@users.noreply.github.com>",
+        ]);
+        await client.close();
+    });
+
+    it("supports mv, rebase, ranges and log formats", async () => {
+        const client = await connect("user-git-more");
+        const result = await bash(
+            client,
+            [
+                "echo 1 > a.txt && git init -b main . >/dev/null && git add a.txt && git commit -m one >/dev/null",
+                "git switch -c topic >/dev/null 2>&1 && git mv a.txt b.txt && git commit -m move >/dev/null",
+                "git switch main >/dev/null 2>&1 && echo 2 > c.txt && git add c.txt && git commit -m two >/dev/null",
+                "git switch topic >/dev/null 2>&1 && git rebase main >/dev/null 2>&1",
+                "git log --format=%s main..topic",
+                "ls",
+            ].join(" && "),
+            undefined,
+            "/workspace/rebase",
+        );
+        expect(result.isError).toBe(false);
+        expect(result.text.trim().split("\n")).toEqual([
+            "move",
+            "b.txt",
+            "c.txt",
+        ]);
         await client.close();
     });
 });

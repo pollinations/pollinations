@@ -34,6 +34,8 @@ const MODERATION_PATTERNS = [
     "nsfw", // Replicate Qwen Image Edit "... contained NSFW content ..."
     "content_safety_violation", // Azure MAI image 400 body "code":"content_safety_violation"
     "prohibited_content", // Gemini/OpenRouter text rejection
+    "i can't help with that request.", // xAI explicit refusal, not generic permission-denied
+    "output audio may be related to copyright restrictions", // Seedance
 ];
 
 // Provider-side blocks that quote content-policy wording but are NOT about this

@@ -14,7 +14,7 @@ import type { RequestData, TransformOptions } from "./types.js";
  *
  * Agent-style endpoints call back into the generation API on the caller's
  * behalf, so they need spend authority — but never the caller's own key. They
- * get a run token: short-lived, no account scope, billed to the caller's key.
+ * get a run token: short-lived, with the caller key's permissions, billed to it.
  *
  * It replaces the endpoint's saved bearer rather than riding alongside it, so a
  * delegating endpoint stays a plain OpenAI-compatible server with no
@@ -63,6 +63,7 @@ async function mintDelegatedToken({
             endpoint.type === "prompt_agent" || endpoint.type === "code_agent"
                 ? endpoint.id
                 : undefined,
+        agentModelId: endpoint.modelId,
     });
 }
 
@@ -85,11 +86,7 @@ export async function communityEndpointGatewayContext({
     parentRequestId: string;
     parentApiKeyId?: string;
 }): Promise<TransformOptions> {
-    const {
-        messages: _messages,
-        agent_model: requestedAgentModel,
-        ...requestDataWithoutMessages
-    } = requestData;
+    const { messages: _messages, ...requestDataWithoutMessages } = requestData;
     const modelConfig = await communityEndpointModelConfig({
         endpoint,
         secret,
@@ -98,10 +95,7 @@ export async function communityEndpointGatewayContext({
     });
     return {
         ...requestDataWithoutMessages,
-        modelConfig:
-            endpoint.type === "endpoint_agent" && requestedAgentModel
-                ? { ...modelConfig, model: requestedAgentModel }
-                : modelConfig,
+        modelConfig,
         modelDef: modelDefinition,
         requestedModel: endpoint.modelId,
         portkeyGatewayUrl,

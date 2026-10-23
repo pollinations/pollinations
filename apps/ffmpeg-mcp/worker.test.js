@@ -5,6 +5,7 @@ import {
     StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
 import { MCP_USAGE_HEADERS } from "../../shared/registry/mcp.ts";
+import { runFfmpeg } from "./container-runtime.js";
 import { createWorker } from "./worker.js";
 
 const SOURCE = "https://media.pollinations.ai/source";
@@ -112,12 +113,53 @@ async function connect(worker, env, calls) {
     return client;
 }
 
+test("runs FFmpeg from the directory containing downloaded inputs", async () => {
+    const execCalls = [];
+    const runtime = {
+        running: true,
+        async exec(command, options = {}) {
+            execCalls.push({ command, options });
+            if (command[0] === "tee") {
+                return {
+                    exitCode: Promise.resolve(0),
+                    stderr: new Blob([]).stream(),
+                };
+            }
+            if (command[0] === "ffmpeg") {
+                return {
+                    exitCode: Promise.resolve(1),
+                    stderr: new Blob(["test failure"]).stream(),
+                    kill() {},
+                };
+            }
+            assert.fail(`Unexpected command: ${command.join(" ")}`);
+        },
+    };
+
+    await runFfmpeg(
+        runtime,
+        () => undefined,
+        [new Blob([new Uint8Array([1, 2, 3])]).stream()],
+        ["-i", "input0"],
+        "mp4",
+        Date.now() + 1_000,
+    );
+
+    assert.equal(execCalls[1].command[0], "ffmpeg");
+    assert.equal(execCalls[1].options.cwd, "/work");
+});
+
 test("serves stateless MCP without caller credentials", async () => {
     const { calls, env, worker } = createHarness();
     const client = await connect(worker, env, calls);
+    const tools = (await client.listTools()).tools;
     assert.deepEqual(
-        (await client.listTools()).tools.map(({ name }) => name),
+        tools.map(({ name }) => name),
         ["runFfmpeg"],
+    );
+    assert.match(
+        tools[0].inputSchema.properties.args.description,
+        /exact names/,
     );
     assert.equal(
         calls.responses.some((response) =>

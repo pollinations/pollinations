@@ -1,14 +1,17 @@
 #!/bin/bash
+# Sourced by the find-*/check-* scripts. Queries the PRODUCTION Tinybird
+# workspace via observability/scripts/tb-prod.sh (token from SOPS, not .tinyb).
 
-TINYBIRD_CONFIG="$(dirname "${BASH_SOURCE[0]}")/../../../../enter.pollinations.ai/observability/.tinyb"
-TINYBIRD_TOKEN=$(jq -r '.token' "$TINYBIRD_CONFIG" 2>/dev/null)
+TB_PROD="$(dirname "${BASH_SOURCE[0]}")/../../../../enter.pollinations.ai/observability/scripts/tb-prod.sh"
 
-if [ -z "$TINYBIRD_TOKEN" ] || [ "$TINYBIRD_TOKEN" = "null" ]; then
-    echo "Error: Could not read Tinybird token from $TINYBIRD_CONFIG" >&2
-    exit 1
-fi
+validate_positive_integer() {
+    local value="$1" max="$2" label="$3"
+    if [[ ! "$value" =~ ^[1-9][0-9]{0,5}$ ]] || (( value > max )); then
+        echo "Error: $label must be an integer from 1 to $max" >&2
+        exit 1
+    fi
+}
 
 run_tinybird_query() {
-    curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TINYBIRD_TOKEN" \
-        --data-urlencode "q=$1"
+    "$TB_PROD" "$1"
 }

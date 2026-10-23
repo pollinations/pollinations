@@ -1,4 +1,4 @@
-import { Button } from "@pollinations/ui";
+import { ArrowLeftIcon, Button } from "@pollinations/ui";
 import type { FC } from "react";
 
 /** An absolute http(s) URL, else null. Used for the `redirect` search param. */
@@ -33,8 +33,8 @@ export function referrerAppUrl(): string | null {
  * The URL to store as `redirect` on first load, or null to keep what we
  * have. The link usually carries the app's origin from the key's metadata;
  * the referrer wins when it is on that same origin, because it can name the
- * exact chat the user left. A referrer from elsewhere never overrides an
- * explicit redirect.
+ * exact chat the user left. An origin-only referrer or one from elsewhere
+ * never overrides an explicit redirect.
  */
 export function preferredReturnUrl(
     redirect: string | undefined,
@@ -42,9 +42,9 @@ export function preferredReturnUrl(
     const referrer = referrerAppUrl();
     if (!referrer || referrer === redirect) return null;
     if (!redirect) return referrer;
-    return new URL(referrer).origin === new URL(redirect).origin
-        ? referrer
-        : null;
+    const url = new URL(referrer);
+    if (url.pathname === "/" && !url.search) return null;
+    return url.origin === new URL(redirect).origin ? referrer : null;
 }
 
 /**
@@ -57,13 +57,19 @@ export const ReturnToApp: FC<{ returnUrl: string | null }> = ({
 }) => {
     if (!returnUrl) return null;
     return (
-        <div className="space-y-3">
-            <Button as="a" href={returnUrl} className="w-full">
+        <div className="w-full space-y-3">
+            <Button
+                as="a"
+                href={returnUrl}
+                intent="neutral"
+                icon={<ArrowLeftIcon />}
+                size="lg"
+                className="w-full"
+            >
                 Back to {new URL(returnUrl).hostname}
             </Button>
-            <p className="text-sm text-theme-text-muted">
-                If the app is still open in another tab, you can close this one
-                instead.
+            <p className="text-center text-xs text-theme-text-muted">
+                You can also close this tab if the app is still open.
             </p>
         </div>
     );

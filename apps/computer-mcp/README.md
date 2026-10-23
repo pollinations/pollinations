@@ -1,21 +1,21 @@
 # Computer MCP
 
 A private, persistent computer for every Pollinations account: a filesystem
-plus a bash shell, exposed as a Streamable HTTP MCP server. Nothing runs while
-idle.
+plus a bash shell and a JavaScript runtime, exposed as a Streamable HTTP MCP
+server. Nothing runs while idle.
 
 Built on [`@cloudflare/computer`](https://github.com/cloudflare/computer)
 (preview). Each user gets one Durable Object whose SQLite holds the
-whole filesystem. The single `bash` tool runs [just-bash](https://github.com/vercel-labs/just-bash)
+whole filesystem. The `bash` tool runs [just-bash](https://github.com/vercel-labs/just-bash)
 in a throwaway Dynamic Worker that talks back to the Durable Object for file
 access. No container, no Linux. The shell has coreutils, grep, sed, awk, jq,
-tar, curl and git; no Node or Python. `curl` uses the Dynamic Worker's own
-`fetch`, so the shell can reach any public URL (egress `direct`); there is no
-host allowlist.
+tar, curl and git; no Node or Python. `curl` requests go through the
+`Egress` entrypoint, which adds a User-Agent, so the shell can reach any public
+URL; there is no host allowlist.
 
-## The tool
+## The tools
 
-One tool, `bash`, with `command`, optional `stdin` (file content for
+`bash` takes `command`, optional `stdin` (file content for
 `cat > path`, passed as-is, no quoting) and optional `cwd`, created if
 missing and defaulting to `/workspace`. The whole tree persists except
 `/tmp`, which is emptied after every call (stdin is fed to the command
@@ -25,13 +25,28 @@ folders in it. Nothing is shared between users. Files come in with `curl -o` (an
 one file to the Pollinations media service (`MEDIA` service binding, the same
 one ffmpeg-mcp uses) and prints its unlisted `https://media.pollinations.ai/…`
 URL (a snapshot with media's 30-day retention, refreshed on reads; the
-command's expiry argument is ignored), or with `git push` to a repository the
-user owns, using a token they provide in the remote URL. The service mints no
-credentials of its own. Every successful call is billed at one flat rate (`computer.tool_call.v1`, reported to gen as a
+command's expiry argument is ignored). Commits default to the caller's GitHub account
+(`id+username@users.noreply.github.com`, forwarded by gen), which a repo's
+`git config user.name/user.email` overrides. Every successful call is billed at one flat rate (`computer.tool_call.v1`, reported to gen as a
 usage receipt); discovery requests and storage are free. Memory is a convention,
 not a tool: a `/workspace/README.md` seeded on first use tells the agent to keep
 current facts in `memory/facts.md` and a dated append-only journal in
 `memory/log/`.
+
+`javascript` takes `code`, an ES module that default-exports a function, and
+optional `cwd`. `WorkerJavaScriptBackend` runs it in a fresh Dynamic Worker
+and prints stdout, stderr and the function's return value as JSON. Code outside
+the function runs in Worker global scope, so console output is lost there and
+I/O throws. `node:fs/promises` reads and writes the same filesystem by absolute
+path, relative imports load modules from `cwd`, and `fetch` goes through the same `Egress`
+gateway as curl. There are no npm packages. Calls are billed like `bash` calls.
+
+## Collective memory
+
+Pushes to the public [`pollinations/collective-memory`](https://github.com/pollinations/collective-memory)
+repository get a GitHub App installation token inside the Durable Object
+(`GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`), so the shell never sees it.
+GitHub rulesets on every branch and tag block force pushes and deletions.
 
 ## How requests reach it
 

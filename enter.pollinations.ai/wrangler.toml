@@ -26,6 +26,9 @@ database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "drizzle"
 
+[[send_email]]
+name = "EMAIL"
+
 [[kv_namespaces]]
 # development-pollinations-enter-kv
 binding = "KV"
@@ -49,8 +52,11 @@ CODE_AGENT_DISPATCH_NAMESPACE = "pollinations-code-agents-development"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
+STRIPE_PUBLISHABLE_KEY = "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUGgUdV2Rl8YPNW25UOy4Oj7I3tMnHqwZmncIu9vSMKa3V00munj0lUE"
 
 [env.local]
+# Same name as `wrangler dev`, so gen's ENTER binding finds `npm run dev` too.
+name = "pollinations-enter"
 
 [[env.local.services]]
 binding = "COMPOSIO_MCP"
@@ -64,6 +70,9 @@ binding = "DB"
 database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "drizzle"
+
+[[env.local.send_email]]
+name = "EMAIL"
 
 [[env.local.kv_namespaces]]
 # development-pollinations-enter-kv
@@ -87,6 +96,7 @@ CODE_AGENT_DISPATCH_NAMESPACE = "pollinations-code-agents-development"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
+STRIPE_PUBLISHABLE_KEY = "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUGgUdV2Rl8YPNW25UOy4Oj7I3tMnHqwZmncIu9vSMKa3V00munj0lUE"
 
 [env.production]
 
@@ -121,12 +131,19 @@ database_name = "production-pollinations-enter-db"
 database_id = "fc771b05-4e24-48bf-980c-d09f21279bd1"
 migrations_dir = "drizzle"
 
+[[env.production.send_email]]
+name = "EMAIL"
+
 [[env.production.kv_namespaces]]
 binding = "KV"
 id = "a621f17ad3e34000971cffa616675c5b"
 
 [env.production.vars]
 ENVIRONMENT = "production"
+X402_HOLDING_USER_ID = "inFByWZoc0Cuwtj3Pau4Ae9d5VBvfxHp"
+WEFT_FACILITATOR_URL = "https://x402.weft.network"
+WEFT_PAY_TO = "0x657d15ea5f5a2877e766137861d7deee1a9422dc"
+WEFT_NETWORK = "eip155:8453"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
@@ -139,10 +156,13 @@ STRIPE_SUCCESS_URL = "https://enter.pollinations.ai"
 BETTER_AUTH_URL = "https://enter.pollinations.ai"
 GEN_BASE_URL = "https://gen.pollinations.ai"
 CODE_AGENT_DISPATCH_NAMESPACE = "pollinations-code-agents-production"
+SITES_DISPATCH_NAMESPACE = "pollinations-hosting"
+SITES_HOST_SUFFIX = ".pollinations.app"
 # Stripe Payment Method Configurations (live)
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TVU4T7rcjS3l7trqtBuve71"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
+STRIPE_PUBLISHABLE_KEY = "pk_live_51SrY3q7rcjS3l7trHGtfzyEb63kpEdfwZJQQifMVcLVS75PHDAbCXMXuem6MyUz89SaF8rXsBopXEOMGz6HVxwAa009lrHccxE"
 [env.staging]
 
 [[env.staging.services]]
@@ -169,6 +189,9 @@ database_name = "staging-pollinations-enter-db"
 database_id = "2cb1cf1a-a18a-4cad-a4bb-be64e3c0e39f"
 migrations_dir = "drizzle"
 
+[[env.staging.send_email]]
+name = "EMAIL"
+
 [[env.staging.kv_namespaces]]
 # staging-pollinations-enter-kv
 binding = "KV"
@@ -176,6 +199,10 @@ id = "ba22195551794751b9792e4e67eb074a"
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
+X402_HOLDING_USER_ID = "x402-staging-holding-20260930"
+WEFT_FACILITATOR_URL = "https://x402.staging.weft.network"
+WEFT_PAY_TO = "0x3b0b371ae3cb08f272b87319684f6518b3b313a0"
+WEFT_NETWORK = "eip155:84532"
 CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
@@ -188,13 +215,16 @@ STRIPE_SUCCESS_URL = "https://staging.enter.pollinations.ai"
 BETTER_AUTH_URL = "https://staging.enter.pollinations.ai"
 GEN_BASE_URL = "https://staging.gen.pollinations.ai"
 CODE_AGENT_DISPATCH_NAMESPACE = "pollinations-code-agents-staging"
+SITES_DISPATCH_NAMESPACE = "pollinations-hosting-staging"
+SITES_HOST_SUFFIX = "--staging.pollinations.app"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
+STRIPE_PUBLISHABLE_KEY = "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUGgUdV2Rl8YPNW25UOy4Oj7I3tMnHqwZmncIu9vSMKa3V00munj0lUE"
 # Staging OAuth lockdown — GitHub IDs are immutable; emails allow one-off
 # team access when the exact GitHub account is unknown. Issue #11137.
 STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015"
-STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai"
+STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai,thomash@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid"
 [env.dev]
 
 [[env.dev.services]]
@@ -211,6 +241,9 @@ binding = "DB"
 database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "drizzle"
+
+[[env.dev.send_email]]
+name = "EMAIL"
 
 [[env.dev.kv_namespaces]]
 # development-pollinations-enter-kv
@@ -237,6 +270,7 @@ CODE_AGENT_DISPATCH_NAMESPACE = "pollinations-code-agents-development"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
+STRIPE_PUBLISHABLE_KEY = "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUGgUdV2Rl8YPNW25UOy4Oj7I3tMnHqwZmncIu9vSMKa3V00munj0lUE"
 [env.test]
 
 [[env.test.services]]
@@ -248,6 +282,9 @@ binding = "DB"
 database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "drizzle"
+
+[[env.test.send_email]]
+name = "EMAIL"
 
 [[env.test.kv_namespaces]]
 # development-pollinations-enter-kv
@@ -262,6 +299,8 @@ LOG_FORMAT = "text"
 D1_EXPORT_TOKEN_SHA256 = "93b05a64761af544d325ac158513bef41959e8777a7375981ec7ae41f84cb05d"
 GITHUB_CLIENT_ID = "test_github_client_id"
 GITHUB_CLIENT_SECRET = "test_github_client_secret"
+GOOGLE_CLIENT_ID = "test_google_client_id"
+GOOGLE_CLIENT_SECRET = "test_google_client_secret"
 DISCORD_CLIENT_ID = "test_discord_client_id"
 DISCORD_CLIENT_SECRET = "test_discord_client_secret"
 DISCORD_BOT_TOKEN = "test_discord_bot_token"
@@ -285,6 +324,10 @@ STRIPE_WEBHOOK_SECRET = "whsec_not_a_real_secret_workers_test_only"
 BETTER_AUTH_URL = "http://localhost:3000"
 GEN_BASE_URL = "https://gen.pollinations.ai"
 CODE_AGENT_DISPATCH_NAMESPACE = "pollinations-code-agents-production"
+SITES_DISPATCH_NAMESPACE = "pollinations-hosting-test"
+SITES_HOST_SUFFIX = ".pollinations.app"
+CODE_AGENT_DEPLOY_API_TOKEN = "test-deploy-token-not-a-secret"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
+STRIPE_PUBLISHABLE_KEY = "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUGgUdV2Rl8YPNW25UOy4Oj7I3tMnHqwZmncIu9vSMKa3V00munj0lUE"

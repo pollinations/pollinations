@@ -18,6 +18,7 @@ import {
 import {
     deduplicateGeneration,
     type GenerationJob,
+    type GenerationJobHead,
 } from "@/middleware/generation-deduplication.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 
@@ -41,6 +42,16 @@ type TestEnv = {
             formData?: FormData;
         };
 };
+
+/** Folds the streamed RPC body back into the job, as the coordinator does. */
+async function receivedJob(
+    head: GenerationJobHead,
+    body?: ReadableStream<Uint8Array>,
+): Promise<GenerationJob> {
+    if (!body) return head;
+    const bytes = new Uint8Array(await new Response(body).arrayBuffer());
+    return { ...head, request: { ...head.request, body: bytes } };
+}
 
 function executionContext(): ExecutionContext {
     return {
@@ -139,8 +150,11 @@ describe("generation request deduplication", () => {
         let active: Promise<void> | undefined;
         let owners = 0;
         const coordinator = {
-            async startAndWait(job: GenerationJob) {
-                jobs.push(job);
+            async startAndWait(
+                head: GenerationJobHead,
+                body?: ReadableStream<Uint8Array>,
+            ) {
+                jobs.push(await receivedJob(head, body));
                 if (!active) {
                     owners += 1;
                     active = Promise.resolve().then(() => {
@@ -175,6 +189,8 @@ describe("generation request deduplication", () => {
                         "Content-Type": "application/json",
                         "X-Forwarded-Host": "gen.pollinations.ai",
                         "X-Original-Client-IP": "203.0.113.42",
+                        "X-Custom-Option": "caller-setting",
+                        Cookie: "session=test-cookie",
                     },
                     body: JSON.stringify({
                         model: "test",
@@ -199,9 +215,9 @@ describe("generation request deduplication", () => {
         expect(owner.headers.get("X-Cache")).toBe("HIT");
         expect(joiner.headers.get("X-Cache")).toBe("HIT");
         expect(jobs[0].request.url).toBe(
-            "https://gen.pollinations.ai/generate?model=test",
+            "https://gen.pollinations.ai/generate?model=test&key=query-secret",
         );
-        expect(jobs[0].request.headers).not.toContainEqual([
+        expect(jobs[0].request.headers).toContainEqual([
             "authorization",
             "Bearer header-secret",
         ]);
@@ -210,6 +226,8 @@ describe("generation request deduplication", () => {
                 ["cf-connecting-ip", "203.0.113.42"],
                 ["x-forwarded-host", "gen.pollinations.ai"],
                 ["x-original-client-ip", "203.0.113.42"],
+                ["x-custom-option", "caller-setting"],
+                ["cookie", "session=test-cookie"],
             ]),
         );
         expect(jobs[0].auth.apiKey).not.toHaveProperty("rawKey");
@@ -224,8 +242,100 @@ describe("generation request deduplication", () => {
                 model: "resolved-model",
                 prompt: "hello",
                 seed: 123,
+                key: "body-secret",
             }),
         );
+    });
+
+    it("reports a fresh generation as a MISS and saves it only once", async () => {
+        const cache = new Map<string, string>();
+        const adapter = createAdapter(cache);
+        const capture = vi.spyOn(adapter, "capture");
+        const coordinator = {
+            async startAndWait() {
+                cache.set("same-request", "generated");
+                return { status: "generated" as const };
+            },
+        };
+        const bindings = {
+            GENERATION_COORDINATOR: { getByName: () => coordinator },
+        } as unknown as CloudflareBindings;
+
+        const response = await createApp(adapter).app.fetch(
+            new Request("https://gen.pollinations.ai/generate"),
+            bindings,
+            executionContext(),
+        );
+
+        expect(await response.text()).toBe("generated");
+        expect(response.headers.get("X-Cache")).toBe("MISS");
+        // The detached executor already saved it; the outer cache must not.
+        expect(capture).not.toHaveBeenCalled();
+    });
+
+    it("preserves raw JSON and binary request bodies", async () => {
+        for (const body of [
+            new TextEncoder().encode(
+                ' { "key": "body-secret", "custom": 42 }\n',
+            ),
+            new Uint8Array([0, 255, 128, 1]),
+        ]) {
+            const cache = new Map<string, string>();
+            const generation = createApp(createAdapter(cache));
+            let job: GenerationJob | undefined;
+            const bindings = {
+                GENERATION_COORDINATOR: {
+                    getByName: () => ({
+                        startAndWait: async (
+                            head: GenerationJobHead,
+                            stream?: ReadableStream<Uint8Array>,
+                        ) => {
+                            job = await receivedJob(head, stream);
+                            cache.set("same-request", "generated");
+                            return { status: "cached" as const };
+                        },
+                    }),
+                },
+            } as unknown as CloudflareBindings;
+            const response = await generation.app.fetch(
+                new Request("https://gen.pollinations.ai/generate", {
+                    method: "POST",
+                    body,
+                }),
+                bindings,
+                executionContext(),
+            );
+            expect(await response.text()).toBe("generated");
+            expect(job?.request.body).toEqual(body);
+        }
+    });
+
+    it("keeps prepared JSON intact but excludes credentials from cache identity", async () => {
+        const body = ' { "key": "body-secret", "custom": 42 }\n';
+        for (const prepared of [false, true]) {
+            const app = new Hono<TestEnv>().post(
+                "/generate",
+                async (c, next) => {
+                    if (prepared) c.set("generationRequestBody", body);
+                    await next();
+                },
+                prepareGenerationRequest,
+                (c) =>
+                    c.json({
+                        body: c.var.generationRequestBody,
+                        identity: c.var.generationCacheBody,
+                    }),
+            );
+            const response = await app.request("/generate", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body,
+            });
+            expect(await response.json()).toEqual({
+                body,
+                identity: '{"custom":42}',
+            });
+        }
     });
 
     it("leaves explicit streams on the direct request path", async () => {
@@ -254,7 +364,7 @@ describe("generation request deduplication", () => {
         expect(generation.originHits).toBe(1);
     });
 
-    it("replays multipart files without putting API keys in the job", async () => {
+    it("replays all multipart fields while excluding credentials from cache identity", async () => {
         const cache = new Map<string, string>();
         const jobs: GenerationJob[] = [];
         const adapter = createAdapter(cache);
@@ -297,7 +407,11 @@ describe("generation request deduplication", () => {
         const bindings = {
             GENERATION_COORDINATOR: {
                 getByName: () => ({
-                    startAndWait: async (job: GenerationJob) => {
+                    startAndWait: async (
+                        head: GenerationJobHead,
+                        body?: ReadableStream<Uint8Array>,
+                    ) => {
+                        const job = await receivedJob(head, body);
                         jobs.push(job);
                         cache.set(job.cache.key, "generated");
                         return { status: "cached" as const };
@@ -336,7 +450,8 @@ describe("generation request deduplication", () => {
             headers: job.request.headers,
             body: job.request.body?.slice().buffer,
         }).formData();
-        expect(replayed.get("key")).toBeNull();
+        expect(replayed.get("key")).toBe("body-secret");
+        expect(job.cache.key).not.toContain("body-secret");
         expect(replayed.get("model")).toBe("voice-transform");
         const audio = replayed.get("audio");
         expect(audio).toBeInstanceOf(File);
@@ -469,82 +584,88 @@ describe("generation request deduplication", () => {
         expect(generation.originHits).toBe(0);
     });
 
-    it.each([
-        "rpc",
-        "completed-cache",
-        "initial-cache",
-        "rpc-and-cache",
-    ])("preserves the underlying %s failure in Tinybird without restarting generation", async (failure) => {
-        const rpcError = Object.assign(new Error("RPC connection reset"), {
-            durableObjectReset: true,
-            overloaded: false,
-            retryable: true,
-        });
-        const cacheError = new Error("R2 read failed");
-        const adapter = createAdapter(new Map());
-        const get = vi.spyOn(adapter, "get").mockImplementation(async () => {
-            if (
-                failure === "initial-cache" ||
-                (get.mock.calls.length === 2 && failure !== "rpc")
-            ) {
-                throw cacheError;
-            }
-            return null;
-        });
-        const startAndWait = vi.fn(async () => {
-            if (failure.startsWith("rpc")) throw rpcError;
-            return { status: "cached" };
-        });
-        const requests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                requests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
-        const generation = createApp(adapter);
-        generation.app.onError(handleError);
-        const ctx = createExecutionContext();
-        const response = await generation.app.fetch(
-            new Request("https://gen.pollinations.ai/generate"),
-            {
-                ENVIRONMENT: "test",
-                TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event_v2",
-                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
-                GENERATION_COORDINATOR: { getByName: () => ({ startAndWait }) },
-            } as unknown as CloudflareBindings,
-            ctx,
-        );
-        await waitOnExecutionContext(ctx);
-        expect(response.status).toBe(503);
-        const body = await response.text();
-        expect(body).toContain(
-            failure.startsWith("rpc")
-                ? "Generation coordination is unavailable"
-                : "Generation cache is temporarily unavailable",
-        );
-        expect(body).not.toContain("RPC connection reset");
-        expect(body).not.toContain("R2 read failed");
-        expect(requests).toHaveLength(1);
-        expect(new URL(requests[0].url).searchParams.get("name")).toBe(
-            "error_event",
-        );
-        const event = (await requests[0].json()) as { stack: string };
-        expect(event.stack).toContain(
-            failure.startsWith("rpc") ? rpcError.message : cacheError.message,
-        );
-        if (failure.startsWith("rpc")) {
-            expect(event.stack).toContain(
-                "durableObjectReset=true overloaded=false retryable=true",
+    it.each(["rpc", "completed-cache", "initial-cache", "rpc-and-cache"])(
+        "preserves the underlying %s failure in Tinybird without restarting generation",
+        async (failure) => {
+            const rpcError = Object.assign(new Error("RPC connection reset"), {
+                durableObjectReset: true,
+                overloaded: false,
+                retryable: true,
+            });
+            const cacheError = new Error("R2 read failed");
+            const adapter = createAdapter(new Map());
+            const get = vi
+                .spyOn(adapter, "get")
+                .mockImplementation(async () => {
+                    if (
+                        failure === "initial-cache" ||
+                        (get.mock.calls.length === 2 && failure !== "rpc")
+                    ) {
+                        throw cacheError;
+                    }
+                    return null;
+                });
+            const startAndWait = vi.fn(async () => {
+                if (failure.startsWith("rpc")) throw rpcError;
+                return { status: "cached" };
+            });
+            const requests: Request[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (input, init) => {
+                    requests.push(new Request(input, init));
+                    return new Response("ok");
+                },
             );
-        }
-        expect(startAndWait).toHaveBeenCalledTimes(
-            failure === "initial-cache" ? 0 : 1,
-        );
-        expect(get).toHaveBeenCalledTimes(failure === "initial-cache" ? 1 : 2);
-        expect(generation.originHits).toBe(0);
-    });
+            const generation = createApp(adapter);
+            generation.app.onError(handleError);
+            const ctx = createExecutionContext();
+            const response = await generation.app.fetch(
+                new Request("https://gen.pollinations.ai/generate"),
+                {
+                    ENVIRONMENT: "test",
+                    TINYBIRD_INGEST_URL:
+                        "https://tinybird.test/v0/events?name=generation_event_v2",
+                    TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                    GENERATION_COORDINATOR: {
+                        getByName: () => ({ startAndWait }),
+                    },
+                } as unknown as CloudflareBindings,
+                ctx,
+            );
+            await waitOnExecutionContext(ctx);
+            expect(response.status).toBe(503);
+            const body = await response.text();
+            expect(body).toContain(
+                failure.startsWith("rpc")
+                    ? "Generation coordination is unavailable"
+                    : "Generation cache is temporarily unavailable",
+            );
+            expect(body).not.toContain("RPC connection reset");
+            expect(body).not.toContain("R2 read failed");
+            expect(requests).toHaveLength(1);
+            expect(new URL(requests[0].url).searchParams.get("name")).toBe(
+                "error_event",
+            );
+            const event = (await requests[0].json()) as { stack: string };
+            expect(event.stack).toContain(
+                failure.startsWith("rpc")
+                    ? rpcError.message
+                    : cacheError.message,
+            );
+            if (failure.startsWith("rpc")) {
+                expect(event.stack).toContain(
+                    "durableObjectReset=true overloaded=false retryable=true",
+                );
+            }
+            expect(startAndWait).toHaveBeenCalledTimes(
+                failure === "initial-cache" ? 0 : 1,
+            );
+            expect(get).toHaveBeenCalledTimes(
+                failure === "initial-cache" ? 1 : 2,
+            );
+            expect(generation.originHits).toBe(0);
+        },
+    );
 
     it("reads a saved result once after an RPC failure without restarting generation", async () => {
         const cache = new Map<string, string>();

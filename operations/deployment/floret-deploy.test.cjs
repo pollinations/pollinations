@@ -80,7 +80,7 @@ test("Floret deploy has local locked Wrangler and verifies both existing domains
     }
 });
 
-test("Floret preserves production account, domains, and both Container bindings", () => {
+test("Floret preserves account and domains while retiring the native shell", () => {
     const config = JSON.parse(
         read("apps/floret/wrangler.jsonc").replace(/^\s*\/\/.*$/gm, ""),
     );
@@ -92,10 +92,18 @@ test("Floret preserves production account, domains, and both Container bindings"
     assert.equal(config.route, undefined);
     assert.deepEqual(
         config.containers.map((item) => item.class_name),
-        ["FloretContainer", "FloretShellContainer"],
+        ["FloretContainer"],
     );
     assert.deepEqual(
         config.durable_objects.bindings.map((item) => item.name),
-        ["FLORET", "FLORET_SHELL", "FLORET_CATALOG"],
+        ["FLORET", "FLORET_CATALOG"],
     );
+    assert.deepEqual(config.migrations, [
+        { tag: "v1", new_sqlite_classes: ["FloretContainer"] },
+        {
+            tag: "v2",
+            new_sqlite_classes: ["FloretShellContainer", "FloretCatalog"],
+        },
+        { tag: "v3", deleted_classes: ["FloretShellContainer"] },
+    ]);
 });

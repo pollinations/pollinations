@@ -1,6 +1,9 @@
 import { getLogger } from "@logtape/logtape";
 import type { ApiKeyType } from "@shared/auth/api-key-creation.ts";
-import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
+import {
+    AUTO_TOP_UP_THRESHOLD_POLLEN,
+    LOW_BALANCE_SHARE,
+} from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
     type CommunityModelRewardResolution,
@@ -51,6 +54,7 @@ import {
     MODEL_USED_HEADER,
     openaiUsageToUsage,
     PROMPT_CACHE_TYPE_HEADER,
+    PROVIDER_BILLING_HEADERS,
     parseUsageHeaders,
     USAGE_MISSING_HEADER,
 } from "@shared/registry/usage-headers.ts";
@@ -82,7 +86,6 @@ import { mergeContentFilterResults } from "@/content-filter.ts";
 import {
     CONTENT_POLICY_ERROR_CODE,
     CONTENT_POLICY_STATUS,
-    isContentPolicyViolation,
 } from "@/image/utils/contentModeration.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
@@ -93,6 +96,7 @@ import {
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
+import { apiErrorStatus } from "@/text/errors.ts";
 import {
     getResponsesEventUsage,
     isResponsesFailure,
@@ -195,13 +199,27 @@ export const track = (eventType: EventType) =>
         const requestTracking = await trackRequest(modelInfo, c.req);
         requestTracking.modelRequested =
             c.var.generationExecution?.originalModel ?? modelInfo.requested;
+        // Only generate.text answers with an SSE stream. Every other event
+        // type returns a file or a JSON envelope, so a stray stream flag
+        // (query or body) must never mark the request as streaming — that
+        // would skip durable generation coordination and double-generate
+        // the identical request.
+        if (eventType !== "generate.text") {
+            requestTracking.streamRequested = false;
+        }
 
         const rawIp = getRealClientIp(c);
         const clientIp =
             rawIp !== "unknown" ? stripIPv4MappedPrefix(rawIp) : undefined;
         const ipSubnet = truncateIpToSubnet(clientIp);
 
-        const userTracking = requestIdentity(c.var.auth);
+        const polliClient = c.req
+            .header("x-polli-client")
+            ?.match(/^cli\/(\d+\.\d+\.\d+)$/);
+        const userTracking = {
+            ...requestIdentity(c.var.auth),
+            polliClientVersion: polliClient?.[1],
+        };
 
         let responseOverride: Response | null = null;
         // What the caller asked for; a provider's response may refine it.
@@ -241,6 +259,7 @@ export const track = (eventType: EventType) =>
         const emitRow = async (row: {
             startTime: Date;
             endTime: Date;
+            attemptStartTime?: Date;
             balanceTracking: BalanceData;
             responseTracking: ResponseTrackingData;
             errorTracking: ErrorData;
@@ -261,6 +280,7 @@ export const track = (eventType: EventType) =>
                 requestTracking,
                 startTime: row.startTime,
                 endTime: row.endTime,
+                attemptStartTime: row.attemptStartTime,
                 balanceTracking: row.balanceTracking,
                 responseTracking: row.responseTracking,
                 cacheKey: await cacheKeyForTracking(),
@@ -303,9 +323,11 @@ export const track = (eventType: EventType) =>
                 const userId = userTracking.userId;
                 if (!userId) return;
 
+                const finalAttempt = attempts.find(
+                    (attempt) => attempt.settled,
+                );
                 const finalCandidate =
-                    attempts.find((attempt) => attempt.settled)?.candidate ??
-                    fallbackCandidates(modelInfo)[0];
+                    finalAttempt?.candidate ?? fallbackCandidates(modelInfo)[0];
                 const billingModel = modelInfo.requested.includes(",")
                     ? (finalCandidate.entry ?? modelInfo)
                     : modelInfo;
@@ -334,6 +356,7 @@ export const track = (eventType: EventType) =>
                     await emitRow({
                         startTime: attempt.startedAt,
                         endTime: attempt.endedAt,
+                        attemptStartTime: attempt.startedAt,
                         balanceTracking: balanceTracking(),
                         responseTracking: {
                             responseStatus: status,
@@ -362,6 +385,7 @@ export const track = (eventType: EventType) =>
                     response,
                     finalCandidate,
                     pricingInput,
+                    c.get("error"),
                 );
                 if (responseTracking.cacheHit) {
                     await releaseApiKeyBudgetReservation(c.var, c.env);
@@ -404,6 +428,7 @@ export const track = (eventType: EventType) =>
                             c.var.balance.apiKeyReservation?.amount,
                         byopClientKeyId: c.var.auth?.apiKey?.byopClientKeyId,
                         modelPaidOnly: billingModel.definition.paidOnly,
+                        questPollenOnly: c.var.auth?.apiKey?.questPollenOnly,
                         // A private endpoint only earns a reward when it backs
                         // its owner's public listing. Cross-owner private
                         // fallbacks are rejected when the fallback is linked.
@@ -419,13 +444,23 @@ export const track = (eventType: EventType) =>
                     payerBucket = deduction.payerBucket;
                     billedPrice = deduction.billedPrice;
                     const totalPrice = responseTracking.price?.totalPrice ?? 0;
+                    const packBalance = deduction.postDeductionPackBalance;
+                    const lowBalanceThreshold =
+                        deduction.lastPackPollen == null
+                            ? null
+                            : LOW_BALANCE_SHARE * deduction.lastPackPollen;
+                    // Enter refills the balance when auto top-up is on. Without
+                    // it, Enter emails the user, so also call it on the charge
+                    // that takes the balance below a share of their last pack.
                     if (
                         totalPrice > 0 &&
                         payerBucket === "pack" &&
-                        deduction.postDeductionPackBalance != null &&
-                        deduction.postDeductionPackBalance <=
-                            AUTO_TOP_UP_THRESHOLD_POLLEN &&
-                        (await isAutoTopUpConfigured(db, userId))
+                        packBalance != null &&
+                        ((lowBalanceThreshold != null &&
+                            packBalance < lowBalanceThreshold &&
+                            packBalance + billedPrice >= lowBalanceThreshold) ||
+                            (packBalance <= AUTO_TOP_UP_THRESHOLD_POLLEN &&
+                                (await isAutoTopUpConfigured(db, userId))))
                     ) {
                         shouldRunAutoTopUp = true;
                     }
@@ -456,6 +491,9 @@ export const track = (eventType: EventType) =>
                 const finalEvent = await emitRow({
                     startTime,
                     endTime,
+                    // Keep request timing intact; route timing starts at the
+                    // settled attempt and includes consumption of its stream.
+                    attemptStartTime: finalAttempt?.startedAt,
                     balanceTracking: committedBalanceTracking,
                     responseTracking,
                     markup,
@@ -666,6 +704,7 @@ export async function trackResponse(
     response: Response,
     candidate: FallbackCandidate,
     pricingInput?: PricingInput,
+    error?: unknown,
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
@@ -695,9 +734,32 @@ export async function trackResponse(
         return notBilled();
     }
     if (!response.ok) {
-        return notBilled({
+        // A failure is billed only when the provider charged for it, which the
+        // handler reports on the error (an xAI video rejected after generation).
+        const usage =
+            error instanceof UpstreamError ? error.billedUsage : undefined;
+        if (!usage) {
+            return notBilled({
+                modelUsed,
+            });
+        }
+        return {
+            responseStatus: response.status,
+            cacheHit,
+            isBilledUsage: true,
+            fallbackUsed,
+            ...calculateUsageBilling({
+                model: resolvedModelRequested,
+                usage,
+                servedBy:
+                    candidate.definition ?? requestTracking.modelDefinition,
+                quotedBy,
+                input: pricingInput,
+            }),
             modelUsed,
-        });
+            modelProviderUsed,
+            usage,
+        };
     }
 
     // Verify the response content-type matches the expected output before
@@ -732,7 +794,9 @@ export async function trackResponse(
         ? { ...pricingInput, ...modelUsage.pricingInput }
         : pricingInput;
     const finishError =
-        eventType === "generate.text" ? finishReasonError(output) : undefined;
+        eventType === "generate.text"
+            ? finishReasonError(output, !!modelUsage)
+            : undefined;
     if (finishError) {
         // Keep the proxy response untouched; only billing and health reflect
         // the upstream protocol's explicit terminal failure.
@@ -763,11 +827,9 @@ export async function trackResponse(
                         : "upstream_finish_reason_error"),
                 errorMessage:
                     finishError.message ??
-                    (finishError.code === "usage_missing"
-                        ? "Upstream stream failed usage validation"
-                        : finishError.status === CONTENT_POLICY_STATUS
-                          ? "Upstream rejected generation for content policy"
-                          : "Upstream ended generation with finish_reason=error"),
+                    (finishError.status === CONTENT_POLICY_STATUS
+                        ? "Upstream rejected generation for content policy"
+                        : "Upstream ended generation with finish_reason=error"),
             },
             errorOutput: output,
         };
@@ -865,48 +927,44 @@ function streamErrorClass(code: string | undefined): string {
     return "UpstreamFinishReasonError";
 }
 
-function finishReasonError(output: unknown):
-    | {
-          status: number;
-          code?: "usage_missing" | "upstream_stream_error";
-          message?: string;
-      }
-    | undefined {
+type StreamError = { status: number; code?: string; message?: string };
+
+// Every text protocol carries its terminal error in one of three places:
+// Chat `{error}`, Responses `{type:"error", ...}` or
+// `{type:"response.failed", response:{error}}`.
+function streamErrorObject(event: object): object | undefined {
+    const { error, type, response } = event as {
+        error?: unknown;
+        type?: unknown;
+        response?: { error?: unknown };
+    };
+    const found = error ?? (type === "error" ? event : response?.error);
+    return found && typeof found === "object" ? found : undefined;
+}
+
+function streamError(raw: unknown): StreamError {
+    const { code, message } = (raw ?? {}) as {
+        code?: unknown;
+        message?: unknown;
+    };
+    return {
+        status: apiErrorStatus(raw ?? {}, 502),
+        code: typeof code === "string" ? code : undefined,
+        message: typeof message === "string" ? message : undefined,
+    };
+}
+
+function finishReasonError(
+    output: unknown,
+    hasUsage: boolean,
+): StreamError | undefined {
     if (!output || typeof output !== "object") return undefined;
     const streamEvents = (output as { streamEvents?: unknown }).streamEvents;
     const events = Array.isArray(streamEvents) ? streamEvents : [output];
     for (const event of events) {
         if (!event || typeof event !== "object") continue;
-        const eventError = (event as { error?: unknown }).error;
-        if (
-            eventError &&
-            typeof eventError === "object" &&
-            (eventError as { code?: unknown }).code === "upstream_stream_error"
-        ) {
-            const { message } = eventError as { message?: unknown };
-            return {
-                status: 502,
-                code: "upstream_stream_error",
-                message: typeof message === "string" ? message : undefined,
-            };
-        }
-        if (
-            (eventError &&
-                typeof eventError === "object" &&
-                (eventError as { code?: unknown }).code === "usage_missing") ||
-            ((event as { type?: unknown }).type === "error" &&
-                (event as { code?: unknown }).code === "usage_missing")
-        ) {
-            return { status: 502, code: "usage_missing" };
-        }
-        if (isResponsesFailure(event)) return { status: 502 };
-        if (eventError) {
-            return {
-                status: isContentPolicyViolation(JSON.stringify(eventError))
-                    ? CONTENT_POLICY_STATUS
-                    : 502,
-            };
-        }
+        const error = streamErrorObject(event);
+        if (error || isResponsesFailure(event)) return streamError(error);
         const choices = (event as { choices?: unknown }).choices;
         if (!Array.isArray(choices)) continue;
         for (const choice of choices) {
@@ -915,12 +973,14 @@ function finishReasonError(output: unknown):
                 finish_reason?: unknown;
                 error?: unknown;
             };
-            if (finish.finish_reason !== "error") continue;
-            return {
-                status: isContentPolicyViolation(JSON.stringify(finish.error))
-                    ? CONTENT_POLICY_STATUS
-                    : 502,
-            };
+            // Filtered completions with valid usage remain billable. Without
+            // usage, preserve the rejection rather than report missing usage.
+            if (!hasUsage && finish.finish_reason === "content_filter") {
+                return { status: CONTENT_POLICY_STATUS };
+            }
+            if (finish.finish_reason === "error") {
+                return streamError(finish.error);
+            }
         }
     }
     return undefined;
@@ -981,10 +1041,16 @@ function getContentTypeGuard(
         const isTimestampedTts =
             response.headers.get("x-pollinations-response-format") ===
             "audio-with-timestamps";
+        const isStemSeparation =
+            requestTracking.modelDefinition.supportedEndpoints?.includes(
+                "/alpha/audio/stem-separation",
+            );
         return {
             kind: "audio",
             isExpected: (contentType) =>
                 contentType.startsWith("audio/") ||
+                (isStemSeparation &&
+                    contentType.startsWith("application/zip")) ||
                 (isSTTModel &&
                     (contentType.startsWith("application/json") ||
                         contentType.startsWith("text/plain"))) ||
@@ -1064,6 +1130,8 @@ export type UserData = {
     apiKeyCreatedForApp?: string;
     apiKeyCreatedForUserId?: string;
     apiKeyClientId?: string;
+    apiKeyCreatedById?: string;
+    apiKeyOriginAppId?: string;
 };
 
 export function requestIdentity(auth: AuthVariables["auth"]): UserData {
@@ -1086,6 +1154,10 @@ export function requestIdentity(auth: AuthVariables["auth"]): UserData {
             ? "redirect-auth"
             : (apiKeyMetadata?.createdVia as string | undefined),
         apiKeyClientId: byopClientKeyId ?? undefined,
+        apiKeyCreatedById: apiKeyMetadata?.createdByApiKeyId as
+            | string
+            | undefined,
+        apiKeyOriginAppId: apiKeyMetadata?.originAppKeyId as string | undefined,
         apiKeyCreatedForApp: auth.apiKey?.byopClientName ?? undefined,
         apiKeyCreatedForUserId: auth.apiKey?.byopClientUserId ?? undefined,
     };
@@ -1103,6 +1175,7 @@ type TrackingEventInput = {
     requestPath: string;
     startTime: Date;
     endTime: Date;
+    attemptStartTime?: Date;
     environment: string;
     eventType: EventType;
     ipSubnet?: string;
@@ -1145,6 +1218,7 @@ function createTrackingEvent({
     requestPath,
     startTime,
     endTime,
+    attemptStartTime,
     environment,
     eventType,
     ipSubnet,
@@ -1166,6 +1240,9 @@ function createTrackingEvent({
         startTime,
         endTime,
         responseTime: endTime.getTime() - startTime.getTime(),
+        attemptResponseTime: attemptStartTime
+            ? endTime.getTime() - attemptStartTime.getTime()
+            : undefined,
         responseStatus: responseTracking.responseStatus,
         environment,
         eventType,
@@ -1273,11 +1350,30 @@ function extractUsageHeaders(response: Response): ModelUsage | null {
             "Failed to determine model: x-model-used header was missing",
         );
     }
+    const unitsHeader = response.headers.get(PROVIDER_BILLING_HEADERS.units);
+    const unitCostHeader = response.headers.get(
+        PROVIDER_BILLING_HEADERS.unitCost,
+    );
+    let providerBilling: PricingInput["providerBilling"];
+    if (unitsHeader !== null || unitCostHeader !== null) {
+        const units = Number(unitsHeader);
+        const unitCost = Number(unitCostHeader);
+        if (
+            !Number.isFinite(units) ||
+            units <= 0 ||
+            !Number.isFinite(unitCost) ||
+            unitCost <= 0
+        ) {
+            throw new Error("Invalid provider billing receipt");
+        }
+        providerBilling = { units, unitCost };
+    }
     const usage = parseUsageHeaders(response.headers);
     return {
         model: modelUsed,
         usage,
         pricingInput: {
+            providerBilling,
             hasExplicitCacheHit:
                 response.headers.get(PROMPT_CACHE_TYPE_HEADER) === "ephemeral",
         },

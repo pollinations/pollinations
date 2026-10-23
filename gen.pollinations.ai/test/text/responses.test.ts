@@ -1,15 +1,21 @@
+import { env } from "cloudflare:test";
+import { validator } from "@shared/middleware/validator.ts";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import {
     type CreateResponseRequest,
     CreateResponseRequestSchema,
     CreateResponseResponseSchema,
     ResponseUsageSchema,
 } from "@shared/schemas/openai.ts";
+import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
+import type { Env } from "@/env.ts";
 import {
     callDirectResponses,
     type DirectResponsesTarget,
     resolveDirectResponsesTarget,
 } from "@/text/responses/client.ts";
+import { generateCreateResponse } from "@/text/responses/handler.ts";
 import {
     buildDirectResponsesRequestBody,
     validateDirectResponsesRequest,
@@ -52,6 +58,76 @@ function authorizedTarget(
 }
 
 describe("direct Responses transport", () => {
+    it("rejects invalid image URLs on Nex Mini before calling the provider", async () => {
+        const directRequest = request({
+            model: "nex-agi/nex-n2.5-mini",
+            input: [
+                null,
+                { role: "user", content: { invalid: true } },
+                {
+                    role: "user",
+                    content: [
+                        null,
+                        {
+                            type: "input_image",
+                            image_url: "http://127.0.0.1/image.png",
+                        },
+                    ],
+                },
+            ],
+        });
+        const target = resolveDirectResponsesTarget(
+            directRequest.model,
+            directRequest,
+        );
+        if (!target) throw new Error("expected direct Nex target");
+
+        await expect(
+            callDirectResponses(directRequest, {
+                ...target,
+                authConfigured: true,
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "invalid_image_url",
+        });
+    });
+
+    it("rejects invalid image URLs on Nex Pro before calling the provider", async () => {
+        const directRequest = request({
+            model: "nex-agi/nex-n2.5-pro",
+            input: [
+                null,
+                { role: "user", content: { invalid: true } },
+                {
+                    role: "user",
+                    content: [
+                        null,
+                        {
+                            type: "input_image",
+                            image_url: "http://127.0.0.1/image.png",
+                        },
+                    ],
+                },
+            ],
+        });
+        const target = resolveDirectResponsesTarget(
+            directRequest.model,
+            directRequest,
+        );
+        if (!target) throw new Error("expected direct Nex target");
+
+        await expect(
+            callDirectResponses(directRequest, {
+                ...target,
+                authConfigured: true,
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "invalid_image_url",
+        });
+    });
+
     it("preserves the complete raw provider error envelope", async () => {
         const directRequest = request();
         const body = JSON.stringify(
@@ -77,12 +153,38 @@ describe("direct Responses transport", () => {
         });
     });
 
+    it("keeps a managed agent's caller-facing status instead of remapping it", async () => {
+        const directRequest = request();
+        const body = JSON.stringify({
+            error: {
+                message:
+                    "Model 'openai/gpt-5-nano' is not allowed for this API key",
+                code: "agent_error",
+            },
+        });
+        const fetcher = vi.fn(async () => new Response(body, { status: 403 }));
+        await expect(
+            callDirectResponses(
+                directRequest,
+                {
+                    ...authorizedTarget(directRequest),
+                    callerFacingStatus: true,
+                },
+                fetcher,
+            ),
+        ).rejects.toMatchObject({
+            status: 403,
+            upstreamStatus: 403,
+            message:
+                "Model 'openai/gpt-5-nano' is not allowed for this API key",
+        });
+    });
+
     it.each([
         ["store", { store: true }],
         ["previous_response_id", { previous_response_id: "resp_previous" }],
         ["conversation", { conversation: "conv_previous" }],
         ["background", { background: true }],
-        ["encrypted state", { include: ["reasoning.encrypted_content"] }],
         ["n", { n: 2 }],
     ])("rejects unsupported state or fan-out: %s", (_name, field) => {
         expect(() =>
@@ -118,19 +220,28 @@ describe("direct Responses transport", () => {
         });
     });
 
-    it("rejects encrypted and referenced response state", () => {
-        expect(() =>
-            validateDirectResponsesRequest(
-                request({
-                    input: [
-                        {
-                            type: "reasoning",
-                            encrypted_content: "opaque-state",
-                        },
-                    ],
-                }),
-            ),
-        ).toThrow(/Encrypted or reusable response state/);
+    it("accepts replayed encrypted reasoning but not stored item references", () => {
+        const parsed = CreateResponseRequestSchema.parse({
+            model: "qwen-large",
+            input: [
+                {
+                    type: "reasoning",
+                    summary: [],
+                    encrypted_content: "opaque-state",
+                },
+            ],
+            include: ["reasoning.encrypted_content"],
+            client_metadata: { session_id: "codex-session" },
+        });
+        expect(() => validateDirectResponsesRequest(parsed)).not.toThrow();
+        const target = resolveDirectResponsesTarget("qwen-large", parsed);
+        if (!target) throw new Error("expected direct target");
+        const body = buildDirectResponsesRequestBody(parsed, target);
+        expect(body).toMatchObject({
+            include: ["reasoning.encrypted_content"],
+            input: parsed.input,
+        });
+        expect(body).not.toHaveProperty("client_metadata");
 
         expect(() =>
             validateDirectResponsesRequest(
@@ -138,7 +249,7 @@ describe("direct Responses transport", () => {
                     input: [{ type: "item_reference", id: "item_123" }],
                 }),
             ),
-        ).toThrow(/Encrypted or reusable response state/);
+        ).toThrow(/Stored response items/);
     });
 
     it("resolves only explicit direct Responses targets", () => {
@@ -165,25 +276,28 @@ describe("direct Responses transport", () => {
         ["required", "required", "none"],
         ["function object", { type: "function", name: "lookup" }, "none"],
         ["auto", "auto", "high"],
-    ])("normalizes Qwen3.8 Max 0902 reasoning for %s tool choice", (_label, toolChoice, expectedEffort) => {
-        const directRequest = request({
-            model: "qwen/qwen3.8-max-0902",
-            reasoning: { effort: "high" },
-            tool_choice: toolChoice,
-        });
-        const target = resolveDirectResponsesTarget(
-            directRequest.model,
-            directRequest,
-        );
-        if (!target) throw new Error("expected direct target");
+    ])(
+        "normalizes Qwen3.8 Max 0902 reasoning for %s tool choice",
+        (_label, toolChoice, expectedEffort) => {
+            const directRequest = request({
+                model: "qwen/qwen3.8-max-0902",
+                reasoning: { effort: "high" },
+                tool_choice: toolChoice,
+            });
+            const target = resolveDirectResponsesTarget(
+                directRequest.model,
+                directRequest,
+            );
+            if (!target) throw new Error("expected direct target");
 
-        expect(
-            buildDirectResponsesRequestBody(directRequest, target),
-        ).toMatchObject({
-            reasoning: { effort: expectedEffort },
-            tool_choice: toolChoice,
-        });
-    });
+            expect(
+                buildDirectResponsesRequestBody(directRequest, target),
+            ).toMatchObject({
+                reasoning: { effort: expectedEffort },
+                tool_choice: toolChoice,
+            });
+        },
+    );
 
     it("passes Responses JSON directly with only target resolution and defaults", async () => {
         const body = {
@@ -389,3 +503,60 @@ describe("direct Responses transport", () => {
         });
     });
 });
+
+it.each([
+    [
+        {
+            tools: [
+                {
+                    type: "function",
+                    name: "weather",
+                    parameters: { type: "object", properties: {} },
+                },
+            ],
+        },
+        "tool calling",
+    ],
+    [{ text: { format: { type: "json_object" } } }, "structured output"],
+    [{ max_output_tokens: 16385 }, "16384 output tokens"],
+])(
+    "Scout capability errors use the Responses invalid-request envelope: %j",
+    async (options, message) => {
+        const app = new Hono<Env>();
+        app.use("*", async (c, next) => {
+            c.set("model", {
+                requested: "llama-scout",
+                resolved: "meta/llama-4-scout",
+                definition: TEXT_SERVICES["meta/llama-4-scout"],
+            });
+            await next();
+        });
+        app.post(
+            "/v1/responses",
+            validator("json", CreateResponseRequestSchema),
+            generateCreateResponse,
+        );
+        const response = await app.request(
+            "/v1/responses",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: "llama-scout",
+                    input: "Hello",
+                    safe: false,
+                    ...options,
+                }),
+            },
+            env,
+        );
+        expect(response.status).toBe(400);
+        expect(await response.json()).toMatchObject({
+            error: {
+                type: "invalid_request_error",
+                code: "unsupported_parameter",
+                message: expect.stringContaining(message),
+            },
+        });
+    },
+);

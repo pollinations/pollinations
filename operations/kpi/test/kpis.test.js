@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { dataWindow } from "../src/lib/chartScale";
 import { buildDailyComparison } from "../src/lib/dailyComparison";
-import { formatValue } from "../src/lib/format";
+import { calcChange, formatValue } from "../src/lib/format";
 import {
     KPI_VIEWS,
     KPIS,
@@ -9,10 +10,130 @@ import {
     kpiView,
     kpiViewById,
     kpiViewId,
+    pollenSpendSeries,
 } from "../src/lib/kpis";
 import { DEFAULT_WEEKS, WEEK_RANGES, weeksFromSearch } from "../src/lib/range";
 
 const community = KPIS.find((row) => row.key === "communityModels");
+
+describe("Zero-based chart axes", () => {
+    it("starts positive revenue and count series at zero", () => {
+        expect(dataWindow([123, 500]).min).toBe(0);
+        expect(dataWindow([6000, 7000]).min).toBe(0);
+        expect(dataWindow([10, 10]).min).toBe(0);
+        expect(dataWindow([0, 0]).max).toBeGreaterThan(0);
+    });
+    it("keeps negative margins and zero visible", () => {
+        expect(dataWindow([-20, -10]).min).toBeLessThan(-20);
+        expect(dataWindow([-20, -10]).max).toBe(0);
+        expect(dataWindow([-10, 20]).min).toBeLessThan(-10);
+        expect(dataWindow([-10, 20]).max).toBeGreaterThan(20);
+    });
+});
+
+describe("Official app requests", () => {
+    const row = KPIS.find((item) => item.key === "officialApps");
+    it("only shows major apps individually while preserving the full total", () => {
+        expect(row.views.map(({ key }) => key)).toEqual([
+            "officialApp_all",
+            "officialApp_cli",
+            "officialApp_play",
+            "officialApp_openwebui",
+        ]);
+        const week = {
+            officialApp_all: 20,
+            officialApp_cli: 4,
+            officialApp_play: 5,
+            officialApp_openwebui: 6,
+            officialApp_playground: 3,
+            officialApp_sirius: 2,
+        };
+        expect(kpiValue(kpiView(row), week)).toBe(20);
+        expect(kpiView(row, 4).key).toBe("officialApp_all");
+        expect(KPI_VIEWS.some(({ key }) => key === "officialApp_sirius")).toBe(
+            false,
+        );
+    });
+    it("defaults to all, switches keys and exposes every view to the graph", () => {
+        expect(kpiView(row).key).toBe("officialApp_all");
+        const week = {
+            officialApp_all: 9,
+            officialApp_cli: 4,
+            officialApp_play: 5,
+        };
+        expect([0, 1, 2].map((i) => kpiValue(kpiView(row, i), week))).toEqual([
+            9, 4, 5,
+        ]);
+        for (let i = 0; i < row.views.length; i++) {
+            expect(kpiViewById(kpiViewId(row, i)).key).toBe(row.views[i].key);
+        }
+        expect(kpiValue(kpiView(row), {})).toBeUndefined();
+        expect(kpiValue(kpiView(row), { officialApp_all: 0 })).toBe(0);
+    });
+});
+
+describe("Pollen spend by category", () => {
+    const row = KPIS.find((item) => item.key === "pollenByCategory");
+
+    it("graphs the top three regular categories by last completed week", () => {
+        const weeks = [
+            { pollenAudio: 999 },
+            {
+                pollenText: 20,
+                pollenVideo: 40,
+                pollenImage: 30,
+                pollenAudio: 1,
+                pollenCommunity: 1000,
+                pollenOther: 2000,
+            },
+        ];
+        expect(pollenSpendSeries(weeks).map(({ key }) => key)).toEqual([
+            "pollenVideo",
+            "pollenImage",
+            "pollenText",
+        ]);
+        expect(
+            pollenSpendSeries(weeks, "pollenCommunity").map(({ key }) => key),
+        ).toEqual(["pollenCommunity"]);
+    });
+
+    it("does not invent categories for missing data, but keeps zero spend", () => {
+        expect(pollenSpendSeries([])).toEqual([]);
+        expect(pollenSpendSeries([{}])).toEqual([]);
+        expect(
+            pollenSpendSeries([{ pollenText: 0 }]).map(({ key }) => key),
+        ).toEqual(["pollenText"]);
+    });
+
+    it("cycles between categories and makes each available to the graph", () => {
+        const week = { pollenText: 120, pollenImage: 80, pollenVideo: 40 };
+        expect([0, 1, 2].map((i) => kpiValue(kpiView(row, i), week))).toEqual([
+            120, 80, 40,
+        ]);
+        for (let i = 0; i < row.views.length; i++) {
+            expect(kpiViewById(kpiViewId(row, i)).key).toBe(row.views[i].key);
+        }
+        expect(kpiView(row, row.views.length).key).toBe("pollenText");
+    });
+
+    it("keeps community separate and missing data distinct from zero spend", () => {
+        const view = kpiView(row, 0);
+        expect(kpiValue(view, { pollenText: 20, pollenCommunity: 200 })).toBe(
+            20,
+        );
+        expect(formatValue(kpiValue(view, {}), view.format)).toBe("—");
+        expect(
+            formatValue(kpiValue(view, { pollenText: 0 }), view.format),
+        ).toBe("$0");
+    });
+
+    it("shows a drop to zero as -100%, without inventing growth from zero or missing data", () => {
+        expect(calcChange(0, 10)).toBe(-100);
+        expect(calcChange(15, 10)).toBe(50);
+        expect(calcChange(10, 0)).toBeNull();
+        expect(calcChange(undefined, 10)).toBeNull();
+    });
+});
 
 describe("agent and MCP KPI rows", () => {
     it("labels the agent volume as observed runs and explains historical coverage", () => {
@@ -375,6 +496,27 @@ describe("revenue row", () => {
     });
 });
 
+describe("Google signups row", () => {
+    const google = KPIS.find((row) => row.key === "googleSignups");
+    it("shows the count and its share of registrations", () => {
+        const week = { registrations: 400, googleSignups: 100 };
+        const shown = [0, 1].map((i) => {
+            const view = kpiView(google, i);
+            return formatValue(kpiValue(view, week), view.format);
+        });
+        expect(shown).toEqual(["100", "25%"]);
+    });
+
+    it("reads as missing, not zero, before the pipe ships the field", () => {
+        for (const index of [0, 1]) {
+            const view = kpiView(google, index);
+            expect(formatValue(kpiValue(view, { registrations: 400 }))).toBe(
+                "—",
+            );
+        }
+    });
+});
+
 describe("Paid Pollen share", () => {
     it("is a precise percent KPI available to the history graph", () => {
         expect(
@@ -402,12 +544,34 @@ describe("gross margin row", () => {
 });
 
 describe("cash coverage row", () => {
-    it("compares Stripe cash against the week's compute cost", () => {
-        expect(kpiValue(coverage, marginWeek)).toBeCloseTo(60.91, 1);
+    it("compares Stripe cash against compute cost across all traffic", () => {
+        // Regular-only cost (3740) would read 60.91% and hide legacy compute.
+        expect(
+            kpiValue(coverage, { ...marginWeek, costUsdAll: 4556 }),
+        ).toBeCloseTo(50, 0);
     });
 
     it("blanks a week with no cost rather than dividing by zero", () => {
-        expect(kpiValue(coverage, { revenue: 100, costUsd: 0 })).toBeNull();
+        expect(kpiValue(coverage, { revenue: 100, costUsdAll: 0 })).toBeNull();
+    });
+});
+
+describe("legacy row", () => {
+    const legacy = KPIS.find((row) => row.key === "legacyRequests");
+    const week = {
+        legacyRequests: 4_445_921,
+        requestsAll: 7_621_720,
+        legacyCostUsd: 120,
+    };
+
+    it("cycles requests, share of all requests, and compute cost", () => {
+        expect(
+            [0, 1, 2].map((i) => kpiValue(kpiView(legacy, i), week)),
+        ).toEqual([4_445_921, (4_445_921 / 7_621_720) * 100, 120]);
+    });
+
+    it("counts a falling legacy share as progress", () => {
+        expect(kpiView(legacy, 1).lowerIsBetter).toBe(true);
     });
 });
 

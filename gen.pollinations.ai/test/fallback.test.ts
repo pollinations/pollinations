@@ -26,7 +26,10 @@ import {
     requestedModelIds,
     resolveModelDefinition,
 } from "../src/middleware/model.ts";
-import type { GenerationModelEntry } from "../src/model-registry.ts";
+import {
+    type GenerationModelEntry,
+    getGenerationModelRegistry,
+} from "../src/model-registry.ts";
 
 function registryEntry(
     id: string,
@@ -41,8 +44,11 @@ function registryEntry(
         category: "text",
         cost: { completionTextTokens: rate },
         priceMultiplier: 1,
+        paidOnly: false,
         addedDate: 0,
         title: id,
+        inputModalities: ["text"],
+        outputModalities: ["text"],
     };
     return {
         id,
@@ -69,10 +75,21 @@ function communityEntry(
     entry.visible = visibility === "public" && hiddenAt === null;
     entry.definition.hidden = hiddenAt !== null;
     entry.communityEndpoint = {
+        id,
+        modelId: id,
+        name: id,
+        title: id,
+        description: null,
         type: "proxy",
         ownerUserId,
         visibility,
-        hiddenAt,
+        baseUrl: "https://example.com/v1/chat/completions",
+        api: "chat_completions",
+        upstreamModel: id,
+        bearerTokenCiphertext: "test",
+        modality: "text",
+        inputModalities: ["text"],
+        perUserRpm: null,
         paidOnly,
         imagePricing: "request",
         fallbacks,
@@ -119,6 +136,11 @@ describe("registry fallback linking", () => {
             ["openai/gpt-image-1-mini", "openai/gpt-image-1-mini:openai"],
             ["openai/gpt-image-1.5", "openai/gpt-image-1.5:openai"],
             ["openai/gpt-image-2", "openai/gpt-image-2:openai"],
+            ["openai/gpt-image-2.5-flare", "openai/gpt-image-2.5-flare:openai"],
+            [
+                "openai/gpt-image-2.5-sunburst",
+                "openai/gpt-image-2.5-sunburst:openai",
+            ],
         ] as const;
 
         for (const [primary, fallback] of pairs) {
@@ -221,6 +243,7 @@ describe("registry fallback linking", () => {
 
         expect(ownPrimary.fallbackEntries?.map((entry) => entry.id)).toEqual([
             "owner/private",
+            "owner/disabled",
         ]);
         expect(
             registryPrimary.fallbackEntries?.map((entry) => entry.id),
@@ -335,6 +358,159 @@ describe("registry fallback linking", () => {
 
         expect(primary.fallbackEntries).toBeUndefined();
     });
+
+    describe("community primary falling back to a static registry target", () => {
+        it("links a static target that costs no more than the primary", () => {
+            const primary = communityEntry(
+                "owner/primary",
+                "owner",
+                "public",
+                null,
+                ["static-cheap"],
+                20,
+            );
+            const target = registryEntry("static-cheap", [], 20);
+            const entries = [primary, target];
+
+            linkFallbackEntries(
+                entries,
+                new Map(entries.map((entry) => [entry.id, entry])),
+            );
+
+            expect(primary.fallbackEntries?.map((entry) => entry.id)).toEqual([
+                "static-cheap",
+            ]);
+        });
+
+        it("rejects a static target that costs more than the primary", () => {
+            const primary = communityEntry(
+                "owner/primary",
+                "owner",
+                "public",
+                null,
+                ["static-expensive"],
+                10,
+            );
+            const target = registryEntry("static-expensive", [], 20);
+            const entries = [primary, target];
+
+            linkFallbackEntries(
+                entries,
+                new Map(entries.map((entry) => [entry.id, entry])),
+            );
+
+            expect(primary.fallbackEntries).toBeUndefined();
+        });
+
+        it("rejects a static target in a different category", () => {
+            const primary = communityEntry(
+                "owner/primary",
+                "owner",
+                "public",
+                null,
+                ["static-image"],
+                10,
+            );
+            const target = registryEntry("static-image", [], 10);
+            target.definition.category = "image";
+            const entries = [primary, target];
+
+            linkFallbackEntries(
+                entries,
+                new Map(entries.map((entry) => [entry.id, entry])),
+            );
+
+            expect(primary.fallbackEntries).toBeUndefined();
+        });
+
+        it("rejects a paid-only static target for a primary that takes Quest Pollen", () => {
+            const anyPollen = communityEntry(
+                "owner/any",
+                "owner",
+                "public",
+                null,
+                ["static-paid"],
+                10,
+            );
+            const paidPrimary = communityEntry(
+                "owner/paid",
+                "owner",
+                "public",
+                null,
+                ["static-paid"],
+                10,
+                true,
+            );
+            const staticPaid = registryEntry("static-paid", [], 10);
+            staticPaid.definition.paidOnly = true;
+            const entries = [anyPollen, paidPrimary, staticPaid];
+
+            linkFallbackEntries(
+                entries,
+                new Map(entries.map((entry) => [entry.id, entry])),
+            );
+
+            expect(anyPollen.fallbackEntries).toBeUndefined();
+            expect(
+                paidPrimary.fallbackEntries?.map((entry) => entry.id),
+            ).toEqual(["static-paid"]);
+        });
+
+        it("rejects a static target that bills beyond its cheap base rate", () => {
+            // The caller pays the primary's rates for the target's usage, so a
+            // dearer variant, extra charges, other units or a cost above the
+            // discounted price cost us the gap.
+            const variant = registryEntry("static-variant", [], 5);
+            variant.definition.costVariants = {
+                long: { completionTextTokens: 20 },
+            };
+            const extras = registryEntry("static-extras", [], 5);
+            extras.definition.billing = { adjustments: [] };
+            const units = registryEntry("static-units", [], 1e-9);
+            units.definition.priceUnits = {
+                completionTextTokens: { unit: "megapixel", quantity: 1e6 },
+            };
+            const discounted = registryEntry("static-discounted", [], 12);
+            discounted.definition.priceMultiplier = 0.5;
+            // Enter must refuse what gen will not route, such as a model
+            // without the /text endpoints every community text model serves.
+            const chatOnly = registryEntry("static-chat-only", [], 5);
+            chatOnly.definition.supportedEndpoints = ["/v1/chat/completions"];
+            const primary = communityEntry(
+                "owner/primary",
+                "owner",
+                "public",
+                null,
+                ["static-variant", "static-extras", "static-units"],
+                10,
+            );
+            const second = communityEntry(
+                "owner/second",
+                "owner",
+                "public",
+                null,
+                ["static-discounted", "static-chat-only"],
+                10,
+            );
+            const entries = [
+                primary,
+                second,
+                variant,
+                extras,
+                units,
+                discounted,
+                chatOnly,
+            ];
+
+            linkFallbackEntries(
+                entries,
+                new Map(entries.map((entry) => [entry.id, entry])),
+            );
+
+            expect(primary.fallbackEntries).toBeUndefined();
+            expect(second.fallbackEntries).toBeUndefined();
+        });
+    });
 });
 
 describe("formatFallbackTarget", () => {
@@ -347,7 +523,7 @@ describe("formatFallbackTarget", () => {
 
 describe("fallback response model attribution", () => {
     const publicId = "qwen/qwen-image-3";
-    const backupId = "qwen/qwen-image-3:replicate";
+    const backupId = "qwen/qwen-image-3:openrouter";
     const model = {
         resolved: publicId,
         definition: IMAGE_SERVICES[publicId],
@@ -453,6 +629,19 @@ describe("isRetryableFallbackError", () => {
         ).toBe(true);
     });
 
+    it("fails over when the provider rejects our egress region", () => {
+        const region = UpstreamError.fromProvider(400, {
+            message: "User location is not supported for the API use.",
+        });
+        expect(isRetryableFallbackError(region)).toBe(true);
+        // An ordinary caller 400 still does not fail over.
+        expect(
+            isRetryableFallbackError(
+                UpstreamError.fromProvider(400, { message: "Invalid voice" }),
+            ),
+        ).toBe(false);
+    });
+
     it("uses the wrapper status for a malformed successful response", () => {
         expect(
             isRetryableFallbackError(
@@ -482,6 +671,19 @@ describe("isRetryableFallbackError", () => {
     });
 
     it("does not fail over on caller errors", () => {
+        for (const [status, upstreamStatus] of [
+            [400, 500],
+            [422, 403],
+        ]) {
+            expect(
+                isRetryableFallbackError(
+                    Object.assign(new Error("Provider returned error"), {
+                        status,
+                        upstreamStatus,
+                    }),
+                ),
+            ).toBe(false);
+        }
         expect(isRetryableFallbackError(textFailure(400))).toBe(false);
         expect(
             isRetryableFallbackError(
@@ -849,14 +1051,23 @@ describe("caller-listed model chains", () => {
     });
 
     it("keeps configured fallbacks for a single-model request", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        const entry = registry
+            .visibleEntries()
+            .find(
+                (entry) =>
+                    entry.eventType === "generate.text" &&
+                    !entry.definition.supportedEndpoints &&
+                    entry.fallbackEntries?.length,
+            );
+        expect(entry).toBeDefined();
+        if (!entry) throw new Error("Missing model with configured fallbacks");
         const model = await resolveModelDefinition(
-            "perplexity/sonar",
+            entry.id,
             "generate.text",
             env,
         );
-        expect(model.fallbackEntries?.map((entry) => entry.id)).toEqual([
-            "perplexity/sonar:openrouter:perplexity",
-        ]);
+        expect(model.fallbackEntries).toEqual(entry.fallbackEntries);
     });
 
     it("tries repeated entries separately without inserting configured routes", async () => {

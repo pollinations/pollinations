@@ -2,6 +2,7 @@ import {
     type CommunityEndpointRuntime,
     isCommunityFallbackPricingAllowed,
     MAX_FALLBACK_TARGETS,
+    staticFallbackRejection,
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
@@ -116,6 +117,21 @@ function isGatewayRoutingFailure(failure: UpstreamFailure): boolean {
     return false;
 }
 
+/**
+ * A provider refusing to serve the region our worker egresses from (Google's
+ * "User location is not supported for the API use"). It arrives as a 400, but
+ * it says nothing about the caller's request: the same request succeeds from
+ * another provider, so the next candidate is worth trying.
+ */
+const PROVIDER_REGION_BLOCK = /user location is not supported/i;
+
+function isProviderRegionBlock(failure: UpstreamFailure): boolean {
+    if (upstreamStatus(failure) !== 400) return false;
+    return upstreamFailureText(failure).some(
+        (text) => text !== undefined && PROVIDER_REGION_BLOCK.test(text),
+    );
+}
+
 function upstreamStatus(failure: UpstreamFailure): number | undefined {
     const upstream = failure.upstreamStatus;
     if (typeof upstream === "number" && (upstream < 200 || upstream >= 300)) {
@@ -190,6 +206,13 @@ export function isRetryableFallbackError(error: unknown): boolean {
     const failure = error as UpstreamFailure;
     const status = upstreamStatus(failure);
     if (!status) return false;
+    // Clients may recognize an input/policy rejection inside a provider 5xx/403.
+    // Respect that classification instead of retrying the original status.
+    if (
+        (failure.status === 400 || failure.status === 422) &&
+        failure.status !== status
+    )
+        return false;
     // A generic provider 408 can benefit from a fallback. Portkey's exact
     // timeout envelope is our own total deadline and must not multiply across
     // fallback candidates.
@@ -201,7 +224,8 @@ export function isRetryableFallbackError(error: unknown): boolean {
     if (
         !serverError &&
         !FALLBACK_ON_STATUS_CODES.includes(status) &&
-        !gatewayRoutingFailure
+        !gatewayRoutingFailure &&
+        !isProviderRegionBlock(failure)
     ) {
         return false;
     }
@@ -262,11 +286,7 @@ function isUsableCommunityFallback(
 ): target is GenerationModelEntry {
     if (target.eventType !== from.eventType) return false;
     const primary = from.communityEndpoint;
-    const candidate = target.communityEndpoint;
-    if (!primary || !candidate) return false;
-    if (primary.modality !== candidate.modality) return false;
-    if (usesAgentRunToken(candidate)) return false;
-    if (primary.imagePricing !== candidate.imagePricing) return false;
+    if (!primary) return false;
     if (
         !from.supportedEndpoints.every((endpoint) =>
             target.supportedEndpoints.includes(endpoint),
@@ -274,6 +294,18 @@ function isUsableCommunityFallback(
     ) {
         return false;
     }
+    const candidate = target.communityEndpoint;
+    if (!candidate) {
+        return (
+            staticFallbackRejection(
+                { ...primary, prices: primary },
+                target.definition,
+            ) === null
+        );
+    }
+    if (primary.modality !== candidate.modality) return false;
+    if (usesAgentRunToken(candidate)) return false;
+    if (primary.imagePricing !== candidate.imagePricing) return false;
     return isCommunityFallbackPricingAllowed(primary, candidate);
 }
 
@@ -296,7 +328,6 @@ export function linkFallbackEntries(
                 continue;
             if (entry.communityEndpoint) {
                 const targetEndpoint = target.communityEndpoint;
-                if (targetEndpoint?.hiddenAt != null) continue;
                 if (
                     targetEndpoint?.visibility === "private" &&
                     entry.communityEndpoint.ownerUserId !==

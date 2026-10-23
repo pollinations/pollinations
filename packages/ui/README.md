@@ -46,7 +46,8 @@ The root `@pollinations/ui` entry also ships a browser IIFE bundle for
 no-build pages. It exposes SDK-free primitives and compositions on
 `window.PollinationsUI`. Non-root subpaths such as `@pollinations/ui/auth`,
 `@pollinations/ui/wallet`, `@pollinations/ui/gen`, and
-`@pollinations/ui/app-user-menu/sdk` remain ESM/CJS-only.
+`@pollinations/ui/app-user-menu/sdk` are ESM-only. The alpha package ships
+ES modules with shared chunks; it does not include a CommonJS build.
 
 React 19 no longer ships UMD builds, so load React from an ESM CDN first, set
 the globals expected by the IIFE bundle, then load `@pollinations/ui`:
@@ -82,11 +83,16 @@ the globals expected by the IIFE bundle, then load `@pollinations/ui`:
 ```
 
 The browser bundle keeps React and ReactDOM external via those globals, but it
-does bundle the root entry's package dependencies, including Ark UI,
-react-markdown, remark, and rehype.
+does bundle the root entry's package dependencies, including Ark UI. Markdown
+and its react-markdown/remark/rehype dependencies are available only through
+the ESM `@pollinations/ui/markdown` subpath.
 
 React's guidance on loading React 19 without UMD builds:
 https://react.dev/blog/2024/04/25/react-19-upgrade-guide#umd-builds-removed
+
+`dist/connect.js` is a separate, self-contained bundle (React included) that
+defines the `<polli-connect>` sign-in button. Usage:
+[Drop-in Button](../../BRING_YOUR_OWN_POLLEN.md#-drop-in-button-no-build-step).
 
 For Pollinations apps that use unprefixed Tailwind utilities, import the
 package-owned app stylesheet instead:
@@ -128,6 +134,30 @@ mask; add a platform by adding a line.
 Wallet colors and utilities are bundled into the main stylesheet
 (`@pollinations/ui/styles.css`) — no separate import needed.
 
+## Dialog layout
+
+`Dialog` keeps rounded corners at every width. Below 480px it spans the phone
+width with an 8px vertical gap; larger viewports have a 16px outer inset and use
+the `size` width limit. Height follows the content, capped by the available
+viewport. Confirmations and completed results follow the same phone-width rule.
+
+Use `DialogHeader`, `DialogBody` (scrolling content), and `DialogFooter` for
+consistent spacing and actions. The frame uses Enter's themed panel color;
+inner cards use the neutral `Surface` default. `AuthModal` uses the same frame
+for standalone pages. Content such as document previews can request a height,
+which remains capped by the shared frame.
+
+Enter's `ResourceDialog` keeps expandable forms top-aligned at every width;
+completed results use the centered `Dialog`. Both inherit the same viewport sizing.
+
+Actions that write server data use a bordered button (`intent="commit"`).
+Navigation and export actions, including device Continue and Copy and close,
+use the default filled style. Sign-in uses `intent="brand"`; destructive
+confirmations use `intent="danger"`. Cancel/Decline/Close actions use the muted,
+borderless `intent="neutral"` style.
+Saved-card checkout preserves its dedicated footer: full-width Confirm with
+Cancel and the alternative payment-method link on the line below.
+
 ## What's exported
 
 - `@pollinations/ui` exports SDK-free design primitives, helpers, and
@@ -157,6 +187,8 @@ Wallet colors and utilities are bundled into the main stylesheet
 - `@pollinations/ui/gen` exports generation UI modules and modality helpers:
   `ModelSelector`, `ModalityChip`, `ModalityDot`, `ModalityTab`,
   `categoryLabel`, and `getModalityKey`.
+- `@pollinations/ui/markdown` exports `Markdown` and `Prose`, kept off the
+  root entry so react-markdown only loads where documents render.
 - `@pollinations/ui/brand/*` exports the canonical brand kit — `mark`,
   `wordmark`, `lockup-horizontal`, `lockup-stacked` (currentColor SVG masters
   plus `-black`/`-white` SVG + PNG), and the `polli/` mascot PNGs.
@@ -168,8 +200,8 @@ Wallet colors and utilities are bundled into the main stylesheet
 - **Design compositions** — `Alert`, `CodeBlock`, `Collapsible`,
   `CopyButton`, `EditableCombobox`, `EditableComboboxToken`,
   `ExternalLinkButton`, `FieldStack`, `FileUpload`, `InfoTip`, `LinkCard`,
-  `Markdown`, `MediaPlaceholder`, `MultiSelect`, `NavItem`, `PeriodPicker`,
-  `Prose`, `Section`, `StatCard`.
+  `MediaPlaceholder`, `MultiSelect`, `NavItem`, `PeriodPicker`, `Section`,
+  `StatCard`.
   `FieldStack` supports label, helper, action, error, and opt-in aligned label
   rows for compact forms.
   `EditableCombobox.startContent` renders content inside a wrapping input shell
@@ -189,8 +221,8 @@ from `@pollinations/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
   such as auth, wallet, app-user-menu, and gen.
 - Public subpath exports (`@pollinations/ui/auth`,
   `@pollinations/ui/wallet`, `@pollinations/ui/gen`,
-  `@pollinations/ui/app-user-menu/sdk`) are built directly from those source
-  layers.
+  `@pollinations/ui/markdown`, `@pollinations/ui/app-user-menu/sdk`) are
+  built directly from those source layers.
 
 ## Theming
 

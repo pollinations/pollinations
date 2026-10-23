@@ -13,19 +13,66 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 | `GET /embeddings/models` | Embedding models with supported modalities |
 | `GET /3d/models` | 3D Generation models with supported modalities |
 
-### Query Parameters
+### Filters
 
-All model discovery endpoints accept an optional `community` query parameter:
+All model list endpoints above accept the same optional `source` filter:
+`official` or `community`. Omit it for both. `community=true|false|1|0`
+remains available as a legacy source filter. The query overrides the
+connection-wide header; `source` overrides `community`. Invalid values return
+**400 Bad Request**. The filter combines with the caller's access restrictions;
+it does not change generation permissions.
 
-| Parameter | Values | Behaviour |
-|-----------|--------|-----------|
-| *(omitted)* | | Returns all models (default, backward-compatible) |
-| `community=false` | `false`, `0` | Excludes community models — returns official models only |
-| `community=true` | `true`, `1` | Returns community models only |
+```bash
+curl 'https://gen.pollinations.ai/v1/models?source=official'
+```
 
-Any other value (e.g. `tru`, `yes`, `2`) returns **400 Bad Request**.
+To search or narrow a list instead of fetching the whole catalog, add any of:
 
-Example: `GET /models?community=false`
+| Parameter | Effect |
+|-----------|--------|
+| `query` | Case-insensitive search of the name, aliases, title, description and publisher; every word must match |
+| `capabilities` | Comma-separated list (`tool_calling`, `reasoning`, `web_search`, `code_execution`, `pollinations_models`); a model needs all of them |
+| `agent` | `true`/`1` for agents only, `false`/`0` to exclude agents |
+| `limit` | At most this many models (1-500), in catalog order |
+
+They apply after the access, source and reliability rules above, so `limit`
+never counts a model the caller cannot see. Unknown capabilities and values
+outside these ranges return **400 Bad Request**.
+
+```bash
+curl 'https://gen.pollinations.ai/text/models?query=gpt&capabilities=reasoning,tool_calling&limit=5'
+```
+
+OpenAI-compatible clients that append `/models` to their base URL can use the
+equivalent header instead of the query parameter:
+
+```text
+Pollinations-Model-Source: official
+```
+
+This header works with Open WebUI and Cline custom OpenAI connections.
+LibreChat administrators can set it in the custom endpoint's `headers` map.
+The client can use any returned model ID for generation without forwarding the
+catalog header.
+
+Lists default to `reliability=reliable`: public community proxy models need more than
+80% success across the last 50 eligible final requests within seven days.
+Official models, agents, and owner-only private models are unaffected. There is no minimum sample size.
+Models without observations remain listed. Successful fallbacks count as successes
+for the requested model; final 4xx are excluded, while owner requests and
+monitor probes count. Each entry includes `health` with `status`,
+`success_rate` (null without observations), and `requests` (at most 50 for
+community proxies). Other models keep their 24-hour health window. Health
+refreshes roughly every 60 seconds; unavailable analytics fails open.
+
+Use `?reliability=all` or `Pollinations-Model-Reliability: all` to see all
+otherwise accessible models. The query takes precedence over the header.
+This only affects discovery: exact-ID calls, retrieval and fallback routing
+remain available. Authentication, key permissions, paid access and manual
+hiding still apply. Owners can manage all their models in My Models.
+
+Time-windowed traffic, latency and fallback breakdowns are served separately by
+`/models/status`, described in [Public Stats](https://gen.pollinations.ai/docs#tag/public-stats).
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.
@@ -60,10 +107,37 @@ Newer Claude and Gemini models may omit sampling controls entirely. On
 Sonnet 4.6, `response_format` supports `json_schema`, not `json_object`.
 Reasoning effort levels and forced-tool restrictions remain model-specific.
 
-## Community Models
+## Community model discovery
 
 Community models and agents use a canonical `community/owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.
 
-The old `owner/model` IDs remain generation aliases in each model's `aliases` array. Key creation and updates accept only canonical model IDs. Existing stored permissions are migrated with the rename.
+The old `owner/model` IDs remain generation aliases in each model's `aliases` array.
 
-For registration, publishing, pricing, fallbacks, and health monitoring, see [Publish a Model](/docs#tag/publish-a-model). For ownership endpoints and schemas, see [Community Models](/docs#tag/community-models) under Resources.
+API key model permissions list model categories and model IDs. A category (`text`, `image`, `video`, `audio`, `3d`, `embedding` or `realtime`) allows every model in it, including models added later. A model ID or alias allows only that model and is stored as its canonical ID.
+
+The `source=community` and `source=official` filters are equivalent source filters
+for discovery. Source, access, and status filters combine with AND semantics.
+
+For registration, publishing, pricing, fallbacks, and health monitoring, see [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model). For ownership endpoints and schemas, see [Community Models](https://gen.pollinations.ai/docs#tag/community-models) under Resources.
+
+## Pollinations-imposed limits
+
+Pollinations sometimes exposes stricter limits than an upstream provider.
+Discovery responses carry the authoritative fields, so clients do not have to
+infer them from provider docs.
+
+## How to read limits from the API
+
+On `GET /models`, `GET /image/models`, `GET /text/models`, and related lists:
+
+| Field | Meaning |
+| --- | --- |
+| `max_duration` / `min_duration` / `allowed_durations` | Video length caps in seconds |
+| `resolutions` | Allowed output resolutions when Pollinations restricts them |
+| `per_user_rpm` | Per-user request rate limit (null/omit = no Pollinations RPM cap) |
+| `max_reference_images` | Max images accepted as references / vision inputs |
+
+Generation rejects values outside these ranges. Upstream may advertise wider
+options; the registry wins for Pollinations requests.
+
+For current per-model values, read the live [`GET /models`](https://gen.pollinations.ai/models) response instead of a copied table.

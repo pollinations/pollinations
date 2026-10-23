@@ -9,7 +9,14 @@ type TinybirdGenerationEvent = Omit<
     | "tinybirdDeliveredAt"
     | "createdAt"
     | "updatedAt"
->;
+    | "tokenCountPromptImage"
+    | "tokenCountCompletionImage"
+> & {
+    tokenCountPromptImage?: number;
+    tokenCountCompletionImage?: number;
+    usagePromptImageUnits: number;
+    usageCompletionImageUnits: number;
+};
 
 type UsageRow = Record<string, unknown>;
 
@@ -22,6 +29,7 @@ export type MockTinybirdState = {
     events: TinybirdGenerationEvent[];
     errorEvents: Record<string, unknown>[];
     referralEvents: Record<string, unknown>[];
+    productEvents: Record<string, unknown>[];
     stripeEvents: Record<string, unknown>[];
     dailyResponse: UsageRow[];
     usageResponse: UsageRow[];
@@ -31,6 +39,7 @@ export type MockTinybirdState = {
     appUsageResponse: UsageRow[];
     modelModalitiesResponse: UsageRow[];
     agentUsageResponse: UsageRow[];
+    modelHealthResponse: UsageRow[];
     pipeCalls: PipeCall[];
 };
 
@@ -39,6 +48,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         events: [],
         errorEvents: [],
         referralEvents: [],
+        productEvents: [],
         stripeEvents: [],
         dailyResponse: [],
         usageResponse: [],
@@ -48,6 +58,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         appUsageResponse: [],
         modelModalitiesResponse: [],
         agentUsageResponse: [],
+        modelHealthResponse: [],
         pipeCalls: [],
     };
 
@@ -82,6 +93,8 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
                 state.referralEvents.push(...rows);
             } else if (eventName === "stripe_event") {
                 state.stripeEvents.push(...rows);
+            } else if (eventName === "product_event") {
+                state.productEvents.push(...rows);
             }
 
             return c.json(
@@ -121,6 +134,10 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.agentUsageResponse }, 200);
         })
+        .get("/v0/pipes/my_model_health.json", (c) => {
+            state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
+            return c.json({ data: state.modelHealthResponse }, 200);
+        })
         .post("/v0/datasources/:datasource/delete", (c) => {
             return c.json({ delete_id: "mock-delete" }, 200);
         });
@@ -136,6 +153,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         state.events = [];
         state.errorEvents = [];
         state.referralEvents = [];
+        state.productEvents = [];
         state.stripeEvents = [];
         state.dailyResponse = [];
         state.usageResponse = [];
@@ -145,6 +163,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         state.appUsageResponse = [];
         state.modelModalitiesResponse = [];
         state.agentUsageResponse = [];
+        state.modelHealthResponse = [];
         state.pipeCalls = [];
     };
 

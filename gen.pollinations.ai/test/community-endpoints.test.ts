@@ -4,9 +4,12 @@ import {
     SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { Buffer } from "node:buffer";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
+import { signSessionToken } from "@shared/auth/session-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import {
     communityAudioSpeechUrl,
@@ -34,6 +37,7 @@ import {
     communityModelDefinition,
     communityModelId,
     communityPriceDefinition,
+    type EndpointAgentCapability,
     type EndpointAgentCommunityEndpointRuntime,
     isCommunityEndpointOwnerAllowed,
     isCommunityFallbackPricingAllowed,
@@ -59,7 +63,6 @@ import {
 } from "@shared/community-endpoints.ts";
 import {
     communityEndpoint as communityEndpointTable,
-    session as sessionTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
@@ -87,9 +90,11 @@ import {
     createTestUser,
     test as fixtureTest,
 } from "@shared/test/fixtures/index.ts";
+import { generateText } from "ai";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
+import OpenAI from "openai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import {
@@ -112,6 +117,155 @@ import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coo
 
 const db = drizzle(env.DB);
 
+fixtureTest(
+    "official agent ownership transfer changes callable model IDs",
+    async () => {
+        const sourceUserId = await createTestUser({
+            githubId: 240205932,
+            githubUsername: "pollinations-router",
+        });
+        const destinationUserId = await createTestUser({
+            githubId: 314960022,
+            githubUsername: "pollinations-ai",
+        });
+        const listings = [
+            ["e1363e66-54b8-49c3-a897-08d99629885f", "floret"],
+            ["9a0db868-29cb-4e78-9d44-ba2be6551337", "midijourney"],
+            ["3ba66897-e040-41b5-8cf5-7c561ee5c52f", "polli"],
+        ] as const;
+        await insertCommunityEndpoints(
+            listings.map(([id, name]) => ({
+                id,
+                ownerUserId: sourceUserId,
+                name,
+                title: name,
+                description: null,
+                type:
+                    name === "midijourney" ? "prompt_agent" : "endpoint_agent",
+                visibility: "public",
+                baseUrl:
+                    name === "midijourney"
+                        ? PROMPT_AGENT_BASE_URL_PLACEHOLDER
+                        : `https://${name}.example.com/v1/chat/completions`,
+                upstreamModel: name === "midijourney" ? id : name,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })),
+        );
+        const oldPolli = communityModelId("pollinations-router", "polli");
+        const newPolli = communityModelId("pollinations-ai", "polli");
+        const oldKey = await createTestApiKey({ allowedModels: ["text"] });
+
+        const catalogIdsFor = async (key: string) => {
+            const response = await fetchGen(
+                new Request("https://gen.pollinations.ai/v1/models", {
+                    headers: { Authorization: `Bearer ${key}` },
+                }),
+            );
+            expect(response.status).toBe(200);
+            const body = (await response.json()) as { data: { id: string }[] };
+            return body.data.map((model) => model.id);
+        };
+
+        await resetGenerationModelRegistryCache(env);
+        expect(await catalogIdsFor(oldKey.key)).toContain(oldPolli);
+        await db
+            .update(communityEndpointTable)
+            .set({ ownerUserId: destinationUserId })
+            .where(eq(communityEndpointTable.ownerUserId, sourceUserId));
+        await resetGenerationModelRegistryCache(env);
+        const registry = await getGenerationModelRegistry(env);
+        for (const [, name] of listings) {
+            expect(
+                registry.resolve(communityModelId("pollinations-router", name)),
+            ).toBeNull();
+            expect(
+                registry.resolve(
+                    legacyCommunityModelId("pollinations-router", name),
+                ),
+            ).toBeNull();
+            const current = registry.resolve(
+                communityModelId("pollinations-ai", name),
+            );
+            expect(current?.communityEndpoint?.ownerUserId).toBe(
+                destinationUserId,
+            );
+            expect(
+                registry.resolve(
+                    legacyCommunityModelId("pollinations-ai", name),
+                ),
+            ).toBe(current);
+        }
+        // A text key keeps the agent under its new ID.
+        expect(await catalogIdsFor(oldKey.key)).toContain(newPolli);
+    },
+);
+
+fixtureTest(
+    "banned owners' public models and agents leave the registry",
+    async () => {
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: "banned-owner",
+        });
+        await insertCommunityEndpoints({
+            id: "ban-model",
+            ownerUserId,
+            name: "model",
+            description: "Test",
+            type: "proxy",
+            visibility: "public",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "test",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        await insertCommunityEndpoints({
+            id: "ban-agent",
+            ownerUserId,
+            name: "agent",
+            description: "Test",
+            type: "prompt_agent",
+            visibility: "public",
+            baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+            upstreamModel: "ban-agent",
+            payload: JSON.stringify({
+                prompt: "Test",
+                baseModel: DEFAULT_TEXT_MODEL,
+                mcpServers: [],
+            }),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        const before = await getCommunityModelRegistryEntries(env);
+        expect(
+            before.filter(
+                (row) => row.communityEndpoint.ownerUserId === ownerUserId,
+            ),
+        ).toHaveLength(2);
+        await db
+            .update(userTable)
+            .set({ banned: true })
+            .where(eq(userTable.id, ownerUserId));
+        await resetGenerationModelRegistryCache(env);
+        expect(
+            (await getCommunityModelRegistryEntries(env)).filter(
+                (row) => row.communityEndpoint.ownerUserId === ownerUserId,
+            ),
+        ).toHaveLength(0);
+        await db
+            .update(userTable)
+            .set({ banned: false })
+            .where(eq(userTable.id, ownerUserId));
+        await resetGenerationModelRegistryCache(env);
+        expect(
+            (await getCommunityModelRegistryEntries(env)).filter(
+                (row) => row.communityEndpoint.ownerUserId === ownerUserId,
+            ),
+        ).toHaveLength(2);
+    },
+);
+
 type CommunityEndpointInsert = typeof communityEndpointTable.$inferInsert;
 type CommunityEndpointFixture = Omit<CommunityEndpointInsert, "title"> &
     Partial<CommunityEndpointPrices> & {
@@ -120,6 +274,7 @@ type CommunityEndpointFixture = Omit<CommunityEndpointInsert, "title"> &
         imagePricing?: CommunityEndpointImagePricing;
         inputModalities?: ModelInputModality[] | null;
         outputModalities?: ModelOutputModality[];
+        capabilities?: EndpointAgentCapability[];
         baseUrl?: string | null;
         api?: CommunityEndpointApi | null;
         upstreamModel?: string;
@@ -143,6 +298,7 @@ function insertCommunityEndpoints(
             imagePricing: rawImagePricing,
             inputModalities: rawInputModalities,
             outputModalities,
+            capabilities,
             baseUrl,
             api: rawApi,
             upstreamModel,
@@ -177,8 +333,10 @@ function insertCommunityEndpoints(
                         api,
                         inputModalities: rawInputModalities ?? undefined,
                         outputModalities,
+                        capabilities,
                     }
                   : {
+                        paidOnly: false,
                         bearerTokenCiphertext:
                             bearerTokenCiphertext ?? "test-ciphertext",
                         api,
@@ -241,7 +399,7 @@ const TEST_MP4_BYTES = [
 ];
 
 function isChatCompletionsRequest(request: Request): boolean {
-    return new URL(request.url).pathname === "/v1/chat/completions";
+    return new URL(request.url).pathname.endsWith("/v1/chat/completions");
 }
 
 function isCommunityImageGenerationsRequest(request: Request): boolean {
@@ -252,12 +410,12 @@ function isCommunityImageEditsRequest(request: Request): boolean {
     return new URL(request.url).pathname.endsWith("/images/edits");
 }
 
-beforeEach(() => {
-    resetGenerationModelRegistryCache();
+beforeEach(async () => {
+    await resetGenerationModelRegistryCache(env);
 });
 
-afterEach(() => {
-    resetGenerationModelRegistryCache();
+afterEach(async () => {
+    await resetGenerationModelRegistryCache(env);
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
 });
@@ -274,8 +432,10 @@ async function maturePendingCommunityEndpoint(id: string): Promise<void> {
 }
 
 async function createEnterCommunityApi(): Promise<Hono<Env>> {
-    const routePath =
-        "../../enter.pollinations.ai/src/routes/community-endpoints.ts";
+    const routePath = new URL(
+        "../../enter.pollinations.ai/src/routes/community-endpoints.ts",
+        import.meta.url,
+    ).href;
     const { communityEndpointsRoutes } = (await import(routePath)) as {
         communityEndpointsRoutes: Hono;
     };
@@ -289,7 +449,10 @@ async function createEnterCommunityApi(): Promise<Hono<Env>> {
 }
 
 async function createEnterFrontendApi(): Promise<Hono<Env>> {
-    const routePath = "../../enter.pollinations.ai/src/frontend-api.ts";
+    const routePath = new URL(
+        "../../enter.pollinations.ai/src/frontend-api.ts",
+        import.meta.url,
+    ).href;
     const { frontendApi } = (await import(routePath)) as {
         frontendApi: Hono;
     };
@@ -336,23 +499,13 @@ async function fetchGen(
     return new Response(body, response);
 }
 
-async function signedSessionCookie(token: string): Promise<string> {
-    const key = await crypto.subtle.importKey(
-        "raw",
-        new TextEncoder().encode(env.BETTER_AUTH_SECRET),
-        { name: "HMAC", hash: "SHA-256" },
-        false,
-        ["sign"],
-    );
-    const signature = await crypto.subtle.sign(
-        "HMAC",
-        key,
-        new TextEncoder().encode(token),
-    );
-    const encodedSignature = btoa(
-        String.fromCharCode(...new Uint8Array(signature)),
-    );
-    return `better-auth.session_token=${encodeURIComponent(`${token}.${encodedSignature}`)}`;
+// The account API is bearer-only: the dashboard calls it with a short-lived
+// session token, signed here for the user.
+async function sessionAuthorization(userId: string): Promise<string> {
+    return `Bearer ${await signSessionToken({
+        secret: env.BETTER_AUTH_SECRET,
+        userId,
+    })}`;
 }
 
 async function expectCommunityChatRequest(
@@ -577,44 +730,46 @@ describe("community endpoint helpers", () => {
         });
     });
 
-    it.each([
-        null,
-        undefined,
-    ])("parses media payloads without a text API (%s)", (api) => {
-        const payload = parseListingPayload(
-            "proxy",
-            JSON.stringify({
+    it.each([null, undefined])(
+        "parses media payloads without a text API (%s)",
+        (api) => {
+            const payload = parseListingPayload(
+                "proxy",
+                JSON.stringify({
+                    bearerTokenCiphertext: "ciphertext",
+                    paidOnly: false,
+                    modality: "image",
+                    api,
+                    imagePricing: "request",
+                    inputModalities: ["image", "image"],
+                    perUserRpm: null,
+                    fallbacks: ["owner/model"],
+                    prices: { completionImagePrice: 0.2 },
+                }),
+            );
+
+            expect(payload).toMatchObject({
                 bearerTokenCiphertext: "ciphertext",
+                api: null,
+                paidOnly: false,
                 modality: "image",
-                api,
                 imagePricing: "request",
-                inputModalities: ["image", "image"],
+                inputModalities: ["image"],
                 perUserRpm: null,
                 fallbacks: ["owner/model"],
-                prices: { completionImagePrice: 0.2 },
-            }),
-        );
-
-        expect(payload).toMatchObject({
-            bearerTokenCiphertext: "ciphertext",
-            api: null,
-            paidOnly: false,
-            modality: "image",
-            imagePricing: "request",
-            inputModalities: ["image"],
-            perUserRpm: null,
-            fallbacks: ["owner/model"],
-            prices: {
-                promptTextPrice: 0,
-                completionImagePrice: 0.2,
-                completionVideoPrice: 0,
-            },
-        });
-    });
+                prices: {
+                    promptTextPrice: 0,
+                    completionImagePrice: 0.2,
+                    completionVideoPrice: 0,
+                },
+            });
+        },
+    );
 
     it("rejects stored payloads that do not match their listing schema", () => {
         const textPayload = {
             bearerTokenCiphertext: "ciphertext",
+            paidOnly: false,
             modality: "text",
             imagePricing: "request",
             inputModalities: ["text"],
@@ -634,6 +789,16 @@ describe("community endpoint helpers", () => {
                 }),
             ),
         ).toMatchObject({ api: "chat_completions" });
+        const { paidOnly: _, ...withoutPaidOnly } = textPayload;
+        expect(
+            parseListingPayload(
+                "proxy",
+                JSON.stringify({
+                    ...withoutPaidOnly,
+                    api: "chat_completions",
+                }),
+            ),
+        ).toBeNull();
         expect(parseListingPayload("proxy", "not json")).toBeNull();
         expect(
             parseListingPayload("proxy", JSON.stringify({ prices: {} })),
@@ -672,6 +837,7 @@ describe("community endpoint helpers", () => {
             parseListingPayload(
                 "proxy",
                 JSON.stringify({
+                    paidOnly: false,
                     bearerTokenCiphertext: "ciphertext",
                     modality: "image",
                     imagePricing: "request",
@@ -830,6 +996,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/transcription",
             title: "Transcription",
             description: null,
+            paidOnly: false,
             modality: "transcription",
             ...communityEndpointPrices({}),
         });
@@ -852,6 +1019,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/speech",
             title: "Speech",
             description: null,
+            paidOnly: false,
             modality: "speech",
             ...communityEndpointPrices({}),
         });
@@ -889,6 +1057,7 @@ describe("community endpoint helpers", () => {
             modelId: "community/voodoohop/openai",
             title: "OpenAI Community",
             description: "OpenAI via community endpoint",
+            paidOnly: false,
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
                 completionTextPrice: 0.1,
@@ -910,6 +1079,7 @@ describe("community endpoint helpers", () => {
                 modelId: "voodoohop/openai",
                 title: "OpenAI",
                 description: null,
+                paidOnly: false,
                 ...prices,
             }).paidOnly,
         ).toBe(false);
@@ -930,6 +1100,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/openai",
             title: "OpenAI Fast",
             description: "OpenAI via community endpoint",
+            paidOnly: false,
             ...communityEndpointPrices({ promptTextPrice: 0.1 }),
         });
 
@@ -945,6 +1116,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/openai",
             title: "OpenAI Fast",
             description: null,
+            paidOnly: false,
             providerName: "Example AI",
             providerUrl: "https://example.com/",
             ...communityEndpointPrices({}),
@@ -960,6 +1132,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "Community Image",
             description: "Community image model",
+            paidOnly: false,
             modality: "image",
             ...communityEndpointPrices({
                 promptTextPrice: 0.2,
@@ -998,6 +1171,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "GPT Image",
             description: "Token-priced image model",
+            paidOnly: false,
             modality: "image",
             imagePricing: "tokens",
             inputModalities: ["text", "image"],
@@ -1037,6 +1211,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "Community Video",
             description: "Community video model",
+            paidOnly: false,
             modality: "video",
             inputModalities: ["text", "image", "audio", "video"],
             ...communityEndpointPrices({ completionVideoPrice: 0.08 }),
@@ -1064,6 +1239,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "Community Embedding",
             description: "Community embedding model",
+            paidOnly: false,
             modality: "embedding",
             ...communityEndpointPrices({
                 promptTextPrice: 0.00001,
@@ -1116,6 +1292,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/openai",
             title: "OpenAI Community",
             description: "OpenAI via community endpoint",
+            paidOnly: false,
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
                 completionTextPrice: 0.1,
@@ -1130,6 +1307,7 @@ describe("community endpoint helpers", () => {
             modelId: "marcosfrgames08/glm-4.6v-flash",
             title: "GLM Vision",
             description: "Vision model",
+            paidOnly: false,
             inputModalities: ["image", "video"],
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
@@ -1145,6 +1323,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/openai",
             title: "OpenAI Community",
             description: "OpenAI via community endpoint",
+            paidOnly: false,
             advertised: {
                 capabilities: ["tool_calling", "reasoning"],
                 contextLength: 128000,
@@ -1164,6 +1343,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/gptimage",
             title: "GPT Image",
             description: "Image model",
+            paidOnly: false,
             modality: "image",
             advertised: {
                 capabilities: ["tool_calling", "reasoning"],
@@ -1182,6 +1362,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/gptimage",
             title: "GPT Image",
             description: "Image model",
+            paidOnly: false,
             modality: "image",
             inputModalities: ["text", "audio"],
             ...communityEndpointPrices({
@@ -1199,6 +1380,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "Community Transcription",
             description: "Community transcription model",
+            paidOnly: false,
             modality: "transcription",
             ...communityEndpointPrices({ promptAudioPrice: 0.0000445 }),
         });
@@ -1249,6 +1431,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "Community Speech",
             description: "Community speech model",
+            paidOnly: false,
             modality: "speech",
             ...communityEndpointPrices({ completionAudioPrice: 0.00002 }),
         });
@@ -1370,8 +1553,6 @@ describe("community endpoint helpers", () => {
                 paidOnly: false,
                 perUserRpm: null,
                 fallbacks: [],
-                hiddenAt: null,
-                hiddenReason: null,
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
@@ -1562,8 +1743,6 @@ describe("community endpoint helpers", () => {
                 paidOnly: false,
                 perUserRpm: null,
                 fallbacks: [],
-                hiddenAt: null,
-                hiddenReason: null,
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
@@ -1766,60 +1945,57 @@ describe("community endpoint helpers", () => {
             expect(fetchMock).toHaveBeenCalledTimes(1);
         });
 
-        it.each([
-            undefined,
-            null,
-            {},
-            { duration: null },
-        ])("falls back to requested duration when usage is missing: %j", async (usage) => {
-            vi.stubGlobal(
-                "fetch",
-                vi.fn(async () =>
-                    Response.json({
-                        data: [{ b64_json: TEST_MP4_BASE64 }],
-                        usage,
-                    }),
-                ),
-            );
-            await expect(
-                callCommunityVideoEndpoint(
-                    await videoEndpoint(),
-                    "a sprout",
-                    { duration: 5 },
-                    secret,
-                ),
-            ).resolves.toMatchObject({
-                durationSeconds: 5,
-                trackingData: { usage: { completionVideoSeconds: 5 } },
-            });
-        });
+        it.each([undefined, null, {}, { duration: null }])(
+            "falls back to requested duration when usage is missing: %j",
+            async (usage) => {
+                vi.stubGlobal(
+                    "fetch",
+                    vi.fn(async () =>
+                        Response.json({
+                            data: [{ b64_json: TEST_MP4_BASE64 }],
+                            usage,
+                        }),
+                    ),
+                );
+                await expect(
+                    callCommunityVideoEndpoint(
+                        await videoEndpoint(),
+                        "a sprout",
+                        { duration: 5 },
+                        secret,
+                    ),
+                ).resolves.toMatchObject({
+                    durationSeconds: 5,
+                    trackingData: { usage: { completionVideoSeconds: 5 } },
+                });
+            },
+        );
 
-        it.each([
-            { duration: 0 },
-            { duration: -1 },
-            { duration: "5" },
-        ])("rejects invalid reported usage %j even when duration was requested", async (usage) => {
-            vi.stubGlobal(
-                "fetch",
-                vi.fn(async () =>
-                    Response.json({
-                        data: [{ b64_json: TEST_MP4_BASE64 }],
-                        usage,
-                    }),
-                ),
-            );
-            await expect(
-                callCommunityVideoEndpoint(
-                    await videoEndpoint(),
-                    "a sprout",
-                    { duration: 5 },
-                    secret,
-                ),
-            ).rejects.toMatchObject({
-                status: 502,
-                message: expect.stringContaining("usage.duration"),
-            });
-        });
+        it.each([{ duration: 0 }, { duration: -1 }, { duration: "5" }])(
+            "rejects invalid reported usage %j even when duration was requested",
+            async (usage) => {
+                vi.stubGlobal(
+                    "fetch",
+                    vi.fn(async () =>
+                        Response.json({
+                            data: [{ b64_json: TEST_MP4_BASE64 }],
+                            usage,
+                        }),
+                    ),
+                );
+                await expect(
+                    callCommunityVideoEndpoint(
+                        await videoEndpoint(),
+                        "a sprout",
+                        { duration: 5 },
+                        secret,
+                    ),
+                ).rejects.toMatchObject({
+                    status: 502,
+                    message: expect.stringContaining("usage.duration"),
+                });
+            },
+        );
 
         it("preserves upstream video failures", async () => {
             vi.stubGlobal(
@@ -1872,8 +2048,6 @@ describe("community endpoint helpers", () => {
                 paidOnly: false,
                 perUserRpm: null,
                 fallbacks: [],
-                hiddenAt: null,
-                hiddenReason: null,
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
@@ -2236,8 +2410,6 @@ describe("community endpoint helpers", () => {
                 paidOnly: false,
                 perUserRpm: null,
                 fallbacks: [],
-                hiddenAt: null,
-                hiddenReason: null,
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
@@ -2424,8 +2596,6 @@ describe("community endpoint helpers", () => {
             paidOnly: false,
             perUserRpm: null,
             fallbacks: [],
-            hiddenAt: null,
-            hiddenReason: null,
             bearerTokenCiphertext: await encryptSecret(
                 "sk_saved_token",
                 secret,
@@ -2489,8 +2659,6 @@ describe("community endpoint helpers", () => {
                 visibility: "public",
                 paidOnly: false,
                 perUserRpm: null,
-                hiddenAt: null,
-                hiddenReason: null,
                 fallbacks: [],
                 ...communityEndpointPrices({}),
                 ...overrides,
@@ -2534,14 +2702,17 @@ describe("community endpoint helpers", () => {
             expect(claims).toMatchObject({ parentApiKeyId: "parent-key-id" });
         });
 
-        it("maps agent_model to the inner model without changing identity or delegation", async () => {
+        it("passes arbitrary metadata without changing model identity or delegation", async () => {
             const endpoint = endpointAgent();
             const context = await communityEndpointGatewayContext({
                 endpoint,
                 modelDefinition: communityModelDefinition(endpoint),
                 requestData: {
                     model: endpoint.modelId,
-                    agent_model: "test/brain",
+                    metadata: {
+                        model: "test/brain",
+                        custom_key: "custom value",
+                    },
                     messages: [{ role: "user", content: "hello" }],
                 },
                 secret,
@@ -2552,7 +2723,11 @@ describe("community endpoint helpers", () => {
             });
 
             expect(context.requestedModel).toBe(endpoint.modelId);
-            expect(context.modelConfig?.model).toBe("test/brain");
+            expect(context.modelConfig?.model).toBe(endpoint.upstreamModel);
+            expect(context.metadata).toEqual({
+                model: "test/brain",
+                custom_key: "custom value",
+            });
             expect(context).not.toHaveProperty("agent_model");
             const token = String(context.modelConfig?.authKey);
             expect(token).toMatch(/^ag_/);
@@ -2560,6 +2735,8 @@ describe("community endpoint helpers", () => {
             expect(await verifyAgentRunToken(token, secret)).toMatchObject({
                 parentApiKeyId: "parent-key-id",
                 parentRequestId: "parent-request-id",
+                // External agents get no managed scope but are still named.
+                agentModelId: endpoint.modelId,
             });
             const defaultContext = await contextFor(endpoint, "parent-key-id");
             expect(defaultContext.modelConfig?.model).toBe(
@@ -2650,151 +2827,190 @@ describe("community endpoint helpers", () => {
     });
 });
 
-fixtureTest(
-    "routes agent_model overrides through JSON and SSE with caller-scoped delegation",
-    async ({ apiKey }) => {
-        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
-        const modelName = `agent-${crypto.randomUUID().slice(0, 8)}`;
-        const modelId = communityModelId(ownerGithubUsername, modelName);
-        const agentUrl = "https://agent.example.com/v1/chat/completions";
-        const ownerUserId = await createTestUser({
-            githubId: nextAllowedGithubId(),
-            githubUsername: ownerGithubUsername,
-        });
-        await insertCommunityEndpoints({
-            id: `endpoint-${crypto.randomUUID()}`,
-            ownerUserId,
-            type: "endpoint_agent",
-            visibility: "public",
-            name: modelName,
-            api: "chat_completions",
-            baseUrl: agentUrl,
-            upstreamModel: "polli",
-            promptTextPrice: 0,
-            completionTextPrice: 0,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
+for (const protocol of ["chat_completions", "responses", "text"] as const) {
+    const api = protocol === "text" ? "chat_completions" : protocol;
+    fixtureTest(
+        `routes ${protocol} metadata through JSON and SSE with caller-scoped delegation`,
+        async ({ apiKey }) => {
+            const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+            const modelName = `agent-${crypto.randomUUID().slice(0, 8)}`;
+            const modelId = communityModelId(ownerGithubUsername, modelName);
+            const path =
+                protocol === "text"
+                    ? "/text"
+                    : api === "responses"
+                      ? "/v1/responses"
+                      : "/v1/chat/completions";
+            const input =
+                api === "responses"
+                    ? { input: "hello" }
+                    : { messages: [{ role: "user", content: "hello" }] };
+            const agentUrl = `https://agent.example.com/v1/${api === "responses" ? "responses" : "chat/completions"}`;
+            const ownerUserId = await createTestUser({
+                githubId: nextAllowedGithubId(),
+                githubUsername: ownerGithubUsername,
+            });
+            await insertCommunityEndpoints({
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                type: "endpoint_agent",
+                visibility: "public",
+                name: modelName,
+                api,
+                baseUrl: agentUrl,
+                upstreamModel: "polli",
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
 
-        const upstreamModels: string[] = [];
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async (input, init) => {
-                const request = new Request(input, init);
-                if (request.url === agentUrl) {
-                    const token =
-                        request.headers
-                            .get("authorization")
-                            ?.replace(/^Bearer\s+/i, "") ?? "";
-                    expect(token).toMatch(/^ag_/);
-                    expect(token).not.toContain(apiKey);
-                    const claims = await verifyAgentRunToken(
-                        token,
-                        env.BETTER_AUTH_SECRET,
-                    );
-                    expect(claims.parentApiKeyId).toBeTruthy();
-                    expect(claims.parentRequestId).toBeTruthy();
-                    const body = (await request.json()) as Record<
-                        string,
-                        unknown
-                    >;
-                    expect(body).not.toHaveProperty("agent_model");
-                    const innerModel = String(body.model);
-                    upstreamModels.push(innerModel);
-                    const usage = {
-                        prompt_tokens: 2,
-                        completion_tokens: 3,
-                        total_tokens: 5,
-                    };
-                    if (body.stream) {
-                        const chunks = [
-                            {
-                                choices: [
+            const upstreamModels: string[] = [];
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (input, init) => {
+                    const request = new Request(input, init);
+                    if (request.url === agentUrl) {
+                        const token =
+                            request.headers
+                                .get("authorization")
+                                ?.replace(/^Bearer\s+/i, "") ?? "";
+                        expect(token).toMatch(/^ag_/);
+                        expect(token).not.toContain(apiKey);
+                        const claims = await verifyAgentRunToken(
+                            token,
+                            env.BETTER_AUTH_SECRET,
+                        );
+                        expect(claims.parentApiKeyId).toBeTruthy();
+                        expect(claims.parentRequestId).toBeTruthy();
+                        const body = (await request.json()) as Record<
+                            string,
+                            unknown
+                        >;
+                        expect(body).not.toHaveProperty("agent_model");
+                        expect(body.model).toBe("polli");
+                        const metadata = body.metadata as
+                            | Record<string, string>
+                            | undefined;
+                        if (metadata)
+                            expect(metadata.custom_key).toBe("unchanged");
+                        const innerModel =
+                            metadata?.model ?? String(body.model);
+                        upstreamModels.push(innerModel);
+                        const usage = {
+                            prompt_tokens: 2,
+                            completion_tokens: 3,
+                            total_tokens: 5,
+                        };
+                        if (api === "responses") {
+                            const response = {
+                                id: "resp_agent",
+                                object: "response",
+                                created_at: 1,
+                                status: "completed",
+                                model: innerModel,
+                                output: [
                                     {
-                                        index: 0,
-                                        delta: {
-                                            role: "assistant",
-                                            content: innerModel,
+                                        id: "msg_agent",
+                                        type: "message",
+                                        role: "assistant",
+                                        status: "completed",
+                                        content: [
+                                            {
+                                                type: "output_text",
+                                                text: innerModel,
+                                                annotations: [],
+                                            },
+                                        ],
+                                    },
+                                ],
+                                usage: {
+                                    input_tokens: 2,
+                                    output_tokens: 3,
+                                    total_tokens: 5,
+                                },
+                            };
+                            return body.stream
+                                ? new Response(
+                                      `event: response.completed\ndata: ${JSON.stringify({ type: "response.completed", sequence_number: 0, response })}\n\n`,
+                                      {
+                                          headers: {
+                                              "Content-Type":
+                                                  "text/event-stream",
+                                          },
+                                      },
+                                  )
+                                : Response.json(response);
+                        }
+                        if (body.stream) {
+                            const chunks = [
+                                {
+                                    choices: [
+                                        {
+                                            index: 0,
+                                            delta: {
+                                                role: "assistant",
+                                                content: innerModel,
+                                            },
+                                            finish_reason: null,
                                         },
-                                        finish_reason: null,
-                                    },
-                                ],
-                            },
-                            {
-                                choices: [
-                                    {
-                                        index: 0,
-                                        delta: {},
-                                        finish_reason: "stop",
-                                    },
-                                ],
-                            },
-                            { choices: [], usage },
-                        ].map(
-                            (chunk) =>
-                                `data: ${JSON.stringify({ id: "agent", object: "chat.completion.chunk", created: 1, model: innerModel, ...chunk })}\n\n`,
-                        );
-                        return new Response(
-                            `${chunks.join("")}data: [DONE]\n\n`,
-                            {
-                                headers: {
-                                    "Content-Type": "text/event-stream",
+                                    ],
                                 },
-                            },
-                        );
+                                {
+                                    choices: [
+                                        {
+                                            index: 0,
+                                            delta: {},
+                                            finish_reason: "stop",
+                                        },
+                                    ],
+                                },
+                                { choices: [], usage },
+                            ].map(
+                                (chunk) =>
+                                    `data: ${JSON.stringify({ id: "agent", object: "chat.completion.chunk", created: 1, model: innerModel, ...chunk })}\n\n`,
+                            );
+                            return new Response(
+                                `${chunks.join("")}data: [DONE]\n\n`,
+                                {
+                                    headers: {
+                                        "Content-Type": "text/event-stream",
+                                    },
+                                },
+                            );
+                        }
+                        return Response.json({
+                            id: "agent",
+                            object: "chat.completion",
+                            model: innerModel,
+                            choices: [
+                                {
+                                    index: 0,
+                                    message: {
+                                        role: "assistant",
+                                        content: innerModel,
+                                    },
+                                    finish_reason: "stop",
+                                },
+                            ],
+                            usage,
+                        });
                     }
-                    return Response.json({
-                        id: "agent",
-                        object: "chat.completion",
-                        model: innerModel,
-                        choices: [
-                            {
-                                index: 0,
-                                message: {
-                                    role: "assistant",
-                                    content: innerModel,
-                                },
-                                finish_reason: "stop",
-                            },
-                        ],
-                        usage,
-                    });
-                }
-                if (isBillingFetch(request)) return Response.json({ data: [] });
-                throw new Error(`Unexpected fetch: ${request.url}`);
-            }),
-        );
-
-        for (const agentModel of ["", "   ", "x".repeat(129), 1, null]) {
-            const invalid = await fetchGen(
-                new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${apiKey}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        model: modelId,
-                        agent_model: agentModel,
-                        messages: [{ role: "user", content: "hello" }],
-                    }),
+                    if (isBillingFetch(request))
+                        return Response.json({ data: [] });
+                    throw new Error(`Unexpected fetch: ${request.url}`);
                 }),
             );
-            expect(invalid.status).toBe(400);
-            await invalid.text();
-        }
-        expect(upstreamModels).toEqual([]);
 
-        for (const stream of [false, true]) {
-            for (const agentModel of [
-                undefined,
-                "test/brain-one",
-                "test/brain-two",
-            ]) {
-                const response = await fetchGen(
-                    new Request(
-                        "https://gen.pollinations.ai/v1/chat/completions",
-                        {
+            for (const stream of [false, true]) {
+                for (const agentModel of [
+                    undefined,
+                    "test/brain-one",
+                    "test/brain-two",
+                    "test/brain-both",
+                ]) {
+                    const response = await fetchGen(
+                        new Request(`https://gen.pollinations.ai${path}`, {
                             method: "POST",
                             headers: {
                                 Authorization: `Bearer ${apiKey}`,
@@ -2805,12 +3021,17 @@ fixtureTest(
                                     ownerGithubUsername,
                                     modelName,
                                 ),
-                                ...(agentModel
-                                    ? { agent_model: agentModel }
-                                    : {}),
-                                messages: [{ role: "user", content: "hello" }],
+                                ...input,
                                 stream,
-                                ...(stream
+                                ...(agentModel
+                                    ? {
+                                          metadata: {
+                                              model: agentModel,
+                                              custom_key: "unchanged",
+                                          },
+                                      }
+                                    : {}),
+                                ...(stream && api === "chat_completions"
                                     ? {
                                           stream_options: {
                                               include_usage: true,
@@ -2818,38 +3039,48 @@ fixtureTest(
                                       }
                                     : {}),
                             }),
-                        },
-                    ),
-                );
-                expect(response.status).toBe(200);
-                expect(response.headers.get("x-model-used")).toBe(modelId);
-                const innerModel = agentModel ?? "polli";
-                if (stream) {
-                    const body = await response.text();
-                    expect(body).toContain(`"content":"${innerModel}"`);
-                    expect(body).toContain('"finish_reason":"stop"');
-                    expect(body).toContain('"choices":[]');
-                    expect(body).toContain("[DONE]");
-                } else {
-                    expect(await response.json()).toMatchObject({
-                        choices: [{ message: { content: innerModel } }],
-                    });
+                        }),
+                    );
+                    expect(response.status).toBe(200);
+                    expect(response.headers.get("x-model-used")).toBe(modelId);
+                    const innerModel = agentModel ?? "polli";
+                    if (api === "responses") {
+                        const body = await response.text();
+                        expect(body).toContain(`"text":"${innerModel}"`);
+                        expect(body).toContain('"input_tokens":2');
+                        if (stream)
+                            expect(body).toContain("event: response.completed");
+                    } else if (stream) {
+                        const body = await response.text();
+                        expect(body).toContain(`"content":"${innerModel}"`);
+                        expect(body).toContain('"finish_reason":"stop"');
+                        expect(body).toContain('"choices":[]');
+                        expect(body).toContain("[DONE]");
+                    } else if (protocol === "text") {
+                        expect(await response.text()).toBe(innerModel);
+                    } else {
+                        expect(await response.json()).toMatchObject({
+                            choices: [{ message: { content: innerModel } }],
+                        });
+                    }
                 }
             }
-        }
-        expect(upstreamModels).toEqual([
-            "polli",
-            "test/brain-one",
-            "test/brain-two",
-            "polli",
-            "test/brain-one",
-            "test/brain-two",
-        ]);
-    },
-);
+            expect(upstreamModels).toEqual([
+                "polli",
+                "test/brain-one",
+                "test/brain-two",
+                "test/brain-both",
+                "polli",
+                "test/brain-one",
+                "test/brain-two",
+                "test/brain-both",
+            ]);
+        },
+    );
+}
 
 fixtureTest(
-    "routes Chat through an exact community URL with its saved token and rejects Responses",
+    "routes Chat and adapted Responses through an exact community Chat URL with its saved token",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `openai-${crypto.randomUUID().slice(0, 8)}`;
@@ -2987,15 +3218,16 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     model: modelId,
-                    agent_model: "test/brain",
+                    metadata: { model: "test/brain" },
                     messages: [{ role: "user", content: "hello" }],
+                    max_tokens: 5,
                 }),
             }),
         );
-        expect(overrideResponse.status).toBe(400);
-        expect(await overrideResponse.text()).toContain(
-            "agent_model is supported only by endpoint agents",
-        );
+        expect(overrideResponse.status).toBe(200);
+        expect(await overrideResponse.json()).toMatchObject({
+            model: "gpt-4.1-mini",
+        });
 
         const responses = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/responses", {
@@ -3004,13 +3236,30 @@ fixtureTest(
                     Authorization: `Bearer ${apiKey}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ model: modelId, input: "hello" }),
+                body: JSON.stringify({
+                    model: modelId,
+                    input: "hello",
+                    max_output_tokens: 5,
+                }),
             }),
         );
-        expect(responses.status).toBe(400);
-        expect(await responses.text()).toContain(
-            "does not support the stateless Responses API",
-        );
+        // The Chat-registered endpoint answers Responses through Chat.
+        expect(responses.status).toBe(200);
+        expect(responses.headers.get("x-model-used")).toBe(modelId);
+        expect(responses.headers.get("x-usage-prompt-text-tokens")).toBe("2");
+        await expect(responses.json()).resolves.toMatchObject({
+            object: "response",
+            status: "completed",
+            model: modelId,
+            output: [
+                {
+                    type: "message",
+                    role: "assistant",
+                    content: [{ type: "output_text", text: "ok" }],
+                },
+            ],
+            usage: { input_tokens: 2, output_tokens: 3, total_tokens: 5 },
+        });
         const models = (await (
             await fetchGen("https://gen.pollinations.ai/v1/models")
         ).json()) as { data: { id: string; supported_endpoints?: string[] }[] };
@@ -3018,13 +3267,274 @@ fixtureTest(
             (model) => model.id === modelId,
         )?.supported_endpoints;
         expect(supportedEndpoints).toContain("/v1/chat/completions");
-        expect(supportedEndpoints).not.toContain("/v1/responses");
+        expect(supportedEndpoints).toContain("/v1/responses");
 
         const upstreamCalls = fetchMock.mock.calls.filter(
             ([input, init]) => new Request(input, init).url === chatUrl,
         );
-        expect(upstreamCalls).toHaveLength(2);
+        expect(upstreamCalls).toHaveLength(4);
     },
+);
+
+fixtureTest.each([{ api: "chat_completions" }, { api: "responses" }] as const)(
+    "registers a $api endpoint without SSE and serves and bills stream: false and stream: true",
+    async ({ api }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `nosse-${crypto.randomUUID().slice(0, 8)}`;
+        const url = `https://plain-json.example.com/v1/${api}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const caller = await createTestApiKey({
+            user: { tierBalance: 0, packBalance: 10 },
+        });
+        const usage =
+            api === "responses"
+                ? { input_tokens: 2, output_tokens: 3, total_tokens: 5 }
+                : { prompt_tokens: 2, completion_tokens: 3, total_tokens: 5 };
+        // A plain JSON server: it ignores `stream` and never sends SSE.
+        const upstreamStreams: unknown[] = [];
+        const events: Record<string, unknown>[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url === url) {
+                    upstreamStreams.push(
+                        ((await request.json()) as { stream?: unknown }).stream,
+                    );
+                    return Response.json(
+                        api === "responses"
+                            ? {
+                                  id: "resp_plain",
+                                  object: "response",
+                                  created_at: 1,
+                                  model: "plain-json",
+                                  status: "completed",
+                                  output: [
+                                      {
+                                          id: "msg_plain",
+                                          type: "message",
+                                          role: "assistant",
+                                          status: "completed",
+                                          content: [
+                                              {
+                                                  type: "output_text",
+                                                  text: "plain answer",
+                                                  annotations: [],
+                                              },
+                                          ],
+                                      },
+                                  ],
+                                  usage,
+                              }
+                            : {
+                                  id: "chatcmpl_plain",
+                                  object: "chat.completion",
+                                  created: 1,
+                                  model: "plain-json",
+                                  choices: [
+                                      {
+                                          index: 0,
+                                          message: {
+                                              role: "assistant",
+                                              content: "plain answer",
+                                          },
+                                          finish_reason: "stop",
+                                      },
+                                  ],
+                                  usage,
+                              },
+                    );
+                }
+                if (isBillingFetch(request)) {
+                    if (new URL(request.url).pathname === "/v0/events")
+                        events.push(
+                            ...parseIngestedEvents(await request.text()),
+                        );
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+        const enterApi = await createEnterCommunityApi();
+        const enterPost = async (path: string, body: unknown) =>
+            fetchEnterApi(
+                enterApi,
+                new Request(
+                    `http://localhost:3000/api/community-endpoints${path}`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization:
+                                await sessionAuthorization(ownerUserId),
+                        },
+                        body: JSON.stringify(body),
+                    },
+                ),
+            );
+
+        // 1. The endpoint test passes and reports the missing capability.
+        const probe = await enterPost("/test", {
+            api,
+            url,
+            bearerToken: "plain-token",
+            model: "plain-json",
+        });
+        expect(probe.status).toBe(200);
+        await expect(probe.json()).resolves.toMatchObject({
+            ok: true,
+            streaming: false,
+            usage,
+        });
+
+        // 2. Registration stores it, then the model is published.
+        const registered = await enterPost("", {
+            name: modelName,
+            title: "Plain JSON",
+            api,
+            url,
+            upstreamModel: "plain-json",
+            bearerToken: "plain-token",
+            visibility: "public",
+            advertised: { streaming: false },
+            promptTextPrice: 0.00001,
+            completionTextPrice: 0.00001,
+        });
+        expect(registered.status).toBe(200);
+        const endpoint = (await registered.json()) as {
+            id: string;
+            modelId: string;
+            advertised: unknown;
+        };
+        expect(endpoint.advertised).toEqual({ streaming: false });
+        await maturePendingCommunityEndpoint(endpoint.id);
+
+        // 3. Callers can tell.
+        const models = (await (
+            await fetchGen("https://gen.pollinations.ai/v1/models")
+        ).json()) as { data: { id: string; supports_streaming?: boolean }[] };
+        expect(
+            models.data.find((model) => model.id === endpoint.modelId),
+        ).toMatchObject({ supports_streaming: false });
+
+        // 4. Both request modes on the public text API.
+        const route = api === "responses" ? "responses" : "chat/completions";
+        const call = (stream: boolean) =>
+            fetchGen(
+                new Request(`https://gen.pollinations.ai/v1/${route}`, {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${caller.key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: endpoint.modelId,
+                        stream,
+                        ...(api === "responses"
+                            ? { input: "hello" }
+                            : {
+                                  messages: [
+                                      { role: "user", content: "hello" },
+                                  ],
+                              }),
+                    }),
+                }),
+            );
+        const before = await getUserBalance(db, caller.userId);
+
+        const json = await call(false);
+        expect(json.status).toBe(200);
+        expect(json.headers.get("x-model-used")).toBe(endpoint.modelId);
+        expect(json.headers.get("x-usage-completion-text-tokens")).toBe("3");
+        expect(await json.text()).toContain("plain answer");
+
+        const streamed = await call(true);
+        expect(streamed.status).toBe(200);
+        expect(streamed.headers.get("content-type")).toContain(
+            "text/event-stream",
+        );
+        expect(streamed.headers.get("x-model-used")).toBe(endpoint.modelId);
+        const streamBody = await streamed.text();
+        expect(streamBody).toContain("plain answer");
+        expect(streamBody).not.toContain("usage_missing");
+        if (api === "responses") {
+            expect(streamBody).toContain("event: response.output_text.delta");
+            expect(streamBody).toContain("event: response.completed");
+        } else {
+            expect(streamBody).toContain('"completion_tokens":3');
+            expect(streamBody.trimEnd().endsWith("data: [DONE]")).toBe(true);
+        }
+
+        // The probe sent stream: false then true; Gen only ever sent false.
+        expect(upstreamStreams).toEqual([false, true, false, false]);
+
+        // 5. Both calls are billed from the reported usage, like any other
+        // community model: 2 prompt + 3 completion tokens at 1e-5 each.
+        const after = await getUserBalance(db, caller.userId);
+        expect(before.packBalance - after.packBalance).toBeCloseTo(10e-5, 9);
+        const billed = events.filter((event) => event.isBilledUsage === true);
+        expect(billed).toHaveLength(2);
+        for (const event of billed) {
+            expect(event).toMatchObject({
+                modelUsed: endpoint.modelId,
+                tokenCountPromptText: 2,
+                tokenCountCompletionText: 3,
+            });
+            expect(event.totalPrice).toBeCloseTo(5e-5, 9);
+        }
+
+        // Clients that stream by default over Chat Completions (Open WebUI)
+        // also get a valid stream from a Responses model.
+        if (api === "responses") {
+            const adapted = await fetchGen(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${caller.key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: endpoint.modelId,
+                        stream: true,
+                        messages: [{ role: "user", content: "hello" }],
+                    }),
+                }),
+            );
+            expect(adapted.status).toBe(200);
+            const adaptedBody = await adapted.text();
+            expect(adaptedBody).toContain("plain answer");
+            expect(adaptedBody).toContain('"completion_tokens":3');
+            expect(adaptedBody).not.toContain("usage_missing");
+            expect(upstreamStreams.at(-1)).toBe(false);
+        }
+        // And the other way: a streaming Responses client on a Chat model.
+        if (api === "chat_completions") {
+            const adapted = await fetchGen(
+                new Request("https://gen.pollinations.ai/v1/responses", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${caller.key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: endpoint.modelId,
+                        stream: true,
+                        input: "hello",
+                    }),
+                }),
+            );
+            expect(adapted.status).toBe(200);
+            const adaptedBody = await adapted.text();
+            expect(adaptedBody).toContain("event: response.output_text.delta");
+            expect(adaptedBody).toContain("event: response.completed");
+            expect(adaptedBody).not.toContain("usage_missing");
+            expect(upstreamStreams.at(-1)).toBe(false);
+        }
+    },
+    20_000,
 );
 
 fixtureTest(
@@ -3153,7 +3663,7 @@ fixtureTest(
             .update(communityEndpointTable)
             .set({ visibility: "public" })
             .where(eq(communityEndpointTable.id, endpointId));
-        resetGenerationModelRegistryCache();
+        await resetGenerationModelRegistryCache(env);
         const callFreePublicModel = async (callerKey: string) =>
             fetchGen(
                 new Request("https://gen.pollinations.ai/v1/chat/completions", {
@@ -3351,6 +3861,345 @@ fixtureTest(
             models.data.find((model) => model.id === modelId)
                 ?.supported_endpoints,
         ).toContain("/v1/responses");
+    },
+);
+
+fixtureTest(
+    "rejects image input for text-only community models on Chat and Responses",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const listings = [
+            { name: "text-only", type: "proxy" as const },
+            {
+                name: "vision",
+                type: "proxy" as const,
+                inputModalities: ["text", "image"] as ModelInputModality[],
+            },
+            { name: "agent", type: "endpoint_agent" as const },
+        ].map((listing) => ({
+            ...listing,
+            modelId: communityModelId(ownerGithubUsername, listing.name),
+            url: `https://${listing.name}.example.com/v1/responses`,
+        }));
+        const bearerTokenCiphertext = await encryptSecret(
+            "Bearer image-token",
+            env.BETTER_AUTH_SECRET,
+        );
+        await insertCommunityEndpoints(
+            listings.map(({ modelId: _modelId, url, ...listing }) => ({
+                ...listing,
+                bearerTokenCiphertext,
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                visibility: "public",
+                api: "responses",
+                baseUrl: url,
+                upstreamModel: "provider-model",
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })),
+        );
+
+        const upstreamUrls: string[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (listings.some((listing) => listing.url === request.url)) {
+                    upstreamUrls.push(request.url);
+                    return Response.json({
+                        id: "resp_image",
+                        object: "response",
+                        created_at: 1,
+                        model: "provider-model",
+                        status: "completed",
+                        output: [
+                            {
+                                id: "msg_image",
+                                type: "message",
+                                status: "completed",
+                                role: "assistant",
+                                content: [
+                                    {
+                                        type: "output_text",
+                                        text: "green",
+                                        annotations: [],
+                                    },
+                                ],
+                            },
+                        ],
+                        usage: {
+                            input_tokens: 2,
+                            output_tokens: 1,
+                            total_tokens: 3,
+                        },
+                    });
+                }
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const image = `data:image/png;base64,${TEST_PNG_BASE64}`;
+        const post = (path: string, body: Record<string, unknown>) =>
+            fetchGen(
+                new Request(`https://gen.pollinations.ai${path}`, {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(body),
+                }),
+            );
+        for (const listing of listings) {
+            const responses = [
+                await post("/v1/chat/completions", {
+                    model: listing.modelId,
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "text", text: "What color?" },
+                                {
+                                    type: "image_url",
+                                    image_url: { url: image },
+                                },
+                            ],
+                        },
+                    ],
+                }),
+                await post("/v1/responses", {
+                    model: listing.modelId,
+                    input: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "input_text", text: "What color?" },
+                                { type: "input_image", image_url: image },
+                            ],
+                        },
+                    ],
+                }),
+            ];
+            for (const response of responses) {
+                const body = await response.text();
+                if (listing.name === "text-only") {
+                    expect(response.status, body).toBe(400);
+                    expect(body).toContain(
+                        "This model does not support image input",
+                    );
+                } else {
+                    expect(response.status, body).toBe(200);
+                }
+            }
+        }
+        expect(upstreamUrls.sort()).toEqual(
+            [
+                listings[1].url,
+                listings[1].url,
+                listings[2].url,
+                listings[2].url,
+            ].sort(),
+        );
+    },
+);
+
+fixtureTest(
+    "stores large inline chat media once per user and sends their URLs upstream",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `vision-${crypto.randomUUID().slice(0, 8)}`;
+        await insertCommunityEndpoints({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId: await createTestUser({
+                githubId: nextAllowedGithubId(),
+                githubUsername: ownerGithubUsername,
+            }),
+            visibility: "public",
+            name: modelName,
+            inputModalities: ["text", "image", "video"],
+            baseUrl: "https://vision.example.com/v1",
+            upstreamModel: "vision-upstream",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0.1,
+            completionTextPrice: 0.1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        type Part = {
+            type: string;
+            image_url?: { url: string };
+            video_url?: { url: string };
+            file?: { file_url?: string };
+        };
+        const upstreamMediaUrls: string[][] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (isChatCompletionsRequest(request)) {
+                    const { messages } = (await request.json()) as {
+                        messages: { content: string | Part[] }[];
+                    };
+                    upstreamMediaUrls.push(
+                        messages.flatMap(({ content }) =>
+                            typeof content === "string"
+                                ? []
+                                : content.flatMap(
+                                      (part) =>
+                                          part.image_url?.url ??
+                                          part.video_url?.url ??
+                                          part.file?.file_url ??
+                                          [],
+                                  ),
+                        ),
+                    );
+                    return Response.json({
+                        id: "chatcmpl_images",
+                        object: "chat.completion",
+                        model: "vision-upstream",
+                        choices: [
+                            {
+                                index: 0,
+                                message: { role: "assistant", content: "ok" },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 1,
+                            total_tokens: 3,
+                        },
+                    });
+                }
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const media = env.MEDIA;
+        const uploads: string[] = [];
+        const bindings = withInlineGenerationCoordinator({
+            ...env,
+            MEDIA: {
+                has: (id: string) => media.has(id),
+                get: (id: string) => media.get(id),
+                upload: async (...args: Parameters<typeof media.upload>) => {
+                    const result = await media.upload(...args);
+                    uploads.push(result.id);
+                    return result;
+                },
+            } as unknown as typeof media,
+        });
+        const send = async (body: string, contentLength = body.length) => {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                        "Content-Length": String(contentLength),
+                    },
+                    body,
+                }),
+                bindings,
+                ctx,
+            );
+            const text = await response.text();
+            await waitOnExecutionContext(ctx);
+            return { status: response.status, text };
+        };
+
+        const first = new Uint8Array(9 * 1024 * 1024).fill(1);
+        const second = new Uint8Array(9 * 1024 * 1024).fill(2);
+        const image = (bytes: Uint8Array) => ({
+            type: "image_url",
+            image_url: {
+                url: `data:image/png;base64,${Buffer.from(bytes).toString("base64")}`,
+            },
+        });
+        const video = {
+            type: "video_url",
+            video_url: { url: "data:video/mp4;base64,AQID" },
+        };
+        const file = {
+            type: "file",
+            file: { file_url: "data:application/pdf;base64,JVBERg==" },
+        };
+        const turn = {
+            role: "user",
+            content: [
+                { type: "text", text: "Compare these" },
+                image(first),
+                image(second),
+                image(first),
+                video,
+                file,
+            ],
+        };
+        const model = communityModelId(ownerGithubUsername, modelName);
+        // Each body is above the 32 MiB text limit; the next turn re-sends
+        // the same images, as chat clients do.
+        const conversations = [
+            [turn],
+            [
+                turn,
+                { role: "assistant", content: "ok" },
+                { role: "user", content: "And the second one?" },
+            ],
+        ];
+        for (const messages of conversations) {
+            const body = JSON.stringify({ model, messages });
+            expect(body.length).toBeGreaterThan(32 * 1024 * 1024);
+            const response = await send(body);
+            expect(response.status, response.text).toBe(200);
+        }
+
+        const repeated = await send(
+            JSON.stringify({ model, messages: conversations[1] }),
+        );
+        expect(repeated.status, repeated.text).toBe(200);
+
+        expect(uploads).toHaveLength(4);
+        const [firstUrl, secondUrl, videoUrl, fileUrl] = uploads.map(
+            (id) => `https://media.pollinations.ai/${id}`,
+        );
+        expect(upstreamMediaUrls).toEqual([
+            [firstUrl, secondUrl, firstUrl, videoUrl, fileUrl],
+            [firstUrl, secondUrl, firstUrl, videoUrl, fileUrl],
+        ]);
+        const stored = await media.get(uploads[0]);
+        expect(stored?.headers.get("content-type")).toBe("image/png");
+        const storedBytes = Buffer.from(
+            await (stored as Response).arrayBuffer(),
+        );
+        expect(storedBytes.equals(first)).toBe(true);
+        for (const [index, contentType] of [
+            "video/mp4",
+            "application/pdf",
+        ].entries()) {
+            const response = await media.get(uploads[index + 2]);
+            expect(response?.headers.get("content-type")).toBe(contentType);
+            await response?.arrayBuffer();
+        }
+
+        const oversized = await send("{}", 100 * 1024 * 1024 + 1);
+        expect(oversized.status).toBe(413);
+        expect(oversized.text).toContain(
+            "Request body exceeds the 100 MiB limit",
+        );
     },
 );
 
@@ -3569,7 +4418,7 @@ fixtureTest.each(
             createdAt: new Date(),
             updatedAt: new Date(),
         });
-        resetGenerationModelRegistryCache();
+        await resetGenerationModelRegistryCache(env);
 
         const caller = await createTestApiKey({
             name: "managed-responses-mcp-billing",
@@ -4244,7 +5093,7 @@ fixtureTest(
         expect(response.headers.get("cache-control")).toBe(
             IMMUTABLE_CACHE_CONTROL,
         );
-        expect(response.headers.get("x-cache")).toBe("HIT");
+        expect(response.headers.get("x-cache")).toBe("MISS");
         expect(response.headers.get("x-cache-type")).toBeNull();
         expect(response.headers.get("x-cache-key")).toBeTruthy();
         await expect(response.text()).resolves.toBe("simple ok");
@@ -4281,15 +5130,11 @@ fixtureTest(
             updatedAt: new Date(),
         });
 
-        const textResponse = await fetchGen(
-            "https://gen.pollinations.ai/text/models",
-        );
-        const allResponse = await fetchGen(
-            "https://gen.pollinations.ai/models",
-        );
-        const openaiResponse = await fetchGen(
-            "https://gen.pollinations.ai/v1/models",
-        );
+        const [textResponse, allResponse, openaiResponse] = await Promise.all([
+            fetchGen("https://gen.pollinations.ai/text/models"),
+            fetchGen("https://gen.pollinations.ai/models"),
+            fetchGen("https://gen.pollinations.ai/v1/models"),
+        ]);
 
         expect(textResponse.status).toBe(200);
         expect(allResponse.status).toBe(200);
@@ -4507,7 +5352,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "excludes a hidden community model from public model catalogs",
+    "ignores legacy hide metadata for public model catalogs",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `disabled-${crypto.randomUUID().slice(0, 8)}`;
@@ -4556,16 +5401,16 @@ fixtureTest(
         for (const models of [textModels, allModels]) {
             expect(
                 models.find((model) => model.name === modelId),
-            ).toBeUndefined();
+            ).toBeDefined();
         }
         expect(
             openaiModels.data.find((model) => model.id === modelId),
-        ).toBeUndefined();
+        ).toBeDefined();
     },
 );
 
 fixtureTest(
-    "filters model catalogs with ?community query parameter",
+    "filters model catalogs by source with legacy community aliases",
     async () => {
         const suffix = crypto.randomUUID().slice(0, 8);
         const textOwner = `filter-text-${suffix}`;
@@ -4639,21 +5484,23 @@ fixtureTest(
             allOnlyNumeric,
         ] = await Promise.all([
             SELF.fetch("https://gen.pollinations.ai/models"),
-            SELF.fetch("https://gen.pollinations.ai/models?community=false"),
-            SELF.fetch("https://gen.pollinations.ai/models?community=true"),
+            SELF.fetch("https://gen.pollinations.ai/models?source=official"),
+            SELF.fetch("https://gen.pollinations.ai/models?source=community"),
             SELF.fetch(
-                "https://gen.pollinations.ai/text/models?community=false",
+                "https://gen.pollinations.ai/text/models?source=official",
             ),
             SELF.fetch(
-                "https://gen.pollinations.ai/text/models?community=true",
+                "https://gen.pollinations.ai/text/models?source=community",
             ),
-            SELF.fetch("https://gen.pollinations.ai/v1/models?community=false"),
-            SELF.fetch("https://gen.pollinations.ai/v1/models?community=true"),
+            SELF.fetch("https://gen.pollinations.ai/v1/models?source=official"),
             SELF.fetch(
-                "https://gen.pollinations.ai/image/models?community=false",
+                "https://gen.pollinations.ai/v1/models?source=community",
             ),
             SELF.fetch(
-                "https://gen.pollinations.ai/image/models?community=true",
+                "https://gen.pollinations.ai/image/models?source=official",
+            ),
+            SELF.fetch(
+                "https://gen.pollinations.ai/image/models?source=community",
             ),
             SELF.fetch("https://gen.pollinations.ai/models?community=0"),
             SELF.fetch("https://gen.pollinations.ai/models?community=1"),
@@ -4751,7 +5598,156 @@ fixtureTest(
 );
 
 fixtureTest(
-    "routes canonical and aliased calls to a hidden community model with a canonical-only key",
+    "searches and narrows model catalogs with query, capabilities, agent and limit",
+    async () => {
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const owner = `search-${suffix}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: owner,
+        });
+        const { key: ownerKey } = await createTestApiKey({
+            userId: ownerUserId,
+        });
+        const agentPayload = JSON.stringify({
+            prompt: "Test",
+            baseModel: DEFAULT_TEXT_MODEL,
+            mcpServers: [],
+        });
+        const [proxyName, agentName, privateAgentName] = [
+            "proxy",
+            "agent",
+            "hidden",
+        ].map((kind) => `qs-${kind}-${suffix}`);
+        await insertCommunityEndpoints([
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                visibility: "public",
+                name: proxyName,
+                description: `Narwhal ${suffix} proxy`,
+                baseUrl: "https://api.example.com/v1",
+                upstreamModel: "gpt-4.1-mini",
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+            ...[
+                [agentName, "public"],
+                [privateAgentName, "private"],
+            ].map(([name, visibility]) => {
+                const id = `endpoint-${crypto.randomUUID()}`;
+                return {
+                    id,
+                    ownerUserId,
+                    visibility: visibility as "public" | "private",
+                    name,
+                    description: `Narwhal ${suffix} agent`,
+                    type: "prompt_agent" as const,
+                    baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+                    upstreamModel: id,
+                    payload: agentPayload,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                };
+            }),
+        ]);
+        const [proxyId, agentId, privateAgentId] = [
+            proxyName,
+            agentName,
+            privateAgentName,
+        ].map((name) => communityModelId(owner, name));
+
+        const names = async (path: string, key?: string) => {
+            const response = await SELF.fetch(
+                `https://gen.pollinations.ai${path}`,
+                key ? { headers: { Authorization: `Bearer ${key}` } } : {},
+            );
+            expect(response.status, path).toBe(200);
+            return ((await response.json()) as { name: string }[])
+                .map((model) => model.name)
+                .sort();
+        };
+
+        // query: case-insensitive, every word must match, hidden stays hidden.
+        const both = [proxyId, agentId].sort();
+        expect(await names(`/models?query=${suffix}`)).toEqual(both);
+        expect(await names(`/models?query=NARWHAL+${suffix}`)).toEqual(both);
+        expect(await names(`/models?query=narwhal+nomatch-${suffix}`)).toEqual(
+            [],
+        );
+
+        // agent: only agents, or everything but agents.
+        expect(await names(`/models?query=${suffix}&agent=true`)).toEqual([
+            agentId,
+        ]);
+        expect(await names(`/models?query=${suffix}&agent=0`)).toEqual([
+            proxyId,
+        ]);
+
+        // capabilities: a model needs all of them.
+        expect(
+            await names(
+                `/models?query=${suffix}&capabilities=reasoning,tool_calling`,
+            ),
+        ).toEqual([agentId]);
+        expect(
+            await names(
+                `/models?query=${suffix}&capabilities=reasoning,web_search`,
+            ),
+        ).toEqual([]);
+
+        // limit: keeps catalog order and runs after every other filter.
+        const catalog = (await (
+            await SELF.fetch("https://gen.pollinations.ai/models")
+        ).json()) as { name: string }[];
+        const limited = (await (
+            await SELF.fetch("https://gen.pollinations.ai/models?limit=3")
+        ).json()) as { name: string }[];
+        expect(limited.map((model) => model.name)).toEqual(
+            catalog.slice(0, 3).map((model) => model.name),
+        );
+        expect(
+            await names(`/text/models?query=${suffix}&limit=1`),
+        ).toHaveLength(1);
+
+        // The owner's private agent is listed for the owner only, and a
+        // limit does not cut it before visibility has been applied.
+        expect(
+            await names(`/models?query=${suffix}&agent=true`, ownerKey),
+        ).toEqual([agentId, privateAgentId].sort());
+        expect(
+            await names(`/models?query=${suffix}&agent=true&limit=2`, ownerKey),
+        ).toEqual([agentId, privateAgentId].sort());
+        expect(await names(`/models?query=${suffix}&agent=true`)).not.toContain(
+            privateAgentId,
+        );
+
+        // Every list route validates the same parameters.
+        for (const path of ["/models", "/text/models", "/v1/models"]) {
+            for (const bad of [
+                "limit=0",
+                "limit=501",
+                "limit=abc",
+                "agent=maybe",
+                "capabilities=bogus",
+            ]) {
+                const response = await SELF.fetch(
+                    `https://gen.pollinations.ai${path}?${bad}`,
+                );
+                expect(response.status, `${path}?${bad}`).toBe(400);
+            }
+        }
+    },
+);
+
+fixtureTest(
+    "routes canonical and aliased calls despite legacy hide metadata",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `disabled-call-${crypto.randomUUID().slice(0, 8)}`;
@@ -4861,15 +5857,6 @@ fixtureTest(
             githubId: COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID,
             githubUsername: ownerGithubUsername,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
 
         const enterApi = await createEnterCommunityApi();
         // The probes are open to every account, so they reach the upstream
@@ -4943,7 +5930,8 @@ fixtureTest(
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
-                            Cookie: await signedSessionCookie(sessionToken),
+                            Authorization:
+                                await sessionAuthorization(ownerUserId),
                         },
                         body: JSON.stringify(probe.body),
                     },
@@ -4968,7 +5956,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     name: `${modelName}-direct-public`,
@@ -4994,7 +5982,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     name: privateModelName,
@@ -5029,7 +6017,7 @@ fixtureTest(
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: await signedSessionCookie(sessionToken),
+                        Authorization: await sessionAuthorization(ownerUserId),
                     },
                     body: JSON.stringify({
                         visibility: "public",
@@ -5140,15 +6128,6 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
 
         const enterApi = await createEnterCommunityApi();
         const fetchMock = vi.fn(async (input, init) => {
@@ -5241,7 +6220,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     name: modelName,
@@ -5275,8 +6254,8 @@ fixtureTest(
             url: "https://gen.pollinations.ai/v1/chat/completions",
             upstreamModel: "openai",
             visibility: "private",
-            promptTextPrice: 0,
-            completionTextPrice: 0,
+            promptTextPrice: 0.00001,
+            completionTextPrice: 0.00001,
             pending: {
                 visibility: "public",
                 promptTextPrice: 0.00001,
@@ -5291,7 +6270,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     api: registered.api,
@@ -5316,7 +6295,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     api: registered.api,
@@ -5368,15 +6347,6 @@ fixtureTest(
         const ownerUserId = await createTestUser({
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
-        });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
         });
 
         const enterApi = await createEnterCommunityApi();
@@ -5509,7 +6479,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     ...registrationPayload,
@@ -5526,7 +6496,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify(registrationPayload),
             }),
@@ -5550,7 +6520,7 @@ fixtureTest(
             baseUrl: "https://api.example.com/v1/images/generations?version=1",
             upstreamModel: "gpt-image-1",
             promptTextPrice: 0,
-            completionImagePrice: 0,
+            completionImagePrice: 0.03,
             pending: {
                 visibility: "public",
                 promptTextPrice: 0,
@@ -5565,7 +6535,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     baseUrl: registered.baseUrl,
@@ -5854,7 +6824,7 @@ fixtureTest(
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: await signedSessionCookie(sessionToken),
+                        Authorization: await sessionAuthorization(ownerUserId),
                     },
                     body: JSON.stringify({
                         completionImagePrice: MAX_COMMUNITY_PRICE_PER_IMAGE,
@@ -5872,7 +6842,7 @@ fixtureTest(
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: await signedSessionCookie(sessionToken),
+                        Authorization: await sessionAuthorization(ownerUserId),
                     },
                     body: JSON.stringify({
                         completionImagePrice:
@@ -5894,16 +6864,7 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-        const cookie = await signedSessionCookie(sessionToken);
+        const authorization = await sessionAuthorization(ownerUserId);
         const enterApi = await createEnterCommunityApi();
         const videoEndpointUrl =
             "https://api.example.com/generate-video?version=1";
@@ -5978,7 +6939,10 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
             enterApi,
             new Request("http://localhost:3000/api/community-endpoints/test", {
                 method: "POST",
-                headers: { "Content-Type": "application/json", Cookie: cookie },
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: authorization,
+                },
                 body: JSON.stringify({
                     baseUrl: videoEndpointUrl,
                     bearerToken: "sk_video_upstream",
@@ -5997,7 +6961,10 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
             enterApi,
             new Request("http://localhost:3000/api/community-endpoints", {
                 method: "POST",
-                headers: { "Content-Type": "application/json", Cookie: cookie },
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: authorization,
+                },
                 body: JSON.stringify({
                     name: modelName,
                     title: "Community Video",
@@ -6020,7 +6987,7 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
         expect(registered).toMatchObject({
             modelId: communityModelId(ownerGithubUsername, modelName),
             modality: "video",
-            completionVideoPrice: 0,
+            completionVideoPrice: 0.08,
         });
         await maturePendingCommunityEndpoint(registered.id);
 
@@ -6046,7 +7013,8 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
                       }),
                   })
                 : new Request(
-                      `https://gen.pollinations.ai/${route}/green%20sprout?model=${encodeURIComponent(registered.modelId)}&reference_images=${encodeURIComponent("https://media.example.com/style.jpg")}`,
+                      // 16x9 is an aspect ratio for video, not an image size.
+                      `https://gen.pollinations.ai/${route}/green%20sprout?model=${encodeURIComponent(registered.modelId)}&width=16&height=9&reference_images=${encodeURIComponent("https://media.example.com/style.jpg")}`,
                       { headers: { Authorization: `Bearer ${caller.key}` } },
                   );
         const disconnectedContext = createExecutionContext();
@@ -6264,7 +7232,7 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: cookie,
+                        Authorization: authorization,
                     },
                     body: JSON.stringify({
                         completionVideoPrice:
@@ -6285,15 +7253,6 @@ fixtureTest(
         const ownerUserId = await createTestUser({
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
-        });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
         });
 
         const enterApi = await createEnterCommunityApi();
@@ -6338,7 +7297,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     ...registrationPayload,
@@ -6358,7 +7317,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     ...registrationPayload,
@@ -6379,7 +7338,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify(registrationPayload),
             }),
@@ -6400,7 +7359,7 @@ fixtureTest(
             inputModalities: ["audio"],
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "whisper-1",
-            promptAudioPrice: 0,
+            promptAudioPrice: 0.0000445,
             pending: {
                 visibility: "public",
                 promptAudioPrice: 0.0000445,
@@ -6414,7 +7373,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     baseUrl: registered.baseUrl,
@@ -6518,15 +7477,6 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
 
         const enterApi = await createEnterCommunityApi();
         const embeddingUrl = "https://api.example.com/v1/embeddings";
@@ -6576,7 +7526,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify(registrationPayload),
             }),
@@ -6610,7 +7560,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     baseUrl: registered.baseUrl,
@@ -6897,9 +7847,6 @@ fixtureTest(
             perUserRpm: 0.5,
             promptTextPrice: 0,
             completionTextPrice: 0,
-            hidden: false,
-            hiddenReason: null,
-            hiddenAt: null,
         });
         expect(created).not.toHaveProperty("bearerToken");
         expect(created).not.toHaveProperty("bearerTokenCiphertext");
@@ -6931,15 +7878,6 @@ fixtureTest(
             unknown
         >;
         expect(typeof secondCreated.id).toBe("string");
-        await db
-            .update(communityEndpointTable)
-            .set({
-                hiddenAt: new Date(),
-                hiddenReason: "was failing",
-                hiddenBy: "monitor",
-            })
-            .where(eq(communityEndpointTable.id, createdId));
-
         const updateResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -6975,8 +7913,6 @@ fixtureTest(
                 promptTextPrice: 0.00001,
                 completionTextPrice: 0.00002,
             },
-            hidden: true,
-            hiddenReason: "was failing",
         });
         const elapsedDelayAt = new Date(
             Date.now() - COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1,
@@ -6985,32 +7921,10 @@ fixtureTest(
             .update(communityEndpointTable)
             .set({
                 pendingAt: elapsedDelayAt,
-                hiddenAt: elapsedDelayAt,
             })
             .where(eq(communityEndpointTable.id, createdId));
 
-        const relistResponse = await fetchEnterApi(
-            enterApi,
-            new Request(
-                `http://localhost:3000/api/account/my-models/${createdId}/update`,
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${key}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ hidden: false }),
-                },
-            ),
-        );
-        expect(relistResponse.status).toBe(200);
-        await expect(relistResponse.json()).resolves.toMatchObject({
-            hidden: false,
-            hiddenReason: null,
-            hiddenAt: null,
-        });
-
-        const hideResponse = await fetchEnterApi(
+        const hiddenUpdateResponse = await fetchEnterApi(
             enterApi,
             new Request(
                 `http://localhost:3000/api/account/my-models/${createdId}/update`,
@@ -7024,11 +7938,7 @@ fixtureTest(
                 },
             ),
         );
-        expect(hideResponse.status).toBe(200);
-        await expect(hideResponse.json()).resolves.toMatchObject({
-            hidden: true,
-            hiddenReason: "Hidden by owner",
-        });
+        expect(hiddenUpdateResponse.status).toBe(400);
         await maturePendingCommunityEndpoint(secondCreated.id as string);
 
         // Minimum-price policy is independent of visibility: any non-negative
@@ -7121,9 +8031,8 @@ fixtureTest(
             expect.any(String),
         );
 
-        // Making the model private clears all owner-set prices, and with them
-        // the paid-only choice: a free listing that still demanded paid balance
-        // would only gate the owner out of their own model.
+        // Going private keeps the queued settings for later republication.
+        // Private calls are free but still try their (free) fallbacks.
         const privatizeResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -7136,6 +8045,7 @@ fixtureTest(
                     },
                     body: JSON.stringify({
                         visibility: "private",
+                        fallbacks: [secondCreated.modelId],
                     }),
                 },
             ),
@@ -7143,13 +8053,25 @@ fixtureTest(
         expect(privatizeResponse.status).toBe(200);
         await expect(privatizeResponse.json()).resolves.toMatchObject({
             visibility: "private",
+            paidOnly: true,
+            promptTextPrice: 0.00003,
+            completionTextPrice: 0.00002,
+            fallbacks: [secondCreated.modelId],
+        });
+        await resetGenerationModelRegistryCache(env);
+        const privateEntry = (await getCommunityModelRegistryEntries(env)).find(
+            (entry) => entry.id === created.modelId,
+        );
+        expect(privateEntry?.communityEndpoint).toMatchObject({
+            visibility: "private",
             paidOnly: false,
+            fallbacks: [secondCreated.modelId],
             promptTextPrice: 0,
             completionTextPrice: 0,
         });
 
-        // Republishing remains free, but becomes visible after the notice
-        // period rather than immediately.
+        // Republishing retains the configured price and paid-only choice,
+        // but becomes visible after the notice period rather than immediately.
         const republishResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -7169,8 +8091,9 @@ fixtureTest(
         expect(republishResponse.status).toBe(200);
         await expect(republishResponse.json()).resolves.toMatchObject({
             visibility: "private",
-            promptTextPrice: 0,
-            completionTextPrice: 0,
+            paidOnly: true,
+            promptTextPrice: 0.00003,
+            completionTextPrice: 0.00002,
             pending: { visibility: "public" },
         });
 
@@ -7180,9 +8103,6 @@ fixtureTest(
                 visibility: "public",
                 pendingVisibility: null,
                 pendingAt: null,
-                hiddenAt: null,
-                hiddenReason: null,
-                hiddenBy: null,
             })
             .where(eq(communityEndpointTable.id, createdId));
         await db
@@ -7252,7 +8172,7 @@ fixtureTest(
             })
             .where(eq(userTable.id, userId));
 
-        resetGenerationModelRegistryCache();
+        await resetGenerationModelRegistryCache(env);
 
         const registryEntry = (
             await getCommunityModelRegistryEntries(env)
@@ -7346,16 +8266,7 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-        const cookie = await signedSessionCookie(sessionToken);
+        const authorization = await sessionAuthorization(ownerUserId);
         const enterApi = await createEnterCommunityApi();
         const createResponse = await fetchEnterApi(
             enterApi,
@@ -7363,7 +8274,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: cookie,
+                    Authorization: authorization,
                 },
                 body: JSON.stringify({
                     name: "price-floor-test",
@@ -7393,7 +8304,7 @@ fixtureTest(
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
-                            Cookie: cookie,
+                            Authorization: authorization,
                         },
                         body: JSON.stringify({
                             promptTextPrice: price,
@@ -7456,15 +8367,6 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: `redir-${crypto.randomUUID().slice(0, 8)}`,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
 
         const enterApi = await createEnterCommunityApi();
         const fetchMock = vi.fn(async (input, init) => {
@@ -7491,7 +8393,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     api: "chat_completions",
@@ -7514,15 +8416,6 @@ fixtureTest("rejects unsafe community model names", async () => {
         githubId: nextAllowedGithubId(),
         githubUsername: ownerGithubUsername,
     });
-    const sessionToken = `session-${crypto.randomUUID()}`;
-    await db.insert(sessionTable).values({
-        id: `session-${crypto.randomUUID()}`,
-        token: sessionToken,
-        userId: ownerUserId,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    });
 
     const enterApi = await createEnterCommunityApi();
     for (const name of [
@@ -7537,7 +8430,7 @@ fixtureTest("rejects unsafe community model names", async () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     name,
@@ -7563,18 +8456,9 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
 
         const enterApi = await createEnterCommunityApi();
-        const cookie = await signedSessionCookie(sessionToken);
+        const authorization = await sessionAuthorization(ownerUserId);
         const register = (body: Record<string, unknown>) =>
             fetchEnterApi(
                 enterApi,
@@ -7582,7 +8466,7 @@ fixtureTest(
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: cookie,
+                        Authorization: authorization,
                     },
                     body: JSON.stringify({
                         name: `bee-${crypto.randomUUID().slice(0, 8)}`,
@@ -7680,21 +8564,118 @@ fixtureTest(
     },
 );
 
+fixtureTest(
+    "lists the declared capabilities of the Floret and Polli endpoint agents",
+    async () => {
+        const ownerUserId = await createTestUser({
+            githubUsername: `owner-${crypto.randomUUID().slice(0, 8)}`,
+        });
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const agents = [
+            {
+                name: `floret-${suffix}`,
+                capabilities: [
+                    "web_search",
+                    "code_execution",
+                    "pollinations_models",
+                ],
+            },
+            {
+                name: `polli-${suffix}`,
+                capabilities: ["tool_calling", "web_search"],
+            },
+            { name: `plain-${suffix}`, capabilities: undefined },
+        ] satisfies {
+            name: string;
+            capabilities: EndpointAgentCapability[] | undefined;
+        }[];
+        const ids = agents.map(() => crypto.randomUUID());
+        await insertCommunityEndpoints(
+            agents.map(({ name, capabilities }, index) => ({
+                id: ids[index],
+                ownerUserId,
+                type: "endpoint_agent" as const,
+                name,
+                title: name,
+                baseUrl: `https://${name}.example.com/v1/chat/completions`,
+                upstreamModel: name,
+                visibility: "public" as const,
+                capabilities,
+            })),
+        );
+        const entries = await getCommunityModelRegistryEntries(env);
+        const [floret, polli, plain] = ids.map((id) =>
+            entries.find((entry) => entry.communityEndpoint.id === id),
+        );
+        // Media made by tools is linked in the text reply, so declaring traits
+        // leaves the text-in/text-out contract untouched.
+        for (const entry of [floret, polli, plain]) {
+            expect(entry?.info).toMatchObject({
+                agent: true,
+                input_modalities: ["text"],
+                output_modalities: ["text"],
+            });
+        }
+        expect(floret?.info.capabilities).toEqual([
+            "web_search",
+            "code_execution",
+            "pollinations_models",
+        ]);
+        expect(floret?.definition).toMatchObject({
+            search: true,
+            codeExecution: true,
+        });
+        expect(floret?.definition.tools).toBeUndefined();
+        expect(polli?.info.capabilities).toEqual([
+            "tool_calling",
+            "web_search",
+        ]);
+        expect(polli?.info.tools).toBe(true);
+        expect(polli?.definition.codeExecution).toBeUndefined();
+        expect(plain?.info.capabilities).toEqual([]);
+
+        const catalog = async (query: string) => {
+            const response = await fetchGen(
+                `https://gen.pollinations.ai/models?query=${suffix}${query}`,
+            );
+            expect(response.status).toBe(200);
+            return (
+                await response.json<
+                    { name: string; capabilities: string[] }[]
+                >()
+            )
+                .map(({ name, capabilities }) => ({ name, capabilities }))
+                .sort((a, b) => a.name.localeCompare(b.name));
+        };
+        const [floretId, polliId, plainId] = ids.map(
+            (id) =>
+                entries.find((entry) => entry.communityEndpoint.id === id)?.id,
+        );
+        expect(await catalog("")).toEqual(
+            [
+                { name: floretId, capabilities: agents[0].capabilities },
+                { name: plainId, capabilities: [] },
+                { name: polliId, capabilities: agents[1].capabilities },
+            ].sort((a, b) => String(a.name).localeCompare(String(b.name))),
+        );
+        const names = async (query: string) =>
+            (await catalog(query)).map(({ name }) => name);
+        expect(await names("&capabilities=web_search")).toEqual(
+            [floretId, polliId].sort(),
+        );
+        expect(await names("&capabilities=pollinations_models")).toEqual([
+            floretId,
+        ]);
+        expect(await names("&capabilities=tool_calling")).toEqual([polliId]);
+    },
+);
+
 fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
     const modelName = `model-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({
         githubId: nextAllowedGithubId(),
         githubUsername: ownerGithubUsername,
-    });
-    const sessionToken = `session-${crypto.randomUUID()}`;
-    await db.insert(sessionTable).values({
-        id: `session-${crypto.randomUUID()}`,
-        token: sessionToken,
-        userId: ownerUserId,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        createdAt: new Date(),
-        updatedAt: new Date(),
     });
 
     const enterEnv = {
@@ -7703,10 +8684,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         GEN_BASE_URL: "https://gen.pollinations.ai",
     };
     const enterApi = await createEnterFrontendApi();
-    const cookie = (await signedSessionCookie(sessionToken)).replace(
-        "better-auth.session_token",
-        "__Secure-better-auth.session_token",
-    );
+    const authorization = await sessionAuthorization(ownerUserId);
     const promptAgent = {
         systemPrompt: "You are a terse SQL tutor.",
         baseModel: "openai/gpt-5-nano",
@@ -7719,7 +8697,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Cookie: cookie,
+                Authorization: authorization,
             },
             body: JSON.stringify({
                 ...promptAgent,
@@ -7770,7 +8748,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
-                Cookie: cookie,
+                Authorization: authorization,
             },
             body: JSON.stringify({
                 systemPrompt: "You are an editable SQL tutor.",
@@ -7778,14 +8756,14 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         }),
         enterEnv,
     );
-    expect(partialUpdateResponse.status).toBe(400);
+    expect(partialUpdateResponse.status).toBe(200);
     const updateAgentResponse = await fetchEnterApi(
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}`, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
-                Cookie: cookie,
+                Authorization: authorization,
             },
             body: JSON.stringify({
                 ...promptAgent,
@@ -7817,7 +8795,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     const listResponse = await fetchEnterApi(
         enterApi,
         new Request("https://enter.test/api/account/my-models", {
-            headers: { Cookie: cookie },
+            headers: { Authorization: authorization },
         }),
         enterEnv,
     );
@@ -7848,7 +8826,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: cookie,
+                    Authorization: authorization,
                 },
                 body: JSON.stringify({
                     promptTextPrice: 0.00001,
@@ -7866,7 +8844,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: cookie,
+                    Authorization: authorization,
                 },
                 body: JSON.stringify({
                     fallbacks: ["owner/backup"],
@@ -7883,7 +8861,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         enterApi,
         new Request(
             `https://enter.test/api/account/my-models/${registration.id}/fallback-candidates`,
-            { headers: { Cookie: cookie } },
+            { headers: { Authorization: authorization } },
         ),
         enterEnv,
     );
@@ -7961,7 +8939,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: cookie,
+                    Authorization: authorization,
                 },
                 body: JSON.stringify({
                     api: "responses",
@@ -7999,7 +8977,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: cookie,
+                    Authorization: authorization,
                 },
                 body: JSON.stringify({
                     bearerToken: "not-supported",
@@ -8009,6 +8987,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         enterEnv,
     );
     expect(invalidEndpointAgentUpdateResponse.status).toBe(400);
+    await resetGenerationModelRegistryCache(env);
     const endpointAgentRegistryEntry = (
         await getCommunityModelRegistryEntries(env)
     ).find((entry) => entry.communityEndpoint.id === endpointAgentId);
@@ -8058,6 +9037,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
             tools?: boolean;
             reasoning?: boolean;
             context_length?: number;
+            tags?: { name: string }[];
             supported_endpoints?: string[];
         }[];
     };
@@ -8093,6 +9073,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     expect(openaiBaseModel).toBeDefined();
     expect(openaiAgentModel).toMatchObject({
         agent: true,
+        tags: [{ name: "text" }, { name: "community" }, { name: "agent" }],
         base_model: promptAgent.baseModel,
         pricing: baseModelInfo?.pricing,
         capabilities: agentCapabilities,
@@ -8107,7 +9088,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}`, {
             method: "DELETE",
-            headers: { Cookie: cookie },
+            headers: { Authorization: authorization },
         }),
         enterEnv,
     );
@@ -8126,21 +9107,9 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         githubId: COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID,
         githubUsername: ownerGithubUsername,
     });
-    const sessionToken = `session-${crypto.randomUUID()}`;
-    await db.insert(sessionTable).values({
-        id: `session-${crypto.randomUUID()}`,
-        token: sessionToken,
-        userId: ownerUserId,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    });
 
     const enterApi = await createEnterFrontendApi();
-    const cookie = (await signedSessionCookie(sessionToken)).replace(
-        "better-auth.session_token",
-        "__Secure-better-auth.session_token",
-    );
+    const authorization = await sessionAuthorization(ownerUserId);
     let commit = "a".repeat(40);
     let repositoryDescription: string | null = "Example code agents";
     let source = `export default async ({ request, pollinations, mcp }) => {
@@ -8187,7 +9156,10 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         enterApi,
         new Request("https://enter.test/api/account/agents", {
             method: "POST",
-            headers: { "Content-Type": "application/json", Cookie: cookie },
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: authorization,
+            },
             body: JSON.stringify({
                 type: "code_agent",
                 repository: "https://github.com/example/agents.git",
@@ -8278,7 +9250,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
                     method,
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: cookie,
+                        Authorization: authorization,
                     },
                     body: JSON.stringify(body),
                 }),
@@ -8298,7 +9270,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
                     method,
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: cookie,
+                        Authorization: authorization,
                     },
                     body: JSON.stringify(body),
                 }),
@@ -8336,22 +9308,24 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
             `https://enter.test/api/account/my-models/${agent.id}/update`,
             {
                 method: "POST",
-                headers: { "Content-Type": "application/json", Cookie: cookie },
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: authorization,
+                },
                 body: JSON.stringify({ hidden: true, description: "" }),
             },
         ),
         enterEnv,
     );
-    expect(hideResponse.status).toBe(200);
-    await expect(hideResponse.json()).resolves.toMatchObject({
-        hidden: true,
-        description: stored.description,
-    });
+    expect(hideResponse.status).toBe(400);
     const noOpResponse = await fetchEnterApi(
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}`, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json", Cookie: cookie },
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: authorization,
+            },
             body: "{}",
         }),
         enterEnv,
@@ -8367,9 +9341,6 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         description: stored.description,
         payload: stored.payload,
         requiredSafetyFeatures: ["violence"],
-        hiddenAt: expect.any(Date),
-        hiddenReason: "Hidden by owner",
-        hiddenBy: "owner",
     });
     expect(deploymentFetch).toHaveBeenCalledTimes(4);
 
@@ -8377,7 +9348,10 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}`, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json", Cookie: cookie },
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: authorization,
+            },
             body: JSON.stringify({ visibility: "public" }),
         }),
         enterEnv,
@@ -8420,7 +9394,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
     const listResponse = await fetchEnterApi(
         enterApi,
         new Request("https://enter.test/api/account/agents", {
-            headers: { Cookie: cookie },
+            headers: { Authorization: authorization },
         }),
         enterEnv,
     );
@@ -8441,7 +9415,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}`, {
             method: "DELETE",
-            headers: { Cookie: cookie },
+            headers: { Authorization: authorization },
         }),
         enterEnv,
     );
@@ -8454,7 +9428,10 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         enterApi,
         new Request("https://enter.test/api/account/agents", {
             method: "POST",
-            headers: { "Content-Type": "application/json", Cookie: cookie },
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: authorization,
+            },
             body: JSON.stringify({
                 type: "code_agent",
                 repository: "https://github.com/example/agents",
@@ -8484,15 +9461,6 @@ fixtureTest("validates community fallback targets on write", async () => {
     const otherOwnerUserId = await createTestUser({
         githubId: nextAllowedGithubId(),
         githubUsername: otherOwnerGithubUsername,
-    });
-    const sessionToken = `session-${crypto.randomUUID()}`;
-    await db.insert(sessionTable).values({
-        id: `session-${crypto.randomUUID()}`,
-        token: sessionToken,
-        userId: ownerUserId,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        createdAt: new Date(),
-        updatedAt: new Date(),
     });
 
     const bearerTokenCiphertext = await encryptSecret(
@@ -8629,7 +9597,7 @@ fixtureTest("validates community fallback targets on write", async () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     name,
@@ -8682,15 +9650,13 @@ fixtureTest("validates community fallback targets on write", async () => {
         `${primaryName}-other-disabled`,
         communityModelId(otherOwnerGithubUsername, targetNames.otherDisabled),
     );
-    expect(otherDisabledTarget.status).toBe(400);
-    expect(await otherDisabledTarget.text()).toContain("does not exist");
+    expect(otherDisabledTarget.status).toBe(200);
 
     const disabledTarget = await createWithFallback(
         `${primaryName}-disabled`,
         communityModelId(ownerGithubUsername, targetNames.disabled),
     );
-    expect(disabledTarget.status).toBe(400);
-    expect(await disabledTarget.text()).toContain("must be listed");
+    expect(disabledTarget.status).toBe(200);
 
     const delegatingTarget = await createWithFallback(
         `${primaryName}-delegating`,
@@ -8756,7 +9722,11 @@ fixtureTest("validates community fallback targets on write", async () => {
         enterApi,
         new Request(
             `http://localhost:3000/api/community-endpoints/${created.id}/fallback-candidates`,
-            { headers: { Cookie: await signedSessionCookie(sessionToken) } },
+            {
+                headers: {
+                    Authorization: await sessionAuthorization(ownerUserId),
+                },
+            },
         ),
     );
     expect(candidates.status).toBe(200);
@@ -8765,12 +9735,14 @@ fixtureTest("validates community fallback targets on write", async () => {
     expect(eligible).toContain(
         communityModelId(ownerGithubUsername, targetNames.priv),
     );
+    expect(eligible).toContain(
+        communityModelId(ownerGithubUsername, targetNames.disabled),
+    );
     // Never itself, and never a target the write path would reject.
     expect(eligible).not.toContain(created.modelId);
     for (const rejected of [
         targetNames.image,
         targetNames.pricey,
-        targetNames.disabled,
         targetNames.delegating,
     ]) {
         expect(eligible).not.toContain(
@@ -8787,7 +9759,7 @@ fixtureTest("validates community fallback targets on write", async () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     fallbacks: [],
@@ -8940,14 +9912,16 @@ fixtureTest(
             await insertCommunityEndpoints(row);
         }
 
-        resetGenerationModelRegistryCache();
+        await resetGenerationModelRegistryCache(env);
         const registry = await getGenerationModelRegistry(env);
 
         const fallbackIds = (model: string) =>
             registry.resolve(model)?.fallbackEntries?.map((e) => e.id);
 
         expect(fallbackIds(id("valid-primary"))).toEqual([id("valid-target")]);
-        expect(fallbackIds(id("disabled-primary"))).toBeUndefined();
+        expect(fallbackIds(id("disabled-primary"))).toEqual([
+            id("disabled-target"),
+        ]);
         expect(fallbackIds(id("deleted-primary"))).toBeUndefined();
         expect(fallbackIds(id("repriced-primary"))).toBeUndefined();
         expect(fallbackIds(id("delegating-primary"))).toBeUndefined();
@@ -8981,7 +9955,7 @@ fixtureTest(
 
 fixtureTest(
     "uses the served model's transform for a registry fallback",
-    async ({ apiKey }) => {
+    async ({ paidApiKey }) => {
         const suffix = crypto.randomUUID().slice(0, 8);
         const ownerGithubUsername = `transform-owner-${suffix}`;
         const ownerUserId = await createTestUser({
@@ -9010,13 +9984,11 @@ fixtureTest(
             updatedAt: new Date(),
         });
 
-        const source = getRegistryModelDefinition(
-            "qwen/qwen3-coder-30b-a3b-instruct",
-        );
+        const source = getRegistryModelDefinition("qwen/qwen3-coder-next");
         const previousFallbacks = source.fallbacks;
         try {
             source.fallbacks = [fallbackModelId];
-            resetGenerationModelRegistryCache();
+            await resetGenerationModelRegistryCache(env);
 
             const messageRoles: string[][] = [];
             vi.stubGlobal(
@@ -9070,11 +10042,11 @@ fixtureTest(
                 new Request("https://gen.pollinations.ai/v1/chat/completions", {
                     method: "POST",
                     headers: {
-                        Authorization: `Bearer ${apiKey}`,
+                        Authorization: `Bearer ${paidApiKey}`,
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        model: "qwen-coder",
+                        model: "qwen3-coder-next",
                         messages: [{ role: "user", content: "hello" }],
                     }),
                 }),
@@ -9085,7 +10057,7 @@ fixtureTest(
             expect(messageRoles).toEqual([["system", "user"], ["user"]]);
         } finally {
             source.fallbacks = previousFallbacks;
-            resetGenerationModelRegistryCache();
+            await resetGenerationModelRegistryCache(env);
         }
     },
 );
@@ -9559,92 +10531,142 @@ fixtureTest(
 );
 
 fixtureTest(
-    "does not serve a fallback the API key is not allowed to use",
-    async () => {
-        const { primaryModelId, fallbackModelId, primaryHost } =
-            await createCommunityFallbackPair({
-                prefix: "scoped",
-            });
-
-        // Scoped to the primary only — calling the fallback directly is a 403.
-        const { key } = await createTestApiKey({
-            allowedModels: [primaryModelId],
-            user: { tierBalance: 100 },
+    "catalog filters support OpenAI and AI SDK discovery and generation",
+    async ({ paidApiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = "catalog-client";
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
         });
+        await insertCommunityEndpoints({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: modelName,
+            title: "Catalog client test",
+            description: "Catalog client test",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "test-model",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_test_upstream",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0.1 / 1_000_000,
+            completionTextPrice: 0.2 / 1_000_000,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        let generationCalls = 0;
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (
+                    request.url ===
+                    "https://api.example.com/v1/chat/completions"
+                ) {
+                    generationCalls++;
+                    expect(request.headers.get("authorization")).toBe(
+                        "Bearer sk_test_upstream",
+                    );
+                    return Response.json({
+                        id: `chatcmpl-${generationCalls}`,
+                        object: "chat.completion",
+                        created: Math.floor(Date.now() / 1000),
+                        model: "test-model",
+                        choices: [
+                            {
+                                index: 0,
+                                message: {
+                                    role: "assistant",
+                                    content: "catalog client ok",
+                                },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 3,
+                            completion_tokens: 3,
+                            total_tokens: 6,
+                        },
+                    });
+                }
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+        const headers = { "Pollinations-Model-Source": "community" };
+        const openai = new OpenAI({
+            apiKey: paidApiKey,
+            baseURL: "https://gen.pollinations.ai/v1",
+            defaultHeaders: headers,
+            fetch: fetchGen,
+            maxRetries: 0,
+        });
+        const listed = await openai.models.list();
+        expect(listed.data.map((model) => model.id)).toEqual([modelId]);
+        expect(
+            (
+                await openai.chat.completions.create({
+                    model: modelId,
+                    messages: [{ role: "user", content: "OpenAI client" }],
+                })
+            ).choices[0].message.content,
+        ).toBe("catalog client ok");
 
-        const gatewayCalls: {
-            config: string | null;
-            provider: string | null;
-            url: string;
-        }[] = [];
-        const fetchMock = vi.fn(async (input, init) => {
-            const request = new Request(input, init);
-            if (isChatCompletionsRequest(request)) {
-                gatewayCalls.push({
-                    config: request.headers.get("x-portkey-config"),
-                    provider: request.headers.get("x-portkey-provider"),
-                    url: request.url,
-                });
-                return Response.json({
-                    id: "chatcmpl_primary",
-                    object: "chat.completion",
-                    choices: [
+        // AI SDK providers generate; the application's discovery request uses the
+        // same base URL and headers before handing the selected ID to the provider.
+        const discovery = await fetchGen(
+            "https://gen.pollinations.ai/v1/models",
+            { headers: { ...headers, Authorization: `Bearer ${paidApiKey}` } },
+        );
+        const catalog = (await discovery.json()) as { data: { id: string }[] };
+        expect(catalog.data.map((model) => model.id)).toEqual([modelId]);
+        const provider = createOpenAICompatible({
+            name: "pollinations",
+            baseURL: "https://gen.pollinations.ai/v1",
+            apiKey: paidApiKey,
+            headers,
+            fetch: fetchGen,
+        });
+        expect(
+            (
+                await generateText({
+                    model: provider.chatModel(catalog.data[0].id),
+                    prompt: "AI SDK client",
+                    maxRetries: 0,
+                })
+            ).text,
+        ).toBe("catalog client ok");
+        expect(generationCalls).toBe(2);
+
+        // A persistent discovery header cannot prohibit generation of a known ID.
+        const officialClient = new OpenAI({
+            apiKey: paidApiKey,
+            baseURL: "https://gen.pollinations.ai/v1",
+            defaultHeaders: { "Pollinations-Model-Source": "official" },
+            fetch: fetchGen,
+            maxRetries: 0,
+        });
+        expect(
+            (await officialClient.models.list()).data.some(
+                (model) => model.id === modelId,
+            ),
+        ).toBe(false);
+        expect(
+            (
+                await officialClient.chat.completions.create({
+                    model: modelId,
+                    messages: [
                         {
-                            index: 0,
-                            message: { role: "assistant", content: "ok" },
-                            finish_reason: "stop",
+                            role: "user",
+                            content: "Known model outside discovery",
                         },
                     ],
-                    usage: {
-                        prompt_tokens: 2,
-                        completion_tokens: 3,
-                        total_tokens: 5,
-                    },
-                });
-            }
-            if (isBillingFetch(request)) return Response.json({ data: [] });
-            throw new Error(`Unexpected fetch: ${request.url}`);
-        });
-        vi.stubGlobal("fetch", fetchMock);
-
-        const response = await fetchGen(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${key}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: primaryModelId,
-                    messages: [{ role: "user", content: "hello" }],
-                }),
-            }),
-        );
-
-        expect(response.status).toBe(200);
-        expect(gatewayCalls).toHaveLength(1);
-        // No strategy/targets config: the request runs against the primary
-        // alone, so the key can never be served the model it cannot call.
-        expect(gatewayCalls[0].config).toBeNull();
-        expect(gatewayCalls[0].provider).toBeNull();
-        expect(gatewayCalls[0].url).toBe(
-            communityChatCompletionsUrl(primaryHost),
-        );
-
-        // The same key calling the fallback directly is refused.
-        const direct = await fetchGen(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${key}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: fallbackModelId,
-                    messages: [{ role: "user", content: "hello" }],
-                }),
-            }),
-        );
-        expect(direct.status).toBe(403);
+                })
+            ).choices[0].message.content,
+        ).toBe("catalog client ok");
     },
 );

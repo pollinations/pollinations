@@ -6,7 +6,7 @@ Transform your questions into sassy cat wisdom! A collaboration between [pollina
 
 CatGPT is an AI-powered meme generator that creates personalized cat comics in response to your questions. Just like the original CatGPT comic, our feline friend responds with lazy, sarcastic wisdom while treating humans as mere servants.
 
-This app emerged from a collaboration with Tanika Godbole, with the idea coming from Dr. Julia Degen. We're using OpenAI's GPT-Image-1 model through pollinations.ai to democratize access to AI-generated cat wisdom!
+This app emerged from a collaboration with Tanika Godbole, with the idea coming from Dr. Julia Degen. We're using Gemini 3.1 Flash-Lite Image (nanobanana-2-lite) through pollinations.ai to democratize access to AI-generated cat wisdom, with GPT Image 1 Mini (gptimage) as a fallback!
 
 ### 🎨 Original Inspiration
 
@@ -47,34 +47,29 @@ Here are some AI-generated CatGPT memes created with our generator:
 
 ## 🚀 Features
 
-- **AI-Powered Generation**: Uses Gemini 2.5 Flash Image (nanobanana) via [gen.pollinations.ai](https://gen.pollinations.ai) API
+- **AI-Powered Generation**: Uses Gemini 3.1 Flash-Lite Image (`nanobanana-2-lite`) via [gen.pollinations.ai](https://gen.pollinations.ai) API
 - **Instant Memes**: Generate custom cat wisdom in seconds
 - **Share & Download**: Save your favorite memes or share them with friends
 - **Community Gallery**: Generated memes are automatically shared so everyone can browse the community's creations
-- **No Sign-up Required**: Completely free and open to use
+- **Pollen-Powered**: Log in with your Pollinations account to generate memes with your balance
 - **Gen-Z Friendly Design**: Modern, vibrant, and fun UI with animated elements
 - **Easter Eggs**: Hidden surprises for the curious (try the Konami code! 🎮)
 
 ## 🛠️ Tech Stack
 
 - **Frontend**: Pure HTML, CSS, and JavaScript (no frameworks needed!)
-- **AI Service**: [gen.pollinations.ai](https://gen.pollinations.ai) - Gemini 2.5 Flash Image (nanobanana) model
+- **AI Service**: [gen.pollinations.ai](https://gen.pollinations.ai): Gemini 3.1 Flash-Lite Image (`nanobanana-2-lite`) with `gptimage` fallback, powered by Claude Fast for text responses
 - **Image Upload**: Pollinations media storage for private references and public generated memes
 - **Design**: Psychedelic Gen-Z aesthetic with animated elements
 
-## 🔧 API Migration (Jan 2026)
+## 🔧 Architecture & Gateway
 
-This app has been migrated from the legacy `image.pollinations.ai` to the new `gen.pollinations.ai` API:
+The app uses the unified `gen.pollinations.ai` API gateway:
 
-- **Old**: `https://enter.pollinations.ai/image/prompt/...?model=nanobanana`
-- **New**: `https://gen.pollinations.ai/image/...?model=nanobanana`
-
-**Key Changes**:
-
-- Model remains `nanobanana` (Gemini 2.5 Flash Image - high-quality, pollen-based)
-- Authentication now uses API keys from [enter.pollinations.ai](https://enter.pollinations.ai/keys)
-- Better rate limiting and reliability
-- Improved image quality with `enhance=true` parameter
+- **Text generation**: Claude Fast (`anthropic/claude-haiku-4.5`) generates the cat's sarcastic replies
+- **Image generation**: Gemini 3.1 Flash-Lite Image (`nanobanana-2-lite`), falling back to `gptimage`
+- **Authentication**: Seamless Pollen balance authorization via [enter.pollinations.ai](https://enter.pollinations.ai)
+- **Media storage**: Tagged public archiving via [media.pollinations.ai](https://media.pollinations.ai)
 
 ## 💡 The Story
 
@@ -87,10 +82,11 @@ Keep your cats happy with premium pet food from our sponsor [PuraPep](https://ww
 ## 🎯 How to Use
 
 1. Visit the [CatGPT Meme Generator](https://pollinations.github.io/catgpt/)
-2. Type your question in the text box
-3. Click "Generate Meme"
-4. Watch as CatGPT responds with feline wisdom!
-5. Download or share your creation; generated memes also appear in the public community gallery
+2. Log in with your Pollinations account
+3. Type your question in the text box (optional: upload a selfie to be caricatured)
+4. Click "Generate Meme"
+5. Watch as CatGPT responds with feline wisdom!
+6. Download or share your creation; generated memes also appear in the public community gallery
 
 ## 🤝 Credits & Collaboration
 

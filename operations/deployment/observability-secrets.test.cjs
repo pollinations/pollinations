@@ -18,9 +18,7 @@ test("Observability provisions its session secret and rejects missing configurat
         POLLINATIONS_AUTH_SESSION_SECRET: "test-session-only",
         GF_ADMIN_PASSWORD: "test-grafana-only",
         TINYBIRD_READ_TOKEN: "test-read-only",
-        TINYBIRD_LEGACY_READ_TOKEN: "test-legacy-only",
-        DISCORD_WEBHOOK_URL: "https://example.invalid/webhook",
-        CLOUDFLARE_TUNNEL_TOKEN: "test-tunnel-only",
+        UNRELATED_SECRET: "test-unrelated-only",
     };
 
     try {
@@ -35,7 +33,7 @@ test("Observability provisions its session secret and rejects missing configurat
             vars,
             /^POLLINATIONS_AUTH_SESSION_SECRET="test-session-only"$/m,
         );
-        assert.doesNotMatch(vars, /CLOUDFLARE_TUNNEL_TOKEN/);
+        assert.doesNotMatch(vars, /UNRELATED_SECRET/);
 
         delete secrets.POLLINATIONS_AUTH_SESSION_SECRET;
         writeFileSync(input, JSON.stringify(secrets));

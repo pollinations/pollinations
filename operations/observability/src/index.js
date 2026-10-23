@@ -6,9 +6,10 @@ const CONTAINER_NAME = "primary";
 const ROOT_URL =
     workerEnv.GF_SERVER_ROOT_URL || "https://observability.pollinations.ai";
 const DOMAIN = new URL(ROOT_URL).host;
+const HEALTH_URL = new URL("/grafana/api/health", ROOT_URL).href;
 const BRAND_HEAD_TAGS = `
 <meta name="description" content="Pollinations operations dashboards">
-<meta property="og:title" content="pollinations.ai">
+<meta property="og:title" content="Observability">
 <meta property="og:description" content="Pollinations operations dashboards">
 <meta property="og:image" content="/grafana/public/img/og-image.png">
 <meta property="og:type" content="website">
@@ -31,6 +32,8 @@ function requiredSecret(name) {
 export class ObservabilityGrafana extends Container {
     defaultPort = 3000;
     requiredPorts = [3000];
+    // The default probe hits /, which Grafana redirects to its public HTTPS URL.
+    pingEndpoint = `${DOMAIN}/grafana/api/health`;
     sleepAfter = "10m";
     envVars = {
         GF_SECURITY_ADMIN_USER: workerEnv.GF_ADMIN_USER || "admin",
@@ -54,20 +57,33 @@ export class ObservabilityGrafana extends Container {
         GF_SECURITY_ALLOW_EMBEDDING: "true",
         GF_SERVER_SERVE_FROM_SUB_PATH: "true",
         GF_USERS_AUTO_ASSIGN_ORG_ROLE: "Editor",
+        // The 60s role cache fills before dashboards are provisioned on boot,
+        // denying every Editor the current dashboards for the first minute.
+        GF_RBAC_PERMISSION_CACHE: "false",
+        // Each open tab would hold a Live WebSocket and keep the container
+        // awake. The dashboards refresh hourly and stream nothing.
+        GF_LIVE_MAX_CONNECTIONS: "0",
+        // Grafana 13 downloads a set of data source plugins on every start.
+        // Each cold start has a fresh disk, so this would repeat every time
+        // and can push boot past the 60 s port wait. Only the ClickHouse
+        // plugin baked into the image is used.
+        GF_PLUGINS_PREINSTALL_DISABLED: "true",
         GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH:
             "/etc/grafana/provisioning/dashboards/platform-usage-rebuild.json",
         TINYBIRD_READ_TOKEN: requiredSecret("TINYBIRD_READ_TOKEN"),
-        TINYBIRD_LEGACY_READ_TOKEN: requiredSecret(
-            "TINYBIRD_LEGACY_READ_TOKEN",
-        ),
-        DISCORD_WEBHOOK_URL: requiredSecret("DISCORD_WEBHOOK_URL"),
     };
 }
 
-async function grafana(env) {
+async function grafanaFetch(request, env) {
     const container = env.OBSERVABILITY_GRAFANA.getByName(CONTAINER_NAME);
-    await container.startAndWaitForPorts();
-    return container;
+    // The container sleeps when idle, so a request may wait for Grafana to
+    // boot from a fresh disk; the SDK's default 20 s port wait is too short.
+    await container.startAndWaitForPorts({
+        cancellationOptions: { portReadyTimeoutMS: 60_000 },
+    });
+    // The SDK uses HTTP for the private hop. Let the browser follow redirects;
+    // following Grafana's public HTTPS redirects inside the container fails.
+    return container.fetch(new Request(request, { redirect: "manual" }));
 }
 
 class BrandHeadInjector {
@@ -80,16 +96,18 @@ export default {
     async fetch(request, env) {
         const url = new URL(request.url);
         if (url.pathname === "/api/health") {
-            await grafana(env);
-            return Response.json(
-                { ok: true },
-                { headers: { "Cache-Control": "no-store" } },
-            );
+            const response = await grafanaFetch(new Request(HEALTH_URL), env);
+            return new Response(response.body, {
+                status: response.status,
+                headers: {
+                    "Content-Type": "application/json",
+                    "Cache-Control": "no-store",
+                },
+            });
         }
 
         const app = createObservabilityApp(async (verifiedRequest) => {
-            const container = await grafana(env);
-            const response = await container.fetch(verifiedRequest);
+            const response = await grafanaFetch(verifiedRequest, env);
             if (
                 (response.headers.get("content-type") || "").includes(
                     "text/html",
@@ -102,23 +120,5 @@ export default {
             return response;
         });
         return app.fetch(request, env);
-    },
-
-    async scheduled(_controller, env, ctx) {
-        const healthRequest = new Request(`${ROOT_URL}/api/health`);
-        ctx.waitUntil(
-            grafana(env)
-                .then((container) => container.fetch(healthRequest))
-                .then((response) => {
-                    if (!response.ok) {
-                        console.warn(
-                            `Grafana health check returned ${response.status}`,
-                        );
-                    }
-                })
-                .catch((error) => {
-                    console.error("Grafana health check failed", error);
-                }),
-        );
     },
 };

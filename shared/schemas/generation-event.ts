@@ -10,7 +10,7 @@ export type EventType =
     | "generate.embedding"
     | "generate.realtime";
 
-export type TinybirdEventType = EventType | "mcp.call";
+export type TinybirdEventType = EventType | "mcp.call" | "sandbox.lease";
 
 // Plain TypeScript type for Tinybird events (no D1 table - events sent directly to Tinybird)
 export type TinybirdEvent = {
@@ -26,6 +26,8 @@ export type TinybirdEvent = {
     startTime: Date;
     endTime?: Date;
     responseTime?: number;
+    /** Duration of this upstream attempt, excluding earlier attempts. */
+    attemptResponseTime?: number;
     responseStatus?: number;
     environment?: string;
     eventType: TinybirdEventType;
@@ -48,6 +50,9 @@ export type TinybirdEvent = {
     apiKeyCreatedForApp?: string;
     apiKeyCreatedForUserId?: string;
     apiKeyClientId?: string;
+    apiKeyCreatedById?: string;
+    apiKeyOriginAppId?: string;
+    polliClientVersion?: string;
 
     // Meter
     selectedMeterId?: string;
@@ -104,6 +109,7 @@ export type TinybirdEvent = {
     tokenPricePromptCacheWrite: number;
     tokenPricePromptAudio: number;
     tokenPricePromptAudioSeconds: number;
+    tokenPricePromptVideoSeconds: number;
     tokenPricePromptImage: number;
     tokenPricePromptVideo: number;
     tokenPriceCompletionText: number;
@@ -128,6 +134,7 @@ export type TinybirdEvent = {
     tokenCountCompletionVideoSeconds: number;
     tokenCountCompletionVideoTokens: number;
     tokenCountPromptAudioSeconds: number;
+    tokenCountPromptVideoSeconds: number;
     tokenCountCompletionAudioSeconds: number;
 
     // Totals
@@ -166,6 +173,7 @@ export type GenerationEventPriceParams = {
     tokenPricePromptCacheWrite: number;
     tokenPricePromptAudio: number;
     tokenPricePromptAudioSeconds: number;
+    tokenPricePromptVideoSeconds: number;
     tokenPricePromptImage: number;
     tokenPricePromptVideo: number;
     tokenPriceCompletionText: number;
@@ -191,6 +199,7 @@ export type GenerationEventUsageParams = {
     tokenCountCompletionVideoSeconds: number;
     tokenCountCompletionVideoTokens: number;
     tokenCountPromptAudioSeconds: number;
+    tokenCountPromptVideoSeconds: number;
     tokenCountCompletionAudioSeconds: number;
 };
 
@@ -210,6 +219,8 @@ export function priceToEventParams(
             priceDefinition?.promptAudioTokens || 0,
         tokenPricePromptAudioSeconds:
             priceDefinition?.promptAudioSeconds || 0,
+        tokenPricePromptVideoSeconds:
+            priceDefinition?.promptVideoSeconds || 0,
         tokenPricePromptImage:
             priceDefinition?.promptImageTokens || 0,
         tokenPricePromptVideo:
@@ -239,6 +250,7 @@ export function usageToEventParams(usage?: Usage): GenerationEventUsageParams {
         tokenCountPromptCached: usage?.promptCachedTokens || 0,
         tokenCountPromptCacheWrite: usage?.promptCacheWriteTokens || 0,
         tokenCountPromptAudio: usage?.promptAudioTokens || 0,
+        tokenCountPromptVideoSeconds: usage?.promptVideoSeconds || 0,
         tokenCountPromptImage: usage?.promptImageTokens || 0,
         tokenCountPromptVideo: usage?.promptVideoTokens || 0,
         tokenCountCompletionText: usage?.completionTextTokens || 0,

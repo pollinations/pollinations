@@ -27,6 +27,8 @@
             // exclude dependencies
             ".github/**",
             "!**/node_modules/**",
+            // exclude sops-encrypted secrets: reformatting them breaks the MAC
+            "!**/secrets/**",
             // exclude build outputs (force-ignore with !!)
             "!**/dist/**",
             "!**/build/**",
@@ -46,10 +48,25 @@
             "!**/*.yml",
             "!**/*.md",
             // exclude vendored font OFL license texts (must be distributed verbatim)
-            "!packages/ui/src/licenses/**"
+            "!packages/ui/src/licenses/**",
+            // exclude the fork of Anthropic's Telegram plugin, kept in its
+            // upstream formatting so it can be compared with upstream
+            "!apps/mama-barbara/barbara/telegram/server.ts"
         ]
     },
     "overrides": [
+        {
+            // SVG files are image assets shown through <img alt="…">, so a
+            // <title> in each file adds nothing
+            "includes": ["**/*.svg"],
+            "linter": {
+                "rules": {
+                    "a11y": {
+                        "noSvgWithoutTitle": "off"
+                    }
+                }
+            }
+        },
         {
             "includes": ["apps/chat/**"],
             "linter": {

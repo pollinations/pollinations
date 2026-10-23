@@ -1,0 +1,124 @@
+name: Deploy / Cloudflare staging
+
+# Manual only. Pick the ref to deploy in the dispatch dialog. Mirrors the
+# production workflow's shape (one shared migration, then per-worker deploy)
+# without the test gate: staging is where changes get tested.
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Which service to deploy'
+        type: choice
+        options:
+          - all
+          - enter
+          - gen
+        default: all
+      push_secrets:
+        description: >-
+          Also push secrets/staging.vars.json to the Workers. Re-applying
+          already-approved values needs no approval; a new or changed value
+          needs Secret Mutation Safety approval (AGENTS.md) before merging it.
+        type: boolean
+        default: false
+
+concurrency:
+  group: pollinations-cloudflare-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # enter and gen share staging-pollinations-enter-db, so the schema moves
+  # once, before either worker deploys. `d1 migrations apply` is idempotent.
+  migrate:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Run database migrations
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: npm run migrate:staging --workspace pollinations-enter
+
+  deploy-enter:
+    needs: migrate
+    if: inputs.service == 'all' || inputs.service == 'enter'
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Build and deploy to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: npm run deploy:staging --workspace pollinations-enter
+
+      - name: Setup SOPS
+        if: inputs.push_secrets
+        uses: nhedger/setup-sops@v3
+
+      # Deploy first so the secret push edits the deployed version (see the
+      # production workflow for why).
+      - name: Push enter secrets
+        if: inputs.push_secrets
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: npm run push-secrets:staging --workspace pollinations-enter
+
+  deploy-gen:
+    needs: migrate
+    if: inputs.service == 'all' || inputs.service == 'gen'
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}
+        run: npm run deploy:staging --workspace pollinations-gen
+
+      - name: Setup SOPS
+        if: inputs.push_secrets
+        uses: nhedger/setup-sops@v3
+
+      - name: Push generation secrets
+        if: inputs.push_secrets
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}
+        run: npm run push-secrets:staging --workspace pollinations-gen

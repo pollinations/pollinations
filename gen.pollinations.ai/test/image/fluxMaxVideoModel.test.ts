@@ -13,6 +13,8 @@ const RESULT_URL =
     "https://queue.fal.run/blackforestlabs/flux-3-max/requests/test";
 const VIDEO_URL = "https://fal.media/flux-3-max-test.mp4";
 const VIDEO_BYTES = new Uint8Array([0, 0, 0, 20, 102, 116, 121, 112]);
+const PRICING_URL = "https://api.fal.ai/v1/models/pricing?endpoint_id=";
+const UNIT_PRICE = 0.02125;
 
 const baseParams: ImageParams = {
     model: "black-forest-labs/flux-3-max",
@@ -33,13 +35,29 @@ type ProviderRequest = {
     body?: Record<string, unknown>;
 };
 
-// fal reports the billed units on the result fetch. The mock reports 6 units
-// for a 5 s request so the tests show billing follows the provider's count.
+// fal reports resolution-weighted units on the result fetch. The mock reports
+// 6 units for a 5 s request so the tests show billing follows fal's units at
+// fal's live unit price, not the requested seconds.
 function mockFluxFetch(requests: ProviderRequest[]) {
     return vi
         .spyOn(globalThis, "fetch")
         .mockImplementation(async (url, init) => {
             const href = typeof url === "string" ? url : url.toString();
+            // Pricing lookups are not provider requests under test.
+            if (href.startsWith(PRICING_URL)) {
+                const endpointId = decodeURIComponent(
+                    href.slice(PRICING_URL.length),
+                );
+                return Response.json({
+                    prices: [
+                        {
+                            endpoint_id: endpointId,
+                            unit_price: UNIT_PRICE,
+                            currency: "USD",
+                        },
+                    ],
+                });
+            }
             requests.push({
                 url: href,
                 body: init?.body
@@ -107,7 +125,8 @@ describe("callFluxMaxVideoAPI", () => {
         expect(result.durationSeconds).toBe(5);
         expect(result.trackingData).toEqual({
             actualModel: "black-forest-labs/flux-3-max",
-            usage: { completionVideoSeconds: 6 },
+            usage: { completionVideoSeconds: 5 },
+            providerBilling: { units: 6, unitCost: UNIT_PRICE },
         });
     });
 

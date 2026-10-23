@@ -4,14 +4,12 @@ import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
 import { sleep } from "../util.ts";
 import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
-import { falBillableUnits } from "../utils/falBillableUnits.ts";
+import { falBillableUnits, falUnitPrice } from "../utils/falBillableUnits.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 
 const FLUX_MAX_MODEL = "black-forest-labs/flux-3-max";
-const FLUX_MAX_TEXT_ENDPOINT =
-    "https://queue.fal.run/blackforestlabs/flux-3-max/text-to-video";
-const FLUX_MAX_IMAGE_ENDPOINT =
-    "https://queue.fal.run/blackforestlabs/flux-3-max/image-to-video";
+const FLUX_MAX_TEXT_ENDPOINT_ID = "blackforestlabs/flux-3-max/text-to-video";
+const FLUX_MAX_IMAGE_ENDPOINT_ID = "blackforestlabs/flux-3-max/image-to-video";
 const FLUX_MAX_POLL_INTERVAL_MS = 3_000;
 const FLUX_MAX_ASPECT_RATIOS = [
     "21:9",
@@ -125,10 +123,14 @@ export async function callFluxMaxVideoAPI(
         requestBody.image_url = startImage;
         if (endImage) requestBody.end_image_url = endImage;
     }
-    const endpoint = isImageToVideo
-        ? FLUX_MAX_IMAGE_ENDPOINT
-        : FLUX_MAX_TEXT_ENDPOINT;
+    const endpointId = isImageToVideo
+        ? FLUX_MAX_IMAGE_ENDPOINT_ID
+        : FLUX_MAX_TEXT_ENDPOINT_ID;
+    const endpoint = `https://queue.fal.run/${endpointId}`;
     const authorization = { Authorization: `Key ${apiKey}` };
+    // fal's units are resolution-weighted, not seconds: charge them at fal's
+    // live unit price, fetched before the paid submission.
+    const unitCost = await falUnitPrice(endpointId, apiKey);
 
     const submissionResponse = await fetchUpstream(endpoint, {
         method: "POST",
@@ -173,9 +175,7 @@ export async function callFluxMaxVideoAPI(
         headers: authorization,
         errorLabel: "FLUX 3 Max result fetch failed",
     });
-    // Bill fal's reported units, not the requested duration. The registry's
-    // per-second cost variants give the 720p and 1080p rates.
-    const billedSeconds = falBillableUnits(resultResponse);
+    const units = falBillableUnits(resultResponse);
     const result = await readJson<FluxMaxResult>(
         resultResponse,
         "FLUX 3 Max returned an invalid result",
@@ -199,7 +199,8 @@ export async function callFluxMaxVideoAPI(
         durationSeconds: duration,
         trackingData: {
             actualModel: FLUX_MAX_MODEL,
-            usage: { completionVideoSeconds: billedSeconds },
+            usage: { completionVideoSeconds: duration },
+            providerBilling: { units, unitCost },
         },
     };
 }

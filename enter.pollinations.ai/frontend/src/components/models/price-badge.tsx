@@ -69,6 +69,22 @@ const PRICE_LINE_LABELS: Record<PriceKind, Record<PriceDirection, string>> = {
     audioOut: { input: "Audio out", output: "Audio out" },
 };
 
+/** One price line as plain text, e.g. { label: "Text in", value: "$0.15/M" }. */
+export const formatPriceLine = ({
+    direction,
+    kind,
+    price,
+    unit,
+}: ModelPriceLine): { label: string; value: string } => {
+    const { value, tokenScale } = formatDisplayPrice(price, unit === "token");
+    const suffix =
+        unit === "token" ? `/${tokenScale}` : PRICE_UNIT_SUFFIX[unit];
+    return {
+        label: PRICE_LINE_LABELS[kind][direction],
+        value: `$${value}${suffix}`,
+    };
+};
+
 const compactNumber = new Intl.NumberFormat("en", { notation: "compact" });
 
 const formatAdjustmentUnit = ({
@@ -333,7 +349,7 @@ const ModelPricingControls: FC<{
                                         type="button"
                                         size="xs"
                                         intent="neutral"
-                                        aria-label={`Show prices for ${dropdown.key === "context" ? "context length" : dropdown.label.toLowerCase()}${modelName ? ` — ${modelName}` : ""}`}
+                                        aria-label={`Show prices for ${dropdown.key === "context" ? "context length" : dropdown.label.toLowerCase()}${modelName ? ` (${modelName})` : ""}`}
                                         className="polli:w-full polli:min-w-0 polli:justify-between polli:gap-1 polli:px-1 polli:py-0 polli:text-xs polli:tabular-nums"
                                     >
                                         <span className="truncate">

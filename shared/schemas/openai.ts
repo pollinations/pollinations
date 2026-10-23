@@ -1,7 +1,10 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
-import { ModelHealthSchema } from "../registry/model-info.ts";
+import {
+    AGENT_FIELD_DESCRIPTIONS,
+    ModelHealthSchema,
+} from "../registry/model-info.ts";
 import { MODEL_CATEGORIES } from "../registry/registry.ts";
 import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
 import { SafeSchema } from "./safety.ts";
@@ -136,6 +139,7 @@ const ChatCompletionRequestMessageContentPartFileSchema = z.object({
         file_id: z.string().optional(),
         file_name: z.string().optional(),
         file_url: z.string().optional(),
+        filename: z.string().optional(),
         mime_type: z.string().optional(),
     }),
     cache_control: CacheControlSchema,
@@ -150,9 +154,7 @@ const ChatCompletionRequestMessageContentPartSchema = z
         ChatCompletionRequestMessageContentPartAudioSchema,
         ChatCompletionRequestMessageContentPartFileSchema,
         // Allow any other content types for provider-specific extensions
-        z
-            .object({ type: z.string() })
-            .passthrough(),
+        z.object({ type: z.string() }).passthrough(),
     ])
     .meta({ $id: "MessageContentPart" });
 
@@ -314,6 +316,12 @@ export const CreateChatCompletionRequestSchema = z
             description:
                 "AI model for text generation. See /v1/models for full list.",
         }),
+        system: z
+            .string()
+            .nullish()
+            .describe(
+                "Optional system prompt prepended before `messages` (same extension as GET /text).",
+            ),
         metadata: z
             .record(z.string(), z.string())
             .nullish()
@@ -396,6 +404,7 @@ export type CreateChatCompletionRequest = z.infer<
 >;
 
 const StatelessResponseIncludeSchema = z.enum([
+    "reasoning.encrypted_content",
     "web_search_call.action.sources",
     "code_interpreter_call.outputs",
     "computer_call_output.output.image_url",
@@ -445,6 +454,8 @@ export const CreateResponseRequestSchema = z
         tool_choice: z.any().optional(),
         parallel_tool_calls: z.boolean().optional(),
         metadata: z.record(z.string(), z.string()).nullish(),
+        // Codex session telemetry; accepted, never sent upstream.
+        client_metadata: z.record(z.string(), z.string()).nullish(),
         user: z.string().optional(),
         safety_identifier: z.string().max(64).optional(),
         prompt_cache_key: z.string().optional(),
@@ -569,9 +580,7 @@ const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionMessageContentPartThinkingSchema,
     ChatCompletionMessageContentPartRedactedThinkingSchema,
     // Allow any other content types for provider-specific extensions (video, audio, file, etc.)
-    z
-        .object({ type: z.string() })
-        .passthrough(),
+    z.object({ type: z.string() }).passthrough(),
 ]);
 
 const ChatCompletionResponseMessageSchema = z.object({
@@ -753,9 +762,20 @@ export const OpenAIModelSchema = z
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),
-        agent: z.boolean().optional(),
-        base_model: z.string().optional(),
-        pricing: z.record(z.string(), z.string()).optional(),
+        agent: z.boolean().optional().describe(AGENT_FIELD_DESCRIPTIONS.agent),
+        base_model: z
+            .string()
+            .optional()
+            .describe(AGENT_FIELD_DESCRIPTIONS.base_model),
+        paid_only: z
+            .boolean()
+            .describe(
+                "True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`.",
+            ),
+        pricing: z
+            .record(z.string(), z.string())
+            .optional()
+            .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
         capabilities: z.array(z.string()).optional(),
         supported_parameters: z
             .array(z.string())
@@ -765,6 +785,12 @@ export const OpenAIModelSchema = z
             ),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
+        supports_streaming: z
+            .boolean()
+            .optional()
+            .describe(
+                "False when the upstream does not stream. `stream: true` still returns a valid event stream, but the whole answer arrives at once when generation finishes. Omitted when the model streams.",
+            ),
         context_length: z.number().optional(),
         per_user_rpm: z.number().positive().nullable().optional(),
         health: ModelHealthSchema.optional(),
@@ -794,6 +820,15 @@ const imageModelField = z
     .meta({
         description: "The model to use for image generation",
     });
+// Edits need a model that reads the source image; schnell is text-only.
+const imageEditModelField = z
+    .string()
+    .optional()
+    .default("openai/gpt-image-1-mini")
+    .meta({
+        description:
+            "The model to use for image editing. It must list image in input_modalities.",
+    });
 const imageNField = z
     .number()
     .int()
@@ -811,6 +846,20 @@ const imageSizeField = z
     .default("1024x1024")
     .meta(imageSizeMeta);
 const imageEditSizeField = z.string().optional().meta(imageSizeMeta);
+// Same bounds as the GET image route and the chat route: out-of-range seeds
+// are rejected here instead of being silently replaced with seed 42 by the
+// generation pipeline.
+const imageSeedField = z
+    .number()
+    .int()
+    .min(-1)
+    .max(2147483647)
+    .nullable()
+    .optional()
+    .meta({
+        description:
+            "Seed for reproducible results. -1 maps to the stable compatibility seed.",
+    });
 const imageQualityField = z
     .enum(["standard", "hd", "low", "medium", "high"])
     .optional()
@@ -844,6 +893,7 @@ export const CreateImageRequestSchema = z
         n: imageNField,
         size: imageSizeField,
         quality: imageQualityField,
+        seed: imageSeedField,
         response_format: imageResponseFormatField,
         user: z.string().optional().meta({
             description: "End-user identifier for abuse tracking",
@@ -920,10 +970,11 @@ export const CreateImageEditRequestSchema = z
                 description:
                     "Source image(s). A URL string, or an array of {image_url} objects (OpenAI format)",
             }),
-        model: imageModelField,
+        model: imageEditModelField,
         n: imageNField,
         size: imageEditSizeField,
         quality: imageQualityField,
+        seed: imageSeedField,
         response_format: imageResponseFormatField,
         resolution: imageResolutionField,
         safe: SafeSchema,

@@ -1,5 +1,5 @@
 import { Command, Option } from "commander";
-import { gen } from "../lib/api.js";
+import { ApiError, gen } from "../lib/api.js";
 import {
     clearCredentials,
     ENTER_URL,
@@ -9,6 +9,8 @@ import {
 } from "../lib/config.js";
 import {
     ExitSignal,
+    fail,
+    getOutputMode,
     printError,
     printInfo,
     printResult,
@@ -108,7 +110,25 @@ async function readStdinToken(): Promise<string> {
     return text.trim();
 }
 
+// gen's response cache can answer an unauthenticated prompt, so a chat
+// completion proves nothing — check the key itself.
+export const keyIsValid = async (key: string) => {
+    try {
+        const info = await gen<{ valid: boolean }>("/account/key", {
+            apiKey: key,
+        });
+        return info.valid === true;
+    } catch (error) {
+        if (error instanceof ApiError && error.status === 401) return false;
+        throw error;
+    }
+};
+
 async function authenticateWithKey(key: string): Promise<void> {
+    const valid = await keyIsValid(key).catch((error) =>
+        fail("Could not verify API key. Nothing was saved", error),
+    );
+    if (!valid) fail("Invalid API key. Nothing was saved.");
     storeKey(key);
     printSuccess("Authenticated. Key stored.");
 
@@ -116,7 +136,7 @@ async function authenticateWithKey(key: string): Promise<void> {
     if (label) {
         printSuccess(label);
     } else {
-        printInfo("Key stored but could not verify. It may still be valid.");
+        printInfo("Key verified, but profile details are unavailable.");
     }
     printInfo(flavor.login);
 }
@@ -162,10 +182,10 @@ export async function loginWithDeviceFlow(
 
     const deviceResp = (await res.json()) as DeviceCodeResponse;
 
-    printInfo(`\nYour code: ${deviceResp.user_code}\n`);
-
     const url = deviceResp.verification_uri_complete;
-    printInfo(`Open this URL in your browser:\n  ${url}`);
+    process.stderr.write(
+        `\nYour code: ${deviceResp.user_code}\n\nOpen this URL in your browser:\n  ${url}\n`,
+    );
 
     if (opts.browser !== false) {
         const open = (await import("open")).default;
@@ -224,16 +244,13 @@ const login = new Command("login")
     .action(async (opts: LoginOptions) => {
         if (opts.token) {
             await authenticateWithKey(assertApiKey(opts.token));
-            return;
-        }
-
-        if (opts.withToken) {
+        } else if (opts.withToken) {
             const key = assertApiKey(await readStdinToken());
             await authenticateWithKey(key);
-            return;
+        } else {
+            await loginWithDeviceFlow({ browser: opts.browser });
         }
-
-        await loginWithDeviceFlow({ browser: opts.browser });
+        if (getOutputMode() === "json") printResult({ authenticated: true });
     });
 
 const logout = new Command("logout")

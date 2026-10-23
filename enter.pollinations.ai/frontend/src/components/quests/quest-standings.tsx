@@ -36,8 +36,8 @@ function nudge(
     if (rank === null) {
         const first = byReward[0];
         return first
-            ? `Earn any quest to join the race — “${first.title}” is +${formatPollen(first.reward)}.`
-            : "Earn any quest to join the race.";
+            ? `Complete a quest to join the race. “${first.title}” earns ${formatPollen(first.reward)} Pollen.`
+            : "Complete a quest to join the race.";
     }
     if (rank === 1) return `You're leading ${monthName(standings.month)}.`;
     const above = rows.find((row) => row.rank === rank - 1);
@@ -47,11 +47,51 @@ function nudge(
     // A tie still needs the smallest quest reward to pass, not 0.
     const target = `${formatPollen(Math.max(gap, 0.25))} Pollen to pass @${above.githubLogin}`;
     return pass
-        ? `${target} — “${pass.title}” is +${formatPollen(pass.reward)}.`
+        ? `${target}. “${pass.title}” earns ${formatPollen(pass.reward)} Pollen.`
         : `${target}.`;
 }
 
+const MEDALS = ["🥇", "🥈", "🥉"];
+
+/** Places moved since the start of today (UTC): ↑3, ↓1, or "new". */
+function Movement({
+    movement,
+    isYou,
+}: {
+    movement: number | null;
+    isYou: boolean;
+}) {
+    if (movement === 0) return null;
+    const [label, text, className] =
+        movement === null
+            ? ["New on the board today", "new", "text-theme-text-muted"]
+            : movement > 0
+              ? [
+                    `Up ${movement} since yesterday`,
+                    `↑${movement}`,
+                    "text-outcome-positive-text",
+                ]
+              : [
+                    `Down ${-movement} since yesterday`,
+                    `↓${-movement}`,
+                    "text-outcome-negative-text",
+                ];
+    return (
+        <span
+            title={label}
+            // The viewer row sits on the accent fill, where tone colours fade.
+            className={`shrink-0 text-xs font-semibold tabular-nums ${
+                isYou ? "text-theme-text-strong" : className
+            }`}
+        >
+            <span aria-hidden="true">{text}</span>
+            <span className="sr-only">{label}</span>
+        </span>
+    );
+}
+
 function StandingRowView({ row, isYou }: { row: StandingRow; isYou: boolean }) {
+    const medal = MEDALS[row.rank - 1];
     return (
         <li
             className={`flex items-center gap-3 rounded-xl px-3 py-2 ${
@@ -59,7 +99,17 @@ function StandingRowView({ row, isYou }: { row: StandingRow; isYou: boolean }) {
             }`}
         >
             <span className="w-6 shrink-0 text-right text-sm font-semibold tabular-nums text-theme-text-muted">
-                {row.rank}
+                {medal ? (
+                    <span
+                        role="img"
+                        aria-label={`Rank ${row.rank}`}
+                        className="text-base leading-none"
+                    >
+                        {medal}
+                    </span>
+                ) : (
+                    row.rank
+                )}
             </span>
             <img
                 src={`https://github.com/${encodeURIComponent(row.githubLogin)}.png?size=64`}
@@ -87,14 +137,17 @@ function StandingRowView({ row, isYou }: { row: StandingRow; isYou: boolean }) {
                     <span className="sr-only">Pollen supporter</span>
                 </span>
             )}
-            <Text
-                as="span"
-                weight="semibold"
-                tone="strong"
-                className="ml-auto shrink-0 tabular-nums"
-            >
-                {formatPollen(row.totalPollen)}
-            </Text>
+            <span className="ml-auto flex shrink-0 items-center gap-2">
+                <Movement movement={row.movement} isYou={isYou} />
+                <Text
+                    as="span"
+                    weight="semibold"
+                    tone="strong"
+                    className="tabular-nums"
+                >
+                    {formatPollen(row.totalPollen)}
+                </Text>
+            </span>
         </li>
     );
 }
@@ -152,13 +205,13 @@ export function QuestStandings({
                         })}
                     </ol>
                 )}
-                {line && (
-                    <p className="flex items-start gap-1.5 border-theme-border border-t px-3 pt-3 font-medium text-sm leading-snug text-theme-text-strong">
-                        <TargetIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>{line}</span>
-                    </p>
-                )}
             </Surface>
+            {line && (
+                <p className="flex items-start gap-1.5 text-[13px] leading-snug text-theme-text-muted">
+                    <TargetIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>{line}</span>
+                </p>
+            )}
         </Section>
     );
 }

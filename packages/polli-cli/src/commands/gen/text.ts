@@ -1,5 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { writeFileSync } from "node:fs";
 import chalk from "chalk";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
@@ -15,6 +14,7 @@ import {
     printSuccess,
     printWarn,
 } from "../../lib/output.js";
+import { prepareOutputPath } from "../../lib/output-file.js";
 import { readStdin } from "../../lib/stdin.js";
 import { streamSSE } from "../../lib/stream.js";
 
@@ -59,7 +59,9 @@ export function createTextCommand() {
         .action(async (promptArg, opts, command: Command) => {
             // With a prompt argument, stdin is optional context: don't wait
             // forever on a caller that leaves stdin open.
-            const stdinText = await readStdin(promptArg ? 3000 : undefined);
+            const stdinText = (
+                await readStdin(promptArg ? 3000 : undefined)
+            ).trim();
             const prompt = promptArg || stdinText;
 
             if (!prompt) {
@@ -165,8 +167,7 @@ export function createTextCommand() {
             if (useStream) body.stream = true;
 
             // Before the paid request, so a bad --output folder costs nothing.
-            if (opts.output)
-                mkdirSync(dirname(opts.output), { recursive: true });
+            if (opts.output) prepareOutputPath(opts.output);
             if (isHuman && !useStream) printInfo("Generating...");
 
             const warnIfTruncated = (reason?: string | null) => {

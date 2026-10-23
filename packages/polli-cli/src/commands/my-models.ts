@@ -222,6 +222,9 @@ export function modelBody(
                 : commaSeparatedList(opts.requiredSafety);
     }
 
+    // Commander sets `streaming: false` only for --no-streaming.
+    if (opts.streaming === false) body.advertised = { streaming: false };
+
     if (includeRequired) {
         for (const required of ["name", "title"]) {
             if (!body[required]) {
@@ -373,6 +376,10 @@ const create = addPriceOptions(
         .option(
             "--image-pricing <mode>",
             "Image billing: request (per image, default) or tokens",
+        )
+        .option(
+            "--no-streaming",
+            "Text endpoint has no SSE (`my-models test` reports streaming: false); stream: true calls get the whole answer at once",
         ),
 ).action(async (opts) => {
     const key = requireKey();
@@ -386,6 +393,7 @@ const create = addPriceOptions(
         else {
             printSuccess(`Model registered: ${created.modelId}`);
             printModels([created]);
+            printInfo("It can take a minute or two before this is callable.");
         }
     } catch (err) {
         fail("Failed to create model", err);
@@ -455,6 +463,7 @@ const update = addPriceOptions(
         else {
             printSuccess(`Model updated: ${updated.modelId}`);
             printModels([updated]);
+            printInfo("It can take a minute or two before this is callable.");
         }
     } catch (err) {
         fail("Failed to update model", err);

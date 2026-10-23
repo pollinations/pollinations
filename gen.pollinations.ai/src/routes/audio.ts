@@ -5,9 +5,11 @@ import {
     UpstreamError,
 } from "@shared/error.ts";
 import {
+    AUDIO_SERVICES,
     AUDIO_VOICES,
     type AudioModelName,
     GEMINI_TTS_VOICES,
+    MAI_VOICE_21_VOICES,
     resolveElevenLabsVoiceId,
 } from "@shared/registry/audio.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
@@ -16,6 +18,7 @@ import {
     createAudioSecondsUsage,
     createAudioTokenUsage,
     createCompletionAudioSecondsUsage,
+    PROVIDER_BILLING_HEADERS,
 } from "@shared/registry/usage-headers.ts";
 import { readResponseBytes } from "@shared/response-bytes.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
@@ -53,6 +56,7 @@ import {
     callCommunityTranscriptionEndpoint,
 } from "../audio/communityEndpoint.ts";
 import { generateLyria35 } from "../audio/lyria.ts";
+import { transcribeMai } from "../audio/mai-transcription.ts";
 import {
     type FallbackCandidate,
     withModelFallbackResponse,
@@ -90,7 +94,7 @@ const CreateSpeechRequestSchema = z
             .optional()
             .meta({
                 description:
-                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; Gemini TTS defaults to wav and supports wav or raw 24 kHz pcm; other explicit formats are rejected; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3.5, google/lyria-3-clip-preview, and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
+                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; MAI-Voice-2.1 and MAI-Voice-2.1 Flash support mp3 and 24 kHz pcm; Gemini TTS defaults to wav and supports wav or raw 24 kHz pcm; other explicit formats are rejected; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3.5, google/lyria-3-clip-preview, and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(380).optional().meta({
@@ -137,6 +141,11 @@ const CreateSpeechRequestSchema = z
             example:
                 "https://media.pollinations.ai/3f9c1e2a-7b4d-4e2f-9a1c-8d6b5e4f3a2b",
         }),
+        strength: z.number().min(0).max(1).optional().meta({
+            description:
+                "How much the output may depart from reference_audio, 0-1: 0 keeps the input, 1 ignores it (stability-ai/stable-audio-3-medium and stability-ai/stable-audio-3 audio-to-audio only). Omit for the provider default.",
+            example: 0.5,
+        }),
         conditioning_ref: z.unknown().optional().meta({
             description:
                 "ElevenLabs Music v2 or v2.5 AudioRefChunk to apply to the generated chunk. reference_audio creates this automatically; advanced clients can reuse x-elevenlabs-reference-song-id here on later requests.",
@@ -152,8 +161,13 @@ const CreateSpeechRequestSchema = z
         }),
         instructions: z.string().optional().meta({
             description:
-                "Emotion/style instruction (Gemini TTS and qwen/qwen3-tts-instruct-flash). e.g. 'excited and cheerful'.",
+                "Emotion/style instruction (Gemini TTS and qwen/qwen-audio-3.0-tts-flash). e.g. 'excited and cheerful'.",
             example: "speak softly and warmly",
+        }),
+        speed: z.number().optional().meta({
+            description:
+                "Speech speed, 0.25-4 (openai/tts-1 and openai/tts-1-hd only; other models accept only 1).",
+            example: 1.25,
         }),
     })
     .meta({ $id: "CreateSpeechRequest" });
@@ -847,15 +861,19 @@ export async function transcribeWithAzure(opts: {
             message: "Azure transcription service is not configured",
         });
     }
+    // OpenAI documents only json for gpt-4o-transcribe; text is the same
+    // transcript without the JSON wrapper, so callers that send it get it.
     assertTranscriptionResponseFormat(responseFormat, "openai/gpt-transcribe", [
         "json",
+        "text",
     ]);
 
     const formData = new FormData();
     formData.append("model", "gpt-transcribe");
     if (language) formData.append("language", language);
     if (prompt) formData.append("prompt", prompt);
-    formData.append("response_format", responseFormat);
+    // Only the json answer carries usage.seconds, which the request bills on.
+    formData.append("response_format", "json");
     if (temperature !== undefined) {
         formData.append("temperature", String(temperature));
     }
@@ -1084,7 +1102,11 @@ const GEMINI_STT_FORMAT_ALIASES: Record<string, string> = {
 
 function resolveGeminiSttFormat(file: File): string {
     const extension = file.name.split(".").at(-1)?.toLowerCase() ?? "";
-    const subtype = file.type.split("/")[1]?.toLowerCase().replace(/^x-/, "");
+    const subtype = file.type
+        .split(";")[0]
+        .split("/")[1]
+        ?.toLowerCase()
+        .replace(/^x-/, "");
     for (const candidate of [extension, subtype ?? ""]) {
         const format = GEMINI_STT_FORMAT_ALIASES[candidate] ?? candidate;
         if ((GEMINI_STT_FORMATS as readonly string[]).includes(format)) {
@@ -1914,9 +1936,6 @@ export async function generateSoundEffect(opts: {
     });
 }
 
-const QWEN_TTS_ENDPOINT =
-    "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
-
 const XAI_TTS_ENDPOINT = "https://api.x.ai/v1/tts";
 
 const DEEPINFRA_TTS_ENDPOINT =
@@ -1946,12 +1965,59 @@ const DEEPINFRA_TTS_CONFIGS = {
 
 type DeepInfraTtsModelName = keyof typeof DEEPINFRA_TTS_CONFIGS;
 
-const QWEN_TTS_MODEL_IDS = {
-    "qwen/qwen3-tts-flash": "qwen3-tts-flash",
-    "qwen/qwen3-tts-instruct-flash": "qwen3-tts-instruct-flash",
-} as const satisfies Partial<Record<AudioModelName, string>>;
+// Both DashScope routes return { output.audio.url, usage.characters }.
+const QWEN_TTS_CONFIGS = {
+    "qwen/qwen3-tts-flash": {
+        modelId: "qwen3-tts-flash",
+        endpoint:
+            "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+        supportsInstructions: false,
+        openAiVoices: {
+            alloy: "Chelsie",
+            echo: "Ethan",
+            fable: "Cherry",
+            onyx: "Ryan",
+            nova: "Serena",
+            shimmer: "Jada",
+            coral: "Cherry",
+            verse: "Ethan",
+            ballad: "Ryan",
+            ash: "Ethan",
+            sage: "Serena",
+        },
+    },
+    "qwen/qwen-audio-3.0-tts-flash": {
+        modelId: "qwen-audio-3.0-tts-flash",
+        endpoint:
+            "https://dashscope-intl.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer",
+        supportsInstructions: true,
+        openAiVoices: {
+            alloy: "loongeva_v3.6",
+            echo: "loongjohn",
+            fable: "loongmary",
+            onyx: "loongjohn",
+            nova: "loongeva_v3.6",
+            shimmer: "loongmary",
+            coral: "longanfengyue",
+            verse: "loongjohn",
+            ballad: "loongjohn",
+            ash: "loongjohn",
+            sage: "longanfengyue",
+        },
+    },
+} as const satisfies Partial<
+    Record<
+        AudioModelName,
+        {
+            modelId: string;
+            endpoint: string;
+            supportsInstructions: boolean;
+            openAiVoices: Record<string, string>;
+        }
+    >
+>;
 
-type QwenTtsModelName = keyof typeof QWEN_TTS_MODEL_IDS;
+type QwenTtsModelName = keyof typeof QWEN_TTS_CONFIGS;
 
 type LyriaInteractionResponse = {
     status?: string;
@@ -1961,24 +2027,6 @@ type LyriaInteractionResponse = {
         data?: string;
     }>;
 };
-
-const QWEN_TTS_OPENAI_VOICE_MAP: Record<string, string> = {
-    alloy: "Chelsie",
-    echo: "Ethan",
-    fable: "Cherry",
-    onyx: "Ryan",
-    nova: "Serena",
-    shimmer: "Jada",
-    coral: "Cherry",
-    verse: "Ethan",
-    ballad: "Ryan",
-    ash: "Ethan",
-    sage: "Serena",
-};
-
-function resolveQwenVoice(voice: string): string {
-    return QWEN_TTS_OPENAI_VOICE_MAP[voice] ?? voice;
-}
 
 export async function generateLyria3Clip(opts: {
     prompt: string;
@@ -2092,6 +2140,31 @@ function requireElevenMusicOptions(
     });
 }
 
+function requireStableAudioStrength(
+    model: string,
+    opts: { strength?: number; referenceAudio?: string },
+): void {
+    if (opts.strength === undefined) return;
+
+    // strength sets how far Stable Audio 3 audio-to-audio may depart from
+    // reference_audio, so it needs both a Stable Audio 3 model and a clip.
+    if (
+        model !== "stability-ai/stable-audio-3-medium" &&
+        model !== "stability-ai/stable-audio-3"
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                "strength is only supported with model=stability-ai/stable-audio-3-medium or stability-ai/stable-audio-3.",
+        });
+    }
+    if (!opts.referenceAudio) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                "strength requires reference_audio: it sets how far audio-to-audio may depart from the input.",
+        });
+    }
+}
+
 function parseOptionalNumber(
     value: FormDataEntryValue | null,
     fieldName: string,
@@ -2178,7 +2251,7 @@ async function parseSpeechRequest(
                     | "flac"
                     | "opus"
                     | "aac"
-                    | "pcm") || "mp3",
+                    | "pcm") || undefined,
             duration: parseOptionalNumber(formData.get("duration"), "duration"),
             // fal-ai/stable-audio-3/medium controls.
             seconds: parseOptionalNumber(formData.get("seconds"), "seconds"),
@@ -2196,11 +2269,13 @@ async function parseSpeechRequest(
             seed: parseOptionalNumber(formData.get("seed"), "seed"),
             instructions:
                 (formData.get("instructions") as string | null) || undefined,
+            speed: parseOptionalNumber(formData.get("speed"), "speed"),
             loop: parseOptionalBoolean(formData.get("loop"), "loop"),
             prompt_influence: parseOptionalNumber(
                 formData.get("prompt_influence"),
                 "prompt_influence",
             ),
+            strength: parseOptionalNumber(formData.get("strength"), "strength"),
             conditioning_ref:
                 typeof rawConditioningRef === "string"
                     ? parseJsonObject(rawConditioningRef, "conditioning_ref")
@@ -2235,7 +2310,7 @@ export async function generateQwenTts(opts: {
     log: Logger;
 }): Promise<Response> {
     const { modelName, text, voice, instructions, apiKey, log } = opts;
-    const modelId = QWEN_TTS_MODEL_IDS[modelName];
+    const config = QWEN_TTS_CONFIGS[modelName];
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -2243,31 +2318,29 @@ export async function generateQwenTts(opts: {
         });
     }
 
-    if (instructions && modelName !== "qwen/qwen3-tts-instruct-flash") {
+    if (instructions && !config.supportsInstructions) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message:
-                "The instructions parameter is only supported by qwen/qwen3-tts-instruct-flash",
+            message: `The instructions parameter is not supported by ${modelName}`,
         });
     }
 
-    const qwenVoice = resolveQwenVoice(voice);
+    const openAiVoices: Record<string, string> = config.openAiVoices;
+    const qwenVoice = openAiVoices[voice] ?? voice;
 
     log.info("Qwen TTS request: model={model}, voice={voice}, chars={chars}", {
-        model: modelId,
+        model: config.modelId,
         voice: qwenVoice,
         chars: text.length,
     });
 
     const body: Record<string, unknown> = {
-        model: modelId,
+        model: config.modelId,
         input: { text, voice: qwenVoice },
-        parameters:
-            modelName === "qwen/qwen3-tts-instruct-flash" && instructions
-                ? { instructions }
-                : {},
+        // Qwen-Audio names the field `instruction`.
+        parameters: instructions ? { instruction: instructions } : {},
     };
 
-    const rawResponse = await fetch(QWEN_TTS_ENDPOINT, {
+    const rawResponse = await fetch(config.endpoint, {
         method: "POST",
         headers: {
             Authorization: `Bearer ${apiKey}`,
@@ -2275,7 +2348,7 @@ export async function generateQwenTts(opts: {
         },
         body: JSON.stringify(body),
     });
-    const response = await ensureUpstreamOk(rawResponse, QWEN_TTS_ENDPOINT);
+    const response = await ensureUpstreamOk(rawResponse, config.endpoint);
 
     const data = (await response.json()) as {
         output?: { audio?: { url?: string } };
@@ -2383,6 +2456,158 @@ const GEMINI_TTS_MODELS = {
     "google/gemini-3.8-flash-tts": "gemini-3.8-flash-tts",
     "google/gemini-3.8-flash-lite-tts": "gemini-3.8-flash-lite-tts",
 } as const;
+
+// Canonical model id -> the suffix Azure expects on its voice ids.
+const MAI_TTS_MODEL_SUFFIXES = {
+    "microsoft/mai-voice-2.1": "MAI-Voice-2.1",
+    "microsoft/mai-voice-2.1-flash": "MAI-Voice-2.1-Flash",
+} as const;
+const MAI_TTS_DEFAULT_VOICE = "en-US-Harper";
+
+export function resolveMaiSpeechVoice(
+    modelName: keyof typeof MAI_TTS_MODEL_SUFFIXES,
+    requestedVoice: string,
+): string {
+    const suffix = MAI_TTS_MODEL_SUFFIXES[modelName];
+    // The speech schema defaults voice to "alloy"; for MAI that means unset.
+    const requested =
+        requestedVoice === "alloy" ? MAI_TTS_DEFAULT_VOICE : requestedVoice;
+    const base = requested.endsWith(`:${suffix}`)
+        ? requested.slice(0, -(suffix.length + 1))
+        : requested;
+    const match = MAI_VOICE_21_VOICES.find(
+        (v) => v.toLowerCase() === base.toLowerCase(),
+    );
+    if (!match) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Invalid voice for ${modelName}: ${requestedVoice}. Supported voices: ${MAI_VOICE_21_VOICES.join(", ")} (optionally suffixed with :${suffix}).`,
+        });
+    }
+    return `${match}:${suffix}`;
+}
+
+export async function generateMaiSpeech(opts: {
+    modelName: keyof typeof MAI_TTS_MODEL_SUFFIXES;
+    routeId: string;
+    provider: string;
+    text: string;
+    voice: string;
+    responseFormat: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const {
+        modelName,
+        routeId,
+        provider,
+        text,
+        voice,
+        responseFormat,
+        apiKey,
+    } = opts;
+    if (responseFormat !== "mp3" && responseFormat !== "pcm")
+        throw new UpstreamError(400, {
+            message: "MAI speech supports mp3 and 24 kHz pcm.",
+        });
+    if (!apiKey)
+        throw new UpstreamError(500, {
+            message: "MAI speech provider is not configured.",
+        });
+    const resolvedVoice = resolveMaiSpeechVoice(modelName, voice);
+    const gateway = provider === "vercel";
+    const url = gateway
+        ? "https://ai-gateway.vercel.sh/v4/ai/speech-model"
+        : "https://swedencentral.tts.speech.microsoft.com/cognitiveservices/v1";
+    const escapeXml = (value: string) =>
+        value.replace(
+            /[&<>"']/g,
+            (ch) =>
+                ({
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    '"': "&quot;",
+                    "'": "&apos;",
+                })[ch] ?? ch,
+        );
+    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${resolvedVoice.slice(0, 5)}"><voice name="${escapeXml(resolvedVoice)}">${escapeXml(text)}</voice></speak>`;
+    const response = await ensureUpstreamOk(
+        await fetch(url, {
+            method: "POST",
+            headers: gateway
+                ? {
+                      Authorization: `Bearer ${apiKey}`,
+                      "Content-Type": "application/json",
+                      "ai-gateway-protocol-version": "0.0.1",
+                      "ai-speech-model-specification-version": "4",
+                      "ai-model-id": modelName,
+                  }
+                : {
+                      "Ocp-Apim-Subscription-Key": apiKey,
+                      "Content-Type": "application/ssml+xml; charset=utf-8",
+                      "User-Agent": "pollinations",
+                      "X-Microsoft-OutputFormat":
+                          responseFormat === "mp3"
+                              ? "audio-24khz-160kbitrate-mono-mp3"
+                              : "raw-24khz-16bit-mono-pcm",
+                  },
+            body: gateway
+                ? JSON.stringify({
+                      text,
+                      voice: resolvedVoice.split(":")[0],
+                      outputFormat: responseFormat,
+                  })
+                : ssml,
+        }),
+        url,
+    );
+    let audio: BodyInit | null = response.body;
+    let characters = text.length;
+    let providerCost: number | undefined;
+    if (gateway) {
+        const parsed = z
+            .object({
+                audio: z.string().min(1),
+                providerMetadata: z.object({
+                    gateway: z.object({
+                        cost: z.coerce.number().finite().positive(),
+                    }),
+                }),
+                usage: z
+                    .object({
+                        inputCharacters: z.number().nonnegative().optional(),
+                    })
+                    .passthrough()
+                    .optional(),
+            })
+            .safeParse(await response.json());
+        if (!parsed.success)
+            throw new UpstreamError(502, {
+                message: "MAI speech returned invalid audio.",
+            });
+        audio = Uint8Array.from(atob(parsed.data.audio), (ch) =>
+            ch.charCodeAt(0),
+        );
+        characters = parsed.data.usage?.inputCharacters ?? characters;
+        providerCost = parsed.data.providerMetadata.gateway.cost;
+    }
+    // Binary providers do not report characters; reconcile against provider billing before merge.
+    return new Response(audio, {
+        headers: {
+            "Content-Type":
+                responseFormat === "pcm" ? "audio/pcm" : "audio/mpeg",
+            "x-tts-voice": resolvedVoice,
+            ...buildUsageHeaders(routeId, createAudioTokenUsage(characters)),
+            ...(providerCost === undefined
+                ? {}
+                : {
+                      [PROVIDER_BILLING_HEADERS.units]: String(providerCost),
+                      [PROVIDER_BILLING_HEADERS.unitCost]: "1",
+                  }),
+        },
+    });
+}
+
 const GEMINI_TTS_ENDPOINT =
     "https://generativelanguage.googleapis.com/v1beta/interactions";
 
@@ -2819,9 +3044,10 @@ export async function generateAzureSpeech(opts: {
     text: string;
     voice: string;
     responseFormat: string;
+    speed?: number;
     apiKey: string;
 }): Promise<Response> {
-    const { modelName, text, voice, responseFormat, apiKey } = opts;
+    const { modelName, text, voice, responseFormat, speed, apiKey } = opts;
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message: "Azure speech service is not configured",
@@ -2839,6 +3065,7 @@ export async function generateAzureSpeech(opts: {
                 input: text,
                 voice,
                 response_format: responseFormat,
+                speed,
             }),
         }),
         endpoint,
@@ -2963,10 +3190,20 @@ export async function generateStableAudio3Medium(opts: {
     steps?: number;
     seed?: number;
     referenceAudio?: File;
+    strength?: number;
     falKey?: string;
     log: Logger;
 }): Promise<Response> {
-    const { prompt, seconds, steps, seed, referenceAudio, falKey, log } = opts;
+    const {
+        prompt,
+        seconds,
+        steps,
+        seed,
+        referenceAudio,
+        strength,
+        falKey,
+        log,
+    } = opts;
 
     if (!falKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -2991,6 +3228,8 @@ export async function generateStableAudio3Medium(opts: {
         input.audio_url = `data:${mime};base64,${arrayBufferToBase64(
             await referenceAudio.arrayBuffer(),
         )}`;
+        // fal's init_noise_level (0-1, default 0.9) is the a2a strength.
+        if (strength !== undefined) input.init_noise_level = strength;
     }
 
     const endpoint = isAudioToAudio
@@ -2998,12 +3237,13 @@ export async function generateStableAudio3Medium(opts: {
         : STABLE_AUDIO_3_MEDIUM_ENDPOINT;
 
     log.info(
-        "Stable Audio 3 Medium {mode} request: chars={chars}, duration={duration}, steps={steps}",
+        "Stable Audio 3 Medium {mode} request: chars={chars}, duration={duration}, steps={steps}, strength={strength}",
         {
             mode: isAudioToAudio ? "audio-to-audio" : "text-to-audio",
             chars: prompt.length,
             duration,
             steps: steps ?? "(default)",
+            strength: input.init_noise_level ?? "(default)",
         },
     );
 
@@ -3068,6 +3308,7 @@ export async function generateStableAudio3Large(opts: {
     seed?: number;
     negativePrompt?: string;
     referenceAudio?: File;
+    strength?: number;
     responseFormat: string;
     apiKey?: string;
     log: Logger;
@@ -3079,6 +3320,7 @@ export async function generateStableAudio3Large(opts: {
         seed,
         negativePrompt,
         referenceAudio,
+        strength,
         responseFormat,
         apiKey,
         log,
@@ -3092,8 +3334,9 @@ export async function generateStableAudio3Large(opts: {
     }
 
     // A reference clip switches Large to audio-to-audio (style transfer): a
-    // different endpoint that takes the clip in `audio` (which defines the
-    // output length) instead of `duration`. Both modes bill the same flat fee.
+    // different endpoint that takes the clip in `audio`. Both modes need
+    // `duration` (the clip does not set the output length; Stability defaults
+    // to 190 s) and bill the same flat fee.
     const isAudioToAudio = referenceAudio !== undefined;
     const endpoint = isAudioToAudio
         ? STABLE_AUDIO_3_LARGE_A2A_ENDPOINT
@@ -3105,22 +3348,26 @@ export async function generateStableAudio3Large(opts: {
     // The direct API's only accepted `model` value is "stable-audio-3".
     formData.append("model", "stable-audio-3");
     formData.append("output_format", responseFormat);
+    formData.append("duration", String(duration));
     if (isAudioToAudio) {
         formData.append("audio", referenceAudio);
-    } else {
-        formData.append("duration", String(duration));
+        // 0 keeps the clip unchanged; 1 (Stability's default) ignores it.
+        if (strength !== undefined) {
+            formData.append("strength", String(strength));
+        }
     }
     if (steps !== undefined) formData.append("steps", String(steps));
     if (seed !== undefined) formData.append("seed", String(seed));
     if (negativePrompt) formData.append("negative_prompt", negativePrompt);
 
     log.info(
-        "Stable Audio 3 Large {mode} request: chars={chars}, duration={duration}, steps={steps}, hasNegativePrompt={hasNegativePrompt}",
+        "Stable Audio 3 Large {mode} request: chars={chars}, duration={duration}, steps={steps}, strength={strength}, hasNegativePrompt={hasNegativePrompt}",
         {
             mode: isAudioToAudio ? "audio-to-audio" : "text-to-audio",
             chars: prompt.length,
-            duration: isAudioToAudio ? "(from reference)" : duration,
+            duration,
             steps: steps ?? "(default)",
+            strength: strength ?? "(default)",
             hasNegativePrompt: Boolean(negativePrompt),
         },
     );
@@ -3230,7 +3477,9 @@ async function dispatchAudioGeneration(
         conditioningRef?: unknown;
         compositionPlan?: unknown;
         referenceAudio?: File;
+        strength?: number;
         instructions?: string;
+        speed?: number;
         loop?: boolean;
         promptInfluence?: number;
         apiKey: string;
@@ -3256,7 +3505,9 @@ async function dispatchAudioGeneration(
         conditioningRef,
         compositionPlan,
         referenceAudio,
+        strength,
         instructions,
+        speed,
         loop,
         promptInfluence,
         apiKey,
@@ -3348,6 +3599,7 @@ async function dispatchAudioGeneration(
                 steps,
                 seed,
                 referenceAudio,
+                strength,
                 falKey,
                 log,
             }),
@@ -3364,6 +3616,7 @@ async function dispatchAudioGeneration(
                 seed,
                 negativePrompt,
                 referenceAudio,
+                strength,
                 responseFormat,
                 apiKey: stabilityApiKey,
                 log,
@@ -3405,7 +3658,7 @@ async function dispatchAudioGeneration(
                 }),
             );
         case "qwen/qwen3-tts-flash":
-        case "qwen/qwen3-tts-instruct-flash":
+        case "qwen/qwen-audio-3.0-tts-flash":
             return withSafetyHeaders(
                 c,
                 await generateQwenTts({
@@ -3437,6 +3690,7 @@ async function dispatchAudioGeneration(
                     text,
                     voice,
                     responseFormat,
+                    speed,
                     apiKey: c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
                 }),
             );
@@ -3451,6 +3705,31 @@ async function dispatchAudioGeneration(
                     log,
                 }),
             );
+        case "microsoft/mai-voice-2.1":
+        case "microsoft/mai-voice-2.1:vercel":
+        case "microsoft/mai-voice-2.1-flash":
+        case "microsoft/mai-voice-2.1-flash:vercel":
+        case "microsoft/mai-voice-2.1-flash:openrouter": {
+            const upstreamModel = c.var.model
+                .resolved as keyof typeof MAI_TTS_MODEL_SUFFIXES;
+            const provider = AUDIO_SERVICES[model as AudioModelName].provider;
+            return withSafetyHeaders(
+                c,
+                await generateMaiSpeech({
+                    modelName: upstreamModel,
+                    routeId: model,
+                    provider,
+                    text,
+                    voice,
+                    responseFormat,
+                    apiKey:
+                        provider === "vercel"
+                            ? (c.env.AI_GATEWAY_API_KEY ?? "")
+                            : c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+                    log,
+                }),
+            );
+        }
         case "google/gemini-3.8-flash-tts":
         case "google/gemini-3.8-flash-lite-tts":
             return withSafetyHeaders(
@@ -3549,17 +3828,36 @@ async function generateAudioFromSpeechRequest(
         conditioning_ref,
         composition_plan,
         reference_audio,
+        strength,
         seed,
         instructions,
+        speed,
         loop,
         prompt_influence,
     } = request;
+
+    // Speed 1 is every model's normal output, so clients that always send the
+    // OpenAI default keep working on other models.
+    if (
+        speed !== undefined &&
+        speed !== 1 &&
+        !["openai/tts-1", "openai/tts-1-hd"].includes(c.var.model.resolved)
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                "The speed parameter is only supported by openai/tts-1 and openai/tts-1-hd",
+        });
+    }
 
     requireElevenMusicOptions(c.var.model.resolved, {
         referenceAudio: reference_audio,
         compositionPlan: composition_plan,
         conditioningRef: conditioning_ref,
         storeForInpainting: store_for_inpainting,
+    });
+    requireStableAudioStrength(c.var.model.resolved, {
+        strength,
+        referenceAudio: reference_audio,
     });
 
     if (c.var.model.resolved === "elevenlabs/eleven-v3:dialogue") {
@@ -3603,7 +3901,9 @@ async function generateAudioFromSpeechRequest(
             conditioningRef: conditioning_ref,
             compositionPlan: composition_plan,
             referenceAudio,
+            strength,
             instructions,
+            speed,
             loop,
             promptInfluence: prompt_influence,
             apiKey: c.env.ELEVENLABS_API_KEY,
@@ -3807,6 +4107,23 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                 c.env.BETTER_AUTH_SECRET,
             );
         }
+        if (
+            candidate.id === "microsoft/mai-transcribe-2" ||
+            candidate.id === "microsoft/mai-transcribe-2:vercel"
+        ) {
+            return transcribeMai({
+                file,
+                language,
+                prompt,
+                responseFormat,
+                temperature,
+                modelId: candidate.id,
+                apiKey:
+                    candidate.id === "microsoft/mai-transcribe-2:vercel"
+                        ? (c.env.AI_GATEWAY_API_KEY ?? "")
+                        : c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+            });
+        }
         if (candidate.id === "x-ai/grok-transcribe") {
             return transcribeWithXai({
                 file,
@@ -3891,11 +4208,11 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                     "Transcription service is not configured (missing API key)",
             });
         }
-        assertTranscriptionResponseFormat(
-            responseFormat,
-            "whisper model",
-            UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
-        );
+        assertTranscriptionResponseFormat(responseFormat, "whisper model", [
+            ...UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
+            "srt",
+            "vtt",
+        ]);
 
         const whisperFormData = new FormData();
         const filename =
@@ -3907,12 +4224,15 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             "model",
             isDeepInfra ? "openai/whisper-large-v3" : "whisper-large-v3",
         );
-        whisperFormData.append(
-            isDeepInfra
-                ? "timestamp_granularities"
-                : "timestamp_granularities[]",
-            "word",
-        );
+        if (isDeepInfra) {
+            // DeepInfra returns segments either way, and drops words when
+            // both granularities are requested.
+            whisperFormData.append("timestamp_granularities", "word");
+        } else {
+            // OVH leaves segments empty unless asked; srt/vtt cues are those.
+            whisperFormData.append("timestamp_granularities[]", "word");
+            whisperFormData.append("timestamp_granularities[]", "segment");
+        }
 
         const whisperUrl = isDeepInfra
             ? "https://api.deepinfra.com/v1/audio/transcriptions"
@@ -4116,7 +4436,7 @@ export const audioRoutes = new Hono<Env>()
             description: [
                 "Generate speech, music, sound effects, or dialogue from text. Compatible with the OpenAI TTS API for JSON requests.",
                 "",
-                "Set `model` to `elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `google/lyria-3.5`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria Clip returns one fixed 30-second MP3 clip. For `google/lyria-3.5`, describe song structure and approximate length in the prompt; the output is MP3 and the `duration` parameter is not supported. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3`, or reference-audio conditioning on either ElevenLabs Music model; for ElevenLabs inpainting, pass a `composition_plan`.",
+                "Set `model` to `elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `google/lyria-3.5`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria Clip returns one fixed 30-second MP3 clip. For `google/lyria-3.5`, describe song structure and approximate length in the prompt; the output is MP3 and the `duration` parameter is not supported. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3` (`strength` 0-1 sets how far the output may depart from it), or reference-audio conditioning on either ElevenLabs Music model; for ElevenLabs inpainting, pass a `composition_plan`.",
                 "",
                 "For multi-speaker audio, set `model` to `elevenlabs/eleven-v3:dialogue` and put one turn per line in `input` as `<voice>: <text>`. Voice labels may be preset names or ElevenLabs voice IDs; the top-level `voice` field is ignored for this model. Dialogue supports up to 10 unique voices and 2,000 total text characters.",
                 "",
@@ -4185,6 +4505,13 @@ export const audioRoutes = new Hono<Env>()
                                     format: "uri",
                                     description:
                                         "Public HTTP(S) URL for reference-audio conditioning or audio-to-audio generation.",
+                                },
+                                strength: {
+                                    type: "number",
+                                    minimum: 0,
+                                    maximum: 1,
+                                    description:
+                                        "How much the output may depart from reference_audio: 0 keeps the input, 1 ignores it (Stable Audio 3 audio-to-audio only). Omit for the provider default.",
                                 },
                                 conditioning_ref: { type: "object" },
                                 composition_plan: { type: "object" },
@@ -4393,15 +4720,8 @@ export const audioRoutes = new Hono<Env>()
                 "",
                 "**Supported audio formats:** mp3, mp4, mpeg, mpga, m4a, wav, webm",
                 "",
-                "**Models:**",
-                "- `openai/whisper-large-v3` (default) — OpenAI Whisper via OVHcloud",
-                "- `whisper-1` — Alias for `openai/whisper-large-v3`",
-                "- `openai/gpt-transcribe` — Fast multilingual speech recognition with prompt context",
-                "- `elevenlabs/scribe-v2` — ElevenLabs Scribe (90+ languages, word-level timestamps)",
-                "- `x-ai/grok-transcribe` — xAI speech recognition with word timestamps, speaker labels, and text formatting",
-                "- `google/gemini-3.5-transcribe` — Google speech recognition with word timestamps and speaker labels (wav, mp3, flac, m4a, ogg, webm, aac; `prompt` is ignored)",
-                "- `assemblyai/universal-2` — AssemblyAI Universal-2 (99 languages)",
-                "- `assemblyai/universal-3.5-pro` — AssemblyAI Universal-3.5 Pro (18 languages, code switching, prompting)",
+                "See `/audio/models` for current transcription models, capabilities, and prices.",
+                "Optional controls and response formats depend on the model. Unsupported combinations return 400.",
             ].join("\n"),
             requestBody: {
                 required: true,
@@ -4421,7 +4741,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     default: "openai/whisper-large-v3",
                                     description:
-                                        "The model to use. Options: `openai/whisper-large-v3`, `whisper-1`, `openai/gpt-transcribe`, `elevenlabs/scribe-v2`, `x-ai/grok-transcribe`, `google/gemini-3.5-transcribe`, `assemblyai/universal-2`, `assemblyai/universal-3.5-pro`.",
+                                        "Transcription model ID. See `/audio/models` for current models advertising `/v1/audio/transcriptions`.",
                                 },
                                 language: {
                                     type: "string",
@@ -4445,7 +4765,7 @@ export const audioRoutes = new Hono<Env>()
                                     ],
                                     default: "json",
                                     description:
-                                        "The format of the transcript output. Support is model-dependent: `srt` and `vtt` require a model that renders subtitles, and `diarized_json` a diarization-capable one. Unsupported combinations return 400 naming the formats that model accepts.",
+                                        "The format of the transcript output. Support is model-dependent: `srt` and `vtt` are only supported by the `assemblyai/*` and `whisper` models, and `diarized_json` requires a diarization-capable one. Unsupported combinations return 400 naming the formats that model accepts.",
                                 },
                                 temperature: {
                                     type: "number",

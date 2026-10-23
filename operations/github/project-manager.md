@@ -73,7 +73,7 @@ Helping people use Pollinations: API reference sources and APIDOCS regeneration,
 Not here: agent guidance for our repo → Internal automation.
 
 ### App catalog & showcase
-Apps built on Pollinations: submissions and review (`operations/app-management/`), catalog entries, metrics, screenshots, ranking and pruning, the "Made with Pollinations" badge, and apps we maintain for people to use or copy (templates and examples in `apps/`, Open WebUI, chat, websim, the playground).
+Apps built on Pollinations: submissions and review (`operations/app-management/`), catalog entries, metrics, screenshots, ranking and pruning, the "Made with Pollinations" badge, and apps we maintain for people to use or copy (templates and examples in `apps/`, Open WebUI, chat, websim).
 Not here: plugins → Developer tools; hosted agents and MCP servers → Agents & agent tools; community agents → Community models; Polli → Internal automation.
 
 ### Data & insights

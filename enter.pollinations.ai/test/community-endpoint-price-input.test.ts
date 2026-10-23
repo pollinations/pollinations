@@ -9,6 +9,7 @@ import {
 import { describe, expect, it } from "vitest";
 import {
     basePriceKeysForModality,
+    formWithVisiblePrices,
     hasValidVisibleFormPrices,
 } from "../frontend/src/components/community-endpoints/price-table.tsx";
 import {
@@ -17,9 +18,34 @@ import {
     isValidPriceInput,
     pricePerMillionToPerToken,
     storedPriceToFormValue,
+    toEndpointPayload,
 } from "../frontend/src/components/community-endpoints/types.ts";
 
 describe("community endpoint price input", () => {
+    it("preserves saved public prices when saving a private model title", () => {
+        const form = {
+            ...emptyForm,
+            visibility: "private" as const,
+            title: "Model",
+            promptTextPrice: "2",
+            completionTextPrice: "6",
+        };
+        // Private models are free at runtime, but retain saved public pricing.
+        // The dialog hides their price fields and submits through this chain.
+        const payload = toEndpointPayload(
+            formWithVisiblePrices(
+                { ...form, title: "Renamed Model" },
+                new Set(),
+            ),
+        );
+
+        expect(payload).toMatchObject({
+            title: "Renamed Model",
+            promptTextPrice: 0.000002,
+            completionTextPrice: 0.000006,
+        });
+    });
+
     it("allows publishing embeddings with only an input-token price", () => {
         const visiblePriceKeys = new Set(basePriceKeysForModality("embedding"));
 

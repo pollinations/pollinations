@@ -1,40 +1,49 @@
 ## Sandboxes
 
-Linux VMs from [E2B](https://e2b.dev), paid from your Pollinations wallet (alpha).
+A cloud Linux computer you open with SSH or VS Code, run on E2B or Azure (alpha) and paid with credits.
 
-### Use a sandbox
+### Create and connect
+
+Create a sandbox in the [dashboard](https://enter.pollinations.ai/sandboxes), or use [polli](#tag/cli) with Node.js 20+.
+
+<p align="left"><img src="https://media.pollinations.ai/7452f81b-4065-4af5-a65b-662c811e7ea2" alt="Sandboxes page on the dashboard" width="560"></p>
 
 ```bash
-polli sandbox create              # prints the id and sets up ssh
-ssh <id>.polli                    # scp, sftp and rsync work too
+npm install -g @pollinations/cli
+polli auth login
+polli sandbox create
+# Or choose the larger template:
+polli sandbox create pollinations-large
+# Or run it on Azure instead of E2B:
+polli sandbox create pollinations-azure
+ssh <id>.polli
+# Open its port 3000 at http://localhost:3000:
+ssh -L 3000:localhost:3000 <id>.polli
 polli sandbox list
-polli sandbox timeout <id> 14400  # keep it running 4 hours without ssh
-polli sandbox kill <id>
 ```
 
-- A sandbox pauses about 10 minutes after the last ssh session ends. Your files stay, and the next `ssh` resumes it.
-- To keep it running without ssh, pay for the time up front with `polli sandbox timeout <id> <seconds>`, up to 24 hours at a time. It also resumes a paused sandbox.
-- The first `ssh` allows only polli's key, `~/.pollinations/ssh/id_ed25519`. On other templates than the default, it first installs `sshd`, `rsync` and `websocat` (Debian-based templates only).
-- The default template, `pollinations` (2 vCPU, 2 GB), is E2B's `base` (Debian 12, Python 3.11) with Node.js 24, polli, and the coding harnesses polli connects: Claude Code, OpenCode, Pi, Hermes Agent and OpenClaw.
-- It comes logged in when the key that creates it has the `keys` permission, as polli's own key does. polli inside uses a key of the sandbox's own, `polli-sandbox-<id>`, created like any other key, with polli's usual permissions. Killing the sandbox leaves the key. Your first interactive `ssh` connects each harness to Pollinations with a key of its own, `polli-harness-<harness>`.
-- `polli sandbox create <template>` starts another E2B template instead, such as `claude` (Claude Code), `codex`, `opencode` or `amp` (2 vCPU, 2 GB each), or [any public one](https://docs.e2b.dev/use-cases/coding-agents). Bigger templates cost more per second.
-- `polli sandbox logs <id>` shows the sandbox's system log: when it started and paused, and each process run in it.
-- Needs Node.js 22 or newer.
+For dashboard-created sandboxes, run `polli sandbox ssh-config` first. VS Code's Remote-SSH connects to `<id>.polli`. If it only says the connection closed, run `ssh <id>.polli` in a terminal to see why.
 
-### Cost and limits
+### E2B or Azure
 
-- Billed at [E2B's per-second rates](https://e2b.dev/pricing) for the sandbox's CPU and memory, paid in advance: 10 minutes at creation, 10 minutes at a time while an ssh session is open, and the time you add with `polli sandbox timeout`.
-- Unused time is not refunded. Pausing a sandbox early, or shortening its timeout, gives up the rest of its paid time; resuming pays again. To stop paying, let the paid time run out or kill the sandbox.
-- A new sandbox needs enough balance, and enough key budget, for its first block; otherwise it is stopped with a 402.
-- At most 3 sandboxes run at once per account.
+The template sets where a sandbox runs: `pollinations` and `pollinations-large` on E2B, `pollinations-azure` and `pollinations-azure-large` on Azure with the same software and sizes, and `pollinations-azure-xl` (8 vCPU, 16 GB) on Azure only. The differences:
 
-### E2B SDKs
+- E2B pauses and resumes long runs once a day; Azure runs them without that break.
+- Azure's disks are larger: about 40, 80 and 160 GB for its three sizes, against 27 GB on E2B.
+- Each provider has its own rates; see [current rates](https://gen.pollinations.ai/alpha/e2b/pricing).
+- On Azure, a sandbox stops at the first 5-minute mark after its timeout, and that time is billed.
+- ssh into sandboxes on Azure needs polli 0.1.59 or newer: update with `npm i -g @pollinations/cli && polli sandbox ssh-config`.
+- E2B's SDKs reach sandboxes on Azure only with `E2B_SANDBOX_URL` set; see [Sandboxes API](#tag/sandboxes-api).
 
-E2B's SDKs, and its CLI run directly, work unchanged. Use a Pollinations key with the `machines` permission:
+### Use E2B SDKs or the API
 
-```bash
-export E2B_API_URL=https://gen.pollinations.ai/alpha/e2b
-export E2B_API_KEY=sk_...
-```
+E2B's SDKs, CLI and REST API work with a Pollinations key: see [Sandboxes API](#tag/sandboxes-api) for the setup, supported endpoints and differences.
 
-Run `polli sandbox ssh-config` once to ssh into the sandboxes they create. Auto-resume, snapshots, forks, IAM and volume mounts are not available.
+### Credits and runtime
+
+- Runtime is prepaid in credits. See [current rates, template sizes and concurrency limits](https://gen.pollinations.ai/alpha/e2b/pricing).
+- Auto-pause defaults to on. Paused sandboxes cost nothing; unused prepaid time is not refunded.
+- API timeouts above 600 seconds renew in 10-minute windows until the deadline, subject to credits, key budget and validity. E2B limits runs to 24 hours, so Pollinations pauses and resumes them once a day, preserving files, memory and processes but dropping connections.
+- SSH and VS Code connections keep it running. Without a background timeout, it pauses 15–20 minutes after the last connection closes (5–10 without SSH connection sharing, including Windows). For background work, `polli sandbox timeout <id> 0` keeps it running until stopped, subject to credits and key validity. The API requires seconds; it has no unlimited setting.
+- `polli sandbox pause <id>` preserves state; `polli sandbox kill <id>` deletes the sandbox and its files.
+- Sandboxes from Pollinations templates, created with a key that has the `keys` permission, get their own API key. Deleting the sandbox leaves it; revoke it on the [Keys page](https://enter.pollinations.ai/keys) when no longer needed.

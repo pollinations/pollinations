@@ -255,12 +255,133 @@ test("GET /api/account/usage/daily maps selected periods to exact windows", asyn
     expect(dailyCalls[0].query.since).toBe("2026-04-24 00:00:00");
     expect(dailyCalls[0].query.until).toBe("2026-04-25 00:00:00");
     expect(dailyCalls[0].query.grain).toBe("hour");
+    expect(dailyCalls[0].query.timezone).toBe("UTC");
     expect(dailyCalls[1].query.since).toBe("2026-04-20 00:00:00");
     expect(dailyCalls[1].query.until).toBe("2026-04-27 00:00:00");
     expect(dailyCalls[1].query.grain).toBe("day");
     expect(dailyCalls[2].query.since).toBe("2026-04-01 00:00:00");
     expect(dailyCalls[2].query.until).toBe("2026-05-01 00:00:00");
     expect(dailyCalls[2].query.grain).toBe("day");
+});
+
+for (const [timezone, period] of [
+    ["Europe/Berlin", "2026-03-29"],
+    ["Asia/Kolkata", "2026-04-24"],
+    ["Australia/Lord_Howe", "2026-10-04"],
+]) {
+    test(`usage periods retain wall-calendar bounds for ${timezone}`, async ({
+        accountToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird");
+        const next = new Date(`${period}T00:00:00Z`);
+        next.setUTCDate(next.getUTCDate() + 1);
+        const query = new URLSearchParams({
+            granularity: "day",
+            period,
+            timezone,
+        });
+        for (const path of ["usage/daily", "usage"]) {
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/account/${path}?${query}`,
+                { headers: authHeaders(accountToken) },
+            );
+            expect(response.status).toBe(200);
+            expect(mocks.tinybird.state.pipeCalls.at(-1)?.query).toMatchObject({
+                timezone: new Intl.DateTimeFormat("en-US", {
+                    timeZone: timezone,
+                }).resolvedOptions().timeZone,
+                since: `${period} 00:00:00`,
+                until: `${next.toISOString().slice(0, 10)} 00:00:00`,
+            });
+        }
+    });
+}
+
+test("usage rejects invalid timezones before calling Tinybird", async ({
+    accountToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    for (const timezone of ["Invalid/Zone", "+02:00", ""]) {
+        const query = new URLSearchParams({ timezone });
+        for (const path of ["usage", "usage/daily"]) {
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/account/${path}?${query}`,
+                { headers: authHeaders(accountToken) },
+            );
+            expect(response.status).toBe(400);
+        }
+    }
+    expect(mocks.tinybird.state.pipeCalls).toHaveLength(0);
+});
+
+test("usage canonicalizes timezone names before forwarding them", async ({
+    accountToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/usage/daily?timezone=europe/berlin",
+        { headers: authHeaders(accountToken) },
+    );
+    expect(response.status).toBe(200);
+    expect(mocks.tinybird.state.pipeCalls.at(-1)?.query.timezone).toBe(
+        "Europe/Berlin",
+    );
+});
+
+test("usage rolling windows and future-period validation use local today", async ({
+    accountToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    for (const timezone of ["Pacific/Kiritimati", "Pacific/Pago_Pago"]) {
+        const parts = Object.fromEntries(
+            new Intl.DateTimeFormat("en-US", {
+                timeZone: timezone,
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+            })
+                .formatToParts(new Date())
+                .map(({ type, value }) => [type, value]),
+        );
+        const today = `${parts.year}-${parts.month}-${parts.day}`;
+        const next = new Date(`${today}T00:00:00Z`);
+        next.setUTCDate(next.getUTCDate() + 1);
+        const tomorrow = next.toISOString().slice(0, 10);
+        const query = new URLSearchParams({ timezone, days: "1" });
+        const rolling = await SELF.fetch(
+            `http://localhost:3000/api/account/usage/daily?${query}`,
+            { headers: authHeaders(accountToken) },
+        );
+        expect(rolling.status).toBe(200);
+        expect(mocks.tinybird.state.pipeCalls.at(-1)?.query).toMatchObject({
+            since: `${today} 00:00:00`,
+            until: `${tomorrow} 00:00:00`,
+            timezone,
+        });
+        query.set("granularity", "day");
+        query.set("period", today);
+        expect(
+            (
+                await SELF.fetch(
+                    `http://localhost:3000/api/account/usage/daily?${query}`,
+                    { headers: authHeaders(accountToken) },
+                )
+            ).status,
+        ).toBe(200);
+        query.set("period", tomorrow);
+        expect(
+            (
+                await SELF.fetch(
+                    `http://localhost:3000/api/account/usage/daily?${query}`,
+                    { headers: authHeaders(accountToken) },
+                )
+            ).status,
+        ).toBe(400);
+    }
 });
 
 test("GET /api/account/usage/daily derives pipe grain from selected period", async ({
@@ -450,6 +571,27 @@ test("GET /api/account/usage forwards table filters to the pipe", async ({
     expect(usageCalls[0].query.models).toBe("gpt-a,gpt-b");
 });
 
+// Tinybird reads `limit` as Int32, so a fractional value must fail here, not
+// upstream as a 500.
+test("GET /api/account/usage rejects a non-integer limit", async ({
+    accountToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/usage?limit=1.5",
+        { headers: authHeaders(accountToken) },
+    );
+
+    expect(response.status).toBe(400);
+    expect(
+        mocks.tinybird.state.pipeCalls.filter((call) =>
+            call.url.includes("activity_usage_transactions.json"),
+        ),
+    ).toHaveLength(0);
+});
+
 test("GET /api/account/usage?format=csv renders rows and sets filename from limit", async ({
     accountToken,
     mocks,
@@ -468,6 +610,7 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
             meter_source: "tier",
             input_text_tokens: 10,
             input_cached_tokens: 0,
+            input_cache_write_tokens: 10089,
             input_audio_tokens: 0,
             input_audio_seconds: 0,
             input_image_tokens: 0.9216,
@@ -503,6 +646,10 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
     const values = lines[1].split(",");
     expect(values[columns.indexOf("input_image_tokens")]).toBe("0.9216");
     expect(values[columns.indexOf("output_image_tokens")]).toBe("2.0736");
+    expect(columns.indexOf("input_cache_write_tokens")).toBe(
+        columns.indexOf("input_cached_tokens") + 1,
+    );
+    expect(values[columns.indexOf("input_cache_write_tokens")]).toBe("10089");
 
     const jsonResponse = await SELF.fetch(
         "http://localhost:3000/api/account/usage?days=30",
@@ -514,6 +661,7 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
     };
     expect(body.usage[0].input_image_tokens).toBe(0.9216);
     expect(body.usage[0].output_image_tokens).toBe(2.0736);
+    expect(body.usage[0].input_cache_write_tokens).toBe(10089);
 
     const usageCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
         call.url.includes("activity_usage_transactions.json"),

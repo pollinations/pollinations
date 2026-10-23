@@ -400,12 +400,22 @@ test("catalog returns quest definitions without ledger stats", async ({
     });
     expectStableCatalogFields("connect_polli_cli", {
         state: "available",
-        rewardAmount: 2,
+        rewardAmount: 1,
         balanceBucket: "tier",
     });
     expectStableCatalogFields("join_discord", {
         state: "available",
         rewardAmount: 1,
+        balanceBucket: "tier",
+    });
+    expectStableCatalogFields("discord_level_10", {
+        state: "available",
+        rewardAmount: 2,
+        balanceBucket: "tier",
+    });
+    expectStableCatalogFields("discord_level_20", {
+        state: "available",
+        rewardAmount: 5,
         balanceBucket: "tier",
     });
     expectStableCatalogFields("app_active", {
@@ -1094,6 +1104,61 @@ test("D1 quest check only records the requested user", async ({
     );
 });
 
+test("a Google user earns basic quests once, before and after connecting GitHub", async ({
+    mocks,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    await mocks.enable("github", "tinybird");
+    const userId = "google-quest-user";
+    await db.insert(schema.user).values({
+        id: userId,
+        name: "Google Quest User",
+        email: "google-quest-user@example.com",
+        emailVerified: true,
+        image: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        tierBalance: 0,
+        packBalance: 0,
+    });
+    await db.insert(schema.account).values({
+        id: "google-quest-user-account",
+        accountId: "google-sub-1",
+        providerId: "google",
+        userId,
+    });
+    await db.insert(schema.apikey).values({
+        id: "google-quest-user-key",
+        name: "Google Quest User Key",
+        key: "sk_google_quest_user",
+        prefix: "sk",
+        referenceId: userId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+    const firstKeyRewards = () =>
+        db
+            .select({ idempotencyKey: schema.rewards.idempotencyKey })
+            .from(schema.rewards)
+            .where(eq(schema.rewards.questId, "first_api_key"));
+
+    await checkQuestsForUser(env, userId);
+    expect(await firstKeyRewards()).toEqual([
+        { idempotencyKey: "quest:first_api_key:google:google-sub-1" },
+    ]);
+
+    // Connecting GitHub changes the reward identity, not what was earned.
+    await db
+        .update(schema.user)
+        .set({
+            githubId: hashGithubId("google-quest-user"),
+            githubUsername: "google-quest-user",
+        })
+        .where(eq(schema.user.id, userId));
+    await checkQuestsForUser(env, userId);
+    expect(await firstKeyRewards()).toHaveLength(1);
+});
+
 test("nine-month Early Adopter quest is coming_soon and never records", async ({
     mocks,
     sessionToken: _sessionToken,
@@ -1190,32 +1255,39 @@ test("app growth quests reward paid usage and ten-user reach, not the first conn
     ]);
 });
 
-test("Polli CLI quest rewards its device-login keys, not other app keys", async ({
+test("Polli CLI quest rewards device-login keys on accounts 3+ days old", async ({
     sessionToken: _sessionToken,
 }) => {
     const db = drizzle(env.DB, { schema });
     const owner = await getOnlyUser();
-    const [polliUserId, otherUserId] = await seedByopConnections(
-        owner.id,
-        2,
-        "polli-quest",
-    );
-    if (!polliUserId || !otherUserId) throw new Error("Expected BYOP users");
+    const [polliUserId, otherUserId, freshPolliUserId] =
+        await seedByopConnections(owner.id, 3, "polli-quest");
+    if (!polliUserId || !otherUserId || !freshPolliUserId) {
+        throw new Error("Expected BYOP users");
+    }
 
     await db
         .update(schema.apikey)
         .set({ byopClientKeyId: "jF3QOFUCn0ipcgRqkTU2kiSFMwZtm7v0" })
-        .where(eq(schema.apikey.referenceId, polliUserId));
+        .where(
+            inArray(schema.apikey.referenceId, [polliUserId, freshPolliUserId]),
+        );
+    const fourDaysAgo = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000);
+    await db
+        .update(schema.user)
+        .set({ createdAt: fourDaysAgo })
+        .where(inArray(schema.user.id, [polliUserId, otherUserId]));
 
-    await checkQuestsForUser(env, polliUserId, [
-        questIndex.ACCOUNT_SETUP_QUEST_GROUP,
-    ]);
-    await checkQuestsForUser(env, otherUserId, [
-        questIndex.ACCOUNT_SETUP_QUEST_GROUP,
-    ]);
-    await checkQuestsForUser(env, polliUserId, [
-        questIndex.ACCOUNT_SETUP_QUEST_GROUP,
-    ]);
+    for (const userId of [
+        polliUserId,
+        otherUserId,
+        freshPolliUserId,
+        polliUserId,
+    ]) {
+        await checkQuestsForUser(env, userId, [
+            questIndex.ACCOUNT_SETUP_QUEST_GROUP,
+        ]);
+    }
 
     const rewards = await db
         .select({
@@ -1224,7 +1296,7 @@ test("Polli CLI quest rewards its device-login keys, not other app keys", async 
         })
         .from(schema.rewards)
         .where(eq(schema.rewards.questId, "connect_polli_cli"));
-    expect(rewards).toEqual([{ userId: polliUserId, amount: 2 }]);
+    expect(rewards).toEqual([{ userId: polliUserId, amount: 1 }]);
 });
 
 test("app milestones award their rewards at inclusive thresholds", async ({
@@ -1347,7 +1419,7 @@ test("existing app rewards retain their original amounts and remain claimable on
     await recordRewards(
         db,
         originalRewards.map(({ questId, amount }) => ({
-            idempotencyKey: rewardKey(questId, user.githubId),
+            idempotencyKey: rewardKey(questId, user),
             userId: user.id,
             questId,
             title: questId,

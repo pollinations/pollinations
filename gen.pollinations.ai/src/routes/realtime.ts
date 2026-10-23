@@ -1153,6 +1153,32 @@ function proxyRealtimeWebSockets(
     wireClose(c, upstream, downstream, tracking);
     downstream.accept({ allowHalfOpen: true });
     upstream.accept({ allowHalfOpen: true });
+    if (allowTranscription && !mai) {
+        // The transcription deployment ships with transcription disabled by
+        // default (session.created reports audio.input.transcription: null),
+        // so a session without a client session.update streams audio into a
+        // session that returns no transcripts and reports no usage — nothing
+        // to bill and nothing to show. OpenAI's transcription sessions
+        // transcribe by default; enable it here as the baseline. A client
+        // session.update still overrides this, and the provider's echo
+        // reaches the client with the public model name.
+        upstream.send(
+            JSON.stringify({
+                type: "session.update",
+                session: {
+                    type: "transcription",
+                    audio: {
+                        input: {
+                            // The session's own defaults, restated so a
+                            // replacement-semantics provider cannot drop them.
+                            format: { type: "audio/pcm", rate: 24000 },
+                            transcription: { model: deployment },
+                        },
+                    },
+                },
+            }),
+        );
+    }
 
     return new Response(null, {
         status: 101,

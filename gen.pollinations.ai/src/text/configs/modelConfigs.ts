@@ -740,10 +740,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "meta/muse-glimmer-30b",
         "together",
     ),
-    "muse-spark-open-openrouter-baseten": createPinnedOpenRouterConfig(
-        "meta/muse-spark-open",
-        "baseten/fp4",
-    ),
     "meta/muse-wonder-1.0": createPinnedOpenRouterConfig(
         "meta/muse-wonder",
         "meta",
@@ -1135,6 +1131,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     "meta/muse-wonder-1.0:vercel": () =>
         createVercelAIGatewayModelConfig({
             model: "meta/muse-wonder-1.0",
+        }),
+    "meta/muse-spark-open:vercel:baseten": () =>
+        createVercelAIGatewayModelConfig({
+            model: "meta/muse-spark-open",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["baseten"] } },
+            },
         }),
 
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------

@@ -1148,8 +1148,8 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
-        name: "meta/muse-spark-open:openrouter:baseten",
-        config: portkeyConfig["muse-spark-open-openrouter-baseten"],
+        name: "meta/muse-spark-open:vercel:baseten",
+        config: portkeyConfig["meta/muse-spark-open:vercel:baseten"],
         transform: mandatoryReasoning,
     },
     {

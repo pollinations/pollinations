@@ -74,11 +74,6 @@ const OPENROUTER_ROUTES = [
         "coreweave/bf16",
     ],
     [
-        "meta/muse-spark-open:openrouter:baseten",
-        "meta/muse-spark-open",
-        "baseten/fp4",
-    ],
-    [
         "google/gemini-3-flash-preview:openrouter:vertex-global",
         "google/gemini-3-flash-preview",
         "google-vertex/global",
@@ -1122,11 +1117,11 @@ describe("static provider fallbacks", () => {
             completionTextTokens: 4.25 / 1_000_000,
         });
         expect(
-            TEXT_SERVICES["meta/muse-spark-open:openrouter:baseten"].cost,
+            TEXT_SERVICES["meta/muse-spark-open:vercel:baseten"].cost,
         ).toMatchObject({
-            promptTextTokens: (1.25 / 1_000_000) * 1.055,
-            promptCachedTokens: (0.15 / 1_000_000) * 1.055,
-            completionTextTokens: (4.25 / 1_000_000) * 1.055,
+            promptTextTokens: 1.25 / 1_000_000,
+            promptCachedTokens: 0.15 / 1_000_000,
+            completionTextTokens: 4.25 / 1_000_000,
         });
         expect(
             TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"].cost,

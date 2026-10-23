@@ -689,12 +689,12 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("routes Muse Spark Open directly to Fireworks with a BaseTen fallback", () => {
+    it("routes Muse Spark Open directly to Fireworks with a BaseTen fallback on Vercel", () => {
         const primary = resolveModelConfig(messages, {
             model: "meta/muse-spark-open",
         });
         const fallback = resolveModelConfig(messages, {
-            model: "meta/muse-spark-open:openrouter:baseten",
+            model: "meta/muse-spark-open:vercel:baseten",
         });
 
         expect(primary.options.model).toBe(
@@ -705,9 +705,9 @@ describe("resolveModelConfig", () => {
             "custom-host": "https://api.fireworks.ai/inference/v1",
         });
         expect(primary.options.provider).toBeUndefined();
-        expect(fallback.options.provider).toEqual({
-            only: ["baseten/fp4"],
-            allow_fallbacks: false,
+        expect(fallback.options.model).toBe("meta/muse-spark-open");
+        expect(fallback.options.providerOptions).toEqual({
+            gateway: { only: ["baseten"] },
         });
     });
 

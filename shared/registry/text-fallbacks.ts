@@ -671,16 +671,17 @@ export const TEXT_FALLBACKS = {
         },
     },
     "meta/muse-spark-open": {
-        "meta/muse-spark-open:openrouter:baseten": {
-            supportedParameters: CHAT_PARAMETERS.openRouterMuseSparkOpen,
-            provider: "openrouter",
-            addedDate: new Date("2026-10-15").getTime(),
+        // Same model on BaseTen through Vercel's AI Gateway, which adds no
+        // fee. Covers Fireworks failures.
+        "meta/muse-spark-open:vercel:baseten": {
+            // Vercel lists the same parameters as for Muse Wonder (2026-10-23).
+            supportedParameters: CHAT_PARAMETERS.vercelMuseWonder,
+            provider: "vercel",
+            // Vercel AI Gateway BaseTen rates (2026-10-23).
             cost: {
-                // OpenRouter BaseTen FP4 rates (2026-10-15), including the
-                // account's 5.5% credit-purchase fee. Covers Fireworks failures.
-                promptTextTokens: perMillion(1.25) * 1.055,
-                promptCachedTokens: perMillion(0.15) * 1.055,
-                completionTextTokens: perMillion(4.25) * 1.055,
+                promptTextTokens: perMillion(1.25),
+                promptCachedTokens: perMillion(0.15),
+                completionTextTokens: perMillion(4.25),
             },
         },
     },

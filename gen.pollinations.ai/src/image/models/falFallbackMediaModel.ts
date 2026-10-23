@@ -204,7 +204,14 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
         input: (params, _duration, hasImage) => ({
             resolution: "480p",
             ...(!hasImage
-                ? { aspect_ratio: aspectRatio(params, WAN_TURBO_RATIOS) }
+                ? {
+                      // Keep Replicate's 16:9 default when the caller sets
+                      // neither a ratio nor dimensions.
+                      aspect_ratio:
+                          params.aspectRatio || params.dimensionsExplicit
+                              ? aspectRatio(params, WAN_TURBO_RATIOS)
+                              : "16:9",
+                  }
                 : {}),
             ...(params.image[1] ? { end_image_url: params.image[1] } : {}),
         }),

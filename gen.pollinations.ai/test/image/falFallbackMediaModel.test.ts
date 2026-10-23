@@ -272,7 +272,7 @@ describe("Fal fallback media models", () => {
             body: {
                 prompt: "a blue circle",
                 resolution: "480p",
-                aspect_ratio: "1:1",
+                aspect_ratio: "16:9",
                 seed: 42,
             },
         });
@@ -289,6 +289,7 @@ describe("Fal fallback media models", () => {
             model: "alibaba/wan-2.2-fast",
             width: 1024,
             height: 768,
+            dimensionsExplicit: true,
         });
         await vi.advanceTimersByTimeAsync(5_000);
         await resultPromise;
@@ -300,6 +301,7 @@ describe("Fal fallback media models", () => {
         ["x-ai/grok-imagine-video-1.5:fal", "9:16", false, "9:16"],
         ["alibaba/wan-2.6:fal", "16:9", false, "16:9"],
         ["alibaba/wan-2.2-fast", "16:9", false, "16:9"],
+        ["alibaba/wan-2.2-fast", "1:1", false, "1:1"],
         ["bytedance/seedance-1-pro-fast:fal", "21:9", false, "21:9"],
         // Wan 2.2 Turbo has no 4:3, so the default 1024×1024 decides.
         ["alibaba/wan-2.2-fast", "4:3", false, "1:1"],

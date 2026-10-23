@@ -11,7 +11,6 @@ import {
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
 import type { HarnessAdapter, HarnessContext, HarnessResult } from "./types.js";
-import { keyUsageCount, waitForKeyUsageIncrease } from "./usage-proof.js";
 
 const ID = "claude-code";
 const LABEL = "Claude Code";
@@ -65,6 +64,8 @@ const status = (ctx: HarnessContext): HarnessResult => {
 };
 
 // Runs Claude Code itself with the written settings, so ready means it works.
+// The pong is the proof: gen may answer it from its cache without a usage row,
+// and resolveHarnessKey has already checked the key.
 const smokeTest = (ctx: HarnessContext) => {
     const run = spawn.sync(
         "claude",
@@ -106,10 +107,7 @@ const configure = async (
     };
     writeTextAtomic(path, `${JSON.stringify({ env }, null, 2)}\n`, 0o600);
     try {
-        const before = await keyUsageCount(apiKey);
-        const startedAt = Date.now();
         smokeTest(ctx);
-        await waitForKeyUsageIncrease(apiKey, before, { afterMs: startedAt });
     } catch (error) {
         if (previous === null) removeIfExists(path);
         else writeTextAtomic(path, previous, 0o600);

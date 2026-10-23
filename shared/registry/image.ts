@@ -60,7 +60,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "FLUX.1 Kontext Pro",
         description:
-            "Edits an existing image from plain instructions — swap, restyle, refine",
+            "Edits an existing image from instructions: swap, restyle or refine",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 1, // Azure FLUX.1 Kontext edit route forwards one input image.
@@ -179,6 +179,30 @@ const IMAGE_BASE_SERVICES = {
         title: "FLUX.3 Image",
         description:
             "Flagship text-to-image and multi-reference editing at 1K or 2K with up to ten references",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
+    },
+    "black-forest-labs/flux-3-image-klein": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Black Forest Labs",
+        category: "image",
+        addedDate: new Date("2026-10-15").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // fal pricing (2026-10-18): $0.009 per billed unit. fal bills BFL's
+        // per-image tiers in these units (1K = 1, 4K = 4), so price = fal's
+        // charge. Usage counts millionths of a unit.
+        cost: {
+            completionImageTokens: perMillion(0.009),
+        },
+        priceUnits: {
+            completionImageTokens: { unit: "megapixel", quantity: 1_000_000 },
+        },
+        title: "FLUX.3 Image Klein",
+        description:
+            "Distilled text-to-image and multi-reference editing up to 4K with up to ten references",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10,
@@ -1063,7 +1087,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p"],
         title: "Wan 2.2",
         description:
-            "Cheap 5-second silent clips at 480p — great for quick drafts",
+            "Generates low-cost, 5-second silent clips at 480p for drafts",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame"],
@@ -1858,6 +1882,35 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1,
+        minDuration: 3,
+        maxDuration: 15,
+        defaultDuration: 5,
+    },
+    "kwaivgi/kling-v3.0-std": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Kuaishou",
+        category: "video",
+        addedDate: new Date("2026-09-19").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // fal.ai kling-video/v3/standard direct published rates (2026-09-22).
+        // No OpenRouter credit fee: fal is the only route (#15176 review
+        // found OpenRouter applies a 5-second billing minimum and returns
+        // 1080p for a requested 720p, so it is not a compatible fallback).
+        // Base is $0.084/s silent; audio adds $0.042/s ($0.126/s with audio).
+        cost: {
+            completionVideoSeconds: 0.084, // per sec at 720p
+            completionAudioSeconds: 0.042, // per sec when audio is enabled
+        },
+        resolutions: ["720p"],
+        title: "Kling 3.0 Standard",
+        description:
+            "Cinematic video with optional synchronized audio from text or start and end frames at 720p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 3,
         maxDuration: 15,
         defaultDuration: 5,

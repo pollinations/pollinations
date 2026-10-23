@@ -1,19 +1,22 @@
-import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import {
     buildUsageHeaders,
     createCompletionAudioSecondsUsage,
     PROVIDER_BILLING_HEADERS,
 } from "@shared/registry/usage-headers.ts";
+import { readResponseBytes } from "@shared/response-bytes.ts";
 import { validateUserMediaUrl } from "@shared/user-media-url.ts";
 import {
     falBillableUnits,
     falUnitPrice,
 } from "../image/utils/falBillableUnits.ts";
+import { fetchUpstream } from "../image/utils/fetchUpstream.ts";
 import { runFalJobResponse } from "../model3d/models/falClient.ts";
 import { toUpstreamError } from "../model3d/modelUtils.ts";
 
 export const SONILO_MODEL = "sonilo/sonilo-1.1-sfx";
 const ENDPOINT = "sonilo/v1.1/video-to-sound-effects";
+const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
 
 /**
  * Sonilo returns sound effects timed to the whole `reference_video` as one
@@ -70,11 +73,15 @@ export async function generateSoniloSfx(opts: {
             message: "Sonilo returned no audio output",
         });
     }
-    const audio = await ensureUpstreamOk(
-        await fetch(data.audio.url),
-        data.audio.url,
+    const audio = await fetchUpstream(data.audio.url, {
+        errorLabel: `Failed to download ${SONILO_MODEL} output`,
+    });
+    const bytes = await readResponseBytes(audio, MAX_OUTPUT_BYTES, (total) =>
+        UpstreamError.fromProvider(502, {
+            message: `${SONILO_MODEL} output is too large: ${total} bytes (max ${MAX_OUTPUT_BYTES})`,
+        }),
     );
-    return new Response(await audio.arrayBuffer(), {
+    return new Response(bytes, {
         headers: {
             "Content-Type": "audio/mpeg",
             ...buildUsageHeaders(

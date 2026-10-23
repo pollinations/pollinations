@@ -19,43 +19,44 @@ afterEach(() => {
     vi.useRealTimers();
 });
 
+function mockFal(output: () => Response) {
+    return vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+        const href = String(url);
+        if (href.startsWith("https://api.fal.ai/v1/models/pricing"))
+            return Response.json({
+                prices: [
+                    {
+                        endpoint_id: "sonilo/v1.1/video-to-sound-effects",
+                        unit_price: 0.009,
+                        currency: "USD",
+                    },
+                ],
+            });
+        if (href === "https://queue.fal.run/sonilo/v1.1/video-to-sound-effects")
+            return Response.json({
+                status_url: "https://queue.fal.run/status",
+                response_url: "https://queue.fal.run/result",
+            });
+        if (href === "https://queue.fal.run/status")
+            return Response.json({ status: "COMPLETED" });
+        if (href === "https://queue.fal.run/result")
+            return Response.json(
+                { audio: { url: "https://fal.media/sfx.mp3" } },
+                { headers: { "x-fal-billable-units": "12" } },
+            );
+        return output();
+    });
+}
+
 describe("Sonilo 1.1 SFX", () => {
     it("bills fal's reported seconds at its live price", async () => {
         vi.useFakeTimers();
-        const fetchSpy = vi
-            .spyOn(globalThis, "fetch")
-            .mockImplementation(async (url) => {
-                const href = String(url);
-                if (href.startsWith("https://api.fal.ai/v1/models/pricing"))
-                    return Response.json({
-                        prices: [
-                            {
-                                endpoint_id:
-                                    "sonilo/v1.1/video-to-sound-effects",
-                                unit_price: 0.009,
-                                currency: "USD",
-                            },
-                        ],
-                    });
-                if (
-                    href ===
-                    "https://queue.fal.run/sonilo/v1.1/video-to-sound-effects"
-                )
-                    return Response.json({
-                        status_url: "https://queue.fal.run/status",
-                        response_url: "https://queue.fal.run/result",
-                    });
-                if (href === "https://queue.fal.run/status")
-                    return Response.json({ status: "COMPLETED" });
-                if (href === "https://queue.fal.run/result")
-                    return Response.json(
-                        { audio: { url: "https://fal.media/sfx.mp3" } },
-                        { headers: { "x-fal-billable-units": "12" } },
-                    );
-                return new Response("ID3sfx", {
+        const fetchSpy = mockFal(
+            () =>
+                new Response("ID3sfx", {
                     headers: { "content-type": "audio/mpeg" },
-                });
-            });
+                }),
+        );
         const pending = generateSoniloSfx(options);
         await vi.advanceTimersByTimeAsync(5000);
         const response = await pending;
@@ -90,6 +91,22 @@ describe("Sonilo 1.1 SFX", () => {
             input: { providerBilling },
         });
         expect(billed.price.totalPrice).toBeCloseTo(0.108, 9);
+    });
+
+    it("rejects an output larger than 64 MB", async () => {
+        vi.useFakeTimers();
+        mockFal(
+            () =>
+                new Response("ID3", {
+                    headers: { "content-length": String(64 * 1024 * 1024 + 1) },
+                }),
+        );
+        const pending = generateSoniloSfx(options);
+        const assertion = expect(pending).rejects.toMatchObject({
+            status: 502,
+        });
+        await vi.advanceTimersByTimeAsync(5000);
+        await assertion;
     });
 
     it.each([

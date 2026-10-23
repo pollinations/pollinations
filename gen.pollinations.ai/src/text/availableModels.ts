@@ -863,6 +863,7 @@ const models: ModelDefinition[] = [
     {
         name: "microsoft/microsoft-decision-1",
         config: portkeyConfig["microsoft-decision-1-azure"],
+        useSystemOneApi: true,
     },
     {
         name: "microsoft/microsoft-decision-1:vercel",

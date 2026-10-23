@@ -208,7 +208,9 @@ export async function requestDecision(
         const response = await fetch(requestUrl, {
             method: "POST",
             headers: {
-                Authorization: `Bearer ${apiKey}`,
+                ...(options.modelConfig?.directAuthHeader === "api-key"
+                    ? { "api-key": apiKey }
+                    : { Authorization: `Bearer ${apiKey}` }),
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(

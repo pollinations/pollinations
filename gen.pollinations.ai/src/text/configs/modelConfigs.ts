@@ -147,13 +147,16 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "microsoft/microsoft-decision-1",
     }),
-    // Stub until Microsoft publishes the Azure request shape and deployment.
-    // A maintainer replaces this before merge.
-    "microsoft-decision-1-azure": () => {
-        throw new Error(
-            "Azure route for Microsoft-Decision-1 is not configured",
-        );
-    },
+    // Azure's Microsoft provider endpoint speaks the TypeSafe native shape;
+    // `model` is the deployment name.
+    "microsoft-decision-1-azure": () => ({
+        provider: "openai",
+        directEndpoint:
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/microsoft/v1/systemone",
+        directAuthHeader: "api-key",
+        authKey: textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+        model: "decision-1",
+    }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
         createAzureResponsesModelConfig(

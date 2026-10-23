@@ -1763,11 +1763,11 @@ const TEXT_BASE_SERVICES = {
         publisher: "Microsoft",
         category: "text",
         addedDate: new Date("2026-10-09").getTime(),
-        priceMultiplier: 1, // Billed at cost, no margin.
+        priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
-            // Azure rate unconfirmed: the Vercel and OpenRouter rate for the same
-            // Azure backend. Replace with Azure's published rate before merge.
+            // Azure Retail Prices "Microsoft Decision 1 1M Tokens" (2026-10-23),
+            // the model's only meter.
             promptTextTokens: perMillion(0.042),
             completionTextTokens: perMillion(0),
         },

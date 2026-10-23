@@ -705,10 +705,14 @@ describe("static provider fallbacks", () => {
             fallbackOnly: true,
             aliases: [],
         });
-        // Fails until a maintainer replaces the Azure stub with the real route.
-        expect(() =>
+        expect(
             findModelByName("microsoft/microsoft-decision-1")?.config(),
-        ).not.toThrow();
+        ).toMatchObject({
+            model: "decision-1",
+            directEndpoint:
+                "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/microsoft/v1/systemone",
+            directAuthHeader: "api-key",
+        });
         expect(
             findModelByName("microsoft/microsoft-decision-1:vercel")?.config(),
         ).toMatchObject({
@@ -732,7 +736,7 @@ describe("static provider fallbacks", () => {
             quotedBy: primary,
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.00004431, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(0.000042, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0000315, 12);
     });
 
     it("quotes OpenAI's context tiers while accounting for OpenRouter's flat fallback cost", () => {

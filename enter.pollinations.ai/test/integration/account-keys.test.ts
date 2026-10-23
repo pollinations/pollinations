@@ -134,7 +134,7 @@ describe("Account Key Management API", () => {
         }) => {
             const parentKey = await createApiKeyViaApi(accountToken, {
                 name: "machine-parent",
-                accountPermissions: ["keys"],
+                accountPermissions: ["profile", "keys", "usage"],
             });
 
             const createChild = await SELF.fetch(
@@ -346,7 +346,11 @@ describe("Account Key Management API", () => {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${createdPub.key}`,
                     },
-                    body: JSON.stringify({ name: "child-from-publishable" }),
+                    // A publishable key's budget is 0, so its keys' are too.
+                    body: JSON.stringify({
+                        name: "child-from-publishable",
+                        pollenBudget: 0,
+                    }),
                 },
             );
 
@@ -354,6 +358,7 @@ describe("Account Key Management API", () => {
             const data = await response.json();
             expect(data.key.startsWith("sk_")).toBe(true);
             expect(data.name).toBe("child-from-publishable");
+            expect(data.pollenBudget).toBe(0);
             expect(data.permissions?.account ?? []).not.toContain("keys");
         });
     });
@@ -440,6 +445,189 @@ describe("Account Key Management API", () => {
             expect((await response.json()).expiresAt).toBe(
                 "2030-01-01T00:00:00.000Z",
             );
+        });
+    });
+
+    describe("keys managed with an API key stay within it", () => {
+        const call = (
+            key: string,
+            path: string,
+            method: string,
+            body?: unknown,
+        ) =>
+            SELF.fetch(`http://localhost:3000/api/account${path}`, {
+                method,
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${key}`,
+                },
+                body: body === undefined ? undefined : JSON.stringify(body),
+            });
+        const budgetOf = async (key: string) =>
+            (
+                await (
+                    await call(key, "/key", "GET")
+                ).json<{
+                    pollenBudget: number | null;
+                }>()
+            ).pollenBudget;
+
+        test("a created key can't get account permissions the calling key lacks", async ({
+            accountToken,
+        }) => {
+            const caller = await createApiKeyViaApi(accountToken, {
+                name: "keys-only",
+                accountPermissions: ["keys"],
+            });
+
+            const escalated = await call(caller.key, "/keys", "POST", {
+                name: "escalated",
+                accountPermissions: ["keys", "profile"],
+            });
+            expect(escalated.status).toBe(403);
+            const same = await call(caller.key, "/keys", "POST", {
+                name: "same",
+                accountPermissions: ["keys"],
+            });
+            expect(same.status).toBe(200);
+        });
+
+        test("a created key inherits and can't exceed the calling key's models and expiry", async ({
+            accountToken,
+        }) => {
+            const caller = await (
+                await call(accountToken, "/keys", "POST", {
+                    name: "text-for-an-hour",
+                    accountPermissions: ["keys"],
+                    allowedModels: ["text"],
+                    expiresIn: 3600,
+                })
+            ).json();
+
+            const inherited = await (
+                await call(caller.key, "/keys", "POST", { name: "inherited" })
+            ).json();
+            expect(inherited.permissions.models).toEqual(["text"]);
+            expect(Date.parse(inherited.expiresAt)).toBeLessThanOrEqual(
+                Date.parse(caller.expiresAt),
+            );
+            const narrower = await call(caller.key, "/keys", "POST", {
+                name: "one-text-model",
+                allowedModels: ["openai/gpt-5.4-nano"],
+                expiresIn: 60,
+            });
+            expect(narrower.status).toBe(200);
+
+            for (const wider of [
+                { allowedModels: ["image"] },
+                { allowedModels: null },
+                { expiresIn: 7200 },
+            ]) {
+                const response = await call(caller.key, "/keys", "POST", {
+                    name: "wider",
+                    ...wider,
+                });
+                expect(response.status).toBe(403);
+            }
+        });
+
+        test("a created key's budget comes out of the calling key's", async ({
+            accountToken,
+        }) => {
+            const caller = await createApiKeyViaApi(accountToken, {
+                name: "five",
+                accountPermissions: ["keys"],
+                pollenBudget: 5,
+            });
+
+            for (const tooMuch of [
+                {},
+                { pollenBudget: null },
+                { pollenBudget: 6 },
+            ]) {
+                const response = await call(caller.key, "/keys", "POST", {
+                    name: "too-much",
+                    ...tooMuch,
+                });
+                expect(response.status).toBe(403);
+            }
+            // A key that isn't created gives its budget back.
+            const failed = await call(caller.key, "/keys", "POST", {
+                name: "bad-client",
+                pollenBudget: 3,
+                consent: { requestedClientId: "pk_invalid" },
+            });
+            expect(failed.status).toBe(400);
+            expect(await budgetOf(caller.key)).toBe(5);
+
+            const child = await call(caller.key, "/keys", "POST", {
+                name: "three",
+                pollenBudget: 3,
+            });
+            expect(child.status).toBe(200);
+            expect(await budgetOf(caller.key)).toBe(2);
+            const another = await call(caller.key, "/keys", "POST", {
+                name: "three-more",
+                pollenBudget: 3,
+            });
+            expect(another.status).toBe(403);
+        });
+
+        test("a key can't update itself", async ({ accountToken }) => {
+            const caller = await createApiKeyViaApi(accountToken, {
+                name: "self",
+                accountPermissions: ["keys"],
+                pollenBudget: 5,
+            });
+
+            const response = await call(
+                caller.key,
+                `/keys/${caller.id}`,
+                "PATCH",
+                { pollenBudget: 1000 },
+            );
+            expect(response.status).toBe(403);
+            expect(await budgetOf(caller.key)).toBe(5);
+        });
+
+        test("an update can't grant more than the calling key has", async ({
+            accountToken,
+        }) => {
+            const caller = await (
+                await call(accountToken, "/keys", "POST", {
+                    name: "limited",
+                    accountPermissions: ["keys"],
+                    allowedModels: ["text"],
+                    pollenBudget: 5,
+                    expiresIn: 3600,
+                })
+            ).json();
+            const target = await createApiKeyViaApi(accountToken, {
+                name: "target",
+                pollenBudget: 1,
+            });
+            const update = (body: object) =>
+                call(caller.key, `/keys/${target.id}`, "PATCH", body);
+
+            for (const tooMuch of [
+                { accountPermissions: ["profile"] },
+                { allowedModels: null },
+                { allowedModels: ["image"] },
+                { expiresAt: null },
+                { expiresAt: "2099-01-01T00:00:00Z" },
+                { pollenBudget: null },
+                // 6 more than the target has; the caller has 5.
+                { pollenBudget: 7 },
+            ]) {
+                expect((await update(tooMuch)).status).toBe(403);
+            }
+            const within = await update({
+                accountPermissions: ["keys"],
+                allowedModels: ["text"],
+                pollenBudget: 4,
+            });
+            expect(within.status).toBe(200);
+            expect(await budgetOf(caller.key)).toBe(2);
         });
     });
 

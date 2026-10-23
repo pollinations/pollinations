@@ -283,7 +283,7 @@ async function requireAgentWriteAccess(
     if (!owner?.githubUsername && (!currentId || visibility === "public")) {
         throw new HTTPException(400, {
             message:
-                "A GitHub username is required to create or publish an agent",
+                "Connect GitHub on your account page to create or publish an agent.",
         });
     }
     if (visibility === "public" && !isCommunityEndpointOwnerAllowed(owner)) {

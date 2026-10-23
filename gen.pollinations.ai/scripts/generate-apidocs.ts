@@ -304,11 +304,14 @@ function renderParamsTable(_spec: Spec, params: Schema[]): string {
 function pickExample(
     spec: Spec,
     schema: Schema | undefined,
-    opts: { compact?: boolean } = {},
+    // `placeholders` fills strings without an example so response examples
+    // keep required fields such as `id`; request bodies stay runnable without it.
+    opts: { compact?: boolean; placeholders?: boolean } = {},
 ): unknown {
     if (!schema) return undefined;
     const resolved = refName(schema) ? deref(spec, schema) : schema;
     if (resolved.example !== undefined) return resolved.example;
+    if (resolved.const !== undefined) return resolved.const;
 
     const union = asArr(resolved.anyOf).length
         ? asArr(resolved.anyOf)
@@ -326,7 +329,10 @@ function pickExample(
 
     if (resolved.default !== undefined) return resolved.default;
 
-    const type = asStr(resolved.type);
+    // Nullable fields use `type: ["string", "null"]`.
+    const type = asStr(
+        asArr(resolved.type).find((t) => t !== "null") ?? resolved.type,
+    );
     if (type === "object" || resolved.properties) {
         const props = asObj(resolved.properties);
         const required = new Set(asArr(resolved.required) as string[]);
@@ -349,7 +355,7 @@ function pickExample(
     if (type === "string") {
         if (asStr(resolved.format) === "date-time")
             return "2026-01-01T00:00:00Z";
-        return undefined;
+        return opts.placeholders ? "string" : undefined;
     }
     return undefined;
 }
@@ -674,7 +680,9 @@ export function renderEndpoint(
             jsonResp.example !== undefined
                 ? jsonResp.example
                 : jsonResp.schema
-                  ? pickExample(spec, asObj(jsonResp.schema))
+                  ? pickExample(spec, asObj(jsonResp.schema), {
+                        placeholders: true,
+                    })
                   : undefined;
         if (isResponseExampleWorthwhile(ex)) {
             out.push("```json");
@@ -1110,6 +1118,8 @@ const PATH_PARAM_EXAMPLES: Record<string, Record<string, string>> = {
     "/account/my-models/{id}": { id: RESOURCE_ID_EXAMPLE },
     "/account/my-models/{id}/update": { id: RESOURCE_ID_EXAMPLE },
     "/account/my-models/{id}/fallback-candidates": { id: RESOURCE_ID_EXAMPLE },
+    "/account/my-models/{id}/test": { id: RESOURCE_ID_EXAMPLE },
+    "/account/my-models/{id}/health": { id: RESOURCE_ID_EXAMPLE },
     "/v1/models/{model}": { model: "openai/gpt-5.4-nano" },
 };
 
@@ -1177,6 +1187,7 @@ const TAG_ORDER = [
     "Community Models",
     "Community Agents",
     "Media Storage",
+    "Sandboxes API",
     "Account",
 ];
 

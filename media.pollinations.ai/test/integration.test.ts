@@ -1,7 +1,6 @@
 import {
     createExecutionContext,
     env,
-    fetchMock,
     SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
@@ -11,7 +10,15 @@ import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { removeMetadata } from "picscrub";
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import {
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from "vitest";
 import app from "../src/index";
 import {
     MediaUpload,
@@ -134,36 +141,23 @@ function createMediaEnv(bucket = createTestR2Bucket()) {
     };
 }
 
+// Answers Gen's key check and refuses every other outbound request.
 function mockAuth() {
-    fetchMock.activate();
-    fetchMock.disableNetConnect();
-    fetchMock
-        .get("https://gen.pollinations.ai")
-        .intercept({ path: "/account/key" })
-        .reply(({ headers }) => {
-            const headerBag = headers as Record<string, string>;
-            const authHeader =
-                headerBag.authorization ?? headerBag.Authorization ?? "";
-            const key = authHeader.replace(/^Bearer /, "");
-            const identity = KEY_IDENTITIES[key];
-            if (!identity) {
-                return {
-                    statusCode: 200,
-                    data: JSON.stringify({ valid: false }),
-                    responseOptions: {
-                        headers: { "content-type": "application/json" },
-                    },
-                };
-            }
-            return {
-                statusCode: 200,
-                data: JSON.stringify(identity),
-                responseOptions: {
-                    headers: { "content-type": "application/json" },
-                },
-            };
-        })
-        .persist();
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        if (
+            url.origin !== "https://gen.pollinations.ai" ||
+            url.pathname !== "/account/key"
+        ) {
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        }
+        const key = (request.headers.get("authorization") ?? "").replace(
+            /^Bearer /,
+            "",
+        );
+        return Response.json(KEY_IDENTITIES[key] ?? { valid: false });
+    });
 }
 
 async function seedUsers() {
@@ -395,7 +389,7 @@ describe("media.pollinations.ai", () => {
     });
 
     afterEach(() => {
-        fetchMock.deactivate();
+        vi.restoreAllMocks();
     });
 
     it("GET / returns service info", async () => {

@@ -76,7 +76,9 @@ const MODEL3D_BASE_SERVICES = {
         paidOnly: true,
         flatRate: true,
         cost: {
-            completionImageTokens: 0.07,
+            // InferencePort list price, $0.25 per generation (docs.inferenceport.ai
+            // p2g-api pricing table and the authenticated /v1/models catalog).
+            completionImageTokens: 0.25,
         },
         title: "NVIDIA Asset Harvester",
         description: "Image-to-3D Gaussian Splat (PLY)",

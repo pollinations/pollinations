@@ -1,7 +1,7 @@
 import type { OpTransactionRow, VendorLedgerRow } from "../types";
 
 // The vocabulary only. Which vendor belongs to which category lives in
-// provider-registry.json; see transactionCategory in providerRegistry.ts.
+// the Drive vendor-details file; see transactionCategory in providerRegistry.ts.
 
 export const CATEGORY_IDS = [
     "revenue",

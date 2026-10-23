@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { before, test } from "node:test";
 import { gzipSync } from "node:zlib";
-import { Miniflare } from "miniflare";
+import { convertV4MiniflareOptions, Miniflare } from "miniflare";
 import { transform } from "sucrase";
 import { createCodeAgentResponsesClient } from "../../gen.pollinations.ai/src/text/agents/code-client.ts";
 import { buildCodeAgentModules } from "./code-agent-sdk.mjs";
@@ -79,26 +79,29 @@ export default async ({ request }: { request: Request }) => {
         cookie: request.headers.get("cookie"),
     });
 };`;
-    const worker = new Miniflare({
-        compatibilityDate: "2026-04-01",
-        modulesRoot: "/",
-        bindings: { POLLINATIONS_BASE_URL: "https://gen.pollinations.ai" },
-        modules: Object.entries({
-            "index.mjs": `
+    // Miniflare 5 nests each Worker's options; convert the single-Worker form.
+    const worker = new Miniflare(
+        convertV4MiniflareOptions({
+            compatibilityDate: "2026-04-01",
+            modulesRoot: "/",
+            bindings: { POLLINATIONS_BASE_URL: "https://gen.pollinations.ai" },
+            modules: Object.entries({
+                "index.mjs": `
 import agent from "./agent.mjs";
 import createCodeAgentWorker from "./runtime.mjs";
 export default createCodeAgentWorker(agent);`,
-            "agent.mjs": transform(agentSource, {
-                transforms: ["typescript"],
-                disableESTransforms: true,
-            }).code,
-            ...modules,
-        }).map(([name, contents]) => ({
-            type: "ESModule",
-            path: `/${name}`,
-            contents,
-        })),
-    });
+                "agent.mjs": transform(agentSource, {
+                    transforms: ["typescript"],
+                    disableESTransforms: true,
+                }).code,
+                ...modules,
+            }).map(([name, contents]) => ({
+                type: "ESModule",
+                path: `/${name}`,
+                contents,
+            })),
+        }),
+    );
     try {
         const client = createCodeAgentResponsesClient(
             {

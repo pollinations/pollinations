@@ -113,6 +113,11 @@ custom_domain = true
 pattern = "*.pollinations.app/*"
 zone_name = "pollinations.app"
 
+# The bare domain's landing page (src/sites-landing.html).
+[[env.production.routes]]
+pattern = "pollinations.app/*"
+zone_name = "pollinations.app"
+
 [[env.production.services]]
 binding = "ENTER"
 service = "pollinations-enter-production"
@@ -231,6 +236,13 @@ POLLEN_REFILL_PER_HOUR = 1
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
+# Azure sandboxes (src/routes/azure-sandboxes.ts): gen's own login, whose
+# secret is AZURE_SANDBOX_CLIENT_SECRET, its sandbox group, and the image
+# operations/infrastructure/azure-sandboxes/build.mjs imported there.
+AZURE_SANDBOX_TENANT_ID = "f542dd61-ecf3-4524-8905-30f2e2a2e967"
+AZURE_SANDBOX_CLIENT_ID = "6917c58e-9b41-45bb-9685-0972f7fbd35f"
+AZURE_SANDBOX_GROUP_URL = "https://management.eastus.azuredevcompute.io/subscriptions/7725a3f5-6483-4079-ba51-a317aa4fc09e/resourceGroups/rg-pollinations-sandboxes/sandboxGroups/pollisbx-production"
+AZURE_SANDBOX_IMAGE = "bfc9e318-3cb1-4a00-8c3c-eafb1b671ee8"
 # Staging routes
 [env.staging]
 
@@ -363,6 +375,11 @@ TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=g
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
+# Azure sandboxes: as in production, with staging's own login and group.
+AZURE_SANDBOX_TENANT_ID = "f542dd61-ecf3-4524-8905-30f2e2a2e967"
+AZURE_SANDBOX_CLIENT_ID = "e1653f2d-5948-466a-bf34-1addc9f45b15"
+AZURE_SANDBOX_GROUP_URL = "https://management.eastus.azuredevcompute.io/subscriptions/7725a3f5-6483-4079-ba51-a317aa4fc09e/resourceGroups/rg-pollinations-sandboxes/sandboxGroups/pollisbx-staging"
+AZURE_SANDBOX_IMAGE = "fcab7587-ab59-46ce-932d-5c237c8ac747"
 # Staging OAuth lockdown — must match enter.pollinations.ai staging allowlist.
 # Request-time gate in shared/auth/api-key.ts fails closed without it. Issue #11137.
 STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015"

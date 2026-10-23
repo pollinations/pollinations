@@ -48,7 +48,10 @@
             "!**/*.yml",
             "!**/*.md",
             // exclude vendored font OFL license texts (must be distributed verbatim)
-            "!packages/ui/src/licenses/**"
+            "!packages/ui/src/licenses/**",
+            // exclude the fork of Anthropic's Telegram plugin, kept in its
+            // upstream formatting so it can be compared with upstream
+            "!apps/mama-barbara/barbara/telegram/server.ts"
         ]
     },
     "overrides": [

@@ -118,4 +118,29 @@ describe("CreateChatCompletionRequestSchema", () => {
         });
         expect(result.messages).toEqual([{ role: "user", content: "" }]);
     });
+
+    it("accepts a string system prompt and tolerates explicit null", () => {
+        const result = CreateChatCompletionRequestSchema.parse({
+            messages: [{ role: "user", content: "hello" }],
+            system: "be concise",
+        });
+        expect(result.system).toBe("be concise");
+
+        const explicitNull = CreateChatCompletionRequestSchema.parse({
+            messages: [{ role: "user", content: "hello" }],
+            system: null,
+        });
+        expect(explicitNull.system).toBeNull();
+    });
+
+    it("rejects a non-string system prompt instead of dropping it", () => {
+        const cases = [["be concise"], 12345, { text: "be concise" }, true];
+        for (const system of cases) {
+            const result = CreateChatCompletionRequestSchema.safeParse({
+                messages: [{ role: "user", content: "hello" }],
+                system,
+            });
+            expect(result.success).toBe(false);
+        }
+    });
 });

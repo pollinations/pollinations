@@ -43,8 +43,8 @@ Quest availability and reward amounts can change, so the dashboard and the linke
 
 Your wallet has two balances:
 
-- **Quest Pollen** — earned from Quests and eligible developer rewards.
-- **Paid Pollen** — purchased through Stripe and eligible developer rewards.
+- **Quest Pollen**: earned from Quests and eligible developer rewards.
+- **Paid Pollen**: purchased through Stripe and eligible developer rewards.
 
 Every request is charged to one balance, never split across both:
 
@@ -64,9 +64,9 @@ Pollinations supports text, images and image edits, video, speech and audio, tra
 
 ## 🔑 Which API key should I use?
 
-- **Personal Secret Key (`sk_`)** — use on a trusted server for your own model usage. It can have a Pollen budget, expiry, model restrictions, and account permissions. Do not ship a personal Secret Key in browser or mobile code.
-- **App Key (`pk_`)** — a publishable OAuth client identifier for Connect User Wallets. It identifies your app and its redirect URIs; it is not the generation credential. After user consent, your app receives a scoped, user-authorized `sk_` for API calls.
-- **Raw publishable key (`pk_` without an app binding)** — legacy direct generation only, limited to 1 Pollen per IP per hour. Do not create new integrations around this flow.
+- **Personal Secret Key (`sk_`)**: use on a trusted server for your own model usage. It can have a Pollen budget, expiry, model restrictions, and account permissions. Do not ship a personal Secret Key in browser or mobile code.
+- **App Key (`pk_`)**: a publishable OAuth client identifier for Connect User Wallets. It identifies your app and its redirect URIs; it is not the generation credential. After user consent, your app receives a scoped, user-authorized `sk_` for API calls.
+- **Raw publishable key (`pk_` without an app binding)**: legacy direct generation only, limited to 1 Pollen per IP per hour. Do not create new integrations around this flow.
 
 All traffic remains subject to platform abuse protection and any model-specific constraints.
 

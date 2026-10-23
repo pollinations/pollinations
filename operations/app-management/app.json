@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🖼️",
+    "name": "Poster Iklan Pantas",
+    "url": "https://poster.simetry.digital",
+    "description": "Malay-language ad poster maker for small sellers in Malaysia. Users type product, headline and offer, pick style and size (feed, story, banner), optionally upload a product photo, and get a ready-to-p",
+    "language": "ms",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "Syafixit",
+    "githubUserId": "144263176",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-22",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/18116",
+    "approvedDate": "2026-10-23",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/851889d1-8c7d-4c16-b97c-4ae3be68d573"
+  },
+  {
+    "emoji": "🖼️",
     "name": "Pollinations Model Tester",
     "url": "https://polli-model-tester-9321atohv-scriptsnsenses-8753s-projects.vercel.app",
     "description": "The app is [Pollinations.ai](https://pollinations.ai/) Models Tester — a single-file, browser-based playground for comparing Pollinations text models side-by-side. The app lets you enter any model ID ",

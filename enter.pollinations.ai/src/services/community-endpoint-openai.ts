@@ -22,6 +22,10 @@ import {
     MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
 } from "@shared/community-media.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
+import {
+    connectCommunityRealtime,
+    parseCommunityRealtimeUsage,
+} from "@shared/realtime.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 import {
     getOpenAIEmbeddingUsage,
@@ -624,4 +628,137 @@ async function testCommunityImageEdits(
     if (!editedImage || !detectImageMimeType(editedImage)) {
         throw new Error("Editing endpoint did not return a supported image");
     }
+}
+
+export async function testCommunityRealtimeEndpoint(
+    input: ModelEndpointTestInput,
+): Promise<CommunityEndpointTestResult> {
+    const response = await connectCommunityRealtime(input);
+    const socket = response.webSocket;
+    if (response.status !== 101 || !socket) {
+        await response.body?.cancel();
+        throw new Error(
+            `Realtime endpoint did not upgrade to WebSocket (HTTP ${response.status})`,
+        );
+    }
+    return new Promise((resolve, reject) => {
+        let finished = false;
+        let started = false;
+        let audioReceived = false;
+        const finish = (result: Error | CommunityEndpointTestResult) => {
+            if (finished) return;
+            finished = true;
+            clearTimeout(timer);
+            socket.close(1000, "Endpoint probe finished");
+            if (result instanceof Error) reject(result);
+            else resolve(result);
+        };
+        const timer = setTimeout(
+            () => finish(new Error("Realtime endpoint probe timed out")),
+            COMMUNITY_ENDPOINT_TIMEOUT_MS,
+        );
+        socket.addEventListener("close", () =>
+            finish(
+                new Error(
+                    "Realtime endpoint closed before returning audio and usage",
+                ),
+            ),
+        );
+        socket.addEventListener("error", () =>
+            finish(new Error("Realtime endpoint connection failed")),
+        );
+        socket.addEventListener("message", (message) => {
+            if (finished) return;
+            try {
+                const event =
+                    typeof message.data === "string"
+                        ? JSON.parse(message.data)
+                        : null;
+                if (event?.type === "session.created") {
+                    socket.send(
+                        JSON.stringify({
+                            type: "session.update",
+                            session: {
+                                type: "realtime",
+                                output_modalities: ["audio"],
+                                instructions:
+                                    "Reply to the greeting with one short spoken sentence.",
+                                audio: {
+                                    input: {
+                                        format: {
+                                            type: "audio/pcm",
+                                            rate: 24000,
+                                        },
+                                        turn_detection: null,
+                                    },
+                                    output: {
+                                        format: {
+                                            type: "audio/pcm",
+                                            rate: 24000,
+                                        },
+                                    },
+                                },
+                            },
+                        }),
+                    );
+                } else if (event?.type === "session.updated" && !started) {
+                    started = true;
+                    const pcm = atob(SAMPLE_AUDIO_BASE64).slice(44);
+                    let pcm24k = "";
+                    for (let i = 0; i < pcm.length; i += 2)
+                        pcm24k += pcm.slice(i, i + 2).repeat(3);
+                    for (const payload of [
+                        {
+                            type: "input_audio_buffer.append",
+                            audio: btoa(pcm24k),
+                        },
+                        { type: "input_audio_buffer.commit" },
+                        { type: "response.create" },
+                    ])
+                        socket.send(JSON.stringify(payload));
+                } else if (event?.type === "response.output_audio.delta") {
+                    const bytes =
+                        typeof event.delta === "string"
+                            ? atob(event.delta)
+                            : "";
+                    if (!bytes.length || bytes.length % 2)
+                        throw new Error(
+                            "Realtime endpoint returned invalid PCM audio",
+                        );
+                    audioReceived = true;
+                } else if (event?.type === "response.done") {
+                    const parsed = parseCommunityRealtimeUsage(
+                        event.response?.usage,
+                    );
+                    if (
+                        !started ||
+                        !audioReceived ||
+                        event.response?.status !== "completed" ||
+                        !parsed?.usage.promptAudioTokens ||
+                        !parsed.usage.completionAudioTokens
+                    ) {
+                        throw new Error(
+                            "Realtime endpoint must return audio input/output token usage and completed PCM audio",
+                        );
+                    }
+                    finish({
+                        usage: parsed.usage,
+                        billableUsage: parsed.usage,
+                        inputModalities: ["text", "audio"],
+                    });
+                } else if (event?.type === "error") {
+                    throw new Error(
+                        "Realtime endpoint returned an error event",
+                    );
+                }
+            } catch (error) {
+                finish(
+                    error instanceof Error
+                        ? error
+                        : new Error("Invalid realtime endpoint response"),
+                );
+            }
+        });
+        socket.accept();
+    });
 }

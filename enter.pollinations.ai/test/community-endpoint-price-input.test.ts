@@ -16,6 +16,7 @@ import {
     emptyForm,
     formPriceToStoredPrice,
     isValidPriceInput,
+    nextFormState,
     pricePerMillionToPerToken,
     storedPriceToFormValue,
     toEndpointPayload,
@@ -145,5 +146,38 @@ describe("community endpoint price input", () => {
                 "video_second",
             ),
         ).toBe(false);
+    });
+});
+
+it("starts realtime drafts with voice inputs and retains all five token rates", () => {
+    const form = nextFormState(
+        {
+            ...emptyForm,
+            requiredSafetyFeatures: ["sexual"],
+            fallbacks: ["openai/gpt-realtime-2.1"],
+            promptTextPrice: "2",
+            promptCachedPrice: "1",
+            promptAudioPrice: "4",
+            completionTextPrice: "6",
+            completionAudioPrice: "8",
+        },
+        "modality",
+        "realtime",
+    );
+    expect(form.inputModalities).toEqual(["text", "audio"]);
+    expect(form.requiredSafetyFeatures).toEqual([]);
+    expect(form.fallbacks).toEqual([]);
+    const visible = new Set(basePriceKeysForModality("realtime"));
+    expect(visible.size).toBe(5);
+    expect(
+        toEndpointPayload(formWithVisiblePrices(form, visible)),
+    ).toMatchObject({
+        modality: "realtime",
+        inputModalities: ["text", "audio"],
+        promptTextPrice: 0.000002,
+        promptCachedPrice: 0.000001,
+        promptAudioPrice: 0.000004,
+        completionTextPrice: 0.000006,
+        completionAudioPrice: 0.000008,
     });
 });

@@ -170,7 +170,7 @@ function describeRealtimeWebSocket(path: "/realtime" | "/v1/realtime") {
             `Connect with \`wss://gen.pollinations.ai${path}?model=${DEFAULT_REALTIME_MODEL}\` and send/receive OpenAI Realtime JSON events over the socket. Selecting \`elevenlabs/scribe-v2-realtime\` creates a transcription session automatically.`,
             "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients pass their user-authorized secret key (`sk_`) in `?key=`.",
             "",
-            `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
+            `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}, plus registered community realtime models. Discover them through /models.`,
             "",
             "**Billing:** requires a positive balance and settles one session total when the socket closes.",
         ].join("\n"),

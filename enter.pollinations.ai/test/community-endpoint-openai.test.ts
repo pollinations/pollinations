@@ -1,3 +1,4 @@
+import { parseCommunityRealtimeUsage } from "@shared/realtime.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     CreateEndpointAgentSchema,
@@ -10,6 +11,7 @@ import {
     testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
+    testCommunityRealtimeEndpoint,
     testCommunitySpeechEndpoint,
     testCommunityTranscriptionEndpoint,
     testCommunityVideoEndpoint,
@@ -1171,5 +1173,198 @@ describe("community endpoint OpenAI service", () => {
         ).rejects.toThrow(
             "Endpoint did not return billable OpenAI token usage",
         );
+    });
+});
+
+describe("community realtime probe", () => {
+    const input = {
+        baseUrl: "https://voice.example.com/v1/realtime?version=1",
+        bearerToken: "provider-token",
+        model: "provider-voice",
+    };
+    const usage = {
+        input_tokens: 10,
+        output_tokens: 5,
+        input_token_details: { text_tokens: 2, audio_tokens: 8 },
+        output_token_details: { text_tokens: 1, audio_tokens: 4 },
+    };
+
+    it.each([
+        "success",
+        "no-audio",
+        "bad-usage",
+        "bad-audio",
+        "error",
+        "closed",
+    ])("requires a completed voice exchange: %s", async (mode) => {
+        const received: Record<string, unknown>[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (url, init) => {
+                const request = new Request(url, init);
+                expect(request.url).toBe(
+                    "https://voice.example.com/v1/realtime?version=1&model=provider-voice",
+                );
+                expect([...request.headers.entries()]).toEqual([
+                    ["authorization", "Bearer provider-token"],
+                    ["upgrade", "websocket"],
+                ]);
+                expect(init.redirect).toBe("manual");
+                const [client, server] = Object.values(new WebSocketPair());
+                server.accept();
+                server.addEventListener("close", () => server.close());
+                server.addEventListener("message", (message) => {
+                    const event = JSON.parse(message.data as string);
+                    received.push(event);
+                    if (event.type === "session.update") {
+                        expect(event.session).toMatchObject({
+                            type: "realtime",
+                            output_modalities: ["audio"],
+                            audio: {
+                                input: {
+                                    format: { type: "audio/pcm", rate: 24000 },
+                                    turn_detection: null,
+                                },
+                            },
+                        });
+                        server.send(
+                            JSON.stringify({ type: "session.updated" }),
+                        );
+                    } else if (event.type === "input_audio_buffer.append") {
+                        const pcm = atob(event.audio);
+                        expect(pcm.length).toBeGreaterThan(24000);
+                        expect(pcm.length % 2).toBe(0);
+                        expect(pcm.slice(0, 4)).not.toBe("RIFF");
+                    } else if (event.type === "response.create") {
+                        if (mode === "closed") {
+                            server.close();
+                            return;
+                        }
+                        if (mode === "error") {
+                            server.send(JSON.stringify({ type: "error" }));
+                            return;
+                        }
+                        if (mode !== "no-audio")
+                            server.send(
+                                JSON.stringify({
+                                    type: "response.output_audio.delta",
+                                    delta:
+                                        mode === "bad-audio"
+                                            ? btoa("x")
+                                            : btoa("\0\0".repeat(24)),
+                                }),
+                            );
+                        server.send(
+                            JSON.stringify({
+                                type: "response.done",
+                                response: {
+                                    status: "completed",
+                                    usage:
+                                        mode === "bad-usage"
+                                            ? {
+                                                  input_tokens: 10,
+                                                  output_tokens: 5,
+                                              }
+                                            : usage,
+                                },
+                            }),
+                        );
+                    }
+                });
+                server.send(JSON.stringify({ type: "session.created" }));
+                return new Response(null, { status: 101, webSocket: client });
+            }),
+        );
+        const probe = testCommunityRealtimeEndpoint(input);
+        if (mode === "success") {
+            await expect(probe).resolves.toMatchObject({
+                billableUsage: {
+                    promptTextTokens: 2,
+                    promptAudioTokens: 8,
+                    completionTextTokens: 1,
+                    completionAudioTokens: 4,
+                },
+                inputModalities: ["text", "audio"],
+            });
+        } else await expect(probe).rejects.toThrow(/Realtime endpoint/);
+        expect(received.map((event) => event.type)).toEqual([
+            "session.update",
+            "input_audio_buffer.append",
+            "input_audio_buffer.commit",
+            "response.create",
+        ]);
+    });
+
+    it.each([302, 401, 503])(
+        "rejects HTTP %s without following redirects",
+        async (status) => {
+            const fetchMock = vi.fn(
+                async () => new Response("Provider failure", { status }),
+            );
+            vi.stubGlobal("fetch", fetchMock);
+            await expect(testCommunityRealtimeEndpoint(input)).rejects.toThrow(
+                `HTTP ${status}`,
+            );
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        },
+    );
+});
+
+describe("community realtime usage validation", () => {
+    const usage = {
+        input_tokens: 20,
+        output_tokens: 10,
+        input_token_details: {
+            text_tokens: 10,
+            audio_tokens: 10,
+            cached_tokens: 6,
+            cached_tokens_details: { text_tokens: 4, audio_tokens: 2 },
+        },
+        output_token_details: { text_tokens: 3, audio_tokens: 7 },
+    };
+    it("counts cached audio once at the shared cached-input rate", () => {
+        expect(parseCommunityRealtimeUsage(usage)?.usage).toEqual({
+            promptTextTokens: 6,
+            promptAudioTokens: 8,
+            promptCachedTokens: 6,
+            completionTextTokens: 3,
+            completionAudioTokens: 7,
+        });
+    });
+    it.each([
+        undefined,
+        { input_tokens: 20, output_tokens: 10 },
+        { ...usage, input_tokens: 19 },
+        { ...usage, output_tokens: 9 },
+        {
+            ...usage,
+            input_token_details: {
+                ...usage.input_token_details,
+                image_tokens: 1,
+            },
+        },
+        {
+            ...usage,
+            input_token_details: {
+                ...usage.input_token_details,
+                cached_tokens_details: undefined,
+            },
+        },
+        {
+            ...usage,
+            input_token_details: {
+                ...usage.input_token_details,
+                cached_tokens: 7,
+            },
+        },
+        {
+            ...usage,
+            input_token_details: {
+                ...usage.input_token_details,
+                text_tokens: -1,
+            },
+        },
+    ])("rejects incomplete or inconsistent usage %#", (input) => {
+        expect(parseCommunityRealtimeUsage(input)).toBeNull();
     });
 });

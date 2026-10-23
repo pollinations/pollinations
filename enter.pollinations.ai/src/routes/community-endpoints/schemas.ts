@@ -464,7 +464,7 @@ export const CommunityEndpointTestResponseSchema = z
             .array(InputModalitySchema)
             .optional()
             .describe(
-                "Image tests only: input types detected from generation and edit probes.",
+                "Input types detected by image editing and realtime voice probes.",
             ),
         streaming: z
             .literal(false)

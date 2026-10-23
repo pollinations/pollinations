@@ -8,6 +8,7 @@ import {
 import { AuthAccessItem } from "@pollinations/ui/auth";
 import {
     COMMUNITY_ENDPOINT_CAPABILITIES,
+    COMMUNITY_ENDPOINT_MODALITIES,
     COMMUNITY_MODALITY_SPEC,
     type CommunityEndpointCapability,
     type CommunityEndpointModality,
@@ -71,16 +72,7 @@ export function ModelCapabilityFields({
                 }
             >
                 <ButtonGroup aria-label="Modality">
-                    {(
-                        [
-                            "text",
-                            "image",
-                            "video",
-                            "transcription",
-                            "speech",
-                            "embedding",
-                        ] as const
-                    ).map((option) => (
+                    {COMMUNITY_ENDPOINT_MODALITIES.map((option) => (
                         <TabButton
                             key={option}
                             active={modality === option}

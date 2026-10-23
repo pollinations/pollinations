@@ -309,7 +309,9 @@ export function CommunityEndpointDialog({
                             ? "Endpoint responded, but did not return transcription text or usage"
                             : form.modality === "speech"
                               ? "Endpoint responded, but did not return binary audio"
-                              : "Endpoint responded, but did not return billable usage",
+                              : form.modality === "realtime"
+                                ? "Endpoint did not return realtime audio and token usage"
+                                : "Endpoint responded, but did not return billable usage",
                 );
             }
             setForm((current) => ({
@@ -319,10 +321,12 @@ export function CommunityEndpointDialog({
                     streaming: body.streaming !== false,
                 }),
                 inputModalities:
-                    current.modality === "image" &&
-                    body.inputModalities?.includes("image")
-                        ? (["text", "image"] as ModelInputModality[])
-                        : current.inputModalities,
+                    current.modality === "realtime"
+                        ? (body.inputModalities ?? current.inputModalities)
+                        : current.modality === "image" &&
+                            body.inputModalities?.includes("image")
+                          ? (["text", "image"] as ModelInputModality[])
+                          : current.inputModalities,
                 // Changing pricing mode changes the units of these fields, so
                 // stale values must not carry across modes.
                 ...(detectedImagePricing !== current.imagePricing
@@ -686,7 +690,9 @@ export function CommunityEndpointDialog({
                                             ? "The exact URL called for the selected API."
                                             : form.modality === "video"
                                               ? "The exact URL Pollinations calls to generate a video."
-                                              : "OpenAI-compatible /v1 base URL, or full image/edit/transcription/speech URL."
+                                              : form.modality === "realtime"
+                                                ? "OpenAI-compatible HTTPS /v1 base URL or full /v1/realtime URL. Uses WebSocket transport."
+                                                : "OpenAI-compatible /v1 base URL, or full image/edit/transcription/speech URL."
                                     }
                                 >
                                     <Field.Input asChild>
@@ -831,7 +837,10 @@ export function CommunityEndpointDialog({
                                                             : form.modality ===
                                                                 "embedding"
                                                               ? "text-embedding-3-small"
-                                                              : "gpt-4o-mini"
+                                                              : form.modality ===
+                                                                  "realtime"
+                                                                ? "gpt-realtime"
+                                                                : "gpt-4o-mini"
                                                 }
                                                 align="end"
                                                 open={providerModelMenuOpen}
@@ -988,7 +997,15 @@ export function CommunityEndpointDialog({
                             </ModelFormRow>
                         </div>
                     </AuthInfoCard>
-                    {!isEndpointAgent && (
+                    {!isEndpointAgent && form.modality === "realtime" && (
+                        <Alert intent="info">
+                            Realtime uses OpenAI-compatible WebSockets and token
+                            pricing. Cached text and audio use the same
+                            cached-input rate. Prompt safety checks and fallback
+                            models are not available.
+                        </Alert>
+                    )}
+                    {!isEndpointAgent && form.modality !== "realtime" && (
                         <AuthInfoCard>
                             <SafetyFeatureSelector
                                 value={form.requiredSafetyFeatures}
@@ -1002,7 +1019,7 @@ export function CommunityEndpointDialog({
                             />
                         </AuthInfoCard>
                     )}
-                    {isShared && (
+                    {isShared && form.modality !== "realtime" && (
                         <AuthInfoCard>
                             <ModelFormRow
                                 label="Fallback models"

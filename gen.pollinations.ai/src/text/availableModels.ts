@@ -407,7 +407,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "stepfun/step-3.7-flash",
-        config: portkeyConfig["stepfun-ai/Step-3.7-Flash"],
+        config: portkeyConfig["stepfun/step-3.7-flash"],
+        transform: mandatoryReasoning,
+    },
+    {
+        name: "stepfun/step-3.7-flash:vercel",
+        config: portkeyConfig["stepfun/step-3.7-flash:vercel"],
         transform: mandatoryReasoning,
     },
     {

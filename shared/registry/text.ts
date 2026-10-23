@@ -3900,14 +3900,14 @@ const TEXT_BASE_SERVICES = {
             "step-flash-3.7",
             "step-flash",
         ],
-        provider: "deepinfra",
+        provider: "novita",
         publisher: "StepFun",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // DeepInfra stepfun-ai/Step-3.7-Flash posted rates (2026-07-30):
+            // Novita stepfun/step-3.7-flash posted rates (2026-10-23):
             // prompt $0.20/M, completion $1.15/M, cache read $0.04/M
             promptTextTokens: perMillion(0.2),
             promptCachedTokens: perMillion(0.04),
@@ -3919,8 +3919,8 @@ const TEXT_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
-        // Emits a chain-of-thought `reasoning` field (verified live); reasoning
-        // tokens are billed within completion_tokens at the completionText rate.
+        // Emits chain-of-thought (verified live); reasoning tokens are billed
+        // within completion_tokens at the completionText rate.
         reasoning: true,
         contextLength: 256000,
         isSpecialized: false,

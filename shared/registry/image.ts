@@ -60,7 +60,7 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "FLUX.1 Kontext Pro",
         description:
-            "Edits an existing image from plain instructions — swap, restyle, refine",
+            "Edits an existing image from instructions: swap, restyle or refine",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 1, // Azure FLUX.1 Kontext edit route forwards one input image.
@@ -179,6 +179,30 @@ const IMAGE_BASE_SERVICES = {
         title: "FLUX.3 Image",
         description:
             "Flagship text-to-image and multi-reference editing at 1K or 2K with up to ten references",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
+    },
+    "black-forest-labs/flux-3-image-klein": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Black Forest Labs",
+        category: "image",
+        addedDate: new Date("2026-10-15").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // fal pricing (2026-10-18): $0.009 per billed unit. fal bills BFL's
+        // per-image tiers in these units (1K = 1, 4K = 4), so price = fal's
+        // charge. Usage counts millionths of a unit.
+        cost: {
+            completionImageTokens: perMillion(0.009),
+        },
+        priceUnits: {
+            completionImageTokens: { unit: "megapixel", quantity: 1_000_000 },
+        },
+        title: "FLUX.3 Image Klein",
+        description:
+            "Distilled text-to-image and multi-reference editing up to 4K with up to ten references",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10,
@@ -1063,7 +1087,7 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p"],
         title: "Wan 2.2",
         description:
-            "Cheap 5-second silent clips at 480p — great for quick drafts",
+            "Generates low-cost, 5-second silent clips at 480p for drafts",
         inputModalities: ["text", "image"],
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame"],

@@ -45,7 +45,8 @@ export default defineConfig({
         tanstackRouter({ autoCodeSplitting: true }),
         react(),
         tailwindcss(),
-        cloudflare(),
+        // Tests run in Node, not the Worker runtime.
+        ...(process.env.VITEST ? [] : [cloudflare()]),
     ],
     resolve: {
         alias: [

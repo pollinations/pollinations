@@ -1,0 +1,13 @@
+{
+  "name": "mama-barbara",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "check": "wrangler deploy --dry-run",
+    "deploy": "sops exec-file --no-fifo secrets.vars.json 'wrangler deploy --secrets-file {} --var KIT_REF:$GITHUB_SHA' && sops exec-env secrets.vars.json 'node webhook.ts'"
+  },
+  "devDependencies": {
+    "wrangler": "^4.151.3"
+  }
+}

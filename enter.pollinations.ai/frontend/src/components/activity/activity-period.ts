@@ -12,13 +12,24 @@ export type ActivityPeriod = PeriodSelection & {
 };
 export const ACTIVITY_MIN_DATE = new Date("2026-01-01T00:00:00Z");
 
+// Periods and chart buckets are calendar values stored as UTC dates; the API
+// resolves them in the browser's timezone.
+export function activityTimezone(): string {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+
+/** The browser's wall-clock time as a calendar value. */
+export function activityNow(now = new Date()): Date {
+    return new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
+}
+
 export function activityDate(value: ActivityPeriod): Date {
     return periodToWindow(value).start;
 }
 
 export function isActivitySelectable(
     value: ActivityPeriod,
-    now = new Date(),
+    now = activityNow(),
 ): boolean {
     return isPeriodSelectable(value, ACTIVITY_MIN_DATE, now);
 }
@@ -36,7 +47,7 @@ export function parseActivityPeriod(
     bucket: unknown,
     anchor?: unknown,
 ): ActivityPeriod {
-    const fallback = periodFromDate("day");
+    const fallback = periodFromDate("day", activityNow());
     if (
         (granularity !== "day" && granularity !== "month") ||
         typeof period !== "string"
@@ -64,7 +75,7 @@ export function parseActivityPeriod(
                 ? `${bucket.replace(" ", "T")}:00:00Z`
                 : `${bucket}T00:00:00Z`,
         );
-        if (selectedDate >= ACTIVITY_MIN_DATE && selectedDate <= new Date())
+        if (selectedDate >= ACTIVITY_MIN_DATE && selectedDate <= activityNow())
             value.bucket = bucket;
     }
     if (
@@ -77,7 +88,7 @@ export function parseActivityPeriod(
             Number.isFinite(anchorDate.getTime()) &&
             anchorDate.toISOString().slice(0, 10) === anchor &&
             anchorDate >= ACTIVITY_MIN_DATE &&
-            anchorDate <= new Date()
+            anchorDate <= activityNow()
         )
             value.anchor = anchor;
     }
@@ -85,7 +96,10 @@ export function parseActivityPeriod(
 }
 
 // The anchor keeps the preferred day even while viewing a shorter month.
-function rememberedActivityDate(value: ActivityPeriod, now = new Date()): Date {
+function rememberedActivityDate(
+    value: ActivityPeriod,
+    now = activityNow(),
+): Date {
     const start = activityDate(value);
     const anchor = new Date(
         `${value.bucket?.slice(0, 10) ?? value.anchor ?? start.toISOString().slice(0, 10)}T00:00:00Z`,

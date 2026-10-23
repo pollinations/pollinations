@@ -27,6 +27,7 @@ export default defineConfig({
             "operations/economics/web/src/components/ReconcilePro.test.tsx",
             "operations/economics/web/src/fixtures.test.ts",
             "operations/economics/web/scripts/check-tinybird-contract.test.mjs",
+            "operations/economics/web/worker/planning.test.ts",
             "operations/economics/web/src/components/SourceRecovery.test.tsx",
             "operations/economics/web/src/lib/allocationIntegrity.test.ts",
             "operations/economics/web/src/lib/creditProjectionHorizon.test.ts",

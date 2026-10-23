@@ -121,12 +121,17 @@ test("all three apps use real identity OAuth and keep sign-out independent", asy
         Response.json({ data: [] });
     await mocks.enable("tinybird");
     const upstream = globalThis.fetch;
-    vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
-        const request = new Request(input, init);
-        return request.url.startsWith(`${ENTER}/api/auth/`)
-            ? SELF.fetch(request)
-            : upstream(input, init);
-    });
+    // A new mock, not vi.spyOn: spying on the fixture's fetch mock returns
+    // that same mock, so `upstream` would call itself.
+    vi.stubGlobal(
+        "fetch",
+        vi.fn<typeof fetch>((input, init) => {
+            const request = new Request(input, init);
+            return request.url.startsWith(`${ENTER}/api/auth/`)
+                ? SELF.fetch(request)
+                : upstream(input, init);
+        }),
+    );
     const sessions = new Map<string, string>();
     for (const app of apps) {
         const response = await login(app, enterCookie);

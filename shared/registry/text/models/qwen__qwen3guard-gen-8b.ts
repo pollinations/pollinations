@@ -19,8 +19,7 @@ export default {
         completionTextTokens: perMillion(0),
     },
     title: "Qwen3Guard 8B",
-    description:
-        "Flags unsafe content — a moderation filter, not a chat companion",
+    description: "Flags unsafe content for moderation",
     inputModalities: ["text"],
     outputModalities: ["text"],
     isSpecialized: true,

@@ -20,10 +20,10 @@ export default {
     paidOnly: true,
     priceMultiplier: 1,
     cost: {
-        // OpenRouter Novita BF16 preserves remote image URLs; verified 2026-08-22.
-        promptTextTokens: perMillion(0.13) * 1.055,
-        promptImageTokens: perMillion(0.13) * 1.055,
-        completionTextTokens: perMillion(0.4) * 1.055,
+        // OpenRouter DeepInfra FP8; rates verified 2026-10-22.
+        promptTextTokens: perMillion(0.07) * 1.055,
+        promptImageTokens: perMillion(0.07) * 1.055,
+        completionTextTokens: perMillion(0.34) * 1.055,
     },
     title: "Gemma 4 26B A4B",
     description:

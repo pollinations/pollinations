@@ -23,8 +23,7 @@ export default {
         completionTextTokens: perMillion(4.0) * 1.055,
     },
     title: "Moonshot Kimi K2.7 Code",
-    description:
-        "Built for agentic coding — plans, reasons and edits code step by step",
+    description: "Agentic coding: plans, reasons and edits code step by step",
     inputModalities: ["text", "image"],
     outputModalities: ["text"],
     maxReferenceImages: 30,

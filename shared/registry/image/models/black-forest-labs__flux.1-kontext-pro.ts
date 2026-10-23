@@ -14,7 +14,7 @@ export default {
     },
     title: "FLUX.1 Kontext Pro",
     description:
-        "Edits an existing image from plain instructions — swap, restyle, refine",
+        "Edits an existing image from instructions: swap, restyle or refine",
     inputModalities: ["text", "image"],
     outputModalities: ["image"],
     maxReferenceImages: 1, // Azure FLUX.1 Kontext edit route forwards one input image.

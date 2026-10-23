@@ -17,7 +17,7 @@ export default {
     },
     resolutions: ["480p"],
     title: "Wan 2.2",
-    description: "Cheap 5-second silent clips at 480p — great for quick drafts",
+    description: "Generates low-cost, 5-second silent clips at 480p for drafts",
     inputModalities: ["text", "image"],
     outputModalities: ["video"],
     videoCapabilities: ["start_frame", "end_frame"],

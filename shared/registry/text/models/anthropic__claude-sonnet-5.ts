@@ -21,8 +21,7 @@ export default {
         completionTextTokens: perMillion(10),
     },
     title: "Claude Sonnet 5",
-    description:
-        "Sharp reasoning with fast responses — a strong default for most work",
+    description: "Reasoning model with fast responses for general use",
     inputModalities: ["text", "image"],
     outputModalities: ["text"],
     maxReferenceImages: 20, // Bedrock Converse image limit.

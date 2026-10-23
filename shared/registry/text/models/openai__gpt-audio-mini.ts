@@ -28,8 +28,7 @@ export default {
         completionAudioTokens: perMillion(20.0),
     },
     title: "GPT Audio Mini",
-    description:
-        "Talks and listens — voice conversations with spoken or text replies",
+    description: "Voice conversations with spoken or text replies",
     voices: [...AUDIO_VOICES],
     inputModalities: ["text", "audio"],
     outputModalities: ["audio", "text"],

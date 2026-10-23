@@ -26,7 +26,7 @@ export default {
     },
     title: "Qwen3 VL 30B A3B Instruct",
     description:
-        "Fast image understanding — describes, reads and analyzes what it sees",
+        "Describes images, reads text in them, and analyzes visual content",
     inputModalities: ["text", "image"],
     outputModalities: ["text"],
     tools: true,

@@ -670,6 +670,21 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "meta/muse-spark-open": {
+        // Same model on BaseTen through Vercel's AI Gateway, which adds no
+        // fee. Covers Fireworks failures.
+        "meta/muse-spark-open:vercel:baseten": {
+            // Vercel lists the same parameters as for Muse Wonder (2026-10-23).
+            supportedParameters: CHAT_PARAMETERS.vercelMuseWonder,
+            provider: "vercel",
+            // Vercel AI Gateway BaseTen rates (2026-10-23).
+            cost: {
+                promptTextTokens: perMillion(1.25),
+                promptCachedTokens: perMillion(0.15),
+                completionTextTokens: perMillion(4.25),
+            },
+        },
+    },
     "meta/muse-wonder-1.0": {
         "meta/muse-wonder-1.0:vercel": {
             supportedParameters: CHAT_PARAMETERS.vercelMuseWonder,

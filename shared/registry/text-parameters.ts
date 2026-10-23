@@ -329,6 +329,17 @@ export const CHAT_PARAMETERS = {
         "top_p",
     ],
     museSpark: [...CHAT, "temperature", "tools"],
+    // The 12 parameters all three OpenRouter endpoints share (2026-10-15).
+    openRouterMuseSparkOpen: [
+        ...CHAT,
+        ...TOOLS,
+        ...SAMPLING,
+        "stop",
+        ...PENALTIES,
+        "top_k",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
     // OpenRouter endpoint parameters (2026-10-12); Meta is its only endpoint.
     openRouterMuseWonder: [
         ...TOOL_CHAT,

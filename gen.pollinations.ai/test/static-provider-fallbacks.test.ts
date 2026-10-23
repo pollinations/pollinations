@@ -1111,6 +1111,18 @@ describe("static provider fallbacks", () => {
             promptCachedTokens: (0.04 / 1_000_000) * 1.055,
             completionTextTokens: (0.2 / 1_000_000) * 1.055,
         });
+        expect(TEXT_SERVICES["meta/muse-spark-open"].cost).toMatchObject({
+            promptTextTokens: 1.25 / 1_000_000,
+            promptCachedTokens: 0.15 / 1_000_000,
+            completionTextTokens: 4.25 / 1_000_000,
+        });
+        expect(
+            TEXT_SERVICES["meta/muse-spark-open:vercel:baseten"].cost,
+        ).toMatchObject({
+            promptTextTokens: 1.25 / 1_000_000,
+            promptCachedTokens: 0.15 / 1_000_000,
+            completionTextTokens: 4.25 / 1_000_000,
+        });
         expect(
             TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"].cost,
         ).toMatchObject({

@@ -1143,6 +1143,16 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["meta/muse-spark-1.2"],
     },
     {
+        name: "meta/muse-spark-open",
+        config: portkeyConfig["accounts/fireworks/models/muse-spark-open"],
+        transform: mandatoryReasoning,
+    },
+    {
+        name: "meta/muse-spark-open:vercel:baseten",
+        config: portkeyConfig["meta/muse-spark-open:vercel:baseten"],
+        transform: mandatoryReasoning,
+    },
+    {
         name: "meta/muse-wonder-1.0",
         config: portkeyConfig["meta/muse-wonder-1.0"],
         transform: mandatoryReasoning,

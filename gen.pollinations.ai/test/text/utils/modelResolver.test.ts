@@ -689,6 +689,28 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("routes Muse Spark Open directly to Fireworks with a BaseTen fallback on Vercel", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "meta/muse-spark-open",
+        });
+        const fallback = resolveModelConfig(messages, {
+            model: "meta/muse-spark-open:vercel:baseten",
+        });
+
+        expect(primary.options.model).toBe(
+            "accounts/fireworks/models/muse-spark-open",
+        );
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(primary.options.provider).toBeUndefined();
+        expect(fallback.options.model).toBe("meta/muse-spark-open");
+        expect(fallback.options.providerOptions).toEqual({
+            gateway: { only: ["baseten"] },
+        });
+    });
+
     it("routes Muse Glimmer directly to DeepInfra", () => {
         const result = resolveModelConfig(messages, { model: "muse-glimmer" });
 

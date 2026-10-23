@@ -896,6 +896,12 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "accounts/fireworks/models/deepseek-v4p1-flash-1017",
         }),
 
+    // -- Fireworks AI (Muse Spark Open) --------------------------------------
+    "accounts/fireworks/models/muse-spark-open": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/muse-spark-open",
+        }),
+
     // -- Fireworks AI (Kimi, GLM, Qwen) --------------------------------------
     "accounts/fireworks/models/kimi-k3": () =>
         createFireworksModelConfig({
@@ -1125,6 +1131,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     "meta/muse-wonder-1.0:vercel": () =>
         createVercelAIGatewayModelConfig({
             model: "meta/muse-wonder-1.0",
+        }),
+    "meta/muse-spark-open:vercel:baseten": () =>
+        createVercelAIGatewayModelConfig({
+            model: "meta/muse-spark-open",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["baseten"] } },
+            },
         }),
 
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------

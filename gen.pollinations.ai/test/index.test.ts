@@ -354,6 +354,7 @@ describe("gen worker routing", () => {
             "/docs/llm.txt?section=publish-an-agent",
             "/docs/llm.txt?section=publish-a-model",
             "/docs/llm.txt?section=sandboxes",
+            "/docs/llm.txt?section=sites",
             "/docs/llm.txt?section=coding-harnesses",
             "/docs/llm.txt?section=mcp",
             "/docs/llm.txt?section=cli",

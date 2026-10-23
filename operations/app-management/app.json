@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🖼️",
+    "name": "Pollinations Model Tester",
+    "url": "https://polli-model-tester-9321atohv-scriptsnsenses-8753s-projects.vercel.app",
+    "description": "The app is [Pollinations.ai](https://pollinations.ai/) Models Tester — a single-file, browser-based playground for comparing Pollinations text models side-by-side. The app lets you enter any model ID ",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "scriptsnsenses-sys",
+    "githubUserId": "251958874",
+    "repositoryUrl": "https://github.com/scriptsnsenses-sys/Pollinations-Model-Tester",
+    "repositoryStars": null,
+    "discordUsername": "dgamez202",
+    "other": null,
+    "submittedDate": "2026-10-20",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17942",
+    "approvedDate": "2026-10-23",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/e550c155-790b-4c03-ba90-f6e0c1e1083e"
+  },
+  {
+    "emoji": "🖼️",
     "name": "Teapot Art",
     "url": "https://svirepyibambr.github.io/teapot-art",
     "description": "A one-page image generator: describe what you want in words — get a picture. Single static HTML file, no build step, no dependencies. Generation goes through the Pollinations image API; a user key is ",

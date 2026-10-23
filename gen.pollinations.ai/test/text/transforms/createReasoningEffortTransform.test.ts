@@ -120,6 +120,8 @@ describe("reasoning_effort model wiring", () => {
         "qwen-vision-pro",
         "thinkingmachines/inkling",
         "kimi-code",
+        "meta/muse-spark-open",
+        "meta/muse-spark-open:openrouter:baseten",
     ])("drops off-value on mandatory-reasoning model %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);

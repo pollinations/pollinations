@@ -1,4 +1,7 @@
-import type { GenerationJob } from "@/middleware/generation-deduplication.ts";
+import type {
+    GenerationJob,
+    GenerationJobHead,
+} from "@/middleware/generation-deduplication.ts";
 import { executeGeneration } from "@/utils/execute-generation.ts";
 
 /** Keeps provider mocks in one isolate while exercising the real middleware. */
@@ -10,11 +13,29 @@ export function withInlineGenerationCoordinator(
     coordinated.GENERATION_COORDINATOR = {
         getByName(name: string) {
             return {
-                async startAndWait(job: GenerationJob) {
+                async startAndWait(
+                    head: GenerationJobHead,
+                    body?: ReadableStream<Uint8Array>,
+                ) {
                     let execution = active.get(name);
                     if (!execution) {
+                        const job: GenerationJob = body
+                            ? {
+                                  ...head,
+                                  request: {
+                                      ...head.request,
+                                      body: new Uint8Array(
+                                          await new Response(
+                                              body,
+                                          ).arrayBuffer(),
+                                      ),
+                                  },
+                              }
+                            : head;
                         execution = executeGeneration(job, coordinated);
                         active.set(name, execution);
+                    } else {
+                        await body?.cancel();
                     }
                     try {
                         const completed = await execution;

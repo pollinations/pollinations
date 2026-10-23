@@ -7,24 +7,13 @@ import { githubSecretScanningRoutes } from "./routes/github-secret-scanning.ts";
 import { questLeaderboardRoutes } from "./routes/quest-leaderboard.ts";
 import { stripeWebhooksRoutes } from "./routes/stripe-webhooks.ts";
 
-// API keys are created and updated exclusively through our own /api/api-keys
-// routes, which validate redirect URIs (rejecting javascript:/data: schemes) and
-// strip server-only metadata. Better Auth's native create/update endpoints store
-// caller metadata verbatim, so leaving them open lets any session bypass that
-// validation. Block them; delete/verify/list/get stay open (the frontend deletes
-// via authClient.apiKey.delete).
+// API keys are managed only through /account/keys, which validates redirect
+// URIs (rejecting javascript:/data: schemes) and strips server-only metadata.
+// Better Auth's native api-key endpoints store caller metadata verbatim and
+// duplicate that API, so they are all blocked.
 const authRoutes = new Hono<Env>()
-    .all("/api-key/create", (c) =>
-        c.json(
-            { error: "Manage API keys through the /api/api-keys routes" },
-            405,
-        ),
-    )
-    .all("/api-key/update", (c) =>
-        c.json(
-            { error: "Manage API keys through the /api/api-keys routes" },
-            405,
-        ),
+    .all("/api-key/*", (c) =>
+        c.json({ error: "Manage API keys through /account/keys" }, 405),
     )
     .on(["GET", "POST"], "*", async (c) => {
         return await createAuth(c.env, c.executionCtx).handler(c.req.raw);

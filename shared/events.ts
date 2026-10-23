@@ -35,7 +35,23 @@ export async function sendToTinybird(
     tinybirdIngestToken: string,
     log: Logger,
 ): Promise<void> {
-    const body = JSON.stringify(removeUnset(event));
+    // Tinybird's historical image columns are UInt32. Fractional usage belongs
+    // in Float64 unit columns; never round it or send it to an integer column.
+    const body = JSON.stringify(
+        removeUnset({
+            ...event,
+            usagePromptImageUnits: event.tokenCountPromptImage,
+            usageCompletionImageUnits: event.tokenCountCompletionImage,
+            tokenCountPromptImage: Number.isInteger(event.tokenCountPromptImage)
+                ? event.tokenCountPromptImage
+                : undefined,
+            tokenCountCompletionImage: Number.isInteger(
+                event.tokenCountCompletionImage,
+            )
+                ? event.tokenCountCompletionImage
+                : undefined,
+        }),
+    );
 
     try {
         const response = await fetch(tinybirdIngestUrl, {

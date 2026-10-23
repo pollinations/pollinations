@@ -20,6 +20,7 @@ import {
     type ModelMessage,
     stepCountIs,
     ToolLoopAgent,
+    type ToolSet,
 } from "ai";
 
 const log = getLogger(["gen", "prompt-agent-runtime"]);
@@ -91,6 +92,7 @@ async function createAgent(
     runtime: PromptAgentRuntime,
     signal: AbortSignal,
     settings: PromptAgentGenerationSettings = {},
+    callerTools: ToolSet = {},
 ) {
     const genBaseUrl = runtime.genBaseUrl.replace(/\/$/, "");
     // Wait for every loader so a late-opening session is also closed on failure.
@@ -102,7 +104,18 @@ async function createAgent(
                 runtime.apiKey,
                 signal,
                 runtime.fetcher,
-            ),
+            ).catch((error) => {
+                log.warn("MCP_SERVER_FAILED: name={name} error={error}", {
+                    name: serverId,
+                    error,
+                });
+                // The caller sees which server broke the run; the text is that
+                // server's reply to the caller's own key.
+                throw new Error(
+                    `MCP server ${serverId} failed: ${error instanceof Error ? error.message : String(error)}`,
+                    { cause: error },
+                );
+            }),
         ),
     );
     const loadedServers = serverResults.flatMap((result) =>
@@ -161,7 +174,7 @@ async function createAgent(
               }
             : runtime.config.systemPrompt,
         allowSystemInMessages: true,
-        tools,
+        tools: { ...callerTools, ...tools },
         stopWhen: stepCountIs(MAX_STEPS),
         ...agentSettings,
         // Model calls spend the caller's balance, so do not retry billed calls.
@@ -171,8 +184,21 @@ async function createAgent(
     return { agent, close, toolCallCounts };
 }
 
-function hitStepLimit(reason: FinishReason, stepCount: number): boolean {
-    return reason === "tool-calls" && stepCount >= MAX_STEPS;
+function hitStepLimit(
+    reason: FinishReason,
+    steps: Awaited<ReturnType<typeof runSdkAgent>>["steps"],
+    callerTools: ToolSet,
+): boolean {
+    return (
+        reason === "tool-calls" &&
+        steps.length >= MAX_STEPS &&
+        !steps
+            .at(-1)
+            ?.toolCalls.some(
+                (call) =>
+                    !call.invalid && Object.hasOwn(callerTools, call.toolName),
+            )
+    );
 }
 
 export async function runPromptAgent(
@@ -181,11 +207,13 @@ export async function runPromptAgent(
     signal: AbortSignal,
     onPart: (part: AgentPart) => void,
     settings: PromptAgentGenerationSettings = {},
+    callerTools: ToolSet = {},
 ): Promise<AgentOutput> {
     const { agent, close, toolCallCounts } = await createAgent(
         runtime,
         signal,
         settings,
+        callerTools,
     );
     try {
         const result = await runSdkAgent(agent, {
@@ -194,7 +222,11 @@ export async function runPromptAgent(
             stream: false,
             onPart,
         });
-        const limited = hitStepLimit(result.finishReason, result.steps.length);
+        const limited = hitStepLimit(
+            result.finishReason,
+            result.steps,
+            callerTools,
+        );
         if (limited) {
             onPart({ type: "text-delta", text: `\n\n${STEP_LIMIT_MESSAGE}` });
         }
@@ -216,11 +248,13 @@ export async function streamPromptAgent(
     signal: AbortSignal,
     onPart: (part: AgentPart) => void,
     settings: PromptAgentGenerationSettings = {},
+    callerTools: ToolSet = {},
 ): Promise<AgentOutput> {
     const { agent, close, toolCallCounts } = await createAgent(
         runtime,
         signal,
         settings,
+        callerTools,
     );
     try {
         const { finishReason: reason, steps } = await runSdkAgent(agent, {
@@ -229,7 +263,7 @@ export async function streamPromptAgent(
             stream: true,
             onPart,
         });
-        const limited = hitStepLimit(reason, steps.length);
+        const limited = hitStepLimit(reason, steps, callerTools);
         if (limited) {
             onPart({ type: "text-delta", text: `\n\n${STEP_LIMIT_MESSAGE}` });
         }

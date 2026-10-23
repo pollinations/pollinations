@@ -2,6 +2,7 @@ import { Section } from "@pollinations/ui";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import {
     type ActivityPeriod,
+    activityTimezone,
     parseActivityPeriod,
 } from "../components/activity/activity-period";
 import { EarningsGraph } from "../components/activity/earnings-graph.tsx";
@@ -44,6 +45,8 @@ export const Route = createFileRoute("/_dashboard/activity")({
             earningsBucket: earnings.bucket,
             earningsAnchor: earnings.anchor,
             usageMetric: metric(search.usageMetric),
+            usageGroup:
+                search.usageGroup === "key" ? ("key" as const) : undefined,
             usageKeys: stringArray(search.usageKeys),
             usageModels: stringArray(search.usageModels),
             earningsMetric: metric(search.earningsMetric),
@@ -86,7 +89,7 @@ function ActivityPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6">
+        <>
             <Section title="Usage" framed>
                 <UsageSection
                     period={usagePeriod}
@@ -99,6 +102,12 @@ function ActivityPage() {
                         })
                     }
                     metric={search.usageMetric ?? "pollen"}
+                    groupBy={search.usageGroup ?? "model"}
+                    onGroupByChange={(group) =>
+                        updateSearch({
+                            usageGroup: group === "key" ? group : undefined,
+                        })
+                    }
                     selectedKeyIds={search.usageKeys ?? []}
                     selectedModels={search.usageModels ?? []}
                     onMetricChange={(metric) =>
@@ -160,9 +169,9 @@ function ActivityPage() {
             <Section title="Last events" framed>
                 <LastEventsPanel />
             </Section>
-            <p className="text-micro text-theme-text-muted">
-                Times shown in UTC.
+            <p className="px-4 text-micro text-theme-text-muted sm:px-0">
+                Times shown in your timezone ({activityTimezone()}).
             </p>
-        </div>
+        </>
     );
 }

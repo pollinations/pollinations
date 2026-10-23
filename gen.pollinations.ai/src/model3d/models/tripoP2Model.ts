@@ -1,4 +1,5 @@
 import { UpstreamError } from "@shared/error.ts";
+import { falBillableUnits } from "../../image/utils/falBillableUnits.ts";
 import type { Model3dGenerationResult } from "../createAndReturnModel3d.ts";
 import {
     assertGlb,
@@ -7,7 +8,7 @@ import {
     toUpstreamError,
 } from "../modelUtils.ts";
 import type { Model3dParams } from "../params.ts";
-import { extractFalModelMesh, runFalJobWithUsage } from "./falClient.ts";
+import { extractFalModelMesh, runFalJobResponse } from "./falClient.ts";
 
 export async function callTripoP2(
     prompt: string,
@@ -20,7 +21,7 @@ export async function callTripoP2(
         });
     }
     try {
-        const { data, billableUnits } = await runFalJobWithUsage({
+        const response = await runFalJobResponse({
             endpoint: "tripo3d/p2/text-to-3d",
             input: {
                 prompt,
@@ -40,6 +41,8 @@ export async function callTripoP2(
                       }),
             },
         });
+        const billableUnits = falBillableUnits(response);
+        const data = (await response.json()) as Record<string, unknown>;
         const buffer = await downloadMesh(extractFalModelMesh(data).url);
         assertGlb(buffer);
         return {

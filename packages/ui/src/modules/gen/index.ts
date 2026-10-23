@@ -10,4 +10,8 @@ export {
     ModelSelector,
     type ModelSelectorCategory,
 } from "./ModelSelector.tsx";
-export { getModalityKey } from "./themes.ts";
+export {
+    getModalityKey,
+    modalityBgVar,
+    modalityTextColor,
+} from "./themes.ts";

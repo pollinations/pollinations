@@ -5,18 +5,35 @@ import {
 } from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
 import economicsRegistry from "../../operations/economics/provider-registry.json";
+import type { CanonicalModelTarget } from "../../operations/economics/web/src/lib/providerRegistry";
 import migrationSql from "../drizzle/0062_standardize-model-permissions.sql?raw";
 
 const modelMappings = [
     ...migrationSql.matchAll(/\('([^']+)', '([^']+)'\)/g),
 ].map((match) => [match[1], match[2]] as const);
 
-it("pins Economics identity bridges to exactly the reviewed public promotions", () => {
-    expect(economicsRegistry.canonicalModelRenames).toEqual(
-        Object.fromEntries(
-            modelMappings.filter(([oldId]) => oldId !== "zimage-fal"),
-        ),
-    );
+it("keeps Economics September identities aligned with the reviewed public promotions", () => {
+    const renames: Record<string, CanonicalModelTarget> =
+        economicsRegistry.canonicalModelRenames;
+    // Historical aliases can have earlier provider-specific meanings. The
+    // public release contract is the unrestricted September promotion.
+    for (const [oldId, newId] of modelMappings) {
+        if (oldId === "zimage-fal") continue;
+        const target = renames[oldId];
+        const models =
+            typeof target === "string"
+                ? [target]
+                : target
+                      ?.filter(
+                          (rule) =>
+                              !rule.provider &&
+                              rule.from <= "2026-09" &&
+                              (!rule.until || rule.until >= "2026-09"),
+                      )
+                      .map((rule) => rule.model);
+        expect(models, oldId).toEqual([newId]);
+    }
+    expect(renames).not.toHaveProperty("zimage-fal");
 });
 
 // Public canonical IDs immediately before this release. Keep this fixture
@@ -181,8 +198,16 @@ const retiredPublicIds = [
     "nemotron-3.5-lightning",
     "qwen3.8-27b",
 ] as const;
+const retiredNovaAliases: Record<string, string> = {
+    "nova-canvas": "amazon/nova-canvas-v1",
+    "nova-reel": "amazon/nova-reel-v1",
+};
+const retiredNovaCanonicalIds = new Set(Object.values(retiredNovaAliases));
+const historicalModelName = (id: string): string =>
+    retiredNovaAliases[id] ??
+    (retiredNovaCanonicalIds.has(id) ? id : resolveModelName(id));
 const publishedMappings = retiredPublicIds.map(
-    (id) => [id, resolveModelName(id)] as const,
+    (id) => [id, historicalModelName(id)] as const,
 );
 
 const hiddenMappings = [["zimage-fal", "tongyi-mai/z-image-turbo"]] as const;
@@ -238,7 +263,7 @@ describe("standardize model permissions migration", () => {
             new Map(
                 modelMappings.map(
                     ([oldId, newId]) =>
-                        [oldId, resolveModelName(newId)] as const,
+                        [oldId, historicalModelName(newId)] as const,
                 ),
             ),
         ).toEqual(new Map([...publishedMappings, ...hiddenMappings]));
@@ -261,7 +286,10 @@ describe("standardize model permissions migration", () => {
         expect(migrationSql).toContain("WITH renames(old_id, new_id)");
         expect(migrationSql).not.toContain("AS MATERIALIZED");
         for (const [retiredId, canonicalId] of modelMappings) {
-            if (retiredId !== "zimage-fal") {
+            if (retiredNovaAliases[retiredId]) {
+                expect(canonicalId).toBe(retiredNovaAliases[retiredId]);
+                expect(() => resolveModelName(retiredId)).toThrow();
+            } else if (retiredId !== "zimage-fal") {
                 const currentId = resolveModelName(canonicalId);
                 expect(resolveModelName(retiredId)).toBe(currentId);
                 expect(getRegistryModelDefinition(currentId).aliases).toContain(

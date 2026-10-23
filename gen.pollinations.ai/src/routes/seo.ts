@@ -77,6 +77,8 @@ export function docsSocialHeadTags(c: Context<Env>): string {
     <meta name="theme-color" content="${SEO_THEME_COLOR}" />
     <meta name="description" content="${description}" />
     <link rel="canonical" href="${canonical}" />
+    <link rel="describedby" href="${getPublicOrigin(c)}/llms.txt" type="text/plain" />
+    <link rel="alternate" href="${getPublicOrigin(c)}/docs/llm.txt" type="text/plain" />
 
     <!-- Open Graph / Social Media Meta Tags -->
     <meta property="og:title" content="${title}" />

@@ -1,9 +1,19 @@
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { setKeyOverride } from "../lib/config.js";
-import { setOutputMode } from "../lib/output.js";
+import { requireFile } from "../lib/input-file.js";
+import { ExitSignal, setOutputMode } from "../lib/output.js";
+import { agentsCommand } from "./agents.js";
 import { createChatCommand } from "./gen/chat.js";
+import { createIsolateCommand } from "./gen/isolate.js";
 import { createTextCommand } from "./gen/text.js";
+import { createTranscribeCommand } from "./gen/transcribe.js";
+import { createVoiceChangeCommand } from "./gen/voice-change.js";
+import { keysCommand } from "./keys.js";
 import { modelsCommand } from "./models.js";
+import { uploadCommand } from "./upload.js";
 
 const originalStdinTTY = process.stdin.isTTY;
 
@@ -27,9 +37,6 @@ function prepare() {
     setOutputMode("json");
     vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-    vi.spyOn(process, "exit").mockImplementation(() => {
-        throw new Error("CLI exited");
-    });
     const fetch = vi.fn(async (_url: string, _init: RequestInit) =>
         Response.json({
             choices: [{ message: { content: "ok" } }],
@@ -41,16 +48,71 @@ function prepare() {
 }
 
 describe("CLI argument validation", () => {
-    it.each([
-        "bogus",
-        "Text",
-        "",
-    ])("rejects unknown model type %j before fetching", async (type) => {
+    it("prints an invalid key budget only once", async () => {
         const fetch = prepare();
         await expect(
-            modelsCommand.parseAsync(["--type", type], { from: "user" }),
-        ).rejects.toThrow("CLI exited");
+            keysCommand.parseAsync(
+                ["create", "--name", "test", "--budget", "-1"],
+                { from: "user" },
+            ),
+        ).rejects.toThrow(ExitSignal);
+        expect(vi.mocked(process.stderr.write).mock.calls).toEqual([
+            [expect.stringContaining("--budget must be a non-negative number")],
+        ]);
         expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("prints an invalid agent option only once", async () => {
+        const fetch = prepare();
+        await expect(
+            agentsCommand.parseAsync(
+                [
+                    "create",
+                    "--config",
+                    "unused.json",
+                    "--visibility",
+                    "invalid",
+                ],
+                { from: "user" },
+            ),
+        ).rejects.toThrow(ExitSignal);
+        expect(vi.mocked(process.stderr.write).mock.calls).toEqual([
+            [
+                expect.stringContaining(
+                    "--visibility must be 'private' or 'public'",
+                ),
+            ],
+        ]);
+        expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it.each(["bogus", "Text", ""])(
+        "rejects unknown model type %j before fetching",
+        async (type) => {
+            const fetch = prepare();
+            await expect(
+                modelsCommand.parseAsync(["--type", type], { from: "user" }),
+            ).rejects.toThrow(ExitSignal);
+            expect(fetch).not.toHaveBeenCalled();
+        },
+    );
+
+    it("fetches only /3d/models for --type 3d", async () => {
+        prepare();
+        const fetch = vi.fn(async (url: string) =>
+            url.includes("/3d/models")
+                ? Response.json([
+                      {
+                          name: "microsoft/trellis-2",
+                          output_modalities: ["3d"],
+                      },
+                  ])
+                : Response.json([]),
+        );
+        vi.stubGlobal("fetch", fetch);
+        await modelsCommand.parseAsync(["--type", "3d"], { from: "user" });
+        const urls = fetch.mock.calls.map(([url]) => url as string);
+        expect(urls).toEqual([expect.stringContaining("/3d/models")]);
     });
 
     it("rejects an unknown model type in stats mode too", async () => {
@@ -59,7 +121,7 @@ describe("CLI argument validation", () => {
             modelsCommand.parseAsync(["--stats", "--type", "bogus"], {
                 from: "user",
             }),
-        ).rejects.toThrow("CLI exited");
+        ).rejects.toThrow(ExitSignal);
         expect(fetch).not.toHaveBeenCalled();
     });
 
@@ -77,7 +139,7 @@ describe("CLI argument validation", () => {
             createTextCommand().parseAsync(["hi", flag, value], {
                 from: "user",
             }),
-        ).rejects.toThrow("CLI exited");
+        ).rejects.toThrow(ExitSignal);
         expect(fetch).not.toHaveBeenCalled();
     });
 
@@ -87,7 +149,7 @@ describe("CLI argument validation", () => {
             createTextCommand().parseAsync(["hi", "--image", "./photo.jpg"], {
                 from: "user",
             }),
-        ).rejects.toThrow("CLI exited");
+        ).rejects.toThrow(ExitSignal);
         expect(fetch).not.toHaveBeenCalled();
     });
 
@@ -97,8 +159,46 @@ describe("CLI argument validation", () => {
             createChatCommand().parseAsync(["--temperature", "abc"], {
                 from: "user",
             }),
-        ).rejects.toThrow("CLI exited");
+        ).rejects.toThrow(ExitSignal);
         expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("lets pipes and devices such as /dev/stdin through", () => {
+        expect(requireFile("/dev/null")).toBe(0);
+    });
+
+    describe.each([
+        ["upload", () => uploadCommand],
+        ["gen transcribe", createTranscribeCommand],
+        ["gen isolate", createIsolateCommand],
+        ["gen voice-change", createVoiceChangeCommand],
+    ])("%s input path", (_name, command) => {
+        it("rejects a directory as one CLI error before reading or fetching", async () => {
+            const folder = mkdtempSync(join(tmpdir(), "polli-input-dir-"));
+            try {
+                const fetch = prepare();
+                await expect(
+                    command().parseAsync([folder], { from: "user" }),
+                ).rejects.toThrow(ExitSignal);
+                expect(vi.mocked(process.stderr.write).mock.calls).toEqual([
+                    [expect.stringContaining(`Not a file: ${folder}`)],
+                ]);
+                expect(fetch).not.toHaveBeenCalled();
+            } finally {
+                rmSync(folder, { recursive: true });
+            }
+        });
+
+        it("rejects a missing path as one CLI error before fetching", async () => {
+            const fetch = prepare();
+            await expect(
+                command().parseAsync(["nope.mp3"], { from: "user" }),
+            ).rejects.toThrow(ExitSignal);
+            expect(vi.mocked(process.stderr.write).mock.calls).toEqual([
+                [expect.stringContaining("File not found: nope.mp3")],
+            ]);
+            expect(fetch).not.toHaveBeenCalled();
+        });
     });
 
     it("sends valid numeric options and an HTTP image URL", async () => {

@@ -14,7 +14,10 @@ import {
 // community clients still send `?nofeed=true`, and excluding it from the
 // cache key prevents those requests from fragmenting the cache. "no-cache"
 // and "key" are request controls that must never affect the cache key.
-export const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key"];
+// "stream" is the same class of no-op here: media responses are files or
+// JSON envelopes, never SSE streams, and the query schema strips it —
+// keeping it would split one image across two cache entries.
+export const EXCLUDED_PARAMS = ["nofeed", "no-cache", "key", "stream"];
 export const SAFETY_CACHE_VERSION = "bedrock-input-v1";
 
 function hasActiveSafety(value: string | null | undefined): boolean {
@@ -25,6 +28,7 @@ export async function generateCacheKey(
     url: URL,
     safeHeader?: string | null,
     requiredSafetyFeatures: readonly SafetyFeature[] = [],
+    modelCacheVersion?: string,
 ): Promise<string> {
     const normalizedUrl = new URL(url);
     const hasQuerySafe = normalizedUrl.searchParams.has("safe");
@@ -51,6 +55,9 @@ export async function generateCacheKey(
     }
     if (usesSafety || usesHeaderSafety || requiredSafetyFeatures.length > 0) {
         normalizedUrl.searchParams.append("__safety", SAFETY_CACHE_VERSION);
+    }
+    if (modelCacheVersion) {
+        normalizedUrl.searchParams.append("__model_cache", modelCacheVersion);
     }
 
     const fullPath = normalizedUrl.pathname + normalizedUrl.search;

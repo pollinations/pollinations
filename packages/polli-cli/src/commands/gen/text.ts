@@ -4,6 +4,7 @@ import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
 import { numberOption } from "../../lib/number-option.js";
 import {
+    ExitSignal,
     fail,
     getOutputMode,
     printError,
@@ -11,12 +12,17 @@ import {
     printMeta,
     printResult,
     printSuccess,
+    printWarn,
 } from "../../lib/output.js";
+import { prepareOutputPath } from "../../lib/output-file.js";
 import { readStdin } from "../../lib/stdin.js";
 import { streamSSE } from "../../lib/stream.js";
 
 interface ChatResponse {
-    choices: Array<{ message: { content: string } }>;
+    choices: Array<{
+        message: { content: string };
+        finish_reason?: string | null;
+    }>;
     model: string;
     usage?: { total_tokens: number };
 }
@@ -24,7 +30,7 @@ interface ChatResponse {
 export function createTextCommand() {
     return new Command("text")
         .description(
-            "Generate text from a prompt (also reads stdin: echo 'hello' | polli text)",
+            "Generate text from a prompt (also reads stdin: echo 'hello' | polli gen text)",
         )
         .argument("[prompt]", "Text prompt (or pipe via stdin)")
         .option("--model <model>", "Text model")
@@ -51,14 +57,18 @@ export function createTextCommand() {
             "Wait for full response instead of streaming tokens",
         )
         .action(async (promptArg, opts, command: Command) => {
-            const stdinText = await readStdin();
+            // With a prompt argument, stdin is optional context: don't wait
+            // forever on a caller that leaves stdin open.
+            const stdinText = (
+                await readStdin(promptArg ? 3000 : undefined)
+            ).trim();
             const prompt = promptArg || stdinText;
 
             if (!prompt) {
                 printError(
                     "No prompt provided. Pass as argument or pipe via stdin.",
                 );
-                process.exit(1);
+                throw new ExitSignal(1);
             }
 
             // If both stdin and arg are provided, use arg as prompt and stdin as context
@@ -156,7 +166,16 @@ export function createTextCommand() {
             if (opts.reasoning) body.reasoning_effort = opts.reasoning;
             if (useStream) body.stream = true;
 
+            // Before the paid request, so a bad --output folder costs nothing.
+            if (opts.output) prepareOutputPath(opts.output);
             if (isHuman && !useStream) printInfo("Generating...");
+
+            const warnIfTruncated = (reason?: string | null) => {
+                if (reason === "length")
+                    printWarn(
+                        "The model reached its output token limit; the response may be truncated.",
+                    );
+            };
 
             try {
                 const res = await fetchGen("/v1/chat/completions", {
@@ -177,15 +196,19 @@ export function createTextCommand() {
                     let content = "";
                     let model: string | null = null;
                     let tokens: number | null = null;
+                    let lengthTerminated = false;
                     for await (const chunk of streamSSE(res, (event) => {
                         if (typeof event.model === "string")
                             model = event.model;
                         if (typeof event.usage?.total_tokens === "number")
                             tokens = event.usage.total_tokens;
+                        if (event.choices?.[0]?.finish_reason === "length")
+                            lengthTerminated = true;
                     })) {
                         content += chunk;
                         if (isHuman) process.stdout.write(colorize(chunk));
                     }
+                    if (lengthTerminated) warnIfTruncated("length");
                     if (isHuman) process.stdout.write("\n");
                     if (getOutputMode() === "json") {
                         printResult({ content, model, tokens });
@@ -195,6 +218,7 @@ export function createTextCommand() {
 
                 const data = (await res.json()) as ChatResponse;
                 const content = data.choices[0]?.message?.content ?? "";
+                warnIfTruncated(data.choices[0]?.finish_reason);
 
                 if (opts.output) {
                     writeFileSync(opts.output, content, "utf-8");

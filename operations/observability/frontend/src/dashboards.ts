@@ -9,7 +9,6 @@
 export type SearchResult = {
     uid?: string;
     title?: string;
-    folderUid?: string;
 };
 
 export type Dashboard = {
@@ -23,16 +22,27 @@ export type Dashboard = {
  */
 export const DEFAULT_DASHBOARD_UID = "platform-usage-rebuild";
 
+/** Header range choices, each ending with the last complete UTC day. */
+export const RANGE_LABELS = {
+    "7d": "Last 7 days",
+    "30d": "Last 30 days",
+    "90d": "Last 90 days",
+} as const;
+
+export type Range = keyof typeof RANGE_LABELS;
+
+/** Matches the `time` every provisioned dashboard saves. */
+const DEFAULT_RANGE: Range = "30d";
+
 /**
- * Current dashboards are the ones provisioned at the top level of
- * `provisioning/dashboards/`; `foldersFromFilesStructure` puts everything under
- * `legacy/` into a Grafana folder. Reading the folder keeps the picker in step
- * with the repository instead of a second hand-maintained list.
+ * The dashboards Grafana has provisioned from `provisioning/dashboards/`,
+ * sorted by title. Reading Grafana's list keeps the picker in step with the
+ * repository instead of a second hand-maintained list.
  */
 export function currentDashboards(results: SearchResult[]): Dashboard[] {
     const dashboards: Dashboard[] = [];
-    for (const { uid, title, folderUid } of results) {
-        if (uid && title && !folderUid) dashboards.push({ uid, title });
+    for (const { uid, title } of results) {
+        if (uid && title) dashboards.push({ uid, title });
     }
     return dashboards.sort((left, right) =>
         left.title.localeCompare(right.title),
@@ -43,31 +53,18 @@ export function readDashboardUid(search: string): string {
     return new URLSearchParams(search).get("d") || DEFAULT_DASHBOARD_UID;
 }
 
+export function readRange(search: string): Range {
+    const range = new URLSearchParams(search).get("range") ?? "";
+    return Object.hasOwn(RANGE_LABELS, range)
+        ? (range as Range)
+        : DEFAULT_RANGE;
+}
+
 /**
- * `traffic_group` values of `generation_usage_hourly` (see the Tinybird pipe
- * `generation_events_classified`), plus `all` for both together.
+ * Kiosk mode hides Grafana's navigation and time picker, so the range travels
+ * in the URL, where `from`/`to` override the dashboard's saved time.
+ * `hideLogo` drops the "Powered by Grafana" footer kiosk mode adds.
  */
-export const TRAFFIC = [
-    { value: "everything_else", label: "Everything else" },
-    { value: "legacy", label: "Legacy" },
-    { value: "all", label: "Both" },
-] as const;
-export type Traffic = (typeof TRAFFIC)[number]["value"];
-
-export function readTraffic(search: string): Traffic {
-    const value = new URLSearchParams(search).get("traffic");
-    return (
-        TRAFFIC.find((traffic) => traffic.value === value)?.value ??
-        "everything_else"
-    );
-}
-
-/** Users & Balances mixes usage and account panels, so it always excludes legacy. */
-export function hasTrafficSelector(uid: string): boolean {
-    return uid !== "users-balances-rebuild";
-}
-
-/** Kiosk mode hides Grafana's variable controls, so the header passes them. */
-export function dashboardSrc(uid: string, traffic: Traffic): string {
-    return `/grafana/d/${encodeURIComponent(uid)}?kiosk&var-traffic=${traffic}`;
+export function dashboardSrc(uid: string, range: Range): string {
+    return `/grafana/d/${encodeURIComponent(uid)}?kiosk&hideLogo&from=now-${range}/d&to=now-1d/d`;
 }

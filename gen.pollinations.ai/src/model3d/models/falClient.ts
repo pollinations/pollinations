@@ -12,7 +12,6 @@
  */
 
 import { sleep } from "../../image/util.ts";
-import { falBillableUnits } from "../../image/utils/falBillableUnits.ts";
 import { getModel3dEnv } from "../env.ts";
 
 const QUEUE_BASE = "https://queue.fal.run";
@@ -65,35 +64,27 @@ export async function runFalJob(
     return (await runFalJobResponse(opts, apiKey)).json();
 }
 
-export async function runFalJobWithUsage(
+/** Preserve the result headers for callers that use fal's reported billing units. */
+export async function runFalJobResponse(
     opts: RunFalJobOptions,
     apiKey = requireFalApiKey(),
-): Promise<{ data: Record<string, unknown>; billableUnits: number }> {
-    const response = await runFalJobResponse(opts, apiKey);
-    const billableUnits = falBillableUnits(response);
-    return { data: await response.json(), billableUnits };
-}
-
-async function runFalJobResponse(
-    opts: RunFalJobOptions,
-    apiKey: string,
 ): Promise<Response> {
-    const submissionResponse = await falFetch(apiKey, {
+    const submitted = await falFetch(apiKey, {
         method: "POST",
         url: `${QUEUE_BASE}/${opts.endpoint}`,
         body: opts.input,
     });
-    const submission = await submissionResponse.json<FalQueueSubmitResponse>();
+    const submission = (await submitted.json()) as FalQueueSubmitResponse;
 
     // Fal still runs and bills a job we stop polling, so wait until it
     // finishes. The durable generation alarm bounds the wait.
     while (true) {
         await sleep(POLL_INTERVAL_MS);
-        const statusResponse = await falFetch(apiKey, {
+        const polled = await falFetch(apiKey, {
             method: "GET",
             url: submission.status_url,
         });
-        const status = await statusResponse.json<FalQueueStatusResponse>();
+        const status = (await polled.json()) as FalQueueStatusResponse;
         if (status.status === "COMPLETED") {
             return falFetch(apiKey, {
                 method: "GET",

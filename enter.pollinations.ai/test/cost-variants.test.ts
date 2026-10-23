@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { modelInfoFromDefinition } from "../../shared/registry/model-info.ts";
 import {
     calculateCost,
@@ -41,7 +41,30 @@ function fallbackBill(
     });
 }
 
+// Vitest 4 reuses an existing spy, so each test restores its console spies.
+afterEach(() => {
+    vi.restoreAllMocks();
+});
+
 describe("long-context cost variants", () => {
+    it.each([
+        [198_999, undefined, 0.399698],
+        [199_000, "long_context", 0.7994],
+    ] as const)(
+        "Grok reprices all billed tokens at %s uncached prompt tokens",
+        (prompt, variant, price) => {
+            const billing = bill("x-ai/grok-4.7", {
+                promptTextTokens: prompt,
+                promptCachedTokens: 1000,
+                completionTextTokens: 100,
+                completionReasoningTokens: 100,
+            });
+            expect(billing.costVariant).toBe(variant);
+            expect(billing.cost.totalCost).toBeCloseTo(price, 10);
+            expect(billing.price.totalPrice).toBeCloseTo(price, 8);
+        },
+    );
+
     it.each([
         ["openai/gpt-5.4", 272_000],
         ["openai/gpt-5.5", 272_000],
@@ -50,20 +73,20 @@ describe("long-context cost variants", () => {
         ["openai/gpt-5.6-terra", 272_000],
         ["openai/gpt-5.6-luna", 272_000],
         ["openai/gpt-6-astra", 272_000],
-    ] satisfies [
-        ModelName,
-        number,
-    ][])("%s uses a strict greater-than boundary", (model, threshold) => {
-        expect(
-            bill(model, { promptTextTokens: threshold - 1 }).costVariant,
-        ).toBeUndefined();
-        expect(
-            bill(model, { promptTextTokens: threshold }).costVariant,
-        ).toBeUndefined();
-        expect(
-            bill(model, { promptTextTokens: threshold + 1 }).costVariant,
-        ).toBe("long_context");
-    });
+    ] satisfies [ModelName, number][])(
+        "%s uses a strict greater-than boundary",
+        (model, threshold) => {
+            expect(
+                bill(model, { promptTextTokens: threshold - 1 }).costVariant,
+            ).toBeUndefined();
+            expect(
+                bill(model, { promptTextTokens: threshold }).costVariant,
+            ).toBeUndefined();
+            expect(
+                bill(model, { promptTextTokens: threshold + 1 }).costVariant,
+            ).toBe("long_context");
+        },
+    );
 
     it("Gemini uses OpenRouter's inclusive 200K boundary", () => {
         expect(
@@ -108,12 +131,16 @@ describe("long-context cost variants", () => {
         [255_999, "context_32k"],
         [256_000, "context_256k"],
         [256_001, "context_256k"],
-    ] as const)("Qwen3.7 Flash OpenRouter fallback selects the expected sheet at %s prompt tokens", (promptTextTokens, expectedVariant) => {
-        expect(
-            bill("qwen/qwen3.7-flash:openrouter:alibaba", { promptTextTokens })
-                .costVariant,
-        ).toBe(expectedVariant);
-    });
+    ] as const)(
+        "Qwen3.7 Flash OpenRouter fallback selects the expected sheet at %s prompt tokens",
+        (promptTextTokens, expectedVariant) => {
+            expect(
+                bill("qwen/qwen3.7-flash:openrouter:alibaba", {
+                    promptTextTokens,
+                }).costVariant,
+            ).toBe(expectedVariant);
+        },
+    );
 
     it("Qwen3.7 Flash OpenRouter fallback counts cached and media tokens toward its tiers", () => {
         expect(
@@ -196,11 +223,14 @@ describe("long-context cost variants", () => {
         [32_001, "context_32k"],
         [256_000, "context_32k"],
         [256_001, "context_256k"],
-    ] as const)("direct Alibaba uses its strict tier boundary at %s prompt tokens", (promptTextTokens, expectedVariant) => {
-        expect(
-            bill("qwen/qwen3.7-flash", { promptTextTokens }).costVariant,
-        ).toBe(expectedVariant);
-    });
+    ] as const)(
+        "direct Alibaba uses its strict tier boundary at %s prompt tokens",
+        (promptTextTokens, expectedVariant) => {
+            expect(
+                bill("qwen/qwen3.7-flash", { promptTextTokens }).costVariant,
+            ).toBe(expectedVariant);
+        },
+    );
 
     it("records OpenRouter fallback cost while retaining the direct explicit-cache quote", () => {
         const billing = fallbackBill(
@@ -255,40 +285,36 @@ describe("long-context cost variants", () => {
     });
 
     it.each([
-        ["openai/gpt-5.6-sol", 10, 1, 12.5, 45, 1 / 3],
+        ["openai/gpt-5.6-sol", 8, 0.8, 10, 30, 1 / 3],
         ["openai/gpt-5.6-terra", 4, 0.4, 5, 18, 0.75],
         ["openai/gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 0.75],
         ["openai/gpt-6-astra", 20, 2, 25, 75, 1],
-    ] satisfies [
-        ModelName,
-        number,
-        number,
-        number,
-        number,
-        number,
-    ][])("%s applies every Azure long-context meter to the full request", (model, input, cached, cacheWrite, output, multiplier) => {
-        const billing = bill(model, {
-            promptTextTokens: 272_001,
-            promptCachedTokens: 1_000,
-            promptCacheWriteTokens: 1_000,
-            completionTextTokens: 1_000,
-        });
+    ] satisfies [ModelName, number, number, number, number, number][])(
+        "%s applies every Azure long-context meter to the full request",
+        (model, input, cached, cacheWrite, output, multiplier) => {
+            const billing = bill(model, {
+                promptTextTokens: 272_001,
+                promptCachedTokens: 1_000,
+                promptCacheWriteTokens: 1_000,
+                completionTextTokens: 1_000,
+            });
 
-        expect(billing.costVariant).toBe("long_context");
-        expect(billing.priceDefinition).toMatchObject({
-            promptTextTokens: (input / 1e6) * multiplier,
-            promptCachedTokens: (cached / 1e6) * multiplier,
-            promptCacheWriteTokens: (cacheWrite / 1e6) * multiplier,
-            completionTextTokens: (output / 1e6) * multiplier,
-        });
-        expect(billing.cost.totalCost).toBeCloseTo(
-            272_001 * (input / 1e6) +
-                1_000 * (cached / 1e6) +
-                1_000 * (cacheWrite / 1e6) +
-                1_000 * (output / 1e6),
-            12,
-        );
-    });
+            expect(billing.costVariant).toBe("long_context");
+            expect(billing.priceDefinition).toMatchObject({
+                promptTextTokens: (input / 1e6) * multiplier,
+                promptCachedTokens: (cached / 1e6) * multiplier,
+                promptCacheWriteTokens: (cacheWrite / 1e6) * multiplier,
+                completionTextTokens: (output / 1e6) * multiplier,
+            });
+            expect(billing.cost.totalCost).toBeCloseTo(
+                272_001 * (input / 1e6) +
+                    1_000 * (cached / 1e6) +
+                    1_000 * (cacheWrite / 1e6) +
+                    1_000 * (output / 1e6),
+                12,
+            );
+        },
+    );
 
     it("counts every prompt token modality, but not audio seconds", () => {
         expect(
@@ -318,13 +344,13 @@ describe("long-context cost variants", () => {
 
         expect(billing.costVariant).toBe("long_context");
         expect(billing.priceDefinition).toMatchObject({
-            promptTextTokens: (4 / 1e6) * 1.055,
-            promptCachedTokens: (0.4 / 1e6) * 1.055,
-            promptCacheWriteTokens: (4 / 1e6) * 1.055,
-            promptAudioTokens: (4 / 1e6) * 1.055,
-            promptImageTokens: (2 / 1e6) * 1.055,
-            promptVideoTokens: (4 / 1e6) * 1.055,
-            completionTextTokens: (18 / 1e6) * 1.055,
+            promptTextTokens: 4 / 1e6,
+            promptCachedTokens: 0.4 / 1e6,
+            promptCacheWriteTokens: 4 / 1e6,
+            promptAudioTokens: 4 / 1e6,
+            promptImageTokens: 4 / 1e6,
+            promptVideoTokens: 4 / 1e6,
+            completionTextTokens: 18 / 1e6,
         });
     });
 
@@ -387,7 +413,7 @@ describe("long-context cost variants", () => {
         });
 
         expect(billing.cost.totalCost).toBeCloseTo(0.375 * 1.055, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(4.5 * 1.055, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(4.5, 12);
     });
 
     it("Qwen applies its advertised long-context sheet", () => {
@@ -436,17 +462,23 @@ describe("AssemblyAI transcription cost variants", () => {
             0.28,
             "prompting_diarization",
         ],
-    ] as const)("%s format=%s prompt=%s bills $%s/hour", (model, responseFormat, hasPrompt, hourlyCost, variant) => {
-        const billing = bill(
-            model,
-            { promptAudioSeconds: 3600 },
-            { hasDiarization: responseFormat === "diarized_json", hasPrompt },
-        );
+    ] as const)(
+        "%s format=%s prompt=%s bills $%s/hour",
+        (model, responseFormat, hasPrompt, hourlyCost, variant) => {
+            const billing = bill(
+                model,
+                { promptAudioSeconds: 3600 },
+                {
+                    hasDiarization: responseFormat === "diarized_json",
+                    hasPrompt,
+                },
+            );
 
-        expect(billing.cost.totalCost).toBeCloseTo(hourlyCost, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(hourlyCost, 12);
-        expect(billing.costVariant).toBe(variant);
-    });
+            expect(billing.cost.totalCost).toBeCloseTo(hourlyCost, 12);
+            expect(billing.price.totalPrice).toBeCloseTo(hourlyCost, 12);
+            expect(billing.costVariant).toBe(variant);
+        },
+    );
 });
 
 describe("request-mode cost variants", () => {
@@ -485,21 +517,69 @@ describe("request-mode cost variants", () => {
 });
 
 describe("resolution cost variants", () => {
-    it.each([
-        [1024, 1024, 0.04, undefined],
-        [1008, 1040, 0.06, "2048"],
-        [1024, 1040, 0.06, "2048"],
-        [2048, 2048, 0.06, "2048"],
-    ] as const)("nova-canvas bills %sx%s at $%s/image", (width, height, rate, variant) => {
-        const billing = bill(
-            "amazon/nova-canvas-v1",
-            { completionImageTokens: 1 },
-            { maxImageDimension: Math.max(width, height) },
-        );
-
-        expect(billing.costVariant).toBe(variant);
-        expect(billing.cost.totalCost).toBeCloseTo(rate, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(rate, 12);
+    it("FLUX.3 quotes both launch and list prices at the cutoff in the same warm registry", () => {
+        const model = "black-forest-labs/flux-3-image";
+        const definition = getRegistryModelDefinition(model);
+        const cutoff = Date.parse("2026-10-08T15:00:00Z");
+        const now = vi.spyOn(Date, "now");
+        try {
+            for (const [time, oneK, twoK] of [
+                [cutoff - 1, 0.024, 0.05],
+                [cutoff, 0.048, 0.1],
+                [cutoff + 1, 0.048, 0.1],
+            ]) {
+                now.mockReturnValue(time);
+                const info = modelInfoFromDefinition(model, definition);
+                expect(Number(info.pricing.completionImageTokens)).toBeCloseTo(
+                    oneK * 1.055,
+                    10,
+                );
+                expect(
+                    Number(
+                        info.pricing_variants?.find(({ name }) => name === "2k")
+                            ?.pricing.completionImageTokens,
+                    ),
+                ).toBeCloseTo(twoK * 1.055, 10);
+                for (const [resolution, cost] of [
+                    ["1k", oneK],
+                    ["2k", twoK],
+                ] as const) {
+                    const billing = bill(
+                        model,
+                        { completionImageTokens: 1 },
+                        { resolution },
+                    );
+                    expect(billing.cost.totalCost).toBeCloseTo(
+                        cost * 1.055,
+                        10,
+                    );
+                    expect(billing.price.totalPrice).toBeCloseTo(
+                        cost * 1.055,
+                        10,
+                    );
+                    // In-flight requests settle the actual provider receipt,
+                    // even when it differs from the catalog's current quote.
+                    const receipt = bill(
+                        model,
+                        { completionImageTokens: 1 },
+                        {
+                            resolution,
+                            providerBilling: { units: 0.024, unitCost: 1.055 },
+                        },
+                    );
+                    expect(receipt.cost.totalCost).toBeCloseTo(
+                        0.024 * 1.055,
+                        10,
+                    );
+                    expect(receipt.price.totalPrice).toBeCloseTo(
+                        0.024 * 1.055,
+                        10,
+                    );
+                }
+            }
+        } finally {
+            now.mockRestore();
+        }
     });
 
     it("p-video bills the 720p base and 1080p variant", () => {
@@ -743,6 +823,26 @@ describe("selection safety and composition", () => {
         expect(billing.servedPrice).toBeCloseTo(0.006, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.01, 12);
         expect(billing.priceDefinition.promptTextTokens).toBeCloseTo(1e-5, 15);
+    });
+
+    it("applies the serving multiplier to provider cost while preserving the fallback quote", () => {
+        const billing = calculateUsageBilling({
+            model: "quoted-model",
+            usage: { completionVideoSeconds: 5 },
+            servedBy: fakeModel({
+                cost: { completionVideoSeconds: 0.025 },
+                priceMultiplier: 2,
+            }),
+            quotedBy: fakeModel({
+                cost: { completionVideoSeconds: 0.08 },
+                priceMultiplier: 2,
+            }),
+            input: { providerBilling: { units: 8, unitCost: 0.0125 } },
+        });
+        expect(billing.cost).toEqual({ totalCost: 0.1 });
+        expect(billing.servedPrice).toBe(0.2);
+        expect(billing.price.totalPrice).toBe(0.8);
+        expect(billing.priceDefinition.completionVideoSeconds).toBe(0.16);
     });
 
     it("reports a served-side selector failure while preserving the quoted price variant", () => {

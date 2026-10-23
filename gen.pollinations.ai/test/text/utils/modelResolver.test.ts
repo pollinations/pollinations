@@ -478,15 +478,15 @@ describe("resolveModelConfig", () => {
         },
     );
 
-    it("routes Step Flash directly to DeepInfra without fallback", () => {
+    it("routes Step Flash directly to Novita", () => {
         const result = resolveModelConfig(messages, {
             model: "stepfun/step-3.7-flash",
         });
 
-        expect(result.options.model).toBe("stepfun-ai/Step-3.7-Flash");
+        expect(result.options.model).toBe("stepfun/step-3.7-flash");
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
-            "custom-host": "https://api.deepinfra.com/v1/openai",
+            directEndpoint: "https://api.novita.ai/openai/v1/chat/completions",
         });
         expect(result.options.provider).toBeUndefined();
     });

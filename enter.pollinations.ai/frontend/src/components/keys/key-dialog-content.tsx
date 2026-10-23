@@ -150,8 +150,8 @@ export function KeyDialogContent({
                         ? "Creating…"
                         : "Saving…"
                     : mode === "create"
-                      ? titles.create
-                      : "Save changes"}
+                      ? "Create"
+                      : "Save"}
             </Button>
         );
 

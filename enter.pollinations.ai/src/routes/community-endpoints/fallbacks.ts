@@ -11,9 +11,15 @@ import {
     parseCommunityModelId,
     parseListingPayload,
     resolveEffectiveProxyListing,
+    staticFallbackRejection,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import type { ModelInputModality } from "@shared/registry/registry.ts";
+import {
+    getRegistryModelDefinition,
+    type ModelInputModality,
+    type ModelName,
+    resolveModelName,
+} from "@shared/registry/registry.ts";
 import { and, eq } from "drizzle-orm";
 import type { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
@@ -115,15 +121,38 @@ export function fallbackTargetRejection(
     return null;
 }
 
+/** The canonical id of a bundled Pollinations model or alias, if it is one. */
+function registryModelId(requested: string): ModelName | null {
+    try {
+        return resolveModelName(requested);
+    } catch {
+        return null;
+    }
+}
+
 async function resolveFallback(
     db: Db,
     requested: string,
     primary: FallbackPrimary,
 ): Promise<string> {
+    // Bundled ids win, as in gen; community names cannot collide with them.
+    const registryId = registryModelId(requested);
+    if (registryId) {
+        const rejection = staticFallbackRejection(
+            primary,
+            getRegistryModelDefinition(registryId),
+        );
+        if (rejection) {
+            throw new HTTPException(400, {
+                message: `Fallback target ${registryId} ${rejection}`,
+            });
+        }
+        return registryId;
+    }
     const parsed = parseCommunityModelId(requested);
     if (!parsed) {
         throw new HTTPException(400, {
-            message: `Fallback target ${requested} must be a community model id in the form community/<owner>/<name>`,
+            message: `Fallback target ${requested} must be a Pollinations model id or a community model id in the form community/<owner>/<name>`,
         });
     }
     const modelId = communityModelId(

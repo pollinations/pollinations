@@ -50,8 +50,5 @@
 }
 
 .dashboard-add-button {
-    width: 4.25rem;
-    height: 2.75rem;
-    padding-inline: 0.75rem;
     gap: 0.25rem;
 }

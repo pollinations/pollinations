@@ -353,6 +353,17 @@ describe("Messages request translation", () => {
         },
     );
 
+    it("raises Claude Code's 1-token model check to the 16 every provider accepts", () => {
+        expect(
+            messagesToChatRequest(
+                request({
+                    max_tokens: 1,
+                    messages: [{ role: "user", content: "Hi" }],
+                }),
+            ).max_tokens,
+        ).toBe(16);
+    });
+
     it("rejects server tools with the tag Claude Code recognizes", () => {
         expect(() =>
             messagesToChatRequest(

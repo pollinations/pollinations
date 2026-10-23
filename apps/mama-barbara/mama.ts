@@ -24,9 +24,10 @@ const SIZES: Record<string, string> = {
 };
 const DEFAULT_SIZE = "pollinations-large";
 // Models that did a whole Barbara turn in Claude Code through gen (a photo,
-// an image, a file reply, a connect link) on 2026-10-22. The first is the
-// default.
+// an image, a file reply, a connect link) on 2026-10-22/23. The first is the
+// default: Quest Pollen pays for it, so a new account's Barbara answers.
 const MODELS: Record<string, string> = {
+    "openai/gpt-6.1-sol": "GPT-6.1 Sol · balanced",
     "anthropic/claude-sonnet-5.5": "Claude Sonnet 5.5 · balanced",
     "anthropic/claude-opus-5.5": "Claude Opus 5.5 · smartest",
     "anthropic/claude-haiku-5.5": "Claude Haiku 5.5 · quick",
@@ -762,7 +763,7 @@ async function modelView(owner: TgUser, b: Barbara): Promise<View> {
             "Switching keeps her conversation. She restarts once her current task is done.",
             "",
             // Measured on 2026-10-22 (see MODELS).
-            "A message costs roughly 0.25 Pollen on Opus, 0.12 on Sonnet and 0.01 on the others. Only GLM can spend Quest Pollen; the others need bought Pollen.",
+            "A message costs roughly 0.25 Pollen on Opus, 0.12 on Sonnet, 0.07 on GPT-6.1 and 0.01 on the others. GPT-6.1 and GLM can spend Quest Pollen; the others need bought Pollen.",
         ].join("\n"),
         reply_markup: {
             inline_keyboard: [

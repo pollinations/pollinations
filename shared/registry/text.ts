@@ -601,6 +601,7 @@ const TEXT_BASE_SERVICES = {
         description: "Reasoning for complex coding and agentic workflows",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
         tools: true,
         reasoning: true,
         contextLength: 1050000,
@@ -659,6 +660,7 @@ const TEXT_BASE_SERVICES = {
             "Faster near-Astra reasoning for coding, agents, and professional work",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
         tools: true,
         reasoning: true,
         contextLength: 1050000,
@@ -715,6 +717,7 @@ const TEXT_BASE_SERVICES = {
         description: "Efficient reasoning for focused, high-volume tasks",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
         tools: true,
         reasoning: true,
         contextLength: 1050000,
@@ -932,8 +935,7 @@ const TEXT_BASE_SERVICES = {
             completionAudioTokens: perMillion(20.0),
         },
         title: "GPT Audio Mini",
-        description:
-            "Talks and listens — voice conversations with spoken or text replies",
+        description: "Voice conversations with spoken or text replies",
         voices: [...AUDIO_VOICES],
         inputModalities: ["text", "audio"],
         outputModalities: ["audio", "text"],
@@ -1306,10 +1308,10 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Novita BF16 preserves remote image URLs; verified 2026-08-22.
-            promptTextTokens: perMillion(0.13) * 1.055,
-            promptImageTokens: perMillion(0.13) * 1.055,
-            completionTextTokens: perMillion(0.4) * 1.055,
+            // OpenRouter DeepInfra FP8; rates verified 2026-10-22.
+            promptTextTokens: perMillion(0.07) * 1.055,
+            promptImageTokens: perMillion(0.07) * 1.055,
+            completionTextTokens: perMillion(0.34) * 1.055,
         },
         title: "Gemma 4 26B A4B",
         description:
@@ -1331,7 +1333,7 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Novita BF16 endpoint, verified 2026-08-22.
+            // OpenRouter Crusoe BF16 at Novita's former rate; verified 2026-10-22.
             promptTextTokens: perMillion(0.14) * 1.055,
             promptImageTokens: perMillion(0.14) * 1.055,
             completionTextTokens: perMillion(0.4) * 1.055,
@@ -2071,8 +2073,7 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(10),
         },
         title: "Claude Sonnet 5",
-        description:
-            "Sharp reasoning with fast responses — a strong default for most work",
+        description: "Reasoning model with fast responses for general use",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -2401,7 +2402,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Moonshot Kimi K2.7 Code",
         description:
-            "Built for agentic coding — plans, reasons and edits code step by step",
+            "Agentic coding: plans, reasons and edits code step by step",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 30,
@@ -2671,10 +2672,10 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Together route rates (2026-08-01). Image and audio
+            // OpenRouter DeepInfra route rates (2026-10-21). Image and audio
             // inputs are tokenized into promptTextTokens; no separate usage is
             // reported or billed for either modality.
-            promptTextTokens: perMillion(0.5) * 1.055,
+            promptTextTokens: perMillion(0.45) * 1.055,
             promptCachedTokens: perMillion(0.1) * 1.055,
             completionTextTokens: perMillion(1.2) * 1.055,
         },
@@ -3849,7 +3850,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Qwen3 VL 30B A3B Instruct",
         description:
-            "Fast image understanding — describes, reads and analyzes what it sees",
+            "Describes images, reads text in them, and analyzes visual content",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -3991,8 +3992,7 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(0),
         },
         title: "Qwen3Guard 8B",
-        description:
-            "Flags unsafe content — a moderation filter, not a chat companion",
+        description: "Flags unsafe content for moderation",
         inputModalities: ["text"],
         outputModalities: ["text"],
         isSpecialized: true,

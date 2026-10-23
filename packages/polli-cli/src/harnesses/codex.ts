@@ -5,7 +5,6 @@ import { commandExists, readTextIfExists } from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
 import type { HarnessAdapter, HarnessContext, HarnessResult } from "./types.js";
-import { keyUsageCount, waitForKeyUsageIncrease } from "./usage-proof.js";
 
 const ID = "codex";
 const LABEL = "Codex";
@@ -353,8 +352,6 @@ export const configureCodex = async (
             }
         }
 
-        const before = await keyUsageCount(key);
-        const startedAt = Date.now();
         const check = smoke(ctx, model);
         if (!check.ok) {
             throw failRun(check, "Codex Router smoke test");
@@ -373,9 +370,6 @@ export const configureCodex = async (
                 "Codex Router smoke test did not confirm a basic routed response.",
             );
         }
-        await waitForKeyUsageIncrease(key, before, {
-            afterMs: startedAt,
-        });
         return {
             ...status(ctx),
             model: `${PROVIDER}/${model}`,

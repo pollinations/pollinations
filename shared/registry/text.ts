@@ -76,6 +76,7 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         reasoning: true,
         isSpecialized: false,
+        alpha: true,
     },
     "openai/gpt-5.4-nano": {
         supportedParameters: CHAT_PARAMETERS.azureGpt,

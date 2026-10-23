@@ -2467,7 +2467,8 @@ test("Responses on a Chat-only model fails without provider usage", async ({
             authorization: `Bearer ${paidApiKey}`,
         },
         body: JSON.stringify({
-            model: "stepfun/step-3.7-flash",
+            // A model without fallbacks, so the missing usage is final.
+            model: "amazon/nova-micro-v1",
             input: "vcr missing chat usage",
         }),
     });

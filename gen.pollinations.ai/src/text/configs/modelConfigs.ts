@@ -1168,9 +1168,19 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "stepfun/step-5-preview",
         }),
 
-    // -- Novita (StepFun) -----------------------------------------------------
+    // -- Novita and Vercel (StepFun) ------------------------------------------
     "stepfun/step-3.7-flash": () =>
         createNovitaModelConfig({ model: "stepfun/step-3.7-flash" }),
+    // Pin StepFun's own endpoint: DeepInfra serves MiMo under this model's id.
+    "stepfun/step-3.7-flash:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "stepfun/step-3.7-flash",
+            responsesEndpoint: undefined,
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["stepfun"] } },
+            },
+        }),
 
     // -- InferencePort (Lightning routers) ------------------------------------
     // "lightning" is the router id that `lightning-text-v2` aliases.

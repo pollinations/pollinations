@@ -3887,6 +3887,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000002,
     },
   },
+  "stepfun/step-3.7-flash:vercel": {
+    "cost": {
+      "completionTextTokens": 0.00000115,
+      "promptCachedTokens": 0.00000004,
+      "promptTextTokens": 0.0000002,
+    },
+    "price": {
+      "completionTextTokens": 0.00000115,
+      "promptCachedTokens": 0.00000004,
+      "promptTextTokens": 0.0000002,
+    },
+  },
   "stepfun/step-5-preview": {
     "cost": {
       "completionTextTokens": 0.0000028485,

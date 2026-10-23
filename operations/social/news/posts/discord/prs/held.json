@@ -4,9 +4,6 @@
       "merge_sha": "39d7b863081e9c26c669eb712442467cd299e18b",
       "merged_at": "2026-10-22T16:15:06Z",
       "required": [
-        "deploy-applications.yml:Deploy apps/websim",
-        "deploy-applications.yml:Deploy operations/economics",
-        "deploy-applications.yml:Deploy operations/model-monitor",
         "deploy-cloudflare-production.yml:deploy-enter",
         "deploy-cloudflare-production.yml:deploy-gen",
         "deploy-cloudflare-production.yml:deploy-media"
@@ -32,11 +29,6 @@
       "merge_sha": "a5132dfc0bab6c5406630487bf7664b182af4294",
       "merged_at": "2026-10-22T15:53:21Z",
       "required": [
-        "deploy-applications.yml:Deploy apps/websim",
-        "deploy-applications.yml:Deploy operations/economics",
-        "deploy-applications.yml:Deploy operations/kpi",
-        "deploy-applications.yml:Deploy operations/model-monitor",
-        "deploy-applications.yml:Deploy operations/observability",
         "deploy-cloudflare-production.yml:deploy-enter"
       ]
     },
@@ -50,16 +42,12 @@
     "18142": {
       "merge_sha": "263ad09af582601f551a96b071bb3e5a9695d59f",
       "merged_at": "2026-10-22T15:55:38Z",
-      "required": [
-        "deploy-applications.yml:Deploy apps/mama-barbara"
-      ]
+      "required": []
     },
     "18150": {
       "merge_sha": "280f6c36cfb6b7e680b4105638bf4d20ea850dce",
       "merged_at": "2026-10-22T18:01:34Z",
-      "required": [
-        "deploy-applications.yml:Deploy apps/mama-barbara"
-      ]
+      "required": []
     },
     "18165": {
       "merge_sha": "279dd5e22764f4eb9eccd80593849d948be77e26",
@@ -91,9 +79,7 @@
     "18181": {
       "merge_sha": "8ffdc2c90ce2a7bb3d187a717c3b6d8c68206f9e",
       "merged_at": "2026-10-23T11:56:03Z",
-      "required": [
-        "deploy-applications.yml:Deploy apps/mama-barbara"
-      ]
+      "required": []
     }
   },
   "production": "2fb10c51169eac51e54f6f38460491ebd5246390",

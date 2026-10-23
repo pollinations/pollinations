@@ -1143,6 +1143,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["meta/muse-spark-1.2"],
     },
     {
+        name: "moonshotai/kimi-k3.1-pro-highspeed",
+        config: portkeyConfig["moonshotai/kimi-k3.1-pro-highspeed"],
+    },
+    {
         name: "meta/muse-wonder-1.0",
         config: portkeyConfig["meta/muse-wonder-1.0"],
         transform: mandatoryReasoning,

@@ -9,7 +9,7 @@ export interface PollinationsConfig {
     textTimeout?: number;
     /** Timeout in ms for image requests (default: 600000 = 10min) */
     imageTimeout?: number;
-    /** Timeout in ms for video requests (default: 1200000 = 20min) */
+    /** Timeout in ms for video and 3D requests (default: 1200000 = 20min) */
     videoTimeout?: number;
 }
 
@@ -37,7 +37,7 @@ export type ImageReasoningMode = "fast" | "balanced" | "pro";
 
 /** Options for image generation */
 export interface ImageGenerateOptions extends RequestOptions {
-    /** Image model to use (server default: 'zimage') */
+    /** Image model to use (server default: 'tongyi-mai/z-image-turbo') */
     model?: ImageModel;
     /** Image width in pixels (default: 1024) */
     width?: number;
@@ -67,7 +67,7 @@ export interface ImageGenerateOptions extends RequestOptions {
 
 /** Options for image editing (POST /v1/images/edits) */
 export interface ImageEditOptions extends RequestOptions {
-    /** Image model to use (server default: 'flux') */
+    /** Image model to use (server default: 'black-forest-labs/flux.1-schnell') */
     model?: ImageModel;
     /** Source image URL(s) for editing */
     image?: string | string[];
@@ -83,13 +83,33 @@ export interface ImageResponse {
     url: string;
 }
 
+/** A finished async media job's binary file (image, video, audio, or 3D). */
+export interface MediaJobResult {
+    buffer: ArrayBuffer;
+    contentType: string;
+}
+
+/** A cached request may complete immediately instead of returning an id. */
+export type MediaJobSubmission =
+    | { id: string; status: "pending" | "succeeded"; status_url: string }
+    | { status: "succeeded"; result: MediaJobResult };
+
+export interface MediaJobStatus {
+    id: string;
+    status: "pending" | "succeeded" | "failed";
+    created_at: number;
+    completed_at?: number;
+    result_url?: string;
+    error?: { httpStatus: number; message: string };
+}
+
 // ============================================================================
 // Video Generation
 // ============================================================================
 
 /** Options for video generation */
 export interface VideoGenerateOptions extends RequestOptions {
-    /** Video model to use (server default: 'veo') */
+    /** Video model to use (server default: 'google/veo-3.1-fast') */
     model?: VideoModel;
     /** Duration in seconds (supported range varies by model) */
     duration?: number;
@@ -120,6 +140,20 @@ export interface VideoResponse {
     /** Content type (video/mp4) */
     contentType: string;
     /** The URL that was used to generate the video */
+    url: string;
+}
+
+export interface Model3dGenerateOptions extends RequestOptions {
+    model?: string;
+    referenceImage?: string | string[];
+    resolution?: "low" | "medium" | "high";
+    seed?: number;
+    safe?: boolean;
+}
+
+export interface Model3dResponse {
+    buffer: ArrayBuffer;
+    contentType: string;
     url: string;
 }
 
@@ -208,7 +242,7 @@ export interface Message {
 
 /** Options for simple text generation */
 export interface TextGenerateOptions extends RequestOptions {
-    /** Text model to use (server default: 'openai') */
+    /** Text model to use (server default: 'openai/gpt-5.4-nano') */
     model?: TextModel;
     /** System prompt to set context */
     systemPrompt?: string;
@@ -282,7 +316,7 @@ export type ChatRouting = Partial<Record<ChatRoutingCapability, string>>;
 
 /** Options for chat completions (POST endpoint) */
 export interface ChatOptions extends RequestOptions {
-    /** Text model to use (server default: 'openai') */
+    /** Text model to use (server default: 'openai/gpt-5.4-nano') */
     model?: TextModel;
     /**
      * Per-capability downstream model overrides for router models. Sent as
@@ -478,7 +512,7 @@ export type AudioModel = "elevenlabs" | "elevenmusic" | string;
 export interface AudioGenerateOptions extends RequestOptions {
     /** Voice to use (server default: 'alloy') */
     voice?: AudioVoice;
-    /** Audio model to use (server default: 'elevenlabs') */
+    /** Audio model to use (server default: 'elevenlabs/eleven-v3') */
     model?: AudioModel;
     /** Duration in seconds (for music models like elevenmusic) */
     duration?: number;
@@ -490,6 +524,33 @@ export interface AudioGenerateOptions extends RequestOptions {
 export interface AudioSpeechOptions extends AudioGenerateOptions {
     /** Public audio URL for models that support reference audio */
     referenceAudio?: string;
+}
+
+export interface AudioSpeechWithTimestampsOptions extends RequestOptions {
+    model?: AudioModel;
+    voice?: AudioVoice;
+    responseFormat?: "mp3" | "opus" | "aac" | "wav" | "pcm";
+    seed?: number;
+}
+
+export interface SpeechAlignment {
+    characters: string[];
+    character_start_times_seconds: number[];
+    character_end_times_seconds: number[];
+}
+
+export interface SpeechWordTiming {
+    word: string;
+    start: number;
+    end: number;
+}
+
+export interface AudioSpeechWithTimestampsResponse {
+    audio_base64: string;
+    alignment?: SpeechAlignment | null;
+    normalized_alignment?: SpeechAlignment | null;
+    /** Words from normalized text, or [] when normalized timings are unavailable. */
+    words: SpeechWordTiming[];
 }
 
 /** File-based voice conversion or speech isolation. */
@@ -544,7 +605,7 @@ export type TranscriptionResponseFormat =
 
 /** Options for speech-to-text transcription */
 export interface TranscribeOptions extends RequestOptions {
-    /** Model to use (server default: 'whisper-large-v3') */
+    /** Model to use (server default: 'openai/whisper-large-v3') */
     model?: TranscriptionModel;
     /** Language code (ISO-639-1, e.g. 'en', 'fr') */
     language?: string;
@@ -777,7 +838,7 @@ export interface DecisionResponse {
 // ============================================================================
 
 /** Account permission scopes */
-export type AccountPermission = "profile" | "usage" | "keys";
+export type AccountPermission = "profile" | "usage" | "keys" | "machines";
 
 /** Options for building a BYOP authorization URL */
 export interface AuthorizeOptions {
@@ -1047,6 +1108,37 @@ export interface CreateKeyOptions {
     earningsEnabled?: boolean;
 }
 
+/** A static site at `https://<name>.pollinations.app` */
+export interface Site {
+    name: string;
+    url: string;
+    createdAt: string;
+    publishedAt: string | null;
+    /** Taken down for breaking the terms; the name stays reserved */
+    blocked: boolean;
+}
+
+/** One file of an inline site deploy, in Vercel's deployment shape */
+export interface SiteFile {
+    /** Path, e.g. `index.html` (required) or `assets/app.js` */
+    file: string;
+    data: string;
+    /** Default `utf-8`; use `base64` for images and other binary files */
+    encoding?: "utf-8" | "base64";
+}
+
+/** Response from GET /account/sites */
+export interface SitesResponse {
+    data: Site[];
+    limits: {
+        sites: number;
+        bytesPerSite: number;
+        filesPerSite: number;
+        bytesPerFile: number;
+        bytesPerInlineDeploy: number;
+    };
+}
+
 /**
  * Response from POST /account/keys — includes the raw `key` value which
  * is ONLY shown at creation time. Store it immediately.
@@ -1119,7 +1211,47 @@ export type ModelCapability =
 
 /** Model information */
 /** Model catalog to list: `/<kind>/models` on the API. */
-export type ModelKind = "text" | "image" | "video" | "audio" | "embeddings";
+export type ModelKind =
+    | "text"
+    | "image"
+    | "video"
+    | "audio"
+    | "3d"
+    | "embeddings";
+
+export interface ModelStatusOptions extends RequestOptions {
+    traffic?: "all" | "regular";
+    minutes?: number;
+}
+
+export interface ModelStatusRow {
+    model: string;
+    event_type: string;
+    model_used: string;
+    provider: string;
+    is_rollup: number;
+    fallback_used: boolean;
+    total_requests: number;
+    status_2xx: number;
+    errors_4xx: number;
+    errors_5xx: number;
+    served: number;
+    fallback_rescues: number;
+    retried_503s: number;
+    last_error_at: string;
+    latency_p50_ms: number | null;
+    latency_p95_ms: number | null;
+    avg_latency_ms: number | null;
+    last_request_at: string;
+    tokens_per_second: number | null;
+}
+
+export interface ModelStatusResponse {
+    meta: { name: string; type: string }[];
+    data: ModelStatusRow[];
+    rows: number;
+    statistics?: { elapsed: number; rows_read: number; bytes_read: number };
+}
 
 export interface ModelInfo {
     /** Fields added by the model registry pass through without an SDK release. */
@@ -1224,7 +1356,7 @@ export interface UserInfo {
 
 /** Options for POST /v1/images/generations */
 export interface ImageGenerateV1Options extends RequestOptions {
-    /** Image model to use (server default: 'flux') */
+    /** Image model to use (server default: 'black-forest-labs/flux.1-schnell') */
     model?: ImageModel;
     /** Size string like "1024x1024". Alternative to width + height. */
     size?: string;

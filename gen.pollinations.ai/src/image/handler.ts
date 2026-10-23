@@ -30,7 +30,6 @@ import {
     type AuthResult,
     createAndReturnImageCached,
     type ImageGenerationResult,
-    isGPTImageRefusedByAzure,
 } from "./createAndReturnImages.ts";
 import {
     createAndReturnVideo,
@@ -82,7 +81,9 @@ const IMAGE_ENV_KEYS = [
     "AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY",
     "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_API_KEY",
+    "AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_WESTUS3_API_KEY",
     "DASHSCOPE_API_KEY",
     "DEEPINFRA_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
@@ -156,12 +157,29 @@ function parseImageParams(
         delete mergedParams.reference_images;
         delete mergedParams.reference_videos;
         delete mergedParams.reference_audios;
+        // Community video endpoints never receive a size, so the image-only
+        // 16 px floor must not reject an aspect ratio like 16x9.
+        delete mergedParams.width;
+        delete mergedParams.height;
     }
     const parseResult = ImageParamsSchema.safeParse(mergedParams);
     if (!parseResult.success) {
         throw new UpstreamError(400, {
             message: `Invalid parameters: ${parseResult.error.issues[0]?.message || "validation failed"}`,
             cause: parseResult.error.issues,
+        });
+    }
+    // A reference image the model cannot consume used to be dropped silently,
+    // billing a fresh generation that ignored the caller's picture. Reject it
+    // like the text protocols already do (docs/text-generation.md). Community
+    // endpoints get the image and decide for themselves.
+    if (
+        parseResult.data.image.length > 0 &&
+        !c.var.model.communityEndpoint &&
+        !c.var.model.definition.inputModalities?.includes("image")
+    ) {
+        throw new UpstreamError(400, {
+            message: `Invalid parameters: ${resolvedModel} does not accept image input. Choose a model that lists "image" under input_modalities.`,
         });
     }
     // Community endpoints receive the flag and decide for themselves.
@@ -296,11 +314,10 @@ async function generateMediaWithFallback(
             candidate.definition?.provider === "azure" &&
             candidate.definition.publisher === "OpenAI"
         ) {
-            // Every Azure region refused, or the reference image host is
-            // rate limiting. Timeouts and 5xx stay terminal so an image Azure
-            // may have produced is not paid for twice.
+            // Every Azure region failed, or the reference image host is rate
+            // limiting and the next target downloads it again.
             return (
-                isGPTImageRefusedByAzure(error) ||
+                isRetryableFallbackError(error) ||
                 (error instanceof UserImageError &&
                     error.upstreamStatus === 429)
             );

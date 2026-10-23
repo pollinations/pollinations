@@ -58,8 +58,6 @@ describe("getGenerationModelRegistry", () => {
             "respan/span-01-lite",
             "openai/whisper-large-v3",
             "lykon/dreamshaper-8-lcm",
-            // Moves to paid with its post-promo price in #16256.
-            "inclusionai/ling-3.1-flash",
         ]);
         const questModels = [];
         for (const id of getModels()) {
@@ -162,6 +160,36 @@ describe("getGenerationModelRegistry", () => {
         );
         expect(native.length).toBeGreaterThan(0);
         expect(native.length).toBeLessThan(chat.length);
+    });
+
+    it("advertises image edits only on models that accept image input", async () => {
+        const registry = await getGenerationModelRegistry(env);
+
+        // Text-only models cannot consume a source image, so the endpoint must
+        // not be listed where clients look up capabilities.
+        for (const id of [
+            "black-forest-labs/flux.1-schnell",
+            "tongyi-mai/z-image-turbo",
+        ]) {
+            const entry = registry.resolve(id);
+            expect(entry?.supportedEndpoints, id).not.toContain(
+                "/v1/images/edits",
+            );
+            expect(entry?.info.supported_endpoints, id).not.toContain(
+                "/v1/images/edits",
+            );
+        }
+        expect(
+            registry.resolve("black-forest-labs/flux.1-kontext-pro")
+                ?.supportedEndpoints,
+        ).toContain("/v1/images/edits");
+
+        for (const entry of registry.visibleEntries()) {
+            if (entry.definition.inputModalities?.includes("image")) continue;
+            expect(entry.supportedEndpoints, entry.id).not.toContain(
+                "/v1/images/edits",
+            );
+        }
     });
 
     it("serves the community catalog from KV without querying D1", async () => {

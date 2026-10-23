@@ -20,7 +20,7 @@ if [ "$(id -u)" != 0 ] &&
     mkdir ~/.pollinations/harnesses 2>/dev/null; then
     chmod 600 ~/.pollinations/credentials*.json
     echo "Connecting the coding harnesses to Pollinations (first login only)..."
-    for harness in opencode pi hermes openclaw claude-code; do
+    for harness in opencode pi openclaw claude-code; do
         (
             log=~/.pollinations/harnesses/$harness.log
             if polli harness "$harness" on >"$log" 2>&1; then

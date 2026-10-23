@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
-"""Write and save the scheduled news posts: daily, weekly, monthly and the model post.
+"""Write and save the scheduled news posts: daily, weekly, monthly, the model post
+and the community post.
 
     python posts.py write JOB DATE --news NEWS --work WORK [--overwrite]
     python posts.py save  JOB DATE --news NEWS --work WORK [--overwrite]
 
-JOB is daily, weekly, monthly or models. DATE is the day, the Sunday, the month
-(YYYY-MM) or the Wednesday. NEWS is a checkout of the news branch. write makes
-the job's model calls and pictures into WORK; save turns WORK into today's files
-under NEWS. Neither commits, and save never touches delivery.json.
+JOB is daily, weekly, monthly, models, community or catalog. DATE is the day, the
+Sunday, the month (YYYY-MM) or the Wednesday. NEWS is a checkout of the news branch.
+write makes the job's model calls and pictures into WORK; save turns WORK into today's
+files under NEWS: data/summaries/<job>/<date>.json and posts/<platform>/<job>/<date>.json.
+Neither commits, and save never touches delivery.json. catalog makes no call: write
+reads /models, and save records it as data/models/<date>.json when it changed.
 
-Each post is one file in prompts/posts/: `key: value` settings between `---`
-lines (JSON values where they parse), then its text. The job's post without a
-tone is its summary: its text is the system prompt, and its output is the recap
-the other posts are written from.
+Each post is one file, in prompts/summaries/ or prompts/posts/<platform>/: `key: value`
+settings between `---` lines (JSON values where they parse), then its text. The job's
+post without a tone is its summary: its text is the system prompt, and its output is the
+recap the other posts are written from. A post under posts/<platform>/ is saved there.
 """
 
 import argparse
@@ -25,16 +28,15 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from common import (
-    DAILY_REL_DIR,
-    GISTS_BRANCH,
+    CONTRIBUTORS_REL_DIR,
+    DATA_REL_DIR,
     IMAGE_SIZE,
     MODELS_NEWS_DIR,
-    MONTHLY_REL_DIR,
-    NEWS_REL_DIR,
     OWNER,
+    POSTS_REL_DIR,
     PROMPTS_DIR,
     REPO,
-    WEEKLY_REL_DIR,
+    SUMMARIES_REL_DIR,
     _migrate_old_snapshot,
     build_daily_summary_artifact,
     build_linkedin_post_text,
@@ -45,12 +47,10 @@ from common import (
     diff_models,
     discord_payload,
     fetch_all_snapshots,
-    filter_daily_gists,
     generate_image,
     get_env,
     get_week_dates,
     load_prompt,
-    models_md,
     models_report_input,
     month_dates,
     monthly_digest_input,
@@ -59,30 +59,59 @@ from common import (
     post_recap,
     prompt_text,
     read_daily_summaries,
-    read_gists_for_date,
-    read_gists_for_week,
     weekly_digest_input,
 )
 from contributors import month_counts
+from prs import day_notes
 
-POSTS_DIR = PROMPTS_DIR / "posts"
-JOB_DIRS = {
-    "daily": DAILY_REL_DIR,
-    "weekly": WEEKLY_REL_DIR,
-    "monthly": MONTHLY_REL_DIR,
-    "models": MODELS_NEWS_DIR,
-}
+# The weekly posts written from the recorded catalog: official and community models.
+CATALOG_JOBS = ("models", "community")
+# Every public model, the community ones the reliability filter hides included, so a
+# model leaving or rejoining the default list is no news.
+FULL_CATALOG = {"reliability": "all"}
+# The catalog facts the community post states. Owner-written text (title, publisher,
+# description, links) never reaches the writer of a public post; the id names the owner.
+CATALOG_FACTS = (
+    "name",
+    "category",
+    "agent",
+    "paid_only",
+    "pricing",
+    "flat_rate",
+    "input_modalities",
+    "output_modalities",
+    "capabilities",
+    "tools",
+    "reasoning",
+    "context_length",
+    "base_model",
+)
+# An agent costs what its base model costs and is paid-only when it is, so the post
+# names the base model instead.
+BASE_MODEL_FACTS = ("pricing", "flat_rate", "paid_only")
 DATES = {
     "daily": "a day (YYYY-MM-DD)",
     "weekly": "a Sunday (YYYY-MM-DD)",
     "monthly": "a month (YYYY-MM)",
     "models": "a day (YYYY-MM-DD)",
+    "community": "a day (YYYY-MM-DD)",
+    "catalog": "a day (YYYY-MM-DD)",
 }
+
+
+def summary_path(job: str, date: str) -> str:
+    return f"{SUMMARIES_REL_DIR}/{job}/{date}.json"
+
+
+def post_path(platform: str, job: str, date: str) -> str:
+    return f"{POSTS_REL_DIR}/{platform}/{job}/{date}.json"
 
 
 def read_post(path: Path) -> dict:
     _, header, text = path.read_text(encoding="utf-8").split("---\n", 2)
-    post = {"name": path.stem, "text": text.strip()}
+    post = {"name": path.relative_to(PROMPTS_DIR).with_suffix("").as_posix(), "text": text.strip()}
+    if path.parent.parent.name == "posts":
+        post["platform"] = path.parent.name
     for line in header.splitlines():
         key, _, value = line.partition(":")
         try:
@@ -93,8 +122,10 @@ def read_post(path: Path) -> dict:
 
 
 def job_posts(job: str) -> list[dict]:
-    """The job's posts, its summary first."""
-    posts = [read_post(path) for path in sorted(POSTS_DIR.glob("*.md"))]
+    """The job's posts, its summary first. Files without settings (tone.md, the PR
+    note prompt) are system prompts, not posts."""
+    paths = sorted([*(PROMPTS_DIR / "summaries").glob("*.md"), *(PROMPTS_DIR / "posts").glob("*/*.md")])
+    posts = [read_post(path) for path in paths if path.read_text(encoding="utf-8").startswith("---\n")]
     return sorted(
         (post for post in posts if post["job"] == job), key=lambda post: "tone" in post
     )
@@ -128,14 +159,21 @@ def check_date(job: str, date: str) -> None:
 
 def check(job: str, date: str, news: Path, overwrite: bool) -> None:
     check_date(job, date)
-    if not (news / NEWS_REL_DIR).is_dir():
-        sys.exit(f"{news} is not a checkout of the news branch")
-    saved = f"snapshots/{date}.json" if job == "models" else f"{date}/summary.json"
-    if (news / JOB_DIRS[job] / saved).exists() and not overwrite:
+    if not (news / DATA_REL_DIR).is_dir():
+        sys.exit(f"{news} has no {DATA_REL_DIR}: not a checkout of the converted news branch")
+    if job == "catalog" and not overwrite:
+        # /models is recorded as it is now, and a recorded day is kept.
+        if date != datetime.now(UTC).strftime("%Y-%m-%d"):
+            sys.exit(f"catalog {date} is not today: /models is only recorded as it is now")
+        if (news / MODELS_NEWS_DIR / f"{date}.json").exists():
+            sys.exit(f"catalog {date} is already recorded; pass --overwrite to replace it")
+    elif job in CATALOG_JOBS:
+        # A saved model or community post is never replaced, even with --overwrite.
+        if (news / model_post_path(job, date)).exists():
+            post = "model" if job == "models" else job
+            sys.exit(f"{job} {date} has a saved {post} post; it is never replaced")
+    elif (news / summary_path(job, date)).exists() and not overwrite:
         sys.exit(f"{job} {date} is already saved; pass --overwrite to replace it")
-    # A saved model post is never replaced, even with --overwrite.
-    if job == "models" and (news / MODELS_NEWS_DIR / date / "discord.json").exists():
-        sys.exit(f"models {date} has a saved model post; it is never replaced")
 
 
 def ask(post: dict, system: str, user: str, token: str) -> dict:
@@ -155,7 +193,7 @@ def ask(post: dict, system: str, user: str, token: str) -> dict:
 
 def write_post(post: dict, recap: str, date: str, token: str) -> dict:
     """A platform post: its tone is the system prompt, its text with the recap the task."""
-    system = load_prompt(f"tone/{post['tone']}")
+    system = load_prompt(f"posts/{post['tone']}/tone")
     retry = ""
     for _ in range(2):
         task = fill(prompt_text(post["text"]), recap=recap, retry=retry, date_str=date)
@@ -183,58 +221,111 @@ def pictures(post: dict, output: dict) -> list[tuple[str, str]]:
     """(file name, prompt) for each picture: one from image_prompt, several from images[i].prompt."""
     names = post["pictures"]
     if len(names) == 1:
-        prompt = output.get("image_prompt")
-        if post.get("strip_picture_prompt"):
-            prompt = str(prompt or "").strip()
-        return [(names[0], prompt)]
+        return [(names[0], output.get("image_prompt"))]
     return [
         (name, image.get("prompt"))
         for name, image in zip(names, output.get("images") or [])
     ]
 
 
-def previous_snapshot_date(news: Path, before: str) -> str | None:
-    """The latest snapshot before `before`. When models/ exists without any snapshot,
-    the baseline was lost: stop rather than silently start a new one."""
+def snapshot_date(news: Path, until: str) -> str | None:
+    """The latest recorded catalog on or before `until`. When models/ exists without any
+    snapshot, the record was lost: stop rather than silently start a new one."""
     models = news / MODELS_NEWS_DIR
-    dates = sorted(
-        path.stem for path in (models / "snapshots").glob("*.json") if path.is_file()
-    )
+    dates = sorted(path.stem for path in models.glob("*.json") if path.is_file())
     if models.is_dir() and not dates and not os.environ.get("ALLOW_BASELINE_REBUILD"):
         sys.exit(
             f"{MODELS_NEWS_DIR}/ has no snapshots: refusing to rebuild the baseline. "
             "Set ALLOW_BASELINE_REBUILD=1 if this is intentional."
         )
-    earlier = [date for date in dates if date < before]
+    earlier = [date for date in dates if date <= until]
     return earlier[-1] if earlier else None
+
+
+def read_snapshot(news: Path, date: str | None) -> dict | None:
+    return date and _migrate_old_snapshot(
+        json.loads(
+            (news / MODELS_NEWS_DIR / f"{date}.json").read_text(
+                encoding="utf-8"
+            )
+        )
+    )
+
+
+def community_facts(model: dict, names: dict) -> dict:
+    """A community model's CATALOG_FACTS; an agent's without what its base model sets.
+    An owner types the base model freely, so it stays only as a catalog model's name."""
+    dropped = BASE_MODEL_FACTS if model.get("agent") else ()
+    facts = {
+        key: value
+        for key, value in model.items()
+        if key in CATALOG_FACTS and key not in dropped
+    }
+    base = names.get(facts.pop("base_model", None))
+    if base:
+        facts["base_model"] = base
+    return facts
+
+
+def covered(job: str, snapshot: dict | None) -> dict | None:
+    """The models a post covers: the official ones for the model post, the community
+    ones' facts for the community post."""
+    if not snapshot:
+        return snapshot
+    if job == "models":
+        return {
+            category: [model for model in models if not model.get("community")]
+            for category, models in snapshot.items()
+        }
+    names = {
+        alias: model["name"]
+        for models in snapshot.values()
+        for model in models
+        for alias in (model["name"], *(model.get("aliases") or ()))
+    }
+    return {
+        category: [
+            community_facts(model, names) for model in models if model.get("community")
+        ]
+        for category, models in snapshot.items()
+    }
+
+
+def daily_notes(notes: list[dict]) -> list[dict]:
+    """The PRs the writer chose for the daily post."""
+    return [note for note in notes if note["publish_tier"] == "daily"]
+
+
+def changelog(notes: list[dict]) -> list[dict]:
+    """What Enter's Changelog reads from the day's PRs: API changes and announced retirements."""
+    keys = ("pr_number", "url", "merged_at", "api_changes", "announcements")
+    return [
+        {key: note[key] for key in keys if key in note}
+        for note in notes
+        if note.get("api_changes") or note.get("announcements")
+    ]
 
 
 def job_input(job: str, date: str, news: Path) -> tuple[str | None, dict]:
     """The summary call's user message (None when there is nothing to write) and what save needs."""
-    if job == "models":
-        current = fetch_all_snapshots()
-        previous_date = previous_snapshot_date(news, date)
-        print(f"  Previous snapshot: {previous_date or '(none)'}")
-        previous = previous_date and _migrate_old_snapshot(
-            json.loads(
-                (
-                    news / MODELS_NEWS_DIR / "snapshots" / f"{previous_date}.json"
-                ).read_text(encoding="utf-8")
-            )
+    if job in CATALOG_JOBS:
+        # The catalog recorded on this day compared with the one a week earlier.
+        week_before = datetime.strptime(date, "%Y-%m-%d") - timedelta(days=7)
+        previous_date = snapshot_date(news, week_before.strftime("%Y-%m-%d"))
+        current_date = snapshot_date(news, date)
+        print(f"  Snapshots: {previous_date or '(none)'} to {current_date or '(none)'}")
+        diff = diff_models(
+            covered(job, read_snapshot(news, previous_date)),
+            covered(job, read_snapshot(news, current_date)),
         )
-        diff = diff_models(previous, current)
         user = (
             None
             if diff.is_empty()
             else models_report_input(diff.to_json(), date, previous_date)
         )
-        return user, {
-            "snapshot": current,
-            "diff": diff.to_json(),
-            "previous_date": previous_date,
-        }
+        return user, {"diff": diff.to_json(), "previous_date": previous_date}
     if job == "monthly":
-        summaries = read_daily_summaries(date, news)
+        summaries = read_daily_summaries(*month_dates(date), news)
         repository = os.environ.get("GITHUB_REPOSITORY", f"{OWNER}/{REPO}")
         counts = month_counts(date, get_env("GITHUB_TOKEN"), repository)
         print(
@@ -245,13 +336,26 @@ def job_input(job: str, date: str, news: Path) -> tuple[str | None, dict]:
             "counts": counts,
         }
     if job == "weekly":
+        # The week's daily summaries, as the monthly reads the month's.
         start, end = period(job, date)
-        gists = filter_daily_gists(read_gists_for_week(start, end, news))
-        return (weekly_digest_input(gists, start, end) if gists else None), {
-            "inputs": gists
+        summaries = read_daily_summaries(start, end, news)
+        return (weekly_digest_input(summaries, start, end) if summaries else None), {
+            "inputs": summaries
         }
-    gists = filter_daily_gists(read_gists_for_date(date, news))
-    return (daily_summary_input(gists, date) if gists else None), {"inputs": gists}
+    # The day's merged PRs from GitHub, each read from its diff; nothing of that reading
+    # is saved but Enter's changelog. Announced retirements are checked against the
+    # models recorded that day.
+    repository = os.environ.get("GITHUB_REPOSITORY", f"{OWNER}/{REPO}")
+    snapshot = read_snapshot(news, snapshot_date(news, date)) or {}
+    catalog = [model for models in snapshot.values() for model in models]
+    notes = day_notes(
+        date, get_env("POLLINATIONS_TOKEN"), get_env("GITHUB_TOKEN"), repository, catalog
+    )
+    selected = daily_notes(notes)
+    return (daily_summary_input(selected, date) if selected else None), {
+        "inputs": selected,
+        "changelog": changelog(notes),
+    }
 
 
 def write(job: str, date: str, news: Path, work: Path, overwrite: bool = False) -> None:
@@ -261,6 +365,10 @@ def write(job: str, date: str, news: Path, work: Path, overwrite: bool = False) 
     (work / "images").mkdir(parents=True, exist_ok=True)
     (work / "raw.json").unlink(missing_ok=True)
     print(f"Writing {job} {date}")
+    if job == "catalog":
+        raw = {"job": job, "date": date, "snapshot": fetch_all_snapshots(FULL_CATALOG)}
+        (work / "raw.json").write_bytes(json_file(raw))
+        return
     summary, *posts = job_posts(job)
     user, kept = job_input(job, date, news)
     raw = {"job": job, "date": date, **kept, "outputs": {}}
@@ -282,10 +390,11 @@ def write(job: str, date: str, news: Path, work: Path, overwrite: bool = False) 
             ):
                 if index:
                     time.sleep(3)
-                image, _ = generate_image(prompt, token, IMAGE_SIZE, IMAGE_SIZE, index)
+                image, url = generate_image(prompt, token, IMAGE_SIZE, IMAGE_SIZE, index)
                 if not image:
                     sys.exit(f"{post['name']}: picture {name} failed")
-                (work / "images" / name).write_bytes(image)
+                (work / "images" / name).write_bytes(image)  # for a preview to show
+                raw.setdefault("pictures", {})[name] = url
     else:
         print("  Nothing new to write")
     (work / "raw.json").write_bytes(json_file(raw))
@@ -295,13 +404,14 @@ def json_file(data) -> bytes:
     return json.dumps(data, indent=2, ensure_ascii=False).encode()
 
 
-def post_files(raw: dict, work: Path) -> dict[str, bytes]:
+def post_files(raw: dict) -> dict[str, bytes]:
     """The summary, each post and its pictures."""
     job, date, outputs = raw["job"], raw["date"], raw["outputs"]
     if not outputs:
-        return {}
+        # A day without posts still keeps what Enter's Changelog reads.
+        entries = raw.get("changelog")
+        return {summary_path(job, date): json_file({"date": date, "changelog": entries})} if entries else {}
     summary, *posts = job_posts(job)
-    base = f"{JOB_DIRS[job]}/{date}"
     start, end = period(job, date)
     generated_at = raw["generated_at"]
     digest = outputs[summary["name"]]
@@ -309,6 +419,7 @@ def post_files(raw: dict, work: Path) -> dict[str, bytes]:
         artifact = build_daily_summary_artifact(
             digest, raw["inputs"], date, generated_at
         )
+        artifact["changelog"] = raw["changelog"]
     elif job == "weekly":
         artifact = build_weekly_summary_artifact(
             digest, raw["inputs"], date, start, end, generated_at
@@ -317,28 +428,23 @@ def post_files(raw: dict, work: Path) -> dict[str, bytes]:
         artifact = build_monthly_summary_artifact(
             digest, raw["inputs"], date, generated_at
         )
-    files = {f"{base}/summary.json": json_file(artifact)}
-    repo = os.environ.get("GITHUB_REPOSITORY", f"{OWNER}/{REPO}")
+    files = {summary_path(job, date): json_file(artifact)}
     for post in posts:
         output = outputs[post["name"]]
         for index, (name, prompt) in enumerate(pictures(post, output)):
-            path = f"{base}/images/{name}"
-            files[path] = (work / "images" / name).read_bytes()
-            url = f"https://raw.githubusercontent.com/{repo}/{GISTS_BRANCH}/{path}"
+            picture = {"url": raw["pictures"][name], "prompt": prompt}
             if len(post["pictures"]) == 1:
-                output["image"] = {"url": url, "prompt": prompt}
+                output["image"] = picture
             else:
-                output["images"][index]["url"] = url
-        if "file" not in post:
-            continue
+                output["images"][index].update(picture)
         if (
             "max_chars" in post
             and len(build_linkedin_post_text(output)) > post["max_chars"]
         ):
             sys.exit(f"{post['name']}: over {post['max_chars']} characters")
-        files[f"{base}/{post['file']}"] = json_file(
+        files[post_path(post["platform"], job, date)] = json_file(
             normalize_platform_post(
-                platform=post["tone"],
+                platform=post["platform"],
                 scope=job,
                 date=date,
                 period_start=start,
@@ -350,35 +456,52 @@ def post_files(raw: dict, work: Path) -> dict[str, bytes]:
     return files
 
 
+def model_post_path(job: str, date: str) -> str:
+    """Where the model or community post is saved once sent."""
+    return post_path(job_posts(job)[0]["platform"], job, date)
+
+
 def model_post(raw: dict) -> dict | None:
-    """The model post's discord.json, or None in a week without changes."""
-    report = raw["outputs"].get("model-post")
+    """The model or community post as sent to Discord, or None when nothing changed."""
+    job = raw["job"]
+    report = raw["outputs"].get(job_posts(job)[0]["name"])
     if not report:
         return None
-    role_id = os.environ.get("DISCORD_MODELS_ROLE_ID")
+    # Only the weekly model post mentions the model-news role.
+    role_id = os.environ.get("DISCORD_MODELS_ROLE_ID") if job == "models" else None
     return discord_payload(
         report["discord_text"],
         raw["date"],
         raw["previous_date"],
         role_id,
         raw["generated_at"],
+        "models_weekly" if job == "models" else "community_weekly",
     )
 
 
-def model_files(raw: dict, news: Path) -> dict[str, bytes]:
-    """The /models snapshot and, when something changed, the post, the comparison and models.md."""
-    date = raw["date"]
-    files = {f"{MODELS_NEWS_DIR}/snapshots/{date}.json": json_file(raw["snapshot"])}
-    report = raw["outputs"].get("model-post")
-    if report:
-        changelog = news / MODELS_NEWS_DIR / "models.md"
-        existing = changelog.read_text(encoding="utf-8") if changelog.exists() else ""
-        files[f"{MODELS_NEWS_DIR}/{date}/discord.json"] = json_file(model_post(raw))
-        files[f"{MODELS_NEWS_DIR}/diffs/{date}.json"] = json_file(raw["diff"])
-        files[f"{MODELS_NEWS_DIR}/models.md"] = models_md(
-            existing, report["models_md_section"]
-        ).encode()
-    return files
+def model_files(raw: dict) -> dict[str, bytes]:
+    """The model or community post, when something changed."""
+    payload = model_post(raw)
+    return {model_post_path(raw["job"], raw["date"]): json_file(payload)} if payload else {}
+
+
+def catalog_files(raw: dict, news: Path, overwrite: bool = False) -> dict[str, bytes]:
+    """The day's snapshot, when the catalog differs from the latest recorded one."""
+    date, current = raw["date"], raw["snapshot"]
+    latest = snapshot_date(news, date)
+    recorded = read_snapshot(news, latest)
+    # A category the record didn't have yet is a change too: the comparison skips it.
+    unchanged = recorded and set(recorded) == set(current)
+    if unchanged and diff_models(recorded, current).is_empty():
+        print(f"  The catalog is unchanged since {latest}")
+        return {}
+    # A half-empty answer from /models would be announced as mass retirements.
+    shrunk = [category for category, models in (recorded or {}).items()
+              if len(current.get(category) or []) < len(models) / 2]
+    if shrunk and not overwrite:
+        sys.exit(f"catalog {date}: {', '.join(shrunk)} lost more than half its models since {latest}; "
+                 "check /models, and record it with --overwrite if the removals are real")
+    return {f"{MODELS_NEWS_DIR}/{date}.json": json_file(current)}
 
 
 def save(job: str, date: str, news: Path, work: Path, overwrite: bool = False) -> None:
@@ -387,9 +510,21 @@ def save(job: str, date: str, news: Path, work: Path, overwrite: bool = False) -
     raw = json.loads((work / "raw.json").read_text(encoding="utf-8"))
     if (raw["job"], raw["date"]) != (job, date):
         sys.exit(f"{work} holds {raw['job']} {raw['date']}, not {job} {date}")
-    files = model_files(raw, news) if job == "models" else post_files(raw, work)
+    if job == "catalog":
+        files = catalog_files(raw, news, overwrite)
+    elif job in CATALOG_JOBS:
+        files = model_files(raw)
+    else:
+        files = post_files(raw)
     if job == "monthly":  # every month has its counts, even one with nothing to write
-        files[f"{MONTHLY_REL_DIR}/{date}/contributors.json"] = json_file(raw["counts"])
+        files[f"{CONTRIBUTORS_REL_DIR}/{date}.json"] = json_file(raw["counts"])
+    if job in ("daily", "weekly", "monthly"):
+        # An overwrite that writes less (a day that became quiet) must not leave the old summary
+        # or posts behind: Enter would show them and deliver.py would send them. delivery.json is kept.
+        for stale in [summary_path(job, date), *(post_path(post["platform"], job, date) for post in job_posts(job)[1:])]:
+            if stale not in files and (news / stale).exists():
+                (news / stale).unlink()
+                print(f"  Removed {stale}")
     for path, content in files.items():
         (news / path).parent.mkdir(parents=True, exist_ok=True)
         (news / path).write_bytes(content)
@@ -403,7 +538,7 @@ def main() -> None:
         description="Write and save the scheduled news posts."
     )
     parser.add_argument("command", choices=("write", "save"))
-    parser.add_argument("job", choices=JOB_DIRS)
+    parser.add_argument("job", choices=DATES)
     parser.add_argument(
         "date", help="the day, the Sunday, the month (YYYY-MM) or the Wednesday"
     )

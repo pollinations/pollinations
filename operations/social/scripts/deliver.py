@@ -2,10 +2,12 @@
 """Deliver the saved news posts: Buffer posts scheduled at today's slots, Discord sends.
 
     python deliver.py schedule JOB DATE                 # Buffer: X, LinkedIn, Instagram
-    python deliver.py send     JOB DATE [--work WORK]   # Discord; WORK for models
-    python deliver.py mark     JOB DATE POST done|failed
+    python deliver.py send     JOB DATE [--work WORK]   # Discord; WORK for models and community
+    python deliver.py mark     JOB DATE PLATFORM done|failed
+    python deliver.py mark     prs MONTH PR done|failed       # a deploy post: its merge month and number
 
-Each post folder on the news branch gets a delivery.json with one entry per post.
+Each posts/<platform>/<job>/ folder on the news branch has a delivery.json with one
+entry per post, keyed by its file name.
 The entry is set to "attempt" before a call and to the result after, always written
 with the file's sha, so two runs can't both send a post and a repeated run skips
 what went out. An "attempt" left behind means the result is unknown: that post
@@ -25,11 +27,12 @@ from pathlib import Path
 import requests
 from common import (
     DISCORD_CHUNK_SIZE,
-    GISTS_BRANCH,
+    NEWS_BRANCH,
     GITHUB_API_BASE,
     LINKEDIN_MAX_CHARS,
     NEWS_REL_DIR,
     OWNER,
+    POSTS_REL_DIR,
     REPO,
     _github_headers,
     chunk_message,
@@ -37,38 +40,32 @@ from common import (
     get_post_image_urls,
     safe_truncate,
 )
-from posts import JOB_DIRS, check_date, model_post
+from posts import CATALOG_JOBS, check_date, job_posts, model_post, post_path, summary_path
 
 # The first date each job is delivered here; older folders went out with the old senders.
-START = {"daily": "2026-10-12", "weekly": "2026-10-18", "models": "2026-10-14"}
+START = {
+    "daily": "2026-10-12",
+    "weekly": "2026-10-18",
+    "models": "2026-10-14",
+    "community": "2026-10-21",
+}
 # The channel today's lookup picks: the first listed of each service in Buffer.
 BUFFER_CHANNELS = {
-    "twitter": "695fe0e5457dae6a34edc9a5",  # pollinations_ai
+    "x": "695fe0e5457dae6a34edc9a5",  # pollinations_ai
     "linkedin": "695fe487457dae6a34ede497",  # pollinations.ai
     "instagram": "695fccbf457dae6a34ed79b4",  # pollinations_ai
 }
 BUFFER_URL = "https://api.buffer.com"
 
-# Each job's post files and where they go.
-POSTS = {
-    "daily": {"twitter.json": "twitter"},
-    "weekly": {
-        "twitter.json": "twitter",
-        "linkedin.json": "linkedin",
-        "instagram.json": "instagram",
-        "discord.json": "discord",
-    },
-    "models": {"discord.json": "discord"},
-}
 # Buffer slots, as today: the next of these weekdays (1 = Monday) at this UTC hour,
 # at least 10 minutes away.
 SLOTS = {
-    "twitter": ((1, 2, 3, 4, 5, 6), 15),
+    "x": ((1, 2, 3, 4, 5, 6), 15),
     "linkedin": ((7,), 18),
     "instagram": ((7,), 18),
 }
 # Text limits, as today: X and Instagram are cut with "...", LinkedIn is refused.
-LIMITS = {"twitter": 280, "instagram": 2200, "linkedin": LINKEDIN_MAX_CHARS}
+LIMITS = {"x": 280, "instagram": 2200, "linkedin": LINKEDIN_MAX_CHARS}
 
 CREATE_POST = """mutation CreatePost($input: CreatePostInput!) {
   createPost(input: $input) {
@@ -109,11 +106,11 @@ def github(method: str, path: str, **kwargs) -> requests.Response:
 
 def read_news(path: str) -> tuple[bytes | None, str | None]:
     """A file on the news branch and its sha, or (None, None) when there is none."""
-    resp = github("GET", path, params={"ref": GISTS_BRANCH})
+    resp = github("GET", path, params={"ref": NEWS_BRANCH})
     if resp.status_code == 404:
         return None, None
     if resp.status_code != 200:
-        sys.exit(f"Reading {path} from {GISTS_BRANCH}: HTTP {resp.status_code}")
+        sys.exit(f"Reading {path} from {NEWS_BRANCH}: HTTP {resp.status_code}")
     body = resp.json()
     return base64.b64decode(body["content"]), body["sha"]
 
@@ -144,7 +141,7 @@ def write_record(
             "content": base64.b64encode(
                 json.dumps({**record, post: entry}, indent=2).encode()
             ).decode(),
-            "branch": GISTS_BRANCH,
+            "branch": NEWS_BRANCH,
             **({"sha": sha} if sha else {}),
         }
         try:
@@ -353,17 +350,25 @@ def weekly_discord(post: dict):
 # ── Commands ─────────────────────────────────────────────────────────
 
 
+def platforms(job: str) -> list[str]:
+    """The platforms a job posts to: its prompts under prompts/posts/<platform>/."""
+    return [post["platform"] for post in job_posts(job) if "platform" in post]
+
+
+def record_of(platform: str, job: str, date: str) -> tuple[str, str]:
+    """The folder whose delivery.json records this post, and the post's key in it."""
+    folder, _, key = post_path(platform, job, date).rpartition("/")
+    return folder, key
+
+
 def run(command: str, job: str, date: str, work: Path | None = None) -> None:
     check_date(job, date)
     if not START[job] or date < START[job]:
         sys.exit(
             f"{job} {date} is before deliver.py's start date ({START[job]}); the old senders deliver it"
         )
-    folder = f"{JOB_DIRS[job]}/{date}"
     channels = SLOTS if command == "schedule" else ("discord",)
-    targets = {
-        post: channel for post, channel in POSTS[job].items() if channel in channels
-    }
+    targets = [channel for channel in channels if channel in platforms(job)]
     # As today, the daily folder dated Saturday is written on Sunday and never delivered.
     if (
         not targets
@@ -373,48 +378,52 @@ def run(command: str, job: str, date: str, work: Path | None = None) -> None:
         print(f"Nothing to {command} for {job} {date}")
         return
 
-    if job == "models":
+    if job in CATALOG_JOBS:
         if work is None:
-            sys.exit("send models needs --work, the folder posts.py wrote")
+            sys.exit(f"send {job} needs --work, the folder posts.py wrote")
         raw = json.loads((work / "raw.json").read_text(encoding="utf-8"))
         if (raw["job"], raw["date"]) != (job, date):
             sys.exit(f"{work} holds {raw['job']} {raw['date']}, not {job} {date}")
         payload = model_post(raw)
         if not payload:
-            print(f"No model changes for {date}: nothing to send")
+            print(f"No {job} changes for {date}: nothing to send")
             return
         text = payload["text"].strip()
         digest = hashlib.sha256(text.encode()).hexdigest()
         webhook = get_env("DISCORD_MODELS_WEBHOOK_URL")
+        # Only the model post mentions its role; community text never pings anyone.
         message = {
             "content": safe_truncate(text, DISCORD_CHUNK_SIZE),
-            "allowed_mentions": {"parse": ["roles"]},
+            "allowed_mentions": {"parse": ["roles"] if job == "models" else []},
         }
 
         def prepare():
             return lambda: send_discord(webhook, [message])
 
-        outcome = deliver(folder, "discord.json", prepare, text_sha256=digest)
+        folder, key = record_of("discord", job, date)
+        outcome = deliver(folder, key, prepare, text_sha256=digest)
         # save stores this WORK's post, so it must be the text that went out.
-        entry = read_record(folder)[0].get("discord.json") or {}
+        entry = read_record(folder)[0].get(key) or {}
         if outcome not in ("failed", "stuck") and (
             entry.get("state"),
             entry.get("text_sha256"),
         ) != ("done", digest):
-            sys.exit(f"models {date} isn't recorded as sent with this WORK's text")
-        outcomes = {"discord.json": outcome}
+            sys.exit(f"{job} {date} isn't recorded as sent with this WORK's text")
+        outcomes = {"discord": outcome}
     else:
-        # A date counts as empty only when none of its files exist; a saved post is
-        # delivered even without its summary, and an expected post that is missing fails.
-        files = {post: read_news(f"{folder}/{post}")[0] for post in POSTS[job]}
-        if read_news(f"{folder}/summary.json")[0] is None and not any(files.values()):
+        # A date counts as empty only when it has no post and no summary text (a quiet
+        # day keeps only Enter's changelog); a saved post is delivered even without its
+        # summary, and an expected post that is missing fails.
+        files = {platform: read_news(post_path(platform, job, date))[0] for platform in platforms(job)}
+        summary = read_news(summary_path(job, date))[0]
+        if not (summary and json.loads(summary).get("summary")) and not any(files.values()):
             print(f"Nothing saved for {job} {date}: nothing to deliver")
             return
         outcomes = {}
-        for post, channel in targets.items():
+        for channel in targets:
 
-            def prepare(post=post, channel=channel):
-                content = files[post]
+            def prepare(channel=channel):
+                content = files[channel]
                 if content is None:
                     raise ValueError("the post file is missing")
                 data = json.loads(content)
@@ -422,7 +431,7 @@ def run(command: str, job: str, date: str, work: Path | None = None) -> None:
                     return weekly_discord(data)
                 return buffer_post(channel, data)
 
-            outcomes[post] = deliver(folder, post, prepare)
+            outcomes[channel] = deliver(*record_of(channel, job, date), prepare)
 
     for post, outcome in outcomes.items():
         print(f"  {job} {date} {post}: {outcome}")
@@ -432,16 +441,21 @@ def run(command: str, job: str, date: str, work: Path | None = None) -> None:
     if problems:
         sys.exit(
             f"Not delivered: {', '.join(problems)}. A stuck post may have gone out: "
-            f"check its channel, then run `deliver.py mark {job} {date} POST done|failed`."
+            f"check its channel, then run `deliver.py mark {job} {date} PLATFORM done|failed`."
         )
 
 
-def mark(job: str, date: str, post: str, state: str) -> None:
-    """A person settles a post: done when they found it, failed to have it sent again."""
-    check_date(job, date)
-    if post not in POSTS[job]:
-        sys.exit(f"{job} has no {post}")
-    folder = f"{JOB_DIRS[job]}/{date}"
+def mark(job: str, date: str, platform: str, state: str) -> None:
+    """A person settles a post: done when they found it, failed to have it sent again.
+    For a deploy post, job is prs, date its PR's merge month and platform the PR number."""
+    if job == "prs":
+        check_date("monthly", date)
+        folder, post = f"{POSTS_REL_DIR}/discord/prs/{date}", f"pr-{platform}"
+    else:
+        check_date(job, date)
+        if platform not in platforms(job):
+            sys.exit(f"{job} has no {platform} post")
+        folder, post = record_of(platform, job, date)
     record, sha = read_record(folder)
     print(f"Replacing {record.get(post)}")
     sent = (record.get(post) or {}).get("discord")
@@ -465,19 +479,19 @@ def main() -> None:
     commands = parser.add_subparsers(dest="command", required=True)
     for name in ("schedule", "send"):
         command = commands.add_parser(name)
-        command.add_argument("job", choices=POSTS)
+        command.add_argument("job", choices=START)
         command.add_argument("date")
         command.add_argument(
-            "--work", type=Path, help="the folder posts.py wrote (models)"
+            "--work", type=Path, help="the folder posts.py wrote (models, community)"
         )
     command = commands.add_parser("mark")
-    command.add_argument("job", choices=POSTS)
-    command.add_argument("date")
-    command.add_argument("post")
+    command.add_argument("job", choices=(*START, "prs"))
+    command.add_argument("date", help="the day, the Sunday, or for prs the merge month (YYYY-MM)")
+    command.add_argument("platform", help="the platform, or for prs the PR number")
     command.add_argument("state", choices=("done", "failed"))
     args = parser.parse_args()
     if args.command == "mark":
-        mark(args.job, args.date, args.post, args.state)
+        mark(args.job, args.date, args.platform, args.state)
     else:
         run(args.command, args.job, args.date, args.work)
 

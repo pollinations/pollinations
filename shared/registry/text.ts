@@ -601,6 +601,7 @@ const TEXT_BASE_SERVICES = {
         description: "Reasoning for complex coding and agentic workflows",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
         tools: true,
         reasoning: true,
         contextLength: 1050000,
@@ -659,6 +660,7 @@ const TEXT_BASE_SERVICES = {
             "Faster near-Astra reasoning for coding, agents, and professional work",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
         tools: true,
         reasoning: true,
         contextLength: 1050000,
@@ -715,6 +717,7 @@ const TEXT_BASE_SERVICES = {
         description: "Efficient reasoning for focused, high-volume tasks",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
         tools: true,
         reasoning: true,
         contextLength: 1050000,
@@ -905,8 +908,7 @@ const TEXT_BASE_SERVICES = {
             completionAudioTokens: perMillion(20.0),
         },
         title: "GPT Audio Mini",
-        description:
-            "Talks and listens — voice conversations with spoken or text replies",
+        description: "Voice conversations with spoken or text replies",
         voices: [...AUDIO_VOICES],
         inputModalities: ["text", "audio"],
         outputModalities: ["audio", "text"],
@@ -954,7 +956,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Google",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.5),
@@ -985,7 +987,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Google",
         category: "text",
         addedDate: new Date("2026-05-19").getTime(),
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         paidOnly: true,
         // Google's promotional pricing runs through 2026-12-31; list rates
         // double on 2027-01-01 and need another update then.
@@ -1018,7 +1020,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Google",
         category: "text",
         addedDate: new Date("2026-09-02").getTime(),
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         paidOnly: true,
         // Google's introductory pricing ends 2026-12-31.
         cost: {
@@ -1043,6 +1045,39 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "google/gemini-4-argon": {
+        supportedParameters: CHAT_PARAMETERS.vertexGemini35,
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "text",
+        addedDate: new Date("2026-10-13").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Vertex global list rates (2026-10-13). Vertex invoices these and
+        // returns 50% as credits through 2026-11-30; that promo is not priced in.
+        cost: {
+            promptTextTokens: perMillion(4),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(4),
+            promptAudioTokens: perMillion(4),
+            promptImageTokens: perMillion(4),
+            promptVideoTokens: perMillion(4),
+            completionTextTokens: perMillion(20),
+        },
+        billing: GEMINI_3_SEARCH_BILLING,
+        title: "Gemini 4 Argon",
+        description:
+            "Flagship reasoning over text, images, audio and video, with web search",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
+        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
+        tools: true,
+        search: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "google/gemini-3.5-flash-lite": {
         supportedParameters: CHAT_PARAMETERS.vertexGemini35,
         aliases: [
@@ -1057,7 +1092,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Google",
         category: "text",
         addedDate: new Date("2026-04-03").getTime(),
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.3),
@@ -1146,23 +1181,53 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4.1-flash": {
+        // Azure accepts this full set (probed 2026-10-15).
         supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: [],
-        provider: "deepinfra",
+        provider: "azure",
         publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2026-09-11").getTime(),
-        priceMultiplier: 1,
-        paidOnly: true,
+        // Azure model catalog and retirement schedule (Preview).
+        // Provider retires this route on 2026-12-15.
+        // 0.5x keeps output at the pre-Azure DeepInfra price.
+        priceMultiplier: 0.5,
+        paidOnly: false,
         perUserRpm: 60,
         cost: {
-            // DeepInfra list rates (2026-10-12); its open-ended 30% discount
-            // is not passed on.
-            promptTextTokens: perMillion(0.2),
+            // Azure Global Standard "V4.1 Flash" catalog rates (2026-10-15).
+            promptTextTokens: perMillion(0.3),
             promptCachedTokens: perMillion(0.006),
-            completionTextTokens: perMillion(0.6),
+            promptImageTokens: perMillion(0.3),
+            completionTextTokens: perMillion(1.2),
         },
         title: "DeepSeek V4.1 Flash",
+        description:
+            "Reasoning, coding, tool calling, and image understanding.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "deepseek/deepseek-v4.1-flash-1017": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        aliases: [],
+        provider: "fireworks",
+        publisher: "DeepSeek",
+        category: "text",
+        addedDate: new Date("2026-10-18").getTime(),
+        // 0.5x matches DeepInfra's output price (0.60 per M).
+        priceMultiplier: 0.5,
+        paidOnly: true,
+        // Fireworks standard serverless rates (2026-10-18).
+        cost: {
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.006),
+            completionTextTokens: perMillion(1.2),
+        },
+        title: "DeepSeek V4.1 Flash 1017",
         description:
             "Reasoning, coding, tool calling, and image understanding.",
         inputModalities: ["text", "image"],
@@ -1216,10 +1281,10 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Novita BF16 preserves remote image URLs; verified 2026-08-22.
-            promptTextTokens: perMillion(0.13) * 1.055,
-            promptImageTokens: perMillion(0.13) * 1.055,
-            completionTextTokens: perMillion(0.4) * 1.055,
+            // OpenRouter DeepInfra FP8; rates verified 2026-10-22.
+            promptTextTokens: perMillion(0.07) * 1.055,
+            promptImageTokens: perMillion(0.07) * 1.055,
+            completionTextTokens: perMillion(0.34) * 1.055,
         },
         title: "Gemma 4 26B A4B",
         description:
@@ -1241,7 +1306,7 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Novita BF16 endpoint, verified 2026-08-22.
+            // OpenRouter Crusoe BF16 at Novita's former rate; verified 2026-10-22.
             promptTextTokens: perMillion(0.14) * 1.055,
             promptImageTokens: perMillion(0.14) * 1.055,
             completionTextTokens: perMillion(0.4) * 1.055,
@@ -1306,11 +1371,13 @@ const TEXT_BASE_SERVICES = {
         // Provider retires this route on 2027-04-06.
         priceMultiplier: 0.75,
         paidOnly: false,
+        // Azure Global Standard meters "Grok 4.2 Inp/Outp glbl" ($1.25 / $2.50
+        // per 1M, effective 2026-05-01), the same rates as grok-4.3.
         cost: {
-            promptTextTokens: perMillion(2.0),
+            promptTextTokens: perMillion(1.25),
             promptCachedTokens: perMillion(0.2),
-            promptImageTokens: perMillion(2.0),
-            completionTextTokens: perMillion(6.0),
+            promptImageTokens: perMillion(1.25),
+            completionTextTokens: perMillion(2.5),
         },
         title: "Grok 4.20",
         description: "Multimodal chat and tool calling with optional reasoning",
@@ -1579,6 +1646,35 @@ const TEXT_BASE_SERVICES = {
         contextLength: 8192,
         isSpecialized: true,
     },
+    "perplexity/pplx-decider-v1.1-27b": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "vercel",
+        publisher: "Perplexity",
+        category: "text",
+        addedDate: new Date("2026-10-07").getTime(),
+        priceMultiplier: 1, // Billed at cost, no margin.
+        paidOnly: true,
+        cost: {
+            // Vercel AI Gateway list price, the cheapest route.
+            promptTextTokens: perMillion(0.02),
+            completionTextTokens: perMillion(0),
+        },
+        title: "Decider V1.1 27B",
+        description:
+            "Typed choices, scores and yes/no probabilities over a 262K " +
+            "context; post state and questions to /alpha/decisions, or send " +
+            "the same JSON in the last user message on /v1/chat/completions. " +
+            "Text state only",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 262144,
+        isSpecialized: true,
+    },
     "liquid/d1": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],
@@ -1589,9 +1685,10 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1, // Billed at cost, no margin.
         paidOnly: true,
         cost: {
-            // OpenRouter list price plus its 5.5% credit fee, as every
-            // OpenRouter route records.
-            promptTextTokens: perMillion(0.04) * 1.055,
+            // OpenRouter list price ($0.02/M input and cached input) plus its
+            // 5.5% credit fee, as every OpenRouter route records.
+            promptTextTokens: perMillion(0.02) * 1.055,
+            promptCachedTokens: perMillion(0.02) * 1.055,
             completionTextTokens: perMillion(0),
         },
         title: "Liquid D1",
@@ -1607,6 +1704,85 @@ const TEXT_BASE_SERVICES = {
         tools: false,
         reasoning: false,
         contextLength: 65536,
+        isSpecialized: true,
+    },
+    "inferenceport-ai/lightning-text-v2.1": {
+        supportedParameters: CHAT_PARAMETERS.inferenceportLightning,
+        aliases: [],
+        provider: "inferenceport",
+        publisher: "InferencePort",
+        category: "text",
+        addedDate: new Date("2026-10-02").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // InferencePort /v1/models list price (2026-10-02): $0.75 per
+            // million input and output tokens, no cache discount.
+            promptTextTokens: perMillion(0.75),
+            completionTextTokens: perMillion(0.75),
+        },
+        title: "Lightning Text v2.1",
+        description:
+            "Router that picks a fast model per prompt, serving Qwen3.8 27B in place of GPT-OSS, with image input, tools and JSON output",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: false,
+        contextLength: 128000,
+        isSpecialized: false,
+    },
+    "inferenceport-ai/lightning-text-v2": {
+        supportedParameters: CHAT_PARAMETERS.inferenceportLightning,
+        aliases: [],
+        provider: "inferenceport",
+        publisher: "InferencePort",
+        category: "text",
+        addedDate: new Date("2026-10-02").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // InferencePort /v1/models list price (2026-10-02): $0.75 per
+            // million input and output tokens, no cache discount.
+            promptTextTokens: perMillion(0.75),
+            completionTextTokens: perMillion(0.75),
+        },
+        title: "Lightning Text v2",
+        description:
+            "Router that picks a fast model per prompt, with image input, tools and JSON output",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: false,
+        contextLength: 128000,
+        isSpecialized: false,
+    },
+    "microsoft/microsoft-decision-1": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "vercel",
+        publisher: "Microsoft",
+        category: "text",
+        addedDate: new Date("2026-10-09").getTime(),
+        priceMultiplier: 1, // Billed at cost, no margin.
+        paidOnly: true,
+        cost: {
+            // Vercel AI Gateway list price, the cheapest route.
+            promptTextTokens: perMillion(0.042),
+            completionTextTokens: perMillion(0),
+        },
+        title: "Microsoft-Decision-1",
+        description:
+            "Fast typed choices with a calibrated probability for each fixed " +
+            "option and no generated text; post state and questions to " +
+            "/alpha/decisions, or send the same JSON in the last user " +
+            "message on /v1/chat/completions",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 32768,
         isSpecialized: true,
     },
     "openai/gpt-6-luna-decisions": {
@@ -1770,14 +1946,14 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-haiku-5.5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "aws",
+        provider: "anthropic",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-10-07").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
-            // Bedrock global standard rates (prompts up to 100K tokens);
+            // Anthropic global standard rates (prompts up to 100K tokens);
             // 5-minute cache writes.
             promptTextTokens: perMillion(0.1),
             promptCachedTokens: perMillion(0.01),
@@ -1821,7 +1997,7 @@ const TEXT_BASE_SERVICES = {
             "Low-cost adaptive reasoning for everyday tasks, tool use and high-volume sub-agents",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 20, // Bedrock Converse image limit.
+        maxReferenceImages: 20, // Preserve the image limit across the AWS fallback.
         tools: true,
         reasoning: true,
         contextLength: 1000000,
@@ -1870,8 +2046,7 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(10),
         },
         title: "Claude Sonnet 5",
-        description:
-            "Sharp reasoning with fast responses — a strong default for most work",
+        description: "Reasoning model with fast responses for general use",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -1882,14 +2057,14 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-sonnet-5.5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "aws",
+        provider: "anthropic",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-09-28").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
-            // AWS Marketplace prod-pjfguoisodbd6, global standard; 5-minute cache writes.
+            // Anthropic global standard rates; 5-minute cache writes.
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.1),
             promptCacheWriteTokens: perMillion(2.5),
@@ -1900,7 +2075,7 @@ const TEXT_BASE_SERVICES = {
             "Fast adaptive reasoning for everyday coding, agentic tool use and long-context work",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 20, // Bedrock Converse image limit.
+        maxReferenceImages: 20, // Preserve the image limit across the AWS fallback.
         tools: true,
         reasoning: true,
         contextLength: 1000000,
@@ -1992,14 +2167,13 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-opus-5.5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "aws",
+        provider: "anthropic",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
-        // Bedrock global route: Anthropic's published global Opus 5.5 rates.
-        // Verify against AWS's price list when the launch-day entry appears.
+        priceMultiplier: 0.75,
+        // Anthropic global standard rates; 5-minute cache writes.
         cost: {
             promptTextTokens: perMillion(4),
             promptCachedTokens: perMillion(0.2),
@@ -2011,7 +2185,7 @@ const TEXT_BASE_SERVICES = {
             "Flagship reasoning for demanding coding, multi-step codebase changes and long-horizon agentic work",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 20, // Bedrock Converse image limit.
+        maxReferenceImages: 20, // Preserve the image limit across the AWS fallback.
         tools: true,
         contextLength: 1000000,
         isSpecialized: false,
@@ -2074,14 +2248,14 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-fable-5.1": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "aws",
+        provider: "anthropic",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-09-01").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
-            // Bedrock global.anthropic.claude-fable-5-1 global standard rates.
+            // Anthropic global standard rates; 5-minute cache writes.
             promptTextTokens: perMillion(10),
             promptCachedTokens: perMillion(0.25),
             promptCacheWriteTokens: perMillion(12.5),
@@ -2092,7 +2266,7 @@ const TEXT_BASE_SERVICES = {
             "Frontier intelligence for complex reasoning, coding and long-running agents",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 20, // Bedrock Converse image limit.
+        maxReferenceImages: 20, // Preserve the image limit across the AWS fallback.
         tools: true,
         reasoning: true,
         contextLength: 1000000,
@@ -2201,7 +2375,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Moonshot Kimi K2.7 Code",
         description:
-            "Built for agentic coding — plans, reasons and edits code step by step",
+            "Agentic coding: plans, reasons and edits code step by step",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 30,
@@ -2334,14 +2508,14 @@ const TEXT_BASE_SERVICES = {
         publisher: "inclusionAI",
         category: "text",
         addedDate: new Date("2026-10-02").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Free during the launch promotion on direct Novita and both
-            // gateway routes. Paid pricing belongs in a separate cutover PR.
-            promptTextTokens: perMillion(0),
-            promptCachedTokens: perMillion(0),
-            completionTextTokens: perMillion(0),
+            // Novita's paid rate since its free launch promotion ended
+            // (2026-10-13 16:00 UTC).
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.06),
+            completionTextTokens: perMillion(0.9),
         },
         title: "Ling 3.1 Flash",
         description:
@@ -2471,10 +2645,10 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Together route rates (2026-08-01). Image and audio
+            // OpenRouter DeepInfra route rates (2026-10-21). Image and audio
             // inputs are tokenized into promptTextTokens; no separate usage is
             // reported or billed for either modality.
-            promptTextTokens: perMillion(0.5) * 1.055,
+            promptTextTokens: perMillion(0.45) * 1.055,
             promptCachedTokens: perMillion(0.1) * 1.055,
             completionTextTokens: perMillion(1.2) * 1.055,
         },
@@ -2622,17 +2796,19 @@ const TEXT_BASE_SERVICES = {
     "xiaomi/mimo-v2.6-flash": {
         supportedParameters: CHAT_PARAMETERS.mimo,
         aliases: [],
-        provider: "openrouter",
+        provider: "novita",
         publisher: "Xiaomi",
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter Xiaomi FP8 endpoint, verified 2026-09-22.
+        // Novita direct (2026-10-10): base rates without OpenRouter's 5.5% fee.
         cost: {
-            promptTextTokens: perMillion(0.14) * 1.055,
-            promptCachedTokens: perMillion(0.0028) * 1.055,
-            completionTextTokens: perMillion(0.28) * 1.055,
+            promptTextTokens: perMillion(0.14),
+            promptCachedTokens: perMillion(0.0028),
+            // Novita reports image tokens as prompt tokens; bill them at the input rate.
+            promptImageTokens: perMillion(0.14),
+            completionTextTokens: perMillion(0.28),
         },
         title: "MiMo V2.6 Flash",
         description:
@@ -2648,17 +2824,19 @@ const TEXT_BASE_SERVICES = {
     "xiaomi/mimo-v2.6-pro": {
         supportedParameters: CHAT_PARAMETERS.mimo,
         aliases: [],
-        provider: "openrouter",
+        provider: "novita",
         publisher: "Xiaomi",
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter Xiaomi FP8 endpoint, verified 2026-09-22.
+        // Novita direct (2026-10-10): base rates without OpenRouter's 5.5% fee.
         cost: {
-            promptTextTokens: perMillion(0.435) * 1.055,
-            promptCachedTokens: perMillion(0.0036) * 1.055,
-            completionTextTokens: perMillion(0.87) * 1.055,
+            promptTextTokens: perMillion(0.435),
+            promptCachedTokens: perMillion(0.0036),
+            // Novita reports image tokens as prompt tokens; bill them at the input rate.
+            promptImageTokens: perMillion(0.435),
+            completionTextTokens: perMillion(0.87),
         },
         title: "MiMo V2.6 Pro",
         description:
@@ -2677,7 +2855,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Google",
         category: "text",
         addedDate: new Date("2025-11-19").getTime(),
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(2.0),
@@ -2688,8 +2866,8 @@ const TEXT_BASE_SERVICES = {
             promptVideoTokens: perMillion(2.0),
             completionTextTokens: perMillion(12.0),
         },
-        // Vertex reprices the whole request from 200K prompt tokens. Image
-        // tokens retain their separately advertised base rate.
+        // Vertex reprices the whole request from 200K prompt tokens; its single
+        // input price covers text, image, audio and video.
         ...defineCostVariants(
             {
                 long_context: {
@@ -2697,6 +2875,7 @@ const TEXT_BASE_SERVICES = {
                     promptCachedTokens: perMillion(0.4),
                     promptCacheWriteTokens: perMillion(4.0),
                     promptAudioTokens: perMillion(4.0),
+                    promptImageTokens: perMillion(4.0),
                     promptVideoTokens: perMillion(4.0),
                     completionTextTokens: perMillion(18.0),
                 },
@@ -2706,7 +2885,7 @@ const TEXT_BASE_SERVICES = {
                 long_context: {
                     label: "Long context (200K+)",
                     description:
-                        "At least 200,000 prompt tokens; text, cached, cache-write, audio, video, and output rates increase while image input stays at its separately advertised base price.",
+                        "At least 200,000 prompt tokens; text, cached, cache-write, image, audio, video, and output rates increase.",
                 },
             },
             "<200K context",
@@ -2977,7 +3156,7 @@ const TEXT_BASE_SERVICES = {
             "Text and image understanding with a 128K context window; no tool calling or structured output",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // Verified on both routes; Pollinations cap.
+        maxReferenceImages: 10, // Pollinations cap.
         tools: false,
         supportsStructuredOutput: false,
         maxCompletionTokens: 16384,
@@ -3092,6 +3271,33 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Muse Spark 1.2",
         description: "Agentic coding and tool-use model with 1M context",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "meta/muse-wonder-1.0": {
+        supportedParameters: CHAT_PARAMETERS.openRouterMuseWonder,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Meta",
+        category: "text",
+        addedDate: new Date("2026-10-12").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter Meta endpoint (2026-10-12), including the 5.5%
+        // credit-purchase fee.
+        cost: {
+            promptTextTokens: perMillion(4) * 1.055,
+            promptCachedTokens: perMillion(0.2) * 1.055,
+            promptImageTokens: perMillion(4) * 1.055,
+            completionTextTokens: perMillion(20) * 1.055,
+        },
+        title: "Muse Wonder 1.0",
+        description:
+            "Long-running agent and coding model with 1M context and image input",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -3615,7 +3821,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Qwen3 VL 30B A3B Instruct",
         description:
-            "Fast image understanding — describes, reads and analyzes what it sees",
+            "Describes images, reads text in them, and analyzes visual content",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -3757,8 +3963,7 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(0),
         },
         title: "Qwen3Guard 8B",
-        description:
-            "Flags unsafe content — a moderation filter, not a chat companion",
+        description: "Flags unsafe content for moderation",
         inputModalities: ["text"],
         outputModalities: ["text"],
         isSpecialized: true,

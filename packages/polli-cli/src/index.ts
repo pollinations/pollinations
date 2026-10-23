@@ -14,6 +14,7 @@ import { modelsCommand } from "./commands/models.js";
 import { myModelsCommand } from "./commands/my-models.js";
 import { questsCommand } from "./commands/quests.js";
 import { sandboxCommand } from "./commands/sandbox/index.js";
+import { sitesCommand } from "./commands/sites.js";
 import { updateCommand } from "./commands/update.js";
 import { uploadCommand } from "./commands/upload.js";
 import { usageCommand } from "./commands/usage.js";
@@ -74,6 +75,9 @@ program.addCommand(harnessCommand);
 
 // E2B sandboxes
 program.addCommand(sandboxCommand);
+
+// Static sites
+program.addCommand(sitesCommand);
 
 // Generation
 program.addCommand(createGenCommand());

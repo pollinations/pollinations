@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { modelInfoFromDefinition } from "../../shared/registry/model-info.ts";
 import {
     calculateCost,
@@ -40,6 +40,11 @@ function fallbackBill(
         input,
     });
 }
+
+// Vitest 4 reuses an existing spy, so each test restores its console spies.
+afterEach(() => {
+    vi.restoreAllMocks();
+});
 
 describe("long-context cost variants", () => {
     it.each([
@@ -339,13 +344,13 @@ describe("long-context cost variants", () => {
 
         expect(billing.costVariant).toBe("long_context");
         expect(billing.priceDefinition).toMatchObject({
-            promptTextTokens: (4 / 1e6) * 1.055,
-            promptCachedTokens: (0.4 / 1e6) * 1.055,
-            promptCacheWriteTokens: (4 / 1e6) * 1.055,
-            promptAudioTokens: (4 / 1e6) * 1.055,
-            promptImageTokens: (2 / 1e6) * 1.055,
-            promptVideoTokens: (4 / 1e6) * 1.055,
-            completionTextTokens: (18 / 1e6) * 1.055,
+            promptTextTokens: 4 / 1e6,
+            promptCachedTokens: 0.4 / 1e6,
+            promptCacheWriteTokens: 4 / 1e6,
+            promptAudioTokens: 4 / 1e6,
+            promptImageTokens: 4 / 1e6,
+            promptVideoTokens: 4 / 1e6,
+            completionTextTokens: 18 / 1e6,
         });
     });
 
@@ -408,7 +413,7 @@ describe("long-context cost variants", () => {
         });
 
         expect(billing.cost.totalCost).toBeCloseTo(0.375 * 1.055, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(4.5 * 1.055, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(4.5, 12);
     });
 
     it("Qwen applies its advertised long-context sheet", () => {

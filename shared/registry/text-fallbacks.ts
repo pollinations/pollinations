@@ -13,12 +13,35 @@ import { CHAT_PARAMETERS } from "./text-parameters";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "perplexity/pplx-decider-v1.1-27b": {
+        // Same Perplexity backend; covers gateway failures, not Perplexity outages.
+        "perplexity/pplx-decider-v1.1-27b:openrouter": {
+            provider: "openrouter",
+            // OpenRouter list price plus its 5.5% credit fee.
+            cost: {
+                promptTextTokens: perMillion(0.02) * 1.055,
+                completionTextTokens: perMillion(0),
+            },
+        },
+    },
     "liquid/d1": {
         // Same Liquid backend; this covers gateway failures, not Liquid outages.
         "liquid/d1:vercel": {
             provider: "vercel",
+            // Vercel AI Gateway list price for the Liquid endpoint.
             cost: {
-                promptTextTokens: perMillion(0.04),
+                promptTextTokens: perMillion(0.02),
+                completionTextTokens: perMillion(0),
+            },
+        },
+    },
+    "microsoft/microsoft-decision-1": {
+        // Same Azure backend; covers gateway failures, not Microsoft outages.
+        "microsoft/microsoft-decision-1:openrouter": {
+            provider: "openrouter",
+            // OpenRouter list price plus its 5.5% credit fee.
+            cost: {
+                promptTextTokens: perMillion(0.042) * 1.055,
                 completionTextTokens: perMillion(0),
             },
         },
@@ -52,23 +75,14 @@ export const TEXT_FALLBACKS = {
         },
     },
     "inclusionai/ling-3.1-flash": {
-        "inclusionai/ling-3.1-flash:openrouter:novita": {
-            provider: "openrouter",
-            // Free during the launch promotion, matching the public quote.
-            cost: {
-                promptTextTokens: perMillion(0),
-                promptCachedTokens: perMillion(0),
-                completionTextTokens: perMillion(0),
-            },
-        },
         "inclusionai/ling-3.1-flash:vercel:novita": {
             provider: "vercel",
-            // Same Novita checkpoint through a separate gateway. Both routes
-            // are free during the launch promotion; recheck rates at cutover.
+            // Same Novita checkpoint through a separate gateway, which adds
+            // no fee. Vercel still listed it free on 2026-10-13.
             cost: {
-                promptTextTokens: perMillion(0),
-                promptCachedTokens: perMillion(0),
-                completionTextTokens: perMillion(0),
+                promptTextTokens: perMillion(0.3),
+                promptCachedTokens: perMillion(0.06),
+                completionTextTokens: perMillion(0.9),
             },
         },
     },
@@ -153,6 +167,7 @@ export const TEXT_FALLBACKS = {
                     long_context: {
                         promptTextTokens: perMillion(4),
                         promptCachedTokens: perMillion(1),
+                        promptImageTokens: perMillion(4),
                         completionTextTokens: perMillion(12),
                     },
                 },
@@ -161,7 +176,7 @@ export const TEXT_FALLBACKS = {
                     long_context: {
                         label: "Long context (≥200K)",
                         description:
-                            "xAI doubles text, cached, and output rates for the whole request.",
+                            "xAI doubles text, cached, image, and output rates for the whole request.",
                     },
                 },
                 "<200K context",
@@ -199,6 +214,30 @@ export const TEXT_FALLBACKS = {
             ),
         },
     },
+    "xiaomi/mimo-v2.6-flash": {
+        "xiaomi/mimo-v2.6-flash:deepinfra": {
+            provider: "deepinfra",
+            addedDate: new Date("2026-10-10").getTime(),
+            // DeepInfra direct (2026-10-10): base rates without OpenRouter's 5.5% fee.
+            cost: {
+                promptTextTokens: perMillion(0.14),
+                promptCachedTokens: perMillion(0.0028),
+                completionTextTokens: perMillion(0.28),
+            },
+        },
+    },
+    "xiaomi/mimo-v2.6-pro": {
+        "xiaomi/mimo-v2.6-pro:deepinfra": {
+            provider: "deepinfra",
+            addedDate: new Date("2026-10-10").getTime(),
+            // DeepInfra bills input at $0.43 per 1M; the public price stays at Novita's $0.435.
+            cost: {
+                promptTextTokens: perMillion(0.43),
+                promptCachedTokens: perMillion(0.0036),
+                completionTextTokens: perMillion(0.87),
+            },
+        },
+    },
     "deepseek/deepseek-v4-flash": {
         "deepseek/deepseek-v4-flash:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
@@ -222,6 +261,20 @@ export const TEXT_FALLBACKS = {
                 promptTextTokens: perMillion(0.3),
                 promptCachedTokens: perMillion(0.006),
                 completionTextTokens: perMillion(1.2),
+            },
+        },
+    },
+    "deepseek/deepseek-v4.1-flash-1017": {
+        "deepseek/deepseek-v4.1-flash-1017:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            addedDate: new Date("2026-10-18").getTime(),
+            cost: {
+                // DeepInfra list rates (2026-10-18); its 51% promotion is not
+                // passed on.
+                promptTextTokens: perMillion(0.2),
+                promptCachedTokens: perMillion(0.006),
+                completionTextTokens: perMillion(0.6),
             },
         },
     },
@@ -483,6 +536,17 @@ export const TEXT_FALLBACKS = {
         },
     },
     "meta/llama-4-scout": {
+        "meta/llama-4-scout:openrouter:deepinfra-fp8-priority": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-19").getTime(),
+            // DeepInfra FP8 priority, verified 2026-10-19. Callers keep the
+            // primary quote; Pollinations absorbs the higher route cost.
+            cost: {
+                promptTextTokens: perMillion(0.15) * 1.055,
+                promptImageTokens: perMillion(0.15) * 1.055,
+                completionTextTokens: perMillion(0.45) * 1.055,
+            },
+        },
         "meta/llama-4-scout:openrouter:novita-bf16": {
             provider: "openrouter",
             addedDate: new Date("2026-09-15").getTime(),
@@ -554,26 +618,27 @@ export const TEXT_FALLBACKS = {
         },
     },
     "anthropic/claude-haiku-5.5": {
-        // Same model through Vercel's AI Gateway at Anthropic's list price,
-        // so it inherits the primary's rates and long-context tier.
-        "anthropic/claude-haiku-5.5:vercel": {
-            provider: "vercel",
-            addedDate: new Date("2026-10-07").getTime(),
+        "anthropic/claude-haiku-5.5:aws": {
+            provider: "aws",
+            addedDate: new Date("2026-10-15").getTime(),
         },
     },
     "anthropic/claude-opus-5.5": {
-        "anthropic/claude-opus-5.5:openrouter:anthropic": {
-            supportedParameters: CHAT_PARAMETERS.openRouterOpus,
-            provider: "openrouter",
-            addedDate: new Date("2026-09-22").getTime(),
-            // Temporary OpenRouter fallback until a direct Azure route and
-            // its price are verified against this route's effective cost.
-            cost: {
-                promptTextTokens: perMillion(4) * 1.055,
-                promptCachedTokens: perMillion(0.2) * 1.055,
-                promptCacheWriteTokens: perMillion(5) * 1.055,
-                completionTextTokens: perMillion(20) * 1.055,
-            },
+        "anthropic/claude-opus-5.5:aws": {
+            provider: "aws",
+            addedDate: new Date("2026-10-15").getTime(),
+        },
+    },
+    "anthropic/claude-sonnet-5.5": {
+        "anthropic/claude-sonnet-5.5:aws": {
+            provider: "aws",
+            addedDate: new Date("2026-10-15").getTime(),
+        },
+    },
+    "anthropic/claude-fable-5.1": {
+        "anthropic/claude-fable-5.1:aws": {
+            provider: "aws",
+            addedDate: new Date("2026-10-15").getTime(),
         },
     },
     "anthropic/claude-fable-5": {
@@ -602,6 +667,22 @@ export const TEXT_FALLBACKS = {
                 promptCachedTokens: perMillion(0.04) * 1.055,
                 promptImageTokens: perMillion(0.35) * 1.055,
                 completionTextTokens: perMillion(1.5) * 1.055,
+            },
+        },
+    },
+    "meta/muse-wonder-1.0": {
+        "meta/muse-wonder-1.0:vercel": {
+            supportedParameters: CHAT_PARAMETERS.vercelMuseWonder,
+            provider: "vercel",
+            addedDate: new Date("2026-10-12").getTime(),
+            // Vercel AI Gateway catalog rates (2026-10-12): base rates with no
+            // OpenRouter fee. Same Meta-hosted model; covers OpenRouter
+            // failures, not Meta outages.
+            cost: {
+                promptTextTokens: perMillion(4),
+                promptCachedTokens: perMillion(0.2),
+                promptImageTokens: perMillion(4),
+                completionTextTokens: perMillion(20),
             },
         },
     },
@@ -709,6 +790,31 @@ export const TEXT_FALLBACKS = {
             }),
         },
     },
+    "google/gemini-4-argon": {
+        "google/gemini-4-argon:openrouter:ai-studio": {
+            supportedParameters: CHAT_PARAMETERS.gemini35AiStudio,
+            provider: "openrouter",
+            priceMultiplier: 1,
+            addedDate: new Date("2026-10-13").getTime(),
+            // OpenRouter Google AI Studio list rates (2026-10-13; its 50% promo
+            // through 2026-11-30 is not counted), including the 5.5%
+            // credit-purchase fee, so this route costs 5.5% above the price.
+            cost: {
+                promptTextTokens: perMillion(4) * 1.055,
+                promptCachedTokens: perMillion(0.2) * 1.055,
+                promptCacheWriteTokens: perMillion(4) * 1.055,
+                promptAudioTokens: perMillion(4) * 1.055,
+                promptImageTokens: perMillion(4) * 1.055,
+                promptVideoTokens: perMillion(4) * 1.055,
+                completionTextTokens: perMillion(20) * 1.055,
+            },
+            // Implicit caching only, so no explicit cache storage is billed.
+            billing: openRouterGeminiBilling({
+                searchCostPerThousandRequests: 14 * 1.055,
+                storageCostPerMillionTokenHours: 0,
+            }),
+        },
+    },
     "google/gemini-2.5-flash-lite": {
         "google/gemini-2.5-flash-lite:openrouter:ai-studio": {
             supportedParameters: CHAT_PARAMETERS.gemini25,
@@ -788,6 +894,7 @@ export const TEXT_FALLBACKS = {
                         promptCachedTokens: perMillion(0.4) * 1.055,
                         promptCacheWriteTokens: perMillion(4.0) * 1.055,
                         promptAudioTokens: perMillion(4.0) * 1.055,
+                        promptImageTokens: perMillion(4.0) * 1.055,
                         promptVideoTokens: perMillion(4.0) * 1.055,
                         completionTextTokens: perMillion(18.0) * 1.055,
                     },
@@ -797,7 +904,7 @@ export const TEXT_FALLBACKS = {
                     long_context: {
                         label: "Long context (200K+)",
                         description:
-                            "At least 200,000 prompt tokens; text, cached, cache-write, audio, video, and output rates increase while image input stays at its separately advertised base price.",
+                            "At least 200,000 prompt tokens; text, cached, cache-write, image, audio, video, and output rates increase.",
                     },
                 },
                 "<200K context",
@@ -822,6 +929,23 @@ export const TEXT_FALLBACKS = {
         },
     },
     "z-ai/glm-5.3": {
+        "z-ai/glm-5.3:deepinfra": {
+            supportedParameters: [
+                ...CHAT_PARAMETERS.deepinfraReasoning.filter(
+                    (parameter) =>
+                        parameter !== "logprobs" &&
+                        parameter !== "top_logprobs",
+                ),
+                "parallel_tool_calls",
+            ],
+            provider: "deepinfra",
+            cost: {
+                // Current 37.5% promotion; no announced end date or gateway fee.
+                promptTextTokens: perMillion(0.9) * 0.625,
+                promptCachedTokens: perMillion(0.2) * 0.625,
+                completionTextTokens: perMillion(4) * 0.625,
+            },
+        },
         "z-ai/glm-5.3:openrouter:friendli": {
             supportedParameters: CHAT_PARAMETERS.openRouterGlm53,
             provider: "openrouter",

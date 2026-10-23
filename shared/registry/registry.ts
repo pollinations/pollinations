@@ -285,7 +285,7 @@ function convertUsage(
     return convertedUsage as Usage;
 }
 
-function derivePrice(
+export function derivePrice(
     costDefinition: CostDefinition,
     priceMultiplier: number,
 ): PriceDefinition {
@@ -629,6 +629,12 @@ function filterVisible<TModelName extends ModelName>(
     );
 }
 
+/** The catalog's flat-rate rule: an explicit `flatRate`, or an image model with no prompt-token rate. */
+export const isFlatRateModel = (definition: ModelDefinition): boolean =>
+    definition.flatRate ??
+    (definition.category === "image" &&
+        definition.cost.promptTextTokens === undefined);
+
 export const isVisibleModelDefinition = (
     definition: ModelDefinition,
 ): boolean => definition.hidden !== true && definition.fallbackOnly !== true;
@@ -661,6 +667,32 @@ export function getPriceDefinitionForModel(
     svc: ModelDefinition,
 ): PriceDefinition {
     return derivePrice(svc.cost, svc.priceMultiplier);
+}
+
+/** Every cost sheet a model can bill at: its base cost and each variant over it. */
+export function getCostSheetsForModel(svc: ModelDefinition): CostDefinition[] {
+    return [
+        svc.cost,
+        ...Object.values(svc.costVariants ?? {}).map((variant) => ({
+            ...svc.cost,
+            ...variant,
+        })),
+    ];
+}
+
+/**
+ * True when `target` costs no more than `primary` for every usage type. A
+ * usage type the primary does not price counts as free, so a target that
+ * charges for it is rejected.
+ */
+export function isFallbackPricingAllowed(
+    primary: PriceDefinition,
+    target: PriceDefinition,
+): boolean {
+    return Object.entries(target).every(
+        ([usageType, price]) =>
+            (price ?? 0) <= (primary[usageType as UsageType] ?? 0),
+    );
 }
 
 /**

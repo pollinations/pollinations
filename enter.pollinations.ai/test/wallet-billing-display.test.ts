@@ -23,6 +23,7 @@ function billing(
             lastIssue: null,
             ...overrides.autoTopUp,
         },
+        lastPackPollen: null,
         paymentMethods: overrides.paymentMethods ?? [
             {
                 id: "pm_card",

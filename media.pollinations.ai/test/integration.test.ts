@@ -1,7 +1,6 @@
 import {
     createExecutionContext,
     env,
-    fetchMock,
     SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
@@ -10,7 +9,16 @@ import { mediaItem, mediaTag } from "@shared/db/media-catalog.ts";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { removeMetadata } from "picscrub";
+import {
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from "vitest";
 import app from "../src/index";
 import {
     MediaUpload,
@@ -27,6 +35,22 @@ const TINY_PNG = new Uint8Array([
     0x00, 0x00, 0x02, 0x00, 0x01, 0xe2, 0x21, 0xbc, 0x33, 0x00, 0x00, 0x00,
     0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
 ]);
+
+const GPS_ORIENTATION_JPEG = new Uint8Array(
+    Buffer.from(
+        "/9j/4QBARXhpZgAASUkqAAgAAAACABIBAwABAAAABgAAACWIBAABAAAAJgAAAAAAAAABAAAAAQAEAAAAAgMAAAAAAAD/4AAQSkZJ" +
+            "RgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYU" +
+            "GBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/" +
+            "wAARCAACAAIDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQID" +
+            "AAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZn" +
+            "aGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx" +
+            "8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJB" +
+            "UQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3" +
+            "eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6" +
+            "/9oADAMBAAIRAxEAPwDwKiiivzI/0IP/2Q==",
+        "base64",
+    ),
+);
 
 interface UploadResponse {
     id: string;
@@ -117,36 +141,23 @@ function createMediaEnv(bucket = createTestR2Bucket()) {
     };
 }
 
+// Answers Gen's key check and refuses every other outbound request.
 function mockAuth() {
-    fetchMock.activate();
-    fetchMock.disableNetConnect();
-    fetchMock
-        .get("https://gen.pollinations.ai")
-        .intercept({ path: "/account/key" })
-        .reply(({ headers }) => {
-            const headerBag = headers as Record<string, string>;
-            const authHeader =
-                headerBag.authorization ?? headerBag.Authorization ?? "";
-            const key = authHeader.replace(/^Bearer /, "");
-            const identity = KEY_IDENTITIES[key];
-            if (!identity) {
-                return {
-                    statusCode: 200,
-                    data: JSON.stringify({ valid: false }),
-                    responseOptions: {
-                        headers: { "content-type": "application/json" },
-                    },
-                };
-            }
-            return {
-                statusCode: 200,
-                data: JSON.stringify(identity),
-                responseOptions: {
-                    headers: { "content-type": "application/json" },
-                },
-            };
-        })
-        .persist();
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        if (
+            url.origin !== "https://gen.pollinations.ai" ||
+            url.pathname !== "/account/key"
+        ) {
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        }
+        const key = (request.headers.get("authorization") ?? "").replace(
+            /^Bearer /,
+            "",
+        );
+        return Response.json(KEY_IDENTITIES[key] ?? { valid: false });
+    });
 }
 
 async function seedUsers() {
@@ -378,7 +389,7 @@ describe("media.pollinations.ai", () => {
     });
 
     afterEach(() => {
-        fetchMock.deactivate();
+        vi.restoreAllMocks();
     });
 
     it("GET / returns service info", async () => {
@@ -546,6 +557,142 @@ describe("media.pollinations.ai", () => {
             "large-image.png",
         );
         expect(new Uint8Array(await getRes.arrayBuffer())).toEqual(TINY_PNG);
+    });
+
+    it("strips GPS metadata for privacy on multipart, JSON, and raw uploads", async () => {
+        const stripped = await removeMetadata(GPS_ORIENTATION_JPEG, {
+            preserveOrientation: true,
+            preserveColorProfile: true,
+        });
+        expect(stripped.data).not.toEqual(GPS_ORIENTATION_JPEG);
+
+        const authorization = `Bearer ${VALID_KEY}`;
+        const multipart = new FormData();
+        multipart.append(
+            "file",
+            new File([GPS_ORIENTATION_JPEG], "photo.jpg", {
+                type: "image/jpeg",
+            }),
+        );
+        const base64 = btoa(String.fromCharCode(...GPS_ORIENTATION_JPEG));
+        const requests = [
+            () =>
+                SELF.fetch("https://media.pollinations.ai/upload?safe=true", {
+                    method: "POST",
+                    body: multipart,
+                    headers: {
+                        Authorization: authorization,
+                        Origin: "https://client.example",
+                    },
+                }),
+            () =>
+                SELF.fetch(
+                    "https://media.pollinations.ai/upload?safe=privacy",
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization: authorization,
+                            "Content-Type": "application/json",
+                            Origin: "https://client.example",
+                        },
+                        body: JSON.stringify({
+                            data: `data:image/jpeg;base64,${base64}`,
+                        }),
+                    },
+                ),
+            () =>
+                SELF.fetch("https://media.pollinations.ai/upload", {
+                    method: "POST",
+                    body: GPS_ORIENTATION_JPEG,
+                    headers: {
+                        Authorization: authorization,
+                        "Content-Type": "image/jpeg",
+                        "Content-Length": String(GPS_ORIENTATION_JPEG.length),
+                        Origin: "https://client.example",
+                        "Pollinations-Safe": "privacy",
+                    },
+                }),
+        ];
+
+        for (const request of requests) {
+            const uploadRes = await request();
+            expect(uploadRes.status).toBe(200);
+            expect(uploadRes.headers.get("X-Safety-Applied")).toBe("privacy");
+            expect(
+                uploadRes.headers.get("Access-Control-Expose-Headers"),
+            ).toContain("X-Safety-Applied");
+            const upload = (await uploadRes.json()) as UploadResponse;
+            const storedRes = await SELF.fetch(upload.url);
+            expect(storedRes.status).toBe(200);
+            expect(new Uint8Array(await storedRes.arrayBuffer())).toEqual(
+                stripped.data,
+            );
+        }
+    });
+
+    it("preserves exact upload bytes without privacy and rejects processing failures", async () => {
+        const form = new FormData();
+        form.append(
+            "file",
+            new File([GPS_ORIENTATION_JPEG], "photo.jpg", {
+                type: "image/jpeg",
+            }),
+        );
+        const uploadRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: form,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        expect(uploadRes.status).toBe(200);
+        expect(uploadRes.headers.has("X-Safety-Applied")).toBe(false);
+        const upload = (await uploadRes.json()) as UploadResponse;
+        const storedRes = await SELF.fetch(upload.url);
+        expect(new Uint8Array(await storedRes.arrayBuffer())).toEqual(
+            GPS_ORIENTATION_JPEG,
+        );
+
+        const invalid = await SELF.fetch(
+            "https://media.pollinations.ai/upload?safe=privacy",
+            {
+                method: "POST",
+                body: new TextEncoder().encode("not an image"),
+                headers: {
+                    Authorization: `Bearer ${VALID_KEY}`,
+                    "Content-Type": "image/jpeg",
+                    "Content-Length": "12",
+                },
+            },
+        );
+        expect(invalid.status).toBe(400);
+
+        const unknownFeature = await SELF.fetch(
+            "https://media.pollinations.ai/upload?safe=unknown",
+            {
+                method: "POST",
+                body: form,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        expect(unknownFeature.status).toBe(400);
+
+        const oversized = await app.fetch(
+            new Request("https://media.pollinations.ai/upload", {
+                method: "POST",
+                body: new Uint8Array([1]),
+                headers: {
+                    Authorization: `Bearer ${VALID_KEY}`,
+                    "Content-Type": "image/jpeg",
+                    "Content-Length": String(32 * 1024 * 1024 + 1),
+                    "Pollinations-Safe": "privacy",
+                },
+            }),
+            createMediaEnv(),
+            createExecutionContext(),
+        );
+        expect(oversized.status).toBe(413);
     });
 
     it("keeps a Unicode raw-upload filename sent as RFC 8187 filename*", async () => {

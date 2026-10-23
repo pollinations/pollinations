@@ -41,6 +41,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     onCreate,
     onUpdate,
     onDelete,
+    onRefresh,
 }) => {
     const [keyCreateOpen, setKeyCreateOpen] = useState(false);
     const [appCreateOpen, setAppCreateOpen] = useState(false);
@@ -48,6 +49,12 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    async function handleEdit(apiKey: ApiKey): Promise<void> {
+        // The list is as old as the page; API calls since then spent the budget.
+        const latest = await onRefresh?.().catch(() => undefined);
+        setEditingKey(latest?.find((key) => key.id === apiKey.id) ?? apiKey);
+    }
 
     async function handleDelete(): Promise<void> {
         if (!deletingKey || isDeleting) return;
@@ -127,7 +134,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 tooltipAlign="center"
                                 tooltipClampToViewport={false}
                                 aria-haspopup="dialog"
-                                onClick={() => setEditingKey(apiKey)}
+                                onClick={() => handleEdit(apiKey)}
                             >
                                 <PencilIcon className="h-4 w-4" />
                             </IconButton>
@@ -297,26 +304,24 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         <Button
             type="button"
             className="dashboard-add-button"
-            aria-label="Create secret key"
-            title="Create secret key"
             aria-haspopup="dialog"
             onClick={() => setKeyCreateOpen(true)}
         >
             <PlusIcon className="h-4 w-4" />
             <KeyIcon className="h-5 w-5" />
+            <span className="ml-1">Create secret key</span>
         </Button>
     );
     const appAction = (
         <Button
             type="button"
             className="dashboard-add-button"
-            aria-label="Create app key"
-            title="Create app key"
             aria-haspopup="dialog"
             onClick={() => setAppCreateOpen(true)}
         >
             <PlusIcon className="h-4 w-4" />
             <AppIcon className="h-5 w-5" />
+            <span className="ml-1">Create app key</span>
         </Button>
     );
 

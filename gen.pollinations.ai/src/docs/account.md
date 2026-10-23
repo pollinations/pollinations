@@ -7,6 +7,7 @@ Self-service endpoints for the authenticated user. Endpoints require authenticat
 | Endpoint | Description |
 |----------|-------------|
 | `GET /account/profile` | GitHub username, image, and community model access |
+| `GET /account/apps` | Community app directory listings owned by the account |
 | `GET /account/balance` | Current pollen balance |
 | `GET /account/quests` | Read-only quest status |
 | `GET /account/usage` | Per-request usage history with costs (account-wide) |
@@ -20,6 +21,12 @@ Self-service endpoints for the authenticated user. Endpoints require authenticat
 
 Returns user profile. `githubUsername`, `image`, and `communityEndpointsAllowed` are always included. `name` and `email` are included only when the API key has `account:profile`.
 
+### GET /account/apps
+
+App directory listings whose `github_user_id` matches the account's linked GitHub user, newest approval first: name, description, links, screenshot, category, platforms, approval date, and whether it supports Pollen Pay. `requests24h` is reported only for Pollen Pay apps, where traffic belongs to that listing.
+
+The directory is public, so no extra permission is required (the same as `/account/profile`). An account without a linked GitHub user, or one that has not listed an app, gets an empty `apps` array. A temporarily unavailable directory answers `503` with a `Retry-After` header rather than an empty list, so a caller can tell "no listings" from "could not read".
+
 ### GET /account/balance
 
 `balance` is the amount visible to this caller and is kept stable for existing clients:
@@ -27,11 +34,11 @@ Returns user profile. `githubUsername`, `image`, and `communityEndpointsAllowed`
 - Budgeted API keys always get the key's remaining budget in `balance` (no extra scope).
 - Sessions and unbudgeted keys get the account total (Quest Pollen + paid) in `balance`. That path requires `account:usage` for API keys.
 
-When the caller can view account usage (dashboard session or `account:usage`), the response also includes `accountBalance: { total, tier, paid }` so clients can see Quest Pollen vs paid Pollen. Budgeted keys without `account:usage` do **not** receive `accountBalance` — that would leak the owner's wallet.
+When the caller can view account usage (dashboard session or `account:usage`), the response also includes `accountBalance: { total, tier, paid }` so clients can see Quest Pollen vs paid Pollen. Budgeted keys without `account:usage` do **not** receive `accountBalance`, which would expose the owner's wallet.
 
 ### GET /account/key/usage
 
-Usage history for the API key used in the request. No extra scope — a key can always read its own usage. For account-wide usage across all keys, use `GET /account/usage` with `account:usage`.
+Usage history for the API key used in the request. No extra scope is required. A key can always read its own usage. For account-wide usage across all keys, use `GET /account/usage` with `account:usage`.
 
 ### GET /account/quests
 

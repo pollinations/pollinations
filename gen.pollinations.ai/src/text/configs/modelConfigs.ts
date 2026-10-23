@@ -593,12 +593,13 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    // OpenRouter serves Inkling Small only through DeepInfra (fp8).
     "thinkingmachines/inkling-small": () =>
         createOpenRouterModelConfig({
             model: "thinkingmachines/inkling-small",
             defaultOptions: {
                 provider: {
-                    only: ["Together"],
+                    only: ["deepinfra"],
                     allow_fallbacks: false,
                 },
             },
@@ -630,14 +631,17 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- OpenRouter (Gemma) ---------------------------------------------------
-    // Novita preserves remote image URLs; NextBit rejects that public input form.
+    // Novita's Gemma deployments regressed: 26B rejected most requests with
+    // 4xx and 31B's endpoint was degraded. 26B pins DeepInfra FP8, which is
+    // text-only on OpenRouter: image requests 404 there and fall back to the
+    // direct DeepInfra route. 31B moves to Crusoe BF16 at Novita's former rate.
     "google/gemma-4-26b-a4b-it": createPinnedOpenRouterConfig(
         "google/gemma-4-26b-a4b-it",
-        "novita/bf16",
+        "deepinfra/fp8",
     ),
     "google/gemma-4-31b-it": createPinnedOpenRouterConfig(
         "google/gemma-4-31b-it",
-        "novita/bf16",
+        "crusoe/bf16",
     ),
 
     // -- Exact-checkpoint text fallbacks -------------------------------------

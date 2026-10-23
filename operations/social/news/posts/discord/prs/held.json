@@ -41,8 +41,15 @@
       "required": [
         "deploy-cloudflare-production.yml:deploy-enter"
       ]
+    },
+    "18189": {
+      "merge_sha": "46231694d001fca69470cb09647736c526b10ecb",
+      "merged_at": "2026-10-23T14:43:35Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter"
+      ]
     }
   },
-  "production": "2fb10c51169eac51e54f6f38460491ebd5246390",
+  "production": "24b51fcfa02dbb81335eb043f0a89a3a746b93b8",
   "master": "02b0575f1ae6daad402bb2782119d7752403ad01"
 }

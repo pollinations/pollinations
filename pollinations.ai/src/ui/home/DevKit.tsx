@@ -149,7 +149,7 @@ const BUILD_FEATURES: Feature[] = [
         color: "var(--polli-color-modality-text)",
     },
     {
-        title: "Sites",
+        title: "Site hosting",
         chips: ["Free", "Static"],
         body: (
             <>
@@ -574,7 +574,7 @@ export function DevKit({ className }: { className?: string }) {
 
             <FeatureGroup
                 title="Pick the pieces you need."
-                description="Agents, sandboxes and hosted tools, plus sites, storage, billing and safety."
+                description="Agents, sandboxes and tools, plus site hosting, storage, billing and safety."
             >
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     {BUILD_FEATURES.map((feature) => (

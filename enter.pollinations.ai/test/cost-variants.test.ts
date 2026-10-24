@@ -253,10 +253,10 @@ describe("long-context cost variants", () => {
         expect(billing.servedPrice).toBeCloseTo(0.00006 * 1.055, 12);
     });
 
-    it("keeps the Llama Scout quote and records the fee-inclusive Novita cost", () => {
+    it("keeps the Llama Scout quote and records direct DeepInfra priority cost", () => {
         const billing = fallbackBill(
             "meta/llama-4-scout",
-            "meta/llama-4-scout:openrouter:novita-bf16",
+            "meta/llama-4-scout:deepinfra:priority",
             {
                 promptTextTokens: 1_000_000,
                 promptImageTokens: 1_000_000,
@@ -264,11 +264,11 @@ describe("long-context cost variants", () => {
             },
         );
 
-        expect(billing.cost.totalCost).toBeCloseTo(0.95 * 1.055, 12);
+        expect(billing.cost.totalCost).toBeCloseTo(0.75, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.5, 12);
-        expect(billing.servedPrice).toBeCloseTo(0.95 * 1.055, 12);
+        expect(billing.servedPrice).toBeCloseTo(0.75, 12);
         expect(billing.cost.totalCost - billing.price.totalPrice).toBeCloseTo(
-            0.95 * 1.055 - 0.5,
+            0.75 - 0.5,
             12,
         );
     });

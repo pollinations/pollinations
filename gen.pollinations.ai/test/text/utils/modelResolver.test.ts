@@ -231,6 +231,21 @@ describe("resolveModelConfig", () => {
         ).toThrow("Model configuration not found for: gpt-5.3-codex");
     });
 
+    it("routes Scout recovery directly to DeepInfra priority", () => {
+        const result = resolveModelConfig(messages, {
+            model: "meta/llama-4-scout:deepinfra:priority",
+        });
+        expect(result.options.model).toBe(
+            "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+        );
+        expect(result.options.service_tier).toBe("priority");
+        expect(result.options.max_tokens).toBe(16384);
+        expect(result.options.provider).toBeUndefined();
+        expect(result.options.modelConfig?.directEndpoint).toBe(
+            "https://api.deepinfra.com/v1/openai/chat/completions",
+        );
+    });
+
     it("does not expose gpt-6-astra as an alias", () => {
         expect(() =>
             resolveModelConfig(messages, { model: "gpt-6-astra" }),
@@ -1194,11 +1209,6 @@ describe("resolveModelConfig", () => {
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
         ["minimax-m2.7", "minimax/minimax-m2.7", "novita/fp8"],
-        [
-            "meta/llama-4-scout:openrouter:novita-bf16",
-            "meta-llama/llama-4-scout",
-            "novita/bf16",
-        ],
     ])(
         "pins %s to %s through %s without fallback",
         (model, route, provider) => {

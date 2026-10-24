@@ -89,8 +89,6 @@ describe("generateTextPortkey", () => {
     it.each([
         { status: 429, failures: 1 },
         { status: 503, failures: 1 },
-        { status: 429, failures: 2 },
-        { status: 503, failures: 2 },
     ])(
         "rescues Scout upstream $status after $failures failures at the primary price",
         async ({ status, failures }) => {
@@ -100,22 +98,21 @@ describe("generateTextPortkey", () => {
             });
             const primary = "meta/llama-4-scout" as const;
             const fallback = TEXT_SERVICES[primary].fallbacks[failures - 1];
-            const expectedRoutes = [
-                "vercel-deepinfra",
-                "deepinfra/fp8/priority",
-                "novita/bf16",
-            ];
+            const expectedRoutes = ["vercel-deepinfra", "deepinfra-priority"];
             const routes: string[] = [];
             vi.spyOn(globalThis, "fetch").mockImplementation(
                 async (input, init) => {
                     const body = JSON.parse(String(init?.body));
                     if (
                         String(input) ===
-                        "https://openrouter.ai/api/v1/chat/completions"
+                        "https://api.deepinfra.com/v1/openai/chat/completions"
                     ) {
-                        expect(body.model).toBe("meta-llama/llama-4-scout");
-                        expect(body.provider.allow_fallbacks).toBe(false);
-                        const route = body.provider.only[0];
+                        expect(body.model).toBe(
+                            "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+                        );
+                        expect(body.service_tier).toBe("priority");
+                        expect(body.provider).toBeUndefined();
+                        const route = "deepinfra-priority";
                         routes.push(route);
                         expect(route).toBe(expectedRoutes[routes.length - 1]);
                     } else {
@@ -179,10 +176,8 @@ describe("generateTextPortkey", () => {
                 servedBy: candidate.definition,
                 quotedBy: TEXT_SERVICES[primary],
             });
-            const [inputRate, outputRate] =
-                failures === 1 ? [0.15, 0.45] : [0.18, 0.59];
             expect(billing.cost.totalCost).toBeCloseTo(
-                ((167 * inputRate + 3 * outputRate) / 1_000_000) * 1.055,
+                (167 * 0.15 + 3 * 0.45) / 1_000_000,
                 12,
             );
             // Customer charges use the ledger's eight-decimal precision.

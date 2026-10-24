@@ -30,16 +30,6 @@ const OPENROUTER_ROUTES = [
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
     ],
-    [
-        "meta/llama-4-scout:openrouter:deepinfra-fp8-priority",
-        "meta-llama/llama-4-scout",
-        "deepinfra/fp8/priority",
-    ],
-    [
-        "meta/llama-4-scout:openrouter:novita-bf16",
-        "meta-llama/llama-4-scout",
-        "novita/bf16",
-    ],
     ["x-ai/grok-4.20:openrouter:xai-zdr", "x-ai/grok-4.20", "xai/zdr"],
     ["x-ai/grok-4.3:openrouter:xai-zdr", "x-ai/grok-4.3", "xai/zdr"],
     [
@@ -1668,11 +1658,11 @@ describe("static provider fallbacks", () => {
             completionTextTokens: (0.5 / 1_000_000) * 1.055,
         });
         expect(
-            TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"].cost,
+            TEXT_SERVICES["meta/llama-4-scout:deepinfra:priority"].cost,
         ).toMatchObject({
-            promptTextTokens: (0.18 / 1_000_000) * 1.055,
-            promptImageTokens: (0.18 / 1_000_000) * 1.055,
-            completionTextTokens: (0.59 / 1_000_000) * 1.055,
+            promptTextTokens: 0.15 / 1_000_000,
+            promptImageTokens: 0.15 / 1_000_000,
+            completionTextTokens: 0.45 / 1_000_000,
         });
         expect(
             TEXT_SERVICES["google/gemini-3.7-flash:openrouter:vertex-global"]
@@ -1752,52 +1742,52 @@ describe("static provider fallbacks", () => {
         });
     });
 
-    it.each([
-        "meta/llama-4-scout:openrouter:deepinfra-fp8-priority",
-        "meta/llama-4-scout:openrouter:novita-bf16",
-    ] as const)("preserves Scout capabilities through %s", (fallback) => {
-        const primary = TEXT_SERVICES["meta/llama-4-scout"];
-        const route = TEXT_SERVICES[fallback];
-        expect(primary).toMatchObject({
-            tools: false,
-            contextLength: 131072,
-            paidOnly: true,
-            priceMultiplier: 1,
-        });
-        expect(primary.cost.promptTextTokens).toBe(0.1 / 1_000_000);
-        expect(
-            supportsTextFallbackRequest(route, {
-                messages: [{ role: "user", content: "Hello" }],
-                stream: true,
-                max_tokens: 128,
-            }),
-        ).toBe(true);
-        expect(supportsTextFallbackRequest(route, { max_tokens: 16384 })).toBe(
-            true,
-        );
-        for (const field of [
-            "max_tokens",
-            "max_completion_tokens",
-            "max_output_tokens",
-        ]) {
-            expect(supportsTextFallbackRequest(route, { [field]: 16385 })).toBe(
-                false,
-            );
-        }
-        const images = (count: number) => ({
-            messages: [
-                {
-                    role: "user",
-                    content: Array.from({ length: count }, () => ({
-                        type: "image_url",
-                        image_url: { url: "https://example.com/image.png" },
-                    })),
-                },
-            ],
-        });
-        expect(supportsTextFallbackRequest(route, images(10))).toBe(true);
-        expect(supportsTextFallbackRequest(route, images(11))).toBe(false);
-    });
+    it.each(["meta/llama-4-scout:deepinfra:priority"] as const)(
+        "preserves Scout capabilities through %s",
+        (fallback) => {
+            const primary = TEXT_SERVICES["meta/llama-4-scout"];
+            const route = TEXT_SERVICES[fallback];
+            expect(primary).toMatchObject({
+                tools: false,
+                contextLength: 131072,
+                paidOnly: true,
+                priceMultiplier: 1,
+            });
+            expect(primary.cost.promptTextTokens).toBe(0.1 / 1_000_000);
+            expect(
+                supportsTextFallbackRequest(route, {
+                    messages: [{ role: "user", content: "Hello" }],
+                    stream: true,
+                    max_tokens: 128,
+                }),
+            ).toBe(true);
+            expect(
+                supportsTextFallbackRequest(route, { max_tokens: 16384 }),
+            ).toBe(true);
+            for (const field of [
+                "max_tokens",
+                "max_completion_tokens",
+                "max_output_tokens",
+            ]) {
+                expect(
+                    supportsTextFallbackRequest(route, { [field]: 16385 }),
+                ).toBe(false);
+            }
+            const images = (count: number) => ({
+                messages: [
+                    {
+                        role: "user",
+                        content: Array.from({ length: count }, () => ({
+                            type: "image_url",
+                            image_url: { url: "https://example.com/image.png" },
+                        })),
+                    },
+                ],
+            });
+            expect(supportsTextFallbackRequest(route, images(10))).toBe(true);
+            expect(supportsTextFallbackRequest(route, images(11))).toBe(false);
+        },
+    );
 
     it.each([
         { tools: [{ type: "function", function: { name: "weather" } }] },
@@ -1862,7 +1852,7 @@ describe("static provider fallbacks", () => {
             ).toMatch(/does not support/);
             expect(
                 supportsTextFallbackRequest(
-                    TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"],
+                    TEXT_SERVICES["meta/llama-4-scout:deepinfra:priority"],
                     request,
                 ),
             ).toBe(false);
@@ -1911,11 +1901,11 @@ describe("static provider fallbacks", () => {
             ],
         },
     ])(
-        "allows defaults and large payloads through Novita (case %#)",
+        "allows defaults and large payloads through DeepInfra priority (case %#)",
         (request) => {
             expect(
                 supportsTextFallbackRequest(
-                    TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"],
+                    TEXT_SERVICES["meta/llama-4-scout:deepinfra:priority"],
                     request,
                 ),
             ).toBe(true);
@@ -2128,11 +2118,10 @@ describe("static provider fallbacks", () => {
         expect(billed.price.totalPrice).toBeCloseTo(quoted, 12);
     });
 
-    it("tries Scout priority before Novita in both API formats", () => {
+    it("uses direct Scout priority recovery with adapted Responses", () => {
         const primary = "meta/llama-4-scout";
-        const priority = `${primary}:openrouter:deepinfra-fp8-priority`;
-        const novita = `${primary}:openrouter:novita-bf16`;
-        expect(TEXT_SERVICES[primary].fallbacks).toEqual([priority, novita]);
+        const priority = `${primary}:deepinfra:priority`;
+        expect(TEXT_SERVICES[primary].fallbacks).toEqual([priority]);
         expect(findModelByName(primary)?.config()).toMatchObject({
             model: "meta/llama-4-scout",
             directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
@@ -2151,20 +2140,11 @@ describe("static provider fallbacks", () => {
             endpoint: "https://ai-gateway.vercel.sh/v1/responses",
             defaults: { providerOptions: { gateway: { only: ["deepinfra"] } } },
         });
-        expect(resolveDirectResponsesTarget(priority, request)).toMatchObject({
-            endpoint: "https://openrouter.ai/api/v1/responses",
-            defaults: {
-                provider: {
-                    only: ["deepinfra/fp8/priority"],
-                    allow_fallbacks: false,
-                },
-            },
-        });
-        expect(resolveDirectResponsesTarget(novita, request)).toMatchObject({
-            endpoint: "https://openrouter.ai/api/v1/responses",
-            defaults: {
-                provider: { only: ["novita/bf16"], allow_fallbacks: false },
-            },
+        expect(resolveDirectResponsesTarget(priority, request)).toBeNull();
+        expect(findModelByName(priority)?.config()).toMatchObject({
+            directEndpoint:
+                "https://api.deepinfra.com/v1/openai/chat/completions",
+            defaultOptions: { service_tier: "priority", max_tokens: 16384 },
         });
     });
 

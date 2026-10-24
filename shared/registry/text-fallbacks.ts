@@ -626,26 +626,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "meta/llama-4-scout": {
-        "meta/llama-4-scout:openrouter:deepinfra-fp8-priority": {
-            provider: "openrouter",
-            addedDate: new Date("2026-10-19").getTime(),
-            // DeepInfra FP8 priority, verified 2026-10-19. Callers keep the
-            // primary quote; Pollinations absorbs the higher route cost.
+        "meta/llama-4-scout:deepinfra:priority": {
+            provider: "deepinfra",
+            priceMultiplier: 1,
+            addedDate: new Date("2026-10-24").getTime(),
+            // Priority recovers standard-pool overloads. Callers retain the primary quote.
             cost: {
-                promptTextTokens: perMillion(0.15) * 1.055,
-                promptImageTokens: perMillion(0.15) * 1.055,
-                completionTextTokens: perMillion(0.45) * 1.055,
-            },
-        },
-        "meta/llama-4-scout:openrouter:novita-bf16": {
-            provider: "openrouter",
-            addedDate: new Date("2026-09-15").getTime(),
-            // OpenRouter Novita BF16, verified 2026-09-15. Callers retain the
-            // DeepInfra quote; Pollinations absorbs the higher fallback cost.
-            cost: {
-                promptTextTokens: perMillion(0.18) * 1.055,
-                promptImageTokens: perMillion(0.18) * 1.055,
-                completionTextTokens: perMillion(0.59) * 1.055,
+                promptTextTokens: perMillion(0.15),
+                promptImageTokens: perMillion(0.15),
+                completionTextTokens: perMillion(0.45),
             },
         },
     },

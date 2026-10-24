@@ -5,6 +5,7 @@ import { HTTPException } from "hono/http-exception";
 import type { RequestIdVariables } from "hono/request-id";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
+import type { $ZodIssue } from "zod/v4/core";
 import {
     getTinybirdDatasourceIngestUrl,
     sendErrorEventToTinybird,
@@ -389,12 +390,34 @@ function createErrorResponse(
     };
 }
 
+/**
+ * Flattens a zod error for the response body. A top-level `z.union` collapses
+ * to "Invalid input" and drops every field, so fall back to the branch that
+ * matched the payload most closely (the fewest issues) to name the field.
+ */
+export function flattenValidationIssues(zodError: z.ZodError) {
+    const flat = z.flattenError(zodError);
+    if (Object.keys(flat.fieldErrors).length > 0) return flat;
+    const unionIssues = zodError.issues.filter(
+        (issue): issue is $ZodIssue & { code: "invalid_union" } =>
+            issue.code === "invalid_union",
+    );
+    if (unionIssues.length === 0) return flat;
+    let best: $ZodIssue[] | undefined;
+    for (const issue of unionIssues) {
+        for (const branch of issue.errors) {
+            if (!best || branch.length < best.length) best = branch;
+        }
+    }
+    return best?.length ? z.flattenError(new z.ZodError(best)) : flat;
+}
+
 function createValidationErrorResponse(
     error: ValidationError,
     status: ContentfulStatusCode,
     timestamp: string,
 ): ErrorResponse {
-    const flatErrors = z.flattenError(error.zodError);
+    const flatErrors = flattenValidationIssues(error.zodError);
     return createErrorResponse(error, status, timestamp, {
         details: { name: error.name, ...flatErrors },
     });

@@ -1255,7 +1255,7 @@ test("media audio uses native speech billing and preserves literal text", async 
     ).toBeLessThan(before.packBalance);
 });
 
-test("speech without a model, or with the tts alias, uses free OpenAI TTS", async ({
+test("speech without a model, or with the tts alias, uses paid-access OpenAI TTS", async ({
     mocks,
 }) => {
     await mocks.enable("tinybird", "azureSpeech");
@@ -1263,8 +1263,7 @@ test("speech without a model, or with the tts alias, uses free OpenAI TTS", asyn
         ...env,
         AZURE_MYCELI_PROD_SWEDEN_API_KEY: "azure-speech-test-key",
     });
-    // Quest Pollen only: a paid-only model would answer 402.
-    const { key } = await createTestApiKey({ user: { tierBalance: 100 } });
+    const { key } = await createTestApiKey({ user: { packBalance: 100 } });
     const speech = (body: Record<string, unknown>): RequestInit => ({
         method: "POST",
         headers: {

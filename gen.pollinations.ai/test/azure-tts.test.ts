@@ -6,7 +6,7 @@ import {
 import { test as workerTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
-import { generateAzureSpeech } from "../src/routes/audio.ts";
+import { generateOpenAITts } from "../src/routes/audio.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 describe("Azure TTS", () => {
@@ -25,7 +25,7 @@ describe("Azure TTS", () => {
             );
             vi.stubGlobal("fetch", fetchMock);
 
-            const response = await generateAzureSpeech({
+            const response = await generateOpenAITts({
                 modelName,
                 text: "Hi 🌻",
                 voice: "alloy",
@@ -54,13 +54,53 @@ describe("Azure TTS", () => {
         },
     );
 
+    it.each(["mp3", "opus", "aac", "flac", "wav", "pcm"])(
+        "preserves %s, voice, speed and Unicode character usage on the OpenAI fallback",
+        async (responseFormat) => {
+            const fetchMock = vi
+                .fn()
+                .mockResolvedValue(new Response(new Uint8Array([1, 2, 3])));
+            vi.stubGlobal("fetch", fetchMock);
+            const response = await generateOpenAITts({
+                modelName: "openai/tts-1:openai",
+                text: "Hi 🌻",
+                voice: "shimmer",
+                responseFormat,
+                speed: 0.25,
+                apiKey: "test-openai-key",
+            });
+            const request = new Request(
+                fetchMock.mock.calls[0][0],
+                fetchMock.mock.calls[0][1],
+            );
+            expect(request.url).toBe("https://api.openai.com/v1/audio/speech");
+            expect(request.headers.get("Authorization")).toBe(
+                "Bearer test-openai-key",
+            );
+            expect(request.headers.has("api-key")).toBe(false);
+            await expect(request.json()).resolves.toEqual({
+                model: "tts-1",
+                input: "Hi 🌻",
+                voice: "shimmer",
+                response_format: responseFormat,
+                speed: 0.25,
+            });
+            expect(response.headers.get("x-model-used")).toBe(
+                "openai/tts-1:openai",
+            );
+            expect(
+                response.headers.get("x-usage-completion-audio-tokens"),
+            ).toBe("4");
+        },
+    );
+
     it("forwards the OpenAI speed parameter", async () => {
         const fetchMock = vi
             .fn()
             .mockResolvedValue(new Response(new Uint8Array([1])));
         vi.stubGlobal("fetch", fetchMock);
 
-        await generateAzureSpeech({
+        await generateOpenAITts({
             modelName: "openai/tts-1",
             text: "Hi",
             voice: "alloy",

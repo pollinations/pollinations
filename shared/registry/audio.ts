@@ -799,13 +799,14 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
     "openai/tts-1": {
-        // The bare "tts" alias points at the free default speech model.
+        // The bare "tts" alias points at the default speech model.
         aliases: ["tts-1", "tts"],
         provider: "azure",
         publisher: "OpenAI",
         category: "audio",
         addedDate: new Date("2026-09-29").getTime(),
-        paidOnly: false,
+        // Azure 3 RPM is below twice the observed 77 RPM peak.
+        paidOnly: true,
         priceMultiplier: 1,
         cost: { completionAudioTokens: 15 / 1_000_000 },
         title: "OpenAI TTS",

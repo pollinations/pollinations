@@ -1,6 +1,12 @@
 import type { FallbackMap } from "./merge-fallbacks";
 
 export const AUDIO_FALLBACKS = {
+    "openai/tts-1": {
+        "openai/tts-1:openai": {
+            provider: "openai",
+            // Same $15/M characters; direct OpenAI retires 2027-01-06.
+        },
+    },
     "microsoft/mai-transcribe-2": {
         "microsoft/mai-transcribe-2:vercel": {
             provider: "vercel",

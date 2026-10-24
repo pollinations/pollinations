@@ -1675,23 +1675,24 @@ const IMAGE_BASE_SERVICES = {
     },
     "x-ai/grok-imagine-video-1.5": {
         aliases: ["grok-imagine-video-1.5"],
-        provider: "openrouter",
+        provider: "xai",
         publisher: "xAI",
         category: "video",
         addedDate: new Date("2026-08-03").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            promptImageTokens: 0.01 * 1.055, // per start-frame image
-            completionVideoSeconds: 0.14 * 1.055, // per sec at 720p
+            // xAI direct API rates; a 1 s 480p probe cost $0.08 (2026-10-24).
+            promptImageTokens: 0.01, // per start-frame image
+            completionVideoSeconds: 0.14, // per sec at 720p
         },
         ...defineCostVariants(
             {
                 "480p": {
-                    completionVideoSeconds: 0.08 * 1.055,
+                    completionVideoSeconds: 0.08,
                 },
                 "1080p": {
-                    completionVideoSeconds: 0.25 * 1.055,
+                    completionVideoSeconds: 0.25,
                 },
             },
             matchResolution("480p", "1080p"),

@@ -13,7 +13,10 @@ import {
 const logOps = debug("pollinations:xai-video:ops");
 
 const XAI_VIDEO_URL = "https://api.x.ai/v1/videos";
-const XAI_UPSTREAM_MODEL = "grok-imagine-video-1.5-lite";
+const XAI_UPSTREAM_MODELS: Record<string, string> = {
+    "x-ai/grok-imagine-video-1.5": "grok-imagine-video-1.5",
+    "x-ai/grok-imagine-video-1.5-lite": "grok-imagine-video-1.5-lite",
+};
 const POLL_INTERVAL_MS = 3000;
 const POLL_TIMEOUT_MS = 3 * 60 * 1000;
 
@@ -71,7 +74,7 @@ async function pollXaiVideo(
 }
 
 /**
- * xAI direct video API for Grok Imagine Video 1.5 Lite. Requests are
+ * xAI direct video API for Grok Imagine Video 1.5 and 1.5 Lite. Requests are
  * asynchronous: submit, poll the request id, then download the temporary URL.
  */
 export async function callXaiVideoAPI(
@@ -85,10 +88,16 @@ export async function callXaiVideoAPI(
         });
     }
 
+    const upstreamModel = XAI_UPSTREAM_MODELS[safeParams.model];
+    if (!upstreamModel) {
+        throw UpstreamError.fromProvider(400, {
+            message: `Unsupported xAI video model: ${safeParams.model}`,
+        });
+    }
     const duration = resolveGrokDuration(safeParams.duration);
     const startFrame = safeParams.image?.[0];
     const requestBody: Record<string, unknown> = {
-        model: XAI_UPSTREAM_MODEL,
+        model: upstreamModel,
         prompt,
         duration,
         resolution: safeParams.resolution ?? "720p",

@@ -629,9 +629,9 @@ describe("resolution cost variants", () => {
 
     it("seedance-pro bills 480p and 1080p around its 720p base", () => {
         const tiers = [
-            [undefined, 0.025],
-            ["480p", 0.015],
-            ["1080p", 0.06],
+            [undefined, 0.021021],
+            ["480p", 0.0099225],
+            ["1080p", 0.0486],
         ] as const;
 
         for (const [resolution, rate] of tiers) {

@@ -25,6 +25,26 @@ export function withoutPayg<T extends object>(value: T): T {
     ) as T;
 }
 
+// Provider billing fields stay internal: OpenRouter's `cost` and `cost_details`
+// are what it charged us.
+function isPrivateUsageKey(key: string): boolean {
+    return (
+        key === "cost" ||
+        key === "cost_details" ||
+        key === "search_context_size" ||
+        key.startsWith("payg_")
+    );
+}
+
+export function publicUsage(
+    usage: ChatCompletion["usage"],
+): ChatCompletion["usage"] {
+    if (!usage || !Object.keys(usage).some(isPrivateUsageKey)) return usage;
+    return Object.fromEntries(
+        Object.entries(usage).filter(([key]) => !isPrivateUsageKey(key)),
+    );
+}
+
 // Gateway tool counters stay on the tracking branch, not the client response.
 export function publicChatChoices(
     choices: ChatCompletion["choices"],
@@ -64,7 +84,7 @@ export function publicChatStream(
                                 data = JSON.stringify({
                                     ...chunk,
                                     ...(chunk.usage && {
-                                        usage: withoutPayg(chunk.usage),
+                                        usage: publicUsage(chunk.usage),
                                     }),
                                     choices: publicChatChoices(chunk.choices),
                                 });

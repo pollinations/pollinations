@@ -285,8 +285,9 @@ export const dsh = {
                 "DeepSeek Harness requires npx. Install Node.js, then run: npx @deepseek-ai/dsh@latest web",
             );
         }
-        const model = options.model ?? DEFAULT_MODEL;
-        const models = await fetchHarnessModels(model);
+        const { model, models } = await fetchHarnessModels(
+            options.model ?? DEFAULT_MODEL,
+        );
 
         const apiKey = await resolveHarnessKey(
             { id: ID, label: LABEL, existingKey: readKey(ctx) },

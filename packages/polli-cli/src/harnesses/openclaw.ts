@@ -234,8 +234,9 @@ export const openclaw = {
                 "OpenClaw was not found. Install it from: https://openclaw.ai/install",
             );
         }
-        const model = options.model ?? DEFAULT_MODEL;
-        const models = await fetchHarnessModels(model);
+        const { model, models } = await fetchHarnessModels(
+            options.model ?? DEFAULT_MODEL,
+        );
         initializeOpenClaw(ctx);
 
         const apiKey = await resolveHarnessKey(

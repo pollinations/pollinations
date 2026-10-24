@@ -1,4 +1,5 @@
 import type { Env } from "@/env.ts";
+import LANDING_HTML from "./sites-landing.html?raw";
 
 // User sites at <name>.pollinations.app (<name>--staging.pollinations.app on
 // staging). Enter uploads each site as a static-assets script named <name>
@@ -45,12 +46,34 @@ async function dispatch(
     }
 }
 
+// The headers pollinations.ai sends with its pages (pollinations.ai/public/_headers).
+const LANDING_HEADERS = {
+    "Content-Type": "text/html; charset=utf-8",
+    "Strict-Transport-Security": "max-age=31536000",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "SAMEORIGIN",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+};
+
+const landing = (status = 200) =>
+    new Response(LANDING_HTML, { status, headers: LANDING_HEADERS });
+
 /** Serves a sites-domain request, or returns undefined for gen's own hosts. */
 export function serveSite(
     request: Request,
     env: Env["Bindings"],
 ): Promise<Response> | undefined {
-    const name = siteName(new URL(request.url).hostname, env.SITES_HOST_SUFFIX);
+    const { hostname, pathname } = new URL(request.url);
+    // The bare domain (production only) explains pollinations.app; its icons
+    // come from gen's public files, and any other path gets the page as a
+    // 404. Site names are labels in front of the suffix, so no site can take it.
+    if (`.${hostname}` === env.SITES_HOST_SUFFIX) {
+        if (pathname === "/") return Promise.resolve(landing());
+        return env.ASSETS.fetch(request).then((asset) =>
+            asset.status === 404 ? landing(404) : asset,
+        );
+    }
+    const name = siteName(hostname, env.SITES_HOST_SUFFIX);
     if (name === undefined || !env.SITES) return undefined;
     if (name === null) return Promise.resolve(notFound());
     return dispatch(env.SITES, name, request);

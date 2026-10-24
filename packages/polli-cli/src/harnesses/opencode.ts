@@ -284,8 +284,9 @@ export const opencode = {
                 "OpenCode was not found. Install it first: curl -fsSL https://opencode.ai/install | bash",
             );
         }
-        const model = options.model ?? DEFAULT_MODEL;
-        const models = await fetchHarnessModels(model);
+        const { model, models } = await fetchHarnessModels(
+            options.model ?? DEFAULT_MODEL,
+        );
         const apiKey = await resolveHarnessKey(
             {
                 id: ID,

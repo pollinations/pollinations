@@ -838,7 +838,7 @@ export interface DecisionResponse {
 // ============================================================================
 
 /** Account permission scopes */
-export type AccountPermission = "profile" | "usage" | "keys";
+export type AccountPermission = "profile" | "usage" | "keys" | "machines";
 
 /** Options for building a BYOP authorization URL */
 export interface AuthorizeOptions {
@@ -1108,6 +1108,37 @@ export interface CreateKeyOptions {
     earningsEnabled?: boolean;
 }
 
+/** A static site at `https://<name>.pollinations.app` */
+export interface Site {
+    name: string;
+    url: string;
+    createdAt: string;
+    publishedAt: string | null;
+    /** Taken down for breaking the terms; the name stays reserved */
+    blocked: boolean;
+}
+
+/** One file of an inline site deploy, in Vercel's deployment shape */
+export interface SiteFile {
+    /** Path, e.g. `index.html` (required) or `assets/app.js` */
+    file: string;
+    data: string;
+    /** Default `utf-8`; use `base64` for images and other binary files */
+    encoding?: "utf-8" | "base64";
+}
+
+/** Response from GET /account/sites */
+export interface SitesResponse {
+    data: Site[];
+    limits: {
+        sites: number;
+        bytesPerSite: number;
+        filesPerSite: number;
+        bytesPerFile: number;
+        bytesPerInlineDeploy: number;
+    };
+}
+
 /**
  * Response from POST /account/keys — includes the raw `key` value which
  * is ONLY shown at creation time. Store it immediately.
@@ -1139,6 +1170,7 @@ export const MODEL_CATEGORIES = [
     "image",
     "video",
     "text",
+    "decision",
     "audio",
     "3d",
     "embedding",

@@ -3502,8 +3502,8 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "costVariants": {
       "2k": {
-        "completionImageTokens": 0.075,
-        "promptImageTokens": 0.003,
+        "completionImageTokens": 0.079125,
+        "promptImageTokens": 0.003165,
       },
     },
     "price": {

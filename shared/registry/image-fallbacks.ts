@@ -137,6 +137,12 @@ export const IMAGE_FALLBACKS = {
                 promptImageTokens: 0.003 * 1.055,
                 completionImageTokens: 0.04 * 1.055,
             },
+            costVariants: {
+                "2k": {
+                    promptImageTokens: 0.003 * 1.055,
+                    completionImageTokens: 0.075 * 1.055,
+                },
+            },
         },
     },
     "qwen/qwen-image-2.1-pro": {

@@ -588,40 +588,44 @@ describe("static provider fallbacks", () => {
         }
     });
 
-    it("uses the identical Sweden checkpoint as the GPT-5.3 Codex fallback", () => {
+    it("uses the independent OpenAI checkpoint as the GPT-5.3 Codex fallback", () => {
         const primary = TEXT_SERVICES["openai/gpt-5.3-codex"];
-        const fallback = TEXT_SERVICES["openai/gpt-5.3-codex:azure:sweden"];
+        const fallback = TEXT_SERVICES["openai/gpt-5.3-codex:openai"];
         expect(primary).toMatchObject({
             provider: "azure",
             aliases: [],
-            fallbacks: ["openai/gpt-5.3-codex:azure:sweden"],
+            fallbacks: ["openai/gpt-5.3-codex:openai"],
             priceMultiplier: 0.75,
             maxCompletionTokens: 128000,
         });
         expect(fallback).toMatchObject({
-            provider: "azure",
+            provider: "openai",
+            priceMultiplier: 1,
             fallbackOnly: true,
             hidden: true,
             aliases: [],
         });
         expect(primary).not.toHaveProperty("paidOnly", true);
         expect(fallback.paidOnly).not.toBe(true);
-        expect(fallback.cost).toEqual(primary.cost);
+        expect(fallback.cost).toEqual({
+            promptTextTokens: 1.75 / 1_000_000,
+            promptCachedTokens: 0.175 / 1_000_000,
+            completionTextTokens: 14 / 1_000_000,
+        });
 
         const billing = calculateUsageBilling({
             model: "openai/gpt-5.3-codex",
             usage: {
                 promptTextTokens: 10,
                 promptCachedTokens: 4,
-                promptCacheWriteTokens: 2,
                 completionTextTokens: 5,
             },
             servedBy: fallback,
             quotedBy: primary,
         });
-        expect(billing.cost.totalCost).toBeCloseTo(0.0000917, 12);
-        expect(billing.price.totalPrice).toBe(0.00006877);
-        expect(billing.price.totalPrice).toBe(billing.servedPrice);
+        expect(billing.cost.totalCost).toBeCloseTo(0.0000882, 12);
+        expect(billing.price.totalPrice).toBe(0.00006615);
+        expect(billing.servedPrice).toBe(0.0000882);
     });
 
     it("preserves the Astra quote while recording direct OpenAI costs", () => {
@@ -1103,6 +1107,31 @@ describe("static provider fallbacks", () => {
         expect(billed.price.totalPrice).toBe(0.00042);
     });
 
+    it("keeps the Azure gpt-5.6-sol quote when OpenAI serves it", () => {
+        const model = "openai/gpt-5.6-sol";
+        expect(TEXT_SERVICES[model].fallbacks).toEqual([
+            "openai/gpt-5.6-sol:openai",
+        ]);
+        expect(TEXT_SERVICES["openai/gpt-5.6-sol:openai"]).toMatchObject({
+            provider: "openai",
+            priceMultiplier: 1,
+            hidden: true,
+        });
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                "promptTextTokens": 1000,
+                "promptCachedTokens": 200,
+                "completionTextTokens": 100,
+                "promptCacheWriteTokens": 50,
+            },
+            servedBy: TEXT_SERVICES["openai/gpt-5.6-sol:openai"],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.00633, 12);
+        expect(billed.price.totalPrice).toBe(0.00211);
+    });
+
     it("prices Muse Wonder on Vercel at base rates and quotes the OpenRouter primary with its fee", () => {
         const primary = TEXT_SERVICES["meta/muse-wonder-1.0"];
         const fallback = TEXT_SERVICES["meta/muse-wonder-1.0:vercel"];
@@ -1142,6 +1171,31 @@ describe("static provider fallbacks", () => {
                 tools: [{ type: "function", function: { name: "lookup" } }],
             }),
         ).toBe(true);
+    });
+
+    it("keeps the Azure gpt-5.6-luna quote when OpenAI serves it", () => {
+        const model = "openai/gpt-5.6-luna";
+        expect(TEXT_SERVICES[model].fallbacks).toEqual([
+            "openai/gpt-5.6-luna:openai",
+        ]);
+        expect(TEXT_SERVICES["openai/gpt-5.6-luna:openai"]).toMatchObject({
+            provider: "openai",
+            priceMultiplier: 1,
+            hidden: true,
+        });
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                "promptTextTokens": 1000,
+                "promptCachedTokens": 200,
+                "completionTextTokens": 100,
+                "promptCacheWriteTokens": 50,
+            },
+            servedBy: TEXT_SERVICES["openai/gpt-5.6-luna:openai"],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.0003365, 12);
+        expect(billed.price.totalPrice).toBe(0.00025238);
     });
 
     it("prices Step 5 Preview on Vercel at base rates and supports tool calls on that fallback", () => {
@@ -1340,6 +1394,30 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.00201231, 8);
     });
 
+    it("keeps the Azure gpt-5.4-mini quote when OpenAI serves it", () => {
+        const model = "openai/gpt-5.4-mini";
+        expect(TEXT_SERVICES[model].fallbacks).toEqual([
+            "openai/gpt-5.4-mini:openai",
+        ]);
+        expect(TEXT_SERVICES["openai/gpt-5.4-mini:openai"]).toMatchObject({
+            provider: "openai",
+            priceMultiplier: 1,
+            hidden: true,
+        });
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                "promptTextTokens": 1000,
+                "promptCachedTokens": 200,
+                "completionTextTokens": 100,
+            },
+            servedBy: TEXT_SERVICES["openai/gpt-5.4-mini:openai"],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.001215, 12);
+        expect(billed.price.totalPrice).toBe(0.00091125);
+    });
+
     it("keeps the Kimi K3 quote when DeepInfra serves cached and reasoning tokens", () => {
         const primary = TEXT_SERVICES["moonshotai/kimi-k3"];
         const fallback = TEXT_SERVICES["moonshotai/kimi-k3:deepinfra"];
@@ -1362,6 +1440,31 @@ describe("static provider fallbacks", () => {
             "custom-host": "https://api.deepinfra.com/v1/openai",
             model: "moonshotai/Kimi-K3",
         });
+    });
+
+    it("keeps the Azure gpt-5.6-terra quote when OpenAI serves it", () => {
+        const model = "openai/gpt-5.6-terra";
+        expect(TEXT_SERVICES[model].fallbacks).toEqual([
+            "openai/gpt-5.6-terra:openai",
+        ]);
+        expect(TEXT_SERVICES["openai/gpt-5.6-terra:openai"]).toMatchObject({
+            provider: "openai",
+            priceMultiplier: 1,
+            hidden: true,
+        });
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                "promptTextTokens": 1000,
+                "promptCachedTokens": 200,
+                "completionTextTokens": 100,
+                "promptCacheWriteTokens": 50,
+            },
+            servedBy: TEXT_SERVICES["openai/gpt-5.6-terra:openai"],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.003365, 12);
+        expect(billed.price.totalPrice).toBe(0.00252375);
     });
 
     it("keeps the MiniMax M3 quote when DeepInfra serves cached and reasoning tokens", () => {

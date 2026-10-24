@@ -198,6 +198,21 @@ describe("direct Responses transport", () => {
         });
     });
 
+    it("keeps gpt-5.6-sol recovery on Standard in native Responses", () => {
+        const input = request({
+            model: "openai/gpt-5.6-sol:openai",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct OpenAI target");
+        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
+            model: "gpt-5.6-sol",
+            service_tier: "default",
+            store: false,
+        });
+    });
+
     it("preserves the complete raw provider error envelope", async () => {
         const directRequest = request();
         const body = JSON.stringify(
@@ -220,6 +235,21 @@ describe("direct Responses transport", () => {
             status: 502,
             upstreamStatus: 429,
             responseBody: body,
+        });
+    });
+
+    it("keeps gpt-5.6-luna recovery on Standard in native Responses", () => {
+        const input = request({
+            model: "openai/gpt-5.6-luna:openai",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct OpenAI target");
+        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
+            model: "gpt-5.6-luna",
+            service_tier: "default",
+            store: false,
         });
     });
 
@@ -291,6 +321,21 @@ describe("direct Responses transport", () => {
         ).toThrow();
     });
 
+    it("keeps gpt-5.4-mini recovery on Standard in native Responses", () => {
+        const input = request({
+            model: "openai/gpt-5.4-mini:openai",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct OpenAI target");
+        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
+            model: "gpt-5.4-mini-2026-03-17",
+            service_tier: "default",
+            store: false,
+        });
+    });
+
     it("accepts harmless stateless include and truncation options", () => {
         expect(
             CreateResponseRequestSchema.parse({
@@ -302,6 +347,21 @@ describe("direct Responses transport", () => {
         ).toMatchObject({
             include: ["message.output_text.logprobs"],
             truncation: "auto",
+        });
+    });
+
+    it("keeps gpt-5.6-terra recovery on Standard in native Responses", () => {
+        const input = request({
+            model: "openai/gpt-5.6-terra:openai",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct OpenAI target");
+        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
+            model: "gpt-5.6-terra",
+            service_tier: "default",
+            store: false,
         });
     });
 
@@ -335,6 +395,21 @@ describe("direct Responses transport", () => {
                 }),
             ),
         ).toThrow(/Stored response items/);
+    });
+
+    it("keeps gpt-5.3-codex recovery on Standard in native Responses", () => {
+        const input = request({
+            model: "openai/gpt-5.3-codex:openai",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct OpenAI target");
+        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
+            model: "gpt-5.3-codex",
+            service_tier: "default",
+            store: false,
+        });
     });
 
     it("resolves only explicit direct Responses targets", () => {

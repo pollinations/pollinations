@@ -202,11 +202,11 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("keeps GPT-5.3 Codex primary and Sweden fallback routes distinct", () => {
+    it("keeps GPT-5.3 Codex primary and OpenAI fallback routes distinct", () => {
         const primary = resolveModelConfig(messages, {
             model: "openai/gpt-5.3-codex",
         });
-        const fallback = findModelByName("openai/gpt-5.3-codex:azure:sweden");
+        const fallback = findModelByName("openai/gpt-5.3-codex:openai");
 
         expect(primary.options.model).toBe("gpt-5.3-codex");
         expect(primary.options.modelConfig).toMatchObject({
@@ -218,11 +218,10 @@ describe("resolveModelConfig", () => {
         });
         expect(fallback?.useResponsesApi).toBe(true);
         expect(fallback?.config()).toMatchObject({
-            provider: "azure-openai",
-            "azure-resource-name": "myceli-prod-swedencentral",
-            "azure-deployment-id": "gpt-5.3-codex",
-            responsesEndpoint:
-                "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
+            provider: "openai",
+            model: "gpt-5.3-codex",
+            responsesEndpoint: "https://api.openai.com/v1/responses",
+            serviceTier: "default",
         });
     });
 
@@ -353,6 +352,20 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins gpt-5.6-sol recovery to exact OpenAI Standard", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5.6-sol:openai",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("gpt-5.6-sol");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
+            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
+        });
+    });
+
     it("pins Hy4 Preview to Tencent on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "tencent/hy4-preview",
@@ -389,6 +402,20 @@ describe("resolveModelConfig", () => {
             directEndpoint: "https://api.novita.ai/openai/v1/chat/completions",
         });
         expect(result.options.provider).toBeUndefined();
+    });
+
+    it("pins gpt-5.6-luna recovery to exact OpenAI Standard", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5.6-luna:openai",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("gpt-5.6-luna");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
+            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
+        });
     });
 
     it("pins Nex N2.5 Mini to Nex AGI on OpenRouter without fallback", () => {
@@ -429,6 +456,20 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins gpt-5.4-mini recovery to exact OpenAI Standard", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5.4-mini:openai",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("gpt-5.4-mini-2026-03-17");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
+            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
+        });
+    });
+
     it("routes Mistral Large 4 to Mistral direct", () => {
         const result = resolveModelConfig(messages, {
             model: "mistralai/mistral-large-4",
@@ -465,6 +506,20 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins gpt-5.6-terra recovery to exact OpenAI Standard", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5.6-terra:openai",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("gpt-5.6-terra");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
+            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
+        });
+    });
+
     it("pins Ling 3.0 Flash VL to DeepInfra fp16 on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "inclusionai/ling-3.0-flash-vl",
@@ -474,6 +529,20 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toEqual({
             only: ["deepinfra/fp16"],
             allow_fallbacks: false,
+        });
+    });
+
+    it("pins gpt-5.3-codex recovery to exact OpenAI Standard", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5.3-codex:openai",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("gpt-5.3-codex");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
+            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
         });
     });
 

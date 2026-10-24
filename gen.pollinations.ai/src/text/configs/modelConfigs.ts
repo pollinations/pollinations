@@ -265,16 +265,19 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5-nano/chat/completions?api-version=2024-12-01-preview",
             azureOpenAIParameters,
         ),
+    "gpt-5.3-codex-openai": () => ({
+        provider: "openai",
+        model: "gpt-5.3-codex",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        directEndpoint: "https://api.openai.com/v1/chat/completions",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        serviceTier: "default",
+        ...azureOpenAIParameters,
+    }),
     "gpt-5.3-codex": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.3-codex/chat/completions?api-version=2025-04-01-preview",
-            azureOpenAIParameters,
-        ),
-    "gpt-5.3-codex-azure-sweden": () =>
-        createAzureResponsesModelConfig(
-            textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
-            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-5.3-codex/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
     "gpt-5.4-openai": () => ({
@@ -292,6 +295,15 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4/chat/completions?api-version=2024-12-01-preview",
             azureOpenAIParameters,
         ),
+    "gpt-5.4-mini-openai": () => ({
+        provider: "openai",
+        model: "gpt-5.4-mini-2026-03-17",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        directEndpoint: "https://api.openai.com/v1/chat/completions",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        serviceTier: "default",
+        ...azureOpenAIParameters,
+    }),
     "gpt-5.4-mini": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
@@ -320,18 +332,45 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- Azure (Myceli Prod — eastus, GPT-5.6) --------------------------------
+    "gpt-5.6-sol-openai": () => ({
+        provider: "openai",
+        model: "gpt-5.6-sol",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        directEndpoint: "https://api.openai.com/v1/chat/completions",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        serviceTier: "default",
+        ...azureOpenAIParameters,
+    }),
     "gpt-5.6-sol": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-sol/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
+    "gpt-5.6-terra-openai": () => ({
+        provider: "openai",
+        model: "gpt-5.6-terra",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        directEndpoint: "https://api.openai.com/v1/chat/completions",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        serviceTier: "default",
+        ...azureOpenAIParameters,
+    }),
     "gpt-5.6-terra": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-terra/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
+    "gpt-5.6-luna-openai": () => ({
+        provider: "openai",
+        model: "gpt-5.6-luna",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        directEndpoint: "https://api.openai.com/v1/chat/completions",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        serviceTier: "default",
+        ...azureOpenAIParameters,
+    }),
     "gpt-5.6-luna": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),

@@ -240,8 +240,8 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
-        name: "openai/gpt-5.3-codex:azure:sweden",
-        config: portkeyConfig["gpt-5.3-codex-azure-sweden"],
+        name: "openai/gpt-5.3-codex:openai",
+        config: portkeyConfig["gpt-5.3-codex-openai"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
     },
@@ -265,6 +265,12 @@ const models: ModelDefinition[] = [
         transform: omitOpenAISampling,
     },
     {
+        name: "openai/gpt-5.4-mini:openai",
+        config: portkeyConfig["gpt-5.4-mini-openai"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
         name: "openai/gpt-5.4-mini",
         config: portkeyConfig["gpt-5.4-mini"],
         transform: omitOpenAISampling,
@@ -275,14 +281,32 @@ const models: ModelDefinition[] = [
         transform: omitOpenAISampling,
     },
     {
+        name: "openai/gpt-5.6-sol:openai",
+        config: portkeyConfig["gpt-5.6-sol-openai"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
         name: "openai/gpt-5.6-sol",
         config: portkeyConfig["gpt-5.6-sol"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
     },
     {
+        name: "openai/gpt-5.6-terra:openai",
+        config: portkeyConfig["gpt-5.6-terra-openai"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
         name: "openai/gpt-5.6-terra",
         config: portkeyConfig["gpt-5.6-terra"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-5.6-luna:openai",
+        config: portkeyConfig["gpt-5.6-luna-openai"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
     },

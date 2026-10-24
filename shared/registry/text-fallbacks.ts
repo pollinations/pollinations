@@ -166,6 +166,12 @@ export const TEXT_FALLBACKS = {
     },
     // OpenRouter Alibaba routes cover gateway failures, not Alibaba-wide outages.
     // Max currently requires reasoning and rejects forced tool choice.
+    "openai/gpt-5.6-sol": {
+        "openai/gpt-5.6-sol:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
+        },
+    },
     "typesafe/jev-1.13": {
         // Same TypeSafe backend; covers gateway failures, not TypeSafe outages.
         "typesafe/jev-1.13:openrouter:typesafe": {
@@ -175,6 +181,12 @@ export const TEXT_FALLBACKS = {
                 promptTextTokens: perMillion(0.042) * 1.055,
                 completionTextTokens: perMillion(0),
             },
+        },
+    },
+    "openai/gpt-5.6-luna": {
+        "openai/gpt-5.6-luna:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
         },
     },
     "qwen/qwen3.8-max": {
@@ -198,9 +210,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "openai/gpt-5.3-codex": {
-        "openai/gpt-5.3-codex:azure:sweden": {
-            provider: "azure",
-            // Provider retires this route on 2027-08-24.
+        "openai/gpt-5.3-codex:openai": {
+            // OpenAI retires this route on 2027-04-01.
+            provider: "openai",
+            priceMultiplier: 1,
+            cost: {
+                promptTextTokens: perMillion(1.75),
+                promptCachedTokens: perMillion(0.175),
+                completionTextTokens: perMillion(14),
+            },
         },
     },
     "openai/gpt-6-astra": {
@@ -256,6 +274,12 @@ export const TEXT_FALLBACKS = {
                 },
                 "<200K context",
             ),
+        },
+    },
+    "openai/gpt-5.4-mini": {
+        "openai/gpt-5.4-mini:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
         },
     },
     "x-ai/grok-4.7": {
@@ -324,6 +348,12 @@ export const TEXT_FALLBACKS = {
                 promptCachedTokens: perMillion(0.015),
                 completionTextTokens: perMillion(0.18),
             },
+        },
+    },
+    "openai/gpt-5.6-terra": {
+        "openai/gpt-5.6-terra:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
         },
     },
     "deepseek/deepseek-v4.1-flash": {

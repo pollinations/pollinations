@@ -152,7 +152,7 @@ export async function callReplicateFallbackImage(
         case "black-forest-labs/flux.1.1-pro:replicate": {
             // Same request as the Azure primary, which already rejected image
             // input and sizes off the 32px grid with a 400 (no fallback).
-            buffer = await runReplicateImage(
+            ({ buffer } = await runReplicateImage(
                 "black-forest-labs/flux-1.1-pro",
                 {
                     prompt,
@@ -163,7 +163,7 @@ export async function callReplicateFallbackImage(
                     seed: params.seed,
                 },
                 "FLUX 1.1 Pro",
-            );
+            ));
             break;
         }
         case "black-forest-labs/flux.1-kontext-pro:replicate": {

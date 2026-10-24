@@ -3210,7 +3210,8 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-05-01").getTime(),
         priceMultiplier: 0.75,
-        paidOnly: false,
+        // 2,000 RPM is below twice the observed 1,840 RPM peak.
+        paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.71),
             completionTextTokens: perMillion(0.71),

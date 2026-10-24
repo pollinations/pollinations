@@ -470,8 +470,9 @@ const AUDIO_BASE_SERVICES = {
         addedDate: new Date("2026-07-26").getTime(),
         priceMultiplier: 1,
         cost: {
-            // ElevenLabs Text to Dialogue uses the v3 TTS character rate.
-            completionAudioTokens: 0.1 / 1000,
+            // ElevenLabs Text to Dialogue uses the v3 TTS character rate:
+            // $0.08 per 1K characters (2026-10-24).
+            completionAudioTokens: 0.08 / 1000,
         },
         title: "ElevenLabs Text to Dialogue",
         description:

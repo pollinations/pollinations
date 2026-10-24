@@ -624,6 +624,48 @@ describe("System One adapter", () => {
         expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 
+    it("forwards respan/span-01-lite's provider pin on the native wire", async () => {
+        const config = findModelByName("respan/span-01-lite")?.config();
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (_input, init) => {
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    provider: {
+                        "only": ["respan"],
+                        "ignore": ["cloudflare"],
+                        "allow_fallbacks": false,
+                    },
+                    model: "respan/span-01-lite",
+                });
+                return Response.json({
+                    model: "respan/span-01-lite",
+                    answers,
+                    usage: { input_tokens: 44, output_tokens: 1 },
+                });
+            });
+        await callSystemOne(
+            [
+                {
+                    role: "user",
+                    content: JSON.stringify({
+                        state: nativeState,
+                        questions: {
+                            urgent: {
+                                type: "noul",
+                                instructions: "Is this urgent?",
+                            },
+                        },
+                    }),
+                },
+            ],
+            {
+                modelConfig: { ...config, authKey: "test-key" },
+                provider: { only: ["cloudflare"] },
+            },
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
     it("forwards native state and questions in one message and returns native answers", async () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")

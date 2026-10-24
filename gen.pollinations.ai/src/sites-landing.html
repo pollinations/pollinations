@@ -76,8 +76,9 @@ body {
 .hero-copy p { text-wrap: balance; }
 .bee { width: 7.5rem; height: auto; rotate: -6deg; user-select: none; }
 .row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
-.sheet { display: flex; flex-direction: column; gap: 3.5rem; padding: 2.5rem 1.25rem; }
-.sheet section { display: flex; flex-direction: column; gap: 1.25rem; }
+/* Separate panels 12px apart, like enter's pages. */
+.panels { display: flex; flex-direction: column; gap: 0.75rem; }
+.hero { display: flex; flex-direction: column; gap: 1.5rem; }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; }
 .card-head { display: flex; align-items: center; gap: 0.75rem; }
 .address {
@@ -112,22 +113,18 @@ footer {
     color: var(--polli-color-text-muted);
 }
 footer nav { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
-/* Phones: the page card runs full width, as on pollinations.ai and enter. */
+/* Phones: the panels run full width, as on pollinations.ai and enter. */
 @media (max-width: 639px) {
-    .sheet { margin-inline: -1.25rem; }
+    .panels { margin-inline: -1.25rem; }
     /* The title is one word that cannot wrap: about 10 em wide. */
     .hero h1 { font-size: min(2.25rem, calc((100vw - 2.5rem) / 10)); }
 }
 @media (min-width: 640px) {
     #root { padding-inline: 1.5rem; }
-    .sheet { gap: 4.5rem; padding: 4rem 2rem; }
-}
-@media (min-width: 768px) {
-    .sheet { padding: 4.5rem 4.5rem; }
 }
 /* Polli sits beside the copy once the one-word title leaves room for her. */
 @media (min-width: 1200px) {
-    .sheet .hero { flex-direction: row; align-items: center; justify-content: space-between; }
+    .hero { flex-direction: row; align-items: center; justify-content: space-between; }
     .bee { order: 1; width: 13.75rem; flex-shrink: 0; }
 }
 </style>
@@ -156,7 +153,7 @@ await new Promise((resolve, reject) => {
 const {
     AppIcon, BookIcon, BrandMark, CloudUploadIcon, CodeBlock, CodeIcon,
     ColorModeToggle, ContentHeader, ExternalLinkButton, GlobeIcon, Heading, IconTile,
-    InlineLink, LinkCard, LockIcon, LogInIcon, McpIcon, Surface, TerminalIcon, Text,
+    InlineLink, LinkCard, LockIcon, LogInIcon, McpIcon, Section, Surface, TerminalIcon, Text,
 } = window.PollinationsUI;
 const h = React.createElement;
 const code = (text) => h("code", { className: "inline" }, text);
@@ -248,8 +245,8 @@ function Page() {
                     icon: h(LogInIcon, { className: "polli:h-4 polli:w-4" }),
                 }, "Dashboard"),
                 h(ColorModeToggle))),
-        h(Surface, { key: "main", as: "main", variant: "panel", className: "sheet" },
-            h("section", { className: "hero" },
+        h("main", { key: "main", className: "panels" },
+            h(Surface, { as: "section", variant: "panel", className: "hero" },
                 h("img", { className: "bee", src: `${UI}/brand/polli/polli.png`, alt: "", width: 540, height: 527 }),
                 h("div", { className: "hero-copy" },
                     h(ContentHeader, {
@@ -271,16 +268,14 @@ function Page() {
                             intent: "neutral",
                             icon: h(TerminalIcon, { className: "polli:h-4 polli:w-4" }),
                         }, "CLI")))),
-            h("section", null,
-                h(ContentHeader, { eyebrow: null, title: "Publish", subtitle: "From your terminal:" }),
+            h(Section, { title: "Publish", intro: "From your terminal:" },
                 h(CodeBlock, { code: PUBLISH, language: "Terminal" }),
                 h(Text, { tone: "strong", weight: "semibold" }, "From code or an agent:"),
                 h("ul", { className: "cards" },
                     FROM_CODE.map((item) =>
                         h("li", { key: item.title },
                             h(LinkCard, { href: item.href }, Card(item)))))),
-            h("section", null,
-                h(ContentHeader, { eyebrow: null, title: "Limits" }),
+            h(Section, { title: "Limits" },
                 h("ul", { className: "cards" },
                     LIMITS.map((item) =>
                         h("li", { key: item.title },

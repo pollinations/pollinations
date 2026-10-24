@@ -1754,3 +1754,30 @@ describe("static provider fallbacks", () => {
         }
     });
 });
+
+it.each([199999, 200000, 200001])(
+    "records Grok 4.3 backup's inclusive long-context cost at %s tokens, retaining the primary quote",
+    (total) => {
+        const model = "x-ai/grok-4.3";
+        const servedBy = TEXT_SERVICES[`${model}:openrouter:xai-zdr`];
+        expect(servedBy.priceMultiplier).toBe(1);
+        const usage = {
+            promptTextTokens: total - 1000,
+            promptImageTokens: 500,
+            promptCachedTokens: 500,
+            completionTextTokens: 10,
+        };
+        const billed = calculateUsageBilling({
+            model,
+            usage,
+            servedBy,
+            quotedBy: TEXT_SERVICES[model],
+        });
+        const base = ((total - 500) * 1.25 + 500 * 0.2 + 10 * 2.5) / 1e6;
+        expect(billed.cost.totalCost).toBeCloseTo(
+            base * 1.055 * (total >= 200000 ? 2 : 1),
+            12,
+        );
+        expect(billed.price.totalPrice).toBeCloseTo(base * 0.75, 8);
+    },
+);

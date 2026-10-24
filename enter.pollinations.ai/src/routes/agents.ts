@@ -7,12 +7,19 @@ import {
     CodeAgentConfigSchema,
     CodeAgentInputSchema,
     communityModelId,
+    effectiveCommunityEndpointVisibility,
     isCommunityEndpointOwnerAllowed,
     PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+    parseCommunityModelId,
     parseListingPayload,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
+import { ValidationError } from "@shared/http/validation-error.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import {
+    getRegistryModelDefinition,
+    resolveModelName,
+} from "@shared/registry/registry.ts";
 import { and, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { type Context, Hono } from "hono";
@@ -175,6 +182,69 @@ async function requireOwnedAgent(db: Db, id: string, ownerUserId: string) {
     });
     if (!row) throw new HTTPException(404, { message: "Agent not found" });
     return row;
+}
+
+function isTextRegistryModel(baseModel: string): boolean | null {
+    try {
+        const definition = getRegistryModelDefinition(
+            resolveModelName(baseModel),
+        );
+        return definition.category === "text" && !definition.fallbackOnly;
+    } catch {
+        return null;
+    }
+}
+
+// Gen resolves baseModel on every call; an unknown id would otherwise only
+// surface as a 400 to the agent's callers.
+async function requireValidBaseModel(
+    db: Db,
+    ownerUserId: string,
+    baseModel: string,
+): Promise<void> {
+    const invalid = () =>
+        new HTTPException(400, {
+            message: `baseModel "${baseModel}" is not a callable text model`,
+        });
+    const bundled = isTextRegistryModel(baseModel);
+    if (bundled !== null) {
+        if (!bundled) throw invalid();
+        return;
+    }
+    const parsed = parseCommunityModelId(baseModel);
+    const owner = parsed
+        ? await db.query.user.findFirst({
+              columns: { id: true },
+              where: eq(schema.user.githubUsername, parsed.ownerGithubUsername),
+          })
+        : undefined;
+    const target =
+        parsed && owner
+            ? await db.query.communityEndpoint.findFirst({
+                  where: and(
+                      eq(schema.communityEndpoint.ownerUserId, owner.id),
+                      eq(schema.communityEndpoint.name, parsed.modelName),
+                  ),
+              })
+            : undefined;
+    // Someone else's private model must look the same as a missing one.
+    if (
+        !target ||
+        (target.ownerUserId !== ownerUserId &&
+            effectiveCommunityEndpointVisibility(
+                target.visibility,
+                target.pendingVisibility,
+                target.pendingAt,
+            ) === "private")
+    ) {
+        throw invalid();
+    }
+    if (
+        target.type === "proxy" &&
+        parseListingPayload("proxy", target.payload)?.modality !== "text"
+    ) {
+        throw invalid();
+    }
 }
 
 async function lookupOwnerGithubUsername(
@@ -454,6 +524,7 @@ export const agentsRoutes = new Hono<Env>()
                     listing.name,
                     input.visibility,
                 );
+                await requireValidBaseModel(db, user.id, input.baseModel);
                 payload = serializePromptAgentConfig(input);
             }
             let row: AgentRow;
@@ -530,12 +601,13 @@ export const agentsRoutes = new Hono<Env>()
                           ...current,
                           ...input,
                       });
-            if (!parsed.success) {
-                throw new HTTPException(400, {
-                    message: parsed.error.issues[0]?.message,
-                });
-            }
+            if (!parsed.success)
+                throw new ValidationError(parsed.error, "json");
             const data = parsed.data;
+            // Only a changed baseModel is checked, so other edits still save.
+            if ("baseModel" in data && input.baseModel !== undefined) {
+                await requireValidBaseModel(db, user.id, data.baseModel);
+            }
             const update: Partial<
                 typeof schema.communityEndpoint.$inferInsert
             > = {

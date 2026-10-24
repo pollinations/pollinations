@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { isRetryableFallbackError } from "../../src/fallback.ts";
 import type { AuthResult } from "../../src/image/createAndReturnImages.ts";
 import { syncImageEnv } from "../../src/image/env.ts";
 import {
@@ -46,6 +47,100 @@ beforeEach(() => {
 afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllEnvs();
+});
+
+describe("Azure FLUX explicit refusals", () => {
+    it.each([
+        [
+            callAzureFluxKontext,
+            "black-forest-labs/flux.1-kontext-pro",
+            "myceli-prod-eastus",
+            "flux-kontext-pro",
+        ],
+        [
+            callAzureFlux11Pro,
+            "black-forest-labs/flux.1.1-pro",
+            "myceli-prod-eastus",
+            "flux-pro-1.1",
+        ],
+        [
+            callAzureFlux11Pro,
+            "black-forest-labs/flux.1.1-pro:azure:sweden",
+            "myceli-prod-swedencentral",
+            "flux-pro-1.1",
+        ],
+        [
+            callAzureFlux2,
+            "black-forest-labs/flux.2-pro",
+            "myceli-prod-eastus",
+            "flux-2-pro",
+        ],
+        [
+            callAzureFlux2,
+            "black-forest-labs/flux.2-flex",
+            "myceli-prod-eastus",
+            "flux-2-flex",
+        ],
+    ] as const)(
+        "classifies a root-level refusal on route %#",
+        async (call, model, resource, path) => {
+            const body = {
+                created: 1792761683,
+                data: [],
+                stop_reason: "refusal",
+            };
+            const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                Response.json(body, {
+                    headers: { "x-ms-request-id": "azure-refusal" },
+                }),
+            );
+            const error = await call(
+                "a blue ceramic teapot",
+                { ...baseParams, model },
+                USER_INFO,
+            ).catch((caught) => caught);
+
+            expect(error).toMatchObject({
+                status: 422,
+                errorCode: "content_policy_violation",
+                upstreamStatus: 200,
+                requestUrl: new URL(
+                    `https://${resource}.cognitiveservices.azure.com/providers/blackforestlabs/v1/${path}?api-version=preview`,
+                ),
+                upstreamHeaders: { "x-ms-request-id": "azure-refusal" },
+            });
+            expect(error.message).toContain("refusal");
+            expect(JSON.parse(error.responseBody)).toEqual(body);
+            expect(isRetryableFallbackError(error)).toBe(false);
+            expect(fetchSpy).toHaveBeenCalledOnce();
+        },
+    );
+
+    it.each([undefined, null, "error", "success", {}, ["refusal"]])(
+        "keeps an unexplained empty response as a retryable 502 (stop_reason=%j)",
+        async (stopReason) => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                Response.json({
+                    data: [],
+                    stop_reason: stopReason,
+                    prompt: "refusal",
+                }),
+            );
+            const error = await callAzureFlux11Pro(
+                "a teapot",
+                {
+                    ...baseParams,
+                    model: "black-forest-labs/flux.1.1-pro",
+                },
+                USER_INFO,
+            ).catch((caught) => caught);
+            expect(error).toMatchObject({
+                status: 502,
+                message: "Azure FLUX 1.1 Pro returned no image",
+            });
+            expect(isRetryableFallbackError(error)).toBe(true);
+        },
+    );
 });
 
 describe("callAzureFluxKontext", () => {

@@ -2036,28 +2036,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000001,
     },
   },
-  "meta/llama-4-scout:openrouter:deepinfra-fp8-priority": {
+  "meta/llama-4-scout:deepinfra:priority": {
     "cost": {
-      "completionTextTokens": 0.00000047475,
-      "promptImageTokens": 0.00000015825,
-      "promptTextTokens": 0.00000015825,
+      "completionTextTokens": 0.00000045,
+      "promptImageTokens": 0.00000015,
+      "promptTextTokens": 0.00000015,
     },
     "price": {
-      "completionTextTokens": 0.00000047475,
-      "promptImageTokens": 0.00000015825,
-      "promptTextTokens": 0.00000015825,
-    },
-  },
-  "meta/llama-4-scout:openrouter:novita-bf16": {
-    "cost": {
-      "completionTextTokens": 0.00000062245,
-      "promptImageTokens": 0.0000001899,
-      "promptTextTokens": 0.0000001899,
-    },
-    "price": {
-      "completionTextTokens": 0.00000062245,
-      "promptImageTokens": 0.0000001899,
-      "promptTextTokens": 0.0000001899,
+      "completionTextTokens": 0.00000045,
+      "promptImageTokens": 0.00000015,
+      "promptTextTokens": 0.00000015,
     },
   },
   "meta/muse-glimmer-30b": {

@@ -213,11 +213,12 @@ test("an Azure template runs on Azure behind E2B's API, paid at 25% of Azure's r
         userId: owner.userId,
         modelProviderUsed: "azure",
     });
-    expect(azure.leases()[0].totalCost).toBeCloseTo(seconds * COST_SECOND, 8);
-    expect(azure.leases()[0].totalPrice).toBeCloseTo(seconds * PRICE_SECOND, 8);
+    // Charges round to the 1e-8 ledger unit, so allow one rounding step.
+    expect(azure.leases()[0].totalCost).toBeCloseTo(seconds * COST_SECOND, 7);
+    expect(azure.leases()[0].totalPrice).toBeCloseTo(seconds * PRICE_SECOND, 7);
     expect(
         (await getUserBalance(drizzle(env.DB), owner.userId)).tierBalance,
-    ).toBeCloseTo(10 - seconds * PRICE_SECOND, 8);
+    ).toBeCloseTo(10 - seconds * PRICE_SECOND, 7);
     // The template's listed rates are the ones it was charged.
     const pricing = await (await fetchGen("", "/pricing")).json<{
         templates: Record<string, { vcpuSecond: number; gibSecond: number }>;
@@ -225,7 +226,7 @@ test("an Azure template runs on Azure behind E2B's API, paid at 25% of Azure's r
     const rates = pricing.templates["pollinations-azure"];
     expect(azure.leases()[0].totalPrice).toBeCloseTo(
         seconds * (2 * rates.vcpuSecond + 2 * rates.gibSecond),
-        8,
+        7,
     );
 
     // It comes logged in, through envd at Azure's port URL.

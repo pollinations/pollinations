@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-24T06:07:47.455184+00:00",
+  "generated_at": "2026-10-24T17:28:55.291216+00:00",
   "models": [
     {
       "id": "2026-09-29:anthropic/claude-sonnet-5.5",
@@ -5127,6 +5127,577 @@
         "max_reference_images": {
           "before": null,
           "after": 50
+        }
+      }
+    },
+    {
+      "id": "2026-10-23:vllm-sr/d3",
+      "model_id": "vllm-sr/d3",
+      "title": "D3",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "decision",
+      "date": "2026-10-23",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "context_length": {
+          "before": null,
+          "after": 65536
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "per_user_rpm": {
+          "before": null,
+          "after": 30
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-23:perplexity/pplx-decider-v1.2",
+      "model_id": "perplexity/pplx-decider-v1.2",
+      "title": "Decider V1.2 27B",
+      "previous_title": "Decider V1.1 27B",
+      "action": "UPDATE",
+      "category": "decision",
+      "date": "2026-10-23",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "model_id": {
+          "before": "perplexity/pplx-decider-v1.1-27b",
+          "after": "perplexity/pplx-decider-v1.2"
+        }
+      }
+    },
+    {
+      "id": "2026-10-23:black-forest-labs/flux-3-max",
+      "model_id": "black-forest-labs/flux-3-max",
+      "title": "FLUX 3 Max",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "video",
+      "date": "2026-10-23",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 2
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "video",
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.0425"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-23:google/gemma-4-26b-a4b-it",
+      "model_id": "google/gemma-4-26b-a4b-it",
+      "title": "Gemma 4 26B A4B",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-23",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000013715",
+            "promptImageTokens": "0.00000013715",
+            "completionTextTokens": "0.000000422"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000007385",
+            "promptImageTokens": "0.00000007385",
+            "completionTextTokens": "0.0000003587"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-23:stealth/glyph-cluster",
+      "model_id": "stealth/glyph-cluster",
+      "title": "Glyph Cluster (Stealth)",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-23",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 256000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "per_user_rpm": {
+          "before": null,
+          "after": 8
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-23:thinkingmachines/inkling-small",
+      "model_id": "thinkingmachines/inkling-small",
+      "title": "Inkling Small",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-23",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005275",
+            "promptCachedTokens": "0.0000001055",
+            "completionTextTokens": "0.000001266"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000047475",
+            "promptCachedTokens": "0.0000001055",
+            "completionTextTokens": "0.000001266"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-23:inception/mercury-3",
+      "model_id": "inception/mercury-3",
+      "title": "Mercury 3",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-23",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1000000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001055",
+            "promptCachedTokens": "0.00000001055",
+            "completionTextTokens": "0.00000036925"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-23:microsoft/microsoft-decision-1",
+      "model_id": "microsoft/microsoft-decision-1",
+      "title": "Microsoft-Decision-1",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "decision",
+      "date": "2026-10-23",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": true,
+          "after": false
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000042"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000000315"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-23:mistralai/mistral-large-4",
+      "model_id": "mistralai/mistral-large-4",
+      "title": "Mistral Large 4",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-23",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000068",
+            "promptCachedTokens": "0.00000007",
+            "completionTextTokens": "0.00000209"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000136",
+            "promptCachedTokens": "0.00000014",
+            "completionTextTokens": "0.00000418"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-23:meta/muse-spark-1.3",
+      "model_id": "meta/muse-spark-1.3",
+      "title": "Muse Spark 1.3",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-23",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000125",
+            "promptCachedTokens": "0.00000015",
+            "completionTextTokens": "0.00000425"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-23:nvidia/nemotron-3.5-super-vl",
+      "model_id": "nvidia/nemotron-3.5-super-vl",
+      "title": "NVIDIA Nemotron 3.5 Super VL",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-23",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 262144
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.00000002",
+            "completionTextTokens": "0.0000005"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-23:qwen/qwen-image-2.1-pro",
+      "model_id": "qwen/qwen-image-2.1-pro",
+      "title": "Qwen Image 2.1 Pro",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-10-23",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionImageTokens": "0.04"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-23:sonilo/sonilo-1.1-sfx",
+      "model_id": "sonilo/sonilo-1.1-sfx",
+      "title": "Sonilo 1.1 SFX",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "audio",
+      "date": "2026-10-23",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "video"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionAudioSeconds": "0.009"
+          }
+        }
+      }
+    },
+    {
+      "id": "2026-10-23:tripo3d/p2",
+      "model_id": "tripo3d/p2",
+      "title": "Tripo P2",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "3d",
+      "date": "2026-10-23",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "3d"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionImageTokens": "1.1"
+          }
         }
       }
     }

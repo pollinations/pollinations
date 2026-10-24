@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { availableModels } from "../gen.pollinations.ai/src/text/availableModels.ts";
 import registry from "../operations/economics/provider-registry.json";
 import { createProviderResolver } from "./providers";
+import { DECISION_SERVICES } from "./registry/decision";
 import {
     getModels,
     getRegistryModelDefinition,
@@ -85,8 +86,14 @@ const HOST_VENDORS: Record<string, string> = {
 
 describe("text API provider attribution", () => {
     it("configures every registered text route, including hidden fallbacks, exactly once", () => {
+        // The decisions endpoint is served by the same text stack, so gen's
+        // text catalog covers the decision registry alongside the text one.
+        const servedTextNames = [
+            ...Object.keys(TEXT_SERVICES),
+            ...Object.keys(DECISION_SERVICES),
+        ].sort();
         expect(availableModels.map((model) => model.name).sort()).toEqual(
-            Object.keys(TEXT_SERVICES).sort(),
+            servedTextNames,
         );
     });
 

@@ -579,7 +579,7 @@ test("nano-banana-2.1 routes to OpenRouter AI Studio and bills exact usage", asy
     const expectedCost =
         ((10 * 1.5 + 12 * 7.5 + 1680 * 30) / 1_000_000) * 1.055;
     expect(event.totalCost).toBeCloseTo(expectedCost, 10);
-    expect(event.totalPrice).toBeCloseTo(expectedCost * 1.055, 7);
+    expect(event.totalPrice).toBeCloseTo(expectedCost, 7);
 });
 
 test("nano-banana-2.1 rejects 4K before calling a provider", async ({

@@ -324,9 +324,20 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("routes Opus 5.5 fast mode through OpenRouter's Anthropic fast endpoint", () => {
+    it("routes Opus 5.5 fast mode through Vercel pinned to Anthropic", () => {
         const result = resolveModelConfig(messages, {
             model: "anthropic/claude-opus-5.5:fast",
+        });
+
+        expect(result.options.model).toBe("anthropic/claude-opus-5.5-fast");
+        expect(result.options.providerOptions).toEqual({
+            gateway: { only: ["anthropic"] },
+        });
+    });
+
+    it("falls back to OpenRouter's Anthropic fast endpoint for Opus 5.5 fast mode", () => {
+        const result = resolveModelConfig(messages, {
+            model: "anthropic/claude-opus-5.5:fast:openrouter:anthropic-fast",
         });
 
         expect(result.options.model).toBe("anthropic/claude-opus-5.5");

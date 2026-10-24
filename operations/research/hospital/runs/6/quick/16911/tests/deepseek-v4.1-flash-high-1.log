@@ -1,0 +1,28 @@
+$ cd /home/user/pollinations && npx vitest run test/text-cache.test.ts
+
+ RUN  v3.2.4 /home/user/pollinations
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  gen.pollinations.ai/test/text-cache.test.ts [ gen.pollinations.ai/test/text-cache.test.ts ]
+Error: Cannot find package 'cloudflare:test' imported from '/home/user/pollinations/gen.pollinations.ai/test/text-cache.test.ts'
+ ❯ gen.pollinations.ai/test/text-cache.test.ts:1:1
+      1| import {
+       | ^
+      2|     createExecutionContext,
+      3|     waitOnExecutionContext,
+
+Caused by: Error: Failed to load url cloudflare:test (resolved id: cloudflare:test) in /home/user/pollinations/gen.pollinations.ai/test/text-cache.test.ts. Does the file exist?
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/config.js:22663:33
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  03:06:19
+   Duration  310ms (transform 60ms, setup 0ms, collect 0ms, tests 0ms, environment 0ms, prepare 72ms)
+
+
+exit 1

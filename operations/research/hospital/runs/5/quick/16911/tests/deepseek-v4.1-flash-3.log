@@ -1,0 +1,25 @@
+$ cd /home/user/pollinations/gen.pollinations.ai && npx vitest run test/generation-deduplication.test.ts
+
+ RUN  v3.2.4 /home/user/pollinations/gen.pollinations.ai
+
+Using secrets defined in .dev.vars.test
+[vpw:debug] Adding `enable_nodejs_tty_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_fs_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_http_modules` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_perf_hooks_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:info] Starting single runtime for vitest.config.ts...
+workerd/io/worker.c++:1150: info: console warning; message = Called .text() on an HTTP body which does not appear to be text. The body's Content-Type is "application/x-ndjson". The result will probably be corrupted. Consider checking the Content-Type header before interpreting entities as text.
+workerd/io/worker.c++:1150: info: console warning; message = Called .text() on an HTTP body which does not appear to be text. The body's Content-Type is "application/x-ndjson". The result will probably be corrupted. Consider checking the Content-Type header before interpreting entities as text.
+workerd/io/worker.c++:1150: info: console warning; message = Called .text() on an HTTP body which does not appear to be text. The body's Content-Type is "application/x-ndjson". The result will probably be corrupted. Consider checking the Content-Type header before interpreting entities as text.
+workerd/io/worker.c++:1150: info: console warning; message = Called .text() on an HTTP body which does not appear to be text. The body's Content-Type is "application/x-ndjson". The result will probably be corrupted. Consider checking the Content-Type header before interpreting entities as text.
+ ✓ test/generation-deduplication.test.ts (14 tests) 197ms
+
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+   Start at  00:28:00
+   Duration  5.10s (transform 1.44s, setup 4.04s, collect 27ms, tests 197ms, environment 0ms, prepare 108ms)
+
+[vpw:debug] Shutting down runtimes...
+[vpw:debug] Disposing remote proxy sessions...
+
+exit 0

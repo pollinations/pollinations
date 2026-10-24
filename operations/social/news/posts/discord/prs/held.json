@@ -1,5 +1,28 @@
 {
-  "held": {},
-  "production": "ea18e9e60a0ee5a136071f176276ba6d1d3d158c",
+  "held": {
+    "18258": {
+      "merge_sha": "d355e8a03c3bed155e9408804198a798990543c6",
+      "merged_at": "2026-10-24T12:38:23Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-gen"
+      ]
+    },
+    "18335": {
+      "merge_sha": "5d8c7dac9e70ed5afa8122667eec2a3910629074",
+      "merged_at": "2026-10-24T14:10:45Z",
+      "required": []
+    },
+    "18358": {
+      "merge_sha": "354aaec66f18bd44d0c4b7e1c15d6824fb93c896",
+      "merged_at": "2026-10-24T16:08:15Z",
+      "required": [
+        "deploy-cloudflare-production.yml:deploy-enter",
+        "deploy-cloudflare-production.yml:deploy-gen",
+        "deploy-cloudflare-production.yml:deploy-media",
+        "deploy-website-cloudflare.yml:deploy"
+      ]
+    }
+  },
+  "production": "d434954b7e3e7e06cd5471fc346cda49ea2890ee",
   "master": "02b0575f1ae6daad402bb2782119d7752403ad01"
 }

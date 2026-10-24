@@ -61,10 +61,8 @@ const saveJson = (path: string, data: Record<string, unknown>) => {
 };
 
 const readKey = (ctx: HarnessContext): string | null => {
-    const env = loadJson(configPath(ctx)).env as
-        | Record<string, unknown>
-        | undefined;
-    const key = env?.vars?.[KEY_ENV];
+    const doc = loadJson(configPath(ctx)) as OpenClawConfig;
+    const key = doc.env?.vars?.[KEY_ENV];
     return typeof key === "string" && key ? key : null;
 };
 
@@ -156,7 +154,7 @@ const stripConfig = (ctx: HarnessContext): boolean => {
     const primary = asRecord(doc.agents?.defaults?.model).primary;
     // Only drop a default we set; a user-chosen model like openai/gpt-5 stays.
     if (typeof primary === "string" && primary.startsWith(`${PROVIDER}/`)) {
-        delete asRecord(asRecord(doc.agents).defaults).model.primary;
+        delete asRecord(doc.agents?.defaults?.model).primary;
         saveJson(configPath(ctx), doc);
         changed = true;
     }
@@ -223,7 +221,7 @@ export const initializeOpenClaw = (ctx: HarnessContext) => {
     }
 };
 
-export const openclaw: HarnessAdapter = {
+export const openclaw = {
     id: ID,
     label: LABEL,
     description: "Add Pollinations as a provider in OpenClaw",
@@ -236,8 +234,9 @@ export const openclaw: HarnessAdapter = {
                 "OpenClaw was not found. Install it from: https://openclaw.ai/install",
             );
         }
-        const model = options.model ?? DEFAULT_MODEL;
-        const models = await fetchHarnessModels(model);
+        const { model, models } = await fetchHarnessModels(
+            options.model ?? DEFAULT_MODEL,
+        );
         initializeOpenClaw(ctx);
 
         const apiKey = await resolveHarnessKey(
@@ -249,4 +248,4 @@ export const openclaw: HarnessAdapter = {
 
     off: disableOpenClaw,
     status: result,
-};
+} satisfies HarnessAdapter;

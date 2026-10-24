@@ -698,8 +698,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
     "meta-models/Muse-Glimmer-30B": () =>
         createDeepInfraModelConfig({ model: "meta-models/Muse-Glimmer-30B" }),
-    "Qwen/Qwen3.8-2.4T-A95B": () =>
-        createDeepInfraModelConfig({ model: "Qwen/Qwen3.8-2.4T-A95B" }),
+    "qwen/qwen3.8-2.4t-a95b:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "alibaba/qwen3.8-2.4t-a95b",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["novita"] } },
+            },
+        }),
     "moonshotai/Kimi-K2.6": () =>
         createDeepInfraModelConfig({ model: "moonshotai/Kimi-K2.6" }),
     "moonshotai/Kimi-K3": () =>

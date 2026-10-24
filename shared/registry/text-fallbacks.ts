@@ -324,13 +324,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "qwen/qwen3.8-2.4t-a95b": {
-        "qwen/qwen3.8-2.4t-a95b:deepinfra": {
-            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
-            provider: "deepinfra",
-            addedDate: new Date("2026-09-01").getTime(),
+        // Vercel AI Gateway pinned to Novita, same rates as the primary
+        // (2026-10-24). DeepInfra retired this model and now serves GLM-5.3
+        // under its ID; Alibaba's endpoint for it ignores image input.
+        "qwen/qwen3.8-2.4t-a95b:vercel": {
+            provider: "vercel",
+            addedDate: new Date("2026-10-24").getTime(),
             cost: {
                 promptTextTokens: perMillion(2),
-                promptCachedTokens: perMillion(0.2),
+                promptCachedTokens: perMillion(0.25),
                 completionTextTokens: perMillion(6),
             },
         },

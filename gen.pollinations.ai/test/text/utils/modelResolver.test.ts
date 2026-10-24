@@ -256,6 +256,17 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("mistral-large-4");
     });
 
+    it("pins the Qwen3.8 2.4T fallback to Novita on Vercel", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen/qwen3.8-2.4t-a95b:vercel",
+        });
+
+        expect(result.options.model).toBe("alibaba/qwen3.8-2.4t-a95b");
+        expect(result.options.providerOptions).toEqual({
+            gateway: { only: ["novita"] },
+        });
+    });
+
     it("pins the Mistral Large 4 fallback to Mistral on Vercel", () => {
         const result = resolveModelConfig(messages, {
             model: "mistralai/mistral-large-4:vercel",

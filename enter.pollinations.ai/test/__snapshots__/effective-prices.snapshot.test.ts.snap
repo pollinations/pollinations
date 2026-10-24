@@ -4305,6 +4305,30 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "x-ai/grok-imagine-image-2.0": {
     "cost": {
+      "completionImageTokens": 0.06,
+      "promptImageTokens": 0.01,
+    },
+    "costVariants": {
+      "low_1k": {
+        "completionImageTokens": 0.04,
+        "promptImageTokens": 0.01,
+      },
+      "low_2k": {
+        "completionImageTokens": 0.06,
+        "promptImageTokens": 0.01,
+      },
+      "medium_2k": {
+        "completionImageTokens": 0.08,
+        "promptImageTokens": 0.01,
+      },
+    },
+    "price": {
+      "completionImageTokens": 0.06,
+      "promptImageTokens": 0.01,
+    },
+  },
+  "x-ai/grok-imagine-image-2.0:openrouter": {
+    "cost": {
       "completionImageTokens": 0.0633,
       "promptImageTokens": 0.01055,
     },

@@ -733,7 +733,7 @@ export async function callOpenRouterGrokImagineImage2API(
     return {
         buffer: base64ToBuffer(encodedImage),
         trackingData: {
-            actualModel: "x-ai/grok-imagine-image-2.0",
+            actualModel: safeParams.model,
             usage: {
                 ...(inputReferences.length > 0
                     ? { promptImageTokens: inputReferences.length }

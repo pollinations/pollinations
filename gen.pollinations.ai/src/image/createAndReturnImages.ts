@@ -996,6 +996,13 @@ const generateImage = async (
             return await callOpenRouterGrokImagineProAPI(prompt, safeParams);
 
         case "x-ai/grok-imagine-image-2.0":
+            return await callXaiImageAPI(
+                prompt,
+                safeParams,
+                "grok-imagine-image-2.0",
+            );
+
+        case "x-ai/grok-imagine-image-2.0:openrouter":
             return await callOpenRouterGrokImagineImage2API(prompt, safeParams);
 
         case "recraft/recraft-v4.1-vector":

@@ -966,6 +966,12 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("does not resolve the removed DeepSeek Pro gateway fallback", () => {
+        expect(
+            findModelByName("deepseek/deepseek-v4-pro:openrouter:streamlake"),
+        ).toBeNull();
+    });
+
     it("routes DeepSeek Pro to the exact 0813 checkpoint on Alibaba", () => {
         const result = resolveModelConfig(messages, { model: "deepseek-pro" });
 

@@ -1400,12 +1400,16 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             // OpenRouter base Alibaba peak rates (00:00–14:00 UTC, 2026-09-23),
-            // including the account's 5.5% credit-purchase fee. Alibaba
-            // halves them the rest of the day; costs are not time-based, so
-            // the peak rate applies all day and never undercharges.
+            // including the account's 5.5% credit-purchase fee. Keep the
+            // deliberate peak-price quote; recorded cost uses the provider
+            // receipt, including its cheaper off-peak tariff.
             promptTextTokens: perMillion(1.122) * 1.055,
             promptCachedTokens: perMillion(0.1122) * 1.055,
             completionTextTokens: perMillion(3.366) * 1.055,
+        },
+        billing: {
+            resolveTotalCost: reportedTextCost(1.055),
+            priceFromRates: true,
         },
         title: "DeepSeek V4 Pro 0813",
         description: "Deep reasoning and strong coding for demanding problems",

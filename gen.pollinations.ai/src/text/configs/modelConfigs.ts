@@ -892,10 +892,6 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    "deepseek-v4-pro-openrouter-streamlake": createPinnedOpenRouterConfig(
-        "deepseek/deepseek-v4-pro-0813",
-        "streamlake",
-    ),
     "qwen-coder-large-openrouter-streamlake": createPinnedOpenRouterConfig(
         "qwen/qwen3-coder-next",
         "streamlake",

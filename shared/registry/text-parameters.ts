@@ -320,12 +320,6 @@ export const CHAT_PARAMETERS = {
         "structured_outputs",
         "top_k",
     ],
-    openRouterStreamLakeReasoning: [
-        ...SAMPLED_CHAT,
-        ...LOGPROBS,
-        ...OPENROUTER_REASONING,
-        "reasoning_effort",
-    ],
     openRouterKimiMoonshot: [
         ...TOOL_CHAT,
         ...PENALTIES,

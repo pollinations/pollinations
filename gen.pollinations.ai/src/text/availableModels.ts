@@ -534,11 +534,6 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
-        name: "deepseek/deepseek-v4-pro:openrouter:streamlake",
-        config: portkeyConfig["deepseek-v4-pro-openrouter-streamlake"],
-        transform: fireworksThinking,
-    },
-    {
         name: "x-ai/grok-4.20",
         config: (options = {}) =>
             (usesGrokReasoning(options)

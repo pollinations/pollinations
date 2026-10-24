@@ -1,0 +1,84 @@
+{
+  "date": "2026-10-23",
+  "period_start": "2026-10-23",
+  "period_end": "2026-10-23",
+  "title": "Video sound effects join the audio API",
+  "summary": "Sonilo adds video-timed sound effects, Barbara starts on a Quest Pollen model, and audio and model conversations get several fixes.\n\nSonilo can generate a separate MP3 sound-effects track timed to a public video URL. Audio request defaults now work across chat completions and model fallbacks without overriding caller settings. Live transcription starts without a client session update, and realtime session events report requestable model names.\n\nNew Barbara setups default to `openai/gpt-6.1-sol`. Her model picker now identifies which choices can use Quest Pollen and shows a per-message estimate for GPT-6.1 Sol.\n\nGemini tool calls can now continue through `/v1/messages` when an Anthropic client replays the conversation. Step 3.7 Flash requests now route to providers serving StepFun rather than receiving MiMo responses.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 14783,
+      "date": "2026-10-23"
+    },
+    {
+      "number": 17597,
+      "date": "2026-10-23"
+    },
+    {
+      "number": 17714,
+      "date": "2026-10-23"
+    },
+    {
+      "number": 17716,
+      "date": "2026-10-23"
+    },
+    {
+      "number": 18151,
+      "date": "2026-10-23"
+    },
+    {
+      "number": 18172,
+      "date": "2026-10-23"
+    },
+    {
+      "number": 18173,
+      "date": "2026-10-23"
+    },
+    {
+      "number": 18178,
+      "date": "2026-10-23"
+    },
+    {
+      "number": 18181,
+      "date": "2026-10-23"
+    },
+    {
+      "number": 18184,
+      "date": "2026-10-23"
+    },
+    {
+      "number": 18189,
+      "date": "2026-10-23"
+    },
+    {
+      "number": 18192,
+      "date": "2026-10-23"
+    },
+    {
+      "number": 18194,
+      "date": "2026-10-23"
+    }
+  ],
+  "generated_at": "2026-10-24T17:48:42.184691+00:00",
+  "daily": [
+    {
+      "emoji": "🎵",
+      "title": "Sound effects for video",
+      "text": "Give `sonilo/sonilo-1.1-sfx` a public video URL in `reference_video` and a sound prompt to generate a separate MP3 effects track timed to the video. It requires a paid balance and has no fallback. [View the model](https://enter.pollinations.ai/models?q=sonilo/sonilo-1.1-sfx).",
+      "prs": [
+        17597
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Barbara starts on GPT-6.1 Sol",
+      "text": "New Barbara setups default to `openai/gpt-6.1-sol`, which can use Quest Pollen. The model picker also shows which choices are Quest Pollen-eligible and gives a per-message estimate for GPT-6.1 Sol.",
+      "prs": [
+        18181
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
+}

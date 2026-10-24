@@ -304,7 +304,8 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-09-23").getTime(),
         // Provider retires this route on 2027-01-09.
-        paidOnly: false,
+        // Combined Azure 36 RPM is below twice the observed 25 RPM peak.
+        paidOnly: true,
         priceMultiplier: 0.75,
         perUserRpm: 12,
         // Azure Global Standard meters, verified 2026-09-23.

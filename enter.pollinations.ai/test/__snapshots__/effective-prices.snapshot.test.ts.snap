@@ -2105,6 +2105,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000013125,
     },
   },
+  "microsoft/mai-image-2.6:vercel": {
+    "cost": {
+      "completionImageTokens": 0.000038,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionImageTokens": 0.000038,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+  },
   "microsoft/mai-transcribe-2": {
     "cost": {
       "promptAudioSeconds": 0.0000277777777777778,

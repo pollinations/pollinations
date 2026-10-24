@@ -47,17 +47,17 @@ type AzureMaiResponse = {
     };
 };
 
-function validateMaiDimensions(
+export function validateMaiDimensions(
     width: number,
     height: number,
-    route: MaiRoute,
+    title: string,
 ): void {
     if (
         width % AZURE_MAI_DIMENSION_STEP !== 0 ||
         height % AZURE_MAI_DIMENSION_STEP !== 0
     ) {
         throw UpstreamError.fromProvider(400, {
-            message: `${route.title} requires width and height to be multiples of ${AZURE_MAI_DIMENSION_STEP}px`,
+            message: `${title} requires width and height to be multiples of ${AZURE_MAI_DIMENSION_STEP}px`,
         });
     }
 }
@@ -68,13 +68,13 @@ function tokenCount(value: unknown): number {
         : 0;
 }
 
-async function editFormData(
+export async function checkMaiInputs(
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
-    route: MaiRoute,
-): Promise<FormData> {
-    const images = await Promise.all(
+): Promise<Awaited<ReturnType<typeof downloadUserImage>>[]> {
+    await requireSafePrompt(prompt, safeParams, userInfo);
+    return await Promise.all(
         safeParams.image.map(async (imageUrl) => {
             const image = await downloadUserImage(imageUrl);
             const imageSafetyResult = await analyzeImageSafety(image.buffer);
@@ -94,7 +94,13 @@ async function editFormData(
             return image;
         }),
     );
+}
 
+function editFormData(
+    prompt: string,
+    images: Awaited<ReturnType<typeof downloadUserImage>>[],
+    route: MaiRoute,
+): FormData {
     // Edits take references as repeated multipart `image` fields (up to 5);
     // Azure rejects width/height here.
     const formData = new FormData();
@@ -121,7 +127,7 @@ export async function callAzureMaiImage(
     }
     const isEdit = safeParams.image.length > 0;
     if (!isEdit) {
-        validateMaiDimensions(safeParams.width, safeParams.height, route);
+        validateMaiDimensions(safeParams.width, safeParams.height, route.title);
     }
 
     const apiKey = getImageEnv("AZURE_MYCELI_PROD_API_KEY");
@@ -131,13 +137,13 @@ export async function callAzureMaiImage(
         );
     }
 
-    await requireSafePrompt(prompt, safeParams, userInfo);
+    const images = await checkMaiInputs(prompt, safeParams, userInfo);
 
     const endpoint = `${AZURE_MAI_ENDPOINT}/${isEdit ? "edits" : "generations"}`;
     const headers: Record<string, string> = { "api-key": apiKey };
     let body: BodyInit;
     if (isEdit) {
-        body = await editFormData(prompt, safeParams, userInfo, route);
+        body = editFormData(prompt, images, route);
     } else {
         headers["Content-Type"] = "application/json";
         // Only these fields are accepted; seed, quality and guidance are 400s.

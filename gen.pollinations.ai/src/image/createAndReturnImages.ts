@@ -23,6 +23,7 @@ import {
 } from "./models/ideogramReplicateModel.ts";
 import { callInferencePortImage } from "./models/inferencePortImageModel.ts";
 import { callKreaImageAPI } from "./models/kreaModel.ts";
+import { callMaiVercelImage } from "./models/maiVercelModel.ts";
 import {
     callOpenRouterFlux2MaxAPI,
     callOpenRouterFlux3API,
@@ -920,6 +921,9 @@ const generateImage = async (
                 safeParams,
                 "black-forest-labs/flux-3-image-klein",
             );
+
+        case "microsoft/mai-image-2.6:vercel":
+            return await callMaiVercelImage(prompt, safeParams, userInfo);
 
         case "microsoft/mai-image-2.6-flash":
         case "microsoft/mai-image-2.6": {

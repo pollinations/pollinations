@@ -18,6 +18,7 @@ const QUOTA_BOUND_MODELS = new Set([
     "inferenceport-ai/lightning-image-turbo",
     "microsoft/mai-image-2.6-flash",
     "microsoft/mai-image-2.6",
+    ...IMAGE_SERVICES["microsoft/mai-image-2.6"].fallbacks,
     "vllm-sr/d3",
 ]);
 

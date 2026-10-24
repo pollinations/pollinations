@@ -410,67 +410,6 @@ describe("POST /v1/embeddings", () => {
         });
     }
 
-    test("rejects Gemini task hints without text content", () => {
-        expect(() => applyGeminiTaskInstruction([], "RETRIEVAL_QUERY")).toThrow(
-            "task_type requires non-empty Gemini text input",
-        );
-    });
-
-    test("returns an OpenAI-compatible response and tracks billing", async ({
-        paidApiKey: apiKey,
-        mocks,
-    }) => {
-        await mocks.enable("tinybird", "tinybirdStats", "vertex");
-        const { response, wait } = await fetchWorker("/v1/embeddings", {
-            method: "POST",
-            headers: {
-                "content-type": "application/json",
-                authorization: `Bearer ${apiKey}`,
-            },
-            body: buildEmbeddingsBody(),
-        });
-        const body = await response.text();
-
-        expect(
-            response.status,
-            `Expected 200 but got ${response.status}: ${body}`,
-        ).toBe(200);
-        const data = JSON.parse(body) as {
-            object: string;
-            data: { object: string; embedding: number[]; index: number }[];
-            model: string;
-            usage: { prompt_tokens: number; total_tokens: number };
-        };
-        expect(data.object).toBe("list");
-        expect(data.data).toEqual([
-            {
-                object: "embedding",
-                embedding: [0, 0.1, 0.2],
-                index: 0,
-            },
-        ]);
-        expect(data.model).toBe(TEST_EMBEDDING_MODEL);
-        expect(data.usage).toEqual({ prompt_tokens: 5, total_tokens: 5 });
-        expect(response.headers.get("x-model-used")).toBe(TEST_EMBEDDING_MODEL);
-        expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("5");
-        expect(mocks.vertex.state.requests).toHaveLength(1);
-
-        await wait();
-
-        const events = mocks.tinybird.state.events;
-        expect(events).toHaveLength(1);
-        expect(events[0]).toMatchObject({
-            eventType: "generate.embedding",
-            modelRequested: TEST_EMBEDDING_MODEL,
-            resolvedModelRequested: TEST_EMBEDDING_MODEL,
-            modelUsed: TEST_EMBEDDING_MODEL,
-            tokenCountPromptText: 5,
-            tokenCountCompletionText: 0,
-            isBilledUsage: true,
-        });
-        expect(events[0].totalPrice).toBeGreaterThan(0);
-    });
-
     test("keeps the Azure large quote during exact-model OpenAI recovery", async ({
         apiKey,
         mocks,
@@ -541,6 +480,67 @@ describe("POST /v1/embeddings", () => {
             totalCost: 1.04e-6,
             totalPrice: 7.8e-7,
         });
+    });
+
+    test("rejects Gemini task hints without text content", () => {
+        expect(() => applyGeminiTaskInstruction([], "RETRIEVAL_QUERY")).toThrow(
+            "task_type requires non-empty Gemini text input",
+        );
+    });
+
+    test("returns an OpenAI-compatible response and tracks billing", async ({
+        paidApiKey: apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "vertex");
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody(),
+        });
+        const body = await response.text();
+
+        expect(
+            response.status,
+            `Expected 200 but got ${response.status}: ${body}`,
+        ).toBe(200);
+        const data = JSON.parse(body) as {
+            object: string;
+            data: { object: string; embedding: number[]; index: number }[];
+            model: string;
+            usage: { prompt_tokens: number; total_tokens: number };
+        };
+        expect(data.object).toBe("list");
+        expect(data.data).toEqual([
+            {
+                object: "embedding",
+                embedding: [0, 0.1, 0.2],
+                index: 0,
+            },
+        ]);
+        expect(data.model).toBe(TEST_EMBEDDING_MODEL);
+        expect(data.usage).toEqual({ prompt_tokens: 5, total_tokens: 5 });
+        expect(response.headers.get("x-model-used")).toBe(TEST_EMBEDDING_MODEL);
+        expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("5");
+        expect(mocks.vertex.state.requests).toHaveLength(1);
+
+        await wait();
+
+        const events = mocks.tinybird.state.events;
+        expect(events).toHaveLength(1);
+        expect(events[0]).toMatchObject({
+            eventType: "generate.embedding",
+            modelRequested: TEST_EMBEDDING_MODEL,
+            resolvedModelRequested: TEST_EMBEDDING_MODEL,
+            modelUsed: TEST_EMBEDDING_MODEL,
+            tokenCountPromptText: 5,
+            tokenCountCompletionText: 0,
+            isBilledUsage: true,
+        });
+        expect(events[0].totalPrice).toBeGreaterThan(0);
     });
 
     test("uses the shared fallback loop for embeddings", async ({

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-24T17:35:13.696790+00:00",
+  "generated_at": "2026-10-24T17:39:13.771431+00:00",
   "models": [
     {
       "id": "2026-09-29:anthropic/claude-sonnet-5.5",
@@ -6880,6 +6880,36 @@
     }
   ],
   "daily": [
+    {
+      "date": "2026-10-21",
+      "emoji": "📱",
+      "title": "My Apps in Enter",
+      "text": "If your linked GitHub account has community catalog listings, you can see them in My Apps. Listings show app details and links, with last-24-hour request counts for Pollen Pay apps.",
+      "prs": [
+        17928
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-21",
+      "emoji": "🔗",
+      "title": "Your catalog apps by API",
+      "text": "Signed-in accounts can use `GET /account/apps` to retrieve their community catalog listings, newest approval first. It needs no extra permission and returns an empty array if the account has no linked GitHub user or listings. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17928
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-10-21",
+      "emoji": "🤖",
+      "title": "Polli keeps its receipts",
+      "text": "In Discord, Polli can use recent successful tool lookups when answering follow-up questions from the same person in a thread. It makes a fresh lookup before contradicting an earlier tool-supported claim.",
+      "prs": [
+        16906
+      ],
+      "kind": "product"
+    },
     {
       "date": "2026-10-20",
       "emoji": "🔗",

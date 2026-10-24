@@ -256,6 +256,17 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("mistral-large-4");
     });
 
+    it("pins the Nemotron 3 Ultra fallback to Baseten on Vercel", () => {
+        const result = resolveModelConfig(messages, {
+            model: "nvidia/nemotron-3-ultra:vercel",
+        });
+
+        expect(result.options.model).toBe("nvidia/nemotron-3-ultra-550b-a55b");
+        expect(result.options.providerOptions).toEqual({
+            gateway: { only: ["baseten"] },
+        });
+    });
+
     it("pins the Mistral Large 4 fallback to Mistral on Vercel", () => {
         const result = resolveModelConfig(messages, {
             model: "mistralai/mistral-large-4:vercel",
@@ -459,11 +470,6 @@ describe("resolveModelConfig", () => {
     it.each([
         [
             "nvidia/nemotron-3-ultra",
-            "accounts/fireworks/models/nemotron-3-ultra-nvfp4",
-            "https://api.fireworks.ai/inference/v1",
-        ],
-        [
-            "nvidia/nemotron-3-ultra:deepinfra",
             "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
             "https://api.deepinfra.com/v1/openai",
         ],

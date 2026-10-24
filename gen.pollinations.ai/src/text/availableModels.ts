@@ -1025,14 +1025,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "nvidia/nemotron-3-ultra",
-        config: portkeyConfig[
-            "accounts/fireworks/models/nemotron-3-ultra-nvfp4"
-        ],
+        config: portkeyConfig["nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B"],
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
-        name: "nvidia/nemotron-3-ultra:deepinfra",
-        config: portkeyConfig["nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B"],
+        name: "nvidia/nemotron-3-ultra:vercel",
+        config: portkeyConfig["nvidia/nemotron-3-ultra:vercel"],
         transform: createReasoningEffortTransform("toggle"),
     },
     {

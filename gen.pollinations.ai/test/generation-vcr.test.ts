@@ -1436,7 +1436,7 @@ test("seed -1 regenerates identical chat requests through the coordinator", asyn
             authorization: `Bearer ${paidApiKey}`,
         },
         body: JSON.stringify({
-            model: "openai/gpt-5-nano",
+            model: "stepfun/step-3.7-flash",
             messages: [
                 { role: "user", content: "vcr random seed regeneration" },
             ],

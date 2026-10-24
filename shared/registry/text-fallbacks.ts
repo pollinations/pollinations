@@ -923,22 +923,21 @@ export const TEXT_FALLBACKS = {
             provider: "openrouter",
             priceMultiplier: 1,
             addedDate: new Date("2026-10-13").getTime(),
-            // OpenRouter Google AI Studio list rates (2026-10-13; its 50% promo
-            // through 2026-11-30 is not counted), including the 5.5%
-            // credit-purchase fee, so this route costs 5.5% above the price.
+            // OpenRouter AI Studio promotional rates verified 2026-10-24,
+            // including the 5.5% credit fee. Callers keep the Vertex quote.
             cost: {
-                promptTextTokens: perMillion(4) * 1.055,
-                promptCachedTokens: perMillion(0.2) * 1.055,
-                promptCacheWriteTokens: perMillion(4) * 1.055,
-                promptAudioTokens: perMillion(4) * 1.055,
-                promptImageTokens: perMillion(4) * 1.055,
-                promptVideoTokens: perMillion(4) * 1.055,
-                completionTextTokens: perMillion(20) * 1.055,
+                promptTextTokens: perMillion(2) * 1.055,
+                promptCachedTokens: perMillion(0.1) * 1.055,
+                promptCacheWriteTokens: perMillion(2) * 1.055,
+                promptAudioTokens: perMillion(2) * 1.055,
+                promptImageTokens: perMillion(2) * 1.055,
+                promptVideoTokens: perMillion(2) * 1.055,
+                completionTextTokens: perMillion(10) * 1.055,
             },
-            // Implicit caching only, so no explicit cache storage is billed.
+            // Reported explicit cache writes include five minutes of storage.
             billing: openRouterGeminiBilling({
                 searchCostPerThousandRequests: 14 * 1.055,
-                storageCostPerMillionTokenHours: 0,
+                storageCostPerMillionTokenHours: 2.25 * 1.055,
             }),
         },
     },

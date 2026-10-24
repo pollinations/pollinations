@@ -1565,10 +1565,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000015825,
     },
     "price": {
-      "completionImageTokens": 0.00003339075,
-      "completionTextTokens": 0.0000083476875,
-      "promptImageTokens": 0.0000016695375,
-      "promptTextTokens": 0.0000016695375,
+      "completionImageTokens": 0.00003165,
+      "completionTextTokens": 0.0000079125,
+      "promptImageTokens": 0.0000015825,
+      "promptTextTokens": 0.0000015825,
     },
   },
   "google/gemini-omni-1.1-flash": {

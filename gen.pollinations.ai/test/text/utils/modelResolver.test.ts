@@ -283,6 +283,23 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("mistral-large-4");
     });
 
+    it("pins Step 5 Preview to StepFun and its fallback to DeepInfra", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "stepfun/step-5-preview",
+        });
+        expect(primary.options.provider).toEqual({
+            only: ["stepfun/fp8"],
+            allow_fallbacks: false,
+        });
+
+        const fallback = resolveModelConfig(messages, {
+            model: "stepfun/step-5-preview:vercel",
+        });
+        expect(fallback.options.providerOptions).toEqual({
+            gateway: { only: ["deepinfra"] },
+        });
+    });
+
     it("pins the Mistral Large 4 fallback to Mistral on Vercel", () => {
         const result = resolveModelConfig(messages, {
             model: "mistralai/mistral-large-4:vercel",

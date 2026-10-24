@@ -8,7 +8,6 @@ import {
     Chip,
     CloudUploadIcon,
     ContentHeader,
-    CubeIcon,
     cn,
     ExternalLinkButton,
     ExternalLinkIcon,
@@ -105,7 +104,7 @@ const BUILD_FEATURES: Feature[] = [
                 href: "https://gen.pollinations.ai/docs#tag/sandboxes",
             },
         ],
-        icon: CubeIcon,
+        icon: TerminalIcon,
         color: "var(--polli-color-modality-realtime)",
     },
     {

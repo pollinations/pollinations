@@ -9,7 +9,6 @@ import {
     ClipboardIcon,
     ColorModeToggle,
     CopyButton,
-    CubeIcon,
     cn,
     DiscordIcon,
     ExternalLinkIcon,
@@ -282,7 +281,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             label: "Sandboxes",
             href: `${genDocsUrl()}#tag/sandboxes`,
             icon: (
-                <CubeIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
+                <TerminalIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
             ),
         },
         {

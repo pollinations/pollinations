@@ -10,6 +10,7 @@ import {
     reportedTextCost,
     withVertexCacheStorage,
 } from "./gemini-billing";
+import { reportedInferencePortCost } from "./inferenceport-billing";
 import { mergeFallbacks } from "./merge-fallbacks";
 import { PERPLEXITY_WEB_SEARCH_BILLING } from "./perplexity-billing";
 import { perMillion } from "./price-helpers";
@@ -1819,6 +1820,7 @@ const TEXT_BASE_SERVICES = {
             promptTextTokens: perMillion(0.75),
             completionTextTokens: perMillion(0.75),
         },
+        billing: { resolveTotalCost: reportedInferencePortCost },
         title: "Lightning Text v2.1",
         description:
             "Router that picks a fast model per prompt, serving Qwen3.8 27B in place of GPT-OSS, with image input, tools and JSON output",

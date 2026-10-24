@@ -25,12 +25,22 @@ const SELFIE_CATGPT =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/selfie-catgpt.png";
 const MODEL = "nanobanana-2-lite";
 
-function log(...args: any[]) {
-    console.log(`[${new Date().toISOString()}]`, ...args);
+function log(...args: unknown[]) {
+    console.log(`[${new Date().toISOString()}]`, ...args.map(redactSecrets));
 }
 
-function logError(...args: any[]) {
-    console.error(`[${new Date().toISOString()}]`, ...args);
+function logError(...args: unknown[]) {
+    console.error(
+        `[${new Date().toISOString()}]`,
+        ...args.map(redactSecrets),
+    );
+}
+
+/** Never let a credential reach the log sink (start-all.sh tees to /tmp). */
+function redactSecrets(arg: unknown): unknown {
+    return typeof arg === "string"
+        ? arg.replaceAll(/([?&])key=[^&\s]+/g, "$1key=[REDACTED]")
+        : arg;
 }
 
 const CAT_SYSTEM = `You are CatGPT — a supremely aloof, sarcastic cat who barely tolerates humans. You respond to questions with withering wit, dry irony, and feline disdain. Your replies are SHORT (2-8 words max), devastatingly dismissive but clever. You don't just say "no" — you find the most cutting, ironic angle. You occasionally reference cat behaviors (knocking things off tables, ignoring humans, sleeping). Never break character. Never be helpful. Never be impressed by human achievements. If an image is attached, you may roast whatever is in it (person, object, pet — anything) in your usual aloof cat way. Examples:
@@ -85,7 +95,8 @@ function createPrompt(
 
 function buildImageUrl(prompt: string, avatarUrl: string | null): string {
     let url = `${IMAGE_API}/${encodeURIComponent(prompt)}?height=1024&width=1024&model=${MODEL}&nologo=true`;
-    if (API_KEY) url += `&key=${encodeURIComponent(API_KEY)}`;
+    // The Bearer header (AUTH below) authenticates the request; the key must
+    // not ride the URL too — log() echoes it into persistent log files.
 
     if (avatarUrl) {
         url += `&enhance=false&image=${encodeURIComponent(`${avatarUrl},${SELFIE_CATGPT}`)}`;

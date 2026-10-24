@@ -350,6 +350,24 @@ describe("callAzureFlux11Pro", () => {
             errorCode: "content_policy_violation",
         });
     });
+
+    it("maps an explicit refusal to a content policy error", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({ data: [], stop_reason: "refusal" }),
+        );
+
+        await expect(
+            callAzureFlux11Pro(
+                "refused request",
+                { ...baseParams, model: "black-forest-labs/flux.1.1-pro" },
+                USER_INFO,
+            ),
+        ).rejects.toMatchObject({
+            status: 422,
+            upstreamStatus: 200,
+            errorCode: "content_policy_violation",
+        });
+    });
 });
 
 describe("callAzureFlux2", () => {

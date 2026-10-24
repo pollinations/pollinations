@@ -99,14 +99,31 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "respan/span-01-lite",
     }),
-    // -- TypeSafe AI via OpenRouter's decisions endpoint. Its own protocol, so
-    // it bypasses Portkey and the Chat transforms — see systemOneClient.ts.
-    // OpenRouter exposes no floating alias, so the version is pinned here.
-    "jev-1.13": () => ({
+    // Both gateways preserve the native TypeSafe Decisions protocol.
+    "jev-1.13": () =>
+        createVercelAIGatewayModelConfig({
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+            model: "typesafe-ai/jev-1.13.0",
+            defaultOptions: {
+                providerOptions: {
+                    gateway: { only: ["typesafe-ai"] },
+                    typesafe: { longContext: true },
+                },
+            },
+        }),
+    "typesafe/jev-1.13:openrouter:typesafe": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "typesafe/jev-1.13",
+        defaultOptions: {
+            provider: {
+                only: ["typesafe"],
+                ignore: ["cloudflare"],
+                allow_fallbacks: false,
+            },
+        },
     }),
     "kev-4b": () => ({
         provider: "openrouter",
@@ -126,18 +143,28 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "perplexity/pplx-decider-v1.2",
     }),
-    "liquid-d1": () => ({
-        provider: "openrouter",
-        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
-        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
-        model: "liquid/d1",
-    }),
-    "liquid/d1:vercel": () =>
+    "liquid-d1": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
             model: "liquid/d1",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["liquid"] } },
+            },
         }),
+    "liquid/d1:openrouter": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "liquid/d1",
+        defaultOptions: {
+            provider: {
+                only: ["liquid"],
+                ignore: ["cloudflare"],
+                allow_fallbacks: false,
+            },
+        },
+    }),
     "gpt-6-luna-decisions": () => ({
         provider: "openai",
         directEndpoint: "https://api.openai.com/v1/decisions",
@@ -150,18 +177,35 @@ export const portkeyConfig: PortkeyConfigMap = {
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "openai/gpt-6-luna-decisions",
+        defaultOptions: {
+            provider: {
+                only: ["openai"],
+                ignore: ["cloudflare"],
+                allow_fallbacks: false,
+            },
+        },
     }),
     "microsoft/microsoft-decision-1:vercel": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
             model: "microsoft/microsoft-decision-1",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["azure"] } },
+            },
         }),
     "microsoft/microsoft-decision-1:openrouter": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "microsoft/microsoft-decision-1",
+        defaultOptions: {
+            provider: {
+                only: ["azure"],
+                ignore: ["cloudflare"],
+                allow_fallbacks: false,
+            },
+        },
     }),
     // Azure's Microsoft provider endpoint speaks the TypeSafe native shape;
     // `model` is the deployment name.
@@ -345,15 +389,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         responsesStreamUpstream: true,
     }),
 
-    "grok-4.6-azure-sweden": () => ({
-        ...portkeyConfig["grok-4.6"](),
-        directEndpoint:
-            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/grok-4.6/chat/completions?api-version=2024-12-01-preview",
-        authKey: textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
-        responsesEndpoint:
-            "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
-    }),
-
     // -- xAI direct -----------------------------------------------------------
     "grok-4.6-xai": () => ({
         provider: "openai",
@@ -394,13 +429,6 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Kimi-K2.6/chat/completions?api-version=2024-12-01-preview",
             { requiresBase64ImageUrls: true },
         ),
-    "Kimi-K2.6-azure-sweden": () =>
-        createAzureModelConfig(
-            textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
-            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/Kimi-K2.6/chat/completions?api-version=2024-12-01-preview",
-            { requiresBase64ImageUrls: true },
-        ),
-
     // -- OpenRouter (frontier models) ----------------------------------------
     "cohere/command-a-plus": createPinnedOpenRouterConfig(
         "cohere/command-a-plus",
@@ -474,10 +502,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "inclusionai/ling-3.0-flash-vl",
         "deepinfra/fp16",
     ),
-    "hy3-openrouter-phala": createPinnedOpenRouterConfig(
-        "tencent/hy3",
-        "phala",
-    ),
     // Reasoning models: explicit max_tokens default below. Without one, the
     // upstream provider's own default applies (Chutes AI defaults to 1024),
     // which reasoning models can burn entirely on their internal thinking
@@ -487,12 +511,37 @@ export const portkeyConfig: PortkeyConfigMap = {
     "qwen/qwen3.7-plus": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.7-plus",
-            defaultOptions: { max_tokens: 64000, provider: { sort: "price" } },
+            defaultOptions: {
+                max_tokens: 64000,
+                // The base slug also matches alibaba/us-east-1, which can
+                // be priced differently.
+                provider: {
+                    only: ["Alibaba"],
+                    ignore: ["alibaba/us-east-1"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
+    "qwen3.7-plus-alibaba": () =>
+        createAlibabaModelConfig({
+            model: "qwen3.7-plus",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+            responsesDisableReasoningForForcedTools: true,
+            defaultOptions: { max_tokens: 64000 },
         }),
     "qwen/qwen3.7-max": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.7-max",
-            defaultOptions: { max_tokens: 64000, provider: { sort: "price" } },
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["alibaba"],
+                    ignore: ["alibaba/us-east-1", "cloudflare"],
+                    allow_fallbacks: false,
+                },
+            },
         }),
     // Confirmed bug: pinned only to Chutes, whose max_tokens default (1024)
     // is entirely consumed by the reasoning trace on non-trivial prompts,
@@ -547,8 +596,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "qwen/qwen3.7-flash",
             defaultOptions: {
                 max_tokens: 64000,
+                // The base slug also matches alibaba/us-east-1, which costs
+                // 15% more than the quoted Alibaba rates.
                 provider: {
                     only: ["Alibaba"],
+                    ignore: ["alibaba/us-east-1"],
                     allow_fallbacks: false,
                 },
             },
@@ -630,18 +682,21 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    // Azure primary, OpenAI second: both OpenRouter tags bill the same
-    // $0.15/$0.60/$0.075 per-M rate. The base slug "azure" also matches
-    // azure/swedencentral (bills 10% higher), so it is excluded explicitly.
-    // The azure tag does not advertise tools, so tool requests are served by
-    // the openai tag at the same rate.
-    "openai/gpt-4o-mini": () =>
+    "openai/gpt-4o-mini": () => ({
+        provider: "openai",
+        model: "gpt-4o-mini",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        directEndpoint: "https://api.openai.com/v1/chat/completions",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        serviceTier: "default",
+    }),
+    "gpt-4o-mini-openrouter": () =>
         createOpenRouterModelConfig({
             model: "openai/gpt-4o-mini",
             defaultOptions: {
                 provider: {
-                    order: ["azure", "openai"],
-                    ignore: ["azure/swedencentral"],
+                    only: ["openai"],
+                    ignore: ["cloudflare"],
                     allow_fallbacks: false,
                 },
             },
@@ -760,6 +815,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-haiku-4.5",
         "google-vertex/global",
     ),
+    "claude-opus-5.5-fast-vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "anthropic/claude-opus-5.5-fast",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["anthropic"] } },
+            },
+        }),
     "claude-opus-5.5-fast-openrouter-anthropic-fast":
         createPinnedOpenRouterConfig(
             "anthropic/claude-opus-5.5",
@@ -872,7 +935,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     "kimi-code-openrouter-moonshot": createPinnedOpenRouterConfig(
         "moonshotai/kimi-k2.7-code",
-        "moonshotai/int4",
+        "inceptron/int4",
     ),
     // StreamLake cannot fetch remote image URLs.
     "kimi-code-openrouter-streamlake": () => ({
@@ -972,7 +1035,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     "mistral-small-2603-openrouter": () =>
         createOpenRouterModelConfig({
             model: "mistralai/mistral-small-2603",
-            defaultOptions: { max_tokens: 64000 },
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["mistral/zdr"],
+                    ignore: ["mistral/eu", "mistral/us", "cloudflare"],
+                    allow_fallbacks: false,
+                },
+            },
         }),
 
     // -- Azure (Myceli Prod — eastus, Mistral Large) -------------------------
@@ -1013,6 +1083,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-sonnet-5",
             defaultOptions: { max_tokens: 64000 },
         }),
+    "anthropic/claude-sonnet-5:anthropic": () =>
+        createAnthropicConfig({
+            model: "claude-sonnet-5",
+            defaultOptions: { max_tokens: 64000 },
+        }),
     "claude-opus-4-6": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-4-6-v1",
@@ -1026,6 +1101,11 @@ export const portkeyConfig: PortkeyConfigMap = {
     "claude-opus-5": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-opus-5:anthropic": () =>
+        createAnthropicConfig({
+            model: "claude-opus-5",
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-opus-5.5": () =>
@@ -1066,6 +1146,19 @@ export const portkeyConfig: PortkeyConfigMap = {
         createBedrockNativeConfig({ model: "us.amazon.nova-2-lite-v1:0" }),
 
     // -- AWS Bedrock (Qwen) ---------------------------------------------------
+    "qwen-coder-openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3-coder-30b-a3b-instruct",
+            // Preserve the existing Chat-based Responses adapter.
+            responsesEndpoint: undefined,
+            defaultOptions: {
+                provider: {
+                    only: ["siliconflow/fp8"],
+                    ignore: ["cloudflare"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "qwen-coder-bedrock": () =>
         createBedrockNativeConfig({ model: "qwen.qwen3-coder-30b-a3b-v1:0" }),
 
@@ -1195,10 +1288,23 @@ export const portkeyConfig: PortkeyConfigMap = {
         "qwen/qwen3-coder-next",
         "parasail/bf16",
     ),
-    "qwen/qwen3-vl-30b-a3b-instruct": createPinnedOpenRouterConfig(
-        "qwen/qwen3-vl-30b-a3b-instruct",
-        "deepinfra/fp8",
-    ),
+    "qwen/qwen3-vl-30b-a3b-instruct": () =>
+        createDeepInfraModelConfig({
+            model: "Qwen/Qwen3-VL-30B-A3B-Instruct",
+            directEndpoint:
+                "https://api.deepinfra.com/v1/openai/chat/completions",
+        }),
+    "qwen3-vl-30b-openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3-vl-30b-a3b-instruct",
+            defaultOptions: {
+                provider: {
+                    only: ["deepinfra/fp8"],
+                    ignore: ["deepinfra/fp8/priority", "cloudflare"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "qwen3-vl-235b-a22b-thinking": () =>
         createAlibabaModelConfig({
             model: "qwen3-vl-235b-a22b-thinking",
@@ -1209,13 +1315,22 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOpenRouterModelConfig({
             model: "stepfun/step-3.5-flash",
         }),
+    // Pinned to StepFun's own endpoint; other OpenRouter endpoints differ in
+    // cache price, precision or context.
     "stepfun/step-5-preview": () =>
         createOpenRouterModelConfig({
             model: "stepfun/step-5-preview",
+            defaultOptions: {
+                provider: { only: ["stepfun/fp8"], allow_fallbacks: false },
+            },
         }),
+    // Vercel's StepFun endpoint has no tools and Tencent caps output at 64K.
     "stepfun/step-5-preview:vercel": () =>
         createVercelAIGatewayModelConfig({
             model: "stepfun/step-5-preview",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["deepinfra"] } },
+            },
         }),
 
     // -- Novita and Vercel (StepFun) ------------------------------------------

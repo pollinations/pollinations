@@ -114,8 +114,18 @@ export async function createAndReturnVideo(
             result = await callFluxMaxVideoAPI(prompt, safeParams);
             break;
         case "x-ai/grok-imagine-video-1.5":
+            result = await callXaiVideoAPI(
+                prompt,
+                safeParams,
+                "grok-imagine-video-1.5",
+            );
+            break;
         case "x-ai/grok-imagine-video-1.5-lite":
-            result = await callXaiVideoAPI(prompt, safeParams);
+            result = await callXaiVideoAPI(
+                prompt,
+                safeParams,
+                "grok-imagine-video-1.5-lite",
+            );
             break;
         case "bytedance/seedance-2.5":
             result = await callSeedance25API(prompt, safeParams);

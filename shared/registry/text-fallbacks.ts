@@ -734,17 +734,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "nvidia/nemotron-3-ultra": {
-        "nvidia/nemotron-3-ultra:deepinfra": {
-            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
-            provider: "deepinfra",
-            addedDate: new Date("2026-09-30").getTime(),
+        "nvidia/nemotron-3-ultra:vercel": {
+            provider: "vercel",
+            addedDate: new Date("2026-10-24").getTime(),
+            // Vercel AI Gateway pinned to Baseten's NVFP4 deployment
+            // (2026-10-24); costs more than the DeepInfra primary.
             cost: {
-                // DeepInfra standard-tier rates (2026-09-30). Flex is
-                // deliberately excluded because requests may wait up to ten
-                // minutes.
-                promptTextTokens: perMillion(0.5),
-                promptCachedTokens: perMillion(0.1),
-                completionTextTokens: perMillion(2.2),
+                promptTextTokens: perMillion(0.6),
+                promptCachedTokens: perMillion(0.12),
+                completionTextTokens: perMillion(2.4),
             },
         },
     },

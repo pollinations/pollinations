@@ -1,3 +1,9 @@
+"""CPU tests; install this folder's requirements.txt plus httpx.
+
+Repo root: python3 -m unittest operations/infrastructure/gpu/klein/test_handler.py
+This folder: python3 -m unittest test_handler
+"""
+
 import base64
 import os
 import unittest
@@ -19,7 +25,10 @@ with (
     patch.dict(os.environ, {"PLN_GPU_TOKEN": "local-test-token"}),
     patch.object(Flux2KleinPipeline, "from_pretrained", return_value=pipeline),
 ):
-    import handler
+    if __package__:
+        from . import handler
+    else:
+        import handler
 
 
 def reference(width, height):

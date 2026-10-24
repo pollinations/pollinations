@@ -358,6 +358,18 @@ describe("resolveModelConfig", () => {
         },
     );
 
+    it("keeps Grok 4.6 recovery on direct xAI", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "x-ai/grok-4.6:xai",
+        });
+        expect(resolved.options.modelConfig).toMatchObject({
+            provider: "openai",
+            model: "grok-4.6",
+            directEndpoint: "https://api.x.ai/v1/chat/completions",
+        });
+        expect(findModelByName("x-ai/grok-4.6:azure:sweden")).toBeNull();
+    });
+
     it("pins Inkling to DeepInfra on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "thinkingmachines/inkling-small",

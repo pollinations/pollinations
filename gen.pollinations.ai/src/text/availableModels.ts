@@ -572,10 +572,6 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["grok-4.7-openrouter"],
     },
     {
-        name: "x-ai/grok-4.6:azure:sweden",
-        config: portkeyConfig["grok-4.6-azure-sweden"],
-    },
-    {
         name: "x-ai/grok-4.6:xai",
         config: portkeyConfig["grok-4.6-xai"],
     },

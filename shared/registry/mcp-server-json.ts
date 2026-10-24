@@ -6,13 +6,15 @@ import type { McpServerDefinition } from "./mcp.ts";
 const GEN_ORIGIN = "https://gen.pollinations.ai";
 const KEYS_URL = "https://enter.pollinations.ai/keys";
 
-// The registry caps `description` at 100 characters; composio's product
-// description runs longer, so it gets a shorter registry-only one.
+// The registry caps `description` at 100 characters; some product
+// descriptions run longer, so they get a shorter registry-only one.
 const DESCRIPTION_OVERRIDES: Partial<
     Record<McpServerDefinition["id"], string>
 > = {
     composio:
         "Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio.",
+    "call-shapes":
+        "Plan a Pollinations model call: endpoint, parameters, cost, and cheaper models.",
 };
 
 export function buildServerEntry(

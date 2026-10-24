@@ -47,7 +47,8 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "CALL_SHAPES_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -223,6 +224,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "call-shapes",
+        name: "Call Shapes",
+        description:
+            "Plan a correct call to a Pollinations model: the endpoint it supports, the parameters it accepts, what it costs, and cheaper models that fit.",
+        binding: "CALL_SHAPES_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Model catalog lookups are free. The planned call itself uses the chosen model's listed rate. No additional MCP fee.",
             rates: [],
         },
     },

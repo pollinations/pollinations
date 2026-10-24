@@ -73,13 +73,34 @@ body {
 .home:focus-visible { outline: 2px solid var(--polli-color-focus); outline-offset: 2px; }
 .logo { width: 2rem; height: 2rem; }
 .hero-copy { display: flex; flex-direction: column; gap: 1.5rem; }
+.hero-copy p { text-wrap: balance; }
 .bee { width: 7.5rem; height: auto; rotate: -6deg; user-select: none; }
 .row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
 .sheet { display: flex; flex-direction: column; gap: 3.5rem; padding: 2.5rem 1.25rem; }
 .sheet section { display: flex; flex-direction: column; gap: 1.25rem; }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; }
 .card-head { display: flex; align-items: center; gap: 0.75rem; }
-.address { vertical-align: 0.1em; }
+.address {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: 0.625rem;
+    min-height: 3rem;
+    padding: 0 1.125rem;
+    border-radius: 0.75rem;
+    background: var(--polli-color-surface-opaque);
+    color: var(--polli-color-text-base);
+    font-size: 1.0625rem;
+    font-weight: 500;
+}
+.address svg { width: 1rem; height: 1rem; flex-shrink: 0; color: var(--polli-color-text-muted); }
+/* Brand colours stay bright in dark mode, like a real text selection. */
+.address mark {
+    padding: 0.125rem 0.1875rem;
+    border-radius: 0.25rem;
+    background: var(--polli-color-brand-accent);
+    color: var(--polli-color-brand-dark);
+}
 code.inline { font-family: var(--polli-font-mono); font-size: 0.9em; color: var(--polli-color-text-strong); }
 footer {
     display: flex;
@@ -133,7 +154,7 @@ await new Promise((resolve, reject) => {
 });
 
 const {
-    AppIcon, BookIcon, BrandMark, Chip, CloudUploadIcon, CodeBlock, CodeIcon,
+    AppIcon, BookIcon, BrandMark, CloudUploadIcon, CodeBlock, CodeIcon,
     ColorModeToggle, ContentHeader, ExternalLinkButton, GlobeIcon, Heading, IconTile,
     InlineLink, LinkCard, LockIcon, LogInIcon, McpIcon, Surface, TerminalIcon, Text,
 } = window.PollinationsUI;
@@ -144,10 +165,12 @@ const DOCS = "https://gen.pollinations.ai/docs";
 const CLI_URL = "https://www.npmjs.com/package/@pollinations/cli";
 const DASHBOARD = "https://enter.pollinations.ai";
 
-// The address the commands below publish to.
-const ADDRESS = h(Chip, { key: "address", size: "lg", className: "address" },
-    h(GlobeIcon, { className: "polli:size-3.5" }),
-    h("span", null, h("strong", null, "my-app"), ".pollinations.app"));
+// The address the commands below publish to, as a browser bar shows it; the
+// name is marked like selected text: the part that is yours.
+const ADDRESS = h("p", { className: "address" },
+    h(LockIcon, { "aria-hidden": "true" }),
+    h("span", { className: "polli:sr-only" }, "Each site is served at "),
+    h("span", null, h("mark", null, "my-app"), ".pollinations.app"));
 
 const PUBLISH = `npm install -g @pollinations/cli
 polli auth login
@@ -233,8 +256,9 @@ function Page() {
                         variant: "page",
                         eyebrow: "Static site hosting",
                         title: "pollinations.app",
-                        subtitle: ["Free hosting for static sites, for anyone with a Pollinations account. Each site is served at ", ADDRESS, "."],
+                        subtitle: "Free hosting for static sites, for anyone with a Pollinations account.",
                     }),
+                    ADDRESS,
                     h("div", { className: "row" },
                         h(ExternalLinkButton, {
                             href: `${DOCS}#tag/sites`,

@@ -578,7 +578,7 @@ describe("static provider fallbacks", () => {
             "x-ai/grok-imagine-video:fal",
         );
         expect(IMAGE_SERVICES["x-ai/grok-imagine-video-1.5"]).toMatchObject({
-            provider: "openrouter",
+            provider: "xai",
             fallbacks: ["x-ai/grok-imagine-video-1.5:fal"],
         });
         const lite = IMAGE_SERVICES["x-ai/grok-imagine-video-1.5-lite"];
@@ -1130,6 +1130,34 @@ describe("static provider fallbacks", () => {
             for (const route of routes)
                 expect(publicAudio.has(route)).toBe(false);
         }
+    });
+
+    it("charges SiliconFlow's reported cache hits at its full input rate", () => {
+        const model = "qwen/qwen3-coder-30b-a3b-instruct";
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 252,
+                promptCachedTokens: 32,
+                completionTextTokens: 6,
+            },
+            servedBy: TEXT_SERVICES[model],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.00002156 * 1.055, 12);
+        expect(billed.price.totalPrice).toBe(0.00002275);
+    });
+
+    it("keeps the cheaper coder quote when Bedrock serves it", () => {
+        const model = "qwen/qwen3-coder-30b-a3b-instruct";
+        const billed = calculateUsageBilling({
+            model,
+            usage: { promptTextTokens: 1000, completionTextTokens: 100 },
+            servedBy: TEXT_SERVICES[`${model}:aws`],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.00021, 12);
+        expect(billed.price.totalPrice).toBeCloseTo(0.00010339, 12);
     });
 
     it("keeps exact provider route costs", () => {

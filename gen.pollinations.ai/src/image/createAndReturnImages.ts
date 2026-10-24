@@ -49,6 +49,7 @@ import {
     callSeedreamAPI,
 } from "./models/seedreamReplicateModel.ts";
 import { callSeedream5ProVercelAPI } from "./models/seedreamVercelModel.ts";
+import { callVercelGeminiImageAPI } from "./models/vercelGeminiImageModel.ts";
 import { callVertexAIGeminiImageAPI } from "./models/vertexAIGeminiImageModel.ts";
 import { callWanImageAPI } from "./models/wanImageModel.ts";
 import { callXaiImageAPI } from "./models/xaiModel.ts";
@@ -817,6 +818,8 @@ const generateImage = async (
             }
         }
 
+        case "google/gemini-nano-banana-2.1":
+        case "google/gemini-nano-banana-2.1:vercel":
         case "google/gemini-2.5-flash-image":
         case "google/gemini-3.1-flash-image":
         case "google/gemini-3.1-flash-lite-image":
@@ -831,7 +834,10 @@ const generateImage = async (
                     await requireSafePrompt(prompt, safeParams, userInfo);
                 }
 
-                return await callVertexAIGeminiImageAPI(prompt, safeParams);
+                return safeParams.model ===
+                    "google/gemini-nano-banana-2.1:vercel"
+                    ? await callVercelGeminiImageAPI(prompt, safeParams)
+                    : await callVertexAIGeminiImageAPI(prompt, safeParams);
             } catch (error) {
                 logError(
                     "Vertex Gemini image generation or safety check failed:",
@@ -844,7 +850,6 @@ const generateImage = async (
 
         case "google/gemini-2.5-flash-image:openrouter:vertex-global":
         case "google/gemini-3.1-flash-image:openrouter:vertex-global":
-        case "google/gemini-nano-banana-2.1":
         case "google/gemini-3.1-flash-lite-image:openrouter:vertex-global":
         case "google/gemini-3-pro-image:openrouter:ai-studio-global": {
             logError(
@@ -999,6 +1004,13 @@ const generateImage = async (
             return await callOpenRouterGrokImagineProAPI(prompt, safeParams);
 
         case "x-ai/grok-imagine-image-2.0":
+            return await callXaiImageAPI(
+                prompt,
+                safeParams,
+                "grok-imagine-image-2.0",
+            );
+
+        case "x-ai/grok-imagine-image-2.0:openrouter":
             return await callOpenRouterGrokImagineImage2API(prompt, safeParams);
 
         case "recraft/recraft-v4.1-vector":

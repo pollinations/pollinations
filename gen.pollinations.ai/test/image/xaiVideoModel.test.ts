@@ -125,6 +125,27 @@ describe("xAI Grok Imagine Video 1.5 Lite", () => {
         });
     });
 
+    it("sends Grok Imagine Video 1.5 to its own xAI model at xAI rates", async () => {
+        setXaiEnv();
+        const requests: Record<string, unknown>[] = [];
+        mockXai(requests);
+
+        const result = await createAndReturnVideo("a calm ocean", {
+            ...baseParams,
+            model: "x-ai/grok-imagine-video-1.5",
+            resolution: "480p",
+        });
+
+        expect(requests[0].model).toBe("grok-imagine-video-1.5");
+        const billing = calculateUsageBilling({
+            model: "x-ai/grok-imagine-video-1.5",
+            usage: result.trackingData.usage,
+            servedBy: IMAGE_SERVICES["x-ai/grok-imagine-video-1.5"],
+            input: { resolution: "480p" },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(5 * 0.08, 10);
+    });
+
     it("bills the duration xAI reports and prices it per resolution", async () => {
         setXaiEnv();
         mockXai([], {

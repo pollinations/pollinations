@@ -103,7 +103,7 @@ describe("openRouterVideoModel", () => {
             seed: 42,
         });
         expect(result.trackingData).toEqual({
-            actualModel: "heygen/heygen-video-1",
+            actualModel: "heygen/heygen-video-1:openrouter",
             usage: { completionVideoSeconds: 7 },
         });
     });
@@ -119,14 +119,14 @@ describe("openRouterVideoModel", () => {
         });
 
         expect(result.trackingData).toEqual({
-            actualModel: "heygen/heygen-video-1",
+            actualModel: "heygen/heygen-video-1:openrouter",
             usage: { completionVideoSeconds: 7 },
             providerBilling: { units: 0.06, unitCost: 1.055 },
         });
         const billing = calculateUsageBilling({
             model: "heygen/heygen-video-1",
             usage: result.trackingData.usage,
-            servedBy: IMAGE_SERVICES["heygen/heygen-video-1"],
+            servedBy: IMAGE_SERVICES["heygen/heygen-video-1:openrouter"],
             input: {
                 resolution: "480p",
                 providerBilling: result.trackingData.providerBilling,

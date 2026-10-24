@@ -182,7 +182,7 @@ export async function callHeyGenVideoAPI(
         mimeType: "video/mp4",
         durationSeconds: duration,
         trackingData: {
-            actualModel: HEYGEN_VIDEO_MODEL,
+            actualModel: "heygen/heygen-video-1:openrouter",
             usage: { completionVideoSeconds: duration },
             ...(providerCost != null && {
                 providerBilling: { units: providerCost, unitCost: 1.055 },

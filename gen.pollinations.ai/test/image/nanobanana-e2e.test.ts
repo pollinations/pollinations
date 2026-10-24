@@ -16,7 +16,7 @@ import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
 
 const png1x1Base64 =
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==";
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 
 afterEach(async () => {
     await teardownFetchMock();
@@ -47,12 +47,36 @@ function createNanobananaMocks() {
         response: undefined,
         status: 200,
     };
+    const vercelState = {
+        requests: [] as Array<{ url: string; body: Record<string, unknown> }>,
+        status: 200,
+        response: {} as Record<string, unknown>,
+    };
     const openRouterState: OpenRouterState = {
         requests: [],
         usage: undefined,
     };
     return createFetchMock({
         tinybird: createMockTinybird(),
+        vercel: {
+            state: vercelState,
+            handlerMap: {
+                "ai-gateway.vercel.sh": async (request: Request) => {
+                    vercelState.requests.push({
+                        url: request.url,
+                        body: (await request.json()) as Record<string, unknown>,
+                    });
+                    return Response.json(vercelState.response, {
+                        status: vercelState.status,
+                    });
+                },
+            },
+            reset: () => {
+                vercelState.requests = [];
+                vercelState.status = 200;
+                vercelState.response = {};
+            },
+        },
         vertex: {
             state: vertexState,
             handlerMap: {
@@ -133,8 +157,9 @@ const test = baseTest.extend<{
             {
                 GOOGLE_PROJECT_ID: "test-project",
                 OPENROUTER_API_KEY: "openrouter-test-key",
+                AI_GATEWAY_API_KEY: "vercel-test-key",
             } as CloudflareBindings,
-            ["GOOGLE_PROJECT_ID", "OPENROUTER_API_KEY"],
+            ["GOOGLE_PROJECT_ID", "OPENROUTER_API_KEY", "AI_GATEWAY_API_KEY"],
         );
         const mocks = createNanobananaMocks();
         await use(mocks);
@@ -532,55 +557,211 @@ test("nanobanana-2-lite preserves fixed 1K routing and exact billing", async ({
     expect(event.totalPrice).toBe(Number(expectedCost.toFixed(8)));
 });
 
-test("nano-banana-2.1 routes to OpenRouter AI Studio and bills exact usage", async ({
+const bananaUsage = {
+    promptTokenCount: 1130,
+    cachedContentTokenCount: 504,
+    candidatesTokenCount: 1688,
+    thoughtsTokenCount: 4,
+    totalTokenCount: 2822,
+    promptTokensDetails: [
+        { modality: "TEXT", tokenCount: 10 },
+        { modality: "IMAGE", tokenCount: 1120 },
+    ],
+    cacheTokensDetails: [
+        { modality: "TEXT", tokenCount: 4 },
+        { modality: "IMAGE", tokenCount: 500 },
+    ],
+    candidatesTokensDetails: [
+        { modality: "TEXT", tokenCount: 8 },
+        { modality: "IMAGE", tokenCount: 1680 },
+    ],
+};
+// Price equals the Vertex cost (multiplier 1).
+const bananaPrice = (626 * 1.5 + 504 * 0.15 + 12 * 7.5 + 1680 * 30) / 1_000_000;
+function vercelBananaResponse() {
+    return {
+        choices: [
+            {
+                finish_reason: "stop",
+                message: {
+                    images: [
+                        {
+                            image_url: {
+                                url: `data:image/png;base64,${png1x1Base64}`,
+                            },
+                        },
+                    ],
+                    provider_metadata: {
+                        google: {
+                            usageMetadata: {
+                                ...bananaUsage,
+                                candidatesTokensDetails: [
+                                    { modality: "IMAGE", tokenCount: 1680 },
+                                ],
+                            },
+                        },
+                    },
+                },
+            },
+        ],
+        usage: {
+            prompt_tokens: 1130,
+            completion_tokens: 1692,
+            total_tokens: 2822,
+            cost: 0.052185,
+        },
+    };
+}
+
+test("nano-banana-2.1 selects the final Vertex image and bills cached input once", async ({
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird", "vertex", "openrouter");
-    mocks.openrouter.state.usage = {
-        prompt_tokens: 10,
-        completion_tokens: 1692,
-        total_tokens: 1702,
-        completion_tokens_details: { image_tokens: 1680, reasoning_tokens: 4 },
+    await mocks.enable("tinybird", "vertex", "vercel", "openrouter");
+    mocks.vertex.state.response = {
+        candidates: [
+            {
+                content: {
+                    parts: [
+                        {
+                            thought: true,
+                            inlineData: {
+                                mimeType: "image/png",
+                                data: "intermediate-not-the-final-image",
+                            },
+                        },
+                        {
+                            inlineData: {
+                                mimeType: "image/png",
+                                data: png1x1Base64,
+                            },
+                        },
+                    ],
+                },
+                finishReason: "STOP",
+            },
+        ],
+        usageMetadata: bananaUsage,
     };
     const { response, wait } = await fetchWorker(
-        "/image/green%20star?model=google/gemini-nano-banana-2.1&width=1920&height=1080&seed=42",
+        "/image/green%20star?model=google/gemini-nano-banana-2.1&width=1920&height=1080&seed=42&reasoning=pro",
         { headers: { authorization: `Bearer ${paidApiKey}` } },
     );
-    expect(response.status, await response.clone().text()).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe(
-        "google/gemini-nano-banana-2.1",
+    expect(
+        response.status,
+        response.status === 200 ? "" : await response.clone().text(),
+    ).toBe(200);
+    expect(Buffer.from(await response.arrayBuffer())).toEqual(
+        Buffer.from(png1x1Base64, "base64"),
     );
-    expect(response.headers.get("x-usage-completion-image-tokens")).toBe(
-        "1680",
-    );
-    expect(response.headers.get("x-usage-completion-reasoning-tokens")).toBe(
-        "4",
-    );
-    await response.arrayBuffer();
+    expect(response.headers.get("x-usage-prompt-cached-tokens")).toBe("504");
+    expect(response.headers.get("x-usage-prompt-image-tokens")).toBe("620");
     await wait();
-    expect(mocks.vertex.state.requests).toHaveLength(0);
-    expect(mocks.openrouter.state.requests).toHaveLength(1);
-    expect(mocks.openrouter.state.requests[0].body).toEqual({
-        model: "google/gemini-nano-banana-2.1",
-        prompt: "green star",
-        n: 1,
-        aspect_ratio: "16:9",
-        resolution: "2K",
-        provider: { only: ["google-ai-studio"], allow_fallbacks: false },
+    expect(mocks.vertex.state.requests).toHaveLength(1);
+    expect(mocks.openrouter.state.requests).toHaveLength(0);
+    expect(mocks.vercel.state.requests).toHaveLength(0);
+    expect(mocks.vertex.state.requests[0].body.generationConfig).toEqual({
+        responseModalities: ["TEXT", "IMAGE"],
+        imageConfig: { aspectRatio: "16:9", imageSize: "2K" },
     });
-    expect(mocks.tinybird.state.events).toHaveLength(1);
-    const event = mocks.tinybird.state.events[0];
+    expect(mocks.vertex.state.requests[0].url).toContain(
+        "/locations/global/publishers/google/models/gemini-nano-banana-2.1:generateContent",
+    );
+    const event = mocks.tinybird.state.events.find(
+        (event) => event.isBilledUsage,
+    );
     expect(event).toMatchObject({
-        modelRequested: "google/gemini-nano-banana-2.1",
+        tokenCountPromptText: 6,
+        tokenCountPromptImage: 620,
+        tokenCountPromptCached: 504,
         tokenCountCompletionText: 8,
         tokenCountCompletionReasoning: 4,
+        tokenCountCompletionImage: 1680,
     });
-    const expectedCost =
-        ((10 * 1.5 + 12 * 7.5 + 1680 * 30) / 1_000_000) * 1.055;
-    expect(event.totalCost).toBeCloseTo(expectedCost, 10);
-    expect(event.totalPrice).toBeCloseTo(expectedCost * 1.055, 7);
+    expect(event?.totalCost).toBeCloseTo(bananaPrice, 10);
+    expect(event?.totalPrice).toBeCloseTo(bananaPrice, 7);
 });
+
+test.for([429, 503])(
+    "nano-banana-2.1 recovers Vertex %s through Vercel with exact cost and caller price",
+    async (status, { paidApiKey, mocks }) => {
+        await mocks.enable("tinybird", "vertex", "vercel", "openrouter");
+        mocks.vertex.state.status = status;
+        mocks.vercel.state.response = vercelBananaResponse();
+        const { response, wait } = await fetchWorker(
+            `/image/backup%20star%20${status}?model=google/gemini-nano-banana-2.1&width=1920&height=1080`,
+            { headers: { authorization: `Bearer ${paidApiKey}` } },
+        );
+        expect(
+            response.status,
+            response.status === 200 ? "" : await response.clone().text(),
+        ).toBe(200);
+        expect(response.headers.get("x-model-used")).toBe(
+            "google/gemini-nano-banana-2.1:vercel",
+        );
+        expect(response.headers.get("x-usage-completion-text-tokens")).toBe(
+            "8",
+        );
+        await response.arrayBuffer();
+        await wait();
+        expect(mocks.vertex.state.requests).toHaveLength(1);
+        expect(mocks.vercel.state.requests).toHaveLength(1);
+        expect(mocks.openrouter.state.requests).toHaveLength(0);
+        expect(mocks.vercel.state.requests[0].body).toMatchObject({
+            model: "google/gemini-nano-banana-2.1",
+            providerOptions: {
+                gateway: { only: ["google"] },
+                google: {
+                    imageConfig: { aspectRatio: "16:9", imageSize: "2K" },
+                },
+            },
+        });
+        const billed = mocks.tinybird.state.events.filter(
+            (event) => event.isBilledUsage,
+        );
+        expect(billed).toHaveLength(1);
+        expect(billed[0].modelProviderUsed).toBe("vercel");
+        expect(billed[0].totalCost).toBeCloseTo(0.052185, 10);
+        expect(billed[0].totalPrice).toBeCloseTo(bananaPrice, 7);
+    },
+);
+
+test.for([
+    "missing usage",
+    "invalid usage",
+    "no final image",
+    "both unavailable",
+])(
+    "nano-banana-2.1 does not bill failed fallback: %s",
+    async (failure, { paidApiKey, mocks }) => {
+        await mocks.enable("tinybird", "vertex", "vercel");
+        mocks.vertex.state.status = 503;
+        const data = vercelBananaResponse();
+        if (failure === "missing usage")
+            delete (data as { usage?: unknown }).usage;
+        if (failure === "invalid usage") data.usage.total_tokens++;
+        if (failure === "no final image") data.choices[0].message.images = [];
+        if (failure === "both unavailable") mocks.vercel.state.status = 503;
+        mocks.vercel.state.response = data;
+        const { response, wait } = await fetchWorker(
+            `/image/failure%20${encodeURIComponent(failure)}?model=google/gemini-nano-banana-2.1`,
+            { headers: { authorization: `Bearer ${paidApiKey}` } },
+        );
+        expect(response.status).toBeGreaterThanOrEqual(500);
+        await response.text();
+        await wait();
+        expect(
+            mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+        ).toHaveLength(0);
+        expect(mocks.tinybird.state.errorEvents).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    upstream_host: "ai-gateway.vercel.sh",
+                }),
+            ]),
+        );
+    },
+);
 
 test("nano-banana-2.1 rejects 4K before calling a provider", async ({
     paidApiKey,
@@ -600,6 +781,34 @@ test("nano-banana-2.1 rejects 4K before calling a provider", async ({
         mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
     ).toHaveLength(0);
 });
+
+test.for([
+    ["hidden fallback", "model=google/gemini-nano-banana-2.1:vercel"],
+    [
+        "too many references",
+        `model=google/gemini-nano-banana-2.1&image=${encodeURIComponent(Array.from({ length: 15 }, () => "https://example.com/image.png").join("|"))}`,
+    ],
+    [
+        "invalid image",
+        `model=google/gemini-nano-banana-2.1&image=${encodeURIComponent("http://127.0.0.1/private.png")}`,
+    ],
+])(
+    "nano-banana-2.1 rejects %s without provider calls",
+    async ([_name, query], { paidApiKey, mocks }) => {
+        await mocks.enable("tinybird", "vertex", "vercel", "openrouter");
+        const { response, wait } = await fetchWorker(
+            `/image/invalid?${query}`,
+            { headers: { authorization: `Bearer ${paidApiKey}` } },
+        );
+        expect(response.status).toBeGreaterThanOrEqual(400);
+        expect(response.status).toBeLessThan(500);
+        await response.text();
+        await wait();
+        expect(mocks.vertex.state.requests).toHaveLength(0);
+        expect(mocks.vercel.state.requests).toHaveLength(0);
+        expect(mocks.openrouter.state.requests).toHaveLength(0);
+    },
+);
 
 test("nano-banana-2.1 requires paid Pollen", async ({ apiKey, mocks }) => {
     await mocks.enable("tinybird", "vertex", "openrouter");

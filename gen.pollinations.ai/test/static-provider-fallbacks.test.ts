@@ -578,7 +578,7 @@ describe("static provider fallbacks", () => {
             "x-ai/grok-imagine-video:fal",
         );
         expect(IMAGE_SERVICES["x-ai/grok-imagine-video-1.5"]).toMatchObject({
-            provider: "openrouter",
+            provider: "xai",
             fallbacks: ["x-ai/grok-imagine-video-1.5:fal"],
         });
         const lite = IMAGE_SERVICES["x-ai/grok-imagine-video-1.5-lite"];
@@ -628,31 +628,36 @@ describe("static provider fallbacks", () => {
         expect(parent.fallbacks).toBeUndefined();
     });
 
-    it("keeps D1 paid-only and charges its public quote on Vercel fallback", () => {
+    it("keeps D1 paid-only and charges its public quote on OpenRouter fallback", () => {
         const primary = TEXT_SERVICES["liquid/d1"];
-        const fallback = TEXT_SERVICES["liquid/d1:vercel"];
-        expect(primary.fallbacks).toEqual(["liquid/d1:vercel"]);
+        const fallback = TEXT_SERVICES["liquid/d1:openrouter"];
+        expect(primary.fallbacks).toEqual(["liquid/d1:openrouter"]);
         expect(fallback).toMatchObject({
-            provider: "vercel",
+            provider: "openrouter",
             paidOnly: true,
             hidden: true,
             fallbackOnly: true,
             aliases: [],
         });
-        expect(findModelByName("liquid/d1:vercel")?.config()).toMatchObject({
-            model: "liquid/d1",
-            provider: "openai",
-            directEndpoint:
-                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
-        });
+        expect(findModelByName("liquid/d1:openrouter")?.config()).toMatchObject(
+            {
+                model: "liquid/d1",
+                provider: "openrouter",
+                directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+            },
+        );
         const billing = calculateUsageBilling({
             model: "liquid/d1",
-            usage: { promptTextTokens: 1000, completionTextTokens: 0 },
+            usage: {
+                promptTextTokens: 600,
+                promptCachedTokens: 400,
+                completionTextTokens: 0,
+            },
             servedBy: fallback,
             quotedBy: primary,
         });
-        expect(billing.cost.totalCost).toBeCloseTo(0.00002, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(0.0000211, 8);
+        expect(billing.cost.totalCost).toBeCloseTo(0.0000211, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.00002, 12);
     });
 
     it("charges Decider's Vercel price on its OpenRouter fallback", () => {
@@ -831,6 +836,21 @@ describe("static provider fallbacks", () => {
             });
             expect(billing.cost.totalCost).toBeCloseTo(expected, 9);
         }
+    });
+
+    it("keeps Jev's lower Vercel quote when OpenRouter serves it", () => {
+        const model = "typesafe/jev-1.13";
+        expect(TEXT_SERVICES[model].fallbacks).toEqual([
+            `${model}:openrouter:typesafe`,
+        ]);
+        const billed = calculateUsageBilling({
+            model,
+            usage: { promptTextTokens: 10000, completionTextTokens: 100 },
+            servedBy: TEXT_SERVICES[`${model}:openrouter:typesafe`],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.0004431, 12);
+        expect(billed.price.totalPrice).toBe(0.00042);
     });
 
     it("prices Muse Wonder on Vercel at base rates and quotes the OpenRouter primary with its fee", () => {
@@ -1077,6 +1097,42 @@ describe("static provider fallbacks", () => {
         });
     });
 
+    it.each([
+        [{ usage: { payg_credits_charged: 0.0001 } }, 0.0001],
+        [{ usage: { payg_credits_charged: 0 } }, 0],
+        [
+            {
+                streamEvents: [
+                    { usage: { payg_credits_charged: 0.00005 } },
+                    { payg_usage: { payg_credits_charged: 0.0001 } },
+                    { payg_credits_charged: 0.0001 },
+                ],
+            },
+            0.0001,
+        ],
+        [{}, 0.001365],
+        [{ usage: { payg_credits_charged: -1 } }, 0.001365],
+        [{ usage: { payg_credits_charged: "0.0001" } }, 0.001365],
+        [{ usage: { payg_credits_charged: Number.NaN } }, 0.001365],
+        [
+            { usage: { payg_credits_charged: Number.POSITIVE_INFINITY } },
+            0.001365,
+        ],
+    ])(
+        "settles Lightning v2.1 from a valid final receipt: %j",
+        (output, expected) => {
+            const model = "inferenceport-ai/lightning-text-v2.1";
+            const billed = calculateUsageBilling({
+                model,
+                output,
+                usage: { promptTextTokens: 1819, completionTextTokens: 1 },
+                servedBy: TEXT_SERVICES[model],
+            });
+            expect(billed.cost.totalCost).toBeCloseTo(expected, 12);
+            expect(billed.price.totalPrice).toBe(expected);
+        },
+    );
+
     it("registers exact text routes as fallback-only inherited models", () => {
         for (const [parent, routes] of Object.entries(
             fallbackRoutes(TEXT_FALLBACKS),
@@ -1156,8 +1212,46 @@ describe("static provider fallbacks", () => {
         expect(billed.price.totalPrice).toBe(0.0030375);
     });
 
+    it("charges SiliconFlow's reported cache hits at its full input rate", () => {
+        const model = "qwen/qwen3-coder-30b-a3b-instruct";
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 252,
+                promptCachedTokens: 32,
+                completionTextTokens: 6,
+            },
+            servedBy: TEXT_SERVICES[model],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.00002156 * 1.055, 12);
+        expect(billed.price.totalPrice).toBe(0.00002275);
+    });
+
+    it("keeps the cheaper coder quote when Bedrock serves it", () => {
+        const model = "qwen/qwen3-coder-30b-a3b-instruct";
+        const billed = calculateUsageBilling({
+            model,
+            usage: { promptTextTokens: 1000, completionTextTokens: 100 },
+            servedBy: TEXT_SERVICES[`${model}:aws`],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.00021, 12);
+        expect(billed.price.totalPrice).toBeCloseTo(0.00010339, 12);
+    });
+
     it("keeps exact provider route costs", () => {
         expect(TEXT_SERVICES["openai/gpt-4o-mini"].cost).toMatchObject({
+            promptTextTokens: 0.15 / 1_000_000,
+            promptCachedTokens: 0.075 / 1_000_000,
+            completionTextTokens: 0.6 / 1_000_000,
+        });
+        expect(TEXT_SERVICES["openai/gpt-4o-mini"].fallbacks).toEqual([
+            "openai/gpt-4o-mini:openrouter:openai",
+        ]);
+        expect(
+            TEXT_SERVICES["openai/gpt-4o-mini:openrouter:openai"].cost,
+        ).toMatchObject({
             promptTextTokens: (0.15 / 1_000_000) * 1.055,
             promptCachedTokens: (0.075 / 1_000_000) * 1.055,
             completionTextTokens: (0.6 / 1_000_000) * 1.055,
@@ -1487,6 +1581,42 @@ describe("static provider fallbacks", () => {
         }
     });
 
+    it.each([
+        [{ usage: { payg_credits_charged: 0.0001 } }, 0.0001],
+        [{ usage: { payg_credits_charged: 0 } }, 0],
+        [
+            {
+                streamEvents: [
+                    { usage: { payg_credits_charged: 0.00005 } },
+                    { payg_usage: { payg_credits_charged: 0.0001 } },
+                    { payg_credits_charged: 0.0001 },
+                ],
+            },
+            0.0001,
+        ],
+        [{}, 0.001365],
+        [{ usage: { payg_credits_charged: -1 } }, 0.001365],
+        [{ usage: { payg_credits_charged: "0.0001" } }, 0.001365],
+        [{ usage: { payg_credits_charged: Number.NaN } }, 0.001365],
+        [
+            { usage: { payg_credits_charged: Number.POSITIVE_INFINITY } },
+            0.001365,
+        ],
+    ])(
+        "settles Lightning v2 from a valid final receipt: %j",
+        (output, expected) => {
+            const model = "inferenceport-ai/lightning-text-v2";
+            const billed = calculateUsageBilling({
+                model,
+                output,
+                usage: { promptTextTokens: 1819, completionTextTokens: 1 },
+                servedBy: TEXT_SERVICES[model],
+            });
+            expect(billed.cost.totalCost).toBeCloseTo(expected, 12);
+            expect(billed.price.totalPrice).toBe(expected);
+        },
+    );
+
     it("rejects image input only for models without image input", () => {
         const chat = {
             messages: [
@@ -1581,6 +1711,18 @@ describe("static provider fallbacks", () => {
                 ).toBeUndefined();
             }
         }
+    });
+
+    it("keeps Qwen VL's direct quote when OpenRouter serves it", () => {
+        const model = "qwen/qwen3-vl-30b-a3b-instruct";
+        const billed = calculateUsageBilling({
+            model,
+            usage: { promptTextTokens: 226, completionTextTokens: 7 },
+            servedBy: TEXT_SERVICES[`${model}:openrouter:deepinfra`],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.0000381 * 1.055, 12);
+        expect(billed.price.totalPrice).toBe(0.0000381);
     });
 
     it("falls back from direct Novita to Novita through Vercel at the same cost", () => {

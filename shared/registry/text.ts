@@ -1586,7 +1586,7 @@ const TEXT_BASE_SERVICES = {
         aliases: [],
         provider: "openrouter",
         publisher: "Respan",
-        category: "text",
+        category: "decision",
         addedDate: new Date("2026-09-30").getTime(),
         priceMultiplier: 1, // Free upstream, so billed at zero.
         // Free upstream, so Quest Pollen can reach it at no cost.
@@ -1616,7 +1616,7 @@ const TEXT_BASE_SERVICES = {
         aliases: ["jev", "typesafe/jev"],
         provider: "openrouter",
         publisher: "TypeSafe",
-        category: "text",
+        category: "decision",
         addedDate: new Date("2026-09-17").getTime(),
         priceMultiplier: 1, // Billed at cost, no margin.
         paidOnly: true,
@@ -1649,7 +1649,7 @@ const TEXT_BASE_SERVICES = {
         aliases: [],
         provider: "openrouter",
         publisher: "Jared Palmer",
-        category: "text",
+        category: "decision",
         addedDate: new Date("2026-09-30").getTime(),
         priceMultiplier: 1, // Billed at cost, no margin.
         paidOnly: true,
@@ -1679,7 +1679,7 @@ const TEXT_BASE_SERVICES = {
         aliases: [],
         provider: "vercel",
         publisher: "Perplexity",
-        category: "text",
+        category: "decision",
         addedDate: new Date("2026-10-07").getTime(),
         priceMultiplier: 1, // Billed at cost, no margin.
         paidOnly: true,
@@ -1708,7 +1708,7 @@ const TEXT_BASE_SERVICES = {
         aliases: [],
         provider: "openrouter",
         publisher: "Liquid AI",
-        category: "text",
+        category: "decision",
         addedDate: new Date("2026-10-02").getTime(),
         priceMultiplier: 1, // Billed at cost, no margin.
         paidOnly: true,
@@ -1789,7 +1789,7 @@ const TEXT_BASE_SERVICES = {
         aliases: [],
         provider: "vercel",
         publisher: "Microsoft",
-        category: "text",
+        category: "decision",
         addedDate: new Date("2026-10-09").getTime(),
         priceMultiplier: 1, // Billed at cost, no margin.
         paidOnly: true,
@@ -1818,7 +1818,7 @@ const TEXT_BASE_SERVICES = {
         aliases: [],
         provider: "openai",
         publisher: "OpenAI",
-        category: "text",
+        category: "decision",
         addedDate: new Date("2026-10-07").getTime(),
         priceMultiplier: 1, // Public pricing follows the direct OpenAI rate.
         paidOnly: true,

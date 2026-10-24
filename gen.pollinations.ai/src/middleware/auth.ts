@@ -24,6 +24,7 @@ type ModelVariables = {
         resolved: string;
         definition: Pick<ModelDefinition, "category" | "aliases">;
         communityEndpoint?: CommunityEndpointRuntime;
+        endpoint?: string;
     };
 };
 
@@ -79,7 +80,14 @@ function installAuth(
         if (!apiKey) return;
 
         const models = apiKey.permissions?.models;
-        if (!keyAllowsModel(models, model.resolved, model.definition)) {
+        if (
+            !keyAllowsModel(
+                models,
+                model.resolved,
+                model.definition,
+                model.endpoint,
+            )
+        ) {
             // A key limited to specific models asks for this one model; a key
             // limited to categories asks for the model's category.
             const grant = models?.some((value) => !isModelCategory(value))

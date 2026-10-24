@@ -158,10 +158,8 @@ test("calculatePrice derives the total from cost via priceMultiplier", () => {
     expect(price.totalPrice).toBeCloseTo(cost.totalCost * priceMultiplier, 8);
 });
 
-test("The default audio model works without paid balance", () => {
-    expect(getRegistryModelDefinition(DEFAULT_AUDIO_MODEL).paidOnly).not.toBe(
-        true,
-    );
+test("The default audio model requires paid balance at its Azure quota", () => {
+    expect(getRegistryModelDefinition(DEFAULT_AUDIO_MODEL).paidOnly).toBe(true);
 });
 
 test("GPT-5.5 is available without paid-only gating", () => {

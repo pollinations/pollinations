@@ -1681,16 +1681,15 @@ const TEXT_BASE_SERVICES = {
     "typesafe/jev-1.13": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: ["jev", "typesafe/jev"],
-        provider: "openrouter",
+        provider: "vercel",
         publisher: "TypeSafe",
         category: "decision",
         addedDate: new Date("2026-09-17").getTime(),
         priceMultiplier: 1, // Billed at cost, no margin.
         paidOnly: true,
         cost: {
-            // TypeSafe list price (docs.typesafe.ai, checked 2026-09-17) plus
-            // OpenRouter's 5.5% credit fee, as every OpenRouter route records.
-            promptTextTokens: perMillion(0.042) * 1.055,
+            // Vercel TypeSafe route (2026-10-24), with no gateway surcharge.
+            promptTextTokens: perMillion(0.042),
             completionTextTokens: perMillion(0),
         },
         title: "Jev",

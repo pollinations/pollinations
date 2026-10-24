@@ -13,6 +13,17 @@ import { CHAT_PARAMETERS } from "./text-parameters";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "typesafe/jev-1.13": {
+        // Same TypeSafe backend; covers gateway failures, not TypeSafe outages.
+        "typesafe/jev-1.13:openrouter:typesafe": {
+            provider: "openrouter",
+            priceMultiplier: 1,
+            cost: {
+                promptTextTokens: perMillion(0.042) * 1.055,
+                completionTextTokens: perMillion(0),
+            },
+        },
+    },
     "perplexity/pplx-decider-v1.2": {
         // Same Perplexity backend; covers gateway failures, not Perplexity outages.
         "perplexity/pplx-decider-v1.2:openrouter": {

@@ -375,7 +375,7 @@ describe("OpenRouter Grok Video Pro", () => {
         ["480p", "480p"],
         ["1080p", "1080p"],
     ] as const)(
-        "routes 1.5 resolution %s as %s",
+        "routes 1.5 Lite resolution %s as %s",
         async (resolution, expectedResolution) => {
             setOpenRouterEnv();
             const requests: Record<string, unknown>[] = [];
@@ -385,17 +385,17 @@ describe("OpenRouter Grok Video Pro", () => {
                 "a calm ocean at sunrise",
                 {
                     ...baseParams,
-                    model: "x-ai/grok-imagine-video-1.5",
+                    model: "x-ai/grok-imagine-video-1.5-lite:openrouter",
                     resolution,
                 },
             );
 
             expect(requests[0]).toMatchObject({
-                model: "x-ai/grok-imagine-video-1.5",
+                model: "x-ai/grok-imagine-video-1.5-lite",
                 resolution: expectedResolution,
             });
             expect(result.trackingData?.actualModel).toBe(
-                "x-ai/grok-imagine-video-1.5",
+                "x-ai/grok-imagine-video-1.5-lite:openrouter",
             );
         },
     );
@@ -421,7 +421,10 @@ describe("OpenRouter Grok Video Pro", () => {
     });
 
     it.each([
-        ["x-ai/grok-imagine-video-1.5", "x-ai/grok-imagine-video-1.5"],
+        [
+            "x-ai/grok-imagine-video-1.5-lite:openrouter",
+            "x-ai/grok-imagine-video-1.5-lite",
+        ],
     ] as const)("%s forwards one start frame", async (model, upstreamModel) => {
         setOpenRouterEnv();
         const requests: Record<string, unknown>[] = [];
@@ -479,7 +482,7 @@ describe("OpenRouter Grok Video Pro", () => {
         expect(result.durationSeconds).toBe(15);
     });
 
-    it.each([["x-ai/grok-imagine-video-1.5", 3]] as const)(
+    it.each([["x-ai/grok-imagine-video-1.5-lite:openrouter", 3]] as const)(
         "enforces a %s timeout of %i minutes",
         async (model, minutes) => {
             vi.useFakeTimers();

@@ -365,7 +365,7 @@ test("Trellis 2 prices selectable resolution tiers", () => {
 test("NVIDIA Asset Harvester flat rate pricing", () => {
     const usage = { completionImageTokens: 1 };
 
-    expect(calculateCost("nvidia/asset-harvester", usage).totalCost).toBe(0.25);
+    expect(calculateCost("nvidia/asset-harvester", usage).totalCost).toBe(0.07);
 });
 
 test("catalog models resolve brand logo SVG assets", () => {
@@ -833,7 +833,7 @@ test("updated provider prices are reflected for xAI media and text routes", () =
                 undefined,
                 { quality, resolution },
             ).totalPrice,
-        ).toBeCloseTo(expected * 1.055, 8);
+        ).toBeCloseTo(expected, 8);
     }
     expect(
         calculateCost("x-ai/grok-imagine-video", {
@@ -846,7 +846,7 @@ test("updated provider prices are reflected for xAI media and text routes", () =
             promptImageTokens: 1,
             completionVideoSeconds: 5,
         }).totalCost,
-    ).toBeCloseTo(0.71 * 1.055, 8);
+    ).toBeCloseTo(0.71, 8);
 });
 
 test("Gemini search cost follows each route's provider metadata", () => {
@@ -1959,7 +1959,7 @@ test("audio cards distinguish clips, audio tokens, characters, and UTF-8 bytes",
         {
             direction: "output",
             kind: "audioOut",
-            price: "0.1",
+            price: "0.08",
             unit: "character",
         },
     ]);

@@ -829,7 +829,7 @@ export const TEXT_FALLBACKS = {
             provider: "openrouter",
             priceMultiplier: 1,
             addedDate: new Date("2026-10-13").getTime(),
-            // OpenRouter AI Studio's 50% promotion through 2026-11-30,
+            // OpenRouter AI Studio promotional rates verified 2026-10-24,
             // including the 5.5% credit fee. Callers keep the Vertex quote.
             cost: {
                 promptTextTokens: perMillion(2) * 1.055,

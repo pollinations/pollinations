@@ -358,11 +358,9 @@ export type FallbackAttempt = {
 /**
  * Runs `attempt` against each candidate until one succeeds.
  *
- * Placed around the upstream call itself rather than around the request, so
- * authentication and moderation are not repeated. Caller-selected alternatives
- * recheck their own balance rules in the local guard immediately before an
- * attempt. Each list position is tried once; callers may explicitly repeat a
- * model when they want another attempt.
+ * Authentication is reused across attempts. Caller-selected alternatives
+ * recheck their own balance rules immediately before an attempt. Each list
+ * position is tried once; callers may explicitly repeat a model.
  *
  * Every upstream call is appended to `attempts`, including the one that serves
  * or ends the request. Recording is not the same as retrying: this loop decides

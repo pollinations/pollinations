@@ -2720,6 +2720,25 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000015,
     },
   },
+  "openai/gpt-5.4:openai": {
+    "cost": {
+      "completionTextTokens": 0.000015,
+      "promptCachedTokens": 0.00000025,
+      "promptTextTokens": 0.0000025,
+    },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.0000225,
+        "promptCachedTokens": 0.0000005,
+        "promptTextTokens": 0.000005,
+      },
+    },
+    "price": {
+      "completionTextTokens": 0.000015,
+      "promptCachedTokens": 0.00000025,
+      "promptTextTokens": 0.0000025,
+    },
+  },
   "openai/gpt-5.5": {
     "cost": {
       "completionTextTokens": 0.00003,

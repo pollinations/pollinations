@@ -60,18 +60,9 @@ body {
     color: var(--polli-color-text-base);
     font-family: var(--polli-font-body);
 }
-/* Widths and gutters follow pollinations.ai. */
-#root { max-width: 1240px; margin: 0 auto; padding: 0 1.25rem; }
-.bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 1.25rem 0;
-}
-.home { display: block; border-radius: 0.375rem; color: var(--polli-color-text-strong); }
-.home:focus-visible { outline: 2px solid var(--polli-color-focus); outline-offset: 2px; }
-.logo { width: 2rem; height: 2rem; }
+/* The content column lines up with AppHeader's (max-w-6xl, px-4, sm:px-6),
+   as on the model monitor. */
+.shell { max-width: 72rem; margin: 0 auto; padding: 0 1rem; }
 .hero-copy { display: flex; flex-direction: column; gap: 1.5rem; }
 .hero-copy p { text-wrap: balance; }
 .bee { width: 7.5rem; height: auto; rotate: -6deg; user-select: none; }
@@ -115,15 +106,13 @@ footer {
 footer nav { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
 /* Phones: the panels run full width, as on pollinations.ai and enter. */
 @media (max-width: 639px) {
-    .panels { margin-inline: -1.25rem; }
-    /* The title is one word that cannot wrap: about 10 em wide. */
-    .hero h1 { font-size: min(2.25rem, calc((100vw - 2.5rem) / 10)); }
+    .panels { margin-inline: -1rem; }
 }
 @media (min-width: 640px) {
-    #root { padding-inline: 1.5rem; }
+    .shell { padding-inline: 1.5rem; }
 }
-/* Polli sits beside the copy once the one-word title leaves room for her. */
-@media (min-width: 1200px) {
+/* Polli sits beside the copy once there is room for both. */
+@media (min-width: 1024px) {
     .hero { flex-direction: row; align-items: center; justify-content: space-between; }
     .bee { order: 1; width: 13.75rem; flex-shrink: 0; }
 }
@@ -151,9 +140,9 @@ await new Promise((resolve, reject) => {
 });
 
 const {
-    AppIcon, BookIcon, BrandMark, CloudUploadIcon, CodeBlock, CodeIcon,
+    AppHeader, AppIcon, BookIcon, CloudUploadIcon, CodeBlock, CodeIcon,
     ColorModeToggle, ContentHeader, ExternalLinkButton, GlobeIcon, Heading, IconTile,
-    InlineLink, LinkCard, LockIcon, LogInIcon, McpIcon, Section, Surface, TerminalIcon, Text,
+    InlineLink, LinkCard, LockIcon, McpIcon, Section, Surface, TerminalIcon, Text,
 } = window.PollinationsUI;
 const h = React.createElement;
 const code = (text) => h("code", { className: "inline" }, text);
@@ -234,57 +223,54 @@ function Card({ title, body, icon, color }) {
 
 function Page() {
     return [
-        h("header", { key: "header", className: "bar" },
-            h("a", { className: "home", href: "https://pollinations.ai", "aria-label": "pollinations.ai" },
-                h(BrandMark, { className: "logo" })),
-            h("div", { className: "row" },
-                h(ExternalLinkButton, {
-                    href: DASHBOARD,
-                    external: false,
-                    intent: "surface",
-                    icon: h(LogInIcon, { className: "polli:h-4 polli:w-4" }),
-                }, "Dashboard"),
-                h(ColorModeToggle))),
-        h("main", { key: "main", className: "panels" },
-            h(Surface, { as: "section", variant: "panel", className: "hero" },
-                h("img", { className: "bee", src: `${UI}/brand/polli/polli.png`, alt: "", width: 540, height: 527 }),
-                h("div", { className: "hero-copy" },
-                    h(ContentHeader, {
-                        variant: "page",
-                        eyebrow: "Static site hosting",
-                        title: "pollinations.app",
-                        subtitle: "Free hosting for static sites, for anyone with a Pollinations account.",
-                    }),
-                    ADDRESS,
-                    h("div", { className: "row" },
-                        h(ExternalLinkButton, {
-                            href: `${DOCS}#tag/sites`,
-                            size: "lg",
-                            icon: h(BookIcon, { className: "polli:h-4 polli:w-4" }),
-                        }, "Docs"),
-                        h(ExternalLinkButton, {
-                            href: CLI_URL,
-                            size: "lg",
-                            intent: "neutral",
-                            icon: h(TerminalIcon, { className: "polli:h-4 polli:w-4" }),
-                        }, "CLI")))),
-            h(Section, { title: "Publish", intro: "From your terminal:" },
-                h(CodeBlock, { code: PUBLISH, language: "Terminal" }),
-                h(Text, { tone: "strong", weight: "semibold" }, "From code or an agent:"),
-                h("ul", { className: "cards" },
-                    FROM_CODE.map((item) =>
-                        h("li", { key: item.title },
-                            h(LinkCard, { href: item.href }, Card(item)))))),
-            h(Section, { title: "Limits" },
-                h("ul", { className: "cards" },
-                    LIMITS.map((item) =>
-                        h("li", { key: item.title },
-                            h(Surface, { className: "polli:flex polli:h-full polli:flex-col polli:gap-2 polli:p-5" }, Card(item))))))),
-        h("footer", { key: "footer" },
-            h("nav", { "aria-label": "Links" },
-                [["pollinations.ai", "https://pollinations.ai"], ["Docs", `${DOCS}#tag/sites`], ["CLI", CLI_URL], ["Dashboard", DASHBOARD, false]].map(([label, href, external]) =>
-                    h(InlineLink, { key: label, href, external, tone: "quiet", size: "footer" }, label))),
-            h("span", null, `© ${new Date().getFullYear()} Myceli.AI OÜ`)),
+        // The app name on top, like the model monitor's header.
+        h(AppHeader, { key: "header", appName: "pollinations.app", navLabel: "pollinations.app links", autoHide: true, innerClassName: "polli:max-w-6xl" },
+            h(ExternalLinkButton, {
+                href: DASHBOARD,
+                icon: h(AppIcon, { className: "polli:h-4 polli:w-4" }),
+            }, "Dashboard"),
+            h(ColorModeToggle)),
+        h("div", { key: "content", className: "shell" },
+            h("main", { className: "panels" },
+                h(Surface, { as: "section", variant: "panel", className: "hero" },
+                    h("img", { className: "bee", src: `${UI}/brand/polli/polli.png`, alt: "", width: 540, height: 527 }),
+                    h("div", { className: "hero-copy" },
+                        h(ContentHeader, {
+                            variant: "page",
+                            eyebrow: null,
+                            title: "Free hosting for static sites",
+                            subtitle: "For anyone with a Pollinations account.",
+                        }),
+                        ADDRESS,
+                        h("div", { className: "row" },
+                            h(ExternalLinkButton, {
+                                href: `${DOCS}#tag/sites`,
+                                size: "lg",
+                                icon: h(BookIcon, { className: "polli:h-4 polli:w-4" }),
+                            }, "Docs"),
+                            h(ExternalLinkButton, {
+                                href: CLI_URL,
+                                size: "lg",
+                                intent: "neutral",
+                                icon: h(TerminalIcon, { className: "polli:h-4 polli:w-4" }),
+                            }, "CLI")))),
+                h(Section, { title: "Publish", intro: "From your terminal:" },
+                    h(CodeBlock, { code: PUBLISH, language: "Terminal" }),
+                    h(Text, { tone: "strong", weight: "semibold" }, "From code or an agent:"),
+                    h("ul", { className: "cards" },
+                        FROM_CODE.map((item) =>
+                            h("li", { key: item.title },
+                                h(LinkCard, { href: item.href }, Card(item)))))),
+                h(Section, { title: "Limits" },
+                    h("ul", { className: "cards" },
+                        LIMITS.map((item) =>
+                            h("li", { key: item.title },
+                                h(Surface, { className: "polli:flex polli:h-full polli:flex-col polli:gap-2 polli:p-5" }, Card(item))))))),
+            h("footer", null,
+                h("nav", { "aria-label": "Links" },
+                    [["pollinations.ai", "https://pollinations.ai"], ["Docs", `${DOCS}#tag/sites`], ["CLI", CLI_URL], ["Dashboard", DASHBOARD]].map(([label, href]) =>
+                        h(InlineLink, { key: label, href, tone: "quiet", size: "footer" }, label))),
+                h("span", null, `© ${new Date().getFullYear()} Myceli.AI OÜ`))),
     ];
 }
 

@@ -58,6 +58,20 @@ function authorizedTarget(
 }
 
 describe("direct Responses transport", () => {
+    it("keeps the GPT-5 Nano backup on Standard for native Responses", () => {
+        const input = request({
+            model: "openai/gpt-5-nano:openai",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct OpenAI target");
+        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
+            model: "gpt-5-nano-2025-08-07",
+            service_tier: "default",
+            store: false,
+        });
+    });
     it("rejects invalid image URLs on Nex Mini before calling the provider", async () => {
         const directRequest = request({
             model: "nex-agi/nex-n2.5-mini",

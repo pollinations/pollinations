@@ -358,6 +358,21 @@ describe("resolveModelConfig", () => {
         },
     );
 
+    it("pins the GPT-5 Nano backup to its exact OpenAI checkpoint and Standard tier", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5-nano:openai",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("gpt-5-nano-2025-08-07");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
+            provider: "openai",
+            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
+        });
+    });
+
     it("pins Inkling to DeepInfra on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "thinkingmachines/inkling-small",

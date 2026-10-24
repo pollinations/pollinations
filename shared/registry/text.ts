@@ -1586,7 +1586,7 @@ const TEXT_BASE_SERVICES = {
         aliases: [],
         provider: "vllm-sr",
         publisher: "vLLM Semantic Router",
-        category: "text",
+        category: "decision",
         addedDate: new Date("2026-10-18").getTime(),
         priceMultiplier: 1,
         paidOnly: false,

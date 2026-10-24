@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description" content="A tiny, hackable visual instrument for saved Pollinations images.">
+    <title>Texture instrument · Pollinations</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="./style.css">
+    <script type="module" src="./instrument.js"></script>
+</head>
+<body>
+<header>
+    <div><a href="https://pollinations.ai">Pollinations</a><h1>Texture instrument</h1></div>
+    <a href="./patch.js">Edit the patch source</a>
+</header>
+<main>
+    <div class="stage">
+        <canvas id="stage" tabindex="0" aria-label="Visual instrument. Drag to change rotation and blend. Space plays or pauses; arrows change texture."></canvas>
+        <div class="transport"><button type="button" id="play" aria-pressed="false">Play</button><span id="caption">Loading textures…</span><button type="button" id="frame">Save PNG</button></div>
+    </div>
+    <section class="controls" aria-label="Patch controls">
+        <label>Rotation <output id="rotation-value" for="rotation"></output><input id="rotation" type="range"></label>
+        <label>Repetition <output id="repetition-value" for="repetition"></output><input id="repetition" type="range"></label>
+        <label>Blend <output id="blend-value" for="blend"></output><input id="blend" type="range"></label>
+        <label>Speed <output id="speed-value" for="speed"></output><input id="speed" type="range"></label>
+        <button type="button" id="reset">Reset patch</button>
+    </section>
+    <section class="library" aria-label="Texture bank">
+        <div class="bank-heading"><h2>Your textures</h2><button type="button" id="export">Export bank + patch</button></div>
+        <div id="bank" role="group" aria-label="Choose a texture"></div>
+        <label class="import">Load images or bank JSON <input id="files" type="file" accept=".json,image/png,image/jpeg,image/webp,image/gif,image/svg+xml" multiple></label>
+        <p id="status" role="status" aria-live="polite">Loading the demo bank…</p>
+    </section>
+    <details>
+        <summary>Play, share, hack</summary>
+        <p>Press Play, then drag the canvas: horizontal movement rotates; vertical movement blends the next texture. Number keys 1–9 and arrow keys switch textures. Space pauses. Start paused to choose your own pace.</p>
+        <p>Load saved Pollinations images or a JSON bank: <code>{"images":[{"url":"https://…/saved.png","caption":"My texture"}]}</code>. Up to 16 images and 32 MB per bank. Public image URLs need CORS enabled; local files are embedded in exports. URLs load once; animation makes no generation calls.</p>
+        <p>Export keeps the bank and controls together. Only image URLs, captions, and patch settings are kept; credential fields are discarded and common credential parameters in URLs are rejected. Sharing a bank also shares its images and URLs.</p>
+        <p>Edit <a href="./patch.js">patch.js</a> to replace the drawing function. Run from the repository root with <code>python3 -m http.server 8080</code>, then open <code>http://localhost:8080/apps/texture-instrument/</code>. Check the pure functions with <code>node apps/texture-instrument/check.mjs</code>.</p>
+    </details>
+</main>
+<footer>Local pixels, shared possibilities. Source and demo textures use the repository’s MIT license.</footer>
+</body>
+</html>

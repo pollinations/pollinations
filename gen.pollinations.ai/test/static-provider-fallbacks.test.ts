@@ -1132,6 +1132,31 @@ describe("static provider fallbacks", () => {
         }
     });
 
+    it("keeps the Azure gpt-5.6-sol quote when OpenAI serves it", () => {
+        const model = "openai/gpt-5.6-sol";
+        expect(TEXT_SERVICES[model].fallbacks).toEqual([
+            "openai/gpt-5.6-sol:openai",
+        ]);
+        expect(TEXT_SERVICES["openai/gpt-5.6-sol:openai"]).toMatchObject({
+            provider: "openai",
+            priceMultiplier: 1,
+            hidden: true,
+        });
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                "promptTextTokens": 1000,
+                "promptCachedTokens": 200,
+                "completionTextTokens": 100,
+                "promptCacheWriteTokens": 50,
+            },
+            servedBy: TEXT_SERVICES["openai/gpt-5.6-sol:openai"],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.00633, 12);
+        expect(billed.price.totalPrice).toBe(0.00211);
+    });
+
     it("keeps exact provider route costs", () => {
         expect(TEXT_SERVICES["openai/gpt-4o-mini"].cost).toMatchObject({
             promptTextTokens: (0.15 / 1_000_000) * 1.055,

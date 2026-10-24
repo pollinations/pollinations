@@ -232,6 +232,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- Azure (Myceli Prod — eastus, GPT-5.6) --------------------------------
+    "gpt-5.6-sol-openai": () => ({
+        provider: "openai",
+        model: "gpt-5.6-sol",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        directEndpoint: "https://api.openai.com/v1/chat/completions",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        serviceTier: "default",
+        ...azureOpenAIParameters,
+    }),
     "gpt-5.6-sol": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),

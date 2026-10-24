@@ -13,6 +13,13 @@ import { CHAT_PARAMETERS } from "./text-parameters";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "openai/gpt-5.4-nano": {
+        "openai/gpt-5.4-nano:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
+        },
+    },
+
     "perplexity/pplx-decider-v1.2": {
         // Same Perplexity backend; covers gateway failures, not Perplexity outages.
         "perplexity/pplx-decider-v1.2:openrouter": {

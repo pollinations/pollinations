@@ -1,0 +1,81 @@
+:root {
+    color-scheme: light dark;
+    font-family: system-ui, sans-serif;
+}
+
+body {
+    margin: 0;
+}
+
+main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+fieldset {
+    display: grid;
+    gap: 8px;
+    border: 1px solid #8884;
+    border-radius: 8px;
+}
+
+label {
+    display: grid;
+    gap: 4px;
+    font-size: 14px;
+}
+
+label.inline {
+    display: flex;
+    align-items: center;
+}
+
+input,
+button {
+    font: inherit;
+    padding: 6px 8px;
+}
+
+p {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+p.user {
+    align-self: flex-end;
+    max-width: 80%;
+    padding: 8px 12px;
+    border-radius: 12px;
+    background: #8882;
+    overflow-wrap: anywhere;
+}
+
+.error {
+    display: block;
+    color: #d33;
+    font-size: 13px;
+}
+
+.surface {
+    border: 1px solid #8884;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+pre {
+    white-space: pre-wrap;
+    font-size: 12px;
+}
+
+form {
+    display: flex;
+    gap: 8px;
+}
+
+form input {
+    flex: 1;
+}

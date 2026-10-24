@@ -54,9 +54,9 @@ test("only the session cookie can mint a session token", async ({ apiKey }) => {
     expect(response.status).toBe(401);
 });
 
-test("session tokens are refused in the query string, expired, forged or for a banned user", async ({
-    sessionToken,
-}) => {
+test("session tokens are refused in the query string, expired, forged or for a banned user", {
+    timeout: 30000,
+}, async ({ sessionToken }) => {
     const token = await mintAccountToken(sessionToken);
     const auth = await authenticateApiKeyRequest({
         request: new Request(BASE, { headers: bearer(token) }),

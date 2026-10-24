@@ -174,6 +174,20 @@ describe("resolveModelConfig", () => {
         },
     );
 
+    it("pins gpt-6-astra recovery to exact OpenAI Standard", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-6-astra:openai",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("gpt-6-astra");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
+            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
+        });
+    });
+
     it("does not set max_tokens for non-Anthropic models", () => {
         const result = resolveModelConfig(messages, {
             model: "openai/gpt-5.4-nano",

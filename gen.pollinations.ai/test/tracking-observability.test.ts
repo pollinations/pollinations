@@ -3946,10 +3946,10 @@ describe("trackResponse model identity", () => {
     });
 
     it.each([200, 502])(
-        "distinguishes same-provider routes on HTTP %i",
+        "distinguishes Azure and direct OpenAI routes on HTTP %i",
         async (status) => {
             const primary = "openai/gpt-6-astra" as const;
-            const fallback = "openai/gpt-6-astra:azure:datazone" as const;
+            const fallback = "openai/gpt-6-astra:openai" as const;
             for (const attempted of [primary, fallback]) {
                 const tracking = await trackResponse(
                     "generate.text",
@@ -3962,7 +3962,8 @@ describe("trackResponse model identity", () => {
                 expect(tracking).toMatchObject({
                     responseStatus: status,
                     modelUsed: attempted,
-                    modelProviderUsed: "azure",
+                    modelProviderUsed:
+                        attempted === primary ? "azure" : "openai",
                     fallbackUsed: attempted !== primary,
                 });
             }

@@ -271,14 +271,14 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
-        name: "openai/gpt-6-astra",
-        config: portkeyConfig["gpt-6-astra"],
+        name: "openai/gpt-6-astra:openai",
+        config: portkeyConfig["gpt-6-astra-openai"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
     },
     {
-        name: "openai/gpt-6-astra:azure:datazone",
-        config: portkeyConfig["gpt-6-astra-azure-datazone"],
+        name: "openai/gpt-6-astra",
+        config: portkeyConfig["gpt-6-astra"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
     },

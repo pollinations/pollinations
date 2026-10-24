@@ -91,7 +91,7 @@ const BUILD_FEATURES: Feature[] = [
         body: (
             <>
                 <Em>A Linux computer in the cloud</Em> for you or your agents.
-                Pay only while it runs.
+                Paused sandboxes cost nothing.
             </>
         ),
         links: [

@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { parseEnv } from "node:util";
-import { isMap, isSeq, parseDocument, Scalar } from "yaml";
+import { type Document, isMap, isSeq, parseDocument, Scalar } from "yaml";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
 import {
@@ -50,7 +50,7 @@ const skillPath = (ctx: HarnessContext) =>
     join(dshHome(ctx), "skills", "polli", "SKILL.md");
 
 // parseDocument keeps comments and untouched entries intact on rewrite.
-const loadYaml = (path: string) =>
+const loadYaml = (path: string): Document =>
     parseDocument(readTextIfExists(path) ?? "", { customTags: [JS_TAG] });
 
 const files = (ctx: HarnessContext) => [
@@ -272,7 +272,7 @@ export const disableDsh = (ctx: HarnessContext): HarnessResult => {
     return { ...result(ctx), configured: false, outcome };
 };
 
-export const dsh: HarnessAdapter = {
+export const dsh = {
     id: ID,
     label: LABEL,
     description: "Configure DeepSeek Harness as a Pollinations provider",
@@ -303,4 +303,4 @@ export const dsh: HarnessAdapter = {
 
     off: disableDsh,
     status: result,
-};
+} satisfies HarnessAdapter;

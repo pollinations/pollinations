@@ -98,6 +98,13 @@ export const portkeyConfig: PortkeyConfigMap = {
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "respan/span-01-lite",
+        defaultOptions: {
+            provider: {
+                "only": ["respan"],
+                "ignore": ["cloudflare"],
+                "allow_fallbacks": false,
+            },
+        },
     }),
     // Both gateways preserve the native TypeSafe Decisions protocol.
     "jev-1.13": () =>

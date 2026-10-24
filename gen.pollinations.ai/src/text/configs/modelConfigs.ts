@@ -487,7 +487,25 @@ export const portkeyConfig: PortkeyConfigMap = {
     "qwen/qwen3.7-plus": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.7-plus",
-            defaultOptions: { max_tokens: 64000, provider: { sort: "price" } },
+            defaultOptions: {
+                max_tokens: 64000,
+                // The base slug also matches alibaba/us-east-1, which can
+                // be priced differently.
+                provider: {
+                    only: ["Alibaba"],
+                    ignore: ["alibaba/us-east-1"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
+    "qwen3.7-plus-alibaba": () =>
+        createAlibabaModelConfig({
+            model: "qwen3.7-plus",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+            responsesDisableReasoningForForcedTools: true,
+            defaultOptions: { max_tokens: 64000 },
         }),
     "qwen/qwen3.7-max": () =>
         createOpenRouterModelConfig({

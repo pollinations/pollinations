@@ -1,5 +1,6 @@
 import {
     defineCostVariants,
+    longContextAbove,
     longContextAtLeast,
     totalPromptTokens,
 } from "./cost-variants";
@@ -366,6 +367,50 @@ export const TEXT_FALLBACKS = {
                 promptVideoTokens: perMillion(0.04) * 1.055,
                 completionTextTokens: perMillion(2.2) * 1.055,
             },
+        },
+    },
+    "qwen/qwen3.7-plus": {
+        "qwen/qwen3.7-plus:alibaba": {
+            provider: "alibaba",
+            supportedParameters: CHAT_PARAMETERS.alibabaQwen,
+            addedDate: new Date("2026-10-24").getTime(),
+            // Direct Alibaba (International), limited-time 20% off list.
+            // Explicit-cache reads cost 10% of input; recorded at the implicit 20%.
+            cost: {
+                promptTextTokens: perMillion(0.32),
+                promptCachedTokens: perMillion(0.064),
+                promptCacheWriteTokens: perMillion(0.4),
+                promptImageTokens: perMillion(0.32),
+                completionTextTokens: perMillion(1.28),
+            },
+            ...defineCostVariants(
+                {
+                    long_context: {
+                        promptTextTokens: perMillion(0.96),
+                        promptCachedTokens: perMillion(0.192),
+                        promptCacheWriteTokens: perMillion(1.2),
+                        promptImageTokens: perMillion(0.96),
+                        completionTextTokens: perMillion(3.84),
+                    },
+                },
+                longContextAbove(256_000),
+                {
+                    long_context: {
+                        label: "Long context (>256K)",
+                        description:
+                            "More than 256,000 prompt tokens; the higher rates apply to the whole request.",
+                    },
+                },
+                "≤256K context",
+                [
+                    {
+                        key: "context",
+                        label: "Context",
+                        unit: "tokens",
+                        values: { "": "≤256K", long_context: ">256K" },
+                    },
+                ],
+            ),
         },
     },
     "qwen/qwen3.7-flash": {

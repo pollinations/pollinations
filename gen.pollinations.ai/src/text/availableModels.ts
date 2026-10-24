@@ -357,6 +357,11 @@ const models: ModelDefinition[] = [
         transform: createReasoningEffortTransform("toggle"),
     },
     {
+        name: "qwen/qwen3.7-plus:alibaba",
+        config: portkeyConfig["qwen3.7-plus-alibaba"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "qwen/qwen3.7-max",
         config: portkeyConfig["qwen/qwen3.7-max"],
     },

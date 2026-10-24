@@ -177,6 +177,13 @@ export const portkeyConfig: PortkeyConfigMap = {
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "openai/gpt-6-luna-decisions",
+        defaultOptions: {
+            provider: {
+                only: ["openai"],
+                ignore: ["cloudflare"],
+                allow_fallbacks: false,
+            },
+        },
     }),
     "microsoft/microsoft-decision-1:vercel": () =>
         createVercelAIGatewayModelConfig({

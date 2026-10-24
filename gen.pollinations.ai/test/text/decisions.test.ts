@@ -47,6 +47,7 @@ const questions = {
 type UpstreamState = {
     requests: Record<string, unknown>[];
     response?: Response;
+    vercelResponse?: Response;
 };
 
 function createDecisionsMock() {
@@ -56,6 +57,7 @@ function createDecisionsMock() {
         reset: () => {
             state.requests = [];
             state.response = undefined;
+            state.vercelResponse = undefined;
         },
         handlerMap: {
             "decision.vllm-sr.ai": async (request: Request) => {
@@ -77,6 +79,7 @@ function createDecisionsMock() {
                     authorization: request.headers.get("authorization"),
                     body: await request.json(),
                 });
+                if (state.vercelResponse) return state.vercelResponse.clone();
                 return Response.json({
                     model: "liquid/d1",
                     answers,
@@ -440,7 +443,7 @@ test("routes Liquid D1 under its own id and bills input tokens", async ({
         provider: "Liquid AI",
     });
     expect(mocks.decisions.state.requests[0]).toMatchObject({
-        pathname: "/api/alpha/decisions",
+        pathname: "/typesafe/v1/systemone",
         body: { model: "liquid/d1" },
     });
     await wait();
@@ -450,28 +453,28 @@ test("routes Liquid D1 under its own id and bills input tokens", async ({
         eventType: "generate.text",
         responseStatus: 200,
         modelRequested: "liquid/d1",
-        modelProviderUsed: "openrouter",
+        modelProviderUsed: "vercel",
         tokenCountPromptText: 452,
-        tokenCountCompletionText: 73,
+        tokenCountCompletionText: 0,
         isBilledUsage: true,
     });
-    expect(event.totalCost).toBeCloseTo((452 * 0.02 * 1.055) / 1_000_000, 12);
+    expect(event.totalCost).toBeCloseTo((452 * 0.02) / 1_000_000, 12);
     const { tierBalance, packBalance } = await getUserBalance(
         drizzle(env.DB),
         userId,
     );
     expect(tierBalance).toBe(0);
-    expect(packBalance).toBeCloseTo(1 - (452 * 0.02 * 1.055) / 1_000_000, 7);
+    expect(packBalance).toBeCloseTo(1 - (452 * 0.02) / 1_000_000, 7);
 });
 
-test("falls back native D1 decisions and records Vercel cost with the public quote", async ({
+test("falls back native D1 decisions and records OpenRouter cost with the public quote", async ({
     mocks,
 }) => {
     const { key, userId } = await createTestApiKey({
         user: { tierBalance: 0, packBalance: 1 },
         allowedModels: ["liquid/d1"],
     });
-    mocks.decisions.state.response = Response.json(
+    mocks.decisions.state.vercelResponse = Response.json(
         { error: { message: "Upstream unavailable" } },
         { status: 503 },
     );
@@ -481,19 +484,19 @@ test("falls back native D1 decisions and records Vercel cost with the public quo
         questions,
     });
     expect(response.status).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe("liquid/d1:vercel");
+    expect(response.headers.get("x-model-used")).toBe("liquid/d1:openrouter");
     expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
     await expect(response.json()).resolves.toMatchObject({
         model: "liquid/d1",
         provider: "Liquid AI",
         answers,
-        usage: { input_tokens: 452, output_tokens: 0 },
+        usage: { input_tokens: 452, output_tokens: 73 },
     });
     await wait();
     expect(mocks.decisions.state.requests).toHaveLength(2);
     expect(mocks.decisions.state.requests[1]).toMatchObject({
-        pathname: "/typesafe/v1/systemone",
-        authorization: "Bearer vercel-test-key",
+        pathname: "/api/alpha/decisions",
+        authorization: "Bearer openrouter-test-key",
         body: { model: "liquid/d1" },
     });
     const events = mocks.tinybird.state.events;
@@ -501,16 +504,16 @@ test("falls back native D1 decisions and records Vercel cost with the public quo
     const billed = events.find((event) => event.isBilledUsage);
     expect(billed).toMatchObject({
         modelRequested: "liquid/d1",
-        modelUsed: "liquid/d1:vercel",
-        modelProviderUsed: "vercel",
+        modelUsed: "liquid/d1:openrouter",
+        modelProviderUsed: "openrouter",
         isFinal: true,
     });
-    expect(billed?.totalCost).toBeCloseTo((452 * 0.02) / 1_000_000, 12);
-    expect(billed?.totalPrice).toBeCloseTo((452 * 0.02 * 1.055) / 1_000_000, 8);
+    expect(billed?.totalCost).toBeCloseTo((452 * 0.02 * 1.055) / 1_000_000, 12);
+    expect(billed?.totalPrice).toBeCloseTo((452 * 0.02) / 1_000_000, 8);
     expect(events).toContainEqual(
         expect.objectContaining({
             modelUsed: "liquid/d1",
-            modelProviderUsed: "openrouter",
+            modelProviderUsed: "vercel",
             isBilledUsage: false,
             isFinal: false,
         }),

@@ -1928,23 +1928,25 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "liquid/d1": {
     "cost": {
       "completionTextTokens": 0,
-      "promptCachedTokens": 0.0000000211,
-      "promptTextTokens": 0.0000000211,
+      "promptCachedTokens": 0.00000002,
+      "promptTextTokens": 0.00000002,
     },
     "price": {
       "completionTextTokens": 0,
-      "promptCachedTokens": 0.0000000211,
-      "promptTextTokens": 0.0000000211,
+      "promptCachedTokens": 0.00000002,
+      "promptTextTokens": 0.00000002,
     },
   },
-  "liquid/d1:vercel": {
+  "liquid/d1:openrouter": {
     "cost": {
       "completionTextTokens": 0,
-      "promptTextTokens": 0.00000002,
+      "promptCachedTokens": 0.0000000211,
+      "promptTextTokens": 0.0000000211,
     },
     "price": {
       "completionTextTokens": 0,
-      "promptTextTokens": 0.00000002,
+      "promptCachedTokens": 0.0000000211,
+      "promptTextTokens": 0.0000000211,
     },
   },
   "lykon/dreamshaper-8-lcm": {

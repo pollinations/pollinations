@@ -126,18 +126,28 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "perplexity/pplx-decider-v1.2",
     }),
-    "liquid-d1": () => ({
-        provider: "openrouter",
-        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
-        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
-        model: "liquid/d1",
-    }),
-    "liquid/d1:vercel": () =>
+    "liquid-d1": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
             model: "liquid/d1",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["liquid"] } },
+            },
         }),
+    "liquid/d1:openrouter": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "liquid/d1",
+        defaultOptions: {
+            provider: {
+                only: ["liquid"],
+                ignore: ["cloudflare"],
+                allow_fallbacks: false,
+            },
+        },
+    }),
     "gpt-6-luna-decisions": () => ({
         provider: "openai",
         directEndpoint: "https://api.openai.com/v1/decisions",

@@ -34,12 +34,13 @@ export const TEXT_FALLBACKS = {
         },
     },
     "liquid/d1": {
-        // Same Liquid backend; this covers gateway failures, not Liquid outages.
-        "liquid/d1:vercel": {
-            provider: "vercel",
-            // Vercel AI Gateway list price for the Liquid endpoint.
+        // Same Liquid backend; covers gateway failures, not Liquid outages.
+        "liquid/d1:openrouter": {
+            provider: "openrouter",
+            priceMultiplier: 1,
             cost: {
-                promptTextTokens: perMillion(0.02),
+                promptTextTokens: perMillion(0.02) * 1.055,
+                promptCachedTokens: perMillion(0.02) * 1.055,
                 completionTextTokens: perMillion(0),
             },
         },

@@ -103,6 +103,17 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "openai/gpt-4o-mini": {
+        "openai/gpt-4o-mini:openrouter:openai": {
+            provider: "openrouter",
+            priceMultiplier: 1,
+            cost: {
+                promptTextTokens: perMillion(0.15) * 1.055,
+                promptCachedTokens: perMillion(0.075) * 1.055,
+                completionTextTokens: perMillion(0.6) * 1.055,
+            },
+        },
+    },
     "inclusionai/ling-3.1-flash": {
         "inclusionai/ling-3.1-flash:vercel:novita": {
             provider: "vercel",

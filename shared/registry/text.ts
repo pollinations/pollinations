@@ -1376,8 +1376,9 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Crusoe BF16 at Novita's former rate; verified 2026-10-22.
+            // OpenRouter Crusoe BF16; cached input uses the full input rate (2026-10-24).
             promptTextTokens: perMillion(0.14) * 1.055,
+            promptCachedTokens: perMillion(0.14) * 1.055,
             promptImageTokens: perMillion(0.14) * 1.055,
             completionTextTokens: perMillion(0.4) * 1.055,
         },
@@ -1442,10 +1443,11 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 0.75,
         paidOnly: false,
         // Azure Global Standard meters "Grok 4.2 Inp/Outp glbl" ($1.25 / $2.50
-        // per 1M, effective 2026-05-01), the same rates as grok-4.3.
+        // per 1M, effective 2026-05-01). Azure has no Grok 4.2 cached meter:
+        // cached tokens bill on the input meter.
         cost: {
             promptTextTokens: perMillion(1.25),
-            promptCachedTokens: perMillion(0.2),
+            promptCachedTokens: perMillion(1.25),
             promptImageTokens: perMillion(1.25),
             completionTextTokens: perMillion(2.5),
         },
@@ -1896,14 +1898,18 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         cost: {
             // Direct OpenAI Decisions: $0.10/M input through 272K tokens.
-            // Output and cache are free; the long-context tier is below.
+            // Output is free; cache reads and writes are subsets of input.
             promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.01),
+            promptCacheWriteTokens: perMillion(0.125),
             completionTextTokens: perMillion(0),
         },
         ...defineCostVariants(
             {
                 long_context: {
                     promptTextTokens: perMillion(0.2),
+                    promptCachedTokens: perMillion(0.02),
+                    promptCacheWriteTokens: perMillion(0.25),
                     completionTextTokens: perMillion(0),
                 },
             },
@@ -2991,7 +2997,7 @@ const TEXT_BASE_SERVICES = {
             promptVideoTokens: perMillion(2.0),
             completionTextTokens: perMillion(12.0),
         },
-        // Vertex reprices the whole request from 200K prompt tokens; its single
+        // Vertex reprices the whole request above 200K prompt tokens; its single
         // input price covers text, image, audio and video.
         ...defineCostVariants(
             {
@@ -3005,23 +3011,23 @@ const TEXT_BASE_SERVICES = {
                     completionTextTokens: perMillion(18.0),
                 },
             },
-            longContextAtLeast(200_000),
+            longContextAbove(200_000),
             {
                 long_context: {
-                    label: "Long context (200K+)",
+                    label: "Long context (>200K)",
                     description:
-                        "At least 200,000 prompt tokens; text, cached, cache-write, image, audio, video, and output rates increase.",
+                        "More than 200,000 prompt tokens; text, cached, cache-write, image, audio, video, and output rates increase.",
                 },
             },
-            "<200K context",
+            "≤200K context",
             [
                 {
                     "key": "context",
                     "label": "Context",
                     "unit": "tokens",
                     "values": {
-                        "": "<200K",
-                        "long_context": "≥200K",
+                        "": "≤200K",
+                        "long_context": ">200K",
                     },
                 },
             ],
@@ -3546,11 +3552,14 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-06-12").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter triples all token rates from 256K prompt tokens.
+        // OpenRouter triples all token rates from 256K prompt tokens. It
+        // folds image tokens into prompt tokens; the direct Alibaba fallback
+        // reports them separately at the same rate.
         cost: {
             promptTextTokens: perMillion(0.32) * 1.055,
             promptCachedTokens: perMillion(0.064) * 1.055,
             promptCacheWriteTokens: perMillion(0.4) * 1.055,
+            promptImageTokens: perMillion(0.32) * 1.055,
             completionTextTokens: perMillion(1.28) * 1.055,
         },
         ...defineCostVariants(
@@ -3559,6 +3568,7 @@ const TEXT_BASE_SERVICES = {
                     promptTextTokens: perMillion(0.96) * 1.055,
                     promptCachedTokens: perMillion(0.192) * 1.055,
                     promptCacheWriteTokens: perMillion(1.2) * 1.055,
+                    promptImageTokens: perMillion(0.96) * 1.055,
                     completionTextTokens: perMillion(3.84) * 1.055,
                 },
             },
@@ -4024,11 +4034,11 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1, // Billed at cost, no margin.
         cost: {
-            // OpenRouter stepfun/step-5-preview posted rates (2026-10-08):
-            // prompt $1.00/M, cache read $0.05/M, completion $2.70/M, plus
+            // OpenRouter stepfun/fp8 endpoint rates (2026-10-24): prompt
+            // $1.00/M, cache read $0.10/M, completion $2.70/M, plus
             // OpenRouter's 5.5% credit fee.
             promptTextTokens: perMillion(1) * 1.055,
-            promptCachedTokens: perMillion(0.05) * 1.055,
+            promptCachedTokens: perMillion(0.1) * 1.055,
             completionTextTokens: perMillion(2.7) * 1.055,
         },
         title: "StepFun Step 5 Preview",

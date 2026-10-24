@@ -1861,8 +1861,8 @@ export async function generateMusic(
 
 /**
  * Calls ElevenLabs Sound Effects (text -> sound effect) via /v1/sound-generation.
- * Billed per second of output audio (see registry
- * `elevenlabs/eleven-text-to-sound-v2` cost block).
+ * Billed per metered second (see registry `elevenlabs/eleven-text-to-sound-v2`
+ * cost block).
  */
 export async function generateSoundEffect(opts: {
     prompt: string;
@@ -1889,9 +1889,8 @@ export async function generateSoundEffect(opts: {
                 "Sound effects service is not configured (missing API key)",
         });
     }
-    // SFX always returns 128 kbps MP3. The per-second price is derived from the
-    // MP3 byte rate, so honoring other formats would need per-format billing
-    // math — reject instead of silently downgrading (default "mp3" passes).
+    // SFX always returns 128 kbps MP3; reject other formats instead of silently
+    // downgrading (default "mp3" passes).
     if (responseFormat && responseFormat !== "mp3") {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message: `elevenlabs/eleven-text-to-sound-v2 only supports mp3 output; response_format=${responseFormat} is not available.`,
@@ -1922,19 +1921,19 @@ export async function generateSoundEffect(opts: {
     const response = await ensureUpstreamOk(rawResponse, elevenLabsUrl);
 
     const contentType = response.headers.get("content-type") || "audio/mpeg";
+    // Bill ElevenLabs' character-cost meter: 12 credits per second, and a flat
+    // 60 credits when the caller sets no duration, whatever length it returns.
+    const meteredSeconds = getElevenLabsMeteredInputSeconds(response, log);
     const audioBuffer = await response.arrayBuffer();
-    // ElevenLabs Sound Effects returns 128 kbps CBR MP3 (= 16 kB/s, ffprobe-verified).
-    const SFX_MP3_BYTES_PER_SECOND = 16000;
-    const estimatedDuration = audioBuffer.byteLength / SFX_MP3_BYTES_PER_SECOND;
 
     const usageHeaders = buildUsageHeaders(
         "elevenlabs/eleven-text-to-sound-v2",
-        createCompletionAudioSecondsUsage(estimatedDuration),
+        createCompletionAudioSecondsUsage(meteredSeconds),
     );
 
-    log.info("Sound effect success: {bytes} bytes, ~{duration}s", {
+    log.info("Sound effect success: {bytes} bytes, {duration}s metered", {
         bytes: audioBuffer.byteLength,
-        duration: Math.round(estimatedDuration),
+        duration: meteredSeconds,
     });
 
     return new Response(audioBuffer, {

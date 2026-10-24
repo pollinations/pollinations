@@ -263,6 +263,20 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins gpt-5.4 recovery to exact OpenAI Standard", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5.4:openai",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("gpt-5.4-2026-03-05");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
+            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
+        });
+    });
+
     it("pins Nex N2.5 Pro to Nex AGI on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "nex-agi/nex-n2.5-pro",
@@ -395,20 +409,6 @@ describe("resolveModelConfig", () => {
             expect(fallback.options.max_tokens).toBe(128000);
         },
     );
-
-    it("pins gpt-5.4 recovery to exact OpenAI Standard", () => {
-        const resolved = resolveModelConfig(messages, {
-            model: "openai/gpt-5.4:openai",
-            service_tier: "priority",
-        });
-        expect(resolved.options.model).toBe("gpt-5.4-2026-03-05");
-        expect(resolved.options.service_tier).toBe("default");
-        expect(resolved.options.modelConfig).toMatchObject({
-            directEndpoint: "https://api.openai.com/v1/chat/completions",
-            supportsMaxCompletionTokens: true,
-            supportsStreamOptions: true,
-        });
-    });
 
     it("pins Jev's exact Vercel version, long context, and OpenRouter backup", () => {
         const primary = resolveModelConfig(messages, {

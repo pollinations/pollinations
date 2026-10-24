@@ -58,20 +58,6 @@ function authorizedTarget(
 }
 
 describe("direct Responses transport", () => {
-    it("keeps gpt-6-astra recovery on Standard in native Responses", () => {
-        const input = request({
-            model: "openai/gpt-6-astra:openai",
-            service_tier: "priority",
-        });
-        const target = resolveDirectResponsesTarget(input.model, input);
-        if (!target) throw new Error("expected direct OpenAI target");
-        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
-        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
-            model: "gpt-6-astra",
-            service_tier: "default",
-            store: false,
-        });
-    });
     it("keeps GPT-4o Mini on its quoted Standard tier for native Responses", () => {
         const input = request({
             model: "openai/gpt-4o-mini",
@@ -98,6 +84,21 @@ describe("direct Responses transport", () => {
             allow_fallbacks: false,
         });
     });
+    it("keeps gpt-6-astra recovery on Standard in native Responses", () => {
+        const input = request({
+            model: "openai/gpt-6-astra:openai",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct OpenAI target");
+        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
+            model: "gpt-6-astra",
+            service_tier: "default",
+            store: false,
+        });
+    });
+
     it("rejects invalid image URLs on Nex Mini before calling the provider", async () => {
         const directRequest = request({
             model: "nex-agi/nex-n2.5-mini",

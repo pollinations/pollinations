@@ -3599,6 +3599,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen/qwen3-vl-30b-a3b-instruct": {
     "cost": {
+      "completionTextTokens": 0.0000006,
+      "promptTextTokens": 0.00000015,
+    },
+    "price": {
+      "completionTextTokens": 0.0000006,
+      "promptTextTokens": 0.00000015,
+    },
+  },
+  "qwen/qwen3-vl-30b-a3b-instruct:openrouter:deepinfra": {
+    "cost": {
       "completionTextTokens": 0.000000633,
       "promptTextTokens": 0.00000015825,
     },

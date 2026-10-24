@@ -421,6 +421,11 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
+        name: "qwen/qwen3-vl-30b-a3b-instruct:openrouter:deepinfra",
+        config: portkeyConfig["qwen3-vl-30b-openrouter"],
+        transform: stripReasoning,
+    },
+    {
         name: "qwen/qwen3-vl-235b-a22b-thinking",
         config: portkeyConfig["qwen3-vl-235b-a22b-thinking"],
         // Alibaba thinking-only model; strip "none" to preserve always-on reasoning.

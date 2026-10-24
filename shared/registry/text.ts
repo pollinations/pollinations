@@ -3957,15 +3957,15 @@ const TEXT_BASE_SERVICES = {
             "qwen-vl",
             "qwen-vision",
         ],
-        provider: "openrouter",
+        provider: "deepinfra",
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-03-22").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.15) * 1.055,
-            completionTextTokens: perMillion(0.6) * 1.055,
+            promptTextTokens: perMillion(0.15),
+            completionTextTokens: perMillion(0.6),
         },
         title: "Qwen3 VL 30B A3B Instruct",
         description:

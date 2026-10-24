@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuthResult } from "../../src/image/createAndReturnImages.ts";
 import { syncImageEnv } from "../../src/image/env.ts";
 import { callAzureMaiImage } from "../../src/image/models/azureMaiImageModel.ts";
+import { callMaiVercelImage } from "../../src/image/models/maiVercelModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
 const GENERATIONS_ENDPOINT =
@@ -46,8 +47,11 @@ beforeEach(() => {
     // the provider call alone, so Content Safety stays unconfigured.
     vi.stubEnv("AZURE_CONTENT_SAFETY_ENDPOINT", "");
     syncImageEnv(
-        { AZURE_MYCELI_PROD_API_KEY: "test-azure-key" } as CloudflareBindings,
-        ["AZURE_MYCELI_PROD_API_KEY"],
+        {
+            AZURE_MYCELI_PROD_API_KEY: "test-azure-key",
+            AI_GATEWAY_API_KEY: "test-gateway-key",
+        } as CloudflareBindings,
+        ["AZURE_MYCELI_PROD_API_KEY", "AI_GATEWAY_API_KEY"],
     );
 });
 
@@ -307,5 +311,127 @@ describe("callAzureMaiImage", () => {
             status: 502,
             message: expect.stringContaining("billing"),
         });
+    });
+});
+
+describe("MAI Image 2.6 Vercel fallback", () => {
+    const response = {
+        images: [OUTPUT_IMAGE.toString("base64")],
+        usage: { inputTokens: 5120, outputTokens: 1024, totalTokens: 6144 },
+        providerMetadata: {
+            azure: { images: [{ textTokens: 0, imageTokens: 5120 }] },
+            gateway: { cost: "0.079872" },
+        },
+    };
+
+    it.each([1024, 1536])(
+        "preserves %i generation dimensions and the Azure-only pin",
+        async (size) => {
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (url, init) => {
+                    expect(url.toString()).toBe(
+                        "https://ai-gateway.vercel.sh/v4/ai/image-model",
+                    );
+                    expect(new Headers(init?.headers).get("ai-model-id")).toBe(
+                        "microsoft/mai-image-2.6",
+                    );
+                    const body = JSON.parse(init?.body as string);
+                    expect(body).toMatchObject({
+                        size: `${size}x${size}`,
+                        n: 1,
+                        providerOptions: { gateway: { only: ["azure"] } },
+                    });
+                    expect(body).not.toHaveProperty("seed");
+                    return Response.json({
+                        ...response,
+                        usage: { inputTokens: 10, outputTokens: 1024 },
+                        providerMetadata: {
+                            azure: {
+                                images: [{ textTokens: 10, imageTokens: 0 }],
+                            },
+                            gateway: { cost: "0.038962" },
+                        },
+                    });
+                },
+            );
+            const result = await callMaiVercelImage(
+                "a circle",
+                {
+                    ...baseParams,
+                    model: "microsoft/mai-image-2.6:vercel",
+                    width: size,
+                    height: size,
+                },
+                USER_INFO,
+            );
+            expect(result.trackingData).toEqual({
+                actualModel: "microsoft/mai-image-2.6:vercel",
+                usage: {
+                    promptTextTokens: 10,
+                    promptImageTokens: 0,
+                    completionImageTokens: 1024,
+                },
+                providerBilling: { units: 0.038962, unitCost: 1 },
+            });
+        },
+    );
+
+    it("sends all five references without edit dimensions and retains modality usage", async () => {
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            if (url.toString() === INPUT_IMAGE_URL)
+                return new Response(INPUT_IMAGE, {
+                    headers: { "Content-Type": "image/png" },
+                });
+            const body = JSON.parse(init?.body as string);
+            expect(body.files).toEqual(
+                Array.from({ length: 5 }, () => ({
+                    type: "file",
+                    data: INPUT_IMAGE.toString("base64"),
+                    mediaType: "image/png",
+                })),
+            );
+            expect(body).not.toHaveProperty("size");
+            return Response.json(response);
+        });
+        const result = await callMaiVercelImage(
+            "make it blue",
+            {
+                ...baseParams,
+                model: "microsoft/mai-image-2.6:vercel",
+                image: Array(5).fill(INPUT_IMAGE_URL),
+            },
+            USER_INFO,
+        );
+        expect(result.buffer).toEqual(OUTPUT_IMAGE);
+        expect(result.trackingData).toEqual({
+            actualModel: "microsoft/mai-image-2.6:vercel",
+            usage: {
+                promptTextTokens: 0,
+                promptImageTokens: 5120,
+                completionImageTokens: 1024,
+            },
+            providerBilling: { units: 0.079872, unitCost: 1 },
+        });
+    });
+
+    it.each([
+        { ...response, providerMetadata: { gateway: { cost: "0.079872" } } },
+        {
+            ...response,
+            providerMetadata: {
+                ...response.providerMetadata,
+                gateway: { cost: "invalid" },
+            },
+        },
+        { ...response, usage: { outputTokens: 0 } },
+    ])("rejects missing or invalid billing metadata", async (invalid) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(invalid));
+        await expect(
+            callMaiVercelImage(
+                "a circle",
+                { ...baseParams, model: "microsoft/mai-image-2.6:vercel" },
+                USER_INFO,
+            ),
+        ).rejects.toMatchObject({ status: 502 });
     });
 });

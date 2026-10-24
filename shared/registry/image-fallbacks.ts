@@ -9,6 +9,13 @@ import { perMillion } from "./price-helpers";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
+    "microsoft/mai-image-2.6": {
+        "microsoft/mai-image-2.6:vercel": {
+            provider: "vercel",
+            // Same 5/8/38 per-million token costs; callers retain Azure × 0.75.
+            priceMultiplier: 1,
+        },
+    },
     "alibaba/wan-2.7-image": {
         "alibaba/wan-2.7-image:replicate": { provider: "replicate" },
     },

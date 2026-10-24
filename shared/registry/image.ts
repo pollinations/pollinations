@@ -1934,6 +1934,51 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 15,
         defaultDuration: 5,
     },
+    "black-forest-labs/flux-3-max": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Black Forest Labs",
+        category: "video",
+        addedDate: new Date("2026-10-20").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // fal.ai FLUX 3 Max list per-second rates, effective after the
+        // 75%-off promotion ended on 2026-11-07. fal's page lists no separate
+        // audio rate.
+        cost: { completionVideoSeconds: 0.17 },
+        ...defineCostVariants(
+            {
+                "1080p": { completionVideoSeconds: 0.29 },
+            },
+            matchResolution("1080p"),
+            {
+                "1080p": {
+                    label: "1080p",
+                    description:
+                        "Applies when the requested video resolution is 1080p.",
+                },
+            },
+            "720p",
+            [
+                {
+                    key: "resolution",
+                    label: "Resolution",
+                    values: { "": "720p", "1080p": "1080p" },
+                },
+            ],
+        ),
+        resolutions: ["720p", "1080p"],
+        title: "FLUX 3 Max",
+        description:
+            "Fast video from text or start and end frames with optional synchronized audio at 720p or 1080p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+        minDuration: 5,
+        maxDuration: 20,
+        defaultDuration: 5,
+    },
     "heygen/heygen-video-1": {
         aliases: [],
         provider: "openrouter",

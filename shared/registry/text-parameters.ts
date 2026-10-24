@@ -295,11 +295,6 @@ export const CHAT_PARAMETERS = {
         "repetition_penalty",
         "seed",
     ],
-    openRouterMinimax27FirstParty: [
-        ...TOOL_CHAT,
-        ...SAMPLING,
-        ...OPENROUTER_REASONING,
-    ],
     openRouterMuseGlimmer: [
         ...SAMPLED_CHAT,
         ...PENALTIES,
@@ -503,12 +498,6 @@ export const CHAT_PARAMETERS = {
         "top_k",
         "repetition_penalty",
         "seed",
-        "reasoning_effort",
-    ],
-    qwen38Reka: [
-        ...EXTENDED_CHAT,
-        ...OPENROUTER_REASONING,
-        "structured_outputs",
         "reasoning_effort",
     ],
     qwen38Max: [...EXTENDED_CHAT, ...OPENROUTER_REASONING, "reasoning_effort"],

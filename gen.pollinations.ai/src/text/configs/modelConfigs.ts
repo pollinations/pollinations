@@ -98,6 +98,13 @@ export const portkeyConfig: PortkeyConfigMap = {
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "respan/span-01-lite",
+        defaultOptions: {
+            provider: {
+                "only": ["respan"],
+                "ignore": ["cloudflare"],
+                "allow_fallbacks": false,
+            },
+        },
     }),
     // Both gateways preserve the native TypeSafe Decisions protocol.
     "jev-1.13": () =>
@@ -130,18 +137,28 @@ export const portkeyConfig: PortkeyConfigMap = {
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "jaredpalmer/kev-4b",
+        defaultOptions: {
+            provider: {
+                "only": ["siliconflow/fp8"],
+                "ignore": ["cloudflare"],
+                "allow_fallbacks": false,
+            },
+        },
     }),
     "pplx-decider-v1.2": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
             model: "perplexity/pplx-decider-v1.2",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["perplexity"] } },
+            },
         }),
-    "perplexity/pplx-decider-v1.2:openrouter": () => ({
-        provider: "openrouter",
-        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
-        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
-        model: "perplexity/pplx-decider-v1.2",
+    "perplexity/pplx-decider-v1.2:perplexity": () => ({
+        provider: "openai",
+        directEndpoint: "https://api.perplexity.ai/v1/decisions",
+        authKey: textEnvironmentValue("PERPLEXITY_API_KEY"),
+        model: "pplx-decider-v1.2",
     }),
     "liquid-d1": () =>
         createVercelAIGatewayModelConfig({
@@ -446,10 +463,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "minimax/minimax-m2.7",
         "novita/fp8",
     ),
-    "minimax-m2.7-openrouter-minimax": createPinnedOpenRouterConfig(
-        "minimax/minimax-m2.7",
-        "minimax/fp8",
-    ),
     "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
     "xiaomi/mimo-v2.6-flash": () =>
         createNovitaModelConfig({ model: "xiaomimimo/mimo-v2.6-flash" }),
@@ -557,11 +570,6 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    "qwen3.8-27b-openrouter-reka": createPinnedOpenRouterConfig(
-        "qwen/qwen3.8-27b",
-        "reka/fp8",
-        64000,
-    ),
     "qwen/qwen3.8-max": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.8-max",
@@ -797,10 +805,17 @@ export const portkeyConfig: PortkeyConfigMap = {
         "x-ai/grok-4.20",
         "xai/zdr",
     ),
-    "grok-large-openrouter-xai-zdr": createPinnedOpenRouterConfig(
-        "x-ai/grok-4.3",
-        "xai/zdr",
-    ),
+    "grok-large-openrouter-xai-zdr": () =>
+        createOpenRouterModelConfig({
+            model: "x-ai/grok-4.3",
+            defaultOptions: {
+                provider: {
+                    only: ["xai/zdr"],
+                    ignore: ["xai/zdr/priority", "cloudflare"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "claude-fast-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-haiku-4.5",
         "google-vertex/global",
@@ -1046,6 +1061,11 @@ export const portkeyConfig: PortkeyConfigMap = {
     "claude-sonnet-4-6": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-sonnet-4-6",
+            defaultOptions: { max_tokens: 64000 },
+        }),
+    "anthropic/claude-sonnet-4.6:anthropic": () =>
+        createAnthropicConfig({
+            model: "claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
         }),
     "anthropic/claude-sonnet-5.5": () =>

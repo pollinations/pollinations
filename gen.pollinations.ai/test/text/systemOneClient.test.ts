@@ -69,6 +69,48 @@ afterEach(() => {
 });
 
 describe("System One adapter", () => {
+    it("forwards respan/span-01-lite's provider pin on the native wire", async () => {
+        const config = findModelByName("respan/span-01-lite")?.config();
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (_input, init) => {
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    provider: {
+                        "only": ["respan"],
+                        "ignore": ["cloudflare"],
+                        "allow_fallbacks": false,
+                    },
+                    model: "respan/span-01-lite",
+                });
+                return Response.json({
+                    model: "respan/span-01-lite",
+                    answers,
+                    usage: { input_tokens: 44, output_tokens: 1 },
+                });
+            });
+        await callSystemOne(
+            [
+                {
+                    role: "user",
+                    content: JSON.stringify({
+                        state: nativeState,
+                        questions: {
+                            urgent: {
+                                type: "noul",
+                                instructions: "Is this urgent?",
+                            },
+                        },
+                    }),
+                },
+            ],
+            {
+                modelConfig: { ...config, authKey: "test-key" },
+                provider: { only: ["cloudflare"] },
+            },
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
     it.each(["typesafe/jev-1.13", "typesafe/jev-1.13:openrouter:typesafe"])(
         "forwards Jev route pins without changing native question shapes: %s",
         async (model) => {
@@ -106,6 +148,34 @@ describe("System One adapter", () => {
             });
         },
     );
+
+    it.each([
+        "perplexity/pplx-decider-v1.2",
+        "perplexity/pplx-decider-v1.2:perplexity",
+    ])("uses the native PPLX route config for %s", async (model) => {
+        const config = findModelByName(model)?.config();
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (url, init) => {
+                expect(String(url)).toBe(config?.directEndpoint);
+                expect(JSON.parse(String(init?.body))).toEqual({
+                    ...(config?.defaultOptions as Record<string, unknown>),
+                    state: nativeState,
+                    questions: nativeQuestions,
+                    model: config?.model,
+                });
+                return Response.json({
+                    model: config?.model,
+                    answers,
+                    usage: { input_tokens: 95, output_tokens: 3 },
+                });
+            });
+        await callSystemOne([{ role: "user", content: nativeContent }], {
+            modelConfig: { ...config, authKey: "test-key" },
+            providerOptions: { gateway: { only: ["cloudflare"] } },
+        });
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
 
     it("rejects D3 question counts above its local limit before calling upstream", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
@@ -708,6 +778,32 @@ describe("System One adapter", () => {
             },
             vi.fn(),
         );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("forwards jaredpalmer/kev-4b's provider pin on the native wire", async () => {
+        const config = findModelByName("jaredpalmer/kev-4b")?.config();
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (_input, init) => {
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    provider: {
+                        "only": ["siliconflow/fp8"],
+                        "ignore": ["cloudflare"],
+                        "allow_fallbacks": false,
+                    },
+                    model: "jaredpalmer/kev-4b",
+                });
+                return Response.json({
+                    model: "jaredpalmer/kev-4b",
+                    answers,
+                    usage: { input_tokens: 44, output_tokens: 1 },
+                });
+            });
+        await callSystemOne([{ role: "user", content: nativeContent }], {
+            modelConfig: { ...config, authKey: "test-key" },
+            provider: { only: ["cloudflare"] },
+        });
         expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 

@@ -25,13 +25,9 @@ export const TEXT_FALLBACKS = {
     },
     "perplexity/pplx-decider-v1.2": {
         // Same Perplexity backend; covers gateway failures, not Perplexity outages.
-        "perplexity/pplx-decider-v1.2:openrouter": {
-            provider: "openrouter",
-            // OpenRouter list price plus its 5.5% credit fee.
-            cost: {
-                promptTextTokens: perMillion(0.02) * 1.055,
-                completionTextTokens: perMillion(0),
-            },
+        "perplexity/pplx-decider-v1.2:perplexity": {
+            provider: "perplexity",
+            priceMultiplier: 1,
         },
     },
     "liquid/d1": {
@@ -102,6 +98,13 @@ export const TEXT_FALLBACKS = {
                 promptCachedTokens: perMillion(0.1),
                 completionTextTokens: perMillion(2.7),
             },
+        },
+    },
+    "anthropic/claude-sonnet-4.6": {
+        // Anthropic's global rates equal the Bedrock global sheet (2026-10-24).
+        "anthropic/claude-sonnet-4.6:anthropic": {
+            provider: "anthropic",
+            addedDate: new Date("2026-10-24").getTime(),
         },
     },
     "stepfun/step-3.7-flash": {
@@ -336,20 +339,6 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
-    "minimax/minimax-m2.7": {
-        "minimax/minimax-m2.7:openrouter:minimax": {
-            supportedParameters: CHAT_PARAMETERS.openRouterMinimax27FirstParty,
-            provider: "openrouter",
-            addedDate: new Date("2026-09-23").getTime(),
-            cost: {
-                // OpenRouter MiniMax first-party FP8 rates (2026-09-23),
-                // including the account's 5.5% credit-purchase fee.
-                promptTextTokens: perMillion(0.3) * 1.055,
-                promptCachedTokens: perMillion(0.06) * 1.055,
-                completionTextTokens: perMillion(1.2) * 1.055,
-            },
-        },
-    },
     "minimax/minimax-m3": {
         "minimax/minimax-m3:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
@@ -371,23 +360,6 @@ export const TEXT_FALLBACKS = {
                 promptTextTokens: perMillion(2),
                 promptCachedTokens: perMillion(0.2),
                 completionTextTokens: perMillion(6),
-            },
-        },
-    },
-    "qwen/qwen3.8-27b": {
-        "qwen/qwen3.8-27b:openrouter:reka-fp8": {
-            supportedParameters: CHAT_PARAMETERS.qwen38Reka,
-            provider: "openrouter",
-            addedDate: new Date("2026-10-13").getTime(),
-            cost: {
-                // OpenRouter Reka FP8 rates (2026-10-13), including the
-                // account's 5.5% credit-purchase fee. OpenRouter publishes one
-                // prompt rate and no separate image/video rates.
-                promptTextTokens: perMillion(0.04) * 1.055,
-                promptCachedTokens: perMillion(0.02) * 1.055,
-                promptImageTokens: perMillion(0.04) * 1.055,
-                promptVideoTokens: perMillion(0.04) * 1.055,
-                completionTextTokens: perMillion(2.2) * 1.055,
             },
         },
     },
@@ -665,6 +637,7 @@ export const TEXT_FALLBACKS = {
         "x-ai/grok-4.3:openrouter:xai-zdr": {
             supportedParameters: CHAT_PARAMETERS.openRouterGrok43,
             provider: "openrouter",
+            priceMultiplier: 1,
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
                 promptTextTokens: perMillion(1.25) * 1.055,
@@ -672,6 +645,25 @@ export const TEXT_FALLBACKS = {
                 promptImageTokens: perMillion(1.25) * 1.055,
                 completionTextTokens: perMillion(2.5) * 1.055,
             },
+            ...defineCostVariants(
+                {
+                    long_context: {
+                        promptTextTokens: perMillion(2.5) * 1.055,
+                        promptCachedTokens: perMillion(0.4) * 1.055,
+                        promptImageTokens: perMillion(2.5) * 1.055,
+                        completionTextTokens: perMillion(5) * 1.055,
+                    },
+                },
+                longContextAtLeast(200_000),
+                {
+                    long_context: {
+                        label: "Long context (≥200K)",
+                        description:
+                            "OpenRouter xAI long-context pricing applies to the whole request.",
+                    },
+                },
+                "<200K context",
+            ),
         },
     },
     "anthropic/claude-haiku-4.5": {
@@ -696,6 +688,7 @@ export const TEXT_FALLBACKS = {
     },
     "anthropic/claude-opus-5.5": {
         "anthropic/claude-opus-5.5:aws": {
+            priceMultiplier: 1,
             provider: "aws",
             addedDate: new Date("2026-10-15").getTime(),
         },

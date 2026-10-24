@@ -390,11 +390,6 @@ const models: ModelDefinition[] = [
         transform: createReasoningEffortTransform("toggle"),
     },
     {
-        name: "qwen/qwen3.8-27b:openrouter:reka-fp8",
-        config: portkeyConfig["qwen3.8-27b-openrouter-reka"],
-        transform: createReasoningEffortTransform("toggle"),
-    },
-    {
         name: "qwen/qwen3.8-max",
         config: portkeyConfig["qwen3.8-max-alibaba"],
         transform: forcedToolWithoutReasoning,
@@ -629,6 +624,11 @@ const models: ModelDefinition[] = [
     {
         name: "anthropic/claude-sonnet-4.6",
         config: portkeyConfig["claude-sonnet-4-6"],
+        transform: pipe(claudeAdaptiveThinking, preferTemperature),
+    },
+    {
+        name: "anthropic/claude-sonnet-4.6:anthropic",
+        config: portkeyConfig["anthropic/claude-sonnet-4.6:anthropic"],
         transform: pipe(claudeAdaptiveThinking, preferTemperature),
     },
     {
@@ -904,8 +904,8 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
-        name: "perplexity/pplx-decider-v1.2:openrouter",
-        config: portkeyConfig["perplexity/pplx-decider-v1.2:openrouter"],
+        name: "perplexity/pplx-decider-v1.2:perplexity",
+        config: portkeyConfig["perplexity/pplx-decider-v1.2:perplexity"],
         useSystemOneApi: true,
     },
     {
@@ -1191,11 +1191,6 @@ const models: ModelDefinition[] = [
         name: "minimax/minimax-m2.7",
         config: portkeyConfig["minimax/minimax-m2.7"],
         // Reasoning mandatory: rejects "none"/"minimal", accepts low/medium/high.
-        transform: mandatoryReasoning,
-    },
-    {
-        name: "minimax/minimax-m2.7:openrouter:minimax",
-        config: portkeyConfig["minimax-m2.7-openrouter-minimax"],
         transform: mandatoryReasoning,
     },
     {

@@ -25,7 +25,6 @@ import {
 import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
 const OPENROUTER_ROUTES = [
-    ["qwen/qwen3.8-27b:openrouter:reka-fp8", "qwen/qwen3.8-27b", "reka/fp8"],
     [
         "anthropic/claude-opus-4.7:openrouter:vertex-global",
         "anthropic/claude-opus-4.7",
@@ -164,6 +163,33 @@ function expectInheritedRoute(
         ).toHaveProperty(usageType);
     }
 }
+
+describe("Qwen Image 3 backup pricing", () => {
+    it.each([
+        [2.25, 0.04],
+        [2.250001, 0.075],
+    ])(
+        "adds the OpenRouter fee once at %s megapixels",
+        (megapixels, outputRate) => {
+            const model = "qwen/qwen-image-3";
+            const billing = calculateUsageBilling({
+                model,
+                usage: { promptImageTokens: 2, completionImageTokens: 1 },
+                servedBy: IMAGE_SERVICES[`${model}:openrouter`],
+                quotedBy: IMAGE_SERVICES[model],
+                input: { megapixels },
+            });
+            expect(billing.cost.totalCost).toBeCloseTo(
+                (0.006 + outputRate) * 1.055,
+                12,
+            );
+            expect(billing.price.totalPrice).toBeCloseTo(
+                0.006 + outputRate,
+                12,
+            );
+        },
+    );
+});
 
 describe("static provider fallbacks", () => {
     it("keeps HY3 on its primary without a same-gateway fallback", () => {
@@ -365,6 +391,15 @@ describe("static provider fallbacks", () => {
         });
     });
 
+    it("keeps MiniMax M2.7 on its primary without a same-gateway fallback", () => {
+        expect(TEXT_SERVICES["minimax/minimax-m2.7"]).not.toHaveProperty(
+            "fallbacks",
+        );
+        expect(TEXT_SERVICES).not.toHaveProperty(
+            "minimax/minimax-m2.7:openrouter:minimax",
+        );
+    });
+
     it.each(["qwen/qwen3.7-flash", "qwen/qwen3.8-flash", "qwen/qwen3.8-max"])(
         "preserves direct Responses support for %s",
         (model) => {
@@ -473,6 +508,27 @@ describe("static provider fallbacks", () => {
         expect(options.seed).toBe(0);
         const unseeded = await route?.transform?.([], { temperature: 0.2 });
         expect(unseeded?.options).toEqual({ temperature: 0.2 });
+    });
+
+    it("tries Bedrock before direct Anthropic for Claude Sonnet 4.6", () => {
+        const model = "anthropic/claude-sonnet-4.6";
+        const primary: ModelDefinition = TEXT_SERVICES[model];
+        const fallback: ModelDefinition = TEXT_SERVICES[`${model}:anthropic`];
+        expect(primary.provider).toBe("aws");
+        expect(primary.fallbacks).toEqual([`${model}:anthropic`]);
+        expect(fallback).toMatchObject({
+            provider: "anthropic",
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        expect(fallback.cost).toEqual(primary.cost);
+        expect(findModelByName(`${model}:anthropic`)?.config()).toMatchObject({
+            provider: "anthropic",
+            model: "claude-sonnet-4-6",
+            defaultOptions: { max_tokens: 64000 },
+        });
+        expect(getVisibleTextModels()).not.toContain(`${model}:anthropic`);
     });
 
     it("keeps the Gemini quote while recording direct and OpenRouter costs", () => {
@@ -777,15 +833,15 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.00002, 12);
     });
 
-    it("charges Decider's Vercel price on its OpenRouter fallback", () => {
+    it("charges Decider's Vercel price on its direct Perplexity fallback", () => {
         const primary = TEXT_SERVICES["perplexity/pplx-decider-v1.2"];
         const fallback =
-            TEXT_SERVICES["perplexity/pplx-decider-v1.2:openrouter"];
+            TEXT_SERVICES["perplexity/pplx-decider-v1.2:perplexity"];
         expect(primary.fallbacks).toEqual([
-            "perplexity/pplx-decider-v1.2:openrouter",
+            "perplexity/pplx-decider-v1.2:perplexity",
         ]);
         expect(fallback).toMatchObject({
-            provider: "openrouter",
+            provider: "perplexity",
             paidOnly: true,
             hidden: true,
             fallbackOnly: true,
@@ -800,12 +856,12 @@ describe("static provider fallbacks", () => {
         });
         expect(
             findModelByName(
-                "perplexity/pplx-decider-v1.2:openrouter",
+                "perplexity/pplx-decider-v1.2:perplexity",
             )?.config(),
         ).toMatchObject({
-            model: "perplexity/pplx-decider-v1.2",
-            provider: "openrouter",
-            directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+            model: "pplx-decider-v1.2",
+            provider: "openai",
+            directEndpoint: "https://api.perplexity.ai/v1/decisions",
         });
         const billing = calculateUsageBilling({
             model: "perplexity/pplx-decider-v1.2",
@@ -813,7 +869,7 @@ describe("static provider fallbacks", () => {
             servedBy: fallback,
             quotedBy: primary,
         });
-        expect(billing.cost.totalCost).toBeCloseTo(0.0000211, 12);
+        expect(billing.cost.totalCost).toBeCloseTo(0.00002, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.00002, 12);
     });
 
@@ -864,6 +920,27 @@ describe("static provider fallbacks", () => {
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.00004431, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.0000315, 12);
+    });
+
+    it("keeps anthropic/claude-opus-5.5's public quote when its backup multiplier is 1", () => {
+        const model = "anthropic/claude-opus-5.5";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES["anthropic/claude-opus-5.5:aws"];
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 100,
+                promptCachedTokens: 20,
+                promptCacheWriteTokens: 10,
+                completionTextTokens: 30,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(fallback.priceMultiplier).toBe(1);
+        expect(primary.priceMultiplier).toBe(0.75);
+        expect(billed.cost.totalCost).toBeCloseTo(0.001054, 12);
+        expect(billed.price.totalPrice).toBe(0.0007905);
     });
 
     it("quotes OpenAI's context tiers while accounting for OpenRouter's flat fallback cost", () => {
@@ -1401,15 +1478,12 @@ describe("static provider fallbacks", () => {
             promptVideoTokens: (0.039 / 1_000_000) * 1.055,
             completionTextTokens: (1.25 / 1_000_000) * 1.055,
         });
-        expect(
-            TEXT_SERVICES["qwen/qwen3.8-27b:openrouter:reka-fp8"].cost,
-        ).toMatchObject({
-            promptTextTokens: (0.04 / 1_000_000) * 1.055,
-            promptCachedTokens: (0.02 / 1_000_000) * 1.055,
-            promptImageTokens: (0.04 / 1_000_000) * 1.055,
-            promptVideoTokens: (0.04 / 1_000_000) * 1.055,
-            completionTextTokens: (2.2 / 1_000_000) * 1.055,
-        });
+        expect(TEXT_SERVICES["qwen/qwen3.8-27b"]).not.toHaveProperty(
+            "fallbacks",
+        );
+        expect(TEXT_SERVICES).not.toHaveProperty(
+            "qwen/qwen3.8-27b:openrouter:reka-fp8",
+        );
         expect(
             TEXT_SERVICES[
                 "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16"
@@ -2036,6 +2110,33 @@ describe("static provider fallbacks", () => {
         }
     });
 });
+
+it.each([199999, 200000, 200001])(
+    "records Grok 4.3 backup's inclusive long-context cost at %s tokens, retaining the primary quote",
+    (total) => {
+        const model = "x-ai/grok-4.3";
+        const servedBy = TEXT_SERVICES[`${model}:openrouter:xai-zdr`];
+        expect(servedBy.priceMultiplier).toBe(1);
+        const usage = {
+            promptTextTokens: total - 1000,
+            promptImageTokens: 500,
+            promptCachedTokens: 500,
+            completionTextTokens: 10,
+        };
+        const billed = calculateUsageBilling({
+            model,
+            usage,
+            servedBy,
+            quotedBy: TEXT_SERVICES[model],
+        });
+        const base = ((total - 500) * 1.25 + 500 * 0.2 + 10 * 2.5) / 1e6;
+        expect(billed.cost.totalCost).toBeCloseTo(
+            base * 1.055 * (total >= 200000 ? 2 : 1),
+            12,
+        );
+        expect(billed.price.totalPrice).toBeCloseTo(base * 0.75, 8);
+    },
+);
 
 it.each([272000, 272001])(
     "prices Luna Decisions cache categories without double counting at %s input tokens",

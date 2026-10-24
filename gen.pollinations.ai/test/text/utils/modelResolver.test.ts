@@ -56,6 +56,20 @@ describe("resolveModelConfig", () => {
         }
     });
 
+    it("keeps jaredpalmer/kev-4b's native provider pin", () => {
+        const result = resolveModelConfig(messages, {
+            model: "jaredpalmer/kev-4b",
+            provider: { only: ["cloudflare"] },
+        });
+        expect(result.options.modelConfig?.defaultOptions).toMatchObject({
+            provider: {
+                "only": ["siliconflow/fp8"],
+                "ignore": ["cloudflare"],
+                "allow_fallbacks": false,
+            },
+        });
+    });
+
     it("preserves Glyph reasoning flags when mapping reasoning_effort", async () => {
         const resolved = resolveModelConfig(messages, {
             model: "stealth/glyph-cluster",
@@ -76,6 +90,20 @@ describe("resolveModelConfig", () => {
             gateway: { only: ["stealth"] },
         });
     });
+    it("keeps respan/span-01-lite's native provider pin", () => {
+        const result = resolveModelConfig(messages, {
+            model: "respan/span-01-lite",
+            provider: { only: ["cloudflare"] },
+        });
+        expect(result.options.modelConfig?.defaultOptions).toMatchObject({
+            provider: {
+                "only": ["respan"],
+                "ignore": ["cloudflare"],
+                "allow_fallbacks": false,
+            },
+        });
+    });
+
     it("sets Anthropic max_tokens defaults", () => {
         expect(
             resolveModelConfig(messages, {
@@ -100,6 +128,23 @@ describe("resolveModelConfig", () => {
                 model: "anthropic/claude-fable-5.1",
             }).options.max_tokens,
         ).toBe(128000);
+    });
+
+    it("pins PPLX Decider's Vercel route and resolves its direct backup", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "perplexity/pplx-decider-v1.2",
+        });
+        expect(primary.options.modelConfig?.defaultOptions).toEqual({
+            providerOptions: { gateway: { only: ["perplexity"] } },
+        });
+        const backup = resolveModelConfig(messages, {
+            model: "perplexity/pplx-decider-v1.2:perplexity",
+        });
+        expect(backup.options.modelConfig).toMatchObject({
+            model: "pplx-decider-v1.2",
+            directEndpoint: "https://api.perplexity.ai/v1/decisions",
+        });
+        expect(backup.options.modelConfig?.defaultOptions).toBeUndefined();
     });
 
     it("lets callers override Anthropic max_tokens", () => {
@@ -791,6 +836,9 @@ describe("resolveModelConfig", () => {
     });
 
     it("pins Qwen3.8 27B to Chutes on OpenRouter without fallback", () => {
+        expect(
+            findModelByName("qwen/qwen3.8-27b:openrouter:reka-fp8"),
+        ).toBeNull();
         const result = resolveModelConfig(messages, {
             model: "qwen3.8-27b",
         });
@@ -1034,11 +1082,6 @@ describe("resolveModelConfig", () => {
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
         ["minimax-m2.7", "minimax/minimax-m2.7", "novita/fp8"],
-        [
-            "minimax/minimax-m2.7:openrouter:minimax",
-            "minimax/minimax-m2.7",
-            "minimax/fp8",
-        ],
     ])(
         "pins %s to %s through %s without fallback",
         (model, route, provider) => {
@@ -1051,6 +1094,12 @@ describe("resolveModelConfig", () => {
             });
         },
     );
+
+    it("does not resolve the removed MiniMax M2.7 gateway fallback", () => {
+        expect(
+            findModelByName("minimax/minimax-m2.7:openrouter:minimax"),
+        ).toBeNull();
+    });
 
     it("routes Qwen Vision directly to DeepInfra with an exact gateway backup", () => {
         const primary = resolveModelConfig(messages, { model: "qwen-vision" });
@@ -1265,6 +1314,18 @@ describe("resolveModelConfig", () => {
                 status: 404,
             }),
         );
+    });
+});
+
+it("excludes Grok 4.3 backup priority endpoints from the quoted price", () => {
+    expect(
+        resolveModelConfig(messages, {
+            model: "x-ai/grok-4.3:openrouter:xai-zdr",
+        }).options.provider,
+    ).toEqual({
+        only: ["xai/zdr"],
+        ignore: ["xai/zdr/priority", "cloudflare"],
+        allow_fallbacks: false,
     });
 });
 

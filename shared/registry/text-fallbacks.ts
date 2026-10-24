@@ -351,23 +351,6 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
-    "qwen/qwen3.8-27b": {
-        "qwen/qwen3.8-27b:openrouter:reka-fp8": {
-            supportedParameters: CHAT_PARAMETERS.qwen38Reka,
-            provider: "openrouter",
-            addedDate: new Date("2026-10-13").getTime(),
-            cost: {
-                // OpenRouter Reka FP8 rates (2026-10-13), including the
-                // account's 5.5% credit-purchase fee. OpenRouter publishes one
-                // prompt rate and no separate image/video rates.
-                promptTextTokens: perMillion(0.04) * 1.055,
-                promptCachedTokens: perMillion(0.02) * 1.055,
-                promptImageTokens: perMillion(0.04) * 1.055,
-                promptVideoTokens: perMillion(0.04) * 1.055,
-                completionTextTokens: perMillion(2.2) * 1.055,
-            },
-        },
-    },
     "qwen/qwen3.7-flash": {
         "qwen/qwen3.7-flash:openrouter:alibaba": {
             provider: "openrouter",

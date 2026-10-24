@@ -3774,22 +3774,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.000000041145,
     },
   },
-  "qwen/qwen3.8-27b:openrouter:reka-fp8": {
-    "cost": {
-      "completionTextTokens": 0.000002321,
-      "promptCachedTokens": 0.0000000211,
-      "promptImageTokens": 0.0000000422,
-      "promptTextTokens": 0.0000000422,
-      "promptVideoTokens": 0.0000000422,
-    },
-    "price": {
-      "completionTextTokens": 0.000002321,
-      "promptCachedTokens": 0.0000000211,
-      "promptImageTokens": 0.0000000422,
-      "promptTextTokens": 0.0000000422,
-      "promptVideoTokens": 0.0000000422,
-    },
-  },
   "qwen/qwen3.8-flash": {
     "cost": {
       "completionTextTokens": 0.00000047,

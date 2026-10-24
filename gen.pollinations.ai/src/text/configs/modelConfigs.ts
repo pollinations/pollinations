@@ -508,11 +508,6 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    "qwen3.8-27b-openrouter-reka": createPinnedOpenRouterConfig(
-        "qwen/qwen3.8-27b",
-        "reka/fp8",
-        64000,
-    ),
     "qwen/qwen3.8-max": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.8-max",

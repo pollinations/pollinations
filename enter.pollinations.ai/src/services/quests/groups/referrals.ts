@@ -1,4 +1,3 @@
-import { rewardKey } from "@shared/billing/rewards.ts";
 import { sql } from "drizzle-orm";
 import type { QuestDefinition } from "../definitions.ts";
 import {
@@ -14,8 +13,8 @@ import { MIN_POLLEN_BOUGHT, pollenBoughtSql } from "./github-contributions.ts";
 /**
  * Referrals: `user.referred_by` names who brought a user, set once near signup
  * by an invite link (auth.ts) or a BYOP app login (attributeAppSignup). The
- * referrer earns the reward once per referred GitHub or Google identity, as
- * soon as that user has bought more than MIN_POLLEN_BOUGHT Pollen.
+ * referrer earns the reward once per referred user, as soon as that user has
+ * bought more than MIN_POLLEN_BOUGHT Pollen.
  */
 
 /** The GitHub account that owns the first-party Pollinations apps. */
@@ -41,23 +40,19 @@ export async function evaluateUser(
     { db }: QuestEvaluationContext,
     user: QuestUser,
 ): Promise<QuestEvaluation> {
-    const referred = await db.all<{
-        githubId: number | null;
-        googleId: string | null;
-    }>(sql`
-        SELECT u.github_id AS githubId, a.account_id AS googleId
-        FROM "user" AS u
-        LEFT JOIN account AS a ON a.user_id = u.id AND a.provider_id = 'google'
+    const referred = await db.all<{ id: string }>(sql`
+        SELECT u.id FROM "user" AS u
         WHERE u.referred_by = ${user.id}
-          AND (u.github_id IS NOT NULL OR a.account_id IS NOT NULL)
           AND (COALESCE(u.banned, 0) = 0 OR u.ban_expires <= unixepoch())
           AND ${pollenBoughtSql(sql`u.id`)} > ${MIN_POLLEN_BOUGHT}`);
     return {
-        proposals: referred.map((identity) => ({
+        proposals: referred.map(({ id }) => ({
             quest: inviteFriendsQuest,
             userId: user.id,
-            // Each referred GitHub or Google identity pays its referrer once, ever.
-            idempotencyKey: rewardKey(inviteFriendsQuest.id, identity),
+            // Keyed on the referred account, not its GitHub or Google login,
+            // which changes when the user links another one. A re-created
+            // account has to buy Pollen again before it pays again.
+            idempotencyKey: `quest:${inviteFriendsQuest.id}:user:${id}`,
         })),
     };
 }

@@ -2413,13 +2413,6 @@ test("Invite friends pays 2 Pollen once per referred user who bought more than 2
             updatedAt: now,
         })),
     );
-    // Signed up with Google only, so the reward is keyed on the Google account.
-    await db.insert(schema.account).values({
-        id: "invite-google-buyer-account",
-        accountId: "google-sub-invite",
-        providerId: "google",
-        userId: "invite-google-buyer",
-    });
     await db.insert(schema.stripeCheckoutCredits).values(
         referred.map(({ id, pollen }) => ({
             sessionId: `cs_test_${id}`,
@@ -2432,6 +2425,12 @@ test("Invite friends pays 2 Pollen once per referred user who bought more than 2
 
     const groups = [{ id: "referrals", ...referrals }];
     await checkQuestsForUser(env, referrer.id, groups);
+    await checkQuestsForUser(env, referrer.id, groups);
+    // Linking GitHub later must not pay for the Google sign-up a second time.
+    await db
+        .update(schema.user)
+        .set({ githubId: hashGithubId("invite-google-buyer") })
+        .where(eq(schema.user.id, "invite-google-buyer"));
     await checkQuestsForUser(env, referrer.id, groups);
 
     expect(
@@ -2448,13 +2447,13 @@ test("Invite friends pays 2 Pollen once per referred user who bought more than 2
     ).toEqual([
         {
             userId: referrer.id,
-            idempotencyKey: `quest:invite_friends:github:${referred[0]?.githubId}`,
+            idempotencyKey: "quest:invite_friends:user:invite-buyer",
             pollenAmount: 2,
             balanceBucket: "tier",
         },
         {
             userId: referrer.id,
-            idempotencyKey: "quest:invite_friends:google:google-sub-invite",
+            idempotencyKey: "quest:invite_friends:user:invite-google-buyer",
             pollenAmount: 2,
             balanceBucket: "tier",
         },

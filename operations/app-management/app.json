@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "💬",
+    "name": "Radio Bloom",
+    "url": "https://mrunknowne09-radio-bloom.static.hf.space",
+    "description": "Radio Bloom is a duplicate-ready voice character playground. Visitors sign in with their own Pollen, then speak or type to three AI characters powered by Pollinations chat, transcription, and voice mo",
+    "language": "en",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "ismailbanouigu",
+    "githubUserId": "20683163",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-16",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17713",
+    "approvedDate": "2026-10-24",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/bf4d3b4f-ad95-40de-aa1f-ef63abc8a60e"
+  },
+  {
     "emoji": "🎮",
     "name": "One Line Arena",
     "url": "https://drjacky.github.io/one-line-arena",

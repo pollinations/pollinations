@@ -300,6 +300,22 @@ describe("static provider fallbacks", () => {
         );
     });
 
+    it("records MiMo V2.6 Flash's discounted backup cost and keeps the Novita quote", () => {
+        const model = "xiaomi/mimo-v2.6-flash";
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 1000,
+                promptCachedTokens: 200,
+                completionTextTokens: 100,
+            },
+            servedBy: TEXT_SERVICES[`${model}:deepinfra`],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.000109564, 12);
+        expect(billed.price.totalPrice).toBe(0.00016856);
+    });
+
     it("lets OpenRouter recover GLM Flash across independent providers", () => {
         const model = "z-ai/glm-5.3-flash";
         const route = `${model}:openrouter`;

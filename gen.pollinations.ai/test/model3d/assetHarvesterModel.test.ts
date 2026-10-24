@@ -1,6 +1,7 @@
 import { env } from "cloudflare:test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { syncModel3dEnvironment } from "../../src/model3d/env.ts";
+import { mediaHeaders } from "../../src/model3d/handler.ts";
 import { callAssetHarvester } from "../../src/model3d/models/assetHarvesterModel.ts";
 import type { Model3dParams } from "../../src/model3d/params.ts";
 
@@ -24,7 +25,7 @@ function params(): Model3dParams {
     };
 }
 
-function mockAsyncSuccess(plyB64 = "cGx5X2RhdGE=") {
+function mockAsyncSuccess(plyB64 = "cGx5X2RhdGE=", cost?: number) {
     return vi
         .spyOn(globalThis, "fetch")
         .mockResolvedValueOnce(
@@ -38,11 +39,29 @@ function mockAsyncSuccess(plyB64 = "cGx5X2RhdGE=") {
                 job_id: "job_456",
                 status: "completed",
                 data: [{ model_ply_b64_bytes: plyB64 }],
+                usage: { payg_credits_charged: cost },
             }),
         );
 }
 
 describe("callAssetHarvester", () => {
+    it("preserves the completed job's charge through the billing headers", async () => {
+        mockAsyncSuccess("cGx5X2RhdGE=", 0.043);
+        const result = await callAssetHarvester(params());
+        const headers = mediaHeaders("", params(), result);
+
+        expect(headers.get("x-usage-provider-billable-units")).toBe("0.043");
+        expect(headers.get("x-usage-provider-unit-cost")).toBe("1");
+        expect(headers.get("x-usage-completion-image-tokens")).toBe("1");
+    });
+
+    it("rejects invalid provider charges", async () => {
+        mockAsyncSuccess("cGx5X2RhdGE=", -1);
+        await expect(callAssetHarvester(params())).rejects.toThrow(
+            "invalid charge",
+        );
+    });
+
     it("uses the async API and correct inferenceport model name", async () => {
         const fetchSpy = mockAsyncSuccess();
 

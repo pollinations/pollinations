@@ -2787,7 +2787,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "nvidia/nemotron-3-ultra": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.deepinfraNemotron,
         aliases: [
             "nemotron-3-ultra",
             "nvidia-nemotron-3-ultra",

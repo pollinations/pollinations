@@ -30,6 +30,7 @@ export const MODEL_CATEGORIES = [
     "3d",
     "embedding",
     "realtime",
+    "decision",
 ] as const;
 
 export type Category = (typeof MODEL_CATEGORIES)[number];

@@ -8,6 +8,12 @@ import {
     Surface,
     Text,
 } from "@pollinations/ui";
+import {
+    type AppCategory,
+    type AppPlatform,
+    CATEGORY_LABELS,
+    PLATFORM_LABELS,
+} from "../../../../shared/app-catalog.ts";
 import type { ListedApp } from "../backend-types.ts";
 import { LoadError, PageStatus } from "./layout/dashboard-loading.tsx";
 
@@ -28,88 +34,145 @@ function formatDate(value: string | null): string | null {
     });
 }
 
-/** A listing's submission issue, shown as "#123" beside its links. */
+/** A listing's submission issue number. */
 function issueNumber(url: string | null): string | null {
     return url?.match(/\/issues\/(\d+)/)?.[1] ?? null;
 }
 
-function AppCard({ app }: { app: ListedApp }) {
+function AppRow({ app }: { app: ListedApp }) {
     const approved = formatDate(app.approvedDate);
     const issue = issueNumber(app.issueUrl);
+    const appUrl = app.webUrl || app.repositoryUrl;
+    const repository = app.repositoryUrl?.match(
+        /^https:\/\/github\.com\/([^/?#]+\/[^/?#]+)/i,
+    )?.[1];
 
     return (
-        <Surface variant="card" className="flex flex-col gap-3">
-            <div className="flex items-start gap-3">
-                {app.screenshotUrl ? (
+        <Surface
+            variant="card"
+            className="flex flex-col overflow-hidden rounded-2xl! p-0! @min-[40rem]:flex-row"
+        >
+            {app.screenshotUrl ? (
+                <div className="relative aspect-video shrink-0 bg-theme-bg-subtle @min-[40rem]:aspect-auto @min-[40rem]:w-48">
                     <img
                         src={app.screenshotUrl}
                         alt=""
                         loading="lazy"
-                        width={96}
-                        height={64}
-                        className="h-16 w-24 shrink-0 rounded-lg bg-theme-bg-subtle object-cover"
+                        width={1280}
+                        height={720}
+                        className="absolute inset-0 h-full w-full object-cover"
                     />
-                ) : null}
-                <div className="flex min-w-0 flex-col gap-1">
-                    <Text as="span" weight="semibold">
-                        {app.emoji ? `${app.emoji} ` : ""}
-                        {app.name}
+                </div>
+            ) : null}
+            <div className="flex min-w-0 flex-1 flex-col gap-3 p-4">
+                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                    <Text as="h3" weight="semibold" className="wrap-anywhere">
+                        {appUrl ? (
+                            <InlineLink href={appUrl}>{app.name}</InlineLink>
+                        ) : (
+                            app.name
+                        )}
                     </Text>
                     {app.description && (
                         <Text
                             as="p"
-                            className="line-clamp-2 text-sm text-theme-text-muted"
+                            className="line-clamp-2 text-sm text-theme-text-muted wrap-anywhere"
                         >
                             {app.description}
                         </Text>
                     )}
+                    {(app.category || app.platforms.length > 0 || app.byop) && (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            {app.category && (
+                                <Chip
+                                    intent="neutral"
+                                    size="sm"
+                                    className="text-theme-text-muted!"
+                                >
+                                    {CATEGORY_LABELS[
+                                        app.category as AppCategory
+                                    ] ?? app.category}
+                                </Chip>
+                            )}
+                            {app.platforms.map((platform) => (
+                                <Chip
+                                    key={platform}
+                                    intent="neutral"
+                                    size="sm"
+                                    className="text-theme-text-muted!"
+                                >
+                                    {PLATFORM_LABELS[platform as AppPlatform] ??
+                                        platform}
+                                </Chip>
+                            ))}
+                            {app.byop && (
+                                <Chip intent="info" size="sm">
+                                    Pollen Pay
+                                </Chip>
+                            )}
+                        </div>
+                    )}
                 </div>
-            </div>
-
-            {(app.category ||
-                app.platforms.length > 0 ||
-                app.byop ||
-                approved) && (
-                <div className="flex flex-wrap items-center gap-1.5">
-                    {app.category && (
-                        <Chip intent="neutral" size="sm">
-                            {app.category}
-                        </Chip>
-                    )}
-                    {app.platforms.map((platform) => (
-                        <Chip key={platform} intent="neutral" size="sm">
-                            {platform}
-                        </Chip>
-                    ))}
-                    {app.byop && (
-                        <Chip intent="info" size="sm">
-                            Pollen Pay
-                        </Chip>
-                    )}
-                    {approved && (
-                        <Chip intent="success" size="sm">
-                            Approved {approved}
-                        </Chip>
+                <div className="flex min-w-0 flex-col items-start gap-2">
+                    <div className="flex max-w-full flex-wrap items-center gap-x-3 gap-y-2 text-xs">
+                        {app.repositoryUrl && (
+                            <InlineLink
+                                href={app.repositoryUrl}
+                                tone="quiet"
+                                className="max-w-full wrap-anywhere"
+                            >
+                                {repository && (
+                                    <GitHubIcon
+                                        aria-hidden="true"
+                                        className="mr-1 inline h-3.5 w-3.5 align-[-0.125em]"
+                                    />
+                                )}
+                                {repository ?? "Repository"}
+                            </InlineLink>
+                        )}
+                        {(approved || (app.issueUrl && issue)) && (
+                            <span className="text-theme-text-muted">
+                                {app.issueUrl && issue ? (
+                                    <InlineLink
+                                        href={app.issueUrl}
+                                        tone="quiet"
+                                        title={`View submission #${issue}`}
+                                    >
+                                        <svg
+                                            aria-hidden="true"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth={2}
+                                            className="mr-1 inline h-3.5 w-3.5 align-[-0.125em]"
+                                        >
+                                            <circle cx={12} cy={12} r={9} />
+                                            <circle
+                                                cx={12}
+                                                cy={12}
+                                                r={1}
+                                                fill="currentColor"
+                                                stroke="none"
+                                            />
+                                        </svg>
+                                        {approved
+                                            ? `Approved ${approved}`
+                                            : `Submission #${issue}`}
+                                    </InlineLink>
+                                ) : (
+                                    `Approved ${approved}`
+                                )}
+                            </span>
+                        )}
+                    </div>
+                    {/* Only a Pollen Pay app reports traffic; the count is its own. */}
+                    {app.requests24h !== null && (
+                        <span className="text-xs tabular-nums text-theme-text-muted">
+                            {app.requests24h.toLocaleString("en-US")} requests ·
+                            24h
+                        </span>
                     )}
                 </div>
-            )}
-
-            <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-                {app.webUrl && (
-                    <InlineLink href={app.webUrl}>Open app</InlineLink>
-                )}
-                {app.repositoryUrl && (
-                    <InlineLink href={app.repositoryUrl}>Repository</InlineLink>
-                )}
-                {app.issueUrl && issue && (
-                    <InlineLink href={app.issueUrl}>#{issue}</InlineLink>
-                )}
-                {/* Only a Pollen Pay app reports traffic; the count is its own. */}
-                {app.requests24h !== null && (
-                    <span className="ml-auto shrink-0 text-xs tabular-nums text-theme-text-muted">
-                        {app.requests24h.toLocaleString("en-US")} requests · 24h
-                    </span>
-                )}
             </div>
         </Surface>
     );
@@ -159,7 +222,7 @@ export function MyApps({
     return (
         <Section
             title="My Apps"
-            intro="Your apps in the community catalog, matched to the GitHub account you signed in with."
+            intro="Your published apps in the community catalog."
             action={
                 apps && apps.length > 0 ? (
                     <Button
@@ -168,7 +231,6 @@ export function MyApps({
                         target="_blank"
                         rel="noreferrer"
                         intent="brand"
-                        size="sm"
                         icon={<GitHubIcon />}
                     >
                         Submit
@@ -185,9 +247,9 @@ export function MyApps({
             ) : apps.length === 0 ? (
                 <EmptyState />
             ) : (
-                <div className="grid gap-2 sm:grid-cols-2">
+                <div className="@container flex flex-col gap-2">
                     {apps.map((app) => (
-                        <AppCard key={`${app.name}|${app.webUrl}`} app={app} />
+                        <AppRow key={`${app.name}|${app.webUrl}`} app={app} />
                     ))}
                 </div>
             )}

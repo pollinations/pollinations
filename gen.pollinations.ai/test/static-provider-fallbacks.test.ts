@@ -252,27 +252,6 @@ describe("static provider fallbacks", () => {
         },
     );
 
-    it("tries Bedrock before direct Anthropic for Claude Sonnet 4.6", () => {
-        const model = "anthropic/claude-sonnet-4.6";
-        const primary: ModelDefinition = TEXT_SERVICES[model];
-        const fallback: ModelDefinition = TEXT_SERVICES[`${model}:anthropic`];
-        expect(primary.provider).toBe("aws");
-        expect(primary.fallbacks).toEqual([`${model}:anthropic`]);
-        expect(fallback).toMatchObject({
-            provider: "anthropic",
-            hidden: true,
-            fallbackOnly: true,
-            aliases: [],
-        });
-        expect(fallback.cost).toEqual(primary.cost);
-        expect(findModelByName(`${model}:anthropic`)?.config()).toMatchObject({
-            provider: "anthropic",
-            model: "claude-sonnet-4-6",
-            defaultOptions: { max_tokens: 64000 },
-        });
-        expect(getVisibleTextModels()).not.toContain(`${model}:anthropic`);
-    });
-
     it("tries direct DeepInfra before OpenRouter for GLM 5.3 at the primary's user price", () => {
         const model = "z-ai/glm-5.3";
         const route = `${model}:deepinfra`;
@@ -419,6 +398,27 @@ describe("static provider fallbacks", () => {
         expect(options.seed).toBe(0);
         const unseeded = await route?.transform?.([], { temperature: 0.2 });
         expect(unseeded?.options).toEqual({ temperature: 0.2 });
+    });
+
+    it("tries Bedrock before direct Anthropic for Claude Sonnet 4.6", () => {
+        const model = "anthropic/claude-sonnet-4.6";
+        const primary: ModelDefinition = TEXT_SERVICES[model];
+        const fallback: ModelDefinition = TEXT_SERVICES[`${model}:anthropic`];
+        expect(primary.provider).toBe("aws");
+        expect(primary.fallbacks).toEqual([`${model}:anthropic`]);
+        expect(fallback).toMatchObject({
+            provider: "anthropic",
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        expect(fallback.cost).toEqual(primary.cost);
+        expect(findModelByName(`${model}:anthropic`)?.config()).toMatchObject({
+            provider: "anthropic",
+            model: "claude-sonnet-4-6",
+            defaultOptions: { max_tokens: 64000 },
+        });
+        expect(getVisibleTextModels()).not.toContain(`${model}:anthropic`);
     });
 
     it("keeps the Gemini quote while recording direct and OpenRouter costs", () => {

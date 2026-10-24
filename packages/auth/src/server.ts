@@ -261,6 +261,27 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         }
     }
 
+    // The flow cookie carries the PKCE verifier and return target, so it is
+    // signed like the session cookie. The prefix keeps the two signatures from
+    // being interchangeable.
+    async function signedFlow(flow: Flow) {
+        const payload = encodeJson(flow);
+        return `${payload}.${await sign(`flow:${payload}`)}`;
+    }
+
+    async function verifiedFlow(value: string) {
+        const [payload, signature, extra] = value.split(".");
+        if (
+            !payload ||
+            !signature ||
+            extra ||
+            !(await verify(`flow:${payload}`, signature))
+        ) {
+            throw new Error("Invalid OAuth flow signature");
+        }
+        return decodeJson<Flow>(payload);
+    }
+
     async function startLogin(request: Request) {
         const requestUrl = new URL(request.url);
         const verifier = randomValue();
@@ -289,7 +310,7 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
             cookie(
                 request,
                 requestCookieName(request, FLOW_COOKIE),
-                encodeJson(flow),
+                await signedFlow(flow),
                 FLOW_MAX_AGE_SECONDS,
                 CALLBACK_PATH,
             ),
@@ -324,7 +345,7 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         const storedFlow = cookieValue(request, flowCookie);
         let flow: Flow;
         try {
-            flow = decodeJson<Flow>(storedFlow);
+            flow = await verifiedFlow(storedFlow);
         } catch {
             return authError("Invalid OAuth state", 400, clearFlow);
         }

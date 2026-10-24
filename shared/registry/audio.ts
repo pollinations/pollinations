@@ -387,10 +387,9 @@ const AUDIO_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            // ElevenLabs v3 via API: measured 0.60 credits/char (API-discounted
-            // from the 1 cr/char UI rate) * $0.166/1k Scale credits = $0.10/1k chars
-            // (matches elevenlabs.io/pricing/api).
-            completionAudioTokens: 0.1 / 1000,
+            // https://elevenlabs.io/pricing/api — $0.08 per 1K characters
+            // (2026-10-24); a 500-character probe metered 0.482 credits/char.
+            completionAudioTokens: 0.08 / 1000,
         },
         title: "ElevenLabs v3 TTS",
         description:
@@ -657,6 +656,25 @@ const AUDIO_BASE_SERVICES = {
         title: "ElevenLabs Sound Effects",
         description: "Sound effects from a text description",
         inputModalities: ["text"],
+        outputModalities: ["audio"],
+    },
+    "sonilo/sonilo-1.1-sfx": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Sonilo",
+        category: "audio",
+        paidOnly: true,
+        addedDate: new Date("2026-10-15").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // fal's price per second of video. Charges use fal's reported
+            // seconds at its live endpoint price.
+            completionAudioSeconds: 0.009,
+        },
+        title: "Sonilo 1.1 SFX",
+        description:
+            "Sound effects timed to a video, as a separate audio track",
+        inputModalities: ["text", "video"],
         outputModalities: ["audio"],
     },
     "openai/whisper-large-v3": {

@@ -1288,10 +1288,10 @@ test("MiniMax M2.7 uses the pinned Novita OpenRouter rates", () => {
     });
 });
 
-test("Step Flash uses DeepInfra's standard and cached token rates", () => {
+test("Step Flash uses Novita's standard and cached token rates", () => {
     const definition = getRegistryModelDefinition("stepfun/step-3.7-flash");
 
-    expect(definition.provider).toBe("deepinfra");
+    expect(definition.provider).toBe("novita");
     expect(definition.priceMultiplier).toBe(1);
     expect(definition.paidOnly).toBe(true);
     expect(definition.cost).toMatchObject({
@@ -1957,7 +1957,7 @@ test("audio cards distinguish clips, audio tokens, characters, and UTF-8 bytes",
         {
             direction: "output",
             kind: "audioOut",
-            price: "0.1",
+            price: "0.08",
             unit: "character",
         },
     ]);

@@ -1,5 +1,5 @@
 {
-  "version": 33,
+  "version": 34,
   "canonicalModelRenames": {
     "claude": [
       {
@@ -2463,6 +2463,8 @@
         "alibaba/wan-3.0-prime/reference-to-video": "wan-3.0",
         "alibaba/wan-3.0-prime/text-to-video": "wan-3.0",
         "alibaba/wan-3.0/text-to-video": null,
+        "blackforestlabs/flux-3-max/image-to-video": "black-forest-labs/flux-3-max",
+        "blackforestlabs/flux-3-max/text-to-video": "black-forest-labs/flux-3-max",
         "fal-ai/hunyuan-3d/v3.1/pro/text-to-3d": null,
         "fal-ai/hunyuan-3d/v3.1/rapid/image-to-3d": null,
         "fal-ai/hunyuan-3d/v3.1/rapid/text-to-3d": null,
@@ -4125,6 +4127,10 @@
           }
         ]
       }
+    },
+    {
+      "id": "vllm-sr",
+      "aliases": []
     },
     {
       "id": "windsurf",

@@ -139,6 +139,18 @@ export const IMAGE_FALLBACKS = {
             },
         },
     },
+    "qwen/qwen-image-2.1-pro": {
+        "qwen/qwen-image-2.1-pro:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-18").getTime(),
+            // OpenRouter's Alibaba endpoint. Maintainer probe (2026-10-18):
+            // usage.cost is $0.046 per image before the 5.5% credit fee, so this
+            // route is above the $0.04 primary price. Up to 4 references.
+            cost: {
+                completionImageTokens: 0.046 * 1.055,
+            },
+        },
+    },
     "prunaai/p-image-edit": {
         "prunaai/p-image-edit:replicate": {
             provider: "replicate",
@@ -273,13 +285,11 @@ export const IMAGE_FALLBACKS = {
         },
     },
     "alibaba/wan-2.2-fast": {
-        "alibaba/wan-2.2-fast:fal": {
-            provider: "fal",
-            addedDate: new Date("2026-09-02").getTime(),
-            // Fal charges $0.05 per fixed 5-second 480p generation. The
-            // inherited $0.01/second sheet bills the caller the same $0.05, so
-            // this fallback has no loss for either text-to-video or image-to-video.
-        },
+        // Replicate is fallback-only: its 4xx rate (~48%, 2026-10-21
+        // /models/status) is terminal (400/422 don't retry), so it must not
+        // be tried first. No :fal route: primary is already Fal, and a
+        // same-endpoint auto-retry would only regenerate on shared Fal faults.
+        "alibaba/wan-2.2-fast:replicate": { provider: "replicate" },
     },
     "bytedance/seedance-1-pro-fast": {
         "bytedance/seedance-1-pro-fast:fal": {

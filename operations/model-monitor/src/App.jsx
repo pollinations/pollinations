@@ -70,6 +70,7 @@ const MODEL_TYPES = [
     { key: "realtime", title: "Realtime" },
     { key: "3d", title: "3D" },
     { key: "text", title: "Text" },
+    { key: "decision", title: "Decision" },
     { key: "embedding", title: "Embedding" },
 ];
 

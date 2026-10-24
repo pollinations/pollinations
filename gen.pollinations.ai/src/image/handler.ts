@@ -13,7 +13,7 @@ import {
     withModelFallback,
 } from "../fallback.ts";
 import { UserImageError } from "../userImage.ts";
-import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { requireModelAttemptAccess } from "../utils/generation-access.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -361,7 +361,7 @@ async function generateMediaWithFallback(
             return { result: generated, params };
         },
         c.var.track?.attempts,
-        (attempt) => enforceModelRateLimit(c, attempt),
+        (attempt) => requireModelAttemptAccess(c, attempt),
         shouldFallback,
     );
     return {

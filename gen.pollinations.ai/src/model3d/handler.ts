@@ -5,7 +5,7 @@ import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import { withModelFallbackResponse } from "../fallback.ts";
 import { bufferToUint8Array } from "../image/utils/imageDownload.ts";
-import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { requireModelAttemptAccess } from "../utils/generation-access.ts";
 import {
     createAndReturnModel3d,
     type Model3dGenerationResult,
@@ -40,7 +40,7 @@ export async function generate3dResponse(
                 });
             },
             c.var.track?.attempts,
-            (candidate) => enforceModelRateLimit(c, candidate),
+            (candidate) => requireModelAttemptAccess(c, candidate),
         );
     } catch (error) {
         throw3dError(error);

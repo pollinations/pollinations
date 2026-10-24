@@ -10,12 +10,14 @@ import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import type { Env } from "@/env.ts";
+import type { FallbackCandidate } from "@/fallback.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import { getEstimatedPrice } from "@/utils/model-stats.ts";
 import { keyBudgetExhausted, requireFunds } from "@/utils/refusals.ts";
+import { enforceModelRateLimit } from "./model-rate-limit.ts";
 
 type GenerationAccessVariables = AuthVariables &
     BalanceVariables &
@@ -30,8 +32,12 @@ type GenerationAccessEnv = {
 export async function checkBalance(
     vars: GenerationAccessVariables,
     env: CloudflareBindings,
+    model: Pick<
+        ModelVariables["model"],
+        "resolved" | "definition"
+    > = vars.model,
 ): Promise<void> {
-    const { auth, balance, model, log } = vars;
+    const { auth, balance, log } = vars;
     if (!auth.user?.id) return;
 
     const isPaidOnly = model.definition.paidOnly;
@@ -83,7 +89,13 @@ export async function reserveApiKeyBudget(
     if (!apiKeyId || amount === undefined) return;
 
     const db = drizzle(env.DB);
-    const reservation = await atomicReserveApiKeyBalance(db, apiKeyId, amount);
+    const reserved = vars.balance.apiKeyReservation?.amount ?? 0;
+    if (vars.balance.apiKeyReservation && amount <= reserved) return;
+    const reservation = await atomicReserveApiKeyBalance(
+        db,
+        apiKeyId,
+        amount - reserved,
+    );
     if (!reservation.ok) {
         throw keyBudgetExhausted(
             { var: vars, env },
@@ -92,8 +104,23 @@ export async function reserveApiKeyBudget(
     }
     vars.balance.apiKeyReservation = {
         apiKeyId,
-        amount: reservation.reserved,
+        amount: reserved + reservation.reserved,
     };
+}
+
+/** Catalog routes keep the existing quote; a caller choice must afford its own. */
+export async function requireModelAttemptAccess(
+    c: Context<Env>,
+    candidate: FallbackCandidate,
+): Promise<void> {
+    if (candidate.entry && c.var.model.requested.includes(",")) {
+        await checkBalance(c.var, c.env, {
+            resolved: candidate.entry.id,
+            definition: candidate.entry.definition,
+        });
+        await reserveApiKeyBudget(c.var, c.env);
+    }
+    await enforceModelRateLimit(c, candidate);
 }
 
 export async function releaseApiKeyBudgetReservation(

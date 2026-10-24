@@ -47,6 +47,7 @@ const questions = {
 type UpstreamState = {
     requests: Record<string, unknown>[];
     response?: Response;
+    failModel?: string;
 };
 
 function createDecisionsMock() {
@@ -56,6 +57,7 @@ function createDecisionsMock() {
         reset: () => {
             state.requests = [];
             state.response = undefined;
+            state.failModel = undefined;
         },
         handlerMap: {
             "decision.vllm-sr.ai": async (request: Request) => {
@@ -84,11 +86,18 @@ function createDecisionsMock() {
                 });
             },
             [DECISIONS_HOST]: async (request: Request) => {
+                const body = (await request.json()) as { model: string };
                 state.requests.push({
                     pathname: new URL(request.url).pathname,
                     authorization: request.headers.get("authorization"),
-                    body: await request.json(),
+                    body,
                 });
+                if (body.model === state.failModel) {
+                    return Response.json(
+                        { error: { message: "Upstream unavailable" } },
+                        { status: 503 },
+                    );
+                }
                 if (state.response) return state.response.clone();
                 return Response.json({
                     model: "typesafe/jev-1.13-20260917",
@@ -519,6 +528,71 @@ test("falls back native D1 decisions and records Vercel cost with the public quo
     expect(balance.tierBalance).toBe(0);
     expect(balance.packBalance).toBeCloseTo(1 - (billed?.totalPrice ?? 0), 8);
 });
+
+for (const packBalance of [0, 1]) {
+    test(`caller decision fallback checks paid Pollen with pack balance ${packBalance}`, async ({
+        mocks,
+    }) => {
+        const { key, userId } = await createTestApiKey({
+            user: { tierBalance: 1, packBalance },
+        });
+        mocks.decisions.state.failModel = "respan/span-01-lite";
+        const model = "respan/span-01-lite,typesafe/jev-1.13";
+        const { response, wait } = await post("/alpha/decisions", key, {
+            model,
+            state: "Disk at 93%.",
+            questions: { act: { type: "noul", instructions: "Act now?" } },
+        });
+
+        expect(response.status).toBe(packBalance ? 200 : 402);
+        if (packBalance) {
+            expect(response.headers.get("x-model-used")).toBe(
+                "typesafe/jev-1.13",
+            );
+            expect(response.headers.get("x-fallback-target")).toBe(
+                "config.targets[1]",
+            );
+            await expect(response.json()).resolves.toMatchObject({
+                model: "typesafe/jev-1.13",
+                provider: "TypeSafe",
+            });
+        } else {
+            await expect(response.json()).resolves.toMatchObject({
+                error: { code: "INSUFFICIENT_BALANCE" },
+            });
+        }
+
+        await wait();
+        expect(
+            mocks.decisions.state.requests.map((request) => request.body),
+        ).toEqual(
+            (packBalance
+                ? ["respan/span-01-lite", "typesafe/jev-1.13"]
+                : ["respan/span-01-lite"]
+            ).map((model) => expect.objectContaining({ model })),
+        );
+        const billed = mocks.tinybird.state.events.filter(
+            (event) => event.isBilledUsage,
+        );
+        expect(billed).toHaveLength(packBalance ? 1 : 0);
+        const balance = await getUserBalance(drizzle(env.DB), userId);
+        expect(balance.tierBalance).toBe(1);
+        if (packBalance) {
+            expect(billed[0]).toMatchObject({
+                modelRequested: model,
+                modelUsed: "typesafe/jev-1.13",
+                modelProviderUsed: "openrouter",
+            });
+            expect(billed[0].totalPrice).toBeGreaterThan(0);
+            expect(balance.packBalance).toBeCloseTo(
+                packBalance - billed[0].totalPrice,
+                8,
+            );
+        } else {
+            expect(balance.packBalance).toBe(0);
+        }
+    });
+}
 
 test("rejects Quest-only Liquid D1 calls before reaching the provider", async ({
     apiKey,

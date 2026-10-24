@@ -1,4 +1,5 @@
 import type { FallbackDefinition } from "../../merge-fallbacks";
+
 export const id = "bytedance/seedream-5.0-lite:fal";
 export const parent = "bytedance/seedream-5.0-lite";
 export const order = 0;

@@ -9,7 +9,7 @@ export default {
     aliases: ["jev", "typesafe/jev"],
     provider: "openrouter",
     publisher: "TypeSafe",
-    category: "text",
+    category: "decision",
     addedDate: new Date("2026-09-17").getTime(),
     priceMultiplier: 1, // Billed at cost, no margin.
     paidOnly: true,

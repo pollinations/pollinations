@@ -1,4 +1,5 @@
 import type { FallbackDefinition } from "../../merge-fallbacks";
+
 export const id = "moonshotai/kimi-k2.6:azure:sweden";
 export const parent = "moonshotai/kimi-k2.6";
 export const order = 0;

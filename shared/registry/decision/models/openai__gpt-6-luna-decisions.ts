@@ -10,7 +10,7 @@ export default {
     aliases: [],
     provider: "openai",
     publisher: "OpenAI",
-    category: "text",
+    category: "decision",
     addedDate: new Date("2026-10-07").getTime(),
     priceMultiplier: 1, // Public pricing follows the direct OpenAI rate.
     paidOnly: true,

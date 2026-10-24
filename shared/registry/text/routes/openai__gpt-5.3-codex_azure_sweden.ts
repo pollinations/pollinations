@@ -1,4 +1,5 @@
 import type { FallbackDefinition } from "../../merge-fallbacks";
+
 export const id = "openai/gpt-5.3-codex:azure:sweden";
 export const parent = "openai/gpt-5.3-codex";
 export const order = 0;

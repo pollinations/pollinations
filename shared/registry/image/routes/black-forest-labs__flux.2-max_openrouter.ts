@@ -1,4 +1,5 @@
 import type { FallbackDefinition } from "../../merge-fallbacks";
+
 export const id = "black-forest-labs/flux.2-max:openrouter";
 export const parent = "black-forest-labs/flux.2-max";
 export const order = 0;

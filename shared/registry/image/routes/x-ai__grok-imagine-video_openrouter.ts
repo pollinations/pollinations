@@ -1,4 +1,5 @@
 import type { FallbackDefinition } from "../../merge-fallbacks";
+
 export const id = "x-ai/grok-imagine-video:openrouter";
 export const parent = "x-ai/grok-imagine-video";
 export const order = 0;

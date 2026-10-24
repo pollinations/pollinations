@@ -1,4 +1,5 @@
 import type { FallbackDefinition } from "../../merge-fallbacks";
+
 export const id = "qwen/qwen-image-3:openrouter";
 export const parent = "qwen/qwen-image-3";
 export const order = 0;

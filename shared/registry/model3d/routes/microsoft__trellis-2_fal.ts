@@ -1,4 +1,5 @@
 import type { FallbackDefinition } from "../../merge-fallbacks";
+
 export const id = "microsoft/trellis-2:fal";
 export const parent = "microsoft/trellis-2";
 export const order = 0;

@@ -1,4 +1,5 @@
 import type { FallbackDefinition } from "../../merge-fallbacks";
+
 export const id = "google/gemini-3.8-flash-lite-tts:openrouter:ai-studio";
 export const parent = "google/gemini-3.8-flash-lite-tts";
 export const order = 0;

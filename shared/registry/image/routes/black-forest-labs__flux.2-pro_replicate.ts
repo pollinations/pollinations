@@ -1,4 +1,5 @@
 import type { FallbackDefinition } from "../../merge-fallbacks";
+
 export const id = "black-forest-labs/flux.2-pro:replicate";
 export const parent = "black-forest-labs/flux.2-pro";
 export const order = 0;

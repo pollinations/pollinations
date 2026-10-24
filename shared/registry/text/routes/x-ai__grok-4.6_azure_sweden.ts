@@ -1,4 +1,5 @@
 import type { FallbackDefinition } from "../../merge-fallbacks";
+
 export const id = "x-ai/grok-4.6:azure:sweden";
 export const parent = "x-ai/grok-4.6";
 export const order = 0;

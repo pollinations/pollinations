@@ -1,9 +1,7 @@
 import { validator } from "@shared/middleware/validator.ts";
+import { DEFAULT_DECISION_MODEL } from "@shared/registry/decision/constants.ts";
 import { DEFAULT_3D_MODEL } from "@shared/registry/model3d/constants.ts";
-import {
-    CreateDecisionRequestSchema,
-    DEFAULT_DECISION_MODEL,
-} from "@shared/schemas/decisions.ts";
+import { CreateDecisionRequestSchema } from "@shared/schemas/decisions.ts";
 import {
     CreateChatCompletionRequestSchema,
     CreateImageRequestSchema,
@@ -127,7 +125,9 @@ generationExecutorRoutes.post(
     "/v1/responses",
     textBodyLimit,
     validator("json", CreateResponseRequestSchema),
-    resolveModel("generate.text"),
+    resolveModel("generate.text", {
+        supportedEndpoint: "/v1/responses",
+    }),
     track("generate.text"),
     textExecutionCache,
     apiKeyBudgetReservation,

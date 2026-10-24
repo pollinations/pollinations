@@ -1,4 +1,5 @@
 import type { FallbackDefinition } from "../../merge-fallbacks";
+
 export const id = "openai/gpt-image-1-mini:openai";
 export const parent = "openai/gpt-image-1-mini";
 export const order = 0;

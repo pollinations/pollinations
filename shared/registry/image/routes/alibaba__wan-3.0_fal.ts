@@ -1,4 +1,5 @@
 import type { FallbackDefinition } from "../../merge-fallbacks";
+
 export const id = "alibaba/wan-3.0:fal";
 export const parent = "alibaba/wan-3.0";
 export const order = 0;

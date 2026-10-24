@@ -1,4 +1,5 @@
 import type { FallbackDefinition } from "../../merge-fallbacks";
+
 export const id = "black-forest-labs/flux.1-schnell:deepinfra";
 export const parent = "black-forest-labs/flux.1-schnell";
 export const order = 0;

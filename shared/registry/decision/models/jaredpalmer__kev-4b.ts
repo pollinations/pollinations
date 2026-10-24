@@ -9,7 +9,7 @@ export default {
     aliases: [],
     provider: "openrouter",
     publisher: "Jared Palmer",
-    category: "text",
+    category: "decision",
     addedDate: new Date("2026-09-30").getTime(),
     priceMultiplier: 1, // Billed at cost, no margin.
     paidOnly: true,

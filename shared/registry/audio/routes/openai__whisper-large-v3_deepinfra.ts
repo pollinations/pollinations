@@ -1,4 +1,5 @@
 import type { FallbackDefinition } from "../../merge-fallbacks";
+
 export const id = "openai/whisper-large-v3:deepinfra";
 export const parent = "openai/whisper-large-v3";
 export const order = 0;

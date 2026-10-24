@@ -469,6 +469,56 @@ describe("Messages response translation", () => {
         ]);
         expect(message.stop_reason).toBe("max_tokens");
     });
+
+    it("round-trips a Gemini tool-call signature in an empty thinking block", () => {
+        const call = (id: string, thought_signature?: string) => ({
+            id,
+            type: "function" as const,
+            function: { name: "Read", arguments: "{}", thought_signature },
+        });
+        const message = chatToMessagesResponse(
+            {
+                id: "chatcmpl_3",
+                object: "chat.completion",
+                created: 1,
+                choices: [
+                    {
+                        finish_reason: "tool_calls",
+                        message: {
+                            role: "assistant",
+                            content: null,
+                            tool_calls: [
+                                call("call_a", "AY8/+="),
+                                call("call_b"),
+                            ],
+                        },
+                    },
+                ],
+                usage,
+            },
+            model,
+        );
+        expect(message.content).toEqual([
+            { type: "thinking", thinking: "", signature: "gemini:AY8/+=" },
+            { type: "tool_use", id: "call_a", name: "Read", input: {} },
+            { type: "tool_use", id: "call_b", name: "Read", input: {} },
+        ]);
+        // Clients replay the thinking block; Gemini wants the signature back
+        // on the first call and rejects the call without it.
+        const chat = messagesToChatRequest(
+            request({
+                messages: [
+                    { role: "user", content: "Read both." },
+                    { role: "assistant", content: message.content },
+                ],
+            }),
+        );
+        expect(chat.messages[1]).toEqual({
+            role: "assistant",
+            content: null,
+            tool_calls: [call("call_a", "AY8/+="), call("call_b")],
+        });
+    });
 });
 
 describe("Messages stream translation", () => {
@@ -636,6 +686,76 @@ describe("Messages stream translation", () => {
         expect(events.at(-2)).toMatchObject({
             delta: { stop_reason: "tool_use" },
         });
+    });
+
+    it("streams a Gemini tool-call signature in a thinking block", async () => {
+        const events = await translateStream([
+            {
+                choices: [
+                    {
+                        delta: {
+                            tool_calls: [
+                                {
+                                    index: 0,
+                                    id: "call_a",
+                                    function: { name: "Read", arguments: "{}" },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+            // The signature may arrive in a later chunk than the call.
+            {
+                choices: [
+                    {
+                        delta: {
+                            tool_calls: [
+                                {
+                                    index: 0,
+                                    function: { thought_signature: "AY8/+=" },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+            { choices: [{ delta: {}, finish_reason: "stop" }], usage },
+            "[DONE]",
+        ]);
+        expect(events.slice(1, -2)).toEqual([
+            {
+                type: "content_block_start",
+                index: 0,
+                content_block: {
+                    type: "thinking",
+                    thinking: "",
+                    signature: "",
+                },
+            },
+            {
+                type: "content_block_delta",
+                index: 0,
+                delta: { type: "signature_delta", signature: "gemini:AY8/+=" },
+            },
+            { type: "content_block_stop", index: 0 },
+            {
+                type: "content_block_start",
+                index: 1,
+                content_block: {
+                    type: "tool_use",
+                    id: "call_a",
+                    name: "Read",
+                    input: {},
+                },
+            },
+            {
+                type: "content_block_delta",
+                index: 1,
+                delta: { type: "input_json_delta", partial_json: "{}" },
+            },
+            { type: "content_block_stop", index: 1 },
+        ]);
     });
 
     it.each([

@@ -9,7 +9,7 @@ export default {
     aliases: [],
     provider: "openrouter",
     publisher: "Respan",
-    category: "text",
+    category: "decision",
     addedDate: new Date("2026-09-30").getTime(),
     priceMultiplier: 1, // Free upstream, so billed at zero.
     // Free upstream, so Quest Pollen can reach it at no cost.

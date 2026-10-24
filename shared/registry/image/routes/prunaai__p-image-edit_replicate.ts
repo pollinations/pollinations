@@ -1,4 +1,5 @@
 import type { FallbackDefinition } from "../../merge-fallbacks";
+
 export const id = "prunaai/p-image-edit:replicate";
 export const parent = "prunaai/p-image-edit";
 export const order = 0;

@@ -15,6 +15,7 @@ export {
     totalPromptTokens,
 } from "./cost-variants";
 
+import { DECISION_SERVICES, type DecisionModelName } from "./decision";
 import { EMBEDDING_SERVICES, type EmbeddingServiceId } from "./embeddings";
 import { IMAGE_SERVICES, type ImageModelName } from "./image";
 import type {
@@ -555,6 +556,7 @@ export function calculateUsageBilling({
 
 const MODEL_REGISTRY = {
     ...TEXT_SERVICES,
+    ...DECISION_SERVICES,
     ...IMAGE_SERVICES,
     ...AUDIO_SERVICES,
     ...EMBEDDING_SERVICES,
@@ -626,6 +628,8 @@ function filterVisible<TModelName extends ModelName>(
 }
 
 export const getVisibleTextModels = () => filterVisible(getTextModels());
+export const getVisibleDecisionModels = () =>
+    filterVisible(Object.keys(DECISION_SERVICES) as DecisionModelName[]);
 export const getVisibleImageModels = () => filterVisible(getImageModels());
 export const getVisibleAudioModels = () => filterVisible(getAudioModels());
 export const getVisibleEmbeddingModels = () =>

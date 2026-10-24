@@ -9,7 +9,7 @@ export default {
     aliases: [],
     provider: "openrouter",
     publisher: "Liquid AI",
-    category: "text",
+    category: "decision",
     addedDate: new Date("2026-10-02").getTime(),
     priceMultiplier: 1, // Billed at cost, no margin.
     paidOnly: true,

@@ -1,4 +1,5 @@
 import type { FallbackDefinition } from "../../merge-fallbacks";
+
 export const id = "google/veo-3.1-fast:replicate";
 export const parent = "google/veo-3.1-fast";
 export const order = 0;

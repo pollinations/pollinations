@@ -1,4 +1,5 @@
 import type { FallbackDefinition } from "../../merge-fallbacks";
+
 export const id = "tongyi-mai/z-image-turbo:fal";
 export const parent = "tongyi-mai/z-image-turbo";
 export const order = 0;

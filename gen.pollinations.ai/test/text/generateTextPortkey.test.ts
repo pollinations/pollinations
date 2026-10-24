@@ -677,6 +677,39 @@ describe("generateTextPortkey", () => {
         expect(fetcher).toHaveBeenCalledOnce();
     });
 
+    it("does not forward the GET voice shortcut to providers", async () => {
+        const fetcher = vi.fn(
+            async (_input: RequestInfo | URL, init?: RequestInit) => {
+                expect(JSON.parse(String(init?.body))).not.toHaveProperty(
+                    "voice",
+                );
+                return Response.json({
+                    model: "provider-model",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                });
+            },
+        );
+
+        await generateTextPortkey(
+            [{ role: "user", content: "hello" }],
+            {
+                model: "provider-model",
+                modelConfig: { provider: "openai", model: "provider-model" },
+                portkeyGatewayUrl: "https://portkey.test",
+                voice: "nova",
+            },
+            fetcher,
+        );
+
+        expect(fetcher).toHaveBeenCalledOnce();
+    });
+
     it("still rejects stop for a Responses-backed model", async () => {
         const portkeyFetcher = vi.fn();
         const responsesFetcher = vi.spyOn(globalThis, "fetch");

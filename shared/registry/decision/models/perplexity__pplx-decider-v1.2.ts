@@ -1,16 +1,16 @@
 import { perMillion } from "../../price-helpers";
-import type { ModelDefinition } from "../../registry";
 import { CHAT_PARAMETERS } from "../../text-parameters";
 
-export const id = "perplexity/pplx-decider-v1.1-27b";
+export const id = "perplexity/pplx-decider-v1.2";
 
 export default {
     supportedParameters: CHAT_PARAMETERS.typesafeJev,
-    aliases: [],
+    // Perplexity retired V1.1 in favour of V1.2.
+    aliases: ["perplexity/pplx-decider-v1.1-27b"],
     provider: "vercel",
     publisher: "Perplexity",
-    category: "text",
-    addedDate: new Date("2026-10-07").getTime(),
+    category: "decision",
+    addedDate: new Date("2026-10-24").getTime(),
     priceMultiplier: 1, // Billed at cost, no margin.
     paidOnly: true,
     cost: {
@@ -18,7 +18,7 @@ export default {
         promptTextTokens: perMillion(0.02),
         completionTextTokens: perMillion(0),
     },
-    title: "Decider V1.1 27B",
+    title: "Decider V1.2 27B",
     description:
         "Typed choices, scores and yes/no probabilities over a 262K " +
         "context; post state and questions to /alpha/decisions, or send " +

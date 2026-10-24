@@ -1,4 +1,5 @@
 import type { FallbackDefinition } from "../../merge-fallbacks";
+
 export const id = "google/gemini-3.5-transcribe:openrouter";
 export const parent = "google/gemini-3.5-transcribe";
 export const order = 0;

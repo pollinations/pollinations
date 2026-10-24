@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 import { env } from "cloudflare:test";
 import { AUDIO_SERVICES } from "@shared/registry/audio/index.ts";
+import { DECISION_SERVICES } from "@shared/registry/decision/index.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image/index.ts";
 import { mergeFallbacks } from "@shared/registry/merge-fallbacks.ts";
 import { MODEL3D_SERVICES } from "@shared/registry/model3d/index.ts";
@@ -70,6 +71,11 @@ const OPENROUTER_ROUTES = [
         "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16",
         "nvidia/nemotron-3.5-lightning",
         "coreweave/bf16",
+    ],
+    [
+        "nvidia/nemotron-3.5-super-vl:openrouter:together",
+        "nvidia/nemotron-3.5-super-vl",
+        "together",
     ],
     [
         "google/gemini-3-flash-preview:openrouter:vertex-global",
@@ -664,8 +670,8 @@ describe("static provider fallbacks", () => {
     });
 
     it("keeps D1 paid-only and charges its public quote on Vercel fallback", () => {
-        const primary = TEXT_SERVICES["liquid/d1"];
-        const fallback = TEXT_SERVICES["liquid/d1:vercel"];
+        const primary = DECISION_SERVICES["liquid/d1"];
+        const fallback = DECISION_SERVICES["liquid/d1:vercel"];
         expect(primary.fallbacks).toEqual(["liquid/d1:vercel"]);
         expect(fallback).toMatchObject({
             provider: "vercel",
@@ -691,11 +697,11 @@ describe("static provider fallbacks", () => {
     });
 
     it("charges Decider's Vercel price on its OpenRouter fallback", () => {
-        const primary = TEXT_SERVICES["perplexity/pplx-decider-v1.1-27b"];
+        const primary = DECISION_SERVICES["perplexity/pplx-decider-v1.2"];
         const fallback =
-            TEXT_SERVICES["perplexity/pplx-decider-v1.1-27b:openrouter"];
+            DECISION_SERVICES["perplexity/pplx-decider-v1.2:openrouter"];
         expect(primary.fallbacks).toEqual([
-            "perplexity/pplx-decider-v1.1-27b:openrouter",
+            "perplexity/pplx-decider-v1.2:openrouter",
         ]);
         expect(fallback).toMatchObject({
             provider: "openrouter",
@@ -705,23 +711,23 @@ describe("static provider fallbacks", () => {
             aliases: [],
         });
         expect(
-            findModelByName("perplexity/pplx-decider-v1.1-27b")?.config(),
+            findModelByName("perplexity/pplx-decider-v1.2")?.config(),
         ).toMatchObject({
-            model: "perplexity/pplx-decider-v1.1-27b",
+            model: "perplexity/pplx-decider-v1.2",
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
         });
         expect(
             findModelByName(
-                "perplexity/pplx-decider-v1.1-27b:openrouter",
+                "perplexity/pplx-decider-v1.2:openrouter",
             )?.config(),
         ).toMatchObject({
-            model: "perplexity/pplx-decider-v1.1-27b",
+            model: "perplexity/pplx-decider-v1.2",
             provider: "openrouter",
             directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         });
         const billing = calculateUsageBilling({
-            model: "perplexity/pplx-decider-v1.1-27b",
+            model: "perplexity/pplx-decider-v1.2",
             usage: { promptTextTokens: 1000, completionTextTokens: 0 },
             servedBy: fallback,
             quotedBy: primary,
@@ -730,22 +736,31 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.00002, 12);
     });
 
-    it("charges Microsoft Decision-1's Vercel price on its OpenRouter fallback", () => {
-        const primary = TEXT_SERVICES["microsoft/microsoft-decision-1"];
+    it("charges Microsoft Decision-1's Azure rate on its Vercel and OpenRouter fallbacks", () => {
+        const primary = DECISION_SERVICES["microsoft/microsoft-decision-1"];
         const fallback =
-            TEXT_SERVICES["microsoft/microsoft-decision-1:openrouter"];
+            DECISION_SERVICES["microsoft/microsoft-decision-1:openrouter"];
         expect(primary.fallbacks).toEqual([
+            "microsoft/microsoft-decision-1:vercel",
             "microsoft/microsoft-decision-1:openrouter",
         ]);
         expect(fallback).toMatchObject({
             provider: "openrouter",
-            paidOnly: true,
+            paidOnly: false,
             hidden: true,
             fallbackOnly: true,
             aliases: [],
         });
         expect(
             findModelByName("microsoft/microsoft-decision-1")?.config(),
+        ).toMatchObject({
+            model: "decision-1",
+            directEndpoint:
+                "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/microsoft/v1/systemone",
+            directAuthHeader: "api-key",
+        });
+        expect(
+            findModelByName("microsoft/microsoft-decision-1:vercel")?.config(),
         ).toMatchObject({
             model: "microsoft/microsoft-decision-1",
             directEndpoint:
@@ -767,13 +782,13 @@ describe("static provider fallbacks", () => {
             quotedBy: primary,
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.00004431, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(0.000042, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0000315, 12);
     });
 
     it("quotes OpenAI's context tiers while accounting for OpenRouter's flat fallback cost", () => {
-        const primary = TEXT_SERVICES["openai/gpt-6-luna-decisions"];
+        const primary = DECISION_SERVICES["openai/gpt-6-luna-decisions"];
         const fallback =
-            TEXT_SERVICES["openai/gpt-6-luna-decisions:openrouter"];
+            DECISION_SERVICES["openai/gpt-6-luna-decisions:openrouter"];
         expect(primary).toMatchObject({
             provider: "openai",
             paidOnly: true,
@@ -964,6 +979,58 @@ describe("static provider fallbacks", () => {
         ).toBe(true);
     });
 
+    it("falls back from Step 3.7 Flash on Novita to StepFun on Vercel at the same rates", () => {
+        const primary = TEXT_SERVICES["stepfun/step-3.7-flash"];
+        const fallback = TEXT_SERVICES["stepfun/step-3.7-flash:vercel"];
+        expect(primary).toMatchObject({
+            provider: "novita",
+            fallbacks: ["stepfun/step-3.7-flash:vercel"],
+        });
+        expect(fallback).toMatchObject({
+            provider: "vercel",
+            hidden: true,
+            fallbackOnly: true,
+        });
+        expect(
+            findModelByName("stepfun/step-3.7-flash:vercel")?.config(),
+        ).toMatchObject({
+            model: "stepfun/step-3.7-flash",
+            responsesEndpoint: undefined,
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["stepfun"] } },
+            },
+        });
+        const usage = {
+            promptTextTokens: 1000,
+            promptCachedTokens: 1000,
+            completionTextTokens: 1000,
+        };
+        const served = calculateUsageBilling({
+            model: "stepfun/step-3.7-flash",
+            usage,
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(served.cost.totalCost).toBeCloseTo(0.00139, 12);
+        expect(served.price.totalPrice).toBeCloseTo(0.00139, 12);
+        expect(
+            supportsTextFallbackRequest(fallback, {
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "image_url",
+                                image_url: { url: "https://example.com/a.png" },
+                            },
+                        ],
+                    },
+                ],
+                tools: [{ type: "function", function: { name: "lookup" } }],
+            }),
+        ).toBe(true);
+    });
+
     it.each([
         ["deepseek/deepseek-v4.1-flash", 0.000546],
         ["deepseek/deepseek-v4.1-flash:fireworks", 0.000546],
@@ -1150,6 +1217,21 @@ describe("static provider fallbacks", () => {
             promptTextTokens: (0.07 / 1_000_000) * 1.055,
             promptCachedTokens: (0.04 / 1_000_000) * 1.055,
             completionTextTokens: (0.2 / 1_000_000) * 1.055,
+        });
+        expect(
+            TEXT_SERVICES["nvidia/nemotron-3.5-super-vl"].cost,
+        ).toMatchObject({
+            promptTextTokens: 0.15 / 1_000_000,
+            promptCachedTokens: 0.02 / 1_000_000,
+            completionTextTokens: 0.5 / 1_000_000,
+        });
+        expect(
+            TEXT_SERVICES["nvidia/nemotron-3.5-super-vl:openrouter:together"]
+                .cost,
+        ).toMatchObject({
+            promptTextTokens: (0.15 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.02 / 1_000_000) * 1.055,
+            completionTextTokens: (0.5 / 1_000_000) * 1.055,
         });
         expect(
             TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"].cost,

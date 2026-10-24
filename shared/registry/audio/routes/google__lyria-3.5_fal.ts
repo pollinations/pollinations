@@ -1,4 +1,5 @@
 import type { FallbackDefinition } from "../../merge-fallbacks";
+
 export const id = "google/lyria-3.5:fal";
 export const parent = "google/lyria-3.5";
 export const order = 0;

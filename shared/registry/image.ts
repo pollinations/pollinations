@@ -500,14 +500,14 @@ const IMAGE_BASE_SERVICES = {
     },
     "bytedance/seedream-5.0-pro": {
         aliases: ["seedream-5-pro", "seedream-pro-5", "seedream5-pro"],
-        provider: "replicate",
+        provider: "vercel",
         publisher: "ByteDance",
         category: "image",
         addedDate: new Date("2026-07-10").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            completionImageTokens: 0.09, // per 2K image
+            completionImageTokens: 0.035, // per 2K image; settle from gateway receipt
         },
         title: "Seedream 5.0 Pro",
         description: "Premium multimodal image generation and editing",

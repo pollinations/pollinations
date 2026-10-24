@@ -9,6 +9,12 @@ import { perMillion } from "./price-helpers";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
+    "bytedance/seedream-5.0-pro": {
+        "bytedance/seedream-5.0-pro:replicate": {
+            provider: "replicate",
+            cost: { completionImageTokens: 0.09 },
+        },
+    },
     "alibaba/wan-2.7-image": {
         "alibaba/wan-2.7-image:replicate": { provider: "replicate" },
     },

@@ -748,6 +748,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "bytedance/seedream-5.0-pro": {
     "cost": {
+      "completionImageTokens": 0.035,
+    },
+    "price": {
+      "completionImageTokens": 0.035,
+    },
+  },
+  "bytedance/seedream-5.0-pro:replicate": {
+    "cost": {
       "completionImageTokens": 0.09,
     },
     "price": {

@@ -67,6 +67,7 @@ const VERTEX_GEMINI_IMAGE_CONFIGS = {
         generator: "Vertex AI Gemini 3 Pro Image",
         resolution: "tiered",
         reasoning: false,
+        cachedInput: true,
     },
 } as const satisfies Record<string, VertexGeminiImageConfig>;
 

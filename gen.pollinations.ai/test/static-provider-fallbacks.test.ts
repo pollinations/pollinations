@@ -1132,42 +1132,6 @@ describe("static provider fallbacks", () => {
         }
     });
 
-    it.each([
-        [{ usage: { payg_credits_charged: 0.0001 } }, 0.0001],
-        [{ usage: { payg_credits_charged: 0 } }, 0],
-        [
-            {
-                streamEvents: [
-                    { usage: { payg_credits_charged: 0.00005 } },
-                    { payg_usage: { payg_credits_charged: 0.0001 } },
-                    { payg_credits_charged: 0.0001 },
-                ],
-            },
-            0.0001,
-        ],
-        [{}, 0.001365],
-        [{ usage: { payg_credits_charged: -1 } }, 0.001365],
-        [{ usage: { payg_credits_charged: "0.0001" } }, 0.001365],
-        [{ usage: { payg_credits_charged: Number.NaN } }, 0.001365],
-        [
-            { usage: { payg_credits_charged: Number.POSITIVE_INFINITY } },
-            0.001365,
-        ],
-    ])(
-        "settles Lightning v2 from a valid final receipt: %j",
-        (output, expected) => {
-            const model = "inferenceport-ai/lightning-text-v2";
-            const billed = calculateUsageBilling({
-                model,
-                output,
-                usage: { promptTextTokens: 1819, completionTextTokens: 1 },
-                servedBy: TEXT_SERVICES[model],
-            });
-            expect(billed.cost.totalCost).toBeCloseTo(expected, 12);
-            expect(billed.price.totalPrice).toBe(expected);
-        },
-    );
-
     it("keeps exact provider route costs", () => {
         expect(TEXT_SERVICES["openai/gpt-4o-mini"].cost).toMatchObject({
             promptTextTokens: (0.15 / 1_000_000) * 1.055,
@@ -1498,6 +1462,42 @@ describe("static provider fallbacks", () => {
             expect(textCapabilityError(sonar, request)).toBeUndefined();
         }
     });
+
+    it.each([
+        [{ usage: { payg_credits_charged: 0.0001 } }, 0.0001],
+        [{ usage: { payg_credits_charged: 0 } }, 0],
+        [
+            {
+                streamEvents: [
+                    { usage: { payg_credits_charged: 0.00005 } },
+                    { payg_usage: { payg_credits_charged: 0.0001 } },
+                    { payg_credits_charged: 0.0001 },
+                ],
+            },
+            0.0001,
+        ],
+        [{}, 0.001365],
+        [{ usage: { payg_credits_charged: -1 } }, 0.001365],
+        [{ usage: { payg_credits_charged: "0.0001" } }, 0.001365],
+        [{ usage: { payg_credits_charged: Number.NaN } }, 0.001365],
+        [
+            { usage: { payg_credits_charged: Number.POSITIVE_INFINITY } },
+            0.001365,
+        ],
+    ])(
+        "settles Lightning v2 from a valid final receipt: %j",
+        (output, expected) => {
+            const model = "inferenceport-ai/lightning-text-v2";
+            const billed = calculateUsageBilling({
+                model,
+                output,
+                usage: { promptTextTokens: 1819, completionTextTokens: 1 },
+                servedBy: TEXT_SERVICES[model],
+            });
+            expect(billed.cost.totalCost).toBeCloseTo(expected, 12);
+            expect(billed.price.totalPrice).toBe(expected);
+        },
+    );
 
     it("rejects image input only for models without image input", () => {
         const chat = {

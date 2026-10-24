@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| News | `https://gen.pollinations.ai/mcp/news` | Search worldwide news articles with GDELT | [Source](https://github.com/pollinations/pollinations/tree/main/apps/news-mcp) |
 
 Send the key with every request:
 
@@ -206,6 +207,14 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### News MCP
+
+`news_search` searches worldwide news through GDELT and returns the newest
+matching articles with title, URL, publish time, domain, language and country.
+GDELT operators such as `"exact phrase"`, `sourcelang:`, `sourcecountry:` and
+`domain:` narrow the search. Searches are free and require a Pollinations key.
+The key is not sent to GDELT.
 
 ### Billing and permissions
 

@@ -2988,7 +2988,7 @@ const TEXT_BASE_SERVICES = {
             promptVideoTokens: perMillion(2.0),
             completionTextTokens: perMillion(12.0),
         },
-        // Vertex reprices the whole request from 200K prompt tokens; its single
+        // Vertex reprices the whole request above 200K prompt tokens; its single
         // input price covers text, image, audio and video.
         ...defineCostVariants(
             {
@@ -3002,23 +3002,23 @@ const TEXT_BASE_SERVICES = {
                     completionTextTokens: perMillion(18.0),
                 },
             },
-            longContextAtLeast(200_000),
+            longContextAbove(200_000),
             {
                 long_context: {
-                    label: "Long context (200K+)",
+                    label: "Long context (>200K)",
                     description:
-                        "At least 200,000 prompt tokens; text, cached, cache-write, image, audio, video, and output rates increase.",
+                        "More than 200,000 prompt tokens; text, cached, cache-write, image, audio, video, and output rates increase.",
                 },
             },
-            "<200K context",
+            "≤200K context",
             [
                 {
                     "key": "context",
                     "label": "Context",
                     "unit": "tokens",
                     "values": {
-                        "": "<200K",
-                        "long_context": "≥200K",
+                        "": "≤200K",
+                        "long_context": ">200K",
                     },
                 },
             ],

@@ -88,20 +88,28 @@ describe("long-context cost variants", () => {
         },
     );
 
-    it("Gemini uses OpenRouter's inclusive 200K boundary", () => {
-        expect(
-            bill("google/gemini-3.1-pro-preview", {
-                promptTextTokens: 199_999,
-            }).costVariant,
-        ).toBeUndefined();
+    it("Gemini 3.1 Pro uses Vertex's strict 200K boundary", () => {
         expect(
             bill("google/gemini-3.1-pro-preview", {
                 promptTextTokens: 200_000,
             }).costVariant,
-        ).toBe("long_context");
+        ).toBeUndefined();
         expect(
             bill("google/gemini-3.1-pro-preview", {
                 promptTextTokens: 200_001,
+            }).costVariant,
+        ).toBe("long_context");
+    });
+
+    it("Gemini 3.1 Pro's OpenRouter fallback keeps the inclusive 200K boundary", () => {
+        expect(
+            bill("google/gemini-3.1-pro-preview:openrouter:vertex-global", {
+                promptTextTokens: 199_999,
+            }).costVariant,
+        ).toBeUndefined();
+        expect(
+            bill("google/gemini-3.1-pro-preview:openrouter:vertex-global", {
+                promptTextTokens: 200_000,
             }).costVariant,
         ).toBe("long_context");
     });

@@ -628,6 +628,27 @@ describe("static provider fallbacks", () => {
         expect(parent.fallbacks).toBeUndefined();
     });
 
+    it("keeps anthropic/claude-sonnet-5.5's public quote when its backup multiplier is 1", () => {
+        const model = "anthropic/claude-sonnet-5.5";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES["anthropic/claude-sonnet-5.5:aws"];
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 100,
+                promptCachedTokens: 20,
+                promptCacheWriteTokens: 10,
+                completionTextTokens: 30,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(fallback.priceMultiplier).toBe(1);
+        expect(primary.priceMultiplier).toBe(0.75);
+        expect(billed.cost.totalCost).toBeCloseTo(0.000527, 12);
+        expect(billed.price.totalPrice).toBe(0.00039525);
+    });
+
     it("keeps D1 paid-only and charges its public quote on OpenRouter fallback", () => {
         const primary = TEXT_SERVICES["liquid/d1"];
         const fallback = TEXT_SERVICES["liquid/d1:openrouter"];

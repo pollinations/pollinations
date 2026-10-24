@@ -269,6 +269,12 @@ const models: ModelDefinition[] = [
         transform: omitOpenAISampling,
     },
     {
+        name: "openai/gpt-5.6-sol:openai",
+        config: portkeyConfig["gpt-5.6-sol-openai"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
         name: "openai/gpt-5.6-sol",
         config: portkeyConfig["gpt-5.6-sol"],
         transform: omitOpenAISampling,

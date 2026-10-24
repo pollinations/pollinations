@@ -166,6 +166,12 @@ export const TEXT_FALLBACKS = {
     },
     // OpenRouter Alibaba routes cover gateway failures, not Alibaba-wide outages.
     // Max currently requires reasoning and rejects forced tool choice.
+    "openai/gpt-5.6-sol": {
+        "openai/gpt-5.6-sol:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
+        },
+    },
     "typesafe/jev-1.13": {
         // Same TypeSafe backend; covers gateway failures, not TypeSafe outages.
         "typesafe/jev-1.13:openrouter:typesafe": {

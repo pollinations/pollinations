@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-24T17:44:43.359533+00:00",
+  "generated_at": "2026-10-24T17:49:30.661538+00:00",
   "models": [
     {
       "id": "2026-09-29:anthropic/claude-sonnet-5.5",
@@ -6880,6 +6880,26 @@
     }
   ],
   "daily": [
+    {
+      "date": "2026-10-23",
+      "emoji": "🎵",
+      "title": "Sound effects for video",
+      "text": "Give `sonilo/sonilo-1.1-sfx` a public video URL in `reference_video` and a sound prompt to generate a separate MP3 effects track timed to the video. It requires a paid balance and has no fallback. [View the model](https://enter.pollinations.ai/models?q=sonilo/sonilo-1.1-sfx).",
+      "prs": [
+        17597
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-23",
+      "emoji": "🤖",
+      "title": "Barbara starts on GPT-6.1 Sol",
+      "text": "New Barbara setups default to `openai/gpt-6.1-sol`, which can use Quest Pollen. The model picker also shows which choices are Quest Pollen-eligible and gives a per-message estimate for GPT-6.1 Sol.",
+      "prs": [
+        18181
+      ],
+      "kind": "product"
+    },
     {
       "date": "2026-10-22",
       "emoji": "🚀",

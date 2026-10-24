@@ -82,7 +82,7 @@ polli gen chat --model openai/gpt-5.4-nano            # interactive multi-turn
 
 ```bash
 polli models                 # all models
-polli models --type image    # filter (text, image, audio, video, 3d, embedding)
+polli models --type image    # filter (text, decision, image, audio, video, 3d, embedding)
 polli models --stats         # health + perf (last 60m)
 polli docs                   # full API reference in the terminal
 polli docs /image            # one endpoint

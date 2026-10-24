@@ -14,9 +14,11 @@ import type { CommunityModelRateLimiter } from "../src/durable-objects/Community
 const QUOTA_BOUND_MODELS = new Set([
     "inclusionai/ling-3.1-flash",
     ...TEXT_SERVICES["inclusionai/ling-3.1-flash"].fallbacks,
+    "stealth/glyph-cluster",
     "inferenceport-ai/lightning-image-turbo",
     "microsoft/mai-image-2.6-flash",
     "microsoft/mai-image-2.6",
+    "vllm-sr/d3",
 ]);
 
 describe("model rate limiting", () => {

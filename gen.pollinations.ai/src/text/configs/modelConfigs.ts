@@ -1019,6 +1019,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
         }),
+    "anthropic/claude-sonnet-4.6:anthropic": () =>
+        createAnthropicConfig({
+            model: "claude-sonnet-4-6",
+            defaultOptions: { max_tokens: 64000 },
+        }),
     "anthropic/claude-sonnet-5.5": () =>
         createAnthropicConfig({
             model: "claude-sonnet-5-5",

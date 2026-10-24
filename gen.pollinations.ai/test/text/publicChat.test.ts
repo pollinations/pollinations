@@ -313,3 +313,44 @@ it("drops InferencePort's PAYG ledger entry from non-streaming completions", asy
     const balance = await getUserBalance(drizzle(env.DB), userId);
     expect(balance.packBalance).toBeCloseTo(100 - 0.0001, 10);
 });
+
+it.each([false, true])(
+    "settles Lightning v2 privately through the handler (stream=%s)",
+    async (stream) => {
+        vi.stubEnv("INFERENCEPORT_API_KEY", "test-ip-key");
+        const usage = {
+            prompt_tokens: 1819,
+            completion_tokens: 1,
+            total_tokens: 1820,
+            payg_credits_charged: 0.0001,
+        };
+        const completion = {
+            id: "chatcmpl-lightning-v2",
+            object: "chat.completion",
+            created: 1760000000,
+            model: "lightning",
+            choices: [
+                {
+                    index: 0,
+                    message: { role: "assistant", content: "OK" },
+                    finish_reason: "stop",
+                },
+            ],
+            usage,
+        };
+        const wire = stream
+            ? `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: "OK" } }] })}\n\ndata: ${JSON.stringify({ choices: [], usage })}\n\ndata: ${JSON.stringify({ payg_usage: { payg_credits_charged: 0.0001 } })}\n\ndata: [DONE]\n\n`
+            : JSON.stringify(completion);
+        const { response, text, calls, balance } = await chatThroughHandler(
+            "inferenceport-ai/lightning-text-v2",
+            "api.inferenceport.ai",
+            wire,
+            stream,
+        );
+        expect(response.status, text).toBe(200);
+        expect(calls).toBe(1);
+        expect(text).toContain("OK");
+        expect(text).not.toContain("payg_");
+        expect(balance.packBalance).toBeCloseTo(100 - 0.0001, 10);
+    },
+);

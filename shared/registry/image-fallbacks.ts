@@ -259,6 +259,30 @@ export const IMAGE_FALLBACKS = {
             },
         },
     },
+    "x-ai/grok-imagine-image-2.0": {
+        "x-ai/grok-imagine-image-2.0:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-24").getTime(),
+            cost: {
+                promptImageTokens: 0.01 * 1.055,
+                completionImageTokens: 0.06 * 1.055, // medium, 1K
+            },
+            costVariants: {
+                low_1k: {
+                    promptImageTokens: 0.01 * 1.055,
+                    completionImageTokens: 0.04 * 1.055,
+                },
+                low_2k: {
+                    promptImageTokens: 0.01 * 1.055,
+                    completionImageTokens: 0.06 * 1.055,
+                },
+                medium_2k: {
+                    promptImageTokens: 0.01 * 1.055,
+                    completionImageTokens: 0.08 * 1.055,
+                },
+            },
+        },
+    },
     "x-ai/grok-imagine-video-1.5-lite": {
         "x-ai/grok-imagine-video-1.5-lite:openrouter": {
             provider: "openrouter",

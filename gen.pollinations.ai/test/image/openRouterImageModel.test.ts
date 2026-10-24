@@ -190,7 +190,7 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
                 "test prompt",
                 {
                     ...baseParams,
-                    model: "x-ai/grok-imagine-image-2.0",
+                    model: "x-ai/grok-imagine-image-2.0:openrouter",
                     quality,
                     resolution,
                     image: [
@@ -228,7 +228,7 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
                 ],
             });
             expect(result.trackingData).toEqual({
-                actualModel: "x-ai/grok-imagine-image-2.0",
+                actualModel: "x-ai/grok-imagine-image-2.0:openrouter",
                 usage: {
                     promptImageTokens: 3,
                     completionImageTokens: 1,
@@ -255,7 +255,7 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
         await expect(
             callOpenRouterGrokImagineImage2API("test prompt", {
                 ...baseParams,
-                model: "x-ai/grok-imagine-image-2.0",
+                model: "x-ai/grok-imagine-image-2.0:openrouter",
             }),
         ).rejects.toMatchObject({
             status: 400,

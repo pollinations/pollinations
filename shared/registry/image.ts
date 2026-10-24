@@ -1532,30 +1532,30 @@ const IMAGE_BASE_SERVICES = {
     },
     "x-ai/grok-imagine-image-2.0": {
         aliases: ["grok-imagine-image-2.0"],
-        provider: "openrouter",
+        provider: "xai",
         publisher: "xAI",
         category: "image",
         addedDate: new Date("2026-08-14").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // OpenRouter x-ai/grok-imagine-image-2.0 pricing, verified 2026-08-14.
+        // xAI direct API rates; a low 1K probe cost $0.04 (2026-10-24).
         cost: {
-            promptImageTokens: 0.01 * 1.055,
-            completionImageTokens: 0.06 * 1.055, // medium, 1K
+            promptImageTokens: 0.01,
+            completionImageTokens: 0.06, // medium, 1K
         },
         ...defineCostVariants(
             {
                 low_1k: {
-                    promptImageTokens: 0.01 * 1.055,
-                    completionImageTokens: 0.04 * 1.055,
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.04,
                 },
                 low_2k: {
-                    promptImageTokens: 0.01 * 1.055,
-                    completionImageTokens: 0.06 * 1.055,
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.06,
                 },
                 medium_2k: {
-                    promptImageTokens: 0.01 * 1.055,
-                    completionImageTokens: 0.08 * 1.055,
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.08,
                 },
             },
             ({ input }) => {

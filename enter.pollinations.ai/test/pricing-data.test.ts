@@ -833,7 +833,7 @@ test("updated provider prices are reflected for xAI media and text routes", () =
                 undefined,
                 { quality, resolution },
             ).totalPrice,
-        ).toBeCloseTo(expected * 1.055, 8);
+        ).toBeCloseTo(expected, 8);
     }
     expect(
         calculateCost("x-ai/grok-imagine-video", {

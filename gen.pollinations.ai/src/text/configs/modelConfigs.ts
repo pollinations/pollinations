@@ -1135,6 +1135,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createVercelAIGatewayModelConfig({
             model: "meta/muse-spark-1.2",
         }),
+    "meta/muse-spark-1.3": () =>
+        createVercelAIGatewayModelConfig({
+            model: "meta/muse-spark-1.3",
+        }),
     "meta/muse-wonder-1.0:vercel": () =>
         createVercelAIGatewayModelConfig({
             model: "meta/muse-wonder-1.0",

@@ -13,6 +13,15 @@ import { CHAT_PARAMETERS } from "./text-parameters";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "qwen/qwen3-coder-30b-a3b-instruct": {
+        "qwen/qwen3-coder-30b-a3b-instruct:aws": {
+            provider: "aws",
+            cost: {
+                promptTextTokens: perMillion(0.15),
+                completionTextTokens: perMillion(0.6),
+            },
+        },
+    },
     "perplexity/pplx-decider-v1.2": {
         // Same Perplexity backend; covers gateway failures, not Perplexity outages.
         "perplexity/pplx-decider-v1.2:openrouter": {

@@ -335,6 +335,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen/qwen3-coder-30b-a3b-instruct",
+        config: portkeyConfig["qwen-coder-openrouter"],
+        transform: pipe(stripReasoning, omitParameters("stop")),
+    },
+    {
+        name: "qwen/qwen3-coder-30b-a3b-instruct:aws",
         config: portkeyConfig["qwen-coder-bedrock"],
         // No default coding prompt: it makes Bedrock narrate before a tool
         // call, leaking raw <function=...> text. Qwen3-Coder has no reasoning

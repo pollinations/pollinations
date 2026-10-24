@@ -18,6 +18,10 @@ const log = getLogger(["enter", "quests", "model-usage"]);
  * generation in that modality within the populated recent window). The pipe
  * decides whether the user qualifies; the rewards table is the idempotent write
  * path.
+ *
+ * The pipe only sees a billed, successful generation, so it cannot tell that
+ * video is paid-only and Quest Pollen is refused there. The video quest states
+ * that prerequisite in its description, the way the other gated quests do.
  */
 
 const useTextModelQuest: QuestDefinition = {
@@ -57,7 +61,7 @@ const useVideoModelQuest: QuestDefinition = {
     id: "use_video_model",
     title: "Use a video model",
     description:
-        "Make one successful request from any of the [video](https://gen.pollinations.ai/docs#tag/video) models.",
+        "Make one successful request from any of the [video](https://gen.pollinations.ai/docs#tag/video) models. Every video model is paid-only, so this needs a Paid Pollen balance — Quest Pollen does not cover them.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,

@@ -144,6 +144,8 @@ export type BillingRules = {
     adjustments?: BillingAdjustmentRule[];
     /** Complete provider charge, including tools, when token details cannot reproduce it. */
     resolveTotalCost?: (output: unknown) => number | undefined;
+    /** Preserve an explicitly fixed customer quote while recording provider receipts. */
+    priceFromRates?: boolean;
 };
 
 // Per-rule billing breakdown, returned in parallel to the numeric usage maps.
@@ -489,7 +491,7 @@ function rateAgainst(
     return {
         cost: reportedCost === undefined ? cost : { totalCost: reportedCost },
         price:
-            reportedCost === undefined
+            reportedCost === undefined || svc.billing?.priceFromRates
                 ? price
                 : {
                       totalPrice: roundPollenLedgerAmount(

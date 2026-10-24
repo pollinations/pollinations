@@ -64,11 +64,6 @@ const OPENROUTER_ROUTES = [
         "streamlake",
     ],
     [
-        "deepseek/deepseek-v4-pro:openrouter:streamlake",
-        "deepseek/deepseek-v4-pro-0813",
-        "streamlake",
-    ],
-    [
         "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16",
         "nvidia/nemotron-3.5-lightning",
         "coreweave/bf16",
@@ -177,6 +172,40 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
+    it.each([false, true])(
+        "records DeepSeek Pro off-peak receipts and preserves its quote (stream %s)",
+        (stream) => {
+            const primary = TEXT_SERVICES["deepseek/deepseek-v4-pro"];
+            const usage = {
+                promptTextTokens: 1000,
+                promptCachedTokens: 100,
+                completionTextTokens: 10,
+            };
+            const receipt =
+                (1000 * 0.5808 + 100 * 0.05808 + 10 * 1.7424) / 1_000_000;
+            const output = { usage: { cost: receipt } };
+            const billed = calculateUsageBilling({
+                model: "deepseek/deepseek-v4-pro",
+                usage,
+                servedBy: primary,
+                quotedBy: primary,
+                output: stream
+                    ? { streamEvents: [{ choices: [] }, output] }
+                    : output,
+            });
+            expect(billed.cost.totalCost).toBeCloseTo(receipt * 1.055, 12);
+            expect(billed.price.totalPrice).toBeCloseTo(
+                ((1000 * 1.122 + 100 * 0.1122 + 10 * 3.366) * 1.055) /
+                    1_000_000,
+                8,
+            );
+            expect(primary).not.toHaveProperty("fallbacks");
+            expect(TEXT_SERVICES).not.toHaveProperty(
+                "deepseek/deepseek-v4-pro:openrouter:streamlake",
+            );
+        },
+    );
+
     it("uses current Worker bindings for AWS and DeepInfra fallback credentials", () => {
         try {
             syncTextEnvironment({
@@ -1011,23 +1040,6 @@ describe("static provider fallbacks", () => {
             expect(billing.price.totalPrice).toBeCloseTo(0.000273, 8);
         },
     );
-
-    it("updates StreamLake's DeepSeek Pro cost without changing the caller's quote", () => {
-        const billing = calculateUsageBilling({
-            model: "deepseek/deepseek-v4-pro",
-            servedBy:
-                TEXT_SERVICES["deepseek/deepseek-v4-pro:openrouter:streamlake"],
-            quotedBy: TEXT_SERVICES["deepseek/deepseek-v4-pro"],
-            usage: {
-                promptTextTokens: 1000,
-                promptCachedTokens: 1000,
-                completionTextTokens: 100,
-                completionReasoningTokens: 100,
-            },
-        });
-        expect(billing.cost.totalCost).toBeCloseTo(0.00113729, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(0.00201231, 8);
-    });
 
     it("keeps the Kimi K3 quote when DeepInfra serves cached and reasoning tokens", () => {
         const primary = TEXT_SERVICES["moonshotai/kimi-k3"];

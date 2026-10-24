@@ -18,7 +18,6 @@ const OPENROUTER_VIDEO_URL = "https://openrouter.ai/api/v1/videos";
 const HAPPYHORSE_MODEL = "alibaba/happyhorse-1.1";
 const HEYGEN_VIDEO_MODEL = "heygen/heygen-video-1";
 const GROK_VIDEO_MODEL = "x-ai/grok-imagine-video";
-const GROK_VIDEO_15_MODEL = "x-ai/grok-imagine-video-1.5";
 const GROK_VIDEO_15_LITE_MODEL = "x-ai/grok-imagine-video-1.5-lite";
 const GROK_VIDEO_15_LITE_FALLBACK =
     "x-ai/grok-imagine-video-1.5-lite:openrouter";
@@ -221,14 +220,9 @@ export async function callOpenRouterGrokVideoAPI(
 ): Promise<VideoGenerationResult> {
     const duration = resolveGrokDuration(safeParams.duration);
     const isLite = safeParams.model === GROK_VIDEO_15_LITE_FALLBACK;
-    const isVersion15 = isLite || safeParams.model === GROK_VIDEO_15_MODEL;
-    const resolution = isVersion15 ? (safeParams.resolution ?? "720p") : "720p";
+    const resolution = isLite ? (safeParams.resolution ?? "720p") : "720p";
     const requestBody: Record<string, unknown> = {
-        model: isLite
-            ? GROK_VIDEO_15_LITE_MODEL
-            : isVersion15
-              ? GROK_VIDEO_15_MODEL
-              : GROK_VIDEO_MODEL,
+        model: isLite ? GROK_VIDEO_15_LITE_MODEL : GROK_VIDEO_MODEL,
         prompt,
         resolution,
         duration,
@@ -250,7 +244,7 @@ export async function callOpenRouterGrokVideoAPI(
     const { buffer, providerCost } = await generateOpenRouterVideo(
         requestBody,
         // Base Grok's 15-second clips can complete after the old 3-minute cutoff.
-        isVersion15 ? GROK_15_POLL_TIMEOUT_MS : 5 * 60 * 1000,
+        isLite ? GROK_15_POLL_TIMEOUT_MS : 5 * 60 * 1000,
     );
 
     logOps("Grok Video Pro generation complete", {

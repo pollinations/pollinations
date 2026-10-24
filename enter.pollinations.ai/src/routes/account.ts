@@ -227,7 +227,7 @@ async function grantFromCallerKey(
         expiresAt: Date | null;
         pollenBudget: number | null;
     },
-    budgetIncrease = grant.pollenBudget ?? 0,
+    budgetToReserve = grant.pollenBudget ?? 0,
 ): Promise<number> {
     if (!callerKey) return 0;
     const deny = (message: string): never => {
@@ -267,14 +267,14 @@ async function grantFromCallerKey(
             "An API key with a pollen budget can only grant a budget, taken from its own",
         );
     }
-    if (budgetIncrease <= 0) return 0;
+    if (budgetToReserve <= 0) return 0;
     const { ok } = await atomicReserveApiKeyBalance(
         drizzle(db),
         callerKey.id,
-        budgetIncrease,
+        budgetToReserve,
     );
     if (!ok) deny("This API key's budget is too low to grant that budget");
-    return budgetIncrease;
+    return budgetToReserve;
 }
 
 function parsePermissions(
@@ -1960,7 +1960,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Update API Key",
             description:
-                "Update an API key's name, model access, budget, account permissions, expiry, description, or app settings. Omitted fields are unchanged. Requires `account:keys` permission when using API keys. An API key can't update itself, and can only edit keys that end up within its own account permissions, models, expiry and budget; raising a budget deducts the increase from a budgeted API key's own budget.",
+                "Update an API key's name, model access, budget, account permissions, expiry, description, or app settings. Omitted fields are unchanged. Requires `account:keys` permission when using API keys. An API key can't update itself, and can only edit keys that end up within its own account permissions, models, expiry and budget. Raising a budget deducts the increase from a budgeted API key's own budget; extending or removing an expiry deducts the entire resulting budget instead.",
             responses: {
                 200: { description: "Updated API key" },
                 400: { description: "Invalid update" },
@@ -2062,6 +2062,14 @@ export const accountRoutes = new Hono<Env>()
                 pollenBudget != null
                     ? pollenBudget - (key.pollenBalance ?? 0)
                     : 0;
+            const updatedBudget =
+                pollenBudget === undefined ? key.pollenBalance : pollenBudget;
+            // Renewing a grant authorizes all its remaining spending again,
+            // even when its budget is unchanged or reduced.
+            const extendsExpiry =
+                key.expiresAt !== null &&
+                expiresAt !== undefined &&
+                (expiresAt === null || expiresAt > key.expiresAt);
             // A key can only edit keys that end up within its own limits.
             await grantFromCallerKey(
                 c.env.DB,
@@ -2071,12 +2079,9 @@ export const accountRoutes = new Hono<Env>()
                     allowedModels: permissions.models ?? null,
                     expiresAt:
                         expiresAt === undefined ? key.expiresAt : expiresAt,
-                    pollenBudget:
-                        pollenBudget === undefined
-                            ? key.pollenBalance
-                            : pollenBudget,
+                    pollenBudget: updatedBudget,
                 },
-                budgetChange,
+                extendsExpiry ? (updatedBudget ?? 0) : budgetChange,
             );
             // A budgeted key moves budget onto what the key has left now
             // rather than overwriting it, so spending during the update isn't

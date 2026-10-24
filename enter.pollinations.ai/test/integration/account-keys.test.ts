@@ -682,6 +682,107 @@ describe("Account Key Management API", () => {
             expect(await budgetOf(caller.key)).toBe(4);
         });
 
+        test("a key can't renew a budget beyond its allowance", async ({
+            accountToken,
+        }) => {
+            const caller = await createApiKeyViaApi(accountToken, {
+                name: "five",
+                accountPermissions: ["keys"],
+                pollenBudget: 5,
+            });
+            const created = await call(accountToken, "/keys", "POST", {
+                name: "hundred-for-a-minute",
+                pollenBudget: 100,
+                expiresIn: 60,
+            });
+            expect(created.status).toBe(200);
+            const target = await created.json();
+            const expiresAt = new Date(Date.now() + 1800_000).toISOString();
+            expect(Date.parse(expiresAt)).toBeGreaterThan(
+                Date.parse(target.expiresAt),
+            );
+
+            for (const renewal of [
+                { expiresAt },
+                { expiresAt: null },
+                { expiresAt, pollenBudget: 6 },
+                { expiresAt: null, pollenBudget: 6 },
+            ]) {
+                const response = await call(
+                    caller.key,
+                    `/keys/${target.id}`,
+                    "PATCH",
+                    renewal,
+                );
+                expect(response.status).toBe(403);
+            }
+            expect(await budgetOf(caller.key)).toBe(5);
+            const keys = await (
+                await call(accountToken, "/keys", "GET")
+            ).json();
+            expect(
+                keys.data.find((key: { id: string }) => key.id === target.id),
+            ).toMatchObject({
+                pollenBalance: 100,
+                expiresAt: target.expiresAt,
+            });
+        });
+
+        test("renewing a key reserves its entire resulting budget", async ({
+            accountToken,
+        }) => {
+            const caller = await createApiKeyViaApi(accountToken, {
+                name: "five",
+                accountPermissions: ["keys"],
+                pollenBudget: 5,
+            });
+            const created = await call(accountToken, "/keys", "POST", {
+                name: "hundred-for-a-minute",
+                pollenBudget: 100,
+                expiresIn: 60,
+            });
+            expect(created.status).toBe(200);
+            const target = await created.json();
+            const url = `/keys/${target.id}`;
+            const expiresAt = new Date(Date.now() + 1800_000).toISOString();
+            const renewed = await call(caller.key, url, "PATCH", {
+                expiresAt,
+                pollenBudget: 3,
+            });
+            expect(renewed.status).toBe(200);
+            expect((await renewed.json()).pollenBalance).toBe(3);
+            expect(await budgetOf(caller.key)).toBe(2);
+
+            // A second renewal must fit the caller's remaining allowance.
+            expect(
+                (await call(caller.key, url, "PATCH", { expiresAt: null }))
+                    .status,
+            ).toBe(403);
+            // Keeping or shortening the expiry doesn't grant extra lifetime.
+            const keys = await (
+                await call(accountToken, "/keys", "GET")
+            ).json();
+            const current = keys.data.find(
+                (key: { id: string }) => key.id === target.id,
+            );
+            for (const expiry of [current.expiresAt, target.expiresAt]) {
+                expect(
+                    (
+                        await call(caller.key, url, "PATCH", {
+                            expiresAt: expiry,
+                        })
+                    ).status,
+                ).toBe(200);
+            }
+            expect(await budgetOf(caller.key)).toBe(2);
+            expect(await budgetOf(target.key)).toBe(3);
+            // The account owner can still renew existing grants directly.
+            expect(
+                (await call(accountToken, url, "PATCH", { expiresAt: null }))
+                    .status,
+            ).toBe(200);
+        });
+
         test("a key limited to a category can grant community models in it", async ({
             accountToken,
         }) => {

@@ -1223,7 +1223,7 @@ describe("static provider fallbacks", () => {
         });
     });
 
-    it("prices Gemini 4 Argon at Vertex list and records OpenRouter's fee on the fallback", () => {
+    it("keeps the Vertex quote while recording Gemini 4 Argon backup promotional costs", () => {
         const primary = TEXT_SERVICES["google/gemini-4-argon"];
         const fallback =
             TEXT_SERVICES["google/gemini-4-argon:openrouter:ai-studio"];
@@ -1235,9 +1235,9 @@ describe("static provider fallbacks", () => {
             fallbacks: ["google/gemini-4-argon:openrouter:ai-studio"],
         });
         expect(fallback.cost).toMatchObject({
-            promptTextTokens: (4 / 1_000_000) * 1.055,
-            promptCachedTokens: (0.2 / 1_000_000) * 1.055,
-            completionTextTokens: (20 / 1_000_000) * 1.055,
+            promptTextTokens: (2 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.1 / 1_000_000) * 1.055,
+            completionTextTokens: (10 / 1_000_000) * 1.055,
         });
         const billing = calculateUsageBilling({
             model: "google/gemini-4-argon",
@@ -1245,8 +1245,22 @@ describe("static provider fallbacks", () => {
             servedBy: fallback,
             quotedBy: primary,
         });
-        expect(billing.cost.totalCost).toBeCloseTo(0.02532, 12);
+        expect(billing.cost.totalCost).toBeCloseTo(0.01266, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.024, 12);
+        const cacheWrite = calculateUsageBilling({
+            model: "google/gemini-4-argon",
+            usage: { promptCacheWriteTokens: 1000 },
+            servedBy: fallback,
+            quotedBy: primary,
+            output: {
+                usage: { prompt_tokens_details: { cache_write_tokens: 1000 } },
+            },
+        });
+        expect(cacheWrite.cost.totalCost).toBeCloseTo(
+            (0.002 + 0.0001875) * 1.055,
+            12,
+        );
+        expect(cacheWrite.price.totalPrice).toBeCloseTo(0.004, 12);
         expect(
             findModelByName(
                 "google/gemini-4-argon:openrouter:ai-studio",

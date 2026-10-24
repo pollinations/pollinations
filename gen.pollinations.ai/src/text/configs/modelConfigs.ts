@@ -418,10 +418,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "minimax/minimax-m2.7",
         "novita/fp8",
     ),
-    "minimax-m2.7-openrouter-minimax": createPinnedOpenRouterConfig(
-        "minimax/minimax-m2.7",
-        "minimax/fp8",
-    ),
     "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
     "xiaomi/mimo-v2.6-flash": () =>
         createNovitaModelConfig({ model: "xiaomimimo/mimo-v2.6-flash" }),

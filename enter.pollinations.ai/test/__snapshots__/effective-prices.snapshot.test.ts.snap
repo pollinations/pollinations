@@ -2283,18 +2283,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000028485,
     },
   },
-  "minimax/minimax-m2.7:openrouter:minimax": {
-    "cost": {
-      "completionTextTokens": 0.000001266,
-      "promptCachedTokens": 0.0000000633,
-      "promptTextTokens": 0.0000003165,
-    },
-    "price": {
-      "completionTextTokens": 0.000001266,
-      "promptCachedTokens": 0.0000000633,
-      "promptTextTokens": 0.0000003165,
-    },
-  },
   "minimax/minimax-m3": {
     "cost": {
       "completionTextTokens": 0.0000012,

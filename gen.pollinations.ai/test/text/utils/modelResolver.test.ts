@@ -861,11 +861,6 @@ describe("resolveModelConfig", () => {
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
         ["minimax-m2.7", "minimax/minimax-m2.7", "novita/fp8"],
         [
-            "minimax/minimax-m2.7:openrouter:minimax",
-            "minimax/minimax-m2.7",
-            "minimax/fp8",
-        ],
-        [
             "meta/llama-4-scout:openrouter:novita-bf16",
             "meta-llama/llama-4-scout",
             "novita/bf16",
@@ -882,6 +877,12 @@ describe("resolveModelConfig", () => {
             });
         },
     );
+
+    it("does not resolve the removed MiniMax M2.7 gateway fallback", () => {
+        expect(
+            findModelByName("minimax/minimax-m2.7:openrouter:minimax"),
+        ).toBeNull();
+    });
 
     it("routes Qwen Vision Pro directly to Alibaba without fallback", () => {
         const result = resolveModelConfig(messages, {

@@ -326,11 +326,10 @@ export const TEXT_FALLBACKS = {
             provider: "deepinfra",
             addedDate: new Date("2026-10-18").getTime(),
             cost: {
-                // DeepInfra list rates (2026-10-18); its 51% promotion is not
-                // passed on.
-                promptTextTokens: perMillion(0.2),
-                promptCachedTokens: perMillion(0.006),
-                completionTextTokens: perMillion(0.6),
+                // DeepInfra current 51% promotion (2026-10-24), no announced end.
+                promptTextTokens: perMillion(0.2) * 0.49,
+                promptCachedTokens: perMillion(0.006) * 0.49,
+                completionTextTokens: perMillion(0.6) * 0.49,
             },
         },
     },

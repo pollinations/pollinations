@@ -822,9 +822,11 @@ const AUDIO_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "audio",
         addedDate: new Date("2026-09-29").getTime(),
-        paidOnly: false,
+        // The regional deployment has 3 RPM against a 30-day peak of 35 RPM.
+        paidOnly: true,
         priceMultiplier: 1,
-        cost: { completionAudioTokens: 30 / 1_000_000 },
+        // Azure Speech-Text to Speech HD-Regional, USD retail (2026-10-24).
+        cost: { completionAudioTokens: 36.3 / 1_000_000 },
         title: "OpenAI TTS HD",
         description:
             "Higher-quality speech synthesis with six voices and six output formats",

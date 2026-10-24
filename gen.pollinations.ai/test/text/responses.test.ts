@@ -300,7 +300,11 @@ describe("direct Responses transport", () => {
                 model: "qwen/qwen3.7-plus",
                 defaults: expect.objectContaining({
                     max_output_tokens: 64000,
-                    provider: { sort: "price" },
+                    provider: {
+                        only: ["Alibaba"],
+                        ignore: ["alibaba/us-east-1"],
+                        allow_fallbacks: false,
+                    },
                 }),
             }),
         );
@@ -363,7 +367,11 @@ describe("direct Responses transport", () => {
                     store: false,
                     max_output_tokens: 64000,
                     max_tool_calls: 4,
-                    provider: { sort: "price" },
+                    provider: {
+                        only: ["Alibaba"],
+                        ignore: ["alibaba/us-east-1"],
+                        allow_fallbacks: false,
+                    },
                     tools: [
                         {
                             type: "function",

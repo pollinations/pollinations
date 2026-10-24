@@ -371,6 +371,8 @@ function createGenerationMocks() {
                 "openrouter.ai": responsesHandler,
                 "myceli-prod-eastus.openai.azure.com": responsesHandler,
                 "api.perplexity.ai": responsesHandler,
+                // Qwen3.7 Plus falls back to Alibaba direct.
+                "dashscope-intl.aliyuncs.com": responsesHandler,
             },
             reset: () => {
                 responsesState.requests = [];
@@ -834,6 +836,13 @@ function usageHeaders(headers: Record<string, string>) {
         "content-type": "application/json; charset=utf-8",
         ...headers,
     };
+}
+
+function withAlibabaFallbackKey() {
+    return withInlineGenerationCoordinator({
+        ...env,
+        DASHSCOPE_API_KEY: "test-dashscope-key",
+    } as unknown as CloudflareBindings);
 }
 
 async function fetchWorker(
@@ -2042,17 +2051,21 @@ test("direct Responses JSON rejects a successful envelope without usage", async 
     await mocks.enable("tinybird", "responsesDirect");
     mocks.responsesDirect.state.omitUsage = true;
 
-    const { response, wait } = await fetchWorker("/v1/responses", {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${paidApiKey}`,
+    const { response, wait } = await fetchWorker(
+        "/v1/responses",
+        {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${paidApiKey}`,
+            },
+            body: JSON.stringify({
+                model: "qwen/qwen3.7-plus",
+                input: "missing usage must fail",
+            }),
         },
-        body: JSON.stringify({
-            model: "qwen/qwen3.7-plus",
-            input: "missing usage must fail",
-        }),
-    });
+        withAlibabaFallbackKey(),
+    );
 
     expect(response.status).toBe(502);
     await expect(response.json()).resolves.toMatchObject({
@@ -2063,12 +2076,15 @@ test("direct Responses JSON rejects a successful envelope without usage", async 
     });
     await wait();
 
-    expect(mocks.responsesDirect.state.requests).toHaveLength(1);
-    expect(mocks.tinybird.state.events).toHaveLength(1);
-    expect(mocks.tinybird.state.events[0]).toMatchObject({
-        responseStatus: 502,
-        isBilledUsage: false,
-    });
+    // OpenRouter and the Alibaba fallback both omit usage; neither bills.
+    expect(mocks.responsesDirect.state.requests).toHaveLength(2);
+    expect(mocks.tinybird.state.events).toHaveLength(2);
+    for (const event of mocks.tinybird.state.events) {
+        expect(event).toMatchObject({
+            responseStatus: 502,
+            isBilledUsage: false,
+        });
+    }
 });
 
 test("direct Responses SSE is unchanged and terminal usage bills once", async ({
@@ -2231,29 +2247,36 @@ test("direct Responses rejects a non-SSE upstream before rewriting content-type"
     await mocks.enable("tinybird", "responsesDirect");
     mocks.responsesDirect.state.wrongStreamContentType = true;
 
-    const { response, wait } = await fetchWorker("/v1/responses", {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${paidApiKey}`,
+    const { response, wait } = await fetchWorker(
+        "/v1/responses",
+        {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${paidApiKey}`,
+            },
+            body: JSON.stringify({
+                model: "qwen/qwen3.7-plus",
+                input: "wrong content type",
+                stream: true,
+            }),
         },
-        body: JSON.stringify({
-            model: "qwen/qwen3.7-plus",
-            input: "wrong content type",
-            stream: true,
-        }),
-    });
+        withAlibabaFallbackKey(),
+    );
 
     expect(response.status).toBe(502);
     await expect(response.json()).resolves.toMatchObject({
         error: { message: expect.stringContaining("content-type") },
     });
     await wait();
-    expect(mocks.tinybird.state.events).toHaveLength(1);
-    expect(mocks.tinybird.state.events[0]).toMatchObject({
-        responseStatus: 502,
-        isBilledUsage: false,
-    });
+    // OpenRouter and the Alibaba fallback fail the same way; neither bills.
+    expect(mocks.tinybird.state.events).toHaveLength(2);
+    for (const event of mocks.tinybird.state.events) {
+        expect(event).toMatchObject({
+            responseStatus: 502,
+            isBilledUsage: false,
+        });
+    }
 });
 
 test("direct Responses returns 400 for reusable input state", async ({

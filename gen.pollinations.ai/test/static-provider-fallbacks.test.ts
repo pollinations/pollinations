@@ -124,7 +124,6 @@ const OPENROUTER_ROUTES = [
         "qwen/qwen3-coder-next",
         "streamlake",
     ],
-    ["tencent/hy3:openrouter:phala", "tencent/hy3", "phala"],
 ] as const;
 
 function fallbackRoutes(fallbacks: Record<string, Record<string, unknown>>) {
@@ -177,6 +176,13 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
+    it("keeps HY3 on its primary without a same-gateway fallback", () => {
+        expect(TEXT_SERVICES["tencent/hy3"]).not.toHaveProperty("fallbacks");
+        expect(TEXT_SERVICES).not.toHaveProperty(
+            "tencent/hy3:openrouter:phala",
+        );
+    });
+
     it("uses current Worker bindings for AWS and DeepInfra fallback credentials", () => {
         try {
             syncTextEnvironment({
@@ -252,6 +258,27 @@ describe("static provider fallbacks", () => {
         },
     );
 
+    it("tries Bedrock before direct Anthropic for Claude Sonnet 5", () => {
+        const model = "anthropic/claude-sonnet-5";
+        const primary: ModelDefinition = TEXT_SERVICES[model];
+        const fallback: ModelDefinition = TEXT_SERVICES[`${model}:anthropic`];
+        expect(primary.provider).toBe("aws");
+        expect(primary.fallbacks).toEqual([`${model}:anthropic`]);
+        expect(fallback).toMatchObject({
+            provider: "anthropic",
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        expect(fallback.cost).toEqual(primary.cost);
+        expect(findModelByName(`${model}:anthropic`)?.config()).toMatchObject({
+            provider: "anthropic",
+            model: "claude-sonnet-5",
+            defaultOptions: { max_tokens: 64000 },
+        });
+        expect(getVisibleTextModels()).not.toContain(`${model}:anthropic`);
+    });
+
     it("tries direct DeepInfra before OpenRouter for GLM 5.3 at the primary's user price", () => {
         const model = "z-ai/glm-5.3";
         const route = `${model}:deepinfra`;
@@ -298,6 +325,22 @@ describe("static provider fallbacks", () => {
             billing.price.totalPrice,
             10,
         );
+    });
+
+    it("records MiMo V2.6 Flash's discounted backup cost and keeps the Novita quote", () => {
+        const model = "xiaomi/mimo-v2.6-flash";
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 1000,
+                promptCachedTokens: 200,
+                completionTextTokens: 100,
+            },
+            servedBy: TEXT_SERVICES[`${model}:deepinfra`],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.000109564, 12);
+        expect(billed.price.totalPrice).toBe(0.00016856);
     });
 
     it("lets OpenRouter recover GLM Flash across independent providers", () => {
@@ -359,6 +402,27 @@ describe("static provider fallbacks", () => {
         },
     );
 
+    it("keeps the Azure Kimi K2.6 quote on direct DeepInfra recovery", () => {
+        const model = "moonshotai/kimi-k2.6";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES["moonshotai/kimi-k2.6:deepinfra"];
+        expect(primary.fallbacks).toEqual(["moonshotai/kimi-k2.6:deepinfra"]);
+        expect(primary.priceMultiplier).toBe(1);
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 100,
+                promptCachedTokens: 20,
+                promptImageTokens: 10,
+                completionTextTokens: 30,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.0001905, 12);
+        expect(billed.price.totalPrice).toBe(0.0002277);
+    });
+
     it("keeps Mistral Large on Azure and bills its direct fallback at the public quote", () => {
         const model = "mistralai/mistral-large-3";
         const primary = TEXT_SERVICES[model];
@@ -390,6 +454,27 @@ describe("static provider fallbacks", () => {
         expect(billed.price.totalPrice).toBeCloseTo(cost * 0.75, 8);
     });
 
+    it("tries Bedrock before direct Anthropic for Claude Opus 5", () => {
+        const model = "anthropic/claude-opus-5";
+        const primary: ModelDefinition = TEXT_SERVICES[model];
+        const fallback: ModelDefinition = TEXT_SERVICES[`${model}:anthropic`];
+        expect(primary.provider).toBe("aws");
+        expect(primary.fallbacks).toEqual([`${model}:anthropic`]);
+        expect(fallback).toMatchObject({
+            provider: "anthropic",
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        expect(fallback.cost).toEqual(primary.cost);
+        expect(findModelByName(`${model}:anthropic`)?.config()).toMatchObject({
+            provider: "anthropic",
+            model: "claude-opus-5",
+            defaultOptions: { max_tokens: 128000 },
+        });
+        expect(getVisibleTextModels()).not.toContain(`${model}:anthropic`);
+    });
+
     it("preserves seeded requests on the direct Mistral fallback", async () => {
         const route = findModelByName("mistralai/mistral-large-3:mistral");
         const options = { seed: 0, reasoning_effort: "high", temperature: 0.2 };
@@ -412,7 +497,7 @@ describe("static provider fallbacks", () => {
             const billed = calculateUsageBilling({
                 model: "google/gemini-3.1-pro-preview",
                 usage: {
-                    promptTextTokens: 200_000,
+                    promptTextTokens: 250_000,
                     completionTextTokens: 1_000,
                 },
                 servedBy: definition,
@@ -436,7 +521,7 @@ describe("static provider fallbacks", () => {
                               ],
                           },
             });
-            const directCost = 0.2 * 4 + 0.001 * 18 + 0.014;
+            const directCost = 0.25 * 4 + 0.001 * 18 + 0.014;
             const expectedCost =
                 definition.provider === "openrouter"
                     ? directCost * 1.055
@@ -558,24 +643,24 @@ describe("static provider fallbacks", () => {
         },
     );
 
-    it("uses Fal first for Grok Video Pro without changing prices or access", () => {
+    it("uses cheaper Replicate for Grok Video Pro with independent Fal backup", () => {
         const primary = IMAGE_SERVICES["x-ai/grok-imagine-video"];
-        const fallback = IMAGE_SERVICES["x-ai/grok-imagine-video:openrouter"];
+        const fallback = IMAGE_SERVICES["x-ai/grok-imagine-video:fal"];
         expect(primary).toMatchObject({
-            provider: "fal",
+            provider: "replicate",
             paidOnly: true,
             priceMultiplier: 1,
             aliases: ["grok-imagine-video", "grok-video-pro"],
-            fallbacks: ["x-ai/grok-imagine-video:openrouter"],
-            cost: { promptImageTokens: 0.002, completionVideoSeconds: 0.07 },
+            fallbacks: ["x-ai/grok-imagine-video:fal"],
+            cost: { promptImageTokens: 0, completionVideoSeconds: 0.05 },
         });
-        expect(fallback.provider).toBe("openrouter");
+        expect(fallback.provider).toBe("fal");
         expect(fallback.cost).toEqual({
-            promptImageTokens: 0.002 * 1.055,
-            completionVideoSeconds: 0.07 * 1.055,
+            promptImageTokens: 0.002,
+            completionVideoSeconds: 0.07,
         });
         expect(IMAGE_SERVICES).not.toHaveProperty(
-            "x-ai/grok-imagine-video:fal",
+            "x-ai/grok-imagine-video:openrouter",
         );
         expect(IMAGE_SERVICES["x-ai/grok-imagine-video-1.5"]).toMatchObject({
             provider: "xai",
@@ -594,6 +679,27 @@ describe("static provider fallbacks", () => {
             promptImageTokens: 0.01 * 1.055,
             completionVideoSeconds: 0.03 * 1.055,
         });
+    });
+
+    it("keeps anthropic/claude-haiku-5.5's public quote when its backup multiplier is 1", () => {
+        const model = "anthropic/claude-haiku-5.5";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:aws"];
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 100,
+                promptCachedTokens: 20,
+                promptCacheWriteTokens: 10,
+                completionTextTokens: 30,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(fallback.priceMultiplier).toBe(1);
+        expect(primary.priceMultiplier).toBe(0.75);
+        expect(billed.cost.totalCost).toBeCloseTo(2.645e-5, 12);
+        expect(billed.price.totalPrice).toBe(1.984e-5);
     });
 
     it("keeps same-provider routes distinct and ordered under a suffixed public ID", () => {
@@ -626,6 +732,27 @@ describe("static provider fallbacks", () => {
             expect(services[routeId].cost).toEqual(parent.cost);
         }
         expect(parent.fallbacks).toBeUndefined();
+    });
+
+    it("keeps anthropic/claude-sonnet-5.5's public quote when its backup multiplier is 1", () => {
+        const model = "anthropic/claude-sonnet-5.5";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES["anthropic/claude-sonnet-5.5:aws"];
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 100,
+                promptCachedTokens: 20,
+                promptCacheWriteTokens: 10,
+                completionTextTokens: 30,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(fallback.priceMultiplier).toBe(1);
+        expect(primary.priceMultiplier).toBe(0.75);
+        expect(billed.cost.totalCost).toBeCloseTo(0.000527, 12);
+        expect(billed.price.totalPrice).toBe(0.00039525);
     });
 
     it("keeps D1 paid-only and charges its public quote on OpenRouter fallback", () => {
@@ -1054,6 +1181,23 @@ describe("static provider fallbacks", () => {
         },
     );
 
+    it("records DeepSeek Flash 1017's discounted fallback cost at the unchanged primary quote", () => {
+        const model = "deepseek/deepseek-v4.1-flash-1017";
+        const billing = calculateUsageBilling({
+            model,
+            servedBy: TEXT_SERVICES[`${model}:deepinfra`],
+            quotedBy: TEXT_SERVICES[model],
+            usage: {
+                promptTextTokens: 1000,
+                promptCachedTokens: 1000,
+                completionTextTokens: 100,
+                completionReasoningTokens: 100,
+            },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.00015974, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.000273, 8);
+    });
+
     it("updates StreamLake's DeepSeek Pro cost without changing the caller's quote", () => {
         const billing = calculateUsageBilling({
             model: "deepseek/deepseek-v4-pro",
@@ -1210,6 +1354,22 @@ describe("static provider fallbacks", () => {
         }
     });
 
+    it("records MiMo V2.6 Pro's discounted backup cost and keeps the Novita quote", () => {
+        const model = "xiaomi/mimo-v2.6-pro";
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 1000,
+                promptCachedTokens: 200,
+                completionTextTokens: 100,
+            },
+            servedBy: TEXT_SERVICES[`${model}:deepinfra`],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.000465948, 12);
+        expect(billed.price.totalPrice).toBe(0.00052272);
+    });
+
     it("charges SiliconFlow's reported cache hits at its full input rate", () => {
         const model = "qwen/qwen3-coder-30b-a3b-instruct";
         const billed = calculateUsageBilling({
@@ -1255,12 +1415,10 @@ describe("static provider fallbacks", () => {
             completionTextTokens: (0.6 / 1_000_000) * 1.055,
         });
         expect(TEXT_SERVICES["x-ai/grok-4.6"].fallbacks).toEqual([
-            "x-ai/grok-4.6:azure:sweden",
             "x-ai/grok-4.6:xai",
         ]);
-        expect(TEXT_SERVICES["x-ai/grok-4.6:azure:sweden"].cost).toEqual(
-            TEXT_SERVICES["x-ai/grok-4.6"].cost,
-        );
+        expect(TEXT_SERVICES["x-ai/grok-4.6:xai"].priceMultiplier).toBe(1);
+
         expect(
             TEXT_SERVICES["deepseek/deepseek-v4-flash:deepinfra"].cost,
         ).toMatchObject({
@@ -1339,7 +1497,7 @@ describe("static provider fallbacks", () => {
         });
     });
 
-    it("prices Gemini 4 Argon at Vertex list and records OpenRouter's fee on the fallback", () => {
+    it("keeps the Vertex quote while recording Gemini 4 Argon backup promotional costs", () => {
         const primary = TEXT_SERVICES["google/gemini-4-argon"];
         const fallback =
             TEXT_SERVICES["google/gemini-4-argon:openrouter:ai-studio"];
@@ -1351,9 +1509,9 @@ describe("static provider fallbacks", () => {
             fallbacks: ["google/gemini-4-argon:openrouter:ai-studio"],
         });
         expect(fallback.cost).toMatchObject({
-            promptTextTokens: (4 / 1_000_000) * 1.055,
-            promptCachedTokens: (0.2 / 1_000_000) * 1.055,
-            completionTextTokens: (20 / 1_000_000) * 1.055,
+            promptTextTokens: (2 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.1 / 1_000_000) * 1.055,
+            completionTextTokens: (10 / 1_000_000) * 1.055,
         });
         const billing = calculateUsageBilling({
             model: "google/gemini-4-argon",
@@ -1361,8 +1519,22 @@ describe("static provider fallbacks", () => {
             servedBy: fallback,
             quotedBy: primary,
         });
-        expect(billing.cost.totalCost).toBeCloseTo(0.02532, 12);
+        expect(billing.cost.totalCost).toBeCloseTo(0.01266, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.024, 12);
+        const cacheWrite = calculateUsageBilling({
+            model: "google/gemini-4-argon",
+            usage: { promptCacheWriteTokens: 1000 },
+            servedBy: fallback,
+            quotedBy: primary,
+            output: {
+                usage: { prompt_tokens_details: { cache_write_tokens: 1000 } },
+            },
+        });
+        expect(cacheWrite.cost.totalCost).toBeCloseTo(
+            (0.002 + 0.0001875) * 1.055,
+            12,
+        );
+        expect(cacheWrite.price.totalPrice).toBeCloseTo(0.004, 12);
         expect(
             findModelByName(
                 "google/gemini-4-argon:openrouter:ai-studio",
@@ -1796,18 +1968,6 @@ describe("static provider fallbacks", () => {
     });
 
     it("binds fallback-only text ids to their exact provider routes", () => {
-        expect(
-            findModelByName("x-ai/grok-4.6:azure:sweden")?.config(),
-        ).toMatchObject({
-            provider: "openai",
-            model: "grok-4.6",
-            directAuthHeader: "api-key",
-            directEndpoint:
-                "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/grok-4.6/chat/completions?api-version=2024-12-01-preview",
-            responsesEndpoint:
-                "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
-            responsesAuthHeader: "api-key",
-        });
         expect(findModelByName("x-ai/grok-4.6:xai")?.config()).toMatchObject({
             provider: "openai",
             directEndpoint: "https://api.x.ai/v1/chat/completions",
@@ -1918,3 +2078,61 @@ describe("static provider fallbacks", () => {
         }
     });
 });
+
+it.each([199999, 200000, 200001])(
+    "records Grok 4.3 backup's inclusive long-context cost at %s tokens, retaining the primary quote",
+    (total) => {
+        const model = "x-ai/grok-4.3";
+        const servedBy = TEXT_SERVICES[`${model}:openrouter:xai-zdr`];
+        expect(servedBy.priceMultiplier).toBe(1);
+        const usage = {
+            promptTextTokens: total - 1000,
+            promptImageTokens: 500,
+            promptCachedTokens: 500,
+            completionTextTokens: 10,
+        };
+        const billed = calculateUsageBilling({
+            model,
+            usage,
+            servedBy,
+            quotedBy: TEXT_SERVICES[model],
+        });
+        const base = ((total - 500) * 1.25 + 500 * 0.2 + 10 * 2.5) / 1e6;
+        expect(billed.cost.totalCost).toBeCloseTo(
+            base * 1.055 * (total >= 200000 ? 2 : 1),
+            12,
+        );
+        expect(billed.price.totalPrice).toBeCloseTo(base * 0.75, 8);
+    },
+);
+
+it.each([272000, 272001])(
+    "prices Luna Decisions cache categories without double counting at %s input tokens",
+    (total) => {
+        const model = "openai/gpt-6-luna-decisions";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[`${model}:openrouter`];
+        const usage = {
+            promptTextTokens: total - 3000,
+            promptCachedTokens: 2000,
+            promptCacheWriteTokens: 1000,
+        };
+        const expected =
+            (((total - 3000) * 0.1 + 2000 * 0.01 + 1000 * 0.125) / 1e6) *
+            (total > 272000 ? 2 : 1);
+        for (const servedBy of [primary, fallback]) {
+            const billed = calculateUsageBilling({
+                model,
+                usage,
+                servedBy,
+                quotedBy: primary,
+            });
+            expect(billed.price.totalPrice).toBeCloseTo(expected, 8);
+            if (servedBy === fallback)
+                expect(billed.cost.totalCost).toBeCloseTo(
+                    ((total - 3000) * 0.1 * 1.055) / 1e6,
+                    12,
+                );
+        }
+    },
+);

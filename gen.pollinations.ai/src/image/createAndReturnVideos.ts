@@ -68,7 +68,7 @@ export async function createAndReturnVideo(
             break;
         case "bytedance/seedance-1-pro-fast":
         case "alibaba/wan-2.6:fal":
-        case "alibaba/wan-2.2-fast:fal":
+        case "alibaba/wan-2.2-fast":
         case "x-ai/grok-imagine-video":
         case "x-ai/grok-imagine-video-1.5:fal":
         case "kandinskylab/kandinsky-6.0-lite":
@@ -88,7 +88,7 @@ export async function createAndReturnVideo(
         case "alibaba/wan-2.6:replicate":
             result = await callWanAPI(prompt, safeParams);
             break;
-        case "alibaba/wan-2.2-fast":
+        case "alibaba/wan-2.2-fast:replicate":
             result = await callWanFastAPI(prompt, safeParams);
             break;
         case "alibaba/wan-2.7":
@@ -104,7 +104,6 @@ export async function createAndReturnVideo(
             result = await callPrunaVideoAPI(prompt, safeParams);
             break;
         case "x-ai/grok-imagine-video:openrouter":
-        case "x-ai/grok-imagine-video-1.5":
         case "x-ai/grok-imagine-video-1.5-lite:openrouter":
             result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
             break;
@@ -114,8 +113,19 @@ export async function createAndReturnVideo(
         case "black-forest-labs/flux-3-max":
             result = await callFluxMaxVideoAPI(prompt, safeParams);
             break;
+        case "x-ai/grok-imagine-video-1.5":
+            result = await callXaiVideoAPI(
+                prompt,
+                safeParams,
+                "grok-imagine-video-1.5",
+            );
+            break;
         case "x-ai/grok-imagine-video-1.5-lite":
-            result = await callXaiVideoAPI(prompt, safeParams);
+            result = await callXaiVideoAPI(
+                prompt,
+                safeParams,
+                "grok-imagine-video-1.5-lite",
+            );
             break;
         case "bytedance/seedance-2.5":
             result = await callSeedance25API(prompt, safeParams);

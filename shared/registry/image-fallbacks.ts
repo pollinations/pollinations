@@ -9,6 +9,27 @@ import { perMillion } from "./price-helpers";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
+    "bytedance/seedream-5.0-pro": {
+        "bytedance/seedream-5.0-pro:replicate": {
+            provider: "replicate",
+            cost: { completionImageTokens: 0.09 },
+        },
+    },
+    "google/gemini-nano-banana-2.1": {
+        "google/gemini-nano-banana-2.1:vercel": {
+            provider: "vercel",
+            // Pinned to Google. Record the gateway's reported charge; its
+            // cached input is billed at full rate. Keep the caller's Vertex
+            // price, including the cache discount, on this fallback.
+            cost: {
+                promptTextTokens: perMillion(1.5),
+                promptImageTokens: perMillion(1.5),
+                promptCachedTokens: perMillion(1.5),
+                completionTextTokens: perMillion(7.5),
+                completionImageTokens: perMillion(30),
+            },
+        },
+    },
     "alibaba/wan-2.7-image": {
         "alibaba/wan-2.7-image:replicate": { provider: "replicate" },
     },
@@ -259,6 +280,30 @@ export const IMAGE_FALLBACKS = {
             },
         },
     },
+    "x-ai/grok-imagine-image-2.0": {
+        "x-ai/grok-imagine-image-2.0:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-24").getTime(),
+            cost: {
+                promptImageTokens: 0.01 * 1.055,
+                completionImageTokens: 0.06 * 1.055, // medium, 1K
+            },
+            costVariants: {
+                low_1k: {
+                    promptImageTokens: 0.01 * 1.055,
+                    completionImageTokens: 0.04 * 1.055,
+                },
+                low_2k: {
+                    promptImageTokens: 0.01 * 1.055,
+                    completionImageTokens: 0.06 * 1.055,
+                },
+                medium_2k: {
+                    promptImageTokens: 0.01 * 1.055,
+                    completionImageTokens: 0.08 * 1.055,
+                },
+            },
+        },
+    },
     "x-ai/grok-imagine-video-1.5-lite": {
         "x-ai/grok-imagine-video-1.5-lite:openrouter": {
             provider: "openrouter",
@@ -285,13 +330,11 @@ export const IMAGE_FALLBACKS = {
         },
     },
     "alibaba/wan-2.2-fast": {
-        "alibaba/wan-2.2-fast:fal": {
-            provider: "fal",
-            addedDate: new Date("2026-09-02").getTime(),
-            // Fal charges $0.05 per fixed 5-second 480p generation. The
-            // inherited $0.01/second sheet bills the caller the same $0.05, so
-            // this fallback has no loss for either text-to-video or image-to-video.
-        },
+        // Replicate is fallback-only: its 4xx rate (~48%, 2026-10-21
+        // /models/status) is terminal (400/422 don't retry), so it must not
+        // be tried first. No :fal route: primary is already Fal, and a
+        // same-endpoint auto-retry would only regenerate on shared Fal faults.
+        "alibaba/wan-2.2-fast:replicate": { provider: "replicate" },
     },
     "bytedance/seedance-1-pro-fast": {
         "bytedance/seedance-1-pro-fast:replicate": {
@@ -319,6 +362,14 @@ export const IMAGE_FALLBACKS = {
                 },
                 "720p",
             ),
+        },
+    },
+    "recraft/recraft-v4.1-flash": {
+        "recraft/recraft-v4.1-flash:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-24").getTime(),
+            // $0.007 per image plus the 5.5% OpenRouter credit fee.
+            cost: { completionImageTokens: 0.007 * 1.055 },
         },
     },
     "tongyi-mai/z-image-turbo": {

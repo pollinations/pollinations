@@ -1,7 +1,10 @@
 import { UpstreamError } from "@shared/error.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import debug from "debug";
-import type { ImageGenerationResult } from "../createAndReturnImages.ts";
+import type {
+    AuthResult,
+    ImageGenerationResult,
+} from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
 import {
@@ -18,6 +21,7 @@ import {
     toDataUri,
 } from "../utils/imageDownload.ts";
 import { writeExifMetadata } from "../writeExifMetadata.ts";
+import { checkMaiInputs } from "./azureMaiImageModel.ts";
 import { resolveQwenImage3Size } from "./falQwenImageModel.ts";
 
 const logOps = debug("pollinations:openrouter-image:ops");
@@ -1019,9 +1023,14 @@ function resolveRecraftAspectRatio(safeParams: ImageParams): string {
 export async function callOpenRouterMaiImageAPI(
     prompt: string,
     safeParams: ImageParams,
+    userInfo: AuthResult,
 ): Promise<ImageGenerationResult> {
     const apiKey = requireOpenRouterImageApiKey();
-    const references = await Promise.all(safeParams.image.map(toDataUri));
+    // Same Content Safety checks as the Azure route.
+    const references = (await checkMaiInputs(prompt, safeParams, userInfo)).map(
+        ({ buffer, mimeType }) =>
+            `data:${mimeType};base64,${buffer.toString("base64")}`,
+    );
     const data = await postOpenRouterImage(
         apiKey,
         {

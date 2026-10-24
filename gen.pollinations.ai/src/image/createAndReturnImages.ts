@@ -933,8 +933,22 @@ const generateImage = async (
             }
         }
 
-        case "microsoft/mai-image-2.6-flash:openrouter":
-            return await callOpenRouterMaiImageAPI(prompt, safeParams);
+        case "microsoft/mai-image-2.6-flash:openrouter": {
+            try {
+                return await callOpenRouterMaiImageAPI(
+                    prompt,
+                    safeParams,
+                    userInfo,
+                );
+            } catch (error) {
+                logError(
+                    "OpenRouter MAI image generation failed:",
+                    error.message,
+                );
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
 
         case "inferenceport-ai/lightning-image-turbo": {
             try {

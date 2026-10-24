@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { AuthResult } from "../../src/image/createAndReturnImages.ts";
 import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callOpenRouterFlux2MaxAPI,
@@ -170,6 +171,7 @@ describe("OpenRouter Grok Imagine Pro", () => {
 });
 
 describe("OpenRouter MAI Image", () => {
+    const userInfo = { userId: "user-1" } as AuthResult;
     const maiParams: ImageParams = {
         ...baseParams,
         model: "microsoft/mai-image-2.6-flash:openrouter",
@@ -185,7 +187,11 @@ describe("OpenRouter MAI Image", () => {
             { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
             ["OPENROUTER_API_KEY"],
         );
-        vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, init) => {
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            // Azure Content Safety checks the prompt and references first.
+            if (String(url) !== OPENROUTER_IMAGE_URL) {
+                return Response.json({ categoriesAnalysis: [] });
+            }
             requests.push(JSON.parse(init?.body as string));
             return Response.json({ data: [{ b64_json: "AQID" }], usage });
         });
@@ -202,6 +208,7 @@ describe("OpenRouter MAI Image", () => {
         const result = await callOpenRouterMaiImageAPI(
             "a lighthouse",
             maiParams,
+            userInfo,
         );
 
         expect(requests[0]).toEqual({
@@ -225,10 +232,11 @@ describe("OpenRouter MAI Image", () => {
             completion_tokens_details: { image_tokens: 1020 },
         });
 
-        const result = await callOpenRouterMaiImageAPI("make it pink", {
-            ...maiParams,
-            image: [PNG_DATA_URI],
-        });
+        const result = await callOpenRouterMaiImageAPI(
+            "make it pink",
+            { ...maiParams, image: [PNG_DATA_URI] },
+            userInfo,
+        );
 
         expect(requests[0]).not.toHaveProperty("size");
         expect(requests[0].input_references).toEqual([
@@ -244,7 +252,7 @@ describe("OpenRouter MAI Image", () => {
         mockMaiFetch([], { prompt_tokens: 5, completion_tokens: 0 });
 
         await expect(
-            callOpenRouterMaiImageAPI("a lighthouse", maiParams),
+            callOpenRouterMaiImageAPI("a lighthouse", maiParams, userInfo),
         ).rejects.toMatchObject({ status: 502 });
     });
 });

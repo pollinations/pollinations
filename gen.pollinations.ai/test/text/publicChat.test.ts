@@ -3,7 +3,9 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { getUserBalance } from "@shared/billing/balance.ts";
 import { createTestApiKey } from "@shared/test/fixtures/index.ts";
+import { drizzle } from "drizzle-orm/d1";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../../src/index.ts";
 import {
@@ -122,7 +124,7 @@ async function chatThroughHandler(
     wire: string,
     stream = true,
 ) {
-    const { key } = await createTestApiKey({
+    const { key, userId } = await createTestApiKey({
         expiresIn: 600,
         user: { packBalance: 100 },
     });
@@ -165,7 +167,8 @@ async function chatThroughHandler(
     );
     const text = await response.text();
     await waitOnExecutionContext(context);
-    return { response, text, calls };
+    const balance = await getUserBalance(drizzle(env.DB), userId);
+    return { response, text, calls, balance };
 }
 
 it("drops OpenRouter's provider cost from client streams", async () => {
@@ -307,3 +310,44 @@ it("drops InferencePort's PAYG ledger entry from non-streaming completions", asy
     expect(text).not.toContain("payg");
     expect(text).not.toContain("balance_after");
 });
+
+it.each([false, true])(
+    "settles Lightning v2 privately through the handler (stream=%s)",
+    async (stream) => {
+        vi.stubEnv("INFERENCEPORT_API_KEY", "test-ip-key");
+        const usage = {
+            prompt_tokens: 1819,
+            completion_tokens: 1,
+            total_tokens: 1820,
+            payg_credits_charged: 0.0001,
+        };
+        const completion = {
+            id: "chatcmpl-lightning-v2",
+            object: "chat.completion",
+            created: 1760000000,
+            model: "lightning",
+            choices: [
+                {
+                    index: 0,
+                    message: { role: "assistant", content: "OK" },
+                    finish_reason: "stop",
+                },
+            ],
+            usage,
+        };
+        const wire = stream
+            ? `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: "OK" } }] })}\n\ndata: ${JSON.stringify({ choices: [], usage })}\n\ndata: ${JSON.stringify({ payg_usage: { payg_credits_charged: 0.0001 } })}\n\ndata: [DONE]\n\n`
+            : JSON.stringify(completion);
+        const { response, text, calls, balance } = await chatThroughHandler(
+            "inferenceport-ai/lightning-text-v2",
+            "api.inferenceport.ai",
+            wire,
+            stream,
+        );
+        expect(response.status, text).toBe(200);
+        expect(calls).toBe(1);
+        expect(text).toContain("OK");
+        expect(text).not.toContain("payg_");
+        expect(balance.packBalance).toBeCloseTo(100 - 0.0001, 10);
+    },
+);

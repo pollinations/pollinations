@@ -1376,8 +1376,9 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Crusoe BF16 at Novita's former rate; verified 2026-10-22.
+            // OpenRouter Crusoe BF16; cached input uses the full input rate (2026-10-24).
             promptTextTokens: perMillion(0.14) * 1.055,
+            promptCachedTokens: perMillion(0.14) * 1.055,
             promptImageTokens: perMillion(0.14) * 1.055,
             completionTextTokens: perMillion(0.4) * 1.055,
         },

@@ -149,6 +149,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Install dependencies
         run: npm ci
@@ -189,6 +190,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Install root dependencies
         run: npm ci
@@ -217,6 +219,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Install root dependencies
         run: npm ci
@@ -278,6 +281,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies
@@ -333,6 +337,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Install workspace dependencies
         run: npm ci
@@ -379,6 +384,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Setup SOPS
         if: matrix.app.sops != 'none'

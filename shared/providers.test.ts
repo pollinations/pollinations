@@ -63,6 +63,7 @@ const PROTOCOL_VENDORS: Record<string, string> = {
     bedrock: "aws",
     "vertex-ai": "google",
     openrouter: "openrouter",
+    "vllm-sr": "vllm-sr",
 };
 const HOST_VENDORS: Record<string, string> = {
     "api.openai.com": "openai",
@@ -75,6 +76,7 @@ const HOST_VENDORS: Record<string, string> = {
     "openrouter.ai": "openrouter",
     "dashscope-intl.aliyuncs.com": "alibaba",
     "ai-gateway.vercel.sh": "vercel",
+    "decision.vllm-sr.ai": "vllm-sr",
     "api.x.ai": "xai",
     "qwen-3-coder-30b-a3b-instruct.endpoints.kepler.ai.cloud.ovh.net":
         "ovhcloud",

@@ -156,19 +156,18 @@ const TEXT_BASE_SERVICES = {
     "openai/gpt-4o-mini": {
         supportedParameters: CHAT_PARAMETERS.openRouterGpt4oMini,
         aliases: [],
-        provider: "openrouter",
+        provider: "openai",
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-09-12").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Azure/OpenAI route rates (2026-09-21), including the
-            // account's 5.5% credit-purchase fee. Image inputs are tokenized
-            // into promptTextTokens; no separate image usage is reported.
-            promptTextTokens: perMillion(0.15) * 1.055,
-            promptCachedTokens: perMillion(0.075) * 1.055,
-            completionTextTokens: perMillion(0.6) * 1.055,
+            // OpenAI Standard rates (2026-10-24). Image inputs are included
+            // in promptTextTokens by the provider.
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.075),
+            completionTextTokens: perMillion(0.6),
         },
         title: "GPT-4o Mini",
         description:

@@ -630,18 +630,21 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    // Azure primary, OpenAI second: both OpenRouter tags bill the same
-    // $0.15/$0.60/$0.075 per-M rate. The base slug "azure" also matches
-    // azure/swedencentral (bills 10% higher), so it is excluded explicitly.
-    // The azure tag does not advertise tools, so tool requests are served by
-    // the openai tag at the same rate.
-    "openai/gpt-4o-mini": () =>
+    "openai/gpt-4o-mini": () => ({
+        provider: "openai",
+        model: "gpt-4o-mini",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        directEndpoint: "https://api.openai.com/v1/chat/completions",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        serviceTier: "default",
+    }),
+    "gpt-4o-mini-openrouter": () =>
         createOpenRouterModelConfig({
             model: "openai/gpt-4o-mini",
             defaultOptions: {
                 provider: {
-                    order: ["azure", "openai"],
-                    ignore: ["azure/swedencentral"],
+                    only: ["openai"],
+                    ignore: ["cloudflare"],
                     allow_fallbacks: false,
                 },
             },

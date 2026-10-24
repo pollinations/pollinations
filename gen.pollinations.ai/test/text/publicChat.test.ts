@@ -3,7 +3,9 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { getUserBalance } from "@shared/billing/balance.ts";
 import { createTestApiKey } from "@shared/test/fixtures/index.ts";
+import { drizzle } from "drizzle-orm/d1";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../../src/index.ts";
 import {
@@ -122,7 +124,7 @@ async function chatThroughHandler(
     wire: string,
     stream = true,
 ) {
-    const { key } = await createTestApiKey({
+    const { key, userId } = await createTestApiKey({
         expiresIn: 600,
         user: { packBalance: 100 },
     });
@@ -165,7 +167,8 @@ async function chatThroughHandler(
     );
     const text = await response.text();
     await waitOnExecutionContext(context);
-    return { response, text, calls };
+    const balance = await getUserBalance(drizzle(env.DB), userId);
+    return { response, text, calls, balance };
 }
 
 it("drops OpenRouter's provider cost from client streams", async () => {
@@ -224,8 +227,8 @@ it("drops InferencePort's PAYG ledger chunk from client streams", async () => {
         payg_credits_charged: 0.0001,
         payg_ledger_entry: { balance_after: 38.9 },
     };
-    const wire = `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: "🌼" } }] })}\n\ndata: ${JSON.stringify({ choices: [], usage: { ...streamUsage, payg_credits_charged: 0.0001 } })}\n\ndata: ${JSON.stringify({ id: "chatcmpl-proxy-meta", choices: [], payg_usage: ledger })}\n\ndata: [DONE]\n\n`;
-    const { response, text, calls } = await chatThroughHandler(
+    const wire = `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: "🌼" } }] })}\n\ndata: ${JSON.stringify({ choices: [], usage: { ...streamUsage, payg_credits_charged: 0.00005 } })}\n\ndata: ${JSON.stringify({ id: "chatcmpl-proxy-meta", choices: [], payg_usage: ledger })}\n\ndata: [DONE]\n\n`;
+    const { response, text, calls, balance } = await chatThroughHandler(
         "inferenceport-ai/lightning-text-v2.1",
         "api.inferenceport.ai",
         wire,
@@ -236,11 +239,12 @@ it("drops InferencePort's PAYG ledger chunk from client streams", async () => {
     expect(text).toContain(JSON.stringify(streamUsage));
     expect(text).toContain("data: [DONE]\n\n");
     expect(text).not.toContain("payg");
+    expect(balance.packBalance).toBeCloseTo(100 - 0.0001, 10);
 });
 
 it("drops InferencePort's PAYG ledger entry from non-streaming completions", async () => {
     vi.stubEnv("INFERENCEPORT_API_KEY", "test-ip-key");
-    const { key } = await createTestApiKey({
+    const { key, userId } = await createTestApiKey({
         expiresIn: 600,
         user: { packBalance: 100 },
     });
@@ -306,4 +310,6 @@ it("drops InferencePort's PAYG ledger entry from non-streaming completions", asy
     expect(text).toContain("🌼 hello");
     expect(text).not.toContain("payg");
     expect(text).not.toContain("balance_after");
+    const balance = await getUserBalance(drizzle(env.DB), userId);
+    expect(balance.packBalance).toBeCloseTo(100 - 0.0001, 10);
 });

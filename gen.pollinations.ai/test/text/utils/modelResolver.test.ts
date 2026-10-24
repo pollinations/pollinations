@@ -5,19 +5,6 @@ import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 const messages = [{ role: "user" as const, content: "Hello" }];
 
 describe("resolveModelConfig", () => {
-    it("keeps respan/span-01-lite's native provider pin", () => {
-        const result = resolveModelConfig(messages, {
-            model: "respan/span-01-lite",
-            provider: { only: ["cloudflare"] },
-        });
-        expect(result.options.modelConfig?.defaultOptions).toMatchObject({
-            provider: {
-                "only": ["respan"],
-                "ignore": ["cloudflare"],
-                "allow_fallbacks": false,
-            },
-        });
-    });
 
     it("pins Liquid D1's primary and backup native configs", () => {
         for (const [model, expected] of [
@@ -66,6 +53,20 @@ describe("resolveModelConfig", () => {
             gateway: { only: ["stealth"] },
         });
     });
+    it("keeps respan/span-01-lite's native provider pin", () => {
+        const result = resolveModelConfig(messages, {
+            model: "respan/span-01-lite",
+            provider: { only: ["cloudflare"] },
+        });
+        expect(result.options.modelConfig?.defaultOptions).toMatchObject({
+            provider: {
+                "only": ["respan"],
+                "ignore": ["cloudflare"],
+                "allow_fallbacks": false,
+            },
+        });
+    });
+
     it("sets Anthropic max_tokens defaults", () => {
         expect(
             resolveModelConfig(messages, {

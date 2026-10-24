@@ -69,6 +69,48 @@ afterEach(() => {
 });
 
 describe("System One adapter", () => {
+    it("forwards respan/span-01-lite's provider pin on the native wire", async () => {
+        const config = findModelByName("respan/span-01-lite")?.config();
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (_input, init) => {
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    provider: {
+                        "only": ["respan"],
+                        "ignore": ["cloudflare"],
+                        "allow_fallbacks": false,
+                    },
+                    model: "respan/span-01-lite",
+                });
+                return Response.json({
+                    model: "respan/span-01-lite",
+                    answers,
+                    usage: { input_tokens: 44, output_tokens: 1 },
+                });
+            });
+        await callSystemOne(
+            [
+                {
+                    role: "user",
+                    content: JSON.stringify({
+                        state: nativeState,
+                        questions: {
+                            urgent: {
+                                type: "noul",
+                                instructions: "Is this urgent?",
+                            },
+                        },
+                    }),
+                },
+            ],
+            {
+                modelConfig: { ...config, authKey: "test-key" },
+                provider: { only: ["cloudflare"] },
+            },
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
     it.each(["typesafe/jev-1.13", "typesafe/jev-1.13:openrouter:typesafe"])(
         "forwards Jev route pins without changing native question shapes: %s",
         async (model) => {
@@ -658,48 +700,6 @@ describe("System One adapter", () => {
                 },
             },
             vi.fn(),
-        );
-        expect(fetchSpy).toHaveBeenCalledTimes(1);
-    });
-
-    it("forwards respan/span-01-lite's provider pin on the native wire", async () => {
-        const config = findModelByName("respan/span-01-lite")?.config();
-        const fetchSpy = vi
-            .spyOn(globalThis, "fetch")
-            .mockImplementationOnce(async (_input, init) => {
-                expect(JSON.parse(String(init?.body))).toMatchObject({
-                    provider: {
-                        "only": ["respan"],
-                        "ignore": ["cloudflare"],
-                        "allow_fallbacks": false,
-                    },
-                    model: "respan/span-01-lite",
-                });
-                return Response.json({
-                    model: "respan/span-01-lite",
-                    answers,
-                    usage: { input_tokens: 44, output_tokens: 1 },
-                });
-            });
-        await callSystemOne(
-            [
-                {
-                    role: "user",
-                    content: JSON.stringify({
-                        state: nativeState,
-                        questions: {
-                            urgent: {
-                                type: "noul",
-                                instructions: "Is this urgent?",
-                            },
-                        },
-                    }),
-                },
-            ],
-            {
-                modelConfig: { ...config, authKey: "test-key" },
-                provider: { only: ["cloudflare"] },
-            },
         );
         expect(fetchSpy).toHaveBeenCalledTimes(1);
     });

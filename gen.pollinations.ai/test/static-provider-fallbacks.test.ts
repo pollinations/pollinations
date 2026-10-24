@@ -1132,6 +1132,53 @@ describe("static provider fallbacks", () => {
         }
     });
 
+    it.each([0, 0.000025019, 0.0000225171])(
+        "settles HY4 peak and off-peak Chat and Responses receipts with one fee: %s",
+        (receipt) => {
+            for (const output of [
+                { usage: { cost: receipt } },
+                { response: { usage: { cost: receipt } } },
+                {
+                    streamEvents: [
+                        { usage: { cost: 0 } },
+                        { usage: { cost: receipt } },
+                    ],
+                },
+                {
+                    streamEvents: [
+                        { response: { usage: { cost: 0 } } },
+                        { response: { usage: { cost: receipt } } },
+                    ],
+                },
+            ]) {
+                const billed = calculateUsageBilling({
+                    model: "tencent/hy4-preview",
+                    usage: { promptTextTokens: 27, completionTextTokens: 1 },
+                    servedBy: TEXT_SERVICES["tencent/hy4-preview"],
+                    output,
+                });
+                expect(billed.cost.totalCost).toBeCloseTo(receipt * 1.055, 14);
+                expect(billed.price.totalPrice).toBe(
+                    Math.round(receipt * 1.055 * 1e8) / 1e8,
+                );
+            }
+        },
+    );
+
+    it.each([undefined, -1, Number.NaN, Number.POSITIVE_INFINITY])(
+        "keeps the HY4 catalog estimate when its dollar receipt is invalid: %s",
+        (cost) => {
+            const billed = calculateUsageBilling({
+                model: "tencent/hy4-preview",
+                usage: { promptTextTokens: 27, completionTextTokens: 1 },
+                servedBy: TEXT_SERVICES["tencent/hy4-preview"],
+                output: { usage: { cost } },
+            });
+            expect(billed.cost.totalCost).toBeCloseTo(0.000026395045, 14);
+            expect(billed.price.totalPrice).toBe(0.0000264);
+        },
+    );
+
     it("keeps exact provider route costs", () => {
         expect(TEXT_SERVICES["openai/gpt-4o-mini"].cost).toMatchObject({
             promptTextTokens: (0.15 / 1_000_000) * 1.055,

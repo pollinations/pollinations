@@ -20,6 +20,7 @@ type GeminiBillingOutput = {
         message?: { provider_metadata?: GatewaySearchMetadata };
         delta?: { provider_metadata?: GatewaySearchMetadata };
     }[];
+    response?: GeminiBillingOutput;
     streamEvents?: GeminiBillingOutput[];
 };
 
@@ -139,7 +140,7 @@ export function reportedTextCost(
 ): (output: unknown) => number | undefined {
     return (output) => {
         for (const event of [...outputEvents(output)].reverse()) {
-            const cost = event.usage?.cost;
+            const cost = event.usage?.cost ?? event.response?.usage?.cost;
             if (typeof cost === "number" && Number.isFinite(cost) && cost >= 0)
                 return cost * fee;
         }

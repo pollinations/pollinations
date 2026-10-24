@@ -2553,6 +2553,8 @@ const TEXT_BASE_SERVICES = {
             promptCachedTokens: perMillion(0.042) * 1.055,
             completionTextTokens: perMillion(2.501) * 1.055,
         },
+        // Tencent discounts 16:00–00:00 UTC daily; the receipt also prices cache hits.
+        billing: { resolveTotalCost: reportedTextCost(1.055) },
         title: "Hy4 Preview",
         description:
             "Mixture-of-experts model for coding agents and complex tool-use workflows",

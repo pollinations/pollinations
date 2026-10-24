@@ -58,7 +58,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-10-08").getTime(),
         priceMultiplier: 1,
-        paidOnly: false,
+        paidOnly: true,
         // Free only during stealth; expiry and subsequent rates are unpublished.
         // https://vercel.com/ai-gateway/models/glyph-cluster
         cost: {

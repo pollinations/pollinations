@@ -519,6 +519,42 @@ export const CommunityEndpointHealthResponseSchema = z.object({
             }),
         )
         .describe("Up to 10 failure groups, newest first."),
+    runs: z
+        .array(
+            z.object({
+                id: z.string().describe("Request ID of the call."),
+                startedAt: z.string().describe("ISO 8601."),
+                status: z.number().describe("HTTP status returned to you."),
+                durationMs: z.number(),
+                keyName: z
+                    .string()
+                    .describe(
+                        "Name of the API key used, or empty for the dashboard.",
+                    ),
+                cost: z
+                    .number()
+                    .describe(
+                        "Pollen charged for the call and everything it ran.",
+                    ),
+                modelCalls: z
+                    .number()
+                    .describe("Text and media generations the agent made."),
+                toolCalls: z
+                    .number()
+                    .describe("MCP tool calls the agent made."),
+                failedCalls: z
+                    .number()
+                    .describe("Generations and tool calls that failed."),
+                error: z
+                    .string()
+                    .describe(
+                        "The call's error, or else the latest failed step's, up to 300 characters.",
+                    ),
+            }),
+        )
+        .describe(
+            "Agents only, empty for models: your own calls in the last seven days, newest first, up to 50. Other callers' runs are left out.",
+        ),
 });
 export const CommunityEndpointDeleteResponseSchema = z.object({
     id: z.string(),

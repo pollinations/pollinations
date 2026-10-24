@@ -800,10 +800,17 @@ export const portkeyConfig: PortkeyConfigMap = {
         "x-ai/grok-4.20",
         "xai/zdr",
     ),
-    "grok-large-openrouter-xai-zdr": createPinnedOpenRouterConfig(
-        "x-ai/grok-4.3",
-        "xai/zdr",
-    ),
+    "grok-large-openrouter-xai-zdr": () =>
+        createOpenRouterModelConfig({
+            model: "x-ai/grok-4.3",
+            defaultOptions: {
+                provider: {
+                    only: ["xai/zdr"],
+                    ignore: ["xai/zdr/priority", "cloudflare"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "claude-fast-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-haiku-4.5",
         "google-vertex/global",

@@ -808,6 +808,28 @@ describe("static provider fallbacks", () => {
         }
     });
 
+    it("keeps the Azure GPT-5 Nano quote when OpenAI serves it", () => {
+        const model = "openai/gpt-5-nano";
+        expect(TEXT_SERVICES[model].fallbacks).toEqual([`${model}:openai`]);
+        expect(TEXT_SERVICES[`${model}:openai`]).toMatchObject({
+            provider: "openai",
+            priceMultiplier: 1,
+            hidden: true,
+        });
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 1000,
+                promptCachedTokens: 200,
+                completionTextTokens: 100,
+            },
+            servedBy: TEXT_SERVICES[`${model}:openai`],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.000091, 12);
+        expect(billed.price.totalPrice).toBe(0.00006825);
+    });
+
     it("prices Claude Haiku 5.5 on AWS exactly as on Anthropic, including the long-context tier", () => {
         const primary = TEXT_SERVICES["anthropic/claude-haiku-5.5"];
         const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:aws"];
@@ -1186,28 +1208,6 @@ describe("static provider fallbacks", () => {
             for (const route of routes)
                 expect(publicAudio.has(route)).toBe(false);
         }
-    });
-
-    it("keeps the Azure GPT-5 Nano quote when OpenAI serves it", () => {
-        const model = "openai/gpt-5-nano";
-        expect(TEXT_SERVICES[model].fallbacks).toEqual([`${model}:openai`]);
-        expect(TEXT_SERVICES[`${model}:openai`]).toMatchObject({
-            provider: "openai",
-            priceMultiplier: 1,
-            hidden: true,
-        });
-        const billed = calculateUsageBilling({
-            model,
-            usage: {
-                promptTextTokens: 1000,
-                promptCachedTokens: 200,
-                completionTextTokens: 100,
-            },
-            servedBy: TEXT_SERVICES[`${model}:openai`],
-            quotedBy: TEXT_SERVICES[model],
-        });
-        expect(billed.cost.totalCost).toBeCloseTo(0.000091, 12);
-        expect(billed.price.totalPrice).toBe(0.00006825);
     });
 
     it("charges SiliconFlow's reported cache hits at its full input rate", () => {

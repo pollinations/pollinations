@@ -3623,7 +3623,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-08-14").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             // Fireworks accounts/fireworks/models/qwen3p8-2p4t-a95b rates (2026-08-14).

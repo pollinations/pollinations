@@ -3746,15 +3746,15 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
   },
-  "qwen/qwen3.8-2.4t-a95b:deepinfra": {
+  "qwen/qwen3.8-2.4t-a95b:vercel": {
     "cost": {
       "completionTextTokens": 0.000006,
-      "promptCachedTokens": 0.0000002,
+      "promptCachedTokens": 0.00000025,
       "promptTextTokens": 0.000002,
     },
     "price": {
       "completionTextTokens": 0.000006,
-      "promptCachedTokens": 0.0000002,
+      "promptCachedTokens": 0.00000025,
       "promptTextTokens": 0.000002,
     },
   },

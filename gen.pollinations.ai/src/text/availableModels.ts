@@ -366,8 +366,8 @@ const models: ModelDefinition[] = [
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
-        name: "qwen/qwen3.8-2.4t-a95b:deepinfra",
-        config: portkeyConfig["Qwen/Qwen3.8-2.4T-A95B"],
+        name: "qwen/qwen3.8-2.4t-a95b:vercel",
+        config: portkeyConfig["qwen/qwen3.8-2.4t-a95b:vercel"],
         transform: fireworksThinking,
     },
     {

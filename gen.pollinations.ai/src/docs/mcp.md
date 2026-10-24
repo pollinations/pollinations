@@ -12,6 +12,7 @@ then choose a server:
 | Server | Endpoint | Use it for | Details |
 | --- | --- | --- | --- |
 | Pollinations | `https://gen.pollinations.ai/mcp/pollinations` | Discover and use models, generate text and media, create embeddings and 3D models, and inspect model status and account balance | [README](https://github.com/pollinations/pollinations/blob/main/packages/mcp/README.md) |
+| IP Geolocation | `https://gen.pollinations.ai/mcp/ip` | Look up geolocation, ISP, ASN, and timezone for any IP address | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ip-mcp) |
 | Ask Jev | `https://gen.pollinations.ai/mcp/ask-jev` | Evaluate state with typed choice, score, and probability questions | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ask-jev-mcp) |
 | FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ffmpeg-mcp) |
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |

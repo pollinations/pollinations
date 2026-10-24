@@ -864,13 +864,13 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
-        name: "perplexity/pplx-decider-v1.1-27b",
-        config: portkeyConfig["pplx-decider-v1.1-27b"],
+        name: "perplexity/pplx-decider-v1.2",
+        config: portkeyConfig["pplx-decider-v1.2"],
         useSystemOneApi: true,
     },
     {
-        name: "perplexity/pplx-decider-v1.1-27b:openrouter",
-        config: portkeyConfig["perplexity/pplx-decider-v1.1-27b:openrouter"],
+        name: "perplexity/pplx-decider-v1.2:openrouter",
+        config: portkeyConfig["perplexity/pplx-decider-v1.2:openrouter"],
         useSystemOneApi: true,
     },
     {

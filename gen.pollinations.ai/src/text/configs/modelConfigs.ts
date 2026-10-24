@@ -114,17 +114,17 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "jaredpalmer/kev-4b",
     }),
-    "pplx-decider-v1.1-27b": () =>
+    "pplx-decider-v1.2": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
-            model: "perplexity/pplx-decider-v1.1-27b",
+            model: "perplexity/pplx-decider-v1.2",
         }),
-    "perplexity/pplx-decider-v1.1-27b:openrouter": () => ({
+    "perplexity/pplx-decider-v1.2:openrouter": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
-        model: "perplexity/pplx-decider-v1.1-27b",
+        model: "perplexity/pplx-decider-v1.2",
     }),
     "liquid-d1": () => ({
         provider: "openrouter",

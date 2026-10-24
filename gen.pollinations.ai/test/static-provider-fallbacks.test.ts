@@ -1132,6 +1132,27 @@ describe("static provider fallbacks", () => {
         }
     });
 
+    it("keeps anthropic/claude-haiku-5.5's public quote when its backup multiplier is 1", () => {
+        const model = "anthropic/claude-haiku-5.5";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:aws"];
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 100,
+                promptCachedTokens: 20,
+                promptCacheWriteTokens: 10,
+                completionTextTokens: 30,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(fallback.priceMultiplier).toBe(1);
+        expect(primary.priceMultiplier).toBe(0.75);
+        expect(billed.cost.totalCost).toBeCloseTo(2.645e-5, 12);
+        expect(billed.price.totalPrice).toBe(1.984e-5);
+    });
+
     it("keeps exact provider route costs", () => {
         expect(TEXT_SERVICES["openai/gpt-4o-mini"].cost).toMatchObject({
             promptTextTokens: (0.15 / 1_000_000) * 1.055,

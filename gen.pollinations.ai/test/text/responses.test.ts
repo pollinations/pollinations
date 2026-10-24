@@ -238,6 +238,21 @@ describe("direct Responses transport", () => {
         });
     });
 
+    it("keeps gpt-5.6-luna recovery on Standard in native Responses", () => {
+        const input = request({
+            model: "openai/gpt-5.6-luna:openai",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct OpenAI target");
+        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
+            model: "gpt-5.6-luna",
+            service_tier: "default",
+            store: false,
+        });
+    });
+
     it("keeps a managed agent's caller-facing status instead of remapping it", async () => {
         const directRequest = request();
         const body = JSON.stringify({

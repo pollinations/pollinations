@@ -183,6 +183,12 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "openai/gpt-5.6-luna": {
+        "openai/gpt-5.6-luna:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
+        },
+    },
     "qwen/qwen3.8-max": {
         "qwen/qwen3.8-max:openrouter:alibaba": {
             provider: "openrouter",

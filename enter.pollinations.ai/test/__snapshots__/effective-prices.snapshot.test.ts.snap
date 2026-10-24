@@ -2888,6 +2888,28 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000015,
     },
   },
+  "openai/gpt-5.6-luna:openai": {
+    "cost": {
+      "completionTextTokens": 0.0000012,
+      "promptCacheWriteTokens": 0.00000025,
+      "promptCachedTokens": 0.00000002,
+      "promptTextTokens": 0.0000002,
+    },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.0000018,
+        "promptCacheWriteTokens": 0.0000005,
+        "promptCachedTokens": 0.00000004,
+        "promptTextTokens": 0.0000004,
+      },
+    },
+    "price": {
+      "completionTextTokens": 0.0000012,
+      "promptCacheWriteTokens": 0.00000025,
+      "promptCachedTokens": 0.00000002,
+      "promptTextTokens": 0.0000002,
+    },
+  },
   "openai/gpt-5.6-sol": {
     "cost": {
       "completionTextTokens": 0.00002,

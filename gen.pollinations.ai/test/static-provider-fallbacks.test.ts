@@ -749,6 +749,27 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.0000315, 12);
     });
 
+    it("keeps anthropic/claude-opus-5.5's public quote when its backup multiplier is 1", () => {
+        const model = "anthropic/claude-opus-5.5";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES["anthropic/claude-opus-5.5:aws"];
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 100,
+                promptCachedTokens: 20,
+                promptCacheWriteTokens: 10,
+                completionTextTokens: 30,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(fallback.priceMultiplier).toBe(1);
+        expect(primary.priceMultiplier).toBe(0.75);
+        expect(billed.cost.totalCost).toBeCloseTo(0.001054, 12);
+        expect(billed.price.totalPrice).toBe(0.0007905);
+    });
+
     it("quotes OpenAI's context tiers while accounting for OpenRouter's flat fallback cost", () => {
         const primary = TEXT_SERVICES["openai/gpt-6-luna-decisions"];
         const fallback =

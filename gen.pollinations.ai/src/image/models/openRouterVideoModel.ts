@@ -110,6 +110,14 @@ export async function callHappyHorseAPI(
         requestBody,
         HAPPYHORSE_POLL_TIMEOUT_MS,
     );
+    if (
+        providerCost != null &&
+        (!Number.isFinite(providerCost) || providerCost < 0)
+    ) {
+        throw UpstreamError.fromProvider(502, {
+            message: "OpenRouter returned invalid HappyHorse billing cost",
+        });
+    }
 
     logOps("HappyHorse generation complete", {
         duration,
@@ -124,6 +132,10 @@ export async function callHappyHorseAPI(
         trackingData: {
             actualModel: "alibaba/happyhorse-1.1",
             usage: { completionVideoSeconds: duration },
+            // OpenRouter bills at least 5 seconds per clip.
+            ...(providerCost != null && {
+                providerBilling: { units: providerCost, unitCost: 1.055 },
+            }),
         },
     };
 }

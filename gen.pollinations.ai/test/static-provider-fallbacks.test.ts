@@ -1132,18 +1132,6 @@ describe("static provider fallbacks", () => {
         }
     });
 
-    it("keeps Qwen VL's direct quote when OpenRouter serves it", () => {
-        const model = "qwen/qwen3-vl-30b-a3b-instruct";
-        const billed = calculateUsageBilling({
-            model,
-            usage: { promptTextTokens: 226, completionTextTokens: 7 },
-            servedBy: TEXT_SERVICES[`${model}:openrouter:deepinfra`],
-            quotedBy: TEXT_SERVICES[model],
-        });
-        expect(billed.cost.totalCost).toBeCloseTo(0.0000381 * 1.055, 12);
-        expect(billed.price.totalPrice).toBe(0.0000381);
-    });
-
     it("keeps exact provider route costs", () => {
         expect(TEXT_SERVICES["openai/gpt-4o-mini"].cost).toMatchObject({
             promptTextTokens: (0.15 / 1_000_000) * 1.055,
@@ -1569,6 +1557,18 @@ describe("static provider fallbacks", () => {
                 ).toBeUndefined();
             }
         }
+    });
+
+    it("keeps Qwen VL's direct quote when OpenRouter serves it", () => {
+        const model = "qwen/qwen3-vl-30b-a3b-instruct";
+        const billed = calculateUsageBilling({
+            model,
+            usage: { promptTextTokens: 226, completionTextTokens: 7 },
+            servedBy: TEXT_SERVICES[`${model}:openrouter:deepinfra`],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.0000381 * 1.055, 12);
+        expect(billed.price.totalPrice).toBe(0.0000381);
     });
 
     it("falls back from direct Novita to Novita through Vercel at the same cost", () => {

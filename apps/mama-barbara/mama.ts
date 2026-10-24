@@ -16,7 +16,25 @@ const GEN = "https://gen.pollinations.ai";
 // `keys` lets gen give each new box a key of its own (see logIn in
 // gen.pollinations.ai/src/routes/e2b.ts); `machines` creates the boxes.
 const SCOPE = "generate machines keys";
-const TEMPLATE = process.env.MAMA_TEMPLATE ?? "pollinations";
+// The computers a new Barbara can get; gen's pricing list gives their CPUs,
+// memory and rates. Only E2B's, whose envd Mama reaches directly (envd.ts).
+const SIZES: Record<string, string> = {
+    "pollinations-large": "Large",
+    pollinations: "Small",
+};
+const DEFAULT_SIZE = "pollinations-large";
+// Models that did a whole Barbara turn in Claude Code through gen (a photo,
+// an image, a file reply, a connect link) on 2026-10-22/23. The first is the
+// default: Quest Pollen pays for it, so a new account's Barbara answers.
+const MODELS: Record<string, string> = {
+    "openai/gpt-6.1-sol": "GPT-6.1 Sol · balanced",
+    "anthropic/claude-sonnet-5.5": "Claude Sonnet 5.5 · balanced",
+    "anthropic/claude-opus-5.5": "Claude Opus 5.5 · smartest",
+    "anthropic/claude-haiku-5.5": "Claude Haiku 5.5 · quick",
+    "deepseek/deepseek-v4.1-flash-1017": "DeepSeek V4.1 Flash · cheapest",
+    "z-ai/glm-5.3-flash": "GLM 5.3 Flash · Quest Pollen",
+};
+const DEFAULT_MODEL = Object.keys(MODELS)[0];
 // E2B's largest timeout: gen keeps the box running and bills the key.
 const KEEP_SECONDS = 2 ** 31 - 1;
 // What a new Barbara's key may spend, and the amounts her settings offer.
@@ -35,6 +53,8 @@ type User = {
     unfinished?: TgUser;
     // The Create my Barbara message, until her bot arrives.
     botLink?: number;
+    // The computer chosen there for the next Barbara.
+    size?: string;
 };
 type TgUser = { id: number; first_name: string; username?: string };
 
@@ -229,7 +249,14 @@ const ASK_FOR_BOT =
 const NO_BOT_YET =
     "\n\nNo bot yet. If Telegram's Create keeps spinning, it's limiting how many bots your account can make right now. That can last up to a day; send /new again later.";
 
-const askForBot = async (from: TgUser) => {
+type Pricing = {
+    vcpuSecond: number;
+    gibSecond: number;
+    templates: Record<string, { cpuCount: number; memoryMB: number }>;
+};
+
+// Her computer can't change once she runs, so it's chosen here.
+async function botLinkView(from: TgUser): Promise<View> {
     // Usernames are Latin letters, digits and _, starting with a letter.
     const name = (from.username ?? from.first_name)
         .replace(/\W/g, "")
@@ -237,32 +264,65 @@ const askForBot = async (from: TgUser) => {
     const username = /^[a-z]/i.test(name)
         ? `${name}_barbara_bot`
         : `barbara_${from.id}_bot`;
-    const reply_markup = {
-        inline_keyboard: [
-            [
-                {
-                    text: "Create my Barbara",
-                    url: `https://t.me/newbot/${await myUsername()}/${username}?name=Barbara`,
-                },
+    const chosen = userOf(from.id).size ?? DEFAULT_SIZE;
+    const pricing = (await fetch(`${GEN}/alpha/e2b/pricing`).then((r) =>
+        r.json(),
+    )) as Pricing;
+    const sizes = Object.keys(SIZES).map((template) => {
+        const { cpuCount, memoryMB } = pricing.templates[template];
+        const perDay =
+            (cpuCount * pricing.vcpuSecond +
+                (memoryMB / 1024) * pricing.gibSecond) *
+            86400;
+        return {
+            template,
+            text: `<b>${SIZES[template]}</b>: ${cpuCount} CPUs, ${memoryMB / 1024} GB, about ${perDay.toFixed(1)} Pollen a day while she runs`,
+        };
+    });
+    return {
+        text: [
+            ASK_FOR_BOT,
+            "",
+            "Her computer, which can't change later:",
+            ...sizes.map((s) =>
+                s.template === chosen ? `✓ ${s.text}` : s.text,
+            ),
+        ].join("\n"),
+        reply_markup: {
+            inline_keyboard: [
+                sizes.map((s) => ({
+                    text: `${s.template === chosen ? "✓ " : ""}${SIZES[s.template]}`,
+                    callback_data: `size::${s.template}`,
+                })),
+                [
+                    {
+                        text: "Create my Barbara",
+                        url: `https://t.me/newbot/${await myUsername()}/${username}?name=Barbara`,
+                        style: "success",
+                    },
+                ],
             ],
-        ],
+        },
     };
+}
+
+const askForBot = async (from: TgUser) => {
     const sent = await tg<{ message_id: number }>("sendMessage", {
         chat_id: from.id,
-        text: ASK_FOR_BOT,
-        reply_markup,
+        parse_mode: "HTML",
+        ...(await botLinkView(from)),
     });
     const user = userOf(from.id);
     user.botLink = sent.message_id;
     save();
     await sleep(2 * 60 * 1000);
     if (user.botLink !== sent.message_id) return;
-    await tg("editMessageText", {
-        chat_id: from.id,
-        message_id: sent.message_id,
-        text: ASK_FOR_BOT + NO_BOT_YET,
-        reply_markup,
-    });
+    const view = await botLinkView(from);
+    await show(
+        from.id,
+        { ...view, text: view.text + NO_BOT_YET },
+        sent.message_id,
+    );
 };
 
 // Her kit, apps/mama-barbara/barbara at KIT_REF: setup.sh, start.sh, the bridge and
@@ -277,8 +337,15 @@ mkdir -p ~/agent && cp -r apps/mama-barbara/barbara/. ~/agent/
 cd ~/agent && rm -rf ~/kit
 printf 'TELEGRAM_BOT_TOKEN=%s\\nOWNER_IDS=%s\\n' "$BOT_TOKEN" "$OWNER" > .env
 chmod 600 .env
-bash setup.sh
+bash setup.sh "$MODEL"
 bash start.sh`;
+
+// Her conversation stays: start.sh resumes it, after her current turn.
+const SWITCH = `set -e
+polli harness claude-code --model "$MODEL" --no-browser
+setsid nohup bash ~/agent/start.sh >/dev/null 2>&1 &`;
+
+const MODEL_OF = `python3 -c 'import json, os; print(json.load(open(os.path.expanduser("~/.pollinations/claude-code.json")))["env"]["ANTHROPIC_MODEL"])'`;
 
 const SETTING_UP =
     "I'm being set up, which takes about two minutes. Tap Start now and I'll answer as soon as I'm ready.";
@@ -312,7 +379,7 @@ async function setUp(owner: TgUser, bot: TgUser) {
         }>(user.key, "/alpha/e2b/sandboxes", {
             method: "POST",
             body: {
-                templateID: TEMPLATE,
+                templateID: user.size ?? DEFAULT_SIZE,
                 timeout: KEEP_SECONDS,
                 autoPause: true,
                 metadata: { name: `barbara-${bot.username}` },
@@ -332,6 +399,7 @@ async function setUp(owner: TgUser, bot: TgUser) {
             REF: KIT_REF,
             BOT_TOKEN: token,
             OWNER: String(owner.id),
+            MODEL: DEFAULT_MODEL,
         });
         await tg("setMyDescription", { description: READY }, token);
         await say(
@@ -523,11 +591,16 @@ async function cardView(owner: TgUser, b: Barbara): Promise<View> {
     const [name, access, box, keys] = await Promise.all([
         nameOf(b),
         accessOf(b),
-        key ? boxOf(key, b) : { state: "" },
+        key ? boxOf(key, b) : { sandboxID: b.box, state: "" },
         key ? keysOf(key) : [],
     ]);
     const people = access.added_users ?? [];
     const boxKey = keyOf(keys, b);
+    // Only a running box can say which model she uses.
+    const model =
+        box.state === "running"
+            ? (await runInBox(box, MODEL_OF, {}).catch(() => "")).trim()
+            : "";
     return {
         text: [
             `<b>${escapeHtml(name)}</b> · @${b.bot}`,
@@ -535,6 +608,7 @@ async function cardView(owner: TgUser, b: Barbara): Promise<View> {
             "",
             "<b>Budget</b>",
             `${budgetText(boxKey)}${boxKey?.lastRequest ? ` · last active ${when(boxKey.lastRequest)}` : ""}`,
+            ...(model ? ["", "<b>Model</b>", MODELS[model] ?? model] : []),
             "",
             "<b>Who can talk to her</b>",
             ["You", ...people.map((u) => escapeHtml(u.first_name))].join(", "),
@@ -547,7 +621,10 @@ async function cardView(owner: TgUser, b: Barbara): Promise<View> {
                 [
                     { text: "✏️ Rename", callback_data: `name:${b.botId}` },
                     { text: "🖼️ Photo", callback_data: `photo:${b.botId}` },
+                ],
+                [
                     { text: "💰 Budget", callback_data: `budget:${b.botId}` },
+                    { text: "🧠 Model", callback_data: `model:${b.botId}` },
                 ],
                 ...(people.length < 10
                     ? [
@@ -670,6 +747,38 @@ async function budgetView(owner: TgUser, b: Barbara): Promise<View> {
     };
 }
 
+async function modelView(owner: TgUser, b: Barbara): Promise<View> {
+    const key = userOf(owner.id).key;
+    const box = key ? await boxOf(key, b) : undefined;
+    const back = [{ text: "‹ Back", callback_data: `open:${b.botId}` }];
+    if (box?.state !== "running")
+        return {
+            text: `@${b.bot} isn't running. Resume her to change her model.`,
+            reply_markup: { inline_keyboard: [back] },
+        };
+    const current = (await runInBox(box, MODEL_OF, {})).trim();
+    return {
+        text: [
+            `<b>Model for @${b.bot}</b>`,
+            "Switching keeps her conversation. She restarts once her current task is done.",
+            "",
+            // Measured on 2026-10-22 (see MODELS).
+            "A message costs roughly 0.25 Pollen on Opus, 0.12 on Sonnet, 0.07 on GPT-6.1 and 0.01 on the others. GPT-6.1 and GLM can spend Quest Pollen; the others need bought Pollen.",
+        ].join("\n"),
+        reply_markup: {
+            inline_keyboard: [
+                ...Object.entries(MODELS).map(([id, label]) => [
+                    {
+                        text: `${id === current ? "✓ " : ""}${label}`,
+                        callback_data: `setmodel:${b.botId}:${id}`,
+                    },
+                ]),
+                back,
+            ],
+        },
+    };
+}
+
 const ALLOW = `python3 - "$ALLOW" <<'EOF'
 import json, os, sys
 path = os.path.expanduser("~/.claude/channels/telegram/access.json")
@@ -757,6 +866,11 @@ async function onButton(q: Callback) {
     const unfinished = userOf(owner.id).unfinished;
     if (action === "retry" && unfinished?.id === Number(botId))
         return setUp(owner, unfinished);
+    if (action === "size" && Object.hasOwn(SIZES, arg)) {
+        userOf(owner.id).size = arg;
+        save();
+        return show(owner.id, await botLinkView(owner), messageId);
+    }
     if (!b) return;
     if (action === "open")
         return show(owner.id, await cardView(owner, b), messageId);
@@ -810,7 +924,23 @@ async function onButton(q: Callback) {
     }
     if (action === "budget")
         return show(owner.id, await budgetView(owner, b), messageId);
+    if (action === "model")
+        return show(owner.id, await modelView(owner, b), messageId);
     const key = userOf(owner.id).key;
+    if (action === "setmodel" && key && Object.hasOwn(MODELS, arg)) {
+        await show(
+            owner.id,
+            { text: `Switching @${b.bot} to ${MODELS[arg]}…` },
+            messageId,
+        );
+        // On failure the card comes back unchanged, and onUpdate says why.
+        try {
+            await runInBox(await boxOf(key, b), SWITCH, { MODEL: arg });
+        } finally {
+            await show(owner.id, await cardView(owner, b), messageId);
+        }
+        return;
+    }
     if (action === "setbudget" && key) {
         await setBudget(key, b, arg === "none" ? null : Number(arg));
         return show(owner.id, await cardView(owner, b), messageId);

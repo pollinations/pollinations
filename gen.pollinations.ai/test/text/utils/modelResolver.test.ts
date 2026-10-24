@@ -5,6 +5,26 @@ import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 const messages = [{ role: "user" as const, content: "Hello" }];
 
 describe("resolveModelConfig", () => {
+    it("preserves Glyph reasoning flags when mapping reasoning_effort", async () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "stealth/glyph-cluster",
+            reasoning_effort: "low",
+            reasoning: { exclude: true },
+        });
+        const model = findModelByName("stealth/glyph-cluster");
+        const transformed = await model?.transform?.(
+            messages,
+            resolved.options,
+        );
+        expect(transformed?.options.reasoning).toEqual({
+            exclude: true,
+            effort: "low",
+        });
+        expect(transformed?.options.reasoning_effort).toBeUndefined();
+        expect(resolved.options.providerOptions).toEqual({
+            gateway: { only: ["stealth"] },
+        });
+    });
     it("sets Anthropic max_tokens defaults", () => {
         expect(
             resolveModelConfig(messages, {
@@ -375,6 +395,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Mercury 3 to Inception on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "inception/mercury-3",
+        });
+
+        expect(result.options.model).toBe("inception/mercury-3");
+        expect(result.options.provider).toEqual({
+            only: ["Inception"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Mercury 2.5 Preview to Inception on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "inception/mercury-2.5-preview",
@@ -478,15 +510,15 @@ describe("resolveModelConfig", () => {
         },
     );
 
-    it("routes Step Flash directly to DeepInfra without fallback", () => {
+    it("routes Step Flash directly to Novita", () => {
         const result = resolveModelConfig(messages, {
             model: "stepfun/step-3.7-flash",
         });
 
-        expect(result.options.model).toBe("stepfun-ai/Step-3.7-Flash");
+        expect(result.options.model).toBe("stepfun/step-3.7-flash");
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
-            "custom-host": "https://api.deepinfra.com/v1/openai",
+            directEndpoint: "https://api.novita.ai/openai/v1/chat/completions",
         });
         expect(result.options.provider).toBeUndefined();
     });
@@ -664,6 +696,28 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("routes Nemotron 3.5 Super VL directly to DeepInfra with a Together fallback", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "nvidia/nemotron-3.5-super-vl",
+        });
+        const fallback = resolveModelConfig(messages, {
+            model: "nvidia/nemotron-3.5-super-vl:openrouter:together",
+        });
+
+        expect(primary.options.model).toBe(
+            "nvidia/NVIDIA-Nemotron-3.5-Super-VL",
+        );
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+        expect(primary.options.provider).toBeUndefined();
+        expect(fallback.options.provider).toEqual({
+            only: ["together"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("routes DeepSeek V4.1 Flash 1017 directly to Fireworks with a DeepInfra fallback", () => {
         const primary = resolveModelConfig(messages, {
             model: "deepseek/deepseek-v4.1-flash-1017",
@@ -706,6 +760,19 @@ describe("resolveModelConfig", () => {
         });
 
         expect(result.options.model).toBe("meta/muse-spark-1.2");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://ai-gateway.vercel.sh/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes Muse Spark 1.3 directly through Vercel without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "meta/muse-spark-1.3",
+        });
+
+        expect(result.options.model).toBe("meta/muse-spark-1.3");
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
             "custom-host": "https://ai-gateway.vercel.sh/v1",
@@ -788,8 +855,8 @@ describe("resolveModelConfig", () => {
             "mistralai/mistral-small-3.2-24b-instruct",
             "deepinfra/fp8",
         ],
-        ["gemma", "google/gemma-4-26b-a4b-it", "novita/bf16"],
-        ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
+        ["gemma", "google/gemma-4-26b-a4b-it", "deepinfra/fp8"],
+        ["gemma-4-31b", "google/gemma-4-31b-it", "crusoe/bf16"],
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
         ["minimax-m2.7", "minimax/minimax-m2.7", "novita/fp8"],

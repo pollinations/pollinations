@@ -60,4 +60,5 @@ export async function runInBox(
         throw new Error(
             `exited with ${exitCode}: ${output.trim().slice(-500)}`,
         );
+    return output;
 }

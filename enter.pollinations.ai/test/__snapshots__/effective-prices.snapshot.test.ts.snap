@@ -1751,6 +1751,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000000422,
     },
   },
+  "inception/mercury-3": {
+    "cost": {
+      "completionTextTokens": 0.00000036925,
+      "promptCachedTokens": 0.00000001055,
+      "promptTextTokens": 0.0000001055,
+    },
+    "price": {
+      "completionTextTokens": 0.00000036925,
+      "promptCachedTokens": 0.00000001055,
+      "promptTextTokens": 0.0000001055,
+    },
+  },
   "inclusionai/ling-3.0-flash-vl": {
     "cost": {
       "completionTextTokens": 0.0000001899,

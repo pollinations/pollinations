@@ -382,6 +382,21 @@ describe("direct Responses transport", () => {
         ).toThrow(/Stored response items/);
     });
 
+    it("keeps gpt-5.3-codex recovery on Standard in native Responses", () => {
+        const input = request({
+            model: "openai/gpt-5.3-codex:openai",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct OpenAI target");
+        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
+            model: "gpt-5.3-codex",
+            service_tier: "default",
+            store: false,
+        });
+    });
+
     it("resolves only explicit direct Responses targets", () => {
         expect(resolveDirectResponsesTarget("qwen-large", request())).toEqual(
             expect.objectContaining({

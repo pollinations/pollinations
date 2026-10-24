@@ -1,5 +1,5 @@
 import { UpstreamError } from "@shared/error.ts";
-import type { Usage } from "@shared/registry/registry.ts";
+import { getCostDefinition, type Usage } from "@shared/registry/registry.ts";
 import debug from "debug";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
@@ -67,6 +67,11 @@ export type VertexGeminiImageUsage = {
     candidatesTokenCount?: number;
     totalTokenCount?: number;
     thoughtsTokenCount?: number;
+    cachedContentTokenCount?: number;
+    cacheTokensDetails?: Array<{
+        modality?: VertexModality;
+        tokenCount?: number;
+    }>;
     promptTokensDetails?: Array<{
         modality?: VertexModality;
         tokenCount?: number;
@@ -141,6 +146,7 @@ function mapModalityDetails(
 
 export function mapVertexGeminiImageUsage(
     usage: VertexGeminiImageUsage | undefined,
+    separateCachedInput = false,
 ): Usage {
     if (
         !usage ||
@@ -179,6 +185,29 @@ export function mapVertexGeminiImageUsage(
             usage.totalTokenCount
     ) {
         invalidVertexUsage(usage);
+    }
+
+    if (separateCachedInput) {
+        const cachedTokens = usage.cachedContentTokenCount ?? 0;
+        const cached: Usage = {};
+        if (
+            !isTokenCount(cachedTokens) ||
+            mapModalityDetails(
+                cached,
+                usage.cacheTokensDetails ?? [],
+                PROMPT_USAGE_KEYS,
+                usage,
+            ) !== cachedTokens
+        ) {
+            invalidVertexUsage(usage);
+        }
+        // Vertex's prompt counts include cached text and image tokens.
+        for (const key of ["promptTextTokens", "promptImageTokens"] as const) {
+            const cachedCount = cached[key] ?? 0;
+            if (cachedCount > (mapped[key] ?? 0)) invalidVertexUsage(usage);
+            if (cachedCount) mapped[key] = (mapped[key] ?? 0) - cachedCount;
+        }
+        addUsage(mapped, "promptCachedTokens", cachedTokens);
     }
 
     return mapped;
@@ -339,7 +368,10 @@ export async function callVertexAIGeminiImageAPI(
     )?.inlineData;
     if (!imagePart?.data) throw noImageError(data);
 
-    const usage = mapVertexGeminiImageUsage(data.usageMetadata);
+    const usage = mapVertexGeminiImageUsage(
+        data.usageMetadata,
+        getCostDefinition(params.model)?.promptCachedTokens !== undefined,
+    );
     const imageBuffer = base64ToBuffer(imagePart.data);
     let finalImageBuffer = imageBuffer;
     try {

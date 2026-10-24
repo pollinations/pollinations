@@ -376,6 +376,7 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             // Gemini 3.1 Flash-Lite Image (GA) via Vertex AI — half of nanobanana-2
+            promptCachedTokens: perMillion(0.025),
             promptTextTokens: perMillion(0.25), // per 1M tokens
             promptImageTokens: perMillion(0.25), // per 1M tokens
             completionTextTokens: perMillion(1.5), // text/reasoning output tokens

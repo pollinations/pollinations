@@ -1,0 +1,9 @@
+name = "focus"
+main = "worker.js"
+compatibility_date = "2025-06-01"
+
+# The @pollinations/ui browser bundle and stylesheet, served as-is from the
+# package build (npm run build --prefix ../../packages/ui).
+[assets]
+directory = "../../packages/ui/dist"
+binding = "ASSETS"

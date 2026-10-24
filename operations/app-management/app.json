@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎮",
+    "name": "One Line Arena",
+    "url": "https://drjacky.github.io/one-line-arena",
+    "description": "Describe a fighter in one line. Pollinations designs the whole fighter from it: name, title, portrait, stats, three moves, a quirk, a weakness and a catchphrase. Then it sends the fighter into a short",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "Drjacky",
+    "githubUserId": "2296754",
+    "repositoryUrl": "https://github.com/Drjacky/one-line-arena",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-13",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17287",
+    "approvedDate": "2026-10-24",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/3352f588-688c-41b3-bb59-51a85101031b"
+  },
+  {
     "emoji": "🎬",
     "name": "AI ad video generator",
     "url": "https://github.com/zee7lubricantsoperations-collab/AI-ad-video-generator-free-no-cahrges-",

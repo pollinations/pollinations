@@ -42,6 +42,7 @@ import {
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
+import { callRecraftFlashFalAPI } from "./models/recraftFalModel.ts";
 import { callReplicateFallbackImage } from "./models/replicateFallbackImageModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
@@ -1017,6 +1018,9 @@ const generateImage = async (
             return await callOpenRouterRecraftVectorAPI(prompt, safeParams);
 
         case "recraft/recraft-v4.1-flash":
+            return await callRecraftFlashFalAPI(prompt, safeParams);
+
+        case "recraft/recraft-v4.1-flash:openrouter":
             return await callOpenRouterRecraftFlashAPI(prompt, safeParams);
 
         case "prunaai/p-image-edit":

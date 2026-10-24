@@ -1636,17 +1636,16 @@ const IMAGE_BASE_SERVICES = {
     },
     "recraft/recraft-v4.1-flash": {
         aliases: [],
-        provider: "openrouter",
+        provider: "fal",
         publisher: "Recraft",
         category: "image",
         addedDate: new Date("2026-09-23").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            // OpenRouter bills 4,175 image tokens per image (same convention
-            // as Recraft Vector): $0.007 fixed per output image, verified
-            // 2026-09-23, plus the mandatory 5.5% OpenRouter credit fee.
-            completionImageTokens: 0.007 * 1.055,
+            // fal recraft/v4.1/flash/text-to-image: $0.007 per image, one
+            // billable unit per image (probe, 2026-10-24).
+            completionImageTokens: 0.007,
         },
         title: "Recraft V4.1 Flash",
         description: "Fast, low-cost raster image generation from text",

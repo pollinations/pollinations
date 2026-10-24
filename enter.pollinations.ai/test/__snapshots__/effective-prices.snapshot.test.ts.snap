@@ -3978,6 +3978,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "recraft/recraft-v4.1-flash": {
     "cost": {
+      "completionImageTokens": 0.007,
+    },
+    "price": {
+      "completionImageTokens": 0.007,
+    },
+  },
+  "recraft/recraft-v4.1-flash:openrouter": {
+    "cost": {
       "completionImageTokens": 0.007385,
     },
     "price": {

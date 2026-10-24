@@ -1054,6 +1054,7 @@ const generateImage = async (
             return await callOpenRouterQwenImage21ProAPI(prompt, safeParams);
 
         case "black-forest-labs/flux.1-kontext-pro:replicate":
+        case "black-forest-labs/flux.1.1-pro:replicate":
         case "black-forest-labs/flux.2-pro:replicate":
         case "prunaai/p-image-edit:replicate":
         case "krea/krea-2-medium:replicate":

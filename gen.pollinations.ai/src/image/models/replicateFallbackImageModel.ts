@@ -16,6 +16,7 @@ import { resolveKreaAspectRatio } from "./kreaModel.ts";
 
 type ReplicateFallbackModel =
     | "black-forest-labs/flux.1-kontext-pro:replicate"
+    | "black-forest-labs/flux.1.1-pro:replicate"
     | "black-forest-labs/flux.2-pro:replicate"
     // Replicate is FLUX.2 Max's primary route (Azure has no Max deployment),
     // so this id carries no ":replicate" suffix, unlike every other case here.
@@ -126,6 +127,23 @@ export async function callReplicateFallbackImage(
                     seed: params.seed,
                 },
                 "FLUX.2 Max",
+            );
+            break;
+        }
+        case "black-forest-labs/flux.1.1-pro:replicate": {
+            // Same request as the Azure primary, which already rejected image
+            // input and sizes off the 32px grid with a 400 (no fallback).
+            buffer = await runReplicateImage(
+                "black-forest-labs/flux-1.1-pro",
+                {
+                    prompt,
+                    aspect_ratio: "custom",
+                    width: params.width,
+                    height: params.height,
+                    output_format: "png",
+                    seed: params.seed,
+                },
+                "FLUX 1.1 Pro",
             );
             break;
         }

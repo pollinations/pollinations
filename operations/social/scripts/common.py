@@ -873,7 +873,7 @@ def commit_files_to_branch(
 # ── Model post ───────────────────────────────────────────────────────
 
 CATEGORIES: tuple[str, ...] = (
-    "text", "image", "video", "audio", "embeddings", "3d", "realtime"
+    "text", "image", "video", "audio", "embeddings", "3d", "realtime", "decision"
 )
 
 
@@ -995,20 +995,29 @@ def diff_models(
         # First run: treat the snapshot as baseline with no announced changes.
         return Diff(added=added, removed=removed, changed=changed)
 
+    # Models are matched across categories: one that moved category changed.
+    prev_all = {
+        _model_key(m): m for ms in previous.values() for m in ms if _model_key(m)
+    }
+    curr_all = {
+        _model_key(m): m for ms in current.values() for m in ms if _model_key(m)
+    }
+
     for cat in CATEGORIES:
         curr_raw = current.get(cat, [])
         curr_by_name = {_model_key(m): m for m in curr_raw if _model_key(m)}
 
-        # Category absent from previous snapshot = newly tracked (e.g. 'video'
+        # Category absent from previous snapshot = newly tracked (e.g. '3d'
         # added after this code change). Treat as no baseline — don't flood the
-        # diff by announcing every existing model as "added".
-        if cat not in previous:
+        # diff by announcing every existing model as "added" — unless it was
+        # split off a recorded category (e.g. 'decision' out of 'text').
+        if cat not in previous and not curr_by_name.keys() & prev_all.keys():
             print(
                 f"  Info: '{cat}' not in previous snapshot — skipping (new category)."
             )
             continue
 
-        prev_raw = previous[cat]
+        prev_raw = previous.get(cat, [])
         prev_by_name = {_model_key(m): m for m in prev_raw if _model_key(m)}
 
         # Old snapshot has raw models but none resolved to a key — structural
@@ -1022,13 +1031,13 @@ def diff_models(
             continue
 
         for name, model in curr_by_name.items():
-            if name not in prev_by_name:
+            if name not in prev_all:
                 added[cat].append(model)
-            elif _normalize_for_diff(prev_by_name[name]) != _normalize_for_diff(model):
-                changed[cat].append({"before": prev_by_name[name], "after": model})
+            elif _normalize_for_diff(prev_all[name]) != _normalize_for_diff(model):
+                changed[cat].append({"before": prev_all[name], "after": model})
 
         for name, model in prev_by_name.items():
-            if name not in curr_by_name:
+            if name not in curr_all:
                 removed[cat].append(model)
 
     return Diff(added=added, removed=removed, changed=changed)

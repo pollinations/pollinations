@@ -4361,20 +4361,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000015,
     },
   },
-  "x-ai/grok-4.6:azure:sweden": {
-    "cost": {
-      "completionTextTokens": 0.000006,
-      "promptCachedTokens": 0.0000005,
-      "promptImageTokens": 0.000002,
-      "promptTextTokens": 0.000002,
-    },
-    "price": {
-      "completionTextTokens": 0.0000045,
-      "promptCachedTokens": 0.000000375,
-      "promptImageTokens": 0.0000015,
-      "promptTextTokens": 0.0000015,
-    },
-  },
   "x-ai/grok-4.6:xai": {
     "cost": {
       "completionTextTokens": 0.000006,
@@ -4391,10 +4377,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       },
     },
     "price": {
-      "completionTextTokens": 0.0000045,
-      "promptCachedTokens": 0.000000375,
-      "promptImageTokens": 0.0000015,
-      "promptTextTokens": 0.0000015,
+      "completionTextTokens": 0.000006,
+      "promptCachedTokens": 0.0000005,
+      "promptImageTokens": 0.000002,
+      "promptTextTokens": 0.000002,
     },
   },
   "x-ai/grok-4.7": {

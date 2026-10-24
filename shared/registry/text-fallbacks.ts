@@ -202,13 +202,9 @@ export const TEXT_FALLBACKS = {
         "openai/gpt-6-luna:openai": { provider: "openai" },
     },
     "x-ai/grok-4.6": {
-        "x-ai/grok-4.6:azure:sweden": {
-            provider: "azure",
-            addedDate: new Date("2026-09-06").getTime(),
-            // Provider retires this route on 2027-08-24.
-        },
         "x-ai/grok-4.6:xai": {
             provider: "xai",
+            priceMultiplier: 1,
             addedDate: new Date("2026-09-24").getTime(),
             // xAI /v1/language-models/grok-4.6 rates (2026-09-24). Image tokens
             // bill at the text input rate; reasoning bills as output.

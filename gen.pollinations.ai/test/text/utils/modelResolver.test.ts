@@ -439,6 +439,18 @@ describe("resolveModelConfig", () => {
         },
     );
 
+    it("keeps Grok 4.6 recovery on direct xAI", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "x-ai/grok-4.6:xai",
+        });
+        expect(resolved.options.modelConfig).toMatchObject({
+            provider: "openai",
+            model: "grok-4.6",
+            directEndpoint: "https://api.x.ai/v1/chat/completions",
+        });
+        expect(findModelByName("x-ai/grok-4.6:azure:sweden")).toBeNull();
+    });
+
     it("pins Jev's exact Vercel version, long context, and OpenRouter backup", () => {
         const primary = resolveModelConfig(messages, {
             model: "typesafe/jev-1.13",

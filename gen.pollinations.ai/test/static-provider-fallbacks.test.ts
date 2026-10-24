@@ -1288,12 +1288,10 @@ describe("static provider fallbacks", () => {
             completionTextTokens: (0.6 / 1_000_000) * 1.055,
         });
         expect(TEXT_SERVICES["x-ai/grok-4.6"].fallbacks).toEqual([
-            "x-ai/grok-4.6:azure:sweden",
             "x-ai/grok-4.6:xai",
         ]);
-        expect(TEXT_SERVICES["x-ai/grok-4.6:azure:sweden"].cost).toEqual(
-            TEXT_SERVICES["x-ai/grok-4.6"].cost,
-        );
+        expect(TEXT_SERVICES["x-ai/grok-4.6:xai"].priceMultiplier).toBe(1);
+
         expect(
             TEXT_SERVICES["deepseek/deepseek-v4-flash:deepinfra"].cost,
         ).toMatchObject({
@@ -1843,18 +1841,6 @@ describe("static provider fallbacks", () => {
     });
 
     it("binds fallback-only text ids to their exact provider routes", () => {
-        expect(
-            findModelByName("x-ai/grok-4.6:azure:sweden")?.config(),
-        ).toMatchObject({
-            provider: "openai",
-            model: "grok-4.6",
-            directAuthHeader: "api-key",
-            directEndpoint:
-                "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/grok-4.6/chat/completions?api-version=2024-12-01-preview",
-            responsesEndpoint:
-                "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
-            responsesAuthHeader: "api-key",
-        });
         expect(findModelByName("x-ai/grok-4.6:xai")?.config()).toMatchObject({
             provider: "openai",
             directEndpoint: "https://api.x.ai/v1/chat/completions",

@@ -534,7 +534,7 @@ export function Sandboxes() {
     return (
         <Section
             title="Sandboxes"
-            intro="A sandbox is a Linux computer in the cloud. Open it with ssh or VS Code. Its files stay while it’s paused, and a paused sandbox costs nothing."
+            intro="A sandbox is a Linux computer in the cloud. Open it with ssh or VS Code. Its files stay while it’s paused, and you pay only while it runs."
             action={
                 <ButtonGroup>
                     <IconButton

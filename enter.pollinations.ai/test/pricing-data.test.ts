@@ -912,7 +912,7 @@ test("Gemini search cost follows each route's provider metadata", () => {
     // costs include its 5.5% fee while keeping the same public quote.
     expect(gemini3FlashCost.totalCost).toBeCloseTo(3.528, 8);
     expect(geminiSearchFastCost.totalCost).toBeCloseTo(2.828, 8);
-    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(4.528, 8);
+    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(9.028, 8);
     expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(2.8, 8);
     expect(gemini3FlashFallbackCost.totalCost).toBeCloseTo(3.528 * 1.055, 8);
 });
@@ -1388,10 +1388,10 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
     );
     expect(geminiCacheWrite).toHaveLength(1);
     expect(geminiCacheWrite[0].unitCost).toBeCloseTo(
-        (0.5 / 12_000_000) * 1.055,
+        (1 / 12_000_000) * 1.055,
         15,
     );
-    expect(geminiCacheWrite[0].cost).toBeCloseTo((0.5 / 12) * 1.055, 15);
+    expect(geminiCacheWrite[0].cost).toBeCloseTo((1 / 12) * 1.055, 15);
 
     for (const model of [
         "google/gemini-3-flash-preview:openrouter:vertex-global",

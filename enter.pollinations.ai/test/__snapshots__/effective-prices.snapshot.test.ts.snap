@@ -4075,6 +4075,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0,
     },
   },
+  "tripo3d/p2": {
+    "cost": {
+      "completionImageTokens": 1.1,
+    },
+    "price": {
+      "completionImageTokens": 1.1,
+    },
+  },
   "typesafe/jev-1.13": {
     "cost": {
       "completionTextTokens": 0,

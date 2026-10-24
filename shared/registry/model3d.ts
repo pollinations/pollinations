@@ -12,6 +12,23 @@ export type Model3dName = keyof typeof MODEL3D_SERVICES;
 // new UsageType, which would require new fields in
 // shared/schemas/generation-event.ts and a Tinybird schema change.
 const MODEL3D_BASE_SERVICES = {
+    "tripo3d/p2": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Tripo",
+        category: "3d",
+        addedDate: new Date("2026-09-26").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        alpha: true,
+        flatRate: true,
+        cost: { completionImageTokens: 1.1 },
+        title: "Tripo P2",
+        description:
+            "Text-to-3D GLB meshes with a 10,000-face target and PBR textures",
+        inputModalities: ["text"],
+        outputModalities: ["3d"],
+    },
     "microsoft/trellis-2": {
         aliases: [
             "trellis-2-low",

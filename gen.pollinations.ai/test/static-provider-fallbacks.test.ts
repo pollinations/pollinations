@@ -252,6 +252,27 @@ describe("static provider fallbacks", () => {
         },
     );
 
+    it("tries Bedrock before direct Anthropic for Claude Sonnet 5", () => {
+        const model = "anthropic/claude-sonnet-5";
+        const primary: ModelDefinition = TEXT_SERVICES[model];
+        const fallback: ModelDefinition = TEXT_SERVICES[`${model}:anthropic`];
+        expect(primary.provider).toBe("aws");
+        expect(primary.fallbacks).toEqual([`${model}:anthropic`]);
+        expect(fallback).toMatchObject({
+            provider: "anthropic",
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        expect(fallback.cost).toEqual(primary.cost);
+        expect(findModelByName(`${model}:anthropic`)?.config()).toMatchObject({
+            provider: "anthropic",
+            model: "claude-sonnet-5",
+            defaultOptions: { max_tokens: 64000 },
+        });
+        expect(getVisibleTextModels()).not.toContain(`${model}:anthropic`);
+    });
+
     it("tries direct DeepInfra before OpenRouter for GLM 5.3 at the primary's user price", () => {
         const model = "z-ai/glm-5.3";
         const route = `${model}:deepinfra`;

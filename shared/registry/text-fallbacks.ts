@@ -660,6 +660,13 @@ export const TEXT_FALLBACKS = {
             addedDate: new Date("2026-10-15").getTime(),
         },
     },
+    "anthropic/claude-sonnet-5": {
+        // Anthropic's global rates equal the Bedrock global sheet (2026-10-24).
+        "anthropic/claude-sonnet-5:anthropic": {
+            provider: "anthropic",
+            addedDate: new Date("2026-10-24").getTime(),
+        },
+    },
     "anthropic/claude-fable-5": {
         "anthropic/claude-fable-5:openrouter:vertex-global": {
             supportedParameters: CHAT_PARAMETERS.openRouterOpus,

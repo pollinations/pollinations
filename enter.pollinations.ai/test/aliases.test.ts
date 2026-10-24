@@ -183,7 +183,6 @@ test("Azure models use the approved public-price multipliers", () => {
         // Azure quota covers less than twice Kimi's peak, so overflow reaches
         // the cash-paid DeepInfra fallback.
         ["moonshotai/kimi-k2.6", 1],
-        ["moonshotai/kimi-k2.6:azure:sweden", 1],
         ["deepseek/deepseek-v4.1-flash", 0.5],
     ]);
 

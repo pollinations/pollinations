@@ -650,7 +650,9 @@ const AUDIO_BASE_SERVICES = {
         addedDate: new Date("2026-06-22").getTime(),
         priceMultiplier: 1,
         cost: {
-            // ElevenLabs Sound Effects: $0.12/minute.
+            // ElevenLabs Sound Effects: $0.12/minute, billed from the
+            // character-cost meter (12 credits per second; 60 credits when
+            // no duration is set).
             completionAudioSeconds: 0.002,
         },
         title: "ElevenLabs Sound Effects",

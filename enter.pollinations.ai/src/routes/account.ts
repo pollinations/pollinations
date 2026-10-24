@@ -29,13 +29,9 @@ import {
 } from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import {
-    keyAllowsModel,
+    keyAllowsModelPermissions,
     toModelPermissions,
 } from "@shared/registry/model-permissions.ts";
-import {
-    getRegistryModelDefinition,
-    type ModelName,
-} from "@shared/registry/registry.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -216,20 +212,20 @@ const GrantAgentSchema = z.intersection(
 );
 
 /**
- * A key can't give another key more than it has itself: account permissions,
- * models and lifetime stay within its own, and a key with a budget can only
- * hand out budget taken from its own, so its keys can't outspend it together.
- * Undefined fields aren't being granted. The account owner (no key) can grant
- * anything. Returns the budget taken from the calling key.
+ * A key can't give another key more than it has itself: the key it creates or
+ * edits ends up with account permissions, models and lifetime within its own
+ * (null is no limit), and a key with a budget can only hand out budget taken
+ * from its own, so its keys can't outspend it together. The account owner (no
+ * key) can grant anything. Returns the budget taken from the calling key.
  */
 async function grantFromCallerKey(
     db: D1Database,
     callerKey: AuthenticatedApiKey | undefined,
     grant: {
         accountPermissions?: string[] | null;
-        allowedModels?: string[] | null;
-        expiresAt?: Date | null;
-        pollenBudget?: number | null;
+        allowedModels: string[] | null;
+        expiresAt: Date | null;
+        pollenBudget: number | null;
     },
     budgetIncrease = grant.pollenBudget ?? 0,
 ): Promise<number> {
@@ -248,18 +244,18 @@ async function grantFromCallerKey(
     }
 
     const models = callerKey.permissions?.models;
-    if (models && grant.allowedModels !== undefined) {
-        const granted =
+    if (
+        models &&
+        !(
             grant.allowedModels &&
-            (await toModelPermissions(db, grant.allowedModels));
-        if (!granted?.every((model) => keyGrantsModel(models, model))) {
-            deny("An API key can only grant models it can use");
-        }
+            (await keyAllowsModelPermissions(db, models, grant.allowedModels))
+        )
+    ) {
+        deny("An API key can only grant models it can use");
     }
 
     if (
         callerKey.expiresAt &&
-        grant.expiresAt !== undefined &&
         !(grant.expiresAt && grant.expiresAt <= callerKey.expiresAt)
     ) {
         deny("An API key can't grant a key that outlives it");
@@ -279,20 +275,6 @@ async function grantFromCallerKey(
     );
     if (!ok) deny("This API key's budget is too low to grant that budget");
     return budgetIncrease;
-}
-
-// A listed category or model, or a registry model in a listed category.
-function keyGrantsModel(models: readonly string[], model: string): boolean {
-    if (models.includes(model)) return true;
-    try {
-        return keyAllowsModel(
-            models,
-            model,
-            getRegistryModelDefinition(model as ModelName),
-        );
-    } catch {
-        return false;
-    }
 }
 
 function parsePermissions(
@@ -1978,7 +1960,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Update API Key",
             description:
-                "Update an API key's name, model access, budget, account permissions, expiry, description, or app settings. Omitted fields are unchanged. Requires `account:keys` permission when using API keys. An API key can't update itself or grant more than it has; raising a budget deducts the increase from a budgeted API key's own budget.",
+                "Update an API key's name, model access, budget, account permissions, expiry, description, or app settings. Omitted fields are unchanged. Requires `account:keys` permission when using API keys. An API key can't update itself, and can only edit keys that end up within its own account permissions, models, expiry and budget; raising a budget deducts the increase from a budgeted API key's own budget.",
             responses: {
                 200: { description: "Updated API key" },
                 400: { description: "Invalid update" },
@@ -2039,12 +2021,12 @@ export const accountRoutes = new Hono<Env>()
             }
             // As on creation: a key can't grant spending it doesn't have.
             if (
-                questPollenOnly === false &&
-                c.var.auth.apiKey?.questPollenOnly
+                callerKey?.questPollenOnly &&
+                !(questPollenOnly ?? key.questPollenOnly)
             ) {
                 throw new HTTPException(403, {
                     message:
-                        "A Quest Pollen only key can't lift that limit from a key",
+                        "A Quest Pollen only key can only edit Quest Pollen only keys",
                 });
             }
 
@@ -2074,16 +2056,26 @@ export const accountRoutes = new Hono<Env>()
                     earningsEnabled,
                 }).filter(([, value]) => value !== undefined),
             );
-            // Raising a budget takes the difference; giving an unlimited key a
-            // budget takes nothing.
+            // Raising a budget takes the difference; an unlimited key counts
+            // as having none.
             const budgetChange =
-                pollenBudget != null && key.pollenBalance != null
-                    ? pollenBudget - key.pollenBalance
+                pollenBudget != null
+                    ? pollenBudget - (key.pollenBalance ?? 0)
                     : 0;
+            // A key can only edit keys that end up within its own limits.
             await grantFromCallerKey(
                 c.env.DB,
                 callerKey,
-                { accountPermissions, allowedModels, expiresAt, pollenBudget },
+                {
+                    accountPermissions: permissions.account ?? null,
+                    allowedModels: permissions.models ?? null,
+                    expiresAt:
+                        expiresAt === undefined ? key.expiresAt : expiresAt,
+                    pollenBudget:
+                        pollenBudget === undefined
+                            ? key.pollenBalance
+                            : pollenBudget,
+                },
                 budgetChange,
             );
             // A budgeted key moves budget onto what the key has left now

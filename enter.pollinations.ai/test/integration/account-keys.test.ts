@@ -1,5 +1,8 @@
 import { env, SELF } from "cloudflare:test";
 import { signGrantAgent } from "@shared/auth/agent-run-token.ts";
+import { communityModelId } from "@shared/community-endpoints.ts";
+import * as schema from "@shared/db/better-auth.ts";
+import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
 import {
     initialKeyEditValues,
@@ -602,10 +605,12 @@ describe("Account Key Management API", () => {
                     expiresIn: 3600,
                 })
             ).json();
-            const target = await createApiKeyViaApi(accountToken, {
-                name: "target",
-                pollenBudget: 1,
-            });
+            const target = await (
+                await call(caller.key, "/keys", "POST", {
+                    name: "target",
+                    pollenBudget: 1,
+                })
+            ).json();
             const update = (body: object) =>
                 call(caller.key, `/keys/${target.id}`, "PATCH", body);
 
@@ -616,8 +621,8 @@ describe("Account Key Management API", () => {
                 { expiresAt: null },
                 { expiresAt: "2099-01-01T00:00:00Z" },
                 { pollenBudget: null },
-                // 6 more than the target has; the caller has 5.
-                { pollenBudget: 7 },
+                // 5 more than the target has; the caller has 4 left.
+                { pollenBudget: 6 },
             ]) {
                 expect((await update(tooMuch)).status).toBe(403);
             }
@@ -628,7 +633,102 @@ describe("Account Key Management API", () => {
             });
             expect(within.status).toBe(200);
             expect((await within.json()).pollenBalance).toBe(4);
-            expect(await budgetOf(caller.key)).toBe(2);
+            expect(await budgetOf(caller.key)).toBe(1);
+        });
+
+        test("a key can only edit keys that end up within its own limits", async ({
+            accountToken,
+        }) => {
+            const caller = await (
+                await call(accountToken, "/keys", "POST", {
+                    name: "limited",
+                    accountPermissions: ["keys"],
+                    pollenBudget: 5,
+                    expiresIn: 3600,
+                })
+            ).json();
+            const expiresAt = new Date(Date.now() + 1800_000).toISOString();
+
+            const broader = await createApiKeyViaApi(accountToken, {
+                name: "broader",
+                accountPermissions: ["keys", "profile"],
+                pollenBudget: 1,
+            });
+            const extend = await call(
+                caller.key,
+                `/keys/${broader.id}`,
+                "PATCH",
+                { expiresAt },
+            );
+            expect(extend.status).toBe(403);
+
+            // An unlimited key is within a budgeted one only once it gets a
+            // budget, taken from the caller's.
+            const unlimited = await createApiKeyViaApi(accountToken, {
+                name: "unlimited",
+            });
+            const url = `/keys/${unlimited.id}`;
+            expect(
+                (await call(caller.key, url, "PATCH", { expiresAt })).status,
+            ).toBe(403);
+            expect(
+                (
+                    await call(caller.key, url, "PATCH", {
+                        expiresAt,
+                        pollenBudget: 1,
+                    })
+                ).status,
+            ).toBe(200);
+            expect(await budgetOf(caller.key)).toBe(4);
+        });
+
+        test("a key limited to a category can grant community models in it", async ({
+            accountToken,
+        }) => {
+            const db = drizzle(env.DB);
+            const owner = await db.select().from(schema.user).get();
+            await db.update(schema.user).set({ githubUsername: "model-owner" });
+            for (const modality of ["text", "image"]) {
+                await db.insert(schema.communityEndpoint).values({
+                    id: `owner-${modality}-model`,
+                    ownerUserId: owner?.id as string,
+                    name: `${modality}-model`,
+                    title: `Owner ${modality} model`,
+                    baseUrl: "https://owner.example.com/v1",
+                    upstreamModel: `${modality}-model`,
+                    payload: JSON.stringify({
+                        paidOnly: false,
+                        bearerTokenCiphertext: "encrypted-token",
+                        modality,
+                        imagePricing: "request",
+                        inputModalities: ["text"],
+                        perUserRpm: null,
+                        fallbacks: [],
+                        prices: {},
+                    }),
+                    visibility: "private",
+                    promptTextPrice: 0,
+                    completionTextPrice: 0,
+                });
+            }
+            const caller = await createApiKeyViaApi(accountToken, {
+                name: "text-only",
+                accountPermissions: ["keys"],
+                allowedModels: ["text"],
+            });
+
+            const textModel = communityModelId("model-owner", "text-model");
+            const text = await call(caller.key, "/keys", "POST", {
+                name: "community-text",
+                allowedModels: [textModel],
+            });
+            expect(text.status).toBe(200);
+            expect((await text.json()).permissions.models).toEqual([textModel]);
+            const image = await call(caller.key, "/keys", "POST", {
+                name: "community-image",
+                allowedModels: [communityModelId("model-owner", "image-model")],
+            });
+            expect(image.status).toBe(403);
         });
     });
 

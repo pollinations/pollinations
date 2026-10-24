@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Site | `https://gen.pollinations.ai/mcp/site` | Inspect a site's crawler and agent discoverability: robots.txt, llms.txt, well-known documents | [Source](https://github.com/pollinations/pollinations/tree/main/apps/site-mcp) |
 
 Send the key with every request:
 
@@ -206,6 +207,17 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### Site MCP
+
+Two free tools inspect a site's crawler and agent discoverability.
+`inspect_site` reports the homepage status, robots.txt rules per major AI
+crawler (GPTBot, ClaudeBot, Google-Extended, and friends), llms.txt, the
+default sitemap, and well-known documents (agent card, OAuth metadata,
+security.txt). `inspect_sitemap` follows a sitemap URL or index to up to five
+child sitemaps and returns the entry count plus the first entries with their
+lastmod dates. Use it before shipping a site to check what crawlers and agents
+will actually see.
 
 ### Billing and permissions
 

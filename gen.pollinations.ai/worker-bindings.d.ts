@@ -7,6 +7,7 @@ interface CloudflareBindings {
     EXA_MCP: Fetcher;
     COMPOSIO_MCP: Fetcher;
     COMPUTER_MCP: Fetcher;
+    SITE_MCP: Fetcher;
     MACHINES_MCP: Fetcher;
     PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;

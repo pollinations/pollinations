@@ -47,6 +47,7 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
+    | "SITE_MCP"
     | "MACHINES_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
@@ -223,6 +224,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "site",
+        name: "Site",
+        description:
+            "Inspect a site's crawler and agent discoverability: robots.txt, llms.txt, well-known documents.",
+        binding: "SITE_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Free. Inspection uses no paid providers.",
             rates: [],
         },
     },

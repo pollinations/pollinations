@@ -214,6 +214,117 @@ function responseBodyError(
     }
 }
 
+function assertCompletionOk(
+    completion: ChatCompletion,
+    responseBody: string,
+    response: Response,
+    modelName: string,
+    requestUrl: URL,
+): void {
+    const responseError = responseBodyError(completion);
+    if (!responseError) return;
+    const details =
+        typeof responseError === "string"
+            ? { message: responseError }
+            : responseError;
+    const error = new Error(
+        details.message || "Text generation failed",
+    ) as ServiceError;
+    const upstreamStatus =
+        typeof details.status === "number"
+            ? details.status
+            : typeof details.code === "number" &&
+                details.code >= 400 &&
+                details.code <= 599
+              ? details.code
+              : undefined;
+    error.status = apiErrorStatus(details, upstreamStatus ?? 502);
+    error.upstreamStatus = upstreamStatus;
+    error.details = details.details ?? details;
+    error.responseBody = responseBody;
+    error.model = modelName;
+    error.requestUrl = requestUrl;
+    error.upstreamHeaders = collectUpstreamHeaders(response.headers);
+    throw error;
+}
+
+/** Catch an opening error while fallback is still possible; replay every byte. */
+async function checkStreamStart(
+    body: ReadableStream<Uint8Array>,
+    response: Response,
+    modelName: string,
+    requestUrl: URL,
+): Promise<ReadableStream<Uint8Array>> {
+    if (!response.headers.get("content-type")?.includes("text/event-stream"))
+        return body;
+    const reader = body.getReader();
+    const decoder = new TextDecoder();
+    const chunks: Uint8Array[] = [];
+    let bytes = 0;
+    let firstEventSeen = false;
+    let heartbeatSeen = false;
+    let ended = false;
+    const parser = createParser({
+        // Keepalives must reach the caller without waiting for model output.
+        onComment() {
+            heartbeatSeen = true;
+        },
+        onEvent(event) {
+            if (firstEventSeen || heartbeatSeen) return;
+            firstEventSeen = true;
+            const completion = parseJsonSafe(event.data);
+            if (completion && typeof completion === "object") {
+                assertCompletionOk(
+                    completion as ChatCompletion,
+                    event.data,
+                    response,
+                    modelName,
+                    requestUrl,
+                );
+            }
+        },
+    });
+    try {
+        // Bound lookahead for a missing separator or an oversized first event.
+        while (!firstEventSeen && !heartbeatSeen && bytes < 64 * 1024) {
+            const { value, done } = await reader.read();
+            if (done) {
+                ended = true;
+                parser.feed(`${decoder.decode()}\n\n`);
+                break;
+            }
+            chunks.push(value);
+            bytes += value.byteLength;
+            parser.feed(decoder.decode(value, { stream: true }));
+        }
+    } catch (error) {
+        void reader.cancel().catch(() => {});
+        reader.releaseLock();
+        throw withUpstreamContext(error, requestUrl);
+    }
+    return new ReadableStream({
+        start(controller) {
+            for (const chunk of chunks) controller.enqueue(chunk);
+            if (ended) {
+                reader.releaseLock();
+                controller.close();
+            }
+        },
+        async pull(controller) {
+            const { value, done } = await reader.read();
+            if (done) {
+                reader.releaseLock();
+                controller.close();
+            } else controller.enqueue(value);
+        },
+        cancel(reason) {
+            const cancelled = reader.cancel(reason);
+            reader.releaseLock();
+            return cancelled;
+        },
+    });
+}
+
 function createApiError(
     response: Response,
     responseBody: string,
@@ -395,13 +506,19 @@ export async function genericOpenAIClient(
                     requestUrl,
                 );
             }
+            const checkedBody = await checkStreamStart(
+                response.body,
+                response,
+                modelName,
+                requestUrl,
+            );
             const streamToReturn = ensureOpenAISseDone(
                 hideReasoning || normalizeContent
                     ? transformStreamCompletions(
-                          response.body,
+                          checkedBody,
                           transformCompletion,
                       )
-                    : response.body,
+                    : checkedBody,
             );
             return withUpstreamRequestUrl(
                 {
@@ -436,32 +553,7 @@ export async function genericOpenAIClient(
             throw error;
         }
         transformCompletion(data);
-        const responseError = responseBodyError(data);
-        if (responseError) {
-            const errorDetails =
-                typeof responseError === "string"
-                    ? { message: responseError }
-                    : responseError;
-            const error = new Error(
-                errorDetails.message || "Text generation failed",
-            ) as ServiceError;
-            const upstreamStatus =
-                typeof errorDetails.status === "number"
-                    ? errorDetails.status
-                    : typeof errorDetails.code === "number" &&
-                        errorDetails.code >= 400 &&
-                        errorDetails.code <= 599
-                      ? errorDetails.code
-                      : undefined;
-            error.status = apiErrorStatus(errorDetails, upstreamStatus ?? 502);
-            error.upstreamStatus = upstreamStatus;
-            error.details = errorDetails.details ?? errorDetails;
-            error.responseBody = responseBody;
-            error.model = modelName;
-            error.requestUrl = requestUrl;
-            error.upstreamHeaders = collectUpstreamHeaders(response.headers);
-            throw error;
-        }
+        assertCompletionOk(data, responseBody, response, modelName, requestUrl);
         log(
             `[${requestId}] Completed in ${Date.now() - startTime}ms, model: ${data.model || modelName}`,
         );

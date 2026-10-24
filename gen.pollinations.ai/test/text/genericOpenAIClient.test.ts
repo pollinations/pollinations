@@ -10,6 +10,63 @@ afterEach(() => {
 });
 
 describe("genericOpenAIClient", () => {
+    it.each([503, 429])(
+        "rejects an opening SSE provider error (%s) before accepting the stream",
+        async (code) => {
+            const details = {
+                code,
+                message:
+                    "Service temporarily unavailable due to high load, please retry.",
+                metadata: { error_type: "provider_overloaded" },
+            };
+            const event = JSON.stringify({
+                model: "unknown",
+                choices: [],
+                error: details,
+            });
+            const encoder = new TextEncoder();
+            const cancel = vi.fn();
+            const fragments = [
+                `data: ${event.slice(0, 30)}`,
+                `${event.slice(30)}\r\n\r\n`,
+            ];
+            const body = new ReadableStream<Uint8Array>({
+                pull(controller) {
+                    const fragment = fragments.shift();
+                    if (fragment) controller.enqueue(encoder.encode(fragment));
+                },
+                cancel,
+            });
+            const error = await genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "mistralai/mistral-small-2603", stream: true },
+                {
+                    endpoint: "https://openrouter.ai/api/v1/chat/completions",
+                    fetcher: async () =>
+                        new Response(body, {
+                            headers: {
+                                "content-type": "text/event-stream",
+                                "x-request-id": "failed-stream",
+                            },
+                        }),
+                },
+            ).catch((error) => error);
+
+            expect(error).toBeInstanceOf(Error);
+            expect(error).toMatchObject({
+                status: code === 429 ? 502 : 503,
+                upstreamStatus: code,
+                message: details.message,
+                responseBody: event,
+                requestUrl: new URL(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                ),
+            });
+            expect(isRetryableFallbackError(error)).toBe(true);
+            expect(cancel).toHaveBeenCalledOnce();
+        },
+    );
+
     it.each([false, true])(
         "normalizes configured Mistral thinking chunks and preserves usage (stream=%s)",
         async (stream) => {
@@ -71,6 +128,118 @@ describe("genericOpenAIClient", () => {
             expect(result.usage).toEqual(usage);
         },
     );
+
+    it("does not retry an opening SSE content-policy rejection", async () => {
+        const error = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model", stream: true },
+            {
+                endpoint: "https://provider.test/chat",
+                fetcher: async () =>
+                    new Response(
+                        'data: {"error":{"code":403,"message":"PROHIBITED_CONTENT"}}\n\n',
+                        { headers: { "content-type": "text/event-stream" } },
+                    ),
+            },
+        ).catch((error) => error);
+        expect(error).toMatchObject({ status: 422, upstreamStatus: 403 });
+        expect(isRetryableFallbackError(error)).toBe(false);
+    });
+
+    it.each([
+        'data: {"choices":[{"delta":{"content":"Hello café"}}]}\n\n',
+        ": OPENROUTER PROCESSING\n\n",
+    ])(
+        "preserves a late SSE error after the opening frame, even in the same chunk: %s",
+        async (first) => {
+            const wire =
+                first +
+                'data: {"error":{"code":503,"message":"provider stopped"}}\n\n' +
+                "data: [DONE]\n\n";
+            const completion = await genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model", stream: true },
+                {
+                    endpoint: "https://provider.test/chat",
+                    fetcher: async () =>
+                        new Response(wire, {
+                            headers: { "content-type": "text/event-stream" },
+                        }),
+                },
+            );
+            await expect(
+                new Response(completion.responseStream).text(),
+            ).resolves.toBe(wire);
+        },
+    );
+
+    it.each([
+        'data: {"choices":[{"delta":{"role":"assistant"}}]}\n\n',
+        ": OPENROUTER PROCESSING\n\n",
+    ])(
+        "forwards the opening frame without waiting for completion and cancels upstream: %s",
+        async (first) => {
+            const cancel = vi.fn();
+            const completion = await genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model", stream: true },
+                {
+                    endpoint: "https://provider.test/chat",
+                    fetcher: async () =>
+                        new Response(
+                            new ReadableStream({
+                                start(controller) {
+                                    controller.enqueue(
+                                        new TextEncoder().encode(first),
+                                    );
+                                },
+                                cancel,
+                            }),
+                            {
+                                headers: {
+                                    "content-type": "text/event-stream",
+                                },
+                            },
+                        ),
+                },
+            );
+            if (!completion.responseStream)
+                throw new Error("Expected a stream");
+            const reader = completion.responseStream.getReader();
+            const chunk = await reader.read();
+            expect(new TextDecoder().decode(chunk.value)).toBe(first);
+            await reader.cancel("client disconnected");
+            expect(cancel).toHaveBeenCalledWith("client disconnected");
+        },
+    );
+
+    it("stops looking ahead when an opening SSE frame is oversized", async () => {
+        const prefix = `: ${"x".repeat(70_000)}`;
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model", stream: true },
+            {
+                endpoint: "https://provider.test/chat",
+                fetcher: async () =>
+                    new Response(
+                        new ReadableStream({
+                            start(controller) {
+                                controller.enqueue(
+                                    new TextEncoder().encode(prefix),
+                                );
+                            },
+                        }),
+                        { headers: { "content-type": "text/event-stream" } },
+                    ),
+            },
+        );
+        if (!completion.responseStream) throw new Error("Expected a stream");
+        const reader = completion.responseStream.getReader();
+        expect(new TextDecoder().decode((await reader.read()).value)).toBe(
+            prefix,
+        );
+        await reader.cancel();
+    });
 
     it("translates Mistral request controls while hiding reasoning locally", async () => {
         const resolved = resolveModelConfig([], {

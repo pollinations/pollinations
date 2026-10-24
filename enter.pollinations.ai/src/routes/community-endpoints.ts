@@ -286,6 +286,23 @@ type HealthRow = {
     message: string;
 };
 
+type RunRow = {
+    run_id: string;
+    started_at: string;
+    status: number;
+    duration_ms: number;
+    key_name: string;
+    cost: number;
+    model_calls: number;
+    tool_calls: number;
+    failed_calls: number;
+    error: string;
+};
+
+// Tinybird returns DateTime as "YYYY-MM-DD hh:mm:ss" in UTC.
+const tinybirdTimeToIso = (value: string) =>
+    new Date(`${value.replace(" ", "T")}Z`).toISOString();
+
 type EndpointProbeKind = "models" | "test";
 
 // Publishing is allowlist-gated. Pricing is independent: public endpoints may
@@ -894,7 +911,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Get Model Health",
             description:
-                "Calls a model's own upstream answered in the last seven UTC days: 2xx and 5xx per day, and the 5xx grouped by status, error code and host, newest first, with the latest message of each group. Fallback attempts and caller identities are left out. API keys require `account:keys`.",
+                "Calls a model's own upstream answered in the last seven UTC days: 2xx and 5xx per day, and the 5xx grouped by status, error code and host, newest first, with the latest message of each group. Fallback attempts and caller identities are left out. For an agent, also lists your own recent runs with the generations and tool calls each made. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Model health",
@@ -924,15 +941,25 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 db,
                 user.id,
             );
-            const rows = await fetchTinybirdRows<HealthRow>(
-                new URL(c.env.TINYBIRD_INGEST_URL).origin,
-                "/v0/pipes/my_model_health.json",
-                requireTinybirdReadToken(c.env),
-                {
-                    model: communityModelId(ownerGithubUsername, endpoint.name),
-                    owner_user_id: user.id,
-                },
-            );
+            const fetchRows = <Row>(pipe: string) =>
+                fetchTinybirdRows<Row>(
+                    new URL(c.env.TINYBIRD_INGEST_URL).origin,
+                    `/v0/pipes/${pipe}.json`,
+                    requireTinybirdReadToken(c.env),
+                    {
+                        model: communityModelId(
+                            ownerGithubUsername,
+                            endpoint.name,
+                        ),
+                        owner_user_id: user.id,
+                    },
+                );
+            const [rows, runs] = await Promise.all([
+                fetchRows<HealthRow>("my_model_health"),
+                endpoint.type === "proxy"
+                    ? []
+                    : fetchRows<RunRow>("my_model_runs"),
+            ]);
             const byDay = new Map(
                 rows
                     .filter((row) => !row.failure_group)
@@ -962,11 +989,21 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         counted: row.counted,
                         fromPollinations: row.from_pollinations,
                         fromOwner: row.from_owner,
-                        lastAt: new Date(
-                            `${row.last_at.replace(" ", "T")}Z`,
-                        ).toISOString(),
+                        lastAt: tinybirdTimeToIso(row.last_at),
                         message: row.message,
                     })),
+                runs: runs.map((run) => ({
+                    id: run.run_id,
+                    startedAt: tinybirdTimeToIso(run.started_at),
+                    status: run.status,
+                    durationMs: run.duration_ms,
+                    keyName: run.key_name === "undefined" ? "" : run.key_name,
+                    cost: run.cost,
+                    modelCalls: run.model_calls,
+                    toolCalls: run.tool_calls,
+                    failedCalls: run.failed_calls,
+                    error: run.error === "undefined" ? "" : run.error,
+                })),
             });
         },
     )

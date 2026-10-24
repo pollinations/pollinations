@@ -84,6 +84,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         model: "vllm-sr/d3",
         decisionsProtocol: "vllm-sr",
     }),
+    "stealth/glyph-cluster": () =>
+        createVercelAIGatewayModelConfig({
+            model: "stealth/glyph-cluster",
+            responsesEndpoint: undefined,
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["stealth"] } },
+            },
+        }),
     "span-01-lite": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
@@ -142,7 +151,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "openai/gpt-6-luna-decisions",
     }),
-    "microsoft-decision-1": () =>
+    "microsoft/microsoft-decision-1:vercel": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
@@ -153,6 +162,16 @@ export const portkeyConfig: PortkeyConfigMap = {
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "microsoft/microsoft-decision-1",
+    }),
+    // Azure's Microsoft provider endpoint speaks the TypeSafe native shape;
+    // `model` is the deployment name.
+    "microsoft-decision-1-azure": () => ({
+        provider: "openai",
+        directEndpoint:
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/microsoft/v1/systemone",
+        directAuthHeader: "api-key",
+        authKey: textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+        model: "decision-1",
     }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>

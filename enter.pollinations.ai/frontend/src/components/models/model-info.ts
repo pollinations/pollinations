@@ -45,6 +45,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Respan: "respan",
     Sesame: "sesame",
     Sonilo: "sonilo",
+    Stealth: "stealth",
     "Stability AI": "stability",
     StepFun: "stepfun",
     Tencent: "tencent",

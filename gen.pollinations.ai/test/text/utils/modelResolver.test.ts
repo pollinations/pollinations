@@ -5,6 +5,26 @@ import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 const messages = [{ role: "user" as const, content: "Hello" }];
 
 describe("resolveModelConfig", () => {
+    it("preserves Glyph reasoning flags when mapping reasoning_effort", async () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "stealth/glyph-cluster",
+            reasoning_effort: "low",
+            reasoning: { exclude: true },
+        });
+        const model = findModelByName("stealth/glyph-cluster");
+        const transformed = await model?.transform?.(
+            messages,
+            resolved.options,
+        );
+        expect(transformed?.options.reasoning).toEqual({
+            exclude: true,
+            effort: "low",
+        });
+        expect(transformed?.options.reasoning_effort).toBeUndefined();
+        expect(resolved.options.providerOptions).toEqual({
+            gateway: { only: ["stealth"] },
+        });
+    });
     it("sets Anthropic max_tokens defaults", () => {
         expect(
             resolveModelConfig(messages, {

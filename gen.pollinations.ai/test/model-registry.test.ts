@@ -59,6 +59,8 @@ describe("getGenerationModelRegistry", () => {
             "vllm-sr/d3",
             "openai/whisper-large-v3",
             "lykon/dreamshaper-8-lcm",
+            // Costs $0 while Vercel offers it as a stealth model.
+            "stealth/glyph-cluster",
         ]);
         const questModels = [];
         for (const id of getModels()) {

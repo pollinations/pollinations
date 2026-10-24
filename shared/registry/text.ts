@@ -38,6 +38,46 @@ export const DEFAULT_TEXT_MODEL = "openai/gpt-5.4-nano" as const;
 export type TextModelName = keyof typeof TEXT_SERVICES;
 
 const TEXT_BASE_SERVICES = {
+    "stealth/glyph-cluster": {
+        aliases: [],
+        supportedParameters: [
+            "max_tokens",
+            "stream",
+            "temperature",
+            "stop",
+            "tools",
+            "tool_choice",
+            "reasoning_effort",
+            "reasoning",
+            "include_reasoning",
+        ],
+        provider: "vercel",
+        // Vercel returned 429 bursts during light testing.
+        perUserRpm: 8,
+        publisher: "Stealth",
+        category: "text",
+        addedDate: new Date("2026-10-08").getTime(),
+        priceMultiplier: 1,
+        paidOnly: false,
+        // Free only during stealth; expiry and subsequent rates are unpublished.
+        // https://vercel.com/ai-gateway/models/glyph-cluster
+        cost: {
+            promptTextTokens: perMillion(0),
+            completionTextTokens: perMillion(0),
+            promptCachedTokens: perMillion(0),
+        },
+        title: "Glyph Cluster (Stealth)",
+        description:
+            "Experimental coding and long-context reasoning with automatic tool calling. Prompts and responses may be retained and used for training; no zero data retention.",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        contextLength: 256000,
+        // The Gateway rejects required and named tool choices; auto/none work.
+        tools: true,
+        reasoning: true,
+        isSpecialized: false,
+        alpha: true,
+    },
     "openai/gpt-5.4-nano": {
         supportedParameters: CHAT_PARAMETERS.azureGpt,
         aliases: ["gpt-5.4-nano", "openai"],
@@ -1814,14 +1854,15 @@ const TEXT_BASE_SERVICES = {
     "microsoft/microsoft-decision-1": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],
-        provider: "vercel",
+        provider: "azure",
         publisher: "Microsoft",
         category: "decision",
         addedDate: new Date("2026-10-09").getTime(),
-        priceMultiplier: 1, // Billed at cost, no margin.
-        paidOnly: true,
+        priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
-            // Vercel AI Gateway list price, the cheapest route.
+            // Azure Retail Prices "Microsoft Decision 1 1M Tokens" (2026-10-23),
+            // the model's only meter.
             promptTextTokens: perMillion(0.042),
             completionTextTokens: perMillion(0),
         },

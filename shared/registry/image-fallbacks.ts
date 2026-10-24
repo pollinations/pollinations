@@ -139,6 +139,18 @@ export const IMAGE_FALLBACKS = {
             },
         },
     },
+    "qwen/qwen-image-2.1-pro": {
+        "qwen/qwen-image-2.1-pro:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-18").getTime(),
+            // OpenRouter's Alibaba endpoint. Maintainer probe (2026-10-18):
+            // usage.cost is $0.046 per image before the 5.5% credit fee, so this
+            // route is above the $0.04 primary price. Up to 4 references.
+            cost: {
+                completionImageTokens: 0.046 * 1.055,
+            },
+        },
+    },
     "prunaai/p-image-edit": {
         "prunaai/p-image-edit:replicate": {
             provider: "replicate",

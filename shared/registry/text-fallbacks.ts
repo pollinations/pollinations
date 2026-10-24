@@ -61,6 +61,8 @@ export const TEXT_FALLBACKS = {
             cost: {
                 promptTextTokens: perMillion(0.1) * 1.055,
                 completionTextTokens: perMillion(0),
+                promptCachedTokens: perMillion(0),
+                promptCacheWriteTokens: perMillion(0),
             },
             // OpenRouter's flat rate must not inherit OpenAI's context tier.
             costVariants: undefined,

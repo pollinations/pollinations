@@ -1067,3 +1067,14 @@ describe("resolveModelConfig", () => {
         );
     });
 });
+
+it("pins Luna Decisions backup to the quoted OpenAI endpoint", () => {
+    const { options } = resolveModelConfig(messages, {
+        model: "openai/gpt-6-luna-decisions:openrouter",
+    });
+    expect(options.provider).toEqual({
+        only: ["openai"],
+        ignore: ["cloudflare"],
+        allow_fallbacks: false,
+    });
+});

@@ -58,6 +58,12 @@ function createDecisionsMock() {
             state.response = undefined;
         },
         handlerMap: {
+            "api.openai.com": async (request: Request) => {
+                state.requests.push({ body: await request.json() });
+                if (!state.response)
+                    throw new Error("Missing OpenAI decisions fixture");
+                return state.response.clone();
+            },
             "decision.vllm-sr.ai": async (request: Request) => {
                 state.requests.push({
                     pathname: new URL(request.url).pathname,
@@ -115,6 +121,7 @@ const test = baseTest.extend<{
     // biome-ignore lint/correctness/noEmptyPattern: vitest fixture pattern requires object destructuring
     mocks: async ({}, use) => {
         env.OPENROUTER_API_KEY = "openrouter-test-key";
+        env.OPENAI_API_KEY = "openai-test-key";
         env.AI_GATEWAY_API_KEY = "vercel-test-key";
         env.D3_KEY = "d3-test-key";
         const tinybird = createMockTinybird();
@@ -865,4 +872,46 @@ test("returns an upstream HTTP 502 when Jev omits usage", async ({
     expect(
         mocks.tinybird.state.events.some((event) => event.isBilledUsage),
     ).toBe(false);
+});
+
+test("bills native Luna Decisions cache reads and writes as subsets of input", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    mocks.decisions.state.response = Response.json({
+        model: "gpt-6-luna",
+        answers: [{ name: "overdue", type: "predicate", probability: 0.96 }],
+        usage: {
+            input_tokens: 100,
+            output_tokens: 0,
+            input_tokens_details: { cached_tokens: 20, cache_write_tokens: 30 },
+        },
+    });
+    const { response, wait } = await fetchWorker("/alpha/decisions", {
+        method: "POST",
+        headers: {
+            authorization: `Bearer ${paidApiKey}`,
+            "content-type": "application/json",
+        },
+        body: JSON.stringify({
+            model: "openai/gpt-6-luna-decisions",
+            state: "Invoice overdue",
+            questions: { overdue: questions.overdue },
+        }),
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+        usage: { input_tokens: 100, output_tokens: 0 },
+        answers: { overdue: answers.overdue },
+    });
+    await wait();
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        tokenCountPromptText: 50,
+        tokenCountPromptCached: 20,
+        tokenCountPromptCacheWrite: 30,
+        totalCost: 0.00000895,
+        totalPrice: 0.00000895,
+        isBilledUsage: true,
+    });
 });

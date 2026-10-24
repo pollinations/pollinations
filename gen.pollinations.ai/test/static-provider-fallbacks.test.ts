@@ -1754,3 +1754,34 @@ describe("static provider fallbacks", () => {
         }
     });
 });
+
+it.each([272000, 272001])(
+    "prices Luna Decisions cache categories without double counting at %s input tokens",
+    (total) => {
+        const model = "openai/gpt-6-luna-decisions";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[`${model}:openrouter`];
+        const usage = {
+            promptTextTokens: total - 3000,
+            promptCachedTokens: 2000,
+            promptCacheWriteTokens: 1000,
+        };
+        const expected =
+            (((total - 3000) * 0.1 + 2000 * 0.01 + 1000 * 0.125) / 1e6) *
+            (total > 272000 ? 2 : 1);
+        for (const servedBy of [primary, fallback]) {
+            const billed = calculateUsageBilling({
+                model,
+                usage,
+                servedBy,
+                quotedBy: primary,
+            });
+            expect(billed.price.totalPrice).toBeCloseTo(expected, 8);
+            if (servedBy === fallback)
+                expect(billed.cost.totalCost).toBeCloseTo(
+                    ((total - 3000) * 0.1 * 1.055) / 1e6,
+                    12,
+                );
+        }
+    },
+);

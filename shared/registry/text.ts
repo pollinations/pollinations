@@ -1893,14 +1893,18 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         cost: {
             // Direct OpenAI Decisions: $0.10/M input through 272K tokens.
-            // Output and cache are free; the long-context tier is below.
+            // Output is free; cache reads and writes are subsets of input.
             promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.01),
+            promptCacheWriteTokens: perMillion(0.125),
             completionTextTokens: perMillion(0),
         },
         ...defineCostVariants(
             {
                 long_context: {
                     promptTextTokens: perMillion(0.2),
+                    promptCachedTokens: perMillion(0.02),
+                    promptCacheWriteTokens: perMillion(0.25),
                     completionTextTokens: perMillion(0),
                 },
             },

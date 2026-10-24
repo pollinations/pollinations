@@ -238,6 +238,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-oss-20b"],
     },
     {
+        name: "openai/gpt-oss-20b:deepinfra",
+        config: portkeyConfig["openai/gpt-oss-20b:deepinfra"],
+    },
+    {
         name: "openai/gpt-5.4",
         config: portkeyConfig["gpt-5.4"],
         transform: omitOpenAISampling,

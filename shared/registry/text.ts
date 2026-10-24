@@ -2462,13 +2462,14 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Moonshot AI int4 rates (2026-09-23), including the
-            // account's 5.5% credit-purchase fee.
-            promptTextTokens: perMillion(0.95) * 1.055,
-            promptCachedTokens: perMillion(0.19) * 1.055,
-            promptCacheWriteTokens: perMillion(0.95) * 1.055,
-            promptImageTokens: perMillion(0.95) * 1.055,
-            completionTextTokens: perMillion(4.0) * 1.055,
+            // OpenRouter Inceptron int4 rates (2026-10-24), including the
+            // account's 5.5% credit-purchase fee. Same int4 checkpoint as
+            // Moonshot's own endpoint; no separate cache-write rate.
+            promptTextTokens: perMillion(0.6712) * 1.055,
+            promptCachedTokens: perMillion(0.15) * 1.055,
+            promptCacheWriteTokens: perMillion(0.6712) * 1.055,
+            promptImageTokens: perMillion(0.6712) * 1.055,
+            completionTextTokens: perMillion(3.35) * 1.055,
         },
         title: "Moonshot Kimi K2.7 Code",
         description:

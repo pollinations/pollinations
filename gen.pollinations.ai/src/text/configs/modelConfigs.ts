@@ -865,7 +865,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     "kimi-code-openrouter-moonshot": createPinnedOpenRouterConfig(
         "moonshotai/kimi-k2.7-code",
-        "moonshotai/int4",
+        "inceptron/int4",
     ),
     // StreamLake cannot fetch remote image URLs.
     "kimi-code-openrouter-streamlake": () => ({

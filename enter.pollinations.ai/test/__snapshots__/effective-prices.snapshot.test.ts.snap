@@ -2467,18 +2467,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "moonshotai/kimi-k2.7-code": {
     "cost": {
-      "completionTextTokens": 0.00000422,
-      "promptCacheWriteTokens": 0.00000100225,
-      "promptCachedTokens": 0.00000020045,
-      "promptImageTokens": 0.00000100225,
-      "promptTextTokens": 0.00000100225,
+      "completionTextTokens": 0.00000353425,
+      "promptCacheWriteTokens": 0.000000708116,
+      "promptCachedTokens": 0.00000015825,
+      "promptImageTokens": 0.000000708116,
+      "promptTextTokens": 0.000000708116,
     },
     "price": {
-      "completionTextTokens": 0.00000422,
-      "promptCacheWriteTokens": 0.00000100225,
-      "promptCachedTokens": 0.00000020045,
-      "promptImageTokens": 0.00000100225,
-      "promptTextTokens": 0.00000100225,
+      "completionTextTokens": 0.00000353425,
+      "promptCacheWriteTokens": 0.000000708116,
+      "promptCachedTokens": 0.00000015825,
+      "promptImageTokens": 0.000000708116,
+      "promptTextTokens": 0.000000708116,
     },
   },
   "moonshotai/kimi-k2.7-code:openrouter:streamlake": {

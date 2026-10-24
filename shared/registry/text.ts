@@ -10,6 +10,7 @@ import {
     reportedTextCost,
     withVertexCacheStorage,
 } from "./gemini-billing";
+import { reportedInferencePortCost } from "./inferenceport-billing";
 import { mergeFallbacks } from "./merge-fallbacks";
 import { PERPLEXITY_WEB_SEARCH_BILLING } from "./perplexity-billing";
 import { perMillion } from "./price-helpers";
@@ -156,19 +157,18 @@ const TEXT_BASE_SERVICES = {
     "openai/gpt-4o-mini": {
         supportedParameters: CHAT_PARAMETERS.openRouterGpt4oMini,
         aliases: [],
-        provider: "openrouter",
+        provider: "openai",
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-09-12").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Azure/OpenAI route rates (2026-09-21), including the
-            // account's 5.5% credit-purchase fee. Image inputs are tokenized
-            // into promptTextTokens; no separate image usage is reported.
-            promptTextTokens: perMillion(0.15) * 1.055,
-            promptCachedTokens: perMillion(0.075) * 1.055,
-            completionTextTokens: perMillion(0.6) * 1.055,
+            // OpenAI Standard rates (2026-10-24). Image inputs are included
+            // in promptTextTokens by the provider.
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.075),
+            completionTextTokens: perMillion(0.6),
         },
         title: "GPT-4o Mini",
         description:
@@ -872,16 +872,18 @@ const TEXT_BASE_SERVICES = {
     "qwen/qwen3-coder-30b-a3b-instruct": {
         supportedParameters: CHAT_PARAMETERS.bedrockQwenCoder,
         aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct", "qwen-coder"],
-        provider: "aws",
+        provider: "openrouter",
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // AWS Bedrock on-demand standard tier, us-east-1.
-            promptTextTokens: perMillion(0.15),
-            completionTextTokens: perMillion(0.6),
+            // SiliconFlow FP8 through OpenRouter, including its 5.5% fee.
+            promptTextTokens: perMillion(0.07) * 1.055,
+            // The receipt reports cache hits at the full input rate.
+            promptCachedTokens: perMillion(0.07) * 1.055,
+            completionTextTokens: perMillion(0.28) * 1.055,
         },
         title: "Qwen3 Coder 30B",
         description:
@@ -1681,16 +1683,15 @@ const TEXT_BASE_SERVICES = {
     "typesafe/jev-1.13": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: ["jev", "typesafe/jev"],
-        provider: "openrouter",
+        provider: "vercel",
         publisher: "TypeSafe",
         category: "decision",
         addedDate: new Date("2026-09-17").getTime(),
         priceMultiplier: 1, // Billed at cost, no margin.
         paidOnly: true,
         cost: {
-            // TypeSafe list price (docs.typesafe.ai, checked 2026-09-17) plus
-            // OpenRouter's 5.5% credit fee, as every OpenRouter route records.
-            promptTextTokens: perMillion(0.042) * 1.055,
+            // Vercel TypeSafe route (2026-10-24), with no gateway surcharge.
+            promptTextTokens: perMillion(0.042),
             completionTextTokens: perMillion(0),
         },
         title: "Jev",
@@ -1774,17 +1775,17 @@ const TEXT_BASE_SERVICES = {
     "liquid/d1": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],
-        provider: "openrouter",
+        provider: "vercel",
         publisher: "Liquid AI",
         category: "decision",
         addedDate: new Date("2026-10-02").getTime(),
         priceMultiplier: 1, // Billed at cost, no margin.
         paidOnly: true,
         cost: {
-            // OpenRouter list price ($0.02/M input and cached input) plus its
-            // 5.5% credit fee, as every OpenRouter route records.
-            promptTextTokens: perMillion(0.02) * 1.055,
-            promptCachedTokens: perMillion(0.02) * 1.055,
+            // Liquid publishes the same $0.02/M ordinary and cached input
+            // price through Vercel, without a gateway fee (2026-10-24).
+            promptTextTokens: perMillion(0.02),
+            promptCachedTokens: perMillion(0.02),
             completionTextTokens: perMillion(0),
         },
         title: "Liquid D1",
@@ -1817,6 +1818,7 @@ const TEXT_BASE_SERVICES = {
             promptTextTokens: perMillion(0.75),
             completionTextTokens: perMillion(0.75),
         },
+        billing: { resolveTotalCost: reportedInferencePortCost },
         title: "Lightning Text v2.1",
         description:
             "Router that picks a fast model per prompt, serving Qwen3.8 27B in place of GPT-OSS, with image input, tools and JSON output",
@@ -1842,6 +1844,7 @@ const TEXT_BASE_SERVICES = {
             promptTextTokens: perMillion(0.75),
             completionTextTokens: perMillion(0.75),
         },
+        billing: { resolveTotalCost: reportedInferencePortCost },
         title: "Lightning Text v2",
         description:
             "Router that picks a fast model per prompt, with image input, tools and JSON output",
@@ -2290,21 +2293,20 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-opus-5.5:fast": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "openrouter",
+        provider: "vercel",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-10-10").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         // Research preview: Anthropic's fast mode for Opus 5.5 at 2x standard
-        // rates, served by OpenRouter's anthropic/fast endpoint (2026-10-10).
-        // Costs include OpenRouter's 5.5% credit fee. Cache writes use the
-        // 5-minute rate.
+        // rates, served by Vercel's anthropic/claude-opus-5.5-fast pinned to
+        // Anthropic (2026-10-24). Cache writes use the 5-minute rate.
         cost: {
-            promptTextTokens: perMillion(8) * 1.055,
-            promptCachedTokens: perMillion(0.4) * 1.055,
-            promptCacheWriteTokens: perMillion(10) * 1.055,
-            completionTextTokens: perMillion(40) * 1.055,
+            promptTextTokens: perMillion(8),
+            promptCachedTokens: perMillion(0.4),
+            promptCacheWriteTokens: perMillion(10),
+            completionTextTokens: perMillion(40),
         },
         title: "Claude Opus 5.5 Fast",
         description:
@@ -2462,13 +2464,14 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Moonshot AI int4 rates (2026-09-23), including the
-            // account's 5.5% credit-purchase fee.
-            promptTextTokens: perMillion(0.95) * 1.055,
-            promptCachedTokens: perMillion(0.19) * 1.055,
-            promptCacheWriteTokens: perMillion(0.95) * 1.055,
-            promptImageTokens: perMillion(0.95) * 1.055,
-            completionTextTokens: perMillion(4.0) * 1.055,
+            // OpenRouter Inceptron int4 rates (2026-10-24), including the
+            // account's 5.5% credit-purchase fee. Same int4 checkpoint as
+            // Moonshot's own endpoint; no separate cache-write rate.
+            promptTextTokens: perMillion(0.6712) * 1.055,
+            promptCachedTokens: perMillion(0.15) * 1.055,
+            promptCacheWriteTokens: perMillion(0.6712) * 1.055,
+            promptImageTokens: perMillion(0.6712) * 1.055,
+            completionTextTokens: perMillion(3.35) * 1.055,
         },
         title: "Moonshot Kimi K2.7 Code",
         description:
@@ -3957,15 +3960,15 @@ const TEXT_BASE_SERVICES = {
             "qwen-vl",
             "qwen-vision",
         ],
-        provider: "openrouter",
+        provider: "deepinfra",
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-03-22").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.15) * 1.055,
-            completionTextTokens: perMillion(0.6) * 1.055,
+            promptTextTokens: perMillion(0.15),
+            completionTextTokens: perMillion(0.6),
         },
         title: "Qwen3 VL 30B A3B Instruct",
         description:

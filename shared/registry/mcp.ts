@@ -47,11 +47,13 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
-    | "MACHINES_MCP";
+    | "MACHINES_MCP"
+    | "VAULT_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
         | { billing: "downstream" }
+        | { billing: "free" }
         | {
               billing: "usage_receipt";
               provider: string;
@@ -225,6 +227,16 @@ export const MCP_SERVERS = [
                 "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
             rates: [],
         },
+    },
+    {
+        id: "vault",
+        name: "Vault",
+        description:
+            "Store and retrieve private memory for the authenticated account.",
+        binding: "VAULT_MCP",
+        billing: "free",
+        userScoped: true,
+        pricing: { rates: [] },
     },
 ] as const satisfies readonly McpServerDefinition[];
 

@@ -149,7 +149,42 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "vault",
+                name: "Vault",
+                description:
+                    "Store and retrieve private memory for the authenticated account.",
+                url: "https://gen.pollinations.ai/mcp/vault",
+                pricing: { rates: [] },
+            },
         ],
+    });
+});
+
+test("routes Vault with the authenticated user and no billing", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const response = await SELF.fetch("https://gen.pollinations.ai/mcp/vault", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${key}`,
+            Cookie: "session=private",
+            "x-pollinations-user-id": "spoofed-user",
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(MCP_REQUEST),
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: { content: [{ type: "text", text: userId }] },
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
     });
 });
 
@@ -262,7 +297,7 @@ test("routes Machines with caller authorization without an extra MCP debit", asy
     });
 });
 
-test.for(["pollinations", "ask-jev", "machines"])(
+test.for(["pollinations", "ask-jev", "machines", "vault"])(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(

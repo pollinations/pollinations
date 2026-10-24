@@ -22,6 +22,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "24"
+          check-latest: true
       - run: node operations/kpi/scripts/snapshot-github.mjs
         env:
           GH_TOKEN: ${{ github.token }}

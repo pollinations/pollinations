@@ -132,14 +132,16 @@ describe("getGenerationModelRegistry", () => {
         }
     });
 
-    it("keeps the Bedrock coder's catalog aligned with its serving route", async () => {
+    it("keeps the coder's catalog aligned with its serving route", async () => {
         const registry = await getGenerationModelRegistry(env);
         const model = registry.resolve("qwen-coder");
 
         expect(model?.id).toBe("qwen/qwen3-coder-30b-a3b-instruct");
-        expect(model?.definition.provider).toBe("aws");
+        expect(model?.definition.provider).toBe("openrouter");
         expect(model?.definition.paidOnly).toBe(true);
-        expect(model?.definition.fallbacks ?? []).toEqual([]);
+        expect(model?.definition.fallbacks).toEqual([
+            "qwen/qwen3-coder-30b-a3b-instruct:aws",
+        ]);
         // Responses runs through its Chat route; there is no native target.
         expect(model?.supportedEndpoints).toContain("/v1/responses");
         expect(supportsDirectResponses(model?.id ?? "")).toBe(false);

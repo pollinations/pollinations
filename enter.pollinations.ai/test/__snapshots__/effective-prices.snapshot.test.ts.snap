@@ -3523,6 +3523,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.01,
     },
   },
+  "prunaai/p-image:replicate": {
+    "cost": {
+      "completionImageTokens": 0.005,
+    },
+    "price": {
+      "completionImageTokens": 0.005,
+    },
+  },
   "prunaai/p-video": {
     "cost": {
       "completionVideoSeconds": 0.02,

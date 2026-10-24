@@ -178,6 +178,13 @@ export const IMAGE_FALLBACKS = {
             },
         },
     },
+    "prunaai/p-image": {
+        // Replicate's official model: flat $0.005 per output image (model page, 2026-10-24).
+        "prunaai/p-image:replicate": {
+            provider: "replicate",
+            addedDate: new Date("2026-10-24").getTime(),
+        },
+    },
     "prunaai/p-image-edit": {
         "prunaai/p-image-edit:replicate": {
             provider: "replicate",

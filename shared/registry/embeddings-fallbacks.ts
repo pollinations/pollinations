@@ -15,6 +15,13 @@ export const EMBEDDING_FALLBACKS = {
             cost: { promptTextTokens: perMillion(0.1) },
         },
     },
+    "openai/text-embedding-3-large": {
+        "openai/text-embedding-3-large:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
+            cost: { promptTextTokens: perMillion(0.13) },
+        },
+    },
     "cohere/embed-v4.0": {
         "cohere/embed-v4.0:azure:sweden": { provider: "azure" },
     },

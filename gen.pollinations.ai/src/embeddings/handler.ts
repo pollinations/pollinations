@@ -36,6 +36,7 @@ const EMBEDDING_PROVIDER_MODEL_IDS: Record<EmbeddingServiceId, string> = {
     "openai/text-embedding-3-small": "text-embedding-3-small",
     "openai/text-embedding-3-small:openai": "text-embedding-3-small",
     "openai/text-embedding-3-large": "text-embedding-3-large",
+    "openai/text-embedding-3-large:openai": "text-embedding-3-large",
     "cohere/embed-v4.0": "embed-v-4-0",
     "cohere/embed-v4.0:azure:sweden": "embed-v-4-0",
     "qwen/qwen3-embedding-8b": "Qwen/Qwen3-Embedding-8B",
@@ -62,6 +63,7 @@ const EMBEDDING_DIMENSIONS: Record<
     "openai/text-embedding-3-small": { max: 1536 },
     "openai/text-embedding-3-small:openai": { max: 1536 },
     "openai/text-embedding-3-large": { max: 3072 },
+    "openai/text-embedding-3-large:openai": { max: 3072 },
     "cohere/embed-v4.0": { max: 1536, allowed: [256, 512, 1024, 1536] },
     "cohere/embed-v4.0:azure:sweden": {
         max: 1536,

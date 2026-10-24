@@ -382,7 +382,7 @@ it.each([
                 `https://enter.pollinations.ai/edit-key?id=${caller.id}&ref=agent_key_budget`,
             );
             if (redirect) link.searchParams.set("redirect", redirect);
-            expect(text).toContain(`[raise the key budget](${link})`);
+            expect(text).toContain(`[raise the key budget](<${link}>)`);
             expect(text).toContain("Topping up the wallet does not raise");
             expect(text).not.toContain("complete a quest");
         }
@@ -474,7 +474,7 @@ it.each([
         }).toString();
         if (TEXT_PERMISSION_NOTICE_ENABLED && !responseFormat) {
             expect(response.status, text).toBe(200);
-            expect(text).toContain(`[allow it for this key](${link})`);
+            expect(text).toContain(`[allow it for this key](<${link}>)`);
         } else {
             // JSON callers parse the body, so they keep the plain 403.
             expect(response.status, text).toBe(403);

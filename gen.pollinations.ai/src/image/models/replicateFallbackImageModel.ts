@@ -171,11 +171,11 @@ export async function callReplicateFallbackImage(
             break;
         }
         case "prunaai/p-image:replicate": {
-            buffer = await runReplicateImage(
+            ({ buffer } = await runReplicateImage(
                 "prunaai/p-image",
                 { ...buildPImageInput(prompt, params) },
                 "Pruna p-image",
-            );
+            ));
             break;
         }
         case "prunaai/p-image-edit:replicate": {

@@ -20,7 +20,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0,
     },
   },
-  "alibaba/wan-2.2-fast:fal": {
+  "alibaba/wan-2.2-fast:replicate": {
     "cost": {
       "completionVideoSeconds": 0.01,
       "promptImageTokens": 0,
@@ -932,10 +932,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "elevenlabs/eleven-v3": {
     "cost": {
-      "completionAudioTokens": 0.0001,
+      "completionAudioTokens": 0.00008,
     },
     "price": {
-      "completionAudioTokens": 0.0001,
+      "completionAudioTokens": 0.00008,
     },
   },
   "elevenlabs/eleven-v3:dialogue": {

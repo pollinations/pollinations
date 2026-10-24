@@ -68,7 +68,7 @@ export async function createAndReturnVideo(
             break;
         case "bytedance/seedance-1-pro-fast:fal":
         case "alibaba/wan-2.6:fal":
-        case "alibaba/wan-2.2-fast:fal":
+        case "alibaba/wan-2.2-fast":
         case "x-ai/grok-imagine-video":
         case "x-ai/grok-imagine-video-1.5:fal":
         case "kandinskylab/kandinsky-6.0-lite":
@@ -88,7 +88,7 @@ export async function createAndReturnVideo(
         case "alibaba/wan-2.6:replicate":
             result = await callWanAPI(prompt, safeParams);
             break;
-        case "alibaba/wan-2.2-fast":
+        case "alibaba/wan-2.2-fast:replicate":
             result = await callWanFastAPI(prompt, safeParams);
             break;
         case "alibaba/wan-2.7":

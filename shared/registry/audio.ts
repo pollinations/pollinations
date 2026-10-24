@@ -387,10 +387,9 @@ const AUDIO_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            // ElevenLabs v3 via API: measured 0.60 credits/char (API-discounted
-            // from the 1 cr/char UI rate) * $0.166/1k Scale credits = $0.10/1k chars
-            // (matches elevenlabs.io/pricing/api).
-            completionAudioTokens: 0.1 / 1000,
+            // https://elevenlabs.io/pricing/api — $0.08 per 1K characters
+            // (2026-10-24); a 500-character probe metered 0.482 credits/char.
+            completionAudioTokens: 0.08 / 1000,
         },
         title: "ElevenLabs v3 TTS",
         description:

@@ -1,0 +1,147 @@
+{
+  "date": "2026-10-20",
+  "period_start": "2026-10-20",
+  "period_end": "2026-10-20",
+  "title": "Google sign-in opens more of Enter",
+  "summary": "Google sign-in, better community model controls, CLI cost estimates, and Stable Audio 3 strength arrived alongside four community apps.\n\nEnter added Google sign-in and a way to connect GitHub later. Google-only accounts can complete eligible Quests, while publishing agents or community models and redeeming promo codes still require GitHub. Paid Pollen accounts gained low-balance and failed auto top-up emails. Smaller fixes preserve return-to-app paths and make API key expiry easier to read.\n\nCommunity model owners can choose eligible Pollinations models as fallbacks when their upstream fails. My Models also shows owners seven days of health data, failure groups, and a way to rerun a proxy model's registration test. Dialog tooltips explain why Create or Save changes is unavailable, and two more community members gained publisher access.\n\nPolli CLI added `--estimate` for image and video requests, with an unknown result when pricing cannot be calculated reliably. Stable Audio 3 audio-to-audio requests gained a `strength` control. GET video routes now accept the documented 1–120 second range, subject to model limits. The CLI rejects an output directory before generation, and Claude Code conversations can continue past a model's image limit by omitting older images.",
+  "pr_count": 22,
+  "prs": [
+    {
+      "number": 11686,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 14386,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 16720,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 16841,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 17231,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 17559,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 17567,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 17571,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 17649,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 17680,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 17761,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 17794,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 17850,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 17856,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 17901,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 17938,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 17943,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 17945,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 17965,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 17966,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 17967,
+      "date": "2026-10-20"
+    },
+    {
+      "number": 17978,
+      "date": "2026-10-20"
+    }
+  ],
+  "generated_at": "2026-10-24T17:34:27.323992+00:00",
+  "daily": [
+    {
+      "emoji": "🔗",
+      "title": "Sign in with Google",
+      "text": "Use Google to sign in to Enter and complete eligible Quests. Connect GitHub later to publish agents or community models and redeem promo codes. [Open Enter](https://enter.pollinations.ai/keys).",
+      "prs": [
+        11686
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Choose community model fallbacks",
+      "text": "Community model owners can select eligible Pollinations models as fallbacks in My Models or through the API. Requests can route to a fallback when the upstream fails, while keeping the community model's pricing.",
+      "prs": [
+        14386
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Estimate before generating",
+      "text": "Run `polli gen image --estimate` or `polli gen video --estimate` to see an estimated Pollen charge without generating media. The CLI reports `estimate: unknown` when it cannot calculate a reliable total. [Get Polli CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        16841
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Inspect your model health",
+      "text": "My Models now shows owners seven days of upstream results and failure groups. Proxy model owners can also rerun the registration test with Test now.",
+      "prs": [
+        17649
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Control audio transformation strength",
+      "text": "Set `strength` from 0 to 1 on audio-to-audio requests with `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3`. Lower values stay closer to `reference_audio`; higher values let the output depart further. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17978
+      ],
+      "kind": "api"
+    }
+  ],
+  "changelog": []
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "daily",
+  "date": "2026-10-20",
+  "period_start": "2026-10-20",
+  "period_end": "2026-10-20",
+  "generated_at": "2026-10-24T17:34:27.323992+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/c0737e1324fc77b23bf5219f72c162f46df668c817818cbf961a7453f6928c08"
+    }
+  ],
+  "text": "Community model owners can now set eligible Pollinations models as fallbacks when an upstream fails. My Models shows 7 days of health data, groups failures, and lets owners rerun a proxy model's registration test. Less guessing at what broke."
+}

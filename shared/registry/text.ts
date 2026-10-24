@@ -1057,18 +1057,18 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-05-19").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Google's promotional pricing runs through 2026-12-31; list rates
-        // double on 2027-01-01 and need another update then.
+        // Vertex list rates from 2027-01-01, after Google's promotional
+        // pricing ended on 2026-12-31.
         cost: {
-            promptTextTokens: perMillion(0.75),
-            promptCachedTokens: perMillion(0.075),
-            promptCacheWriteTokens: perMillion(0.75),
-            promptAudioTokens: perMillion(0.75),
-            promptImageTokens: perMillion(0.75),
-            promptVideoTokens: perMillion(0.75),
-            completionTextTokens: perMillion(3.75),
+            promptTextTokens: perMillion(1.5),
+            promptCachedTokens: perMillion(0.15),
+            promptCacheWriteTokens: perMillion(1.5),
+            promptAudioTokens: perMillion(1.5),
+            promptImageTokens: perMillion(1.5),
+            promptVideoTokens: perMillion(1.5),
+            completionTextTokens: perMillion(7.5),
         },
-        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 0.5),
+        billing: withVertexCacheStorage(GEMINI_3_SEARCH_BILLING, 1),
         title: "Gemini 3.7 Flash",
         description:
             "Sharp, fast reasoning over text, images, audio and video, plus web search",

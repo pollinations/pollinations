@@ -578,7 +578,7 @@ describe("static provider fallbacks", () => {
             "x-ai/grok-imagine-video:fal",
         );
         expect(IMAGE_SERVICES["x-ai/grok-imagine-video-1.5"]).toMatchObject({
-            provider: "openrouter",
+            provider: "xai",
             fallbacks: ["x-ai/grok-imagine-video-1.5:fal"],
         });
         const lite = IMAGE_SERVICES["x-ai/grok-imagine-video-1.5-lite"];

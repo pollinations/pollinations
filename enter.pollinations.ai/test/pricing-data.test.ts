@@ -846,7 +846,7 @@ test("updated provider prices are reflected for xAI media and text routes", () =
             promptImageTokens: 1,
             completionVideoSeconds: 5,
         }).totalCost,
-    ).toBeCloseTo(0.71 * 1.055, 8);
+    ).toBeCloseTo(0.71, 8);
 });
 
 test("Gemini search cost follows each route's provider metadata", () => {

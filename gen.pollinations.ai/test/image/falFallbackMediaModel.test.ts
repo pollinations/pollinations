@@ -306,7 +306,9 @@ describe("Fal fallback media models", () => {
             await vi.advanceTimersByTimeAsync(5_000);
             await resultPromise;
 
-            expect(requests[0].body?.aspect_ratio).toBe(expected);
+            // Provider-priced routes look up fal's price before submitting.
+            const submit = requests.find((request) => request.body);
+            expect(submit?.body?.aspect_ratio).toBe(expected);
         },
     );
 

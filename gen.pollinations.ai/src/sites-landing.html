@@ -96,7 +96,8 @@ body {
     mask-image: linear-gradient(to bottom, black 65%, transparent 100%);
 }
 .hero-copy { position: relative; }
-.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; }
+/* Three cards per row, or one: never two and an orphan. */
+.cards { display: grid; gap: 1rem; }
 .card-head { display: flex; align-items: center; gap: 0.75rem; }
 .address {
     display: inline-flex;
@@ -135,6 +136,9 @@ footer nav { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
 /* The panel's padding grows at sm (polli:sm:p-7). */
 @media (min-width: 40rem) {
     .hero-scene { width: calc(100% + 3.5rem); margin: -1.75rem -1.75rem 0; aspect-ratio: 2 / 1; }
+}
+@media (min-width: 54rem) {
+    .cards { grid-template-columns: repeat(3, 1fr); }
 }
 /* Beside the long headline only once both fit, as on pollinations.ai's home. */
 @media (min-width: 64rem) {
@@ -243,7 +247,6 @@ const LIMITS = [
             ".",
         ],
         icon: LockIcon,
-        color: "var(--polli-color-warning-text)",
     },
 ];
 

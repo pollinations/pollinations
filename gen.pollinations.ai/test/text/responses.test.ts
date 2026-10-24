@@ -72,6 +72,32 @@ describe("direct Responses transport", () => {
             store: false,
         });
     });
+    it("keeps GPT-4o Mini on its quoted Standard tier for native Responses", () => {
+        const input = request({
+            model: "openai/gpt-4o-mini",
+            service_tier: "priority",
+        });
+        const primary = resolveDirectResponsesTarget(input.model, input);
+        if (!primary) throw new Error("expected direct OpenAI target");
+        expect(primary.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, primary)).toMatchObject({
+            model: "gpt-4o-mini",
+            service_tier: "default",
+            store: false,
+        });
+        const fallback = resolveDirectResponsesTarget(
+            "openai/gpt-4o-mini:openrouter:openai",
+            input,
+        );
+        expect(fallback?.endpoint).toBe(
+            "https://openrouter.ai/api/v1/responses",
+        );
+        expect(fallback?.defaults.provider).toEqual({
+            only: ["openai"],
+            ignore: ["cloudflare"],
+            allow_fallbacks: false,
+        });
+    });
     it("rejects invalid image URLs on Nex Mini before calling the provider", async () => {
         const directRequest = request({
             model: "nex-agi/nex-n2.5-mini",

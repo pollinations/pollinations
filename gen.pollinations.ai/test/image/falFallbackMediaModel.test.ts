@@ -262,7 +262,7 @@ describe("Fal fallback media models", () => {
         });
         const resultPromise = callFalFallbackVideo("a blue circle", {
             ...baseParams,
-            model: "alibaba/wan-2.2-fast:fal",
+            model: "alibaba/wan-2.2-fast",
         });
         await vi.advanceTimersByTimeAsync(5_000);
         const result = await resultPromise;
@@ -272,7 +272,7 @@ describe("Fal fallback media models", () => {
             body: {
                 prompt: "a blue circle",
                 resolution: "480p",
-                aspect_ratio: "1:1",
+                aspect_ratio: "16:9",
                 seed: 42,
             },
         });
@@ -286,9 +286,10 @@ describe("Fal fallback media models", () => {
         });
         const resultPromise = callFalFallbackVideo("a blue circle", {
             ...baseParams,
-            model: "alibaba/wan-2.2-fast:fal",
+            model: "alibaba/wan-2.2-fast",
             width: 1024,
             height: 768,
+            dimensionsExplicit: true,
         });
         await vi.advanceTimersByTimeAsync(5_000);
         await resultPromise;
@@ -299,10 +300,11 @@ describe("Fal fallback media models", () => {
     it.each([
         ["x-ai/grok-imagine-video-1.5:fal", "9:16", false, "9:16"],
         ["alibaba/wan-2.6:fal", "16:9", false, "16:9"],
-        ["alibaba/wan-2.2-fast:fal", "16:9", false, "16:9"],
+        ["alibaba/wan-2.2-fast", "16:9", false, "16:9"],
+        ["alibaba/wan-2.2-fast", "1:1", false, "1:1"],
         ["bytedance/seedance-1-pro-fast:fal", "21:9", false, "21:9"],
         // Wan 2.2 Turbo has no 4:3, so the default 1024×1024 decides.
-        ["alibaba/wan-2.2-fast:fal", "4:3", false, "1:1"],
+        ["alibaba/wan-2.2-fast", "4:3", false, "1:1"],
         // Explicit dimensions win over the requested ratio.
         ["alibaba/wan-2.6:fal", "16:9", true, "1:1"],
     ] as const)(
@@ -471,7 +473,7 @@ describe("Fal fallback media models", () => {
         });
         const resultPromise = callFalFallbackVideo("move", {
             ...baseParams,
-            model: "alibaba/wan-2.2-fast:fal",
+            model: "alibaba/wan-2.2-fast",
             image: [
                 "https://example.com/start.png",
                 "https://example.com/end.png",
@@ -492,8 +494,26 @@ describe("Fal fallback media models", () => {
         });
         expect(result.durationSeconds).toBe(5);
         expect(result.trackingData).toEqual({
-            actualModel: "alibaba/wan-2.2-fast:fal",
+            actualModel: "alibaba/wan-2.2-fast",
             usage: { promptImageTokens: 2, completionVideoSeconds: 5 },
         });
+    });
+
+    it("routes the wan-2.2-fast base id to Fal turbo (Replicate isolated)", async () => {
+        const requests = mockFal({
+            video: { url: MEDIA_URL, content_type: "video/mp4" },
+        });
+        const resultPromise = createAndReturnVideo("a blue circle", {
+            ...baseParams,
+            model: "alibaba/wan-2.2-fast",
+        });
+        await vi.advanceTimersByTimeAsync(5_000);
+        const result = await resultPromise;
+
+        expect(requests[0].url).toBe(
+            "https://queue.fal.run/fal-ai/wan/v2.2-a14b/text-to-video/turbo",
+        );
+        expect(result.trackingData.actualModel).toBe("alibaba/wan-2.2-fast");
+        expect(result.trackingData.usage.completionVideoSeconds).toBe(5);
     });
 });

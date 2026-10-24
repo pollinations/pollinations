@@ -86,7 +86,12 @@ async function normalizedFormData(formData: FormData): Promise<{
     const identity = new Map<string, unknown[]>();
 
     for (const [name, value] of formData.entries()) {
-        if (name.toLowerCase() === "key") continue;
+        // Multipart generation responses are files, never SSE streams: a
+        // stray `stream` field is ignored by every handler and must not
+        // fragment the cache identity either.
+        if (name.toLowerCase() === "key" || name.toLowerCase() === "stream") {
+            continue;
+        }
         const values = identity.get(name) ?? [];
         if (value instanceof File) {
             const bytes = new Uint8Array(await value.arrayBuffer());

@@ -44,6 +44,7 @@ import {
     handleTranscription,
     handleVoiceChanger,
     handleVoiceIsolator,
+    prepareSpeechCacheIdentity,
 } from "./audio.ts";
 import {
     generateChatCompletion,
@@ -278,6 +279,7 @@ generationExecutorRoutes.post(
     }),
     track("generate.audio"),
     prepareGenerationRequest,
+    prepareSpeechCacheIdentity,
     audioExecutionCache,
     apiKeyBudgetReservation,
     handleSpeech,
@@ -291,6 +293,7 @@ generationExecutorRoutes.post(
     }),
     track("generate.audio"),
     prepareGenerationRequest,
+    prepareSpeechCacheIdentity,
     textExecutionCache,
     apiKeyBudgetReservation,
     handleSpeechWithTimestamps,

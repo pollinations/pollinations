@@ -97,6 +97,8 @@
 - 🎙️ **Real-time API**: OpenAI-compatible WebSocket for streaming conversations
 - 🔢 **Embeddings Creation**: Semantic search, retrieval, similarity matching
 - 🤖 **Managed Agents**: Turn a prompt, base model, and optional Pollinations tools into a reusable model
+- 📦 **Sandboxes**: Cloud Linux computers for you or your agents, opened with SSH or VS Code
+- 🌐 **Sites**: Free static hosting at `<name>.pollinations.app`
 - 🎣 **_Easy-to-use Packages_** ([Packages](packages/))
 
 ## Guides

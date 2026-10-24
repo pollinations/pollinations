@@ -596,6 +596,27 @@ describe("static provider fallbacks", () => {
         });
     });
 
+    it("keeps anthropic/claude-haiku-5.5's public quote when its backup multiplier is 1", () => {
+        const model = "anthropic/claude-haiku-5.5";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:aws"];
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 100,
+                promptCachedTokens: 20,
+                promptCacheWriteTokens: 10,
+                completionTextTokens: 30,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(fallback.priceMultiplier).toBe(1);
+        expect(primary.priceMultiplier).toBe(0.75);
+        expect(billed.cost.totalCost).toBeCloseTo(2.645e-5, 12);
+        expect(billed.price.totalPrice).toBe(1.984e-5);
+    });
+
     it("keeps same-provider routes distinct and ordered under a suffixed public ID", () => {
         const parentId = "google/gemini-2.5-flash-lite:search";
         const parent: ModelDefinition = {
@@ -1186,27 +1207,6 @@ describe("static provider fallbacks", () => {
             for (const route of routes)
                 expect(publicAudio.has(route)).toBe(false);
         }
-    });
-
-    it("keeps anthropic/claude-haiku-5.5's public quote when its backup multiplier is 1", () => {
-        const model = "anthropic/claude-haiku-5.5";
-        const primary = TEXT_SERVICES[model];
-        const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:aws"];
-        const billed = calculateUsageBilling({
-            model,
-            usage: {
-                promptTextTokens: 100,
-                promptCachedTokens: 20,
-                promptCacheWriteTokens: 10,
-                completionTextTokens: 30,
-            },
-            servedBy: fallback,
-            quotedBy: primary,
-        });
-        expect(fallback.priceMultiplier).toBe(1);
-        expect(primary.priceMultiplier).toBe(0.75);
-        expect(billed.cost.totalCost).toBeCloseTo(2.645e-5, 12);
-        expect(billed.price.totalPrice).toBe(1.984e-5);
     });
 
     it("charges SiliconFlow's reported cache hits at its full input rate", () => {

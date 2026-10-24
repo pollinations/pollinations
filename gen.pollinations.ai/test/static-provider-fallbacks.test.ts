@@ -655,15 +655,15 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.0000211, 8);
     });
 
-    it("charges Decider's Vercel price on its OpenRouter fallback", () => {
+    it("charges Decider's Vercel price on its direct Perplexity fallback", () => {
         const primary = TEXT_SERVICES["perplexity/pplx-decider-v1.2"];
         const fallback =
-            TEXT_SERVICES["perplexity/pplx-decider-v1.2:openrouter"];
+            TEXT_SERVICES["perplexity/pplx-decider-v1.2:perplexity"];
         expect(primary.fallbacks).toEqual([
-            "perplexity/pplx-decider-v1.2:openrouter",
+            "perplexity/pplx-decider-v1.2:perplexity",
         ]);
         expect(fallback).toMatchObject({
-            provider: "openrouter",
+            provider: "perplexity",
             paidOnly: true,
             hidden: true,
             fallbackOnly: true,
@@ -678,12 +678,12 @@ describe("static provider fallbacks", () => {
         });
         expect(
             findModelByName(
-                "perplexity/pplx-decider-v1.2:openrouter",
+                "perplexity/pplx-decider-v1.2:perplexity",
             )?.config(),
         ).toMatchObject({
-            model: "perplexity/pplx-decider-v1.2",
-            provider: "openrouter",
-            directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+            model: "pplx-decider-v1.2",
+            provider: "perplexity",
+            directEndpoint: "https://api.perplexity.ai/v1/decisions",
         });
         const billing = calculateUsageBilling({
             model: "perplexity/pplx-decider-v1.2",
@@ -691,7 +691,7 @@ describe("static provider fallbacks", () => {
             servedBy: fallback,
             quotedBy: primary,
         });
-        expect(billing.cost.totalCost).toBeCloseTo(0.0000211, 12);
+        expect(billing.cost.totalCost).toBeCloseTo(0.00002, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.00002, 12);
     });
 

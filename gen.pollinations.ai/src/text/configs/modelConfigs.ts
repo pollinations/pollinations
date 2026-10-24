@@ -119,12 +119,15 @@ export const portkeyConfig: PortkeyConfigMap = {
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
             model: "perplexity/pplx-decider-v1.2",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["perplexity"] } },
+            },
         }),
-    "perplexity/pplx-decider-v1.2:openrouter": () => ({
-        provider: "openrouter",
-        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
-        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
-        model: "perplexity/pplx-decider-v1.2",
+    "perplexity/pplx-decider-v1.2:perplexity": () => ({
+        provider: "perplexity",
+        directEndpoint: "https://api.perplexity.ai/v1/decisions",
+        authKey: textEnvironmentValue("PERPLEXITY_API_KEY"),
+        model: "pplx-decider-v1.2",
     }),
     "liquid-d1": () => ({
         provider: "openrouter",

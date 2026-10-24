@@ -13,6 +13,12 @@ import { CHAT_PARAMETERS } from "./text-parameters";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "openai/gpt-5-nano": {
+        "openai/gpt-5-nano:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
+        },
+    },
     "qwen/qwen3-coder-30b-a3b-instruct": {
         "qwen/qwen3-coder-30b-a3b-instruct:aws": {
             provider: "aws",

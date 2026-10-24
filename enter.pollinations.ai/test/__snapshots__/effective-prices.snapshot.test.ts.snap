@@ -2720,6 +2720,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000000375,
     },
   },
+  "openai/gpt-5-nano:openai": {
+    "cost": {
+      "completionTextTokens": 0.0000004,
+      "promptCachedTokens": 0.000000005,
+      "promptTextTokens": 0.00000005,
+    },
+    "price": {
+      "completionTextTokens": 0.0000004,
+      "promptCachedTokens": 0.000000005,
+      "promptTextTokens": 0.00000005,
+    },
+  },
   "openai/gpt-5.3-codex": {
     "cost": {
       "completionTextTokens": 0.000014,

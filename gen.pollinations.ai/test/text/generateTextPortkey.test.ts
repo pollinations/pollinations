@@ -89,8 +89,6 @@ describe("generateTextPortkey", () => {
     it.each([
         { status: 429, failures: 1 },
         { status: 503, failures: 1 },
-        { status: 429, failures: 2 },
-        { status: 503, failures: 2 },
     ])(
         "rescues Scout upstream $status after $failures failures at the primary price",
         async ({ status, failures }) => {
@@ -100,22 +98,21 @@ describe("generateTextPortkey", () => {
             });
             const primary = "meta/llama-4-scout" as const;
             const fallback = TEXT_SERVICES[primary].fallbacks[failures - 1];
-            const expectedRoutes = [
-                "vercel-deepinfra",
-                "deepinfra/fp8/priority",
-                "novita/bf16",
-            ];
+            const expectedRoutes = ["vercel-deepinfra", "deepinfra-priority"];
             const routes: string[] = [];
             vi.spyOn(globalThis, "fetch").mockImplementation(
                 async (input, init) => {
                     const body = JSON.parse(String(init?.body));
                     if (
                         String(input) ===
-                        "https://openrouter.ai/api/v1/chat/completions"
+                        "https://api.deepinfra.com/v1/openai/chat/completions"
                     ) {
-                        expect(body.model).toBe("meta-llama/llama-4-scout");
-                        expect(body.provider.allow_fallbacks).toBe(false);
-                        const route = body.provider.only[0];
+                        expect(body.model).toBe(
+                            "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+                        );
+                        expect(body.service_tier).toBe("priority");
+                        expect(body.provider).toBeUndefined();
+                        const route = "deepinfra-priority";
                         routes.push(route);
                         expect(route).toBe(expectedRoutes[routes.length - 1]);
                     } else {
@@ -179,10 +176,8 @@ describe("generateTextPortkey", () => {
                 servedBy: candidate.definition,
                 quotedBy: TEXT_SERVICES[primary],
             });
-            const [inputRate, outputRate] =
-                failures === 1 ? [0.15, 0.45] : [0.18, 0.59];
             expect(billing.cost.totalCost).toBeCloseTo(
-                ((167 * inputRate + 3 * outputRate) / 1_000_000) * 1.055,
+                (167 * 0.15 + 3 * 0.45) / 1_000_000,
                 12,
             );
             // Customer charges use the ledger's eight-decimal precision.
@@ -190,7 +185,7 @@ describe("generateTextPortkey", () => {
         },
     );
 
-    it("falls back from East US to Sweden Grok and bills image and reasoning usage", async () => {
+    it("preserves Azure Grok image and additive reasoning accounting", async () => {
         const hosts: string[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -198,15 +193,6 @@ describe("generateTextPortkey", () => {
                 hosts.push(url.hostname);
                 expect(JSON.parse(String(init?.body)).model).toBe("grok-4.6");
                 expect(new Headers(init?.headers).has("api-key")).toBe(true);
-                if (
-                    url.hostname ===
-                    "myceli-prod-eastus.cognitiveservices.azure.com"
-                ) {
-                    return Response.json(
-                        { error: { message: "Capacity exhausted" } },
-                        { status: 429 },
-                    );
-                }
                 return Response.json({
                     model: "grok-4.6",
                     choices: [
@@ -230,23 +216,12 @@ describe("generateTextPortkey", () => {
                 });
             },
         );
-        const { result, index } = await withModelFallback(
-            ["x-ai/grok-4.6", ...TEXT_SERVICES["x-ai/grok-4.6"].fallbacks].map(
-                (id) => ({
-                    id,
-                    definition: TEXT_SERVICES[id as keyof typeof TEXT_SERVICES],
-                }),
-            ),
-            ({ id }) =>
-                generateTextPortkey(
-                    [{ role: "user", content: "Read the image." }],
-                    { model: id },
-                ),
+        const result = await generateTextPortkey(
+            [{ role: "user", content: "Read the image." }],
+            { model: "x-ai/grok-4.6" },
         );
-        expect(index).toBe(1);
         expect(hosts).toEqual([
             "myceli-prod-eastus.cognitiveservices.azure.com",
-            "myceli-prod-swedencentral.cognitiveservices.azure.com",
         ]);
         const usage = openaiUsageToUsage(
             result.usage as Parameters<typeof openaiUsageToUsage>[0],
@@ -260,14 +235,14 @@ describe("generateTextPortkey", () => {
         const billing = calculateUsageBilling({
             model: "x-ai/grok-4.6",
             usage,
-            servedBy: TEXT_SERVICES["x-ai/grok-4.6:azure:sweden"],
+            servedBy: TEXT_SERVICES["x-ai/grok-4.6"],
             quotedBy: TEXT_SERVICES["x-ai/grok-4.6"],
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.001754, 12);
         expect(billing.price.totalPrice).toBe(0.0013155);
     });
 
-    it("falls back from both Azure Grok regions to xAI direct at the primary price", async () => {
+    it("falls back from Azure Grok to xAI direct at the primary price", async () => {
         const hosts: string[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -322,10 +297,9 @@ describe("generateTextPortkey", () => {
                     model: id,
                 }),
         );
-        expect(index).toBe(2);
+        expect(index).toBe(1);
         expect(hosts).toEqual([
             "myceli-prod-eastus.cognitiveservices.azure.com",
-            "myceli-prod-swedencentral.cognitiveservices.azure.com",
             "api.x.ai",
         ]);
         const billing = calculateUsageBilling({

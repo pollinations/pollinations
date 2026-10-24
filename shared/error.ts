@@ -389,12 +389,40 @@ function createErrorResponse(
     };
 }
 
+/**
+ * A failed `z.union` reports one opaque `invalid_union` issue ("Invalid input")
+ * that hides the real field errors, which `z.flattenError` then drops. Replace
+ * each with the issues of the branch closest to the input (fewest issues), so
+ * clients see the failing field and its message.
+ */
+export function unwrapUnionIssues(
+    issues: z.core.$ZodIssue[],
+): z.core.$ZodIssue[] {
+    return issues.flatMap((issue) => {
+        if (issue.code !== "invalid_union" || issue.errors.length === 0) {
+            return [issue];
+        }
+        const closest = issue.errors.reduce((best, branch) =>
+            branch.length < best.length ? branch : best,
+        );
+        // Branch issue paths are relative to the union's own position.
+        return unwrapUnionIssues(
+            closest.map((inner) => ({
+                ...inner,
+                path: [...issue.path, ...inner.path],
+            })),
+        );
+    });
+}
+
 function createValidationErrorResponse(
     error: ValidationError,
     status: ContentfulStatusCode,
     timestamp: string,
 ): ErrorResponse {
-    const flatErrors = z.flattenError(error.zodError);
+    const flatErrors = z.flattenError(
+        new z.ZodError(unwrapUnionIssues(error.zodError.issues)),
+    );
     return createErrorResponse(error, status, timestamp, {
         details: { name: error.name, ...flatErrors },
     });

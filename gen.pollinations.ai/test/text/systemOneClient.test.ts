@@ -624,6 +624,32 @@ describe("System One adapter", () => {
         expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 
+    it("forwards jaredpalmer/kev-4b's provider pin on the native wire", async () => {
+        const config = findModelByName("jaredpalmer/kev-4b")?.config();
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (_input, init) => {
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    provider: {
+                        "only": ["siliconflow/fp8"],
+                        "ignore": ["cloudflare"],
+                        "allow_fallbacks": false,
+                    },
+                    model: "jaredpalmer/kev-4b",
+                });
+                return Response.json({
+                    model: "jaredpalmer/kev-4b",
+                    answers,
+                    usage: { input_tokens: 44, output_tokens: 1 },
+                });
+            });
+        await callSystemOne([{ role: "user", content: nativeContent }], {
+            modelConfig: { ...config, authKey: "test-key" },
+            provider: { only: ["cloudflare"] },
+        });
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
     it("forwards native state and questions in one message and returns native answers", async () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")

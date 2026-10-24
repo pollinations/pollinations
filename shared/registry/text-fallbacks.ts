@@ -660,6 +660,19 @@ export const TEXT_FALLBACKS = {
             addedDate: new Date("2026-10-15").getTime(),
         },
     },
+    "anthropic/claude-opus-5.5:fast": {
+        "anthropic/claude-opus-5.5:fast:openrouter:anthropic-fast": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-24").getTime(),
+            // OpenRouter's anthropic/fast endpoint, plus the 5.5% credit fee.
+            cost: {
+                promptTextTokens: perMillion(8) * 1.055,
+                promptCachedTokens: perMillion(0.4) * 1.055,
+                promptCacheWriteTokens: perMillion(10) * 1.055,
+                completionTextTokens: perMillion(40) * 1.055,
+            },
+        },
+    },
     "anthropic/claude-fable-5": {
         "anthropic/claude-fable-5:openrouter:vertex-global": {
             supportedParameters: CHAT_PARAMETERS.openRouterOpus,

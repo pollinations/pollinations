@@ -753,6 +753,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-haiku-4.5",
         "google-vertex/global",
     ),
+    "claude-opus-5.5-fast-vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "anthropic/claude-opus-5.5-fast",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["anthropic"] } },
+            },
+        }),
     "claude-opus-5.5-fast-openrouter-anthropic-fast":
         createPinnedOpenRouterConfig(
             "anthropic/claude-opus-5.5",

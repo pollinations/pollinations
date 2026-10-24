@@ -7,6 +7,7 @@ import {
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
     callOpenRouterQwenImage3API,
+    callOpenRouterQwenImage21ProAPI,
     callOpenRouterRecraftFlashAPI,
     callOpenRouterRecraftVectorAPI,
     callOpenRouterSeedreamFlashAPI,
@@ -1578,5 +1579,47 @@ describe("OpenRouter Qwen Image 3 Pro", () => {
         await expect(
             callOpenRouterQwenImage3API("no receipt", qwenParams),
         ).rejects.toMatchObject({ status: 502 });
+    });
+
+    it("sends the Pro checkpoint at the requested size, pinned to Alibaba, and bills OpenRouter's cost", async () => {
+        const requests: Record<string, unknown>[] = [];
+        mockQwen(requests, { cost: 0.046 });
+
+        const result = await callOpenRouterQwenImage21ProAPI("A lighthouse", {
+            ...qwenParams,
+            model: "qwen/qwen-image-2.1-pro:openrouter",
+            width: 1280,
+            height: 720,
+        });
+
+        expect(requests[0]).toEqual({
+            model: "qwen/qwen-image-2.1-pro",
+            prompt: "A lighthouse",
+            n: 1,
+            seed: 42,
+            size: "1280x720",
+            provider: { only: ["alibaba"], allow_fallbacks: false },
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "qwen/qwen-image-2.1-pro:openrouter",
+            providerBilling: { units: 0.046, unitCost: 1.055 },
+            usage: { completionImageTokens: 1 },
+        });
+    });
+
+    it("sends Pro reference images without metering them, since OpenRouter's cost includes them", async () => {
+        const requests: Record<string, unknown>[] = [];
+        mockQwen(requests, { cost: 0.046 });
+
+        const result = await callOpenRouterQwenImage21ProAPI("edit", {
+            ...qwenParams,
+            model: "qwen/qwen-image-2.1-pro:openrouter",
+            image: Array(2).fill(PNG_DATA_URI),
+        });
+
+        expect(requests[0].input_references).toHaveLength(2);
+        expect(result.trackingData?.usage).toEqual({
+            completionImageTokens: 1,
+        });
     });
 });

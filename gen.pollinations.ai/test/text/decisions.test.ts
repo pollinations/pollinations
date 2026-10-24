@@ -588,11 +588,11 @@ test("defaults to jev and accepts the alias", async ({
     expect(mocks.decisions.state.requests).toHaveLength(2);
 });
 
-test("a text key reaches Jev by its canonical ID and both aliases", async ({
+test("a decision key reaches Jev by its canonical ID and both aliases", async ({
     mocks,
 }) => {
     const { key } = await createTestApiKey({
-        allowedModels: ["text"],
+        allowedModels: ["decision"],
         user: { tierBalance: 100, packBalance: 1 },
     });
 
@@ -609,6 +609,77 @@ test("a text key reaches Jev by its canonical ID and both aliases", async ({
         await wait();
     }
     expect(mocks.decisions.state.requests).toHaveLength(3);
+});
+
+test("a text key needs decision on /alpha/decisions but still reaches Jev on chat", async ({
+    mocks,
+}) => {
+    const { key, id } = await createTestApiKey({
+        allowedModels: ["text"],
+        user: { tierBalance: 100, packBalance: 1 },
+    });
+
+    const decision = await post("/alpha/decisions", key, {
+        model: "jev",
+        state: "Disk at 91%.",
+        questions,
+    });
+    expect(decision.response.status).toBe(403);
+    expect(await decision.response.text()).toContain(
+        `/grant?id=${id}&category=decision&`,
+    );
+    await decision.wait();
+    expect(mocks.decisions.state.requests).toHaveLength(0);
+
+    const chat = await post("/v1/chat/completions", key, {
+        model: "jev",
+        messages: [
+            {
+                role: "user",
+                content: JSON.stringify({ state: "Disk at 91%.", questions }),
+            },
+        ],
+    });
+    expect(chat.response.status).toBe(200);
+    const body = (await chat.response.json()) as {
+        choices: { message: { content: string } }[];
+    };
+    expect(JSON.parse(body.choices[0].message.content)).toEqual(answers);
+    await chat.wait();
+    expect(mocks.decisions.state.requests).toHaveLength(1);
+});
+
+test("the decision category holds exactly the models served at /alpha/decisions", async () => {
+    type CatalogModel = {
+        name: string;
+        category: string;
+        supported_endpoints?: string[];
+    };
+    const { key } = await createTestApiKey({
+        allowedModels: ["decision"],
+        user: { packBalance: 1 },
+    });
+    const catalog = await fetchWorker("/models", {});
+    const models = (await catalog.response.json()) as CatalogModel[];
+    await catalog.wait();
+    const decisionModels = models.filter((model) =>
+        model.supported_endpoints?.includes("/alpha/decisions"),
+    );
+    expect(decisionModels.length).toBeGreaterThan(0);
+    for (const model of models) {
+        expect(model.category === "decision", model.name).toBe(
+            decisionModels.includes(model),
+        );
+    }
+
+    const allowed = await fetchWorker("/models", {
+        headers: { authorization: `Bearer ${key}` },
+    });
+    const allowedModels = (await allowed.response.json()) as CatalogModel[];
+    await allowed.wait();
+    expect(allowedModels.map(({ name }) => name).sort()).toEqual(
+        decisionModels.map(({ name }) => name).sort(),
+    );
 });
 
 test("rejects a malformed question before calling upstream", async ({

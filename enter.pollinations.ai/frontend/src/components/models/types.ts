@@ -11,7 +11,8 @@ export type ModelCategory =
     | "video"
     | "3d"
     | "embedding"
-    | "realtime";
+    | "realtime"
+    | "decision";
 
 export type ModelCapability =
     | "tool_calling"

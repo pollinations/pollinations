@@ -748,6 +748,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         "nvidia/nemotron-3.5-lightning",
         "coreweave/bf16",
     ),
+    "nvidia/NVIDIA-Nemotron-3.5-Super-VL": () =>
+        createDeepInfraModelConfig({
+            model: "nvidia/NVIDIA-Nemotron-3.5-Super-VL",
+        }),
+    "nemotron-3.5-super-vl-openrouter-together": createPinnedOpenRouterConfig(
+        "nvidia/nemotron-3.5-super-vl",
+        "together",
+    ),
     "gemini-3-flash-openrouter-vertex-global":
         createPinnedOpenRouterGeminiConfig(
             "gemini-3-flash-preview",
@@ -882,6 +890,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         "inception/mercury-2.5-preview",
         "Inception",
         64000,
+    ),
+    "inception/mercury-3": createPinnedOpenRouterConfig(
+        "inception/mercury-3",
+        "Inception",
+        131072,
     ),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------
@@ -1172,10 +1185,18 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "stepfun/step-5-preview",
         }),
 
-    // -- DeepInfra (StepFun) --------------------------------------------------
-    "stepfun-ai/Step-3.7-Flash": () =>
-        createDeepInfraModelConfig({
-            model: "stepfun-ai/Step-3.7-Flash",
+    // -- Novita and Vercel (StepFun) ------------------------------------------
+    "stepfun/step-3.7-flash": () =>
+        createNovitaModelConfig({ model: "stepfun/step-3.7-flash" }),
+    // Pin StepFun's own endpoint: DeepInfra serves MiMo under this model's id.
+    "stepfun/step-3.7-flash:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "stepfun/step-3.7-flash",
+            responsesEndpoint: undefined,
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["stepfun"] } },
+            },
         }),
 
     // -- InferencePort (Lightning routers) ------------------------------------

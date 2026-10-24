@@ -13,6 +13,23 @@ const validUsage: VertexGeminiImageUsage = {
 };
 
 describe("Vertex Gemini image usage", () => {
+    it("rejects cached counts that do not reconcile with their modalities", () => {
+        for (const usage of [
+            { ...validUsage, cachedContentTokenCount: 3 },
+            {
+                ...validUsage,
+                cachedContentTokenCount: 12,
+                cacheTokensDetails: [
+                    { modality: "TEXT" as const, tokenCount: 12 },
+                ],
+            },
+            { ...validUsage, cachedContentTokenCount: -1 },
+        ]) {
+            expect(() => mapVertexGeminiImageUsage(usage, true)).toThrow(
+                "invalid image billing usage metadata",
+            );
+        }
+    });
     it("maps text, image, and reasoning usage exactly", () => {
         expect(
             mapVertexGeminiImageUsage({

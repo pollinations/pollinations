@@ -1,0 +1,146 @@
+{
+  "date": "2026-10-22",
+  "period_start": "2026-10-22",
+  "period_end": "2026-10-22",
+  "title": "Static sites get a home",
+  "summary": "Static hosting, more ways to run Barbara, and Azure sandboxes led a day of fixes across the API and developer tools.\n\nStatic-site hosting was added at `<name>.pollinations.app`. People can publish with `polli sites deploy`, the SDK, MCP tools, or the Sites API. Barbara can publish a built page or app and return its URL. The bare domain now has a Sites landing page and deployment guide.\n\nMama Barbara can set up a personal Claude Code assistant in a user's own sandbox and Telegram bot. Owners can manage the bot from Telegram, choose Small or Large when creating it, and switch among five models later without losing the conversation. New Barbaras default to Large; existing ones keep their sandboxes. Mama also explains when Telegram has not created a bot after two minutes.\n\nThree Azure sandbox templates were added behind the E2B-compatible API. People can choose a provider by template in Enter, the API, or `polli sandbox create`. Azure offers larger disk options and avoids E2B's daily pause and resume, but bills while a sandbox is idle and through the next five-minute lease check after timeout.",
+  "pr_count": 21,
+  "prs": [
+    {
+      "number": 16277,
+      "date": "2026-10-22"
+    },
+    {
+      "number": 17205,
+      "date": "2026-10-22"
+    },
+    {
+      "number": 17926,
+      "date": "2026-10-22"
+    },
+    {
+      "number": 18026,
+      "date": "2026-10-22"
+    },
+    {
+      "number": 18040,
+      "date": "2026-10-22"
+    },
+    {
+      "number": 18051,
+      "date": "2026-10-22"
+    },
+    {
+      "number": 18054,
+      "date": "2026-10-22"
+    },
+    {
+      "number": 18056,
+      "date": "2026-10-22"
+    },
+    {
+      "number": 18057,
+      "date": "2026-10-22"
+    },
+    {
+      "number": 18062,
+      "date": "2026-10-22"
+    },
+    {
+      "number": 18069,
+      "date": "2026-10-22"
+    },
+    {
+      "number": 18070,
+      "date": "2026-10-22"
+    },
+    {
+      "number": 18072,
+      "date": "2026-10-22"
+    },
+    {
+      "number": 18086,
+      "date": "2026-10-22"
+    },
+    {
+      "number": 18101,
+      "date": "2026-10-22"
+    },
+    {
+      "number": 18119,
+      "date": "2026-10-22"
+    },
+    {
+      "number": 18129,
+      "date": "2026-10-22"
+    },
+    {
+      "number": 18130,
+      "date": "2026-10-22"
+    },
+    {
+      "number": 18131,
+      "date": "2026-10-22"
+    },
+    {
+      "number": 18142,
+      "date": "2026-10-22"
+    },
+    {
+      "number": 18150,
+      "date": "2026-10-22"
+    }
+  ],
+  "generated_at": "2026-10-24T17:43:50.893990+00:00",
+  "daily": [
+    {
+      "emoji": "🚀",
+      "title": "Host a static site",
+      "text": "Publish a site at `<name>.pollinations.app` with `polli sites deploy`, the SDK, MCP tools, or the Sites API. Accounts can have up to five sites; inline API uploads are limited to 5 MB and 1,000 files, while larger sites can use the CLI or two-step upload. [Read the Sites guide](https://gen.pollinations.ai/docs).",
+      "prs": [
+        18051,
+        18072,
+        18131
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Build a Barbara in Telegram",
+      "text": "Mama Barbara helps you set up a Telegram bot you own with a personal Claude Code assistant in its own sandbox. It can answer DMs and group mentions, use Pollinations generation tools, and connect to linked apps.",
+      "prs": [
+        18057
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Choose Barbara's setup",
+      "text": "Pick Small or Large when creating a Barbara, then switch her model among Claude Sonnet 5.5, Claude Opus 5.5, Claude Haiku 5.5, DeepSeek V4.1 Flash 1017, and GLM 5.3 Flash. Computer size is fixed after creation; model changes preserve the conversation and take effect after the current turn.",
+      "prs": [
+        18142,
+        18150
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "Let Barbara publish sites",
+      "text": "Barbara can publish a built web page or app at `<name>.pollinations.app` and send back its URL. Published sites are public.",
+      "prs": [
+        18070
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Choose an Azure sandbox",
+      "text": "When available, choose `pollinations-azure`, `pollinations-azure-large`, or `pollinations-azure-xl` in Enter, the API, or `polli sandbox create`. Azure bills running sandboxes even when idle; its 2 vCPU, 2 GB template costs about 0.049 Pollen/hour, with usage charged through the next five-minute lease check after timeout.",
+      "prs": [
+        18026
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
+}

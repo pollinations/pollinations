@@ -77,6 +77,22 @@ function createPinnedOpenRouterGeminiConfig(
 // =============================================================================
 
 export const portkeyConfig: PortkeyConfigMap = {
+    "vllm-sr/d3": () => ({
+        provider: "vllm-sr",
+        directEndpoint: "https://decision.vllm-sr.ai/v1/systemone",
+        authKey: textEnvironmentValue("D3_KEY"),
+        model: "vllm-sr/d3",
+        decisionsProtocol: "vllm-sr",
+    }),
+    "stealth/glyph-cluster": () =>
+        createVercelAIGatewayModelConfig({
+            model: "stealth/glyph-cluster",
+            responsesEndpoint: undefined,
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["stealth"] } },
+            },
+        }),
     "span-01-lite": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
@@ -98,17 +114,17 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "jaredpalmer/kev-4b",
     }),
-    "pplx-decider-v1.1-27b": () =>
+    "pplx-decider-v1.2": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
-            model: "perplexity/pplx-decider-v1.1-27b",
+            model: "perplexity/pplx-decider-v1.2",
         }),
-    "perplexity/pplx-decider-v1.1-27b:openrouter": () => ({
+    "perplexity/pplx-decider-v1.2:openrouter": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
-        model: "perplexity/pplx-decider-v1.1-27b",
+        model: "perplexity/pplx-decider-v1.2",
     }),
     "liquid-d1": () => ({
         provider: "openrouter",
@@ -135,7 +151,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "openai/gpt-6-luna-decisions",
     }),
-    "microsoft-decision-1": () =>
+    "microsoft/microsoft-decision-1:vercel": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
@@ -146,6 +162,16 @@ export const portkeyConfig: PortkeyConfigMap = {
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "microsoft/microsoft-decision-1",
+    }),
+    // Azure's Microsoft provider endpoint speaks the TypeSafe native shape;
+    // `model` is the deployment name.
+    "microsoft-decision-1-azure": () => ({
+        provider: "openai",
+        directEndpoint:
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/microsoft/v1/systemone",
+        directAuthHeader: "api-key",
+        authKey: textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+        model: "decision-1",
     }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
@@ -1134,6 +1160,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "meta/muse-spark-1.2": () =>
         createVercelAIGatewayModelConfig({
             model: "meta/muse-spark-1.2",
+        }),
+    "meta/muse-spark-1.3": () =>
+        createVercelAIGatewayModelConfig({
+            model: "meta/muse-spark-1.3",
         }),
     "meta/muse-wonder-1.0:vercel": () =>
         createVercelAIGatewayModelConfig({

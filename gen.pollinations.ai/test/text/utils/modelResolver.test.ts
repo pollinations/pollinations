@@ -5,6 +5,26 @@ import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 const messages = [{ role: "user" as const, content: "Hello" }];
 
 describe("resolveModelConfig", () => {
+    it("preserves Glyph reasoning flags when mapping reasoning_effort", async () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "stealth/glyph-cluster",
+            reasoning_effort: "low",
+            reasoning: { exclude: true },
+        });
+        const model = findModelByName("stealth/glyph-cluster");
+        const transformed = await model?.transform?.(
+            messages,
+            resolved.options,
+        );
+        expect(transformed?.options.reasoning).toEqual({
+            exclude: true,
+            effort: "low",
+        });
+        expect(transformed?.options.reasoning_effort).toBeUndefined();
+        expect(resolved.options.providerOptions).toEqual({
+            gateway: { only: ["stealth"] },
+        });
+    });
     it("sets Anthropic max_tokens defaults", () => {
         expect(
             resolveModelConfig(messages, {
@@ -740,6 +760,19 @@ describe("resolveModelConfig", () => {
         });
 
         expect(result.options.model).toBe("meta/muse-spark-1.2");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://ai-gateway.vercel.sh/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes Muse Spark 1.3 directly through Vercel without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "meta/muse-spark-1.3",
+        });
+
+        expect(result.options.model).toBe("meta/muse-spark-1.3");
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
             "custom-host": "https://ai-gateway.vercel.sh/v1",

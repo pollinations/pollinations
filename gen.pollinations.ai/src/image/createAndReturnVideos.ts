@@ -10,6 +10,7 @@ import {
     callFalFallbackVideo,
     callMireloSfxAPI,
 } from "./models/falFallbackMediaModel.ts";
+import { callFluxMaxVideoAPI } from "./models/fluxMaxVideoModel.ts";
 import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
 import { callKlingVideoAPI } from "./models/klingVideoModel.ts";
 import {
@@ -67,7 +68,7 @@ export async function createAndReturnVideo(
             break;
         case "bytedance/seedance-1-pro-fast:fal":
         case "alibaba/wan-2.6:fal":
-        case "alibaba/wan-2.2-fast:fal":
+        case "alibaba/wan-2.2-fast":
         case "x-ai/grok-imagine-video":
         case "x-ai/grok-imagine-video-1.5:fal":
         case "kandinskylab/kandinsky-6.0-lite":
@@ -87,7 +88,7 @@ export async function createAndReturnVideo(
         case "alibaba/wan-2.6:replicate":
             result = await callWanAPI(prompt, safeParams);
             break;
-        case "alibaba/wan-2.2-fast":
+        case "alibaba/wan-2.2-fast:replicate":
             result = await callWanFastAPI(prompt, safeParams);
             break;
         case "alibaba/wan-2.7":
@@ -109,6 +110,9 @@ export async function createAndReturnVideo(
             break;
         case "kwaivgi/kling-v3.0-std":
             result = await callKlingVideoAPI(prompt, safeParams);
+            break;
+        case "black-forest-labs/flux-3-max":
+            result = await callFluxMaxVideoAPI(prompt, safeParams);
             break;
         case "x-ai/grok-imagine-video-1.5-lite":
             result = await callXaiVideoAPI(prompt, safeParams);

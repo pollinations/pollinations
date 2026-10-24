@@ -46,3 +46,16 @@ export async function downloadMesh(url: string): Promise<Buffer> {
     }
     return Buffer.from(await response.arrayBuffer());
 }
+
+export function assertGlb(buffer: Buffer): void {
+    if (
+        buffer.length < 20 ||
+        buffer.toString("ascii", 0, 4) !== "glTF" ||
+        buffer.readUInt32LE(4) !== 2 ||
+        buffer.readUInt32LE(8) !== buffer.length
+    ) {
+        throw UpstreamError.fromProvider(502, {
+            message: "3D provider returned an invalid GLB file",
+        });
+    }
+}

@@ -3275,6 +3275,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000000015,
     },
   },
+  "openai/text-embedding-3-small:openai": {
+    "cost": {
+      "promptTextTokens": 0.00000002,
+    },
+    "price": {
+      "promptTextTokens": 0.00000002,
+    },
+  },
   "openai/tts-1": {
     "cost": {
       "completionAudioTokens": 0.000015,

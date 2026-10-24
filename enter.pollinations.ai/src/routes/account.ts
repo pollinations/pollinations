@@ -50,6 +50,7 @@ import { captureFromRequest } from "../utils/product-analytics.ts";
 import { agentsRoutes } from "./agents.ts";
 import { communityEndpointsRoutes } from "./community-endpoints.ts";
 import { promoCodeRedeemRoutes } from "./promo-codes.ts";
+import { sitesRoutes } from "./sites.ts";
 
 const listedAppsResponseSchema = z.object({
     apps: z.array(listedAppSchema).describe("The caller's listed apps"),
@@ -123,7 +124,7 @@ const CreateKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "Models this key can use. A category (text, image, video, audio, 3d, embedding, realtime) allows every model in it, including models added later; a model ID or alias from /models allows only that model and is stored as its canonical ID. null = all models",
+            "Models this key can use. A category (text, image, video, audio, 3d, embedding, realtime, decision) allows every model in it, including models added later; a model ID or alias from /models allows only that model and is stored as its canonical ID. null = all models",
         ),
     pollenBudget: z
         .number()
@@ -1017,6 +1018,7 @@ export const accountRoutes = new Hono<Env>()
         c.header("Pragma", "no-cache");
     })
     .route("/agents", agentsRoutes)
+    .route("/sites", sitesRoutes)
     .route("/my-models", communityEndpointsRoutes)
     .route("/promo-codes", promoCodeRedeemRoutes)
     .get(
@@ -2115,7 +2117,7 @@ export const accountRoutes = new Hono<Env>()
                                                 .array(z.string())
                                                 .nullable()
                                                 .describe(
-                                                    "Model categories (text, image, video, audio, 3d, embedding, realtime) and model IDs this key can use, null = all models allowed",
+                                                    "Model categories (text, image, video, audio, 3d, embedding, realtime, decision) and model IDs this key can use, null = all models allowed",
                                                 ),
                                             account: z
                                                 .array(z.string())

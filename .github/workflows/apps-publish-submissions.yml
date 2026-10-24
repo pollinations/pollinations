@@ -49,6 +49,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "22"
+          check-latest: true
           package-manager-cache: false
 
       - name: Install screenshot dependency

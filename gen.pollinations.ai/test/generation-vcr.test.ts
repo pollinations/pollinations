@@ -91,6 +91,7 @@ function createGenerationMocks() {
     env.OPENROUTER_API_KEY = "openrouter-test-key";
     env.AZURE_MYCELI_PROD_API_KEY = "azure-test-key";
     env.DEEPINFRA_API_KEY = "deepinfra-test-key";
+    env.NOVITA_API_KEY = "novita-test-key";
     env.REPLICATE_API_TOKEN = "replicate-test-key";
     const portkeyHost = new URL(env.PORTKEY_GATEWAY_URL).host;
     const portkeyState: {
@@ -99,6 +100,18 @@ function createGenerationMocks() {
     } = {
         requests: [],
         failStatus: null,
+    };
+    const fakeChatProvider = async (request: Request) => {
+        portkeyState.requests.push(
+            (await request.clone().json()) as Record<string, unknown>,
+        );
+        if (portkeyState.failStatus) {
+            return Response.json(
+                { error: { message: "chat provider unavailable" } },
+                { status: portkeyState.failStatus },
+            );
+        }
+        return fakePortkeyResponse(request);
     };
     const replicateState: {
         requests: Array<{
@@ -342,21 +355,9 @@ function createGenerationMocks() {
         portkeyDirect: {
             state: portkeyState,
             handlerMap: {
-                [portkeyHost]: async (request) => {
-                    portkeyState.requests.push(
-                        (await request.clone().json()) as Record<
-                            string,
-                            unknown
-                        >,
-                    );
-                    if (portkeyState.failStatus) {
-                        return Response.json(
-                            { error: { message: "chat provider unavailable" } },
-                            { status: portkeyState.failStatus },
-                        );
-                    }
-                    return fakePortkeyResponse(request);
-                },
+                [portkeyHost]: fakeChatProvider,
+                // Direct chat providers answer like the Portkey gateway.
+                "api.novita.ai": fakeChatProvider,
             },
             reset: () => {
                 portkeyState.requests = [];
@@ -1117,6 +1118,32 @@ test("media text protocols share one edit generation with native edits", async (
     expect(await response.text()).toContain("does not accept image input");
     await wait();
     expect(mocks.deepInfra.state.requests).toHaveLength(1);
+});
+
+test("native image edits reject a text-only model instead of dropping the image", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "deepInfra");
+    const { key } = await createTestApiKey({ user: { packBalance: 100 } });
+    const { response, wait } = await fetchWorker("/v1/images/edits", {
+        method: "POST",
+        headers: {
+            authorization: `Bearer ${key}`,
+            "content-type": "application/json",
+        },
+        body: JSON.stringify({
+            model: "black-forest-labs/flux.1-schnell",
+            prompt: "make the sky purple",
+            image: `data:image/png;base64,${png1x1Base64}`,
+        }),
+    });
+
+    // The model declares text-only input, so a successful response would be an
+    // unrelated generation with the source image silently dropped.
+    expect(response.status, await response.clone().text()).toBe(400);
+    expect(await response.text()).toContain("does not accept image input");
+    await wait();
+    expect(mocks.deepInfra.state.requests).toHaveLength(0);
 });
 
 test("media Responses rejects invalid string input before generation", async ({
@@ -2440,7 +2467,8 @@ test("Responses on a Chat-only model fails without provider usage", async ({
             authorization: `Bearer ${paidApiKey}`,
         },
         body: JSON.stringify({
-            model: "stepfun/step-3.7-flash",
+            // A model without fallbacks, so the missing usage is final.
+            model: "amazon/nova-micro-v1",
             input: "vcr missing chat usage",
         }),
     });
@@ -3143,6 +3171,36 @@ test("simple text supports audio output models", async ({
         tokenCountCompletionAudio: 4,
         isBilledUsage: true,
     });
+});
+
+test("chat completions leave explicit text-only modalities untouched on audio models", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai/gpt-audio-mini",
+            messages: [{ role: "user", content: "vcr text-only modalities" }],
+            modalities: ["text"],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    await response.json();
+    await wait();
+
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
+    expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
+        modalities: ["text"],
+    });
+    expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty("audio");
 });
 
 test("simple text prompts can include slashes", async ({

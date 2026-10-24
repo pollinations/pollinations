@@ -85,6 +85,8 @@ Model approval never authorizes adding, rotating, synchronizing, deploying, revo
   working for keys that stored the old ID only while the old ID stays an
   alias. A model that changes category changes which restricted keys reach
   it; state that in the PR.
+- Models served at `/alpha/decisions` use `category: "decision"`. Keys need
+  `decision` on that route; on chat endpoints, `text` also allows them.
 - Audit every modality registry and every model change merged to `main` since
   the current production revision; production can lag behind `main`.
 - If a model or provider is missing from the registry, check `git log --all -- <path>`

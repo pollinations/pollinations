@@ -50,6 +50,10 @@ Among correct candidates, prefer:
 Treat unrelated edits, generated noise, lockfile churn, duplicated helpers,
 hard-coded copies of dynamic data, mock infrastructure, and contaminated commit
 history as costs. Line count is evidence, not the decision by itself.
+Consider meaningful effort separately from the final diff: real testing,
+investigating failures, responding to feedback, and iterations that simplify
+the solution all count. Do not use lines of code or commit count as proxies;
+effort does not replace correctness or maintainability.
 
 ## Report
 
@@ -65,5 +69,6 @@ Give a concise comparison containing:
 Do not comment, close, edit, or merge contributor PRs unless the user asks. If a
 maintainer follow-up is authorized, keep it minimal and preserve contributor
 attribution. A small bonus for an alternative is exceptional: use it only when
-the alternative was independently strong or materially influenced the shipped
-solution, not merely because it was submitted.
+the alternative was independently strong, materially influenced the shipped
+solution, or contributed valuable testing and thoughtful iteration. State the
+actual reason; do not invent inspiration that did not occur.

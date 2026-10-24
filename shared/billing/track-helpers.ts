@@ -84,6 +84,8 @@ interface DeductionParams {
     apiKeyReservedAmount?: number;
     byopClientKeyId?: string | null;
     modelPaidOnly?: boolean;
+    /** The key never spends paid Pollen, so the charge always takes Quest Pollen. */
+    questPollenOnly?: boolean;
     communityModelReward?: CommunityModelRewardInput | null;
 }
 
@@ -172,6 +174,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     communityModelReward: CommunityModelRewardResolution | null;
     payerBucket: Bucket | null;
     postDeductionPackBalance: number | null;
+    lastPackPollen: number | null;
     billedPrice: number;
 }> {
     const {
@@ -184,6 +187,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         apiKeyReservedAmount,
         byopClientKeyId,
         modelPaidOnly,
+        questPollenOnly,
         communityModelReward: communityModelRewardInput,
     } = params;
 
@@ -210,6 +214,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
             communityModelReward: null,
             payerBucket: null,
             postDeductionPackBalance: null,
+            lastPackPollen: null,
             billedPrice: 0,
         };
     }
@@ -231,6 +236,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
             communityModelReward: null,
             payerBucket: null,
             postDeductionPackBalance: null,
+            lastPackPollen: null,
             billedPrice: 0,
         };
     }
@@ -268,6 +274,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     //    payer drew from, so they are only possible once that bucket is known.
     let payerBucket: Bucket | null = null;
     let postDeductionPackBalance: number | null = null;
+    let lastPackPollen: number | null = null;
     let payerDeducted = !userId;
 
     try {
@@ -277,9 +284,11 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
                 userId,
                 billedPrice,
                 modelPaidOnly,
+                questPollenOnly,
             );
             payerBucket = deduction.bucket;
             postDeductionPackBalance = deduction.postDeductionPackBalance;
+            lastPackPollen = deduction.lastPackPollen;
             payerDeducted = true;
             if (
                 deduction.postDeductionBalance != null &&
@@ -388,6 +397,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         communityModelReward,
         payerBucket,
         postDeductionPackBalance,
+        lastPackPollen,
         billedPrice,
     };
 }
@@ -515,19 +525,27 @@ async function deductUserBalance(
     userId: string,
     amount: number,
     modelPaidOnly?: boolean,
+    questPollenOnly?: boolean,
 ): Promise<{
     bucket: Bucket | null;
     postDeductionPackBalance: number | null;
+    lastPackPollen: number | null;
     postDeductionBalance: number | null;
 }> {
     try {
-        const { ok, bucket, packBalance, postDeductionBalance } =
-            await atomicDeductUserBalance(
-                db,
-                userId,
-                amount,
-                modelPaidOnly ?? false,
-            );
+        const {
+            ok,
+            bucket,
+            packBalance,
+            lastPackPollen,
+            postDeductionBalance,
+        } = await atomicDeductUserBalance(
+            db,
+            userId,
+            amount,
+            modelPaidOnly ?? false,
+            questPollenOnly ?? false,
+        );
         if (!ok) {
             throw new Error(
                 `User balance deduction affected 0 rows for ${userId}`,
@@ -549,6 +567,7 @@ async function deductUserBalance(
         return {
             bucket,
             postDeductionPackBalance: bucket === "pack" ? packBalance : null,
+            lastPackPollen,
             postDeductionBalance,
         };
     } catch (error) {

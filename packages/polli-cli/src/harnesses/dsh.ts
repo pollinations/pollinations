@@ -23,7 +23,7 @@ import type {
 const ID = "dsh";
 const LABEL = "DeepSeek Harness";
 const PROVIDER = "pollinations";
-const DEFAULT_MODEL = "openai/gpt-5.4-nano";
+const DEFAULT_MODEL = "openai/gpt-6-sol";
 const KEY_ENV = "POLLI_DSH_API_KEY";
 const MCP_ID = "mcp-pollinations";
 const MCP_URL = `${BASE_URL}/mcp/pollinations`;

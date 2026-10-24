@@ -2,6 +2,7 @@ import {
     AccountIcon,
     AccountMenu,
     BookIcon,
+    BrandMark,
     BugIcon,
     CheckIcon,
     Chip,
@@ -24,7 +25,6 @@ import {
     WalletIcon,
     XIcon,
 } from "@pollinations/ui";
-import logoWordmarkUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
 import { Link, useRouterState } from "@tanstack/react-router";
 import type {
     ComponentType,
@@ -37,7 +37,7 @@ import type {
     SetStateAction,
 } from "react";
 import { createContext, useCallback, useEffect, useRef, useState } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient, apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
 import {
     QUEST_STATUS_UPDATED_EVENT,
@@ -47,6 +47,7 @@ import {
     DASHBOARD_NAV_ITEMS,
     type DashboardPage,
     type DashboardPath,
+    dashboardNavItems,
 } from "./dashboard-theme.ts";
 
 /** Counts what the page still waits for; the shell shows one status while > 0. */
@@ -63,11 +64,6 @@ type DashboardNavItem = {
     icon: ComponentType<{ className?: string }>;
 };
 
-const brandWordmarkMask: CSSProperties = {
-    WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-    mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-};
-
 type DashboardShellProps = PropsWithChildren<{
     navItems?: readonly DashboardNavItem[];
     accountName?: string;
@@ -75,6 +71,7 @@ type DashboardShellProps = PropsWithChildren<{
     onSignOut?: () => void;
     accountArea?: ReactNode;
     walletArea?: ReactNode;
+    signInBanner?: ReactNode;
     showFooterLinks?: boolean;
     showQuestStatus?: boolean;
 }>;
@@ -123,7 +120,7 @@ const brandLinks: readonly BrandLink[] = [
         count: "5k",
     },
     {
-        href: "https://discord.gg/pollinations-ai-885844321461485618",
+        href: "https://discord.gg/k9F7SyTgqn",
         label: "Discord community",
         icon: <DiscordIcon className="h-full w-full" />,
         text: "discord",
@@ -153,12 +150,13 @@ const accountMenuLinks: readonly AccountMenuLink[] = [
 ];
 
 export const DashboardShell: FC<DashboardShellProps> = ({
-    navItems = DASHBOARD_NAV_ITEMS,
+    navItems = dashboardNavItems(),
     accountName,
     githubAvatarUrl,
     onSignOut,
     accountArea,
     walletArea,
+    signInBanner,
     showFooterLinks = true,
     showQuestStatus = false,
     children,
@@ -357,7 +355,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     >
                         <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 px-4 py-3">
                             <div className="flex items-center justify-between gap-2">
-                                <BrandMark size="drawer" />
+                                <DashboardBrand size="drawer" />
                                 <button
                                     type="button"
                                     className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
@@ -388,9 +386,13 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     )}
                     <ScrollArea
                         ref={mainScrollRef}
-                        className="min-h-0 min-w-0 flex-1 overscroll-contain px-0 pt-16 pb-8 sm:px-4 lg:px-6 lg:pt-10"
+                        className={cn(
+                            "min-h-0 min-w-0 flex-1 overscroll-contain px-0 pb-8 sm:px-4 lg:px-6 lg:pt-10",
+                            signInBanner ? "pt-3" : "pt-16",
+                        )}
                     >
                         <main className="mx-auto flex max-w-[800px] flex-col gap-3">
+                            {signInBanner}
                             {children}
                         </main>
                     </ScrollArea>
@@ -416,7 +418,7 @@ function useQuestNavStatus(enabled: boolean): string | null {
             try {
                 const [catalogResponse, rewardsResponse] = await Promise.all([
                     apiClient.quests.catalog.$get(),
-                    apiClient.quests.rewards.$get(),
+                    accountClient.quests.rewards.$get(),
                 ]);
                 if (!catalogResponse.ok || !rewardsResponse.ok) {
                     throw new Error("Quest status unavailable");
@@ -488,7 +490,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
         aria-label="Dashboard navigation"
     >
         <div className="hidden shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1 lg:flex">
-            <BrandMark size="desktop" />
+            <DashboardBrand size="desktop" />
             <BrandLinks links={brandLinks} />
         </div>
         <ScrollArea
@@ -512,7 +514,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         onClick={onNavigate}
                     >
                         {item.label}
-                        {(item.id === "my-models" ||
+                        {(item.id === "sandboxes" ||
                             (item.id === "quests" && questStatus)) && (
                             <Chip
                                 intent="neutral"
@@ -550,7 +552,7 @@ const MobileMenuButton: FC<{
     </button>
 );
 
-const BrandMark: FC<{ size: "desktop" | "drawer" }> = ({ size }) => (
+const DashboardBrand: FC<{ size: "desktop" | "drawer" }> = ({ size }) => (
     <a
         href="https://pollinations.ai"
         target="_blank"
@@ -559,13 +561,9 @@ const BrandMark: FC<{ size: "desktop" | "drawer" }> = ({ size }) => (
         aria-label="Pollinations"
     >
         <span className="sr-only">Pollinations</span>
-        <span
-            aria-hidden="true"
-            className={cn(
-                "block shrink-0 bg-current",
-                size === "desktop" ? "h-6 w-[195px]" : "h-5 w-[162px]",
-            )}
-            style={brandWordmarkMask}
+        <BrandMark
+            variant="lockup"
+            className={size === "desktop" ? "h-6 w-[195px]" : "h-5 w-[162px]"}
         />
     </a>
 );
@@ -578,11 +576,13 @@ const BrandLinks: FC<{ links: readonly BrandLink[] }> = ({ links }) => (
     </div>
 );
 
+// No noreferrer: GitHub's traffic report credits enter.pollinations.ai only
+// when the referrer travels, and it is our only count of clicks to the repo.
 const BrandLinkRow: FC<BrandLink> = ({ href, label, icon, text, count }) => (
     <a
         href={href}
         target="_blank"
-        rel="noopener noreferrer"
+        rel="noopener"
         aria-label={label}
         className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-surface-opaque/55 py-[3px] pr-[10px] pl-[7px] text-micro font-medium leading-none text-theme-text-strong/80 transition-colors hover:border-theme-text-strong/15 hover:bg-surface-opaque hover:text-theme-text-strong"
     >

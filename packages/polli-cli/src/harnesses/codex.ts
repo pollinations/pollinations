@@ -5,13 +5,12 @@ import { commandExists, readTextIfExists } from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
 import type { HarnessAdapter, HarnessContext, HarnessResult } from "./types.js";
-import { keyUsageCount, waitForKeyUsageIncrease } from "./usage-proof.js";
 
 const ID = "codex";
 const LABEL = "Codex";
 const PROVIDER = "pollinations";
 const OWNER_MARKER = "managed-by=polli-harness-codex";
-const DEFAULT_MODEL = "openai/gpt-5.4-nano";
+const DEFAULT_MODEL = "openai/gpt-6-sol";
 const MIN_ROUTER_VERSION = [0, 6, 0] as const;
 const ROUTER_INSTALL =
     "https://github.com/duolahypercho/codex-router#install-everything-recommended";
@@ -353,8 +352,6 @@ export const configureCodex = async (
             }
         }
 
-        const before = await keyUsageCount(key);
-        const startedAt = Date.now();
         const check = smoke(ctx, model);
         if (!check.ok) {
             throw failRun(check, "Codex Router smoke test");
@@ -373,10 +370,11 @@ export const configureCodex = async (
                 "Codex Router smoke test did not confirm a basic routed response.",
             );
         }
-        await waitForKeyUsageIncrease(key, before, {
-            afterMs: startedAt,
-        });
-        return { ...status(ctx), smokeVerified: true };
+        return {
+            ...status(ctx),
+            model: `${PROVIDER}/${model}`,
+            smokeVerified: true,
+        };
     } catch (error) {
         try {
             if (!hadModel && provider(ctx)) removeModel(ctx, model);

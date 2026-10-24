@@ -11,6 +11,7 @@ import { Await, useLoaderData } from "@tanstack/react-router";
 import type { FC, KeyboardEvent, ReactNode } from "react";
 import { useDeferredValue } from "react";
 import { PageStatus } from "../layout/dashboard-loading.tsx";
+import { saveBlob } from "./activity-csv";
 import { formatActivityPollen } from "./format-activity-pollen";
 import type { Metric } from "./types";
 
@@ -135,13 +136,17 @@ export const ActivityEmptyState: FC<{ children: ReactNode }> = ({
     </div>
 );
 
-export function downloadFile(url: string): void {
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.rel = "noopener";
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
+/**
+ * Saves a fetched attachment under the server's file name. The account API
+ * takes a bearer token, which a plain link navigation can't send.
+ */
+export async function downloadFile(response: Response): Promise<void> {
+    if (!response.ok) throw new Error(`Download failed (${response.status})`);
+    const filename =
+        response.headers
+            .get("Content-Disposition")
+            ?.match(/filename="([^"]+)"/)?.[1] ?? "download.csv";
+    saveBlob(await response.blob(), filename);
 }
 
 export function formatActivityChartDate(

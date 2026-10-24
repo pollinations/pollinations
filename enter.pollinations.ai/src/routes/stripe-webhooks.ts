@@ -10,6 +10,7 @@ import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import {
     creditAutoTopUpInvoice,
     markAutoTopUpInvoiceFailed,
+    saveCheckoutCardAsDefault,
 } from "../utils/stripe-billing/index.ts";
 import { recordStripeCardFingerprintAttempt } from "../utils/stripe-card-gate.ts";
 
@@ -240,9 +241,11 @@ async function creditCheckoutSessionOnce({
                 SET pack_balance = ROUND(
                     COALESCE(pack_balance, 0) + ?,
                     ${POLLEN_BILLING_PRECISION}
-                )
+                ),
+                last_pack_pollen = ?,
+                low_balance_notified_at = NULL
                 WHERE id = ?`,
-            ).bind(creditsToAdd, userId),
+            ).bind(creditsToAdd, creditsToAdd, userId),
         ]);
 
         if ((updateResult.meta.changes ?? 0) !== 1) {
@@ -655,6 +658,10 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         c.env,
                     );
 
+                    if (result.success) {
+                        await saveCheckoutCardAsDefault(stripe, session);
+                    }
+
                     if (result.duplicate) {
                         break;
                     }
@@ -682,6 +689,10 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     session,
                     c.env,
                 );
+
+                if (result.success) {
+                    await saveCheckoutCardAsDefault(stripe, session);
+                }
 
                 if (result.duplicate) {
                     break;

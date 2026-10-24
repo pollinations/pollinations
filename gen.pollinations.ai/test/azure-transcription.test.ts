@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { transcribeMai } from "../src/audio/mai-transcription.ts";
 import { transcribeWithAzure } from "../src/routes/audio.ts";
 
 describe("transcribeWithAzure", () => {
@@ -48,6 +49,30 @@ describe("transcribeWithAzure", () => {
         });
     });
 
+    it("answers text from Azure's json, which carries the billed duration", async () => {
+        const fetchMock = vi.fn().mockResolvedValueOnce(
+            Response.json({
+                text: "hello from Azure",
+                usage: { type: "duration", seconds: 60 },
+            }),
+        );
+        vi.stubGlobal("fetch", fetchMock);
+
+        const response = await transcribeWithAzure({
+            file: new File(["audio"], "audio.wav"),
+            responseFormat: "text",
+            apiKey: "test-key",
+        });
+
+        const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+        expect((init.body as FormData).get("response_format")).toBe("json");
+        expect(response.headers.get("content-type")).toBe(
+            "text/plain; charset=utf-8",
+        );
+        expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("60");
+        expect(await response.text()).toBe("hello from Azure");
+    });
+
     it("rejects unsupported response formats before calling Azure", async () => {
         const fetchMock = vi.fn();
         vi.stubGlobal("fetch", fetchMock);
@@ -80,4 +105,30 @@ describe("transcribeWithAzure", () => {
             }),
         ).rejects.toMatchObject({ status: 502 });
     });
+});
+
+describe("MAI request validation", () => {
+    it.each([
+        { responseFormat: "srt" },
+        { responseFormat: "vtt" },
+        { responseFormat: "diarized_json" },
+        { language: "en" },
+        { prompt: "vocabulary hint" },
+        { temperature: 0.2 },
+    ])(
+        "rejects unsupported controls before any provider call: %j",
+        async (options) => {
+            // An absent credential proves validation runs before provider access.
+            await expect(
+                transcribeMai({
+                    file: new File(["audio"], "audio.wav", {
+                        type: "audio/wav",
+                    }),
+                    modelId: "microsoft/mai-transcribe-2",
+                    apiKey: "",
+                    ...options,
+                }),
+            ).rejects.toMatchObject({ status: 400 });
+        },
+    );
 });

@@ -120,6 +120,46 @@ test("signed-out views are recorded without a user and pass attribution through"
     ]);
 });
 
+test("website views come only from the sibling site and keep their own event", async () => {
+    const originalFetch = globalThis.fetch;
+    const rows: Record<string, unknown>[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        if (
+            new URL(String(input)).searchParams.get("name") === "product_event"
+        ) {
+            rows.push(JSON.parse(String(init?.body)));
+            return new Response(null, { status: 202 });
+        }
+        return originalFetch(input, init);
+    });
+    const websiteView = async (page: string, origin: string) => {
+        const ctx = createExecutionContext();
+        const response = await productAnalyticsRoutes.fetch(
+            new Request(
+                `https://enter.pollinations.ai/website-page-view?${new URLSearchParams({ page, utm_source: "reddit" })}`,
+                { method: "POST", headers: { Origin: origin } },
+            ),
+            env,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        return response.status;
+    };
+    expect(await websiteView("/play", "https://pollinations.ai")).toBe(204);
+    expect(await websiteView("/play", "https://enter.pollinations.ai")).toBe(
+        403,
+    );
+    expect(await websiteView("/keys", "https://pollinations.ai")).toBe(400);
+    expect(rows).toEqual([
+        expect.objectContaining({
+            event: "website_page_viewed",
+            page: "/play",
+            utm_source: "reddit",
+            user_id: "",
+        }),
+    ]);
+});
+
 test("views record the visitor's country from Cloudflare, never the IP", async () => {
     const originalFetch = globalThis.fetch;
     const rows: Record<string, unknown>[] = [];
@@ -262,12 +302,19 @@ test("signing in records the request to GitHub and the resulting session", async
     // The start carries the page it came from, so the funnel can divide it by
     // views of that same page.
     expect(signIn[0]?.page).toBe("/sign-in");
+    // Every stage names the provider, so GitHub and Google funnels separate.
+    expect(signIn.map((row) => row.provider)).toEqual([
+        "github",
+        "github",
+        "github",
+    ]);
     // A first sign-in also created the user, which is what separates new from
     // returning without joining the daily d1_user snapshot.
     const signup = mocks.tinybird.state.productEvents.find(
         (row) => row.event === "signup_completed",
     );
     expect(signup?.user_id).toBe(signIn[2]?.user_id);
+    expect(signup?.provider).toBe("github");
 });
 
 test("a start from an untracked page stays out of the funnel ratio", async ({

@@ -1,6 +1,6 @@
 import { applyD1Migrations, env } from "cloudflare:test";
+import { resetStorageBeforeEach } from "@shared/test/reset-storage.ts";
 
-// Setup files run outside isolated storage, and may be run multiple times.
-// `applyD1Migrations()` only applies migrations that haven't already been
-// applied, therefore it is safe to call this function here.
+// Storage is isolated per test file, so every file starts with an empty D1.
 await applyD1Migrations(env.DB, env.TEST_MIGRATIONS);
+resetStorageBeforeEach({ db: env.DB, r2: [env.MEDIA_BUCKET] });

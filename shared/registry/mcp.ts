@@ -47,6 +47,7 @@ export type McpBindingName =
     | "EXA_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP"
+    | "MACHINES_MCP"
     | "VAULT_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
@@ -193,9 +194,9 @@ export const MCP_SERVERS = [
     },
     {
         id: "composio",
-        name: "Connected Apps",
+        name: "Connectors",
         description:
-            "Read Gmail, search GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
+            "Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
         binding: "COMPOSIO_MCP",
         billing: "usage_receipt",
         provider: "composio",
@@ -207,12 +208,25 @@ export const MCP_SERVERS = [
         id: "computer",
         name: "Computer",
         description:
-            "A private persistent computer: files and a bash shell that survive between runs.",
+            "A private persistent computer: files that survive between runs, a bash shell and JavaScript.",
         binding: "COMPUTER_MCP",
         billing: "usage_receipt",
         provider: "cloudflare",
         userScoped: true,
         pricing: COMPUTER_MCP_PRICING,
+    },
+    {
+        id: "machines",
+        name: "Machines",
+        description:
+            "Start, pause, resume, and run commands and file operations in Linux sandboxes.",
+        binding: "MACHINES_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+            rates: [],
+        },
     },
     {
         id: "vault",

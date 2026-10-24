@@ -3,7 +3,7 @@ DESCRIPTION >
     Includes production plus the isolated debug-prod-copy staging fixture.
     Reportable production history begins after the known January window.
     traffic_group comes from generation_events_classified, so dashboards can
-    show legacy bridge traffic, everything else, or both.
+    select regular usage while retaining legacy, operations and dev totals.
 
 NODE generation_usage_hourly_mv_node
 SQL >
@@ -94,6 +94,8 @@ SQL >
                 if(response_status >= 200 AND response_status < 300, token_count_completion_image, 0)
             )
         ) AS completion_image_tokens,
+        sumState(if(response_status >= 200 AND response_status < 300, usage_prompt_image_units, 0)) AS prompt_image_units,
+        sumState(if(response_status >= 200 AND response_status < 300, usage_completion_image_units, 0)) AS completion_image_units,
         sumState(
             if(response_status >= 200 AND response_status < 300, token_count_prompt_audio_seconds, 0)
         ) AS prompt_audio_seconds,
@@ -128,3 +130,5 @@ SQL >
 
 TYPE MATERIALIZED
 DATASOURCE generation_usage_hourly
+
+DEPLOYMENT_METHOD alter

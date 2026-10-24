@@ -50,7 +50,7 @@ describe("AppUserMenu", () => {
 
     afterEach(() => vi.unstubAllGlobals());
 
-    test("renders the branded connect pill when logged out", () => {
+    test("renders the bordered brand button with an inline mark when logged out", () => {
         sdk.auth.isLoggedIn = false;
 
         const html = renderMenu();
@@ -58,6 +58,10 @@ describe("AppUserMenu", () => {
         expect(html).toContain("Pollinations Connect");
         expect(html).toContain("mask:url(");
         expect(html.match(/mask:url\(/g)).toHaveLength(2);
+        expect(html).toContain('data-intent="brand"');
+        expect(html).toContain("polli:border-theme-text-soft");
+        expect(html).not.toContain("polli:gap-0");
+        expect(html).not.toContain("polli:h-full");
     });
 
     test("shows Permissions only when the connected key has an id", () => {
@@ -68,12 +72,49 @@ describe("AppUserMenu", () => {
         expect(renderMenu()).not.toContain("Permissions");
     });
 
+    test("enlarges only the logged-out action when requested", () => {
+        sdk.auth.isLoggedIn = false;
+        expect(renderMenu()).toContain("polli:h-10");
+        const large = renderToStaticMarkup(<AppUserMenu connectSize="lg" />);
+        expect(large).toContain("polli:h-12");
+        expect(large).toContain("polli:text-base");
+        expect(large).toContain("polli:px-5");
+
+        sdk.auth.isLoggedIn = true;
+        expect(renderToStaticMarkup(<AppUserMenu connectSize="lg" />)).toBe(
+            renderMenu(),
+        );
+    });
+
     test("shows the connected key budget", () => {
         const html = renderMenu();
 
         expect(html).toContain("App budget:");
         expect(html).toContain("5");
         expect(html).not.toContain("Unlimited");
+    });
+
+    test("customizes the menu without hiding the balance or account actions", () => {
+        const html = renderToStaticMarkup(
+            <AppUserMenu
+                showBuyPollen={false}
+                menuLinks={[
+                    { label: "Need help?", href: "https://example.com/help" },
+                ]}
+            />,
+        );
+        expect(html).not.toContain("Buy Pollen");
+        expect(html).toContain("App budget:");
+        expect(html).toContain("Permissions");
+        expect(html).toContain("Disconnect");
+        expect(html).toContain('href="https://example.com/help"');
+        expect(html.indexOf("Need help?")).toBeLessThan(html.indexOf("<hr"));
+        expect(html.indexOf("<hr")).toBeLessThan(html.indexOf("Permissions"));
+        expect(html.indexOf("Permissions")).toBeLessThan(
+            html.indexOf("Disconnect"),
+        );
+        expect(renderMenu()).not.toContain("<hr");
+        expect(renderMenu()).toContain("Buy Pollen");
     });
 
     test("shows the wallet for an unlimited key with usage permission", () => {
@@ -86,8 +127,8 @@ describe("AppUserMenu", () => {
 
         const html = renderMenu();
 
-        expect(html).toContain("Quest Pollen:");
-        expect(html).toContain("Paid Pollen:");
+        expect(html).toContain("Quest pollen:");
+        expect(html).toContain("Paid pollen:");
         expect(html).not.toContain("Unlimited");
     });
 

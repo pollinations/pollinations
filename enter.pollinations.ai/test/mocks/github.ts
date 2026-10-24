@@ -157,13 +157,12 @@ export function createMockGithub(): MockAPI<MockGithubState> {
             }
 
             const author = search.match(/\bauthor:([^\s]+)/)?.[1];
+            const label = search.match(/\blabel:([^\s]+)/)?.[1];
             const issues = state.questIssues.filter(
                 (issue) =>
                     (!author || issue.user?.login === author) &&
-                    (!search.includes("label:POLLEN-QUEST") ||
-                        issue.labels?.some(
-                            (label) => label.name === "POLLEN-QUEST",
-                        )),
+                    (!label ||
+                        issue.labels?.some(({ name }) => name === label)),
             );
             const start = Number(body.variables?.after ?? 0);
             const nodes = issues.slice(start, start + 100).map((issue) => ({

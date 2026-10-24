@@ -69,6 +69,86 @@ afterEach(() => {
 });
 
 describe("System One adapter", () => {
+    it("forwards respan/span-01-lite's provider pin on the native wire", async () => {
+        const config = findModelByName("respan/span-01-lite")?.config();
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (_input, init) => {
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    provider: {
+                        "only": ["respan"],
+                        "ignore": ["cloudflare"],
+                        "allow_fallbacks": false,
+                    },
+                    model: "respan/span-01-lite",
+                });
+                return Response.json({
+                    model: "respan/span-01-lite",
+                    answers,
+                    usage: { input_tokens: 44, output_tokens: 1 },
+                });
+            });
+        await callSystemOne(
+            [
+                {
+                    role: "user",
+                    content: JSON.stringify({
+                        state: nativeState,
+                        questions: {
+                            urgent: {
+                                type: "noul",
+                                instructions: "Is this urgent?",
+                            },
+                        },
+                    }),
+                },
+            ],
+            {
+                modelConfig: { ...config, authKey: "test-key" },
+                provider: { only: ["cloudflare"] },
+            },
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it.each(["typesafe/jev-1.13", "typesafe/jev-1.13:openrouter:typesafe"])(
+        "forwards Jev route pins without changing native question shapes: %s",
+        async (model) => {
+            const config: Record<string, unknown> = {
+                ...findModelByName(model)?.config(),
+                authKey: "test-key",
+            };
+            const fetchSpy = vi
+                .spyOn(globalThis, "fetch")
+                .mockImplementationOnce(async (input, init) => {
+                    expect(String(input)).toBe(config.directEndpoint);
+                    expect(JSON.parse(String(init?.body))).toEqual({
+                        ...(config.defaultOptions as Record<string, unknown>),
+                        model: config.model,
+                        state: nativeState,
+                        questions: nativeQuestions,
+                    });
+                    return Response.json({
+                        model: config.model,
+                        answers,
+                        usage: { input_tokens: 430, output_tokens: 62 },
+                    });
+                });
+            const result = await callSystemOne(
+                [{ role: "user", content: nativeContent }],
+                { modelConfig: config },
+            );
+            expect(fetchSpy).toHaveBeenCalledTimes(1);
+            expect(
+                JSON.parse(String(result.choices?.[0]?.message?.content)),
+            ).toEqual(answers);
+            expect(result.usage).toMatchObject({
+                prompt_tokens: 430,
+                completion_tokens: 62,
+            });
+        },
+    );
+
     it("rejects D3 question counts above its local limit before calling upstream", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
         await expect(
@@ -341,7 +421,7 @@ describe("System One adapter", () => {
             const result = await generateTextPortkey(
                 [{ role: "user", content: nativeContent }],
                 {
-                    model: "liquid/d1:vercel",
+                    model: "liquid/d1",
                     stream,
                     modelConfig: {
                         ...modelConfig,
@@ -380,6 +460,11 @@ describe("System One adapter", () => {
                 );
                 expect(JSON.parse(String(init?.body))).toMatchObject({
                     model: "openai/gpt-6-luna-decisions",
+                    provider: {
+                        only: ["openai"],
+                        ignore: ["cloudflare"],
+                        allow_fallbacks: false,
+                    },
                 });
                 return Response.json({
                     model: "openai/gpt-6-luna-decisions-20261006",
@@ -392,8 +477,10 @@ describe("System One adapter", () => {
             {
                 model: "openai/gpt-6-luna-decisions:openrouter",
                 modelConfig: {
-                    ...modelConfig,
-                    model: "openai/gpt-6-luna-decisions",
+                    ...findModelByName(
+                        "openai/gpt-6-luna-decisions:openrouter",
+                    )?.config(),
+                    authKey: "test-key",
                 },
             },
             vi.fn(),
@@ -484,7 +571,14 @@ describe("System One adapter", () => {
                                 probability: 0.98,
                             },
                         ],
-                        usage: { input_tokens: 61, output_tokens: 0 },
+                        usage: {
+                            input_tokens: 61,
+                            output_tokens: 0,
+                            input_tokens_details: {
+                                cached_tokens: 20,
+                                cache_write_tokens: 30,
+                            },
+                        },
                     });
                 },
             );
@@ -519,6 +613,10 @@ describe("System One adapter", () => {
                 prompt_tokens: 61,
                 completion_tokens: 0,
                 total_tokens: 61,
+                prompt_tokens_details: {
+                    cached_tokens: 20,
+                    cache_write_tokens: 30,
+                },
             });
             if (stream) {
                 if (!result.responseStream) throw new Error("Missing stream");
@@ -526,6 +624,8 @@ describe("System One adapter", () => {
                     requireChatStreamUsage(result.responseStream),
                 ).text();
                 expect(text).toContain('"prompt_tokens":61');
+                expect(text).toContain('"cached_tokens":20');
+                expect(text).toContain('"cache_write_tokens":30');
                 expect(text).toContain("data: [DONE]");
             }
         },
@@ -589,6 +689,35 @@ describe("System One adapter", () => {
         expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 
+    it.each(["vercel", "openrouter"])(
+        "forwards Microsoft Decision-1's %s pin to its native request",
+        async (provider) => {
+            const config = findModelByName(
+                `microsoft/microsoft-decision-1:${provider}`,
+            )?.config();
+            const fetchSpy = vi
+                .spyOn(globalThis, "fetch")
+                .mockImplementationOnce(async (_input, init) => {
+                    expect(JSON.parse(String(init?.body))).toEqual({
+                        ...(config?.defaultOptions as Record<string, unknown>),
+                        state: nativeState,
+                        questions: nativeQuestions,
+                        model: "microsoft/microsoft-decision-1",
+                    });
+                    return Response.json({
+                        model: "microsoft-decision-1",
+                        answers,
+                        usage: { input_tokens: 44, output_tokens: 1 },
+                    });
+                });
+            await callSystemOne([{ role: "user", content: nativeContent }], {
+                modelConfig: { ...config, authKey: "test-key" },
+                provider: { only: ["cloudflare"] },
+            });
+            expect(fetchSpy).toHaveBeenCalledTimes(1);
+        },
+    );
+
     it("routes microsoft/microsoft-decision-1 to its Azure deployment with an api-key header", async () => {
         const azureEndpoint =
             "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/microsoft/v1/systemone";
@@ -623,6 +752,60 @@ describe("System One adapter", () => {
         );
         expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
+
+    it("forwards jaredpalmer/kev-4b's provider pin on the native wire", async () => {
+        const config = findModelByName("jaredpalmer/kev-4b")?.config();
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (_input, init) => {
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    provider: {
+                        "only": ["siliconflow/fp8"],
+                        "ignore": ["cloudflare"],
+                        "allow_fallbacks": false,
+                    },
+                    model: "jaredpalmer/kev-4b",
+                });
+                return Response.json({
+                    model: "jaredpalmer/kev-4b",
+                    answers,
+                    usage: { input_tokens: 44, output_tokens: 1 },
+                });
+            });
+        await callSystemOne([{ role: "user", content: nativeContent }], {
+            modelConfig: { ...config, authKey: "test-key" },
+            provider: { only: ["cloudflare"] },
+        });
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it.each(["liquid/d1", "liquid/d1:openrouter"])(
+        "forwards Liquid D1's configured native pin for %s",
+        async (model) => {
+            const config = findModelByName(model)?.config();
+            const fetchSpy = vi
+                .spyOn(globalThis, "fetch")
+                .mockImplementationOnce(async (url, init) => {
+                    expect(String(url)).toBe(config?.directEndpoint);
+                    expect(JSON.parse(String(init?.body))).toEqual({
+                        ...(config?.defaultOptions as Record<string, unknown>),
+                        state: nativeState,
+                        questions: nativeQuestions,
+                        model: "liquid/d1",
+                    });
+                    return Response.json({
+                        model: "liquid/d1",
+                        answers,
+                        usage: { input_tokens: 95, output_tokens: 3 },
+                    });
+                });
+            await callSystemOne([{ role: "user", content: nativeContent }], {
+                modelConfig: { ...config, authKey: "test-key" },
+                provider: { only: ["cloudflare"] },
+            });
+            expect(fetchSpy).toHaveBeenCalledTimes(1);
+        },
+    );
 
     it("forwards native state and questions in one message and returns native answers", async () => {
         const fetchSpy = vi
@@ -911,3 +1094,25 @@ describe("System One adapter", () => {
         ).rejects.toMatchObject({ status: 502 });
     });
 });
+
+it.each(["cached_tokens", "cache_write_tokens"])(
+    "rejects negative Decisions %s",
+    async (field) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                model: "gpt-6-luna-decisions",
+                answers,
+                usage: {
+                    input_tokens: 100,
+                    output_tokens: 0,
+                    input_tokens_details: { [field]: -1 },
+                },
+            }),
+        );
+        await expect(
+            callSystemOne([{ role: "user", content: nativeContent }], {
+                modelConfig,
+            }),
+        ).rejects.toMatchObject({ status: 502 });
+    },
+);

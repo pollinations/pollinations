@@ -163,6 +163,37 @@ describe("registry fallback linking", () => {
         ).toEqual(["primary", "target"]);
     });
 
+    it("keeps the balance-class rule for registry declarations", () => {
+        const freePrimary = registryEntry("free-primary", [
+            "paid-target",
+            "free-target",
+        ]);
+        const paidPrimary = registryEntry("paid-primary", [
+            "paid-target",
+            "free-target",
+        ]);
+        paidPrimary.definition.paidOnly = true;
+        const paidTarget = registryEntry("paid-target");
+        paidTarget.definition.paidOnly = true;
+        const freeTarget = registryEntry("free-target");
+        const entries = [freePrimary, paidPrimary, paidTarget, freeTarget];
+
+        linkFallbackEntries(
+            entries,
+            new Map(entries.map((entry) => [entry.id, entry])),
+        );
+
+        // A non-paid-only primary cannot reach a paid-only target; a
+        // paid-only primary may fall back to either kind.
+        expect(freePrimary.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "free-target",
+        ]);
+        expect(paidPrimary.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "paid-target",
+            "free-target",
+        ]);
+    });
+
     it("does not apply the community fallback cap to registry declarations", () => {
         const targetIds = ["one", "two", "three", "four"];
         const primary = registryEntry("primary", targetIds);

@@ -336,6 +336,17 @@ export function linkFallbackEntries(
                     continue;
                 }
                 if (!isUsableCommunityFallback(entry, target)) continue;
+            } else if (
+                !isCommunityFallbackBalanceAllowed(
+                    entry.definition,
+                    target.definition,
+                )
+            ) {
+                // Same balance-class rule as community primaries: admission,
+                // pricing and settlement stay keyed to the primary, so a
+                // non-paid-only primary must never be served by a paid-only
+                // target.
+                continue;
             }
             if (targets.some((linked) => linked.id === target.id)) continue;
             targets.push({ ...target, fallbackEntries: undefined });

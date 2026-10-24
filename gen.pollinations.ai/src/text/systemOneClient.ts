@@ -280,7 +280,13 @@ export async function requestDecision(
                           input: decisionText(state),
                           questions: toOpenAIQuestions(questions),
                       }
-                    : { ...(d3 ? toD3Request(request) : request), model },
+                    : {
+                          ...(options.modelConfig?.defaultOptions as
+                              | Record<string, unknown>
+                              | undefined),
+                          ...(d3 ? toD3Request(request) : request),
+                          model,
+                      },
             ),
         });
         await ensureUpstreamOk(response, requestUrl);

@@ -9,6 +9,21 @@ import { perMillion } from "./price-helpers";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
+    "google/gemini-nano-banana-2.1": {
+        "google/gemini-nano-banana-2.1:vercel": {
+            provider: "vercel",
+            // Pinned to Google. Record the gateway's reported charge; its
+            // cached input is billed at full rate. Keep the caller's Vertex
+            // price, including the cache discount, on this fallback.
+            cost: {
+                promptTextTokens: perMillion(1.5),
+                promptImageTokens: perMillion(1.5),
+                promptCachedTokens: perMillion(1.5),
+                completionTextTokens: perMillion(7.5),
+                completionImageTokens: perMillion(30),
+            },
+        },
+    },
     "alibaba/wan-2.7-image": {
         "alibaba/wan-2.7-image:replicate": { provider: "replicate" },
     },

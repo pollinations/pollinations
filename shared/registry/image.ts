@@ -390,18 +390,19 @@ const IMAGE_BASE_SERVICES = {
     },
     "google/gemini-nano-banana-2.1": {
         aliases: [],
-        provider: "openrouter",
+        provider: "google",
         publisher: "Google",
         category: "image",
         addedDate: new Date("2026-10-06").getTime(),
         paidOnly: true,
         priceMultiplier: 1.055,
         cost: {
-            // Google AI Studio via OpenRouter, including the 5.5% credit fee.
-            promptTextTokens: perMillion(1.5) * 1.055, // per 1M tokens
-            promptImageTokens: perMillion(1.5) * 1.055, // per 1M tokens
-            completionTextTokens: perMillion(7.5) * 1.055, // text/reasoning output tokens
-            completionImageTokens: perMillion(30) * 1.055, // per 1M tokens
+            // Vertex global standard pricing; cached input includes images.
+            promptTextTokens: perMillion(1.5),
+            promptImageTokens: perMillion(1.5),
+            promptCachedTokens: perMillion(0.15),
+            completionTextTokens: perMillion(7.5),
+            completionImageTokens: perMillion(30),
         },
         title: "Nano Banana 2.1",
         description:

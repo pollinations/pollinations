@@ -13,6 +13,7 @@ import {
     toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 import { resolveKreaAspectRatio } from "./kreaModel.ts";
+import { buildPImageInput } from "./prunaModel.ts";
 
 type ReplicateFallbackModel =
     | "black-forest-labs/flux.1-kontext-pro:replicate"
@@ -20,6 +21,7 @@ type ReplicateFallbackModel =
     // Replicate is FLUX.2 Max's primary route (Azure has no Max deployment),
     // so this id carries no ":replicate" suffix, unlike every other case here.
     | "black-forest-labs/flux.2-max"
+    | "prunaai/p-image:replicate"
     | "prunaai/p-image-edit:replicate"
     | "krea/krea-2-medium:replicate";
 
@@ -146,6 +148,14 @@ export async function callReplicateFallbackImage(
                     seed: params.seed,
                 },
                 "FLUX.1 Kontext Pro",
+            );
+            break;
+        }
+        case "prunaai/p-image:replicate": {
+            buffer = await runReplicateImage(
+                "prunaai/p-image",
+                { ...buildPImageInput(prompt, params) },
+                "Pruna p-image",
             );
             break;
         }

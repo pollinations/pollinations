@@ -185,6 +185,74 @@ describe("text cache", () => {
         expect(otherCaller).not.toBe(first);
     });
 
+    it("keeps paid-only model responses per caller, never shared or keyless", async () => {
+        let originHits = 0;
+        const app = new Hono<TestEnv>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "test-request");
+                await next();
+            })
+            .post(
+                "/v1/chat/completions/:tier",
+                (c, next) => {
+                    // resolveModel and auth have run before the cache does.
+                    c.set("model", {
+                        definition: {
+                            paidOnly: c.req.param("tier") === "paid",
+                        },
+                    } as ModelVariables["model"]);
+                    const keyId = c.req.header("x-test-key");
+                    (
+                        c as unknown as { set: (k: string, v: unknown) => void }
+                    ).set("auth", {
+                        apiKey: keyId ? { id: keyId } : undefined,
+                    });
+                    return next();
+                },
+                textCache,
+                async () => {
+                    originHits += 1;
+                    return new Response(`generation:${originHits}`, {
+                        headers: { "Content-Type": "text/plain" },
+                    });
+                },
+            );
+        const env = createTextCacheEnv();
+        const send = async (tier: string, key?: string) => {
+            const result = await dispatch(
+                app,
+                `/v1/chat/completions/${tier}`,
+                {
+                    ...chatInit({
+                        model: "m",
+                        messages: [{ role: "user", content: "same prompt" }],
+                    }),
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...(key ? { "x-test-key": key } : {}),
+                    },
+                },
+                env,
+            );
+            const cache = result.response.headers.get("X-Cache");
+            await consumeAndWait(result);
+            return cache;
+        };
+
+        // Paid-only: same caller hits, other caller and keyless miss.
+        expect(await send("paid", "key-a")).toBe("MISS");
+        expect(await send("paid", "key-a")).toBe("HIT");
+        expect(await send("paid", "key-b")).toBe("MISS");
+        expect(await send("paid")).toBe("MISS");
+        expect(originHits).toBe(3);
+
+        // Models that are not paid-only keep the shared, public cache.
+        expect(await send("free", "key-a")).toBe("MISS");
+        expect(await send("free", "key-b")).toBe("HIT");
+        expect(await send("free")).toBe("HIT");
+    });
+
     it("serves cached responses before auth while misses still require auth", async () => {
         let originHits = 0;
         const app = new Hono<TestEnv>()

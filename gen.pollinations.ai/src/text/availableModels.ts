@@ -218,6 +218,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["openai/gpt-4o-mini"],
     },
     {
+        name: "openai/gpt-4o-mini:openrouter:openai",
+        config: portkeyConfig["gpt-4o-mini-openrouter"],
+    },
+    {
         name: "openai/gpt-5.3-codex",
         config: portkeyConfig["gpt-5.3-codex"],
         transform: omitOpenAISampling,
@@ -339,6 +343,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen/qwen3-coder-30b-a3b-instruct",
+        config: portkeyConfig["qwen-coder-openrouter"],
+        transform: pipe(stripReasoning, omitParameters("stop")),
+    },
+    {
+        name: "qwen/qwen3-coder-30b-a3b-instruct:aws",
         config: portkeyConfig["qwen-coder-bedrock"],
         // No default coding prompt: it makes Bedrock narrate before a tool
         // call, leaking raw <function=...> text. Qwen3-Coder has no reasoning
@@ -422,6 +431,11 @@ const models: ModelDefinition[] = [
         name: "qwen/qwen3-vl-30b-a3b-instruct",
         config: portkeyConfig["qwen/qwen3-vl-30b-a3b-instruct"],
         // Vision model, no reasoning mode.
+        transform: stripReasoning,
+    },
+    {
+        name: "qwen/qwen3-vl-30b-a3b-instruct:openrouter:deepinfra",
+        config: portkeyConfig["qwen3-vl-30b-openrouter"],
         transform: stripReasoning,
     },
     {
@@ -670,6 +684,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "anthropic/claude-opus-5.5:fast",
+        config: portkeyConfig["claude-opus-5.5-fast-vercel"],
+        transform: pipe(mandatoryReasoning, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-opus-5.5:fast:openrouter:anthropic-fast",
         config: portkeyConfig["claude-opus-5.5-fast-openrouter-anthropic-fast"],
         transform: pipe(mandatoryReasoning, omitClaudeSampling),
     },
@@ -863,6 +882,11 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "typesafe/jev-1.13:openrouter:typesafe",
+        config: portkeyConfig["typesafe/jev-1.13:openrouter:typesafe"],
+        useSystemOneApi: true,
+    },
+    {
         name: "jaredpalmer/kev-4b",
         config: portkeyConfig["kev-4b"],
         useSystemOneApi: true,
@@ -906,8 +930,8 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
-        name: "liquid/d1:vercel",
-        config: portkeyConfig["liquid/d1:vercel"],
+        name: "liquid/d1:openrouter",
+        config: portkeyConfig["liquid/d1:openrouter"],
         useSystemOneApi: true,
     },
     {

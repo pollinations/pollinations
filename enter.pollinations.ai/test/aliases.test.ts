@@ -231,10 +231,10 @@ test("GPT Audio 1.5 uses the exact Azure Global meter sheet", () => {
     });
 });
 
-test("Seedream 5 Pro uses Replicate and requires paid balance at provider cost", () => {
+test("Seedream 5 Pro uses Vercel and requires paid balance at provider cost", () => {
     const definition = getRegistryModelDefinition("bytedance/seedream-5.0-pro");
 
-    expect(definition.provider).toBe("replicate");
+    expect(definition.provider).toBe("vercel");
     expect(definition.paidOnly).toBe(true);
     expect(definition.priceMultiplier).toBe(1);
 });

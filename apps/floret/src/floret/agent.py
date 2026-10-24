@@ -5,8 +5,9 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-import uuid
 from collections.abc import AsyncGenerator
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any, cast
 
 from openai import AsyncOpenAI
@@ -133,7 +134,7 @@ async def _run_agent_events(
                         "content": (
                             "Your answer references media files that were never "
                             "published. Files in the workspace are NOT delivered "
-                            "to the user. Use `assets publish` in Computer bash for each final file "
+                            "to the user. Use `upload_media` with each final file path "
                             "and include the returned URLs in your answer."
                         ),
                     }
@@ -156,7 +157,7 @@ async def _run_agent_events(
                 "arguments": arguments,
             }
 
-        # Generation can run concurrently; workspace snapshots must not race.
+        # Generation can run concurrently; shell commands must not race.
         async def _run(call: Any) -> tuple[str, Any]:
             call_id, name, raw_args = _tool_call_fields(call)
             async with semaphore:
@@ -238,19 +239,15 @@ async def run_agent_events(
         if settings.catalog_endpoint:
             await warm_registry()
             catalog_token = set_request_catalog(await fetch_model_catalog())
-        from floret.tools import mcp
+        from floret.tools import bash
 
-        workspace = f"/workspace/floret/{uuid.uuid4().hex}"
-        used = [False]
-        try:
-            with mcp.workspace(workspace) as used:
+        Path(settings.temp_dir).mkdir(parents=True, exist_ok=True)
+        with TemporaryDirectory(dir=settings.temp_dir, prefix="run-") as directory:
+            with bash.workspace(str(Path(directory).resolve())):
                 async for event in _run_agent_events(
                     messages, model=model, max_iters=max_iters, routing=routing
                 ):
                     yield event
-        finally:
-            if used[0]:
-                await mcp.cleanup_workspace(workspace)
     finally:
         if catalog_token is not None:
             reset_request_catalog(catalog_token)

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import re
 from contextvars import ContextVar, Token
+from pathlib import Path
 from typing import Any, cast
 
 import httpx
@@ -563,12 +565,19 @@ async def warm_registry() -> None:
     if settings.catalog_endpoint:
         async with _lock:
             try:
-                async with httpx.AsyncClient(
-                    timeout=15, follow_redirects=False
-                ) as client:
-                    response = await client.get(settings.catalog_endpoint)
-                    response.raise_for_status()
-                    payload = response.json()
+                if settings.catalog_endpoint.startswith("file://"):
+                    payload = json.loads(
+                        await asyncio.to_thread(
+                            Path(settings.catalog_endpoint[7:]).read_text
+                        )
+                    )
+                else:
+                    async with httpx.AsyncClient(
+                        timeout=15, follow_redirects=False
+                    ) as client:
+                        response = await client.get(settings.catalog_endpoint)
+                        response.raise_for_status()
+                        payload = response.json()
                 if not isinstance(payload, dict):
                     raise ValueError("Global model catalog returned invalid data")
                 install_global_snapshot(payload)

@@ -83,7 +83,7 @@ export async function catalogOutbound(request, env) {
 }
 
 export function createGateway(getAgent, fetchImpl = globalThis.fetch) {
-    return async function fetch(request, env) {
+    return async function fetch(request, env, ctx) {
         const path = new URL(request.url).pathname;
         if (path.startsWith("/_internal/") || path === "/run") {
             return new Response("Not found", { status: 404 });
@@ -102,6 +102,6 @@ export function createGateway(getAgent, fetchImpl = globalThis.fetch) {
                 },
             );
         }
-        return getAgent(env).fetch(request);
+        return getAgent(env).fetch(request, ctx);
     };
 }

@@ -8,18 +8,14 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
-import httpx
-
 from floret.routing import RoutingPreferences
-from floret.tools import gen, mcp, media
+from floret.tools import bash, gen, mcp, media
 
 logger = logging.getLogger(__name__)
-
-_PUBLISHED_URL = re.compile(r"https://media\.pollinations\.ai/[^\s)\]]+", re.IGNORECASE)
 
 
 @dataclass
@@ -219,16 +215,16 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         "function": {
             "name": "upload_media",
             "description": (
-                "Upload a URL or data: URI to Pollinations hosting and get a public "
+                "Upload a sandbox file path, URL or data: URI to Pollinations hosting and get a public "
                 "URL (30-day retention). Handles authenticated Pollinations generation "
-                "URLs. For Computer workspace files, use bash with assets publish instead."
+                "URLs. Use an absolute path to publish a file created by bash."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "source": {
                         "type": "string",
-                        "description": "Data: URI or HTTP(S) URL, not a local path.",
+                        "description": "Absolute sandbox file path, data URI, or HTTP(S) URL.",
                     },
                     "filename": {
                         "type": "string",
@@ -314,11 +310,9 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         "function": {
             "name": "bash",
             "description": (
-                "Run official Computer MCP bash: shell utilities, curl, git, jq, and files. "
-                "Defaults to a temporary run-specific directory under /workspace/floret. "
-                "The caller's Computer filesystem is shared across runs, not isolated. Use relative paths for run files. "
-                "/tmp is cleared after each call. No Python, Node, package installs, native ffmpeg, or GUI. "
-                "Use stdin with cat > path to write text; assets publish <path> prints a public file URL and attaches media. "
+                "Run bash in this run's isolated E2B Linux VM. Python, Node and native ffmpeg are available. "
+                "Files, /tmp and background processes persist between calls until the run ends. "
+                "Use stdin with cat > path to write text. Publish final files with upload_media. "
                 "Commands have a 60-second limit and bounded output."
             ),
             "parameters": {
@@ -328,7 +322,7 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                     "stdin": {"type": "string"},
                     "cwd": {
                         "type": "string",
-                        "description": "Absolute working directory; defaults to this run's temporary directory, removed when the run ends.",
+                        "description": "Absolute working directory; defaults to this run's workspace.",
                     },
                 },
                 "required": ["command"],
@@ -493,6 +487,10 @@ async def dispatch(
                 arts = [{"type": "video", "url": url}]
             elif src.endswith((".mp3", ".wav", ".ogg", ".m4a", ".flac")):
                 arts = [{"type": "audio", "url": url}]
+            elif Path(str(args.get("source", ""))).is_absolute() and not src.endswith(
+                (".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg")
+            ):
+                arts = [{"type": "file", "url": url}]
             return ToolResult(brain=f"Uploaded. Public URL: {url}", artifacts=arts)
 
         if name == "generate_3d":
@@ -502,10 +500,11 @@ async def dispatch(
                 artifacts=[{"type": "3d", "url": url, "mime_type": mime}],
             )
 
-        if name in {"bash", "runFfmpeg"}:
-            result = await mcp.call_tool(
-                "computer" if name == "bash" else "ffmpeg", name, args
-            )
+        if name == "bash":
+            return ToolResult(brain=await bash.run(**args))
+
+        if name == "runFfmpeg":
+            result = await mcp.call_tool("ffmpeg", name, args)
             texts = []
             arts = []
             for content in result.content:
@@ -526,35 +525,6 @@ async def dispatch(
                         }
                     )
             brain = "\n".join(texts)
-            if (
-                name == "bash"
-                and not result.isError
-                and "assets publish" in str(args.get("command", ""))
-            ):
-                async with httpx.AsyncClient(
-                    timeout=15, follow_redirects=False
-                ) as client:
-                    for url in dict.fromkeys(_PUBLISHED_URL.findall(brain)):
-                        response = await client.head(url)
-                        response.raise_for_status()
-                        mime = (
-                            response.headers.get(
-                                "content-type", "application/octet-stream"
-                            )
-                            .split(";", 1)[0]
-                            .strip()
-                            .lower()
-                        )
-                        kind = mime.split("/", 1)[0]
-                        arts.append(
-                            {
-                                "type": kind
-                                if kind in {"image", "video", "audio"}
-                                else "file",
-                                "url": url,
-                                "mime_type": mime,
-                            }
-                        )
             return ToolResult(
                 brain=f"ERROR from {name}: {brain}" if result.isError else brain,
                 artifacts=[] if result.isError else arts,

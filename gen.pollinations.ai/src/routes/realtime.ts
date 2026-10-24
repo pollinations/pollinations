@@ -698,6 +698,25 @@ function validateUpstreamRealtimeEvent(
         : null;
 }
 
+/**
+ * The provider's session events name the deployment, not the model callers
+ * request ("gpt-realtime-2-1" is an Azure deployment id, not a name in
+ * /models). Rewrite the top-level session.model to the registry's public
+ * identity, as every other surface does.
+ */
+function rewriteSessionModel(
+    data: unknown,
+    deployment: string,
+    publicModel: string,
+): unknown {
+    const event = asRecord(parseEventData(data));
+    const session = asRecord(event.session);
+    if (typeof session.model !== "string") return data;
+    if (session.model !== deployment) return data;
+    session.model = publicModel;
+    return JSON.stringify(event);
+}
+
 function rewriteLiveTranscriptionModel(
     data: unknown,
     from: string | readonly string[],
@@ -1121,12 +1140,45 @@ function proxyRealtimeWebSockets(
                           transcriptionModel,
                       );
                   })()
-            : undefined,
+            : (data) =>
+                  rewriteSessionModel(
+                      data,
+                      REALTIME_ROUTES[
+                          c.var.model.resolved as AzureRealtimeModelName
+                      ].deployment,
+                      c.var.model.resolved,
+                  ),
     );
     wireClose(c, downstream, upstream, tracking);
     wireClose(c, upstream, downstream, tracking);
     downstream.accept({ allowHalfOpen: true });
     upstream.accept({ allowHalfOpen: true });
+    if (allowTranscription && !mai) {
+        // The transcription deployment ships with transcription disabled by
+        // default (session.created reports audio.input.transcription: null),
+        // so a session without a client session.update streams audio into a
+        // session that returns no transcripts and reports no usage — nothing
+        // to bill and nothing to show. OpenAI's transcription sessions
+        // transcribe by default; enable it here as the baseline. A client
+        // session.update still overrides this, and the provider's echo
+        // reaches the client with the public model name.
+        upstream.send(
+            JSON.stringify({
+                type: "session.update",
+                session: {
+                    type: "transcription",
+                    audio: {
+                        input: {
+                            // The session's own defaults, restated so a
+                            // replacement-semantics provider cannot drop them.
+                            format: { type: "audio/pcm", rate: 24000 },
+                            transcription: { model: deployment },
+                        },
+                    },
+                },
+            }),
+        );
+    }
 
     return new Response(null, {
         status: 101,

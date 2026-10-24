@@ -45,7 +45,7 @@ For agent-assisted login, use `polli --json auth login --no-browser`. Read stder
 | Transcribe audio | `polli gen transcribe path/to.mp3` |
 | Upload a local file | `polli upload path/to.png` (prints public URL) |
 | List all models | `polli models` |
-| Filter models by type | `polli models --type image` (text, image, audio, video, 3d, embedding) |
+| Filter models by type | `polli models --type image` (text, decision, image, audio, video, 3d, embedding) |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
 | Developer earnings | `polli earnings` (`--days <n>`) |
@@ -265,7 +265,7 @@ polli keys create --name "server" --models black-forest-labs/flux.1-schnell tong
 polli keys update <id> --models text black-forest-labs/flux.1-schnell  # every text model plus FLUX.1 Schnell
 polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
-`--models` takes categories (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`) and model IDs from `polli models`. A category includes models added later; a model ID allows only that model.
+`--models` takes categories (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`, `decision`) and model IDs from `polli models`. A category includes models added later; a model ID allows only that model.
 `--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. Include `keys` to let the new key create, list, and revoke keys itself. Existing keys with `account:keys` can manage my-models where that invite-only feature is enabled, but still need `account:usage` for read-only account state. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
 
 ### Connect a coding harness

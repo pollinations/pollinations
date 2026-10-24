@@ -1424,6 +1424,53 @@ test("chat completions use local text generation with VCR-backed Portkey", async
     );
 });
 
+test("seed -1 regenerates identical chat requests through the coordinator", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const init = {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "stepfun/step-3.7-flash",
+            messages: [
+                { role: "user", content: "vcr random seed regeneration" },
+            ],
+            seed: -1,
+        }),
+    };
+    for (let attempt = 0; attempt < 2; attempt++) {
+        const { response, wait } = await fetchWorker(
+            "/v1/chat/completions",
+            init,
+        );
+        expect(response.status).toBe(200);
+        expect(response.headers.get("X-Cache")).toBe("MISS");
+        expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+        await response.json();
+        await wait();
+    }
+
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(2);
+    for (const { seed } of mocks.portkeyDirect.state.requests) {
+        expect(Number.isInteger(seed)).toBe(true);
+        expect(seed).toBeGreaterThanOrEqual(0);
+        expect(seed).toBeLessThanOrEqual(2147483647);
+    }
+    expect(mocks.tinybird.state.events).toHaveLength(2);
+    for (const event of mocks.tinybird.state.events) {
+        expect(event).toMatchObject({
+            eventType: "generate.text",
+            responseStatus: 200,
+            isBilledUsage: true,
+        });
+    }
+});
+
 test("chat completions reject a successful envelope without usage", async ({
     paidApiKey,
     mocks,

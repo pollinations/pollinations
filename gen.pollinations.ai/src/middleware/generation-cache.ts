@@ -18,6 +18,8 @@ export async function hashGenerationCacheIdentity(
 }
 
 export type GenerationCacheVariables = {
+    /** Stable within one request, fresh across seed=-1 text requests. */
+    textSeedScope?: string;
     generationCache?: {
         adapter: GenerationCacheAdapter;
         key: string;

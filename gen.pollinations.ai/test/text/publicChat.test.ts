@@ -17,12 +17,17 @@ const metadata = {
     gateway: { gatewayToolCalls: { exa_search: 1 } },
     other: { citation: "https://example.com" },
 };
+// OpenRouter reports what it charged us next to the token counts.
 const usage = {
     prompt_tokens: 100,
     completion_tokens: 20,
     total_tokens: 120,
     cost: 0.007018,
+    is_byok: false,
+    prompt_tokens_details: { cached_tokens: 0 },
+    cost_details: { upstream_inference_cost: 0.00665 },
 };
+const { cost: _cost, cost_details: _costDetails, ...clientUsage } = usage;
 const encoder = new TextEncoder();
 describe("client gateway metadata", () => {
     it("removes only gateway metadata without mutating the billing completion", () => {
@@ -82,7 +87,8 @@ describe("client gateway metadata", () => {
                 expect(publicText).toContain("🌼");
                 expect(publicText).toContain("id: first\nevent: message\n");
                 expect(publicText).toContain("data: [DONE]\n\n");
-                expect(publicText).toContain(JSON.stringify(usage));
+                expect(publicText).toContain(JSON.stringify(clientUsage));
+                expect(publicText).not.toContain("cost");
             }
         },
     );
@@ -110,7 +116,12 @@ afterEach(() => {
     vi.unstubAllEnvs();
 });
 
-async function streamThroughHandler(model: string, host: string, wire: string) {
+async function chatThroughHandler(
+    model: string,
+    host: string,
+    wire: string,
+    stream = true,
+) {
     const { key } = await createTestApiKey({
         expiresIn: 600,
         user: { packBalance: 100 },
@@ -124,7 +135,11 @@ async function streamThroughHandler(model: string, host: string, wire: string) {
         if (new URL(target).host === host) {
             calls++;
             return new Response(wire, {
-                headers: { "content-type": "text/event-stream" },
+                headers: {
+                    "content-type": stream
+                        ? "text/event-stream"
+                        : "application/json",
+                },
             });
         }
         return Response.json({ data: [] });
@@ -139,7 +154,7 @@ async function streamThroughHandler(model: string, host: string, wire: string) {
             },
             body: JSON.stringify({
                 model,
-                stream: true,
+                stream,
                 messages: [
                     { role: "user", content: `Hello ${crypto.randomUUID()}` },
                 ],
@@ -153,10 +168,10 @@ async function streamThroughHandler(model: string, host: string, wire: string) {
     return { response, text, calls };
 }
 
-it("passes non-Vercel stream bytes through the real handler unchanged", async () => {
-    const model = "google/gemini-2.5-flash-lite:search";
-    const wire = `retry: 001500\n\ndata: { "custom_number": 1e+2, "choices": [{"delta":{"content":"🌼"}}] }\n\ndata: { "choices": [], "usage": ${JSON.stringify(usage)} }\n\ndata: [DONE]\n\n`;
-    const { response, text, calls } = await streamThroughHandler(
+it("drops OpenRouter's provider cost from client streams", async () => {
+    const model = "inception/mercury-3";
+    const wire = `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: "🌼" } }] })}\n\ndata: ${JSON.stringify({ choices: [], usage })}\n\ndata: [DONE]\n\n`;
+    const { response, text, calls } = await chatThroughHandler(
         model,
         "openrouter.ai",
         wire,
@@ -164,7 +179,38 @@ it("passes non-Vercel stream bytes through the real handler unchanged", async ()
     expect(response.status, text).toBe(200);
     expect(response.headers.get("x-model-used")).toBe(model);
     expect(calls).toBe(1);
-    expect(text).toBe(wire);
+    expect(text).toContain("🌼");
+    expect(text).toContain(JSON.stringify(clientUsage));
+    expect(text).toContain("data: [DONE]\n\n");
+    expect(text).not.toContain("cost");
+});
+
+it("drops OpenRouter's provider cost from non-streaming completions", async () => {
+    const model = "inception/mercury-3";
+    const wire = JSON.stringify({
+        id: "gen-nonstream",
+        object: "chat.completion",
+        created: 1760000000,
+        model,
+        choices: [
+            {
+                index: 0,
+                message: { role: "assistant", content: "🌼 hello" },
+                finish_reason: "stop",
+            },
+        ],
+        usage,
+    });
+    const { response, text, calls } = await chatThroughHandler(
+        model,
+        "openrouter.ai",
+        wire,
+        false,
+    );
+    expect(response.status, text).toBe(200);
+    expect(calls).toBe(1);
+    expect(JSON.parse(text).usage).toEqual(clientUsage);
+    expect(text).not.toContain("cost");
 });
 
 it("drops InferencePort's PAYG ledger chunk from client streams", async () => {
@@ -179,7 +225,7 @@ it("drops InferencePort's PAYG ledger chunk from client streams", async () => {
         payg_ledger_entry: { balance_after: 38.9 },
     };
     const wire = `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: "🌼" } }] })}\n\ndata: ${JSON.stringify({ choices: [], usage: { ...streamUsage, payg_credits_charged: 0.0001 } })}\n\ndata: ${JSON.stringify({ id: "chatcmpl-proxy-meta", choices: [], payg_usage: ledger })}\n\ndata: [DONE]\n\n`;
-    const { response, text, calls } = await streamThroughHandler(
+    const { response, text, calls } = await chatThroughHandler(
         "inferenceport-ai/lightning-text-v2.1",
         "api.inferenceport.ai",
         wire,

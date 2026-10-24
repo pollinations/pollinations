@@ -4692,14 +4692,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "xiaomi/mimo-v2.6-pro:deepinfra": {
     "cost": {
-      "completionTextTokens": 0.00000087,
-      "promptCachedTokens": 0.0000000036,
-      "promptTextTokens": 0.00000043,
+      "completionTextTokens": 0.000000783,
+      "promptCachedTokens": 0.00000000324,
+      "promptTextTokens": 0.000000387,
     },
     "price": {
-      "completionTextTokens": 0.00000087,
-      "promptCachedTokens": 0.0000000036,
-      "promptTextTokens": 0.00000043,
+      "completionTextTokens": 0.000000783,
+      "promptCachedTokens": 0.00000000324,
+      "promptTextTokens": 0.000000387,
     },
   },
   "z-ai/glm-5.2": {

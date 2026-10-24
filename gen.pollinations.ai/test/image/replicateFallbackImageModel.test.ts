@@ -98,6 +98,36 @@ describe("callReplicateFallbackImage", () => {
         });
     });
 
+    it("bills FLUX.2 from Replicate's whole-megapixel counts", async () => {
+        vi.spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(
+                Response.json({
+                    id: "prediction_1",
+                    status: "succeeded",
+                    output: OUTPUT_URL,
+                    metrics: {
+                        predict_time: 1,
+                        image_input_megapixel_count: 0,
+                        image_output_megapixel_count: 2,
+                    },
+                }),
+            )
+            .mockResolvedValueOnce(
+                new Response(new Uint8Array([1, 2, 3]), {
+                    headers: { "content-type": "image/png" },
+                }),
+            );
+
+        const result = await callReplicateFallbackImage("a red apple", {
+            ...params("black-forest-labs/flux.2-max"),
+            width: 1280,
+        });
+
+        expect(result.trackingData.usage).toEqual({
+            completionImageTokens: 2,
+        });
+    });
+
     it("passes all supported p-image-edit references", async () => {
         const fetchSpy = mockPrediction();
 

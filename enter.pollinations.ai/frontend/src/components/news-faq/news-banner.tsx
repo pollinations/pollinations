@@ -48,8 +48,9 @@ type Announcement = {
 };
 
 /**
- * Newest first. Cards share a row, so keep them even: a title of a few
- * words, one sentence of about 80 characters and a two- or three-word button.
+ * Newest first; only the first four current ones show. Cards share a row, so
+ * keep them even: a title of a few words, one sentence of about 80 characters
+ * and a two- or three-word button.
  */
 const ANNOUNCEMENTS: Announcement[] = [
     {
@@ -62,6 +63,18 @@ const ANNOUNCEMENTS: Announcement[] = [
         cta: {
             label: "Migrate your app",
             href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
+        },
+    },
+    {
+        date: "2026-10-22",
+        until: "2026-11-05",
+        label: "New",
+        title: "Free site hosting",
+        text: "Publish a static site at your-name.pollinations.app from the CLI, SDK or an agent.",
+        icon: GlobeIcon,
+        cta: {
+            label: "Visit pollinations.app",
+            href: "https://pollinations.app",
         },
     },
     {
@@ -97,7 +110,7 @@ const ANNOUNCEMENTS: Announcement[] = [
 ];
 
 export const currentAnnouncements = (today: string) =>
-    ANNOUNCEMENTS.filter(({ until }) => until >= today);
+    ANNOUNCEMENTS.filter(({ until }) => until >= today).slice(0, 4);
 
 function changeChip(
     { action, date, changes, status }: ModelNews,

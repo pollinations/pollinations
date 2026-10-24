@@ -11,6 +11,7 @@ import {
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
 import { parseAuthorizeRedirectUrl } from "@shared/auth/redirect-uri.ts";
+import { MODEL_CATEGORIES } from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
 
 describe("getGrantedOAuthScope", () => {
@@ -172,7 +173,9 @@ describe("model category selection", () => {
 
     it("stores every category as all models and keeps none distinct", () => {
         const all = readModelSelection(null);
-        expect(all.categories.size).toBe(7);
+        expect([...all.categories].sort()).toEqual(
+            [...MODEL_CATEGORIES].sort(),
+        );
         expect(writeModelSelection(all)).toBeNull();
         expect(
             writeModelSelection({ categories: new Set(), models: [] }),

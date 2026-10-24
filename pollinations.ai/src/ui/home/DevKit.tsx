@@ -190,7 +190,7 @@ const MODEL_KINDS: {
     categories: ModelCategory[];
 }[] = [
     { label: "Image", icon: ImageIcon, categories: ["image"] },
-    { label: "Text", icon: ChatIcon, categories: ["text"] },
+    { label: "Text", icon: ChatIcon, categories: ["text", "decision"] },
     { label: "Audio", icon: AudioIcon, categories: ["audio", "realtime"] },
     { label: "Video & 3D", icon: VideoIcon, categories: ["video", "3d"] },
     { label: "Embeddings", icon: SearchIcon, categories: ["embedding"] },

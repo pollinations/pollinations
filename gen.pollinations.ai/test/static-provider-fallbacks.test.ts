@@ -1754,3 +1754,30 @@ describe("static provider fallbacks", () => {
         }
     });
 });
+
+describe("Qwen Image 3 backup pricing", () => {
+    it.each([
+        [2.25, 0.04],
+        [2.250001, 0.075],
+    ])(
+        "adds the OpenRouter fee once at %s megapixels",
+        (megapixels, outputRate) => {
+            const model = "qwen/qwen-image-3";
+            const billing = calculateUsageBilling({
+                model,
+                usage: { promptImageTokens: 2, completionImageTokens: 1 },
+                servedBy: IMAGE_SERVICES[`${model}:openrouter`],
+                quotedBy: IMAGE_SERVICES[model],
+                input: { megapixels },
+            });
+            expect(billing.cost.totalCost).toBeCloseTo(
+                (0.006 + outputRate) * 1.055,
+                12,
+            );
+            expect(billing.price.totalPrice).toBeCloseTo(
+                0.006 + outputRate,
+                12,
+            );
+        },
+    );
+});

@@ -55,18 +55,21 @@ const VERTEX_GEMINI_IMAGE_CONFIGS = {
         generator: "Vertex AI Gemini 3.1 Flash Image",
         resolution: "tiered",
         reasoning: true,
+        cachedInput: true,
     },
     "google/gemini-3.1-flash-lite-image": {
         model: "gemini-3.1-flash-lite-image",
         generator: "Vertex AI Gemini 3.1 Flash-Lite Image",
         resolution: "1K",
         reasoning: true,
+        cachedInput: true,
     },
     "google/gemini-3-pro-image": {
         model: "gemini-3-pro-image",
         generator: "Vertex AI Gemini 3 Pro Image",
         resolution: "tiered",
         reasoning: false,
+        cachedInput: true,
     },
 } as const satisfies Record<string, VertexGeminiImageConfig>;
 

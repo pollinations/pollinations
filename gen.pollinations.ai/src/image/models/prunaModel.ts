@@ -234,10 +234,11 @@ async function downloadOutput(
 // p-image: Text-to-Image
 // =============================================================================
 
-export async function callPrunaImageAPI(
+/** p-image input shared by the DeepInfra primary and the Replicate fallback. */
+export function buildPImageInput(
     prompt: string,
     safeParams: ImageParams,
-): Promise<ImageGenerationResult> {
+): PImageInput {
     const dims = closestByRatio(
         safeParams.width || 1024,
         safeParams.height || 1024,
@@ -251,6 +252,14 @@ export async function callPrunaImageAPI(
         height: dims.height,
     };
     if (safeParams.seed !== undefined) input.seed = safeParams.seed;
+    return input;
+}
+
+export async function callPrunaImageAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    const input = buildPImageInput(prompt, safeParams);
 
     logOps("p-image input:", { ...input, prompt: prompt.slice(0, 80) });
 

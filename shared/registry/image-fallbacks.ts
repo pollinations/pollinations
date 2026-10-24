@@ -103,6 +103,11 @@ export const IMAGE_FALLBACKS = {
         "black-forest-labs/flux.1.1-pro:azure:sweden": {
             provider: "azure",
         },
+        // Replicate's official model: $0.04 per output image (model page, 2026-10-24).
+        "black-forest-labs/flux.1.1-pro:replicate": {
+            provider: "replicate",
+            addedDate: new Date("2026-10-24").getTime(),
+        },
     },
     "black-forest-labs/flux.2-pro": {
         "black-forest-labs/flux.2-pro:replicate": {
@@ -158,6 +163,12 @@ export const IMAGE_FALLBACKS = {
                 promptImageTokens: 0.003 * 1.055,
                 completionImageTokens: 0.04 * 1.055,
             },
+            costVariants: {
+                "2k": {
+                    promptImageTokens: 0.003 * 1.055,
+                    completionImageTokens: 0.075 * 1.055,
+                },
+            },
         },
     },
     "qwen/qwen-image-2.1-pro": {
@@ -170,6 +181,13 @@ export const IMAGE_FALLBACKS = {
             cost: {
                 completionImageTokens: 0.046 * 1.055,
             },
+        },
+    },
+    "prunaai/p-image": {
+        // Replicate's official model: flat $0.005 per output image (model page, 2026-10-24).
+        "prunaai/p-image:replicate": {
+            provider: "replicate",
+            addedDate: new Date("2026-10-24").getTime(),
         },
     },
     "prunaai/p-image-edit": {

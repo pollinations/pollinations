@@ -56,6 +56,34 @@ afterEach(() => {
 });
 
 describe("callReplicateFallbackImage", () => {
+    it("sends p-image the primary's supported size and bills one image", async () => {
+        const fetchSpy = mockPrediction();
+
+        const result = await callReplicateFallbackImage("a red apple", {
+            ...params("prunaai/p-image:replicate"),
+            width: 1920,
+            height: 1080,
+        });
+
+        expect(fetchSpy.mock.calls[0][0]).toBe(
+            "https://api.replicate.com/v1/models/prunaai/p-image/predictions",
+        );
+        const body = JSON.parse(
+            (fetchSpy.mock.calls[0][1] as RequestInit).body as string,
+        );
+        expect(body.input).toEqual({
+            prompt: "a red apple",
+            aspect_ratio: "custom",
+            width: 1376,
+            height: 768,
+            seed: 42,
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "prunaai/p-image:replicate",
+            usage: { completionImageTokens: 1 },
+        });
+    });
+
     it("sends Krea's requested aspect ratio like the primary route", async () => {
         const fetchSpy = mockPrediction();
 
@@ -68,6 +96,35 @@ describe("callReplicateFallbackImage", () => {
             (fetchSpy.mock.calls[0][1] as RequestInit).body as string,
         );
         expect(body.input.aspect_ratio).toBe("16:9");
+    });
+
+    it("sends FLUX 1.1 Pro the exact size and seed like the Azure primary", async () => {
+        const fetchSpy = mockPrediction();
+
+        const result = await callReplicateFallbackImage("a red apple", {
+            ...params("black-forest-labs/flux.1.1-pro:replicate"),
+            width: 1344,
+            height: 768,
+        });
+
+        expect(fetchSpy.mock.calls[0][0]).toBe(
+            "https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro/predictions",
+        );
+        const body = JSON.parse(
+            (fetchSpy.mock.calls[0][1] as RequestInit).body as string,
+        );
+        expect(body.input).toEqual({
+            prompt: "a red apple",
+            aspect_ratio: "custom",
+            width: 1344,
+            height: 768,
+            output_format: "png",
+            seed: 42,
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "black-forest-labs/flux.1.1-pro:replicate",
+            usage: { completionImageTokens: 1 },
+        });
     });
 
     it("maps FLUX.2 Max generation to the exact Replicate model", async () => {

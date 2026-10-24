@@ -14,6 +14,12 @@ import { CHAT_PARAMETERS } from "./text-parameters";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "openai/gpt-5-nano": {
+        "openai/gpt-5-nano:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
+        },
+    },
     "qwen/qwen3-coder-30b-a3b-instruct": {
         "qwen/qwen3-coder-30b-a3b-instruct:aws": {
             provider: "aws",
@@ -25,13 +31,9 @@ export const TEXT_FALLBACKS = {
     },
     "perplexity/pplx-decider-v1.2": {
         // Same Perplexity backend; covers gateway failures, not Perplexity outages.
-        "perplexity/pplx-decider-v1.2:openrouter": {
-            provider: "openrouter",
-            // OpenRouter list price plus its 5.5% credit fee.
-            cost: {
-                promptTextTokens: perMillion(0.02) * 1.055,
-                completionTextTokens: perMillion(0),
-            },
+        "perplexity/pplx-decider-v1.2:perplexity": {
+            provider: "perplexity",
+            priceMultiplier: 1,
         },
     },
     "liquid/d1": {
@@ -104,6 +106,13 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "anthropic/claude-sonnet-4.6": {
+        // Anthropic's global rates equal the Bedrock global sheet (2026-10-24).
+        "anthropic/claude-sonnet-4.6:anthropic": {
+            provider: "anthropic",
+            addedDate: new Date("2026-10-24").getTime(),
+        },
+    },
     "stepfun/step-3.7-flash": {
         // StepFun's own endpoint through Vercel's AI Gateway at the posted base rates.
         "stepfun/step-3.7-flash:vercel": {
@@ -112,6 +121,17 @@ export const TEXT_FALLBACKS = {
                 promptTextTokens: perMillion(0.2),
                 promptCachedTokens: perMillion(0.04),
                 completionTextTokens: perMillion(1.15),
+            },
+        },
+    },
+    "openai/gpt-oss-20b": {
+        // DeepInfra direct rates (2026-10-24), below the OVHcloud primary.
+        "openai/gpt-oss-20b:deepinfra": {
+            provider: "deepinfra",
+            addedDate: new Date("2026-10-24").getTime(),
+            cost: {
+                promptTextTokens: perMillion(0.03),
+                completionTextTokens: perMillion(0.14),
             },
         },
     },
@@ -124,6 +144,12 @@ export const TEXT_FALLBACKS = {
                 promptCachedTokens: perMillion(0.075) * 1.055,
                 completionTextTokens: perMillion(0.6) * 1.055,
             },
+        },
+    },
+    "openai/gpt-5.4-nano": {
+        "openai/gpt-5.4-nano:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
         },
     },
     "inclusionai/ling-3.1-flash": {
@@ -178,25 +204,9 @@ export const TEXT_FALLBACKS = {
         },
     },
     "openai/gpt-6-astra": {
-        "openai/gpt-6-astra:azure:datazone": {
-            provider: "azure",
-            // Provider retires this route on 2028-01-11.
-            // Same checkpoint, separate US Data Zone quota pool. The caller
-            // keeps the Global quote; Pollinations absorbs the 10% premium.
-            cost: {
-                promptTextTokens: perMillion(11),
-                promptCachedTokens: perMillion(1.1),
-                promptCacheWriteTokens: perMillion(13.75),
-                completionTextTokens: perMillion(55),
-            },
-            costVariants: {
-                long_context: {
-                    promptTextTokens: perMillion(22),
-                    promptCachedTokens: perMillion(2.2),
-                    promptCacheWriteTokens: perMillion(27.5),
-                    completionTextTokens: perMillion(82.5),
-                },
-            },
+        "openai/gpt-6-astra:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
         },
     },
     "openai/gpt-6-sol": {
@@ -342,20 +352,6 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
-    "minimax/minimax-m2.7": {
-        "minimax/minimax-m2.7:openrouter:minimax": {
-            supportedParameters: CHAT_PARAMETERS.openRouterMinimax27FirstParty,
-            provider: "openrouter",
-            addedDate: new Date("2026-09-23").getTime(),
-            cost: {
-                // OpenRouter MiniMax first-party FP8 rates (2026-09-23),
-                // including the account's 5.5% credit-purchase fee.
-                promptTextTokens: perMillion(0.3) * 1.055,
-                promptCachedTokens: perMillion(0.06) * 1.055,
-                completionTextTokens: perMillion(1.2) * 1.055,
-            },
-        },
-    },
     "minimax/minimax-m3": {
         "minimax/minimax-m3:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
@@ -377,23 +373,6 @@ export const TEXT_FALLBACKS = {
                 promptTextTokens: perMillion(2),
                 promptCachedTokens: perMillion(0.2),
                 completionTextTokens: perMillion(6),
-            },
-        },
-    },
-    "qwen/qwen3.8-27b": {
-        "qwen/qwen3.8-27b:openrouter:reka-fp8": {
-            supportedParameters: CHAT_PARAMETERS.qwen38Reka,
-            provider: "openrouter",
-            addedDate: new Date("2026-10-13").getTime(),
-            cost: {
-                // OpenRouter Reka FP8 rates (2026-10-13), including the
-                // account's 5.5% credit-purchase fee. OpenRouter publishes one
-                // prompt rate and no separate image/video rates.
-                promptTextTokens: perMillion(0.04) * 1.055,
-                promptCachedTokens: perMillion(0.02) * 1.055,
-                promptImageTokens: perMillion(0.04) * 1.055,
-                promptVideoTokens: perMillion(0.04) * 1.055,
-                completionTextTokens: perMillion(2.2) * 1.055,
             },
         },
     },
@@ -733,6 +712,7 @@ export const TEXT_FALLBACKS = {
     },
     "anthropic/claude-opus-5.5": {
         "anthropic/claude-opus-5.5:aws": {
+            priceMultiplier: 1,
             provider: "aws",
             addedDate: new Date("2026-10-15").getTime(),
         },

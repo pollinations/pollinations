@@ -130,6 +130,23 @@ describe("resolveModelConfig", () => {
         ).toBe(128000);
     });
 
+    it("pins PPLX Decider's Vercel route and resolves its direct backup", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "perplexity/pplx-decider-v1.2",
+        });
+        expect(primary.options.modelConfig?.defaultOptions).toEqual({
+            providerOptions: { gateway: { only: ["perplexity"] } },
+        });
+        const backup = resolveModelConfig(messages, {
+            model: "perplexity/pplx-decider-v1.2:perplexity",
+        });
+        expect(backup.options.modelConfig).toMatchObject({
+            model: "pplx-decider-v1.2",
+            directEndpoint: "https://api.perplexity.ai/v1/decisions",
+        });
+        expect(backup.options.modelConfig?.defaultOptions).toBeUndefined();
+    });
+
     it("lets callers override Anthropic max_tokens", () => {
         const result = resolveModelConfig(messages, {
             model: "anthropic/claude-sonnet-4.6",
@@ -156,6 +173,18 @@ describe("resolveModelConfig", () => {
         });
 
         expect(result.options.model).toBe("global.anthropic.claude-opus-5");
+    });
+
+    it("routes the GPT-OSS 20B fallback to DeepInfra", () => {
+        const result = resolveModelConfig(messages, {
+            model: "openai/gpt-oss-20b:deepinfra",
+        });
+
+        expect(result.options.model).toBe("openai/gpt-oss-20b");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
     });
 
     it("routes openai/gpt-6-astra to the direct Azure Responses deployment", () => {
@@ -209,6 +238,21 @@ describe("resolveModelConfig", () => {
         ).toThrow("Model configuration not found for: gpt-6-astra");
     });
 
+    it("pins the GPT-5 Nano backup to its exact OpenAI checkpoint and Standard tier", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5-nano:openai",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("gpt-5-nano-2025-08-07");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
+            provider: "openai",
+            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
+        });
+    });
+
     it.each(["gpt-6-sol", "gpt-6.1-sol", "gpt-6-luna"])(
         "routes %s through Azure with direct OpenAI fallback",
         (model) => {
@@ -237,12 +281,43 @@ describe("resolveModelConfig", () => {
         },
     );
 
+    it("pins gpt-6-astra recovery to exact OpenAI Standard", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-6-astra:openai",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("gpt-6-astra");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
+            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
+        });
+    });
+
     it("does not set max_tokens for non-Anthropic models", () => {
         const result = resolveModelConfig(messages, {
             model: "openai/gpt-5.4-nano",
         });
 
         expect(result.options.max_tokens).toBeUndefined();
+    });
+
+    it("pins gpt-5.4-nano recovery to exact OpenAI Standard", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5.4-nano:openai",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("gpt-5.4-nano-2026-03-17");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelDef).toMatchObject({
+            useResponsesApi: true,
+        });
+        expect(resolved.options.modelConfig).toMatchObject({
+            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
+        });
     });
 
     it("resolves nova-fast to us.amazon.nova-micro-v1:0", () => {
@@ -818,6 +893,9 @@ describe("resolveModelConfig", () => {
     });
 
     it("pins Qwen3.8 27B to Chutes on OpenRouter without fallback", () => {
+        expect(
+            findModelByName("qwen/qwen3.8-27b:openrouter:reka-fp8"),
+        ).toBeNull();
         const result = resolveModelConfig(messages, {
             model: "qwen3.8-27b",
         });
@@ -1062,11 +1140,6 @@ describe("resolveModelConfig", () => {
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
         ["minimax-m2.7", "minimax/minimax-m2.7", "novita/fp8"],
         [
-            "minimax/minimax-m2.7:openrouter:minimax",
-            "minimax/minimax-m2.7",
-            "minimax/fp8",
-        ],
-        [
             "meta/llama-4-scout:openrouter:novita-bf16",
             "meta-llama/llama-4-scout",
             "novita/bf16",
@@ -1083,6 +1156,12 @@ describe("resolveModelConfig", () => {
             });
         },
     );
+
+    it("does not resolve the removed MiniMax M2.7 gateway fallback", () => {
+        expect(
+            findModelByName("minimax/minimax-m2.7:openrouter:minimax"),
+        ).toBeNull();
+    });
 
     it("routes Qwen Vision directly to DeepInfra with an exact gateway backup", () => {
         const primary = resolveModelConfig(messages, { model: "qwen-vision" });

@@ -150,12 +150,15 @@ export const portkeyConfig: PortkeyConfigMap = {
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
             model: "perplexity/pplx-decider-v1.2",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["perplexity"] } },
+            },
         }),
-    "perplexity/pplx-decider-v1.2:openrouter": () => ({
-        provider: "openrouter",
-        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
-        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
-        model: "perplexity/pplx-decider-v1.2",
+    "perplexity/pplx-decider-v1.2:perplexity": () => ({
+        provider: "openai",
+        directEndpoint: "https://api.perplexity.ai/v1/decisions",
+        authKey: textEnvironmentValue("PERPLEXITY_API_KEY"),
+        model: "pplx-decider-v1.2",
     }),
     "liquid-d1": () =>
         createVercelAIGatewayModelConfig({
@@ -232,12 +235,30 @@ export const portkeyConfig: PortkeyConfigMap = {
         model: "decision-1",
     }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
+    "gpt-5.4-nano-openai": () => ({
+        provider: "openai",
+        model: "gpt-5.4-nano-2026-03-17",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        directEndpoint: "https://api.openai.com/v1/chat/completions",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        serviceTier: "default",
+        ...azureOpenAIParameters,
+    }),
     "gpt-5.4-nano": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4-nano/chat/completions?api-version=2024-12-01-preview",
             azureOpenAIParameters,
         ),
+    "gpt-5-nano-openai": () => ({
+        provider: "openai",
+        model: "gpt-5-nano-2025-08-07",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        directEndpoint: "https://api.openai.com/v1/chat/completions",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        serviceTier: "default",
+        ...azureOpenAIParameters,
+    }),
     "gpt-5-nano-2025-08-07": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
@@ -317,16 +338,19 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-luna/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
+    "gpt-6-astra-openai": () => ({
+        provider: "openai",
+        model: "gpt-6-astra",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        directEndpoint: "https://api.openai.com/v1/chat/completions",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        serviceTier: "default",
+        ...azureOpenAIParameters,
+    }),
     "gpt-6-astra": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-astra/chat/completions?api-version=2025-04-01-preview",
-            azureOpenAIParameters,
-        ),
-    "gpt-6-astra-azure-datazone": () =>
-        createAzureResponsesModelConfig(
-            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
-            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-astra-datazone/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
     "gpt-6-sol": () =>
@@ -469,10 +493,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "minimax/minimax-m2.7",
         "novita/fp8",
     ),
-    "minimax-m2.7-openrouter-minimax": createPinnedOpenRouterConfig(
-        "minimax/minimax-m2.7",
-        "minimax/fp8",
-    ),
     "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
     "xiaomi/mimo-v2.6-flash": () =>
         createNovitaModelConfig({ model: "xiaomimimo/mimo-v2.6-flash" }),
@@ -580,11 +600,6 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    "qwen3.8-27b-openrouter-reka": createPinnedOpenRouterConfig(
-        "qwen/qwen3.8-27b",
-        "reka/fp8",
-        64000,
-    ),
     "qwen/qwen3.8-max": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.8-max",
@@ -1081,6 +1096,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
         }),
+    "anthropic/claude-sonnet-4.6:anthropic": () =>
+        createAnthropicConfig({
+            model: "claude-sonnet-4-6",
+            defaultOptions: { max_tokens: 64000 },
+        }),
     "anthropic/claude-sonnet-5.5": () =>
         createAnthropicConfig({
             model: "claude-sonnet-5-5",
@@ -1385,6 +1405,8 @@ export const portkeyConfig: PortkeyConfigMap = {
             responsesEndpoint:
                 "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/responses",
         }),
+    "openai/gpt-oss-20b:deepinfra": () =>
+        createDeepInfraModelConfig({ model: "openai/gpt-oss-20b" }),
     "Qwen3Guard-Gen-8B": () =>
         createOVHcloudOAIConfig({ model: "Qwen3Guard-Gen-8B" }),
 };

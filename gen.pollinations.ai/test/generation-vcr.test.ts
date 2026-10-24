@@ -358,6 +358,7 @@ function createGenerationMocks() {
                 [portkeyHost]: fakeChatProvider,
                 // Direct chat providers answer like the Portkey gateway.
                 "api.novita.ai": fakeChatProvider,
+                "api.openai.com": fakeChatProvider,
             },
             reset: () => {
                 portkeyState.requests = [];
@@ -1460,12 +1461,14 @@ test("chat completions reject a successful envelope without usage", async ({
     });
     await wait();
 
-    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
-    expect(mocks.tinybird.state.events).toHaveLength(1);
-    expect(mocks.tinybird.state.events[0]).toMatchObject({
-        responseStatus: 502,
-        isBilledUsage: false,
-    });
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(2);
+    expect(mocks.tinybird.state.events).toHaveLength(2);
+    for (const event of mocks.tinybird.state.events) {
+        expect(event).toMatchObject({
+            responseStatus: 502,
+            isBilledUsage: false,
+        });
+    }
 });
 
 test("chat completions forward a 28 MiB inline-image request", async ({

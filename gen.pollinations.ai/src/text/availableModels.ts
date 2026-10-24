@@ -204,6 +204,13 @@ const audioDefaultsTransform: TransformFn = (messages, options) => {
 
 const models: ModelDefinition[] = [
     {
+        name: "openai/gpt-5.4-nano:openai",
+        config: portkeyConfig["gpt-5.4-nano-openai"],
+        transform: omitOpenAISampling,
+        // OpenAI Chat rejects tools with reasoning; Responses preserves both.
+        useResponsesApi: true,
+    },
+    {
         name: "openai/gpt-5.4-nano",
         config: portkeyConfig["gpt-5.4-nano"],
         transform: omitOpenAISampling,
@@ -211,6 +218,11 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5-nano",
         config: portkeyConfig["gpt-5-nano-2025-08-07"],
+        transform: omitOpenAISampling,
+    },
+    {
+        name: "openai/gpt-5-nano:openai",
+        config: portkeyConfig["gpt-5-nano-openai"],
         transform: omitOpenAISampling,
     },
     {
@@ -242,6 +254,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gpt-5.4-openai"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-oss-20b:deepinfra",
+        config: portkeyConfig["openai/gpt-oss-20b:deepinfra"],
     },
     {
         name: "openai/gpt-5.4",
@@ -277,14 +293,14 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
-        name: "openai/gpt-6-astra",
-        config: portkeyConfig["gpt-6-astra"],
+        name: "openai/gpt-6-astra:openai",
+        config: portkeyConfig["gpt-6-astra-openai"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
     },
     {
-        name: "openai/gpt-6-astra:azure:datazone",
-        config: portkeyConfig["gpt-6-astra-azure-datazone"],
+        name: "openai/gpt-6-astra",
+        config: portkeyConfig["gpt-6-astra"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
     },
@@ -393,11 +409,6 @@ const models: ModelDefinition[] = [
     {
         name: "qwen/qwen3.8-27b",
         config: portkeyConfig["qwen/qwen3.8-27b"],
-        transform: createReasoningEffortTransform("toggle"),
-    },
-    {
-        name: "qwen/qwen3.8-27b:openrouter:reka-fp8",
-        config: portkeyConfig["qwen3.8-27b-openrouter-reka"],
         transform: createReasoningEffortTransform("toggle"),
     },
     {
@@ -635,6 +646,11 @@ const models: ModelDefinition[] = [
     {
         name: "anthropic/claude-sonnet-4.6",
         config: portkeyConfig["claude-sonnet-4-6"],
+        transform: pipe(claudeAdaptiveThinking, preferTemperature),
+    },
+    {
+        name: "anthropic/claude-sonnet-4.6:anthropic",
+        config: portkeyConfig["anthropic/claude-sonnet-4.6:anthropic"],
         transform: pipe(claudeAdaptiveThinking, preferTemperature),
     },
     {
@@ -910,8 +926,8 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
-        name: "perplexity/pplx-decider-v1.2:openrouter",
-        config: portkeyConfig["perplexity/pplx-decider-v1.2:openrouter"],
+        name: "perplexity/pplx-decider-v1.2:perplexity",
+        config: portkeyConfig["perplexity/pplx-decider-v1.2:perplexity"],
         useSystemOneApi: true,
     },
     {
@@ -1197,11 +1213,6 @@ const models: ModelDefinition[] = [
         name: "minimax/minimax-m2.7",
         config: portkeyConfig["minimax/minimax-m2.7"],
         // Reasoning mandatory: rejects "none"/"minimal", accepts low/medium/high.
-        transform: mandatoryReasoning,
-    },
-    {
-        name: "minimax/minimax-m2.7:openrouter:minimax",
-        config: portkeyConfig["minimax-m2.7-openrouter-minimax"],
         transform: mandatoryReasoning,
     },
     {

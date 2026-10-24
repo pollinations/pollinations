@@ -1,10 +1,10 @@
 import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import { withModelFallbackResponse } from "../fallback.ts";
 import { bufferToUint8Array } from "../image/utils/imageDownload.ts";
+import { buildTrackingHeaders } from "../image/utils/trackingHeaders.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import {
     createAndReturnModel3d,
@@ -121,7 +121,10 @@ export function mediaHeaders(
 
     const modelUsed = result.trackingData?.actualModel || safeParams.model;
     const usage = result.trackingData?.usage || { completionImageTokens: 1 };
-    const trackingHeaders = buildUsageHeaders(modelUsed, usage);
+    const trackingHeaders = buildTrackingHeaders(modelUsed, {
+        ...result.trackingData,
+        usage,
+    });
     for (const [key, value] of Object.entries(trackingHeaders)) {
         headers.set(key, value);
     }

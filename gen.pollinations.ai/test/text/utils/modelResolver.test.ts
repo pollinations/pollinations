@@ -256,6 +256,18 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("mistral-large-4");
     });
 
+    it("routes the GPT-OSS 20B fallback to DeepInfra", () => {
+        const result = resolveModelConfig(messages, {
+            model: "openai/gpt-oss-20b:deepinfra",
+        });
+
+        expect(result.options.model).toBe("openai/gpt-oss-20b");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+    });
+
     it("pins the Mistral Large 4 fallback to Mistral on Vercel", () => {
         const result = resolveModelConfig(messages, {
             model: "mistralai/mistral-large-4:vercel",

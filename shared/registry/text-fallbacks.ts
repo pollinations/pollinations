@@ -660,6 +660,17 @@ export const TEXT_FALLBACKS = {
             addedDate: new Date("2026-10-15").getTime(),
         },
     },
+    "openai/gpt-oss-20b": {
+        // DeepInfra direct rates (2026-10-24), below the OVHcloud primary.
+        "openai/gpt-oss-20b:deepinfra": {
+            provider: "deepinfra",
+            addedDate: new Date("2026-10-24").getTime(),
+            cost: {
+                promptTextTokens: perMillion(0.03),
+                completionTextTokens: perMillion(0.14),
+            },
+        },
+    },
     "anthropic/claude-fable-5": {
         "anthropic/claude-fable-5:openrouter:vertex-global": {
             supportedParameters: CHAT_PARAMETERS.openRouterOpus,

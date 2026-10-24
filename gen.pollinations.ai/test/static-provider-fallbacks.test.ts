@@ -682,7 +682,7 @@ describe("static provider fallbacks", () => {
             )?.config(),
         ).toMatchObject({
             model: "pplx-decider-v1.2",
-            provider: "perplexity",
+            provider: "openai",
             directEndpoint: "https://api.perplexity.ai/v1/decisions",
         });
         const billing = calculateUsageBilling({

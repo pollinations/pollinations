@@ -124,7 +124,7 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         }),
     "perplexity/pplx-decider-v1.2:perplexity": () => ({
-        provider: "perplexity",
+        provider: "openai",
         directEndpoint: "https://api.perplexity.ai/v1/decisions",
         authKey: textEnvironmentValue("PERPLEXITY_API_KEY"),
         model: "pplx-decider-v1.2",

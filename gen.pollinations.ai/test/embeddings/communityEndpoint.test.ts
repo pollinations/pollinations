@@ -226,6 +226,58 @@ describe("generateCommunityEmbeddings", () => {
         ).rejects.toMatchObject({ status: 502 });
     });
 
+    it("rejects self-reported prompt tokens far beyond the input size", async () => {
+        const endpoint = buildRuntime();
+        vi.stubGlobal(
+            "fetch",
+            vi.fn().mockResolvedValue(
+                upstreamResponse({
+                    prompt_tokens: 1_000_000_000,
+                    total_tokens: 1_000_000_000,
+                }),
+            ),
+        );
+
+        await expect(
+            generateCommunityEmbeddings(
+                endpoint,
+                {
+                    model: "upstream-model",
+                    encoding_format: "float",
+                    input: "hello world",
+                },
+                "owner/bge",
+                SECRET,
+            ),
+        ).rejects.toMatchObject({ status: 502 });
+    });
+
+    it("accepts usage up to the input's byte length plus special tokens", async () => {
+        const endpoint = buildRuntime();
+        // "hello" is 5 bytes; one input allows 16 extra special tokens.
+        vi.stubGlobal(
+            "fetch",
+            vi
+                .fn()
+                .mockResolvedValue(
+                    upstreamResponse({ prompt_tokens: 21, total_tokens: 21 }),
+                ),
+        );
+
+        const response = await generateCommunityEmbeddings(
+            endpoint,
+            {
+                model: "upstream-model",
+                encoding_format: "float",
+                input: "hello",
+            },
+            "owner/bge",
+            SECRET,
+        );
+
+        expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("21");
+    });
+
     it("rejects an upstream that omits token usage entirely", async () => {
         const endpoint = buildRuntime();
         vi.stubGlobal(

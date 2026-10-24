@@ -124,12 +124,38 @@ export async function generateCommunityEmbeddings(
             "Community embedding endpoint did not return positive prompt token usage required for billing",
         );
     }
+    // The endpoint owner reports this number and the caller is billed for it,
+    // so it must be plausible for the input actually sent.
+    if (usage.prompt_tokens > maxPlausiblePromptTokens(inputs)) {
+        throw invalidResponse(
+            upstreamUrl,
+            "Community embedding endpoint reported more prompt tokens than the input can contain",
+        );
+    }
     const billableUsage: Usage = { promptTextTokens: usage.prompt_tokens };
     return embeddingResponse(
         responseModel,
         data,
         usage.prompt_tokens,
         billableUsage,
+    );
+}
+
+/** Special tokens (BOS/EOS/CLS/SEP) a tokenizer may add around each input. */
+const SPECIAL_TOKEN_ALLOWANCE_PER_INPUT = 16;
+
+/**
+ * A token covers at least one UTF-8 byte, so the input's byte length (plus a
+ * small special-token allowance) bounds any honest prompt token count.
+ */
+function maxPlausiblePromptTokens(inputs: string[]): number {
+    const encoder = new TextEncoder();
+    return inputs.reduce(
+        (total, input) =>
+            total +
+            encoder.encode(input).length +
+            SPECIAL_TOKEN_ALLOWANCE_PER_INPUT,
+        0,
     );
 }
 

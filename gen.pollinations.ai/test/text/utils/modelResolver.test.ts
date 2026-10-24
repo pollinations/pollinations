@@ -140,6 +140,21 @@ describe("resolveModelConfig", () => {
         ).toThrow("Model configuration not found for: gpt-5.3-codex");
     });
 
+    it("routes Scout recovery directly to DeepInfra priority", () => {
+        const result = resolveModelConfig(messages, {
+            model: "meta/llama-4-scout:deepinfra:priority",
+        });
+        expect(result.options.model).toBe(
+            "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+        );
+        expect(result.options.service_tier).toBe("priority");
+        expect(result.options.max_tokens).toBe(16384);
+        expect(result.options.provider).toBeUndefined();
+        expect(result.options.modelConfig?.directEndpoint).toBe(
+            "https://api.deepinfra.com/v1/openai/chat/completions",
+        );
+    });
+
     it("does not expose gpt-6-astra as an alias", () => {
         expect(() =>
             resolveModelConfig(messages, { model: "gpt-6-astra" }),
@@ -957,21 +972,6 @@ describe("resolveModelConfig", () => {
             });
         },
     );
-
-    it("routes Scout recovery directly to DeepInfra priority", () => {
-        const result = resolveModelConfig(messages, {
-            model: "meta/llama-4-scout:deepinfra:priority",
-        });
-        expect(result.options.model).toBe(
-            "meta-llama/Llama-4-Scout-17B-16E-Instruct",
-        );
-        expect(result.options.service_tier).toBe("priority");
-        expect(result.options.max_tokens).toBe(16384);
-        expect(result.options.provider).toBeUndefined();
-        expect(result.options.modelConfig?.directEndpoint).toBe(
-            "https://api.deepinfra.com/v1/openai/chat/completions",
-        );
-    });
 
     it("routes Qwen Vision directly to DeepInfra with an exact gateway backup", () => {
         const primary = resolveModelConfig(messages, { model: "qwen-vision" });

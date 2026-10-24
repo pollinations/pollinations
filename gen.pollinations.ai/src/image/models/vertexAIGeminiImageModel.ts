@@ -61,6 +61,7 @@ const VERTEX_GEMINI_IMAGE_CONFIGS = {
         generator: "Vertex AI Gemini 3.1 Flash-Lite Image",
         resolution: "1K",
         reasoning: true,
+        cachedInput: true,
     },
     "google/gemini-3-pro-image": {
         model: "gemini-3-pro-image",

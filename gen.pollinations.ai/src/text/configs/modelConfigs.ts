@@ -965,7 +965,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     "mistral-small-2603-openrouter": () =>
         createOpenRouterModelConfig({
             model: "mistralai/mistral-small-2603",
-            defaultOptions: { max_tokens: 64000 },
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["mistral/zdr"],
+                    ignore: ["mistral/eu", "mistral/us", "cloudflare"],
+                    allow_fallbacks: false,
+                },
+            },
         }),
 
     // -- Azure (Myceli Prod — eastus, Mistral Large) -------------------------

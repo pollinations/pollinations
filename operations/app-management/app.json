@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎮",
+    "name": "Tiny Fighter Arena",
+    "url": "https://kreggscode.github.io/tiny-fighter-arena",
+    "description": "Describe a fighter in one line, the AI designs the whole thing from it, then sends it into a short commentated battle up a five-rung ladder. One line in ( a shy storm cloud that apologises before it s",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "kreggscode",
+    "githubUserId": "117812547",
+    "repositoryUrl": "https://github.com/kreggscode/tiny-fighter-arena",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-14",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17379",
+    "approvedDate": "2026-10-24",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/3073525e-8ce2-4eef-a0ea-d43b30d20b94"
+  },
+  {
     "emoji": "💬",
     "name": "Radio Bloom",
     "url": "https://mrunknowne09-radio-bloom.static.hf.space",

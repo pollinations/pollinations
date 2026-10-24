@@ -1049,6 +1049,30 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.00201231, 8);
     });
 
+    it("keeps the Azure gpt-5.4-mini quote when OpenAI serves it", () => {
+        const model = "openai/gpt-5.4-mini";
+        expect(TEXT_SERVICES[model].fallbacks).toEqual([
+            "openai/gpt-5.4-mini:openai",
+        ]);
+        expect(TEXT_SERVICES["openai/gpt-5.4-mini:openai"]).toMatchObject({
+            provider: "openai",
+            priceMultiplier: 1,
+            hidden: true,
+        });
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                "promptTextTokens": 1000,
+                "promptCachedTokens": 200,
+                "completionTextTokens": 100,
+            },
+            servedBy: TEXT_SERVICES["openai/gpt-5.4-mini:openai"],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.001215, 12);
+        expect(billed.price.totalPrice).toBe(0.00091125);
+    });
+
     it("keeps the Kimi K3 quote when DeepInfra serves cached and reasoning tokens", () => {
         const primary = TEXT_SERVICES["moonshotai/kimi-k3"];
         const fallback = TEXT_SERVICES["moonshotai/kimi-k3:deepinfra"];
@@ -1186,30 +1210,6 @@ describe("static provider fallbacks", () => {
             for (const route of routes)
                 expect(publicAudio.has(route)).toBe(false);
         }
-    });
-
-    it("keeps the Azure gpt-5.4-mini quote when OpenAI serves it", () => {
-        const model = "openai/gpt-5.4-mini";
-        expect(TEXT_SERVICES[model].fallbacks).toEqual([
-            "openai/gpt-5.4-mini:openai",
-        ]);
-        expect(TEXT_SERVICES["openai/gpt-5.4-mini:openai"]).toMatchObject({
-            provider: "openai",
-            priceMultiplier: 1,
-            hidden: true,
-        });
-        const billed = calculateUsageBilling({
-            model,
-            usage: {
-                "promptTextTokens": 1000,
-                "promptCachedTokens": 200,
-                "completionTextTokens": 100,
-            },
-            servedBy: TEXT_SERVICES["openai/gpt-5.4-mini:openai"],
-            quotedBy: TEXT_SERVICES[model],
-        });
-        expect(billed.cost.totalCost).toBeCloseTo(0.001215, 12);
-        expect(billed.price.totalPrice).toBe(0.00091125);
     });
 
     it("charges SiliconFlow's reported cache hits at its full input rate", () => {

@@ -156,12 +156,22 @@ export const portkeyConfig: PortkeyConfigMap = {
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
             model: "microsoft/microsoft-decision-1",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["azure"] } },
+            },
         }),
     "microsoft/microsoft-decision-1:openrouter": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "microsoft/microsoft-decision-1",
+        defaultOptions: {
+            provider: {
+                only: ["azure"],
+                ignore: ["cloudflare"],
+                allow_fallbacks: false,
+            },
+        },
     }),
     // Azure's Microsoft provider endpoint speaks the TypeSafe native shape;
     // `model` is the deployment name.

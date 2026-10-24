@@ -589,6 +589,35 @@ describe("System One adapter", () => {
         expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 
+    it.each(["vercel", "openrouter"])(
+        "forwards Microsoft Decision-1's %s pin to its native request",
+        async (provider) => {
+            const config = findModelByName(
+                `microsoft/microsoft-decision-1:${provider}`,
+            )?.config();
+            const fetchSpy = vi
+                .spyOn(globalThis, "fetch")
+                .mockImplementationOnce(async (_input, init) => {
+                    expect(JSON.parse(String(init?.body))).toEqual({
+                        ...(config?.defaultOptions as Record<string, unknown>),
+                        state: nativeState,
+                        questions: nativeQuestions,
+                        model: "microsoft/microsoft-decision-1",
+                    });
+                    return Response.json({
+                        model: "microsoft-decision-1",
+                        answers,
+                        usage: { input_tokens: 44, output_tokens: 1 },
+                    });
+                });
+            await callSystemOne([{ role: "user", content: nativeContent }], {
+                modelConfig: { ...config, authKey: "test-key" },
+                provider: { only: ["cloudflare"] },
+            });
+            expect(fetchSpy).toHaveBeenCalledTimes(1);
+        },
+    );
+
     it("routes microsoft/microsoft-decision-1 to its Azure deployment with an api-key header", async () => {
         const azureEndpoint =
             "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/microsoft/v1/systemone";

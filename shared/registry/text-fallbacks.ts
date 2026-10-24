@@ -39,6 +39,7 @@ export const TEXT_FALLBACKS = {
         // Same Azure backend; covers gateway failures, not Microsoft outages.
         "microsoft/microsoft-decision-1:vercel": {
             provider: "vercel",
+            priceMultiplier: 1,
             // Vercel AI Gateway list price, the cheapest route.
             cost: {
                 promptTextTokens: perMillion(0.042),
@@ -47,6 +48,7 @@ export const TEXT_FALLBACKS = {
         },
         "microsoft/microsoft-decision-1:openrouter": {
             provider: "openrouter",
+            priceMultiplier: 1,
             // OpenRouter list price plus its 5.5% credit fee.
             cost: {
                 promptTextTokens: perMillion(0.042) * 1.055,

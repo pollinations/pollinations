@@ -8,6 +8,7 @@ const MAX_STATS_WINDOW_MINUTES = 7 * 24 * 60;
 
 interface ModelEntry {
     name: string;
+    category?: string;
     description?: string;
     output_modalities?: string[];
     input_modalities?: string[];
@@ -67,7 +68,7 @@ export const modelsCommand = new Command("models")
     .description("List available models or show model health stats")
     .option(
         "--type <type>",
-        "Filter: text, image, audio, video, 3d, embedding, all",
+        "Filter: text, decision, image, audio, video, 3d, embedding, all",
         "all",
     )
     .option("--verbose", "Show additional details (context length)")
@@ -81,6 +82,7 @@ export const modelsCommand = new Command("models")
         if (
             ![
                 "text",
+                "decision",
                 "image",
                 "audio",
                 "video",
@@ -90,7 +92,7 @@ export const modelsCommand = new Command("models")
             ].includes(opts.type)
         ) {
             fail(
-                "--type must be one of: text, image, audio, video, 3d, embedding, all",
+                "--type must be one of: text, decision, image, audio, video, 3d, embedding, all",
             );
         }
         if (opts.stats) {
@@ -108,10 +110,21 @@ export const modelsCommand = new Command("models")
 
                 const rows = await fetchModelStats(windowMinutes);
                 const wantType = opts.type as string;
+                // Decision models record text events, so match them by name.
+                const decisionNames =
+                    wantType === "decision"
+                        ? new Set(
+                              (await gen<ModelEntry[]>("/text/models"))
+                                  .filter((m) => m.category === "decision")
+                                  .map((m) => m.name),
+                          )
+                        : undefined;
                 const valid = rows.filter((r) => {
                     if (r.model === "undefined") return false;
                     if (Number(r.total_requests ?? 0) <= 1) return false;
                     if (wantType === "all") return true;
+                    if (decisionNames)
+                        return decisionNames.has(String(r.model));
                     const t = String(r.event_type ?? "").replace(
                         "generate.",
                         "",
@@ -161,10 +174,14 @@ export const modelsCommand = new Command("models")
                     raw.push({ model: m, type: mType });
                 }
             }
-            if (type === "all" || type === "text") {
+            if (type === "all" || type === "text" || type === "decision") {
                 const textModels = await gen<ModelEntry[]>("/text/models");
-                for (const m of textModels)
-                    raw.push({ model: m, type: "text" });
+                for (const m of textModels) {
+                    const mType =
+                        m.category === "decision" ? "decision" : "text";
+                    if (type !== "all" && mType !== type) continue;
+                    raw.push({ model: m, type: mType });
+                }
             }
             if (type === "all" || type === "audio") {
                 const audioModels = await gen<ModelEntry[]>("/audio/models");

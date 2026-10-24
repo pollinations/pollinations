@@ -36,6 +36,8 @@ export type ModelVariables = {
         /** Static registry definition, or a dynamic definition resolved from D1. */
         definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
+        /** The endpoint the route resolved the model for, when it names one. */
+        endpoint?: string;
         /**
          * Extra cache-key scope for models whose output is not shareable
          * between callers. Unset means the response is cacheable platform-wide,
@@ -142,6 +144,7 @@ export async function resolveModelDefinition(
         requested: model,
         resolved: entry.id,
         definition: entry.definition,
+        ...(supportedEndpoint && { endpoint: supportedEndpoint }),
         ...(entry.communityEndpoint && {
             communityEndpoint: entry.communityEndpoint,
         }),

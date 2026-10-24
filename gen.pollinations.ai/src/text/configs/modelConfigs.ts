@@ -238,6 +238,15 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-sol/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
+    "gpt-5.6-terra-openai": () => ({
+        provider: "openai",
+        model: "gpt-5.6-terra",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        directEndpoint: "https://api.openai.com/v1/chat/completions",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        serviceTier: "default",
+        ...azureOpenAIParameters,
+    }),
     "gpt-5.6-terra": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),

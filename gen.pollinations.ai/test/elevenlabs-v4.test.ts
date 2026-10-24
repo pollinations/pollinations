@@ -4,7 +4,7 @@ import {
     runInDurableObject,
     SELF,
 } from "cloudflare:test";
-import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
+import { AUDIO_SERVICES } from "@shared/registry/audio/index.ts";
 import {
     createTestApiKey,
     test as workerTest,
@@ -81,12 +81,12 @@ describe.each(["elevenlabs/eleven-v4", "elevenlabs/eleven-v4-turbo"] as const)(
                         100 -
                             billedRequests *
                                 [...input].length *
-                                AUDIO_SERVICES[model].cost
-                                    .completionAudioTokens,
+                                (AUDIO_SERVICES[model].cost
+                                    .completionAudioTokens as number),
                         8,
                     );
                 }
-                for (const voice of AUDIO_SERVICES[model].voices) {
+                for (const voice of AUDIO_SERVICES[model].voices as string[]) {
                     const response = await SELF.fetch(
                         "https://gen.pollinations.ai/v1/audio/speech",
                         {
@@ -227,7 +227,8 @@ describe.each(["elevenlabs/eleven-v4", "elevenlabs/eleven-v4-turbo"] as const)(
                 );
                 const price =
                     [...input].length *
-                    AUDIO_SERVICES[model].cost.completionAudioTokens;
+                    (AUDIO_SERVICES[model].cost
+                        .completionAudioTokens as number);
                 await vi.waitFor(async () => {
                     const balance = await env.DB.prepare(
                         "SELECT pack_balance FROM user WHERE id = ?",

@@ -1,5 +1,5 @@
 import { remapUpstreamStatus } from "@shared/error.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image/index.ts";
 import { calculateCost, calculatePrice } from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {

@@ -1,4 +1,4 @@
-import type { ImageModelName } from "@shared/registry/image.ts";
+import type { ImageModelName } from "@shared/registry/image/index.ts";
 
 const DEFAULT_IMAGE_SIDE_LENGTH = 1024;
 

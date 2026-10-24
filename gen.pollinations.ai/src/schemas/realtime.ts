@@ -1,9 +1,9 @@
+import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime/constants.ts";
 import {
-    DEFAULT_REALTIME_MODEL,
     REALTIME_MODEL_NAMES,
     REALTIME_SERVICES,
     type RealtimeModelName,
-} from "@shared/registry/realtime.ts";
+} from "@shared/registry/realtime/index.ts";
 import { resolveModelName } from "@shared/registry/registry.ts";
 import { z } from "zod";
 

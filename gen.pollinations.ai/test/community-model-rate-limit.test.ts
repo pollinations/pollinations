@@ -1,12 +1,12 @@
 import { env } from "cloudflare:test";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image/index.ts";
 import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
 import {
     getModels,
     getRegistryModelDefinition,
     type ModelDefinition,
 } from "@shared/registry/registry.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { TEXT_SERVICES } from "@shared/registry/text/index.ts";
 import { describe, expect, it } from "vitest";
 import type { CommunityModelRateLimiter } from "../src/durable-objects/CommunityModelRateLimiter.ts";
 
@@ -38,11 +38,15 @@ describe("model rate limiting", () => {
             env.COMMUNITY_MODEL_RATE_LIMITER.newUniqueId(),
         ) as DurableObjectStub<CommunityModelRateLimiter>;
         for (let i = 0; i < 8; i++) {
-            await expect(stub.check(definition.perUserRpm)).resolves.toEqual({
+            await expect(
+                stub.check(definition.perUserRpm as number),
+            ).resolves.toEqual({
                 allowed: true,
             });
         }
-        await expect(stub.check(definition.perUserRpm)).resolves.toMatchObject({
+        await expect(
+            stub.check(definition.perUserRpm as number),
+        ).resolves.toMatchObject({
             allowed: false,
         });
     });

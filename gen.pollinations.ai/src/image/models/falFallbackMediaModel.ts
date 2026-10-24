@@ -1,5 +1,5 @@
 import { UpstreamError } from "@shared/error.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image/index.ts";
 import {
     FalError,
     runFalJob,

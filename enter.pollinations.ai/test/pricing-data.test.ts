@@ -1,7 +1,7 @@
 import { BotIcon, ChatIcon, ImageIcon } from "@pollinations/ui";
-import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
-import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { AUDIO_SERVICES } from "@shared/registry/audio/index.ts";
+import { EMBEDDING_SERVICES } from "@shared/registry/embeddings/index.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image/index.ts";
 import {
     getAudioModelsInfo,
     getEmbeddingModelsInfo,
@@ -23,7 +23,7 @@ import {
     getRegistryModelDefinition,
     type ModelName,
 } from "@shared/registry/registry.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { TEXT_SERVICES } from "@shared/registry/text/index.ts";
 import { type ComponentProps, createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { assert, expect, test } from "vitest";

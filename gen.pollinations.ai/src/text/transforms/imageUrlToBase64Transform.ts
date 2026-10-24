@@ -1,5 +1,5 @@
 import type { ModelDefinition } from "@shared/registry/registry.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { TEXT_SERVICES } from "@shared/registry/text/index.ts";
 import debug from "debug";
 import { fetchUserImage, MAX_IMAGE_SIZE, UserImageError } from "@/userImage.ts";
 import { arrayBufferToBase64 } from "@/util.ts";

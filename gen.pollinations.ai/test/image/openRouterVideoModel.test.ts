@@ -1,4 +1,4 @@
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image/index.ts";
 import { calculateUsageBilling } from "@shared/registry/registry.ts";
 import { afterEach, assert, describe, expect, it, vi } from "vitest";
 import { type FallbackAttempt, withModelFallback } from "../../src/fallback.ts";

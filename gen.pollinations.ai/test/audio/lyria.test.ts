@@ -1,5 +1,5 @@
 import { env } from "cloudflare:test";
-import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
+import { AUDIO_SERVICES } from "@shared/registry/audio/index.ts";
 import { calculateUsageBilling } from "@shared/registry/registry.ts";
 import {
     MODEL_USED_HEADER,

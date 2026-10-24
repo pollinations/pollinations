@@ -1,4 +1,4 @@
-import type { EmbeddingServiceId } from "@shared/registry/embeddings.ts";
+import type { EmbeddingServiceId } from "@shared/registry/embeddings/index.ts";
 import type { ModelDefinition, Usage } from "@shared/registry/registry.ts";
 import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
 import {

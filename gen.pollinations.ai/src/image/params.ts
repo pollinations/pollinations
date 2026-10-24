@@ -1,4 +1,7 @@
-import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
+import {
+    IMAGE_SERVICES,
+    type ImageModelName,
+} from "@shared/registry/image/index.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { validateUserMediaUrl } from "@shared/user-media-url.ts";
 import { z } from "zod";

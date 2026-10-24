@@ -1,4 +1,4 @@
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { TEXT_SERVICES } from "@shared/registry/text/index.ts";
 import { describe, expect, it } from "vitest";
 import {
     findModelByName,

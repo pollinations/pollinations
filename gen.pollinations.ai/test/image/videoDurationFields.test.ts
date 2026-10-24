@@ -3,7 +3,7 @@ import {
     getVideoModelIds,
     IMAGE_SERVICES,
     type ImageModelName,
-} from "@shared/registry/image.ts";
+} from "@shared/registry/image/index.ts";
 import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
 import { describe, expect, it } from "vitest";
 

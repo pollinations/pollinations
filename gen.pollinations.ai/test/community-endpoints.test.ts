@@ -67,24 +67,25 @@ import {
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
-import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
-import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
-import { DEFAULT_3D_MODEL } from "@shared/registry/model3d.ts";
-import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
+import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio/constants.ts";
+import { DEFAULT_DECISION_MODEL } from "@shared/registry/decision/constants.ts";
+import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings/constants.ts";
+import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image/constants.ts";
+import { DEFAULT_3D_MODEL } from "@shared/registry/model3d/constants.ts";
+import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime/constants.ts";
 import {
     calculateUsageBilling,
     getRegistryModelDefinition,
     type ModelInputModality,
     type ModelOutputModality,
 } from "@shared/registry/registry.ts";
-import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import { DEFAULT_TEXT_MODEL } from "@shared/registry/text/constants.ts";
 import {
     FALLBACK_TARGET_HEADER,
     MODEL_USED_HEADER,
     USAGE_TYPE_HEADERS,
 } from "@shared/registry/usage-headers.ts";
-import { DEFAULT_DECISION_MODEL } from "@shared/schemas/decisions.ts";
+import {} from "@shared/schemas/decisions.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,

@@ -48,11 +48,42 @@ type Merged<TBase, TFallbacks extends FallbackMap> = TBase &
  * a full model definition placed directly after it, so ids and order match what
  * the catalog would look like if the routes were written out by hand.
  */
+/**
+ * Reject route ids that collide anywhere in the merged catalog. A loader
+ * already catches duplicates within a single parent, but a route can also
+ * reuse a base model's id, or share an id with another parent's route. The
+ * merge writes both into one map, so the later write silently wins — a
+ * collision is an authoring mistake, not a routing decision, so fail loudly.
+ */
+function assertNoRouteIdCollisions(
+    base: Record<string, ModelDefinition>,
+    fallbacks: FallbackMap,
+): void {
+    const baseIds = new Set(Object.keys(base));
+    const seenRouteIds = new Set<string>();
+    for (const [parentId, routes] of Object.entries(fallbacks)) {
+        for (const routeId of Object.keys(routes)) {
+            if (baseIds.has(routeId)) {
+                throw new Error(
+                    `Fallback route "${routeId}" reuses the id of base model "${routeId}"; rename the route.`,
+                );
+            }
+            if (seenRouteIds.has(routeId)) {
+                throw new Error(
+                    `Fallback route id "${routeId}" is declared under more than one parent (including "${parentId}"); rename it.`,
+                );
+            }
+            seenRouteIds.add(routeId);
+        }
+    }
+}
+
 export function mergeFallbacks<
     TFallbacks extends FallbackMap,
     TBase extends Record<string, ModelDefinition> &
         Record<keyof TFallbacks, ModelDefinition>,
 >(base: TBase, fallbacks: TFallbacks): Merged<TBase, TFallbacks> {
+    assertNoRouteIdCollisions(base, fallbacks);
     const merged: Record<string, ModelDefinition> = {};
     for (const [parentId, parent] of Object.entries(base)) {
         const routes = (fallbacks as FallbackMap)[parentId];

@@ -1,7 +1,5 @@
-import {
-    DEFAULT_3D_MODEL,
-    MODEL3D_SERVICES,
-} from "@shared/registry/model3d.ts";
+import { DEFAULT_3D_MODEL } from "@shared/registry/model3d/constants.ts";
+import { MODEL3D_SERVICES } from "@shared/registry/model3d/index.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { z } from "zod";
 

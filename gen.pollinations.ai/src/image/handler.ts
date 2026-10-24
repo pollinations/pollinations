@@ -1,6 +1,6 @@
 import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image/constants.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { secretEquals } from "@shared/secret-equal.ts";
 import type { Context } from "hono";

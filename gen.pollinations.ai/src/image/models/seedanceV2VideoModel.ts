@@ -6,7 +6,7 @@
  * Replicate's native multimodal input fields and remains URL-based.
  */
 
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image/index.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";

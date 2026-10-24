@@ -1,5 +1,5 @@
 import { UpstreamError } from "@shared/error.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image/index.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
@@ -171,8 +171,8 @@ export async function callKlingVideoAPI(
     // never substitute the requested duration for the provider's billed usage.
     const rates = IMAGE_SERVICES[KLING_MODEL].cost;
     const rate =
-        rates.completionVideoSeconds +
-        (generateAudio ? rates.completionAudioSeconds : 0);
+        (rates.completionVideoSeconds as number) +
+        (generateAudio ? (rates.completionAudioSeconds as number) : 0);
     const billedSeconds = Number(
         ((falBillableUnits(resultResponse) * 0.14) / rate).toFixed(9),
     );

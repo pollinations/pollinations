@@ -1,4 +1,4 @@
-import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image/constants.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { z } from "zod";
 import { BooleanQueryParamSchema } from "./text.ts";

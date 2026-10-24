@@ -1,4 +1,4 @@
-import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
+import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings/constants.ts";
 import { z } from "zod";
 import { MAX_EMBEDDING_BATCH_SIZE } from "@/embeddings/limits.ts";
 

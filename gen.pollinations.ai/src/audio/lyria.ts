@@ -1,5 +1,5 @@
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
-import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
+import { AUDIO_SERVICES } from "@shared/registry/audio/index.ts";
 import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
 import { falBillableUnits } from "../image/utils/falBillableUnits.ts";
 import { runFalJobResponse } from "../model3d/models/falClient.ts";

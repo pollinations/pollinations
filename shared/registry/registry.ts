@@ -15,45 +15,44 @@ export {
     totalPromptTokens,
 } from "./cost-variants";
 
+import { DECISION_SERVICES, type DecisionModelName } from "./decision";
 import { EMBEDDING_SERVICES, type EmbeddingServiceId } from "./embeddings";
 import { IMAGE_SERVICES, type ImageModelName } from "./image";
+import type {
+    Category,
+    ModelInputModality,
+    ModelOutputModality,
+    PRICE_UNITS,
+    VideoCapability,
+} from "./model-constants";
 import { MODEL3D_SERVICES, type Model3dName } from "./model3d";
 import type { BillingRateDefinition, PricingDimension } from "./public-pricing";
+import {
+    derivePrice,
+    getCostSheetsForModel,
+    isFallbackPricingAllowed,
+    isFlatRateModel,
+    isVisibleModelDefinition,
+} from "./public-pricing";
 import { REALTIME_SERVICES, type RealtimeModelName } from "./realtime";
 import { TEXT_SERVICES, type TextModelName } from "./text";
 
-export const MODEL_CATEGORIES = [
-    "text",
-    "image",
-    "audio",
-    "video",
-    "3d",
-    "embedding",
-    "realtime",
-    "decision",
-] as const;
-
-export type Category = (typeof MODEL_CATEGORIES)[number];
-
-export const MODEL_INPUT_MODALITIES = [
-    "text",
-    "image",
-    "audio",
-    "video",
-] as const;
-
-export type ModelInputModality = (typeof MODEL_INPUT_MODALITIES)[number];
-
-export const MODEL_OUTPUT_MODALITIES = [
-    "text",
-    "image",
-    "audio",
-    "video",
-    "embedding",
-    "3d",
-] as const;
-
-export type ModelOutputModality = (typeof MODEL_OUTPUT_MODALITIES)[number];
+export type {
+    Category,
+    ModelInputModality,
+    ModelOutputModality,
+    VideoCapability,
+} from "./model-constants";
+// The shared model vocabulary lives in a glob-free module so schema consumers
+// (and the code-agent bundle) can validate against it without loading the
+// catalogs. Re-exported here to keep the registry entry point complete.
+export {
+    MODEL_CATEGORIES,
+    MODEL_INPUT_MODALITIES,
+    MODEL_OUTPUT_MODALITIES,
+    PRICE_UNITS,
+    VIDEO_CAPABILITIES,
+} from "./model-constants";
 
 export type UsageType =
     | "promptTextTokens"
@@ -74,8 +73,6 @@ export type UsageType =
 
 // Usage represents raw usage metrics (tokens, seconds, etc.)
 export type Usage = { [K in UsageType]?: number };
-
-export const PRICE_UNITS = ["megapixel", "token", "byte"] as const;
 
 // Billed unit for a usage field whose name or category default misdescribes
 // it. `quantity` usage units make one billed unit. Display-only.
@@ -104,6 +101,20 @@ export type CostVariantMetadata = {
     description: string;
 };
 
+/**
+ * Model names are `string` at the type level. The per-model files load through
+ * `import.meta.glob`, whose keys TypeScript cannot narrow to literals, so
+ * `keyof typeof <catalog>` is `string` rather than a literal-id union.
+ *
+ * What load-time validation still protects: every id a *catalog declaration*
+ * uses — the loader rejects duplicate ids, unknown parents, and ids that
+ * collide anywhere in the catalog (see mergeFallbacks).
+ *
+ * What it does not: an id a *consumer* passes in — a request body, a config, a
+ * test. Those arrive as arbitrary strings and must be checked at the runtime
+ * boundary that receives them; `getRegistryModelDefinition` throws on an
+ * unknown id, and the generation routes resolve and 404.
+ */
 export type ModelName =
     | ImageModelName
     | TextModelName
@@ -111,18 +122,6 @@ export type ModelName =
     | EmbeddingServiceId
     | RealtimeModelName
     | Model3dName;
-
-export const VIDEO_CAPABILITIES = [
-    "start_frame",
-    "end_frame",
-    "keyframes",
-    "reference_images",
-    "reference_videos",
-    "reference_audios",
-    "audio_output",
-] as const;
-
-export type VideoCapability = (typeof VIDEO_CAPABILITIES)[number];
 
 export type BillingAdjustmentRule = BillingRateDefinition & {
     // Counts billable units from the response output (stream outputs carry a
@@ -286,18 +285,15 @@ function convertUsage(
     return convertedUsage as Usage;
 }
 
-export function derivePrice(
-    costDefinition: CostDefinition,
-    priceMultiplier: number,
-): PriceDefinition {
-    if (priceMultiplier === 1) return costDefinition;
-    return Object.fromEntries(
-        Object.entries(costDefinition).map(([k, v]) => [
-            k,
-            (v as number) * priceMultiplier,
-        ]),
-    ) as PriceDefinition;
-}
+// Priced/visibility predicates live in public-pricing.ts (glob-free) so the
+// enter code-agent bundle can import them without pulling the catalog loaders.
+export {
+    derivePrice,
+    getCostSheetsForModel,
+    isFallbackPricingAllowed,
+    isFlatRateModel,
+    isVisibleModelDefinition,
+};
 
 // Resolve the variant name for one request. Never throws: a throwing or
 // misconfigured selector logs and falls back to base rates — a selector bug
@@ -560,6 +556,7 @@ export function calculateUsageBilling({
 
 const MODEL_REGISTRY = {
     ...TEXT_SERVICES,
+    ...DECISION_SERVICES,
     ...IMAGE_SERVICES,
     ...AUDIO_SERVICES,
     ...EMBEDDING_SERVICES,
@@ -630,17 +627,9 @@ function filterVisible<TModelName extends ModelName>(
     );
 }
 
-/** The catalog's flat-rate rule: an explicit `flatRate`, or an image model with no prompt-token rate. */
-export const isFlatRateModel = (definition: ModelDefinition): boolean =>
-    definition.flatRate ??
-    (definition.category === "image" &&
-        definition.cost.promptTextTokens === undefined);
-
-export const isVisibleModelDefinition = (
-    definition: ModelDefinition,
-): boolean => definition.hidden !== true && definition.fallbackOnly !== true;
-
 export const getVisibleTextModels = () => filterVisible(getTextModels());
+export const getVisibleDecisionModels = () =>
+    filterVisible(Object.keys(DECISION_SERVICES) as DecisionModelName[]);
 export const getVisibleImageModels = () => filterVisible(getImageModels());
 export const getVisibleAudioModels = () => filterVisible(getAudioModels());
 export const getVisibleEmbeddingModels = () =>
@@ -668,32 +657,6 @@ export function getPriceDefinitionForModel(
     svc: ModelDefinition,
 ): PriceDefinition {
     return derivePrice(svc.cost, svc.priceMultiplier);
-}
-
-/** Every cost sheet a model can bill at: its base cost and each variant over it. */
-export function getCostSheetsForModel(svc: ModelDefinition): CostDefinition[] {
-    return [
-        svc.cost,
-        ...Object.values(svc.costVariants ?? {}).map((variant) => ({
-            ...svc.cost,
-            ...variant,
-        })),
-    ];
-}
-
-/**
- * True when `target` costs no more than `primary` for every usage type. A
- * usage type the primary does not price counts as free, so a target that
- * charges for it is rejected.
- */
-export function isFallbackPricingAllowed(
-    primary: PriceDefinition,
-    target: PriceDefinition,
-): boolean {
-    return Object.entries(target).every(
-        ([usageType, price]) =>
-            (price ?? 0) <= (primary[usageType as UsageType] ?? 0),
-    );
 }
 
 /**

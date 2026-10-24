@@ -1,10 +1,10 @@
+/// <reference types="vite/client" />
 import { env } from "cloudflare:test";
-import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
-import { AUDIO_FALLBACKS } from "@shared/registry/audio-fallbacks.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
-import { IMAGE_FALLBACKS } from "@shared/registry/image-fallbacks.ts";
+import { AUDIO_SERVICES } from "@shared/registry/audio/index.ts";
+import { DECISION_SERVICES } from "@shared/registry/decision/index.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image/index.ts";
 import { mergeFallbacks } from "@shared/registry/merge-fallbacks.ts";
-import { MODEL3D_SERVICES } from "@shared/registry/model3d.ts";
+import { MODEL3D_SERVICES } from "@shared/registry/model3d/index.ts";
 import {
     calculateUsageBilling,
     getVisibleAudioModels,
@@ -12,8 +12,7 @@ import {
     getVisibleTextModels,
     type ModelDefinition,
 } from "@shared/registry/registry.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
-import { TEXT_FALLBACKS } from "@shared/registry/text-fallbacks.ts";
+import { TEXT_SERVICES } from "@shared/registry/text/index.ts";
 import { describe, expect, it } from "vitest";
 import { findModelByName } from "../src/text/availableModels.ts";
 import { createBedrockNativeConfig } from "../src/text/configs/providerConfigs.ts";
@@ -126,6 +125,48 @@ const OPENROUTER_ROUTES = [
     ],
     ["tencent/hy3:openrouter:phala", "tencent/hy3", "phala"],
 ] as const;
+
+// Rebuild the parent→routes maps from the one-model-per-file route
+// declarations the loaders merge, so these checks do not depend on the
+// loader's merge output.
+type RouteFile = { id: string; parent: string; order: number };
+
+function routeFallbackMap(
+    modules: Record<string, RouteFile>,
+): Record<string, Record<string, unknown>> {
+    const byParent = new Map<string, RouteFile[]>();
+    for (const mod of Object.values(modules)) {
+        const list = byParent.get(mod.parent) ?? [];
+        list.push(mod);
+        byParent.set(mod.parent, list);
+    }
+    return Object.fromEntries(
+        [...byParent].map(([parent, list]) => [
+            parent,
+            Object.fromEntries(
+                list
+                    .sort((a, b) => a.order - b.order)
+                    .map((route) => [route.id, {}]),
+            ),
+        ]),
+    );
+}
+
+const TEXT_FALLBACKS = routeFallbackMap(
+    import.meta.glob("../../shared/registry/text/routes/*.ts", {
+        eager: true,
+    }) as Record<string, RouteFile>,
+);
+const IMAGE_FALLBACKS = routeFallbackMap(
+    import.meta.glob("../../shared/registry/image/routes/*.ts", {
+        eager: true,
+    }) as Record<string, RouteFile>,
+);
+const AUDIO_FALLBACKS = routeFallbackMap(
+    import.meta.glob("../../shared/registry/audio/routes/*.ts", {
+        eager: true,
+    }) as Record<string, RouteFile>,
+);
 
 function fallbackRoutes(fallbacks: Record<string, Record<string, unknown>>) {
     return Object.fromEntries(
@@ -629,8 +670,8 @@ describe("static provider fallbacks", () => {
     });
 
     it("keeps D1 paid-only and charges its public quote on Vercel fallback", () => {
-        const primary = TEXT_SERVICES["liquid/d1"];
-        const fallback = TEXT_SERVICES["liquid/d1:vercel"];
+        const primary = DECISION_SERVICES["liquid/d1"];
+        const fallback = DECISION_SERVICES["liquid/d1:vercel"];
         expect(primary.fallbacks).toEqual(["liquid/d1:vercel"]);
         expect(fallback).toMatchObject({
             provider: "vercel",
@@ -656,9 +697,9 @@ describe("static provider fallbacks", () => {
     });
 
     it("charges Decider's Vercel price on its OpenRouter fallback", () => {
-        const primary = TEXT_SERVICES["perplexity/pplx-decider-v1.2"];
+        const primary = DECISION_SERVICES["perplexity/pplx-decider-v1.2"];
         const fallback =
-            TEXT_SERVICES["perplexity/pplx-decider-v1.2:openrouter"];
+            DECISION_SERVICES["perplexity/pplx-decider-v1.2:openrouter"];
         expect(primary.fallbacks).toEqual([
             "perplexity/pplx-decider-v1.2:openrouter",
         ]);
@@ -696,9 +737,9 @@ describe("static provider fallbacks", () => {
     });
 
     it("charges Microsoft Decision-1's Azure rate on its Vercel and OpenRouter fallbacks", () => {
-        const primary = TEXT_SERVICES["microsoft/microsoft-decision-1"];
+        const primary = DECISION_SERVICES["microsoft/microsoft-decision-1"];
         const fallback =
-            TEXT_SERVICES["microsoft/microsoft-decision-1:openrouter"];
+            DECISION_SERVICES["microsoft/microsoft-decision-1:openrouter"];
         expect(primary.fallbacks).toEqual([
             "microsoft/microsoft-decision-1:vercel",
             "microsoft/microsoft-decision-1:openrouter",
@@ -745,9 +786,9 @@ describe("static provider fallbacks", () => {
     });
 
     it("quotes OpenAI's context tiers while accounting for OpenRouter's flat fallback cost", () => {
-        const primary = TEXT_SERVICES["openai/gpt-6-luna-decisions"];
+        const primary = DECISION_SERVICES["openai/gpt-6-luna-decisions"];
         const fallback =
-            TEXT_SERVICES["openai/gpt-6-luna-decisions:openrouter"];
+            DECISION_SERVICES["openai/gpt-6-luna-decisions:openrouter"];
         expect(primary).toMatchObject({
             provider: "openai",
             paidOnly: true,
@@ -1586,7 +1627,9 @@ describe("static provider fallbacks", () => {
         });
         const { promptTextTokens, completionTextTokens } =
             TEXT_SERVICES[primary].cost;
-        const quoted = 1000 * promptTextTokens + 100 * completionTextTokens;
+        const quoted =
+            1000 * (promptTextTokens as number) +
+            100 * (completionTextTokens as number);
         expect(billed.cost.totalCost).toBeCloseTo(quoted, 12);
         expect(billed.price.totalPrice).toBeCloseTo(quoted, 12);
     });

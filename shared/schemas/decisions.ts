@@ -9,9 +9,6 @@ import { z } from "zod";
  * native shape and the response returns `answers` plus token usage.
  */
 
-/** The only decision model today; callers may omit `model` entirely. */
-export const DEFAULT_DECISION_MODEL = "typesafe/jev-1.13";
-
 /**
  * State, instructions, and criteria all accept any JSON the caller wants to
  * hand the model — a sentence, a record, or a list of records — so none of

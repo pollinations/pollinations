@@ -1,4 +1,4 @@
-import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
+import { AUDIO_SERVICES } from "@shared/registry/audio/index.ts";
 import { describe, expect, it } from "vitest";
 import { resolveAudioDuration } from "../../src/routes/audio.ts";
 

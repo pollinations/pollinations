@@ -38,43 +38,41 @@ describe("parsePositiveInt", () => {
     });
 });
 
-test.for([
-    "text",
-    "empty",
-])("transcription rejects a %s file field with 400", async (kind, {
-    paidApiKey,
-}) => {
-    const mocks = createFetchMock({ tinybird: createMockTinybird() });
-    await mocks.enable("tinybird");
-    const form = new FormData();
-    form.set("model", "google/gemini-3.5-transcribe");
-    form.set(
-        "file",
-        kind === "text"
-            ? "not an audio upload"
-            : new File([], "empty.wav", { type: "audio/wav" }),
-    );
-    const ctx = createExecutionContext();
-    const response = await worker.fetch(
-        new Request("https://gen.pollinations.ai/v1/audio/transcriptions", {
-            method: "POST",
-            headers: { authorization: `Bearer ${paidApiKey}` },
-            body: form,
-        }),
-        withInlineGenerationCoordinator(env),
-        ctx,
-    );
-    expect(response.status).toBe(400);
-    expect(await response.json()).toMatchObject({
-        error: {
-            message: "The file field must contain a non-empty audio file",
-        },
-    });
-    await waitOnExecutionContext(ctx);
-    expect(
-        mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
-    ).toHaveLength(0);
-});
+test.for(["text", "empty"])(
+    "transcription rejects a %s file field with 400",
+    async (kind, { paidApiKey }) => {
+        const mocks = createFetchMock({ tinybird: createMockTinybird() });
+        await mocks.enable("tinybird");
+        const form = new FormData();
+        form.set("model", "google/gemini-3.5-transcribe");
+        form.set(
+            "file",
+            kind === "text"
+                ? "not an audio upload"
+                : new File([], "empty.wav", { type: "audio/wav" }),
+        );
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/v1/audio/transcriptions", {
+                method: "POST",
+                headers: { authorization: `Bearer ${paidApiKey}` },
+                body: form,
+            }),
+            withInlineGenerationCoordinator(env),
+            ctx,
+        );
+        expect(response.status).toBe(400);
+        expect(await response.json()).toMatchObject({
+            error: {
+                message: "The file field must contain a non-empty audio file",
+            },
+        });
+        await waitOnExecutionContext(ctx);
+        expect(
+            mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+        ).toHaveLength(0);
+    },
+);
 
 test("transcription enforces the API key's allowed models", async ({
     restrictedApiKey,

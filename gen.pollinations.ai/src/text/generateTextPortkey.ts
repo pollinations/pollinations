@@ -8,6 +8,7 @@ import { normalizeOptions } from "./textGenerationUtils.js";
 import { generateHeaders } from "./transforms/headerGenerator.js";
 import { imageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
 import { processParameters } from "./transforms/parameterProcessor.js";
+import { pdfFileParts } from "./transforms/pdfFileParts.js";
 import type {
     ChatCompletion,
     ChatMessage,
@@ -16,6 +17,7 @@ import type {
     TransformResult,
 } from "./types.js";
 import { resolveModelConfig } from "./utils/modelResolver.js";
+import { callVercelSearch } from "./vercelSearch.ts";
 
 export const log = debug("pollinations:portkey");
 
@@ -53,6 +55,10 @@ export async function generateTextPortkey(
         state = await modelDef.transform(messages, state.options);
     }
 
+    // `voice` is a GET /text shortcut: the audio models' transform has already
+    // folded it into `audio.voice`, and no provider reads it at the top level.
+    delete state.options.voice;
+
     if (state.options.model) {
         state = await resolveModelConfig(state.messages, state.options);
         // TypeSafe has its own wire format and does not use Portkey transforms.
@@ -61,6 +67,7 @@ export async function generateTextPortkey(
         }
         state = await generateHeaders(state.messages, state.options);
         state = await imageUrlToBase64Transform(state.messages, state.options);
+        state = pdfFileParts(state.messages, state.options);
         state = await processParameters(state.messages, state.options);
     }
 
@@ -107,6 +114,9 @@ export async function generateTextPortkey(
 
     // This internal transport belongs only to the Responses adapter.
     delete state.options.responsesFetcher;
+
+    if (modelDef?.useVercelSearchFormatting)
+        return callVercelSearch(state.messages, state.options, requestConfig);
 
     const completion = await genericOpenAIClient(
         state.messages,

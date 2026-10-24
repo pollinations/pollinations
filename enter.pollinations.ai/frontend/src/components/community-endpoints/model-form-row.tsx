@@ -6,12 +6,15 @@ export function ModelFormRow({
     help,
     optional = false,
     action,
+    note,
     children,
 }: {
     label: string;
     help?: ReactNode;
     optional?: boolean;
     action?: ReactNode;
+    /** Shown under the control so the label stays centred on the control alone. */
+    note?: ReactNode;
     children: ReactNode;
 }) {
     return (
@@ -39,6 +42,7 @@ export function ModelFormRow({
                     children
                 )}
             </div>
+            {note && <div className="min-w-0 sm:col-start-2">{note}</div>}
         </Field.Root>
     );
 }

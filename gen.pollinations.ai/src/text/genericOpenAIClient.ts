@@ -1,5 +1,6 @@
 import { collectUpstreamHeaders } from "@shared/error.ts";
 import debug from "debug";
+import { createParser } from "eventsource-parser";
 import { apiErrorStatus } from "./errors.ts";
 import { prepareMessages } from "./textGenerationUtils.js";
 import type {
@@ -10,7 +11,10 @@ import type {
     ServiceError,
     TransformOptions,
 } from "./types.js";
-import { cleanNullAndUndefined } from "./utils/objectCleaners.js";
+import {
+    cleanNullAndUndefined,
+    isPlainObject,
+} from "./utils/objectCleaners.js";
 
 const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
@@ -58,6 +62,102 @@ function ensureOpenAISseDone(
                 if (!seenDone) {
                     controller.enqueue(encoder.encode("data: [DONE]\n\n"));
                 }
+            },
+        }),
+    );
+}
+
+/** Translate Mistral thinking chunks into the existing OpenAI response fields. */
+function normalizeMistralContent(
+    completion: Pick<ChatCompletion, "choices">,
+): void {
+    for (const choice of completion.choices ?? []) {
+        for (const message of [choice.message, choice.delta]) {
+            if (!message || !Array.isArray(message.content)) continue;
+            const parts = message.content;
+            if (
+                !parts.every(
+                    (part) =>
+                        isPlainObject(part) &&
+                        (part.type === "text" || part.type === "thinking"),
+                )
+            )
+                continue;
+            let text = "";
+            let reasoning = "";
+            for (const part of parts) {
+                if (!isPlainObject(part)) continue;
+                if (part.type === "text" && typeof part.text === "string") {
+                    text += part.text;
+                } else if (
+                    part.type === "thinking" &&
+                    Array.isArray(part.thinking)
+                ) {
+                    for (const chunk of part.thinking) {
+                        if (
+                            isPlainObject(chunk) &&
+                            typeof chunk.text === "string"
+                        )
+                            reasoning += chunk.text;
+                    }
+                }
+            }
+            message.content = text;
+            if (reasoning) message.reasoning_content = reasoning;
+        }
+    }
+}
+
+function removeReasoning(completion: Pick<ChatCompletion, "choices">): void {
+    for (const choice of completion.choices ?? []) {
+        for (const message of [choice.message, choice.delta]) {
+            if (!message) continue;
+            delete message.reasoning;
+            delete message.reasoning_content;
+            delete message.reasoning_details;
+        }
+    }
+}
+
+function transformStreamCompletions(
+    source: ReadableStream<Uint8Array>,
+    transform: (completion: ChatCompletion) => void,
+): ReadableStream<Uint8Array> {
+    const decoder = new TextDecoder();
+    const encoder = new TextEncoder();
+    let parser: ReturnType<typeof createParser>;
+    return source.pipeThrough(
+        new TransformStream({
+            start(controller) {
+                parser = createParser({
+                    onEvent(event) {
+                        let data = event.data;
+                        if (data.trim() !== "[DONE]") {
+                            const completion = JSON.parse(
+                                data,
+                            ) as ChatCompletion;
+                            transform(completion);
+                            data = JSON.stringify(completion);
+                        }
+                        const fields: string[] = [];
+                        if (event.event !== undefined)
+                            fields.push(`event: ${event.event}`);
+                        if (event.id !== undefined)
+                            fields.push(`id: ${event.id}`);
+                        for (const line of data.split("\n"))
+                            fields.push(`data: ${line}`);
+                        controller.enqueue(
+                            encoder.encode(`${fields.join("\n")}\n\n`),
+                        );
+                    },
+                });
+            },
+            transform(chunk) {
+                parser.feed(decoder.decode(chunk, { stream: true }));
+            },
+            flush() {
+                parser.feed(`${decoder.decode()}\n\n`);
+                parser.reset({ consume: true });
             },
         }),
     );
@@ -165,6 +265,15 @@ export async function genericOpenAIClient(
     const { endpoint, additionalHeaders = {}, fetcher = fetch } = config;
     const startTime = Date.now();
     const requestId = crypto.randomUUID();
+    const hideReasoning =
+        options.include_reasoning === false ||
+        (options.reasoning as { exclude?: boolean } | undefined)?.exclude ===
+            true;
+    const normalizeContent = options.modelConfig?.useMistralChatFormat === true;
+    const transformCompletion = (completion: ChatCompletion) => {
+        if (normalizeContent) normalizeMistralContent(completion);
+        if (hideReasoning) removeReasoning(completion);
+    };
     let requestUrl: URL | undefined;
 
     log(`[${requestId}] Starting request`, {
@@ -202,6 +311,25 @@ export async function genericOpenAIClient(
             messages: preparedMessages,
             ...cleanedOptions,
         });
+
+        if (normalizeContent && isPlainObject(requestBody)) {
+            if (requestBody.seed !== undefined) {
+                requestBody.random_seed = requestBody.seed;
+                delete requestBody.seed;
+            }
+            const reasoning = requestBody.reasoning;
+            if (
+                requestBody.reasoning_effort === undefined &&
+                isPlainObject(reasoning)
+            ) {
+                if (reasoning.enabled === false)
+                    requestBody.reasoning_effort = "none";
+                else if (typeof reasoning.effort === "string")
+                    requestBody.reasoning_effort = reasoning.effort;
+            }
+            delete requestBody.reasoning;
+            delete requestBody.include_reasoning;
+        }
 
         log(`[${requestId}] Request body prepared`, {
             model: modelName,
@@ -267,7 +395,14 @@ export async function genericOpenAIClient(
                     requestUrl,
                 );
             }
-            const streamToReturn = ensureOpenAISseDone(response.body);
+            const streamToReturn = ensureOpenAISseDone(
+                hideReasoning || normalizeContent
+                    ? transformStreamCompletions(
+                          response.body,
+                          transformCompletion,
+                      )
+                    : response.body,
+            );
             return withUpstreamRequestUrl(
                 {
                     id: `genericopenai-${requestId}`,
@@ -300,6 +435,7 @@ export async function genericOpenAIClient(
             error.upstreamHeaders = collectUpstreamHeaders(response.headers);
             throw error;
         }
+        transformCompletion(data);
         const responseError = responseBodyError(data);
         if (responseError) {
             const errorDetails =
@@ -333,6 +469,14 @@ export async function genericOpenAIClient(
         const choices = (data.choices?.length ? data.choices : [{}]).map(
             (choice): CompletionChoice => {
                 const formattedChoice = { ...choice };
+                if (formattedChoice.message) {
+                    const message = { ...formattedChoice.message };
+                    // DeepInfra returns null for optional fields that Chat
+                    // request messages require to be absent rather than null.
+                    if (message.name === null) delete message.name;
+                    if (message.tool_calls === null) delete message.tool_calls;
+                    formattedChoice.message = message;
+                }
                 // Some providers report "stop" even when they returned a tool
                 // call. Keep the compatibility fix without dropping choices.
                 if (formattedChoice.message?.tool_calls?.length) {

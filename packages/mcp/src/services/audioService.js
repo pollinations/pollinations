@@ -82,7 +82,10 @@ export async function transcribeAudio(params, context) {
     if (typeof result?.text !== "string") {
         throw new Error("Transcription returned no text");
     }
-    return createMCPResponse([createTextContent(result.text)]);
+    return createMCPResponse([
+        createTextContent(result.text),
+        createTextContent({ usage: result.usage }, true),
+    ]);
 }
 
 async function generateAudio(params, context) {
@@ -155,7 +158,7 @@ export const audioTools = [
                 .boolean()
                 .optional()
                 .describe("Generate instrumental music where supported"),
-            instruct: z
+            instructions: z
                 .string()
                 .optional()
                 .describe("Emotion or style instruction where supported"),

@@ -6,6 +6,7 @@ import {
     type AccountBalance,
     useAccountBalance,
 } from "../../hooks/use-account-balance.ts";
+import { REFUND_POLICY_URL, TERMS_URL } from "../pollen/pollen-balance.tsx";
 import { AuthAccountIdentity } from "./auth-account-identity.tsx";
 
 // Footnote links stay quiet like the shared legal notice.
@@ -33,13 +34,34 @@ export const footnotes = {
         <>
             Need help?{" "}
             <InlineLink
-                href="https://discord.gg/pollinations-ai-885844321461485618"
+                href="https://discord.gg/k9F7SyTgqn"
                 tone="quiet"
                 showIcon={false}
             >
                 Ask on Discord
             </InlineLink>
             .
+        </>
+    ),
+    // The top-up page: who to ask and the terms of buying.
+    payment: (
+        <>
+            Payment help:{" "}
+            <InlineLink
+                href="mailto:billing@pollinations.ai"
+                tone="quiet"
+                showIcon={false}
+            >
+                billing@pollinations.ai
+            </InlineLink>
+            {" · "}
+            <InlineLink href={TERMS_URL} tone="quiet" showIcon={false}>
+                Terms
+            </InlineLink>
+            {" · "}
+            <InlineLink href={REFUND_POLICY_URL} tone="quiet" showIcon={false}>
+                Refund
+            </InlineLink>
         </>
     ),
     billing: (

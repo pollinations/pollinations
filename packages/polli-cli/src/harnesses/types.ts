@@ -32,10 +32,8 @@ export interface HarnessResult {
     routerInstalled?: boolean;
     routerVersion?: string;
     routerCompatible?: boolean;
-    routerReady?: boolean;
     clientInstalled?: boolean;
     providerReady?: boolean;
-    profileReady?: boolean;
     keyReady?: boolean;
     smokeVerified?: boolean;
     next?: string;

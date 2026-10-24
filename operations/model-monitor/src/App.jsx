@@ -23,6 +23,7 @@ import {
 } from "@pollinations/ui";
 import { ModalityChip } from "@pollinations/ui/gen";
 import { Fragment, useCallback, useEffect, useState } from "react";
+import EvalsView from "./EvalsView.jsx";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 import {
     computeHealthStatus,
@@ -69,6 +70,7 @@ const MODEL_TYPES = [
     { key: "realtime", title: "Realtime" },
     { key: "3d", title: "3D" },
     { key: "text", title: "Text" },
+    { key: "decision", title: "Decision" },
     { key: "embedding", title: "Embedding" },
 ];
 
@@ -112,7 +114,7 @@ const EXTERNAL_LINKS = [
         showLabel: true,
     },
     {
-        href: "https://discord.gg/pollinations-ai-885844321461485618",
+        href: "https://discord.gg/k9F7SyTgqn",
         label: "Discord",
         icon: <DiscordIcon className="h-4 w-4" />,
     },
@@ -593,7 +595,61 @@ function WindowTabs({ value, onChange }) {
     );
 }
 
-function App() {
+const VIEWS = [
+    { key: "health", label: "Health" },
+    { key: "evals", label: "Evals" },
+];
+
+function ViewTabs({ value, onChange }) {
+    return (
+        <div className="flex gap-1.5">
+            {VIEWS.map(({ key, label }) => (
+                <TabButton
+                    key={key}
+                    active={value === key}
+                    onClick={() => onChange(key)}
+                    size="lg"
+                >
+                    {label}
+                </TabButton>
+            ))}
+        </div>
+    );
+}
+
+function Header() {
+    return (
+        <AppHeader
+            appName="Model Monitor"
+            navLabel="Model Monitor links"
+            autoHide
+            innerClassName="polli:max-w-6xl"
+        >
+            {EXTERNAL_LINKS.map((link) => (
+                <HeaderLink key={link.href} {...link} />
+            ))}
+            <ColorModeToggle />
+        </AppHeader>
+    );
+}
+
+function EvalsPage({ view, onView }) {
+    return (
+        <div className="min-h-dvh bg-app-bg text-theme-text-base">
+            <Header />
+            <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7">
+                <Text className="m-0 max-w-3xl">
+                    Weekly evals: every text model, community models included,
+                    answers the same fresh questions.
+                </Text>
+                <ViewTabs value={view} onChange={onView} />
+                <EvalsView />
+            </main>
+        </div>
+    );
+}
+
+function App({ view, onView }) {
     const [aggregationWindow, setAggregationWindow] = useState("60m");
     const [adminMode] = useState(isAdminPath);
     const { models, lastUpdated, error, endpointStatus } =
@@ -796,23 +852,14 @@ function App() {
 
     return (
         <div className="min-h-dvh bg-app-bg text-theme-text-base">
-            <AppHeader
-                appName="Model Monitor"
-                navLabel="Model Monitor links"
-                autoHide
-                innerClassName="polli:max-w-6xl"
-            >
-                {EXTERNAL_LINKS.map((link) => (
-                    <HeaderLink key={link.href} {...link} />
-                ))}
-                <ColorModeToggle />
-            </AppHeader>
+            <Header />
             <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7">
                 <section className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex min-w-0 flex-col gap-1">
                         <Text className="m-0 max-w-3xl">
                             Real-time health monitoring for Pollinations AI
-                            models.
+                            models, based on real user requests. Our own tests
+                            and monitoring probes are not counted.
                         </Text>
                         <Text size="xs" tone="soft" className="m-0">
                             Data as of:{" "}
@@ -824,6 +871,7 @@ function App() {
                             }) || "-"}{" "}
                             UTC
                         </Text>
+                        <ViewTabs value={view} onChange={onView} />
                     </div>
                     <WindowTabs
                         value={aggregationWindow}
@@ -1271,4 +1319,23 @@ function App() {
     );
 }
 
-export default App;
+export default function Root() {
+    const [view, setView] = useState(() =>
+        window.location.hash === "#evals" ? "evals" : "health",
+    );
+    const changeView = useCallback((next) => {
+        setView(next);
+        window.history.replaceState(
+            null,
+            "",
+            next === "evals"
+                ? "#evals"
+                : `${window.location.pathname}${window.location.search}`,
+        );
+    }, []);
+    return view === "evals" ? (
+        <EvalsPage view={view} onView={changeView} />
+    ) : (
+        <App view={view} onView={changeView} />
+    );
+}

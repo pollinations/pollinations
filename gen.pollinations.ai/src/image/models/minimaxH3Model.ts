@@ -1,5 +1,4 @@
 import { UpstreamError } from "@shared/error.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
@@ -300,17 +299,6 @@ async function callFalMinimaxMaxVariant(
               ? imageEndpoint
               : textEndpoint;
     const requestedAspectRatio = safeParams.aspectRatio;
-    if (
-        !hasFrames &&
-        requestedAspectRatio &&
-        !H3_MAX_ASPECT_RATIOS.includes(
-            requestedAspectRatio as (typeof H3_MAX_ASPECT_RATIOS)[number],
-        )
-    ) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${title} does not support aspectRatio ${requestedAspectRatio}`,
-        });
-    }
 
     return callFalH3API(
         title,
@@ -403,7 +391,6 @@ export async function callMinimaxH3MaxTurboAPI(
         undefined,
         prompt,
         safeParams,
-        // Turbo's reviewed registry rate applies to fal's weighted units.
-        IMAGE_SERVICES[H3_MAX_TURBO_MODEL].cost.completionVideoSeconds,
+        "lookup",
     );
 }

@@ -1,40 +1,30 @@
 import {
-    normalizeAllowedModelSelection,
-    setConsentModelGroup,
-    toggleConsentModel,
+    readModelSelection,
+    writeModelSelection,
 } from "@frontend/components/keys/model-selection.ts";
 import {
     DEFAULT_CONSENT_BUDGET,
     DEFAULT_CONSENT_EXPIRY_DAYS,
     expiryDaysToExpiresIn,
     getAuthorizeInitialPermissions,
+    getGrantedOAuthScope,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
+import { parseAuthorizeRedirectUrl } from "@shared/auth/redirect-uri.ts";
+import { MODEL_CATEGORIES } from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
 
-describe("normalizeAllowedModelSelection", () => {
-    it("collapses fully selected model lists back to null", () => {
-        const allModelIds = ["a", "b", "c"];
-
-        expect(
-            normalizeAllowedModelSelection(["a", "b", "c"], allModelIds),
-        ).toBeNull();
-    });
-
-    it("keeps partial selections as explicit arrays", () => {
-        const allModelIds = ["a", "b", "c"];
-
-        expect(normalizeAllowedModelSelection(["a", "b"], allModelIds)).toEqual(
-            ["a", "b"],
+describe("getGrantedOAuthScope", () => {
+    it.each([
+        [[], [], undefined],
+        [["generate"], [], "generate"],
+        [["generate", "usage", "keys"], ["usage"], "generate usage"],
+        [["usage"], [], ""],
+        [["unknown"], [], ""],
+    ])("echoes granted scopes for %j", (requested, granted, expected) => {
+        expect(getGrantedOAuthScope(new Set(requested), granted)).toBe(
+            expected,
         );
-    });
-
-    it("does not collapse to null when selections include stale model ids", () => {
-        const allModelIds = ["a", "b", "c"];
-
-        expect(
-            normalizeAllowedModelSelection(["a", "b", "x"], allModelIds),
-        ).toEqual(["a", "b", "x"]);
     });
 });
 
@@ -160,36 +150,57 @@ describe("sanitizeAuthorizeAccountPermissions", () => {
     });
 });
 
-describe("permission picker selections", () => {
-    it("keeps a finite consent grant finite when every offered model is reselected", () => {
-        const offered = ["a", "b"];
-        const narrowed = toggleConsentModel(null, offered, "a");
-        expect(narrowed).toEqual(["b"]);
-        expect(new Set(toggleConsentModel(narrowed, offered, "a"))).toEqual(
-            new Set(offered),
-        );
-        expect(toggleConsentModel(narrowed, offered, "unrequested")).toEqual([
-            "b",
+describe("model category selection", () => {
+    it("keeps model IDs beside categories so a save never widens them", () => {
+        const selection = readModelSelection([
+            "flux-schnell",
+            "audio",
+            "community/alice/private",
+        ]);
+        expect([...selection.categories]).toEqual(["audio"]);
+        expect(selection.models).toEqual([
+            "flux-schnell",
+            "community/alice/private",
+        ]);
+        selection.categories.add("text");
+        expect(writeModelSelection(selection)).toEqual([
+            "text",
+            "audio",
+            "flux-schnell",
+            "community/alice/private",
         ]);
     });
-    it("changes only visible models and preserves selections outside the loaded catalog", () => {
+
+    it("stores every category as all models and keeps none distinct", () => {
+        const all = readModelSelection(null);
+        expect([...all.categories].sort()).toEqual(
+            [...MODEL_CATEGORIES].sort(),
+        );
+        expect(writeModelSelection(all)).toBeNull();
         expect(
-            setConsentModelGroup(
-                ["a", "b", "private"],
-                ["a", "b", "c"],
-                ["a"],
-                false,
-            ),
-        ).toEqual(["b", "private"]);
-        expect(
-            setConsentModelGroup(["b"], ["a", "b"], ["a", "unrequested"], true),
-        ).toEqual(["b", "a"]);
-    });
-    it("preserves the difference between no models and all models", () => {
-        expect(normalizeAllowedModelSelection([], ["a", "b"])).toEqual([]);
-        expect(normalizeAllowedModelSelection([], [])).toEqual([]);
-        expect(
-            setConsentModelGroup(null, ["a", "b"], ["a", "b"], false),
+            writeModelSelection({ categories: new Set(), models: [] }),
         ).toEqual([]);
+    });
+});
+
+describe("parseAuthorizeRedirectUrl", () => {
+    it.each([
+        "https://app.example/callback?x=1",
+        "http://localhost:5173/",
+        "http://127.0.0.1:8080/cb",
+        "http://[::1]:3000/cb",
+        "myapp://callback",
+    ])("accepts %s", (url) => {
+        expect(parseAuthorizeRedirectUrl(url)?.href).toBe(new URL(url).href);
+    });
+
+    it.each([
+        " JavaScript:void(0)",
+        "java\tscript://app.example/%0avoid(0)",
+        "data:text/html,hello",
+        "file:///C:/app/index.html",
+        "not a url",
+    ])("rejects %j", (url) => {
+        expect(parseAuthorizeRedirectUrl(url)).toBeNull();
     });
 });

@@ -22,6 +22,13 @@
     --color-brand-dark: var(--polli-color-brand-dark);
     --color-brand-accent: var(--polli-color-brand-accent);
 
+    --color-social-discord: var(--polli-color-social-discord);
+    --color-social-discord-text: var(--polli-color-social-discord-text);
+    --color-social-github: var(--polli-color-social-github);
+    --color-social-github-hover: var(--polli-color-social-github-hover);
+    --color-social-github-text: var(--polli-color-social-github-text);
+    --color-social-github-border: var(--polli-color-social-github-border);
+
     --color-app-bg: var(--polli-color-app-bg);
     --color-divider: var(--polli-color-divider);
 
@@ -78,11 +85,6 @@
 
     --color-outcome-positive-text: var(--polli-color-outcome-positive-text);
     --color-outcome-negative-text: var(--polli-color-outcome-negative-text);
-
-    --color-switch-thumb: var(--polli-color-switch-thumb);
-    --color-switch-track-off: var(--polli-color-switch-track-off);
-    --color-switch-track-on: var(--polli-color-switch-track-on);
-    --color-switch-track-invalid: var(--polli-color-switch-track-invalid);
 
     --color-surface-block: var(--polli-color-surface-block);
     --color-surface-opaque: var(--polli-color-surface-opaque);

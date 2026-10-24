@@ -22,6 +22,7 @@ import { RetentionTable } from "./components/RetentionTable";
 import { Trend } from "./components/Trend";
 import { SOURCE_LABELS, useKpiData } from "./hooks/useKpiData";
 import { calcChange, formatValue, weekLabel } from "./lib/format";
+import { OFFICIAL_APP_VIEWS } from "./lib/officialApps";
 import { DEFAULT_WEEKS, WEEK_RANGES, weeksFromSearch } from "./lib/range";
 
 const EXPORT_COLUMNS = [
@@ -51,6 +52,7 @@ const EXPORT_COLUMNS = [
     ["agentUsers", "Observed agent unique users"],
     ["mcpCalls", "Recorded MCP calls"],
     ["mcpUsers", "MCP unique users"],
+    ...OFFICIAL_APP_VIEWS.map(({ key, name }) => [key, name]),
 ];
 
 function exportCsv(weeklyData) {
@@ -200,7 +202,8 @@ function Dashboard({ accountUser }) {
                     <Text as="p" tone="base">
                         Weekly KPIs for pollinations.ai. Figures are the last
                         full week ({weekLabel(currentWeek?.week)}) against the
-                        one before it.
+                        one before it. Usage excludes legacy APIs, company
+                        operations and development tests.
                     </Text>
                     <label className="flex items-center gap-2 text-sm text-theme-text-muted">
                         Range

@@ -1,8 +1,12 @@
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient } from "../../api.ts";
 import { formatActivityChartDate } from "./activity-helpers";
-import { type ActivityPeriod, isInActivityBucket } from "./activity-period";
+import {
+    type ActivityPeriod,
+    activityTimezone,
+    isInActivityBucket,
+} from "./activity-period";
 import type { DataPoint, Metric } from "./types";
 
 export type EarningsSource = "byop_markup" | "community_model";
@@ -108,9 +112,15 @@ export function useEarningsData(
         const controller = new AbortController();
         request.current = controller;
         setStatus({ key: requestKey, pending: true, error: null });
-        return apiClient.account.earnings
+        return accountClient.earnings
             .$get(
-                { query: { granularity, period } },
+                {
+                    query: {
+                        granularity,
+                        period,
+                        timezone: activityTimezone(),
+                    },
+                },
                 { init: { signal: controller.signal } },
             )
             .then((r) => {

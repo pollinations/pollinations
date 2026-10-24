@@ -11,6 +11,7 @@ import {
     ColorModeToggle,
     Dropdown,
     DropdownItem,
+    StableLabel,
     TabButton,
 } from "@pollinations/ui";
 import { DashboardAccountMenu, DashboardSignIn } from "@pollinations/ui/auth";
@@ -20,10 +21,10 @@ import {
     currentDashboards,
     type Dashboard,
     dashboardSrc,
-    hasTrafficSelector,
+    RANGE_LABELS,
+    type Range,
     readDashboardUid,
-    readTraffic,
-    TRAFFIC,
+    readRange,
 } from "./dashboards.ts";
 
 function useDashboards(): Dashboard[] {
@@ -89,7 +90,10 @@ function DashboardPicker({
                     ariaLabel={`Select dashboard, showing ${title}`}
                     className="gap-2"
                 >
-                    <span className="truncate">{title}</span>
+                    <StableLabel
+                        text={title}
+                        options={dashboards.map((dashboard) => dashboard.title)}
+                    />
                     <ChevronIcon expanded={open} />
                 </TabButton>
             )}
@@ -114,6 +118,52 @@ function DashboardPicker({
     );
 }
 
+/** Sized for the widest label, so switching ranges moves nothing. */
+function RangePicker({
+    selected,
+    onSelect,
+}: {
+    selected: Range;
+    onSelect: (range: Range) => void;
+}) {
+    const label = RANGE_LABELS[selected];
+    return (
+        <Dropdown
+            align="start"
+            className="w-60 max-w-[calc(100vw-2rem)] p-1"
+            trigger={(open) => (
+                <TabButton
+                    active={open}
+                    size="sm"
+                    ariaLabel={`Select time range, showing ${label}`}
+                    className="gap-2"
+                >
+                    <StableLabel
+                        text={label}
+                        options={Object.values(RANGE_LABELS)}
+                    />
+                    <ChevronIcon expanded={open} />
+                </TabButton>
+            )}
+        >
+            {(close) =>
+                (Object.keys(RANGE_LABELS) as Range[]).map((range) => (
+                    <DropdownItem
+                        key={range}
+                        aria-current={range === selected ? "true" : undefined}
+                        onClick={() => {
+                            onSelect(range);
+                            close();
+                        }}
+                    >
+                        {RANGE_LABELS[range]}
+                    </DropdownItem>
+                ))
+            }
+        </Dropdown>
+    );
+}
+
 function Dashboards({
     user,
 }: {
@@ -121,8 +171,8 @@ function Dashboards({
 }) {
     const dashboards = useDashboards();
     const [uid, select] = useUrlParam("d", readDashboardUid);
-    const [traffic, selectTraffic] = useUrlParam("traffic", readTraffic);
-    const src = dashboardSrc(uid, traffic);
+    const [range, selectRange] = useUrlParam("range", readRange);
+    const src = dashboardSrc(uid, range);
     return (
         <div className="flex h-dvh flex-col bg-app-bg">
             <AppHeader appName="Observability" navLabel="Observability links">
@@ -131,24 +181,7 @@ function Dashboards({
                     selected={uid}
                     onSelect={select}
                 />
-                {hasTrafficSelector(uid) && (
-                    <fieldset
-                        aria-label="Traffic"
-                        className="m-0 flex gap-1 border-0 p-0"
-                    >
-                        {TRAFFIC.map(({ value, label }) => (
-                            <TabButton
-                                key={value}
-                                active={value === traffic}
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => selectTraffic(value)}
-                            >
-                                {label}
-                            </TabButton>
-                        ))}
-                    </fieldset>
-                )}
+                <RangePicker selected={range} onSelect={selectRange} />
                 <ColorModeToggle />
                 <DashboardAccountMenu user={user} onSignOut={signOut} />
             </AppHeader>

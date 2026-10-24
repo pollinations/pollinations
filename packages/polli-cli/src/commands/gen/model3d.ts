@@ -2,6 +2,7 @@ import { writeFileSync } from "node:fs";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
 import { fail, getOutputMode, printInfo, printMeta } from "../../lib/output.js";
+import { prepareOutputPath } from "../../lib/output-file.js";
 
 // The response's Content-Type, not the model name, decides the file
 // extension: nvidia/asset-harvester returns PLY, everything else GLB.
@@ -55,6 +56,8 @@ export function createModel3dCommand() {
             const encodedPrompt = encodeURIComponent(promptArg || "model");
             const path = `/3d/${encodedPrompt}?${params}`;
 
+            // Before the paid request, so a bad --output folder costs nothing.
+            if (opts.output) prepareOutputPath(opts.output);
             if (isHuman)
                 printInfo("Generating 3D model (this can take a while)...");
 

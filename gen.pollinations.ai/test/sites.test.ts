@@ -73,7 +73,11 @@ describe("serveSite", () => {
 
     it("serves the landing page on the bare domain, never a site", async () => {
         const { env, get } = sitesEnv(async () => new Response("hello"));
-        const assets = vi.fn(async () => new Response("icon"));
+        const assets = vi.fn(async (request: Request) =>
+            new URL(request.url).pathname === "/favicon.ico"
+                ? new Response("icon")
+                : new Response(null, { status: 404 }),
+        );
         env.ASSETS = { fetch: assets } as unknown as Fetcher;
 
         const page = await serveSite(
@@ -83,6 +87,7 @@ describe("serveSite", () => {
         expect(page?.headers.get("Content-Type")).toBe(
             "text/html; charset=utf-8",
         );
+        expect(page?.headers.get("X-Content-Type-Options")).toBe("nosniff");
         const html = await page?.text();
         expect(html).toContain("polli sites deploy");
         expect(html).toContain("@pollinations/ui@");
@@ -92,6 +97,13 @@ describe("serveSite", () => {
             env,
         );
         expect(await icon?.text()).toBe("icon");
+
+        const missing = await serveSite(
+            new Request("https://pollinations.app/my-app"),
+            env,
+        );
+        expect(missing?.status).toBe(404);
+        expect(await missing?.text()).toContain("polli sites deploy");
         expect(get).not.toHaveBeenCalled();
     });
 

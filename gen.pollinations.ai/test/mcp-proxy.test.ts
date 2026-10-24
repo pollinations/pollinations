@@ -46,6 +46,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
+                id: "trivia",
+                name: "Trivia",
+                description:
+                    "Fetch trivia questions by category, difficulty, and type from Open Trivia DB, with shuffled answers and decoded text.",
+                url: "https://gen.pollinations.ai/mcp/trivia",
+                pricing: {
+                    description:
+                        "Trivia tools use the free Open Trivia DB. No additional MCP fee.",
+                    rates: [],
+                },
+            },
+            {
                 id: "ffmpeg",
                 name: "FFmpeg",
                 description:
@@ -227,6 +239,44 @@ test("routes Ask Jev with caller authorization without an extra MCP debit", asyn
     });
 });
 
+test("routes Trivia with caller authorization without an extra MCP debit", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const payload = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+            name: "trivia_questions",
+            arguments: { amount: 1 },
+        },
+    };
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/trivia",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        pathname: "/",
+        authorization: `Bearer ${key}`,
+        cookie: null,
+        payload,
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
+});
+
 test("routes Machines with caller authorization without an extra MCP debit", async () => {
     const { key, userId } = await createTestApiKey({
         user: { tierBalance: 1 },
@@ -262,7 +312,7 @@ test("routes Machines with caller authorization without an extra MCP debit", asy
     });
 });
 
-test.for(["pollinations", "ask-jev", "machines"])(
+test.for(["pollinations", "ask-jev", "trivia", "machines"])(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(

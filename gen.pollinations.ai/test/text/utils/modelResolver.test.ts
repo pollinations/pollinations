@@ -189,6 +189,7 @@ describe("resolveModelConfig", () => {
     });
 
     it("pins Hy3 to Novita on OpenRouter without fallback", () => {
+        expect(findModelByName("tencent/hy3:openrouter:phala")).toBeNull();
         const result = resolveModelConfig(messages, {
             model: "tencent/hy3",
         });
@@ -196,18 +197,6 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("tencent/hy3");
         expect(result.options.provider).toEqual({
             only: ["novita"],
-            allow_fallbacks: false,
-        });
-    });
-
-    it("routes the Hy3 Phala fallback to the exact OpenRouter endpoint", () => {
-        const result = resolveModelConfig(messages, {
-            model: "tencent/hy3:openrouter:phala",
-        });
-
-        expect(result.options.model).toBe("tencent/hy3");
-        expect(result.options.provider).toEqual({
-            only: ["phala"],
             allow_fallbacks: false,
         });
     });

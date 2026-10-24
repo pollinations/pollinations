@@ -124,7 +124,6 @@ const OPENROUTER_ROUTES = [
         "qwen/qwen3-coder-next",
         "streamlake",
     ],
-    ["tencent/hy3:openrouter:phala", "tencent/hy3", "phala"],
 ] as const;
 
 function fallbackRoutes(fallbacks: Record<string, Record<string, unknown>>) {
@@ -177,6 +176,13 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
+    it("keeps HY3 on its primary without a same-gateway fallback", () => {
+        expect(TEXT_SERVICES["tencent/hy3"]).not.toHaveProperty("fallbacks");
+        expect(TEXT_SERVICES).not.toHaveProperty(
+            "tencent/hy3:openrouter:phala",
+        );
+    });
+
     it("uses current Worker bindings for AWS and DeepInfra fallback credentials", () => {
         try {
             syncTextEnvironment({

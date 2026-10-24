@@ -100,6 +100,13 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "anthropic/claude-sonnet-4.6": {
+        // Anthropic's global rates equal the Bedrock global sheet (2026-10-24).
+        "anthropic/claude-sonnet-4.6:anthropic": {
+            provider: "anthropic",
+            addedDate: new Date("2026-10-24").getTime(),
+        },
+    },
     "stepfun/step-3.7-flash": {
         // StepFun's own endpoint through Vercel's AI Gateway at the posted base rates.
         "stepfun/step-3.7-flash:vercel": {

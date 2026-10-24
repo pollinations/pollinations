@@ -412,10 +412,10 @@ const AUDIO_BASE_SERVICES = {
         addedDate: new Date("2026-05-14").getTime(),
         priceMultiplier: 1,
         cost: {
-            // ElevenLabs Flash v2.5 via API: measured 0.30 credits/char
-            // (API-discounted from the 0.5 cr/char UI rate) * $0.166/1k Scale
-            // credits = $0.05/1k chars (matches elevenlabs.io/pricing/api).
-            completionAudioTokens: 0.05 / 1000,
+            // https://elevenlabs.io/pricing/api — Flash/Turbo $0.04 per 1K
+            // characters (2026-10-24); a 500-character probe metered 0.24
+            // credits/char.
+            completionAudioTokens: 0.04 / 1000,
         },
         title: "ElevenLabs Flash v2.5",
         description:

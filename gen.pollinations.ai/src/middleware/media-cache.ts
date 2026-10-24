@@ -3,6 +3,7 @@
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import { generateCacheKey } from "@/utils/media-cache.ts";
+import type { AuthVariables } from "./auth.ts";
 import {
     createGenerationCache,
     createGenerationExecutionCache,
@@ -71,6 +72,15 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
                 response.headers.get("x-cache") !== "HIT" &&
                 config.mediaTypes.some((type) => contentType?.includes(type))
             );
+        },
+        // A cached file is free to serve, but it is still the output of a
+        // generation whose model permissions are checked before the cache. A
+        // paid-only model therefore must not become an anonymous read just
+        // because another caller paid for the generation first.
+        requiresAuthorisedHit(c) {
+            const variables = c.var as typeof c.var &
+                Partial<AuthVariables & ModelVariables>;
+            return variables.model?.definition.paidOnly === true;
         },
         capture(c, cacheKey, response) {
             const stored = new Response(response.clone().body, response);

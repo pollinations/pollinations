@@ -902,7 +902,6 @@ describe("resolveModelConfig", () => {
 
     it.each([
         ["qwen-coder-large", "qwen/qwen3-coder-next", "parasail/bf16"],
-        ["qwen-vision", "qwen/qwen3-vl-30b-a3b-instruct", "deepinfra/fp8"],
         [
             "mistral-small-3.2",
             "mistralai/mistral-small-3.2-24b-instruct",
@@ -935,6 +934,24 @@ describe("resolveModelConfig", () => {
             });
         },
     );
+
+    it("routes Qwen Vision directly to DeepInfra with an exact gateway backup", () => {
+        const primary = resolveModelConfig(messages, { model: "qwen-vision" });
+        expect(primary.options.model).toBe("Qwen/Qwen3-VL-30B-A3B-Instruct");
+        expect(primary.options.modelConfig?.directEndpoint).toBe(
+            "https://api.deepinfra.com/v1/openai/chat/completions",
+        );
+        expect(primary.options.provider).toBeUndefined();
+        const fallback = resolveModelConfig(messages, {
+            model: "qwen/qwen3-vl-30b-a3b-instruct:openrouter:deepinfra",
+        });
+        expect(fallback.options.model).toBe("qwen/qwen3-vl-30b-a3b-instruct");
+        expect(fallback.options.provider).toEqual({
+            only: ["deepinfra/fp8"],
+            ignore: ["deepinfra/fp8/priority", "cloudflare"],
+            allow_fallbacks: false,
+        });
+    });
 
     it("routes Qwen Vision Pro directly to Alibaba without fallback", () => {
         const result = resolveModelConfig(messages, {

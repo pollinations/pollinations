@@ -971,6 +971,16 @@ export const TEXT_FALLBACKS = {
             }),
         },
     },
+    "qwen/qwen3-vl-30b-a3b-instruct": {
+        "qwen/qwen3-vl-30b-a3b-instruct:openrouter:deepinfra": {
+            provider: "openrouter",
+            priceMultiplier: 1,
+            cost: {
+                promptTextTokens: perMillion(0.15) * 1.055,
+                completionTextTokens: perMillion(0.6) * 1.055,
+            },
+        },
+    },
     "qwen/qwen3-vl-235b-a22b-thinking": {
         "qwen/qwen3-vl-235b-a22b-thinking:openrouter:novita-bf16": {
             supportedParameters: CHAT_PARAMETERS.openRouterQwenVl,

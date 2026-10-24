@@ -1219,10 +1219,23 @@ export const portkeyConfig: PortkeyConfigMap = {
         "qwen/qwen3-coder-next",
         "parasail/bf16",
     ),
-    "qwen/qwen3-vl-30b-a3b-instruct": createPinnedOpenRouterConfig(
-        "qwen/qwen3-vl-30b-a3b-instruct",
-        "deepinfra/fp8",
-    ),
+    "qwen/qwen3-vl-30b-a3b-instruct": () =>
+        createDeepInfraModelConfig({
+            model: "Qwen/Qwen3-VL-30B-A3B-Instruct",
+            directEndpoint:
+                "https://api.deepinfra.com/v1/openai/chat/completions",
+        }),
+    "qwen3-vl-30b-openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3-vl-30b-a3b-instruct",
+            defaultOptions: {
+                provider: {
+                    only: ["deepinfra/fp8"],
+                    ignore: ["deepinfra/fp8/priority", "cloudflare"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "qwen3-vl-235b-a22b-thinking": () =>
         createAlibabaModelConfig({
             model: "qwen3-vl-235b-a22b-thinking",

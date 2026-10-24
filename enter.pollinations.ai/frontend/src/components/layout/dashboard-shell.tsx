@@ -14,7 +14,6 @@ import {
     ExternalLinkIcon,
     GenApiIcon,
     GitHubIcon,
-    GlobeIcon,
     LoadingStatus,
     McpIcon,
     MenuIcon,
@@ -275,13 +274,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             href: `${genDocsUrl()}#tag/mcp-servers`,
             icon: (
                 <McpIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
-            ),
-        },
-        {
-            label: "Sites",
-            href: `${genDocsUrl()}#tag/sites`,
-            icon: (
-                <GlobeIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
             ),
         },
     ];

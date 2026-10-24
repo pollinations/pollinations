@@ -1,0 +1,56 @@
+#!/usr/bin/env node
+// Shows an HTML page on this herdr pane's card on Thomas's agent dashboard
+// (http://127.0.0.1:7320/). The card gets a Page button that opens the page in
+// a large sandboxed panel. One page per pane; each call replaces it.
+//
+//   dash-page report.html       show this file (the dashboard keeps a copy)
+//   dash-page - < report.html   read the page from stdin
+//   dash-page --clear           remove the page
+//
+// Make the page self-contained: inline CSS, JS and images (data: URIs), or load
+// them from https URLs (CDN scripts work). Relative paths and local files don't
+// load, and localStorage is unavailable. A button can call dashReply("text") to
+// put that text into Thomas's reply box for this pane; he presses Send and it
+// reaches you as `Re your page "<title>": …`.
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
+const MAX_BYTES = 8 * 1024 * 1024;
+const pane = process.env.HERDR_PANE_ID;
+if (!pane) {
+    console.error("dash-page: HERDR_PANE_ID is not set (not running in a herdr pane)");
+    process.exit(1);
+}
+const arg = process.argv[2];
+if (!arg) {
+    console.error("usage: dash-page <file.html> | dash-page - < file.html | dash-page --clear");
+    process.exit(1);
+}
+const dir = path.join(os.homedir(), ".config/herdr/dashboard/status");
+const file = path.join(dir, `${pane.replace(/[^\w:-]/g, "_")}.page.html`);
+if (arg === "--clear") {
+    fs.rmSync(file, { force: true });
+    console.log(`dashboard page removed for ${pane}`);
+    process.exit(0);
+}
+let html;
+try {
+    html = fs.readFileSync(arg === "-" ? 0 : arg, "utf8");
+} catch (e) {
+    console.error(`dash-page: can't read ${arg}: ${e.message}`);
+    process.exit(1);
+}
+if (!html.trim()) {
+    console.error("dash-page: the page is empty");
+    process.exit(1);
+}
+if (Buffer.byteLength(html) > MAX_BYTES) {
+    console.error(`dash-page: the page is over ${MAX_BYTES / 1024 / 1024} MB; link large media instead of inlining it`);
+    process.exit(1);
+}
+fs.mkdirSync(dir, { recursive: true });
+fs.writeFileSync(`${file}.tmp`, html);
+fs.renameSync(`${file}.tmp`, file);
+const title = html.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1].trim();
+console.log(`dashboard page updated for ${pane}${title ? ` ("${title}")` : " (add a <title> to name it)"}`);

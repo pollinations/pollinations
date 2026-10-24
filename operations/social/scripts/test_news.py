@@ -702,6 +702,12 @@ class PostsTest(unittest.TestCase):
             # A person who checked /models records it anyway.
             self.assertEqual(list(self.new("catalog", today, overwrite=True)[2]),
                              [f"{NEWS_REL_DIR}/data/models/{today}.json"])
+        # Community owners list and remove many models at once: only official models count.
+        self.checkout("community")
+        self.put(f"data/models/{day_before}.json",
+                 {**recorded, "image": [{"name": f"community/a/m{n}", "community": True} for n in range(9)]})
+        with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(recorded)):
+            self.assertEqual(list(self.new("catalog", today)[2]), [f"{NEWS_REL_DIR}/data/models/{today}.json"])
 
     def test_the_catalog_keeps_3d_realtime_and_decision_models(self):
         models = [{"name": "a", "category": "3d"}, {"name": "b", "category": "realtime"},

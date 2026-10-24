@@ -1189,6 +1189,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["meta/muse-spark-1.2"],
     },
     {
+        name: "meta/muse-spark-1.3",
+        config: portkeyConfig["meta/muse-spark-1.3"],
+    },
+    {
         name: "meta/muse-wonder-1.0",
         config: portkeyConfig["meta/muse-wonder-1.0"],
         transform: mandatoryReasoning,

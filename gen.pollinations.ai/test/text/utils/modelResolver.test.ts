@@ -5,6 +5,33 @@ import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 const messages = [{ role: "user" as const, content: "Hello" }];
 
 describe("resolveModelConfig", () => {
+    it("pins Liquid D1's primary and backup native configs", () => {
+        for (const [model, expected] of [
+            [
+                "liquid/d1",
+                { providerOptions: { gateway: { only: ["liquid"] } } },
+            ],
+            [
+                "liquid/d1:openrouter",
+                {
+                    provider: {
+                        only: ["liquid"],
+                        ignore: ["cloudflare"],
+                        allow_fallbacks: false,
+                    },
+                },
+            ],
+        ] as const) {
+            const result = resolveModelConfig(messages, {
+                model,
+                provider: { only: ["cloudflare"] },
+            });
+            expect(result.options.modelConfig?.defaultOptions).toEqual(
+                expected,
+            );
+        }
+    });
+
     it("preserves Glyph reasoning flags when mapping reasoning_effort", async () => {
         const resolved = resolveModelConfig(messages, {
             model: "stealth/glyph-cluster",

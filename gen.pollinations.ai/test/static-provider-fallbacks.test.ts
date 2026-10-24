@@ -628,31 +628,36 @@ describe("static provider fallbacks", () => {
         expect(parent.fallbacks).toBeUndefined();
     });
 
-    it("keeps D1 paid-only and charges its public quote on Vercel fallback", () => {
+    it("keeps D1 paid-only and charges its public quote on OpenRouter fallback", () => {
         const primary = TEXT_SERVICES["liquid/d1"];
-        const fallback = TEXT_SERVICES["liquid/d1:vercel"];
-        expect(primary.fallbacks).toEqual(["liquid/d1:vercel"]);
+        const fallback = TEXT_SERVICES["liquid/d1:openrouter"];
+        expect(primary.fallbacks).toEqual(["liquid/d1:openrouter"]);
         expect(fallback).toMatchObject({
-            provider: "vercel",
+            provider: "openrouter",
             paidOnly: true,
             hidden: true,
             fallbackOnly: true,
             aliases: [],
         });
-        expect(findModelByName("liquid/d1:vercel")?.config()).toMatchObject({
-            model: "liquid/d1",
-            provider: "openai",
-            directEndpoint:
-                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
-        });
+        expect(findModelByName("liquid/d1:openrouter")?.config()).toMatchObject(
+            {
+                model: "liquid/d1",
+                provider: "openrouter",
+                directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+            },
+        );
         const billing = calculateUsageBilling({
             model: "liquid/d1",
-            usage: { promptTextTokens: 1000, completionTextTokens: 0 },
+            usage: {
+                promptTextTokens: 600,
+                promptCachedTokens: 400,
+                completionTextTokens: 0,
+            },
             servedBy: fallback,
             quotedBy: primary,
         });
-        expect(billing.cost.totalCost).toBeCloseTo(0.00002, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(0.0000211, 8);
+        expect(billing.cost.totalCost).toBeCloseTo(0.0000211, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.00002, 12);
     });
 
     it("charges Decider's Vercel price on its OpenRouter fallback", () => {

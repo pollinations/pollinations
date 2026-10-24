@@ -902,8 +902,8 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
-        name: "liquid/d1:vercel",
-        config: portkeyConfig["liquid/d1:vercel"],
+        name: "liquid/d1:openrouter",
+        config: portkeyConfig["liquid/d1:openrouter"],
         useSystemOneApi: true,
     },
     {

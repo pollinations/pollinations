@@ -176,7 +176,6 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
-
     it("keeps HY3 on its primary without a same-gateway fallback", () => {
         expect(TEXT_SERVICES["tencent/hy3"]).not.toHaveProperty("fallbacks");
         expect(TEXT_SERVICES).not.toHaveProperty(

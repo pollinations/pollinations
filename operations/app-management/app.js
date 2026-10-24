@@ -37,6 +37,7 @@ const REQUIRED_FIELDS = new Set([
 const CATALOG_FIELDS = new Set([
     ...REQUIRED_FIELDS,
     ...OPTIONAL_NULLABLE_STRING_FIELDS,
+    "appKeyIds",
 ]);
 
 function validateApps(apps, filePath = APP_FILE) {
@@ -84,6 +85,20 @@ function validateApps(apps, filePath = APP_FILE) {
         ) {
             throw new Error(
                 `${label}.screenshotUrl must use https://media.pollinations.ai/`,
+            );
+        }
+        // Enter App Key ids (public, not secrets) whose usage this listing owns.
+        if (
+            "appKeyIds" in app &&
+            (!Array.isArray(app.appKeyIds) ||
+                app.appKeyIds.length === 0 ||
+                app.appKeyIds.some(
+                    (id) => typeof id !== "string" || !/^[\w-]+$/.test(id),
+                ) ||
+                new Set(app.appKeyIds).size !== app.appKeyIds.length)
+        ) {
+            throw new Error(
+                `${label}.appKeyIds must be a non-empty array of unique App Key ids`,
             );
         }
         if (

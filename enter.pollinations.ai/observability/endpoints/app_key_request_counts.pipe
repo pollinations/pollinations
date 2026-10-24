@@ -1,0 +1,21 @@
+DESCRIPTION >
+    Get request counts per App Key id in the last 24 hours.
+    Used by the app metrics script for catalog entries that list their
+    `appKeyIds` in app.json. Returns key ids and counts only.
+
+TOKEN tinybird_read READ
+
+NODE app_key_request_counts_node
+SQL >
+    SELECT
+        api_key_client_id AS app_key_id,
+        count() AS requests
+    FROM generation_event_v2
+    WHERE start_time > now() - INTERVAL 1 DAY
+      AND is_final  -- one row per request; attempts counted separately
+      AND api_key_created_via = 'redirect-auth'
+      AND api_key_client_id NOT IN ('', 'undefined')
+    GROUP BY app_key_id
+    HAVING requests > 0
+
+TYPE endpoint

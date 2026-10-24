@@ -840,7 +840,7 @@ test("updated provider prices are reflected for xAI media and text routes", () =
             promptImageTokens: 1,
             completionVideoSeconds: 5,
         }).totalCost,
-    ).toBeCloseTo(0.352, 8);
+    ).toBeCloseTo(0.25, 8);
     expect(
         calculateCost("x-ai/grok-imagine-video-1.5", {
             promptImageTokens: 1,
@@ -1929,12 +1929,14 @@ test("FLUX megapixel prices and flat reference-image prices retain their units",
         ]);
     }
     const grok = models.find(({ name }) => name === "x-ai/grok-imagine-video");
-    expect(grok?.prices).toContainEqual({
-        direction: "input",
-        kind: "image",
-        price: "0.002",
-        unit: "image",
-    });
+    expect(grok?.prices).toEqual([
+        {
+            direction: "output",
+            kind: "video",
+            price: "0.05",
+            unit: "second",
+        },
+    ]);
 });
 
 test("audio cards distinguish clips, audio tokens, characters, and UTF-8 bytes", () => {

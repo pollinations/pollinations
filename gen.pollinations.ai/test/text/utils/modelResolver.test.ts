@@ -865,11 +865,6 @@ describe("resolveModelConfig", () => {
             "minimax/minimax-m2.7",
             "minimax/fp8",
         ],
-        [
-            "meta/llama-4-scout:openrouter:novita-bf16",
-            "meta-llama/llama-4-scout",
-            "novita/bf16",
-        ],
     ])(
         "pins %s to %s through %s without fallback",
         (model, route, provider) => {
@@ -882,6 +877,21 @@ describe("resolveModelConfig", () => {
             });
         },
     );
+
+    it("routes Scout recovery directly to DeepInfra priority", () => {
+        const result = resolveModelConfig(messages, {
+            model: "meta/llama-4-scout:deepinfra:priority",
+        });
+        expect(result.options.model).toBe(
+            "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+        );
+        expect(result.options.service_tier).toBe("priority");
+        expect(result.options.max_tokens).toBe(16384);
+        expect(result.options.provider).toBeUndefined();
+        expect(result.options.modelConfig?.directEndpoint).toBe(
+            "https://api.deepinfra.com/v1/openai/chat/completions",
+        );
+    });
 
     it("routes Qwen Vision Pro directly to Alibaba without fallback", () => {
         const result = resolveModelConfig(messages, {

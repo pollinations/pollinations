@@ -718,16 +718,13 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
     ),
-    "llama-scout-openrouter-deepinfra-priority": createPinnedOpenRouterConfig(
-        "meta-llama/llama-4-scout",
-        "deepinfra/fp8/priority",
-        16384,
-    ),
-    "llama-scout-openrouter-novita": createPinnedOpenRouterConfig(
-        "meta-llama/llama-4-scout",
-        "novita/bf16",
-        16384,
-    ),
+    "llama-scout-deepinfra-priority": () =>
+        createDeepInfraModelConfig({
+            model: "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+            directEndpoint:
+                "https://api.deepinfra.com/v1/openai/chat/completions",
+            defaultOptions: { max_tokens: 16384, service_tier: "priority" },
+        }),
     // The base slug "xai" also matches xai/zdr/us and the priority tiers,
     // which bill above the quoted rate, so they are excluded explicitly.
     "grok-4.7-openrouter": () =>

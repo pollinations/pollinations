@@ -354,6 +354,7 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             // Gemini 3.1 Flash Image via Vertex AI
+            promptCachedTokens: perMillion(0.05),
             promptTextTokens: perMillion(0.5), // per 1M tokens
             promptImageTokens: perMillion(0.5), // per 1M tokens
             completionTextTokens: perMillion(3), // text/reasoning output tokens
@@ -376,6 +377,7 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             // Gemini 3.1 Flash-Lite Image (GA) via Vertex AI — half of nanobanana-2
+            promptCachedTokens: perMillion(0.025),
             promptTextTokens: perMillion(0.25), // per 1M tokens
             promptImageTokens: perMillion(0.25), // per 1M tokens
             completionTextTokens: perMillion(1.5), // text/reasoning output tokens
@@ -425,6 +427,7 @@ const IMAGE_BASE_SERVICES = {
             // 4K image: 2000 tokens = $0.24/image
             promptTextTokens: perMillion(2), // per 1M tokens
             promptImageTokens: perMillion(2), // per 1M tokens
+            promptCachedTokens: perMillion(0.2),
             completionTextTokens: perMillion(12), // text/reasoning output tokens
             completionImageTokens: perMillion(120), // per 1M tokens, 1120 tokens per 1K image
         },
@@ -849,24 +852,26 @@ const IMAGE_BASE_SERVICES = {
     },
     "bytedance/seedance-1-pro-fast": {
         aliases: ["seedance-pro"],
-        provider: "replicate",
+        provider: "fal",
         publisher: "ByteDance",
         category: "video",
         addedDate: new Date("2025-12-04").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Replicate bytedance/seedance-1-pro-fast is per-second tiered by
-        // resolution (480p $0.015, 720p $0.025, 1080p $0.06).
+        // fal bills $1 per 1M video tokens (2026-10-24); these are the 16:9
+        // per-second equivalents. Charges use fal's reported units at its
+        // live endpoint price, and fal doesn't charge input images.
         cost: {
-            completionVideoSeconds: 0.025, // per sec at 720p
+            promptImageTokens: 0,
+            completionVideoSeconds: 0.021021, // per sec at 720p
         },
         ...defineCostVariants(
             {
                 "480p": {
-                    completionVideoSeconds: 0.015,
+                    completionVideoSeconds: 0.0099225,
                 },
                 "1080p": {
-                    completionVideoSeconds: 0.06,
+                    completionVideoSeconds: 0.0486,
                 },
             },
             matchResolution("480p", "1080p"),
@@ -1654,15 +1659,15 @@ const IMAGE_BASE_SERVICES = {
     },
     "x-ai/grok-imagine-video": {
         aliases: ["grok-imagine-video", "grok-video-pro"],
-        provider: "fal",
+        provider: "replicate",
         publisher: "xAI",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            promptImageTokens: 0.002, // per start-frame image
-            completionVideoSeconds: 0.07, // per sec at 720p
+            promptImageTokens: 0, // included in output-video price
+            completionVideoSeconds: 0.05, // per reported output second at 720p
         },
         resolutions: ["720p"],
         title: "Grok Video Pro",
@@ -1984,22 +1989,22 @@ const IMAGE_BASE_SERVICES = {
     },
     "heygen/heygen-video-1": {
         aliases: [],
-        provider: "openrouter",
+        provider: "fal",
         publisher: "HeyGen",
         category: "video",
         addedDate: new Date("2026-09-30").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // OpenRouter HeyGen endpoint, 50% launch discount through October 2026
-        // (list $0.02/s at 480p, $0.03/s at 768p), verified 2026-10-01:
-        // a 5s 480p clip billed 5 x $0.01. Includes the 5.5% OpenRouter
-        // credit fee. Raise to list price when the discount ends.
+        // fal heygen/heygen-video: $0.01/s at 480p and 768p until 2026-10-31,
+        // then $0.02/s (2026-10-24). Charges use fal's reported units at its
+        // live endpoint price, and fal doesn't charge the first frame.
         cost: {
-            completionVideoSeconds: 0.01 * 1.055, // per sec at 480p
+            promptImageTokens: 0,
+            completionVideoSeconds: 0.01, // per sec at 480p
         },
         ...defineCostVariants(
             {
-                "768p": { completionVideoSeconds: 0.015 * 1.055 },
+                "768p": { completionVideoSeconds: 0.01 },
             },
             matchResolution("768p"),
             {

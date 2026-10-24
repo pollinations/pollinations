@@ -617,6 +617,11 @@ const models: ModelDefinition[] = [
         transform: pipe(claudeAdaptiveThinking, preferTemperature),
     },
     {
+        name: "anthropic/claude-sonnet-4.6:anthropic",
+        config: portkeyConfig["anthropic/claude-sonnet-4.6:anthropic"],
+        transform: pipe(claudeAdaptiveThinking, preferTemperature),
+    },
+    {
         name: "anthropic/claude-sonnet-5",
         config: portkeyConfig["claude-sonnet-5"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),

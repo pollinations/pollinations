@@ -395,7 +395,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-10-06").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         cost: {
             // Vertex global standard pricing; cached input includes images.
             promptTextTokens: perMillion(1.5),

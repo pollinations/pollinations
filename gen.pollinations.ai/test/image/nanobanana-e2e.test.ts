@@ -576,8 +576,8 @@ const bananaUsage = {
         { modality: "IMAGE", tokenCount: 1680 },
     ],
 };
-const bananaPrice =
-    ((626 * 1.5 + 504 * 0.15 + 12 * 7.5 + 1680 * 30) / 1_000_000) * 1.055;
+// Price equals the Vertex cost (multiplier 1).
+const bananaPrice = (626 * 1.5 + 504 * 0.15 + 12 * 7.5 + 1680 * 30) / 1_000_000;
 function vercelBananaResponse() {
     return {
         choices: [
@@ -678,7 +678,7 @@ test("nano-banana-2.1 selects the final Vertex image and bills cached input once
         tokenCountCompletionReasoning: 4,
         tokenCountCompletionImage: 1680,
     });
-    expect(event?.totalCost).toBeCloseTo(bananaPrice / 1.055, 10);
+    expect(event?.totalCost).toBeCloseTo(bananaPrice, 10);
     expect(event?.totalPrice).toBeCloseTo(bananaPrice, 7);
 });
 

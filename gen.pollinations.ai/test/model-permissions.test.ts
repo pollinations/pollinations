@@ -295,8 +295,6 @@ test("filters non-Azure and non-Fireworks text models by paid balance", async ({
         "openai/gpt-oss-20b",
         "respan/span-01-lite",
         "vllm-sr/d3",
-        // Costs $0 while Vercel offers it as a stealth model.
-        "stealth/glyph-cluster",
     ];
     const paidProviderModelNames = getVisibleTextModels().filter((model) => {
         const definition = getRegistryModelDefinition(model);

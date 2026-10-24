@@ -5,19 +5,6 @@ import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 const messages = [{ role: "user" as const, content: "Hello" }];
 
 describe("resolveModelConfig", () => {
-    it("keeps jaredpalmer/kev-4b's native provider pin", () => {
-        const result = resolveModelConfig(messages, {
-            model: "jaredpalmer/kev-4b",
-            provider: { only: ["cloudflare"] },
-        });
-        expect(result.options.modelConfig?.defaultOptions).toMatchObject({
-            provider: {
-                "only": ["siliconflow/fp8"],
-                "ignore": ["cloudflare"],
-                "allow_fallbacks": false,
-            },
-        });
-    });
 
     it("pins Liquid D1's primary and backup native configs", () => {
         for (const [model, expected] of [
@@ -44,6 +31,20 @@ describe("resolveModelConfig", () => {
                 expected,
             );
         }
+    });
+
+    it("keeps jaredpalmer/kev-4b's native provider pin", () => {
+        const result = resolveModelConfig(messages, {
+            model: "jaredpalmer/kev-4b",
+            provider: { only: ["cloudflare"] },
+        });
+        expect(result.options.modelConfig?.defaultOptions).toMatchObject({
+            provider: {
+                "only": ["siliconflow/fp8"],
+                "ignore": ["cloudflare"],
+                "allow_fallbacks": false,
+            },
+        });
     });
 
     it("preserves Glyph reasoning flags when mapping reasoning_effort", async () => {

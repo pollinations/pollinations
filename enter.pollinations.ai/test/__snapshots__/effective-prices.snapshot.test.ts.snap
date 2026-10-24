@@ -2105,6 +2105,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000013125,
     },
   },
+  "microsoft/mai-image-2.6-flash:openrouter": {
+    "cost": {
+      "completionImageTokens": 0.000020045,
+      "promptImageTokens": 0.0000026375,
+      "promptTextTokens": 0.00000184625,
+    },
+    "price": {
+      "completionImageTokens": 0.00001503375,
+      "promptImageTokens": 0.000001978125,
+      "promptTextTokens": 0.0000013846875,
+    },
+  },
   "microsoft/mai-transcribe-2": {
     "cost": {
       "promptAudioSeconds": 0.0000277777777777778,

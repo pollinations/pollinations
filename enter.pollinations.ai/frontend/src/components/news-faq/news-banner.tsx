@@ -65,6 +65,18 @@ const ANNOUNCEMENTS: Announcement[] = [
         },
     },
     {
+        date: "2026-10-22",
+        until: "2026-11-05",
+        label: "New",
+        title: "Free site hosting",
+        text: "Publish a static site at your-name.pollinations.app from the CLI, SDK or an agent.",
+        icon: GlobeIcon,
+        cta: {
+            label: "Visit pollinations.app",
+            href: "https://pollinations.app",
+        },
+    },
+    {
         date: "2026-10-17",
         until: "2026-10-31",
         label: "Updated",

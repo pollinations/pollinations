@@ -58,6 +58,7 @@ export function buildDirectResponsesRequestBody(
         ...target.defaults,
         ...request,
         model: target.model,
+        ...(target.serviceTier ? { service_tier: target.serviceTier } : {}),
         store: false,
     };
     delete body.safe;

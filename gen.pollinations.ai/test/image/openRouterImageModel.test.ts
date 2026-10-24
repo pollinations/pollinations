@@ -190,7 +190,7 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
                 "test prompt",
                 {
                     ...baseParams,
-                    model: "x-ai/grok-imagine-image-2.0",
+                    model: "x-ai/grok-imagine-image-2.0:openrouter",
                     quality,
                     resolution,
                     image: [
@@ -228,7 +228,7 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
                 ],
             });
             expect(result.trackingData).toEqual({
-                actualModel: "x-ai/grok-imagine-image-2.0",
+                actualModel: "x-ai/grok-imagine-image-2.0:openrouter",
                 usage: {
                     promptImageTokens: 3,
                     completionImageTokens: 1,
@@ -255,7 +255,7 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
         await expect(
             callOpenRouterGrokImagineImage2API("test prompt", {
                 ...baseParams,
-                model: "x-ai/grok-imagine-image-2.0",
+                model: "x-ai/grok-imagine-image-2.0:openrouter",
             }),
         ).rejects.toMatchObject({
             status: 400,
@@ -1374,7 +1374,7 @@ describe("OpenRouter Recraft vector", () => {
 describe("OpenRouter Recraft Flash", () => {
     const flashParams: ImageParams = {
         ...baseParams,
-        model: "recraft/recraft-v4.1-flash",
+        model: "recraft/recraft-v4.1-flash:openrouter",
     };
 
     function mockFlashResponse(
@@ -1439,7 +1439,7 @@ describe("OpenRouter Recraft Flash", () => {
         });
         expect(result.buffer).toEqual(PNG);
         expect(result.trackingData).toEqual({
-            actualModel: "recraft/recraft-v4.1-flash",
+            actualModel: "recraft/recraft-v4.1-flash:openrouter",
             usage: { completionImageTokens: 1 },
         });
     });

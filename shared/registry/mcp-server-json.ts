@@ -6,13 +6,15 @@ import type { McpServerDefinition } from "./mcp.ts";
 const GEN_ORIGIN = "https://gen.pollinations.ai";
 const KEYS_URL = "https://enter.pollinations.ai/keys";
 
-// The registry caps `description` at 100 characters; composio's product
-// description runs longer, so it gets a shorter registry-only one.
+// The registry caps `description` at 100 characters; composio's and
+// trivia's product descriptions run longer, so they get shorter
+// registry-only ones.
 const DESCRIPTION_OVERRIDES: Partial<
     Record<McpServerDefinition["id"], string>
 > = {
     composio:
         "Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio.",
+    trivia: "Fetch trivia questions by category, difficulty, and type from Open Trivia DB.",
 };
 
 export function buildServerEntry(

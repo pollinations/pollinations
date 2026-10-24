@@ -74,6 +74,17 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "stepfun/step-3.7-flash": {
+        // StepFun's own endpoint through Vercel's AI Gateway at the posted base rates.
+        "stepfun/step-3.7-flash:vercel": {
+            provider: "vercel",
+            cost: {
+                promptTextTokens: perMillion(0.2),
+                promptCachedTokens: perMillion(0.04),
+                completionTextTokens: perMillion(1.15),
+            },
+        },
+    },
     "inclusionai/ling-3.1-flash": {
         "inclusionai/ling-3.1-flash:vercel:novita": {
             provider: "vercel",

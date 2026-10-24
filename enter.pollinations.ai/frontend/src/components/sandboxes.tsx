@@ -13,9 +13,9 @@ import {
     Dropdown,
     DropdownItem,
     Field,
+    IconButton,
     InlineLink,
     Input,
-    LoadingStatus,
     PauseIcon,
     PlayIcon,
     PlusIcon,
@@ -515,10 +515,10 @@ export function Sandboxes() {
     const createAction = (
         <Button
             type="button"
-            className="dashboard-add-button"
-            aria-busy={busyId === "new"}
+            icon={<TerminalIcon />}
+            aria-busy={creating}
             aria-haspopup="dialog"
-            disabled={full || busyId === "new"}
+            disabled={full || creating}
             onClick={() =>
                 setPending({
                     action: "create",
@@ -527,15 +527,7 @@ export function Sandboxes() {
                 })
             }
         >
-            {busyId === "new" ? (
-                <LoadingStatus>Creating sandbox…</LoadingStatus>
-            ) : (
-                <>
-                    <PlusIcon className="h-4 w-4" />
-                    <TerminalIcon className="h-5 w-5" />
-                    <span className="ml-1">Create sandbox</span>
-                </>
-            )}
+            {creating ? "Creating…" : "Create"}
         </Button>
     );
 
@@ -545,15 +537,15 @@ export function Sandboxes() {
             intro="A sandbox is a Linux computer in the cloud. Open it with ssh or VS Code. Its files stay while it’s paused, and you pay only while it runs."
             action={
                 <ButtonGroup>
-                    <Button
-                        size="sm"
-                        intent="neutral"
-                        icon={<RefreshIcon />}
+                    <IconButton
+                        size="md"
+                        variant="ghost"
+                        title="Refresh"
                         disabled={loading}
                         onClick={() => void load()}
                     >
-                        Refresh
-                    </Button>
+                        <RefreshIcon className="h-4 w-4" />
+                    </IconButton>
                     {sandboxes.length > 0 && createAction}
                 </ButtonGroup>
             }
@@ -739,7 +731,7 @@ export function Sandboxes() {
                                     {!pending
                                         ? ""
                                         : pending.action === "create"
-                                          ? "Create sandbox"
+                                          ? "Create"
                                           : pending.action === "limit"
                                             ? "Set time limit"
                                             : addTo

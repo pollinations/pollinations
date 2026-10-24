@@ -375,6 +375,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Mercury 3 to Inception on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "inception/mercury-3",
+        });
+
+        expect(result.options.model).toBe("inception/mercury-3");
+        expect(result.options.provider).toEqual({
+            only: ["Inception"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Mercury 2.5 Preview to Inception on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "inception/mercury-2.5-preview",
@@ -478,15 +490,15 @@ describe("resolveModelConfig", () => {
         },
     );
 
-    it("routes Step Flash directly to DeepInfra without fallback", () => {
+    it("routes Step Flash directly to Novita", () => {
         const result = resolveModelConfig(messages, {
             model: "stepfun/step-3.7-flash",
         });
 
-        expect(result.options.model).toBe("stepfun-ai/Step-3.7-Flash");
+        expect(result.options.model).toBe("stepfun/step-3.7-flash");
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
-            "custom-host": "https://api.deepinfra.com/v1/openai",
+            directEndpoint: "https://api.novita.ai/openai/v1/chat/completions",
         });
         expect(result.options.provider).toBeUndefined();
     });

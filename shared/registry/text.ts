@@ -771,6 +771,34 @@ const TEXT_BASE_SERVICES = {
         contextLength: 260000,
         isSpecialized: false,
     },
+    "inception/mercury-3": {
+        supportedParameters: CHAT_PARAMETERS.mercury25,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Inception",
+        category: "text",
+        addedDate: new Date("2026-10-19").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter's Inception route launch rates (50% off, checked
+        // 2026-10-23), including the account's 5.5% credit-purchase fee. List
+        // is $0.20 / $0.02 cached / $0.70 per M; raise these when the launch
+        // offer ends (no end date published).
+        cost: {
+            promptTextTokens: perMillion(0.1) * 1.055,
+            promptCachedTokens: perMillion(0.01) * 1.055,
+            completionTextTokens: perMillion(0.35) * 1.055,
+        },
+        title: "Mercury 3",
+        description:
+            "Diffusion reasoning for agentic workflows and real-time voice and search",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "cohere/command-a-plus": {
         supportedParameters: CHAT_PARAMETERS.openRouterCohere,
         aliases: [
@@ -3340,12 +3368,11 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Mistral direct API launch rates (docs.mistral.ai, 2026-10-06):
-            // list price is $1.36 / $0.14 cached / $4.18 per million, shown
-            // at half until the discount ends.
-            promptTextTokens: perMillion(0.68),
-            promptCachedTokens: perMillion(0.07),
-            completionTextTokens: perMillion(2.09),
+            // Mistral direct API list rates (docs.mistral.ai pricing); the
+            // 50% launch offer from 2026-10-06 ran for two weeks.
+            promptTextTokens: perMillion(1.36),
+            promptCachedTokens: perMillion(0.14),
+            completionTextTokens: perMillion(4.18),
         },
         title: "Mistral Large 4",
         description:
@@ -3926,14 +3953,14 @@ const TEXT_BASE_SERVICES = {
             "step-flash-3.7",
             "step-flash",
         ],
-        provider: "deepinfra",
+        provider: "novita",
         publisher: "StepFun",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // DeepInfra stepfun-ai/Step-3.7-Flash posted rates (2026-07-30):
+            // Novita stepfun/step-3.7-flash posted rates (2026-10-23):
             // prompt $0.20/M, completion $1.15/M, cache read $0.04/M
             promptTextTokens: perMillion(0.2),
             promptCachedTokens: perMillion(0.04),
@@ -3945,8 +3972,8 @@ const TEXT_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
-        // Emits a chain-of-thought `reasoning` field (verified live); reasoning
-        // tokens are billed within completion_tokens at the completionText rate.
+        // Emits chain-of-thought (verified live); reasoning tokens are billed
+        // within completion_tokens at the completionText rate.
         reasoning: true,
         contextLength: 256000,
         isSpecialized: false,

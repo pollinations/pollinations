@@ -891,6 +891,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         "Inception",
         64000,
     ),
+    "inception/mercury-3": createPinnedOpenRouterConfig(
+        "inception/mercury-3",
+        "Inception",
+        131072,
+    ),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------
     "accounts/fireworks/models/deepseek-v4p1-flash": () =>
@@ -1176,10 +1181,18 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "stepfun/step-5-preview",
         }),
 
-    // -- DeepInfra (StepFun) --------------------------------------------------
-    "stepfun-ai/Step-3.7-Flash": () =>
-        createDeepInfraModelConfig({
-            model: "stepfun-ai/Step-3.7-Flash",
+    // -- Novita and Vercel (StepFun) ------------------------------------------
+    "stepfun/step-3.7-flash": () =>
+        createNovitaModelConfig({ model: "stepfun/step-3.7-flash" }),
+    // Pin StepFun's own endpoint: DeepInfra serves MiMo under this model's id.
+    "stepfun/step-3.7-flash:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "stepfun/step-3.7-flash",
+            responsesEndpoint: undefined,
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["stepfun"] } },
+            },
         }),
 
     // -- InferencePort (Lightning routers) ------------------------------------

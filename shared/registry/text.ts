@@ -3552,11 +3552,14 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-06-12").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter triples all token rates from 256K prompt tokens.
+        // OpenRouter triples all token rates from 256K prompt tokens. It
+        // folds image tokens into prompt tokens; the direct Alibaba fallback
+        // reports them separately at the same rate.
         cost: {
             promptTextTokens: perMillion(0.32) * 1.055,
             promptCachedTokens: perMillion(0.064) * 1.055,
             promptCacheWriteTokens: perMillion(0.4) * 1.055,
+            promptImageTokens: perMillion(0.32) * 1.055,
             completionTextTokens: perMillion(1.28) * 1.055,
         },
         ...defineCostVariants(
@@ -3565,6 +3568,7 @@ const TEXT_BASE_SERVICES = {
                     promptTextTokens: perMillion(0.96) * 1.055,
                     promptCachedTokens: perMillion(0.192) * 1.055,
                     promptCacheWriteTokens: perMillion(1.2) * 1.055,
+                    promptImageTokens: perMillion(0.96) * 1.055,
                     completionTextTokens: perMillion(3.84) * 1.055,
                 },
             },

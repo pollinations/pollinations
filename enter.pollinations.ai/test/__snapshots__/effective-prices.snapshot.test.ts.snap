@@ -3828,6 +3828,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.0000013504,
       "promptCacheWriteTokens": 0.000000422,
       "promptCachedTokens": 0.00000006752,
+      "promptImageTokens": 0.0000003376,
       "promptTextTokens": 0.0000003376,
     },
     "costVariants": {
@@ -3835,6 +3836,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
         "completionTextTokens": 0.0000040512,
         "promptCacheWriteTokens": 0.000001266,
         "promptCachedTokens": 0.00000020256,
+        "promptImageTokens": 0.0000010128,
         "promptTextTokens": 0.0000010128,
       },
     },
@@ -3842,7 +3844,33 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.0000013504,
       "promptCacheWriteTokens": 0.000000422,
       "promptCachedTokens": 0.00000006752,
+      "promptImageTokens": 0.0000003376,
       "promptTextTokens": 0.0000003376,
+    },
+  },
+  "qwen/qwen3.7-plus:alibaba": {
+    "cost": {
+      "completionTextTokens": 0.00000128,
+      "promptCacheWriteTokens": 0.0000004,
+      "promptCachedTokens": 0.000000064,
+      "promptImageTokens": 0.00000032,
+      "promptTextTokens": 0.00000032,
+    },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.00000384,
+        "promptCacheWriteTokens": 0.0000012,
+        "promptCachedTokens": 0.000000192,
+        "promptImageTokens": 0.00000096,
+        "promptTextTokens": 0.00000096,
+      },
+    },
+    "price": {
+      "completionTextTokens": 0.00000128,
+      "promptCacheWriteTokens": 0.0000004,
+      "promptCachedTokens": 0.000000064,
+      "promptImageTokens": 0.00000032,
+      "promptTextTokens": 0.00000032,
     },
   },
   "qwen/qwen3.8-2.4t-a95b": {

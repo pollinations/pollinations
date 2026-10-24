@@ -12,6 +12,7 @@ import {
 } from "./models/falFallbackMediaModel.ts";
 import { callFluxMaxVideoAPI } from "./models/fluxMaxVideoModel.ts";
 import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
+import { callGrokReplicateVideoAPI } from "./models/grokReplicateVideoModel.ts";
 import { callKlingVideoAPI } from "./models/klingVideoModel.ts";
 import {
     callMinimaxH3API,
@@ -69,7 +70,7 @@ export async function createAndReturnVideo(
         case "bytedance/seedance-1-pro-fast":
         case "alibaba/wan-2.6:fal":
         case "alibaba/wan-2.2-fast":
-        case "x-ai/grok-imagine-video":
+        case "x-ai/grok-imagine-video:fal":
         case "x-ai/grok-imagine-video-1.5:fal":
         case "kandinskylab/kandinsky-6.0-lite":
         case "heygen/heygen-video-1":
@@ -104,7 +105,9 @@ export async function createAndReturnVideo(
         case "prunaai/p-video":
             result = await callPrunaVideoAPI(prompt, safeParams);
             break;
-        case "x-ai/grok-imagine-video:openrouter":
+        case "x-ai/grok-imagine-video":
+            result = await callGrokReplicateVideoAPI(prompt, safeParams);
+            break;
         case "x-ai/grok-imagine-video-1.5-lite:openrouter":
             result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
             break;

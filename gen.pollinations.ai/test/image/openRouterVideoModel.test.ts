@@ -1,8 +1,6 @@
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { calculateUsageBilling } from "@shared/registry/registry.ts";
-import { afterEach, assert, describe, expect, it, vi } from "vitest";
-import { type FallbackAttempt, withModelFallback } from "../../src/fallback.ts";
-import { createAndReturnVideo } from "../../src/image/createAndReturnVideos.ts";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callHappyHorseAPI,
@@ -372,87 +370,6 @@ function mockGrokFetch(requests: Record<string, unknown>[]) {
 }
 
 describe("OpenRouter Grok Video Pro", () => {
-    it("falls back from a Fal 503 to the same model on OpenRouter", async () => {
-        syncImageEnv(
-            {
-                FAL_KEY: "test-fal-key",
-                OPENROUTER_API_KEY: "openrouter-test-key",
-            } as CloudflareBindings,
-            ["FAL_KEY", "OPENROUTER_API_KEY"],
-        );
-        const requests: Record<string, unknown>[] = [];
-        mockGrokFetch(requests).mockImplementationOnce(async (url) => {
-            expect(url).toBe(
-                "https://queue.fal.run/xai/grok-imagine-video/image-to-video",
-            );
-            return Response.json(
-                { error: "temporarily unavailable" },
-                { status: 503 },
-            );
-        });
-        const candidates = [
-            "x-ai/grok-imagine-video",
-            ...IMAGE_SERVICES["x-ai/grok-imagine-video"].fallbacks,
-        ].map((id) => ({
-            id: id as ImageParams["model"],
-            definition: IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES],
-        }));
-        const attempts: FallbackAttempt[] = [];
-        const { result, index, candidate } = await withModelFallback(
-            candidates,
-            ({ id }) =>
-                createAndReturnVideo("move", {
-                    ...baseParams,
-                    model: id,
-                    duration: 15,
-                    image: ["https://example.com/start.png"],
-                }),
-            attempts,
-        );
-        expect(index).toBe(1);
-        expect(candidate.definition.provider).toBe("openrouter");
-        expect(attempts.map(({ settled }) => settled)).toEqual([false, true]);
-        expect(result.trackingData).toEqual({
-            actualModel: "x-ai/grok-imagine-video:openrouter",
-            usage: { promptImageTokens: 1, completionVideoSeconds: 15 },
-        });
-        expect(requests[0].model).toBe("x-ai/grok-imagine-video");
-    });
-
-    it("submits the exact 720p route and honors an explicit aspect ratio", async () => {
-        setOpenRouterEnv();
-        const requests: Record<string, unknown>[] = [];
-        mockGrokFetch(requests);
-
-        const result = await createAndReturnVideo("a calm ocean at sunrise", {
-            ...baseParams,
-            model: "x-ai/grok-imagine-video:openrouter",
-            dimensionsExplicit: false,
-            width: 1024,
-            height: 1024,
-            aspectRatio: "16:9",
-        });
-
-        expect(requests).toEqual([
-            {
-                model: "x-ai/grok-imagine-video",
-                prompt: "a calm ocean at sunrise",
-                resolution: "720p",
-                duration: 5,
-                aspect_ratio: "16:9",
-            },
-        ]);
-        expect(result).toMatchObject({
-            buffer: Buffer.from([0, 0, 0, 24]),
-            mimeType: "video/mp4",
-            durationSeconds: 5,
-            trackingData: {
-                actualModel: "x-ai/grok-imagine-video:openrouter",
-                usage: { completionVideoSeconds: 5 },
-            },
-        });
-    });
-
     it.each([
         [undefined, "720p"],
         ["480p", "480p"],
@@ -504,7 +421,6 @@ describe("OpenRouter Grok Video Pro", () => {
     });
 
     it.each([
-        ["x-ai/grok-imagine-video", "x-ai/grok-imagine-video"],
         [
             "x-ai/grok-imagine-video-1.5-lite:openrouter",
             "x-ai/grok-imagine-video-1.5-lite",
@@ -557,7 +473,7 @@ describe("OpenRouter Grok Video Pro", () => {
             "a calm ocean at sunrise",
             {
                 ...baseParams,
-                model: "x-ai/grok-imagine-video",
+                model: "x-ai/grok-imagine-video-1.5",
                 duration: 99,
             },
         );
@@ -566,43 +482,7 @@ describe("OpenRouter Grok Video Pro", () => {
         expect(result.durationSeconds).toBe(15);
     });
 
-    it("accepts a base Grok fallback that completes after three minutes", async () => {
-        vi.useFakeTimers();
-        setOpenRouterEnv();
-        const startedAt = Date.now();
-        const requests: Record<string, unknown>[] = [];
-        const fetchMock = mockGrokFetch(requests);
-        const completedFetch = fetchMock.getMockImplementation();
-        assert(completedFetch);
-        fetchMock.mockImplementation(async (url, init) => {
-            if (
-                url.toString() === GROK_POLL_URL &&
-                Date.now() - startedAt < 195_000
-            ) {
-                return Response.json({ status: "pending" });
-            }
-            return completedFetch(url, init);
-        });
-
-        const resultPromise = createAndReturnVideo("animate this frame", {
-            ...baseParams,
-            model: "x-ai/grok-imagine-video:openrouter",
-            duration: 15,
-            image: ["https://example.com/start.png"],
-        });
-        await vi.advanceTimersByTimeAsync(195_000);
-        const result = await resultPromise;
-        expect(result.trackingData).toEqual({
-            actualModel: "x-ai/grok-imagine-video:openrouter",
-            usage: { promptImageTokens: 1, completionVideoSeconds: 15 },
-        });
-        expect(requests).toHaveLength(1);
-    });
-
-    it.each([
-        ["x-ai/grok-imagine-video:openrouter", 5],
-        ["x-ai/grok-imagine-video-1.5-lite:openrouter", 3],
-    ] as const)(
+    it.each([["x-ai/grok-imagine-video-1.5-lite:openrouter", 3]] as const)(
         "enforces a %s timeout of %i minutes",
         async (model, minutes) => {
             vi.useFakeTimers();
@@ -657,7 +537,7 @@ describe("OpenRouter Grok Video Pro", () => {
             await expect(
                 callOpenRouterGrokVideoAPI("a calm ocean at sunrise", {
                     ...baseParams,
-                    model: "x-ai/grok-imagine-video",
+                    model: "x-ai/grok-imagine-video-1.5",
                     duration,
                 }),
             ).rejects.toMatchObject({ status: 400 });

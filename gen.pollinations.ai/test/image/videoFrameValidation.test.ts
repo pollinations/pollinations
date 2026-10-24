@@ -24,7 +24,7 @@ const VIDEO_FRAME_LIMITS = [
     ["alibaba/wan-2.2-fast:replicate", 2],
     ["alibaba/wan-2.7", 2],
     ["x-ai/grok-imagine-video", 1],
-    ["x-ai/grok-imagine-video:openrouter", 1],
+    ["x-ai/grok-imagine-video:fal", 1],
     ["x-ai/grok-imagine-video-1.5", 1],
     ["x-ai/grok-imagine-video-1.5:fal", 1],
     ["x-ai/grok-imagine-video-1.5-lite", 1],

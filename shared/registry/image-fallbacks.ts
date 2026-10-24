@@ -275,12 +275,11 @@ export const IMAGE_FALLBACKS = {
         },
     },
     "x-ai/grok-imagine-video": {
-        "x-ai/grok-imagine-video:openrouter": {
-            provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
+        "x-ai/grok-imagine-video:fal": {
+            provider: "fal",
             cost: {
-                promptImageTokens: 0.002 * 1.055, // per start-frame image
-                completionVideoSeconds: 0.07 * 1.055, // per sec at 720p
+                promptImageTokens: 0.002,
+                completionVideoSeconds: 0.07,
             },
         },
     },

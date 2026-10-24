@@ -558,24 +558,24 @@ describe("static provider fallbacks", () => {
         },
     );
 
-    it("uses Fal first for Grok Video Pro without changing prices or access", () => {
+    it("uses cheaper Replicate for Grok Video Pro with independent Fal backup", () => {
         const primary = IMAGE_SERVICES["x-ai/grok-imagine-video"];
-        const fallback = IMAGE_SERVICES["x-ai/grok-imagine-video:openrouter"];
+        const fallback = IMAGE_SERVICES["x-ai/grok-imagine-video:fal"];
         expect(primary).toMatchObject({
-            provider: "fal",
+            provider: "replicate",
             paidOnly: true,
             priceMultiplier: 1,
             aliases: ["grok-imagine-video", "grok-video-pro"],
-            fallbacks: ["x-ai/grok-imagine-video:openrouter"],
-            cost: { promptImageTokens: 0.002, completionVideoSeconds: 0.07 },
+            fallbacks: ["x-ai/grok-imagine-video:fal"],
+            cost: { promptImageTokens: 0, completionVideoSeconds: 0.05 },
         });
-        expect(fallback.provider).toBe("openrouter");
+        expect(fallback.provider).toBe("fal");
         expect(fallback.cost).toEqual({
-            promptImageTokens: 0.002 * 1.055,
-            completionVideoSeconds: 0.07 * 1.055,
+            promptImageTokens: 0.002,
+            completionVideoSeconds: 0.07,
         });
         expect(IMAGE_SERVICES).not.toHaveProperty(
-            "x-ai/grok-imagine-video:fal",
+            "x-ai/grok-imagine-video:openrouter",
         );
         expect(IMAGE_SERVICES["x-ai/grok-imagine-video-1.5"]).toMatchObject({
             provider: "xai",

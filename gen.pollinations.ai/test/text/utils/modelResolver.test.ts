@@ -163,6 +163,19 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("us.amazon.nova-micro-v1:0");
     });
 
+    it("pins Qwen 3.7 Max to the quoted Alibaba endpoint without pricier regions", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen/qwen3.7-max",
+        });
+        expect(result.options.model).toBe("qwen/qwen3.7-max");
+        expect(result.options.max_tokens).toBe(64000);
+        expect(result.options.provider).toEqual({
+            only: ["alibaba"],
+            ignore: ["alibaba/us-east-1", "cloudflare"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins longcat to the exact OpenRouter endpoint without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "meituan/longcat-2.0",

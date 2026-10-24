@@ -1304,6 +1304,8 @@ export const portkeyConfig: PortkeyConfigMap = {
             responsesEndpoint:
                 "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/responses",
         }),
+    "openai/gpt-oss-20b:deepinfra": () =>
+        createDeepInfraModelConfig({ model: "openai/gpt-oss-20b" }),
     "Qwen3Guard-Gen-8B": () =>
         createOVHcloudOAIConfig({ model: "Qwen3Guard-Gen-8B" }),
 };

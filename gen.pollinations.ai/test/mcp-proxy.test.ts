@@ -149,6 +149,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [],
                 },
             },
+            {
+                id: "sec-edgar",
+                name: "SEC EDGAR",
+                description:
+                    "Search SEC filings and read reported financial concepts for US public companies.",
+                url: "https://gen.pollinations.ai/mcp/sec-edgar",
+                pricing: {
+                    description:
+                        "SEC EDGAR lookups are free. No additional MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });
@@ -262,7 +274,45 @@ test("routes Machines with caller authorization without an extra MCP debit", asy
     });
 });
 
-test.for(["pollinations", "ask-jev", "machines"])(
+test("routes SEC EDGAR with caller authorization without an extra MCP debit", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const payload = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+            name: "search_filings",
+            arguments: { query: "material weakness" },
+        },
+    };
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/sec-edgar",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        pathname: "/",
+        authorization: `Bearer ${key}`,
+        cookie: null,
+        payload,
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
+});
+
+test.for(["pollinations", "ask-jev", "machines", "sec-edgar"])(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(

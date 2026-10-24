@@ -20,6 +20,7 @@ export type DirectResponsesTarget = {
     headers: Record<string, string>;
     model: string;
     defaults: JsonObject;
+    serviceTier?: string;
     imageConversionModel?: string;
     /**
      * Ask for a stream even when the caller wants JSON. Cloudflare ends a
@@ -54,6 +55,9 @@ export function responsesTargetFromConfig(
             ? { disableReasoningForForcedTools: true as const }
             : {}),
         endpoint,
+        ...(typeof config.serviceTier === "string"
+            ? { serviceTier: config.serviceTier }
+            : {}),
         headers: authHeader,
         model,
         ...(config.requiresBase64ImageUrls === true

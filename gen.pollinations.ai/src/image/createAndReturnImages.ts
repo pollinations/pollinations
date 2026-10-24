@@ -30,6 +30,7 @@ import {
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
     callOpenRouterQwenImage3API,
+    callOpenRouterQwenImage21ProAPI,
     callOpenRouterRecraftFlashAPI,
     callOpenRouterRecraftVectorAPI,
     callOpenRouterSeedreamFlashAPI,
@@ -1039,8 +1040,18 @@ const generateImage = async (
                 "qwen-image-2.1-turbo",
             );
 
+        case "qwen/qwen-image-2.1-pro":
+            return await callAlibabaImage(
+                prompt,
+                safeParams,
+                "qwen-image-2.1-pro",
+            );
+
         case "qwen/qwen-image-3:openrouter":
             return await callOpenRouterQwenImage3API(prompt, safeParams);
+
+        case "qwen/qwen-image-2.1-pro:openrouter":
+            return await callOpenRouterQwenImage21ProAPI(prompt, safeParams);
 
         case "black-forest-labs/flux.1-kontext-pro:replicate":
         case "black-forest-labs/flux.2-pro:replicate":

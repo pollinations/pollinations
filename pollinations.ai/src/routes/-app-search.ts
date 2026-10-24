@@ -10,69 +10,20 @@
  * URL. Lists round-trip as comma-separated values.
  */
 
-/** Mirrors the category field in operations/app-management/app.json. */
-export const APP_CATEGORIES = [
-    "image",
-    "chat",
-    "build",
-    "writing",
-    "games",
-    "learn",
-    "business",
-    "bots",
-    "video_audio",
-] as const;
-export type AppCategory = (typeof APP_CATEGORIES)[number];
+import {
+    APP_CATEGORIES,
+    APP_PLATFORMS,
+    type AppCategory,
+} from "../../../shared/app-catalog.ts";
 
-export const CATEGORY_LABELS: Record<AppCategory, string> = {
-    image: "Image",
-    chat: "Chat",
-    build: "Build",
-    writing: "Writing",
-    games: "Games",
-    learn: "Learn",
-    business: "Business",
-    bots: "Bots",
-    video_audio: "Video & audio",
-};
-
-/** Mirrors the Platform column; an app can list several. */
-export const APP_PLATFORMS = [
-    "web",
-    "android",
-    "ios",
-    "windows",
-    "macos",
-    "desktop",
-    "cli",
-    "discord",
-    "telegram",
-    "whatsapp",
-    "library",
-    "browser-ext",
-    "roblox",
-    "wordpress",
-    "api",
-] as const;
-export type AppPlatform = (typeof APP_PLATFORMS)[number];
-
-export const PLATFORM_LABELS: Record<AppPlatform, string> = {
-    web: "Web",
-    android: "Android",
-    ios: "iOS",
-    windows: "Windows",
-    macos: "macOS",
-    desktop: "Desktop",
-    cli: "CLI",
-    discord: "Discord",
-    telegram: "Telegram",
-    whatsapp: "WhatsApp",
-    library: "Library",
-    "browser-ext": "Browser extension",
-    roblox: "Roblox",
-    wordpress: "WordPress",
-    api: "API",
-};
+export {
+    APP_CATEGORIES,
+    APP_PLATFORMS,
+    type AppCategory,
+    type AppPlatform,
+    CATEGORY_LABELS,
+    PLATFORM_LABELS,
+} from "../../../shared/app-catalog.ts";
 
 export const APP_SORTS = ["fresh", "buzz"] as const;
 export type AppSort = (typeof APP_SORTS)[number];

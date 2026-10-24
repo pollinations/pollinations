@@ -487,8 +487,8 @@ export function CommunityEndpointDialog({
                     ? "Saving…"
                     : "Creating…"
                 : isEdit
-                  ? "Save changes"
-                  : "Create model"}
+                  ? "Save"
+                  : "Create"}
         </Button>
     );
 
@@ -887,7 +887,7 @@ export function CommunityEndpointDialog({
                                     >
                                         {testState.status === "loading"
                                             ? "Testing…"
-                                            : "Test endpoint"}
+                                            : "Test"}
                                     </Button>
                                     {testState.status === "error" &&
                                         testState.message && (

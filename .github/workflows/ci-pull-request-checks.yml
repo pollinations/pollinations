@@ -80,6 +80,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies
@@ -212,6 +213,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies
@@ -261,9 +263,15 @@ jobs:
           fi
 
   gen:
-    name: Test gen.pollinations.ai
+    name: Test gen.pollinations.ai (${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Every test file starts its own Workers runtime, so the files are split
+    # across three runners. A fourth runner saved only ~20 s (#18135).
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
 
     steps:
       - name: Checkout code
@@ -292,6 +300,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies
@@ -300,10 +309,10 @@ jobs:
 
       - name: Test gen.pollinations.ai
         if: steps.gen-files.outputs.any_changed == 'true'
-        run: npm test --workspace pollinations-gen
+        run: npm test --workspace pollinations-gen -- --shard=${{ matrix.shard }}/3
 
       - name: Typecheck gen.pollinations.ai
-        if: steps.gen-files.outputs.any_changed == 'true'
+        if: steps.gen-files.outputs.any_changed == 'true' && matrix.shard == 1
         run: npm run typecheck --workspace pollinations-gen
 
   media-docs:
@@ -329,6 +338,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install workspace dependencies
@@ -364,6 +374,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies

@@ -54,7 +54,7 @@ export const Generate3dRequestQueryParamsSchema = z.object({
         }),
     seed: z.coerce.number().int().optional().meta({
         description:
-            "Seed for varied generations. Passed through to models that support it (`hyper3d/rodin-2.5`); otherwise only affects the media-cache key, so a new seed forces a fresh generation for the same prompt/image.",
+            "Seed for varied generations. Passed through to models that support it; otherwise only affects the media-cache key, so a new seed forces a fresh generation for the same prompt/image.",
     }),
     safe: SafeSchema,
 });

@@ -1132,6 +1132,27 @@ describe("static provider fallbacks", () => {
         }
     });
 
+    it("keeps the Azure Kimi K2.6 quote on direct DeepInfra recovery", () => {
+        const model = "moonshotai/kimi-k2.6";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES["moonshotai/kimi-k2.6:deepinfra"];
+        expect(primary.fallbacks).toEqual(["moonshotai/kimi-k2.6:deepinfra"]);
+        expect(primary.priceMultiplier).toBe(1);
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 100,
+                promptCachedTokens: 20,
+                promptImageTokens: 10,
+                completionTextTokens: 30,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.0001905, 12);
+        expect(billed.price.totalPrice).toBe(0.0002277);
+    });
+
     it("keeps exact provider route costs", () => {
         expect(TEXT_SERVICES["openai/gpt-4o-mini"].cost).toMatchObject({
             promptTextTokens: (0.15 / 1_000_000) * 1.055,

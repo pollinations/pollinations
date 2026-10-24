@@ -358,6 +358,17 @@ describe("resolveModelConfig", () => {
         },
     );
 
+    it("keeps Kimi K2.6 recovery on direct DeepInfra", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "moonshotai/kimi-k2.6:deepinfra",
+        });
+        expect(resolved.options.modelConfig).toMatchObject({
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "moonshotai/Kimi-K2.6",
+        });
+        expect(findModelByName("moonshotai/kimi-k2.6:azure:sweden")).toBeNull();
+    });
+
     it("pins Inkling to DeepInfra on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "thinkingmachines/inkling-small",

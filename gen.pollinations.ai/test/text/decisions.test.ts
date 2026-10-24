@@ -74,16 +74,23 @@ function createDecisionsMock() {
                 });
             },
             "ai-gateway.vercel.sh": async (request: Request) => {
+                const body = (await request.json()) as { model: string };
                 state.requests.push({
                     pathname: new URL(request.url).pathname,
                     authorization: request.headers.get("authorization"),
-                    body: await request.json(),
+                    body,
                 });
                 if (state.vercelResponse) return state.vercelResponse.clone();
+                if (state.response && body.model === "typesafe-ai/jev-1.13.0")
+                    return state.response.clone();
                 return Response.json({
-                    model: "liquid/d1",
+                    model: body.model,
                     answers,
-                    usage: { input_tokens: 452, output_tokens: 0 },
+                    usage: {
+                        input_tokens: 452,
+                        output_tokens:
+                            body.model === "typesafe-ai/jev-1.13.0" ? 73 : 0,
+                    },
                 });
             },
             [DECISIONS_HOST]: async (request: Request) => {
@@ -190,11 +197,15 @@ test("answers a decision, forwards the native body, and bills input tokens", asy
 
     expect(mocks.decisions.state.requests).toHaveLength(1);
     expect(mocks.decisions.state.requests[0]).toMatchObject({
-        pathname: "/api/alpha/decisions",
-        authorization: "Bearer openrouter-test-key",
+        pathname: "/typesafe/v1/systemone",
+        authorization: "Bearer vercel-test-key",
         // Forwarded untouched, under the upstream's pinned model id.
         body: {
-            model: "typesafe/jev-1.13",
+            model: "typesafe-ai/jev-1.13.0",
+            providerOptions: {
+                gateway: { only: ["typesafe-ai"] },
+                typesafe: { longContext: true },
+            },
             state: "Invoice issued 2026-08-01, net-30. Today is 2026-09-19.",
             questions,
         },
@@ -231,8 +242,8 @@ test("answers the same decision on TypeSafe's /v1/systemone path", async ({
     });
     expect(mocks.decisions.state.requests).toHaveLength(1);
     expect(mocks.decisions.state.requests[0]).toMatchObject({
-        pathname: "/api/alpha/decisions",
-        body: { model: "typesafe/jev-1.13", questions },
+        pathname: "/typesafe/v1/systemone",
+        body: { model: "typesafe-ai/jev-1.13.0", questions },
     });
 
     await wait();
@@ -864,7 +875,12 @@ test("returns an upstream HTTP 502 when Jev omits usage", async ({
         error: { code: "BAD_GATEWAY", details: { name: "UpstreamError" } },
     });
     await wait();
-    expect(mocks.decisions.state.requests).toHaveLength(1);
+    expect(mocks.decisions.state.requests).toHaveLength(2);
+    expect(
+        mocks.decisions.state.requests.map(
+            (request) => (request.body as { model: string }).model,
+        ),
+    ).toEqual(["typesafe-ai/jev-1.13.0", "typesafe/jev-1.13"]);
     expect(
         mocks.tinybird.state.events.some((event) => event.isBilledUsage),
     ).toBe(false);

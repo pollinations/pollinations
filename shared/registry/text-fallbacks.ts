@@ -117,6 +117,17 @@ export const TEXT_FALLBACKS = {
     },
     // OpenRouter Alibaba routes cover gateway failures, not Alibaba-wide outages.
     // Max currently requires reasoning and rejects forced tool choice.
+    "typesafe/jev-1.13": {
+        // Same TypeSafe backend; covers gateway failures, not TypeSafe outages.
+        "typesafe/jev-1.13:openrouter:typesafe": {
+            provider: "openrouter",
+            priceMultiplier: 1,
+            cost: {
+                promptTextTokens: perMillion(0.042) * 1.055,
+                completionTextTokens: perMillion(0),
+            },
+        },
+    },
     "qwen/qwen3.8-max": {
         "qwen/qwen3.8-max:openrouter:alibaba": {
             provider: "openrouter",

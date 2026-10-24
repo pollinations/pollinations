@@ -99,14 +99,31 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "respan/span-01-lite",
     }),
-    // -- TypeSafe AI via OpenRouter's decisions endpoint. Its own protocol, so
-    // it bypasses Portkey and the Chat transforms — see systemOneClient.ts.
-    // OpenRouter exposes no floating alias, so the version is pinned here.
-    "jev-1.13": () => ({
+    // Both gateways preserve the native TypeSafe Decisions protocol.
+    "jev-1.13": () =>
+        createVercelAIGatewayModelConfig({
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+            model: "typesafe-ai/jev-1.13.0",
+            defaultOptions: {
+                providerOptions: {
+                    gateway: { only: ["typesafe-ai"] },
+                    typesafe: { longContext: true },
+                },
+            },
+        }),
+    "typesafe/jev-1.13:openrouter:typesafe": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "typesafe/jev-1.13",
+        defaultOptions: {
+            provider: {
+                only: ["typesafe"],
+                ignore: ["cloudflare"],
+                allow_fallbacks: false,
+            },
+        },
     }),
     "kev-4b": () => ({
         provider: "openrouter",

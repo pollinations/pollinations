@@ -874,6 +874,11 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "typesafe/jev-1.13:openrouter:typesafe",
+        config: portkeyConfig["typesafe/jev-1.13:openrouter:typesafe"],
+        useSystemOneApi: true,
+    },
+    {
         name: "jaredpalmer/kev-4b",
         config: portkeyConfig["kev-4b"],
         useSystemOneApi: true,

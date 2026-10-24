@@ -69,6 +69,44 @@ afterEach(() => {
 });
 
 describe("System One adapter", () => {
+    it.each(["typesafe/jev-1.13", "typesafe/jev-1.13:openrouter:typesafe"])(
+        "forwards Jev route pins without changing native question shapes: %s",
+        async (model) => {
+            const config: Record<string, unknown> = {
+                ...findModelByName(model)?.config(),
+                authKey: "test-key",
+            };
+            const fetchSpy = vi
+                .spyOn(globalThis, "fetch")
+                .mockImplementationOnce(async (input, init) => {
+                    expect(String(input)).toBe(config.directEndpoint);
+                    expect(JSON.parse(String(init?.body))).toEqual({
+                        ...(config.defaultOptions as Record<string, unknown>),
+                        model: config.model,
+                        state: nativeState,
+                        questions: nativeQuestions,
+                    });
+                    return Response.json({
+                        model: config.model,
+                        answers,
+                        usage: { input_tokens: 430, output_tokens: 62 },
+                    });
+                });
+            const result = await callSystemOne(
+                [{ role: "user", content: nativeContent }],
+                { modelConfig: config },
+            );
+            expect(fetchSpy).toHaveBeenCalledTimes(1);
+            expect(
+                JSON.parse(String(result.choices?.[0]?.message?.content)),
+            ).toEqual(answers);
+            expect(result.usage).toMatchObject({
+                prompt_tokens: 430,
+                completion_tokens: 62,
+            });
+        },
+    );
+
     it("rejects D3 question counts above its local limit before calling upstream", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
         await expect(

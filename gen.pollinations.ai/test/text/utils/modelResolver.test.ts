@@ -396,6 +396,26 @@ describe("resolveModelConfig", () => {
         },
     );
 
+    it("pins Jev's exact Vercel version, long context, and OpenRouter backup", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "typesafe/jev-1.13",
+        });
+        expect(primary.options.model).toBe("typesafe-ai/jev-1.13.0");
+        expect(primary.options.providerOptions).toEqual({
+            gateway: { only: ["typesafe-ai"] },
+            typesafe: { longContext: true },
+        });
+        const backup = resolveModelConfig(messages, {
+            model: "typesafe/jev-1.13:openrouter:typesafe",
+        });
+        expect(backup.options.model).toBe("typesafe/jev-1.13");
+        expect(backup.options.provider).toEqual({
+            only: ["typesafe"],
+            ignore: ["cloudflare"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Inkling to DeepInfra on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "thinkingmachines/inkling-small",

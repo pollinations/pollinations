@@ -833,6 +833,21 @@ describe("static provider fallbacks", () => {
         }
     });
 
+    it("keeps Jev's lower Vercel quote when OpenRouter serves it", () => {
+        const model = "typesafe/jev-1.13";
+        expect(TEXT_SERVICES[model].fallbacks).toEqual([
+            `${model}:openrouter:typesafe`,
+        ]);
+        const billed = calculateUsageBilling({
+            model,
+            usage: { promptTextTokens: 10000, completionTextTokens: 100 },
+            servedBy: TEXT_SERVICES[`${model}:openrouter:typesafe`],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.0004431, 12);
+        expect(billed.price.totalPrice).toBe(0.00042);
+    });
+
     it("prices Muse Wonder on Vercel at base rates and quotes the OpenRouter primary with its fee", () => {
         const primary = TEXT_SERVICES["meta/muse-wonder-1.0"];
         const fallback = TEXT_SERVICES["meta/muse-wonder-1.0:vercel"];
@@ -1130,21 +1145,6 @@ describe("static provider fallbacks", () => {
             for (const route of routes)
                 expect(publicAudio.has(route)).toBe(false);
         }
-    });
-
-    it("keeps Jev's lower Vercel quote when OpenRouter serves it", () => {
-        const model = "typesafe/jev-1.13";
-        expect(TEXT_SERVICES[model].fallbacks).toEqual([
-            `${model}:openrouter:typesafe`,
-        ]);
-        const billed = calculateUsageBilling({
-            model,
-            usage: { promptTextTokens: 10000, completionTextTokens: 100 },
-            servedBy: TEXT_SERVICES[`${model}:openrouter:typesafe`],
-            quotedBy: TEXT_SERVICES[model],
-        });
-        expect(billed.cost.totalCost).toBeCloseTo(0.0004431, 12);
-        expect(billed.price.totalPrice).toBe(0.00042);
     });
 
     it("keeps exact provider route costs", () => {

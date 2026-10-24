@@ -390,18 +390,19 @@ const IMAGE_BASE_SERVICES = {
     },
     "google/gemini-nano-banana-2.1": {
         aliases: [],
-        provider: "openrouter",
+        provider: "google",
         publisher: "Google",
         category: "image",
         addedDate: new Date("2026-10-06").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Google AI Studio via OpenRouter, including the 5.5% credit fee.
-            promptTextTokens: perMillion(1.5) * 1.055, // per 1M tokens
-            promptImageTokens: perMillion(1.5) * 1.055, // per 1M tokens
-            completionTextTokens: perMillion(7.5) * 1.055, // text/reasoning output tokens
-            completionImageTokens: perMillion(30) * 1.055, // per 1M tokens
+            // Vertex global standard pricing; cached input includes images.
+            promptTextTokens: perMillion(1.5),
+            promptImageTokens: perMillion(1.5),
+            promptCachedTokens: perMillion(0.15),
+            completionTextTokens: perMillion(7.5),
+            completionImageTokens: perMillion(30),
         },
         title: "Nano Banana 2.1",
         description:
@@ -1072,14 +1073,16 @@ const IMAGE_BASE_SERVICES = {
     },
     "alibaba/wan-2.2-fast": {
         aliases: ["wan2.2", "wan-2.2", "wan-fast"],
-        provider: "replicate",
+        provider: "fal",
         publisher: "Alibaba",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Replicate wan-2.2-fast, locked to 480p. Silent, fixed ~5s clip billed
-        // flat ($0.01/s x 5s = $0.05).
+        // Fal wan-2.2-turbo, locked to 480p. Silent, fixed ~5s clip billed
+        // flat ($0.01/s x 5s = $0.05). Primary moved off Replicate, which
+        // returned 4xx on ~48% of requests (31 req, 15 errors_4xx,
+        // 2026-10-21 /models/status); Replicate stays as a fallback-only route.
         cost: {
             promptImageTokens: 0,
             completionVideoSeconds: 0.01, // per sec (480p, silent)
@@ -1530,30 +1533,30 @@ const IMAGE_BASE_SERVICES = {
     },
     "x-ai/grok-imagine-image-2.0": {
         aliases: ["grok-imagine-image-2.0"],
-        provider: "openrouter",
+        provider: "xai",
         publisher: "xAI",
         category: "image",
         addedDate: new Date("2026-08-14").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // OpenRouter x-ai/grok-imagine-image-2.0 pricing, verified 2026-08-14.
+        // xAI direct API rates; a low 1K probe cost $0.04 (2026-10-24).
         cost: {
-            promptImageTokens: 0.01 * 1.055,
-            completionImageTokens: 0.06 * 1.055, // medium, 1K
+            promptImageTokens: 0.01,
+            completionImageTokens: 0.06, // medium, 1K
         },
         ...defineCostVariants(
             {
                 low_1k: {
-                    promptImageTokens: 0.01 * 1.055,
-                    completionImageTokens: 0.04 * 1.055,
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.04,
                 },
                 low_2k: {
-                    promptImageTokens: 0.01 * 1.055,
-                    completionImageTokens: 0.06 * 1.055,
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.06,
                 },
                 medium_2k: {
-                    promptImageTokens: 0.01 * 1.055,
-                    completionImageTokens: 0.08 * 1.055,
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.08,
                 },
             },
             ({ input }) => {
@@ -1675,23 +1678,24 @@ const IMAGE_BASE_SERVICES = {
     },
     "x-ai/grok-imagine-video-1.5": {
         aliases: ["grok-imagine-video-1.5"],
-        provider: "openrouter",
+        provider: "xai",
         publisher: "xAI",
         category: "video",
         addedDate: new Date("2026-08-03").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            promptImageTokens: 0.01 * 1.055, // per start-frame image
-            completionVideoSeconds: 0.14 * 1.055, // per sec at 720p
+            // xAI direct API rates; a 1 s 480p probe cost $0.08 (2026-10-24).
+            promptImageTokens: 0.01, // per start-frame image
+            completionVideoSeconds: 0.14, // per sec at 720p
         },
         ...defineCostVariants(
             {
                 "480p": {
-                    completionVideoSeconds: 0.08 * 1.055,
+                    completionVideoSeconds: 0.08,
                 },
                 "1080p": {
-                    completionVideoSeconds: 0.25 * 1.055,
+                    completionVideoSeconds: 0.25,
                 },
             },
             matchResolution("480p", "1080p"),

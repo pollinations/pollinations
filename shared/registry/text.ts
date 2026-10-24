@@ -872,16 +872,18 @@ const TEXT_BASE_SERVICES = {
     "qwen/qwen3-coder-30b-a3b-instruct": {
         supportedParameters: CHAT_PARAMETERS.bedrockQwenCoder,
         aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct", "qwen-coder"],
-        provider: "aws",
+        provider: "openrouter",
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // AWS Bedrock on-demand standard tier, us-east-1.
-            promptTextTokens: perMillion(0.15),
-            completionTextTokens: perMillion(0.6),
+            // SiliconFlow FP8 through OpenRouter, including its 5.5% fee.
+            promptTextTokens: perMillion(0.07) * 1.055,
+            // The receipt reports cache hits at the full input rate.
+            promptCachedTokens: perMillion(0.07) * 1.055,
+            completionTextTokens: perMillion(0.28) * 1.055,
         },
         title: "Qwen3 Coder 30B",
         description:
@@ -2290,21 +2292,20 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-opus-5.5:fast": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "openrouter",
+        provider: "vercel",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-10-10").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         // Research preview: Anthropic's fast mode for Opus 5.5 at 2x standard
-        // rates, served by OpenRouter's anthropic/fast endpoint (2026-10-10).
-        // Costs include OpenRouter's 5.5% credit fee. Cache writes use the
-        // 5-minute rate.
+        // rates, served by Vercel's anthropic/claude-opus-5.5-fast pinned to
+        // Anthropic (2026-10-24). Cache writes use the 5-minute rate.
         cost: {
-            promptTextTokens: perMillion(8) * 1.055,
-            promptCachedTokens: perMillion(0.4) * 1.055,
-            promptCacheWriteTokens: perMillion(10) * 1.055,
-            completionTextTokens: perMillion(40) * 1.055,
+            promptTextTokens: perMillion(8),
+            promptCachedTokens: perMillion(0.4),
+            promptCacheWriteTokens: perMillion(10),
+            completionTextTokens: perMillion(40),
         },
         title: "Claude Opus 5.5 Fast",
         description:

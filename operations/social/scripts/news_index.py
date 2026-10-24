@@ -79,16 +79,22 @@ def model_changes(before, after, prefix):
 
 
 
+def tracked(snapshot: Dict, other: Dict) -> List[Dict]:
+    """The snapshot's models in categories the other record also holds or split off one it holds
+    (it has some of their models). A newly recorded category announces nothing."""
+    names = {model["name"] for models in other.values() for model in models}
+    return [model for category, models in snapshot.items()
+            if category in other or any(model["name"] in names for model in models)
+            for model in models]
+
+
 def record_changes(snapshots: List[tuple]) -> List[tuple]:
     """(day, event) for each change between consecutive recorded catalogs, dated the day before
-    the morning record that first shows it: the day it went live. Only categories both
-    snapshots hold are compared, so a newly recorded category announces nothing."""
+    the morning record that first shows it: the day it went live."""
     changes = []
     for (_, previous), (recorded, current) in zip(snapshots, snapshots[1:]):
         day = (datetime.strptime(recorded, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
-        shared = previous.keys() & current.keys()
-        before = [model for category in shared for model in previous[category]]
-        after = [model for category in shared for model in current[category]]
+        before, after = tracked(previous, current), tracked(current, previous)
         changes.extend((day, event) for event in model_changes(before, after, day))
     return changes
 

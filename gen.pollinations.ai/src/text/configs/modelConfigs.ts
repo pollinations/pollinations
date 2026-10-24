@@ -753,6 +753,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-haiku-4.5",
         "google-vertex/global",
     ),
+    "claude-opus-5.5-fast-vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "anthropic/claude-opus-5.5-fast",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["anthropic"] } },
+            },
+        }),
     "claude-opus-5.5-fast-openrouter-anthropic-fast":
         createPinnedOpenRouterConfig(
             "anthropic/claude-opus-5.5",
@@ -1059,6 +1067,19 @@ export const portkeyConfig: PortkeyConfigMap = {
         createBedrockNativeConfig({ model: "us.amazon.nova-2-lite-v1:0" }),
 
     // -- AWS Bedrock (Qwen) ---------------------------------------------------
+    "qwen-coder-openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3-coder-30b-a3b-instruct",
+            // Preserve the existing Chat-based Responses adapter.
+            responsesEndpoint: undefined,
+            defaultOptions: {
+                provider: {
+                    only: ["siliconflow/fp8"],
+                    ignore: ["cloudflare"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "qwen-coder-bedrock": () =>
         createBedrockNativeConfig({ model: "qwen.qwen3-coder-30b-a3b-v1:0" }),
 

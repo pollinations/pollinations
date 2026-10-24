@@ -1076,16 +1076,26 @@ function QuestOverviewContent({
                     </div>
                 </Section>
             )}
-            {!state.anonymous && !state.loading && githubId !== null && (
+            {!state.anonymous && !state.loading && (
                 <Section title="Invite link">
                     <Text size="sm" tone="muted">
                         Earn 2 Quest Pollen for each friend who signs up with
                         your link and buys more than 2 Pollen.
                     </Text>
-                    <CopyField
-                        label="Copy invite link"
-                        value={`${window.location.origin}/?ref=${githubId}`}
-                    />
+                    {githubId === null ? (
+                        // The link carries the inviter's GitHub id.
+                        <Text size="sm" tone="muted">
+                            <InlineLink href="/account">
+                                Connect GitHub
+                            </InlineLink>{" "}
+                            to get your invite link.
+                        </Text>
+                    ) : (
+                        <CopyField
+                            label="Copy invite link"
+                            value={`${window.location.origin}/?ref=${githubId}`}
+                        />
+                    )}
                 </Section>
             )}
             {/* Mounts after the quests load, so a `?code=` link scrolls to its final spot. */}

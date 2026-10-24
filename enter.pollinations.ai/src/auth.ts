@@ -284,7 +284,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 },
                 create: {
                     // An invite link (?ref=<GitHub id>) leaves a cookie that
-                    // the GitHub callback carries here; see main.tsx.
+                    // the OAuth callback carries here; see main.tsx.
                     before: async (user, context) => {
                         const ref = Number(
                             context?.getCookie(INVITE_REF_COOKIE) || Number.NaN,

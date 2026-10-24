@@ -2392,9 +2392,12 @@ test("Invite friends pays 2 Pollen once per referred user who bought more than 2
         { name: "buyer", pollen: 5, banned: false },
         { name: "smallest-pack", pollen: 2, banned: false },
         { name: "banned-buyer", pollen: 5, banned: true },
+        { name: "google-buyer", pollen: 5, banned: false },
     ].map(({ name, pollen, banned }) => ({
         id: `invite-${name}`,
-        githubId: hashGithubId(`invite-${name}`),
+        githubId: name.startsWith("google")
+            ? null
+            : hashGithubId(`invite-${name}`),
         pollen,
         banned,
     }));
@@ -2410,6 +2413,13 @@ test("Invite friends pays 2 Pollen once per referred user who bought more than 2
             updatedAt: now,
         })),
     );
+    // Signed up with Google only, so the reward is keyed on the Google account.
+    await db.insert(schema.account).values({
+        id: "invite-google-buyer-account",
+        accountId: "google-sub-invite",
+        providerId: "google",
+        userId: "invite-google-buyer",
+    });
     await db.insert(schema.stripeCheckoutCredits).values(
         referred.map(({ id, pollen }) => ({
             sessionId: `cs_test_${id}`,
@@ -2433,11 +2443,18 @@ test("Invite friends pays 2 Pollen once per referred user who bought more than 2
                 balanceBucket: schema.rewards.balanceBucket,
             })
             .from(schema.rewards)
-            .where(eq(schema.rewards.questId, "invite_friends")),
+            .where(eq(schema.rewards.questId, "invite_friends"))
+            .orderBy(schema.rewards.idempotencyKey),
     ).toEqual([
         {
             userId: referrer.id,
             idempotencyKey: `quest:invite_friends:github:${referred[0]?.githubId}`,
+            pollenAmount: 2,
+            balanceBucket: "tier",
+        },
+        {
+            userId: referrer.id,
+            idempotencyKey: "quest:invite_friends:google:google-sub-invite",
             pollenAmount: 2,
             balanceBucket: "tier",
         },

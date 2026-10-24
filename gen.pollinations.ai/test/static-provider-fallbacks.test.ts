@@ -1012,6 +1012,23 @@ describe("static provider fallbacks", () => {
         },
     );
 
+    it("records DeepSeek Flash 1017's discounted fallback cost at the unchanged primary quote", () => {
+        const model = "deepseek/deepseek-v4.1-flash-1017";
+        const billing = calculateUsageBilling({
+            model,
+            servedBy: TEXT_SERVICES[`${model}:deepinfra`],
+            quotedBy: TEXT_SERVICES[model],
+            usage: {
+                promptTextTokens: 1000,
+                promptCachedTokens: 1000,
+                completionTextTokens: 100,
+                completionReasoningTokens: 100,
+            },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.00015974, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.000273, 8);
+    });
+
     it("updates StreamLake's DeepSeek Pro cost without changing the caller's quote", () => {
         const billing = calculateUsageBilling({
             model: "deepseek/deepseek-v4-pro",

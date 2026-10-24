@@ -264,6 +264,12 @@ export const TEXT_FALLBACKS = {
             ),
         },
     },
+    "openai/gpt-5.4-mini": {
+        "openai/gpt-5.4-mini:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
+        },
+    },
     "x-ai/grok-4.7": {
         "x-ai/grok-4.7:openrouter": {
             provider: "openrouter",

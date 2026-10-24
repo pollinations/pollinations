@@ -283,6 +283,15 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4/chat/completions?api-version=2024-12-01-preview",
             azureOpenAIParameters,
         ),
+    "gpt-5.4-mini-openai": () => ({
+        provider: "openai",
+        model: "gpt-5.4-mini-2026-03-17",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        directEndpoint: "https://api.openai.com/v1/chat/completions",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        serviceTier: "default",
+        ...azureOpenAIParameters,
+    }),
     "gpt-5.4-mini": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),

@@ -443,6 +443,20 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins gpt-5.4-mini recovery to exact OpenAI Standard", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5.4-mini:openai",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("gpt-5.4-mini-2026-03-17");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
+            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
+        });
+    });
+
     it("routes Mistral Large 4 to Mistral direct", () => {
         const result = resolveModelConfig(messages, {
             model: "mistralai/mistral-large-4",

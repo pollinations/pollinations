@@ -354,6 +354,7 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             // Gemini 3.1 Flash Image via Vertex AI
+            promptCachedTokens: perMillion(0.05),
             promptTextTokens: perMillion(0.5), // per 1M tokens
             promptImageTokens: perMillion(0.5), // per 1M tokens
             completionTextTokens: perMillion(3), // text/reasoning output tokens

@@ -4339,12 +4339,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "x-ai/grok-imagine-video": {
     "cost": {
-      "completionVideoSeconds": 0.07,
-      "promptImageTokens": 0.002,
+      "completionVideoSeconds": 0.05,
+      "promptImageTokens": 0,
     },
     "price": {
-      "completionVideoSeconds": 0.07,
-      "promptImageTokens": 0.002,
+      "completionVideoSeconds": 0.05,
+      "promptImageTokens": 0,
     },
   },
   "x-ai/grok-imagine-video-1.5": {
@@ -4419,14 +4419,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.01,
     },
   },
-  "x-ai/grok-imagine-video:openrouter": {
+  "x-ai/grok-imagine-video:fal": {
     "cost": {
-      "completionVideoSeconds": 0.07385,
-      "promptImageTokens": 0.00211,
+      "completionVideoSeconds": 0.07,
+      "promptImageTokens": 0.002,
     },
     "price": {
-      "completionVideoSeconds": 0.07385,
-      "promptImageTokens": 0.00211,
+      "completionVideoSeconds": 0.07,
+      "promptImageTokens": 0.002,
     },
   },
   "x-ai/grok-transcribe": {

@@ -1652,15 +1652,15 @@ const IMAGE_BASE_SERVICES = {
     },
     "x-ai/grok-imagine-video": {
         aliases: ["grok-imagine-video", "grok-video-pro"],
-        provider: "fal",
+        provider: "replicate",
         publisher: "xAI",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            promptImageTokens: 0.002, // per start-frame image
-            completionVideoSeconds: 0.07, // per sec at 720p
+            promptImageTokens: 0, // included in output-video price
+            completionVideoSeconds: 0.05, // per reported output second at 720p
         },
         resolutions: ["720p"],
         title: "Grok Video Pro",

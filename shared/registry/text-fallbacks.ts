@@ -711,6 +711,20 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "nvidia/nemotron-3.5-super-vl": {
+        "nvidia/nemotron-3.5-super-vl:openrouter:together": {
+            supportedParameters: CHAT_PARAMETERS.openRouterNemotronSuperVl,
+            provider: "openrouter",
+            addedDate: new Date("2026-10-15").getTime(),
+            cost: {
+                // OpenRouter Together rates (2026-10-15), including the account's
+                // 5.5% credit-purchase fee.
+                promptTextTokens: perMillion(0.15) * 1.055,
+                promptCachedTokens: perMillion(0.02) * 1.055,
+                completionTextTokens: perMillion(0.5) * 1.055,
+            },
+        },
+    },
     "nvidia/nemotron-3-ultra": {
         "nvidia/nemotron-3-ultra:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,

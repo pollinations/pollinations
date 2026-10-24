@@ -18,9 +18,10 @@ const mocks = vi.hoisted(() => ({
         async (harness: { existingKey: string | null }) =>
             harness.existingKey ?? "sk_child",
     ),
-    fetchHarnessModels: vi.fn(async (selected: string) => [
-        { id: selected, contextWindow: 128000, input: ["text"] },
-    ]),
+    fetchHarnessModels: vi.fn(async (selected: string) => ({
+        model: selected,
+        models: [{ id: selected, contextWindow: 128000, input: ["text"] }],
+    })),
     gen: vi.fn(),
 }));
 
@@ -131,6 +132,18 @@ describe("Claude Code harness", () => {
         // gen can answer the pong from its cache without a usage row (#18053).
         expect(mocks.gen).not.toHaveBeenCalled();
         expect(existsSync(join(home, ".claude"))).toBe(false);
+    });
+
+    it("writes the canonical model ID when --model is an alias", async () => {
+        mocks.fetchHarnessModels.mockResolvedValueOnce({
+            model: "deepseek/deepseek-v4-flash",
+            models: [],
+        });
+        const result = await claudeCode.on(ctx, { model: "deepseek" });
+        expect(mocks.fetchHarnessModels).toHaveBeenLastCalledWith("deepseek");
+        expect(result.model).toBe("deepseek/deepseek-v4-flash");
+        const { env } = JSON.parse(readFileSync(settingsFile(), "utf-8"));
+        expect(env.ANTHROPIC_MODEL).toBe("deepseek/deepseek-v4-flash");
     });
 
     it("reuses the key stored in its settings file", async () => {

@@ -218,6 +218,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["openai/gpt-4o-mini"],
     },
     {
+        name: "openai/gpt-4o-mini:openrouter:openai",
+        config: portkeyConfig["gpt-4o-mini-openrouter"],
+    },
+    {
         name: "openai/gpt-5.3-codex",
         config: portkeyConfig["gpt-5.3-codex"],
         transform: omitOpenAISampling,
@@ -335,6 +339,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen/qwen3-coder-30b-a3b-instruct",
+        config: portkeyConfig["qwen-coder-openrouter"],
+        transform: pipe(stripReasoning, omitParameters("stop")),
+    },
+    {
+        name: "qwen/qwen3-coder-30b-a3b-instruct:aws",
         config: portkeyConfig["qwen-coder-bedrock"],
         // No default coding prompt: it makes Bedrock narrate before a tool
         // call, leaking raw <function=...> text. Qwen3-Coder has no reasoning
@@ -354,6 +363,11 @@ const models: ModelDefinition[] = [
     {
         name: "qwen/qwen3.7-plus",
         config: portkeyConfig["qwen/qwen3.7-plus"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
+        name: "qwen/qwen3.7-plus:alibaba",
+        config: portkeyConfig["qwen3.7-plus-alibaba"],
         transform: createReasoningEffortTransform("toggle"),
     },
     {
@@ -418,6 +432,11 @@ const models: ModelDefinition[] = [
         name: "qwen/qwen3-vl-30b-a3b-instruct",
         config: portkeyConfig["qwen/qwen3-vl-30b-a3b-instruct"],
         // Vision model, no reasoning mode.
+        transform: stripReasoning,
+    },
+    {
+        name: "qwen/qwen3-vl-30b-a3b-instruct:openrouter:deepinfra",
+        config: portkeyConfig["qwen3-vl-30b-openrouter"],
         transform: stripReasoning,
     },
     {
@@ -572,10 +591,6 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["grok-4.7-openrouter"],
     },
     {
-        name: "x-ai/grok-4.6:azure:sweden",
-        config: portkeyConfig["grok-4.6-azure-sweden"],
-    },
-    {
         name: "x-ai/grok-4.6:xai",
         config: portkeyConfig["grok-4.6-xai"],
     },
@@ -622,6 +637,11 @@ const models: ModelDefinition[] = [
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
+        name: "anthropic/claude-sonnet-5:anthropic",
+        config: portkeyConfig["anthropic/claude-sonnet-5:anthropic"],
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
+    },
+    {
         name: "anthropic/claude-sonnet-5.5",
         config: portkeyConfig["anthropic/claude-sonnet-5.5"],
         // Reasoning is mandatory on this route and sampling params are rejected.
@@ -654,6 +674,11 @@ const models: ModelDefinition[] = [
         transform: pipe(claudeOpus5Thinking, omitClaudeSampling),
     },
     {
+        name: "anthropic/claude-opus-5:anthropic",
+        config: portkeyConfig["anthropic/claude-opus-5:anthropic"],
+        transform: pipe(claudeOpus5Thinking, omitClaudeSampling),
+    },
+    {
         name: "anthropic/claude-opus-5.5",
         config: portkeyConfig["anthropic/claude-opus-5.5"],
         // Adaptive thinking is always enabled for this model.
@@ -666,6 +691,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "anthropic/claude-opus-5.5:fast",
+        config: portkeyConfig["claude-opus-5.5-fast-vercel"],
+        transform: pipe(mandatoryReasoning, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-opus-5.5:fast:openrouter:anthropic-fast",
         config: portkeyConfig["claude-opus-5.5-fast-openrouter-anthropic-fast"],
         transform: pipe(mandatoryReasoning, omitClaudeSampling),
     },
@@ -859,6 +889,11 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "typesafe/jev-1.13:openrouter:typesafe",
+        config: portkeyConfig["typesafe/jev-1.13:openrouter:typesafe"],
+        useSystemOneApi: true,
+    },
+    {
         name: "jaredpalmer/kev-4b",
         config: portkeyConfig["kev-4b"],
         useSystemOneApi: true,
@@ -902,8 +937,8 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
-        name: "liquid/d1:vercel",
-        config: portkeyConfig["liquid/d1:vercel"],
+        name: "liquid/d1:openrouter",
+        config: portkeyConfig["liquid/d1:openrouter"],
         useSystemOneApi: true,
     },
     {
@@ -964,11 +999,6 @@ const models: ModelDefinition[] = [
     {
         name: "moonshotai/kimi-k2.6",
         config: portkeyConfig["Kimi-K2.6"],
-        transform: fireworksThinking,
-    },
-    {
-        name: "moonshotai/kimi-k2.6:azure:sweden",
-        config: portkeyConfig["Kimi-K2.6-azure-sweden"],
         transform: fireworksThinking,
     },
     {
@@ -1192,10 +1222,6 @@ const models: ModelDefinition[] = [
     {
         name: "inclusionai/ling-3.0-flash-vl",
         config: portkeyConfig["inclusionai/ling-3.0-flash-vl"],
-    },
-    {
-        name: "tencent/hy3:openrouter:phala",
-        config: portkeyConfig["hy3-openrouter-phala"],
     },
     {
         name: "minimax/minimax-m3",

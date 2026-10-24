@@ -1468,6 +1468,7 @@ test("quest check records model-usage rewards per modality", async ({
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
     // This user has generated with text, audio and video, but not image.
+    // Video earns nothing while every video model needs Paid Pollen (#17625).
     mocks.tinybird.state.modelModalitiesResponse = [
         {
             userId: user.id,
@@ -1487,7 +1488,7 @@ test("quest check records model-usage rewards per modality", async ({
     const questIds = new Set(rewards.map((reward) => reward.questId));
     expect(questIds.has("use_text_model")).toBe(true);
     expect(questIds.has("use_audio_model")).toBe(true);
-    expect(questIds.has("use_video_model")).toBe(true);
+    expect(questIds.has("use_video_model")).toBe(false);
     expect(questIds.has("use_image_model")).toBe(false);
 
     expect(

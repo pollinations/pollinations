@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Weather | `https://gen.pollinations.ai/mcp/weather` | Look up places by name and get current conditions and a 7-day forecast | [Source](https://github.com/pollinations/pollinations/tree/main/apps/weather-mcp) |
 
 Send the key with every request:
 
@@ -206,6 +207,13 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### Weather MCP
+
+The Weather server answers questions about places and their forecast with
+Open-Meteo. Use `geocode` to turn a place name into coordinates, then `weather`
+for current conditions and a 7-day daily forecast. Weather lookups are free and
+need no extra MCP fee. The caller's key is never forwarded to Open-Meteo.
 
 ### Billing and permissions
 

@@ -5,22 +5,6 @@ import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 const messages = [{ role: "user" as const, content: "Hello" }];
 
 describe("resolveModelConfig", () => {
-    it("pins PPLX Decider's Vercel route and resolves its direct backup", () => {
-        const primary = resolveModelConfig(messages, {
-            model: "perplexity/pplx-decider-v1.2",
-        });
-        expect(primary.options.modelConfig?.defaultOptions).toEqual({
-            providerOptions: { gateway: { only: ["perplexity"] } },
-        });
-        const backup = resolveModelConfig(messages, {
-            model: "perplexity/pplx-decider-v1.2:perplexity",
-        });
-        expect(backup.options.modelConfig).toMatchObject({
-            model: "pplx-decider-v1.2",
-            directEndpoint: "https://api.perplexity.ai/v1/decisions",
-        });
-        expect(backup.options.modelConfig?.defaultOptions).toBeUndefined();
-    });
 
     it("pins Liquid D1's primary and backup native configs", () => {
         for (const [model, expected] of [
@@ -93,6 +77,23 @@ describe("resolveModelConfig", () => {
                 model: "anthropic/claude-fable-5.1",
             }).options.max_tokens,
         ).toBe(128000);
+    });
+
+    it("pins PPLX Decider's Vercel route and resolves its direct backup", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "perplexity/pplx-decider-v1.2",
+        });
+        expect(primary.options.modelConfig?.defaultOptions).toEqual({
+            providerOptions: { gateway: { only: ["perplexity"] } },
+        });
+        const backup = resolveModelConfig(messages, {
+            model: "perplexity/pplx-decider-v1.2:perplexity",
+        });
+        expect(backup.options.modelConfig).toMatchObject({
+            model: "pplx-decider-v1.2",
+            directEndpoint: "https://api.perplexity.ai/v1/decisions",
+        });
+        expect(backup.options.modelConfig?.defaultOptions).toBeUndefined();
     });
 
     it("lets callers override Anthropic max_tokens", () => {

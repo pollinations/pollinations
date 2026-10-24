@@ -107,6 +107,34 @@ describe("System One adapter", () => {
         },
     );
 
+    it.each([
+        "perplexity/pplx-decider-v1.2",
+        "perplexity/pplx-decider-v1.2:perplexity",
+    ])("uses the native PPLX route config for %s", async (model) => {
+        const config = findModelByName(model)?.config();
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (url, init) => {
+                expect(String(url)).toBe(config?.directEndpoint);
+                expect(JSON.parse(String(init?.body))).toEqual({
+                    ...(config?.defaultOptions as Record<string, unknown>),
+                    state: nativeState,
+                    questions: nativeQuestions,
+                    model: config?.model,
+                });
+                return Response.json({
+                    model: config?.model,
+                    answers,
+                    usage: { input_tokens: 95, output_tokens: 3 },
+                });
+            });
+        await callSystemOne([{ role: "user", content: nativeContent }], {
+            modelConfig: { ...config, authKey: "test-key" },
+            providerOptions: { gateway: { only: ["cloudflare"] } },
+        });
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
     it("rejects D3 question counts above its local limit before calling upstream", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
         await expect(
@@ -659,34 +687,6 @@ describe("System One adapter", () => {
             },
             vi.fn(),
         );
-        expect(fetchSpy).toHaveBeenCalledTimes(1);
-    });
-
-    it.each([
-        "perplexity/pplx-decider-v1.2",
-        "perplexity/pplx-decider-v1.2:perplexity",
-    ])("uses the native PPLX route config for %s", async (model) => {
-        const config = findModelByName(model)?.config();
-        const fetchSpy = vi
-            .spyOn(globalThis, "fetch")
-            .mockImplementationOnce(async (url, init) => {
-                expect(String(url)).toBe(config?.directEndpoint);
-                expect(JSON.parse(String(init?.body))).toEqual({
-                    ...(config?.defaultOptions as Record<string, unknown>),
-                    state: nativeState,
-                    questions: nativeQuestions,
-                    model: config?.model,
-                });
-                return Response.json({
-                    model: config?.model,
-                    answers,
-                    usage: { input_tokens: 95, output_tokens: 3 },
-                });
-            });
-        await callSystemOne([{ role: "user", content: nativeContent }], {
-            modelConfig: { ...config, authKey: "test-key" },
-            providerOptions: { gateway: { only: ["cloudflare"] } },
-        });
         expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 

@@ -64,6 +64,13 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "anthropic/claude-opus-5": {
+        // Anthropic's global rates equal the Bedrock global sheet (2026-10-24).
+        "anthropic/claude-opus-5:anthropic": {
+            provider: "anthropic",
+            addedDate: new Date("2026-10-24").getTime(),
+        },
+    },
     "openai/gpt-6-luna-decisions": {
         // Same OpenAI backend; covers direct-route failures, not OpenAI outages.
         "openai/gpt-6-luna-decisions:openrouter": {
@@ -690,13 +697,6 @@ export const TEXT_FALLBACKS = {
         "anthropic/claude-fable-5.1:aws": {
             provider: "aws",
             addedDate: new Date("2026-10-15").getTime(),
-        },
-    },
-    "anthropic/claude-opus-5": {
-        // Anthropic's global rates equal the Bedrock global sheet (2026-10-24).
-        "anthropic/claude-opus-5:anthropic": {
-            provider: "anthropic",
-            addedDate: new Date("2026-10-24").getTime(),
         },
     },
     "anthropic/claude-opus-5.5:fast": {

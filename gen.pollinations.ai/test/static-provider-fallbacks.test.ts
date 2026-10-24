@@ -252,27 +252,6 @@ describe("static provider fallbacks", () => {
         },
     );
 
-    it("tries Bedrock before direct Anthropic for Claude Opus 5", () => {
-        const model = "anthropic/claude-opus-5";
-        const primary: ModelDefinition = TEXT_SERVICES[model];
-        const fallback: ModelDefinition = TEXT_SERVICES[`${model}:anthropic`];
-        expect(primary.provider).toBe("aws");
-        expect(primary.fallbacks).toEqual([`${model}:anthropic`]);
-        expect(fallback).toMatchObject({
-            provider: "anthropic",
-            hidden: true,
-            fallbackOnly: true,
-            aliases: [],
-        });
-        expect(fallback.cost).toEqual(primary.cost);
-        expect(findModelByName(`${model}:anthropic`)?.config()).toMatchObject({
-            provider: "anthropic",
-            model: "claude-opus-5",
-            defaultOptions: { max_tokens: 128000 },
-        });
-        expect(getVisibleTextModels()).not.toContain(`${model}:anthropic`);
-    });
-
     it("tries direct DeepInfra before OpenRouter for GLM 5.3 at the primary's user price", () => {
         const model = "z-ai/glm-5.3";
         const route = `${model}:deepinfra`;
@@ -409,6 +388,27 @@ describe("static provider fallbacks", () => {
         const cost = 0.001 * 0.5 + 0.0002 * 0.05 + 0.0001 * 1.5;
         expect(billed.cost.totalCost).toBeCloseTo(cost, 12);
         expect(billed.price.totalPrice).toBeCloseTo(cost * 0.75, 8);
+    });
+
+    it("tries Bedrock before direct Anthropic for Claude Opus 5", () => {
+        const model = "anthropic/claude-opus-5";
+        const primary: ModelDefinition = TEXT_SERVICES[model];
+        const fallback: ModelDefinition = TEXT_SERVICES[`${model}:anthropic`];
+        expect(primary.provider).toBe("aws");
+        expect(primary.fallbacks).toEqual([`${model}:anthropic`]);
+        expect(fallback).toMatchObject({
+            provider: "anthropic",
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        expect(fallback.cost).toEqual(primary.cost);
+        expect(findModelByName(`${model}:anthropic`)?.config()).toMatchObject({
+            provider: "anthropic",
+            model: "claude-opus-5",
+            defaultOptions: { max_tokens: 128000 },
+        });
+        expect(getVisibleTextModels()).not.toContain(`${model}:anthropic`);
     });
 
     it("preserves seeded requests on the direct Mistral fallback", async () => {

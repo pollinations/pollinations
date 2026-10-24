@@ -700,6 +700,7 @@ export const TEXT_FALLBACKS = {
     },
     "anthropic/claude-haiku-5.5": {
         "anthropic/claude-haiku-5.5:aws": {
+            priceMultiplier: 1,
             provider: "aws",
             addedDate: new Date("2026-10-15").getTime(),
         },

@@ -2267,7 +2267,7 @@ describe("tracking observability", () => {
             tokenCountCompletionAudio: 2,
         });
         expect(JSON.stringify(event)).not.toContain("large-audio-payload");
-        expect(consumePollen).toHaveBeenCalledWith(0.0002);
+        expect(consumePollen).toHaveBeenCalledWith(0.00016);
     });
 
     it("bills plain-text speech-to-text responses from usage headers", async () => {

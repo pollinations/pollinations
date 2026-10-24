@@ -214,7 +214,8 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-08-31").getTime(),
         priceMultiplier: 0.75,
-        paidOnly: true,
+        // Azure 25 RPM covers more than twice the observed 10 RPM peak.
+        paidOnly: false,
         // Azure Global Standard pricing, verified 2026-08-31. Azure rounds
         // input and output megapixels up to whole billable units.
         cost: {

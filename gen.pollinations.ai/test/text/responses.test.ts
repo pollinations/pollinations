@@ -58,20 +58,6 @@ function authorizedTarget(
 }
 
 describe("direct Responses transport", () => {
-    it("keeps gpt-5.6-sol recovery on Standard in native Responses", () => {
-        const input = request({
-            model: "openai/gpt-5.6-sol:openai",
-            service_tier: "priority",
-        });
-        const target = resolveDirectResponsesTarget(input.model, input);
-        if (!target) throw new Error("expected direct OpenAI target");
-        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
-        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
-            model: "gpt-5.6-sol",
-            service_tier: "default",
-            store: false,
-        });
-    });
     it("keeps GPT-4o Mini on its quoted Standard tier for native Responses", () => {
         const input = request({
             model: "openai/gpt-4o-mini",
@@ -165,6 +151,21 @@ describe("direct Responses transport", () => {
         ).rejects.toMatchObject({
             status: 400,
             errorCode: "invalid_image_url",
+        });
+    });
+
+    it("keeps gpt-5.6-sol recovery on Standard in native Responses", () => {
+        const input = request({
+            model: "openai/gpt-5.6-sol:openai",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct OpenAI target");
+        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
+            model: "gpt-5.6-sol",
+            service_tier: "default",
+            store: false,
         });
     });
 

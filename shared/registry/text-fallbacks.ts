@@ -13,12 +13,6 @@ import { CHAT_PARAMETERS } from "./text-parameters";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
-    "openai/gpt-5.6-sol": {
-        "openai/gpt-5.6-sol:openai": {
-            provider: "openai",
-            priceMultiplier: 1,
-        },
-    },
 
     "qwen/qwen3-coder-30b-a3b-instruct": {
         "qwen/qwen3-coder-30b-a3b-instruct:aws": {
@@ -135,6 +129,12 @@ export const TEXT_FALLBACKS = {
     },
     // OpenRouter Alibaba routes cover gateway failures, not Alibaba-wide outages.
     // Max currently requires reasoning and rejects forced tool choice.
+    "openai/gpt-5.6-sol": {
+        "openai/gpt-5.6-sol:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
+        },
+    },
     "typesafe/jev-1.13": {
         // Same TypeSafe backend; covers gateway failures, not TypeSafe outages.
         "typesafe/jev-1.13:openrouter:typesafe": {

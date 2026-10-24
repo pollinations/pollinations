@@ -916,10 +916,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "elevenlabs/eleven-multilingual-v2": {
     "cost": {
-      "completionAudioTokens": 0.0001,
+      "completionAudioTokens": 0.00008,
     },
     "price": {
-      "completionAudioTokens": 0.0001,
+      "completionAudioTokens": 0.00008,
     },
   },
   "elevenlabs/eleven-text-to-sound-v2": {

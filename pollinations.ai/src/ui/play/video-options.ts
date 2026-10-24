@@ -2,6 +2,7 @@
 export function videoOptions(id: string, capabilities: readonly string[]) {
     const ratios = ["16:9", "9:16"];
     if (id === "minimax/minimax-h3") ratios.splice(1);
+    else if (id === "kwaivgi/kling-v3.0-std") ratios.push("1:1");
     else if (id.startsWith("x-ai/")) ratios.push("1:1", "4:3", "3:4");
     else if (
         id.startsWith("minimax/") ||

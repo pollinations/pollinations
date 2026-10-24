@@ -18,11 +18,11 @@ const mocks = vi.hoisted(() => ({
         async (harness: { existingKey: string | null }) =>
             harness.existingKey ?? "sk_child",
     ),
-    fetchHarnessModels: vi.fn(async (selected: string) => [
-        { id: selected, contextWindow: 128000, input: ["text"] },
-    ]),
-    keyUsageCount: vi.fn(async () => 4),
-    waitForKeyUsageIncrease: vi.fn(async () => 5),
+    fetchHarnessModels: vi.fn(async (selected: string) => ({
+        model: selected,
+        models: [{ id: selected, contextWindow: 128000, input: ["text"] }],
+    })),
+    gen: vi.fn(),
 }));
 
 vi.mock("./keys.js", () => ({
@@ -31,10 +31,7 @@ vi.mock("./keys.js", () => ({
 vi.mock("./models.js", () => ({
     fetchHarnessModels: mocks.fetchHarnessModels,
 }));
-vi.mock("./usage-proof.js", () => ({
-    keyUsageCount: mocks.keyUsageCount,
-    waitForKeyUsageIncrease: mocks.waitForKeyUsageIncrease,
-}));
+vi.mock("../lib/api.js", () => ({ gen: mocks.gen }));
 
 import { claudeCode } from "./claude-code.js";
 
@@ -91,7 +88,7 @@ console.log("pong");
 
 beforeEach(() => {
     mocks.resolveHarnessKey.mockClear();
-    mocks.waitForKeyUsageIncrease.mockClear();
+    mocks.gen.mockClear();
     home = mkdtempSync(join(tmpdir(), "polli-claude-harness-"));
     ctx = { home, env: {} };
     installFakeClaude();
@@ -132,12 +129,21 @@ describe("Claude Code harness", () => {
                 settings: { env },
             }),
         ]);
-        expect(mocks.waitForKeyUsageIncrease).toHaveBeenCalledWith(
-            "sk_child",
-            4,
-            expect.objectContaining({ afterMs: expect.any(Number) }),
-        );
+        // gen can answer the pong from its cache without a usage row (#18053).
+        expect(mocks.gen).not.toHaveBeenCalled();
         expect(existsSync(join(home, ".claude"))).toBe(false);
+    });
+
+    it("writes the canonical model ID when --model is an alias", async () => {
+        mocks.fetchHarnessModels.mockResolvedValueOnce({
+            model: "deepseek/deepseek-v4-flash",
+            models: [],
+        });
+        const result = await claudeCode.on(ctx, { model: "deepseek" });
+        expect(mocks.fetchHarnessModels).toHaveBeenLastCalledWith("deepseek");
+        expect(result.model).toBe("deepseek/deepseek-v4-flash");
+        const { env } = JSON.parse(readFileSync(settingsFile(), "utf-8"));
+        expect(env.ANTHROPIC_MODEL).toBe("deepseek/deepseek-v4-flash");
     });
 
     it("reuses the key stored in its settings file", async () => {

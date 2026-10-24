@@ -58,6 +58,19 @@ function createDecisionsMock() {
             state.response = undefined;
         },
         handlerMap: {
+            "decision.vllm-sr.ai": async (request: Request) => {
+                state.requests.push({
+                    pathname: new URL(request.url).pathname,
+                    authorization: request.headers.get("authorization"),
+                    body: await request.json(),
+                });
+                if (state.response) return state.response.clone();
+                return Response.json({
+                    model: "vllm-sr/d3",
+                    answers,
+                    usage: { input_tokens: 452, output_tokens: 0 },
+                });
+            },
             "ai-gateway.vercel.sh": async (request: Request) => {
                 state.requests.push({
                     pathname: new URL(request.url).pathname,
@@ -103,6 +116,7 @@ const test = baseTest.extend<{
     mocks: async ({}, use) => {
         env.OPENROUTER_API_KEY = "openrouter-test-key";
         env.AI_GATEWAY_API_KEY = "vercel-test-key";
+        env.D3_KEY = "d3-test-key";
         const tinybird = createMockTinybird();
         const decisions = createDecisionsMock();
         const fetchMock = createFetchMock({ tinybird, decisions });
@@ -305,6 +319,110 @@ test("routes Span-01 Lite under its own id and bills nothing", async ({
     });
 });
 
+for (const path of ["/alpha/decisions", "/v1/systemone"]) {
+    test(`D3 accepts Quest Pollen without charging on ${path}`, async ({
+        mocks,
+    }) => {
+        const { key, userId } = await createTestApiKey({
+            user: { tierBalance: 1, packBalance: 0 },
+        });
+        const state = { invoice: { daysOverdue: 3 } };
+        const { response, wait } = await post(path, key, {
+            model: "vllm-sr/d3",
+            state,
+            questions,
+        });
+        expect(response.status).toBe(200);
+        await expect(response.json()).resolves.toMatchObject({
+            model: "vllm-sr/d3",
+            provider: "vLLM Semantic Router",
+            answers,
+            usage: { input_tokens: 452, output_tokens: 0 },
+        });
+        expect(mocks.decisions.state.requests).toEqual([
+            {
+                pathname: "/v1/systemone",
+                authorization: "Bearer d3-test-key",
+                body: {
+                    model: "vllm-sr/d3",
+                    state: JSON.stringify(state),
+                    questions,
+                },
+            },
+        ]);
+        await wait();
+        expect(mocks.tinybird.state.events).toHaveLength(1);
+        expect(mocks.tinybird.state.events[0]).toMatchObject({
+            eventType: "generate.text",
+            responseStatus: 200,
+            modelRequested: "vllm-sr/d3",
+            modelProviderUsed: "vllm-sr",
+            tokenCountPromptText: 452,
+            tokenCountCompletionText: 0,
+            totalCost: 0,
+            totalPrice: 0,
+        });
+        expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+            tierBalance: 1,
+            packBalance: 0,
+        });
+    });
+}
+
+for (const path of ["/v1/responses", "/v1/messages"]) {
+    test(`D3 uses the shared Chat adapter on ${path}`, async ({
+        apiKey,
+        mocks,
+    }) => {
+        const content = JSON.stringify({ state: "Disk at 93%.", questions });
+        const request =
+            path === "/v1/responses"
+                ? { model: "vllm-sr/d3", input: content }
+                : {
+                      model: "vllm-sr/d3",
+                      max_tokens: 64,
+                      messages: [{ role: "user", content }],
+                  };
+        const { response, wait } = await post(path, apiKey, request);
+        expect(response.status).toBe(200);
+        const body = (await response.json()) as {
+            output?: { content: { text: string }[] }[];
+            content?: { text: string }[];
+            usage: { input_tokens: number; output_tokens: number };
+        };
+        const text =
+            body.output?.[0].content[0].text ?? body.content?.[0].text ?? "";
+        expect(JSON.parse(text)).toEqual(answers);
+        expect(body.usage).toMatchObject({
+            input_tokens: 452,
+            output_tokens: 0,
+        });
+        await wait();
+        expect(mocks.decisions.state.requests).toHaveLength(1);
+        expect(mocks.decisions.state.requests[0]).toMatchObject({
+            pathname: "/v1/systemone",
+            body: { model: "vllm-sr/d3", state: "Disk at 93%.", questions },
+        });
+    });
+}
+
+test("D3 rejects malformed questions before calling upstream", async ({
+    mocks,
+}) => {
+    const { key } = await createTestApiKey({
+        user: { tierBalance: 1, packBalance: 0 },
+    });
+    const { response, wait } = await post("/alpha/decisions", key, {
+        model: "vllm-sr/d3",
+        state: "Invoice overdue",
+        questions: { action: { type: "unknown" } },
+    });
+    expect(response.status).toBe(400);
+    expect(await response.text()).toContain("questions");
+    await wait();
+    expect(mocks.decisions.state.requests).toHaveLength(0);
+});
+
 test("routes Liquid D1 under its own id and bills input tokens", async ({
     mocks,
 }) => {
@@ -470,11 +588,11 @@ test("defaults to jev and accepts the alias", async ({
     expect(mocks.decisions.state.requests).toHaveLength(2);
 });
 
-test("a text key reaches Jev by its canonical ID and both aliases", async ({
+test("a decision key reaches Jev by its canonical ID and both aliases", async ({
     mocks,
 }) => {
     const { key } = await createTestApiKey({
-        allowedModels: ["text"],
+        allowedModels: ["decision"],
         user: { tierBalance: 100, packBalance: 1 },
     });
 
@@ -491,6 +609,77 @@ test("a text key reaches Jev by its canonical ID and both aliases", async ({
         await wait();
     }
     expect(mocks.decisions.state.requests).toHaveLength(3);
+});
+
+test("a text key needs decision on /alpha/decisions but still reaches Jev on chat", async ({
+    mocks,
+}) => {
+    const { key, id } = await createTestApiKey({
+        allowedModels: ["text"],
+        user: { tierBalance: 100, packBalance: 1 },
+    });
+
+    const decision = await post("/alpha/decisions", key, {
+        model: "jev",
+        state: "Disk at 91%.",
+        questions,
+    });
+    expect(decision.response.status).toBe(403);
+    expect(await decision.response.text()).toContain(
+        `/grant?id=${id}&category=decision&`,
+    );
+    await decision.wait();
+    expect(mocks.decisions.state.requests).toHaveLength(0);
+
+    const chat = await post("/v1/chat/completions", key, {
+        model: "jev",
+        messages: [
+            {
+                role: "user",
+                content: JSON.stringify({ state: "Disk at 91%.", questions }),
+            },
+        ],
+    });
+    expect(chat.response.status).toBe(200);
+    const body = (await chat.response.json()) as {
+        choices: { message: { content: string } }[];
+    };
+    expect(JSON.parse(body.choices[0].message.content)).toEqual(answers);
+    await chat.wait();
+    expect(mocks.decisions.state.requests).toHaveLength(1);
+});
+
+test("the decision category holds exactly the models served at /alpha/decisions", async () => {
+    type CatalogModel = {
+        name: string;
+        category: string;
+        supported_endpoints?: string[];
+    };
+    const { key } = await createTestApiKey({
+        allowedModels: ["decision"],
+        user: { packBalance: 1 },
+    });
+    const catalog = await fetchWorker("/models", {});
+    const models = (await catalog.response.json()) as CatalogModel[];
+    await catalog.wait();
+    const decisionModels = models.filter((model) =>
+        model.supported_endpoints?.includes("/alpha/decisions"),
+    );
+    expect(decisionModels.length).toBeGreaterThan(0);
+    for (const model of models) {
+        expect(model.category === "decision", model.name).toBe(
+            decisionModels.includes(model),
+        );
+    }
+
+    const allowed = await fetchWorker("/models", {
+        headers: { authorization: `Bearer ${key}` },
+    });
+    const allowedModels = (await allowed.response.json()) as CatalogModel[];
+    await allowed.wait();
+    expect(allowedModels.map(({ name }) => name).sort()).toEqual(
+        decisionModels.map(({ name }) => name).sort(),
+    );
 });
 
 test("rejects a malformed question before calling upstream", async ({

@@ -84,6 +84,7 @@ import {
     MODEL_USED_HEADER,
     USAGE_TYPE_HEADERS,
 } from "@shared/registry/usage-headers.ts";
+import { DEFAULT_DECISION_MODEL } from "@shared/schemas/decisions.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
@@ -432,8 +433,10 @@ async function maturePendingCommunityEndpoint(id: string): Promise<void> {
 }
 
 async function createEnterCommunityApi(): Promise<Hono<Env>> {
-    const routePath =
-        "../../enter.pollinations.ai/src/routes/community-endpoints.ts";
+    const routePath = new URL(
+        "../../enter.pollinations.ai/src/routes/community-endpoints.ts",
+        import.meta.url,
+    ).href;
     const { communityEndpointsRoutes } = (await import(routePath)) as {
         communityEndpointsRoutes: Hono;
     };
@@ -447,7 +450,10 @@ async function createEnterCommunityApi(): Promise<Hono<Env>> {
 }
 
 async function createEnterFrontendApi(): Promise<Hono<Env>> {
-    const routePath = "../../enter.pollinations.ai/src/frontend-api.ts";
+    const routePath = new URL(
+        "../../enter.pollinations.ai/src/frontend-api.ts",
+        import.meta.url,
+    ).href;
     const { frontendApi } = (await import(routePath)) as {
         frontendApi: Hono;
     };
@@ -5088,7 +5094,7 @@ fixtureTest(
         expect(response.headers.get("cache-control")).toBe(
             IMMUTABLE_CACHE_CONTROL,
         );
-        expect(response.headers.get("x-cache")).toBe("HIT");
+        expect(response.headers.get("x-cache")).toBe("MISS");
         expect(response.headers.get("x-cache-type")).toBeNull();
         expect(response.headers.get("x-cache-key")).toBeTruthy();
         await expect(response.text()).resolves.toBe("simple ok");
@@ -5264,9 +5270,15 @@ fixtureTest(
         const allNames = allModels.map((model) => model.name);
 
         expect(allNames).toEqual(openaiModels.data.map((model) => model.id));
+        // Decision models also answer on chat endpoints, so the text list
+        // keeps them.
         expect(textModels.map((model) => model.name)).toEqual(
             allModels
-                .filter((model) => model.category === "text")
+                .filter(
+                    (model) =>
+                        model.category === "text" ||
+                        model.category === "decision",
+                )
                 .map((model) => model.name),
         );
         expect(allNames).toEqual([
@@ -5276,6 +5288,7 @@ fixtureTest(
 
         const categoryOrder = [
             "text",
+            "decision",
             "image",
             "video",
             "3d",
@@ -5293,6 +5306,7 @@ fixtureTest(
 
         const defaults: Record<string, string> = {
             text: DEFAULT_TEXT_MODEL,
+            decision: DEFAULT_DECISION_MODEL,
             image: DEFAULT_IMAGE_MODEL,
             "3d": DEFAULT_3D_MODEL,
             audio: DEFAULT_AUDIO_MODEL,

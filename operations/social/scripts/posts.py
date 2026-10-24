@@ -495,9 +495,12 @@ def catalog_files(raw: dict, news: Path, overwrite: bool = False) -> dict[str, b
     if unchanged and diff_models(recorded, current).is_empty():
         print(f"  The catalog is unchanged since {latest}")
         return {}
-    # A half-empty answer from /models would be announced as mass retirements.
+    # A half-empty answer from /models would be announced as mass retirements. Only official
+    # models count: community owners list and remove many at once.
+    def official(models):
+        return [model for model in models or [] if not model.get("community")]
     shrunk = [category for category, models in (recorded or {}).items()
-              if len(current.get(category) or []) < len(models) / 2]
+              if len(official(current.get(category))) < len(official(models)) / 2]
     if shrunk and not overwrite:
         sys.exit(f"catalog {date}: {', '.join(shrunk)} lost more than half its models since {latest}; "
                  "check /models, and record it with --overwrite if the removals are real")

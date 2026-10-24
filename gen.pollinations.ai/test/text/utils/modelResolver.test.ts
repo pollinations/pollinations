@@ -5,6 +5,33 @@ import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 const messages = [{ role: "user" as const, content: "Hello" }];
 
 describe("resolveModelConfig", () => {
+    it("pins Liquid D1's primary and backup native configs", () => {
+        for (const [model, expected] of [
+            [
+                "liquid/d1",
+                { providerOptions: { gateway: { only: ["liquid"] } } },
+            ],
+            [
+                "liquid/d1:openrouter",
+                {
+                    provider: {
+                        only: ["liquid"],
+                        ignore: ["cloudflare"],
+                        allow_fallbacks: false,
+                    },
+                },
+            ],
+        ] as const) {
+            const result = resolveModelConfig(messages, {
+                model,
+                provider: { only: ["cloudflare"] },
+            });
+            expect(result.options.modelConfig?.defaultOptions).toEqual(
+                expected,
+            );
+        }
+    });
+
     it("preserves Glyph reasoning flags when mapping reasoning_effort", async () => {
         const resolved = resolveModelConfig(messages, {
             model: "stealth/glyph-cluster",
@@ -324,9 +351,20 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("routes Opus 5.5 fast mode through OpenRouter's Anthropic fast endpoint", () => {
+    it("routes Opus 5.5 fast mode through Vercel pinned to Anthropic", () => {
         const result = resolveModelConfig(messages, {
             model: "anthropic/claude-opus-5.5:fast",
+        });
+
+        expect(result.options.model).toBe("anthropic/claude-opus-5.5-fast");
+        expect(result.options.providerOptions).toEqual({
+            gateway: { only: ["anthropic"] },
+        });
+    });
+
+    it("falls back to OpenRouter's Anthropic fast endpoint for Opus 5.5 fast mode", () => {
+        const result = resolveModelConfig(messages, {
+            model: "anthropic/claude-opus-5.5:fast:openrouter:anthropic-fast",
         });
 
         expect(result.options.model).toBe("anthropic/claude-opus-5.5");
@@ -445,20 +483,35 @@ describe("resolveModelConfig", () => {
         "qwen3-coder",
         "qwen3-coder-30b-a3b-instruct",
         "qwen-coder",
-    ])("routes %s directly to Bedrock", (model) => {
+    ])("routes %s to the pinned OpenRouter coder", (model) => {
         const result = resolveModelConfig(messages, {
             model,
             stop: ["STOP"],
             reasoning_effort: "high",
         });
 
+        expect(result.options.model).toBe("qwen/qwen3-coder-30b-a3b-instruct");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openrouter",
+        });
+        expect(result.options.modelConfig?.responsesEndpoint).toBeUndefined();
+        expect(result.options.provider).toEqual({
+            only: ["siliconflow/fp8"],
+            ignore: ["cloudflare"],
+            allow_fallbacks: false,
+        });
+        expect(result.messages).toEqual(messages);
+    });
+
+    it("retains the exact Bedrock coder as the backup", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen/qwen3-coder-30b-a3b-instruct:aws",
+        });
         expect(result.options.model).toBe("qwen.qwen3-coder-30b-a3b-v1:0");
         expect(result.options.modelConfig).toMatchObject({
             provider: "bedrock",
             "aws-region": "us-east-1",
         });
-        expect(result.options.modelConfig?.responsesEndpoint).toBeUndefined();
-        expect(result.messages).toEqual(messages);
     });
 
     it("removes unsupported controls without injecting a coder prompt", async () => {

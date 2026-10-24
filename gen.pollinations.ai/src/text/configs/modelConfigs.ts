@@ -143,18 +143,28 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "perplexity/pplx-decider-v1.2",
     }),
-    "liquid-d1": () => ({
-        provider: "openrouter",
-        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
-        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
-        model: "liquid/d1",
-    }),
-    "liquid/d1:vercel": () =>
+    "liquid-d1": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
             model: "liquid/d1",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["liquid"] } },
+            },
         }),
+    "liquid/d1:openrouter": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "liquid/d1",
+        defaultOptions: {
+            provider: {
+                only: ["liquid"],
+                ignore: ["cloudflare"],
+                allow_fallbacks: false,
+            },
+        },
+    }),
     "gpt-6-luna-decisions": () => ({
         provider: "openai",
         directEndpoint: "https://api.openai.com/v1/decisions",
@@ -770,6 +780,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-haiku-4.5",
         "google-vertex/global",
     ),
+    "claude-opus-5.5-fast-vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "anthropic/claude-opus-5.5-fast",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["anthropic"] } },
+            },
+        }),
     "claude-opus-5.5-fast-openrouter-anthropic-fast":
         createPinnedOpenRouterConfig(
             "anthropic/claude-opus-5.5",
@@ -882,7 +900,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     "kimi-code-openrouter-moonshot": createPinnedOpenRouterConfig(
         "moonshotai/kimi-k2.7-code",
-        "moonshotai/int4",
+        "inceptron/int4",
     ),
     // StreamLake cannot fetch remote image URLs.
     "kimi-code-openrouter-streamlake": () => ({
@@ -1076,6 +1094,19 @@ export const portkeyConfig: PortkeyConfigMap = {
         createBedrockNativeConfig({ model: "us.amazon.nova-2-lite-v1:0" }),
 
     // -- AWS Bedrock (Qwen) ---------------------------------------------------
+    "qwen-coder-openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3-coder-30b-a3b-instruct",
+            // Preserve the existing Chat-based Responses adapter.
+            responsesEndpoint: undefined,
+            defaultOptions: {
+                provider: {
+                    only: ["siliconflow/fp8"],
+                    ignore: ["cloudflare"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "qwen-coder-bedrock": () =>
         createBedrockNativeConfig({ model: "qwen.qwen3-coder-30b-a3b-v1:0" }),
 

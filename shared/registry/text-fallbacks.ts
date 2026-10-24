@@ -13,6 +13,15 @@ import { CHAT_PARAMETERS } from "./text-parameters";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "qwen/qwen3-coder-30b-a3b-instruct": {
+        "qwen/qwen3-coder-30b-a3b-instruct:aws": {
+            provider: "aws",
+            cost: {
+                promptTextTokens: perMillion(0.15),
+                completionTextTokens: perMillion(0.6),
+            },
+        },
+    },
     "perplexity/pplx-decider-v1.2": {
         // Same Perplexity backend; covers gateway failures, not Perplexity outages.
         "perplexity/pplx-decider-v1.2:openrouter": {
@@ -25,12 +34,13 @@ export const TEXT_FALLBACKS = {
         },
     },
     "liquid/d1": {
-        // Same Liquid backend; this covers gateway failures, not Liquid outages.
-        "liquid/d1:vercel": {
-            provider: "vercel",
-            // Vercel AI Gateway list price for the Liquid endpoint.
+        // Same Liquid backend; covers gateway failures, not Liquid outages.
+        "liquid/d1:openrouter": {
+            provider: "openrouter",
+            priceMultiplier: 1,
             cost: {
-                promptTextTokens: perMillion(0.02),
+                promptTextTokens: perMillion(0.02) * 1.055,
+                promptCachedTokens: perMillion(0.02) * 1.055,
                 completionTextTokens: perMillion(0),
             },
         },
@@ -669,6 +679,19 @@ export const TEXT_FALLBACKS = {
         "anthropic/claude-fable-5.1:aws": {
             provider: "aws",
             addedDate: new Date("2026-10-15").getTime(),
+        },
+    },
+    "anthropic/claude-opus-5.5:fast": {
+        "anthropic/claude-opus-5.5:fast:openrouter:anthropic-fast": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-24").getTime(),
+            // OpenRouter's anthropic/fast endpoint, plus the 5.5% credit fee.
+            cost: {
+                promptTextTokens: perMillion(8) * 1.055,
+                promptCachedTokens: perMillion(0.4) * 1.055,
+                promptCacheWriteTokens: perMillion(10) * 1.055,
+                completionTextTokens: perMillion(40) * 1.055,
+            },
         },
     },
     "anthropic/claude-fable-5": {

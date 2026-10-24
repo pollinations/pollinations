@@ -1189,11 +1189,6 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
-        name: "minimax/minimax-m2.7:openrouter:minimax",
-        config: portkeyConfig["minimax-m2.7-openrouter-minimax"],
-        transform: mandatoryReasoning,
-    },
-    {
         name: "tencent/hy3",
         config: portkeyConfig["tencent/hy3"],
     },

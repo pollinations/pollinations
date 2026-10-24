@@ -401,6 +401,15 @@ describe("static provider fallbacks", () => {
         });
     });
 
+    it("keeps MiniMax M2.7 on its primary without a same-gateway fallback", () => {
+        expect(TEXT_SERVICES["minimax/minimax-m2.7"]).not.toHaveProperty(
+            "fallbacks",
+        );
+        expect(TEXT_SERVICES).not.toHaveProperty(
+            "minimax/minimax-m2.7:openrouter:minimax",
+        );
+    });
+
     it.each(["qwen/qwen3.7-flash", "qwen/qwen3.8-flash", "qwen/qwen3.8-max"])(
         "preserves direct Responses support for %s",
         (model) => {

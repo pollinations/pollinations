@@ -332,20 +332,6 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
-    "minimax/minimax-m2.7": {
-        "minimax/minimax-m2.7:openrouter:minimax": {
-            supportedParameters: CHAT_PARAMETERS.openRouterMinimax27FirstParty,
-            provider: "openrouter",
-            addedDate: new Date("2026-09-23").getTime(),
-            cost: {
-                // OpenRouter MiniMax first-party FP8 rates (2026-09-23),
-                // including the account's 5.5% credit-purchase fee.
-                promptTextTokens: perMillion(0.3) * 1.055,
-                promptCachedTokens: perMillion(0.06) * 1.055,
-                completionTextTokens: perMillion(1.2) * 1.055,
-            },
-        },
-    },
     "minimax/minimax-m3": {
         "minimax/minimax-m3:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,

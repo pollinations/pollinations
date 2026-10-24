@@ -216,7 +216,7 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
             ...(params.image[1] ? { end_image_url: params.image[1] } : {}),
         }),
     },
-    "bytedance/seedance-1-pro-fast:fal": {
+    "bytedance/seedance-1-pro-fast": {
         textEndpoint: "fal-ai/bytedance/seedance/v1/pro/fast/text-to-video",
         imageEndpoint: "fal-ai/bytedance/seedance/v1/pro/fast/image-to-video",
         duration: (params) =>
@@ -227,6 +227,7 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
             aspect_ratio: aspectRatio(params, SEEDANCE_RATIOS),
             camera_fixed: false,
         }),
+        providerPriced: true,
     },
     // Same aspect ratios as Seedance; image-to-video follows the first frame.
     "heygen/heygen-video-1": {

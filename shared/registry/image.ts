@@ -849,24 +849,26 @@ const IMAGE_BASE_SERVICES = {
     },
     "bytedance/seedance-1-pro-fast": {
         aliases: ["seedance-pro"],
-        provider: "replicate",
+        provider: "fal",
         publisher: "ByteDance",
         category: "video",
         addedDate: new Date("2025-12-04").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Replicate bytedance/seedance-1-pro-fast is per-second tiered by
-        // resolution (480p $0.015, 720p $0.025, 1080p $0.06).
+        // fal bills $1 per 1M video tokens (2026-10-24); these are the 16:9
+        // per-second equivalents. Charges use fal's reported units at its
+        // live endpoint price, and fal doesn't charge input images.
         cost: {
-            completionVideoSeconds: 0.025, // per sec at 720p
+            promptImageTokens: 0,
+            completionVideoSeconds: 0.021021, // per sec at 720p
         },
         ...defineCostVariants(
             {
                 "480p": {
-                    completionVideoSeconds: 0.015,
+                    completionVideoSeconds: 0.0099225,
                 },
                 "1080p": {
-                    completionVideoSeconds: 0.06,
+                    completionVideoSeconds: 0.0486,
                 },
             },
             matchResolution("480p", "1080p"),

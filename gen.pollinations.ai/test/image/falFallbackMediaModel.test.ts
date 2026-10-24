@@ -217,16 +217,6 @@ describe("Fal fallback media models", () => {
             "wan/v2.6/text-to-video",
             { duration: 10, resolution: "720p", aspect_ratio: "1:1" },
         ],
-        [
-            "bytedance/seedance-1-pro-fast:fal",
-            "fal-ai/bytedance/seedance/v1/pro/fast/text-to-video",
-            {
-                duration: 5,
-                resolution: "480p",
-                aspect_ratio: "1:1",
-                camera_fixed: false,
-            },
-        ],
     ] as const)(
         "sends %s through its exact Fal endpoint",
         async (model, endpoint, input) => {
@@ -237,10 +227,6 @@ describe("Fal fallback media models", () => {
                 ...baseParams,
                 model,
                 duration: input.duration,
-                resolution:
-                    model === "bytedance/seedance-1-pro-fast:fal"
-                        ? "480p"
-                        : undefined,
             });
             await vi.advanceTimersByTimeAsync(5_000);
             const result = await resultPromise;
@@ -302,7 +288,7 @@ describe("Fal fallback media models", () => {
         ["alibaba/wan-2.6:fal", "16:9", false, "16:9"],
         ["alibaba/wan-2.2-fast", "16:9", false, "16:9"],
         ["alibaba/wan-2.2-fast", "1:1", false, "1:1"],
-        ["bytedance/seedance-1-pro-fast:fal", "21:9", false, "21:9"],
+        ["bytedance/seedance-1-pro-fast", "21:9", false, "21:9"],
         // Wan 2.2 Turbo has no 4:3, so the default 1024×1024 decides.
         ["alibaba/wan-2.2-fast", "4:3", false, "1:1"],
         // Explicit dimensions win over the requested ratio.
@@ -320,7 +306,9 @@ describe("Fal fallback media models", () => {
             await vi.advanceTimersByTimeAsync(5_000);
             await resultPromise;
 
-            expect(requests[0].body?.aspect_ratio).toBe(expected);
+            // Provider-priced routes look up fal's price before submitting.
+            const submit = requests.find((request) => request.body);
+            expect(submit?.body?.aspect_ratio).toBe(expected);
         },
     );
 
@@ -524,6 +512,41 @@ describe("Fal fallback media models", () => {
             expect(fetch).not.toHaveBeenCalled();
         },
     );
+
+    it("bills Seedance 1.0 Pro Fast from fal's units and live price", async () => {
+        const endpoint = "fal-ai/bytedance/seedance/v1/pro/fast/text-to-video";
+        const requests = mockFal({
+            video: { url: MEDIA_URL, content_type: "video/mp4" },
+        });
+        const resultPromise = callFalFallbackVideo("a blue circle", {
+            ...baseParams,
+            model: "bytedance/seedance-1-pro-fast",
+            duration: 5,
+            resolution: "480p",
+            aspectRatio: "21:9",
+        });
+        await vi.advanceTimersByTimeAsync(5_000);
+        const result = await resultPromise;
+
+        expect(requests[0].url).toBe(
+            `https://api.fal.ai/v1/models/pricing?endpoint_id=${encodeURIComponent(endpoint)}`,
+        );
+        expect(requests[1]).toEqual({
+            url: `https://queue.fal.run/${endpoint}`,
+            body: {
+                prompt: "a blue circle",
+                duration: 5,
+                resolution: "480p",
+                aspect_ratio: "21:9",
+                camera_fixed: false,
+                seed: 42,
+            },
+        });
+        expect(result.trackingData.providerBilling).toEqual({
+            units: 1,
+            unitCost: 0.17,
+        });
+    });
 
     it("maps Wan 2.2 start and end frames to the Fal turbo endpoint", async () => {
         const requests = mockFal({

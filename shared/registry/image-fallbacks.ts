@@ -359,14 +359,15 @@ export const IMAGE_FALLBACKS = {
         "alibaba/wan-2.2-fast:replicate": { provider: "replicate" },
     },
     "bytedance/seedance-1-pro-fast": {
-        "bytedance/seedance-1-pro-fast:fal": {
-            provider: "fal",
-            addedDate: new Date("2026-09-01").getTime(),
-            cost: { completionVideoSeconds: 0.0216 },
+        "bytedance/seedance-1-pro-fast:replicate": {
+            provider: "replicate",
+            addedDate: new Date("2026-10-24").getTime(),
+            // Replicate per-second rates by resolution (2026-10-24).
+            cost: { completionVideoSeconds: 0.025 },
             ...defineCostVariants(
                 {
-                    "480p": { completionVideoSeconds: 0.0096 },
-                    "1080p": { completionVideoSeconds: 0.0486 },
+                    "480p": { completionVideoSeconds: 0.015 },
+                    "1080p": { completionVideoSeconds: 0.06 },
                 },
                 matchResolution("480p", "1080p"),
                 {

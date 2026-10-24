@@ -63,10 +63,10 @@ export async function createAndReturnVideo(
         case "google/veo-3.1-fast:replicate":
             result = await callVeoReplicateAPI(prompt, safeParams);
             break;
-        case "bytedance/seedance-1-pro-fast":
+        case "bytedance/seedance-1-pro-fast:replicate":
             result = await callSeedanceProAPI(prompt, safeParams);
             break;
-        case "bytedance/seedance-1-pro-fast:fal":
+        case "bytedance/seedance-1-pro-fast":
         case "alibaba/wan-2.6:fal":
         case "alibaba/wan-2.2-fast":
         case "x-ai/grok-imagine-video":

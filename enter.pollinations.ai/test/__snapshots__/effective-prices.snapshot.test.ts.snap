@@ -632,6 +632,24 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "bytedance/seedance-1-pro-fast": {
     "cost": {
+      "completionVideoSeconds": 0.021021,
+      "promptImageTokens": 0,
+    },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.0486,
+      },
+      "480p": {
+        "completionVideoSeconds": 0.0099225,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.021021,
+      "promptImageTokens": 0,
+    },
+  },
+  "bytedance/seedance-1-pro-fast:replicate": {
+    "cost": {
       "completionVideoSeconds": 0.025,
     },
     "costVariants": {
@@ -644,22 +662,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionVideoSeconds": 0.025,
-    },
-  },
-  "bytedance/seedance-1-pro-fast:fal": {
-    "cost": {
-      "completionVideoSeconds": 0.0216,
-    },
-    "costVariants": {
-      "1080p": {
-        "completionVideoSeconds": 0.0486,
-      },
-      "480p": {
-        "completionVideoSeconds": 0.0096,
-      },
-    },
-    "price": {
-      "completionVideoSeconds": 0.0216,
     },
   },
   "bytedance/seedance-2.0": {

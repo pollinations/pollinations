@@ -11,7 +11,7 @@ const VIDEO_FRAME_LIMITS = [
     ["google/veo-3.1-fast", 2],
     ["google/veo-3.1-fast:replicate", 2],
     ["bytedance/seedance-1-pro-fast", 1],
-    ["bytedance/seedance-1-pro-fast:fal", 1],
+    ["bytedance/seedance-1-pro-fast:replicate", 1],
     ["bytedance/seedance-2.0", 2],
     ["bytedance/seedance-2.0-mini", 2],
     ["bytedance/seedance-2.0-fast", 2],

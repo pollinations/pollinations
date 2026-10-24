@@ -5,14 +5,12 @@ import { generateFunName } from "../../lib/fun-name.ts";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
 import { KeyDialogContent } from "./key-dialog-content.tsx";
 import { useKeyPermissions } from "./key-permissions.tsx";
+import {
+    DEFAULT_LOCALHOST_REDIRECT,
+    findInvalidRedirectUri,
+    invalidRedirectUriMessage,
+} from "./publishable-key-settings.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
-
-/**
- * Pre-filled callback for app keys so local dev works out of the box. Loopback
- * ports are wildcarded (RFC 8252 §7.3), so only the path needs editing. The
- * dev sees it in the editor and should remove it before production.
- */
-const DEFAULT_LOCALHOST_REDIRECT = "http://localhost/callback";
 
 type ApiKeyDialogProps = {
     onSubmit: (state: CreateApiKey) => Promise<CreateApiKeyResponse>;
@@ -65,6 +63,14 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        const invalidUri =
+            keyType === "publishable"
+                ? findInvalidRedirectUri(redirectUris)
+                : null;
+        if (invalidUri) {
+            setError(invalidRedirectUriMessage(invalidUri));
+            return;
+        }
         setIsSubmitting(true);
         setError(null);
         try {

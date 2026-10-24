@@ -13,7 +13,10 @@ function cookieFrom(response: Response, name: string) {
 }
 
 function flowFromCookie(value: string) {
-    const base64 = value.replaceAll("-", "+").replaceAll("_", "/");
+    const base64 = value
+        .split(".")[0]
+        .replaceAll("-", "+")
+        .replaceAll("_", "/");
     const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
     return JSON.parse(atob(padded)) as {
         returnTo: string;
@@ -253,6 +256,44 @@ describe("Pollinations OAuth", () => {
         );
 
         expect(response?.status).toBe(302);
+        expect(upstream).not.toHaveBeenCalled();
+    });
+
+    it("rejects a tampered or unsigned OAuth flow cookie", async () => {
+        const upstream = vi.fn();
+        const auth = createPollinationsAuth({ ...config, fetch: upstream });
+        const { location, flow } = await begin(auth);
+        const state = location.searchParams.get("state");
+        const [payload] = flow.split(".");
+        const forged = btoa(
+            JSON.stringify({
+                ...flowFromCookie(flow),
+                returnTo: "https://kpi.pollinations.ai/evil",
+            }),
+        )
+            .replaceAll("+", "-")
+            .replaceAll("/", "_")
+            .replaceAll("=", "");
+
+        for (const cookie of [
+            payload, // signature stripped
+            `${forged}.${flow.split(".")[1]}`, // payload changed, old signature
+            `${payload}.AAAA`, // wrong signature
+        ]) {
+            const response = await auth.handle(
+                new Request(
+                    `https://kpi.pollinations.ai/auth/callback?code=code-x&state=${state}`,
+                    {
+                        headers: {
+                            Cookie: `pollinations_oauth_flow=${cookie}`,
+                        },
+                    },
+                ),
+            );
+            expect(response?.headers.get("Location")).toBe(
+                "https://kpi.pollinations.ai/?auth_error=invalid_state",
+            );
+        }
         expect(upstream).not.toHaveBeenCalled();
     });
 

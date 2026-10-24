@@ -15,7 +15,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { fail, printInfo } from "../../lib/output.js";
 import bootstrap from "./bootstrap.sh?raw";
-import { type Connection, connectSandbox } from "./e2b.js";
+import { type Connection, connectSandbox, SANDBOX_ID_PATTERN } from "./e2b.js";
 
 const SSH_DIR = join(homedir(), ".pollinations", "ssh");
 const SSH_KEY = join(SSH_DIR, "id_ed25519");
@@ -112,8 +112,7 @@ async function runAsRoot(
 // Pipes stdin and stdout to sshd in the sandbox; ssh runs this per connection.
 export async function proxy(host: string) {
     const id = host.replace(/\.polli$/, "");
-    // E2B's IDs, or Azure's UUIDs.
-    if (!/^[a-z0-9-]+$/.test(id)) {
+    if (!SANDBOX_ID_PATTERN.test(id)) {
         fail(`Expected <sandbox-id>.polli, got "${host}"`);
     }
     if (typeof WebSocket === "undefined")

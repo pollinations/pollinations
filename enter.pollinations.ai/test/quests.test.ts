@@ -67,6 +67,9 @@ type SeedQuestIssue = {
     completedByPrNumber?: number | null;
     completedByGithubId?: number | null;
     completedByLogin?: string | null;
+    // A reopened multi-winner quest: still open, but GitHub keeps the merged
+    // PRs that closed it before it was reopened.
+    reopened?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
 };
@@ -81,17 +84,18 @@ function seedQuestIssue(github: MockGithubState, issue: SeedQuestIssue): void {
     const completedByLogin = issue.completedByLogin ?? null;
     const created = issue.createdAt ?? new Date("2026-06-01T00:00:00Z");
     const updated = issue.updatedAt ?? new Date("2026-06-02T00:00:00Z");
+    const isClosed =
+        !issue.reopened && (completedBy !== null || issue.closed === true);
 
     github.questIssues.push({
         number: issue.issueNumber,
-        state: completedBy !== null || issue.closed ? "closed" : "open",
+        state: isClosed ? "closed" : "open",
         title: issue.title,
         html_url: `https://github.com/pollinations/pollinations/issues/${issue.issueNumber}`,
         body: questIssueBody(issue.reward, issue.goal),
         created_at: created.toISOString(),
         updated_at: updated.toISOString(),
-        closed_at:
-            completedBy !== null || issue.closed ? updated.toISOString() : null,
+        closed_at: isClosed ? updated.toISOString() : null,
         user: { login: "maintainer" },
         assignees: assigneeLogin
             ? [{ login: assigneeLogin, databaseId: assigneeGithubId }]
@@ -616,6 +620,7 @@ test("quest checks reuse the GitHub quest issues the catalog just fetched", asyn
         completedByLogin: user.githubUsername,
     });
     await env.KV.delete("quests:catalog:v30");
+
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
     );
@@ -632,6 +637,37 @@ test("quest checks reuse the GitHub quest issues the catalog just fetched", asyn
     expect(rewards).toEqual([
         { idempotencyKey: `quest:github:issue:806:github:${user.githubId}` },
     ]);
+});
+
+test("catalog keeps a reopened multi-winner quest available", async ({
+    mocks,
+}) => {
+    await mocks.enable("github");
+    await env.KV.delete("quests:catalog:v30");
+
+    // Multi-winner quests are reopened after each winner, but GitHub keeps the
+    // merged PRs that closed them before the reopen.
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 807,
+        title: "Reopened multi-winner bounty",
+        goal: "Still open for more entries after an earlier winner.",
+        reward: 5,
+        completedByPrNumber: 1807,
+        reopened: true,
+    });
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/catalog",
+    );
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+        quests: { id: string; state: string }[];
+    };
+    const quest = payload.quests.find(
+        (candidate) => candidate.id === "github:issue:807",
+    );
+
+    expect(quest?.state).toBe("available");
 });
 
 test("account quests merge earned rewards into completed status", async ({

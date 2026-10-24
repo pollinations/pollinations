@@ -397,8 +397,12 @@ function toDerivedQuestIssue(
 ): DerivedQuestIssue {
     const body = issue.body ?? "";
     const closers = mergedClosers(issue);
+    // An open quest stays available even after a merged PR: multi-winner quests
+    // are reopened after each winner, and GitHub keeps the merged closers
+    // attached to the open issue. Only a closed issue, or one claimed by an
+    // assignee, leaves the open board.
     const state: DerivedQuestIssue["state"] =
-        closers.length > 0 || issue.assignees.nodes.length > 0
+        issue.state === "CLOSED" || issue.assignees.nodes.length > 0
             ? "completed"
             : "available";
     return {

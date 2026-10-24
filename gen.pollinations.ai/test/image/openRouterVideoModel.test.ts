@@ -175,6 +175,31 @@ describe("openRouterVideoModel", () => {
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
+    it("bills a short HappyHorse clip from OpenRouter's reported cost", async () => {
+        setOpenRouterEnv();
+        // OpenRouter bills 5 seconds for a 3-second clip.
+        mockHappyHorseSuccess([], 0.494);
+
+        const result = await callHappyHorseAPI("a paper boat", {
+            ...baseParams,
+            duration: 3,
+        });
+
+        expect(result.trackingData).toEqual({
+            actualModel: "alibaba/happyhorse-1.1",
+            usage: { completionVideoSeconds: 3 },
+            providerBilling: { units: 0.494, unitCost: 1.055 },
+        });
+        const billing = calculateUsageBilling({
+            model: "alibaba/happyhorse-1.1",
+            usage: result.trackingData.usage,
+            servedBy: IMAGE_SERVICES["alibaba/happyhorse-1.1"],
+            input: { providerBilling: result.trackingData.providerBilling },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.52117, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.52117, 8);
+    });
+
     it("maps the HappyHorse image to a first-frame request", async () => {
         setOpenRouterEnv();
         const requests: Record<string, unknown>[] = [];

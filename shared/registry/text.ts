@@ -38,6 +38,46 @@ export const DEFAULT_TEXT_MODEL = "openai/gpt-5.4-nano" as const;
 export type TextModelName = keyof typeof TEXT_SERVICES;
 
 const TEXT_BASE_SERVICES = {
+    "stealth/glyph-cluster": {
+        aliases: [],
+        supportedParameters: [
+            "max_tokens",
+            "stream",
+            "temperature",
+            "stop",
+            "tools",
+            "tool_choice",
+            "reasoning_effort",
+            "reasoning",
+            "include_reasoning",
+        ],
+        provider: "vercel",
+        // Vercel returned 429 bursts during light testing.
+        perUserRpm: 8,
+        publisher: "Stealth",
+        category: "text",
+        addedDate: new Date("2026-10-08").getTime(),
+        priceMultiplier: 1,
+        paidOnly: false,
+        // Free only during stealth; expiry and subsequent rates are unpublished.
+        // https://vercel.com/ai-gateway/models/glyph-cluster
+        cost: {
+            promptTextTokens: perMillion(0),
+            completionTextTokens: perMillion(0),
+            promptCachedTokens: perMillion(0),
+        },
+        title: "Glyph Cluster (Stealth)",
+        description:
+            "Experimental coding and long-context reasoning with automatic tool calling. Prompts and responses may be retained and used for training; no zero data retention.",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        contextLength: 256000,
+        // The Gateway rejects required and named tool choices; auto/none work.
+        tools: true,
+        reasoning: true,
+        isSpecialized: false,
+        alpha: true,
+    },
     "openai/gpt-5.4-nano": {
         supportedParameters: CHAT_PARAMETERS.azureGpt,
         aliases: ["gpt-5.4-nano", "openai"],
@@ -601,6 +641,7 @@ const TEXT_BASE_SERVICES = {
         description: "Reasoning for complex coding and agentic workflows",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
         tools: true,
         reasoning: true,
         contextLength: 1050000,
@@ -659,6 +700,7 @@ const TEXT_BASE_SERVICES = {
             "Faster near-Astra reasoning for coding, agents, and professional work",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
         tools: true,
         reasoning: true,
         contextLength: 1050000,
@@ -715,6 +757,7 @@ const TEXT_BASE_SERVICES = {
         description: "Efficient reasoning for focused, high-volume tasks",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 50, // Azure rejects more: "Exceeded maximum number of images (50)".
         tools: true,
         reasoning: true,
         contextLength: 1050000,
@@ -766,6 +809,34 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 260000,
+        isSpecialized: false,
+    },
+    "inception/mercury-3": {
+        supportedParameters: CHAT_PARAMETERS.mercury25,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Inception",
+        category: "text",
+        addedDate: new Date("2026-10-19").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter's Inception route launch rates (50% off, checked
+        // 2026-10-23), including the account's 5.5% credit-purchase fee. List
+        // is $0.20 / $0.02 cached / $0.70 per M; raise these when the launch
+        // offer ends (no end date published).
+        cost: {
+            promptTextTokens: perMillion(0.1) * 1.055,
+            promptCachedTokens: perMillion(0.01) * 1.055,
+            completionTextTokens: perMillion(0.35) * 1.055,
+        },
+        title: "Mercury 3",
+        description:
+            "Diffusion reasoning for agentic workflows and real-time voice and search",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
         isSpecialized: false,
     },
     "cohere/command-a-plus": {
@@ -905,8 +976,7 @@ const TEXT_BASE_SERVICES = {
             completionAudioTokens: perMillion(20.0),
         },
         title: "GPT Audio Mini",
-        description:
-            "Talks and listens — voice conversations with spoken or text replies",
+        description: "Voice conversations with spoken or text replies",
         voices: [...AUDIO_VOICES],
         inputModalities: ["text", "audio"],
         outputModalities: ["audio", "text"],
@@ -1179,23 +1249,53 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4.1-flash": {
+        // Azure accepts this full set (probed 2026-10-15).
         supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: [],
-        provider: "deepinfra",
+        provider: "azure",
         publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2026-09-11").getTime(),
-        priceMultiplier: 1,
-        paidOnly: true,
+        // Azure model catalog and retirement schedule (Preview).
+        // Provider retires this route on 2026-12-15.
+        // 0.5x keeps output at the pre-Azure DeepInfra price.
+        priceMultiplier: 0.5,
+        paidOnly: false,
         perUserRpm: 60,
         cost: {
-            // DeepInfra list rates (2026-10-12); its open-ended 30% discount
-            // is not passed on.
-            promptTextTokens: perMillion(0.2),
+            // Azure Global Standard "V4.1 Flash" catalog rates (2026-10-15).
+            promptTextTokens: perMillion(0.3),
             promptCachedTokens: perMillion(0.006),
-            completionTextTokens: perMillion(0.6),
+            promptImageTokens: perMillion(0.3),
+            completionTextTokens: perMillion(1.2),
         },
         title: "DeepSeek V4.1 Flash",
+        description:
+            "Reasoning, coding, tool calling, and image understanding.",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "deepseek/deepseek-v4.1-flash-1017": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        aliases: [],
+        provider: "fireworks",
+        publisher: "DeepSeek",
+        category: "text",
+        addedDate: new Date("2026-10-18").getTime(),
+        // 0.5x matches DeepInfra's output price (0.60 per M).
+        priceMultiplier: 0.5,
+        paidOnly: true,
+        // Fireworks standard serverless rates (2026-10-18).
+        cost: {
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.006),
+            completionTextTokens: perMillion(1.2),
+        },
+        title: "DeepSeek V4.1 Flash 1017",
         description:
             "Reasoning, coding, tool calling, and image understanding.",
         inputModalities: ["text", "image"],
@@ -1249,10 +1349,10 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Novita BF16 preserves remote image URLs; verified 2026-08-22.
-            promptTextTokens: perMillion(0.13) * 1.055,
-            promptImageTokens: perMillion(0.13) * 1.055,
-            completionTextTokens: perMillion(0.4) * 1.055,
+            // OpenRouter DeepInfra FP8; rates verified 2026-10-22.
+            promptTextTokens: perMillion(0.07) * 1.055,
+            promptImageTokens: perMillion(0.07) * 1.055,
+            completionTextTokens: perMillion(0.34) * 1.055,
         },
         title: "Gemma 4 26B A4B",
         description:
@@ -1274,7 +1374,7 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Novita BF16 endpoint, verified 2026-08-22.
+            // OpenRouter Crusoe BF16 at Novita's former rate; verified 2026-10-22.
             promptTextTokens: perMillion(0.14) * 1.055,
             promptImageTokens: perMillion(0.14) * 1.055,
             completionTextTokens: perMillion(0.4) * 1.055,
@@ -1339,11 +1439,13 @@ const TEXT_BASE_SERVICES = {
         // Provider retires this route on 2027-04-06.
         priceMultiplier: 0.75,
         paidOnly: false,
+        // Azure Global Standard meters "Grok 4.2 Inp/Outp glbl" ($1.25 / $2.50
+        // per 1M, effective 2026-05-01), the same rates as grok-4.3.
         cost: {
-            promptTextTokens: perMillion(2.0),
+            promptTextTokens: perMillion(1.25),
             promptCachedTokens: perMillion(0.2),
-            promptImageTokens: perMillion(2.0),
-            completionTextTokens: perMillion(6.0),
+            promptImageTokens: perMillion(1.25),
+            completionTextTokens: perMillion(2.5),
         },
         title: "Grok 4.20",
         description: "Multimodal chat and tool calling with optional reasoning",
@@ -1519,12 +1621,39 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "vllm-sr/d3": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "vllm-sr",
+        publisher: "vLLM Semantic Router",
+        category: "decision",
+        addedDate: new Date("2026-10-18").getTime(),
+        priceMultiplier: 1,
+        paidOnly: false,
+        // One shared free key: 16 concurrent requests, 540 per minute.
+        perUserRpm: 30,
+        cost: {
+            promptTextTokens: perMillion(0),
+            completionTextTokens: perMillion(0),
+        },
+        title: "D3",
+        description:
+            "Typed choices, yes/no probabilities and scores for routing and " +
+            "classification. Inputs may be logged and used for training",
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 65536,
+        isSpecialized: true,
+    },
     "respan/span-01-lite": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],
         provider: "openrouter",
         publisher: "Respan",
-        category: "text",
+        category: "decision",
         addedDate: new Date("2026-09-30").getTime(),
         priceMultiplier: 1, // Free upstream, so billed at zero.
         // Free upstream, so Quest Pollen can reach it at no cost.
@@ -1554,7 +1683,7 @@ const TEXT_BASE_SERVICES = {
         aliases: ["jev", "typesafe/jev"],
         provider: "openrouter",
         publisher: "TypeSafe",
-        category: "text",
+        category: "decision",
         addedDate: new Date("2026-09-17").getTime(),
         priceMultiplier: 1, // Billed at cost, no margin.
         paidOnly: true,
@@ -1587,7 +1716,7 @@ const TEXT_BASE_SERVICES = {
         aliases: [],
         provider: "openrouter",
         publisher: "Jared Palmer",
-        category: "text",
+        category: "decision",
         addedDate: new Date("2026-09-30").getTime(),
         priceMultiplier: 1, // Billed at cost, no margin.
         paidOnly: true,
@@ -1612,19 +1741,50 @@ const TEXT_BASE_SERVICES = {
         contextLength: 8192,
         isSpecialized: true,
     },
+    "perplexity/pplx-decider-v1.2": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        // Perplexity retired V1.1 in favour of V1.2.
+        aliases: ["perplexity/pplx-decider-v1.1-27b"],
+        provider: "vercel",
+        publisher: "Perplexity",
+        category: "decision",
+        addedDate: new Date("2026-10-24").getTime(),
+        priceMultiplier: 1, // Billed at cost, no margin.
+        paidOnly: true,
+        cost: {
+            // Vercel AI Gateway list price, the cheapest route.
+            promptTextTokens: perMillion(0.02),
+            completionTextTokens: perMillion(0),
+        },
+        title: "Decider V1.2 27B",
+        description:
+            "Typed choices, scores and yes/no probabilities over a 262K " +
+            "context; post state and questions to /alpha/decisions, or send " +
+            "the same JSON in the last user message on /v1/chat/completions. " +
+            "Text state only",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 262144,
+        isSpecialized: true,
+    },
     "liquid/d1": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],
         provider: "openrouter",
         publisher: "Liquid AI",
-        category: "text",
+        category: "decision",
         addedDate: new Date("2026-10-02").getTime(),
         priceMultiplier: 1, // Billed at cost, no margin.
         paidOnly: true,
         cost: {
-            // OpenRouter list price plus its 5.5% credit fee, as every
-            // OpenRouter route records.
-            promptTextTokens: perMillion(0.04) * 1.055,
+            // OpenRouter list price ($0.02/M input and cached input) plus its
+            // 5.5% credit fee, as every OpenRouter route records.
+            promptTextTokens: perMillion(0.02) * 1.055,
+            promptCachedTokens: perMillion(0.02) * 1.055,
             completionTextTokens: perMillion(0),
         },
         title: "Liquid D1",
@@ -1692,12 +1852,42 @@ const TEXT_BASE_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
+    "microsoft/microsoft-decision-1": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "decision",
+        addedDate: new Date("2026-10-09").getTime(),
+        priceMultiplier: 0.75,
+        paidOnly: false,
+        cost: {
+            // Azure Retail Prices "Microsoft Decision 1 1M Tokens" (2026-10-23),
+            // the model's only meter.
+            promptTextTokens: perMillion(0.042),
+            completionTextTokens: perMillion(0),
+        },
+        title: "Microsoft-Decision-1",
+        description:
+            "Fast typed choices with a calibrated probability for each fixed " +
+            "option and no generated text; post state and questions to " +
+            "/alpha/decisions, or send the same JSON in the last user " +
+            "message on /v1/chat/completions",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 32768,
+        isSpecialized: true,
+    },
     "openai/gpt-6-luna-decisions": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],
         provider: "openai",
         publisher: "OpenAI",
-        category: "text",
+        category: "decision",
         addedDate: new Date("2026-10-07").getTime(),
         priceMultiplier: 1, // Public pricing follows the direct OpenAI rate.
         paidOnly: true,
@@ -1858,7 +2048,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-10-07").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             // Anthropic global standard rates (prompts up to 100K tokens);
             // 5-minute cache writes.
@@ -1953,8 +2143,7 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(10),
         },
         title: "Claude Sonnet 5",
-        description:
-            "Sharp reasoning with fast responses — a strong default for most work",
+        description: "Reasoning model with fast responses for general use",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -1970,7 +2159,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-28").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             // Anthropic global standard rates; 5-minute cache writes.
             promptTextTokens: perMillion(2),
@@ -2080,7 +2269,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         // Anthropic global standard rates; 5-minute cache writes.
         cost: {
             promptTextTokens: perMillion(4),
@@ -2161,7 +2350,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-01").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             // Anthropic global standard rates; 5-minute cache writes.
             promptTextTokens: perMillion(10),
@@ -2283,7 +2472,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Moonshot Kimi K2.7 Code",
         description:
-            "Built for agentic coding — plans, reasons and edits code step by step",
+            "Agentic coding: plans, reasons and edits code step by step",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 30,
@@ -2553,10 +2742,10 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Together route rates (2026-08-01). Image and audio
+            // OpenRouter DeepInfra route rates (2026-10-21). Image and audio
             // inputs are tokenized into promptTextTokens; no separate usage is
             // reported or billed for either modality.
-            promptTextTokens: perMillion(0.5) * 1.055,
+            promptTextTokens: perMillion(0.45) * 1.055,
             promptCachedTokens: perMillion(0.1) * 1.055,
             completionTextTokens: perMillion(1.2) * 1.055,
         },
@@ -2653,6 +2842,31 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "nvidia/nemotron-3.5-super-vl": {
+        supportedParameters: CHAT_PARAMETERS.openRouterNemotronSuperVl,
+        aliases: [],
+        provider: "deepinfra",
+        publisher: "NVIDIA",
+        category: "text",
+        addedDate: new Date("2026-10-15").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // DeepInfra direct fp4 list rates (2026-10-23). No gateway fee.
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.02),
+            completionTextTokens: perMillion(0.5),
+        },
+        title: "NVIDIA Nemotron 3.5 Super VL",
+        description:
+            "Open-weight reasoning over text and image inputs, with tool calling and structured output",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "xiaomi/mimo-v2.5": {
         supportedParameters: CHAT_PARAMETERS.mimo,
         aliases: ["mimo", "mimo-2.5", "mimo-v2.5"],
@@ -2704,17 +2918,19 @@ const TEXT_BASE_SERVICES = {
     "xiaomi/mimo-v2.6-flash": {
         supportedParameters: CHAT_PARAMETERS.mimo,
         aliases: [],
-        provider: "openrouter",
+        provider: "novita",
         publisher: "Xiaomi",
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter Xiaomi FP8 endpoint, verified 2026-09-22.
+        // Novita direct (2026-10-10): base rates without OpenRouter's 5.5% fee.
         cost: {
-            promptTextTokens: perMillion(0.14) * 1.055,
-            promptCachedTokens: perMillion(0.0028) * 1.055,
-            completionTextTokens: perMillion(0.28) * 1.055,
+            promptTextTokens: perMillion(0.14),
+            promptCachedTokens: perMillion(0.0028),
+            // Novita reports image tokens as prompt tokens; bill them at the input rate.
+            promptImageTokens: perMillion(0.14),
+            completionTextTokens: perMillion(0.28),
         },
         title: "MiMo V2.6 Flash",
         description:
@@ -2730,17 +2946,19 @@ const TEXT_BASE_SERVICES = {
     "xiaomi/mimo-v2.6-pro": {
         supportedParameters: CHAT_PARAMETERS.mimo,
         aliases: [],
-        provider: "openrouter",
+        provider: "novita",
         publisher: "Xiaomi",
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter Xiaomi FP8 endpoint, verified 2026-09-22.
+        // Novita direct (2026-10-10): base rates without OpenRouter's 5.5% fee.
         cost: {
-            promptTextTokens: perMillion(0.435) * 1.055,
-            promptCachedTokens: perMillion(0.0036) * 1.055,
-            completionTextTokens: perMillion(0.87) * 1.055,
+            promptTextTokens: perMillion(0.435),
+            promptCachedTokens: perMillion(0.0036),
+            // Novita reports image tokens as prompt tokens; bill them at the input rate.
+            promptImageTokens: perMillion(0.435),
+            completionTextTokens: perMillion(0.87),
         },
         title: "MiMo V2.6 Pro",
         description:
@@ -2770,8 +2988,8 @@ const TEXT_BASE_SERVICES = {
             promptVideoTokens: perMillion(2.0),
             completionTextTokens: perMillion(12.0),
         },
-        // Vertex reprices the whole request from 200K prompt tokens. Image
-        // tokens retain their separately advertised base rate.
+        // Vertex reprices the whole request from 200K prompt tokens; its single
+        // input price covers text, image, audio and video.
         ...defineCostVariants(
             {
                 long_context: {
@@ -2779,6 +2997,7 @@ const TEXT_BASE_SERVICES = {
                     promptCachedTokens: perMillion(0.4),
                     promptCacheWriteTokens: perMillion(4.0),
                     promptAudioTokens: perMillion(4.0),
+                    promptImageTokens: perMillion(4.0),
                     promptVideoTokens: perMillion(4.0),
                     completionTextTokens: perMillion(18.0),
                 },
@@ -2788,7 +3007,7 @@ const TEXT_BASE_SERVICES = {
                 long_context: {
                     label: "Long context (200K+)",
                     description:
-                        "At least 200,000 prompt tokens; text, cached, cache-write, audio, video, and output rates increase while image input stays at its separately advertised base price.",
+                        "At least 200,000 prompt tokens; text, cached, cache-write, image, audio, video, and output rates increase.",
                 },
             },
             "<200K context",
@@ -3059,7 +3278,7 @@ const TEXT_BASE_SERVICES = {
             "Text and image understanding with a 128K context window; no tool calling or structured output",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // Verified on both routes; Pollinations cap.
+        maxReferenceImages: 10, // Pollinations cap.
         tools: false,
         supportsStructuredOutput: false,
         maxCompletionTokens: 16384,
@@ -3181,6 +3400,31 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "meta/muse-spark-1.3": {
+        supportedParameters: CHAT_PARAMETERS.museSpark,
+        aliases: [],
+        provider: "vercel",
+        publisher: "Meta",
+        category: "text",
+        addedDate: new Date("2026-10-23").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Vercel AI Gateway Meta route, verified 2026-10-23.
+            promptTextTokens: perMillion(1.25),
+            promptCachedTokens: perMillion(0.15),
+            completionTextTokens: perMillion(4.25),
+        },
+        title: "Muse Spark 1.3",
+        description:
+            "Long-horizon multimodal reasoning for coding, agents and tool-driven workflows",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "meta/muse-wonder-1.0": {
         supportedParameters: CHAT_PARAMETERS.openRouterMuseWonder,
         aliases: [],
@@ -3218,12 +3462,11 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Mistral direct API launch rates (docs.mistral.ai, 2026-10-06):
-            // list price is $1.36 / $0.14 cached / $4.18 per million, shown
-            // at half until the discount ends.
-            promptTextTokens: perMillion(0.68),
-            promptCachedTokens: perMillion(0.07),
-            completionTextTokens: perMillion(2.09),
+            // Mistral direct API list rates (docs.mistral.ai pricing); the
+            // 50% launch offer from 2026-10-06 ran for two weeks.
+            promptTextTokens: perMillion(1.36),
+            promptCachedTokens: perMillion(0.14),
+            completionTextTokens: perMillion(4.18),
         },
         title: "Mistral Large 4",
         description:
@@ -3726,7 +3969,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Qwen3 VL 30B A3B Instruct",
         description:
-            "Fast image understanding — describes, reads and analyzes what it sees",
+            "Describes images, reads text in them, and analyzes visual content",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -3804,14 +4047,14 @@ const TEXT_BASE_SERVICES = {
             "step-flash-3.7",
             "step-flash",
         ],
-        provider: "deepinfra",
+        provider: "novita",
         publisher: "StepFun",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // DeepInfra stepfun-ai/Step-3.7-Flash posted rates (2026-07-30):
+            // Novita stepfun/step-3.7-flash posted rates (2026-10-23):
             // prompt $0.20/M, completion $1.15/M, cache read $0.04/M
             promptTextTokens: perMillion(0.2),
             promptCachedTokens: perMillion(0.04),
@@ -3823,8 +4066,8 @@ const TEXT_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
-        // Emits a chain-of-thought `reasoning` field (verified live); reasoning
-        // tokens are billed within completion_tokens at the completionText rate.
+        // Emits chain-of-thought (verified live); reasoning tokens are billed
+        // within completion_tokens at the completionText rate.
         reasoning: true,
         contextLength: 256000,
         isSpecialized: false,
@@ -3868,8 +4111,7 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(0),
         },
         title: "Qwen3Guard 8B",
-        description:
-            "Flags unsafe content — a moderation filter, not a chat companion",
+        description: "Flags unsafe content for moderation",
         inputModalities: ["text"],
         outputModalities: ["text"],
         isSpecialized: true,

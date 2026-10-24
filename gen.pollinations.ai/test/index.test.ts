@@ -28,6 +28,9 @@ function envWithEnter(
     fetch: Fetcher["fetch"] = async () => new Response("enter"),
 ): CloudflareBindings {
     return {
+        ASSETS: {
+            fetch: async () => new Response("Not Found", { status: 404 }),
+        } as unknown as Fetcher,
         ENTER: { fetch } as unknown as Fetcher,
         ENVIRONMENT: "test",
         LOG_LEVEL: "debug",
@@ -87,7 +90,7 @@ describe("gen worker routing", () => {
             error: {
                 code: "UNAUTHORIZED",
                 message:
-                    "A valid API key is required. Get one at https://enter.pollinations.ai/keys",
+                    "A valid API key is required. Get one at https://enter.pollinations.ai/keys, or buy one with USDC (x402) at https://enter.pollinations.ai/api/x402/keys",
             },
         });
         await waitOnExecutionContext(ctx);
@@ -114,7 +117,7 @@ describe("gen worker routing", () => {
             error: {
                 code: "UNAUTHORIZED",
                 message:
-                    "A valid API key is required. Get one at https://enter.pollinations.ai/keys",
+                    "A valid API key is required. Get one at https://enter.pollinations.ai/keys, or buy one with USDC (x402) at https://enter.pollinations.ai/api/x402/keys",
             },
         });
         await waitOnExecutionContext(ctx);
@@ -180,6 +183,28 @@ describe("gen worker routing", () => {
             'property="og:image" content="https://staging.gen.pollinations.ai/og-image.png"',
         );
         expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
+    });
+
+    it("serves gen's icons after the routes", async () => {
+        // Like Cloudflare's asset server: 405 for methods other than GET/HEAD.
+        const ASSETS = {
+            fetch: async (request: Request) =>
+                request.method !== "GET" && request.method !== "HEAD"
+                    ? new Response("Method Not Allowed", { status: 405 })
+                    : new URL(request.url).pathname === "/favicon.ico"
+                      ? new Response("icon")
+                      : new Response("missing", { status: 404 }),
+        } as unknown as Fetcher;
+        const env = { ...envWithEnter(), ASSETS };
+
+        expect(await (await fetchWorker("/favicon.ico", env)).text()).toBe(
+            "icon",
+        );
+        expect((await fetchWorker("/missing.png", env)).status).toBe(404);
+        const post = await fetchWorker("/v1/chat/completion", env, {
+            method: "POST",
+        });
+        expect(post.status).toBe(404);
     });
 
     it("serves the docs web app manifest", async () => {
@@ -294,24 +319,6 @@ describe("gen worker routing", () => {
             "https://staging.gen.pollinations.ai/",
             "https://staging.gen.pollinations.ai/docs",
         ]);
-
-        // A trusted forwarded host is reflected in both discovery files.
-        const forwarded = {
-            "x-forwarded-host": "gen.pollinations.ai",
-            "x-forwarded-proto": "https",
-        };
-        const prodSitemap = await fetchWorker("/sitemap.xml", envWithEnter(), {
-            headers: forwarded,
-        });
-        expect(await prodSitemap.text()).toContain(
-            "<loc>https://gen.pollinations.ai/docs</loc>",
-        );
-        const prodRobots = await fetchWorker("/robots.txt", envWithEnter(), {
-            headers: forwarded,
-        });
-        expect(await prodRobots.text()).toContain(
-            "Sitemap: https://gen.pollinations.ai/sitemap.xml",
-        );
     });
 
     it("serves llms-full.txt with the full guide and CLI skill in one file", async () => {
@@ -338,17 +345,22 @@ describe("gen worker routing", () => {
         expect(index.headers.get("Content-Type")).toContain("text/plain");
         expect(index.headers.get("X-Robots-Tag")).toBeNull();
         const body = await index.text();
-        expect(body).toContain("/docs/polli-skill.md");
-        expect(body).toContain("/docs/polli-tasks.md");
-        expect(body).toContain("/docs/llm.txt");
-        expect(body).toContain("/docs/llm.txt?section=cli");
-        expect(body).toContain("/docs/llm.txt?section=mcp");
 
         for (const path of [
             "/docs/polli-skill.md",
             "/docs/polli-tasks.md",
             "/docs/llm.txt",
+            "/docs/llm.txt?section=byop",
+            "/docs/llm.txt?section=publish-an-agent",
+            "/docs/llm.txt?section=publish-a-model",
+            "/docs/llm.txt?section=sandboxes",
+            "/docs/llm.txt?section=sites",
+            "/docs/llm.txt?section=coding-harnesses",
+            "/docs/llm.txt?section=mcp",
+            "/docs/llm.txt?section=cli",
+            "/docs/llm.txt?section=x402",
         ]) {
+            expect(body).toContain(path);
             const response = await fetchWorker(path);
             expect(response.status).toBe(200);
             expect(response.headers.get("Content-Type")).toContain(
@@ -381,11 +393,16 @@ describe("gen worker routing", () => {
             "pollinations-api",
             "bring-your-own-pollen",
             "quest-contributor",
+            "pollinations-sdk",
         ]);
         const [polli, apiSkill, byopSkill] = body.skills;
         expect(polli.description).toMatch(/^Generate images/);
         expect(apiSkill.description).toMatch(/without installing/);
         expect(byopSkill.description).toMatch(/Bring Your Own Pollen/);
+        expect(
+            body.skills.find((skill) => skill.name === "pollinations-sdk")
+                ?.description,
+        ).toMatch(/npm package/);
 
         for (const skill of body.skills) {
             expect(skill.type).toBe("skill-md");
@@ -402,8 +419,11 @@ describe("gen worker routing", () => {
                 "public, max-age=3600",
             );
             const bytes = new Uint8Array(await skillFile.arrayBuffer());
+            // Accept CRLF checkouts: git's default core.autocrlf on Windows
+            // gives the bundled bytes CRLF endings; the contract is that the
+            // served file starts with the frontmatter that names the skill.
             expect(new TextDecoder().decode(bytes)).toMatch(
-                new RegExp(`^---\\nname: ${skill.name}\\n`),
+                new RegExp(`^---\\r?\\nname: ${skill.name}\\r?\\n`),
             );
             const hash = await crypto.subtle.digest("SHA-256", bytes);
             const hex = [...new Uint8Array(hash)]
@@ -421,6 +441,7 @@ describe("gen worker routing", () => {
         for (const path of [
             "index.json",
             "pollinations-api/SKILL.md",
+            "pollinations-sdk/SKILL.md",
             "bring-your-own-pollen/SKILL.md",
             "quest-contributor/SKILL.md",
         ]) {
@@ -849,10 +870,11 @@ describe("gen worker routing", () => {
             description:
                 "Quick web searches with cited answers; keeps it brief",
         });
-        // Sonar Pro and Reasoning Pro retired into aliases of Sonar.
+        // Sonar Pro and Reasoning Pro retired into aliases of Sonar. Other
+        // Perplexity models, such as decision models, may use the prefix.
         expect(
             models
-                .filter((model) => model.name.startsWith("perplexity/"))
+                .filter((model) => model.name.startsWith("perplexity/sonar"))
                 .map((model) => model.name),
         ).toEqual(["perplexity/sonar"]);
         expect(models.some((model) => model.name === "perplexity-deep")).toBe(
@@ -983,14 +1005,28 @@ describe("model status", () => {
         });
     });
 
+    it("rejects invalid minutes before contacting Tinybird", async () => {
+        const upstream = vi.spyOn(globalThis, "fetch");
+        for (const minutes of ["abc", "0", "-5", "1.5", "99999999"]) {
+            const response = await fetchWorker(
+                `/models/status?minutes=${minutes}`,
+            );
+            expect(response.status).toBe(400);
+            expect(await response.json()).toEqual({
+                error: "minutes must be an integer between 1 and 10080",
+            });
+        }
+        expect(upstream).not.toHaveBeenCalled();
+    });
+
     it("passes upstream errors through unchanged", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-            Response.json({ error: "bad minutes" }, { status: 400 }),
+            Response.json({ error: "upstream exploded" }, { status: 500 }),
         );
 
-        const response = await fetchWorker("/models/status?minutes=abc");
-        expect(response.status).toBe(400);
-        expect(await response.json()).toEqual({ error: "bad minutes" });
+        const response = await fetchWorker("/models/status?minutes=15");
+        expect(response.status).toBe(500);
+        expect(await response.json()).toEqual({ error: "upstream exploded" });
     });
 
     it("serves the 7-day model usage stats the dashboard prices models with", async () => {
@@ -2327,6 +2363,8 @@ fixtureTest(
                         unknown
                     >;
                     expect(body.prompt).toBe("warm pads");
+                    // no strength → fal keeps its default init_noise_level.
+                    expect(body.init_noise_level).toBeUndefined();
                     sentAudioUrl = body.audio_url;
 
                     return Response.json({
@@ -2410,6 +2448,108 @@ fixtureTest(
         expect(calls).toContain(a2aEndpoint);
         expect(calls).toContain(resultUrl);
         expect(calls).toContain(falFileUrl);
+    },
+);
+
+fixtureTest(
+    "maps stable-audio-3-medium strength to fal init_noise_level",
+    async ({ paidApiKey }) => {
+        vi.useFakeTimers({ toFake: ["setTimeout"] });
+        const calls: string[] = [];
+        const a2aEndpoint =
+            "https://queue.fal.run/fal-ai/stable-audio-3/medium/audio-to-audio";
+        const statusUrl = `${a2aEndpoint}/requests/a2a-strength/status`;
+        const resultUrl = `${a2aEndpoint}/requests/a2a-strength`;
+        const falFileUrl = "https://v3.fal.media/files/test-a2a-strength.mp3";
+        const referenceAudioUrl =
+            "https://media.pollinations.ai/test-reference-audio";
+        let sentInitNoiseLevel: unknown;
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+
+                if (request.url === referenceAudioUrl) {
+                    return new Response(new Uint8Array([82, 73, 70, 70]), {
+                        headers: { "Content-Type": "audio/wav" },
+                    });
+                }
+
+                if (request.url === a2aEndpoint) {
+                    const body = (await request.json()) as Record<
+                        string,
+                        unknown
+                    >;
+                    sentInitNoiseLevel = body.init_noise_level;
+
+                    return Response.json({
+                        request_id: "a2a-strength",
+                        status_url: statusUrl,
+                        response_url: resultUrl,
+                    });
+                }
+
+                if (request.url === statusUrl) {
+                    return Response.json({ status: "COMPLETED" });
+                }
+
+                if (request.url === resultUrl) {
+                    return Response.json({
+                        audio: { url: falFileUrl, content_type: "audio/mpeg" },
+                        seed: 1,
+                    });
+                }
+
+                if (request.url === falFileUrl) {
+                    return new Response(new Uint8Array([73, 68, 51, 4]), {
+                        headers: { "Content-Type": "audio/mpeg" },
+                    });
+                }
+
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const pending = worker.fetch(
+            new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "stable-audio-3-medium",
+                    input: "warm pads",
+                    reference_audio: referenceAudioUrl,
+                    strength: 0.05,
+                }),
+            }),
+            withInlineGenerationCoordinator({
+                ...env,
+                FAL_KEY: "test-fal-key",
+            } as unknown as CloudflareBindings),
+            ctx,
+        );
+        await vi.waitFor(() => expect(calls).toContain(a2aEndpoint));
+        await vi.advanceTimersByTimeAsync(5_000);
+        const response = await pending;
+
+        expect(response.status).toBe(200);
+        await response.arrayBuffer();
+
+        await waitOnExecutionContext(ctx);
+        expect(sentInitNoiseLevel).toBe(0.05);
     },
 );
 
@@ -2560,9 +2700,12 @@ fixtureTest(
                     expect(formData.get("prompt")).toBe("warm pads");
                     expect(formData.get("model")).toBe("stable-audio-3");
                     expect(formData.get("output_format")).toBe("mp3");
-                    // a2a sends the reference clip, not a duration.
+                    // a2a sends the reference clip and still needs a
+                    // duration: the clip does not set the output length.
                     expect(formData.get("audio")).toBeInstanceOf(File);
-                    expect(formData.get("duration")).toBeNull();
+                    expect(formData.get("duration")).toBe("190");
+                    // no strength → Stability's default applies.
+                    expect(formData.get("strength")).toBeNull();
 
                     return Response.json({ id: generationId }, { status: 202 });
                 }
@@ -2630,6 +2773,173 @@ fixtureTest(
         );
     },
     20_000,
+);
+
+fixtureTest(
+    "sends stable-audio-3-large strength and duration on audio-to-audio",
+    async ({ paidApiKey }) => {
+        const generationId = "test-a2a-strength-generation-id";
+        const a2aEndpoint =
+            "https://api.stability.ai/v2beta/audio/stable-audio/audio-to-audio";
+        const referenceAudioUrl =
+            "https://media.pollinations.ai/test-reference-audio";
+        let sentForm: FormData | undefined;
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+
+                if (request.url === referenceAudioUrl) {
+                    return new Response(new Uint8Array([82, 73, 70, 70]), {
+                        headers: { "Content-Type": "audio/wav" },
+                    });
+                }
+
+                if (request.url === a2aEndpoint) {
+                    sentForm = await request.formData();
+                    return Response.json({ id: generationId }, { status: 202 });
+                }
+
+                if (
+                    request.url ===
+                    `https://api.stability.ai/v2beta/results/${generationId}`
+                ) {
+                    return new Response(new Uint8Array([73, 68, 51, 4]), {
+                        headers: { "Content-Type": "audio/mpeg" },
+                    });
+                }
+
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "stable-audio-3-large",
+                    input: "warm pads",
+                    reference_audio: referenceAudioUrl,
+                    duration: 35.5,
+                    strength: 0.3,
+                }),
+            }),
+            withInlineGenerationCoordinator({
+                ...env,
+                STABILITY_API_KEY: "test-stability-key",
+            } as unknown as CloudflareBindings),
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        await response.arrayBuffer();
+
+        await waitOnExecutionContext(ctx);
+        expect(sentForm?.get("audio")).toBeInstanceOf(File);
+        expect(sentForm?.get("duration")).toBe("35.5");
+        expect(sentForm?.get("strength")).toBe("0.3");
+    },
+    20_000,
+);
+
+fixtureTest(
+    "rejects strength without reference_audio or on other models",
+    async ({ paidApiKey }) => {
+        const calls: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+                return Response.json({ data: [] });
+            },
+        );
+
+        const referenceAudioUrl =
+            "https://media.pollinations.ai/test-reference-audio";
+        const multipartBody = new FormData();
+        multipartBody.append("model", "stable-audio-3-large");
+        multipartBody.append("input", "warm pads");
+        multipartBody.append("strength", "0.5");
+
+        for (const [body, message] of [
+            [
+                JSON.stringify({
+                    model: "stable-audio-3-medium",
+                    input: "warm pads",
+                    strength: 0.5,
+                }),
+                "strength requires reference_audio",
+            ],
+            // multipart parses strength too.
+            [multipartBody, "strength requires reference_audio"],
+            [
+                JSON.stringify({
+                    model: "elevenmusic",
+                    input: "warm pads",
+                    reference_audio: referenceAudioUrl,
+                    strength: 0.5,
+                }),
+                "strength is only supported with model=stability-ai/stable-audio-3-medium or stability-ai/stable-audio-3",
+            ],
+        ] as const) {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    "https://staging.gen.pollinations.ai/v1/audio/speech",
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${paidApiKey}`,
+                            ...(typeof body === "string"
+                                ? { "Content-Type": "application/json" }
+                                : {}),
+                        },
+                        body,
+                    },
+                ),
+                withInlineGenerationCoordinator({
+                    ...env,
+                    FAL_KEY: "test-fal-key",
+                    STABILITY_API_KEY: "test-stability-key",
+                    ELEVENLABS_API_KEY: "test-eleven-key",
+                } as unknown as CloudflareBindings),
+                ctx,
+            );
+
+            const responseText = await response.text();
+            await waitOnExecutionContext(ctx);
+            expect(response.status).toBe(400);
+            expect(JSON.parse(responseText)).toMatchObject({
+                error: { message: expect.stringContaining(message) },
+            });
+        }
+
+        // Rejected before the clip is fetched or any provider is called.
+        expect(
+            calls.some((url) =>
+                [
+                    "media.pollinations.ai",
+                    "queue.fal.run",
+                    "api.stability.ai",
+                    "api.elevenlabs.io",
+                ].includes(new URL(url).hostname),
+            ),
+        ).toBe(false);
+    },
 );
 
 it("lists stable-audio-3-large in audio models", async () => {

@@ -659,6 +659,25 @@ const AUDIO_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
+    "sonilo/sonilo-1.1-sfx": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Sonilo",
+        category: "audio",
+        paidOnly: true,
+        addedDate: new Date("2026-10-15").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // fal's price per second of video. Charges use fal's reported
+            // seconds at its live endpoint price.
+            completionAudioSeconds: 0.009,
+        },
+        title: "Sonilo 1.1 SFX",
+        description:
+            "Sound effects timed to a video, as a separate audio track",
+        inputModalities: ["text", "video"],
+        outputModalities: ["audio"],
+    },
     "openai/whisper-large-v3": {
         aliases: ["whisper-1", "whisper-large-v3", "whisper"],
         provider: "ovhcloud",
@@ -1044,6 +1063,8 @@ const AUDIO_BASE_SERVICES = {
             // surcharge — the handler bills one flat completion audio unit.
             completionAudioTokens: 0.26,
         },
+        // Audio-to-audio used to omit `duration` and returned 190 s files.
+        cacheVersion: "2026-10-21-a2a-duration",
         title: "Stable Audio 3 Large",
         description:
             "Highest-quality long-form stereo music generation; priced per generation",

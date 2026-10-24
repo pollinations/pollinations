@@ -5,18 +5,35 @@ import {
 } from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
 import economicsRegistry from "../../operations/economics/provider-registry.json";
+import type { CanonicalModelTarget } from "../../operations/economics/web/src/lib/providerRegistry";
 import migrationSql from "../drizzle/0062_standardize-model-permissions.sql?raw";
 
 const modelMappings = [
     ...migrationSql.matchAll(/\('([^']+)', '([^']+)'\)/g),
 ].map((match) => [match[1], match[2]] as const);
 
-it("pins Economics identity bridges to exactly the reviewed public promotions", () => {
-    expect(economicsRegistry.canonicalModelRenames).toEqual(
-        Object.fromEntries(
-            modelMappings.filter(([oldId]) => oldId !== "zimage-fal"),
-        ),
-    );
+it("keeps Economics September identities aligned with the reviewed public promotions", () => {
+    const renames: Record<string, CanonicalModelTarget> =
+        economicsRegistry.canonicalModelRenames;
+    // Historical aliases can have earlier provider-specific meanings. The
+    // public release contract is the unrestricted September promotion.
+    for (const [oldId, newId] of modelMappings) {
+        if (oldId === "zimage-fal") continue;
+        const target = renames[oldId];
+        const models =
+            typeof target === "string"
+                ? [target]
+                : target
+                      ?.filter(
+                          (rule) =>
+                              !rule.provider &&
+                              rule.from <= "2026-09" &&
+                              (!rule.until || rule.until >= "2026-09"),
+                      )
+                      .map((rule) => rule.model);
+        expect(models, oldId).toEqual([newId]);
+    }
+    expect(renames).not.toHaveProperty("zimage-fal");
 });
 
 // Public canonical IDs immediately before this release. Keep this fixture

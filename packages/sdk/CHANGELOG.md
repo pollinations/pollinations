@@ -2,7 +2,17 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
-## [Unreleased]
+## [5.1.0-alpha.21] - 2026-10-23
+
+### Added
+- `decision` model category for models served at `/alpha/decisions`.
+
+## [5.1.0-alpha.20] - 2026-10-22
+
+### Added
+- `deploySite()`, `listSites()` and `deleteSite()` publish static sites at
+  `https://<name>.pollinations.app` with inline files (up to 5 MB per
+  request). Keys need the `machines` account permission.
 
 ## [5.1.0-alpha.19] - 2026-10-14
 

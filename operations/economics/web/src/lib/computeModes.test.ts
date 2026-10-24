@@ -102,6 +102,43 @@ describe("compute modes", () => {
         );
     });
 
+    it("includes known API usage without inventing provider costs or borrowing another month", () => {
+        const data: Data = {
+            opPollen: [
+                "aws",
+                "azure",
+                "google",
+                "perplexity",
+                "openai",
+                "vast.ai",
+                "modal",
+                "unknown",
+                "exa",
+            ].map((vendor) => pollen(vendor)),
+        };
+        const result = managedInferenceData(data);
+        expect(result.opPollen?.map((row) => row.vendor)).toEqual([
+            "aws",
+            "azure",
+            "google",
+            "perplexity",
+            "openai",
+        ]);
+        expect(result.vendorLedger).toEqual([]);
+    });
+
+    it("keeps an observed GPU or mixed month out even for a known API provider", () => {
+        const result = managedInferenceData({
+            opPollen: [pollen("aws"), pollen("azure")],
+            vendorLedger: [
+                cloud("aws", "gpu"),
+                cloud("azure", "gpu"),
+                cloud("azure", "inference"),
+            ],
+        });
+        expect(result.opPollen).toEqual([]);
+    });
+
     it("ignores zero-value witness rows when classifying compute mode", () => {
         const inference = cloud("modal", "inference");
         const witness = cloud("modal", "gpu");
@@ -133,6 +170,13 @@ describe("compute modes", () => {
         expect(result.vendorLedger?.map((row) => row.vendor)).toEqual([
             "openai",
         ]);
+        expect(result.opPollen?.map((row) => row.vendor)).toEqual(["openai"]);
+    });
+
+    it("excludes infrastructure usage from direct delivery without requiring a monthly bill", () => {
+        const result = directDeliveryData({
+            opPollen: [pollen("openai"), pollen("exa"), pollen("cloudflare")],
+        });
         expect(result.opPollen?.map((row) => row.vendor)).toEqual(["openai"]);
     });
 

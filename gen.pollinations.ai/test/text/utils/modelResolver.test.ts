@@ -56,6 +56,20 @@ describe("resolveModelConfig", () => {
         }
     });
 
+    it("keeps jaredpalmer/kev-4b's native provider pin", () => {
+        const result = resolveModelConfig(messages, {
+            model: "jaredpalmer/kev-4b",
+            provider: { only: ["cloudflare"] },
+        });
+        expect(result.options.modelConfig?.defaultOptions).toMatchObject({
+            provider: {
+                "only": ["siliconflow/fp8"],
+                "ignore": ["cloudflare"],
+                "allow_fallbacks": false,
+            },
+        });
+    });
+
     it("preserves Glyph reasoning flags when mapping reasoning_effort", async () => {
         const resolved = resolveModelConfig(messages, {
             model: "stealth/glyph-cluster",

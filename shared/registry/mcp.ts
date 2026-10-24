@@ -43,6 +43,7 @@ export type McpPricingInfo = {
 export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "ASK_JEV_MCP"
+    | "TRIVIA_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -124,6 +125,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Decision tools use Jev's listed model rate. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "trivia",
+        name: "Trivia",
+        description:
+            "Fetch trivia questions by category, difficulty, and type from Open Trivia DB, with shuffled answers and decoded text.",
+        binding: "TRIVIA_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Trivia tools use the free Open Trivia DB. No additional MCP fee.",
             rates: [],
         },
     },

@@ -444,10 +444,9 @@ const AUDIO_BASE_SERVICES = {
         addedDate: new Date("2026-06-22").getTime(),
         priceMultiplier: 1,
         cost: {
-            // ElevenLabs Multilingual v2 via API: measured 0.60 credits/char
-            // (API-discounted from the 1 cr/char UI rate) * $0.166/1k Scale credits
-            // = $0.10/1k chars (matches elevenlabs.io/pricing/api).
-            completionAudioTokens: 0.1 / 1000,
+            // https://elevenlabs.io/pricing/api — $0.08 per 1K characters
+            // (2026-10-24).
+            completionAudioTokens: 0.08 / 1000,
         },
         title: "ElevenLabs Multilingual v2",
         description:

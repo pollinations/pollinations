@@ -325,6 +325,11 @@ const models: ModelDefinition[] = [
         transform: createReasoningEffortTransform("toggle"),
     },
     {
+        name: "inception/mercury-3",
+        config: portkeyConfig["inception/mercury-3"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "cohere/command-a-plus",
         config: portkeyConfig["cohere/command-a-plus"],
     },
@@ -864,6 +869,29 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "stealth/glyph-cluster",
+        config: portkeyConfig["stealth/glyph-cluster"],
+        transform: (messages, options) => {
+            const { reasoning_effort, ...rest } = options;
+            return {
+                messages,
+                options: {
+                    ...rest,
+                    ...(reasoning_effort === undefined
+                        ? {}
+                        : {
+                              reasoning: {
+                                  ...(rest.reasoning as
+                                      | Record<string, unknown>
+                                      | undefined),
+                                  effort: reasoning_effort,
+                              },
+                          }),
+                },
+            };
+        },
+    },
+    {
         name: "liquid/d1",
         config: portkeyConfig["liquid-d1"],
         useSystemOneApi: true,
@@ -893,7 +921,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "microsoft/microsoft-decision-1",
-        config: portkeyConfig["microsoft-decision-1"],
+        config: portkeyConfig["microsoft-decision-1-azure"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "microsoft/microsoft-decision-1:vercel",
+        config: portkeyConfig["microsoft/microsoft-decision-1:vercel"],
         useSystemOneApi: true,
     },
     {
@@ -1007,6 +1040,16 @@ const models: ModelDefinition[] = [
     {
         name: "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16",
         config: portkeyConfig["nemotron-3.5-lightning-openrouter-coreweave"],
+        transform: fireworksThinking,
+    },
+    {
+        name: "nvidia/nemotron-3.5-super-vl",
+        config: portkeyConfig["nvidia/NVIDIA-Nemotron-3.5-Super-VL"],
+        transform: fireworksThinking,
+    },
+    {
+        name: "nvidia/nemotron-3.5-super-vl:openrouter:together",
+        config: portkeyConfig["nemotron-3.5-super-vl-openrouter-together"],
         transform: fireworksThinking,
     },
     {
@@ -1172,6 +1215,10 @@ const models: ModelDefinition[] = [
     {
         name: "meta/muse-spark-1.2",
         config: portkeyConfig["meta/muse-spark-1.2"],
+    },
+    {
+        name: "meta/muse-spark-1.3",
+        config: portkeyConfig["meta/muse-spark-1.3"],
     },
     {
         name: "meta/muse-wonder-1.0",

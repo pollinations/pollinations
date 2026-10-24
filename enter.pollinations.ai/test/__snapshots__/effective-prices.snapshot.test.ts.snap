@@ -1764,6 +1764,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000000422,
     },
   },
+  "inception/mercury-3": {
+    "cost": {
+      "completionTextTokens": 0.00000036925,
+      "promptCachedTokens": 0.00000001055,
+      "promptTextTokens": 0.0000001055,
+    },
+    "price": {
+      "completionTextTokens": 0.00000036925,
+      "promptCachedTokens": 0.00000001055,
+      "promptTextTokens": 0.0000001055,
+    },
+  },
   "inclusionai/ling-3.0-flash-vl": {
     "cost": {
       "completionTextTokens": 0.0000001899,
@@ -2029,6 +2041,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000125,
     },
   },
+  "meta/muse-spark-1.3": {
+    "cost": {
+      "completionTextTokens": 0.00000425,
+      "promptCachedTokens": 0.00000015,
+      "promptTextTokens": 0.00000125,
+    },
+    "price": {
+      "completionTextTokens": 0.00000425,
+      "promptCachedTokens": 0.00000015,
+      "promptTextTokens": 0.00000125,
+    },
+  },
   "meta/muse-wonder-1.0": {
     "cost": {
       "completionTextTokens": 0.0000211,
@@ -2144,7 +2168,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionTextTokens": 0,
-      "promptTextTokens": 0.000000042,
+      "promptTextTokens": 0.0000000315,
     },
   },
   "microsoft/microsoft-decision-1:openrouter": {
@@ -2154,7 +2178,17 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionTextTokens": 0,
-      "promptTextTokens": 0.00000004431,
+      "promptTextTokens": 0.0000000332325,
+    },
+  },
+  "microsoft/microsoft-decision-1:vercel": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.000000042,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.0000000315,
     },
   },
   "microsoft/trellis-2": {
@@ -2565,6 +2599,30 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.000000211,
       "promptCachedTokens": 0.0000000422,
       "promptTextTokens": 0.00000007385,
+    },
+  },
+  "nvidia/nemotron-3.5-super-vl": {
+    "cost": {
+      "completionTextTokens": 0.0000005,
+      "promptCachedTokens": 0.00000002,
+      "promptTextTokens": 0.00000015,
+    },
+    "price": {
+      "completionTextTokens": 0.0000005,
+      "promptCachedTokens": 0.00000002,
+      "promptTextTokens": 0.00000015,
+    },
+  },
+  "nvidia/nemotron-3.5-super-vl:openrouter:together": {
+    "cost": {
+      "completionTextTokens": 0.0000005275,
+      "promptCachedTokens": 0.0000000211,
+      "promptTextTokens": 0.00000015825,
+    },
+    "price": {
+      "completionTextTokens": 0.0000005275,
+      "promptCachedTokens": 0.0000000211,
+      "promptTextTokens": 0.00000015825,
     },
   },
   "openai/gpt-4o-mini": {
@@ -3397,6 +3455,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.00000002,
     },
   },
+  "qwen/qwen-image-2.1-pro": {
+    "cost": {
+      "completionImageTokens": 0.04,
+    },
+    "price": {
+      "completionImageTokens": 0.04,
+    },
+  },
+  "qwen/qwen-image-2.1-pro:openrouter": {
+    "cost": {
+      "completionImageTokens": 0.04853,
+    },
+    "price": {
+      "completionImageTokens": 0.04853,
+    },
+  },
   "qwen/qwen-image-2.1-turbo": {
     "cost": {
       "completionImageTokens": 0.016,
@@ -3886,6 +3960,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioTokens": 0.0041,
     },
   },
+  "stealth/glyph-cluster": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptCachedTokens": 0,
+      "promptTextTokens": 0,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptCachedTokens": 0,
+      "promptTextTokens": 0,
+    },
+  },
   "stepfun/step-3.5-flash": {
     "cost": {
       "completionTextTokens": 0.0000003165,
@@ -4022,6 +4108,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionImageTokens": 0,
+    },
+  },
+  "tripo3d/p2": {
+    "cost": {
+      "completionImageTokens": 1.1,
+    },
+    "price": {
+      "completionImageTokens": 1.1,
     },
   },
   "typesafe/jev-1.13": {

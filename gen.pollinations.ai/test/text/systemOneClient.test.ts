@@ -402,6 +402,41 @@ describe("System One adapter", () => {
         expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 
+    it("routes microsoft/microsoft-decision-1 to its Azure deployment with an api-key header", async () => {
+        const azureEndpoint =
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/microsoft/v1/systemone";
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (input, init) => {
+                expect(String(input)).toBe(azureEndpoint);
+                const headers = new Headers(init?.headers);
+                expect(headers.get("api-key")).toBe("test-key");
+                expect(headers.get("authorization")).toBeNull();
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    model: "decision-1",
+                });
+                return Response.json({
+                    model: "microsoft-decision-1",
+                    answers,
+                    usage: { input_tokens: 126, output_tokens: 3 },
+                });
+            });
+        await generateTextPortkey(
+            [{ role: "user", content: nativeContent }],
+            {
+                model: "microsoft/microsoft-decision-1",
+                modelConfig: {
+                    ...modelConfig,
+                    directEndpoint: azureEndpoint,
+                    directAuthHeader: "api-key",
+                    model: "decision-1",
+                },
+            },
+            vi.fn(),
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
     it("forwards native state and questions in one message and returns native answers", async () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")

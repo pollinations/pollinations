@@ -84,6 +84,7 @@ import {
     MODEL_USED_HEADER,
     USAGE_TYPE_HEADERS,
 } from "@shared/registry/usage-headers.ts";
+import { DEFAULT_DECISION_MODEL } from "@shared/schemas/decisions.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
@@ -5269,9 +5270,15 @@ fixtureTest(
         const allNames = allModels.map((model) => model.name);
 
         expect(allNames).toEqual(openaiModels.data.map((model) => model.id));
+        // Decision models also answer on chat endpoints, so the text list
+        // keeps them.
         expect(textModels.map((model) => model.name)).toEqual(
             allModels
-                .filter((model) => model.category === "text")
+                .filter(
+                    (model) =>
+                        model.category === "text" ||
+                        model.category === "decision",
+                )
                 .map((model) => model.name),
         );
         expect(allNames).toEqual([
@@ -5281,6 +5288,7 @@ fixtureTest(
 
         const categoryOrder = [
             "text",
+            "decision",
             "image",
             "video",
             "3d",
@@ -5298,6 +5306,7 @@ fixtureTest(
 
         const defaults: Record<string, string> = {
             text: DEFAULT_TEXT_MODEL,
+            decision: DEFAULT_DECISION_MODEL,
             image: DEFAULT_IMAGE_MODEL,
             "3d": DEFAULT_3D_MODEL,
             audio: DEFAULT_AUDIO_MODEL,

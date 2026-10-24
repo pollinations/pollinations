@@ -45,9 +45,16 @@ const textCacheAdapter: GenerationCacheAdapter = {
         // its own entry, so a repeat runs its tools again; the coordinator still
         // hands a non-streaming result to its caller through that entry.
         const cacheScope = variables.model?.cacheScope;
+        const callerId = variables.auth?.apiKey?.id ?? variables.auth?.user?.id;
+        // Lookup runs before access checks, so a shared entry for a paid-only
+        // model would hand paid output to anyone, keyless callers included,
+        // and let one caller seed what another receives. Paid-only models get
+        // a per-caller entry instead: repeats by the same caller still hit.
         const partition = cacheScope
             ? `${cacheScope}:key:${variables.auth?.apiKey?.id ?? "anonymous"}:run:${c.var.requestId}`
-            : undefined;
+            : variables.model?.definition.paidOnly
+              ? `paid-only:caller:${callerId ?? "anonymous"}`
+              : undefined;
         return generateCacheKey(
             c.req.raw,
             bodyText,

@@ -398,24 +398,6 @@ export const CHAT_PARAMETERS = {
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],
-    // Phala fallback route for Hy3 (2026-09-18): distinct provider from
-    // Novita primary, adds min_p over Novita's parameter surface.
-    openRouterHy3Phala: [
-        "max_tokens",
-        "stream",
-        ...TOOLS,
-        "structured_outputs",
-        "temperature",
-        "top_p",
-        "top_k",
-        "min_p",
-        ...PENALTIES,
-        "repetition_penalty",
-        "stop",
-        "seed",
-        ...OPENROUTER_REASONING,
-        "reasoning_effort",
-    ],
     // OpenRouter Novita tag for Ling 3.1 Flash (verified 2026-10-05): no
     // response_format, structured outputs or logprobs; reasoning_effort
     // "none" turns thinking off.

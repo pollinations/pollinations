@@ -1,5 +1,6 @@
 import {
     defineCostVariants,
+    longContextAbove,
     longContextAtLeast,
     totalPromptTokens,
 } from "./cost-variants";
@@ -49,6 +50,7 @@ export const TEXT_FALLBACKS = {
         // Same Azure backend; covers gateway failures, not Microsoft outages.
         "microsoft/microsoft-decision-1:vercel": {
             provider: "vercel",
+            priceMultiplier: 1,
             // Vercel AI Gateway list price, the cheapest route.
             cost: {
                 promptTextTokens: perMillion(0.042),
@@ -57,11 +59,19 @@ export const TEXT_FALLBACKS = {
         },
         "microsoft/microsoft-decision-1:openrouter": {
             provider: "openrouter",
+            priceMultiplier: 1,
             // OpenRouter list price plus its 5.5% credit fee.
             cost: {
                 promptTextTokens: perMillion(0.042) * 1.055,
                 completionTextTokens: perMillion(0),
             },
+        },
+    },
+    "anthropic/claude-opus-5": {
+        // Anthropic's global rates equal the Bedrock global sheet (2026-10-24).
+        "anthropic/claude-opus-5:anthropic": {
+            provider: "anthropic",
+            addedDate: new Date("2026-10-24").getTime(),
         },
     },
     "openai/gpt-6-luna-decisions": {
@@ -71,6 +81,8 @@ export const TEXT_FALLBACKS = {
             cost: {
                 promptTextTokens: perMillion(0.1) * 1.055,
                 completionTextTokens: perMillion(0),
+                promptCachedTokens: perMillion(0),
+                promptCacheWriteTokens: perMillion(0),
             },
             // OpenRouter's flat rate must not inherit OpenAI's context tier.
             costVariants: undefined,
@@ -81,13 +93,13 @@ export const TEXT_FALLBACKS = {
         },
     },
     "stepfun/step-5-preview": {
-        // Same StepFun model through Vercel's AI Gateway at the posted base
-        // rates, without OpenRouter's credit fee.
+        // Same StepFun model through Vercel's AI Gateway pinned to DeepInfra
+        // (2026-10-24), without OpenRouter's credit fee.
         "stepfun/step-5-preview:vercel": {
             provider: "vercel",
             cost: {
                 promptTextTokens: perMillion(1),
-                promptCachedTokens: perMillion(0.05),
+                promptCachedTokens: perMillion(0.1),
                 completionTextTokens: perMillion(2.7),
             },
         },
@@ -197,13 +209,9 @@ export const TEXT_FALLBACKS = {
         "openai/gpt-6-luna:openai": { provider: "openai" },
     },
     "x-ai/grok-4.6": {
-        "x-ai/grok-4.6:azure:sweden": {
-            provider: "azure",
-            addedDate: new Date("2026-09-06").getTime(),
-            // Provider retires this route on 2027-08-24.
-        },
         "x-ai/grok-4.6:xai": {
             provider: "xai",
+            priceMultiplier: 1,
             addedDate: new Date("2026-09-24").getTime(),
             // xAI /v1/language-models/grok-4.6 rates (2026-09-24). Image tokens
             // bill at the text input rate; reasoning bills as output.
@@ -269,11 +277,11 @@ export const TEXT_FALLBACKS = {
         "xiaomi/mimo-v2.6-flash:deepinfra": {
             provider: "deepinfra",
             addedDate: new Date("2026-10-10").getTime(),
-            // DeepInfra direct (2026-10-10): base rates without OpenRouter's 5.5% fee.
+            // DeepInfra current 35% discount verified 2026-10-24; callers keep the Novita quote.
             cost: {
-                promptTextTokens: perMillion(0.14),
-                promptCachedTokens: perMillion(0.0028),
-                completionTextTokens: perMillion(0.28),
+                promptTextTokens: perMillion(0.091),
+                promptCachedTokens: perMillion(0.00182),
+                completionTextTokens: perMillion(0.182),
             },
         },
     },
@@ -281,11 +289,11 @@ export const TEXT_FALLBACKS = {
         "xiaomi/mimo-v2.6-pro:deepinfra": {
             provider: "deepinfra",
             addedDate: new Date("2026-10-10").getTime(),
-            // DeepInfra bills input at $0.43 per 1M; the public price stays at Novita's $0.435.
+            // DeepInfra current discounted rates verified 2026-10-24. Callers keep the Novita quote.
             cost: {
-                promptTextTokens: perMillion(0.43),
-                promptCachedTokens: perMillion(0.0036),
-                completionTextTokens: perMillion(0.87),
+                promptTextTokens: perMillion(0.387),
+                promptCachedTokens: perMillion(0.00324),
+                completionTextTokens: perMillion(0.783),
             },
         },
     },
@@ -321,11 +329,10 @@ export const TEXT_FALLBACKS = {
             provider: "deepinfra",
             addedDate: new Date("2026-10-18").getTime(),
             cost: {
-                // DeepInfra list rates (2026-10-18); its 51% promotion is not
-                // passed on.
-                promptTextTokens: perMillion(0.2),
-                promptCachedTokens: perMillion(0.006),
-                completionTextTokens: perMillion(0.6),
+                // DeepInfra current 51% promotion (2026-10-24), no announced end.
+                promptTextTokens: perMillion(0.2) * 0.49,
+                promptCachedTokens: perMillion(0.006) * 0.49,
+                completionTextTokens: perMillion(0.6) * 0.49,
             },
         },
     },
@@ -353,22 +360,6 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
-    "tencent/hy3": {
-        "tencent/hy3:openrouter:phala": {
-            supportedParameters: CHAT_PARAMETERS.openRouterHy3Phala,
-            provider: "openrouter",
-            addedDate: new Date("2026-09-18").getTime(),
-            // Phala route rates (2026-09-18, includes the mandatory 5.5%
-            // OpenRouter credit fee); distinct provider from the Novita
-            // primary, and the highest uptime of Hy3's six endpoints
-            // (99.97%), with low latency (~1.6-2.5s) in local E2E testing.
-            cost: {
-                promptTextTokens: perMillion(0.15) * 1.055,
-                promptCachedTokens: perMillion(0.04) * 1.055,
-                completionTextTokens: perMillion(0.64) * 1.055,
-            },
-        },
-    },
     "qwen/qwen3.8-27b": {
         "qwen/qwen3.8-27b:openrouter:reka-fp8": {
             supportedParameters: CHAT_PARAMETERS.qwen38Reka,
@@ -384,6 +375,50 @@ export const TEXT_FALLBACKS = {
                 promptVideoTokens: perMillion(0.04) * 1.055,
                 completionTextTokens: perMillion(2.2) * 1.055,
             },
+        },
+    },
+    "qwen/qwen3.7-plus": {
+        "qwen/qwen3.7-plus:alibaba": {
+            provider: "alibaba",
+            supportedParameters: CHAT_PARAMETERS.alibabaQwen,
+            addedDate: new Date("2026-10-24").getTime(),
+            // Direct Alibaba (International), limited-time 20% off list.
+            // Explicit-cache reads cost 10% of input; recorded at the implicit 20%.
+            cost: {
+                promptTextTokens: perMillion(0.32),
+                promptCachedTokens: perMillion(0.064),
+                promptCacheWriteTokens: perMillion(0.4),
+                promptImageTokens: perMillion(0.32),
+                completionTextTokens: perMillion(1.28),
+            },
+            ...defineCostVariants(
+                {
+                    long_context: {
+                        promptTextTokens: perMillion(0.96),
+                        promptCachedTokens: perMillion(0.192),
+                        promptCacheWriteTokens: perMillion(1.2),
+                        promptImageTokens: perMillion(0.96),
+                        completionTextTokens: perMillion(3.84),
+                    },
+                },
+                longContextAbove(256_000),
+                {
+                    long_context: {
+                        label: "Long context (>256K)",
+                        description:
+                            "More than 256,000 prompt tokens; the higher rates apply to the whole request.",
+                    },
+                },
+                "≤256K context",
+                [
+                    {
+                        key: "context",
+                        label: "Context",
+                        unit: "tokens",
+                        values: { "": "≤256K", long_context: ">256K" },
+                    },
+                ],
+            ),
         },
     },
     "qwen/qwen3.7-flash": {
@@ -459,11 +494,6 @@ export const TEXT_FALLBACKS = {
         },
     },
     "moonshotai/kimi-k2.6": {
-        "moonshotai/kimi-k2.6:azure:sweden": {
-            provider: "azure",
-            addedDate: new Date("2026-09-23").getTime(),
-            // Provider retires this route on 2027-04-16.
-        },
         "moonshotai/kimi-k2.6:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
             provider: "deepinfra",
@@ -656,6 +686,7 @@ export const TEXT_FALLBACKS = {
     },
     "anthropic/claude-haiku-5.5": {
         "anthropic/claude-haiku-5.5:aws": {
+            priceMultiplier: 1,
             provider: "aws",
             addedDate: new Date("2026-10-15").getTime(),
         },
@@ -668,6 +699,7 @@ export const TEXT_FALLBACKS = {
     },
     "anthropic/claude-sonnet-5.5": {
         "anthropic/claude-sonnet-5.5:aws": {
+            priceMultiplier: 1,
             provider: "aws",
             addedDate: new Date("2026-10-15").getTime(),
         },
@@ -676,6 +708,13 @@ export const TEXT_FALLBACKS = {
         "anthropic/claude-fable-5.1:aws": {
             provider: "aws",
             addedDate: new Date("2026-10-15").getTime(),
+        },
+    },
+    "anthropic/claude-sonnet-5": {
+        // Anthropic's global rates equal the Bedrock global sheet (2026-10-24).
+        "anthropic/claude-sonnet-5:anthropic": {
+            provider: "anthropic",
+            addedDate: new Date("2026-10-24").getTime(),
         },
     },
     "anthropic/claude-opus-5.5:fast": {
@@ -860,22 +899,21 @@ export const TEXT_FALLBACKS = {
             provider: "openrouter",
             priceMultiplier: 1,
             addedDate: new Date("2026-10-13").getTime(),
-            // OpenRouter Google AI Studio list rates (2026-10-13; its 50% promo
-            // through 2026-11-30 is not counted), including the 5.5%
-            // credit-purchase fee, so this route costs 5.5% above the price.
+            // OpenRouter AI Studio promotional rates verified 2026-10-24,
+            // including the 5.5% credit fee. Callers keep the Vertex quote.
             cost: {
-                promptTextTokens: perMillion(4) * 1.055,
-                promptCachedTokens: perMillion(0.2) * 1.055,
-                promptCacheWriteTokens: perMillion(4) * 1.055,
-                promptAudioTokens: perMillion(4) * 1.055,
-                promptImageTokens: perMillion(4) * 1.055,
-                promptVideoTokens: perMillion(4) * 1.055,
-                completionTextTokens: perMillion(20) * 1.055,
+                promptTextTokens: perMillion(2) * 1.055,
+                promptCachedTokens: perMillion(0.1) * 1.055,
+                promptCacheWriteTokens: perMillion(2) * 1.055,
+                promptAudioTokens: perMillion(2) * 1.055,
+                promptImageTokens: perMillion(2) * 1.055,
+                promptVideoTokens: perMillion(2) * 1.055,
+                completionTextTokens: perMillion(10) * 1.055,
             },
-            // Implicit caching only, so no explicit cache storage is billed.
+            // Reported explicit cache writes include five minutes of storage.
             billing: openRouterGeminiBilling({
                 searchCostPerThousandRequests: 14 * 1.055,
-                storageCostPerMillionTokenHours: 0,
+                storageCostPerMillionTokenHours: 2.25 * 1.055,
             }),
         },
     },

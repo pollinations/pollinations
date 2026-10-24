@@ -672,6 +672,73 @@ describe("GenerationCoordinator", () => {
         expect(await env.TEXT_BUCKET.head(key)).toBeNull();
     });
 
+    it.each(["text", "media"] as const)(
+        "recovers an interrupted alarm from its completed %s cache entry",
+        async (storage) => {
+            const now = Date.now() + 60_000;
+            vi.spyOn(Date, "now").mockReturnValue(now);
+            const fetch = vi
+                .spyOn(globalThis, "fetch")
+                .mockRejectedValue(
+                    new Error("Recovery must not call the provider"),
+                );
+            const stub = env.GENERATION_COORDINATOR.getByName(
+                `recovery-${crypto.randomUUID()}`,
+            );
+            const key = crypto.randomUUID().replaceAll("-", "").repeat(2);
+            const job = { ...testJob(key, "POST"), cache: { storage, key } };
+            const recovered = await runInDurableObject(
+                stub,
+                async (coordinator, state) => {
+                    const waiting = coordinator.startAndWait(
+                        job,
+                        new Response("request body").body ?? undefined,
+                    );
+                    await waitForAlarm(state);
+                    await coordinator.submit(job);
+                    // The executor saved its result, then the alarm died
+                    // before finish() cleared the claimed job and record.
+                    await state.storage.put("job", {
+                        ...(await state.storage.get<object>("job")),
+                        started: true,
+                    });
+                    if (storage === "text") {
+                        await env.TEXT_BUCKET.put(key, "completed result");
+                    } else {
+                        await env.MEDIA.put(
+                            key,
+                            new Response("completed result", {
+                                headers: { "content-type": "image/png" },
+                            }),
+                        );
+                    }
+
+                    await coordinator.alarm();
+                    const outcome = await waiting;
+                    const record = await coordinator.status("user-1");
+                    const expiresAt = await state.storage.getAlarm();
+                    expect([...(await state.storage.list()).keys()]).toEqual([
+                        "async",
+                    ]);
+                    // A further alarm delivery must not execute anything.
+                    await coordinator.alarm();
+                    await state.storage.deleteAlarm();
+                    return { outcome, record, expiresAt };
+                },
+            );
+
+            expect(recovered.outcome).toEqual({ status: "cached" });
+            expect(recovered.record).toMatchObject({
+                status: "succeeded",
+                ownerIds: ["user-1"],
+                completedAt: now,
+            });
+            expect(recovered.record).not.toHaveProperty("error");
+            expect(recovered.expiresAt).toBe(now + 24 * 60 * 60 * 1_000);
+            expect(fetch).not.toHaveBeenCalled();
+        },
+    );
+
     it("settles a pending async record when a sync join cancels its alarm", async () => {
         const stub = env.GENERATION_COORDINATOR.getByName(
             `test-${crypto.randomUUID()}`,

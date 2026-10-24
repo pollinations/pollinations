@@ -2488,7 +2488,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         // Fireworks standard serverless rates (2026-07-30).
         cost: {

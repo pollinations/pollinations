@@ -74,6 +74,11 @@ const OPENROUTER_ROUTES = [
         "coreweave/bf16",
     ],
     [
+        "nvidia/nemotron-3.5-super-vl:openrouter:together",
+        "nvidia/nemotron-3.5-super-vl",
+        "together",
+    ],
+    [
         "google/gemini-3-flash-preview:openrouter:vertex-global",
         "google/gemini-3-flash-preview",
         "google-vertex/global",
@@ -690,22 +695,31 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.00002, 12);
     });
 
-    it("charges Microsoft Decision-1's Vercel price on its OpenRouter fallback", () => {
+    it("charges Microsoft Decision-1's Azure rate on its Vercel and OpenRouter fallbacks", () => {
         const primary = TEXT_SERVICES["microsoft/microsoft-decision-1"];
         const fallback =
             TEXT_SERVICES["microsoft/microsoft-decision-1:openrouter"];
         expect(primary.fallbacks).toEqual([
+            "microsoft/microsoft-decision-1:vercel",
             "microsoft/microsoft-decision-1:openrouter",
         ]);
         expect(fallback).toMatchObject({
             provider: "openrouter",
-            paidOnly: true,
+            paidOnly: false,
             hidden: true,
             fallbackOnly: true,
             aliases: [],
         });
         expect(
             findModelByName("microsoft/microsoft-decision-1")?.config(),
+        ).toMatchObject({
+            model: "decision-1",
+            directEndpoint:
+                "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/microsoft/v1/systemone",
+            directAuthHeader: "api-key",
+        });
+        expect(
+            findModelByName("microsoft/microsoft-decision-1:vercel")?.config(),
         ).toMatchObject({
             model: "microsoft/microsoft-decision-1",
             directEndpoint:
@@ -727,7 +741,7 @@ describe("static provider fallbacks", () => {
             quotedBy: primary,
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.00004431, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(0.000042, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0000315, 12);
     });
 
     it("quotes OpenAI's context tiers while accounting for OpenRouter's flat fallback cost", () => {
@@ -924,6 +938,58 @@ describe("static provider fallbacks", () => {
         ).toBe(true);
     });
 
+    it("falls back from Step 3.7 Flash on Novita to StepFun on Vercel at the same rates", () => {
+        const primary = TEXT_SERVICES["stepfun/step-3.7-flash"];
+        const fallback = TEXT_SERVICES["stepfun/step-3.7-flash:vercel"];
+        expect(primary).toMatchObject({
+            provider: "novita",
+            fallbacks: ["stepfun/step-3.7-flash:vercel"],
+        });
+        expect(fallback).toMatchObject({
+            provider: "vercel",
+            hidden: true,
+            fallbackOnly: true,
+        });
+        expect(
+            findModelByName("stepfun/step-3.7-flash:vercel")?.config(),
+        ).toMatchObject({
+            model: "stepfun/step-3.7-flash",
+            responsesEndpoint: undefined,
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["stepfun"] } },
+            },
+        });
+        const usage = {
+            promptTextTokens: 1000,
+            promptCachedTokens: 1000,
+            completionTextTokens: 1000,
+        };
+        const served = calculateUsageBilling({
+            model: "stepfun/step-3.7-flash",
+            usage,
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(served.cost.totalCost).toBeCloseTo(0.00139, 12);
+        expect(served.price.totalPrice).toBeCloseTo(0.00139, 12);
+        expect(
+            supportsTextFallbackRequest(fallback, {
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "image_url",
+                                image_url: { url: "https://example.com/a.png" },
+                            },
+                        ],
+                    },
+                ],
+                tools: [{ type: "function", function: { name: "lookup" } }],
+            }),
+        ).toBe(true);
+    });
+
     it.each([
         ["deepseek/deepseek-v4.1-flash", 0.000546],
         ["deepseek/deepseek-v4.1-flash:fireworks", 0.000546],
@@ -1110,6 +1176,21 @@ describe("static provider fallbacks", () => {
             promptTextTokens: (0.07 / 1_000_000) * 1.055,
             promptCachedTokens: (0.04 / 1_000_000) * 1.055,
             completionTextTokens: (0.2 / 1_000_000) * 1.055,
+        });
+        expect(
+            TEXT_SERVICES["nvidia/nemotron-3.5-super-vl"].cost,
+        ).toMatchObject({
+            promptTextTokens: 0.15 / 1_000_000,
+            promptCachedTokens: 0.02 / 1_000_000,
+            completionTextTokens: 0.5 / 1_000_000,
+        });
+        expect(
+            TEXT_SERVICES["nvidia/nemotron-3.5-super-vl:openrouter:together"]
+                .cost,
+        ).toMatchObject({
+            promptTextTokens: (0.15 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.02 / 1_000_000) * 1.055,
+            completionTextTokens: (0.5 / 1_000_000) * 1.055,
         });
         expect(
             TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"].cost,

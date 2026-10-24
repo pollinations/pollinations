@@ -56,8 +56,11 @@ describe("getGenerationModelRegistry", () => {
             "qwen/qwen3guard-gen-8b",
             "openai/gpt-oss-20b",
             "respan/span-01-lite",
+            "vllm-sr/d3",
             "openai/whisper-large-v3",
             "lykon/dreamshaper-8-lcm",
+            // Costs $0 while Vercel offers it as a stealth model.
+            "stealth/glyph-cluster",
         ]);
         const questModels = [];
         for (const id of getModels()) {
@@ -114,6 +117,10 @@ describe("getGenerationModelRegistry", () => {
             ["google/gemini-3.7-flash:openrouter:vertex-global", "stop", true],
             ["nvidia/nemotron-3.5-lightning", "top_k", true],
             ["nvidia/nemotron-3-ultra", "top_k", true],
+            ["nvidia/nemotron-3.5-super-vl", "tools", true],
+            ["nvidia/nemotron-3.5-super-vl", "top_k", true],
+            ["nvidia/nemotron-3.5-super-vl", "seed", false],
+            ["nvidia/nemotron-3.5-super-vl", "logprobs", false],
             ["qwen/qwen3-coder-30b-a3b-instruct", "top_k", false],
             ["qwen/qwen3-vl-235b-a22b-thinking", "response_format", false],
             ["perplexity/sonar", "search_domain_filter", true],
@@ -153,7 +160,16 @@ describe("getGenerationModelRegistry", () => {
         expect(chat.length).toBeGreaterThan(0);
         for (const entry of chat) {
             expect(entry.info.supported_endpoints).toContain("/v1/responses");
+            expect(entry.info.supported_endpoints).toContain("/v1/messages");
         }
+        expect(
+            registry.resolve("vllm-sr/d3")?.info.supported_endpoints,
+        ).toEqual([
+            "/alpha/decisions",
+            "/v1/chat/completions",
+            "/v1/responses",
+            "/v1/messages",
+        ]);
         // Native Responses targets stay a subset; the rest are adapted.
         const native = chat.filter((entry) =>
             supportsDirectResponses(entry.id),

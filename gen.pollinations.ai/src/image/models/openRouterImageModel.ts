@@ -525,25 +525,46 @@ export async function callOpenRouterSeedreamFlashAPI(
     };
 }
 
-/**
- * Qwen Image 3 Pro through OpenRouter's Alibaba endpoint: the same
- * qwen-image-3.0-pro checkpoint as the DashScope primary, with up to 3
- * references. OpenRouter prices the size it is sent, so the primary's size
- * resolver keeps both routes on the same price tier.
- */
-export async function callOpenRouterQwenImage3API(
+type OpenRouterAlibabaQwenRoute = {
+    model: string;
+    actualModel: string;
+    size: (params: ImageParams) => string;
+    /** Whether reference images are metered on top of OpenRouter's cost. */
+    meterReferences: boolean;
+};
+
+const QWEN_IMAGE_3_ROUTE: OpenRouterAlibabaQwenRoute = {
+    model: QWEN_IMAGE_3_PRO_MODEL,
+    actualModel: "qwen/qwen-image-3:openrouter",
+    size: (params) => {
+        const { width, height } = resolveQwenImage3Size(params);
+        return `${width}x${height}`;
+    },
+    meterReferences: true,
+};
+
+const QWEN_IMAGE_2_1_PRO_ROUTE: OpenRouterAlibabaQwenRoute = {
+    model: "qwen/qwen-image-2.1-pro",
+    actualModel: "qwen/qwen-image-2.1-pro:openrouter",
+    size: (params) => `${params.width}x${params.height}`,
+    // OpenRouter's cost already covers the references.
+    meterReferences: false,
+};
+
+/** Alibaba-pinned Qwen image models through OpenRouter, billed at its reported cost. */
+async function callOpenRouterAlibabaQwenImage(
     prompt: string,
     safeParams: ImageParams,
+    route: OpenRouterAlibabaQwenRoute,
 ): Promise<ImageGenerationResult> {
     const apiKey = requireOpenRouterImageApiKey();
-    const { width, height } = resolveQwenImage3Size(safeParams);
     const references = await Promise.all(safeParams.image.map(toDataUri));
     const requestBody: Record<string, unknown> = {
-        model: QWEN_IMAGE_3_PRO_MODEL,
+        model: route.model,
         prompt,
         n: 1,
         seed: safeParams.seed,
-        size: `${width}x${height}`,
+        size: route.size(safeParams),
         provider: { only: ["alibaba"], allow_fallbacks: false },
     };
     if (references.length > 0) {
@@ -570,16 +591,45 @@ export async function callOpenRouterQwenImage3API(
     return {
         buffer: base64ToBuffer(encodedImage),
         trackingData: {
-            actualModel: "qwen/qwen-image-3:openrouter",
+            actualModel: route.actualModel,
             providerBilling: { units: providerCost, unitCost: 1.055 },
             usage: {
-                ...(references.length > 0
+                ...(route.meterReferences && references.length > 0
                     ? { promptImageTokens: references.length }
                     : {}),
                 completionImageTokens: 1,
             },
         },
     };
+}
+
+/**
+ * Qwen Image 3 Pro through OpenRouter's Alibaba endpoint: the same
+ * qwen-image-3.0-pro checkpoint as the DashScope primary, with up to 3
+ * references. OpenRouter prices the size it is sent, so the primary's size
+ * resolver keeps both routes on the same price tier.
+ */
+export function callOpenRouterQwenImage3API(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    return callOpenRouterAlibabaQwenImage(
+        prompt,
+        safeParams,
+        QWEN_IMAGE_3_ROUTE,
+    );
+}
+
+/** Qwen Image 2.1 Pro through OpenRouter's Alibaba endpoint, with up to 4 references. */
+export function callOpenRouterQwenImage21ProAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    return callOpenRouterAlibabaQwenImage(
+        prompt,
+        safeParams,
+        QWEN_IMAGE_2_1_PRO_ROUTE,
+    );
 }
 
 export async function callOpenRouterGrokImagineProAPI(

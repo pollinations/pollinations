@@ -176,6 +176,32 @@ const perplexityWebSearch: TransformFn = (messages, options) => {
     };
 };
 
+// Audio models: default to a spoken+text reply and pick a wire format that
+// matches transport (pcm16 for streaming, mp3 otherwise) unless the caller
+// already specified one. A caller that explicitly asks for text-only
+// modalities is left untouched — injecting an audio config would contradict
+// the requested modalities and providers reject that combination.
+const audioDefaultsTransform: TransformFn = (messages, options) => {
+    const modalities = options.modalities || ["text", "audio"];
+    if (!modalities.includes("audio")) return { messages, options };
+
+    const voice = options.voice || options.audio?.voice || "alloy";
+    const audioFormat = options.stream ? "pcm16" : "mp3";
+    return {
+        messages,
+        options: {
+            ...options,
+            modalities,
+            audio: options.audio
+                ? {
+                      ...options.audio,
+                      format: options.audio.format || audioFormat,
+                  }
+                : { voice, format: audioFormat },
+        },
+    };
+};
+
 const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5.4-nano",
@@ -299,6 +325,11 @@ const models: ModelDefinition[] = [
         transform: createReasoningEffortTransform("toggle"),
     },
     {
+        name: "inception/mercury-3",
+        config: portkeyConfig["inception/mercury-3"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "cohere/command-a-plus",
         config: portkeyConfig["cohere/command-a-plus"],
     },
@@ -407,7 +438,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "stepfun/step-3.7-flash",
-        config: portkeyConfig["stepfun-ai/Step-3.7-Flash"],
+        config: portkeyConfig["stepfun/step-3.7-flash"],
+        transform: mandatoryReasoning,
+    },
+    {
+        name: "stepfun/step-3.7-flash:vercel",
+        config: portkeyConfig["stepfun/step-3.7-flash:vercel"],
         transform: mandatoryReasoning,
     },
     {
@@ -547,12 +583,12 @@ const models: ModelDefinition[] = [
         name: "openai/gpt-audio-mini",
         config: portkeyConfig["gpt-audio-mini-2025-12-15"],
         // Audio models don't support reasoning_effort.
-        transform: stripReasoning,
+        transform: pipe(audioDefaultsTransform, stripReasoning),
     },
     {
         name: "openai/gpt-audio-1.5",
         config: portkeyConfig["gpt-audio-1.5"],
-        transform: stripReasoning,
+        transform: pipe(audioDefaultsTransform, stripReasoning),
     },
     {
         name: "anthropic/claude-haiku-4.5",
@@ -984,6 +1020,16 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
+        name: "nvidia/nemotron-3.5-super-vl",
+        config: portkeyConfig["nvidia/NVIDIA-Nemotron-3.5-Super-VL"],
+        transform: fireworksThinking,
+    },
+    {
+        name: "nvidia/nemotron-3.5-super-vl:openrouter:together",
+        config: portkeyConfig["nemotron-3.5-super-vl-openrouter-together"],
+        transform: fireworksThinking,
+    },
+    {
         name: "xiaomi/mimo-v2.5",
         config: portkeyConfig["xiaomi/mimo-v2.5"],
     },
@@ -1146,6 +1192,10 @@ const models: ModelDefinition[] = [
     {
         name: "meta/muse-spark-1.2",
         config: portkeyConfig["meta/muse-spark-1.2"],
+    },
+    {
+        name: "meta/muse-spark-1.3",
+        config: portkeyConfig["meta/muse-spark-1.3"],
     },
     {
         name: "meta/muse-wonder-1.0",

@@ -146,6 +146,12 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "openai/gpt-5.4-nano": {
+        "openai/gpt-5.4-nano:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
+        },
+    },
     "inclusionai/ling-3.1-flash": {
         "inclusionai/ling-3.1-flash:vercel:novita": {
             provider: "vercel",

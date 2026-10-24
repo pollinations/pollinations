@@ -71,13 +71,13 @@ export const TEXT_FALLBACKS = {
         },
     },
     "stepfun/step-5-preview": {
-        // Same StepFun model through Vercel's AI Gateway at the posted base
-        // rates, without OpenRouter's credit fee.
+        // Same StepFun model through Vercel's AI Gateway pinned to DeepInfra
+        // (2026-10-24), without OpenRouter's credit fee.
         "stepfun/step-5-preview:vercel": {
             provider: "vercel",
             cost: {
                 promptTextTokens: perMillion(1),
-                promptCachedTokens: perMillion(0.05),
+                promptCachedTokens: perMillion(0.1),
                 completionTextTokens: perMillion(2.7),
             },
         },

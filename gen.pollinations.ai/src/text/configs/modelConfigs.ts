@@ -1202,13 +1202,22 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOpenRouterModelConfig({
             model: "stepfun/step-3.5-flash",
         }),
+    // Pinned to StepFun's own endpoint; other OpenRouter endpoints differ in
+    // cache price, precision or context.
     "stepfun/step-5-preview": () =>
         createOpenRouterModelConfig({
             model: "stepfun/step-5-preview",
+            defaultOptions: {
+                provider: { only: ["stepfun/fp8"], allow_fallbacks: false },
+            },
         }),
+    // Vercel's StepFun endpoint has no tools and Tencent caps output at 64K.
     "stepfun/step-5-preview:vercel": () =>
         createVercelAIGatewayModelConfig({
             model: "stepfun/step-5-preview",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["deepinfra"] } },
+            },
         }),
 
     // -- Novita and Vercel (StepFun) ------------------------------------------

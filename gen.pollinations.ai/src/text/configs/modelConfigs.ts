@@ -174,6 +174,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         model: "decision-1",
     }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
+    "gpt-5.4-nano-openai": () => ({
+        provider: "openai",
+        model: "gpt-5.4-nano-2026-03-17",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        directEndpoint: "https://api.openai.com/v1/chat/completions",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        serviceTier: "default",
+        ...azureOpenAIParameters,
+    }),
     "gpt-5.4-nano": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),

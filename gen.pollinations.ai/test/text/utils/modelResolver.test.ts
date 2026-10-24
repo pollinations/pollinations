@@ -358,6 +358,23 @@ describe("resolveModelConfig", () => {
         },
     );
 
+    it("pins gpt-5.4-nano recovery to exact OpenAI Standard", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5.4-nano:openai",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("gpt-5.4-nano-2026-03-17");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelDef).toMatchObject({
+            useResponsesApi: true,
+        });
+        expect(resolved.options.modelConfig).toMatchObject({
+            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
+        });
+    });
+
     it("pins Inkling to DeepInfra on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "thinkingmachines/inkling-small",

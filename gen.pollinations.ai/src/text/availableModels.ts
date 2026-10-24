@@ -204,6 +204,13 @@ const audioDefaultsTransform: TransformFn = (messages, options) => {
 
 const models: ModelDefinition[] = [
     {
+        name: "openai/gpt-5.4-nano:openai",
+        config: portkeyConfig["gpt-5.4-nano-openai"],
+        transform: omitOpenAISampling,
+        // OpenAI Chat rejects tools with reasoning; Responses preserves both.
+        useResponsesApi: true,
+    },
+    {
         name: "openai/gpt-5.4-nano",
         config: portkeyConfig["gpt-5.4-nano"],
         transform: omitOpenAISampling,

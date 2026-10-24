@@ -1132,6 +1132,30 @@ describe("static provider fallbacks", () => {
         }
     });
 
+    it("keeps the Azure gpt-5.4-nano quote when OpenAI serves it", () => {
+        const model = "openai/gpt-5.4-nano";
+        expect(TEXT_SERVICES[model].fallbacks).toEqual([
+            "openai/gpt-5.4-nano:openai",
+        ]);
+        expect(TEXT_SERVICES["openai/gpt-5.4-nano:openai"]).toMatchObject({
+            provider: "openai",
+            priceMultiplier: 1,
+            hidden: true,
+        });
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                "promptTextTokens": 1000,
+                "promptCachedTokens": 200,
+                "completionTextTokens": 100,
+            },
+            servedBy: TEXT_SERVICES["openai/gpt-5.4-nano:openai"],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.000329, 12);
+        expect(billed.price.totalPrice).toBe(0.00024675);
+    });
+
     it("keeps exact provider route costs", () => {
         expect(TEXT_SERVICES["openai/gpt-4o-mini"].cost).toMatchObject({
             promptTextTokens: (0.15 / 1_000_000) * 1.055,

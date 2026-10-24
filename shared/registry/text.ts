@@ -3250,7 +3250,7 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         contextLength: 1048576,
         isSpecialized: false,
-        paidOnly: true,
+        paidOnly: false,
     },
     "meta/llama-4-scout": {
         supportedParameters: CHAT_PARAMETERS.llamaScout,

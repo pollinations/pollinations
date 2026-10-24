@@ -25,6 +25,7 @@ import {
     type FileUploadProps,
     ImageIcon,
     InfoTip,
+    InlineLink,
     Input,
     MediaPlaceholder,
     MicIcon,
@@ -56,6 +57,7 @@ import {
     useState,
 } from "react";
 import { API_BASE_URL } from "../../config";
+import { SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
 import { ApiUrlCard } from "./ApiUrlCard";
 import { MediaModelOption } from "./MediaModelOption";
@@ -1818,6 +1820,14 @@ export function Playground() {
                         <BusyPlaceholder category={activeCategory} />
                     )}
                     {result && <ResultPanel result={result} />}
+                    {result && (
+                        <Text size="sm" tone="muted">
+                            Like it?{" "}
+                            <InlineLink href={SOCIAL_LINKS.github.url}>
+                                Star us on GitHub
+                            </InlineLink>
+                        </Text>
+                    )}
                     {apiUrl && (
                         <ApiUrlCard
                             url={

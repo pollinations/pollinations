@@ -11,6 +11,7 @@ import {
     cn,
     ExternalLinkButton,
     ExternalLinkIcon,
+    GitHubIcon,
     Heading,
     type IconProps,
     IconTile,
@@ -30,7 +31,7 @@ import {
 import { modalityBgVar, modalityTextColor } from "@pollinations/ui/gen";
 import { PaidChip } from "@pollinations/ui/wallet";
 import type { ComponentType, ReactNode } from "react";
-import { LINKS } from "../../copy/content/socialLinks";
+import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { useMcpServers, usePlatformStats } from "../../data/publicStats";
 
 type Feature = {
@@ -412,17 +413,34 @@ function Models() {
                     ),
                 )}
             </ul>
-            <ExternalLinkButton
-                href="https://gen.pollinations.ai/docs"
-                size="md"
-                intent="neutral"
-                icon={
-                    <BookIcon aria-hidden="true" className="size-4 shrink-0" />
-                }
-                className="self-start"
-            >
-                Explore the API
-            </ExternalLinkButton>
+            <div className="flex flex-wrap gap-2">
+                <ExternalLinkButton
+                    href="https://gen.pollinations.ai/docs"
+                    size="md"
+                    intent="neutral"
+                    icon={
+                        <BookIcon
+                            aria-hidden="true"
+                            className="size-4 shrink-0"
+                        />
+                    }
+                >
+                    Explore the API
+                </ExternalLinkButton>
+                <ExternalLinkButton
+                    href={SOCIAL_LINKS.github.url}
+                    size="md"
+                    intent="neutral"
+                    icon={
+                        <GitHubIcon
+                            aria-hidden="true"
+                            className="size-4 shrink-0"
+                        />
+                    }
+                >
+                    Open source on GitHub
+                </ExternalLinkButton>
+            </div>
         </FeatureGroup>
     );
 }

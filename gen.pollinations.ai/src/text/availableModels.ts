@@ -1223,10 +1223,6 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["inclusionai/ling-3.0-flash-vl"],
     },
     {
-        name: "tencent/hy3:openrouter:phala",
-        config: portkeyConfig["hy3-openrouter-phala"],
-    },
-    {
         name: "minimax/minimax-m3",
         config: portkeyConfig["accounts/fireworks/models/minimax-m3"],
         transform: fireworksThinkingWithoutCacheControl,

@@ -4189,18 +4189,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000001477,
     },
   },
-  "tencent/hy3:openrouter:phala": {
-    "cost": {
-      "completionTextTokens": 0.0000006752,
-      "promptCachedTokens": 0.0000000422,
-      "promptTextTokens": 0.00000015825,
-    },
-    "price": {
-      "completionTextTokens": 0.0000006752,
-      "promptCachedTokens": 0.0000000422,
-      "promptTextTokens": 0.00000015825,
-    },
-  },
   "tencent/hy4-preview": {
     "cost": {
       "completionTextTokens": 0.000002638555,

@@ -518,10 +518,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "inclusionai/ling-3.0-flash-vl",
         "deepinfra/fp16",
     ),
-    "hy3-openrouter-phala": createPinnedOpenRouterConfig(
-        "tencent/hy3",
-        "phala",
-    ),
     // Reasoning models: explicit max_tokens default below. Without one, the
     // upstream provider's own default applies (Chutes AI defaults to 1024),
     // which reasoning models can burn entirely on their internal thinking

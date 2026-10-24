@@ -215,6 +215,8 @@ export const IMAGE_FALLBACKS = {
         "black-forest-labs/flux.1-schnell:deepinfra": {
             provider: "deepinfra",
             addedDate: new Date("2026-09-01").getTime(),
+            // Per 1024² image; the handler records DeepInfra's reported
+            // charge, which scales with image area.
             cost: { completionImageTokens: 0.0005 },
         },
     },

@@ -3307,7 +3307,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0000075,
     },
   },
-  "perplexity/pplx-decider-v1.1-27b": {
+  "perplexity/pplx-decider-v1.2": {
     "cost": {
       "completionTextTokens": 0,
       "promptTextTokens": 0.00000002,
@@ -3317,7 +3317,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000002,
     },
   },
-  "perplexity/pplx-decider-v1.1-27b:openrouter": {
+  "perplexity/pplx-decider-v1.2:openrouter": {
     "cost": {
       "completionTextTokens": 0,
       "promptTextTokens": 0.0000000211,

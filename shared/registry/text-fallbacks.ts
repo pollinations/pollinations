@@ -13,9 +13,9 @@ import { CHAT_PARAMETERS } from "./text-parameters";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
-    "perplexity/pplx-decider-v1.1-27b": {
+    "perplexity/pplx-decider-v1.2": {
         // Same Perplexity backend; covers gateway failures, not Perplexity outages.
-        "perplexity/pplx-decider-v1.1-27b:openrouter": {
+        "perplexity/pplx-decider-v1.2:openrouter": {
             provider: "openrouter",
             // OpenRouter list price plus its 5.5% credit fee.
             cost: {

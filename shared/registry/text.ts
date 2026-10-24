@@ -1741,13 +1741,14 @@ const TEXT_BASE_SERVICES = {
         contextLength: 8192,
         isSpecialized: true,
     },
-    "perplexity/pplx-decider-v1.1-27b": {
+    "perplexity/pplx-decider-v1.2": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
-        aliases: [],
+        // Perplexity retired V1.1 in favour of V1.2.
+        aliases: ["perplexity/pplx-decider-v1.1-27b"],
         provider: "vercel",
         publisher: "Perplexity",
         category: "decision",
-        addedDate: new Date("2026-10-07").getTime(),
+        addedDate: new Date("2026-10-24").getTime(),
         priceMultiplier: 1, // Billed at cost, no margin.
         paidOnly: true,
         cost: {
@@ -1755,7 +1756,7 @@ const TEXT_BASE_SERVICES = {
             promptTextTokens: perMillion(0.02),
             completionTextTokens: perMillion(0),
         },
-        title: "Decider V1.1 27B",
+        title: "Decider V1.2 27B",
         description:
             "Typed choices, scores and yes/no probabilities over a 262K " +
             "context; post state and questions to /alpha/decisions, or send " +

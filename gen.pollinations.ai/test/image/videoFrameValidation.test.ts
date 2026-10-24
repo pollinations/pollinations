@@ -34,6 +34,7 @@ const VIDEO_FRAME_LIMITS = [
     ["kwaivgi/kling-v3.0-std", 2],
     ["black-forest-labs/flux-3-max", 2],
     ["heygen/heygen-video-1", 1],
+    ["heygen/heygen-video-1:openrouter", 1],
     ["minimax/minimax-h3", 0],
     ["minimax/minimax-h3-max", 2],
     ["minimax/minimax-h3-max-turbo", 2],

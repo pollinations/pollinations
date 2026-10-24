@@ -324,6 +324,64 @@ describe("Fal fallback media models", () => {
         },
     );
 
+    it.each([
+        [
+            [],
+            "heygen/heygen-video/text-to-video",
+            { duration: 7, resolution: "768p", aspect_ratio: "21:9" },
+        ],
+        [
+            ["https://example.com/start.png"],
+            "heygen/heygen-video/image-to-video",
+            {
+                duration: 7,
+                resolution: "768p",
+                image_url: "https://example.com/start.png",
+            },
+        ],
+    ] as const)(
+        "bills HeyGen Video 1 (%j) from fal's units and live price",
+        async (image, endpoint, input) => {
+            const requests = mockFal({
+                video: { url: MEDIA_URL, content_type: "video/mp4" },
+            });
+            const resultPromise = callFalFallbackVideo("a paper boat", {
+                ...baseParams,
+                model: "heygen/heygen-video-1",
+                duration: 7,
+                resolution: "768p",
+                aspectRatio: "21:9",
+                image: [...image],
+            });
+            await vi.advanceTimersByTimeAsync(5_000);
+            const result = await resultPromise;
+
+            expect(requests[0].url).toBe(
+                `https://api.fal.ai/v1/models/pricing?endpoint_id=${encodeURIComponent(endpoint)}`,
+            );
+            expect(requests[1]).toEqual({
+                url: `https://queue.fal.run/${endpoint}`,
+                body: { prompt: "a paper boat", ...input, seed: 42 },
+            });
+            expect(result.trackingData.providerBilling).toEqual({
+                units: 1,
+                unitCost: 0.17,
+            });
+        },
+    );
+
+    it("rejects a HeyGen Video 1 duration outside 5 to 15 seconds on fal", async () => {
+        const requests = mockFal({ video: { url: MEDIA_URL } });
+        await expect(
+            callFalFallbackVideo("a paper boat", {
+                ...baseParams,
+                model: "heygen/heygen-video-1",
+                duration: 4,
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(requests).toHaveLength(0);
+    });
+
     it("omits aspect ratio where Grok 1.5 image-to-video follows the source", async () => {
         const requests = mockFal({
             video: { url: MEDIA_URL, content_type: "video/mp4" },

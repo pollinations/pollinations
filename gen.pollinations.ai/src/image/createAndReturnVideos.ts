@@ -72,6 +72,7 @@ export async function createAndReturnVideo(
         case "x-ai/grok-imagine-video":
         case "x-ai/grok-imagine-video-1.5:fal":
         case "kandinskylab/kandinsky-6.0-lite":
+        case "heygen/heygen-video-1":
             result = await callFalFallbackVideo(prompt, safeParams);
             break;
         case "mirelo/sfx-2.0":
@@ -133,7 +134,7 @@ export async function createAndReturnVideo(
         case "alibaba/happyhorse-1.1":
             result = await callHappyHorseAPI(prompt, safeParams);
             break;
-        case "heygen/heygen-video-1":
+        case "heygen/heygen-video-1:openrouter":
             result = await callHeyGenVideoAPI(prompt, safeParams);
             break;
         case "minimax/minimax-h3":

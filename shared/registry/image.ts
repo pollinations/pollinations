@@ -1984,22 +1984,22 @@ const IMAGE_BASE_SERVICES = {
     },
     "heygen/heygen-video-1": {
         aliases: [],
-        provider: "openrouter",
+        provider: "fal",
         publisher: "HeyGen",
         category: "video",
         addedDate: new Date("2026-09-30").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // OpenRouter HeyGen endpoint, 50% launch discount through October 2026
-        // (list $0.02/s at 480p, $0.03/s at 768p), verified 2026-10-01:
-        // a 5s 480p clip billed 5 x $0.01. Includes the 5.5% OpenRouter
-        // credit fee. Raise to list price when the discount ends.
+        // fal heygen/heygen-video: $0.01/s at 480p and 768p until 2026-10-31,
+        // then $0.02/s (2026-10-24). Charges use fal's reported units at its
+        // live endpoint price, and fal doesn't charge the first frame.
         cost: {
-            completionVideoSeconds: 0.01 * 1.055, // per sec at 480p
+            promptImageTokens: 0,
+            completionVideoSeconds: 0.01, // per sec at 480p
         },
         ...defineCostVariants(
             {
-                "768p": { completionVideoSeconds: 0.015 * 1.055 },
+                "768p": { completionVideoSeconds: 0.01 },
             },
             matchResolution("768p"),
             {

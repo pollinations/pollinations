@@ -228,6 +228,29 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
             camera_fixed: false,
         }),
     },
+    // Same aspect ratios as Seedance; image-to-video follows the first frame.
+    "heygen/heygen-video-1": {
+        textEndpoint: "heygen/heygen-video/text-to-video",
+        imageEndpoint: "heygen/heygen-video/image-to-video",
+        duration: (params) => {
+            const duration = params.duration ?? 5;
+            if (!Number.isInteger(duration) || duration < 5 || duration > 15) {
+                throw UpstreamError.fromProvider(400, {
+                    message:
+                        "HeyGen Video 1 duration must be an integer from 5 to 15 seconds",
+                });
+            }
+            return duration;
+        },
+        input: (params, duration, hasImage) => ({
+            duration,
+            resolution: params.resolution ?? "480p",
+            ...(!hasImage
+                ? { aspect_ratio: aspectRatio(params, SEEDANCE_RATIOS) }
+                : {}),
+        }),
+        providerPriced: true,
+    },
     // Renders 5 seconds only; image-to-video follows the source ratio.
     "kandinskylab/kandinsky-6.0-lite": {
         textEndpoint: "fal-ai/kandinsky6-lite/text-to-video",

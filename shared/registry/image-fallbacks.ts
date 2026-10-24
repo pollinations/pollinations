@@ -252,6 +252,28 @@ export const IMAGE_FALLBACKS = {
             maxReferenceImages: 10,
         },
     },
+    "heygen/heygen-video-1": {
+        "heygen/heygen-video-1:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-24").getTime(),
+            // OpenRouter HeyGen rates with its 50% launch discount (list
+            // $0.02/s at 480p, $0.036/s at 768p), plus the 5.5% credit fee.
+            // The handler bills OpenRouter's reported cost.
+            cost: { completionVideoSeconds: 0.01 * 1.055 },
+            ...defineCostVariants(
+                { "768p": { completionVideoSeconds: 0.018 * 1.055 } },
+                matchResolution("768p"),
+                {
+                    "768p": {
+                        label: "768p",
+                        description:
+                            "Applies when the requested video resolution is 768p.",
+                    },
+                },
+                "480p",
+            ),
+        },
+    },
     "x-ai/grok-imagine-video": {
         "x-ai/grok-imagine-video:openrouter": {
             provider: "openrouter",

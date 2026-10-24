@@ -1,0 +1,113 @@
+{
+  "date": "2026-10-21",
+  "period_start": "2026-10-21",
+  "period_end": "2026-10-21",
+  "title": "A home for your apps, and dates that match your day",
+  "summary": "My Apps arrived, Polli got better at follow-ups, and a run of fixes made model requests and account activity easier to trust.\n\nEnter added My Apps for signed-in people whose linked GitHub account has community catalog listings. Activity now uses the browser's local timezone for charts, totals, navigation, and CSV downloads. Smaller fixes preserve model filters when clearing search and let Play retain square Kling video selections.\n\nPolli now carries successful tool lookups into Discord follow-up answers within the same thread and requester, and checks again before contradicting an earlier tool-supported claim. The CLI also reports wallet balances more accurately in payment errors and uploads the correct byte length from pipes. The agent guide gained measured sandbox and tooling limits.\n\nInkling Small now routes through DeepInfra on OpenRouter to address 502 failures. The Messages API raises token limits below 16 for provider compatibility, fixing Claude Code model checks without changing limits on other routes. Fresh image, audio, and 3D generations now return X-Cache: MISS rather than HIT. Text API docs explain when identical requests may receive cached answers.",
+  "pr_count": 18,
+  "prs": [
+    {
+      "number": 16906,
+      "date": "2026-10-21"
+    },
+    {
+      "number": 17450,
+      "date": "2026-10-21"
+    },
+    {
+      "number": 17650,
+      "date": "2026-10-21"
+    },
+    {
+      "number": 17686,
+      "date": "2026-10-21"
+    },
+    {
+      "number": 17741,
+      "date": "2026-10-21"
+    },
+    {
+      "number": 17928,
+      "date": "2026-10-21"
+    },
+    {
+      "number": 17960,
+      "date": "2026-10-21"
+    },
+    {
+      "number": 17962,
+      "date": "2026-10-21"
+    },
+    {
+      "number": 17968,
+      "date": "2026-10-21"
+    },
+    {
+      "number": 17983,
+      "date": "2026-10-21"
+    },
+    {
+      "number": 17984,
+      "date": "2026-10-21"
+    },
+    {
+      "number": 17990,
+      "date": "2026-10-21"
+    },
+    {
+      "number": 17991,
+      "date": "2026-10-21"
+    },
+    {
+      "number": 17996,
+      "date": "2026-10-21"
+    },
+    {
+      "number": 18004,
+      "date": "2026-10-21"
+    },
+    {
+      "number": 18008,
+      "date": "2026-10-21"
+    },
+    {
+      "number": 18011,
+      "date": "2026-10-21"
+    },
+    {
+      "number": 18012,
+      "date": "2026-10-21"
+    }
+  ],
+  "generated_at": "2026-10-24T17:38:32.201124+00:00",
+  "daily": [
+    {
+      "emoji": "📱",
+      "title": "My Apps in Enter",
+      "text": "If your linked GitHub account has community catalog listings, you can see them in My Apps. Listings show app details and links, with last-24-hour request counts for Pollen Pay apps.",
+      "prs": [
+        17928
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Your catalog apps by API",
+      "text": "Signed-in accounts can use `GET /account/apps` to retrieve their community catalog listings, newest approval first. It needs no extra permission and returns an empty array if the account has no linked GitHub user or listings. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17928
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Polli keeps its receipts",
+      "text": "In Discord, Polli can use recent successful tool lookups when answering follow-up questions from the same person in a thread. It makes a fresh lookup before contradicting an earlier tool-supported claim.",
+      "prs": [
+        16906
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": []
+}

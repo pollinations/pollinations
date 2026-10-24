@@ -1957,7 +1957,7 @@ test("audio cards distinguish clips, audio tokens, characters, and UTF-8 bytes",
         {
             direction: "output",
             kind: "audioOut",
-            price: "0.1",
+            price: "0.08",
             unit: "character",
         },
     ]);

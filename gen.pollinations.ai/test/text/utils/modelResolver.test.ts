@@ -1025,6 +1025,19 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("pins Mistral Small 4's backup to its quoted standard ZDR endpoint", () => {
+        const result = resolveModelConfig(messages, {
+            model: "mistralai/mistral-small-4:openrouter",
+        });
+        expect(result.options.model).toBe("mistralai/mistral-small-2603");
+        expect(result.options.max_tokens).toBe(64000);
+        expect(result.options.provider).toEqual({
+            only: ["mistral/zdr"],
+            ignore: ["mistral/eu", "mistral/us", "cloudflare"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("routes Mistral Small 4 to Mistral's direct API", () => {
         const result = resolveModelConfig(messages, { model: "mistral" });
 

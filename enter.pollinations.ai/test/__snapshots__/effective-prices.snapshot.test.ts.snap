@@ -1612,11 +1612,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "google/gemma-4-31b-it": {
     "cost": {
       "completionTextTokens": 0.000000422,
+      "promptCachedTokens": 0.0000001477,
       "promptImageTokens": 0.0000001477,
       "promptTextTokens": 0.0000001477,
     },
     "price": {
       "completionTextTokens": 0.000000422,
+      "promptCachedTokens": 0.0000001477,
       "promptImageTokens": 0.0000001477,
       "promptTextTokens": 0.0000001477,
     },

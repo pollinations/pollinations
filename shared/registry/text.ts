@@ -2817,7 +2817,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "nvidia/nemotron-3.5-lightning": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.deepinfraNemotron,
         aliases: ["nemotron-3.5-lightning"],
         provider: "deepinfra",
         publisher: "NVIDIA",

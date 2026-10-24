@@ -13,17 +13,6 @@ import { CHAT_PARAMETERS } from "./text-parameters";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
-    "openai/gpt-4o-mini": {
-        "openai/gpt-4o-mini:openrouter:openai": {
-            provider: "openrouter",
-            priceMultiplier: 1,
-            cost: {
-                promptTextTokens: perMillion(0.15) * 1.055,
-                promptCachedTokens: perMillion(0.075) * 1.055,
-                completionTextTokens: perMillion(0.6) * 1.055,
-            },
-        },
-    },
     "perplexity/pplx-decider-v1.2": {
         // Same Perplexity backend; covers gateway failures, not Perplexity outages.
         "perplexity/pplx-decider-v1.2:openrouter": {
@@ -101,6 +90,17 @@ export const TEXT_FALLBACKS = {
                 promptTextTokens: perMillion(0.2),
                 promptCachedTokens: perMillion(0.04),
                 completionTextTokens: perMillion(1.15),
+            },
+        },
+    },
+    "openai/gpt-4o-mini": {
+        "openai/gpt-4o-mini:openrouter:openai": {
+            provider: "openrouter",
+            priceMultiplier: 1,
+            cost: {
+                promptTextTokens: perMillion(0.15) * 1.055,
+                promptCachedTokens: perMillion(0.075) * 1.055,
+                completionTextTokens: perMillion(0.6) * 1.055,
             },
         },
     },

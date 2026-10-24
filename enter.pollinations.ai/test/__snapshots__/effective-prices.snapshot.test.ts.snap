@@ -3338,6 +3338,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000000975,
     },
   },
+  "openai/text-embedding-3-large:openai": {
+    "cost": {
+      "promptTextTokens": 0.00000013,
+    },
+    "price": {
+      "promptTextTokens": 0.00000013,
+    },
+  },
   "openai/text-embedding-3-small": {
     "cost": {
       "promptTextTokens": 0.00000002,

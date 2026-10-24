@@ -86,7 +86,8 @@ function createEmbeddingMocks() {
             },
             reset: () => {},
         } satisfies MockAPI<Record<string, never>>,
-        azureOpenAI: createAzureOpenAIMock(),
+        azureOpenAI: createOpenAIMock(),
+        openai: createOpenAIMock("api.openai.com"),
         cohereAzure: createCohereAzureMock(),
         fireworks: createHostedMock(FIREWORKS_HOST),
         deepinfra: createHostedMock(DEEPINFRA_HOST),
@@ -146,7 +147,7 @@ function createVertexMock(): MockAPI<{ requests: unknown[]; urls: string[] }> {
     };
 }
 
-function createAzureOpenAIMock(): MockAPI<{
+function createOpenAIMock(host = AZURE_HOST): MockAPI<{
     requests: unknown[];
     urls: string[];
     apiKeys: (string | null)[];
@@ -168,7 +169,7 @@ function createAzureOpenAIMock(): MockAPI<{
     return {
         state,
         handlerMap: {
-            [AZURE_HOST]: async (request) => {
+            [host]: async (request) => {
                 const body = (await request.json()) as {
                     input?: string[];
                     dimensions?: number;
@@ -408,6 +409,78 @@ describe("POST /v1/embeddings", () => {
             });
         });
     }
+
+    test("keeps the Azure large quote during exact-model OpenAI recovery", async ({
+        apiKey,
+        mocks,
+    }) => {
+        await mocks.enable(
+            "tinybird",
+            "tinybirdStats",
+            "azureOpenAI",
+            "openai",
+        );
+        mocks.azureOpenAI.state.failModel = "text-embedding-3-large";
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({
+                model: "openai/text-embedding-3-large",
+                input: ["Hello", "World"],
+                dimensions: 256,
+                encoding_format: "base64",
+            }),
+        });
+        expect(response.status).toBe(200);
+        expect(response.headers.get("x-model-used")).toBe(
+            "openai/text-embedding-3-large:openai",
+        );
+        const data = await response.json<{
+            model: string;
+            data: { index: number; embedding: string }[];
+            usage: { prompt_tokens: number };
+        }>();
+        // Embedding responses identify the served route, matching existing fallbacks.
+        expect(data.model).toBe("openai/text-embedding-3-large:openai");
+        expect(data.data.map((item) => item.index)).toEqual([0, 1]);
+        for (const [index, item] of data.data.entries()) {
+            const bytes = Uint8Array.from(atob(item.embedding), (char) =>
+                char.charCodeAt(0),
+            );
+            expect(bytes.byteLength).toBe(256 * 4);
+            expect(new DataView(bytes.buffer).getFloat32(0, true)).toBe(index);
+        }
+        expect(data.usage.prompt_tokens).toBe(8);
+        expect(mocks.openai.state.urls).toEqual([
+            "https://api.openai.com/v1/embeddings",
+        ]);
+        expect(mocks.openai.state.authorization).toEqual([
+            "Bearer test-openai-api-key",
+        ]);
+        expect(mocks.openai.state.apiKeys).toEqual([null]);
+        expect(mocks.openai.state.requests).toEqual([
+            {
+                model: "text-embedding-3-large",
+                input: ["Hello", "World"],
+                dimensions: 256,
+            },
+        ]);
+        await wait();
+        const billed = mocks.tinybird.state.events.filter(
+            (event) => event.isBilledUsage,
+        );
+        expect(billed).toHaveLength(1);
+        expect(billed[0]).toMatchObject({
+            modelRequested: "openai/text-embedding-3-large",
+            modelUsed: "openai/text-embedding-3-large:openai",
+            tokenCountPromptText: 8,
+            totalCost: 1.04e-6,
+            totalPrice: 7.8e-7,
+        });
+    });
 
     test("rejects Gemini task hints without text content", () => {
         expect(() => applyGeminiTaskInstruction([], "RETRIEVAL_QUERY")).toThrow(

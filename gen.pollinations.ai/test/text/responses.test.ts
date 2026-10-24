@@ -335,6 +335,21 @@ describe("direct Responses transport", () => {
         });
     });
 
+    it("keeps gpt-5.6-terra recovery on Standard in native Responses", () => {
+        const input = request({
+            model: "openai/gpt-5.6-terra:openai",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct OpenAI target");
+        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
+            model: "gpt-5.6-terra",
+            service_tier: "default",
+            store: false,
+        });
+    });
+
     it("accepts replayed encrypted reasoning but not stored item references", () => {
         const parsed = CreateResponseRequestSchema.parse({
             model: "qwen-large",

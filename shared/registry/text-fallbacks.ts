@@ -338,6 +338,12 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "openai/gpt-5.6-terra": {
+        "openai/gpt-5.6-terra:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
+        },
+    },
     "deepseek/deepseek-v4.1-flash": {
         "deepseek/deepseek-v4.1-flash:fireworks": {
             supportedParameters: CHAT_PARAMETERS.fireworksReasoning,

@@ -287,6 +287,12 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
+        name: "openai/gpt-5.6-terra:openai",
+        config: portkeyConfig["gpt-5.6-terra-openai"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
         name: "openai/gpt-5.6-terra",
         config: portkeyConfig["gpt-5.6-terra"],
         transform: omitOpenAISampling,

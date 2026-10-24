@@ -493,6 +493,20 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins gpt-5.6-terra recovery to exact OpenAI Standard", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5.6-terra:openai",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("gpt-5.6-terra");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
+            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
+        });
+    });
+
     it("pins Ling 3.0 Flash VL to DeepInfra fp16 on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "inclusionai/ling-3.0-flash-vl",

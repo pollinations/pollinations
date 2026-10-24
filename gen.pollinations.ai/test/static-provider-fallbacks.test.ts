@@ -1414,6 +1414,31 @@ describe("static provider fallbacks", () => {
         });
     });
 
+    it("keeps the Azure gpt-5.6-terra quote when OpenAI serves it", () => {
+        const model = "openai/gpt-5.6-terra";
+        expect(TEXT_SERVICES[model].fallbacks).toEqual([
+            "openai/gpt-5.6-terra:openai",
+        ]);
+        expect(TEXT_SERVICES["openai/gpt-5.6-terra:openai"]).toMatchObject({
+            provider: "openai",
+            priceMultiplier: 1,
+            hidden: true,
+        });
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                "promptTextTokens": 1000,
+                "promptCachedTokens": 200,
+                "completionTextTokens": 100,
+                "promptCacheWriteTokens": 50,
+            },
+            servedBy: TEXT_SERVICES["openai/gpt-5.6-terra:openai"],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.003365, 12);
+        expect(billed.price.totalPrice).toBe(0.00252375);
+    });
+
     it("keeps the MiniMax M3 quote when DeepInfra serves cached and reasoning tokens", () => {
         const primary = TEXT_SERVICES["minimax/minimax-m3"];
         const fallback = TEXT_SERVICES["minimax/minimax-m3:deepinfra"];

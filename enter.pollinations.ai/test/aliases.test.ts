@@ -174,7 +174,6 @@ test("Azure models use the approved public-price multipliers", () => {
     const azureMultiplierOverrides = new Map<string, number>([
         ["openai/gpt-5.6-sol", 1 / 3],
         ["openai/gpt-6-astra", 1],
-        ["openai/gpt-6-astra:azure:datazone", 1],
         ["openai/gpt-6-sol", 1],
         ["openai/gpt-6.1-sol", 1],
         ["openai/gpt-6-luna", 1],

@@ -616,6 +616,9 @@ describe("resolveModelConfig", () => {
     });
 
     it("pins Qwen3.8 27B to Chutes on OpenRouter without fallback", () => {
+        expect(
+            findModelByName("qwen/qwen3.8-27b:openrouter:reka-fp8"),
+        ).toBeNull();
         const result = resolveModelConfig(messages, {
             model: "qwen3.8-27b",
         });

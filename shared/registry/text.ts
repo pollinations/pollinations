@@ -1440,10 +1440,11 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 0.75,
         paidOnly: false,
         // Azure Global Standard meters "Grok 4.2 Inp/Outp glbl" ($1.25 / $2.50
-        // per 1M, effective 2026-05-01), the same rates as grok-4.3.
+        // per 1M, effective 2026-05-01). Azure has no Grok 4.2 cached meter:
+        // cached tokens bill on the input meter.
         cost: {
             promptTextTokens: perMillion(1.25),
-            promptCachedTokens: perMillion(0.2),
+            promptCachedTokens: perMillion(1.25),
             promptImageTokens: perMillion(1.25),
             completionTextTokens: perMillion(2.5),
         },

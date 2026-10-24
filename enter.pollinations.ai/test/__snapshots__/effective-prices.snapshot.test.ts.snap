@@ -4141,13 +4141,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "x-ai/grok-4.20": {
     "cost": {
       "completionTextTokens": 0.0000025,
-      "promptCachedTokens": 0.0000002,
+      "promptCachedTokens": 0.00000125,
       "promptImageTokens": 0.00000125,
       "promptTextTokens": 0.00000125,
     },
     "price": {
       "completionTextTokens": 0.000001875,
-      "promptCachedTokens": 0.00000015,
+      "promptCachedTokens": 0.0000009375,
       "promptImageTokens": 0.0000009375,
       "promptTextTokens": 0.0000009375,
     },

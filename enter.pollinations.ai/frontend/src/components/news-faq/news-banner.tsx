@@ -48,8 +48,9 @@ type Announcement = {
 };
 
 /**
- * Newest first. Cards share a row, so keep them even: a title of a few
- * words, one sentence of about 80 characters and a two- or three-word button.
+ * Newest first; only the first four current ones show. Cards share a row, so
+ * keep them even: a title of a few words, one sentence of about 80 characters
+ * and a two- or three-word button.
  */
 const ANNOUNCEMENTS: Announcement[] = [
     {
@@ -109,7 +110,7 @@ const ANNOUNCEMENTS: Announcement[] = [
 ];
 
 export const currentAnnouncements = (today: string) =>
-    ANNOUNCEMENTS.filter(({ until }) => until >= today);
+    ANNOUNCEMENTS.filter(({ until }) => until >= today).slice(0, 4);
 
 function changeChip(
     { action, date, changes, status }: ModelNews,

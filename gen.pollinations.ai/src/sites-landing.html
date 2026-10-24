@@ -43,6 +43,17 @@
             mode = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
         }
         if (mode === "dark") document.documentElement.classList.add("dark");
+        // Start the hero art for this light before the app bundle, as on pollinations.ai.
+        const base = `/art/sites-hero-${mode === "dark" ? "night" : "day"}`;
+        const preload = document.createElement("link");
+        preload.rel = "preload";
+        preload.as = "image";
+        preload.type = "image/webp";
+        preload.fetchPriority = "high";
+        preload.imageSrcset = `${base}-1024.webp 1024w, ${base}.webp 2048w`;
+        preload.imageSizes = "(max-width: 1152px) 100vw, 1152px";
+        preload.href = `${base}.webp`;
+        document.head.appendChild(preload);
     })();
 </script>
 <style>
@@ -64,12 +75,27 @@ body {
    as on the model monitor. */
 .shell { max-width: 72rem; margin: 0 auto; padding: 0 1rem; }
 .hero-copy { display: flex; flex-direction: column; gap: 1.5rem; }
-.hero-copy p { text-wrap: balance; }
-.bee { width: 7.5rem; height: auto; rotate: -6deg; user-select: none; }
+.hero-copy :is(h1, p) { text-wrap: balance; }
 .row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
 /* Separate panels 12px apart, like enter's pages. */
 .panels { display: flex; flex-direction: column; gap: 0.75rem; }
-.hero { display: flex; flex-direction: column; gap: 1.5rem; }
+/* The hero art, as on pollinations.ai (HeroScene + .hero-scene): a banner
+   above the copy, bled to the panel's edges; from lg up behind the copy at the
+   top right, its edges masked into the card. */
+.hero { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 1.5rem; }
+.hero-scene {
+    display: block;
+    width: calc(100% + 2rem);
+    max-width: none;
+    margin: -1rem -1rem 0;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    object-position: right;
+    pointer-events: none;
+    user-select: none;
+    mask-image: linear-gradient(to bottom, black 65%, transparent 100%);
+}
+.hero-copy { position: relative; }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; }
 .card-head { display: flex; align-items: center; gap: 0.75rem; }
 .address {
@@ -81,18 +107,13 @@ body {
     padding: 0 1.125rem;
     border-radius: 0.75rem;
     background: var(--polli-color-surface-opaque);
-    color: var(--polli-color-text-base);
     font-size: 1.0625rem;
     font-weight: 500;
 }
 .address svg { width: 1rem; height: 1rem; flex-shrink: 0; color: var(--polli-color-text-muted); }
-/* The package's info blue (links, edits), like a browser's text selection. */
-.address mark {
-    padding: 0.125rem 0.1875rem;
-    border-radius: 0.25rem;
-    background: var(--polli-color-info-bg-light);
-    color: var(--polli-color-info-text);
-}
+/* Like a browser bar: the part that is yours reads strong, the rest dims. */
+.address { color: var(--polli-color-text-muted); }
+.address mark { background: none; color: var(--polli-color-text-strong); font-weight: 600; }
 code.inline { font-family: var(--polli-font-mono); font-size: 0.9em; color: var(--polli-color-text-strong); }
 footer {
     display: flex;
@@ -111,10 +132,25 @@ footer nav { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
 @media (min-width: 640px) {
     .shell { padding-inline: 1.5rem; }
 }
-/* Polli sits beside the copy once there is room for both. */
-@media (min-width: 1024px) {
-    .hero { flex-direction: row; align-items: center; justify-content: space-between; }
-    .bee { order: 1; width: 13.75rem; flex-shrink: 0; }
+/* The panel's padding grows at sm (polli:sm:p-7). */
+@media (min-width: 40rem) {
+    .hero-scene { width: calc(100% + 3.5rem); margin: -1.75rem -1.75rem 0; aspect-ratio: 2 / 1; }
+}
+/* Beside the long headline only once both fit, as on pollinations.ai's home. */
+@media (min-width: 64rem) {
+    .hero-scene {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 76%;
+        margin: 0;
+        aspect-ratio: auto;
+        mask-image:
+            linear-gradient(to right, transparent 38%, black 62%),
+            linear-gradient(to bottom, black 55%, transparent 100%);
+        mask-composite: intersect;
+    }
+    .hero-copy { max-width: 72%; }
 }
 </style>
 </head>
@@ -142,7 +178,7 @@ await new Promise((resolve, reject) => {
 const {
     AppHeader, AppIcon, BookIcon, CloudUploadIcon, CodeBlock, CodeIcon,
     ColorModeToggle, ContentHeader, ExternalLinkButton, GlobeIcon, Heading, IconTile,
-    InlineLink, LinkCard, LockIcon, McpIcon, Section, Surface, TerminalIcon, Text,
+    InlineLink, LinkCard, LockIcon, McpIcon, Section, Surface, TerminalIcon, Text, useColorMode,
 } = window.PollinationsUI;
 const h = React.createElement;
 const code = (text) => h("code", { className: "inline" }, text);
@@ -152,7 +188,7 @@ const CLI_URL = "https://www.npmjs.com/package/@pollinations/cli";
 const DASHBOARD = "https://enter.pollinations.ai";
 
 // The address the commands below publish to, as a browser bar shows it; the
-// name is marked like selected text: the part that is yours.
+// name, the part that is yours, is marked.
 const ADDRESS = h("p", { className: "address" },
     h(LockIcon, { "aria-hidden": "true" }),
     h("span", { className: "polli:sr-only" }, "Each site is served at "),
@@ -222,6 +258,8 @@ function Card({ title, body, icon, color }) {
 }
 
 function Page() {
+    // Day art in light mode, night art in dark mode, as on pollinations.ai.
+    const art = `/art/sites-hero-${useColorMode().isDark ? "night" : "day"}`;
     return [
         // The app name on top, like the model monitor's header.
         h(AppHeader, { key: "header", appName: "pollinations.app", navLabel: "pollinations.app links", autoHide: true, innerClassName: "polli:max-w-6xl" },
@@ -233,7 +271,17 @@ function Page() {
         h("div", { key: "content", className: "shell" },
             h("main", { className: "panels" },
                 h(Surface, { as: "section", variant: "panel", className: "hero" },
-                    h("img", { className: "bee", src: `${UI}/brand/polli/polli.png`, alt: "", width: 540, height: 527 }),
+                    h("img", {
+                        className: "hero-scene",
+                        src: `${art}.webp`,
+                        srcSet: `${art}-1024.webp 1024w, ${art}.webp 2048w`,
+                        sizes: "(max-width: 1152px) 100vw, 1152px",
+                        alt: "",
+                        "aria-hidden": "true",
+                        width: 2048,
+                        height: 854,
+                        fetchPriority: "high",
+                    }),
                     h("div", { className: "hero-copy" },
                         h(ContentHeader, {
                             variant: "page",

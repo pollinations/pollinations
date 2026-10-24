@@ -177,14 +177,6 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
-    it("keeps MiniMax M2.7 on its primary without a same-gateway fallback", () => {
-        expect(TEXT_SERVICES["minimax/minimax-m2.7"]).not.toHaveProperty(
-            "fallbacks",
-        );
-        expect(TEXT_SERVICES).not.toHaveProperty(
-            "minimax/minimax-m2.7:openrouter:minimax",
-        );
-    });
 
     it("uses current Worker bindings for AWS and DeepInfra fallback credentials", () => {
         try {
@@ -339,6 +331,15 @@ describe("static provider fallbacks", () => {
             promptCachedTokens: (0.03 / 1_000_000) * 1.055,
             completionTextTokens: (0.5 / 1_000_000) * 1.055,
         });
+    });
+
+    it("keeps MiniMax M2.7 on its primary without a same-gateway fallback", () => {
+        expect(TEXT_SERVICES["minimax/minimax-m2.7"]).not.toHaveProperty(
+            "fallbacks",
+        );
+        expect(TEXT_SERVICES).not.toHaveProperty(
+            "minimax/minimax-m2.7:openrouter:minimax",
+        );
     });
 
     it.each(["qwen/qwen3.7-flash", "qwen/qwen3.8-flash", "qwen/qwen3.8-max"])(

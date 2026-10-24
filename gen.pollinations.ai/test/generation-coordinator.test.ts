@@ -619,6 +619,68 @@ describe("GenerationCoordinator", () => {
         expect(result).toEqual({ status: "cached" });
     });
 
+    it.each(["startAndWait", "submit"] as const)(
+        "keeps RPC responsive during a stalled %s cache check and rechecks a stale miss",
+        async (method) => {
+            const stub = env.GENERATION_COORDINATOR.getByName(
+                `slow-cache-${crypto.randomUUID()}`,
+            );
+            const job = testJob(`slow-cache-${crypto.randomUUID()}`);
+            let lookupStarted = false;
+            let release!: () => void;
+            const blocked = new Promise<void>((resolve) => {
+                release = resolve;
+            });
+            await runInDurableObject(stub, (coordinator) => {
+                const bucket = Reflect.get(coordinator, "env")
+                    .TEXT_BUCKET as R2Bucket;
+                const head = bucket.head.bind(bucket);
+                vi.spyOn(bucket, "head").mockImplementationOnce(async (key) => {
+                    const result = await head(key);
+                    lookupStarted = true;
+                    await blocked;
+                    return result;
+                });
+            });
+
+            const pending = stub[method](job);
+            let responsive = false;
+            try {
+                await vi.waitFor(() => expect(lookupStarted).toBe(true));
+                responsive = await Promise.race([
+                    stub.status("user-1").then(() => true),
+                    new Promise<false>((resolve) =>
+                        setTimeout(() => resolve(false), 1000),
+                    ),
+                ]);
+                // An earlier execution can finish while this caller's cache
+                // lookup is in flight. The alarm must recheck before executing.
+                await env.TEXT_BUCKET.put(job.cache.key, "completed-result");
+            } finally {
+                release();
+            }
+
+            expect(await pending).toEqual(
+                method === "submit" ? "pending" : { status: "cached" },
+            );
+            if (method === "submit") {
+                await vi.waitFor(async () =>
+                    expect(await stub.status("user-1")).toMatchObject({
+                        status: "succeeded",
+                    }),
+                );
+            }
+            await runInDurableObject(stub, async (_coordinator, state) => {
+                expect(await state.storage.get("job")).toBeUndefined();
+                await state.storage.deleteAlarm();
+            });
+            expect(
+                await (await env.TEXT_BUCKET.get(job.cache.key))?.text(),
+            ).toBe("completed-result");
+            expect(responsive).toBe(true);
+        },
+    );
+
     it("joins concurrent callers for the same cache identity", async () => {
         vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
         const stub = env.GENERATION_COORDINATOR.getByName(

@@ -97,8 +97,10 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         let immediate: GenerationOutcome | undefined;
         let wait: Promise<GenerationOutcome> | undefined;
 
+        // External cache I/O must not hold the 30-second concurrency gate.
+        // The alarm rechecks a stale miss before executing the admitted job.
+        const cachePresent = await cacheExists(this.env, job.cache);
         await this.ctx.blockConcurrencyWhile(async () => {
-            const cachePresent = await cacheExists(this.env, job.cache);
             const stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
 
             if (cachePresent) {
@@ -136,8 +138,8 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         body?: ReadableStream<Uint8Array>,
     ): Promise<AsyncJobRecord["status"]> {
         let status: AsyncJobRecord["status"] = "pending";
+        const cachePresent = await cacheExists(this.env, job.cache);
         await this.ctx.blockConcurrencyWhile(async () => {
-            const cachePresent = await cacheExists(this.env, job.cache);
             const stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
             const previous = await this.readRecord();
             const sameRun = stored && previous?.status === "pending";

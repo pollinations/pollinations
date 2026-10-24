@@ -230,6 +230,12 @@ export const TEXT_FALLBACKS = {
     "openai/gpt-6-sol": {
         "openai/gpt-6-sol:openai": { provider: "openai" },
     },
+    "openai/gpt-5.4": {
+        "openai/gpt-5.4:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
+        },
+    },
     "openai/gpt-6.1-sol": {
         "openai/gpt-6.1-sol:openai": { provider: "openai" },
     },

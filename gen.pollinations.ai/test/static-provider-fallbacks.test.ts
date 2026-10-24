@@ -1252,6 +1252,30 @@ describe("static provider fallbacks", () => {
         ).toBe(true);
     });
 
+    it("keeps the Azure gpt-5.4 quote when OpenAI serves it", () => {
+        const model = "openai/gpt-5.4";
+        expect(TEXT_SERVICES[model].fallbacks).toEqual([
+            "openai/gpt-5.4:openai",
+        ]);
+        expect(TEXT_SERVICES["openai/gpt-5.4:openai"]).toMatchObject({
+            provider: "openai",
+            priceMultiplier: 1,
+            hidden: true,
+        });
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                "promptTextTokens": 1000,
+                "promptCachedTokens": 200,
+                "completionTextTokens": 100,
+            },
+            servedBy: TEXT_SERVICES["openai/gpt-5.4:openai"],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.00405, 12);
+        expect(billed.price.totalPrice).toBe(0.0030375);
+    });
+
     it("falls back from Step 3.7 Flash on Novita to StepFun on Vercel at the same rates", () => {
         const primary = TEXT_SERVICES["stepfun/step-3.7-flash"];
         const fallback = TEXT_SERVICES["stepfun/step-3.7-flash:vercel"];

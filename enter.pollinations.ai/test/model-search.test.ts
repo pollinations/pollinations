@@ -17,6 +17,7 @@ describe("model search", () => {
             "embedding",
             "agent",
             "mcp",
+            "sandbox",
         ] as const) {
             expect(validateModelSearch({ category }).category).toBe(category);
         }
@@ -84,7 +85,15 @@ describe("model search", () => {
             "source:community",
         );
         expect(
-            validateModelSearch({ agentQ: " capability:agent ", mcpQ: "  " }),
-        ).toMatchObject({ agentQ: "capability:agent", mcpQ: undefined });
+            validateModelSearch({
+                agentQ: " capability:agent ",
+                mcpQ: "  ",
+                sandboxQ: " azure ",
+            }),
+        ).toMatchObject({
+            agentQ: "capability:agent",
+            mcpQ: undefined,
+            sandboxQ: "azure",
+        });
     });
 });

@@ -65,6 +65,7 @@ export const sectionLabels: Record<SectionType, string> = {
     embedding: "Embedding",
     agent: "Agents",
     mcp: "MCPs",
+    sandbox: "Sandboxes",
 };
 
 // --- Tab content ---

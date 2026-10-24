@@ -1,26 +1,38 @@
 #!/usr/bin/env node
 // Builds the Azure templates' image and imports it into each sandbox group
-// given, as the disk image gen's AZURE_SANDBOX_IMAGE names there. It all runs
-// on Azure: a builder box gets this checkout's ../e2b and this folder, builds
+// gen's wrangler.toml names (AZURE_SANDBOX_GROUP_URL), then writes the new
+// image ids into its AZURE_SANDBOX_IMAGE lines. It all runs on Azure: a
+// builder box gets this checkout's ../e2b and this folder, builds
 // ../e2b/e2b.Dockerfile on what E2B's builder adds (e2b-base.Dockerfile), then
 // the Dockerfile here, and serves the result
 // from a registry on a port of its own, which Azure imports from. Then a box
-// from the image must start envd with its token before the ids are printed.
-// Needs `az login` with the Data Owner role on the groups.
+// from the image must start envd with its token before its id is written.
+// Needs `az login` with the Data Owner role on the groups; CI logs in as the
+// pollinations-ci-sandbox-image app (deploy-azure-sandbox-image.yml).
 //
-//   node operations/infrastructure/azure-sandboxes/build.mjs <group-url>...
-//
-// A group URL is the sandbox group's data plane:
-// https://management.<region>.azuredevcompute.io/subscriptions/<sub>/resourceGroups/<rg>/sandboxGroups/<group>
+//   node operations/infrastructure/azure-sandboxes/build.mjs
 import { execFileSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
+import { readFileSync, writeFileSync } from "node:fs";
 
-const groups = process.argv.slice(2);
-if (!groups.length) {
-    console.error("usage: build.mjs <group-url>...");
-    process.exit(1);
-}
 const here = new URL(".", import.meta.url).pathname;
+const wrangler = `${here}../../../gen.pollinations.ai/wrangler.toml`;
+const groups = [
+    ...readFileSync(wrangler, "utf8").matchAll(
+        /^AZURE_SANDBOX_GROUP_URL = "(.+)"$/gm,
+    ),
+].map(([, url]) => url);
+
+// The image line follows its group's line in each environment's block.
+function pin(group, image) {
+    const lines = readFileSync(wrangler, "utf8").split("\n");
+    const at = lines.indexOf(`AZURE_SANDBOX_GROUP_URL = "${group}"`) + 1;
+    if (!lines[at]?.startsWith("AZURE_SANDBOX_IMAGE = ")) {
+        throw new Error(`no AZURE_SANDBOX_IMAGE line after ${group}`);
+    }
+    lines[at] = `AZURE_SANDBOX_IMAGE = "${image}"`;
+    writeFileSync(wrangler, lines.join("\n"));
+}
 const commit = execFileSync(
     "git",
     ["-C", here, "rev-parse", "--short", "HEAD"],
@@ -198,6 +210,7 @@ try {
             image = await azure(`${group}/diskimages/${image.id}`);
         }
         await smokeTest(group, image.id);
+        pin(group, image.id);
         console.log(`${group}\n  AZURE_SANDBOX_IMAGE = "${image.id}"`);
     }
 } finally {

@@ -838,6 +838,30 @@ describe("static provider fallbacks", () => {
         }
     });
 
+    it("keeps the Azure gpt-5.4-nano quote when OpenAI serves it", () => {
+        const model = "openai/gpt-5.4-nano";
+        expect(TEXT_SERVICES[model].fallbacks).toEqual([
+            "openai/gpt-5.4-nano:openai",
+        ]);
+        expect(TEXT_SERVICES["openai/gpt-5.4-nano:openai"]).toMatchObject({
+            provider: "openai",
+            priceMultiplier: 1,
+            hidden: true,
+        });
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                "promptTextTokens": 1000,
+                "promptCachedTokens": 200,
+                "completionTextTokens": 100,
+            },
+            servedBy: TEXT_SERVICES["openai/gpt-5.4-nano:openai"],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.000329, 12);
+        expect(billed.price.totalPrice).toBe(0.00024675);
+    });
+
     it("keeps Jev's lower Vercel quote when OpenRouter serves it", () => {
         const model = "typesafe/jev-1.13";
         expect(TEXT_SERVICES[model].fallbacks).toEqual([
@@ -1186,30 +1210,6 @@ describe("static provider fallbacks", () => {
             for (const route of routes)
                 expect(publicAudio.has(route)).toBe(false);
         }
-    });
-
-    it("keeps the Azure gpt-5.4-nano quote when OpenAI serves it", () => {
-        const model = "openai/gpt-5.4-nano";
-        expect(TEXT_SERVICES[model].fallbacks).toEqual([
-            "openai/gpt-5.4-nano:openai",
-        ]);
-        expect(TEXT_SERVICES["openai/gpt-5.4-nano:openai"]).toMatchObject({
-            provider: "openai",
-            priceMultiplier: 1,
-            hidden: true,
-        });
-        const billed = calculateUsageBilling({
-            model,
-            usage: {
-                "promptTextTokens": 1000,
-                "promptCachedTokens": 200,
-                "completionTextTokens": 100,
-            },
-            servedBy: TEXT_SERVICES["openai/gpt-5.4-nano:openai"],
-            quotedBy: TEXT_SERVICES[model],
-        });
-        expect(billed.cost.totalCost).toBeCloseTo(0.000329, 12);
-        expect(billed.price.totalPrice).toBe(0.00024675);
     });
 
     it("charges SiliconFlow's reported cache hits at its full input rate", () => {

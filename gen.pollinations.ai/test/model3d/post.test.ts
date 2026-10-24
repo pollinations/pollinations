@@ -248,6 +248,39 @@ test("POST /3d sends JSON image and seed to the existing Rodin provider path", a
     });
 }, 10_000);
 
+test("concurrent identical POST /3d requests share one generation", async () => {
+    syncModel3dEnvironment({
+        ...env,
+        FAL_KEY: "fal_test_key",
+    } as CloudflareBindings);
+    await mocks.enable("tinybird", "fal");
+    const { key } = await createTestApiKey({
+        user: { packBalance: 1 },
+    });
+    const bindings = withInlineGenerationCoordinator(env);
+    const path = `/3d/${crypto.randomUUID()}`;
+    const init = () => ({
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${key}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ model: "hyper3d-rodin", seed: 42 }),
+    });
+
+    const [first, joined] = await Promise.all([
+        fetch3d(path, init(), bindings),
+        fetch3d(path, init(), bindings),
+    ]);
+
+    expect(first.status).toBe(200);
+    expect(joined.status).toBe(200);
+    expect(mocks.fal.state.bodies).toHaveLength(1);
+    expect(
+        mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+    ).toHaveLength(1);
+}, 10_000);
+
 test("media Responses and Chat reuse native text-to-3D generation", async () => {
     const bindings = withInlineGenerationCoordinator({
         ...env,

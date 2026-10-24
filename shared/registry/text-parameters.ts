@@ -295,11 +295,6 @@ export const CHAT_PARAMETERS = {
         "repetition_penalty",
         "seed",
     ],
-    openRouterMinimax27FirstParty: [
-        ...TOOL_CHAT,
-        ...SAMPLING,
-        ...OPENROUTER_REASONING,
-    ],
     openRouterMuseGlimmer: [
         ...SAMPLED_CHAT,
         ...PENALTIES,

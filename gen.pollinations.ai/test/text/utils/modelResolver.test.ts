@@ -130,6 +130,23 @@ describe("resolveModelConfig", () => {
         ).toBe(128000);
     });
 
+    it("pins PPLX Decider's Vercel route and resolves its direct backup", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "perplexity/pplx-decider-v1.2",
+        });
+        expect(primary.options.modelConfig?.defaultOptions).toEqual({
+            providerOptions: { gateway: { only: ["perplexity"] } },
+        });
+        const backup = resolveModelConfig(messages, {
+            model: "perplexity/pplx-decider-v1.2:perplexity",
+        });
+        expect(backup.options.modelConfig).toMatchObject({
+            model: "pplx-decider-v1.2",
+            directEndpoint: "https://api.perplexity.ai/v1/decisions",
+        });
+        expect(backup.options.modelConfig?.defaultOptions).toBeUndefined();
+    });
+
     it("lets callers override Anthropic max_tokens", () => {
         const result = resolveModelConfig(messages, {
             model: "anthropic/claude-sonnet-4.6",

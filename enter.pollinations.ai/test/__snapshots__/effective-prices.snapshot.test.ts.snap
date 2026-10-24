@@ -3420,14 +3420,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000002,
     },
   },
-  "perplexity/pplx-decider-v1.2:openrouter": {
+  "perplexity/pplx-decider-v1.2:perplexity": {
     "cost": {
       "completionTextTokens": 0,
-      "promptTextTokens": 0.0000000211,
+      "promptTextTokens": 0.00000002,
     },
     "price": {
       "completionTextTokens": 0,
-      "promptTextTokens": 0.0000000211,
+      "promptTextTokens": 0.00000002,
     },
   },
   "perplexity/sonar": {

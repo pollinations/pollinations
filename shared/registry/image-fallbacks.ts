@@ -9,6 +9,12 @@ import { perMillion } from "./price-helpers";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
+    "bytedance/seedream-5.0-pro": {
+        "bytedance/seedream-5.0-pro:replicate": {
+            provider: "replicate",
+            cost: { completionImageTokens: 0.09 },
+        },
+    },
     "google/gemini-nano-banana-2.1": {
         "google/gemini-nano-banana-2.1:vercel": {
             provider: "vercel",

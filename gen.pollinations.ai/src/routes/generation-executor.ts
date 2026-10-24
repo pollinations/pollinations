@@ -127,7 +127,9 @@ generationExecutorRoutes.post(
     "/v1/responses",
     textBodyLimit,
     validator("json", CreateResponseRequestSchema),
-    resolveModel("generate.text"),
+    resolveModel("generate.text", {
+        supportedEndpoint: "/v1/responses",
+    }),
     track("generate.text"),
     textExecutionCache,
     apiKeyBudgetReservation,

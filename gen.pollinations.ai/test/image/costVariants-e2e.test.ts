@@ -338,3 +338,51 @@ test("H3 Max bills reference provider units without inflating video duration", a
         isBilledUsage: true,
     });
 });
+
+// fal's FLUX 3 Max units are resolution-weighted (about 2 per second at 720p,
+// 3.41 at 1080p), so charges use fal's units at fal's live unit price.
+test("FLUX 3 Max bills fal's units at fal's live unit price at 1080p", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "fal", "media");
+    const response = await generate(
+        `/image/flux-3-max-1080p?model=black-forest-labs/flux-3-max&seed=15392&duration=5&resolution=1080p`,
+        paidApiKey,
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-usage-provider-billable-units")).toBe(
+        "21.28",
+    );
+    expect(response.headers.get("x-usage-provider-unit-cost")).toBe("0.05");
+    expect(mocks.fal.state.submissions).toBe(1);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelUsed: "black-forest-labs/flux-3-max",
+        costVariant: "1080p",
+        tokenCountCompletionVideoSeconds: 5,
+        totalCost: 1.064,
+        totalPrice: 1.064,
+        isBilledUsage: true,
+    });
+});
+
+test("FLUX 3 Max bills fal's units at the default resolution", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "fal", "media");
+    const response = await generate(
+        `/image/flux-3-max-720p?model=black-forest-labs/flux-3-max&seed=15392&duration=5`,
+        paidApiKey,
+    );
+    expect(response.status).toBe(200);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelUsed: "black-forest-labs/flux-3-max",
+        tokenCountCompletionVideoSeconds: 5,
+        totalCost: 1.064,
+        totalPrice: 1.064,
+        isBilledUsage: true,
+    });
+});

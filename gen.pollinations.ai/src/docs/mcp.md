@@ -18,6 +18,7 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| PubMed | `https://gen.pollinations.ai/mcp/pubmed` | Search PubMed-indexed biomedical literature and read abstracts and metadata | [Source](https://github.com/pollinations/pollinations/tree/main/apps/pubmed-mcp) |
 
 Send the key with every request:
 
@@ -206,6 +207,15 @@ while paused, with no additional MCP fee.
 Command output and file reads are cut at 100,000 characters with a marker.
 Before a long command, extend the paid lease with `connect_sandbox`; a command's
 `timeoutMs` only controls how long it waits, not how long the sandbox stays up.
+
+### PubMed MCP
+
+The PubMed server searches PubMed-indexed biomedical literature through Europe
+PMC. `search_articles` accepts plain terms or Europe PMC query syntax, plus
+filters for open access and publication year, and returns titles, authors,
+journals, citation counts, and identifiers. `get_article` reads one record by
+PMID, DOI, or PMCID and returns the abstract, journal details, keywords, and
+MeSH terms. No provider key is needed and the caller's key is never forwarded.
 
 ### Billing and permissions
 

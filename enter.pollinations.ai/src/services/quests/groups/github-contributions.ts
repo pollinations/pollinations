@@ -3,7 +3,7 @@ import {
     githubAppCredentialsFromEnv,
 } from "@shared/github/app-auth.ts";
 import { graphql } from "@shared/github/client.ts";
-import { sql } from "drizzle-orm";
+import { type SQL, sql } from "drizzle-orm";
 import type { QuestDefinition } from "../definitions.ts";
 import {
     type QuestCard,
@@ -70,8 +70,9 @@ const HONEY_CENSUS: Survey = {
     ],
     minWrittenChars: 100,
 };
-// Buying only the smallest pack (2 Pollen) doesn't qualify for the Honey Census.
-const HONEY_CENSUS_MIN_POLLEN_BOUGHT = 2;
+// Buying only the smallest pack (2 Pollen) doesn't qualify for the Honey Census
+// or pay a referral.
+export const MIN_POLLEN_BOUGHT = 2;
 
 const firstMergedPrQuest: QuestDefinition = {
     id: "merged_pr",
@@ -125,7 +126,7 @@ const beeCensusQuest: QuestDefinition = {
 const honeyCensusQuest: QuestDefinition = {
     id: "honey_census",
     title: "Take the Honey Census",
-    description: `For anyone who has bought more than ${HONEY_CENSUS_MIN_POLLEN_BOUGHT} Pollen in total: answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=honey-census.yml). Your two written answers need at least ${HONEY_CENSUS.minWrittenChars} characters in total. One response per GitHub account.`,
+    description: `For anyone who has bought more than ${MIN_POLLEN_BOUGHT} Pollen in total: answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=honey-census.yml). Your two written answers need at least ${HONEY_CENSUS.minWrittenChars} characters in total. One response per GitHub account.`,
     category: "community",
     scope: "perUser",
     rewardAmount: 5,
@@ -549,16 +550,21 @@ function writtenAnswerLength(body: string, survey: Survey): number {
 }
 
 // Pollen bought in total: Stripe checkouts, paid auto top-ups, and Polar
-// orders from before Stripe.
-async function pollenBought(db: QuestDb, userId: string): Promise<number> {
-    const [row] = await db.all<{ total: number }>(sql`
-        SELECT
+// orders from before Stripe. `userId` is a value or an outer query's column.
+export function pollenBoughtSql(userId: string | SQL): SQL {
+    return sql`(
             (SELECT COALESCE(SUM(pollen_credited), 0) FROM stripe_checkout_credits
              WHERE user_id = ${userId})
           + (SELECT COALESCE(SUM(amount_usd), 0) FROM stripe_auto_top_up_attempt
              WHERE user_id = ${userId} AND status = 'paid')
           + (SELECT COALESCE(SUM(pollen_credited), 0) FROM polar_checkout_credits
-             WHERE user_id = ${userId}) AS total`);
+             WHERE user_id = ${userId}))`;
+}
+
+async function pollenBought(db: QuestDb, userId: string): Promise<number> {
+    const [row] = await db.all<{ total: number }>(
+        sql`SELECT ${pollenBoughtSql(userId)} AS total`,
+    );
     return row?.total ?? 0;
 }
 
@@ -578,7 +584,7 @@ export async function evaluateUser(
             answeredSurvey(token, user, BEE_CENSUS),
             pollenBought(ctx.db, user.id).then(
                 (bought) =>
-                    bought > HONEY_CENSUS_MIN_POLLEN_BOUGHT &&
+                    bought > MIN_POLLEN_BOUGHT &&
                     answeredSurvey(token, user, HONEY_CENSUS),
             ),
         ]);

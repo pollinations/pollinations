@@ -526,7 +526,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     "qwen/qwen3.7-max": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.7-max",
-            defaultOptions: { max_tokens: 64000, provider: { sort: "price" } },
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["alibaba"],
+                    ignore: ["alibaba/us-east-1", "cloudflare"],
+                    allow_fallbacks: false,
+                },
+            },
         }),
     // Confirmed bug: pinned only to Chutes, whose max_tokens default (1024)
     // is entirely consumed by the reasoning trace on non-trivial prompts,

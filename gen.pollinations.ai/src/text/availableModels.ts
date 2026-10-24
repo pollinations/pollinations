@@ -218,14 +218,14 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["openai/gpt-4o-mini"],
     },
     {
-        name: "openai/gpt-5.3-codex",
-        config: portkeyConfig["gpt-5.3-codex"],
+        name: "openai/gpt-5.3-codex:openai",
+        config: portkeyConfig["gpt-5.3-codex-openai"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
     },
     {
-        name: "openai/gpt-5.3-codex:azure:sweden",
-        config: portkeyConfig["gpt-5.3-codex-azure-sweden"],
+        name: "openai/gpt-5.3-codex",
+        config: portkeyConfig["gpt-5.3-codex"],
         transform: omitOpenAISampling,
         useResponsesApi: true,
     },

@@ -128,9 +128,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "openai/gpt-5.3-codex": {
-        "openai/gpt-5.3-codex:azure:sweden": {
-            provider: "azure",
-            // Provider retires this route on 2027-08-24.
+        "openai/gpt-5.3-codex:openai": {
+            // OpenAI retires this route on 2027-04-01.
+            provider: "openai",
+            priceMultiplier: 1,
+            cost: {
+                promptTextTokens: perMillion(1.75),
+                promptCachedTokens: perMillion(0.175),
+                completionTextTokens: perMillion(14),
+            },
         },
     },
     "openai/gpt-6-astra": {

@@ -2663,18 +2663,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000013125,
     },
   },
-  "openai/gpt-5.3-codex:azure:sweden": {
+  "openai/gpt-5.3-codex:openai": {
     "cost": {
       "completionTextTokens": 0.000014,
-      "promptCacheWriteTokens": 0.00000175,
       "promptCachedTokens": 0.000000175,
       "promptTextTokens": 0.00000175,
     },
     "price": {
-      "completionTextTokens": 0.0000105,
-      "promptCacheWriteTokens": 0.0000013125,
-      "promptCachedTokens": 0.00000013125,
-      "promptTextTokens": 0.0000013125,
+      "completionTextTokens": 0.000014,
+      "promptCachedTokens": 0.000000175,
+      "promptTextTokens": 0.00000175,
     },
   },
   "openai/gpt-5.4": {

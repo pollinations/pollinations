@@ -1096,6 +1096,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-opus-5",
             defaultOptions: { max_tokens: 128000 },
         }),
+    "anthropic/claude-opus-5:anthropic": () =>
+        createAnthropicConfig({
+            model: "claude-opus-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
     "anthropic/claude-opus-5.5": () =>
         createAnthropicConfig({
             model: "claude-opus-5-5",

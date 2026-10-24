@@ -454,6 +454,27 @@ describe("static provider fallbacks", () => {
         expect(billed.price.totalPrice).toBeCloseTo(cost * 0.75, 8);
     });
 
+    it("tries Bedrock before direct Anthropic for Claude Opus 5", () => {
+        const model = "anthropic/claude-opus-5";
+        const primary: ModelDefinition = TEXT_SERVICES[model];
+        const fallback: ModelDefinition = TEXT_SERVICES[`${model}:anthropic`];
+        expect(primary.provider).toBe("aws");
+        expect(primary.fallbacks).toEqual([`${model}:anthropic`]);
+        expect(fallback).toMatchObject({
+            provider: "anthropic",
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        expect(fallback.cost).toEqual(primary.cost);
+        expect(findModelByName(`${model}:anthropic`)?.config()).toMatchObject({
+            provider: "anthropic",
+            model: "claude-opus-5",
+            defaultOptions: { max_tokens: 128000 },
+        });
+        expect(getVisibleTextModels()).not.toContain(`${model}:anthropic`);
+    });
+
     it("preserves seeded requests on the direct Mistral fallback", async () => {
         const route = findModelByName("mistralai/mistral-large-3:mistral");
         const options = { seed: 0, reasoning_effort: "high", temperature: 0.2 };

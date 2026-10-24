@@ -5,6 +5,30 @@ import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 const messages = [{ role: "user" as const, content: "Hello" }];
 
 describe("resolveModelConfig", () => {
+    it("keeps Microsoft Decision-1 backup pins in the native config", () => {
+        for (const [suffix, pin] of [
+            ["vercel", { providerOptions: { gateway: { only: ["azure"] } } }],
+            [
+                "openrouter",
+                {
+                    provider: {
+                        only: ["azure"],
+                        ignore: ["cloudflare"],
+                        allow_fallbacks: false,
+                    },
+                },
+            ],
+        ] as const) {
+            const result = resolveModelConfig(messages, {
+                model: `microsoft/microsoft-decision-1:${suffix}`,
+                provider: { only: ["cloudflare"] },
+            });
+            expect(result.options.modelConfig?.defaultOptions).toMatchObject(
+                pin,
+            );
+        }
+    });
+
     it("pins Liquid D1's primary and backup native configs", () => {
         for (const [model, expected] of [
             [
@@ -32,6 +56,20 @@ describe("resolveModelConfig", () => {
         }
     });
 
+    it("keeps jaredpalmer/kev-4b's native provider pin", () => {
+        const result = resolveModelConfig(messages, {
+            model: "jaredpalmer/kev-4b",
+            provider: { only: ["cloudflare"] },
+        });
+        expect(result.options.modelConfig?.defaultOptions).toMatchObject({
+            provider: {
+                "only": ["siliconflow/fp8"],
+                "ignore": ["cloudflare"],
+                "allow_fallbacks": false,
+            },
+        });
+    });
+
     it("preserves Glyph reasoning flags when mapping reasoning_effort", async () => {
         const resolved = resolveModelConfig(messages, {
             model: "stealth/glyph-cluster",
@@ -52,6 +90,20 @@ describe("resolveModelConfig", () => {
             gateway: { only: ["stealth"] },
         });
     });
+    it("keeps respan/span-01-lite's native provider pin", () => {
+        const result = resolveModelConfig(messages, {
+            model: "respan/span-01-lite",
+            provider: { only: ["cloudflare"] },
+        });
+        expect(result.options.modelConfig?.defaultOptions).toMatchObject({
+            provider: {
+                "only": ["respan"],
+                "ignore": ["cloudflare"],
+                "allow_fallbacks": false,
+            },
+        });
+    });
+
     it("sets Anthropic max_tokens defaults", () => {
         expect(
             resolveModelConfig(messages, {
@@ -85,6 +137,17 @@ describe("resolveModelConfig", () => {
         });
 
         expect(result.options.max_tokens).toBe(1024);
+    });
+
+    it("keeps Kimi K2.6 recovery on direct DeepInfra", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "moonshotai/kimi-k2.6:deepinfra",
+        });
+        expect(resolved.options.modelConfig).toMatchObject({
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "moonshotai/Kimi-K2.6",
+        });
+        expect(findModelByName("moonshotai/kimi-k2.6:azure:sweden")).toBeNull();
     });
 
     it("routes claude-large to the global Opus 5 profile", () => {
@@ -190,6 +253,19 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("us.amazon.nova-micro-v1:0");
     });
 
+    it("pins Qwen 3.7 Max to the quoted Alibaba endpoint without pricier regions", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen/qwen3.7-max",
+        });
+        expect(result.options.model).toBe("qwen/qwen3.7-max");
+        expect(result.options.max_tokens).toBe(64000);
+        expect(result.options.provider).toEqual({
+            only: ["alibaba"],
+            ignore: ["alibaba/us-east-1", "cloudflare"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins longcat to the exact OpenRouter endpoint without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "meituan/longcat-2.0",
@@ -216,6 +292,7 @@ describe("resolveModelConfig", () => {
     });
 
     it("pins Hy3 to Novita on OpenRouter without fallback", () => {
+        expect(findModelByName("tencent/hy3:openrouter:phala")).toBeNull();
         const result = resolveModelConfig(messages, {
             model: "tencent/hy3",
         });
@@ -223,18 +300,6 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("tencent/hy3");
         expect(result.options.provider).toEqual({
             only: ["novita"],
-            allow_fallbacks: false,
-        });
-    });
-
-    it("routes the Hy3 Phala fallback to the exact OpenRouter endpoint", () => {
-        const result = resolveModelConfig(messages, {
-            model: "tencent/hy3:openrouter:phala",
-        });
-
-        expect(result.options.model).toBe("tencent/hy3");
-        expect(result.options.provider).toEqual({
-            only: ["phala"],
             allow_fallbacks: false,
         });
     });
@@ -281,6 +346,23 @@ describe("resolveModelConfig", () => {
         });
 
         expect(result.options.model).toBe("mistral-large-4");
+    });
+
+    it("pins Step 5 Preview to StepFun and its fallback to DeepInfra", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "stepfun/step-5-preview",
+        });
+        expect(primary.options.provider).toEqual({
+            only: ["stepfun/fp8"],
+            allow_fallbacks: false,
+        });
+
+        const fallback = resolveModelConfig(messages, {
+            model: "stepfun/step-5-preview:vercel",
+        });
+        expect(fallback.options.providerOptions).toEqual({
+            gateway: { only: ["deepinfra"] },
+        });
     });
 
     it("pins the Mistral Large 4 fallback to Mistral on Vercel", () => {
@@ -409,6 +491,18 @@ describe("resolveModelConfig", () => {
             expect(fallback.options.max_tokens).toBe(128000);
         },
     );
+
+    it("keeps Grok 4.6 recovery on direct xAI", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "x-ai/grok-4.6:xai",
+        });
+        expect(resolved.options.modelConfig).toMatchObject({
+            provider: "openai",
+            model: "grok-4.6",
+            directEndpoint: "https://api.x.ai/v1/chat/completions",
+        });
+        expect(findModelByName("x-ai/grok-4.6:azure:sweden")).toBeNull();
+    });
 
     it("pins Jev's exact Vercel version, long context, and OpenRouter backup", () => {
         const primary = resolveModelConfig(messages, {
@@ -616,6 +710,19 @@ describe("resolveModelConfig", () => {
             directEndpoint: "https://api.novita.ai/openai/v1/chat/completions",
         });
         expect(result.options.provider).toBeUndefined();
+    });
+
+    it("pins the Qwen3.7 Flash OpenRouter fallback away from Alibaba US", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen/qwen3.7-flash:openrouter:alibaba",
+        });
+
+        expect(result.options.model).toBe("qwen/qwen3.7-flash");
+        expect(result.options.provider).toEqual({
+            only: ["Alibaba"],
+            ignore: ["alibaba/us-east-1"],
+            allow_fallbacks: false,
+        });
     });
 
     it("routes qwen3.7-flash directly to Alibaba", () => {
@@ -1009,6 +1116,19 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("pins Mistral Small 4's backup to its quoted standard ZDR endpoint", () => {
+        const result = resolveModelConfig(messages, {
+            model: "mistralai/mistral-small-4:openrouter",
+        });
+        expect(result.options.model).toBe("mistralai/mistral-small-2603");
+        expect(result.options.max_tokens).toBe(64000);
+        expect(result.options.provider).toEqual({
+            only: ["mistral/zdr"],
+            ignore: ["mistral/eu", "mistral/us", "cloudflare"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("routes Mistral Small 4 to Mistral's direct API", () => {
         const result = resolveModelConfig(messages, { model: "mistral" });
 
@@ -1177,5 +1297,28 @@ describe("resolveModelConfig", () => {
                 status: 404,
             }),
         );
+    });
+});
+
+it("excludes Grok 4.3 backup priority endpoints from the quoted price", () => {
+    expect(
+        resolveModelConfig(messages, {
+            model: "x-ai/grok-4.3:openrouter:xai-zdr",
+        }).options.provider,
+    ).toEqual({
+        only: ["xai/zdr"],
+        ignore: ["xai/zdr/priority", "cloudflare"],
+        allow_fallbacks: false,
+    });
+});
+
+it("pins Luna Decisions backup to the quoted OpenAI endpoint", () => {
+    const { options } = resolveModelConfig(messages, {
+        model: "openai/gpt-6-luna-decisions:openrouter",
+    });
+    expect(options.provider).toEqual({
+        only: ["openai"],
+        ignore: ["cloudflare"],
+        allow_fallbacks: false,
     });
 });

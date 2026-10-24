@@ -16,9 +16,10 @@ const mocks = vi.hoisted(() => ({
         async (harness: { existingKey: string | null }) =>
             harness.existingKey ?? "sk_new",
     ),
-    fetchHarnessModels: vi.fn(async (selected: string) => [
-        { id: selected, contextWindow: 128000, input: ["text"] },
-    ]),
+    fetchHarnessModels: vi.fn(async (selected: string) => ({
+        model: selected,
+        models: [{ id: selected, contextWindow: 128000, input: ["text"] }],
+    })),
     gen: vi.fn(),
 }));
 

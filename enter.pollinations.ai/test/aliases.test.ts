@@ -183,7 +183,6 @@ test("Azure models use the approved public-price multipliers", () => {
         // Azure quota covers less than twice Kimi's peak, so overflow reaches
         // the cash-paid DeepInfra fallback.
         ["moonshotai/kimi-k2.6", 1],
-        ["moonshotai/kimi-k2.6:azure:sweden", 1],
         ["deepseek/deepseek-v4.1-flash", 0.5],
     ]);
 
@@ -231,10 +230,10 @@ test("GPT Audio 1.5 uses the exact Azure Global meter sheet", () => {
     });
 });
 
-test("Seedream 5 Pro uses Replicate and requires paid balance at provider cost", () => {
+test("Seedream 5 Pro uses Vercel and requires paid balance at provider cost", () => {
     const definition = getRegistryModelDefinition("bytedance/seedream-5.0-pro");
 
-    expect(definition.provider).toBe("replicate");
+    expect(definition.provider).toBe("vercel");
     expect(definition.paidOnly).toBe(true);
     expect(definition.priceMultiplier).toBe(1);
 });

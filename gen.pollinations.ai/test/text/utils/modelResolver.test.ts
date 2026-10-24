@@ -5,6 +5,30 @@ import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 const messages = [{ role: "user" as const, content: "Hello" }];
 
 describe("resolveModelConfig", () => {
+    it("keeps Microsoft Decision-1 backup pins in the native config", () => {
+        for (const [suffix, pin] of [
+            ["vercel", { providerOptions: { gateway: { only: ["azure"] } } }],
+            [
+                "openrouter",
+                {
+                    provider: {
+                        only: ["azure"],
+                        ignore: ["cloudflare"],
+                        allow_fallbacks: false,
+                    },
+                },
+            ],
+        ] as const) {
+            const result = resolveModelConfig(messages, {
+                model: `microsoft/microsoft-decision-1:${suffix}`,
+                provider: { only: ["cloudflare"] },
+            });
+            expect(result.options.modelConfig?.defaultOptions).toMatchObject(
+                pin,
+            );
+        }
+    });
+
     it("pins Liquid D1's primary and backup native configs", () => {
         for (const [model, expected] of [
             [

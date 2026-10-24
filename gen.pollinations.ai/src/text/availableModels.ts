@@ -844,6 +844,11 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "vllm-sr/d3",
+        config: portkeyConfig["vllm-sr/d3"],
+        useSystemOneApi: true,
+    },
+    {
         name: "respan/span-01-lite",
         config: portkeyConfig["span-01-lite"],
         useSystemOneApi: true,
@@ -859,14 +864,37 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
-        name: "perplexity/pplx-decider-v1.1-27b",
-        config: portkeyConfig["pplx-decider-v1.1-27b"],
+        name: "perplexity/pplx-decider-v1.2",
+        config: portkeyConfig["pplx-decider-v1.2"],
         useSystemOneApi: true,
     },
     {
-        name: "perplexity/pplx-decider-v1.1-27b:openrouter",
-        config: portkeyConfig["perplexity/pplx-decider-v1.1-27b:openrouter"],
+        name: "perplexity/pplx-decider-v1.2:openrouter",
+        config: portkeyConfig["perplexity/pplx-decider-v1.2:openrouter"],
         useSystemOneApi: true,
+    },
+    {
+        name: "stealth/glyph-cluster",
+        config: portkeyConfig["stealth/glyph-cluster"],
+        transform: (messages, options) => {
+            const { reasoning_effort, ...rest } = options;
+            return {
+                messages,
+                options: {
+                    ...rest,
+                    ...(reasoning_effort === undefined
+                        ? {}
+                        : {
+                              reasoning: {
+                                  ...(rest.reasoning as
+                                      | Record<string, unknown>
+                                      | undefined),
+                                  effort: reasoning_effort,
+                              },
+                          }),
+                },
+            };
+        },
     },
     {
         name: "liquid/d1",
@@ -898,7 +926,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "microsoft/microsoft-decision-1",
-        config: portkeyConfig["microsoft-decision-1"],
+        config: portkeyConfig["microsoft-decision-1-azure"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "microsoft/microsoft-decision-1:vercel",
+        config: portkeyConfig["microsoft/microsoft-decision-1:vercel"],
         useSystemOneApi: true,
     },
     {

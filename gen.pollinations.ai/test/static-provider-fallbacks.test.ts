@@ -656,11 +656,11 @@ describe("static provider fallbacks", () => {
     });
 
     it("charges Decider's Vercel price on its OpenRouter fallback", () => {
-        const primary = TEXT_SERVICES["perplexity/pplx-decider-v1.1-27b"];
+        const primary = TEXT_SERVICES["perplexity/pplx-decider-v1.2"];
         const fallback =
-            TEXT_SERVICES["perplexity/pplx-decider-v1.1-27b:openrouter"];
+            TEXT_SERVICES["perplexity/pplx-decider-v1.2:openrouter"];
         expect(primary.fallbacks).toEqual([
-            "perplexity/pplx-decider-v1.1-27b:openrouter",
+            "perplexity/pplx-decider-v1.2:openrouter",
         ]);
         expect(fallback).toMatchObject({
             provider: "openrouter",
@@ -670,23 +670,23 @@ describe("static provider fallbacks", () => {
             aliases: [],
         });
         expect(
-            findModelByName("perplexity/pplx-decider-v1.1-27b")?.config(),
+            findModelByName("perplexity/pplx-decider-v1.2")?.config(),
         ).toMatchObject({
-            model: "perplexity/pplx-decider-v1.1-27b",
+            model: "perplexity/pplx-decider-v1.2",
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
         });
         expect(
             findModelByName(
-                "perplexity/pplx-decider-v1.1-27b:openrouter",
+                "perplexity/pplx-decider-v1.2:openrouter",
             )?.config(),
         ).toMatchObject({
-            model: "perplexity/pplx-decider-v1.1-27b",
+            model: "perplexity/pplx-decider-v1.2",
             provider: "openrouter",
             directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         });
         const billing = calculateUsageBilling({
-            model: "perplexity/pplx-decider-v1.1-27b",
+            model: "perplexity/pplx-decider-v1.2",
             usage: { promptTextTokens: 1000, completionTextTokens: 0 },
             servedBy: fallback,
             quotedBy: primary,
@@ -695,22 +695,31 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.00002, 12);
     });
 
-    it("charges Microsoft Decision-1's Vercel price on its OpenRouter fallback", () => {
+    it("charges Microsoft Decision-1's Azure rate on its Vercel and OpenRouter fallbacks", () => {
         const primary = TEXT_SERVICES["microsoft/microsoft-decision-1"];
         const fallback =
             TEXT_SERVICES["microsoft/microsoft-decision-1:openrouter"];
         expect(primary.fallbacks).toEqual([
+            "microsoft/microsoft-decision-1:vercel",
             "microsoft/microsoft-decision-1:openrouter",
         ]);
         expect(fallback).toMatchObject({
             provider: "openrouter",
-            paidOnly: true,
+            paidOnly: false,
             hidden: true,
             fallbackOnly: true,
             aliases: [],
         });
         expect(
             findModelByName("microsoft/microsoft-decision-1")?.config(),
+        ).toMatchObject({
+            model: "decision-1",
+            directEndpoint:
+                "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/microsoft/v1/systemone",
+            directAuthHeader: "api-key",
+        });
+        expect(
+            findModelByName("microsoft/microsoft-decision-1:vercel")?.config(),
         ).toMatchObject({
             model: "microsoft/microsoft-decision-1",
             directEndpoint:
@@ -732,7 +741,7 @@ describe("static provider fallbacks", () => {
             quotedBy: primary,
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.00004431, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(0.000042, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0000315, 12);
     });
 
     it("quotes OpenAI's context tiers while accounting for OpenRouter's flat fallback cost", () => {

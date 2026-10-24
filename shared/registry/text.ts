@@ -38,6 +38,46 @@ export const DEFAULT_TEXT_MODEL = "openai/gpt-5.4-nano" as const;
 export type TextModelName = keyof typeof TEXT_SERVICES;
 
 const TEXT_BASE_SERVICES = {
+    "stealth/glyph-cluster": {
+        aliases: [],
+        supportedParameters: [
+            "max_tokens",
+            "stream",
+            "temperature",
+            "stop",
+            "tools",
+            "tool_choice",
+            "reasoning_effort",
+            "reasoning",
+            "include_reasoning",
+        ],
+        provider: "vercel",
+        // Vercel returned 429 bursts during light testing.
+        perUserRpm: 8,
+        publisher: "Stealth",
+        category: "text",
+        addedDate: new Date("2026-10-08").getTime(),
+        priceMultiplier: 1,
+        paidOnly: false,
+        // Free only during stealth; expiry and subsequent rates are unpublished.
+        // https://vercel.com/ai-gateway/models/glyph-cluster
+        cost: {
+            promptTextTokens: perMillion(0),
+            completionTextTokens: perMillion(0),
+            promptCachedTokens: perMillion(0),
+        },
+        title: "Glyph Cluster (Stealth)",
+        description:
+            "Experimental coding and long-context reasoning with automatic tool calling. Prompts and responses may be retained and used for training; no zero data retention.",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        contextLength: 256000,
+        // The Gateway rejects required and named tool choices; auto/none work.
+        tools: true,
+        reasoning: true,
+        isSpecialized: false,
+        alpha: true,
+    },
     "openai/gpt-5.4-nano": {
         supportedParameters: CHAT_PARAMETERS.azureGpt,
         aliases: ["gpt-5.4-nano", "openai"],
@@ -1581,6 +1621,33 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "vllm-sr/d3": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "vllm-sr",
+        publisher: "vLLM Semantic Router",
+        category: "decision",
+        addedDate: new Date("2026-10-18").getTime(),
+        priceMultiplier: 1,
+        paidOnly: false,
+        // One shared free key: 16 concurrent requests, 540 per minute.
+        perUserRpm: 30,
+        cost: {
+            promptTextTokens: perMillion(0),
+            completionTextTokens: perMillion(0),
+        },
+        title: "D3",
+        description:
+            "Typed choices, yes/no probabilities and scores for routing and " +
+            "classification. Inputs may be logged and used for training",
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 65536,
+        isSpecialized: true,
+    },
     "respan/span-01-lite": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],
@@ -1674,13 +1741,14 @@ const TEXT_BASE_SERVICES = {
         contextLength: 8192,
         isSpecialized: true,
     },
-    "perplexity/pplx-decider-v1.1-27b": {
+    "perplexity/pplx-decider-v1.2": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
-        aliases: [],
+        // Perplexity retired V1.1 in favour of V1.2.
+        aliases: ["perplexity/pplx-decider-v1.1-27b"],
         provider: "vercel",
         publisher: "Perplexity",
         category: "decision",
-        addedDate: new Date("2026-10-07").getTime(),
+        addedDate: new Date("2026-10-24").getTime(),
         priceMultiplier: 1, // Billed at cost, no margin.
         paidOnly: true,
         cost: {
@@ -1688,7 +1756,7 @@ const TEXT_BASE_SERVICES = {
             promptTextTokens: perMillion(0.02),
             completionTextTokens: perMillion(0),
         },
-        title: "Decider V1.1 27B",
+        title: "Decider V1.2 27B",
         description:
             "Typed choices, scores and yes/no probabilities over a 262K " +
             "context; post state and questions to /alpha/decisions, or send " +
@@ -1787,14 +1855,15 @@ const TEXT_BASE_SERVICES = {
     "microsoft/microsoft-decision-1": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],
-        provider: "vercel",
+        provider: "azure",
         publisher: "Microsoft",
         category: "decision",
         addedDate: new Date("2026-10-09").getTime(),
-        priceMultiplier: 1, // Billed at cost, no margin.
-        paidOnly: true,
+        priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
-            // Vercel AI Gateway list price, the cheapest route.
+            // Azure Retail Prices "Microsoft Decision 1 1M Tokens" (2026-10-23),
+            // the model's only meter.
             promptTextTokens: perMillion(0.042),
             completionTextTokens: perMillion(0),
         },

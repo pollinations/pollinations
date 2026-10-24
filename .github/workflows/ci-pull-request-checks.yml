@@ -80,6 +80,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies
@@ -212,6 +213,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies
@@ -298,6 +300,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies
@@ -335,6 +338,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install workspace dependencies
@@ -370,6 +374,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
           cache: 'npm'
 
       - name: Install dependencies

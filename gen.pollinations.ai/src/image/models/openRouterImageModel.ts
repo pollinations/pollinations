@@ -1047,7 +1047,7 @@ export async function callOpenRouterRecraftFlashAPI(
     return {
         buffer: base64ToBuffer(generatedImage.b64_json),
         trackingData: {
-            actualModel: RECRAFT_FLASH_MODEL,
+            actualModel: safeParams.model,
             // OpenRouter bills this endpoint a fixed $0.007 per output image.
             usage: { completionImageTokens: 1 },
         },

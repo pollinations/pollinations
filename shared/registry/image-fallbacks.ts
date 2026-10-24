@@ -259,6 +259,14 @@ export const IMAGE_FALLBACKS = {
             },
         },
     },
+    "recraft/recraft-v4.1-flash": {
+        "recraft/recraft-v4.1-flash:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-24").getTime(),
+            // $0.007 per image plus the 5.5% OpenRouter credit fee.
+            cost: { completionImageTokens: 0.007 * 1.055 },
+        },
+    },
     "x-ai/grok-imagine-video-1.5-lite": {
         "x-ai/grok-imagine-video-1.5-lite:openrouter": {
             provider: "openrouter",

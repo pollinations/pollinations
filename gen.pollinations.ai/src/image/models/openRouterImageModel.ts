@@ -1015,6 +1015,68 @@ function resolveRecraftAspectRatio(safeParams: ImageParams): string {
     );
 }
 
+/** MAI Image fallback on OpenRouter's Azure endpoint (`<model>:openrouter`). */
+export async function callOpenRouterMaiImageAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    const apiKey = requireOpenRouterImageApiKey();
+    const references = await Promise.all(safeParams.image.map(toDataUri));
+    const data = await postOpenRouterImage(
+        apiKey,
+        {
+            model: safeParams.model.replace(/:openrouter$/, ""),
+            prompt,
+            n: 1,
+            // Like Azure, edits follow the first reference's shape.
+            ...(references.length > 0
+                ? {
+                      input_references: references.map((url) => ({
+                          type: "image_url",
+                          image_url: { url },
+                      })),
+                  }
+                : { size: `${safeParams.width}x${safeParams.height}` }),
+            provider: { only: ["azure"], allow_fallbacks: false },
+        },
+        "OpenRouter MAI Image request failed",
+    );
+    const encodedImage = data.data?.[0]?.b64_json;
+    if (!encodedImage) {
+        throw buildOpenRouterNoImageError(data);
+    }
+
+    const usage = data.usage;
+    const completionImageTokens =
+        usage?.completion_tokens_details?.image_tokens;
+    if (
+        !isTokenCount(usage?.prompt_tokens) ||
+        !isTokenCount(completionImageTokens) ||
+        completionImageTokens === 0
+    ) {
+        invalidOpenRouterImageUsage(usage);
+    }
+    logOps("MAI Image generation complete", {
+        references: references.length,
+        providerCost: usage.cost,
+    });
+
+    return {
+        buffer: base64ToBuffer(encodedImage),
+        trackingData: {
+            actualModel: safeParams.model,
+            usage: {
+                // OpenRouter reports one prompt count. With references it bills
+                // all of it at the image-input rate (probe, 2026-10-24).
+                [references.length > 0
+                    ? "promptImageTokens"
+                    : "promptTextTokens"]: usage.prompt_tokens,
+                completionImageTokens,
+            },
+        },
+    };
+}
+
 export async function callOpenRouterRecraftFlashAPI(
     prompt: string,
     safeParams: ImageParams,

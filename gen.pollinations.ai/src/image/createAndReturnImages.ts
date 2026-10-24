@@ -29,6 +29,7 @@ import {
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
+    callOpenRouterMaiImageAPI,
     callOpenRouterQwenImage3API,
     callOpenRouterQwenImage21ProAPI,
     callOpenRouterRecraftFlashAPI,
@@ -931,6 +932,9 @@ const generateImage = async (
                 throw error;
             }
         }
+
+        case "microsoft/mai-image-2.6-flash:openrouter":
+            return await callOpenRouterMaiImageAPI(prompt, safeParams);
 
         case "inferenceport-ai/lightning-image-turbo": {
             try {

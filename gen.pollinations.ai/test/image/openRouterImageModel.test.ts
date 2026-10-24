@@ -6,6 +6,7 @@ import {
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
+    callOpenRouterMaiImageAPI,
     callOpenRouterQwenImage3API,
     callOpenRouterQwenImage21ProAPI,
     callOpenRouterRecraftFlashAPI,
@@ -165,6 +166,86 @@ describe("OpenRouter Grok Imagine Pro", () => {
             status: 502,
             requestUrl: new URL(OPENROUTER_IMAGE_URL),
         });
+    });
+});
+
+describe("OpenRouter MAI Image", () => {
+    const maiParams: ImageParams = {
+        ...baseParams,
+        model: "microsoft/mai-image-2.6-flash:openrouter",
+        width: 1344,
+        height: 768,
+    };
+
+    function mockMaiFetch(
+        requests: Record<string, unknown>[],
+        usage: Record<string, unknown>,
+    ) {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, init) => {
+            requests.push(JSON.parse(init?.body as string));
+            return Response.json({ data: [{ b64_json: "AQID" }], usage });
+        });
+    }
+
+    it("pins Azure, sends the exact size and bills the reported tokens", async () => {
+        const requests: Record<string, unknown>[] = [];
+        mockMaiFetch(requests, {
+            prompt_tokens: 5,
+            completion_tokens: 1008,
+            completion_tokens_details: { image_tokens: 1008 },
+        });
+
+        const result = await callOpenRouterMaiImageAPI(
+            "a lighthouse",
+            maiParams,
+        );
+
+        expect(requests[0]).toEqual({
+            model: "microsoft/mai-image-2.6-flash",
+            prompt: "a lighthouse",
+            n: 1,
+            size: "1344x768",
+            provider: { only: ["azure"], allow_fallbacks: false },
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "microsoft/mai-image-2.6-flash:openrouter",
+            usage: { promptTextTokens: 5, completionImageTokens: 1008 },
+        });
+    });
+
+    it("sends edits without a size and bills the prompt as image input", async () => {
+        const requests: Record<string, unknown>[] = [];
+        mockMaiFetch(requests, {
+            prompt_tokens: 329,
+            completion_tokens: 1020,
+            completion_tokens_details: { image_tokens: 1020 },
+        });
+
+        const result = await callOpenRouterMaiImageAPI("make it pink", {
+            ...maiParams,
+            image: [PNG_DATA_URI],
+        });
+
+        expect(requests[0]).not.toHaveProperty("size");
+        expect(requests[0].input_references).toEqual([
+            { type: "image_url", image_url: { url: PNG_DATA_URI } },
+        ]);
+        expect(result.trackingData?.usage).toEqual({
+            promptImageTokens: 329,
+            completionImageTokens: 1020,
+        });
+    });
+
+    it("rejects an image without output token usage", async () => {
+        mockMaiFetch([], { prompt_tokens: 5, completion_tokens: 0 });
+
+        await expect(
+            callOpenRouterMaiImageAPI("a lighthouse", maiParams),
+        ).rejects.toMatchObject({ status: 502 });
     });
 });
 

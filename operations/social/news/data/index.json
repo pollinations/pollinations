@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-24T17:28:55.291216+00:00",
+  "generated_at": "2026-10-24T17:35:13.696790+00:00",
   "models": [
     {
       "id": "2026-09-29:anthropic/claude-sonnet-5.5",
@@ -6880,6 +6880,56 @@
     }
   ],
   "daily": [
+    {
+      "date": "2026-10-20",
+      "emoji": "🔗",
+      "title": "Sign in with Google",
+      "text": "Use Google to sign in to Enter and complete eligible Quests. Connect GitHub later to publish agents or community models and redeem promo codes. [Open Enter](https://enter.pollinations.ai/keys).",
+      "prs": [
+        11686
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-20",
+      "emoji": "🤖",
+      "title": "Choose community model fallbacks",
+      "text": "Community model owners can select eligible Pollinations models as fallbacks in My Models or through the API. Requests can route to a fallback when the upstream fails, while keeping the community model's pricing.",
+      "prs": [
+        14386
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-20",
+      "emoji": "💡",
+      "title": "Estimate before generating",
+      "text": "Run `polli gen image --estimate` or `polli gen video --estimate` to see an estimated Pollen charge without generating media. The CLI reports `estimate: unknown` when it cannot calculate a reliable total. [Get Polli CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        16841
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-20",
+      "emoji": "🎯",
+      "title": "Inspect your model health",
+      "text": "My Models now shows owners seven days of upstream results and failure groups. Proxy model owners can also rerun the registration test with Test now.",
+      "prs": [
+        17649
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-20",
+      "emoji": "🎵",
+      "title": "Control audio transformation strength",
+      "text": "Set `strength` from 0 to 1 on audio-to-audio requests with `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3`. Lower values stay closer to `reference_audio`; higher values let the output depart further. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17978
+      ],
+      "kind": "api"
+    },
     {
       "date": "2026-10-18",
       "emoji": "🎨",

@@ -1580,11 +1580,11 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000015,
     },
     "price": {
-      "completionImageTokens": 0.00003165,
-      "completionTextTokens": 0.0000079125,
-      "promptCachedTokens": 0.00000015825,
-      "promptImageTokens": 0.0000015825,
-      "promptTextTokens": 0.0000015825,
+      "completionImageTokens": 0.00003,
+      "completionTextTokens": 0.0000075,
+      "promptCachedTokens": 0.00000015,
+      "promptImageTokens": 0.0000015,
+      "promptTextTokens": 0.0000015,
     },
   },
   "google/gemini-nano-banana-2.1:vercel": {
@@ -1596,11 +1596,11 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000015,
     },
     "price": {
-      "completionImageTokens": 0.00003165,
-      "completionTextTokens": 0.0000079125,
-      "promptCachedTokens": 0.0000015825,
-      "promptImageTokens": 0.0000015825,
-      "promptTextTokens": 0.0000015825,
+      "completionImageTokens": 0.00003,
+      "completionTextTokens": 0.0000075,
+      "promptCachedTokens": 0.0000015,
+      "promptImageTokens": 0.0000015,
+      "promptTextTokens": 0.0000015,
     },
   },
   "google/gemini-omni-1.1-flash": {

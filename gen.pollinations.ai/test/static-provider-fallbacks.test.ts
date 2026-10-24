@@ -412,7 +412,7 @@ describe("static provider fallbacks", () => {
             const billed = calculateUsageBilling({
                 model: "google/gemini-3.1-pro-preview",
                 usage: {
-                    promptTextTokens: 200_000,
+                    promptTextTokens: 250_000,
                     completionTextTokens: 1_000,
                 },
                 servedBy: definition,
@@ -436,7 +436,7 @@ describe("static provider fallbacks", () => {
                               ],
                           },
             });
-            const directCost = 0.2 * 4 + 0.001 * 18 + 0.014;
+            const directCost = 0.25 * 4 + 0.001 * 18 + 0.014;
             const expectedCost =
                 definition.provider === "openrouter"
                     ? directCost * 1.055

@@ -118,6 +118,17 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "openai/gpt-oss-20b": {
+        // DeepInfra direct rates (2026-10-24), below the OVHcloud primary.
+        "openai/gpt-oss-20b:deepinfra": {
+            provider: "deepinfra",
+            addedDate: new Date("2026-10-24").getTime(),
+            cost: {
+                promptTextTokens: perMillion(0.03),
+                completionTextTokens: perMillion(0.14),
+            },
+        },
+    },
     "openai/gpt-4o-mini": {
         "openai/gpt-4o-mini:openrouter:openai": {
             provider: "openrouter",

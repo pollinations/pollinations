@@ -424,6 +424,7 @@ const IMAGE_BASE_SERVICES = {
             // 4K image: 2000 tokens = $0.24/image
             promptTextTokens: perMillion(2), // per 1M tokens
             promptImageTokens: perMillion(2), // per 1M tokens
+            promptCachedTokens: perMillion(0.2),
             completionTextTokens: perMillion(12), // text/reasoning output tokens
             completionImageTokens: perMillion(120), // per 1M tokens, 1120 tokens per 1K image
         },

@@ -180,18 +180,35 @@ export const portkeyConfig: PortkeyConfigMap = {
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "openai/gpt-6-luna-decisions",
+        defaultOptions: {
+            provider: {
+                only: ["openai"],
+                ignore: ["cloudflare"],
+                allow_fallbacks: false,
+            },
+        },
     }),
     "microsoft/microsoft-decision-1:vercel": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
             model: "microsoft/microsoft-decision-1",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["azure"] } },
+            },
         }),
     "microsoft/microsoft-decision-1:openrouter": () => ({
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "microsoft/microsoft-decision-1",
+        defaultOptions: {
+            provider: {
+                only: ["azure"],
+                ignore: ["cloudflare"],
+                allow_fallbacks: false,
+            },
+        },
     }),
     // Azure's Microsoft provider endpoint speaks the TypeSafe native shape;
     // `model` is the deployment name.
@@ -375,15 +392,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         responsesStreamUpstream: true,
     }),
 
-    "grok-4.6-azure-sweden": () => ({
-        ...portkeyConfig["grok-4.6"](),
-        directEndpoint:
-            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/grok-4.6/chat/completions?api-version=2024-12-01-preview",
-        authKey: textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
-        responsesEndpoint:
-            "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
-    }),
-
     // -- xAI direct -----------------------------------------------------------
     "grok-4.6-xai": () => ({
         provider: "openai",
@@ -424,13 +432,6 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Kimi-K2.6/chat/completions?api-version=2024-12-01-preview",
             { requiresBase64ImageUrls: true },
         ),
-    "Kimi-K2.6-azure-sweden": () =>
-        createAzureModelConfig(
-            textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
-            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/Kimi-K2.6/chat/completions?api-version=2024-12-01-preview",
-            { requiresBase64ImageUrls: true },
-        ),
-
     // -- OpenRouter (frontier models) ----------------------------------------
     "cohere/command-a-plus": createPinnedOpenRouterConfig(
         "cohere/command-a-plus",
@@ -504,10 +505,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "inclusionai/ling-3.0-flash-vl",
         "deepinfra/fp16",
     ),
-    "hy3-openrouter-phala": createPinnedOpenRouterConfig(
-        "tencent/hy3",
-        "phala",
-    ),
     // Reasoning models: explicit max_tokens default below. Without one, the
     // upstream provider's own default applies (Chutes AI defaults to 1024),
     // which reasoning models can burn entirely on their internal thinking
@@ -517,12 +514,37 @@ export const portkeyConfig: PortkeyConfigMap = {
     "qwen/qwen3.7-plus": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.7-plus",
-            defaultOptions: { max_tokens: 64000, provider: { sort: "price" } },
+            defaultOptions: {
+                max_tokens: 64000,
+                // The base slug also matches alibaba/us-east-1, which can
+                // be priced differently.
+                provider: {
+                    only: ["Alibaba"],
+                    ignore: ["alibaba/us-east-1"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
+    "qwen3.7-plus-alibaba": () =>
+        createAlibabaModelConfig({
+            model: "qwen3.7-plus",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+            responsesDisableReasoningForForcedTools: true,
+            defaultOptions: { max_tokens: 64000 },
         }),
     "qwen/qwen3.7-max": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.7-max",
-            defaultOptions: { max_tokens: 64000, provider: { sort: "price" } },
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["alibaba"],
+                    ignore: ["alibaba/us-east-1", "cloudflare"],
+                    allow_fallbacks: false,
+                },
+            },
         }),
     // Confirmed bug: pinned only to Chutes, whose max_tokens default (1024)
     // is entirely consumed by the reasoning trace on non-trivial prompts,
@@ -577,8 +599,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "qwen/qwen3.7-flash",
             defaultOptions: {
                 max_tokens: 64000,
+                // The base slug also matches alibaba/us-east-1, which costs
+                // 15% more than the quoted Alibaba rates.
                 provider: {
                     only: ["Alibaba"],
+                    ignore: ["alibaba/us-east-1"],
                     allow_fallbacks: false,
                 },
             },
@@ -1006,7 +1031,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     "mistral-small-2603-openrouter": () =>
         createOpenRouterModelConfig({
             model: "mistralai/mistral-small-2603",
-            defaultOptions: { max_tokens: 64000 },
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["mistral/zdr"],
+                    ignore: ["mistral/eu", "mistral/us", "cloudflare"],
+                    allow_fallbacks: false,
+                },
+            },
         }),
 
     // -- Azure (Myceli Prod — eastus, Mistral Large) -------------------------
@@ -1047,6 +1079,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-sonnet-5",
             defaultOptions: { max_tokens: 64000 },
         }),
+    "anthropic/claude-sonnet-5:anthropic": () =>
+        createAnthropicConfig({
+            model: "claude-sonnet-5",
+            defaultOptions: { max_tokens: 64000 },
+        }),
     "claude-opus-4-6": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-4-6-v1",
@@ -1060,6 +1097,11 @@ export const portkeyConfig: PortkeyConfigMap = {
     "claude-opus-5": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-opus-5:anthropic": () =>
+        createAnthropicConfig({
+            model: "claude-opus-5",
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-opus-5.5": () =>
@@ -1269,13 +1311,22 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOpenRouterModelConfig({
             model: "stepfun/step-3.5-flash",
         }),
+    // Pinned to StepFun's own endpoint; other OpenRouter endpoints differ in
+    // cache price, precision or context.
     "stepfun/step-5-preview": () =>
         createOpenRouterModelConfig({
             model: "stepfun/step-5-preview",
+            defaultOptions: {
+                provider: { only: ["stepfun/fp8"], allow_fallbacks: false },
+            },
         }),
+    // Vercel's StepFun endpoint has no tools and Tencent caps output at 64K.
     "stepfun/step-5-preview:vercel": () =>
         createVercelAIGatewayModelConfig({
             model: "stepfun/step-5-preview",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["deepinfra"] } },
+            },
         }),
 
     // -- Novita and Vercel (StepFun) ------------------------------------------

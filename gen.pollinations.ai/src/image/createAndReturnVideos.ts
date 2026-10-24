@@ -12,6 +12,7 @@ import {
 } from "./models/falFallbackMediaModel.ts";
 import { callFluxMaxVideoAPI } from "./models/fluxMaxVideoModel.ts";
 import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
+import { callGrokReplicateVideoAPI } from "./models/grokReplicateVideoModel.ts";
 import { callKlingVideoAPI } from "./models/klingVideoModel.ts";
 import {
     callMinimaxH3API,
@@ -63,15 +64,16 @@ export async function createAndReturnVideo(
         case "google/veo-3.1-fast:replicate":
             result = await callVeoReplicateAPI(prompt, safeParams);
             break;
-        case "bytedance/seedance-1-pro-fast":
+        case "bytedance/seedance-1-pro-fast:replicate":
             result = await callSeedanceProAPI(prompt, safeParams);
             break;
-        case "bytedance/seedance-1-pro-fast:fal":
+        case "bytedance/seedance-1-pro-fast":
         case "alibaba/wan-2.6:fal":
         case "alibaba/wan-2.2-fast":
-        case "x-ai/grok-imagine-video":
+        case "x-ai/grok-imagine-video:fal":
         case "x-ai/grok-imagine-video-1.5:fal":
         case "kandinskylab/kandinsky-6.0-lite":
+        case "heygen/heygen-video-1":
             result = await callFalFallbackVideo(prompt, safeParams);
             break;
         case "mirelo/sfx-2.0":
@@ -103,7 +105,9 @@ export async function createAndReturnVideo(
         case "prunaai/p-video":
             result = await callPrunaVideoAPI(prompt, safeParams);
             break;
-        case "x-ai/grok-imagine-video:openrouter":
+        case "x-ai/grok-imagine-video":
+            result = await callGrokReplicateVideoAPI(prompt, safeParams);
+            break;
         case "x-ai/grok-imagine-video-1.5-lite:openrouter":
             result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
             break;
@@ -133,7 +137,7 @@ export async function createAndReturnVideo(
         case "alibaba/happyhorse-1.1":
             result = await callHappyHorseAPI(prompt, safeParams);
             break;
-        case "heygen/heygen-video-1":
+        case "heygen/heygen-video-1:openrouter":
             result = await callHeyGenVideoAPI(prompt, safeParams);
             break;
         case "minimax/minimax-h3":

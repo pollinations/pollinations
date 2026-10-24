@@ -69,6 +69,193 @@ afterEach(() => {
 });
 
 describe("System One adapter", () => {
+    it("rejects D3 question counts above its local limit before calling upstream", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callSystemOne(
+                [
+                    {
+                        role: "user",
+                        content: JSON.stringify({
+                            state: "Invoice overdue",
+                            questions: Object.fromEntries(
+                                Array.from({ length: 65 }, (_, index) => [
+                                    `question_${index}`,
+                                    {
+                                        type: "noul",
+                                        instructions: "Is it overdue?",
+                                    },
+                                ]),
+                            ),
+                        }),
+                    },
+                ],
+                {
+                    modelConfig: {
+                        authKey: "d3-test-key",
+                        model: "vllm-sr/d3",
+                        directEndpoint:
+                            "https://decision.vllm-sr.ai/v1/systemone",
+                        decisionsProtocol: "vllm-sr",
+                    },
+                },
+            ),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+    it("rejects D3 questions without instructions before calling upstream", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callSystemOne(
+                [
+                    {
+                        role: "user",
+                        content: JSON.stringify({
+                            state: "Invoice overdue",
+                            questions: { overdue: { type: "noul" } },
+                        }),
+                    },
+                ],
+                {
+                    modelConfig: {
+                        authKey: "d3-test-key",
+                        model: "vllm-sr/d3",
+                        directEndpoint:
+                            "https://decision.vllm-sr.ai/v1/systemone",
+                        decisionsProtocol: "vllm-sr",
+                    },
+                },
+            ),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+    it.each([false, true])(
+        "normalizes structured D3 input and restores the score legend (stream=%s)",
+        async (stream) => {
+            const questions = {
+                ...nativeQuestions,
+                department: {
+                    ...nativeQuestions.department,
+                    criteria: {
+                        billing: { issue: "Payment" },
+                        technical: null,
+                    },
+                },
+                is_urgent: {
+                    ...nativeQuestions.is_urgent,
+                    criteria: {
+                        true: ["Time-sensitive"],
+                        false: { urgent: false },
+                    },
+                },
+            };
+            const fetchSpy = vi
+                .spyOn(globalThis, "fetch")
+                .mockImplementationOnce(async (input, init) => {
+                    expect(String(input)).toBe(
+                        "https://decision.vllm-sr.ai/v1/systemone",
+                    );
+                    expect(
+                        new Headers(init?.headers).get("authorization"),
+                    ).toBe("Bearer d3-test-key");
+                    expect(JSON.parse(String(init?.body))).toEqual({
+                        model: "vllm-sr/d3",
+                        state: JSON.stringify(nativeState),
+                        questions: {
+                            department: {
+                                ...questions.department,
+                                criteria: {
+                                    billing: '{"issue":"Payment"}',
+                                    technical: null,
+                                },
+                            },
+                            frustration: {
+                                ...questions.frustration,
+                                instructions: JSON.stringify(
+                                    questions.frustration.instructions,
+                                ),
+                                criteria: [
+                                    "Calm",
+                                    JSON.stringify(
+                                        questions.frustration.criteria[1],
+                                    ),
+                                    "Very angry",
+                                ],
+                            },
+                            is_urgent: {
+                                ...questions.is_urgent,
+                                criteria: {
+                                    true: '["Time-sensitive"]',
+                                    false: '{"urgent":false}',
+                                },
+                            },
+                        },
+                    });
+                    return Response.json({
+                        answers,
+                        usage: { input_tokens: 312, output_tokens: 0 },
+                    });
+                });
+            const result = await generateTextPortkey(
+                [
+                    {
+                        role: "user",
+                        content: JSON.stringify({
+                            state: nativeState,
+                            questions,
+                        }),
+                    },
+                ],
+                {
+                    model: "vllm-sr/d3",
+                    stream,
+                    modelConfig: {
+                        authKey: "d3-test-key",
+                        model: "vllm-sr/d3",
+                        directEndpoint:
+                            "https://decision.vllm-sr.ai/v1/systemone",
+                        decisionsProtocol: "vllm-sr",
+                    },
+                },
+                vi.fn(),
+            );
+            const expected = {
+                ...answers,
+                frustration: {
+                    ...answers.frustration,
+                    legend: Object.fromEntries(
+                        questions.frustration.criteria.map(
+                            (criterion, index) => [index, criterion],
+                        ),
+                    ),
+                },
+            };
+            expect(
+                JSON.parse(String(result.choices?.[0]?.message?.content)),
+            ).toEqual(expected);
+            expect(fetchSpy).toHaveBeenCalledTimes(1);
+            if (stream) {
+                if (!result.responseStream) throw new Error("Missing stream");
+                const events = (
+                    await new Response(
+                        requireChatStreamUsage(result.responseStream),
+                    ).text()
+                )
+                    .split("\n\n")
+                    .filter(Boolean)
+                    .map((event) => event.replace(/^data: /, ""));
+                expect(
+                    JSON.parse(JSON.parse(events[0]).choices[0].delta.content),
+                ).toEqual(expected);
+                expect(JSON.parse(events.at(-2) as string).usage).toEqual({
+                    prompt_tokens: 312,
+                    completion_tokens: 0,
+                    total_tokens: 312,
+                });
+                expect(events.at(-1)).toBe("[DONE]");
+            }
+        },
+    );
     it.each(["typesafe/jev-1.13", "typesafe/jev", "jev"])(
         "resolves %s to the versioned canonical model",
         (name) => {

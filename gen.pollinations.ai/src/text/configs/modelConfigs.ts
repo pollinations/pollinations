@@ -77,6 +77,13 @@ function createPinnedOpenRouterGeminiConfig(
 // =============================================================================
 
 export const portkeyConfig: PortkeyConfigMap = {
+    "vllm-sr/d3": () => ({
+        provider: "vllm-sr",
+        directEndpoint: "https://decision.vllm-sr.ai/v1/systemone",
+        authKey: textEnvironmentValue("D3_KEY"),
+        model: "vllm-sr/d3",
+        decisionsProtocol: "vllm-sr",
+    }),
     "stealth/glyph-cluster": () =>
         createVercelAIGatewayModelConfig({
             model: "stealth/glyph-cluster",

@@ -52,6 +52,7 @@ const BRAND_LOGOS: Record<string, string> = {
     "Thinking Machines": "thinking-machines",
     Tripo: "tripo",
     TypeSafe: "typesafe",
+    "vLLM Semantic Router": "vllm-sr",
     Xiaomi: "xiaomi",
     "Z.ai": "zai",
     xAI: "xai",

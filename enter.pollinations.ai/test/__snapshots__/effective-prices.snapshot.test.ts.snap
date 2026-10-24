@@ -4128,6 +4128,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000004431,
     },
   },
+  "vllm-sr/d3": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0,
+    },
+  },
   "x-ai/grok-4.20": {
     "cost": {
       "completionTextTokens": 0.0000025,

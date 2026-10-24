@@ -844,6 +844,11 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "vllm-sr/d3",
+        config: portkeyConfig["vllm-sr/d3"],
+        useSystemOneApi: true,
+    },
+    {
         name: "respan/span-01-lite",
         config: portkeyConfig["span-01-lite"],
         useSystemOneApi: true,

@@ -249,11 +249,11 @@ export const TEXT_FALLBACKS = {
         "xiaomi/mimo-v2.6-pro:deepinfra": {
             provider: "deepinfra",
             addedDate: new Date("2026-10-10").getTime(),
-            // DeepInfra bills input at $0.43 per 1M; the public price stays at Novita's $0.435.
+            // DeepInfra current discounted rates verified 2026-10-24. Callers keep the Novita quote.
             cost: {
-                promptTextTokens: perMillion(0.43),
-                promptCachedTokens: perMillion(0.0036),
-                completionTextTokens: perMillion(0.87),
+                promptTextTokens: perMillion(0.387),
+                promptCachedTokens: perMillion(0.00324),
+                completionTextTokens: perMillion(0.783),
             },
         },
     },

@@ -1132,6 +1132,22 @@ describe("static provider fallbacks", () => {
         }
     });
 
+    it("records MiMo V2.6 Pro's discounted backup cost and keeps the Novita quote", () => {
+        const model = "xiaomi/mimo-v2.6-pro";
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 1000,
+                promptCachedTokens: 200,
+                completionTextTokens: 100,
+            },
+            servedBy: TEXT_SERVICES[`${model}:deepinfra`],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.000465948, 12);
+        expect(billed.price.totalPrice).toBe(0.00052272);
+    });
+
     it("keeps exact provider route costs", () => {
         expect(TEXT_SERVICES["openai/gpt-4o-mini"].cost).toMatchObject({
             promptTextTokens: (0.15 / 1_000_000) * 1.055,

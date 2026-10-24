@@ -15,6 +15,7 @@ import type {
     GenerationJobHead,
     GenerationOutcome,
 } from "@/middleware/generation-deduplication.ts";
+import { captureError } from "@/utils/execute-generation.ts";
 import worker from "../src/index.ts";
 
 function testJob(key: string, method = "GET"): GenerationJobHead {
@@ -74,6 +75,129 @@ async function newCoordinatorIds(existing: DurableObjectId[]) {
 
 afterEach(() => {
     vi.restoreAllMocks();
+});
+
+describe("coordinator error capture", () => {
+    it.each([64 * 1024, 64 * 1024 + 17])(
+        "captures only the first 64 KiB of a %i-byte error without waiting for its tail or cancellation",
+        async (size) => {
+            const bytes = Uint8Array.from({ length: size }, (_, i) => i % 251);
+            let controller!: ReadableStreamDefaultController<Uint8Array>;
+            let cancelled = false;
+            let releaseCancel!: () => void;
+            const cancellation = new Promise<void>((resolve) => {
+                releaseCancel = resolve;
+            });
+            const response = new Response(
+                new ReadableStream<Uint8Array>(
+                    {
+                        start(stream) {
+                            controller = stream;
+                            stream.enqueue(bytes.subarray(0, 123));
+                            stream.enqueue(bytes.subarray(123));
+                        },
+                        cancel() {
+                            cancelled = true;
+                            return cancellation;
+                        },
+                    },
+                    { highWaterMark: 0 },
+                ),
+                {
+                    status: 429,
+                    headers: {
+                        "content-type": "application/octet-stream",
+                        "retry-after": "30",
+                        "x-moderation-reason": "test",
+                        "x-safety-result": "blocked",
+                        "set-cookie": "internal-only=test",
+                    },
+                },
+            );
+            const pending = captureError(response);
+            let timeout: ReturnType<typeof setTimeout> | undefined;
+            try {
+                const result = await Promise.race([
+                    pending,
+                    new Promise<null>((resolve) => {
+                        timeout = setTimeout(() => resolve(null), 1_000);
+                    }),
+                ]);
+                expect(result).not.toBeNull();
+                expect(result?.body).toEqual(bytes.slice(0, 64 * 1024));
+                expect(result?.httpStatus).toBe(429);
+                expect(Object.fromEntries(result?.headers ?? [])).toEqual({
+                    "content-type": "application/octet-stream",
+                    "retry-after": "30",
+                    "x-moderation-reason": "test",
+                    "x-safety-result": "blocked",
+                });
+                expect(cancelled).toBe(true);
+                expect(response.body?.locked).toBe(false);
+            } finally {
+                clearTimeout(timeout);
+                releaseCancel();
+                if (!cancelled) controller.close();
+                await pending;
+            }
+        },
+    );
+
+    it.each([null, "upstream error: café"])(
+        "preserves a complete short error body (%s)",
+        async (body) => {
+            const response = new Response(body, { status: 503 });
+            const result = await captureError(response);
+            expect(result.httpStatus).toBe(503);
+            expect(result.body).toEqual(new TextEncoder().encode(body ?? ""));
+            expect(response.body?.locked ?? false).toBe(false);
+        },
+    );
+
+    it("preserves the original error when cancelling its tail fails", async () => {
+        let cancelled = false;
+        const response = new Response(
+            new ReadableStream<Uint8Array>(
+                {
+                    start(controller) {
+                        controller.enqueue(new Uint8Array(64 * 1024));
+                    },
+                    pull(controller) {
+                        controller.close();
+                    },
+                    cancel() {
+                        cancelled = true;
+                        return Promise.reject(new Error("cancellation failed"));
+                    },
+                },
+                { highWaterMark: 0 },
+            ),
+            { status: 502 },
+        );
+        const result = await captureError(response);
+        expect(result.httpStatus).toBe(502);
+        expect(result.body.byteLength).toBe(64 * 1024);
+        expect(cancelled).toBe(true);
+        expect(response.body?.locked).toBe(false);
+    });
+
+    it("propagates a body read failure and releases the reader", async () => {
+        const response = new Response(
+            new ReadableStream<Uint8Array>({
+                start(controller) {
+                    controller.enqueue(new Uint8Array([1, 2, 3]));
+                },
+                pull(controller) {
+                    controller.error(new Error("upstream disconnected"));
+                },
+            }),
+            { status: 502 },
+        );
+        await expect(captureError(response)).rejects.toThrow(
+            "upstream disconnected",
+        );
+        expect(response.body?.locked).toBe(false);
+    });
 });
 
 describe("GenerationCoordinator", () => {

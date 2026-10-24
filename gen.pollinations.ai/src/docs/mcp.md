@@ -18,6 +18,11 @@ then choose a server:
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 | Machines | `https://gen.pollinations.ai/mcp/machines` | Start, pause, resume, and run commands and file operations in Linux sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
+| Toolbox | `https://gen.pollinations.ai/mcp/toolbox` | Time, cron previews, Unicode, contrast checks, and SVG QR codes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/toolbox-mcp) |
+
+Toolbox is free but still requires a key. Time conversion rejects ambiguous or
+skipped local times: include an explicit
+offset to select an instant. Cron previews do not schedule jobs.
 
 Send the key with every request:
 

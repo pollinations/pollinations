@@ -2155,7 +2155,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionTextTokens": 0,
-      "promptTextTokens": 0.000000042,
+      "promptTextTokens": 0.0000000315,
     },
   },
   "microsoft/microsoft-decision-1:openrouter": {
@@ -2165,7 +2165,17 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionTextTokens": 0,
-      "promptTextTokens": 0.00000004431,
+      "promptTextTokens": 0.0000000332325,
+    },
+  },
+  "microsoft/microsoft-decision-1:vercel": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.000000042,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.0000000315,
     },
   },
   "microsoft/trellis-2": {

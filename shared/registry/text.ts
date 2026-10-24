@@ -1827,14 +1827,15 @@ const TEXT_BASE_SERVICES = {
     "microsoft/microsoft-decision-1": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],
-        provider: "vercel",
+        provider: "azure",
         publisher: "Microsoft",
         category: "decision",
         addedDate: new Date("2026-10-09").getTime(),
-        priceMultiplier: 1, // Billed at cost, no margin.
-        paidOnly: true,
+        priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
-            // Vercel AI Gateway list price, the cheapest route.
+            // Azure Retail Prices "Microsoft Decision 1 1M Tokens" (2026-10-23),
+            // the model's only meter.
             promptTextTokens: perMillion(0.042),
             completionTextTokens: perMillion(0),
         },

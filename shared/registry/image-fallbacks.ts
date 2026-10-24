@@ -243,6 +243,8 @@ export const IMAGE_FALLBACKS = {
         "black-forest-labs/flux.1-schnell:deepinfra": {
             provider: "deepinfra",
             addedDate: new Date("2026-09-01").getTime(),
+            // Per 1024² image; the handler records DeepInfra's reported
+            // charge, which scales with image area.
             cost: { completionImageTokens: 0.0005 },
         },
     },
@@ -259,13 +261,34 @@ export const IMAGE_FALLBACKS = {
             maxReferenceImages: 10,
         },
     },
-    "x-ai/grok-imagine-video": {
-        "x-ai/grok-imagine-video:openrouter": {
+    "heygen/heygen-video-1": {
+        "heygen/heygen-video-1:openrouter": {
             provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
+            addedDate: new Date("2026-10-24").getTime(),
+            // OpenRouter HeyGen rates with its 50% launch discount (list
+            // $0.02/s at 480p, $0.036/s at 768p), plus the 5.5% credit fee.
+            // The handler bills OpenRouter's reported cost.
+            cost: { completionVideoSeconds: 0.01 * 1.055 },
+            ...defineCostVariants(
+                { "768p": { completionVideoSeconds: 0.018 * 1.055 } },
+                matchResolution("768p"),
+                {
+                    "768p": {
+                        label: "768p",
+                        description:
+                            "Applies when the requested video resolution is 768p.",
+                    },
+                },
+                "480p",
+            ),
+        },
+    },
+    "x-ai/grok-imagine-video": {
+        "x-ai/grok-imagine-video:fal": {
+            provider: "fal",
             cost: {
-                promptImageTokens: 0.002 * 1.055, // per start-frame image
-                completionVideoSeconds: 0.07 * 1.055, // per sec at 720p
+                promptImageTokens: 0.002,
+                completionVideoSeconds: 0.07,
             },
         },
     },
@@ -344,14 +367,15 @@ export const IMAGE_FALLBACKS = {
         "alibaba/wan-2.2-fast:replicate": { provider: "replicate" },
     },
     "bytedance/seedance-1-pro-fast": {
-        "bytedance/seedance-1-pro-fast:fal": {
-            provider: "fal",
-            addedDate: new Date("2026-09-01").getTime(),
-            cost: { completionVideoSeconds: 0.0216 },
+        "bytedance/seedance-1-pro-fast:replicate": {
+            provider: "replicate",
+            addedDate: new Date("2026-10-24").getTime(),
+            // Replicate per-second rates by resolution (2026-10-24).
+            cost: { completionVideoSeconds: 0.025 },
             ...defineCostVariants(
                 {
-                    "480p": { completionVideoSeconds: 0.0096 },
-                    "1080p": { completionVideoSeconds: 0.0486 },
+                    "480p": { completionVideoSeconds: 0.015 },
+                    "1080p": { completionVideoSeconds: 0.06 },
                 },
                 matchResolution("480p", "1080p"),
                 {

@@ -103,6 +103,11 @@ export const IMAGE_FALLBACKS = {
         "black-forest-labs/flux.1.1-pro:azure:sweden": {
             provider: "azure",
         },
+        // Replicate's official model: $0.04 per output image (model page, 2026-10-24).
+        "black-forest-labs/flux.1.1-pro:replicate": {
+            provider: "replicate",
+            addedDate: new Date("2026-10-24").getTime(),
+        },
     },
     "black-forest-labs/flux.2-pro": {
         "black-forest-labs/flux.2-pro:replicate": {

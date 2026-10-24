@@ -71,7 +71,6 @@ function communityEntry(
     paidOnly = false,
 ): GenerationModelEntry {
     const entry = registryEntry(id, fallbacks, rate);
-    entry.definition.paidOnly = paidOnly;
     entry.visible = visibility === "public" && hiddenAt === null;
     entry.definition.hidden = hiddenAt !== null;
     entry.communityEndpoint = {
@@ -102,20 +101,6 @@ function communityEntry(
 }
 
 describe("registry fallback linking", () => {
-    it("rejects Quest-to-paid catalog fallbacks but allows paid-to-Quest", () => {
-        const quest = registryEntry("quest", ["paid"]);
-        const paid = registryEntry("paid", ["quest"]);
-        paid.definition.paidOnly = true;
-        const entries = [quest, paid];
-        linkFallbackEntries(
-            entries,
-            new Map(entries.map((entry) => [entry.id, entry])),
-        );
-        expect(quest.fallbackEntries).toBeUndefined();
-        expect(paid.fallbackEntries?.map((entry) => entry.id)).toEqual([
-            "quest",
-        ]);
-    });
     it("marks provider routes as hidden, fallback-only registry entries", () => {
         expect(IMAGE_SERVICES["tongyi-mai/z-image-turbo"].fallbacks).toContain(
             "tongyi-mai/z-image-turbo:fal",
@@ -1112,4 +1097,19 @@ describe("caller-listed model chains", () => {
             resolveModelDefinition("openai-fast,flux", "generate.text", env),
         ).rejects.toThrowError(/is a image model/);
     });
+
+    it.each(["flux,hyper3d/rodin-2.5", "hyper3d/rodin-2.5,flux"])(
+        "rejects mixed output categories in %s",
+        async (models) => {
+            await expect(
+                resolveModelDefinition(
+                    models,
+                    "generate.image",
+                    env,
+                    undefined,
+                    "/v1/responses",
+                ),
+            ).rejects.toThrowError(/same model category/);
+        },
+    );
 });

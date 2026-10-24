@@ -1,5 +1,6 @@
 import {
     type CommunityEndpointRuntime,
+    isCommunityFallbackBalanceAllowed,
     isCommunityFallbackPricingAllowed,
     MAX_FALLBACK_TARGETS,
     staticFallbackRejection,
@@ -306,6 +307,7 @@ function isUsableCommunityFallback(
     if (primary.modality !== candidate.modality) return false;
     if (usesAgentRunToken(candidate)) return false;
     if (primary.imagePricing !== candidate.imagePricing) return false;
+    if (!isCommunityFallbackBalanceAllowed(primary, candidate)) return false;
     return isCommunityFallbackPricingAllowed(primary, candidate);
 }
 
@@ -324,8 +326,6 @@ export function linkFallbackEntries(
         for (const targetId of declared) {
             const target = byIdOrAlias.get(targetId);
             if (!target || target === entry) continue;
-            if (!entry.definition.paidOnly && target.definition.paidOnly)
-                continue;
             if (entry.communityEndpoint) {
                 const targetEndpoint = target.communityEndpoint;
                 if (
@@ -361,9 +361,8 @@ export type FallbackAttempt = {
  * Placed around the upstream call itself rather than around the request, so
  * authentication and moderation are not repeated. Caller-selected alternatives
  * recheck their own balance rules in the local guard immediately before an
- * attempt. Every candidate is tried at most once: the dominant failure is an
- * exhausted quota, and asking the same endpoint again would only spend more of
- * a budget that is already gone.
+ * attempt. Each list position is tried once; callers may explicitly repeat a
+ * model when they want another attempt.
  *
  * Every upstream call is appended to `attempts`, including the one that serves
  * or ends the request. Recording is not the same as retrying: this loop decides

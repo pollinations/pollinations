@@ -32,8 +32,12 @@ type GenerationAccessEnv = {
 export async function checkBalance(
     vars: GenerationAccessVariables,
     env: CloudflareBindings,
+    model: Pick<
+        ModelVariables["model"],
+        "resolved" | "definition"
+    > = vars.model,
 ): Promise<void> {
-    const { auth, balance, model, log } = vars;
+    const { auth, balance, log } = vars;
     if (!auth.user?.id) return;
 
     const isPaidOnly = model.definition.paidOnly;
@@ -110,17 +114,10 @@ export async function requireModelAttemptAccess(
     candidate: FallbackCandidate,
 ): Promise<void> {
     if (candidate.entry && c.var.model.requested.includes(",")) {
-        await checkBalance(
-            {
-                ...c.var,
-                model: {
-                    ...c.var.model,
-                    resolved: candidate.entry.id,
-                    definition: candidate.entry.definition,
-                },
-            },
-            c.env,
-        );
+        await checkBalance(c.var, c.env, {
+            resolved: candidate.entry.id,
+            definition: candidate.entry.definition,
+        });
         await reserveApiKeyBudget(c.var, c.env);
     }
     await enforceModelRateLimit(c, candidate);

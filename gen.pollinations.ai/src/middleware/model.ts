@@ -177,7 +177,7 @@ export async function resolveModelDefinition(
     supportedEndpoint?: string,
 ): Promise<ModelVariables["model"]> {
     const registry = await getGenerationModelRegistry(env);
-    const [entry, ...alternates] = requestedModelIds(model).map((id) =>
+    const entries = requestedModelIds(model).map((id) =>
         resolveModelEntry(
             registry,
             id,
@@ -186,6 +186,16 @@ export async function resolveModelDefinition(
             supportedEndpoint,
         ),
     );
+    const [entry, ...alternates] = entries;
+    const mismatched = alternates.find(
+        (alternate) =>
+            alternate.definition.category !== entry.definition.category,
+    );
+    if (mismatched) {
+        throw new HTTPException(400, {
+            message: `Model lists must use the same model category: "${entry.id}" is ${entry.definition.category}, but "${mismatched.id}" is ${mismatched.definition.category}.`,
+        });
+    }
     // Explicit lists replace configured fallbacks, preserving order and repeats.
     const fallbackEntries = model.includes(",")
         ? alternates
@@ -193,7 +203,7 @@ export async function resolveModelDefinition(
     // An agent run executes tools and spends the caller's balance, so its
     // answer belongs to that caller and must never be replayed to another —
     // whether it serves as the primary or as someone's listed alternate.
-    const agent = [entry, ...alternates].find(
+    const agent = entries.find(
         (candidate) =>
             candidate.communityEndpoint &&
             usesAgentRunToken(candidate.communityEndpoint),

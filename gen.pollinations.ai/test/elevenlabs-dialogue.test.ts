@@ -181,6 +181,86 @@ workerTest(
     },
 );
 
+workerTest.for(["elevenlabs/eleven-v3:dialogue", "elevenlabs/eleven-v3"])(
+    "reaches dialogue after a failed caller choice %s",
+    async (primary, { paidApiKey }) => {
+        const realFetch = globalThis.fetch.bind(globalThis);
+        const providerCalls: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const url =
+                    input instanceof Request ? input.url : input.toString();
+                if (url.startsWith("https://api.elevenlabs.io/v1/text-to-")) {
+                    providerCalls.push(new Request(input, init));
+                    if (providerCalls.length === 1) {
+                        return new Response("temporarily unavailable", {
+                            status: 503,
+                        });
+                    }
+                    return new Response(new Uint8Array([73, 68, 51, 4]), {
+                        headers: { "content-type": "audio/mpeg" },
+                    });
+                }
+                if (
+                    url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+                return realFetch(input, init);
+            },
+        );
+        const greeting = `Hello ${crypto.randomUUID()}.`;
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/v1/audio/speech", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: `${primary},elevenlabs/eleven-v3:dialogue`,
+                    input: `nova: ${greeting}\ngeorge: Hi!`,
+                    voice: "alloy",
+                    response_format: "mp3",
+                    seed: 42,
+                    safe: false,
+                }),
+            }),
+            withInlineGenerationCoordinator({
+                ...env,
+                ELEVENLABS_API_KEY: "test-eleven-key",
+            } as unknown as CloudflareBindings),
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        expect(providerCalls).toHaveLength(2);
+        expect(providerCalls[0].url).toContain(
+            primary.endsWith(":dialogue")
+                ? "/text-to-dialogue"
+                : "/text-to-speech/",
+        );
+        expect(providerCalls[1].url).toContain("/text-to-dialogue");
+        await expect(providerCalls[1].json()).resolves.toEqual({
+            inputs: [
+                { text: greeting, voice_id: "MF3mGyEYCl7XYWbV9V6O" },
+                { text: "Hi!", voice_id: "JBFqnCBsd6RMkjVDRZzb" },
+            ],
+            model_id: "eleven_v3",
+            seed: 42,
+        });
+        expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
+            String(greeting.length + 3),
+        );
+        expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(0);
+        await waitOnExecutionContext(ctx);
+    },
+);
+
 workerTest(
     "rejects dialogue lines without a voice label",
     async ({ paidApiKey }) => {

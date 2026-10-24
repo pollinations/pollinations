@@ -894,6 +894,31 @@ describe("static provider fallbacks", () => {
         ).toBe(true);
     });
 
+    it("keeps the Azure gpt-5.6-luna quote when OpenAI serves it", () => {
+        const model = "openai/gpt-5.6-luna";
+        expect(TEXT_SERVICES[model].fallbacks).toEqual([
+            "openai/gpt-5.6-luna:openai",
+        ]);
+        expect(TEXT_SERVICES["openai/gpt-5.6-luna:openai"]).toMatchObject({
+            provider: "openai",
+            priceMultiplier: 1,
+            hidden: true,
+        });
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                "promptTextTokens": 1000,
+                "promptCachedTokens": 200,
+                "completionTextTokens": 100,
+                "promptCacheWriteTokens": 50,
+            },
+            servedBy: TEXT_SERVICES["openai/gpt-5.6-luna:openai"],
+            quotedBy: TEXT_SERVICES[model],
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.0003365, 12);
+        expect(billed.price.totalPrice).toBe(0.00025238);
+    });
+
     it("prices Step 5 Preview on Vercel at base rates and supports tool calls on that fallback", () => {
         const primary = TEXT_SERVICES["stepfun/step-5-preview"];
         const fallback = TEXT_SERVICES["stepfun/step-5-preview:vercel"];
@@ -1186,31 +1211,6 @@ describe("static provider fallbacks", () => {
             for (const route of routes)
                 expect(publicAudio.has(route)).toBe(false);
         }
-    });
-
-    it("keeps the Azure gpt-5.6-luna quote when OpenAI serves it", () => {
-        const model = "openai/gpt-5.6-luna";
-        expect(TEXT_SERVICES[model].fallbacks).toEqual([
-            "openai/gpt-5.6-luna:openai",
-        ]);
-        expect(TEXT_SERVICES["openai/gpt-5.6-luna:openai"]).toMatchObject({
-            provider: "openai",
-            priceMultiplier: 1,
-            hidden: true,
-        });
-        const billed = calculateUsageBilling({
-            model,
-            usage: {
-                "promptTextTokens": 1000,
-                "promptCachedTokens": 200,
-                "completionTextTokens": 100,
-                "promptCacheWriteTokens": 50,
-            },
-            servedBy: TEXT_SERVICES["openai/gpt-5.6-luna:openai"],
-            quotedBy: TEXT_SERVICES[model],
-        });
-        expect(billed.cost.totalCost).toBeCloseTo(0.0003365, 12);
-        expect(billed.price.totalPrice).toBe(0.00025238);
     });
 
     it("charges SiliconFlow's reported cache hits at its full input rate", () => {

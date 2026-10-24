@@ -251,6 +251,20 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("pins gpt-5.6-luna recovery to exact OpenAI Standard", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "openai/gpt-5.6-luna:openai",
+            service_tier: "priority",
+        });
+        expect(resolved.options.model).toBe("gpt-5.6-luna");
+        expect(resolved.options.service_tier).toBe("default");
+        expect(resolved.options.modelConfig).toMatchObject({
+            directEndpoint: "https://api.openai.com/v1/chat/completions",
+            supportsMaxCompletionTokens: true,
+            supportsStreamOptions: true,
+        });
+    });
+
     it("pins Nex N2.5 Mini to Nex AGI on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "nex-agi/nex-n2.5-mini",
@@ -395,20 +409,6 @@ describe("resolveModelConfig", () => {
             expect(fallback.options.max_tokens).toBe(128000);
         },
     );
-
-    it("pins gpt-5.6-luna recovery to exact OpenAI Standard", () => {
-        const resolved = resolveModelConfig(messages, {
-            model: "openai/gpt-5.6-luna:openai",
-            service_tier: "priority",
-        });
-        expect(resolved.options.model).toBe("gpt-5.6-luna");
-        expect(resolved.options.service_tier).toBe("default");
-        expect(resolved.options.modelConfig).toMatchObject({
-            directEndpoint: "https://api.openai.com/v1/chat/completions",
-            supportsMaxCompletionTokens: true,
-            supportsStreamOptions: true,
-        });
-    });
 
     it("pins Jev's exact Vercel version, long context, and OpenRouter backup", () => {
         const primary = resolveModelConfig(messages, {

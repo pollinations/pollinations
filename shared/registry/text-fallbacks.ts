@@ -13,12 +13,6 @@ import { CHAT_PARAMETERS } from "./text-parameters";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
-    "openai/gpt-5.6-luna": {
-        "openai/gpt-5.6-luna:openai": {
-            provider: "openai",
-            priceMultiplier: 1,
-        },
-    },
 
     "qwen/qwen3-coder-30b-a3b-instruct": {
         "qwen/qwen3-coder-30b-a3b-instruct:aws": {
@@ -144,6 +138,12 @@ export const TEXT_FALLBACKS = {
                 promptTextTokens: perMillion(0.042) * 1.055,
                 completionTextTokens: perMillion(0),
             },
+        },
+    },
+    "openai/gpt-5.6-luna": {
+        "openai/gpt-5.6-luna:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
         },
     },
     "qwen/qwen3.8-max": {

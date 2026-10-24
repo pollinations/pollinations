@@ -547,8 +547,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "qwen/qwen3.7-flash",
             defaultOptions: {
                 max_tokens: 64000,
+                // The base slug also matches alibaba/us-east-1, which costs
+                // 15% more than the quoted Alibaba rates.
                 provider: {
                     only: ["Alibaba"],
+                    ignore: ["alibaba/us-east-1"],
                     allow_fallbacks: false,
                 },
             },

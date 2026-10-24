@@ -523,6 +523,19 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("pins the Qwen3.7 Flash OpenRouter fallback away from Alibaba US", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen/qwen3.7-flash:openrouter:alibaba",
+        });
+
+        expect(result.options.model).toBe("qwen/qwen3.7-flash");
+        expect(result.options.provider).toEqual({
+            only: ["Alibaba"],
+            ignore: ["alibaba/us-east-1"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("routes qwen3.7-flash directly to Alibaba", () => {
         const result = resolveModelConfig(messages, {
             model: "qwen/qwen3.7-flash",

@@ -3288,7 +3288,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionAudioTokens": 0.0000363,
     },
     "price": {
-      "completionAudioTokens": 0.000027225,
+      "completionAudioTokens": 0.0000363,
     },
   },
   "openai/whisper-large-v3": {

@@ -824,7 +824,7 @@ const AUDIO_BASE_SERVICES = {
         addedDate: new Date("2026-09-29").getTime(),
         // The regional deployment has 3 RPM against a 30-day peak of 35 RPM.
         paidOnly: true,
-        priceMultiplier: 0.75,
+        priceMultiplier: 1,
         // Azure Speech-Text to Speech HD-Regional, USD retail (2026-10-24).
         cost: { completionAudioTokens: 36.3 / 1_000_000 },
         title: "OpenAI TTS HD",

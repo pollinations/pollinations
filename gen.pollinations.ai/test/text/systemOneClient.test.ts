@@ -624,6 +624,34 @@ describe("System One adapter", () => {
         expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 
+    it.each([
+        "perplexity/pplx-decider-v1.2",
+        "perplexity/pplx-decider-v1.2:perplexity",
+    ])("uses the native PPLX route config for %s", async (model) => {
+        const config = findModelByName(model)?.config();
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (url, init) => {
+                expect(String(url)).toBe(config?.directEndpoint);
+                expect(JSON.parse(String(init?.body))).toEqual({
+                    ...(config?.defaultOptions as Record<string, unknown>),
+                    state: nativeState,
+                    questions: nativeQuestions,
+                    model: config?.model,
+                });
+                return Response.json({
+                    model: config?.model,
+                    answers,
+                    usage: { input_tokens: 95, output_tokens: 3 },
+                });
+            });
+        await callSystemOne([{ role: "user", content: nativeContent }], {
+            modelConfig: { ...config, authKey: "test-key" },
+            providerOptions: { gateway: { only: ["cloudflare"] } },
+        });
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
     it("forwards native state and questions in one message and returns native answers", async () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")

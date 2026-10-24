@@ -15,13 +15,9 @@ import { CHAT_PARAMETERS } from "./text-parameters";
 export const TEXT_FALLBACKS = {
     "perplexity/pplx-decider-v1.2": {
         // Same Perplexity backend; covers gateway failures, not Perplexity outages.
-        "perplexity/pplx-decider-v1.2:openrouter": {
-            provider: "openrouter",
-            // OpenRouter list price plus its 5.5% credit fee.
-            cost: {
-                promptTextTokens: perMillion(0.02) * 1.055,
-                completionTextTokens: perMillion(0),
-            },
+        "perplexity/pplx-decider-v1.2:perplexity": {
+            provider: "perplexity",
+            priceMultiplier: 1,
         },
     },
     "liquid/d1": {

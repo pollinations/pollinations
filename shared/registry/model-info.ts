@@ -59,6 +59,16 @@ export type ModelHealth = z.infer<typeof ModelHealthSchema>;
 //         promptAudioTokens, promptAudioSeconds, promptImageTokens,
 //         completionTextTokens, completionReasoningTokens, completionAudioTokens,
 //         completionImageTokens, completionVideoSeconds, completionVideoTokens
+// An agent has no price of its own: callers pay for the model and tool calls
+// it makes. Shared by the Pollinations and OpenAI-compatible model schemas.
+export const AGENT_FIELD_DESCRIPTIONS = {
+    agent: "True for agents. An agent's charges are the model and tool calls it makes, billed to the caller under those models.",
+    base_model:
+        "Model a prompt agent runs on; `pricing` shows its rates. Absent when Gen cannot see which models an agent calls.",
+    pricing:
+        "Pollen rates per billed unit. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes.",
+};
+
 export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
@@ -75,12 +85,16 @@ export const ModelInfoSchema = z.object({
         )
         .optional(),
     community: z.boolean(),
-    agent: z.boolean().optional(),
-    base_model: z.string().optional(),
+    agent: z.boolean().optional().describe(AGENT_FIELD_DESCRIPTIONS.agent),
+    base_model: z
+        .string()
+        .optional()
+        .describe(AGENT_FIELD_DESCRIPTIONS.base_model),
     per_user_rpm: z.number().positive().nullable().optional(),
     pricing: z
         .record(z.string(), z.string())
-        .and(z.object({ currency: z.literal("pollen") })),
+        .and(z.object({ currency: z.literal("pollen") }))
+        .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
     pricing_variants: z
         .array(
             z.object({
@@ -171,10 +185,16 @@ export const ModelInfoSchema = z.object({
             "Maximum requested output tokens, including max_tokens, max_completion_tokens and max_output_tokens.",
         ),
     reasoning: z.boolean().optional(),
+    supports_streaming: z
+        .boolean()
+        .optional()
+        .describe(
+            "False when the upstream does not stream. `stream: true` still returns a valid event stream, but the whole answer arrives at once when generation finishes. Omitted when the model streams.",
+        ),
     context_length: z.number().optional(),
     voices: z.array(z.string()).optional(),
     is_specialized: z.boolean().optional(),
-    paid_only: z.boolean().optional(),
+    paid_only: z.boolean(),
     pending_change: z
         .object({
             effective_at: z.string().datetime(),
@@ -310,6 +330,7 @@ export function modelInfoFromDefinition(
         supports_structured_output: service.supportsStructuredOutput,
         max_completion_tokens: service.maxCompletionTokens,
         reasoning: service.reasoning,
+        supports_streaming: service.supportsStreaming,
         context_length: service.contextLength,
         voices: service.voices,
         is_specialized: service.isSpecialized,

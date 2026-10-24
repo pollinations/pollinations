@@ -3,7 +3,12 @@ import {
     CompletionUsageSchema,
 } from "@shared/schemas/openai.ts";
 import { createParser } from "eventsource-parser";
-import { messagesUsage, stopReason, toolUseInput } from "./translate.ts";
+import {
+    GEMINI_SIGNATURE_PREFIX,
+    messagesUsage,
+    stopReason,
+    toolUseInput,
+} from "./translate.ts";
 
 // Claude Code aborts a stream after 300 seconds without bytes.
 export const PING_INTERVAL_MS = 15_000;
@@ -16,7 +21,11 @@ type ChatDelta = {
     tool_calls?: {
         index?: number;
         id?: string;
-        function?: { name?: string; arguments?: string };
+        function?: {
+            name?: string;
+            arguments?: string;
+            thought_signature?: string;
+        };
     }[];
 };
 
@@ -27,7 +36,12 @@ type ChatChunk = {
     error?: { message?: string };
 };
 
-type ToolCall = { id: string; name: string; arguments: string };
+type ToolCall = {
+    id: string;
+    name: string;
+    arguments: string;
+    thoughtSignature?: string;
+};
 
 /**
  * Translate a Chat Completions SSE stream into Anthropic Messages events.
@@ -103,6 +117,16 @@ export function chatToMessagesStream(
                     return;
                 }
                 closeBlock();
+                const thoughtSignature = [...toolCalls.values()].find(
+                    (call) => call.thoughtSignature,
+                )?.thoughtSignature;
+                if (thoughtSignature) {
+                    thinkingDelta({
+                        type: "signature_delta",
+                        signature: GEMINI_SIGNATURE_PREFIX + thoughtSignature,
+                    });
+                    closeBlock();
+                }
                 for (const call of toolCalls.values()) {
                     startBlock({
                         type: "tool_use",
@@ -184,6 +208,8 @@ export function chatToMessagesStream(
                     };
                     existing.name += call.function?.name ?? "";
                     existing.arguments += call.function?.arguments ?? "";
+                    existing.thoughtSignature ??=
+                        call.function?.thought_signature;
                     toolCalls.set(index, existing);
                 }
             };

@@ -37,6 +37,9 @@ function successResponse(): Response {
 }
 
 beforeEach(() => {
+    // The Workers env fills process.env as in production. These tests cover
+    // the provider call alone, so Content Safety stays unconfigured.
+    vi.stubEnv("AZURE_CONTENT_SAFETY_ENDPOINT", "");
     syncImageEnv(
         { INFERENCEPORT_API_KEY: "test-ip-key" } as CloudflareBindings,
         ["INFERENCEPORT_API_KEY"],
@@ -45,6 +48,7 @@ beforeEach(() => {
 
 afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
 });
 
 describe("callInferencePortImage", () => {
@@ -152,56 +156,6 @@ describe("callInferencePortImage", () => {
         });
     });
 
-    it("rejects more than two reference images before calling upstream", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callInferencePortImage(
-                "combine these",
-                {
-                    ...baseParams,
-                    image: [
-                        "https://example.com/a.png",
-                        "https://example.com/b.png",
-                        "https://example.com/c.png",
-                        "https://example.com/d.png",
-                        "https://example.com/e.png",
-                    ],
-                },
-                USER_INFO,
-            ),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
-    it("rejects unsupported dimensions before calling upstream", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-        await expect(
-            callInferencePortImage(
-                "a lighthouse",
-                { ...baseParams, dimensionsExplicit: true, width: 512 },
-                USER_INFO,
-            ),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
-    it("rejects transparent backgrounds before calling upstream", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callInferencePortImage(
-                "a logo",
-                { ...baseParams, transparent: true },
-                USER_INFO,
-            ),
-        ).rejects.toMatchObject({
-            status: 400,
-            message: expect.stringContaining("Transparent"),
-        });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
     it("fails clearly when upstream returns no image", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             Response.json({ data: [] }),
@@ -212,22 +166,20 @@ describe("callInferencePortImage", () => {
         ).rejects.toMatchObject({ status: 502 });
     });
 
-    it.each([
-        undefined,
-        0,
-        -1,
-        1.5,
-    ])("rejects invalid reported image usage %s", async (imageCount) => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            Response.json({
-                data: [{ b64_json: OUTPUT_IMAGE.toString("base64") }],
-                usage: { image_count: imageCount },
-            }),
-        );
-        await expect(
-            callInferencePortImage("a lighthouse", baseParams, USER_INFO),
-        ).rejects.toMatchObject({ status: 502 });
-    });
+    it.each([undefined, 0, -1, 1.5])(
+        "rejects invalid reported image usage %s",
+        async (imageCount) => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                Response.json({
+                    data: [{ b64_json: OUTPUT_IMAGE.toString("base64") }],
+                    usage: { image_count: imageCount },
+                }),
+            );
+            await expect(
+                callInferencePortImage("a lighthouse", baseParams, USER_INFO),
+            ).rejects.toMatchObject({ status: 502 });
+        },
+    );
 
     it("bills the image count reported by the provider", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(

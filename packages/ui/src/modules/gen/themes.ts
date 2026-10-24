@@ -36,4 +36,4 @@ export const modalityBgVar = (key: ModalityKey): string =>
 
 /** A modality's text color, mixed toward the strong text so it stays readable on its background. */
 export const modalityTextColor = (key: ModalityKey): string =>
-    `color-mix(in oklab, ${modalityColorVar(key)} 72%, var(--polli-color-text-strong))`;
+    `color-mix(in oklab, ${modalityColorVar(key)} 60%, var(--polli-color-text-strong))`;

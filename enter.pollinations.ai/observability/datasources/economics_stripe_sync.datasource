@@ -1,0 +1,19 @@
+DESCRIPTION >
+    Successful full-pagination collection receipts. Counts and coverage only; never financial totals or reconciliation state.
+
+TOKEN "operations_read" READ
+TOKEN "operations_ingest" READ
+TOKEN "operations_ingest" APPEND
+
+SCHEMA >
+    `account_id` String `json:$.account_id`,
+    `month` String `json:$.month`,
+    `revenue_stream` LowCardinality(String) `json:$.revenue_stream`,
+    `default_currency` LowCardinality(String) `json:$.default_currency`,
+    `coverage_end` DateTime64(3) `json:$.coverage_end`,
+    `collected_at` DateTime64(3) `json:$.collected_at`,
+    `transaction_count` UInt64 `json:$.transaction_count`,
+    `expected_account_ids` Array(String) `json:$.expected_account_ids[:]`
+
+ENGINE MergeTree
+ENGINE_SORTING_KEY account_id, month

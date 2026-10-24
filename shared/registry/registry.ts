@@ -141,6 +141,8 @@ export type BillingAdjustmentRule = BillingRateDefinition & {
 
 export type BillingRules = {
     adjustments?: BillingAdjustmentRule[];
+    /** Complete provider charge, including tools, when token details cannot reproduce it. */
+    resolveTotalCost?: (output: unknown) => number | undefined;
 };
 
 // Per-rule billing breakdown, returned in parallel to the numeric usage maps.
@@ -197,11 +199,6 @@ export type ModelDefinition = {
     billing?: BillingRules;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
-    // When this model or route stops being served (ms epoch), set only when
-    // known: a provider's published retirement, or our own decision to retire
-    // it. Exact cutoff when the provider gives one, else the start of the day.
-    // Fallback routes never inherit it.
-    retirementDate?: number;
     // User-facing metadata
     title: string; // Human display name, e.g. "FLUX.1 Kontext"
     brandUrl?: string;
@@ -220,7 +217,9 @@ export type ModelDefinition = {
     contextLength?: number;
     voices?: string[];
     isSpecialized?: boolean;
-    paidOnly?: boolean; // Models that require paid balance only
+    // True when callers may only spend Paid Pollen; false when Quest Pollen
+    // also works. Required on every model — there is no implicit default.
+    paidOnly: boolean;
     alpha?: boolean; // Experimental models with potential instability
     // Flat per-generation pricing (one fee per request, independent of output
     // size/length). Lets the pricing UI show a "/gen" badge instead of guessing
@@ -244,12 +243,15 @@ export type ModelDefinition = {
     durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
+    supportsTransparency?: boolean; // Image-only: `transparent=true` returns a PNG with alpha; other models reject it
     /** Output-token limit enforced on public requests and fallback routes. */
     maxCompletionTokens?: number;
     /** False when the model rejects JSON/structured output requests. */
     supportsStructuredOutput?: boolean;
     /** False when the model answers JSON mode (json_object) with no content but honors json_schema. */
     supportsJsonMode?: boolean;
+    /** False when the upstream has no SSE; Gen buffers `stream: true` calls. */
+    supportsStreaming?: boolean;
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.
@@ -283,7 +285,7 @@ function convertUsage(
     return convertedUsage as Usage;
 }
 
-function derivePrice(
+export function derivePrice(
     costDefinition: CostDefinition,
     priceMultiplier: number,
 ): PriceDefinition {
@@ -480,9 +482,19 @@ function rateAgainst(
         totalPrice: roundPollenLedgerAmount(tokenTotalPrice + adjustmentPrice),
     };
 
+    // Opt-in provider totals include search; adjustments remain an informational breakdown.
+    const reportedCost = svc.billing?.resolveTotalCost?.(output);
+
     return {
-        cost,
-        price,
+        cost: reportedCost === undefined ? cost : { totalCost: reportedCost },
+        price:
+            reportedCost === undefined
+                ? price
+                : {
+                      totalPrice: roundPollenLedgerAmount(
+                          reportedCost * svc.priceMultiplier,
+                      ),
+                  },
         adjustments,
         priceDefinition: derivePrice(effectiveCost, svc.priceMultiplier),
         costVariant,
@@ -617,6 +629,12 @@ function filterVisible<TModelName extends ModelName>(
     );
 }
 
+/** The catalog's flat-rate rule: an explicit `flatRate`, or an image model with no prompt-token rate. */
+export const isFlatRateModel = (definition: ModelDefinition): boolean =>
+    definition.flatRate ??
+    (definition.category === "image" &&
+        definition.cost.promptTextTokens === undefined);
+
 export const isVisibleModelDefinition = (
     definition: ModelDefinition,
 ): boolean => definition.hidden !== true && definition.fallbackOnly !== true;
@@ -649,6 +667,32 @@ export function getPriceDefinitionForModel(
     svc: ModelDefinition,
 ): PriceDefinition {
     return derivePrice(svc.cost, svc.priceMultiplier);
+}
+
+/** Every cost sheet a model can bill at: its base cost and each variant over it. */
+export function getCostSheetsForModel(svc: ModelDefinition): CostDefinition[] {
+    return [
+        svc.cost,
+        ...Object.values(svc.costVariants ?? {}).map((variant) => ({
+            ...svc.cost,
+            ...variant,
+        })),
+    ];
+}
+
+/**
+ * True when `target` costs no more than `primary` for every usage type. A
+ * usage type the primary does not price counts as free, so a target that
+ * charges for it is rejected.
+ */
+export function isFallbackPricingAllowed(
+    primary: PriceDefinition,
+    target: PriceDefinition,
+): boolean {
+    return Object.entries(target).every(
+        ([usageType, price]) =>
+            (price ?? 0) <= (primary[usageType as UsageType] ?? 0),
+    );
 }
 
 /**

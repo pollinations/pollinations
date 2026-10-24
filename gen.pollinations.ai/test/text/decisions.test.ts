@@ -4,7 +4,6 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
-import { apikey } from "@shared/db/better-auth.ts";
 import {
     test as baseTest,
     createTestApiKey,
@@ -14,7 +13,6 @@ import {
     teardownFetchMock,
 } from "@shared/test/mocks/fetch.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
-import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, beforeEach, expect } from "vitest";
 import worker from "../../src/index.ts";
@@ -150,10 +148,8 @@ function post(path: string, key: string, body: unknown) {
     });
 }
 
-// A Quest-Pollen-only key: jev is deliberately not paid-only, so the free tier
-// must reach the decisions route.
 test("answers a decision, forwards the native body, and bills input tokens", async ({
-    apiKey,
+    paidApiKey: apiKey,
     mocks,
 }) => {
     const { response, wait } = await post("/alpha/decisions", apiKey, {
@@ -199,9 +195,44 @@ test("answers a decision, forwards the native body, and bills input tokens", asy
     });
 });
 
+test("answers the same decision on TypeSafe's /v1/systemone path", async ({
+    paidApiKey: apiKey,
+    mocks,
+}) => {
+    const { response, wait } = await post("/v1/systemone", apiKey, {
+        model: "typesafe/jev-1.13",
+        state: "Invoice issued 2026-08-01, net-30. Today is 2026-09-19.",
+        questions,
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        model: "typesafe/jev-1.13",
+        provider: "TypeSafe",
+        answers,
+        usage: { input_tokens: 452, output_tokens: 73 },
+    });
+    expect(mocks.decisions.state.requests).toHaveLength(1);
+    expect(mocks.decisions.state.requests[0]).toMatchObject({
+        pathname: "/api/alpha/decisions",
+        body: { model: "typesafe/jev-1.13", questions },
+    });
+
+    await wait();
+    expect(mocks.decisions.state.requests).toHaveLength(1);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        requestPath: "/v1/systemone",
+        responseStatus: 200,
+        modelRequested: "typesafe/jev-1.13",
+        isBilledUsage: true,
+    });
+});
+
 test("routes Kev 4B under its own id and publisher", async ({ mocks }) => {
     const { key, userId } = await createTestApiKey({
-        user: { tierBalance: 1, packBalance: 0 },
+        user: { tierBalance: 1, packBalance: 1 },
     });
     const { response, wait } = await post("/alpha/decisions", key, {
         model: "jaredpalmer/kev-4b",
@@ -233,8 +264,8 @@ test("routes Kev 4B under its own id and publisher", async ({ mocks }) => {
     expect(event.totalCost).toBeCloseTo((452 * 0.042 * 1.055) / 1_000_000, 12);
     expect(event.totalPrice).toBe(0.00002003);
     expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
-        tierBalance: 0.99997997,
-        packBalance: 0,
+        tierBalance: 1,
+        packBalance: 0.99997997,
     });
 });
 
@@ -306,13 +337,13 @@ test("routes Liquid D1 under its own id and bills input tokens", async ({
         tokenCountCompletionText: 73,
         isBilledUsage: true,
     });
-    expect(event.totalCost).toBeCloseTo((452 * 0.04 * 1.055) / 1_000_000, 12);
+    expect(event.totalCost).toBeCloseTo((452 * 0.02 * 1.055) / 1_000_000, 12);
     const { tierBalance, packBalance } = await getUserBalance(
         drizzle(env.DB),
         userId,
     );
     expect(tierBalance).toBe(0);
-    expect(packBalance).toBeCloseTo(1 - (452 * 0.04 * 1.055) / 1_000_000, 7);
+    expect(packBalance).toBeCloseTo(1 - (452 * 0.02 * 1.055) / 1_000_000, 7);
 });
 
 test("falls back native D1 decisions and records Vercel cost with the public quote", async ({
@@ -356,8 +387,8 @@ test("falls back native D1 decisions and records Vercel cost with the public quo
         modelProviderUsed: "vercel",
         isFinal: true,
     });
-    expect(billed?.totalCost).toBeCloseTo((452 * 0.04) / 1_000_000, 12);
-    expect(billed?.totalPrice).toBeCloseTo((452 * 0.04 * 1.055) / 1_000_000, 8);
+    expect(billed?.totalCost).toBeCloseTo((452 * 0.02) / 1_000_000, 12);
+    expect(billed?.totalPrice).toBeCloseTo((452 * 0.02 * 1.055) / 1_000_000, 8);
     expect(events).toContainEqual(
         expect.objectContaining({
             modelUsed: "liquid/d1",
@@ -411,7 +442,10 @@ test("rejects Quest-only Liquid D1 calls before reaching the provider", async ({
     expect(mocks.decisions.state.requests).toHaveLength(0);
 });
 
-test("defaults to jev and accepts the alias", async ({ apiKey, mocks }) => {
+test("defaults to jev and accepts the alias", async ({
+    paidApiKey: apiKey,
+    mocks,
+}) => {
     const withoutModel = await post("/alpha/decisions", apiKey, {
         state: "Disk at 91%.",
         questions: { act: { type: "noul", instructions: "Act now?" } },
@@ -436,17 +470,13 @@ test("defaults to jev and accepts the alias", async ({ apiKey, mocks }) => {
     expect(mocks.decisions.state.requests).toHaveLength(2);
 });
 
-test("existing Jev key permissions allow the canonical model and both aliases", async ({
+test("a text key reaches Jev by its canonical ID and both aliases", async ({
     mocks,
 }) => {
-    const { key, id } = await createTestApiKey({
-        allowedModels: ["typesafe/jev-1.13"],
-        user: { tierBalance: 100 },
+    const { key } = await createTestApiKey({
+        allowedModels: ["text"],
+        user: { tierBalance: 100, packBalance: 1 },
     });
-    await drizzle(env.DB)
-        .update(apikey)
-        .set({ permissions: JSON.stringify({ models: ["typesafe/jev"] }) })
-        .where(eq(apikey.id, id));
 
     for (const model of ["typesafe/jev-1.13", "typesafe/jev", "jev"]) {
         const { response, wait } = await post("/alpha/decisions", key, {
@@ -503,7 +533,10 @@ test("a chat model cannot be used on the decisions route", async ({
 
 // The registry now pins jev to two endpoints, so the chat adapter that shipped
 // first must keep working.
-test("jev still answers on chat completions", async ({ apiKey, mocks }) => {
+test("jev still answers on chat completions", async ({
+    paidApiKey: apiKey,
+    mocks,
+}) => {
     const { response, wait } = await post("/v1/chat/completions", apiKey, {
         model: "jev",
         messages: [
@@ -524,7 +557,7 @@ test("jev still answers on chat completions", async ({ apiKey, mocks }) => {
 
 for (const stream of [false, true]) {
     test(`Kev answers on chat completions with stream=${stream}`, async ({
-        apiKey,
+        paidApiKey: apiKey,
         mocks,
     }) => {
         mocks.decisions.state.response = Response.json({
@@ -626,7 +659,7 @@ for (const { code, tierBalance, pollenBudget } of [
 }
 
 test("returns an upstream HTTP 502 when Jev omits usage", async ({
-    apiKey,
+    paidApiKey: apiKey,
     mocks,
 }) => {
     mocks.decisions.state.response = Response.json({ answers });

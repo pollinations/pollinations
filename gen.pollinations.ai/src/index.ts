@@ -24,16 +24,30 @@ import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
+import { agentDiscoveryLinks } from "@/middleware/agent-discovery.ts";
 import { logger } from "@/middleware/logger.ts";
+import {
+    GENERATION_HANDOFF_PATH,
+    generationHandoffRoutes,
+} from "@/utils/execute-generation.ts";
 import { audioRoutes } from "./routes/audio.ts";
-import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
-import { E2B_PATH, e2bRoutes } from "./routes/e2b.ts";
+import { stopExpiredAzureSandboxes } from "./routes/azure-sandboxes.ts";
+import {
+    buildMergedOpenApiSpec,
+    createDocsRoutes,
+    LLMS_FULL_TEXT,
+} from "./routes/docs.ts";
+import { E2B_PATH, e2bRoutes, keepSandboxes } from "./routes/e2b.ts";
+import { jobRoutes } from "./routes/jobs.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
+import { mcpCardRoutes } from "./routes/mcp-card.ts";
 import { createMessagesRoutes } from "./routes/messages.ts";
-import { modelStatusRoutes } from "./routes/model-status.ts";
+import { modelStatsRoutes, modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
 import { stemSeparationRoutes } from "./routes/stem-separation.ts";
+import { wellKnownRoutes } from "./routes/well-known.ts";
+import { serveSite } from "./sites.ts";
 
 export { CommunityModelRateLimiter } from "./durable-objects/CommunityModelRateLimiter.ts";
 export { GenerationCoordinator } from "./durable-objects/GenerationCoordinator.ts";
@@ -66,7 +80,8 @@ function notFound(): Response {
     return noIndex(new Response("Not Found", { status: 404 }));
 }
 
-function robotsTxt(): Response {
+function robotsTxt(c: Context<Env>): Response {
+    const origin = getPublicOrigin(c);
     return new Response(
         [
             "User-agent: *",
@@ -80,8 +95,36 @@ function robotsTxt(): Response {
             "Disallow: /mcp/",
             "Disallow: /v1/",
             "Disallow: /api/",
+            // https://contentsignals.org
+            "Content-Signal: search=yes, ai-input=yes, ai-train=yes",
+            "",
+            `Sitemap: ${origin}/sitemap.xml`,
         ].join("\n"),
         { headers: { "Content-Type": "text/plain" } },
+    );
+}
+
+/** Serve a minimal XML sitemap for the public HTML pages (crawler discovery). */
+function sitemapXml(c: Context<Env>): Response {
+    const origin = getPublicOrigin(c);
+    return new Response(
+        [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+            "  <url>",
+            `    <loc>${origin}/</loc>`,
+            "  </url>",
+            "  <url>",
+            `    <loc>${origin}/docs</loc>`,
+            "  </url>",
+            "</urlset>",
+        ].join("\n"),
+        {
+            headers: {
+                "Content-Type": "application/xml; charset=utf-8",
+                "Cache-Control": "public, max-age=3600",
+            },
+        },
     );
 }
 
@@ -94,19 +137,41 @@ function llmsTxt(c: Context<Env>): Response {
 
 ## Start here
 
+- [Full docs in one file](${origin}/llms-full.txt): The API guide, CLI skill, and task recipes in a single request.
 - [Polli CLI task recipes](${origin}/docs/polli-tasks.md): Connect OpenCode or generate an image, with a check for the first result.
 - [Polli CLI agent skill](${origin}/docs/polli-skill.md): Commands, authentication, structured output, and common tasks.
-- [Polli CLI guide](${origin}/docs/llm.txt?section=cli): Installation, login, usage, and harness setup.
-- [API quick start and reference](${origin}/docs/llm.txt): Plain-text API guide and integrations.
+- [Agent Skills index](${origin}/.well-known/agent-skills/index.json): Install the polli skill with any Agent Skills discovery client.
+- [Direct REST API skill](${origin}/.well-known/agent-skills/pollinations-api/SKILL.md): Call the API with curl or fetch when the CLI cannot be installed.
+- [Pollinations SDK skill](${origin}/.well-known/agent-skills/pollinations-sdk/SKILL.md): Use the official npm SDK from code with an API key.
+- [Bring Your Own Pollen skill](${origin}/.well-known/agent-skills/bring-your-own-pollen/SKILL.md): Add user-paid sign-in (OAuth PKCE, fragment, or device flow) so each user spends their own Pollen.
+- [API catalog](${origin}/.well-known/api-catalog): RFC 9727 linkset pointing agents at the OpenAPI schema and the plain-text API guide.
+- [API quick start and reference](${origin}/docs/llm.txt): Plain-text API reference and guides.
 - [Interactive API docs](${origin}/docs): Browse endpoints and examples in a browser.
 - [OpenAPI schema](${origin}/openapi.json): Current endpoints and request schemas.
 - [Live model catalog](${origin}/models): Current model IDs and capabilities.
 - [MCP server catalog](${origin}/mcp): Agent tools and server URLs.
-- [MCP setup guide](${origin}/docs/llm.txt?section=mcp): Connect an agent to the hosted tools.
+- [OAuth protected resource metadata](${origin}/.well-known/oauth-protected-resource): RFC 9728 pointer to the authorization server that issues API keys.
+- [MCP AI Catalog](${origin}/.well-known/ai-catalog.json): SEP-2127 discovery of MCP Server Cards.
+
+## Guides
+
+- [Connect User Wallets (BYOP)](${origin}/docs/llm.txt?section=byop): Let users pay with their own Pollen.
+- [Publish an Agent](${origin}/docs/llm.txt?section=publish-an-agent): Publish a hosted agent.
+- [Publish a Model](${origin}/docs/llm.txt?section=publish-a-model): Connect your model endpoint.
+- [Sandboxes](${origin}/docs/llm.txt?section=sandboxes): Run code in a virtual machine.
+- [Sites](${origin}/docs/llm.txt?section=sites): Host a static site at <name>.pollinations.app.
+- [Coding Harnesses](${origin}/docs/llm.txt?section=coding-harnesses): Connect a coding assistant.
+- [MCP Servers](${origin}/docs/llm.txt?section=mcp): Give agents access to tools.
+- [CLI](${origin}/docs/llm.txt?section=cli): Use Pollinations from a terminal.
+
+## Contribute
+
+- [Quest contributor agent skill](${origin}/.well-known/agent-skills/quest-contributor/SKILL.md): Find a POLLEN-QUEST issue, submit a PR, and claim the Pollen reward.
 
 ## Account
 
-- [Create an API key](https://enter.pollinations.ai/keys): Sign in and manage keys.
+- [Create a secret key](https://enter.pollinations.ai/keys): Sign in and manage keys.
+- [Buy a prepaid key with USDC (x402)](${origin}/docs/llm.txt?section=x402): No account or sign-in; pay from $0.01 on Base.
 - [Balance and Pollen](https://enter.pollinations.ai/pollen): Check available credits.
 `,
         {
@@ -147,10 +212,39 @@ function redirectLegacyDocs(c: Context<Env>): Response {
 app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", requestId())
     .use("*", logger)
-    .get("/robots.txt", () => robotsTxt())
+    .use("*", async (c, next) => {
+        await next();
+        if (c.res.status === 401) {
+            c.header(
+                "WWW-Authenticate",
+                `Bearer resource_metadata="${getPublicOrigin(c)}/.well-known/oauth-protected-resource"`,
+            );
+        }
+    })
+    .use("*", agentDiscoveryLinks())
+    .get("/robots.txt", (c) => robotsTxt(c))
+    .get("/sitemap.xml", (c) => sitemapXml(c))
     .get("/llms.txt", (c) => llmsTxt(c))
+    .get("/llms-full.txt", (c) =>
+        c.text(LLMS_FULL_TEXT, 200, {
+            "Cache-Control": "public, max-age=3600",
+        }),
+    )
     .get("/manifest.webmanifest", () => manifestResponse())
-    .get("/", (c) => c.html(docsLandingHtml(c)))
+    .route("/.well-known", wellKnownRoutes)
+    // Coordinator alarms run generations here, under the zone's timeout.
+    .route(GENERATION_HANDOFF_PATH, generationHandoffRoutes)
+    .get("/", async (c) => {
+        c.header("Vary", "Accept", { append: true });
+        if (c.req.header("accept")?.includes("text/markdown")) {
+            // Cloudflare ignores Vary on cached responses: keep it private.
+            return c.body(await llmsTxt(c).text(), 200, {
+                "Content-Type": "text/markdown; charset=utf-8",
+                "Cache-Control": "private, max-age=3600",
+            });
+        }
+        return c.html(docsLandingHtml(c));
+    })
     .get("/docs/", (c) => c.redirect(`${getPublicOrigin(c)}/docs`, 301))
     .all("/api/docs", redirectLegacyDocs)
     .all("/api/docs/", redirectLegacyDocs)
@@ -164,8 +258,8 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
         url.pathname = `/api${stripTrailingSlash(url.pathname)}`;
         return fetchEnter(c, url);
     })
-    // Only the read-only quest catalog is part of the public gen API. Dashboard
-    // quest actions (/check, /rewards, /claim) stay on enter's session API.
+    // The read-only quest catalog. Per-account quest rewards live under
+    // /account/quests.
     .all("/quests/catalog", (c) => {
         if (c.req.method !== "GET" && c.req.method !== "HEAD") {
             return notFound();
@@ -186,6 +280,10 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .route("/v1/audio", audioRoutes)
     .route("/", stemSeparationRoutes)
     .route("/", mcpRoutes)
+    // SEP-2127 Server Cards stay public: mcpRoutes' auth middleware matches
+    // only the exact /mcp/:serverId path, while its /mcp/* edge rate limit
+    // still runs first because the cards are mounted after it.
+    .route("/", mcpCardRoutes)
     .route(E2B_PATH, e2bRoutes)
     // Conventional, discoverable alias for the merged OpenAPI spec. JSON-only;
     // the ?format=yaml passthrough stays on /docs/open-api/generate-schema.
@@ -194,7 +292,9 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
         const merged = await buildMergedOpenApiSpec(c, app);
         return c.json(merged);
     })
+    .route("/", jobRoutes)
     .route("/", modelStatusRoutes)
+    .route("/", modelStatsRoutes)
     .route(
         "/",
         createMessagesRoutes((request, c) =>
@@ -204,11 +304,23 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .route("/", proxyRoutes);
 
 app.notFound(async (c: Context<Env>) => {
+    // Gen's icons and images in public/.
+    if (c.req.method === "GET" || c.req.method === "HEAD") {
+        const asset = await c.env.ASSETS.fetch(c.req.raw);
+        if (asset.status !== 404) return asset;
+    }
     return handleError(new HTTPException(404), c);
 });
 
 app.onError(handleError);
 
 export default {
-    fetch: app.fetch,
-};
+    fetch: (request: Request, env, ctx) =>
+        serveSite(request, env) ?? app.fetch(request, env, ctx),
+    // The only cron, every 5 minutes (wrangler.toml). Leases end only after
+    // the keeper has renewed the kept sandboxes.
+    scheduled: async (_controller, env, ctx) => {
+        await keepSandboxes(env, ctx);
+        await stopExpiredAzureSandboxes(env);
+    },
+} satisfies ExportedHandler<CloudflareBindings>;

@@ -43,7 +43,7 @@ export const IMAGE_FALLBACKS = {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),
             // OpenAI shutdown_date.
-            retirementDate: new Date("2026-12-01").getTime(),
+            // Provider retires this route on 2026-12-01.
         },
     },
     "openai/gpt-image-1.5": {
@@ -51,7 +51,7 @@ export const IMAGE_FALLBACKS = {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),
             // OpenAI shutdown_date.
-            retirementDate: new Date("2026-12-01").getTime(),
+            // Provider retires this route on 2026-12-01.
         },
     },
     "openai/gpt-image-2": {
@@ -126,19 +126,28 @@ export const IMAGE_FALLBACKS = {
         },
     },
     "qwen/qwen-image-3": {
-        "qwen/qwen-image-3:fal": { provider: "fal" },
-        "qwen/qwen-image-3:replicate": {
-            provider: "replicate",
-            addedDate: new Date("2026-09-01").getTime(),
+        "qwen/qwen-image-3:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-14").getTime(),
+            // OpenRouter's qwen/qwen-image-3-pro on Alibaba: the primary's
+            // exact checkpoint. The handler records OpenRouter's reported
+            // usage.cost plus the 5.5% credit fee; these rates describe the
+            // route at 1K.
             cost: {
-                promptImageTokens: 0,
-                completionImageTokens: 0.03,
+                promptImageTokens: 0.003 * 1.055,
+                completionImageTokens: 0.04 * 1.055,
             },
-            costVariants: {
-                "2k": {
-                    promptImageTokens: 0,
-                    completionImageTokens: 0.03,
-                },
+        },
+    },
+    "qwen/qwen-image-2.1-pro": {
+        "qwen/qwen-image-2.1-pro:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-18").getTime(),
+            // OpenRouter's Alibaba endpoint. Maintainer probe (2026-10-18):
+            // usage.cost is $0.046 per image before the 5.5% credit fee, so this
+            // route is above the $0.04 primary price. Up to 4 references.
+            cost: {
+                completionImageTokens: 0.046 * 1.055,
             },
         },
     },
@@ -154,7 +163,7 @@ export const IMAGE_FALLBACKS = {
             priceMultiplier: 1,
             addedDate: new Date("2026-09-21").getTime(),
             // OpenRouter expiration_date.
-            retirementDate: new Date("2027-03-15").getTime(),
+            // Provider retires this route on 2027-03-15.
             cost: {
                 promptTextTokens: perMillion(0.3) * 1.055,
                 promptImageTokens: perMillion(0.3) * 1.055,
@@ -246,6 +255,24 @@ export const IMAGE_FALLBACKS = {
                 },
                 "1080p": {
                     completionVideoSeconds: 0.25,
+                },
+            },
+        },
+    },
+    "x-ai/grok-imagine-video-1.5-lite": {
+        "x-ai/grok-imagine-video-1.5-lite:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-06").getTime(),
+            cost: {
+                promptImageTokens: 0.01 * 1.055, // per start-frame image
+                completionVideoSeconds: 0.03 * 1.055, // per sec at 720p
+            },
+            costVariants: {
+                "480p": {
+                    completionVideoSeconds: 0.02 * 1.055,
+                },
+                "1080p": {
+                    completionVideoSeconds: 0.14 * 1.055,
                 },
             },
         },

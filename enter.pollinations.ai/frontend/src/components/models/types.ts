@@ -13,12 +13,6 @@ export type ModelCategory =
     | "embedding"
     | "realtime";
 
-export type ModelDisplayCategory =
-    | ModelCategory
-    | "community-text"
-    | "community-image"
-    | "community-agent";
-
 export type ModelCapability =
     | "tool_calling"
     | "reasoning"

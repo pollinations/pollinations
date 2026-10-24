@@ -91,6 +91,10 @@ SCHEMA >
 `token_price_completion_video_tokens`  Float64 `json:$.tokenPriceCompletionVideoTokens` DEFAULT 0,
 
 -- Usage
+-- Historical integer image columns remain as defaults for pre-migration parts.
+-- Float64 columns preserve image usage: providers also report megapixels.
+`usage_prompt_image_units` Float64 `json:$.usagePromptImageUnits` DEFAULT toFloat64(token_count_prompt_image),
+`usage_completion_image_units` Float64 `json:$.usageCompletionImageUnits` DEFAULT toFloat64(token_count_completion_image),
 `token_count_prompt_text`          UInt32   `json:$.tokenCountPromptText` DEFAULT 0,
 `token_count_prompt_audio`         UInt32   `json:$.tokenCountPromptAudio` DEFAULT 0,
 `token_count_prompt_cached`        UInt32   `json:$.tokenCountPromptCached` DEFAULT 0,

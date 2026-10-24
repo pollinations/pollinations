@@ -624,9 +624,9 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBe(billing.servedPrice);
     });
 
-    it("preserves the Astra quote while recording Data Zone costs", () => {
+    it("preserves the Astra quote while recording direct OpenAI costs", () => {
         const primary = TEXT_SERVICES["openai/gpt-6-astra"];
-        const fallback = TEXT_SERVICES["openai/gpt-6-astra:azure:datazone"];
+        const fallback = TEXT_SERVICES["openai/gpt-6-astra:openai"];
         expect(primary.cost).toEqual({
             promptTextTokens: 10 / 1_000_000,
             promptCachedTokens: 1 / 1_000_000,
@@ -634,16 +634,16 @@ describe("static provider fallbacks", () => {
             completionTextTokens: 50 / 1_000_000,
         });
         expect(fallback.cost).toEqual({
-            promptTextTokens: 11 / 1_000_000,
-            promptCachedTokens: 1.1 / 1_000_000,
-            promptCacheWriteTokens: 13.75 / 1_000_000,
-            completionTextTokens: 55 / 1_000_000,
+            promptTextTokens: 10 / 1_000_000,
+            promptCachedTokens: 1 / 1_000_000,
+            promptCacheWriteTokens: 12.5 / 1_000_000,
+            completionTextTokens: 50 / 1_000_000,
         });
         expect(fallback.costVariants?.long_context).toEqual({
-            promptTextTokens: 22 / 1_000_000,
-            promptCachedTokens: 2.2 / 1_000_000,
-            promptCacheWriteTokens: 27.5 / 1_000_000,
-            completionTextTokens: 82.5 / 1_000_000,
+            promptTextTokens: 20 / 1_000_000,
+            promptCachedTokens: 2 / 1_000_000,
+            promptCacheWriteTokens: 25 / 1_000_000,
+            completionTextTokens: 75 / 1_000_000,
         });
         expect(fallback.selectCostVariant).toBe(primary.selectCostVariant);
         expect(
@@ -664,15 +664,15 @@ describe("static provider fallbacks", () => {
             servedBy: fallback,
             quotedBy: primary,
         });
-        expect(billing.cost.totalCost).toBeCloseTo(0.000396, 12);
+        expect(billing.cost.totalCost).toBeCloseTo(0.00036, 12);
         expect(billing.price.totalPrice).toBe(0.00036);
-        const model = findModelByName("openai/gpt-6-astra:azure:datazone");
+        const model = findModelByName("openai/gpt-6-astra:openai");
         expect(model?.useResponsesApi).toBe(true);
         expect(model?.config()).toMatchObject({
-            "azure-deployment-id": "gpt-6-astra-datazone",
-            "azure-resource-name": "myceli-prod-eastus",
-            responsesEndpoint:
-                "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+            provider: "openai",
+            model: "gpt-6-astra",
+            serviceTier: "default",
+            responsesEndpoint: "https://api.openai.com/v1/responses",
         });
     });
 

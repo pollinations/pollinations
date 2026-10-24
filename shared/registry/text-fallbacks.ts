@@ -198,25 +198,9 @@ export const TEXT_FALLBACKS = {
         },
     },
     "openai/gpt-6-astra": {
-        "openai/gpt-6-astra:azure:datazone": {
-            provider: "azure",
-            // Provider retires this route on 2028-01-11.
-            // Same checkpoint, separate US Data Zone quota pool. The caller
-            // keeps the Global quote; Pollinations absorbs the 10% premium.
-            cost: {
-                promptTextTokens: perMillion(11),
-                promptCachedTokens: perMillion(1.1),
-                promptCacheWriteTokens: perMillion(13.75),
-                completionTextTokens: perMillion(55),
-            },
-            costVariants: {
-                long_context: {
-                    promptTextTokens: perMillion(22),
-                    promptCachedTokens: perMillion(2.2),
-                    promptCacheWriteTokens: perMillion(27.5),
-                    completionTextTokens: perMillion(82.5),
-                },
-            },
+        "openai/gpt-6-astra:openai": {
+            provider: "openai",
+            priceMultiplier: 1,
         },
     },
     "openai/gpt-6-sol": {

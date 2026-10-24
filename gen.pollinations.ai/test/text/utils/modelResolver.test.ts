@@ -111,6 +111,17 @@ describe("resolveModelConfig", () => {
         expect(result.options.max_tokens).toBe(1024);
     });
 
+    it("keeps Kimi K2.6 recovery on direct DeepInfra", () => {
+        const resolved = resolveModelConfig(messages, {
+            model: "moonshotai/kimi-k2.6:deepinfra",
+        });
+        expect(resolved.options.modelConfig).toMatchObject({
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "moonshotai/Kimi-K2.6",
+        });
+        expect(findModelByName("moonshotai/kimi-k2.6:azure:sweden")).toBeNull();
+    });
+
     it("routes claude-large to the global Opus 5 profile", () => {
         const result = resolveModelConfig(messages, {
             model: "anthropic/claude-opus-5",

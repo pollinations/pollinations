@@ -992,11 +992,6 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
-        name: "moonshotai/kimi-k2.6:azure:sweden",
-        config: portkeyConfig["Kimi-K2.6-azure-sweden"],
-        transform: fireworksThinking,
-    },
-    {
         name: "moonshotai/kimi-k2.6:deepinfra",
         config: portkeyConfig["moonshotai/Kimi-K2.6"],
         transform: toggleReasoningExceptForcedTools,

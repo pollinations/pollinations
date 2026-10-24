@@ -429,13 +429,6 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Kimi-K2.6/chat/completions?api-version=2024-12-01-preview",
             { requiresBase64ImageUrls: true },
         ),
-    "Kimi-K2.6-azure-sweden": () =>
-        createAzureModelConfig(
-            textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
-            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/Kimi-K2.6/chat/completions?api-version=2024-12-01-preview",
-            { requiresBase64ImageUrls: true },
-        ),
-
     // -- OpenRouter (frontier models) ----------------------------------------
     "cohere/command-a-plus": createPinnedOpenRouterConfig(
         "cohere/command-a-plus",

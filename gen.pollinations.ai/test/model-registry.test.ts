@@ -114,6 +114,10 @@ describe("getGenerationModelRegistry", () => {
             ["google/gemini-3.7-flash:openrouter:vertex-global", "stop", true],
             ["nvidia/nemotron-3.5-lightning", "top_k", true],
             ["nvidia/nemotron-3-ultra", "top_k", true],
+            ["nvidia/nemotron-3.5-super-vl", "tools", true],
+            ["nvidia/nemotron-3.5-super-vl", "top_k", true],
+            ["nvidia/nemotron-3.5-super-vl", "seed", false],
+            ["nvidia/nemotron-3.5-super-vl", "logprobs", false],
             ["qwen/qwen3-coder-30b-a3b-instruct", "top_k", false],
             ["qwen/qwen3-vl-235b-a22b-thinking", "response_format", false],
             ["perplexity/sonar", "search_domain_filter", true],
@@ -160,6 +164,36 @@ describe("getGenerationModelRegistry", () => {
         );
         expect(native.length).toBeGreaterThan(0);
         expect(native.length).toBeLessThan(chat.length);
+    });
+
+    it("advertises image edits only on models that accept image input", async () => {
+        const registry = await getGenerationModelRegistry(env);
+
+        // Text-only models cannot consume a source image, so the endpoint must
+        // not be listed where clients look up capabilities.
+        for (const id of [
+            "black-forest-labs/flux.1-schnell",
+            "tongyi-mai/z-image-turbo",
+        ]) {
+            const entry = registry.resolve(id);
+            expect(entry?.supportedEndpoints, id).not.toContain(
+                "/v1/images/edits",
+            );
+            expect(entry?.info.supported_endpoints, id).not.toContain(
+                "/v1/images/edits",
+            );
+        }
+        expect(
+            registry.resolve("black-forest-labs/flux.1-kontext-pro")
+                ?.supportedEndpoints,
+        ).toContain("/v1/images/edits");
+
+        for (const entry of registry.visibleEntries()) {
+            if (entry.definition.inputModalities?.includes("image")) continue;
+            expect(entry.supportedEndpoints, entry.id).not.toContain(
+                "/v1/images/edits",
+            );
+        }
     });
 
     it("serves the community catalog from KV without querying D1", async () => {

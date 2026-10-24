@@ -593,12 +593,13 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    // OpenRouter serves Inkling Small only through DeepInfra (fp8).
     "thinkingmachines/inkling-small": () =>
         createOpenRouterModelConfig({
             model: "thinkingmachines/inkling-small",
             defaultOptions: {
                 provider: {
-                    only: ["Together"],
+                    only: ["deepinfra"],
                     allow_fallbacks: false,
                 },
             },
@@ -630,14 +631,17 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- OpenRouter (Gemma) ---------------------------------------------------
-    // Novita preserves remote image URLs; NextBit rejects that public input form.
+    // Novita's Gemma deployments regressed: 26B rejected most requests with
+    // 4xx and 31B's endpoint was degraded. 26B pins DeepInfra FP8, which is
+    // text-only on OpenRouter: image requests 404 there and fall back to the
+    // direct DeepInfra route. 31B moves to Crusoe BF16 at Novita's former rate.
     "google/gemma-4-26b-a4b-it": createPinnedOpenRouterConfig(
         "google/gemma-4-26b-a4b-it",
-        "novita/bf16",
+        "deepinfra/fp8",
     ),
     "google/gemma-4-31b-it": createPinnedOpenRouterConfig(
         "google/gemma-4-31b-it",
-        "novita/bf16",
+        "crusoe/bf16",
     ),
 
     // -- Exact-checkpoint text fallbacks -------------------------------------
@@ -743,6 +747,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     "nemotron-3.5-lightning-openrouter-coreweave": createPinnedOpenRouterConfig(
         "nvidia/nemotron-3.5-lightning",
         "coreweave/bf16",
+    ),
+    "nvidia/NVIDIA-Nemotron-3.5-Super-VL": () =>
+        createDeepInfraModelConfig({
+            model: "nvidia/NVIDIA-Nemotron-3.5-Super-VL",
+        }),
+    "nemotron-3.5-super-vl-openrouter-together": createPinnedOpenRouterConfig(
+        "nvidia/nemotron-3.5-super-vl",
+        "together",
     ),
     "gemini-3-flash-openrouter-vertex-global":
         createPinnedOpenRouterGeminiConfig(
@@ -878,6 +890,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         "inception/mercury-2.5-preview",
         "Inception",
         64000,
+    ),
+    "inception/mercury-3": createPinnedOpenRouterConfig(
+        "inception/mercury-3",
+        "Inception",
+        131072,
     ),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------
@@ -1164,10 +1181,18 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "stepfun/step-5-preview",
         }),
 
-    // -- DeepInfra (StepFun) --------------------------------------------------
-    "stepfun-ai/Step-3.7-Flash": () =>
-        createDeepInfraModelConfig({
-            model: "stepfun-ai/Step-3.7-Flash",
+    // -- Novita and Vercel (StepFun) ------------------------------------------
+    "stepfun/step-3.7-flash": () =>
+        createNovitaModelConfig({ model: "stepfun/step-3.7-flash" }),
+    // Pin StepFun's own endpoint: DeepInfra serves MiMo under this model's id.
+    "stepfun/step-3.7-flash:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "stepfun/step-3.7-flash",
+            responsesEndpoint: undefined,
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["stepfun"] } },
+            },
         }),
 
     // -- InferencePort (Lightning routers) ------------------------------------

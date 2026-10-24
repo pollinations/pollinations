@@ -55,6 +55,10 @@ export async function generateTextPortkey(
         state = await modelDef.transform(messages, state.options);
     }
 
+    // `voice` is a GET /text shortcut: the audio models' transform has already
+    // folded it into `audio.voice`, and no provider reads it at the top level.
+    delete state.options.voice;
+
     if (state.options.model) {
         state = await resolveModelConfig(state.messages, state.options);
         // TypeSafe has its own wire format and does not use Portkey transforms.

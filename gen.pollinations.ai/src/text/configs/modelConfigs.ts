@@ -1067,6 +1067,19 @@ export const portkeyConfig: PortkeyConfigMap = {
         createBedrockNativeConfig({ model: "us.amazon.nova-2-lite-v1:0" }),
 
     // -- AWS Bedrock (Qwen) ---------------------------------------------------
+    "qwen-coder-openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3-coder-30b-a3b-instruct",
+            // Preserve the existing Chat-based Responses adapter.
+            responsesEndpoint: undefined,
+            defaultOptions: {
+                provider: {
+                    only: ["siliconflow/fp8"],
+                    ignore: ["cloudflare"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "qwen-coder-bedrock": () =>
         createBedrockNativeConfig({ model: "qwen.qwen3-coder-30b-a3b-v1:0" }),
 

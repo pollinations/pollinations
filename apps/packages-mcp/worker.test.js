@@ -440,7 +440,7 @@ test("legacy npm names, platform constraints and Python epoch versions", async (
     const urls = [];
     t.mock.method(globalThis, "fetch", async (url) => {
         urls.push(url);
-        return url.includes("pypi.org")
+        return new URL(url).hostname === "pypi.org"
             ? Response.json({
                   info: {
                       name: "example",

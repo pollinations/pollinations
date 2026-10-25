@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-10-25",
+  "period_start": "2026-10-18",
+  "period_end": "2026-10-24",
+  "generated_at": "2026-10-25T06:25:30.851348+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/79fc7aab9b24f851330c89820ef437f6415436e66a491fb296ecc7d4b34a7e89"
+    }
+  ],
+  "text": "## Weekly Update - 2026-10-25\n\nHey <@&1424461167883194418>, here’s what changed this week.\n\n🌱 **Build and publish**\n- Static sites can be published at `<name>.pollinations.app` through Polli CLI, the SDK, MCP tools, or the Sites API. Barbara can publish a built page and return its URL. Sites are public, with a limit of five per account.\n- Mama Barbara added personal Telegram assistant setup. Three Azure sandbox templates add another compute option; Azure bills running sandboxes even when idle.\n\n🎨 **More models**\n- Video: Kling 3.0 Standard and FLUX 3 Max. Images: FLUX.3 Image Klein and Qwen Image 2.1 Pro. Text-to-3D: alpha, paid-only Tripo P2.\n- Sonilo can make a timed MP3 effects track for a public video. Stable Audio 3 added audio-to-audio `strength`.\n- Text additions: DeepSeek V4.1 Flash 1017, Muse Spark 1.3, Glyph Cluster, Nemotron 3.5 Super VL, and Mercury 3. Decision models now have a separate catalog category and `decision` API-key permission. D3 is free with Quest access; Perplexity Decider V1.2 is paid-only. Its V1.1 ID remains an alias. Keep confidential data out of D3 and Glyph Cluster because of provider training or logging caveats.\n\n🧭 **Your workspace**\n- Google sign-in works for Enter and eligible Quests. Publishing agents or community models and redeeming promo codes still require GitHub. My Apps lists submissions for linked GitHub accounts. Model owners get fallback choices and seven days of health data; agent owners can inspect up to 50 of their own runs from the last seven days.\n\n🛠️ **Smaller, useful things**\n- More fallback paths landed, along with audio-default handling and Gemini tool-call replay fixes. Polli CLI can estimate image and video Pollen charges without generating; unreliable totals show `estimate: unknown`. `polli harness --model` accepts aliases.\n- Ten community apps joined the catalog, and there’s a one-time Discord boost Quest.\n\nCode and project links: https://github.com/pollinations/pollinations"
+}

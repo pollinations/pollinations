@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-10-25",
+  "period_start": "2026-10-18",
+  "period_end": "2026-10-24",
+  "generated_at": "2026-10-25T06:25:30.851348+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/75e4ee2ffb6ca08d00cce9e42eaede6121f48adffc928a8b89e94bb092c8044b"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol.43: sites & routes\n\n169 selected PRs this week. Static sites, new models, and fewer surprises when a provider falls over.\n\n1. Publish a static site at <name>.pollinations.app through Polli CLI, the SDK, MCP tools, or the Sites API. Barbara can publish a built page and return its URL. Sites are public; accounts can have up to five.\n\n2. Kling 3.0 Standard and FLUX 3 Max joined video. FLUX.3 Image Klein and Qwen Image 2.1 Pro expanded image options. Stable Audio 3 added an audio-to-audio strength control.\n\n3. Decision models got their own catalog category and decision API-key permission. D3 joined the lineup. D3 and Glyph Cluster have provider training or logging caveats. Keep confidential data elsewhere.\n\n4. Google sign-in arrived. GitHub is still needed to publish agents or community models and redeem promo codes. Agent owners can inspect up to 50 of their runs from the last seven days.\n\n5. Community models gained eligible fallbacks. Polli CLI can estimate image and video requests before generation, or report estimate: unknown. Ten community apps joined.\n\nCode and contributions: https://github.com/pollinations/pollinations\n\n#OpenSource #AI #DevTools #BuildInPublic"
+}

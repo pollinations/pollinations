@@ -1,0 +1,14 @@
+{
+  "platform": "x",
+  "scope": "weekly",
+  "date": "2026-10-25",
+  "period_start": "2026-10-18",
+  "period_end": "2026-10-24",
+  "generated_at": "2026-10-25T06:25:30.851348+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/0a49ce1803b44e594bee798b15fc6dc0500b12e8f0661e295265d84f87726671"
+    }
+  ],
+  "text": "This week: static-site hosting at <name>.pollinations.app. Publish via Polli CLI, SDK, MCP, or Sites API. Barbara can publish a built page and return its URL. Sites are public. Kling 3.0 Standard and FLUX 3 Max also joined the video catalog."
+}

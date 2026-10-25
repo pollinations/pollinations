@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-10-25",
+  "period_start": "2026-10-18",
+  "period_end": "2026-10-24",
+  "generated_at": "2026-10-25T06:25:30.851348+00:00",
+  "images": [
+    {
+      "url": "https://media.pollinations.ai/6916725e8c6eb428cce494c7ba4c6ed1728678a4d02e5824b5d2a9373173af1c"
+    },
+    {
+      "url": "https://media.pollinations.ai/fd702434a270cee0cf898ca76b6c491a108617a23ffcaa8a698c09b42a176cff"
+    },
+    {
+      "url": "https://media.pollinations.ai/41e95e35d7f8fcc7624597b07174c5ba333c28192625a4168ca083f3a0c6cc56"
+    }
+  ],
+  "text": "This week, apps gained static-site hosting at <name>.pollinations.app. Barbara can publish a built page and return its URL. Published sites are public, so check what you put there.\n\nThe model catalog grew across video, images, 3D, audio, text, and decisions. Enter added Google sign-in, My Apps, model health, and agent run history. We also merged more fallback routes, and Polli CLI can estimate image and video requests before generating. Ten community apps joined the catalog, too.\n\nDetails and code: github.com/pollinations/pollinations\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #buildinpublic #staticwebsites #aivideo #developer tools",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

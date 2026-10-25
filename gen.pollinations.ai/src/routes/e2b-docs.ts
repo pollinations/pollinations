@@ -87,10 +87,19 @@ function entry(
     });
 }
 
-const CREATE =
-    "Pollinations turns auto-pause on by default, enforces secured access and prepays the first lease from your credits. A timeout over 600 seconds keeps the sandbox running until then, prepaid 10 minutes at a time. Enabled `autoResume`, an `iam` configuration or non-empty `volumeMounts` return 400.";
-const CONNECT =
-    "Resumes a paused sandbox. Only `timeout` is used, 300 seconds if omitted. You prepay only the time beyond the current lease, and a timeout over 600 seconds keeps the sandbox running until then.";
+// Not E2B's: the opt-in idle pause of a keep.
+const IDLE =
+    "On an E2B sandbox, `idleTimeout` (seconds, at least 300) then pauses it after that long without activity, checked every 5 minutes, and keeps it for the next connect or request to a shared port to resume. Activity is a request to a shared port, a connect, an API request with the sandbox's own key, or CPU use of 5% or more. Left out, the current setting stays; 0 turns it off.";
+const CREATE = `Pollinations turns auto-pause on by default, enforces secured access and prepays the first lease from your credits. A timeout over 600 seconds keeps the sandbox running until then, prepaid 10 minutes at a time. ${IDLE} Enabled \`autoResume\`, an \`iam\` configuration or non-empty \`volumeMounts\` return 400.`;
+const CONNECT = `Resumes a paused sandbox. Only \`timeout\` and \`idleTimeout\` are used, \`timeout\` 300 seconds if omitted. You prepay only the time beyond the current lease, and a timeout over 600 seconds keeps the sandbox running until then. ${IDLE}`;
+
+const port = {
+    name: "port",
+    in: "path" as const,
+    required: true,
+    schema: { type: "integer" as const, example: 8080 },
+    description: "Port the sandbox serves, 1 to 65535.",
+};
 
 export const sandboxDocs = {
     create: entry("Create sandbox", {
@@ -144,7 +153,7 @@ export const sandboxDocs = {
     timeout: entry("Set sandbox timeout", {
         e2bPage: "set-sandbox-timeout",
         e2bTitle: "Set sandbox timeout",
-        notes: "Extra runtime is prepaid from your credits; a shorter timeout refunds nothing. Over 600 seconds keeps the sandbox running until then; 600 or less ends that.",
+        notes: `Extra runtime is prepaid from your credits; a shorter timeout refunds nothing. Over 600 seconds keeps the sandbox running until then; 600 or less ends that. ${IDLE}`,
         byId: true,
         charges: true,
         example: { timeout: 3600 },
@@ -178,6 +187,50 @@ export const sandboxDocs = {
         byId: true,
         // Blocks all outbound traffic except the Pollinations API.
         example: { denyOut: ["0.0.0.0/0"], allowOut: ["gen.pollinations.ai"] },
+    }),
+    sharePort: describeRoute({
+        tags: ["Sandboxes API"],
+        summary: "Share sandbox port",
+        description:
+            "Not part of E2B's API. Serves the port at `https://{port}-{id}.pollinations.app`, returned as `url`, to requests that carry `secret` (16 to 256 visible ASCII characters) in the `header` you name, `X-Pollinations-Secret` if you don't; others get 403. Sharing again replaces the secret. A request there resumes a paused sandbox first and extends a lease that ends within a minute, both prepaid like a connect by the key that shared the port. For a Telegram webhook, pass the webhook's `secret_token` with `X-Telegram-Bot-Api-Secret-Token`. E2B sandboxes only.",
+        security: [{ bearerAuth: [] }],
+        parameters: [id, port],
+        requestBody: {
+            content: {
+                "application/json": {
+                    schema: {
+                        example: {
+                            secret: "a-long-random-string",
+                            header: "X-Telegram-Bot-Api-Secret-Token",
+                        },
+                    },
+                },
+            },
+        },
+        responses: {
+            200: { description: "`url`: where the port is served." },
+            400: {
+                description:
+                    "Invalid port, secret or header, or an Azure sandbox.",
+            },
+            401: { description: "Missing or invalid Pollinations API key." },
+            403: {
+                description: "The key lacks the `account:machines` permission.",
+            },
+            404: { description: "No sandbox with this ID in your account." },
+        },
+    }),
+    unsharePort: describeRoute({
+        tags: ["Sandboxes API"],
+        summary: "Unshare sandbox port",
+        description: "Not part of E2B's API. Stops serving a shared port.",
+        security: [{ bearerAuth: [] }],
+        parameters: [id, port],
+        responses: {
+            204: { description: "The port is no longer served." },
+            401: { description: "Missing or invalid Pollinations API key." },
+            404: { description: "No sandbox with this ID in your account." },
+        },
     }),
     pricing: describeRoute({
         tags: ["Sandboxes API"],

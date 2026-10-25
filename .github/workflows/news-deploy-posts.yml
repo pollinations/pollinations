@@ -48,6 +48,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
+          check-latest: true
 
       - name: Checkout production deployment rules
         uses: actions/checkout@v5

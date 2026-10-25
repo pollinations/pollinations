@@ -2,6 +2,11 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [5.1.0-alpha.21] - 2026-10-23
+
+### Added
+- `decision` model category for models served at `/alpha/decisions`.
+
 ## [5.1.0-alpha.20] - 2026-10-22
 
 ### Added

@@ -2,132 +2,330 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>pollinations.app</title>
-<meta name="description" content="Static site hosting at <name>.pollinations.app for Pollinations accounts.">
-<link rel="icon" type="image/png" href="/favicon-32x32.png">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>pollinations.app | Free static site hosting</title>
+<meta name="description" content="Free hosting for static sites at your-app.pollinations.app. Publish with one command from the CLI, or from code with the SDK, the MCP server or the API.">
+<link rel="canonical" href="https://pollinations.app/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://pollinations.app/">
+<meta property="og:site_name" content="pollinations.app">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="pollinations.app | Free static site hosting">
+<meta property="og:description" content="Publish a static site at your-app.pollinations.app with one command. Free for every Pollinations account.">
+<meta property="og:image" content="https://pollinations.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="pollinations.ai logo">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@pollinations_ai">
+<meta name="twitter:image" content="https://pollinations.app/og-image.png">
+<meta name="twitter:image:alt" content="pollinations.ai logo">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="preload" href="/fonts/lct-mogi-a.woff2" as="font" type="font/woff2" crossorigin>
+<meta name="apple-mobile-web-app-title" content="pollinations.app">
+<!-- The page is built from the published @pollinations/ui package, loaded
+     the no-build way its README describes. Its version is pinned here and in
+     the script's UI constant; bump all three together. -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.22/dist/styles.css">
+<link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.22/dist/index.browser.min.js">
+<link rel="modulepreload" href="https://esm.sh/react@19.2.5">
+<link rel="modulepreload" href="https://esm.sh/react-dom@19.2.5/client?deps=react@19.2.5">
+<script>
+    // The package's colour mode, set before paint as on pollinations.ai.
+    (() => {
+        let mode;
+        try {
+            mode = localStorage.getItem("polli-color-mode");
+        } catch {}
+        if (mode !== "light" && mode !== "dark") {
+            mode = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        if (mode === "dark") document.documentElement.classList.add("dark");
+        // Start the hero art for this light before the app bundle, as on pollinations.ai.
+        const base = `/art/sites-hero-${mode === "dark" ? "night" : "day"}`;
+        const preload = document.createElement("link");
+        preload.rel = "preload";
+        preload.as = "image";
+        preload.type = "image/webp";
+        preload.fetchPriority = "high";
+        preload.imageSrcset = `${base}-1024.webp 1024w, ${base}.webp 2048w`;
+        preload.imageSizes = "(max-width: 1152px) 100vw, 1152px";
+        preload.href = `${base}.webp`;
+        document.head.appendChild(preload);
+    })();
+</script>
 <style>
-/* Colors from packages/ui/src/styles/tokens.css. */
-@font-face {
-    font-family: "LCT Mogi";
-    src: url("/fonts/lct-mogi-a.woff2") format("woff2");
-    font-display: swap;
-}
-:root {
-    color-scheme: light dark;
-    --bg: oklch(0.902 0.013 80);
-    --block: oklch(0.96 0.02 85);
-    --code: oklch(0.996 0.004 85);
-    --strong: oklch(0.25 0.02 80);
-    --text: oklch(0.4 0.017 80);
-    --muted: oklch(0.49 0.013 80);
-    --divider: oklch(0.835 0.007 80);
-    --accent: oklch(0.9 0.135 85);
-}
-@media (prefers-color-scheme: dark) {
-    :root {
-        --bg: oklch(0.145 0.004 80);
-        --block: oklch(0.205 0.005 80);
-        --code: oklch(0.255 0.006 80);
-        --strong: oklch(0.93 0.004 80);
-        --text: oklch(0.85 0.007 80);
-        --muted: oklch(0.72 0.008 80);
-        --divider: oklch(0.33 0.006 80);
-    }
-}
-* { box-sizing: border-box; }
+/* The package ships no reset: apps bring Tailwind's. This is the same
+   preflight pollinations.ai builds with, in the package's base layer so every
+   component style still wins. Its few uncompiled --theme() font declarations
+   are dropped by the browser; the body sets the font below. */
+@import url("https://cdn.jsdelivr.net/npm/tailwindcss@4.3.3/preflight.css") layer(base);
+
+/* Page layout only: colours, type and components come from the package. */
 body {
     margin: 0;
-    min-height: 100vh;
-    padding: 16px;
-    display: flex;
+    min-height: 100dvh;
+    background: var(--polli-color-app-bg);
+    color: var(--polli-color-text-base);
+    font-family: var(--polli-font-body);
+}
+/* The content column lines up with AppHeader's (max-w-6xl, px-4, sm:px-6),
+   as on the model monitor. */
+.shell { max-width: 72rem; margin: 0 auto; padding: 0 1rem; }
+.hero-copy { display: flex; flex-direction: column; gap: 1.5rem; }
+.hero-copy :is(h1, p) { text-wrap: balance; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+/* Separate panels 12px apart, like enter's pages. */
+.panels { display: flex; flex-direction: column; gap: 0.75rem; }
+/* The hero art, as on pollinations.ai (HeroScene + .hero-scene): a banner
+   above the copy, bled to the panel's edges; from lg up behind the copy at the
+   top right, its edges masked into the card. */
+.hero { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 1.5rem; }
+.hero-scene {
+    display: block;
+    width: calc(100% + 2rem);
+    max-width: none;
+    margin: -1rem -1rem 0;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    object-position: right;
+    pointer-events: none;
+    user-select: none;
+    mask-image: linear-gradient(to bottom, black 65%, transparent 100%);
+}
+.hero-copy { position: relative; }
+/* Three cards per row, or one: never two and an orphan. */
+.cards { display: grid; gap: 1rem; }
+.card-head { display: flex; align-items: center; gap: 0.75rem; }
+.address {
+    display: inline-flex;
+    align-self: flex-start;
     align-items: center;
-    justify-content: center;
-    background: var(--bg);
-    color: var(--text);
-    font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    gap: 0.625rem;
+    min-height: 3rem;
+    padding: 0 1.125rem;
+    border-radius: 0.75rem;
+    background: var(--polli-color-surface-opaque);
+    font-size: 1.0625rem;
+    font-weight: 500;
 }
-main {
-    width: 100%;
-    min-width: 0;
-    max-width: 40rem;
-    padding: clamp(1.5rem, 6vw, 3rem);
-    border-radius: 1.75rem;
-    background: var(--block);
+.address svg { width: 1rem; height: 1rem; flex-shrink: 0; color: var(--polli-color-text-muted); }
+/* Like a browser bar: the part that is yours reads strong, the rest dims. */
+.address { color: var(--polli-color-text-muted); }
+.address mark { background: none; color: var(--polli-color-text-strong); font-weight: 600; }
+code.inline { font-family: var(--polli-font-mono); font-size: 0.9em; color: var(--polli-color-text-strong); }
+footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.5rem 1.5rem;
+    padding: 2rem 0 3rem;
+    font-size: 0.875rem;
+    color: var(--polli-color-text-muted);
 }
-.logo { display: block; width: 11rem; color: var(--strong); }
-.logo svg { display: block; width: 100%; height: auto; }
-.eyebrow {
-    margin: 2.5rem 0 0.5rem;
-    color: var(--muted);
-    font-size: 12px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+footer nav { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
+/* Phones: the panels run full width, as on pollinations.ai and enter. */
+@media (max-width: 639px) {
+    .panels { margin-inline: -1rem; }
 }
-h1, h2 {
-    margin: 0;
-    color: var(--strong);
-    font-family: "LCT Mogi", ui-sans-serif, sans-serif;
-    font-weight: normal;
-    line-height: 1.05;
+@media (min-width: 640px) {
+    .shell { padding-inline: 1.5rem; }
 }
-h1 { font-size: clamp(1.75rem, 7.5vw, 3rem); overflow-wrap: anywhere; }
-h2 { margin-top: 2rem; font-size: 1.5rem; }
-p, ul { margin: 0.75rem 0; }
-ul { padding-left: 1.25rem; }
-code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--strong); }
-pre {
-    margin: 0.75rem 0;
-    padding: 1rem 1.25rem;
-    overflow-x: auto;
-    border: 1px solid var(--divider);
-    border-radius: 1.25rem;
-    background: var(--code);
-    line-height: 1.6;
+/* The panel's padding grows at sm (polli:sm:p-7). */
+@media (min-width: 40rem) {
+    .hero-scene { width: calc(100% + 3.5rem); margin: -1.75rem -1.75rem 0; aspect-ratio: 2 / 1; }
 }
-.comment { color: var(--muted); }
-nav { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 2rem; }
-nav a {
-    padding: 0.5rem 1rem;
-    border: 1px solid var(--divider);
-    border-radius: 999px;
-    color: var(--strong);
-    font-size: 15px;
-    text-decoration: none;
+@media (min-width: 54rem) {
+    .cards { grid-template-columns: repeat(3, 1fr); }
 }
-nav a:hover { border-color: var(--strong); }
-nav a:first-child { border-color: transparent; background: var(--accent); color: #110518; }
+/* Beside the long headline only once both fit, as on pollinations.ai's home. */
+@media (min-width: 64rem) {
+    .hero-scene {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 76%;
+        margin: 0;
+        aspect-ratio: auto;
+        mask-image:
+            linear-gradient(to right, transparent 38%, black 62%),
+            linear-gradient(to bottom, black 55%, transparent 100%);
+        mask-composite: intersect;
+    }
+    .hero-copy { max-width: 72%; }
+}
 </style>
 </head>
 <body>
-<main>
-    <a class="logo" href="https://pollinations.ai" aria-label="pollinations.ai"><!-- lockup --></a>
-    <p class="eyebrow">Static site hosting</p>
-    <h1>pollinations.app</h1>
-    <p>Free hosting for static sites, for anyone with a Pollinations account. Each site is served at <code>https://&lt;name&gt;.pollinations.app</code>.</p>
+<div id="root"></div>
+<noscript>Read about pollinations.app hosting in the <a href="https://gen.pollinations.ai/docs#tag/sites">docs</a>.</noscript>
+<script type="module">
+import React from "https://esm.sh/react@19.2.5";
+import { createRoot } from "https://esm.sh/react-dom@19.2.5/client?deps=react@19.2.5";
+import * as ReactDOM from "https://esm.sh/react-dom@19.2.5?deps=react@19.2.5";
 
-    <h2>Publish</h2>
-    <pre><code>npm install -g @pollinations/cli
+const UI = "https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.22/dist";
+
+// The package's browser bundle reads React from these globals.
+window.React = React;
+window.ReactDOM = ReactDOM;
+await new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = `${UI}/index.browser.min.js`;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.append(script);
+});
+
+const {
+    AppHeader, AppIcon, BookIcon, CloudUploadIcon, CodeBlock, CodeIcon,
+    ColorModeToggle, ContentHeader, ExternalLinkButton, GlobeIcon, Heading, IconTile,
+    InlineLink, LinkCard, LockIcon, McpIcon, Section, Surface, TerminalIcon, Text, useColorMode,
+} = window.PollinationsUI;
+const h = React.createElement;
+const code = (text) => h("code", { className: "inline" }, text);
+
+const DOCS = "https://gen.pollinations.ai/docs";
+const CLI_URL = "https://www.npmjs.com/package/@pollinations/cli";
+const DASHBOARD = "https://enter.pollinations.ai";
+
+// The address the commands below publish to, as a browser bar shows it; the
+// name, the part that is yours, is marked.
+const ADDRESS = h("p", { className: "address" },
+    h(LockIcon, { "aria-hidden": "true" }),
+    h("span", { className: "polli:sr-only" }, "Each site is served at "),
+    h("span", null, h("mark", null, "my-app"), ".pollinations.app"));
+
+const PUBLISH = `npm install -g @pollinations/cli
 polli auth login
 polli sites deploy ./dist --name my-app
-<span class="comment"># → https://my-app.pollinations.app</span></code></pre>
-    <p>From code or an agent: <code>deploySite</code> in <code>@pollinations/sdk</code>, the <code>deploySite</code> tool of the Pollinations MCP server, or <code>PUT /account/sites/{name}</code>.</p>
+# → https://my-app.pollinations.app`;
 
-    <h2>Limits</h2>
-    <ul>
-        <li>5 sites per account, 200 MB and 1,000 files per site.</li>
-        <li>A folder of static files with an <code>index.html</code>. Unknown paths serve it, so single-page apps work.</li>
-        <li>Sites are public: never put an API key in one.</li>
-    </ul>
+// Card colours follow the matching cards on pollinations.ai.
+const FROM_CODE = [
+    {
+        title: "SDK",
+        body: [code("deploySite"), " in ", code("@pollinations/sdk")],
+        href: "https://www.npmjs.com/package/@pollinations/sdk",
+        icon: CodeIcon,
+        color: "var(--polli-color-modality-image)",
+    },
+    {
+        title: "MCP server",
+        body: ["The ", code("deploySite"), " tool of the Pollinations MCP server"],
+        href: `${DOCS}#tag/mcp-servers`,
+        icon: McpIcon,
+        color: "var(--polli-color-modality-video)",
+    },
+    {
+        title: "API",
+        body: [code("PUT /account/sites/{name}")],
+        href: `${DOCS}#tag/account`,
+        icon: GlobeIcon,
+        color: "var(--polli-color-modality-text)",
+    },
+];
 
-    <nav>
-        <a href="https://gen.pollinations.ai/docs#tag/sites">Docs</a>
-        <a href="https://www.npmjs.com/package/@pollinations/cli">CLI</a>
-        <a href="https://enter.pollinations.ai">Dashboard</a>
-        <a href="https://pollinations.ai">pollinations.ai</a>
-    </nav>
-</main>
+const LIMITS = [
+    {
+        title: "5 sites per account",
+        body: ["200 MB and 1,000 files per site."],
+        icon: CloudUploadIcon,
+    },
+    {
+        title: "Single-page apps work",
+        body: ["A folder of static files with an ", code("index.html"), ". Unknown paths serve it."],
+        icon: AppIcon,
+    },
+    {
+        title: "Sites are public",
+        body: [
+            "Never put an API key in one. Let visitors sign in with their own Pollen through ",
+            h(InlineLink, { key: "wallets", href: `${DOCS}#tag/connect-user-wallets` }, "Connect User Wallets"),
+            ".",
+        ],
+        icon: LockIcon,
+    },
+];
+
+// Laid out like the feature cards on pollinations.ai.
+function Card({ title, body, icon, color }) {
+    return [
+        h("div", { key: "head", className: "card-head" },
+            h(IconTile, { icon, color }),
+            h(Heading, { as: "h3", size: "card" }, title)),
+        h(Text, { key: "body", size: "sm" }, ...body),
+    ];
+}
+
+function Page() {
+    // Day art in light mode, night art in dark mode, as on pollinations.ai.
+    const art = `/art/sites-hero-${useColorMode().isDark ? "night" : "day"}`;
+    return [
+        // The app name on top, like the model monitor's header.
+        h(AppHeader, { key: "header", appName: "pollinations.app", navLabel: "pollinations.app links", autoHide: true, innerClassName: "polli:max-w-6xl" },
+            h(ExternalLinkButton, {
+                href: DASHBOARD,
+                icon: h(AppIcon, { className: "polli:h-4 polli:w-4" }),
+            }, "Dashboard"),
+            h(ColorModeToggle)),
+        h("div", { key: "content", className: "shell" },
+            h("main", { className: "panels" },
+                h(Surface, { as: "section", variant: "panel", className: "hero" },
+                    h("img", {
+                        className: "hero-scene",
+                        src: `${art}.webp`,
+                        srcSet: `${art}-1024.webp 1024w, ${art}.webp 2048w`,
+                        sizes: "(max-width: 1152px) 100vw, 1152px",
+                        alt: "",
+                        "aria-hidden": "true",
+                        width: 2048,
+                        height: 854,
+                        fetchPriority: "high",
+                    }),
+                    h("div", { className: "hero-copy" },
+                        h(ContentHeader, {
+                            variant: "page",
+                            eyebrow: null,
+                            title: "Free hosting for static sites",
+                            subtitle: "For anyone with a Pollinations account.",
+                        }),
+                        ADDRESS,
+                        h("div", { className: "row" },
+                            h(ExternalLinkButton, {
+                                href: `${DOCS}#tag/sites`,
+                                size: "lg",
+                                icon: h(BookIcon, { className: "polli:h-4 polli:w-4" }),
+                            }, "Docs"),
+                            h(ExternalLinkButton, {
+                                href: CLI_URL,
+                                size: "lg",
+                                intent: "neutral",
+                                icon: h(TerminalIcon, { className: "polli:h-4 polli:w-4" }),
+                            }, "CLI")))),
+                h(Section, { title: "Publish", intro: "From your terminal:" },
+                    h(CodeBlock, { code: PUBLISH, language: "Terminal" }),
+                    h(Text, { tone: "strong", weight: "semibold" }, "From code or an agent:"),
+                    h("ul", { className: "cards" },
+                        FROM_CODE.map((item) =>
+                            h("li", { key: item.title },
+                                h(LinkCard, { href: item.href }, Card(item)))))),
+                h(Section, { title: "Limits" },
+                    h("ul", { className: "cards" },
+                        LIMITS.map((item) =>
+                            h("li", { key: item.title },
+                                h(Surface, { className: "polli:flex polli:h-full polli:flex-col polli:gap-2 polli:p-5" }, Card(item))))))),
+            h("footer", null,
+                h("nav", { "aria-label": "Links" },
+                    [["pollinations.ai", "https://pollinations.ai"], ["Docs", `${DOCS}#tag/sites`], ["CLI", CLI_URL], ["Dashboard", DASHBOARD]].map(([label, href]) =>
+                        h(InlineLink, { key: label, href, tone: "quiet", size: "footer" }, label))),
+                h("span", null, `© ${new Date().getFullYear()} Myceli.AI OÜ`))),
+    ];
+}
+
+createRoot(document.getElementById("root")).render(h(Page));
+</script>
 </body>
 </html>

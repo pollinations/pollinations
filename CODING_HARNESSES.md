@@ -42,12 +42,12 @@ Current OpenClaw requires Node `>=24.16.0 <25` or `>=26.1.0`; Pi requires Node `
 
 ## Harnesses
 
-Polli defaults to `openai/gpt-6-sol` unless you pass `--model <id>`. Bloom is key-only: Polli does not change Bloom's model selection.
+Polli defaults to `openai/gpt-6-sol` unless you pass `--model <id>` (a model ID or one of its aliases, such as `deepseek`). Bloom is key-only: Polli does not change Bloom's model selection.
 
 | Harness | Status | What is unique |
 | --- | --- | --- |
 | [Bloom CLI](https://github.com/Ilm-Alan/bloom-cli) | **Available now**: `polli harness bloom on` | Creates a dedicated key for Bloom's existing Pollinations integration. |
-| [Claude Code](https://claude.com/claude-code) | **Available now**: `polli harness claude-code on` | Writes a separate settings file for gen's Anthropic Messages API, leaving the native Claude login and settings alone; runs Claude Code itself for a `pong` smoke and verifies dedicated-key usage. |
+| [Claude Code](https://claude.com/claude-code) | **Available now**: `polli harness claude-code on` | Writes a separate settings file for gen's Anthropic Messages API, leaving the native Claude login and settings alone; runs Claude Code itself for a `pong` smoke. |
 | [Codex](https://github.com/openai/codex) + [Codex Router](https://github.com/duolahypercho/codex-router) | **Available now**: `polli harness codex on` | Uses Codex Router's generic-provider/curation path, protected credential storage and compatibility probe; native Codex ChatGPT login is left untouched. |
 | [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) | **Available now**: `polli harness dsh on` | Adds the Pollinations provider, hosted Pollinations MCP, and Polli skill. Uses `openai/gpt-6-sol` by default. Its official launch uses `npx`, so no separate global DSH installation is required. |
 | [Hermes Agent](https://github.com/NousResearch/hermes-agent) | **Available now**: `polli harness hermes on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, discovering models from the live catalog. Install the hosted MCP servers with `polli mcp install hermes --all`. Defaults to `openai/gpt-6-sol`. |
@@ -78,7 +78,7 @@ polli harness claude-code off
 
 Claude Code talks to gen's Anthropic Messages API (`/v1/messages`) directly. `on` writes `~/.pollinations/claude-code.json`, a Claude Code settings file whose `env` sets `ANTHROPIC_BASE_URL`, the dedicated key as `ANTHROPIC_AUTH_TOKEN`, and the model as `ANTHROPIC_MODEL` and every model alias (`haiku`, `sonnet`, `opus`, `fable`), so background requests and subagents also use Pollinations. Claude Code reads the file only when launched with `--settings`; plain `claude` keeps your native login and `~/.claude` settings.
 
-Choose another model with `--model <id>`. Before `on` succeeds, Polli runs `claude -p --settings ~/.pollinations/claude-code.json` with a one-word `pong` prompt and confirms activity for the dedicated key; if that fails, the previous file is restored. `off` deletes only that file.
+Choose another model with `--model <id>`. Before `on` succeeds, Polli runs `claude -p --settings ~/.pollinations/claude-code.json` with a one-word `pong` prompt and checks the reply; if that fails, the previous file is restored. `off` deletes only that file.
 
 gen does not serve `/v1/messages/count_tokens`, so `/context` shows estimated counts. Claude Code warns that a Pollinations model id is not in its catalog and compacts at 200K tokens.
 
@@ -94,7 +94,7 @@ polli harness codex off
 
 `on` requires Codex and Codex Router `>=0.6.0`. Polli drives Codex Router's generic-provider, protected-credential, model-curation, and compatibility-test paths rather than pointing Codex directly at Pollinations. It creates an owned `pollinations` provider, stores the dedicated child key in the router's protected credential store, and curates the selected live Pollinations model. Native Codex ChatGPT login and unrelated Codex/router configuration are preserved.
 
-Choose the routed model with `--model <id>`. Before setup succeeds, Codex Router runs its compatibility smoke and Polli verifies dedicated-key activity. `status` reports client/router/provider/key/model readiness. `off` removes only Polli-owned provider, credential, and routed model state; it never removes Codex Router itself. Foreign provider state is never overwritten.
+Choose the routed model with `--model <id>`. Before setup succeeds, Codex Router runs its compatibility smoke. `status` reports client/router/provider/key/model readiness. `off` removes only Polli-owned provider, credential, and routed model state; it never removes Codex Router itself. Foreign provider state is never overwritten.
 
 ## tgpt
 

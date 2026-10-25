@@ -304,6 +304,81 @@ describe("community endpoint configuration policy", () => {
         expect(publicAgent.status).toBe(403);
     });
 
+    test("identifies invalid agent creation fields", async ({
+        accountToken,
+    }) => {
+        const prompt = {
+            name: "validation-agent",
+            title: "Validation agent",
+            systemPrompt: "Answer briefly.",
+            baseModel: "openai",
+        };
+        for (const [body, field] of [
+            [{ ...prompt, mcpServers: ["not-a-server"] }, "mcpServers"],
+            [
+                {
+                    ...prompt,
+                    type: "prompt_agent",
+                    mcpServers: ["not-a-server"],
+                },
+                "mcpServers",
+            ],
+            [{ ...prompt, name: "invalid name" }, "name"],
+            [{ ...prompt, title: "" }, "title"],
+            [{ ...prompt, baseModel: 42 }, "baseModel"],
+            [{ type: "code_agent" }, "repository"],
+            [{ ...prompt, type: "unknown" }, "type"],
+            [{ ...prompt, type: null }, "type"],
+        ] as const) {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/account/agents",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${accountToken}`,
+                    },
+                    body: JSON.stringify(body),
+                },
+            );
+            expect(response.status).toBe(400);
+            const result = await response.json<{
+                error: {
+                    details: {
+                        formErrors: string[];
+                        fieldErrors: Record<string, string[]>;
+                    };
+                };
+            }>();
+            expect(result.error.details.formErrors).toEqual([]);
+            expect(
+                result.error.details.fieldErrors[field]?.length,
+            ).toBeGreaterThan(0);
+        }
+    });
+
+    test("accepts an explicit prompt agent type", async ({ accountToken }) => {
+        const response = await SELF.fetch(
+            "http://localhost:3000/api/account/agents",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accountToken}`,
+                },
+                body: JSON.stringify({
+                    type: "prompt_agent",
+                    name: "explicit-prompt-agent",
+                    title: "Explicit prompt agent",
+                    systemPrompt: "Answer briefly.",
+                    baseModel: "openai",
+                }),
+            },
+        );
+        expect(response.status, await response.clone().text()).toBe(200);
+        expect(await response.json()).toMatchObject({ type: "prompt_agent" });
+    });
+
     test("accepts descriptions up to the limit and names it when rejecting", async ({
         accountToken,
     }) => {
@@ -704,7 +779,9 @@ describe("community endpoint configuration policy", () => {
         const body = (await health.json()) as {
             days: { day: string; succeeded: number; failed: number }[];
             failures: unknown[];
+            runs: unknown[];
         };
+        expect(body.runs).toEqual([]);
         expect(mocks.tinybird.state.pipeCalls.at(-1)?.query).toMatchObject({
             model: created.modelId,
         });
@@ -735,5 +812,55 @@ describe("community endpoint configuration policy", () => {
             headers: { Authorization: `Bearer ${accountToken}` },
         });
         expect(missing.status).toBe(404);
+    });
+
+    test("adds the owner's own runs to an agent's health", async ({
+        accountToken,
+        mocks,
+    }) => {
+        const created = await postModel(accountToken, "/endpoint-agents", {
+            name: "runs-agent",
+            title: "Runs agent",
+            api: "responses",
+            url: "https://agent.example.com/v1/responses",
+        });
+        await mocks.enable("tinybird");
+        mocks.tinybird.state.modelRunsResponse = [
+            {
+                run_id: "run-1",
+                started_at: "2026-10-16 08:45:15",
+                status: 502,
+                duration_ms: 4000,
+                key_name: "undefined",
+                cost: 0.0021,
+                model_calls: 2,
+                tool_calls: 1,
+                failed_calls: 1,
+                error: "MCP server computer failed",
+            },
+        ];
+        const health = await SELF.fetch(`${endpointUrl}/${created.id}/health`, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(health.status).toBe(200);
+        expect(((await health.json()) as { runs: unknown[] }).runs).toEqual([
+            {
+                id: "run-1",
+                startedAt: "2026-10-16T08:45:15.000Z",
+                status: 502,
+                durationMs: 4000,
+                keyName: "",
+                cost: 0.0021,
+                modelCalls: 2,
+                toolCalls: 1,
+                failedCalls: 1,
+                error: "MCP server computer failed",
+            },
+        ]);
+        const runsCall = mocks.tinybird.state.pipeCalls.find((call) =>
+            call.url.includes("my_model_runs"),
+        );
+        expect(runsCall?.query).toMatchObject({ model: created.modelId });
+        expect(runsCall?.query.owner_user_id).toBeTruthy();
     });
 });

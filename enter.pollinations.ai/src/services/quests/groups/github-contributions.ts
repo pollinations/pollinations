@@ -1,3 +1,4 @@
+import { MAX_REWARD_AMOUNT } from "@shared/billing/rewards.ts";
 import {
     getInstallationToken,
     githubAppCredentialsFromEnv,
@@ -290,7 +291,14 @@ async function githubToken(env: CloudflareBindings): Promise<string> {
 
 function parseReward(body: string): number | null {
     const match = body.match(QUEST_REWARD_REGEX);
-    return match ? Number(match[1]) : null;
+    if (!match) return null;
+    const amount = Number(match[1]);
+    // The body is author-editable. An out-of-range amount must not become a
+    // payable quest: recordRewards throws on amounts outside
+    // (0, MAX_REWARD_AMOUNT], and one throw fails the whole quest check.
+    if (!Number.isFinite(amount) || amount <= 0 || amount > MAX_REWARD_AMOUNT)
+        return null;
+    return amount;
 }
 
 // Pull a short human description out of the issue body: prefer a Goal/Scope

@@ -494,7 +494,7 @@ function CommunityConnections({
                         </Text>
                         <Text size="sm" tone="muted">
                             {githubUsername === null
-                                ? "Connect GitHub for GitHub quests, community models, and agents."
+                                ? "Connect GitHub for GitHub quests, apps, community models, and agents."
                                 : githubUsername
                                   ? `@${githubUsername}`
                                   : "Connected"}

@@ -56,8 +56,11 @@ describe("getGenerationModelRegistry", () => {
             "qwen/qwen3guard-gen-8b",
             "openai/gpt-oss-20b",
             "respan/span-01-lite",
+            "vllm-sr/d3",
             "openai/whisper-large-v3",
             "lykon/dreamshaper-8-lcm",
+            // Costs $0 while Vercel offers it as a stealth model.
+            "stealth/glyph-cluster",
         ]);
         const questModels = [];
         for (const id of getModels()) {
@@ -129,14 +132,16 @@ describe("getGenerationModelRegistry", () => {
         }
     });
 
-    it("keeps the Bedrock coder's catalog aligned with its serving route", async () => {
+    it("keeps the coder's catalog aligned with its serving route", async () => {
         const registry = await getGenerationModelRegistry(env);
         const model = registry.resolve("qwen-coder");
 
         expect(model?.id).toBe("qwen/qwen3-coder-30b-a3b-instruct");
-        expect(model?.definition.provider).toBe("aws");
+        expect(model?.definition.provider).toBe("openrouter");
         expect(model?.definition.paidOnly).toBe(true);
-        expect(model?.definition.fallbacks ?? []).toEqual([]);
+        expect(model?.definition.fallbacks).toEqual([
+            "qwen/qwen3-coder-30b-a3b-instruct:aws",
+        ]);
         // Responses runs through its Chat route; there is no native target.
         expect(model?.supportedEndpoints).toContain("/v1/responses");
         expect(supportsDirectResponses(model?.id ?? "")).toBe(false);
@@ -157,7 +162,16 @@ describe("getGenerationModelRegistry", () => {
         expect(chat.length).toBeGreaterThan(0);
         for (const entry of chat) {
             expect(entry.info.supported_endpoints).toContain("/v1/responses");
+            expect(entry.info.supported_endpoints).toContain("/v1/messages");
         }
+        expect(
+            registry.resolve("vllm-sr/d3")?.info.supported_endpoints,
+        ).toEqual([
+            "/alpha/decisions",
+            "/v1/chat/completions",
+            "/v1/responses",
+            "/v1/messages",
+        ]);
         // Native Responses targets stay a subset; the rest are adapted.
         const native = chat.filter((entry) =>
             supportsDirectResponses(entry.id),

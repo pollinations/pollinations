@@ -408,6 +408,11 @@ test("catalog returns quest definitions without ledger stats", async ({
         rewardAmount: 1,
         balanceBucket: "tier",
     });
+    expectStableCatalogFields("discord_boost", {
+        state: "available",
+        rewardAmount: 20,
+        balanceBucket: "tier",
+    });
     expectStableCatalogFields("discord_level_10", {
         state: "available",
         rewardAmount: 2,
@@ -1983,6 +1988,54 @@ test("two lazy GitHub issue bounties each record independently", async ({
         issueRewards.find((g) => g.userId === "community-issue-second-user")
             ?.pollenAmount,
     ).toBeCloseTo(13);
+});
+
+test("issue bounties with out-of-range rewards record nothing and do not fail the check", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    mocks.github.state.user.created_at = new Date().toISOString();
+    await mocks.enable("github", "tinybird");
+
+    // The issue body is author-editable, so a reward of 0 or above the
+    // MAX_REWARD_AMOUNT cap can appear at any time. Before the fix both
+    // parsed into a quest definition and recordRewards threw on the amount,
+    // failing every bounty in the same check, including the valid one.
+    for (const issue of [
+        { issueNumber: 951, reward: 10001 },
+        { issueNumber: 953, reward: 0 },
+        { issueNumber: 952, reward: 17 },
+    ]) {
+        seedQuestIssue(mocks.github.state, {
+            issueNumber: issue.issueNumber,
+            title: `Bounty #${issue.issueNumber}`,
+            goal: "Merge the linked PR.",
+            reward: issue.reward,
+            completedByPrNumber: issue.issueNumber + 1000,
+            completedByGithubId: user.githubId,
+            completedByLogin: user.githubUsername,
+        });
+    }
+
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({
+            idempotencyKey: schema.rewards.idempotencyKey,
+            pollenAmount: schema.rewards.pollenAmount,
+        })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.balanceBucket, "tier"));
+    const issueRewards = rewards.filter((g) =>
+        g.idempotencyKey.startsWith("quest:github:issue:"),
+    );
+    expect(issueRewards).toHaveLength(1);
+    expect(issueRewards[0].idempotencyKey).toBe(
+        `quest:github:issue:952:github:${user.githubId}`,
+    );
+    expect(issueRewards[0].pollenAmount).toBeCloseTo(17);
 });
 
 // Regression guard: GitHub search returns at most 100 issues per page, so a

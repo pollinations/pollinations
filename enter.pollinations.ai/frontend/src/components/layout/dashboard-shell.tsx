@@ -59,8 +59,9 @@ type DashboardNavItem = {
 };
 
 // One card per group: Pollinations' resources (News & FAQ, models, agents &
-// MCP), then your pages (Balance first), then Docs in a card of its own. Your
-// balances and name sit under the cards. Signed out only resources and Docs show.
+// MCP), then your pages (Balance first). Docs follows on its own, without a
+// card: it leaves the dashboard. Your balances and name sit at the bottom.
+// Signed out only resources and Docs show.
 const NAV_CARD_ORDER: readonly DashboardNavGroup[] = ["resources", "yours"];
 const NAV_CARD_CLASS =
     "flex flex-col gap-0.5 rounded-card bg-surface-opaque p-1.5";
@@ -398,9 +399,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         </div>
                     );
                 })}
-                <div className={NAV_CARD_CLASS}>
-                    <DocsRow />
-                </div>
+                <DocsRow />
             </nav>
         </ScrollArea>
         <div className="flex shrink-0 flex-col gap-2 pt-3">
@@ -459,10 +458,11 @@ const BrandHeader: FC<{ onClose: () => void }> = ({ onClose }) => (
     </div>
 );
 
-// Docs looks like the other rows; ↗ marks that it opens the API reference,
-// and the quiet icon copies all of it as plain text for an AI chat.
+// Docs looks like the other rows and is inset like them, so the icons line up;
+// ↗ marks that it opens the API reference, and the quiet icon copies all of it
+// as plain text for an AI chat.
 const DocsRow: FC = () => (
-    <div className="flex items-center">
+    <div className="flex items-center px-1.5">
         <NavItem
             as="a"
             href={genDocsUrl()}
@@ -483,7 +483,7 @@ const DocsRow: FC = () => (
             copiedTimeoutMs={1500}
             tooltip="Copy all docs as text"
             aria-label="Copy all docs as text"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-theme-text-muted transition-colors hover:bg-app-bg/40 hover:text-theme-text-strong"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-theme-text-muted transition-colors hover:bg-surface-opaque/60 hover:text-theme-text-strong"
         >
             {(copied) =>
                 copied ? (

@@ -52,7 +52,7 @@ interface SingleKeyInfo {
 }
 
 const MODELS_HELP =
-    "Models the key can use: categories (text, image, video, audio, 3d, embedding, realtime) or model IDs from `polli models`. A category includes models added later; a model ID allows only that model";
+    "Models the key can use: categories (text, image, video, audio, 3d, embedding, realtime, decision) or model IDs from `polli models`. A category includes models added later; a model ID allows only that model";
 
 const formatPerms = (p: KeyInfo["permissions"]) => {
     if (!p) return "-";

@@ -265,7 +265,6 @@ declare namespace Cloudflare {
 		DISCORD_CLIENT_SECRET?: "test_discord_client_secret";
 		DISCORD_BOT_TOKEN?: "test_discord_bot_token";
 		TINYBIRD_ECONOMICS_READ_TOKEN?: "test_economics_read_token";
-		ASSETS: Fetcher;
 	}
 }
 interface CloudflareBindings extends Cloudflare.Env {}

@@ -354,6 +354,7 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             // Gemini 3.1 Flash Image via Vertex AI
+            promptCachedTokens: perMillion(0.05),
             promptTextTokens: perMillion(0.5), // per 1M tokens
             promptImageTokens: perMillion(0.5), // per 1M tokens
             completionTextTokens: perMillion(3), // text/reasoning output tokens
@@ -376,6 +377,7 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             // Gemini 3.1 Flash-Lite Image (GA) via Vertex AI — half of nanobanana-2
+            promptCachedTokens: perMillion(0.025),
             promptTextTokens: perMillion(0.25), // per 1M tokens
             promptImageTokens: perMillion(0.25), // per 1M tokens
             completionTextTokens: perMillion(1.5), // text/reasoning output tokens
@@ -390,18 +392,19 @@ const IMAGE_BASE_SERVICES = {
     },
     "google/gemini-nano-banana-2.1": {
         aliases: [],
-        provider: "openrouter",
+        provider: "google",
         publisher: "Google",
         category: "image",
         addedDate: new Date("2026-10-06").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         cost: {
-            // Google AI Studio via OpenRouter, including the 5.5% credit fee.
-            promptTextTokens: perMillion(1.5) * 1.055, // per 1M tokens
-            promptImageTokens: perMillion(1.5) * 1.055, // per 1M tokens
-            completionTextTokens: perMillion(7.5) * 1.055, // text/reasoning output tokens
-            completionImageTokens: perMillion(30) * 1.055, // per 1M tokens
+            // Vertex global standard pricing; cached input includes images.
+            promptTextTokens: perMillion(1.5),
+            promptImageTokens: perMillion(1.5),
+            promptCachedTokens: perMillion(0.15),
+            completionTextTokens: perMillion(7.5),
+            completionImageTokens: perMillion(30),
         },
         title: "Nano Banana 2.1",
         description:
@@ -424,6 +427,7 @@ const IMAGE_BASE_SERVICES = {
             // 4K image: 2000 tokens = $0.24/image
             promptTextTokens: perMillion(2), // per 1M tokens
             promptImageTokens: perMillion(2), // per 1M tokens
+            promptCachedTokens: perMillion(0.2),
             completionTextTokens: perMillion(12), // text/reasoning output tokens
             completionImageTokens: perMillion(120), // per 1M tokens, 1120 tokens per 1K image
         },
@@ -500,14 +504,14 @@ const IMAGE_BASE_SERVICES = {
     },
     "bytedance/seedream-5.0-pro": {
         aliases: ["seedream-5-pro", "seedream-pro-5", "seedream5-pro"],
-        provider: "replicate",
+        provider: "vercel",
         publisher: "ByteDance",
         category: "image",
         addedDate: new Date("2026-07-10").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            completionImageTokens: 0.09, // per 2K image
+            completionImageTokens: 0.035, // per 2K image; settle from gateway receipt
         },
         title: "Seedream 5.0 Pro",
         description: "Premium multimodal image generation and editing",
@@ -848,24 +852,26 @@ const IMAGE_BASE_SERVICES = {
     },
     "bytedance/seedance-1-pro-fast": {
         aliases: ["seedance-pro"],
-        provider: "replicate",
+        provider: "fal",
         publisher: "ByteDance",
         category: "video",
         addedDate: new Date("2025-12-04").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Replicate bytedance/seedance-1-pro-fast is per-second tiered by
-        // resolution (480p $0.015, 720p $0.025, 1080p $0.06).
+        // fal bills $1 per 1M video tokens (2026-10-24); these are the 16:9
+        // per-second equivalents. Charges use fal's reported units at its
+        // live endpoint price, and fal doesn't charge input images.
         cost: {
-            completionVideoSeconds: 0.025, // per sec at 720p
+            promptImageTokens: 0,
+            completionVideoSeconds: 0.021021, // per sec at 720p
         },
         ...defineCostVariants(
             {
                 "480p": {
-                    completionVideoSeconds: 0.015,
+                    completionVideoSeconds: 0.0099225,
                 },
                 "1080p": {
-                    completionVideoSeconds: 0.06,
+                    completionVideoSeconds: 0.0486,
                 },
             },
             matchResolution("480p", "1080p"),
@@ -1072,14 +1078,16 @@ const IMAGE_BASE_SERVICES = {
     },
     "alibaba/wan-2.2-fast": {
         aliases: ["wan2.2", "wan-2.2", "wan-fast"],
-        provider: "replicate",
+        provider: "fal",
         publisher: "Alibaba",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Replicate wan-2.2-fast, locked to 480p. Silent, fixed ~5s clip billed
-        // flat ($0.01/s x 5s = $0.05).
+        // Fal wan-2.2-turbo, locked to 480p. Silent, fixed ~5s clip billed
+        // flat ($0.01/s x 5s = $0.05). Primary moved off Replicate, which
+        // returned 4xx on ~48% of requests (31 req, 15 errors_4xx,
+        // 2026-10-21 /models/status); Replicate stays as a fallback-only route.
         cost: {
             promptImageTokens: 0,
             completionVideoSeconds: 0.01, // per sec (480p, silent)
@@ -1416,6 +1424,25 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10,
     },
+    "qwen/qwen-image-2.1-pro": {
+        aliases: [],
+        provider: "alibaba",
+        publisher: "Qwen",
+        category: "image",
+        addedDate: new Date("2026-10-18").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Alibaba Singapore (International) list price (2026-10-18): $0.04 per
+        // output image. Beijing and the global regions list $0.035333.
+        cost: {
+            completionImageTokens: 0.04, // per image
+        },
+        title: "Qwen Image 2.1 Pro",
+        description: "Generation and editing with up to 10 reference images",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
+    },
     "qwen/qwen-image-3": {
         aliases: ["qwen-image-3"],
         provider: "alibaba",
@@ -1511,30 +1538,30 @@ const IMAGE_BASE_SERVICES = {
     },
     "x-ai/grok-imagine-image-2.0": {
         aliases: ["grok-imagine-image-2.0"],
-        provider: "openrouter",
+        provider: "xai",
         publisher: "xAI",
         category: "image",
         addedDate: new Date("2026-08-14").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // OpenRouter x-ai/grok-imagine-image-2.0 pricing, verified 2026-08-14.
+        // xAI direct API rates; a low 1K probe cost $0.04 (2026-10-24).
         cost: {
-            promptImageTokens: 0.01 * 1.055,
-            completionImageTokens: 0.06 * 1.055, // medium, 1K
+            promptImageTokens: 0.01,
+            completionImageTokens: 0.06, // medium, 1K
         },
         ...defineCostVariants(
             {
                 low_1k: {
-                    promptImageTokens: 0.01 * 1.055,
-                    completionImageTokens: 0.04 * 1.055,
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.04,
                 },
                 low_2k: {
-                    promptImageTokens: 0.01 * 1.055,
-                    completionImageTokens: 0.06 * 1.055,
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.06,
                 },
                 medium_2k: {
-                    promptImageTokens: 0.01 * 1.055,
-                    completionImageTokens: 0.08 * 1.055,
+                    promptImageTokens: 0.01,
+                    completionImageTokens: 0.08,
                 },
             },
             ({ input }) => {
@@ -1614,17 +1641,16 @@ const IMAGE_BASE_SERVICES = {
     },
     "recraft/recraft-v4.1-flash": {
         aliases: [],
-        provider: "openrouter",
+        provider: "fal",
         publisher: "Recraft",
         category: "image",
         addedDate: new Date("2026-09-23").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            // OpenRouter bills 4,175 image tokens per image (same convention
-            // as Recraft Vector): $0.007 fixed per output image, verified
-            // 2026-09-23, plus the mandatory 5.5% OpenRouter credit fee.
-            completionImageTokens: 0.007 * 1.055,
+            // fal recraft/v4.1/flash/text-to-image: $0.007 per image, one
+            // billable unit per image (probe, 2026-10-24).
+            completionImageTokens: 0.007,
         },
         title: "Recraft V4.1 Flash",
         description: "Fast, low-cost raster image generation from text",
@@ -1633,15 +1659,15 @@ const IMAGE_BASE_SERVICES = {
     },
     "x-ai/grok-imagine-video": {
         aliases: ["grok-imagine-video", "grok-video-pro"],
-        provider: "fal",
+        provider: "replicate",
         publisher: "xAI",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            promptImageTokens: 0.002, // per start-frame image
-            completionVideoSeconds: 0.07, // per sec at 720p
+            promptImageTokens: 0, // included in output-video price
+            completionVideoSeconds: 0.05, // per reported output second at 720p
         },
         resolutions: ["720p"],
         title: "Grok Video Pro",
@@ -1656,23 +1682,24 @@ const IMAGE_BASE_SERVICES = {
     },
     "x-ai/grok-imagine-video-1.5": {
         aliases: ["grok-imagine-video-1.5"],
-        provider: "openrouter",
+        provider: "xai",
         publisher: "xAI",
         category: "video",
         addedDate: new Date("2026-08-03").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            promptImageTokens: 0.01 * 1.055, // per start-frame image
-            completionVideoSeconds: 0.14 * 1.055, // per sec at 720p
+            // xAI direct API rates; a 1 s 480p probe cost $0.08 (2026-10-24).
+            promptImageTokens: 0.01, // per start-frame image
+            completionVideoSeconds: 0.14, // per sec at 720p
         },
         ...defineCostVariants(
             {
                 "480p": {
-                    completionVideoSeconds: 0.08 * 1.055,
+                    completionVideoSeconds: 0.08,
                 },
                 "1080p": {
-                    completionVideoSeconds: 0.25 * 1.055,
+                    completionVideoSeconds: 0.25,
                 },
             },
             matchResolution("480p", "1080p"),
@@ -1915,24 +1942,69 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 15,
         defaultDuration: 5,
     },
+    "black-forest-labs/flux-3-max": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Black Forest Labs",
+        category: "video",
+        addedDate: new Date("2026-10-20").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // fal.ai FLUX 3 Max promotional per-second rates (2026-10-20), 75% off
+        // through 2026-11-07. List after the promotion: $0.17/s at 720p and
+        // $0.29/s at 1080p (follow-up PR). fal's page lists no separate audio rate.
+        cost: { completionVideoSeconds: 0.0425 },
+        ...defineCostVariants(
+            {
+                "1080p": { completionVideoSeconds: 0.0725 },
+            },
+            matchResolution("1080p"),
+            {
+                "1080p": {
+                    label: "1080p",
+                    description:
+                        "Applies when the requested video resolution is 1080p.",
+                },
+            },
+            "720p",
+            [
+                {
+                    key: "resolution",
+                    label: "Resolution",
+                    values: { "": "720p", "1080p": "1080p" },
+                },
+            ],
+        ),
+        resolutions: ["720p", "1080p"],
+        title: "FLUX 3 Max",
+        description:
+            "Fast video from text or start and end frames with optional synchronized audio at 720p or 1080p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
+        minDuration: 5,
+        maxDuration: 20,
+        defaultDuration: 5,
+    },
     "heygen/heygen-video-1": {
         aliases: [],
-        provider: "openrouter",
+        provider: "fal",
         publisher: "HeyGen",
         category: "video",
         addedDate: new Date("2026-09-30").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // OpenRouter HeyGen endpoint, 50% launch discount through October 2026
-        // (list $0.02/s at 480p, $0.03/s at 768p), verified 2026-10-01:
-        // a 5s 480p clip billed 5 x $0.01. Includes the 5.5% OpenRouter
-        // credit fee. Raise to list price when the discount ends.
+        // fal heygen/heygen-video: $0.01/s at 480p and 768p until 2026-10-31,
+        // then $0.02/s (2026-10-24). Charges use fal's reported units at its
+        // live endpoint price, and fal doesn't charge the first frame.
         cost: {
-            completionVideoSeconds: 0.01 * 1.055, // per sec at 480p
+            promptImageTokens: 0,
+            completionVideoSeconds: 0.01, // per sec at 480p
         },
         ...defineCostVariants(
             {
-                "768p": { completionVideoSeconds: 0.015 * 1.055 },
+                "768p": { completionVideoSeconds: 0.01 },
             },
             matchResolution("768p"),
             {

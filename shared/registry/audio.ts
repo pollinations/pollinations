@@ -387,10 +387,9 @@ const AUDIO_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            // ElevenLabs v3 via API: measured 0.60 credits/char (API-discounted
-            // from the 1 cr/char UI rate) * $0.166/1k Scale credits = $0.10/1k chars
-            // (matches elevenlabs.io/pricing/api).
-            completionAudioTokens: 0.1 / 1000,
+            // https://elevenlabs.io/pricing/api — $0.08 per 1K characters
+            // (2026-10-24); a 500-character probe metered 0.482 credits/char.
+            completionAudioTokens: 0.08 / 1000,
         },
         title: "ElevenLabs v3 TTS",
         description:
@@ -413,10 +412,10 @@ const AUDIO_BASE_SERVICES = {
         addedDate: new Date("2026-05-14").getTime(),
         priceMultiplier: 1,
         cost: {
-            // ElevenLabs Flash v2.5 via API: measured 0.30 credits/char
-            // (API-discounted from the 0.5 cr/char UI rate) * $0.166/1k Scale
-            // credits = $0.05/1k chars (matches elevenlabs.io/pricing/api).
-            completionAudioTokens: 0.05 / 1000,
+            // https://elevenlabs.io/pricing/api — Flash/Turbo $0.04 per 1K
+            // characters (2026-10-24); a 500-character probe metered 0.24
+            // credits/char.
+            completionAudioTokens: 0.04 / 1000,
         },
         title: "ElevenLabs Flash v2.5",
         description:
@@ -444,10 +443,9 @@ const AUDIO_BASE_SERVICES = {
         addedDate: new Date("2026-06-22").getTime(),
         priceMultiplier: 1,
         cost: {
-            // ElevenLabs Multilingual v2 via API: measured 0.60 credits/char
-            // (API-discounted from the 1 cr/char UI rate) * $0.166/1k Scale credits
-            // = $0.10/1k chars (matches elevenlabs.io/pricing/api).
-            completionAudioTokens: 0.1 / 1000,
+            // https://elevenlabs.io/pricing/api — $0.08 per 1K characters
+            // (2026-10-24).
+            completionAudioTokens: 0.08 / 1000,
         },
         title: "ElevenLabs Multilingual v2",
         description:
@@ -470,8 +468,9 @@ const AUDIO_BASE_SERVICES = {
         addedDate: new Date("2026-07-26").getTime(),
         priceMultiplier: 1,
         cost: {
-            // ElevenLabs Text to Dialogue uses the v3 TTS character rate.
-            completionAudioTokens: 0.1 / 1000,
+            // ElevenLabs Text to Dialogue uses the v3 TTS character rate:
+            // $0.08 per 1K characters (2026-10-24).
+            completionAudioTokens: 0.08 / 1000,
         },
         title: "ElevenLabs Text to Dialogue",
         description:
@@ -651,12 +650,33 @@ const AUDIO_BASE_SERVICES = {
         addedDate: new Date("2026-06-22").getTime(),
         priceMultiplier: 1,
         cost: {
-            // ElevenLabs Sound Effects: $0.12/minute.
+            // ElevenLabs Sound Effects: $0.12/minute, billed from the
+            // character-cost meter (12 credits per second; 60 credits when
+            // no duration is set).
             completionAudioSeconds: 0.002,
         },
         title: "ElevenLabs Sound Effects",
         description: "Sound effects from a text description",
         inputModalities: ["text"],
+        outputModalities: ["audio"],
+    },
+    "sonilo/sonilo-1.1-sfx": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Sonilo",
+        category: "audio",
+        paidOnly: true,
+        addedDate: new Date("2026-10-15").getTime(),
+        priceMultiplier: 1,
+        cost: {
+            // fal's price per second of video. Charges use fal's reported
+            // seconds at its live endpoint price.
+            completionAudioSeconds: 0.009,
+        },
+        title: "Sonilo 1.1 SFX",
+        description:
+            "Sound effects timed to a video, as a separate audio track",
+        inputModalities: ["text", "video"],
         outputModalities: ["audio"],
     },
     "openai/whisper-large-v3": {

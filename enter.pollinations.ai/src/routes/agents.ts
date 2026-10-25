@@ -7,19 +7,14 @@ import {
     CodeAgentConfigSchema,
     CodeAgentInputSchema,
     communityModelId,
-    effectiveCommunityEndpointVisibility,
     isCommunityEndpointOwnerAllowed,
     PROMPT_AGENT_BASE_URL_PLACEHOLDER,
     parseCommunityModelId,
     parseListingPayload,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { ValidationError } from "@shared/http/validation-error.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import {
-    getRegistryModelDefinition,
-    resolveModelName,
-} from "@shared/registry/registry.ts";
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { and, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { type Context, Hono } from "hono";
@@ -39,6 +34,10 @@ import {
     PromptAgentInputSchema,
     serializePromptAgentConfig,
 } from "../services/prompt-agent.ts";
+import {
+    findReferenceableCommunityModel,
+    registryModelId,
+} from "./community-endpoints/fallbacks.ts";
 import {
     CodeAgentUpdateSchema,
     RequiredSafetyFeaturesSchema,
@@ -184,17 +183,6 @@ async function requireOwnedAgent(db: Db, id: string, ownerUserId: string) {
     return row;
 }
 
-function isTextRegistryModel(baseModel: string): boolean | null {
-    try {
-        const definition = getRegistryModelDefinition(
-            resolveModelName(baseModel),
-        );
-        return definition.category === "text" && !definition.fallbackOnly;
-    } catch {
-        return null;
-    }
-}
-
 // Gen resolves baseModel on every call; an unknown id would otherwise only
 // surface as a 400 to the agent's callers.
 async function requireValidBaseModel(
@@ -206,42 +194,21 @@ async function requireValidBaseModel(
         new HTTPException(400, {
             message: `baseModel "${baseModel}" is not a callable text model`,
         });
-    const bundled = isTextRegistryModel(baseModel);
-    if (bundled !== null) {
-        if (!bundled) throw invalid();
+    const registryId = registryModelId(baseModel);
+    if (registryId) {
+        const definition = getRegistryModelDefinition(registryId);
+        if (definition.category !== "text" || definition.fallbackOnly)
+            throw invalid();
         return;
     }
     const parsed = parseCommunityModelId(baseModel);
-    const owner = parsed
-        ? await db.query.user.findFirst({
-              columns: { id: true },
-              where: eq(schema.user.githubUsername, parsed.ownerGithubUsername),
-          })
+    const target = parsed
+        ? await findReferenceableCommunityModel(db, ownerUserId, parsed)
         : undefined;
-    const target =
-        parsed && owner
-            ? await db.query.communityEndpoint.findFirst({
-                  where: and(
-                      eq(schema.communityEndpoint.ownerUserId, owner.id),
-                      eq(schema.communityEndpoint.name, parsed.modelName),
-                  ),
-              })
-            : undefined;
-    // Someone else's private model must look the same as a missing one.
     if (
         !target ||
-        (target.ownerUserId !== ownerUserId &&
-            effectiveCommunityEndpointVisibility(
-                target.visibility,
-                target.pendingVisibility,
-                target.pendingAt,
-            ) === "private")
-    ) {
-        throw invalid();
-    }
-    if (
-        target.type === "proxy" &&
-        parseListingPayload("proxy", target.payload)?.modality !== "text"
+        (target.type === "proxy" &&
+            parseListingPayload("proxy", target.payload)?.modality !== "text")
     ) {
         throw invalid();
     }
@@ -601,8 +568,14 @@ export const agentsRoutes = new Hono<Env>()
                           ...current,
                           ...input,
                       });
-            if (!parsed.success)
-                throw new ValidationError(parsed.error, "json");
+            if (!parsed.success) {
+                const issue = parsed.error.issues[0];
+                throw new HTTPException(400, {
+                    message: issue?.path.length
+                        ? `${issue.path.join(".")}: ${issue.message}`
+                        : issue?.message,
+                });
+            }
             const data = parsed.data;
             // Only a changed baseModel is checked, so other edits still save.
             if ("baseModel" in data && input.baseModel !== undefined) {

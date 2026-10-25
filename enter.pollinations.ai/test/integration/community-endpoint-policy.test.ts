@@ -483,12 +483,8 @@ describe("community endpoint configuration policy", () => {
             mcpServers: ["pollinations", "not-a-server"],
         });
         expect(rejected.status).toBe(400);
-        const body = await rejected.json<{
-            error: { details: { fieldErrors: Record<string, string[]> } };
-        }>();
-        expect(Object.keys(body.error.details.fieldErrors)).toEqual([
-            "mcpServers",
-        ]);
+        const body = await rejected.json<{ error: { message: string } }>();
+        expect(body.error.message).toMatch(/^mcpServers(\.\d+)?: /);
     });
 
     test("preserves validation error precedence", () => {

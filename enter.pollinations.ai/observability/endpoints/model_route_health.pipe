@@ -23,6 +23,12 @@ describe the same traffic, and p50/p95 are computed correctly at each level
 rather than derived from the other (percentiles cannot be combined after the
 fact).
 
+`rejected_4xx` counts the requests we refused ourselves before calling any
+provider: the caller had no balance, the key's budget was used up, or the key
+may not use the model (401/402/403 from our gateway; a provider's 401/402/403
+reaches callers as 502). They say nothing about the model, so they are left out
+of `total_requests`, `errors_4xx` and `served`.
+
 Column names match `model_health` so consumers reuse one health rule for both.
 Traffic defaults to all for existing API and catalog consumers. Model Monitor
 requests regular traffic explicitly.
@@ -31,6 +37,7 @@ Time window is controlled by the `minutes` parameter (default 60).
 NODE model_route_health_stats
 SQL >
     %
+    WITH response_status IN (401, 402, 403) AND error_source = 'undefined' AS rejected
     SELECT
         resolved_model_requested as model,
         event_type,
@@ -58,7 +65,7 @@ SQL >
         -- failure no user ever saw. This makes the rollup identical to
         -- `model_health`; the difference against its routes is the retried
         -- attempts, which `fallback_rescues` accounts for.
-        if(GROUPING(model_used) = 1, countIf(is_final), count()) as total_requests,
+        if(GROUPING(model_used) = 1, countIf(is_final AND NOT rejected), countIf(NOT rejected)) as total_requests,
         if(
             GROUPING(model_used) = 1,
             countIf(is_final AND response_status >= 200 AND response_status < 300),
@@ -66,9 +73,14 @@ SQL >
         ) as status_2xx,
         if(
             GROUPING(model_used) = 1,
-            countIf(is_final AND response_status >= 400 AND response_status < 500),
-            countIf(response_status >= 400 AND response_status < 500)
+            countIf(is_final AND response_status >= 400 AND response_status < 500 AND NOT rejected),
+            countIf(response_status >= 400 AND response_status < 500 AND NOT rejected)
         ) as errors_4xx,
+        if(
+            GROUPING(model_used) = 1,
+            countIf(is_final AND rejected),
+            countIf(rejected)
+        ) as rejected_4xx,
         if(
             GROUPING(model_used) = 1,
             countIf(is_final AND response_status >= 500),
@@ -77,7 +89,7 @@ SQL >
         -- How many of these calls were the one the caller actually received.
         -- Summed over a model's routes this equals its request count, which is
         -- what `model_health` reports.
-        countIf(is_final) as served,
+        countIf(is_final AND NOT rejected) as served,
         countIf(
             -- Qualified: the SELECT aliases `fallback_used` to max(fallback_used)
             -- above, and an unqualified reference here would resolve to that

@@ -7,11 +7,17 @@ Returns request counts, 4xx/5xx error counts, response times, and a
 completion-token throughput estimate (tokens/sec) for monitoring dashboards.
 Also separates primary queue rejection from successful fallback rescue so a
 healthy final response is not reported as a model outage.
+`rejected_4xx` counts the requests we refused ourselves before calling any
+provider (no balance, key budget used up, model not allowed for the key). They
+say nothing about the model, so they are left out of `total_requests`,
+`errors_4xx` and `own_calls`.
 Time window is controlled by the `minutes` parameter (default 60).
 
 NODE model_health_stats
 SQL >
     %
+    -- Our gateway's own 401/402/403; a provider's arrive as 502.
+    WITH response_status IN (401, 402, 403) AND error_source = 'undefined' AS rejected
     SELECT
         resolved_model_requested as model,
         event_type,
@@ -19,9 +25,10 @@ SQL >
         topKIf(1)(model_used, is_final)[1] as model_used,
         -- What a caller asking for this model experiences. A request that was
         -- rescued by a fallback succeeded, and says so here.
-        countIf(is_final) as total_requests,
+        countIf(is_final AND NOT rejected) as total_requests,
         countIf(is_final AND response_status >= 200 AND response_status < 300) as status_2xx,
-        countIf(is_final AND response_status >= 400 AND response_status < 500) as errors_4xx,
+        countIf(is_final AND response_status >= 400 AND response_status < 500 AND NOT rejected) as errors_4xx,
+        countIf(is_final AND rejected) as rejected_4xx,
         countIf(is_final AND response_status >= 500) as errors_5xx,
         -- Whether this model's OWN upstream works, which the columns above
         -- cannot show: a model rescued on every request reads 100% healthy up
@@ -32,7 +39,7 @@ SQL >
         -- upstream names, so comparing model IDs would misclassify old calls.
         -- A gateway-enforced per-user cap says nothing about whether the
         -- upstream works. Keep the 429 visible without depressing its health.
-        countIf(NOT fallback_used AND error_response_code != 'community_model_rate_limit') as own_calls,
+        countIf(NOT fallback_used AND error_response_code != 'community_model_rate_limit' AND NOT rejected) as own_calls,
         countIf(NOT fallback_used AND error_response_code != 'community_model_rate_limit' AND response_status >= 200 AND response_status < 300) as own_calls_ok,
         countIf(NOT fallback_used AND response_status >= 500) as primary_5xx,
         -- A non-final primary 503 was retried elsewhere. Keep it visible as

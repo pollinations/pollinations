@@ -44,6 +44,7 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
                 Partial<ModelVariables & AuthVariables>;
             const cacheUrl = new URL(c.var.generationRequestUrl ?? c.req.url);
             if (variables.model?.requested.includes(",")) {
+                c.set("generationCachePrivate", true);
                 cacheUrl.searchParams.set(
                     "__caller_list_key",
                     variables.auth?.apiKey?.id ?? "anonymous",
@@ -68,7 +69,12 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
         async get(c, cacheKey) {
             const response = await c.env.MEDIA.get(cacheKey);
             if (!response) return null;
-            response.headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
+            response.headers.set(
+                "Cache-Control",
+                c.var.generationCachePrivate
+                    ? "private, no-store"
+                    : IMMUTABLE_CACHE_CONTROL,
+            );
             response.headers.set("X-Cache", "HIT");
             return response;
         },
@@ -81,6 +87,9 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
             );
         },
         capture(c, cacheKey, response) {
+            if (c.var.generationCachePrivate) {
+                response.headers.set("Cache-Control", "private, no-store");
+            }
             const stored = new Response(response.clone().body, response);
             for (const name of [...stored.headers.keys()]) {
                 if (

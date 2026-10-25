@@ -155,6 +155,9 @@ describe("media cache", () => {
             );
             await consumeAndWait(result);
             expect(result.response.headers.get("X-Cache")).toBe(status);
+            expect(result.response.headers.get("Cache-Control")).toBe(
+                "private, no-store",
+            );
         }
         expect(originHits).toBe(2);
     });

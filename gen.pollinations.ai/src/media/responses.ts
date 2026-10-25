@@ -184,7 +184,12 @@ export function mediaResponses(protocol: MediaProtocol) {
         ])
             headers.delete(name);
         // The file is immutable, not the per-request protocol envelope.
-        headers.set("Cache-Control", "no-cache");
+        headers.set(
+            "Cache-Control",
+            c.var.model.requested.includes(",")
+                ? "private, no-store"
+                : "no-cache",
+        );
         if (body.stream === true) {
             const stream = textResponseStream(response);
             headers.set("Content-Type", "text/event-stream; charset=utf-8");

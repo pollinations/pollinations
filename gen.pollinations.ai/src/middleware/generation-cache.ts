@@ -18,6 +18,8 @@ export async function hashGenerationCacheIdentity(
 }
 
 export type GenerationCacheVariables = {
+    /** Caller-scoped entries stay internal; shared HTTP caches must not replay them. */
+    generationCachePrivate?: boolean;
     generationCache?: {
         adapter: GenerationCacheAdapter;
         key: string;

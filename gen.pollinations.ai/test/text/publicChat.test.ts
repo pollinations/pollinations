@@ -113,6 +113,40 @@ describe("client gateway metadata", () => {
     });
 });
 
+it("also returns Gemini tool-call signatures in Google's extra_content field", () => {
+    const signed = {
+        id: "call_1",
+        type: "function",
+        function: {
+            name: "read_file",
+            arguments: "{}",
+            thought_signature: "sig",
+        },
+    };
+    const unsigned = {
+        id: "call_2",
+        type: "function",
+        function: { name: "read_file", arguments: "{}" },
+    };
+    const toolCalls = [signed, unsigned];
+    const [message] = publicChatChoices([
+        { index: 0, message: { role: "assistant", tool_calls: toolCalls } },
+    ]) ?? [{}];
+    const [delta] = publicChatChoices([
+        { index: 0, delta: { tool_calls: [{ index: 0, ...signed }] } },
+    ]) ?? [{}];
+
+    const google = { google: { thought_signature: "sig" } };
+    expect(message.message?.tool_calls).toEqual([
+        { ...signed, extra_content: google },
+        unsigned,
+    ]);
+    expect(delta.delta?.tool_calls).toEqual([
+        { index: 0, ...signed, extra_content: google },
+    ]);
+    expect(toolCalls[0]).not.toHaveProperty("extra_content");
+});
+
 afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllEnvs();
@@ -214,6 +248,48 @@ it("drops OpenRouter's provider cost from non-streaming completions", async () =
     expect(calls).toBe(1);
     expect(JSON.parse(text).usage).toEqual(clientUsage);
     expect(text).not.toContain("cost");
+});
+
+it("returns tool-call signatures in Google's extra_content field from non-streaming completions", async () => {
+    const model = "inception/mercury-3";
+    const wire = JSON.stringify({
+        id: "gen-signed",
+        object: "chat.completion",
+        created: 1760000000,
+        model,
+        choices: [
+            {
+                index: 0,
+                message: {
+                    role: "assistant",
+                    tool_calls: [
+                        {
+                            id: "call_1",
+                            type: "function",
+                            function: {
+                                name: "read_file",
+                                arguments: "{}",
+                                thought_signature: "sig",
+                            },
+                        },
+                    ],
+                },
+                finish_reason: "tool_calls",
+            },
+        ],
+        usage,
+    });
+    const { response, text } = await chatThroughHandler(
+        model,
+        "openrouter.ai",
+        wire,
+        false,
+    );
+    expect(response.status, text).toBe(200);
+    expect(JSON.parse(text).choices[0].message.tool_calls[0]).toMatchObject({
+        function: { thought_signature: "sig" },
+        extra_content: { google: { thought_signature: "sig" } },
+    });
 });
 
 it("drops InferencePort's PAYG ledger chunk from client streams", async () => {

@@ -1,10 +1,30 @@
 import { createParser } from "eventsource-parser";
 import type { ChatCompletion } from "../types.ts";
 
+type ToolCall = { function?: { thought_signature?: unknown } };
+
+// Gemini signs its tool calls. Clients written for Google's OpenAI-compatible
+// API read and resend the signature from `extra_content.google`.
+function withGoogleSignatures<T extends Record<string, unknown>>(
+    message: T,
+): T {
+    if (!Array.isArray(message.tool_calls)) return message;
+    return {
+        ...message,
+        tool_calls: message.tool_calls.map((call: ToolCall) => {
+            const thought_signature = call?.function?.thought_signature;
+            return typeof thought_signature === "string"
+                ? { ...call, extra_content: { google: { thought_signature } } }
+                : call;
+        }),
+    };
+}
+
 function publicMessage<T extends Record<string, unknown>>(
-    message: T | undefined,
+    input: T | undefined,
 ): T | undefined {
-    if (!message) return message;
+    if (!input) return input;
+    const message = withGoogleSignatures(input);
     const metadata = message.provider_metadata as
         | Record<string, unknown>
         | undefined;

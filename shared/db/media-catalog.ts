@@ -1,7 +1,8 @@
-// Media catalog: queryable metadata for published (tagged) uploads. Blobs
-// stay in R2 — these tables only index them. Tags are the publish action:
-// only tagged uploads get a catalog row (untagged uploads stay uncataloged
-// blobs behind their UUID). The row id is the R2 storage key and the public
+// Media catalog: queryable metadata for uploads made with a user-owned API
+// key. Blobs stay in R2 — these tables only index them. Every such upload
+// gets a row so its owner can list and delete it; tags additionally publish
+// it to public galleries. Uploads without a user-owned key stay uncataloged
+// blobs behind their UUID. The row id is the R2 storage key and the public
 // retrieval id. (Generations are not cataloged yet; see the
 // generation-tagging followup.)
 

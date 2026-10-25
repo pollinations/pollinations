@@ -1,0 +1,649 @@
+{
+  "date": "2026-10-24",
+  "period_start": "2026-10-24",
+  "period_end": "2026-10-24",
+  "title": "More ways to make images, video, and 3D",
+  "summary": "New models span 3D, image, video, text, and decisions, while agent run history and a large routing pass make the existing tools easier to inspect and use.\n\nTripo P2 adds text-to-3D meshes, Qwen Image 2.1 Pro adds image generation and editing, and FLUX 3 Max adds video from text or start and end frames. Media routing work also added fallback paths for P-Image and FLUX 1.1 Pro, lowered charges for Seedream 5.0 Pro and Grok Imagine Image 2.0, and made image errors more specific.\n\nMuse Spark 1.3, Glyph Cluster, NVIDIA Nemotron 3.5 Super VL, Mercury 3, and the free D3 decision model joined the catalog. Perplexity Decider V1.2 replaces V1.1 while keeping the old ID as an alias. Decision models also gained their own API-key permission and catalog category, separate from text access.\n\nAgent owners can inspect recent runs in My Models, Discord boosters can claim a one-time Quest reward, and `polli harness --model` accepts model aliases. The site-hosting landing page was rebuilt, the homepage now points to sandboxes and site hosting, and four community apps joined the catalog. Smaller changes improved app submission parsing, My Apps links, and model logos.",
+  "pr_count": 82,
+  "prs": [
+    {
+      "number": 14390,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 15501,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 16561,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 16797,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 17572,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 17629,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 17704,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 17710,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 17797,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 17858,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 17862,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 17925,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 17947,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 17977,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18125,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18138,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18152,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18204,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18244,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18248,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18249,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18251,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18253,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18256,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18258,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18262,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18263,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18264,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18274,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18275,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18280,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18282,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18284,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18286,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18288,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18290,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18296,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18299,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18300,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18302,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18305,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18312,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18314,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18315,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18317,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18318,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18319,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18322,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18323,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18324,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18325,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18326,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18327,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18328,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18329,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18330,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18331,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18335,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18347,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18348,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18349,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18350,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18352,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18354,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18355,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18356,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18357,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18358,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18359,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18361,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18362,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18363,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18365,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18368,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18369,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18371,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18372,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18380,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18383,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18384,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18385,
+      "date": "2026-10-24"
+    },
+    {
+      "number": 18391,
+      "date": "2026-10-24"
+    }
+  ],
+  "generated_at": "2026-10-25T06:24:45.955967+00:00",
+  "daily": [
+    {
+      "emoji": "🎨",
+      "title": "Tripo P2 text-to-3D",
+      "text": "Turn a text prompt of up to 1,024 characters into a GLB mesh with PBR textures using the alpha, paid-only `tripo3d/p2` model. It does not accept image input. [View the model](https://enter.pollinations.ai/models?q=tripo3d/p2).",
+      "prs": [
+        15501
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Qwen Image 2.1 Pro",
+      "text": "Generate or edit images with paid-balance model `qwen/qwen-image-2.1-pro`. The Alibaba route accepts up to 10 reference images and sizes up to 2560×2560; its fallback accepts at most four references and may return 2048×2048 for a 2560×2560 request. [View the model](https://enter.pollinations.ai/models?q=qwen/qwen-image-2.1-pro).",
+      "prs": [
+        17858
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "FLUX 3 Max video",
+      "text": "Make 5–20 second videos from text or up to two images used as start and end frames. Paid-balance model `black-forest-labs/flux-3-max` supports optional audio, 720p or 1080p output, and seven aspect ratios. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        17947
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Muse Spark 1.3",
+      "text": "Use paid-only `meta/muse-spark-1.3` for text and image input, reasoning, and tools. It has a 1,048,576-token context window; Muse Spark 1.2 remains a separate model. [View the model](https://enter.pollinations.ai/models?q=meta/muse-spark-1.3).",
+      "prs": [
+        14390
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Experimental Glyph Cluster",
+      "text": "Try `stealth/glyph-cluster` for coding, long-context reasoning, and automatic tool calling. It is free during stealth for Quest and Paid users, with an 8-request-per-minute limit. Its provider may use prompts and responses for training and does not offer zero data retention. [View the model](https://enter.pollinations.ai/models?q=stealth/glyph-cluster).",
+      "prs": [
+        16797
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Nemotron 3.5 Super VL",
+      "text": "Send text or images to paid-only `nvidia/nemotron-3.5-super-vl`. It supports tools, reasoning, structured output, and a 262,144-token context window. [View the model](https://enter.pollinations.ai/models?q=nvidia/nemotron-3.5-super-vl).",
+      "prs": [
+        17629
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Mercury 3",
+      "text": "Use paid-balance `inception/mercury-3` for text requests with tools, reasoning, and a 1,000,000-token context window. Its configured maximum output is 131,072 tokens; structured output is not in its supported-parameter set. [View the model](https://enter.pollinations.ai/models?q=inception/mercury-3).",
+      "prs": [
+        17925
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "D3 for decisions",
+      "text": "Use free, Quest-accessible `vllm-sr/d3` for typed choices, yes/no probabilities, and scores through `/alpha/decisions` or `/v1/systemone`. It is limited to 30 requests per minute, and its provider may log inputs and outputs for training. Do not send confidential data. [View the model](https://enter.pollinations.ai/models?q=vllm-sr/d3).",
+      "prs": [
+        17862
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Perplexity Decider V1.2",
+      "text": "Use `perplexity/pplx-decider-v1.2` through decisions or chat requests. It replaces retired V1.1, and the old `perplexity/pplx-decider-v1.1-27b` ID remains an alias. Access is paid-only. [View the model](https://enter.pollinations.ai/models?q=perplexity/pplx-decider-v1.2).",
+      "prs": [
+        18251
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Separate decision-key access",
+      "text": "Grant an API key the `decision` category to use decision models through `/alpha/decisions` without granting access to every text model. The category also appears in model listings, the SDK, and `polli models --type decision`. [Manage API keys](https://enter.pollinations.ai/keys).",
+      "prs": [
+        17710
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "📱",
+      "title": "Inspect recent agent runs",
+      "text": "Open an agent's Health panel in My Models to inspect up to 50 of your runs from the last seven days. See status, duration, Pollen charged, generation and tool-call counts, failed steps, and errors.",
+      "prs": [
+        17704
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "✨",
+      "title": "Discord boost Quest",
+      "text": "Connect Discord and boost the Pollinations server to claim 20 Quest Pollen once per Discord account. [Join the Discord](https://discord.gg/k9F7SyTgqn).",
+      "prs": [
+        18125
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "💡",
+      "title": "Model aliases in harnesses",
+      "text": "Pass a model ID or alias to `polli harness --model`. The CLI resolves aliases against `/v1/models` and saves the canonical ID in the harness config. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        18152
+      ],
+      "kind": "product"
+    }
+  ],
+  "changelog": [
+    {
+      "pr_number": 18380,
+      "url": "https://github.com/pollinations/pollinations/pull/18380",
+      "merged_at": "2026-10-24T18:01:25Z",
+      "api_changes": [
+        {
+          "id": "pr-18380:DELETE /account/sites/{name}",
+          "endpoint": "DELETE /account/sites/{name}",
+          "summary": "Delete Site",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-18380:GET /account/apps",
+          "endpoint": "GET /account/apps",
+          "summary": "List My Apps",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-18380:GET /account/earnings",
+          "endpoint": "GET /account/earnings",
+          "summary": "Get Developer Earnings",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:timezone",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-18380:GET /account/earnings/transactions",
+          "endpoint": "GET /account/earnings/transactions",
+          "summary": "Get Earnings Transactions",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:timezone",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-18380:GET /account/key/usage",
+          "endpoint": "GET /account/key/usage",
+          "summary": "Get API Key Usage",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:timezone",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-18380:GET /account/my-models/{id}/health",
+          "endpoint": "GET /account/my-models/{id}/health",
+          "summary": "Get Model Health",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-18380:GET /account/sites",
+          "endpoint": "GET /account/sites",
+          "summary": "List Sites",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-18380:GET /account/usage",
+          "endpoint": "GET /account/usage",
+          "summary": "Get Usage History",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:timezone",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-18380:GET /account/usage/daily",
+          "endpoint": "GET /account/usage/daily",
+          "summary": "Get Daily Usage",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:timezone",
+              "before": null,
+              "after": {
+                "type": "string",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-18380:GET /audio/{text}",
+          "endpoint": "GET /audio/{text}",
+          "summary": "Generate Audio",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "parameters:query:reference_video",
+              "before": null,
+              "after": {
+                "type": "string · uri",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-18380:POST /account/my-models/{id}/test",
+          "endpoint": "POST /account/my-models/{id}/test",
+          "summary": "Test Saved Model",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-18380:POST /account/sites/{name}/upload",
+          "endpoint": "POST /account/sites/{name}/upload",
+          "summary": "Start Site Upload",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        },
+        {
+          "id": "pr-18380:POST /v1/audio/speech",
+          "endpoint": "POST /v1/audio/speech",
+          "summary": "Generate Audio (OpenAI-compatible)",
+          "action": "CHANGE",
+          "breaking": false,
+          "changes": [
+            {
+              "field": "body:strength",
+              "before": null,
+              "after": {
+                "type": "number",
+                "required": false
+              },
+              "breaking": false
+            }
+          ]
+        },
+        {
+          "id": "pr-18380:PUT /account/sites/{name}",
+          "endpoint": "PUT /account/sites/{name}",
+          "summary": "Publish Site",
+          "action": "ADD",
+          "breaking": false,
+          "changes": []
+        }
+      ]
+    }
+  ]
+}

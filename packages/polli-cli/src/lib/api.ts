@@ -6,6 +6,7 @@ export class ApiError extends Error {
     constructor(
         public readonly status: number,
         message: string,
+        public readonly body = "",
     ) {
         super(message);
         this.name = "ApiError";
@@ -16,7 +17,7 @@ export const requireKey = (): string => {
     const key = resolveApiKey();
     if (!key) {
         printError("Not logged in. Run: polli auth login");
-        fail(
+        return fail(
             "Or pipe a key: printf '%s' '<your-key>' | polli auth login --with-token",
         );
     }
@@ -54,6 +55,7 @@ const send = async (
         throw new ApiError(
             res.status,
             `${res.status} ${res.statusText}: ${text}`,
+            text,
         );
     }
 

@@ -4,6 +4,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { TinybirdEvent } from "@shared/schemas/generation-event.ts";
 import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
@@ -352,6 +353,17 @@ describe("Messages request translation", () => {
         },
     );
 
+    it("raises Claude Code's 1-token model check to the 16 every provider accepts", () => {
+        expect(
+            messagesToChatRequest(
+                request({
+                    max_tokens: 1,
+                    messages: [{ role: "user", content: "Hi" }],
+                }),
+            ).max_tokens,
+        ).toBe(16);
+    });
+
     it("rejects server tools with the tag Claude Code recognizes", () => {
         expect(() =>
             messagesToChatRequest(
@@ -456,6 +468,56 @@ describe("Messages response translation", () => {
             { type: "text", text: "Partial" },
         ]);
         expect(message.stop_reason).toBe("max_tokens");
+    });
+
+    it("round-trips a Gemini tool-call signature in an empty thinking block", () => {
+        const call = (id: string, thought_signature?: string) => ({
+            id,
+            type: "function" as const,
+            function: { name: "Read", arguments: "{}", thought_signature },
+        });
+        const message = chatToMessagesResponse(
+            {
+                id: "chatcmpl_3",
+                object: "chat.completion",
+                created: 1,
+                choices: [
+                    {
+                        finish_reason: "tool_calls",
+                        message: {
+                            role: "assistant",
+                            content: null,
+                            tool_calls: [
+                                call("call_a", "AY8/+="),
+                                call("call_b"),
+                            ],
+                        },
+                    },
+                ],
+                usage,
+            },
+            model,
+        );
+        expect(message.content).toEqual([
+            { type: "thinking", thinking: "", signature: "gemini:AY8/+=" },
+            { type: "tool_use", id: "call_a", name: "Read", input: {} },
+            { type: "tool_use", id: "call_b", name: "Read", input: {} },
+        ]);
+        // Clients replay the thinking block; Gemini wants the signature back
+        // on the first call and rejects the call without it.
+        const chat = messagesToChatRequest(
+            request({
+                messages: [
+                    { role: "user", content: "Read both." },
+                    { role: "assistant", content: message.content },
+                ],
+            }),
+        );
+        expect(chat.messages[1]).toEqual({
+            role: "assistant",
+            content: null,
+            tool_calls: [call("call_a", "AY8/+="), call("call_b")],
+        });
     });
 });
 
@@ -624,6 +686,76 @@ describe("Messages stream translation", () => {
         expect(events.at(-2)).toMatchObject({
             delta: { stop_reason: "tool_use" },
         });
+    });
+
+    it("streams a Gemini tool-call signature in a thinking block", async () => {
+        const events = await translateStream([
+            {
+                choices: [
+                    {
+                        delta: {
+                            tool_calls: [
+                                {
+                                    index: 0,
+                                    id: "call_a",
+                                    function: { name: "Read", arguments: "{}" },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+            // The signature may arrive in a later chunk than the call.
+            {
+                choices: [
+                    {
+                        delta: {
+                            tool_calls: [
+                                {
+                                    index: 0,
+                                    function: { thought_signature: "AY8/+=" },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+            { choices: [{ delta: {}, finish_reason: "stop" }], usage },
+            "[DONE]",
+        ]);
+        expect(events.slice(1, -2)).toEqual([
+            {
+                type: "content_block_start",
+                index: 0,
+                content_block: {
+                    type: "thinking",
+                    thinking: "",
+                    signature: "",
+                },
+            },
+            {
+                type: "content_block_delta",
+                index: 0,
+                delta: { type: "signature_delta", signature: "gemini:AY8/+=" },
+            },
+            { type: "content_block_stop", index: 0 },
+            {
+                type: "content_block_start",
+                index: 1,
+                content_block: {
+                    type: "tool_use",
+                    id: "call_a",
+                    name: "Read",
+                    input: {},
+                },
+            },
+            {
+                type: "content_block_delta",
+                index: 1,
+                delta: { type: "input_json_delta", partial_json: "{}" },
+            },
+            { type: "content_block_stop", index: 1 },
+        ]);
     });
 
     it.each([
@@ -1040,6 +1172,69 @@ describe("POST /v1/messages", () => {
                 ],
             },
         ]);
+    });
+
+    it("replaces the oldest images over the model's limit, tool results included", async () => {
+        const caller = await createTestApiKey({ user: { tierBalance: 100 } });
+        const { providerBodies } = mockUpstream();
+        const limit = TEXT_SERVICES[model].maxReferenceImages as number;
+        const image = (n: number) => ({
+            type: "image",
+            source: { type: "base64", media_type: "image/png", data: `${n}` },
+        });
+        // Claude Code opens screenshots with its Read tool, then one is pasted.
+        const reads = Array.from({ length: limit + 1 }, (_, n) => [
+            {
+                role: "assistant",
+                content: [
+                    {
+                        type: "tool_use",
+                        id: `toolu_${n}`,
+                        name: "Read",
+                        input: { file_path: `shot${n}.png` },
+                    },
+                ],
+            },
+            {
+                role: "user",
+                content: [
+                    {
+                        type: "tool_result",
+                        tool_use_id: `toolu_${n}`,
+                        content: [image(n)],
+                    },
+                ],
+            },
+        ]).flat();
+        const { response, text } = await call(
+            "/v1/messages",
+            {
+                model,
+                max_tokens: 32,
+                messages: [
+                    ...reads,
+                    {
+                        role: "user",
+                        content: [
+                            image(limit + 1),
+                            { type: "text", text: "Compare them." },
+                        ],
+                    },
+                ],
+            },
+            caller.key,
+        );
+        expect(response.status, text).toBe(200);
+        // The two oldest become notes; the newest `limit` stay, in order.
+        const sent = JSON.stringify(providerBodies[0].messages);
+        const note = `[image omitted: over the ${limit}-image limit]`;
+        expect(sent.split(note)).toHaveLength(3);
+        expect(sent.match(/data:image\/png;base64,\d+/g)).toEqual(
+            Array.from(
+                { length: limit },
+                (_, n) => `data:image/png;base64,${n + 2}`,
+            ),
+        );
     });
 
     it("preserves thinking signatures through response validation", async () => {

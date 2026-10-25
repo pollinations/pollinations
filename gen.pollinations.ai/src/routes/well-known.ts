@@ -1,9 +1,12 @@
+import { OAUTH_SCOPES } from "@shared/auth/authorize-config.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { Hono } from "hono";
 import { etag } from "hono/etag";
 import type { Env } from "@/env.ts";
+import BYOP_SKILL from "../../../.claude/skills/bring-your-own-pollen/SKILL.md?raw";
 import API_SKILL from "../../../.claude/skills/pollinations-api/SKILL.md?raw";
+import SDK_SKILL from "../../../.claude/skills/pollinations-sdk/SKILL.md?raw";
 import QUEST_CONTRIBUTOR_SKILL from "../../../.claude/skills/quest-contributor/SKILL.md?raw";
 import CLI_SKILL from "../../../packages/polli-cli/SKILL.md?raw";
 import { SERVER_CARD_MEDIA_TYPE } from "./mcp-card.ts";
@@ -17,7 +20,9 @@ const SKILLS_SCHEMA =
 const AGENT_SKILLS = [
     { name: "polli", markdown: CLI_SKILL },
     { name: "pollinations-api", markdown: API_SKILL },
+    { name: "bring-your-own-pollen", markdown: BYOP_SKILL },
     { name: "quest-contributor", markdown: QUEST_CONTRIBUTOR_SKILL },
+    { name: "pollinations-sdk", markdown: SDK_SKILL },
 ].map((skill) => ({
     ...skill,
     path: `/.well-known/agent-skills/${skill.name}/SKILL.md`,
@@ -35,6 +40,18 @@ async function sha256Hex(text: string): Promise<string> {
         .join("");
 }
 
+// One entry per hosted MCP server's Server Card. The SEP-2127 AI Catalog and
+// the ARD manifest share this list, so the two can't drift. Both schemas
+// require a per-entry displayName (ards-project/ard-spec, ai-catalog v1.0).
+function buildCatalogEntries(origin: string) {
+    return MCP_SERVERS.map((server) => ({
+        identifier: `urn:air:pollinations.ai:mcp:${server.id}`,
+        displayName: server.name,
+        type: SERVER_CARD_MEDIA_TYPE,
+        url: `${origin}/mcp/${server.id}/server-card`,
+    }));
+}
+
 export const wellKnownRoutes = new Hono<Env>()
     // SEP-2127 AI Catalog: one entry per hosted MCP server's Server Card.
     .get("/ai-catalog.json", etag(), (c) => {
@@ -45,15 +62,21 @@ export const wellKnownRoutes = new Hono<Env>()
             JSON.stringify(
                 {
                     specVersion: "1.0",
-                    entries: MCP_SERVERS.map((server) => ({
-                        identifier: `urn:air:pollinations.ai:mcp:${server.id}`,
-                        type: SERVER_CARD_MEDIA_TYPE,
-                        url: `${origin}/mcp/${server.id}/server-card`,
-                    })),
+                    entries: buildCatalogEntries(origin),
                 },
                 null,
                 2,
             ),
+        );
+    })
+    // Agentic Resource Discovery manifest: the canonical entry source path;
+    // the ai-catalog.json predecessor path stays for compatibility.
+    .get("/ard.json", etag(), (c) => {
+        const origin = getPublicOrigin(c);
+        c.header("Content-Type", "application/json; charset=utf-8");
+        c.header("Cache-Control", "public, max-age=3600");
+        return c.body(
+            JSON.stringify({ entries: buildCatalogEntries(origin) }, null, 2),
         );
     })
     .get("/agent-skills/index.json", async (c) => {
@@ -115,4 +138,20 @@ export const wellKnownRoutes = new Hono<Env>()
                 ],
             }),
         );
+    })
+    .get("/oauth-protected-resource", (c) => {
+        // RFC 9728: tells an agent that hits a 401 here which authorization
+        // server issues keys. enter hosts the RFC 8414 metadata.
+        const origin = getPublicOrigin(c);
+        c.header("Cache-Control", "public, max-age=3600");
+        return c.json({
+            resource: origin,
+            authorization_servers: [
+                origin.replace("gen.pollinations.ai", "enter.pollinations.ai"),
+            ],
+            scopes_supported: [...OAUTH_SCOPES],
+            bearer_methods_supported: ["header"],
+            resource_name: "Pollinations API",
+            resource_documentation: `${origin}/docs/llm.txt`,
+        });
     });

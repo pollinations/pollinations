@@ -17,11 +17,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { expect } from "vitest";
-import {
-    type AuthEnv,
-    authFromSnapshot,
-    keyPermissionsLink,
-} from "../src/middleware/auth.ts";
+import { type AuthEnv, authFromSnapshot } from "../src/middleware/auth.ts";
 import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
@@ -126,7 +122,7 @@ test("a category allows every model in it and nothing else", async () => {
     const denied = await app.request("/text/openai");
     expect(denied.status).toBe(403);
     expect(await denied.text()).toBe(
-        "Model 'openai' is not allowed for this API key, which is limited to image. Manage key permissions at https://enter.pollinations.ai/edit-key?id=test",
+        "Model 'openai' is not allowed for this API key, which is limited to image. Allow it at https://enter.pollinations.ai/grant?id=test&category=text&ref=agent_grant",
     );
 });
 
@@ -137,17 +133,9 @@ test("a model ID allows only that model, also after a rename keeps it as an alia
     expect((await app.request("/image/flux-2?alias=flux")).status).toBe(200);
     const denied = await app.request("/image/zimage");
     expect(denied.status).toBe(403);
+    // A key limited to specific models asks for the one model, not its category.
     expect(await denied.text()).toBe(
-        "Model 'zimage' is not allowed for this API key, which is limited to text, flux. Manage key permissions at https://enter.pollinations.ai/edit-key?id=test",
-    );
-});
-
-test("keyPermissionsLink resolves production and staging editor links", () => {
-    expect(keyPermissionsLink("key-1")).toBe(
-        "https://enter.pollinations.ai/edit-key?id=key-1",
-    );
-    expect(keyPermissionsLink("key-1", "staging")).toBe(
-        "https://staging.enter.pollinations.ai/edit-key?id=key-1",
+        "Model 'zimage' is not allowed for this API key, which is limited to text, flux. Allow it at https://enter.pollinations.ai/grant?id=test&model=zimage&ref=agent_grant",
     );
 });
 
@@ -180,7 +168,7 @@ test("requireModelAccess uses staging host for staging environment", async () =>
     } as CloudflareBindings);
     expect(responseEnv.status).toBe(403);
     expect(await responseEnv.text()).toBe(
-        "Model 'forbidden-model' is not allowed for this API key, which is limited to text. Manage key permissions at https://staging.enter.pollinations.ai/edit-key?id=staging-key-id",
+        "Model 'forbidden-model' is not allowed for this API key, which is limited to text. Allow it at https://staging.enter.pollinations.ai/grant?id=staging-key-id&category=image&ref=agent_grant",
     );
 });
 
@@ -257,7 +245,7 @@ test("empty model permissions deny access and return an empty catalog", async ()
     });
 
     const generationResponse = await fetchWorker(
-        `/text/test?model=${RESTRICTED_TEXT_TEST_MODEL}`,
+        `/text/test?model=${RESTRICTED_TEXT_TEST_MODEL}&json=true`,
         { headers },
     );
     expect(generationResponse.status).toBe(403);
@@ -276,7 +264,7 @@ test("media routes own their endpoint-specific model defaults", async () => {
     expect(videoResponse.status).toBe(403);
 });
 
-test("filters OpenRouter text models by paid balance", async ({
+test("filters non-Azure and non-Fireworks text models by paid balance", async ({
     apiKey,
     paidApiKey,
 }) => {
@@ -301,39 +289,34 @@ test("filters OpenRouter text models by paid balance", async ({
     const paidModels = (await paidResponse.json()) as {
         data: { id: string }[];
     };
-    // Only the approved low-cost models are exempt from paid balance.
-    const questPollenModels = new Set([
-        "typesafe/jev-1.13",
-        "jaredpalmer/kev-4b",
+    // Approved Quest Pollen exceptions outside Azure and Fireworks.
+    const questExceptions = [
+        "qwen/qwen3guard-gen-8b",
+        "openai/gpt-oss-20b",
         "respan/span-01-lite",
-    ]);
-    const openRouterModelNames = getVisibleTextModels().filter((model) => {
+        "vllm-sr/d3",
+        // Costs $0 while Vercel offers it as a stealth model.
+        "stealth/glyph-cluster",
+    ];
+    const paidProviderModelNames = getVisibleTextModels().filter((model) => {
         const definition = getRegistryModelDefinition(model);
         return (
-            definition.provider === "openrouter" &&
-            !questPollenModels.has(model)
+            !["azure", "fireworks"].includes(definition.provider) &&
+            !questExceptions.includes(model)
         );
     });
     const freeModelNames = new Set(freeModels.data.map((model) => model.id));
     const paidModelNames = new Set(paidModels.data.map((model) => model.id));
 
-    for (const model of questPollenModels) {
-        expect(
-            freeModelNames.has(model),
-            `${model} visible to Quest Pollen`,
-        ).toBe(true);
-        expect(
-            paidModelNames.has(model),
-            `${model} visible to paid users`,
-        ).toBe(true);
+    for (const model of questExceptions) {
+        expect(freeModelNames.has(model), model).toBe(true);
     }
-
-    expect(openRouterModelNames.length).toBeGreaterThan(0);
+    expect(paidProviderModelNames.length).toBeGreaterThan(0);
     expect(
-        openRouterModelNames.every((model) => !freeModelNames.has(model)),
+        paidProviderModelNames.every((model) => !freeModelNames.has(model)),
     ).toBe(true);
     expect(
-        openRouterModelNames.every((model) => paidModelNames.has(model)),
+        paidProviderModelNames.every((model) => paidModelNames.has(model)),
     ).toBe(true);
 
     expect(generation.status).toBe(TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402);
@@ -426,7 +409,7 @@ test("filters paid-only audio models by paid balance", async ({
         freeModels.some(
             (model) => model.name === "assemblyai/universal-3.5-pro",
         ),
-    ).toBe(true);
+    ).toBe(false);
     expect(
         paidModels.some(
             (model) => model.name === "assemblyai/universal-3.5-pro",

@@ -58,21 +58,25 @@ describe("API provider identities", () => {
 // These are routing expectations, not another provider catalog. Compare the
 // actual text connection configuration with the vendor attributed by the registry.
 const PROTOCOL_VENDORS: Record<string, string> = {
+    anthropic: "anthropic",
     "azure-openai": "azure",
     bedrock: "aws",
     "vertex-ai": "google",
     openrouter: "openrouter",
+    "vllm-sr": "vllm-sr",
 };
 const HOST_VENDORS: Record<string, string> = {
     "api.openai.com": "openai",
     "api.fireworks.ai": "fireworks",
     "api.deepinfra.com": "deepinfra",
+    "api.inferenceport.ai": "inferenceport",
     "api.mistral.ai": "mistral",
     "api.novita.ai": "novita",
     "api.perplexity.ai": "perplexity",
     "openrouter.ai": "openrouter",
     "dashscope-intl.aliyuncs.com": "alibaba",
     "ai-gateway.vercel.sh": "vercel",
+    "decision.vllm-sr.ai": "vllm-sr",
     "api.x.ai": "xai",
     "qwen-3-coder-30b-a3b-instruct.endpoints.kepler.ai.cloud.ovh.net":
         "ovhcloud",

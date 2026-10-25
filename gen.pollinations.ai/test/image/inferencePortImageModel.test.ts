@@ -37,6 +37,9 @@ function successResponse(): Response {
 }
 
 beforeEach(() => {
+    // The Workers env fills process.env as in production. These tests cover
+    // the provider call alone, so Content Safety stays unconfigured.
+    vi.stubEnv("AZURE_CONTENT_SAFETY_ENDPOINT", "");
     syncImageEnv(
         { INFERENCEPORT_API_KEY: "test-ip-key" } as CloudflareBindings,
         ["INFERENCEPORT_API_KEY"],
@@ -45,6 +48,7 @@ beforeEach(() => {
 
 afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
 });
 
 describe("callInferencePortImage", () => {
@@ -150,22 +154,6 @@ describe("callInferencePortImage", () => {
             completionImageTokens: 1,
             totalTokenCount: 1,
         });
-    });
-
-    it("rejects transparent backgrounds before calling upstream", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callInferencePortImage(
-                "a logo",
-                { ...baseParams, transparent: true },
-                USER_INFO,
-            ),
-        ).rejects.toMatchObject({
-            status: 400,
-            message: expect.stringContaining("Transparent"),
-        });
-        expect(fetchSpy).not.toHaveBeenCalled();
     });
 
     it("fails clearly when upstream returns no image", async () => {

@@ -1760,6 +1760,76 @@ describe("tracking observability", () => {
         expect(enterFetch).not.toHaveBeenCalled();
     });
 
+    it("calls Enter only on the charge that crosses the low-balance threshold", async () => {
+        const db = drizzle(env.DB);
+        const userId = `track-low-balance-${crypto.randomUUID()}`;
+        await db.insert(userTable).values({
+            id: userId,
+            email: `${userId}@test.local`,
+            name: "Track Low Balance Test",
+            tierBalance: 0,
+            packBalance: 2,
+            lastPackPollen: 10,
+            autoTopUpEnabled: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        const [user] = await db
+            .select()
+            .from(userTable)
+            .where(eq(userTable.id, userId))
+            .limit(1);
+        if (!user) throw new Error("Expected inserted user");
+
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("ok"));
+        const enterFetch = vi.fn<typeof env.ENTER.fetch>(async () =>
+            Response.json({ status: "skipped" }),
+        );
+
+        // The first charge takes the balance from 2 to just below it; the
+        // second starts below, so only the first one calls Enter.
+        for (let i = 0; i < 2; i++) {
+            const ctx = createExecutionContext();
+            const response = await createTestApp(async () => {}, user).fetch(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "cf-connecting-ip": "203.0.113.42",
+                    },
+                    body: JSON.stringify({
+                        model: "openai/gpt-5.4-nano",
+                        stream: false,
+                        messages: [{ role: "user", content: `test ${i}` }],
+                    }),
+                }),
+                {
+                    ...env,
+                    ENTER: { fetch: enterFetch },
+                    ENVIRONMENT: "test",
+                    PLN_ENTER_TOKEN:
+                        "test_internal_token_with_enough_length_for_checks",
+                    LOG_LEVEL: "debug",
+                    LOG_FORMAT: "text",
+                    BETTER_AUTH_SECRET: "test_secret",
+                    TINYBIRD_INGEST_URL:
+                        "https://tinybird.test/v0/events?name=generation_event_v2",
+                    TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                } as unknown as CloudflareBindings,
+                ctx,
+            );
+            await waitOnExecutionContext(ctx);
+            expect(response.status).toBe(200);
+        }
+
+        const [after] = await db
+            .select({ packBalance: userTable.packBalance })
+            .from(userTable)
+            .where(eq(userTable.id, userId));
+        expect(after?.packBalance).toBeLessThan(2);
+        expect(enterFetch).toHaveBeenCalledTimes(1);
+    });
+
     it("emits the credited community model reward amount", async () => {
         const db = drizzle(env.DB);
         const payerId = `track-community-payer-${crypto.randomUUID()}`;
@@ -2197,7 +2267,7 @@ describe("tracking observability", () => {
             tokenCountCompletionAudio: 2,
         });
         expect(JSON.stringify(event)).not.toContain("large-audio-payload");
-        expect(consumePollen).toHaveBeenCalledWith(0.0002);
+        expect(consumePollen).toHaveBeenCalledWith(0.00016);
     });
 
     it("bills plain-text speech-to-text responses from usage headers", async () => {
@@ -2370,7 +2440,13 @@ describe("tracking observability", () => {
                 modelUsed: model,
                 isBilledUsage: true,
                 tokenCountCompletionVideoSeconds: 5,
-                tokenPriceCompletionVideoSeconds: 0.025,
+                tokenPriceCompletionVideoSeconds: 0,
+                adjustmentUnits: {
+                    "fal.minimax_h3_max_turbo.provider_units.v1": units,
+                },
+                adjustmentCosts: {
+                    "fal.minimax_h3_max_turbo.provider_units.v1": totalCost,
+                },
                 totalCost,
                 totalPrice: totalCost,
             });
@@ -3448,82 +3524,123 @@ describe("trackResponse modelUsed", () => {
         expect(tracking.modelUsed).toBeUndefined();
     });
 
-    it("prices an Alibaba explicit-cache hit from response metadata", async () => {
+    it("keeps Qwen Max's OpenRouter fallback cost separate from the direct explicit-cache quote", async () => {
         const tracking = await trackResponse(
             "generate.text",
-            requestTrackingFixture(false, "qwen/qwen3.7-flash"),
+            requestTrackingFixture(false, "qwen/qwen3.8-max"),
             Response.json(
                 { choices: [] },
                 {
                     headers: {
-                        "x-model-used": "qwen/qwen3.7-flash",
+                        "x-model-used": "qwen/qwen3.8-max:openrouter:alibaba",
                         "x-usage-prompt-cached-tokens": "1000000",
                         "x-usage-prompt-cache-type": "ephemeral",
                     },
                 },
             ),
-            candidateFixture("qwen/qwen3.7-flash"),
+            candidateFixture("qwen/qwen3.8-max:openrouter:alibaba"),
         );
-
-        // Both the quote and serving cost use the direct explicit-cache rate.
-        expect(tracking.costVariant).toBe("context_256k_explicit_cache");
-        expect(tracking.cost?.totalCost).toBeCloseTo(0.02, 12);
-        expect(tracking.price?.totalPrice).toBeCloseTo(0.02, 12);
+        expect(tracking.cost?.totalCost).toBeCloseTo(0.25 * 1.055, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.17, 12);
     });
 
-    it("uses Alibaba's implicit rate unless the response confirms an explicit hit", async () => {
-        const tracking = await trackResponse(
-            "generate.text",
-            requestTrackingFixture(false, "qwen/qwen3.7-flash"),
-            Response.json(
-                { choices: [] },
-                {
-                    headers: {
-                        "x-model-used": "qwen/qwen3.7-flash",
-                        "x-usage-prompt-cached-tokens": "1000000",
+    it.each([
+        ["qwen/qwen3.7-flash", "context_256k_explicit_cache", 0.02, 0.04],
+        ["qwen/qwen3.8-max", "explicit_cache", 0.17, 0.25],
+        ["qwen/qwen3.8-max-0902", "explicit_cache", 0.17, 0.25],
+    ] as const)(
+        "prices %s explicit-cache hits from response metadata",
+        async (model, variant, explicitRate, _implicitRate) => {
+            const tracking = await trackResponse(
+                "generate.text",
+                requestTrackingFixture(false, model),
+                Response.json(
+                    { choices: [] },
+                    {
+                        headers: {
+                            "x-model-used": model,
+                            "x-usage-prompt-cached-tokens": "1000000",
+                            "x-usage-prompt-cache-type": "ephemeral",
+                        },
+                    },
+                ),
+                candidateFixture(model),
+            );
+
+            // Both the quote and serving cost use the direct explicit-cache rate.
+            expect(tracking.costVariant).toBe(variant);
+            expect(tracking.cost?.totalCost).toBeCloseTo(explicitRate, 12);
+            expect(tracking.price?.totalPrice).toBeCloseTo(explicitRate, 12);
+        },
+    );
+
+    it.each([
+        ["qwen/qwen3.7-flash", "context_256k_explicit_cache", 0.02, 0.04],
+        ["qwen/qwen3.8-max", "explicit_cache", 0.17, 0.25],
+        ["qwen/qwen3.8-max-0902", "explicit_cache", 0.17, 0.25],
+    ] as const)(
+        "uses %s implicit rate unless the response confirms an explicit hit",
+        async (model, _variant, _explicitRate, implicitRate) => {
+            const tracking = await trackResponse(
+                "generate.text",
+                requestTrackingFixture(false, model),
+                Response.json(
+                    { choices: [] },
+                    {
+                        headers: {
+                            "x-model-used": model,
+                            "x-usage-prompt-cached-tokens": "1000000",
+                        },
+                    },
+                ),
+                candidateFixture(model),
+                // Even a stale request-side hint must not override what the
+                // provider actually reported on the response.
+                { hasExplicitCacheHit: true },
+            );
+
+            expect(tracking.cost?.totalCost).toBeCloseTo(implicitRate, 12);
+            expect(tracking.price?.totalPrice).toBeCloseTo(implicitRate, 12);
+        },
+    );
+
+    it.each([
+        ["qwen/qwen3.7-flash", "context_256k_explicit_cache", 0.02, 0.04],
+        ["qwen/qwen3.8-max", "explicit_cache", 0.17, 0.25],
+        ["qwen/qwen3.8-max-0902", "explicit_cache", 0.17, 0.25],
+    ] as const)(
+        "prices streamed %s explicit-cache hits from terminal usage",
+        async (model, variant, explicitRate, _implicitRate) => {
+            const usageEvent = JSON.stringify({
+                model: model,
+                choices: [],
+                usage: {
+                    prompt_tokens: 1_000_000,
+                    completion_tokens: 0,
+                    total_tokens: 1_000_000,
+                    prompt_tokens_details: {
+                        cached_tokens: 1_000_000,
+                        cache_type: "ephemeral",
                     },
                 },
-            ),
-            candidateFixture("qwen/qwen3.7-flash"),
-            // Even a stale request-side hint must not override what the
-            // provider actually reported on the response.
-            { hasExplicitCacheHit: true },
-        );
+            });
+            const tracking = await trackResponse(
+                "generate.text",
+                requestTrackingFixture(true, model),
+                new Response(`data: ${usageEvent}\n\ndata: [DONE]\n\n`, {
+                    headers: {
+                        "content-type": "text/event-stream",
+                        "x-model-used": model,
+                    },
+                }),
+                candidateFixture(model),
+            );
 
-        expect(tracking.cost?.totalCost).toBeCloseTo(0.04, 12);
-        expect(tracking.price?.totalPrice).toBeCloseTo(0.04, 12);
-    });
-
-    it("prices a streamed Alibaba explicit-cache hit from terminal usage", async () => {
-        const usageEvent = JSON.stringify({
-            model: "qwen/qwen3.7-flash",
-            choices: [],
-            usage: {
-                prompt_tokens: 1_000_000,
-                completion_tokens: 0,
-                total_tokens: 1_000_000,
-                prompt_tokens_details: {
-                    cached_tokens: 1_000_000,
-                    cache_type: "ephemeral",
-                },
-            },
-        });
-        const tracking = await trackResponse(
-            "generate.text",
-            requestTrackingFixture(true, "qwen/qwen3.7-flash"),
-            new Response(`data: ${usageEvent}\n\ndata: [DONE]\n\n`, {
-                headers: {
-                    "content-type": "text/event-stream",
-                    "x-model-used": "qwen/qwen3.7-flash",
-                },
-            }),
-            candidateFixture("qwen/qwen3.7-flash"),
-        );
-
-        expect(tracking.costVariant).toBe("context_256k_explicit_cache");
-        expect(tracking.cost?.totalCost).toBeCloseTo(0.02, 12);
-        expect(tracking.price?.totalPrice).toBeCloseTo(0.02, 12);
-    });
+            expect(tracking.costVariant).toBe(variant);
+            expect(tracking.cost?.totalCost).toBeCloseTo(explicitRate, 12);
+            expect(tracking.price?.totalPrice).toBeCloseTo(explicitRate, 12);
+        },
+    );
 });
 
 describe("trackResponse missing usage", () => {
@@ -3829,10 +3946,10 @@ describe("trackResponse model identity", () => {
     });
 
     it.each([200, 502])(
-        "distinguishes same-provider routes on HTTP %i",
+        "distinguishes Azure and direct OpenAI routes on HTTP %i",
         async (status) => {
             const primary = "openai/gpt-6-astra" as const;
-            const fallback = "openai/gpt-6-astra:azure:datazone" as const;
+            const fallback = "openai/gpt-6-astra:openai" as const;
             for (const attempted of [primary, fallback]) {
                 const tracking = await trackResponse(
                     "generate.text",
@@ -3845,7 +3962,8 @@ describe("trackResponse model identity", () => {
                 expect(tracking).toMatchObject({
                     responseStatus: status,
                     modelUsed: attempted,
-                    modelProviderUsed: "azure",
+                    modelProviderUsed:
+                        attempted === primary ? "azure" : "openai",
                     fallbackUsed: attempted !== primary,
                 });
             }

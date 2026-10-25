@@ -467,7 +467,13 @@ test("proxies OpenAI-compatible realtime WebSockets on both public routes", asyn
             session: { model: "gpt-realtime-2-1" },
         });
         upstream.server.send(serverEvent);
-        await expect(downstreamMessage).resolves.toBe(serverEvent);
+        // The session reports the public model, never the deployment id.
+        await expect(downstreamMessage).resolves.toBe(
+            JSON.stringify({
+                type: "session.created",
+                session: { model: "openai/gpt-realtime-2.1" },
+            }),
+        );
 
         client.close();
         upstream.server.close();
@@ -486,8 +492,12 @@ test("forwards the initial Azure session event after listeners are attached", as
         initialProviderMessage,
     });
 
+    // The forwarded event carries the public model identity.
     await expect(session.initialClientMessage).resolves.toBe(
-        initialProviderMessage,
+        JSON.stringify({
+            type: "session.created",
+            session: { model: "openai/gpt-realtime-2.1" },
+        }),
     );
     await closeRealtimeSession(session);
 });
@@ -576,6 +586,24 @@ test("serves GPT Live Transcribe through Azure and bills streamed duration", asy
     if (!client) throw new Error("Expected downstream WebSocket");
     client.accept();
     upstream.server.accept();
+
+    // The proxy enables transcription by default on connect, so the provider
+    // receives the injected baseline session.update before the client's own.
+    const injectedUpdate = nextMessage(upstream.server);
+    await expect(injectedUpdate).resolves.toBe(
+        JSON.stringify({
+            type: "session.update",
+            session: {
+                type: "transcription",
+                audio: {
+                    input: {
+                        format: { type: "audio/pcm", rate: 24000 },
+                        transcription: { model: "test-gpt-live-transcribe" },
+                    },
+                },
+            },
+        }),
+    );
 
     const forwardedUpdate = nextMessage(upstream.server);
     const sessionUpdate = JSON.stringify({
@@ -1080,6 +1108,9 @@ test("enforces paid-only and model permissions for Scribe Realtime", async () =>
 
     expect(questResponse.status).toBe(402);
     expect(permissionResponse.status).toBe(403);
+    expect(await permissionResponse.text()).toContain(
+        `https://enter.pollinations.ai/grant?id=${emptyPermissions.id}&category=realtime`,
+    );
 });
 
 test("accepts a publishable key without forwarding it to ElevenLabs", async () => {

@@ -1,4 +1,8 @@
 import { env } from "cloudflare:test";
+import {
+    getModels,
+    getRegistryModelDefinition,
+} from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CommunityModelEnv } from "../src/community-models.ts";
 import {
@@ -44,6 +48,32 @@ function skewedDbBinding(): CloudflareBindings["DB"] {
 }
 
 describe("getGenerationModelRegistry", () => {
+    it("requires paid Pollen outside Azure and Fireworks except the approved exceptions", () => {
+        const exceptions = new Set([
+            "tongyi-mai/z-image-turbo",
+            "black-forest-labs/flux.1-schnell",
+            "black-forest-labs/flux.2-klein-4b",
+            "qwen/qwen3guard-gen-8b",
+            "openai/gpt-oss-20b",
+            "respan/span-01-lite",
+            "vllm-sr/d3",
+            "openai/whisper-large-v3",
+            "lykon/dreamshaper-8-lcm",
+            // Costs $0 while Vercel offers it as a stealth model.
+            "stealth/glyph-cluster",
+        ]);
+        const questModels = [];
+        for (const id of getModels()) {
+            const definition = getRegistryModelDefinition(id);
+            // Access follows the requested public model, including its internal fallbacks.
+            if (definition.fallbackOnly) continue;
+            if (["azure", "fireworks"].includes(definition.provider)) continue;
+            expect(definition.paidOnly, id).toBe(!exceptions.has(id));
+            if (!definition.paidOnly) questModels.push(id);
+        }
+        expect(new Set(questModels)).toEqual(exceptions);
+    });
+
     it("declares unique Chat controls for every configured route", async () => {
         const registry = await getGenerationModelRegistry(env);
         for (const model of availableModels) {
@@ -87,6 +117,10 @@ describe("getGenerationModelRegistry", () => {
             ["google/gemini-3.7-flash:openrouter:vertex-global", "stop", true],
             ["nvidia/nemotron-3.5-lightning", "top_k", true],
             ["nvidia/nemotron-3-ultra", "top_k", true],
+            ["nvidia/nemotron-3.5-super-vl", "tools", true],
+            ["nvidia/nemotron-3.5-super-vl", "top_k", true],
+            ["nvidia/nemotron-3.5-super-vl", "seed", false],
+            ["nvidia/nemotron-3.5-super-vl", "logprobs", false],
             ["qwen/qwen3-coder-30b-a3b-instruct", "top_k", false],
             ["qwen/qwen3-vl-235b-a22b-thinking", "response_format", false],
             ["perplexity/sonar", "search_domain_filter", true],
@@ -98,14 +132,16 @@ describe("getGenerationModelRegistry", () => {
         }
     });
 
-    it("keeps the Bedrock coder's catalog aligned with its serving route", async () => {
+    it("keeps the coder's catalog aligned with its serving route", async () => {
         const registry = await getGenerationModelRegistry(env);
         const model = registry.resolve("qwen-coder");
 
         expect(model?.id).toBe("qwen/qwen3-coder-30b-a3b-instruct");
-        expect(model?.definition.provider).toBe("aws");
+        expect(model?.definition.provider).toBe("openrouter");
         expect(model?.definition.paidOnly).toBe(true);
-        expect(model?.definition.fallbacks ?? []).toEqual([]);
+        expect(model?.definition.fallbacks).toEqual([
+            "qwen/qwen3-coder-30b-a3b-instruct:aws",
+        ]);
         // Responses runs through its Chat route; there is no native target.
         expect(model?.supportedEndpoints).toContain("/v1/responses");
         expect(supportsDirectResponses(model?.id ?? "")).toBe(false);
@@ -126,13 +162,52 @@ describe("getGenerationModelRegistry", () => {
         expect(chat.length).toBeGreaterThan(0);
         for (const entry of chat) {
             expect(entry.info.supported_endpoints).toContain("/v1/responses");
+            expect(entry.info.supported_endpoints).toContain("/v1/messages");
         }
+        expect(
+            registry.resolve("vllm-sr/d3")?.info.supported_endpoints,
+        ).toEqual([
+            "/alpha/decisions",
+            "/v1/chat/completions",
+            "/v1/responses",
+            "/v1/messages",
+        ]);
         // Native Responses targets stay a subset; the rest are adapted.
         const native = chat.filter((entry) =>
             supportsDirectResponses(entry.id),
         );
         expect(native.length).toBeGreaterThan(0);
         expect(native.length).toBeLessThan(chat.length);
+    });
+
+    it("advertises image edits only on models that accept image input", async () => {
+        const registry = await getGenerationModelRegistry(env);
+
+        // Text-only models cannot consume a source image, so the endpoint must
+        // not be listed where clients look up capabilities.
+        for (const id of [
+            "black-forest-labs/flux.1-schnell",
+            "tongyi-mai/z-image-turbo",
+        ]) {
+            const entry = registry.resolve(id);
+            expect(entry?.supportedEndpoints, id).not.toContain(
+                "/v1/images/edits",
+            );
+            expect(entry?.info.supported_endpoints, id).not.toContain(
+                "/v1/images/edits",
+            );
+        }
+        expect(
+            registry.resolve("black-forest-labs/flux.1-kontext-pro")
+                ?.supportedEndpoints,
+        ).toContain("/v1/images/edits");
+
+        for (const entry of registry.visibleEntries()) {
+            if (entry.definition.inputModalities?.includes("image")) continue;
+            expect(entry.supportedEndpoints, entry.id).not.toContain(
+                "/v1/images/edits",
+            );
+        }
     });
 
     it("serves the community catalog from KV without querying D1", async () => {

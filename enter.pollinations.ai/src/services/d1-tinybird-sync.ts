@@ -1,5 +1,5 @@
 /**
- * Paged D1 export for the daily Tinybird snapshot replacement.
+ * Paged D1 export for the 4-hourly Tinybird snapshot replacement.
  *
  * GitHub Actions assembles the pages and atomically replaces each Tinybird
  * datasource. Sensitive columns are excluded here and never leave D1.

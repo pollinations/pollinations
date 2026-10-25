@@ -1,5 +1,6 @@
 import { defaultParseSearch } from "@tanstack/react-router";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
+import { preferredReturnUrl } from "../frontend/src/lib/return-to-app.tsx";
 import { validateTopUpSearch } from "../frontend/src/lib/top-up-search.ts";
 
 test.each(["stripe_success", "stripe_canceled", "stripe_billing_return"])(
@@ -30,3 +31,21 @@ test.each(["false", "0", "anything", ""])(
         expect(search.stripe_canceled).toBeUndefined();
     },
 );
+
+test("preserves an explicit app chat URL when the browser only sends an origin referrer", () => {
+    // /top-up replaces redirect only for a non-null result; an origin-only
+    // referrer must not erase the Back link's explicit path, query or fragment.
+    vi.stubGlobal("document", { referrer: "https://app.example/" });
+    vi.stubGlobal("window", {
+        location: { origin: "https://enter.pollinations.ai" },
+    });
+    try {
+        expect(
+            preferredReturnUrl(
+                "https://app.example/chat/123?model=openai#latest",
+            ),
+        ).toBeNull();
+    } finally {
+        vi.unstubAllGlobals();
+    }
+});

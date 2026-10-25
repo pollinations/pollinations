@@ -37,6 +37,7 @@ import {
     communityModelDefinition,
     communityModelId,
     communityPriceDefinition,
+    type EndpointAgentCapability,
     type EndpointAgentCommunityEndpointRuntime,
     isCommunityEndpointOwnerAllowed,
     isCommunityFallbackPricingAllowed,
@@ -83,6 +84,7 @@ import {
     MODEL_USED_HEADER,
     USAGE_TYPE_HEADERS,
 } from "@shared/registry/usage-headers.ts";
+import { DEFAULT_DECISION_MODEL } from "@shared/schemas/decisions.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
@@ -273,6 +275,7 @@ type CommunityEndpointFixture = Omit<CommunityEndpointInsert, "title"> &
         imagePricing?: CommunityEndpointImagePricing;
         inputModalities?: ModelInputModality[] | null;
         outputModalities?: ModelOutputModality[];
+        capabilities?: EndpointAgentCapability[];
         baseUrl?: string | null;
         api?: CommunityEndpointApi | null;
         upstreamModel?: string;
@@ -296,6 +299,7 @@ function insertCommunityEndpoints(
             imagePricing: rawImagePricing,
             inputModalities: rawInputModalities,
             outputModalities,
+            capabilities,
             baseUrl,
             api: rawApi,
             upstreamModel,
@@ -330,6 +334,7 @@ function insertCommunityEndpoints(
                         api,
                         inputModalities: rawInputModalities ?? undefined,
                         outputModalities,
+                        capabilities,
                     }
                   : {
                         paidOnly: false,
@@ -428,8 +433,10 @@ async function maturePendingCommunityEndpoint(id: string): Promise<void> {
 }
 
 async function createEnterCommunityApi(): Promise<Hono<Env>> {
-    const routePath =
-        "../../enter.pollinations.ai/src/routes/community-endpoints.ts";
+    const routePath = new URL(
+        "../../enter.pollinations.ai/src/routes/community-endpoints.ts",
+        import.meta.url,
+    ).href;
     const { communityEndpointsRoutes } = (await import(routePath)) as {
         communityEndpointsRoutes: Hono;
     };
@@ -443,7 +450,10 @@ async function createEnterCommunityApi(): Promise<Hono<Env>> {
 }
 
 async function createEnterFrontendApi(): Promise<Hono<Env>> {
-    const routePath = "../../enter.pollinations.ai/src/frontend-api.ts";
+    const routePath = new URL(
+        "../../enter.pollinations.ai/src/frontend-api.ts",
+        import.meta.url,
+    ).href;
     const { frontendApi } = (await import(routePath)) as {
         frontendApi: Hono;
     };
@@ -2726,6 +2736,8 @@ describe("community endpoint helpers", () => {
             expect(await verifyAgentRunToken(token, secret)).toMatchObject({
                 parentApiKeyId: "parent-key-id",
                 parentRequestId: "parent-request-id",
+                // External agents get no managed scope but are still named.
+                agentModelId: endpoint.modelId,
             });
             const defaultContext = await contextFor(endpoint, "parent-key-id");
             expect(defaultContext.modelConfig?.model).toBe(
@@ -4521,7 +4533,7 @@ fixtureTest.each(
                         reasoning_effort?: string;
                     };
                     expect(upstream.reasoning_effort).toBe("low");
-                    if (modelCalls === 2) {
+                    if (modelCalls >= 2) {
                         expect(
                             upstream.messages.some(
                                 (message) =>
@@ -4550,13 +4562,13 @@ fixtureTest.each(
                     const finishReason =
                         modelCalls === 1 ? "tool_calls" : "stop";
                     const usage =
-                        modelCalls === 2 && usageKind === "missing"
+                        modelCalls >= 2 && usageKind === "missing"
                             ? undefined
                             : {
                                   prompt_tokens: 10,
                                   completion_tokens: 5,
                                   total_tokens: 15,
-                                  ...(modelCalls === 2 &&
+                                  ...(modelCalls >= 2 &&
                                   usageKind === "malformed"
                                       ? {
                                             prompt_tokens_details: {
@@ -4657,7 +4669,8 @@ fixtureTest.each(
             }),
         );
         const body = await response.text();
-        expect(modelCalls).toBe(2);
+        // Invalid non-stream usage retries the declared OpenAI backup.
+        expect(modelCalls).toBe(!stream && usageKind !== "valid" ? 3 : 2);
         expect(mcpCalls).toBe(1);
         expect(runtimeClientIps.every((ip) => ip === testClientIp)).toBe(true);
         expect(runtimeToken).toMatch(/^ag_/);
@@ -5082,7 +5095,7 @@ fixtureTest(
         expect(response.headers.get("cache-control")).toBe(
             IMMUTABLE_CACHE_CONTROL,
         );
-        expect(response.headers.get("x-cache")).toBe("HIT");
+        expect(response.headers.get("x-cache")).toBe("MISS");
         expect(response.headers.get("x-cache-type")).toBeNull();
         expect(response.headers.get("x-cache-key")).toBeTruthy();
         await expect(response.text()).resolves.toBe("simple ok");
@@ -5258,9 +5271,15 @@ fixtureTest(
         const allNames = allModels.map((model) => model.name);
 
         expect(allNames).toEqual(openaiModels.data.map((model) => model.id));
+        // Decision models also answer on chat endpoints, so the text list
+        // keeps them.
         expect(textModels.map((model) => model.name)).toEqual(
             allModels
-                .filter((model) => model.category === "text")
+                .filter(
+                    (model) =>
+                        model.category === "text" ||
+                        model.category === "decision",
+                )
                 .map((model) => model.name),
         );
         expect(allNames).toEqual([
@@ -5270,6 +5289,7 @@ fixtureTest(
 
         const categoryOrder = [
             "text",
+            "decision",
             "image",
             "video",
             "3d",
@@ -5287,6 +5307,7 @@ fixtureTest(
 
         const defaults: Record<string, string> = {
             text: DEFAULT_TEXT_MODEL,
+            decision: DEFAULT_DECISION_MODEL,
             image: DEFAULT_IMAGE_MODEL,
             "3d": DEFAULT_3D_MODEL,
             audio: DEFAULT_AUDIO_MODEL,
@@ -7002,7 +7023,8 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
                       }),
                   })
                 : new Request(
-                      `https://gen.pollinations.ai/${route}/green%20sprout?model=${encodeURIComponent(registered.modelId)}&reference_images=${encodeURIComponent("https://media.example.com/style.jpg")}`,
+                      // 16x9 is an aspect ratio for video, not an image size.
+                      `https://gen.pollinations.ai/${route}/green%20sprout?model=${encodeURIComponent(registered.modelId)}&width=16&height=9&reference_images=${encodeURIComponent("https://media.example.com/style.jpg")}`,
                       { headers: { Authorization: `Bearer ${caller.key}` } },
                   );
         const disconnectedContext = createExecutionContext();
@@ -8549,6 +8571,112 @@ fixtureTest(
                 output_modalities: outputModalities,
             });
         }
+    },
+);
+
+fixtureTest(
+    "lists the declared capabilities of the Floret and Polli endpoint agents",
+    async () => {
+        const ownerUserId = await createTestUser({
+            githubUsername: `owner-${crypto.randomUUID().slice(0, 8)}`,
+        });
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const agents = [
+            {
+                name: `floret-${suffix}`,
+                capabilities: [
+                    "web_search",
+                    "code_execution",
+                    "pollinations_models",
+                ],
+            },
+            {
+                name: `polli-${suffix}`,
+                capabilities: ["tool_calling", "web_search"],
+            },
+            { name: `plain-${suffix}`, capabilities: undefined },
+        ] satisfies {
+            name: string;
+            capabilities: EndpointAgentCapability[] | undefined;
+        }[];
+        const ids = agents.map(() => crypto.randomUUID());
+        await insertCommunityEndpoints(
+            agents.map(({ name, capabilities }, index) => ({
+                id: ids[index],
+                ownerUserId,
+                type: "endpoint_agent" as const,
+                name,
+                title: name,
+                baseUrl: `https://${name}.example.com/v1/chat/completions`,
+                upstreamModel: name,
+                visibility: "public" as const,
+                capabilities,
+            })),
+        );
+        const entries = await getCommunityModelRegistryEntries(env);
+        const [floret, polli, plain] = ids.map((id) =>
+            entries.find((entry) => entry.communityEndpoint.id === id),
+        );
+        // Media made by tools is linked in the text reply, so declaring traits
+        // leaves the text-in/text-out contract untouched.
+        for (const entry of [floret, polli, plain]) {
+            expect(entry?.info).toMatchObject({
+                agent: true,
+                input_modalities: ["text"],
+                output_modalities: ["text"],
+            });
+        }
+        expect(floret?.info.capabilities).toEqual([
+            "web_search",
+            "code_execution",
+            "pollinations_models",
+        ]);
+        expect(floret?.definition).toMatchObject({
+            search: true,
+            codeExecution: true,
+        });
+        expect(floret?.definition.tools).toBeUndefined();
+        expect(polli?.info.capabilities).toEqual([
+            "tool_calling",
+            "web_search",
+        ]);
+        expect(polli?.info.tools).toBe(true);
+        expect(polli?.definition.codeExecution).toBeUndefined();
+        expect(plain?.info.capabilities).toEqual([]);
+
+        const catalog = async (query: string) => {
+            const response = await fetchGen(
+                `https://gen.pollinations.ai/models?query=${suffix}${query}`,
+            );
+            expect(response.status).toBe(200);
+            return (
+                await response.json<
+                    { name: string; capabilities: string[] }[]
+                >()
+            )
+                .map(({ name, capabilities }) => ({ name, capabilities }))
+                .sort((a, b) => a.name.localeCompare(b.name));
+        };
+        const [floretId, polliId, plainId] = ids.map(
+            (id) =>
+                entries.find((entry) => entry.communityEndpoint.id === id)?.id,
+        );
+        expect(await catalog("")).toEqual(
+            [
+                { name: floretId, capabilities: agents[0].capabilities },
+                { name: plainId, capabilities: [] },
+                { name: polliId, capabilities: agents[1].capabilities },
+            ].sort((a, b) => String(a.name).localeCompare(String(b.name))),
+        );
+        const names = async (query: string) =>
+            (await catalog(query)).map(({ name }) => name);
+        expect(await names("&capabilities=web_search")).toEqual(
+            [floretId, polliId].sort(),
+        );
+        expect(await names("&capabilities=pollinations_models")).toEqual([
+            floretId,
+        ]);
+        expect(await names("&capabilities=tool_calling")).toEqual([polliId]);
     },
 );
 

@@ -8,6 +8,8 @@ import type {
     AudioBinaryResponse,
     AudioGenerateOptions,
     AudioSpeechOptions,
+    AudioSpeechWithTimestampsOptions,
+    AudioSpeechWithTimestampsResponse,
     AudioTransformOptions,
     AuthorizeDeviceOptions,
     AuthorizeOptions,
@@ -34,10 +36,22 @@ import type {
     ImageResponse,
     KeyInfo,
     KeyUsageOptions,
+    MediaJobResult,
+    MediaJobStatus,
+    MediaJobSubmission,
     Message,
+    Model3dGenerateOptions,
+    Model3dResponse,
     ModelInfo,
+    ModelKind,
+    ModelStatusOptions,
+    ModelStatusResponse,
     PollinationsConfig,
     RequestOptions,
+    Site,
+    SiteFile,
+    SitesResponse,
+    SpeechWordTiming,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -52,7 +66,7 @@ import type {
 } from "./types.js";
 import { PollinationsError } from "./types.js";
 
-const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
+export const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
 export const AUTH_BASE_URL = "https://enter.pollinations.ai";
 const DEVICE_FLOW_CLIENT_ID = "pk_NgBAArhUeGvSRFba";
 const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys usage";
@@ -484,7 +498,7 @@ export class Pollinations {
      * ```ts
      * const result = await pollinations.imageEdit('Make the sky purple', {
      *   image: 'https://example.com/photo.jpg',
-     *   model: 'flux',
+     *   model: 'black-forest-labs/flux.1-kontext-pro',
      * });
      * ```
      */
@@ -506,7 +520,11 @@ export class Pollinations {
         };
 
         if (options.image) {
-            body.image = options.image;
+            // The JSON edits endpoint follows the OpenAI shape: a single URL
+            // string or an array of { image_url } objects.
+            body.image = Array.isArray(options.image)
+                ? options.image.map((image_url) => ({ image_url }))
+                : options.image;
         }
 
         const json = await fetchWithTimeout(
@@ -556,7 +574,7 @@ export class Pollinations {
      * // Single image, size string (OpenAI style)
      * const img = await pollinations.imageGenerate('A cute robot', {
      *   size: '1024x1024',
-     *   model: 'flux',
+     *   model: 'black-forest-labs/flux.1-schnell',
      * });
      * ```
      */
@@ -697,7 +715,7 @@ export class Pollinations {
      *
      * @example
      * ```ts
-     * const url = await pollinations.videoUrl('A cat playing piano', { model: 'veo', duration: 4 });
+     * const url = await pollinations.videoUrl('A cat playing piano', { model: 'google/veo-3.1-fast', duration: 4 });
      * ```
      */
     async videoUrl(
@@ -745,6 +763,220 @@ export class Pollinations {
                     response.headers.get("content-type") || "video/mp4";
 
                 return { buffer, contentType, url: stripKeyFromUrl(url) };
+            },
+        );
+    }
+
+    async model3d(
+        prompt: string,
+        options: Model3dGenerateOptions = {},
+    ): Promise<Model3dResponse> {
+        if (!prompt || typeof prompt !== "string") {
+            throw new PollinationsError(
+                "Prompt is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+        const query = this.buildQueryParams(
+            {
+                model: options.model,
+                image: options.referenceImage,
+                resolution: options.resolution,
+                seed: options.seed,
+                safe: options.safe,
+            },
+            false,
+        );
+        const url = `${this.baseUrl}/3d/${encodeURIComponent(prompt)}${query ? `?${query}` : ""}`;
+        return fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.videoTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                return {
+                    buffer: await response.arrayBuffer(),
+                    contentType:
+                        response.headers.get("content-type") ||
+                        "model/gltf-binary",
+                    url,
+                };
+            },
+        );
+    }
+
+    // ============================================================================
+    // Asynchronous Media Jobs
+    // ============================================================================
+
+    /** Submit a media request without waiting for the provider to finish. */
+    private async submitMedia(
+        url: string,
+        signal?: AbortSignal,
+    ): Promise<MediaJobSubmission> {
+        return fetchWithTimeout(
+            url,
+            { headers: { ...this.getHeaders(), Prefer: "respond-async" } },
+            this.textTimeout,
+            signal,
+            async (response) => {
+                if (response.status === 202) {
+                    const job = (await response.json()) as Record<
+                        string,
+                        unknown
+                    >;
+                    if (
+                        typeof job.id !== "string" ||
+                        !/^[0-9a-f]{64}$/.test(job.id) ||
+                        (job.status !== "pending" &&
+                            job.status !== "succeeded") ||
+                        typeof job.status_url !== "string"
+                    ) {
+                        throw new PollinationsError(
+                            "Invalid media job response",
+                            "INVALID_RESPONSE",
+                            502,
+                        );
+                    }
+                    return job as MediaJobSubmission;
+                }
+                if (!response.ok) await this.handleErrorResponse(response);
+                // The server may ignore Prefer when the media is already cached.
+                return {
+                    status: "succeeded",
+                    result: {
+                        buffer: await response.arrayBuffer(),
+                        contentType:
+                            response.headers.get("content-type") ||
+                            "application/octet-stream",
+                    },
+                };
+            },
+        );
+    }
+
+    async imageAsync(
+        prompt: string,
+        options: ImageGenerateOptions = {},
+    ): Promise<MediaJobSubmission> {
+        if (!prompt)
+            throw new PollinationsError(
+                "Prompt is required",
+                "INVALID_INPUT",
+                400,
+            );
+        return this.submitMedia(
+            stripKeyFromUrl(this.buildImageUrl(prompt, options)),
+            options.signal,
+        );
+    }
+
+    async videoAsync(
+        prompt: string,
+        options: VideoGenerateOptions = {},
+    ): Promise<MediaJobSubmission> {
+        if (!prompt)
+            throw new PollinationsError(
+                "Prompt is required",
+                "INVALID_INPUT",
+                400,
+            );
+        return this.submitMedia(
+            stripKeyFromUrl(this.buildVideoUrl(prompt, options)),
+            options.signal,
+        );
+    }
+
+    async audioAsync(
+        text: string,
+        options: AudioGenerateOptions = {},
+    ): Promise<MediaJobSubmission> {
+        if (!text)
+            throw new PollinationsError(
+                "Text is required",
+                "INVALID_INPUT",
+                400,
+            );
+        const query = this.buildQueryParams(
+            {
+                voice: options.voice,
+                model: options.model,
+                duration: options.duration,
+                seed: options.seed,
+            },
+            false,
+        );
+        return this.submitMedia(
+            `${this.baseUrl}/audio/${encodeURIComponent(text)}${query ? `?${query}` : ""}`,
+            options.signal,
+        );
+    }
+
+    async model3dAsync(
+        prompt: string,
+        options: Model3dGenerateOptions = {},
+    ): Promise<MediaJobSubmission> {
+        if (!prompt)
+            throw new PollinationsError(
+                "Prompt is required",
+                "INVALID_INPUT",
+                400,
+            );
+        const query = this.buildQueryParams(
+            {
+                model: options.model,
+                image: options.referenceImage,
+                resolution: options.resolution,
+                seed: options.seed,
+                safe: options.safe,
+            },
+            false,
+        );
+        return this.submitMedia(
+            `${this.baseUrl}/3d/${encodeURIComponent(prompt)}${query ? `?${query}` : ""}`,
+            options.signal,
+        );
+    }
+
+    private jobPath(id: string): string {
+        if (!/^[0-9a-f]{64}$/.test(id)) {
+            throw new PollinationsError(
+                "Invalid media job id",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+        return `${this.baseUrl}/v1/jobs/${id}`;
+    }
+
+    /** Poll a submitted job until its status is succeeded or failed. */
+    async job(
+        id: string,
+        options: RequestOptions = {},
+    ): Promise<MediaJobStatus> {
+        return this.getJson<MediaJobStatus>(this.jobPath(id), options.signal);
+    }
+
+    /** Download the completed result; rejects with 409 while still pending. */
+    async jobResult(
+        id: string,
+        options: RequestOptions = {},
+    ): Promise<MediaJobResult> {
+        return fetchWithTimeout(
+            `${this.jobPath(id)}/result`,
+            { headers: this.getHeaders() },
+            this.videoTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                return {
+                    buffer: await response.arrayBuffer(),
+                    contentType:
+                        response.headers.get("content-type") ||
+                        "application/octet-stream",
+                };
             },
         );
     }
@@ -996,7 +1228,7 @@ export class Pollinations {
      * const { buffer } = await pollinations.audio('Hello, how are you today?', { voice: 'nova' });
      *
      * // Music generation
-     * const { buffer } = await pollinations.audio('upbeat jazz', { model: 'elevenmusic', duration: 30 });
+     * const { buffer } = await pollinations.audio('upbeat jazz', { model: 'elevenlabs/music-v2', duration: 30 });
      * ```
      */
     async audio(
@@ -1093,6 +1325,92 @@ export class Pollinations {
         );
     }
 
+    async audioSpeechWithTimestamps(
+        text: string,
+        options: AudioSpeechWithTimestampsOptions = {},
+    ): Promise<AudioSpeechWithTimestampsResponse> {
+        if (!text || typeof text !== "string") {
+            throw new PollinationsError(
+                "Text is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+        return fetchWithTimeout(
+            `${this.baseUrl}/v1/audio/speech/with-timestamps`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify({
+                    input: text,
+                    model: options.model,
+                    voice: options.voice,
+                    response_format: options.responseFormat,
+                    seed: options.seed,
+                }),
+            },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                const data =
+                    (await response.json()) as AudioSpeechWithTimestampsResponse;
+                const alignment = data?.normalized_alignment;
+                if (
+                    typeof data?.audio_base64 !== "string" ||
+                    (alignment != null &&
+                        (!Array.isArray(alignment.characters) ||
+                            !Array.isArray(
+                                alignment.character_start_times_seconds,
+                            ) ||
+                            !Array.isArray(
+                                alignment.character_end_times_seconds,
+                            ) ||
+                            alignment.characters.length !==
+                                alignment.character_start_times_seconds
+                                    .length ||
+                            alignment.characters.length !==
+                                alignment.character_end_times_seconds.length ||
+                            !alignment.characters.every(
+                                (c) => typeof c === "string",
+                            ) ||
+                            !alignment.character_start_times_seconds.every(
+                                Number.isFinite,
+                            ) ||
+                            !alignment.character_end_times_seconds.every(
+                                Number.isFinite,
+                            )))
+                ) {
+                    throw new PollinationsError(
+                        "Invalid timestamped speech response",
+                        "INVALID_RESPONSE",
+                        502,
+                    );
+                }
+                const words: SpeechWordTiming[] = [];
+                if (!alignment) return { ...data, words };
+                let current: SpeechWordTiming | undefined;
+                for (const [i, character] of alignment.characters.entries()) {
+                    if (/\s/u.test(character)) {
+                        current = undefined;
+                    } else {
+                        const start =
+                            alignment.character_start_times_seconds[i];
+                        const end = alignment.character_end_times_seconds[i];
+                        if (current) {
+                            current.word += character;
+                            current.end = end;
+                        } else {
+                            current = { word: character, start, end };
+                            words.push(current);
+                        }
+                    }
+                }
+                return { ...data, words };
+            },
+        );
+    }
+
     /** Transform uploaded audio, or isolate speech from audio/video. */
     async audioTransform(
         audio: Blob,
@@ -1130,41 +1448,30 @@ export class Pollinations {
     // ============================================================================
 
     /**
-     * Get available text models
+     * Get available models, or only one kind of them
      *
      * @example
      * ```ts
-     * const models = await pollinations.textModels();
-     * console.log(models.map(m => m.name));
+     * const all = await pollinations.models();
+     * const video = await pollinations.models("video");
      * ```
      */
-    async textModels(): Promise<ModelInfo[]> {
-        return this.getJson<ModelInfo[]>(`${this.baseUrl}/text/models`);
+    async models(kind?: ModelKind): Promise<ModelInfo[]> {
+        const path = kind ? `/${kind}/models` : "/models";
+        return this.getJson<ModelInfo[]>(`${this.baseUrl}${path}`);
     }
 
-    /**
-     * Get available image models
-     *
-     * @example
-     * ```ts
-     * const models = await pollinations.imageModels();
-     * console.log(models.map(m => m.name));
-     * ```
-     */
-    async imageModels(): Promise<ModelInfo[]> {
-        return this.getJson<ModelInfo[]>(`${this.baseUrl}/image/models`);
-    }
-
-    /**
-     * Get all available models
-     *
-     * @example
-     * ```ts
-     * const models = await pollinations.models();
-     * ```
-     */
-    async models(): Promise<ModelInfo[]> {
-        return this.getJson<ModelInfo[]>(`${this.baseUrl}/models`);
+    async modelStatus(
+        options: ModelStatusOptions = {},
+    ): Promise<ModelStatusResponse> {
+        const query = this.buildQueryParams(
+            { traffic: options.traffic, minutes: options.minutes },
+            false,
+        );
+        return this.getJson<ModelStatusResponse>(
+            `${this.baseUrl}/models/status${query ? `?${query}` : ""}`,
+            options.signal,
+        );
     }
 
     // ============================================================================
@@ -1179,7 +1486,7 @@ export class Pollinations {
      * // From a file (Node.js)
      * import fs from 'fs';
      * const audioBuffer = fs.readFileSync('speech.mp3');
-     * const result = await pollinations.transcribe(audioBuffer, { model: 'whisper-large-v3' });
+     * const result = await pollinations.transcribe(audioBuffer, { model: 'openai/whisper-large-v3' });
      * console.log(result.text);
      *
      * // From a Blob (browser)
@@ -1435,7 +1742,7 @@ export class Pollinations {
      * ```ts
      * const url = pollinations.authorizeUrl({
      *   redirectUrl: 'https://myapp.com/callback',
-     *   models: ['flux', 'openai'],
+     *   models: ['black-forest-labs/flux.1-schnell', 'openai/gpt-5.4-nano'],
      *   budget: 10,
      *   permissions: ['profile', 'usage'],
      * });
@@ -1851,6 +2158,81 @@ export class Pollinations {
             async (response) => {
                 if (!response.ok) await this.handleErrorResponse(response);
                 return response.json() as Promise<CreatedKey>;
+            },
+        );
+    }
+
+    /**
+     * List your static sites and the account's site limits.
+     * Needs a key with the `machines` account permission.
+     *
+     * @example
+     * ```ts
+     * const { data } = await pollinations.listSites();
+     * data.forEach(site => console.log(site.url));
+     * ```
+     */
+    async listSites(options: RequestOptions = {}): Promise<SitesResponse> {
+        return this.getJson<SitesResponse>(
+            `${this.baseUrl}/account/sites`,
+            options.signal,
+        );
+    }
+
+    /**
+     * Publish a static site at `https://<name>.pollinations.app`, replacing
+     * what was there. Files are sent inline (up to 5 MB per request);
+     * `index.html` is required. The first deploy claims the name.
+     *
+     * @example
+     * ```ts
+     * const site = await pollinations.deploySite('my-app', [
+     *   { file: 'index.html', data: '<h1>Hello</h1>' },
+     *   { file: 'logo.png', data: pngBase64, encoding: 'base64' },
+     * ]);
+     * console.log(site.url); // https://my-app.pollinations.app
+     * ```
+     */
+    async deploySite(
+        name: string,
+        files: SiteFile[],
+        options: RequestOptions = {},
+    ): Promise<Site> {
+        return fetchWithTimeout(
+            `${this.baseUrl}/account/sites/${encodeURIComponent(name)}`,
+            {
+                method: "PUT",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify({ files }),
+            },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                return response.json() as Promise<Site>;
+            },
+        );
+    }
+
+    /**
+     * Take a site offline and free its name.
+     *
+     * @example
+     * ```ts
+     * await pollinations.deleteSite('my-app');
+     * ```
+     */
+    async deleteSite(
+        name: string,
+        options: RequestOptions = {},
+    ): Promise<void> {
+        return fetchWithTimeout(
+            `${this.baseUrl}/account/sites/${encodeURIComponent(name)}`,
+            { method: "DELETE", headers: this.getHeaders() },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
             },
         );
     }

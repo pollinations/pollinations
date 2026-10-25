@@ -17,6 +17,34 @@ function publicMessage<T extends Record<string, unknown>>(
     };
 }
 
+// InferencePort's `payg_*` fields hold its ledger entry, including our account
+// balance.
+export function withoutPayg<T extends object>(value: T): T {
+    return Object.fromEntries(
+        Object.entries(value).filter(([key]) => !key.startsWith("payg_")),
+    ) as T;
+}
+
+// Provider billing fields stay internal: OpenRouter's `cost` and `cost_details`
+// are what it charged us.
+function isPrivateUsageKey(key: string): boolean {
+    return (
+        key === "cost" ||
+        key === "cost_details" ||
+        key === "search_context_size" ||
+        key.startsWith("payg_")
+    );
+}
+
+export function publicUsage(
+    usage: ChatCompletion["usage"],
+): ChatCompletion["usage"] {
+    if (!usage || !Object.keys(usage).some(isPrivateUsageKey)) return usage;
+    return Object.fromEntries(
+        Object.entries(usage).filter(([key]) => !isPrivateUsageKey(key)),
+    );
+}
+
 // Gateway tool counters stay on the tracking branch, not the client response.
 export function publicChatChoices(
     choices: ChatCompletion["choices"],
@@ -50,11 +78,14 @@ export function publicChatStream(
                         let data = event.data;
                         if (data.trim() !== "[DONE]") {
                             try {
-                                const chunk = JSON.parse(
-                                    data,
-                                ) as ChatCompletion;
+                                const chunk = withoutPayg(
+                                    JSON.parse(data) as ChatCompletion,
+                                );
                                 data = JSON.stringify({
                                     ...chunk,
+                                    ...(chunk.usage && {
+                                        usage: publicUsage(chunk.usage),
+                                    }),
                                     choices: publicChatChoices(chunk.choices),
                                 });
                             } catch {

@@ -73,6 +73,13 @@ describe("OAuth authorization server metadata", () => {
         expect(meta.device_authorization_endpoint).toBe(
             `${BASE}/api/device/code`,
         );
+        expect(meta.scopes_supported).toEqual([
+            "generate",
+            "profile",
+            "usage",
+            "keys",
+            "machines",
+        ]);
         expect(meta.response_types_supported).toEqual(["code"]);
         expect(meta.grant_types_supported).toEqual([
             "authorization_code",
@@ -81,6 +88,8 @@ describe("OAuth authorization server metadata", () => {
         expect(meta.code_challenge_methods_supported).toEqual(["S256"]);
         expect(meta.token_endpoint_auth_methods_supported).toEqual(["none"]);
         expect(meta.client_id_metadata_document_supported).toBe(true);
+        // localhost has no enter. subdomain, so the gen origin is BASE over https.
+        expect(meta.service_documentation).toBe("https://localhost:3000/docs");
     });
 });
 
@@ -225,6 +234,17 @@ describe("POST /api/oauth/token (authorization_code + PKCE)", () => {
         expect(res.status).toBe(400);
         const body = (await res.json()) as { error: string };
         expect(body.error).toBe("invalid_request");
+    });
+
+    test("a JSON null body returns unsupported_grant_type, not 500", async () => {
+        const res = await SELF.fetch(`${BASE}/api/oauth/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "null",
+        });
+        expect(res.status).toBe(400);
+        const body = (await res.json()) as { error: string };
+        expect(body.error).toBe("unsupported_grant_type");
     });
 
     test("device_code grant works through the standard token endpoint", async () => {

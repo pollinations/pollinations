@@ -3,6 +3,7 @@ import {
     AGENT_RUN_TOKEN_TTL_SECONDS,
     signAgentRunToken,
     verifyAgentRunToken,
+    verifyGrantAgent,
 } from "@shared/auth/agent-run-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import { atomicReserveApiKeyBalance } from "@shared/billing/deduction.ts";
@@ -130,6 +131,50 @@ test("surfaces the parent request id", async () => {
         await probe(authProbe, "https://gen.pollinations.ai/", token)
     ).json();
     expect(body).toMatchObject({ agentRun: { parentRequestId: "req-abc" } });
+});
+
+test("a refusal during an agent run names the agent in a signed grant link", async () => {
+    const parent = await createTestApiKey({
+        allowedModels: ["image"],
+        user: { tierBalance: 100 },
+    });
+    const agent = "community/alice/research-buddy";
+    const token = await signAgentRunToken({
+        secret: env.BETTER_AUTH_SECRET,
+        parentApiKeyId: parent.id,
+        parentRequestId: crypto.randomUUID(),
+        agentModelId: agent,
+    });
+
+    const response = await probe(
+        communityProbe(),
+        "https://gen.pollinations.ai/",
+        token,
+    );
+    expect(response.status).toBe(403);
+    const link = new URL(
+        (await response.text()).match(/https:\/\/\S+/)?.[0] ?? "",
+    );
+    expect(link.pathname).toBe("/grant");
+    expect(link.searchParams.get("agent")).toBe(agent);
+
+    const signed = {
+        secret: env.BETTER_AUTH_SECRET,
+        apiKeyId: parent.id,
+        grant: { category: "text" },
+        agent,
+        sig: link.searchParams.get("sig") ?? "",
+    };
+    expect(verifyGrantAgent(signed)).toBe(true);
+    // The link passes through the agent. Its signature covers the agent, the
+    // key and the grant, so none of them can be swapped.
+    expect(
+        verifyGrantAgent({ ...signed, agent: "community/pollinations/floret" }),
+    ).toBe(false);
+    expect(
+        verifyGrantAgent({ ...signed, grant: { permission: "machines" } }),
+    ).toBe(false);
+    expect(verifyGrantAgent({ ...signed, apiKeyId: "other-key" })).toBe(false);
 });
 
 test("agent run tokens can call community models and agents", async () => {

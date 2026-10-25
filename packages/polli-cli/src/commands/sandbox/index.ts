@@ -17,10 +17,9 @@ import {
     type LogEntry,
     listSandboxes,
     pauseSandbox,
-    RUN_SECONDS,
     sandboxLogs,
 } from "./e2b.js";
-import { proxy, setupSsh } from "./ssh.js";
+import { proxy, setupSsh, stderrToTerminal } from "./ssh.js";
 
 // Whole seconds, as in E2B's `timeout`. 0 never expires, like Daytona's
 // `autoStopInterval: 0`; E2B has no such value, so polli asks for its largest.
@@ -34,12 +33,12 @@ function parseTimeout(value: string): number {
     return seconds || KEEP_SECONDS;
 }
 
-// Past E2B's 24-hour run, gen keeps a sandbox running until its timeout;
-// otherwise it runs until its lease ends at `endAt`.
+// `endAt` is when the timeout ends, also while gen keeps the sandbox running
+// 10 minutes at a time.
 const runsUntil = (seconds: number, endAt: number) =>
     seconds === KEEP_SECONDS
         ? "runs until you pause or kill it"
-        : `runs until ${new Date(seconds > RUN_SECONDS ? Date.now() + seconds * 1000 : endAt).toLocaleString()}, then pauses`;
+        : `runs until ${new Date(endAt).toLocaleString()}, then pauses`;
 
 // E2B's tracing fields mean nothing to a user.
 const TRACE_FIELDS = ["edge_trace_id", "trace_id", "span_id", "source_type"];
@@ -66,12 +65,12 @@ export const sandboxCommand = new Command("sandbox")
             .description("Start a sandbox you can ssh into")
             .argument(
                 "[template]",
-                "E2B template; pollinations-large has 4 vCPU and 8 GB",
+                "pollinations-large has 4 vCPU and 8 GB; pollinations-azure, pollinations-azure-large and pollinations-azure-xl (8 vCPU, 16 GB) run on Azure",
                 "pollinations",
             )
             .option(
                 "--timeout <seconds>",
-                "Keep it running this long without ssh, paid in advance; 0 never expires",
+                "Keep it running this long without ssh, paid 10 minutes at a time; 0 never expires",
                 parseTimeout,
             )
             .action(
@@ -121,6 +120,7 @@ export const sandboxCommand = new Command("sandbox")
                         // A paused sandbox's endAt is when it paused.
                         sandboxes.map((sandbox) => ({
                             id: sandbox.sandboxID,
+                            name: sandbox.metadata?.name,
                             template: sandbox.alias ?? sandbox.templateID,
                             size: `${sandbox.cpuCount} vCPU, ${sandbox.memoryMB} MB`,
                             state:
@@ -137,7 +137,7 @@ export const sandboxCommand = new Command("sandbox")
     .addCommand(
         new Command("timeout")
             .description(
-                "Keep a sandbox running at least <seconds> from now, paid in advance; 0 never expires; resumes a paused one",
+                "Keep a sandbox running at least <seconds> from now, paid 10 minutes at a time; 0 never expires; resumes a paused one",
             )
             .argument("<id>")
             .argument("<seconds>", "seconds from now, or 0", parseTimeout)
@@ -233,6 +233,7 @@ export const sandboxCommand = new Command("sandbox")
             .description("ssh ProxyCommand for <sandbox-id>.polli")
             .argument("<host>")
             .action(async (host: string) => {
+                stderrToTerminal();
                 requireKey();
                 try {
                     await proxy(host);

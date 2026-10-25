@@ -1,15 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
+    fmtExactNumber,
+    fmtExactUsd,
     fmtMarginPct,
     fmtMonthDay,
     fmtMonthYear,
     fmtNumber,
     fmtPct,
     fmtPeriod,
+    fmtRateUsd,
     fmtSmartNumber,
     fmtUnsignedPct,
     fmtUsd,
     fmtUtcDateTime,
+    hasVisibleAmount,
 } from "./format";
 
 describe("format", () => {
@@ -47,34 +51,34 @@ describe("format", () => {
 });
 
 describe("fmtSmartNumber", () => {
-    it("uses up to four visible digits without trailing zeroes", () => {
-        expect(fmtSmartNumber(1234.567)).toBe("1,234");
-        expect(fmtSmartNumber(123.4567)).toBe("123.4");
-        expect(fmtSmartNumber(20.7)).toBe("20.7");
-        expect(fmtSmartNumber(20.74)).toBe("20.74");
-        expect(fmtSmartNumber(20.725)).toBe("20.72");
-        expect(fmtSmartNumber(1.234567)).toBe("1.23");
-        expect(fmtSmartNumber(0.137)).toBe("0.13");
-        expect(fmtSmartNumber(0.06011)).toBe("0.06");
-        expect(fmtSmartNumber(0.05667)).toBe("0.05");
-        expect(fmtSmartNumber(0.03609)).toBe("0.03");
-        expect(fmtSmartNumber(0.005732)).toBe("<0.01");
-        expect(fmtSmartNumber(0.00123456)).toBe("<0.01");
-        expect(fmtSmartNumber(0.2061)).toBe("0.2");
-        expect(fmtSmartNumber(0.2499)).toBe("0.24");
-        expect(fmtSmartNumber(0.2515)).toBe("0.25");
+    it("rounds to whole units without trailing decimals", () => {
+        expect(fmtSmartNumber(1234.567)).toBe("1,235");
+        expect(fmtSmartNumber(123.4567)).toBe("123");
+        expect(fmtSmartNumber(20.7)).toBe("21");
+        expect(fmtSmartNumber(20.74)).toBe("21");
+        expect(fmtSmartNumber(20.725)).toBe("21");
+        expect(fmtSmartNumber(1.234567)).toBe("1");
+        expect(fmtSmartNumber(0.137)).toBe("");
+        expect(fmtSmartNumber(0.06011)).toBe("");
+        expect(fmtSmartNumber(0.05667)).toBe("");
+        expect(fmtSmartNumber(0.03609)).toBe("");
+        expect(fmtSmartNumber(0.005732)).toBe("");
+        expect(fmtSmartNumber(0.00123456)).toBe("");
+        expect(fmtSmartNumber(0.2061)).toBe("");
+        expect(fmtSmartNumber(0.2499)).toBe("");
+        expect(fmtSmartNumber(0.2515)).toBe("");
     });
 
-    it("uses compact suffixes for large numbers", () => {
-        expect(fmtSmartNumber(12409.6)).toBe("12.4k");
-        expect(fmtSmartNumber(1234567)).toBe("1.23M");
-        expect(fmtSmartNumber(1234567890)).toBe("1.23B");
-        expect(fmtSmartNumber(1234567890123)).toBe("1.23T");
+    it("uses comma separators for large whole numbers", () => {
+        expect(fmtSmartNumber(12409.6)).toBe("12,410");
+        expect(fmtSmartNumber(1234567)).toBe("1,234,567");
+        expect(fmtSmartNumber(1234567890)).toBe("1,234,567,890");
+        expect(fmtSmartNumber(1234567890123)).toBe("1,234,567,890,123");
     });
 
-    it("uses a readable floor for tiny nonzero values", () => {
-        expect(fmtSmartNumber(0.000000000000000444)).toBe("<0.01");
-        expect(fmtSmartNumber(0.0009)).toBe("<0.01");
+    it("hides tiny nonzero values", () => {
+        expect(fmtSmartNumber(0.000000000000000444)).toBe("");
+        expect(fmtSmartNumber(0.0009)).toBe("");
     });
 });
 
@@ -88,20 +92,34 @@ describe("fmtMonthDay", () => {
 });
 
 describe("fmtUsd", () => {
-    it("renders adaptive compact dollars", () => {
-        expect(fmtUsd(12409.6)).toBe("$12.4k");
-        expect(fmtUsd(1234.567)).toBe("$1,234");
+    it("renders rounded whole dollars", () => {
+        expect(fmtUsd(12409.6)).toBe("$12,410");
+        expect(fmtUsd(1234.567)).toBe("$1,235");
+    });
+
+    it("does not truncate floating-point noise into a false monetary gap", () => {
+        expect(fmtUsd(64.8 + 41.6)).toBe("$106");
+        expect(fmtUsd(105.4 - (64.8 + 41.6))).toBe("−$1");
+        expect(fmtUsd(106.39)).toBe("$106");
     });
 
     it("renders negatives with a minus sign", () => {
-        expect(fmtUsd(-13921.4)).toBe("−$13.92k");
+        expect(fmtUsd(-13921.4)).toBe("−$13,921");
     });
 
-    it("renders tiny dollars with a less-than floor", () => {
-        expect(fmtUsd(0.000000000000000444)).toBe("<$0.01");
-        expect(fmtUsd(-0.0009)).toBe("−<$0.01");
-        expect(fmtUsd(-0.05667)).toBe("−$0.05");
-        expect(fmtUsd(-0.03609)).toBe("−$0.03");
+    it("hides amounts below one dollar in either direction", () => {
+        expect(fmtUsd(0.000000000000000444)).toBe("");
+        expect(fmtUsd(-0.0009)).toBe("");
+        expect(fmtUsd(-0.05667)).toBe("");
+        expect(fmtUsd(-0.03609)).toBe("");
+        for (const value of [-0.99, 0.99]) {
+            expect(fmtUsd(value)).toBe("");
+            expect(fmtNumber(value)).toBe("");
+        }
+        expect(fmtUsd(0)).toBe("$0");
+        expect(fmtNumber(0)).toBe("0");
+        expect(fmtUsd(1)).toBe("$1");
+        expect(fmtNumber(-1)).toBe("−1");
     });
 
     it("renders missing values as an en dash", () => {
@@ -112,11 +130,11 @@ describe("fmtUsd", () => {
 });
 
 describe("fmtNumber", () => {
-    it("renders plain numbers with the shared four-digit precision", () => {
-        expect(fmtNumber(60.629999999999995)).toBe("60.62");
-        expect(fmtNumber(1216.9900000000002)).toBe("1,216");
-        expect(fmtNumber(12000)).toBe("12k");
-        expect(fmtNumber(-738.1800000000001)).toBe("−738.1");
+    it("renders plain numbers with shared whole-unit rounding", () => {
+        expect(fmtNumber(60.629999999999995)).toBe("61");
+        expect(fmtNumber(1216.9900000000002)).toBe("1,217");
+        expect(fmtNumber(12000)).toBe("12,000");
+        expect(fmtNumber(-738.1800000000001)).toBe("−738");
     });
 
     it("renders missing values as an en dash", () => {
@@ -127,8 +145,8 @@ describe("fmtNumber", () => {
 });
 
 describe("fmtPct", () => {
-    it("renders signed adaptive percentages", () => {
-        expect(fmtPct(4.66666)).toBe("+4.66%");
+    it("renders signed percentages with two decimal places", () => {
+        expect(fmtPct(4.66666)).toBe("+4.67%");
         expect(fmtPct(-30.714)).toBe("−30.71%");
         expect(fmtPct(0.0009)).toBe("+<0.01%");
     });
@@ -139,9 +157,9 @@ describe("fmtPct", () => {
 });
 
 describe("fmtUnsignedPct", () => {
-    it("renders unsigned adaptive percentages", () => {
-        expect(fmtUnsignedPct(99.999)).toBe("99.99%");
-        expect(fmtUnsignedPct(12345.6)).toBe("12.34k%");
+    it("preserves percentage precision and incomplete coverage", () => {
+        expect(fmtUnsignedPct(99.999)).toBe("<100%");
+        expect(fmtUnsignedPct(12345.6)).toBe("12,345.6%");
         expect(fmtUnsignedPct(0.0009)).toBe("<0.01%");
     });
 
@@ -149,4 +167,36 @@ describe("fmtUnsignedPct", () => {
         expect(fmtUnsignedPct(null)).toBe("–");
         expect(fmtUnsignedPct(undefined)).toBe("–");
     });
+});
+
+describe("precision at inspection boundaries", () => {
+    it("retains ledger amounts and distinguishes zero from missing", () => {
+        expect(fmtExactNumber(7860.25)).toBe("7,860.25");
+        expect(fmtExactNumber(-0.19)).toBe("−0.19");
+        expect(fmtExactNumber(0.00000123)).toBe("0.00000123");
+        expect(fmtExactNumber(0)).toBe("0");
+        expect(fmtExactNumber(null)).toBe("–");
+        expect(fmtExactUsd(0.63)).toBe("$0.63");
+        expect(fmtRateUsd(111.1 / 737.6)).toBe("$0.150624");
+    });
+    it("never rounds an incomplete percentage to 100%", () => {
+        expect(fmtMarginPct(99.9)).toBe("99.9%");
+        expect(fmtUnsignedPct(99.999)).toBe("<100%");
+        expect(fmtUnsignedPct(100)).toBe("100%");
+    });
+});
+
+it("filters only known sub-dollar amounts using raw magnitudes", () => {
+    expect(hasVisibleAmount([0, 0.99, -0.99])).toBe(false);
+    expect(hasVisibleAmount([1])).toBe(true);
+    expect(hasVisibleAmount([-1])).toBe(true);
+    expect(hasVisibleAmount([0, null])).toBe(true);
+    expect(hasVisibleAmount([undefined])).toBe(true);
+    expect(hasVisibleAmount([Number.NaN])).toBe(true);
+});
+
+it("removes binary arithmetic noise while retaining sub-cent precision", () => {
+    expect(fmtExactUsd(0.1 + 0.2)).toBe("$0.3");
+    expect(fmtExactNumber(-5.9399999999999995)).toBe("−5.94");
+    expect(fmtExactUsd(0.000472)).toBe("$0.000472");
 });

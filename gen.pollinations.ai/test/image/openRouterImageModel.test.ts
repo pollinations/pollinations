@@ -6,6 +6,8 @@ import {
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
+    callOpenRouterQwenImage3API,
+    callOpenRouterQwenImage21ProAPI,
     callOpenRouterRecraftFlashAPI,
     callOpenRouterRecraftVectorAPI,
     callOpenRouterSeedreamFlashAPI,
@@ -107,7 +109,7 @@ describe("OpenRouter Grok Imagine Pro", () => {
         });
     });
 
-    it("forwards one edit image and tracks its input fee", async () => {
+    it("forwards every edit image and tracks their input fees", async () => {
         syncImageEnv(
             { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
             ["OPENROUTER_API_KEY"],
@@ -119,7 +121,10 @@ describe("OpenRouter Grok Imagine Pro", () => {
             ...baseParams,
             width: 1280,
             height: 720,
-            image: ["https://example.com/input.png"],
+            image: [
+                "https://example.com/input.png",
+                "https://example.com/b.png",
+            ],
         });
 
         expect(requests[0]).toEqual({
@@ -133,10 +138,14 @@ describe("OpenRouter Grok Imagine Pro", () => {
                     type: "image_url",
                     image_url: { url: "https://example.com/input.png" },
                 },
+                {
+                    type: "image_url",
+                    image_url: { url: "https://example.com/b.png" },
+                },
             ],
         });
         expect(result.trackingData?.usage).toEqual({
-            promptImageTokens: 1,
+            promptImageTokens: 2,
             completionImageTokens: 1,
         });
     });
@@ -181,7 +190,7 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
                 "test prompt",
                 {
                     ...baseParams,
-                    model: "x-ai/grok-imagine-image-2.0",
+                    model: "x-ai/grok-imagine-image-2.0:openrouter",
                     quality,
                     resolution,
                     image: [
@@ -219,7 +228,7 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
                 ],
             });
             expect(result.trackingData).toEqual({
-                actualModel: "x-ai/grok-imagine-image-2.0",
+                actualModel: "x-ai/grok-imagine-image-2.0:openrouter",
                 usage: {
                     promptImageTokens: 3,
                     completionImageTokens: 1,
@@ -246,7 +255,7 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
         await expect(
             callOpenRouterGrokImagineImage2API("test prompt", {
                 ...baseParams,
-                model: "x-ai/grok-imagine-image-2.0",
+                model: "x-ai/grok-imagine-image-2.0:openrouter",
             }),
         ).rejects.toMatchObject({
             status: 400,
@@ -1365,7 +1374,7 @@ describe("OpenRouter Recraft vector", () => {
 describe("OpenRouter Recraft Flash", () => {
     const flashParams: ImageParams = {
         ...baseParams,
-        model: "recraft/recraft-v4.1-flash",
+        model: "recraft/recraft-v4.1-flash:openrouter",
     };
 
     function mockFlashResponse(
@@ -1430,7 +1439,7 @@ describe("OpenRouter Recraft Flash", () => {
         });
         expect(result.buffer).toEqual(PNG);
         expect(result.trackingData).toEqual({
-            actualModel: "recraft/recraft-v4.1-flash",
+            actualModel: "recraft/recraft-v4.1-flash:openrouter",
             usage: { completionImageTokens: 1 },
         });
     });
@@ -1467,5 +1476,150 @@ describe("OpenRouter Recraft Flash", () => {
         await expect(
             callOpenRouterRecraftFlashAPI("blocked", flashParams),
         ).rejects.toMatchObject({ status: 400 });
+    });
+});
+
+describe("OpenRouter Qwen Image 3 Pro", () => {
+    const qwenParams: ImageParams = {
+        ...baseParams,
+        model: "qwen/qwen-image-3:openrouter",
+    };
+
+    function mockQwen(
+        requests: Record<string, unknown>[],
+        usage: { cost?: number } | null = { cost: 0.04 },
+    ) {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            const href = typeof url === "string" ? url : url.toString();
+            if (href !== OPENROUTER_IMAGE_URL) {
+                return new Response("unexpected URL", { status: 404 });
+            }
+            requests.push(
+                JSON.parse(init?.body as string) as Record<string, unknown>,
+            );
+            return Response.json({
+                data: [{ b64_json: PNG.toString("base64") }],
+                usage: usage ?? undefined,
+            });
+        });
+    }
+
+    it("sends the primary's checkpoint and size, pinned to Alibaba, and bills OpenRouter's cost", async () => {
+        const requests: Record<string, unknown>[] = [];
+        mockQwen(requests);
+
+        const result = await callOpenRouterQwenImage3API(
+            "A poster reading BUILD",
+            qwenParams,
+        );
+
+        expect(requests[0]).toEqual({
+            model: "qwen/qwen-image-3-pro",
+            prompt: "A poster reading BUILD",
+            n: 1,
+            seed: 42,
+            size: "1024x1024",
+            provider: { only: ["alibaba"], allow_fallbacks: false },
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "qwen/qwen-image-3:openrouter",
+            providerBilling: { units: 0.04, unitCost: 1.055 },
+            usage: { completionImageTokens: 1 },
+        });
+    });
+
+    it.each([
+        [{ aspectRatio: "16:9" as const }, "1376x768"],
+        [{ aspectRatio: "21:9" as const }, "1568x672"],
+        [{ width: 2048, height: 2048, dimensionsExplicit: true }, "2048x2048"],
+        [{ width: 1000, height: 700, dimensionsExplicit: true }, "1000x700"],
+    ])("requests the size the primary would (%j)", async (overrides, size) => {
+        const requests: Record<string, unknown>[] = [];
+        mockQwen(requests);
+
+        await callOpenRouterQwenImage3API("size", {
+            ...qwenParams,
+            ...overrides,
+        });
+
+        expect(requests[0].size).toBe(size);
+    });
+
+    it.each([1, 3])(
+        "sends %i reference image(s) and meters each",
+        async (count) => {
+            const requests: Record<string, unknown>[] = [];
+            mockQwen(requests);
+
+            const result = await callOpenRouterQwenImage3API("edit", {
+                ...qwenParams,
+                image: Array(count).fill(PNG_DATA_URI),
+            });
+
+            expect(requests[0].input_references).toEqual(
+                Array(count).fill({
+                    type: "image_url",
+                    image_url: { url: PNG_DATA_URI },
+                }),
+            );
+            expect(result.trackingData?.usage).toEqual({
+                promptImageTokens: count,
+                completionImageTokens: 1,
+            });
+        },
+    );
+
+    it("rejects a response without a positive OpenRouter cost", async () => {
+        mockQwen([], { cost: 0 });
+
+        await expect(
+            callOpenRouterQwenImage3API("no receipt", qwenParams),
+        ).rejects.toMatchObject({ status: 502 });
+    });
+
+    it("sends the Pro checkpoint at the requested size, pinned to Alibaba, and bills OpenRouter's cost", async () => {
+        const requests: Record<string, unknown>[] = [];
+        mockQwen(requests, { cost: 0.046 });
+
+        const result = await callOpenRouterQwenImage21ProAPI("A lighthouse", {
+            ...qwenParams,
+            model: "qwen/qwen-image-2.1-pro:openrouter",
+            width: 1280,
+            height: 720,
+        });
+
+        expect(requests[0]).toEqual({
+            model: "qwen/qwen-image-2.1-pro",
+            prompt: "A lighthouse",
+            n: 1,
+            seed: 42,
+            size: "1280x720",
+            provider: { only: ["alibaba"], allow_fallbacks: false },
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "qwen/qwen-image-2.1-pro:openrouter",
+            providerBilling: { units: 0.046, unitCost: 1.055 },
+            usage: { completionImageTokens: 1 },
+        });
+    });
+
+    it("sends Pro reference images without metering them, since OpenRouter's cost includes them", async () => {
+        const requests: Record<string, unknown>[] = [];
+        mockQwen(requests, { cost: 0.046 });
+
+        const result = await callOpenRouterQwenImage21ProAPI("edit", {
+            ...qwenParams,
+            model: "qwen/qwen-image-2.1-pro:openrouter",
+            image: Array(2).fill(PNG_DATA_URI),
+        });
+
+        expect(requests[0].input_references).toHaveLength(2);
+        expect(result.trackingData?.usage).toEqual({
+            completionImageTokens: 1,
+        });
     });
 });

@@ -51,7 +51,7 @@ interface SingleKeyInfo {
 }
 
 const MODELS_HELP =
-    "Models the key can use: categories (text, image, video, audio, 3d, embedding, realtime) or model IDs from `polli models`. A category includes models added later; a model ID allows only that model";
+    "Models the key can use: categories (text, image, video, audio, 3d, embedding, realtime, decision) or model IDs from `polli models`. A category includes models added later; a model ID allows only that model";
 
 const formatPerms = (p: KeyInfo["permissions"]) => {
     if (!p) return "-";
@@ -265,8 +265,8 @@ const update = new Command("update")
         "after",
         `
 Examples:
-  polli keys update <id> --models flux zimage
-  polli keys update <id> --models text flux
+  polli keys update <id> --models black-forest-labs/flux.1-schnell tongyi-mai/z-image-turbo
+  polli keys update <id> --models text black-forest-labs/flux.1-schnell
 `,
     )
     .action(async (id, opts) => {

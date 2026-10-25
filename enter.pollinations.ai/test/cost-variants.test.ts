@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { modelInfoFromDefinition } from "../../shared/registry/model-info.ts";
 import {
     calculateCost,
@@ -41,7 +41,30 @@ function fallbackBill(
     });
 }
 
+// Vitest 4 reuses an existing spy, so each test restores its console spies.
+afterEach(() => {
+    vi.restoreAllMocks();
+});
+
 describe("long-context cost variants", () => {
+    it.each([
+        [198_999, undefined, 0.399698],
+        [199_000, "long_context", 0.7994],
+    ] as const)(
+        "Grok reprices all billed tokens at %s uncached prompt tokens",
+        (prompt, variant, price) => {
+            const billing = bill("x-ai/grok-4.7", {
+                promptTextTokens: prompt,
+                promptCachedTokens: 1000,
+                completionTextTokens: 100,
+                completionReasoningTokens: 100,
+            });
+            expect(billing.costVariant).toBe(variant);
+            expect(billing.cost.totalCost).toBeCloseTo(price, 10);
+            expect(billing.price.totalPrice).toBeCloseTo(price, 8);
+        },
+    );
+
     it.each([
         ["openai/gpt-5.4", 272_000],
         ["openai/gpt-5.5", 272_000],
@@ -65,20 +88,28 @@ describe("long-context cost variants", () => {
         },
     );
 
-    it("Gemini uses OpenRouter's inclusive 200K boundary", () => {
-        expect(
-            bill("google/gemini-3.1-pro-preview", {
-                promptTextTokens: 199_999,
-            }).costVariant,
-        ).toBeUndefined();
+    it("Gemini 3.1 Pro uses Vertex's strict 200K boundary", () => {
         expect(
             bill("google/gemini-3.1-pro-preview", {
                 promptTextTokens: 200_000,
             }).costVariant,
-        ).toBe("long_context");
+        ).toBeUndefined();
         expect(
             bill("google/gemini-3.1-pro-preview", {
                 promptTextTokens: 200_001,
+            }).costVariant,
+        ).toBe("long_context");
+    });
+
+    it("Gemini 3.1 Pro's OpenRouter fallback keeps the inclusive 200K boundary", () => {
+        expect(
+            bill("google/gemini-3.1-pro-preview:openrouter:vertex-global", {
+                promptTextTokens: 199_999,
+            }).costVariant,
+        ).toBeUndefined();
+        expect(
+            bill("google/gemini-3.1-pro-preview:openrouter:vertex-global", {
+                promptTextTokens: 200_000,
             }).costVariant,
         ).toBe("long_context");
     });
@@ -222,10 +253,10 @@ describe("long-context cost variants", () => {
         expect(billing.servedPrice).toBeCloseTo(0.00006 * 1.055, 12);
     });
 
-    it("keeps the Llama Scout quote and records the fee-inclusive Novita cost", () => {
+    it("keeps the Llama Scout quote and records direct DeepInfra priority cost", () => {
         const billing = fallbackBill(
             "meta/llama-4-scout",
-            "meta/llama-4-scout:openrouter:novita-bf16",
+            "meta/llama-4-scout:deepinfra:priority",
             {
                 promptTextTokens: 1_000_000,
                 promptImageTokens: 1_000_000,
@@ -233,11 +264,11 @@ describe("long-context cost variants", () => {
             },
         );
 
-        expect(billing.cost.totalCost).toBeCloseTo(0.95 * 1.055, 12);
+        expect(billing.cost.totalCost).toBeCloseTo(0.75, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.5, 12);
-        expect(billing.servedPrice).toBeCloseTo(0.95 * 1.055, 12);
+        expect(billing.servedPrice).toBeCloseTo(0.75, 12);
         expect(billing.cost.totalCost - billing.price.totalPrice).toBeCloseTo(
-            0.95 * 1.055 - 0.5,
+            0.75 - 0.5,
             12,
         );
     });
@@ -262,7 +293,7 @@ describe("long-context cost variants", () => {
     });
 
     it.each([
-        ["openai/gpt-5.6-sol", 10, 1, 12.5, 45, 1 / 3],
+        ["openai/gpt-5.6-sol", 8, 0.8, 10, 30, 1 / 3],
         ["openai/gpt-5.6-terra", 4, 0.4, 5, 18, 0.75],
         ["openai/gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 0.75],
         ["openai/gpt-6-astra", 20, 2, 25, 75, 1],
@@ -321,13 +352,13 @@ describe("long-context cost variants", () => {
 
         expect(billing.costVariant).toBe("long_context");
         expect(billing.priceDefinition).toMatchObject({
-            promptTextTokens: (4 / 1e6) * 1.055,
-            promptCachedTokens: (0.4 / 1e6) * 1.055,
-            promptCacheWriteTokens: (4 / 1e6) * 1.055,
-            promptAudioTokens: (4 / 1e6) * 1.055,
-            promptImageTokens: (2 / 1e6) * 1.055,
-            promptVideoTokens: (4 / 1e6) * 1.055,
-            completionTextTokens: (18 / 1e6) * 1.055,
+            promptTextTokens: 4 / 1e6,
+            promptCachedTokens: 0.4 / 1e6,
+            promptCacheWriteTokens: 4 / 1e6,
+            promptAudioTokens: 4 / 1e6,
+            promptImageTokens: 4 / 1e6,
+            promptVideoTokens: 4 / 1e6,
+            completionTextTokens: 18 / 1e6,
         });
     });
 
@@ -390,7 +421,7 @@ describe("long-context cost variants", () => {
         });
 
         expect(billing.cost.totalCost).toBeCloseTo(0.375 * 1.055, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(4.5 * 1.055, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(4.5, 12);
     });
 
     it("Qwen applies its advertised long-context sheet", () => {
@@ -606,9 +637,9 @@ describe("resolution cost variants", () => {
 
     it("seedance-pro bills 480p and 1080p around its 720p base", () => {
         const tiers = [
-            [undefined, 0.025],
-            ["480p", 0.015],
-            ["1080p", 0.06],
+            [undefined, 0.021021],
+            ["480p", 0.0099225],
+            ["1080p", 0.0486],
         ] as const;
 
         for (const [resolution, rate] of tiers) {

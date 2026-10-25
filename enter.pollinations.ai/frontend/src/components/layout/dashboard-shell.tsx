@@ -28,14 +28,7 @@ import type {
     RefObject,
     SetStateAction,
 } from "react";
-import {
-    createContext,
-    Fragment,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from "react";
+import { createContext, useCallback, useEffect, useRef, useState } from "react";
 import { accountClient, apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
 import {
@@ -64,14 +57,10 @@ type DashboardNavItem = {
     group: DashboardNavGroup;
 };
 
-// Each card lists its groups, with a thin line between them: Pollinations'
-// resources on top (News & FAQ, models, agents & MCP, then Docs after a line),
-// then your pages (Balance first). Your balances and name sit under the cards.
-// Signed out only the resources card has items.
-const NAV_CARDS: readonly (readonly DashboardNavGroup[])[] = [
-    ["resources"],
-    ["yours"],
-];
+// One card per group: Pollinations' resources (News & FAQ, models, agents &
+// MCP), then your pages (Balance first), then Docs in a card of its own. Your
+// balances and name sit under the cards. Signed out only resources and Docs show.
+const NAV_CARD_ORDER: readonly DashboardNavGroup[] = ["resources", "yours"];
 const NAV_CARD_CLASS =
     "flex flex-col gap-0.5 rounded-card bg-surface-opaque p-1.5";
 
@@ -372,60 +361,45 @@ const DashboardRail: FC<DashboardRailProps> = ({
             }
         >
             <nav className="flex flex-col gap-2">
-                {NAV_CARDS.map((groups) => {
-                    const sections = groups
-                        .map((group) => ({
-                            group,
-                            items: navItems.filter(
-                                (item) =>
-                                    item.group === group &&
-                                    item.id !== "account",
-                            ),
-                        }))
-                        .filter(({ items }) => items.length > 0);
-                    if (sections.length === 0) return null;
+                {NAV_CARD_ORDER.map((group) => {
+                    const items = navItems.filter(
+                        (item) => item.group === group,
+                    );
+                    if (items.length === 0) return null;
                     return (
-                        <div key={groups.join()} className={NAV_CARD_CLASS}>
-                            {sections.map(({ group, items }, index) => (
-                                <Fragment key={group}>
-                                    {index > 0 && <NavDivider />}
-                                    {items.map((item) => (
-                                        <NavItem
-                                            as={Link}
-                                            key={item.id}
-                                            to={item.to}
-                                            data-theme="accent"
-                                            icon={item.icon}
-                                            active={activePage === item.id}
-                                            onClick={onNavigate}
+                        <div key={group} className={NAV_CARD_CLASS}>
+                            {items.map((item) => (
+                                <NavItem
+                                    as={Link}
+                                    key={item.id}
+                                    to={item.to}
+                                    data-theme="accent"
+                                    icon={item.icon}
+                                    active={activePage === item.id}
+                                    onClick={onNavigate}
+                                >
+                                    {item.label}
+                                    {(item.id === "sandboxes" ||
+                                        (item.id === "quests" &&
+                                            questStatus)) && (
+                                        <Chip
+                                            intent="neutral"
+                                            size="sm"
+                                            className="ml-auto bg-transparent text-theme-text-soft"
                                         >
-                                            {item.label}
-                                            {(item.id === "sandboxes" ||
-                                                (item.id === "quests" &&
-                                                    questStatus)) && (
-                                                <Chip
-                                                    intent="neutral"
-                                                    size="sm"
-                                                    className="ml-auto bg-transparent text-theme-text-soft"
-                                                >
-                                                    {item.id === "quests"
-                                                        ? questStatus
-                                                        : "New!"}
-                                                </Chip>
-                                            )}
-                                        </NavItem>
-                                    ))}
-                                    {group === "resources" && (
-                                        <>
-                                            <NavDivider />
-                                            <DocsRow />
-                                        </>
+                                            {item.id === "quests"
+                                                ? questStatus
+                                                : "New!"}
+                                        </Chip>
                                     )}
-                                </Fragment>
+                                </NavItem>
                             ))}
                         </div>
                     );
                 })}
+                <div className={NAV_CARD_CLASS}>
+                    <DocsRow />
+                </div>
             </nav>
         </ScrollArea>
         <div className="flex shrink-0 flex-col gap-2 pt-3">
@@ -519,10 +493,6 @@ const DocsRow: FC = () => (
             }
         </CopyButton>
     </div>
-);
-
-const NavDivider: FC = () => (
-    <div className="mx-3 my-1 border-t border-theme-text-strong/10" />
 );
 
 const DashboardFooter: FC<{

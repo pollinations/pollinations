@@ -1,0 +1,71 @@
+# Started only by the host wrapper (local-mcp-pilot) from a release fetched at
+# a production commit. Secrets come from the host-only secrets/ directory; the
+# wrapper derives LOCAL_MCP_TUNNEL_ID from the tunnel credential file.
+name: pollinations-local-mcp-pilot
+services:
+  controller:
+    image: ${LOCAL_MCP_CONTROLLER_IMAGE:?release image required}
+    pull_policy: never
+    user: "10001:10001"
+    restart: unless-stopped
+    init: true
+    ports:
+      - "127.0.0.1:18765:8765"
+    environment:
+      LOCAL_SHELL_MCP_HOST: "0.0.0.0"
+      LOCAL_SHELL_MCP_PORT: "8765"
+      LOCAL_SHELL_MCP_PUBLIC_BASE_URL: "https://local-mcp.pollinations.ai"
+      LOCAL_SHELL_MCP_AUTH_MODE: "oauth"
+      LOCAL_SHELL_MCP_AUTH_BYPASS_LOCALHOST: "false"
+      LOCAL_SHELL_MCP_REQUIRE_AUTH_FOR_MCP_DISCOVERY: "true"
+      LOCAL_SHELL_MCP_OAUTH_ADMIN_PIN: "${LOCAL_SHELL_MCP_OAUTH_ADMIN_PIN:?explicit approval and secret required}"
+      LOCAL_SHELL_MCP_OAUTH_JWT_SECRET: "${LOCAL_SHELL_MCP_OAUTH_JWT_SECRET:?explicit approval and secret required}"
+      LOCAL_SHELL_MCP_OAUTH_ACCESS_TOKEN_TTL_S: "3600"
+      LOCAL_SHELL_MCP_DISABLE_LOCAL: "true"
+      LOCAL_SHELL_MCP_ALLOW_FULL_CONTAINER: "false"
+      LOCAL_SHELL_MCP_REMOTE_ENABLED: "true"
+      LOCAL_SHELL_MCP_REMOTE_INVITE_TTL_S: "600"
+      LOCAL_SHELL_MCP_REMOTE_MAX_PENDING_JOBS: "32"
+      LOCAL_SHELL_MCP_WORKSPACE_ROOT: "/state/workspace"
+      LOCAL_SHELL_MCP_STATE_DIR: "/state/registry"
+      LOCAL_SHELL_MCP_UI_ENABLED: "false"
+      LOCAL_SHELL_MCP_LIVE_WORKSPACE_ENABLED: "false"
+      LOCAL_SHELL_MCP_UI_WALLPAPER: "none"
+      LOCAL_SHELL_MCP_FILE_DOWNLOAD_ENABLED: "false"
+      LOCAL_SHELL_MCP_PERSISTENT_CREDENTIALS: "false"
+      LOCAL_SHELL_MCP_LOGICAL_SESSIONS_ENABLED: "false"
+      LOCAL_SHELL_MCP_MCP_MAX_SESSIONS: "8"
+      LOCAL_SHELL_MCP_FORWARDED_ALLOW_IPS: "*"
+      LOCAL_SHELL_MCP_MAX_HTTP_REQUEST_BYTES: "4194304"
+      LOCAL_SHELL_MCP_MAX_AUDIT_LOG_BYTES: "10000000"
+    volumes:
+      - state:/state
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 512m
+    cpus: "0.50"
+    pids_limit: 96
+    stop_grace_period: 30s
+  tunnel:
+    # uid 1000 (ubuntu) owns the 0600 credential file on the host.
+    user: "1000:1000"
+    image: cloudflare/cloudflared@sha256:faa8e0a1475f137c910be6025f43c8e4092fdd35461b31e19fd1390657a1ff39
+    restart: unless-stopped
+    command: [tunnel, --no-autoupdate, --config, /etc/cloudflared/config.yaml, run, --credentials-file, /run/secrets/tunnel-credentials.json, "${LOCAL_MCP_TUNNEL_ID:?approved tunnel id required}"]
+    volumes:
+      - /home/ubuntu/pollinations-local-mcp-pilot/secrets/tunnel-credentials.json:/run/secrets/tunnel-credentials.json:ro
+      - ./cloudflared.yaml:/etc/cloudflared/config.yaml:ro
+    depends_on:
+      controller:
+        condition: service_healthy
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    cpus: "0.25"
+    pids_limit: 32
+volumes:
+  state:

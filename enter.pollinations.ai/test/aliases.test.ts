@@ -1,4 +1,4 @@
-import { AUDIO_SERVICES } from "@shared/registry/audio";
+import { AUDIO_SERVICES, DEFAULT_AUDIO_MODEL } from "@shared/registry/audio";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings";
 import { IMAGE_SERVICES } from "@shared/registry/image";
 import { MODEL3D_SERVICES } from "@shared/registry/model3d";
@@ -26,6 +26,16 @@ function serviceAliasTestCases(
     );
 }
 
+test("OpenAI speech model names resolve to the OpenAI TTS models", () => {
+    expect(resolveModelName("tts-1")).toBe("openai/tts-1");
+    expect(resolveModelName("tts")).toBe("openai/tts-1");
+    expect(resolveModelName("tts-1-hd")).toBe("openai/tts-1-hd");
+});
+
+test("OpenAI transcription model name resolves to GPT Transcribe", () => {
+    expect(resolveModelName("gpt-4o-transcribe")).toBe("openai/gpt-transcribe");
+});
+
 function requiredCostRate(model: ModelName, field: UsageType): number {
     const rate = getCostDefinition(model)?.[field];
 
@@ -37,50 +47,53 @@ function requiredCostRate(model: ModelName, field: UsageType): number {
     return rate as number;
 }
 
-test.for(
-    serviceAliasTestCases(TEXT_SERVICES),
-)("Text service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
-});
+test.for(serviceAliasTestCases(TEXT_SERVICES))(
+    "Text service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
 
-test.for(
-    serviceAliasTestCases(IMAGE_SERVICES),
-)("Image service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
-});
+test.for(serviceAliasTestCases(IMAGE_SERVICES))(
+    "Image service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
 
-test.for(
-    serviceAliasTestCases(AUDIO_SERVICES),
-)("Audio service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
-});
+test.for(serviceAliasTestCases(AUDIO_SERVICES))(
+    "Audio service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
 
-test.for(
-    serviceAliasTestCases(EMBEDDING_SERVICES),
-)("Embedding service alias %s is resolved to %s", ([
-    alias,
-    shouldResolveTo,
-]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
-});
+test.for(serviceAliasTestCases(EMBEDDING_SERVICES))(
+    "Embedding service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
 
-test.for(
-    serviceAliasTestCases(REALTIME_SERVICES),
-)("Realtime service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
-});
+test.for(serviceAliasTestCases(REALTIME_SERVICES))(
+    "Realtime service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
 
-test.for(
-    serviceAliasTestCases(MODEL3D_SERVICES),
-)("3D service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
-});
+test.for(serviceAliasTestCases(MODEL3D_SERVICES))(
+    "3D service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
 
 test("every public model has a publisher-qualified canonical ID", () => {
     for (const model of getModels()) {
@@ -145,17 +158,22 @@ test("calculatePrice derives the total from cost via priceMultiplier", () => {
     expect(price.totalPrice).toBeCloseTo(cost.totalCost * priceMultiplier, 8);
 });
 
+test("The default audio model works without paid balance", () => {
+    expect(getRegistryModelDefinition(DEFAULT_AUDIO_MODEL).paidOnly).not.toBe(
+        true,
+    );
+});
+
 test("GPT-5.5 is available without paid-only gating", () => {
     const definition = getRegistryModelDefinition("openai/gpt-5.5");
 
-    expect(definition.paidOnly).toBeUndefined();
+    expect(definition.paidOnly).toBe(false);
 });
 
 test("Azure models use the approved public-price multipliers", () => {
     const azureMultiplierOverrides = new Map<string, number>([
         ["openai/gpt-5.6-sol", 1 / 3],
         ["openai/gpt-6-astra", 1],
-        ["openai/gpt-6-astra:azure:datazone", 1],
         ["openai/gpt-6-sol", 1],
         ["openai/gpt-6.1-sol", 1],
         ["openai/gpt-6-luna", 1],
@@ -164,7 +182,7 @@ test("Azure models use the approved public-price multipliers", () => {
         // Azure quota covers less than twice Kimi's peak, so overflow reaches
         // the cash-paid DeepInfra fallback.
         ["moonshotai/kimi-k2.6", 1],
-        ["moonshotai/kimi-k2.6:azure:sweden", 1],
+        ["deepseek/deepseek-v4.1-flash", 0.5],
     ]);
 
     for (const model of getModels()) {
@@ -183,10 +201,7 @@ test("GPT-5.6 models remain available without paid-only gating", () => {
         "openai/gpt-5.6-terra",
         "openai/gpt-5.6-luna",
     ] as const) {
-        expect(
-            getRegistryModelDefinition(model).paidOnly,
-            model,
-        ).toBeUndefined();
+        expect(getRegistryModelDefinition(model).paidOnly, model).toBe(false);
     }
 });
 
@@ -214,10 +229,10 @@ test("GPT Audio 1.5 uses the exact Azure Global meter sheet", () => {
     });
 });
 
-test("Seedream 5 Pro uses Replicate and requires paid balance at provider cost", () => {
+test("Seedream 5 Pro uses Vercel and requires paid balance at provider cost", () => {
     const definition = getRegistryModelDefinition("bytedance/seedream-5.0-pro");
 
-    expect(definition.provider).toBe("replicate");
+    expect(definition.provider).toBe("vercel");
     expect(definition.paidOnly).toBe(true);
     expect(definition.priceMultiplier).toBe(1);
 });
@@ -231,17 +246,17 @@ test("DeepSeek V4 models are billed at their route's multiplier", () => {
 
     const expectedProviders = {
         "deepseek/deepseek-v4-flash": "azure",
-        "deepseek/deepseek-v4.1-flash": "fireworks",
+        "deepseek/deepseek-v4.1-flash": "azure",
         "deepseek/deepseek-v4-pro": "openrouter",
     } as const;
     const expectedPaidOnly = {
-        "deepseek/deepseek-v4-flash": undefined,
-        "deepseek/deepseek-v4.1-flash": undefined,
+        "deepseek/deepseek-v4-flash": false,
+        "deepseek/deepseek-v4.1-flash": false,
         "deepseek/deepseek-v4-pro": true,
     } as const;
     const expectedMultipliers = {
         "deepseek/deepseek-v4-flash": 0.75,
-        "deepseek/deepseek-v4.1-flash": 1,
+        "deepseek/deepseek-v4.1-flash": 0.5,
         "deepseek/deepseek-v4-pro": 1,
     } as const;
 

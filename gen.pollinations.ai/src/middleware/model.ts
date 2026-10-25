@@ -36,6 +36,8 @@ export type ModelVariables = {
         /** Static registry definition, or a dynamic definition resolved from D1. */
         definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
+        /** The endpoint the route resolved the model for, when it names one. */
+        endpoint?: string;
         /**
          * Extra cache-key scope for models whose output is not shareable
          * between callers. Unset means the response is cacheable platform-wide,
@@ -142,6 +144,7 @@ export async function resolveModelDefinition(
         requested: model,
         resolved: entry.id,
         definition: entry.definition,
+        ...(supportedEndpoint && { endpoint: supportedEndpoint }),
         ...(entry.communityEndpoint && {
             communityEndpoint: entry.communityEndpoint,
         }),
@@ -225,19 +228,6 @@ export function resolveModel(
             c.var.auth?.user?.id,
             options?.supportedEndpoint,
         );
-        // Fallback-only entries are provider implementations of the public
-        // model the caller selected, so they inherit that model's permission.
-        // Visible and community targets remain independently scoped: a key can
-        // never be served — or billed for — a model it could not call directly.
-        const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-        if (allowedModels && resolved.fallbackEntries) {
-            resolved.fallbackEntries = resolved.fallbackEntries.filter(
-                (entry) =>
-                    (entry.definition.fallbackOnly === true &&
-                        !entry.communityEndpoint) ||
-                    allowedModels.includes(entry.id),
-            );
-        }
         c.set("model", resolved);
         c.header(MODEL_REQUESTED_HEADER, resolved.resolved);
         await next();

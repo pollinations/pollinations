@@ -10,7 +10,6 @@ import {
     InfoTip,
     InlineLink,
     Input,
-    PlusIcon,
     Section,
     Surface,
     TokensIcon,
@@ -26,15 +25,15 @@ import {
     useEffect,
     useState,
 } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient } from "../../api.ts";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
 import { LoadError, PageLoading } from "../layout/dashboard-loading.tsx";
+import type { ApiModelInfo } from "../models/model-catalog.ts";
 import { AgentDeleteConfirmation } from "./agent-delete-confirmation.tsx";
 import { AgentDialog } from "./agent-dialog.tsx";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
 import { CommunityEndpointDeleteConfirmation } from "./community-endpoint-delete-confirmation.tsx";
 import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
-import { CommunityEndpointToggleConfirmation } from "./community-endpoint-toggle-confirmation.tsx";
 import {
     type AgentFormState,
     type CommunityEndpoint,
@@ -55,6 +54,7 @@ type CommunityEndpointsProps = {
     canPublish: boolean;
     // Public community models offered as fallback targets in the dialog.
     fallbackOptions: FallbackModelOption[];
+    healthByModelId: Record<string, ApiModelInfo["health"]> | null;
 };
 
 const PUBLISHER_ACCESS_REQUEST_URL =
@@ -120,6 +120,7 @@ export function CommunityEndpoints({
     onChange,
     canPublish,
     fallbackOptions,
+    healthByModelId,
 }: CommunityEndpointsProps) {
     const [endpoints, setEndpoints] = useState<CommunityEndpoint[]>([]);
     const [agents, setAgents] = useState<ManagedAgent[]>([]);
@@ -143,8 +144,6 @@ export function CommunityEndpoints({
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<EditableEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
-    const [toggling, setToggling] = useState<CommunityEndpoint | null>(null);
-    const [togglingId, setTogglingId] = useState<string | null>(null);
     const [agentCreateOpen, setAgentCreateOpen] = useState(false);
     const [editingAgent, setEditingAgent] = useState<ManagedAgent | null>(null);
     const [deletingAgent, setDeletingAgent] = useState<ManagedAgent | null>(
@@ -155,8 +154,8 @@ export function CommunityEndpoints({
         setError(null);
         try {
             const [endpointResponse, agentResponse] = await Promise.all([
-                apiClient.account["my-models"].$get(),
-                apiClient.account.agents.$get(),
+                accountClient["my-models"].$get(),
+                accountClient.agents.$get(),
             ]);
             if (!endpointResponse.ok || !agentResponse.ok) {
                 setError(
@@ -192,7 +191,7 @@ export function CommunityEndpoints({
     }, [loadEndpoints]);
 
     async function handleCreateAgent(form: AgentFormState): Promise<void> {
-        const response = await apiClient.account.agents.$post({
+        const response = await accountClient.agents.$post({
             json: toAgentPayload(form),
         });
         if (!response.ok) throw new Error(await readError(response));
@@ -202,7 +201,7 @@ export function CommunityEndpoints({
 
     async function handleUpdateAgent(form: AgentFormState): Promise<void> {
         if (!editingAgent) return;
-        const response = await apiClient.account.agents[":id"].$patch({
+        const response = await accountClient.agents[":id"].$patch({
             param: { id: editingAgent.id },
             json: toAgentUpdatePayload(form),
         });
@@ -217,7 +216,7 @@ export function CommunityEndpoints({
         setDeletingAgent(null);
         setError(null);
         try {
-            const response = await apiClient.account.agents[":id"].$delete({
+            const response = await accountClient.agents[":id"].$delete({
                 param: { id: target.id },
             });
             if (!response.ok) throw new Error(await readError(response));
@@ -228,21 +227,23 @@ export function CommunityEndpoints({
         }
     }
 
-    async function handleSyncAgent(): Promise<void> {
-        if (!editingAgent) return;
-        const response = await apiClient.account.agents[":id"].sync.$post({
+    async function handleSyncAgent(): Promise<string> {
+        if (!editingAgent) throw new Error("No agent selected");
+        const response = await accountClient.agents[":id"].sync.$post({
             param: { id: editingAgent.id },
         });
         if (!response.ok) throw new Error(await readError(response));
+        const { deployedCommitSha } = await response.json();
         await loadEndpoints();
         await onChange?.();
+        return deployedCommitSha;
     }
 
     async function handleCreate(
         payload: EndpointPayload,
         bearerToken: string,
     ): Promise<void> {
-        const response = await apiClient.account["my-models"].$post({
+        const response = await accountClient["my-models"].$post({
             json: { ...payload, bearerToken },
         });
         if (!response.ok) throw new Error(await readError(response));
@@ -271,9 +272,7 @@ export function CommunityEndpoints({
                 : bearerToken
                   ? { ...proxyUpdate, bearerToken }
                   : proxyUpdate;
-        const response = await apiClient.account["my-models"][
-            ":id"
-        ].update.$post({
+        const response = await accountClient["my-models"][":id"].update.$post({
             param: { id: editing.id },
             json: update,
         });
@@ -288,9 +287,9 @@ export function CommunityEndpoints({
         setDeleting(null);
         setError(null);
         try {
-            const response = await apiClient.account["my-models"][
-                ":id"
-            ].$delete({ param: { id: target.id } });
+            const response = await accountClient["my-models"][":id"].$delete({
+                param: { id: target.id },
+            });
             if (!response.ok) throw new Error(await readError(response));
             await loadEndpoints();
             await onChange?.();
@@ -312,9 +311,7 @@ export function CommunityEndpoints({
         setIsSavingProvider(true);
         setError(null);
         try {
-            const response = await apiClient.account[
-                "my-models"
-            ].provider.$post({
+            const response = await accountClient["my-models"].provider.$post({
                 json: {
                     name: providerName,
                     url: providerUrl,
@@ -342,39 +339,6 @@ export function CommunityEndpoints({
         setError(null);
     }
 
-    async function handleToggle(endpoint: CommunityEndpoint): Promise<void> {
-        setTogglingId(endpoint.id);
-        setError(null);
-        try {
-            const response = await apiClient.account["my-models"][
-                ":id"
-            ].update.$post({
-                param: { id: endpoint.id },
-                json: { hidden: !endpoint.hidden },
-            });
-            if (!response.ok) throw new Error(await readError(response));
-            const updated = (await response.json()) as CommunityEndpoint;
-            setEndpoints((current) =>
-                current.map((item) =>
-                    item.id === updated.id ? updated : item,
-                ),
-            );
-            await onChange?.();
-        } catch (thrown) {
-            setError(
-                resourceActionError(
-                    "update",
-                    endpoint.type === "proxy"
-                        ? "the model’s visibility"
-                        : "the agent’s visibility",
-                    thrown,
-                ),
-            );
-        } finally {
-            setTogglingId(null);
-        }
-    }
-
     const publisherAccessRequestLink = (
         <InlineLink href={PUBLISHER_ACCESS_REQUEST_URL}>
             publisher access request
@@ -383,13 +347,13 @@ export function CommunityEndpoints({
 
     const privateModelGuidance = (
         <>
-            Your models are private — callable only by you and shown only when{" "}
-            <strong>/models</strong> is authenticated with your key. Public
-            publishing is allowlist-only. To request publishing access for
-            models, agents, or both, submit a {publisherAccessRequestLink}. You
-            can register, probe, and test private models without approval. For
-            questions, ask in{" "}
-            <InlineLink href="https://discord.gg/pollinations-ai-885844321461485618">
+            Your models are private. Only you can call them, and they appear in{" "}
+            <strong>/models</strong> only when you authenticate with your key.
+            Public publishing is allowlist-only. To request publishing access
+            for models, agents, or both, submit a {publisherAccessRequestLink}.
+            You can register, probe, and test private models without approval.
+            For questions, ask in{" "}
+            <InlineLink href="https://discord.gg/k9F7SyTgqn">
                 Discord
             </InlineLink>
             .
@@ -417,8 +381,8 @@ export function CommunityEndpoints({
                 key={endpoint.id}
                 endpoint={endpoint}
                 agent={agent}
-                isToggling={togglingId === endpoint.id}
-                onToggle={() => setToggling(endpoint)}
+                health={healthByModelId?.[endpoint.modelId]}
+                healthUnavailable={healthByModelId === null}
                 onEdit={
                     agent
                         ? () =>
@@ -442,27 +406,21 @@ export function CommunityEndpoints({
     const agentAction = (
         <Button
             type="button"
-            className="dashboard-add-button"
-            aria-label="Create agent"
-            title="Create agent"
+            icon={<BotIcon />}
             aria-haspopup="dialog"
             onClick={() => setAgentCreateOpen(true)}
         >
-            <PlusIcon className="h-4 w-4" />
-            <BotIcon className="h-5 w-5" />
+            Create
         </Button>
     );
     const modelAction = (
         <Button
             type="button"
-            className="dashboard-add-button"
-            aria-label="Create model"
-            title="Create model"
+            icon={<BeakerIcon />}
             aria-haspopup="dialog"
             onClick={() => setCreateOpen(true)}
         >
-            <PlusIcon className="h-4 w-4" />
-            <BeakerIcon className="h-5 w-5" />
+            Create
         </Button>
     );
 
@@ -672,15 +630,6 @@ export function CommunityEndpoints({
                 onCancel={() => setDeletingAgent(null)}
             />
 
-            <CommunityEndpointToggleConfirmation
-                endpoint={toggling}
-                onConfirm={() => {
-                    if (!toggling) return;
-                    void handleToggle(toggling);
-                    setToggling(null);
-                }}
-                onCancel={() => setToggling(null)}
-            />
             <AgentDialog
                 open={agentCreateOpen}
                 onOpenChange={setAgentCreateOpen}

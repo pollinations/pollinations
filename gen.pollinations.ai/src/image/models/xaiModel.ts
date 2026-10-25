@@ -13,17 +13,13 @@ const XAI_EDITS_URL = "https://api.x.ai/v1/images/edits";
 
 /**
  * Calls the xAI official image API.
- * modelId should be "grok-imagine-image" (basic) or
- * "grok-imagine-image-quality" (pro).
+ * modelId is "grok-imagine-image" or "grok-imagine-image-2.0".
  *
- * When `safeParams.image` contains a reference image URL, the request is
+ * When `safeParams.image` contains reference image URLs, the request is
  * routed to /v1/images/edits for image-to-image generation. xAI's edits
  * endpoint requires application/json (NOT multipart/form-data — explicitly
- * called out in xAI's docs as a divergence from the OpenAI SDK). The
- * `image` field is a single ImageUrl object: `{url, detail}`, not an array
- * — verified empirically against the live endpoint (array form returns
- * 422). Only the first reference image is forwarded; additional entries
- * in `safeParams.image` are ignored.
+ * called out in xAI's docs as a divergence from the OpenAI SDK). Every
+ * reference goes in the `images` array, which takes up to 5 sources.
  */
 export async function callXaiImageAPI(
     prompt: string,
@@ -37,8 +33,7 @@ export async function callXaiImageAPI(
         });
     }
 
-    const referenceImage = safeParams.image?.[0];
-    const isEditMode = !!referenceImage;
+    const isEditMode = safeParams.image.length > 0;
     const endpoint = isEditMode ? XAI_EDITS_URL : XAI_GENERATE_URL;
 
     logOps(
@@ -55,10 +50,17 @@ export async function callXaiImageAPI(
 
     if (modelId === "grok-imagine-image") {
         requestBody.resolution = "2k";
+    } else {
+        // Grok Imagine Image 2.0: low or medium quality (checked in params).
+        requestBody.resolution = safeParams.resolution === "2k" ? "2k" : "1k";
+        requestBody.quality = safeParams.quality;
     }
 
-    if (isEditMode && referenceImage) {
-        requestBody.image = { url: referenceImage, detail: "auto" };
+    if (isEditMode) {
+        requestBody.images = safeParams.image.map((url) => ({
+            url,
+            type: "image_url",
+        }));
     }
 
     const aspectRatio = closestAspectRatio(safeParams.width, safeParams.height);
@@ -96,13 +98,11 @@ export async function callXaiImageAPI(
     return {
         buffer,
         trackingData: {
-            actualModel:
-                modelId === "grok-imagine-image-quality" ||
-                modelId === "grok-imagine-image-pro"
-                    ? "x-ai/grok-imagine-image-quality"
-                    : "x-ai/grok-imagine-image",
+            actualModel: safeParams.model,
             usage: {
-                ...(isEditMode ? { promptImageTokens: 1 } : {}),
+                ...(isEditMode
+                    ? { promptImageTokens: safeParams.image.length }
+                    : {}),
                 completionImageTokens: 1,
             },
         },

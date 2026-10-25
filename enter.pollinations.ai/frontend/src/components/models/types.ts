@@ -11,13 +11,8 @@ export type ModelCategory =
     | "video"
     | "3d"
     | "embedding"
-    | "realtime";
-
-export type ModelDisplayCategory =
-    | ModelCategory
-    | "community-text"
-    | "community-image"
-    | "community-agent";
+    | "realtime"
+    | "decision";
 
 export type ModelCapability =
     | "tool_calling"
@@ -39,7 +34,14 @@ export type PriceKind =
 
 export type PriceDirection = "input" | "output";
 
-export type PriceUnit = "token" | "second" | "request";
+export type PriceUnit =
+    | "token"
+    | "second"
+    | "request"
+    | "megapixel"
+    | "character"
+    | "byte"
+    | "image";
 
 export type ModelPriceLine = {
     direction: PriceDirection;

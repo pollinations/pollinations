@@ -58,6 +58,161 @@ function authorizedTarget(
 }
 
 describe("direct Responses transport", () => {
+    it("keeps the GPT-5 Nano backup on Standard for native Responses", () => {
+        const input = request({
+            model: "openai/gpt-5-nano:openai",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct OpenAI target");
+        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
+            model: "gpt-5-nano-2025-08-07",
+            service_tier: "default",
+            store: false,
+        });
+    });
+    it("keeps GPT-4o Mini on its quoted Standard tier for native Responses", () => {
+        const input = request({
+            model: "openai/gpt-4o-mini",
+            service_tier: "priority",
+        });
+        const primary = resolveDirectResponsesTarget(input.model, input);
+        if (!primary) throw new Error("expected direct OpenAI target");
+        expect(primary.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, primary)).toMatchObject({
+            model: "gpt-4o-mini",
+            service_tier: "default",
+            store: false,
+        });
+        const fallback = resolveDirectResponsesTarget(
+            "openai/gpt-4o-mini:openrouter:openai",
+            input,
+        );
+        expect(fallback?.endpoint).toBe(
+            "https://openrouter.ai/api/v1/responses",
+        );
+        expect(fallback?.defaults.provider).toEqual({
+            only: ["openai"],
+            ignore: ["cloudflare"],
+            allow_fallbacks: false,
+        });
+    });
+    it("keeps gpt-6-astra recovery on Standard in native Responses", () => {
+        const input = request({
+            model: "openai/gpt-6-astra:openai",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct OpenAI target");
+        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
+            model: "gpt-6-astra",
+            service_tier: "default",
+            store: false,
+        });
+    });
+
+    it("rejects invalid image URLs on Nex Mini before calling the provider", async () => {
+        const directRequest = request({
+            model: "nex-agi/nex-n2.5-mini",
+            input: [
+                null,
+                { role: "user", content: { invalid: true } },
+                {
+                    role: "user",
+                    content: [
+                        null,
+                        {
+                            type: "input_image",
+                            image_url: "http://127.0.0.1/image.png",
+                        },
+                    ],
+                },
+            ],
+        });
+        const target = resolveDirectResponsesTarget(
+            directRequest.model,
+            directRequest,
+        );
+        if (!target) throw new Error("expected direct Nex target");
+
+        await expect(
+            callDirectResponses(directRequest, {
+                ...target,
+                authConfigured: true,
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "invalid_image_url",
+        });
+    });
+
+    it("keeps gpt-5.4-nano recovery on Standard in native Responses", () => {
+        const input = request({
+            model: "openai/gpt-5.4-nano:openai",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct OpenAI target");
+        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
+            model: "gpt-5.4-nano-2026-03-17",
+            service_tier: "default",
+            store: false,
+        });
+    });
+
+    it("rejects invalid image URLs on Nex Pro before calling the provider", async () => {
+        const directRequest = request({
+            model: "nex-agi/nex-n2.5-pro",
+            input: [
+                null,
+                { role: "user", content: { invalid: true } },
+                {
+                    role: "user",
+                    content: [
+                        null,
+                        {
+                            type: "input_image",
+                            image_url: "http://127.0.0.1/image.png",
+                        },
+                    ],
+                },
+            ],
+        });
+        const target = resolveDirectResponsesTarget(
+            directRequest.model,
+            directRequest,
+        );
+        if (!target) throw new Error("expected direct Nex target");
+
+        await expect(
+            callDirectResponses(directRequest, {
+                ...target,
+                authConfigured: true,
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "invalid_image_url",
+        });
+    });
+
+    it("keeps gpt-5.6-sol recovery on Standard in native Responses", () => {
+        const input = request({
+            model: "openai/gpt-5.6-sol:openai",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct OpenAI target");
+        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
+            model: "gpt-5.6-sol",
+            service_tier: "default",
+            store: false,
+        });
+    });
+
     it("preserves the complete raw provider error envelope", async () => {
         const directRequest = request();
         const body = JSON.stringify(
@@ -80,6 +235,21 @@ describe("direct Responses transport", () => {
             status: 502,
             upstreamStatus: 429,
             responseBody: body,
+        });
+    });
+
+    it("keeps gpt-5.6-luna recovery on Standard in native Responses", () => {
+        const input = request({
+            model: "openai/gpt-5.6-luna:openai",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct OpenAI target");
+        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
+            model: "gpt-5.6-luna",
+            service_tier: "default",
+            store: false,
         });
     });
 
@@ -115,7 +285,6 @@ describe("direct Responses transport", () => {
         ["previous_response_id", { previous_response_id: "resp_previous" }],
         ["conversation", { conversation: "conv_previous" }],
         ["background", { background: true }],
-        ["encrypted state", { include: ["reasoning.encrypted_content"] }],
         ["n", { n: 2 }],
     ])("rejects unsupported state or fan-out: %s", (_name, field) => {
         expect(() =>
@@ -127,6 +296,21 @@ describe("direct Responses transport", () => {
         ).toThrow();
     });
 
+    it("keeps gpt-5.4 recovery on Standard in native Responses", () => {
+        const input = request({
+            model: "openai/gpt-5.4:openai",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct OpenAI target");
+        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
+            model: "gpt-5.4-2026-03-05",
+            service_tier: "default",
+            store: false,
+        });
+    });
+
     it("rejects hosted tools without adapting or dropping them", () => {
         expect(() =>
             CreateResponseRequestSchema.parse({
@@ -135,6 +319,21 @@ describe("direct Responses transport", () => {
                 tools: [{ type: "web_search_preview" }],
             }),
         ).toThrow();
+    });
+
+    it("keeps gpt-5.4-mini recovery on Standard in native Responses", () => {
+        const input = request({
+            model: "openai/gpt-5.4-mini:openai",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct OpenAI target");
+        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
+            model: "gpt-5.4-mini-2026-03-17",
+            service_tier: "default",
+            store: false,
+        });
     });
 
     it("accepts harmless stateless include and truncation options", () => {
@@ -151,19 +350,43 @@ describe("direct Responses transport", () => {
         });
     });
 
-    it("rejects encrypted and referenced response state", () => {
-        expect(() =>
-            validateDirectResponsesRequest(
-                request({
-                    input: [
-                        {
-                            type: "reasoning",
-                            encrypted_content: "opaque-state",
-                        },
-                    ],
-                }),
-            ),
-        ).toThrow(/Encrypted or reusable response state/);
+    it("keeps gpt-5.6-terra recovery on Standard in native Responses", () => {
+        const input = request({
+            model: "openai/gpt-5.6-terra:openai",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct OpenAI target");
+        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
+            model: "gpt-5.6-terra",
+            service_tier: "default",
+            store: false,
+        });
+    });
+
+    it("accepts replayed encrypted reasoning but not stored item references", () => {
+        const parsed = CreateResponseRequestSchema.parse({
+            model: "qwen-large",
+            input: [
+                {
+                    type: "reasoning",
+                    summary: [],
+                    encrypted_content: "opaque-state",
+                },
+            ],
+            include: ["reasoning.encrypted_content"],
+            client_metadata: { session_id: "codex-session" },
+        });
+        expect(() => validateDirectResponsesRequest(parsed)).not.toThrow();
+        const target = resolveDirectResponsesTarget("qwen-large", parsed);
+        if (!target) throw new Error("expected direct target");
+        const body = buildDirectResponsesRequestBody(parsed, target);
+        expect(body).toMatchObject({
+            include: ["reasoning.encrypted_content"],
+            input: parsed.input,
+        });
+        expect(body).not.toHaveProperty("client_metadata");
 
         expect(() =>
             validateDirectResponsesRequest(
@@ -171,7 +394,22 @@ describe("direct Responses transport", () => {
                     input: [{ type: "item_reference", id: "item_123" }],
                 }),
             ),
-        ).toThrow(/Encrypted or reusable response state/);
+        ).toThrow(/Stored response items/);
+    });
+
+    it("keeps gpt-5.3-codex recovery on Standard in native Responses", () => {
+        const input = request({
+            model: "openai/gpt-5.3-codex:openai",
+            service_tier: "priority",
+        });
+        const target = resolveDirectResponsesTarget(input.model, input);
+        if (!target) throw new Error("expected direct OpenAI target");
+        expect(target.endpoint).toBe("https://api.openai.com/v1/responses");
+        expect(buildDirectResponsesRequestBody(input, target)).toMatchObject({
+            model: "gpt-5.3-codex",
+            service_tier: "default",
+            store: false,
+        });
     });
 
     it("resolves only explicit direct Responses targets", () => {
@@ -182,7 +420,11 @@ describe("direct Responses transport", () => {
                 model: "qwen/qwen3.7-plus",
                 defaults: expect.objectContaining({
                     max_output_tokens: 64000,
-                    provider: { sort: "price" },
+                    provider: {
+                        only: ["Alibaba"],
+                        ignore: ["alibaba/us-east-1"],
+                        allow_fallbacks: false,
+                    },
                 }),
             }),
         );
@@ -198,25 +440,28 @@ describe("direct Responses transport", () => {
         ["required", "required", "none"],
         ["function object", { type: "function", name: "lookup" }, "none"],
         ["auto", "auto", "high"],
-    ])("normalizes Qwen3.8 Max 0902 reasoning for %s tool choice", (_label, toolChoice, expectedEffort) => {
-        const directRequest = request({
-            model: "qwen/qwen3.8-max-0902",
-            reasoning: { effort: "high" },
-            tool_choice: toolChoice,
-        });
-        const target = resolveDirectResponsesTarget(
-            directRequest.model,
-            directRequest,
-        );
-        if (!target) throw new Error("expected direct target");
+    ])(
+        "normalizes Qwen3.8 Max 0902 reasoning for %s tool choice",
+        (_label, toolChoice, expectedEffort) => {
+            const directRequest = request({
+                model: "qwen/qwen3.8-max-0902",
+                reasoning: { effort: "high" },
+                tool_choice: toolChoice,
+            });
+            const target = resolveDirectResponsesTarget(
+                directRequest.model,
+                directRequest,
+            );
+            if (!target) throw new Error("expected direct target");
 
-        expect(
-            buildDirectResponsesRequestBody(directRequest, target),
-        ).toMatchObject({
-            reasoning: { effort: expectedEffort },
-            tool_choice: toolChoice,
-        });
-    });
+            expect(
+                buildDirectResponsesRequestBody(directRequest, target),
+            ).toMatchObject({
+                reasoning: { effort: expectedEffort },
+                tool_choice: toolChoice,
+            });
+        },
+    );
 
     it("passes Responses JSON directly with only target resolution and defaults", async () => {
         const body = {
@@ -242,7 +487,11 @@ describe("direct Responses transport", () => {
                     store: false,
                     max_output_tokens: 64000,
                     max_tool_calls: 4,
-                    provider: { sort: "price" },
+                    provider: {
+                        only: ["Alibaba"],
+                        ignore: ["alibaba/us-east-1"],
+                        allow_fallbacks: false,
+                    },
                     tools: [
                         {
                             type: "function",
@@ -438,41 +687,44 @@ it.each([
     ],
     [{ text: { format: { type: "json_object" } } }, "structured output"],
     [{ max_output_tokens: 16385 }, "16384 output tokens"],
-])("Scout capability errors use the Responses invalid-request envelope: %j", async (options, message) => {
-    const app = new Hono<Env>();
-    app.use("*", async (c, next) => {
-        c.set("model", {
-            requested: "llama-scout",
-            resolved: "meta/llama-4-scout",
-            definition: TEXT_SERVICES["meta/llama-4-scout"],
+])(
+    "Scout capability errors use the Responses invalid-request envelope: %j",
+    async (options, message) => {
+        const app = new Hono<Env>();
+        app.use("*", async (c, next) => {
+            c.set("model", {
+                requested: "llama-scout",
+                resolved: "meta/llama-4-scout",
+                definition: TEXT_SERVICES["meta/llama-4-scout"],
+            });
+            await next();
         });
-        await next();
-    });
-    app.post(
-        "/v1/responses",
-        validator("json", CreateResponseRequestSchema),
-        generateCreateResponse,
-    );
-    const response = await app.request(
-        "/v1/responses",
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model: "llama-scout",
-                input: "Hello",
-                safe: false,
-                ...options,
-            }),
-        },
-        env,
-    );
-    expect(response.status).toBe(400);
-    expect(await response.json()).toMatchObject({
-        error: {
-            type: "invalid_request_error",
-            code: "unsupported_parameter",
-            message: expect.stringContaining(message),
-        },
-    });
-});
+        app.post(
+            "/v1/responses",
+            validator("json", CreateResponseRequestSchema),
+            generateCreateResponse,
+        );
+        const response = await app.request(
+            "/v1/responses",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: "llama-scout",
+                    input: "Hello",
+                    safe: false,
+                    ...options,
+                }),
+            },
+            env,
+        );
+        expect(response.status).toBe(400);
+        expect(await response.json()).toMatchObject({
+            error: {
+                type: "invalid_request_error",
+                code: "unsupported_parameter",
+                message: expect.stringContaining(message),
+            },
+        });
+    },
+);

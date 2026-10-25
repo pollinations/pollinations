@@ -8,7 +8,8 @@ import {
 } from "../utils/coreUtils.js";
 
 // Permissions are enforced by the API: the read tools need `account:usage`, the
-// key tools `account:keys`. Its error message is returned unchanged.
+// key tools `account:keys`, the site tools `account:machines`. Its error
+// message is returned unchanged.
 async function callAccount(
     path,
     context,
@@ -40,6 +41,7 @@ async function getBalance(_params, context) {
         createTextContent(
             {
                 pollen: data.balance,
+                accountBalance: data.accountBalance,
                 note: "Pollen balance for the authenticated key. Key-scoped when the key has its own budget, otherwise account-wide.",
             },
             true,
@@ -50,7 +52,7 @@ async function getBalance(_params, context) {
 const getUsage = ({ daily, days, limit, model, key }, context) =>
     callAccount(daily ? "/account/usage/daily" : "/account/usage", context, {
         params: daily
-            ? { days }
+            ? { days, api_key_ids: key?.join(",") }
             : {
                   days,
                   limit,
@@ -75,6 +77,7 @@ const createKey = (
         models,
         budget,
         permissions,
+        questPollenOnly,
         redirectUri,
         earnings,
     },
@@ -89,6 +92,7 @@ const createKey = (
             allowedModels: models,
             pollenBudget: budget,
             accountPermissions: permissions,
+            questPollenOnly,
             redirectUris: redirectUri,
             earningsEnabled: earnings,
         },
@@ -98,6 +102,22 @@ const revokeKey = ({ id }, context) =>
     callAccount(`/account/keys/${encodeURIComponent(id)}`, context, {
         method: "DELETE",
     });
+
+const sitePath = (name) => `/account/sites/${encodeURIComponent(name)}`;
+
+const listSites = (_params, context) => callAccount("/account/sites", context);
+
+const deploySite = ({ name, files }, context) =>
+    callAccount(sitePath(name), context, { method: "PUT", body: { files } });
+
+const deleteSite = ({ name }, context) =>
+    callAccount(sitePath(name), context, { method: "DELETE" });
+
+const siteName = z
+    .string()
+    .describe(
+        "Site name: 3-32 lowercase letters, digits and hyphens, starting with a letter",
+    );
 
 export const accountTools = [
     [
@@ -112,6 +132,7 @@ export const accountTools = [
         "getUsage",
         "List recent requests with model, tokens, and cost (like `polli usage --history`), " +
             "or set daily=true for a per-day summary (`polli usage --daily`). " +
+            "A call to an agent is listed under the models the agent called, not under the agent. " +
             "Requires 'account:usage' permission.",
         {
             daily: z
@@ -138,9 +159,7 @@ export const accountTools = [
             key: z
                 .array(z.string())
                 .optional()
-                .describe(
-                    "Only these API key ids, from listKeys (history only)",
-                ),
+                .describe("Only these API key ids, from listKeys"),
         },
         getUsage,
     ],
@@ -153,9 +172,8 @@ export const accountTools = [
                 .number()
                 .int()
                 .min(1)
-                .max(90)
                 .optional()
-                .describe("Rolling window in days, max 90"),
+                .describe("Rolling window in days"),
         },
         getEarnings,
     ],
@@ -192,7 +210,9 @@ export const accountTools = [
             models: z
                 .array(z.string())
                 .optional()
-                .describe("Restrict the key to these model ids"),
+                .describe(
+                    "Restrict the key to these model categories (text, image, video, audio, 3d, embedding, realtime, decision) or model IDs; a model ID allows only that model",
+                ),
             budget: z
                 .number()
                 .min(0)
@@ -203,6 +223,12 @@ export const accountTools = [
                 .optional()
                 .describe(
                     'Account permissions, e.g. ["profile", "usage"]; "keys" lets the new key create keys',
+                ),
+            questPollenOnly: z
+                .boolean()
+                .optional()
+                .describe(
+                    "Never spend paid Pollen; requests stop when Quest Pollen runs out",
                 ),
             redirectUri: z
                 .array(z.string())
@@ -221,5 +247,44 @@ export const accountTools = [
             "Requires 'account:keys' permission.",
         { id: z.string().describe("Key id from listKeys") },
         revokeKey,
+    ],
+    [
+        "listSites",
+        "List the account's static sites at https://<name>.pollinations.app and the site limits (`polli sites list`). " +
+            "Requires 'account:machines' permission.",
+        {},
+        listSites,
+    ],
+    [
+        "deploySite",
+        "Publish a static site at https://<name>.pollinations.app, replacing what was there (`polli sites deploy`). " +
+            "Send every file inline; index.html is required, up to 5 MB per request. The first deploy claims the name. " +
+            "Requires 'account:machines' permission.",
+        {
+            name: siteName,
+            files: z
+                .array(
+                    z.object({
+                        file: z
+                            .string()
+                            .describe("Path, e.g. index.html or assets/app.js"),
+                        data: z.string().describe("File content"),
+                        encoding: z
+                            .enum(["utf-8", "base64"])
+                            .optional()
+                            .describe(
+                                "utf-8 (default) for text, base64 for images and other binary files",
+                            ),
+                    }),
+                )
+                .min(1),
+        },
+        deploySite,
+    ],
+    [
+        "deleteSite",
+        "Take a site offline and free its name (`polli sites delete`). Requires 'account:machines' permission.",
+        { name: siteName },
+        deleteSite,
     ],
 ];

@@ -21,7 +21,7 @@ import {
 } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
 import { formatPollen, WalletBalanceCard } from "@pollinations/ui/wallet";
-import { useLoaderData } from "@tanstack/react-router";
+import { useLoaderData, useRouter } from "@tanstack/react-router";
 import {
     type ComponentType,
     type FC,
@@ -30,7 +30,7 @@ import {
     useRef,
     useState,
 } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient, apiClient } from "../../api.ts";
 import type {
     QuestCatalogResponse,
     QuestCheckResult,
@@ -43,6 +43,7 @@ import {
 } from "../layout/dashboard-loading.tsx";
 import { QUEST_STATUS_UPDATED_EVENT } from "./quest-nav-status.ts";
 import { QuestStandings } from "./quest-standings.tsx";
+import { RedeemCode } from "./redeem-code.tsx";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
 type QuestProgress = QuestCheckResult["progress"][number];
@@ -205,7 +206,7 @@ async function loadQuestData(): Promise<QuestData> {
     const [catalogResponse, rewardsResponse, standingsResponse] =
         await Promise.all([
             apiClient.quests.catalog.$get(),
-            apiClient.quests.rewards.$get(),
+            accountClient.quests.rewards.$get(),
             apiClient.quests.standings.$get(),
         ]);
     if (!catalogResponse.ok) {
@@ -444,8 +445,10 @@ export function QuestRow({
     const claimed = card.status === "claimed";
     const claimableRewardId =
         card.status === "claimable" ? card.rewardId : undefined;
+    // A claimed quest no longer needs its progress bar — the reward is banked,
+    // so the "N / N" count is done and just adds noise.
     const progress =
-        !card.comingSoon && card.progress ? (
+        !card.comingSoon && !claimed && card.progress ? (
             <QuestProgressBar progress={card.progress} />
         ) : null;
     const rewardAmount = earned
@@ -603,6 +606,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
 };
 
 function QuestOverviewContent({ userId }: { userId: string | null }) {
+    const router = useRouter();
     const [claimError, setClaimError] = useState<string | null>(null);
     const [state, setState] = useState<FetchState>({
         ...INITIAL_STATE,
@@ -662,7 +666,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             // warm) or any failure leaves the already-loaded quests intact and
             // does NOT surface a red error — the cached data is still valid.
             try {
-                const response = await apiClient.quests.check.$post();
+                const response = await accountClient.quests.check.$post();
                 if (cancelled) return;
                 if (response.ok) {
                     const checkResult =
@@ -700,7 +704,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
         }));
 
         try {
-            const response = await apiClient.quests.rewards[
+            const response = await accountClient.quests.rewards[
                 ":rewardId"
             ].claim.$post({
                 param: { rewardId },
@@ -708,6 +712,9 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             if (!response.ok) {
                 throw new Error("Couldn’t claim the reward. Please try again.");
             }
+            void router.invalidate({
+                filter: (match) => match.routeId === "/_dashboard",
+            });
             const questData = await loadQuestData();
             setState((current) => ({
                 ...current,
@@ -730,6 +737,15 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                     : "Couldn’t claim the reward. Please try again.",
             );
         }
+    }
+
+    async function refreshRewards(): Promise<void> {
+        void router.invalidate({
+            filter: (match) => match.routeId === "/_dashboard",
+        });
+        const questData = await loadQuestData();
+        setState((current) => ({ ...current, ...questData }));
+        window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
     }
 
     // A reward's questId IS the catalog id it earned (one reward == one quest),
@@ -962,15 +978,15 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                     <p className="flex items-start gap-1.5">
                         <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            Quests can be retroactive — if you qualify under a
-                            quest's rules, just claim the reward.
+                            Past activity may count. If you meet a quest's
+                            requirements, you can claim its reward.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">
                         <BeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            Early days — quests are in alpha, with more coming
-                            and rewards still evolving.
+                            Quests are in alpha. Availability and rewards may
+                            change.
                         </span>
                     </p>
                 </div>
@@ -983,35 +999,6 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                 />
             )}
 
-            {bonusRewardCards.length > 0 && (
-                <Section
-                    title="Bonus rewards"
-                    action={
-                        <span className="text-xs font-medium tabular-nums text-theme-text-strong">
-                            {
-                                bonusRewardCards.filter(
-                                    (card) => card.status === "claimed",
-                                ).length
-                            }{" "}
-                            / {bonusRewardCards.length}
-                        </span>
-                    }
-                >
-                    <div className="flex flex-col gap-2">
-                        {bonusRewardCards.map((card) => (
-                            <QuestRow
-                                key={card.key}
-                                card={card}
-                                icon={SparkleIcon}
-                                claiming={state.claimingRewardIds.includes(
-                                    card.rewardId ?? "",
-                                )}
-                                onClaim={handleClaimReward}
-                            />
-                        ))}
-                    </div>
-                </Section>
-            )}
             {CATEGORIES.map((category) => {
                 const cards = sections[category.key];
                 if (state.loading || cards.length === 0) return null;
@@ -1049,6 +1036,39 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                     </Section>
                 );
             })}
+            {bonusRewardCards.length > 0 && (
+                <Section
+                    title="Bonus rewards"
+                    action={
+                        <span className="text-xs font-medium tabular-nums text-theme-text-strong">
+                            {
+                                bonusRewardCards.filter(
+                                    (card) => card.status === "claimed",
+                                ).length
+                            }{" "}
+                            / {bonusRewardCards.length}
+                        </span>
+                    }
+                >
+                    <div className="flex flex-col gap-2">
+                        {bonusRewardCards.map((card) => (
+                            <QuestRow
+                                key={card.key}
+                                card={card}
+                                icon={SparkleIcon}
+                                claiming={state.claimingRewardIds.includes(
+                                    card.rewardId ?? "",
+                                )}
+                                onClaim={handleClaimReward}
+                            />
+                        ))}
+                    </div>
+                </Section>
+            )}
+            {/* Mounts after the quests load, so a `?code=` link scrolls to its final spot. */}
+            {!state.anonymous && !state.loading && (
+                <RedeemCode onRedeemed={() => void refreshRewards()} />
+            )}
         </>
     );
 }

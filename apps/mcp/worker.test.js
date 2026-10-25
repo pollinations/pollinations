@@ -10,6 +10,8 @@ const TOKEN = "sk_test_request_scoped";
 const EXPECTED_TOOLS = [
     "createEmbeddings",
     "createKey",
+    "deleteSite",
+    "deploySite",
     "generate3D",
     "generateAudio",
     "generateImage",
@@ -22,6 +24,7 @@ const EXPECTED_TOOLS = [
     "listKeys",
     "listModels",
     "listQuests",
+    "listSites",
     "revokeKey",
     "transcribeAudio",
 ];
@@ -314,10 +317,11 @@ test("proxies discovery and reuses audio, video, and 3D links without uploads", 
         });
 
         if (url.endsWith("/audio/models?community=false")) {
-            return Response.json([
-                { name: "speech-test" },
-                { name: "audio-agent", agent: true },
-            ]);
+            return Response.json([{ name: "speech-test" }]);
+        }
+        // Gen applies the agent filter; the MCP only forwards it.
+        if (url.endsWith("/audio/models?community=false&agent=true")) {
+            return Response.json([{ name: "audio-agent", agent: true }]);
         }
         if (url.endsWith("/video/models")) {
             return Response.json([{ name: "veo" }]);

@@ -33,9 +33,6 @@ const DEEPINFRA_IMAGE_MODELS = {
         "black-forest-labs/FLUX-1-schnell",
 } as const;
 
-// p-image-edit / p-video accept up to this many reference images.
-const MAX_EDIT_IMAGES = 5;
-
 // Supported dimensions for prunaai/p-image (custom aspect_ratio mode).
 const SUPPORTED_DIMENSIONS = [
     [1024, 1024],
@@ -57,7 +54,6 @@ const PVIDEO_ASPECT_RATIOS = [
     "2:3",
     "1:1",
 ] as const;
-type PVideoAspectRatio = (typeof PVIDEO_ASPECT_RATIOS)[number];
 
 interface PImageInput {
     prompt: string;
@@ -86,7 +82,7 @@ interface PVideoInput {
     resolution: "720p" | "1080p";
     duration: number;
     image?: string;
-    aspect_ratio?: PVideoAspectRatio;
+    aspect_ratio?: string;
     fps?: 24 | 48;
     seed?: number;
 }
@@ -104,6 +100,7 @@ interface DeepInfraImageOutput {
 async function generateDeepInfraImage(
     actualModel: keyof typeof DEEPINFRA_IMAGE_MODELS,
     input: PImageInput | PImageEditInput | FluxSchnellInput,
+    billReportedCost = false,
 ): Promise<ImageGenerationResult> {
     const displayName =
         actualModel === "black-forest-labs/flux.1-schnell:deepinfra"
@@ -144,9 +141,10 @@ async function generateDeepInfraImage(
         });
 
     const buffer = base64ToBuffer(image);
+    const providerCost = result.inference_status?.cost;
     logOps(`Generated ${actualModel}:`, {
         bytes: buffer.length,
-        providerCost: result.inference_status?.cost,
+        providerCost,
         runtimeMs: result.inference_status?.runtime_ms,
     });
     return {
@@ -157,6 +155,12 @@ async function generateDeepInfraImage(
                 completionImageTokens: 1,
                 totalTokenCount: 1,
             },
+            ...(billReportedCost &&
+                typeof providerCost === "number" &&
+                Number.isFinite(providerCost) &&
+                providerCost >= 0 && {
+                    providerBilling: { units: providerCost, unitCost: 1 },
+                }),
         },
     };
 }
@@ -173,9 +177,11 @@ export async function callFluxSchnellDeepInfraAPI(
         num_images: 1,
     };
     if (safeParams.seed !== undefined) input.seed = safeParams.seed;
+    // DeepInfra prices FLUX.1 Schnell by image area; record its charge.
     return generateDeepInfraImage(
         "black-forest-labs/flux.1-schnell:deepinfra",
         input,
+        true,
     );
 }
 
@@ -228,10 +234,11 @@ async function downloadOutput(
 // p-image: Text-to-Image
 // =============================================================================
 
-export async function callPrunaImageAPI(
+/** p-image input shared by the DeepInfra primary and the Replicate fallback. */
+export function buildPImageInput(
     prompt: string,
     safeParams: ImageParams,
-): Promise<ImageGenerationResult> {
+): PImageInput {
     const dims = closestByRatio(
         safeParams.width || 1024,
         safeParams.height || 1024,
@@ -245,6 +252,14 @@ export async function callPrunaImageAPI(
         height: dims.height,
     };
     if (safeParams.seed !== undefined) input.seed = safeParams.seed;
+    return input;
+}
+
+export async function callPrunaImageAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    const input = buildPImageInput(prompt, safeParams);
 
     logOps("p-image input:", { ...input, prompt: prompt.slice(0, 80) });
 
@@ -268,11 +283,6 @@ export async function callPrunaImageEditAPI(
         throw UpstreamError.fromProvider(400, {
             message:
                 "p-image-edit requires at least one input image. Provide one via the image parameter.",
-        });
-    }
-    if (images.length > MAX_EDIT_IMAGES) {
-        throw UpstreamError.fromProvider(400, {
-            message: `p-image-edit supports at most ${MAX_EDIT_IMAGES} input images (received ${images.length}).`,
         });
     }
 
@@ -314,12 +324,15 @@ async function generatePrunaVideo(
         // ignored by the upstream in this mode.
         input.image = await toDataUri(images[0]);
     } else {
-        // Text-to-video: pick the closest supported aspect ratio.
-        input.aspect_ratio = closestRatioLogSpace(
-            safeParams.width || 1024,
-            safeParams.height || 1024,
-            PVIDEO_ASPECT_RATIOS,
-        );
+        // Text-to-video: the requested aspect ratio as-is (Replicate rejects
+        // unsupported ones), else the closest supported one to width/height.
+        input.aspect_ratio =
+            safeParams.aspectRatio ??
+            closestRatioLogSpace(
+                safeParams.width || 1024,
+                safeParams.height || 1024,
+                PVIDEO_ASPECT_RATIOS,
+            );
     }
 
     if (safeParams.fps) input.fps = safeParams.fps >= 36 ? 48 : 24;

@@ -1,6 +1,5 @@
 import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
@@ -23,6 +22,13 @@ import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { createPromptAgentResponsesClient } from "./agents/client.ts";
 import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
+import {
+    publicChatChoices,
+    publicChatStream,
+    publicUsage,
+    withoutPayg,
+} from "./chat/public.ts";
+import { completionToChatStream } from "./chat/stream.ts";
 import {
     requireChatCompletionUsage,
     requireChatStreamUsage,
@@ -50,29 +56,6 @@ type TextContext = Context<Env>;
 
 function generatePollinationsId(): string {
     return `pllns_${crypto.randomUUID().replaceAll("-", "")}`;
-}
-
-function prepareRequestParameters(
-    requestParams: RequestData,
-    modelDefinition: ModelDefinition,
-): RequestData {
-    const isAudioModel =
-        modelDefinition.outputModalities?.includes("audio") ?? false;
-    if (!isAudioModel) return requestParams;
-
-    const voice = requestParams.voice || requestParams.audio?.voice || "alloy";
-    const audioFormat = requestParams.stream ? "pcm16" : "mp3";
-
-    return {
-        ...requestParams,
-        modalities: requestParams.modalities || ["text", "audio"],
-        audio: requestParams.audio
-            ? {
-                  ...requestParams.audio,
-                  format: requestParams.audio.format || audioFormat,
-              }
-            : { voice, format: audioFormat },
-    };
 }
 
 /**
@@ -135,6 +118,30 @@ async function gatewayContext(
     };
 }
 
+/** One Chat provider call for one candidate, shared by Chat and adapted Responses. */
+export async function generateChatAttempt(
+    c: TextContext,
+    requestData: RequestData,
+    candidate: FallbackCandidate,
+): Promise<ChatCompletion> {
+    const portkey = c.env.PORTKEY;
+    // An upstream without SSE is asked for JSON, then its answer is replayed
+    // as a stream.
+    const buffered =
+        requestData.stream === true &&
+        candidate.definition?.supportsStreaming === false;
+    const attemptData = buffered
+        ? { ...requestData, stream: false }
+        : requestData;
+    const result = await generateTextPortkey(
+        attemptData.messages,
+        await gatewayContext(c, attemptData, candidate),
+        portkey ? (input, init) => portkey.fetch(input, init) : undefined,
+    );
+    if (!attemptData.stream) requireChatCompletionUsage(result);
+    return buffered ? completionToChatStream(result) : result;
+}
+
 function withGatewayContext(c: TextContext, requestData: RequestData) {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
 
@@ -180,29 +187,25 @@ function usageHeaders(
     return headers;
 }
 
-function publicCompletionUsage(
-    usage: ChatCompletion["usage"],
-): ChatCompletion["usage"] {
-    if (!usage || (!("cost" in usage) && !("search_context_size" in usage))) {
-        return usage;
-    }
-
-    const {
-        cost: _cost,
-        search_context_size: _searchContextSize,
-        ...publicUsage
-    } = usage;
-    return publicUsage;
-}
-
-function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
-    const usage = publicCompletionUsage(completion.usage);
-    if (usage === completion.usage) return completion;
-
-    const publicCompletion = {
+function publicChatCompletion(
+    completion: ChatCompletion,
+    isVercel: boolean,
+): ChatCompletion {
+    const usage = publicUsage(completion.usage);
+    // InferencePort also attaches its `payg_*` ledger to the top level of
+    // non-streaming responses; the stream path strips it in public.ts.
+    const hasPaygTopLevel = Object.keys(completion).some((key) =>
+        key.startsWith("payg_"),
+    );
+    if (!isVercel && !hasPaygTopLevel && usage === completion.usage)
+        return completion;
+    const publicCompletion = withoutPayg({
         ...completion,
         usage,
-    };
+        choices: isVercel
+            ? publicChatChoices(completion.choices)
+            : completion.choices,
+    });
     if (completion.fallbackTarget !== undefined) {
         Object.defineProperty(publicCompletion, "fallbackTarget", {
             value: completion.fallbackTarget,
@@ -348,7 +351,6 @@ async function generateTextResponse(
         );
         if (capabilityError)
             throw new UpstreamError(400, { message: capabilityError });
-        const portkey = c.env.PORTKEY;
         const candidates = fallbackCandidates(c.var.model)
             .map((candidate, originalIndex) => ({
                 ...candidate,
@@ -364,19 +366,7 @@ async function generateTextResponse(
             );
         const { result: completion, candidate } = await withModelFallback(
             candidates,
-            async (attempt) => {
-                const result = await generateTextPortkey(
-                    requestData.messages,
-                    await gatewayContext(c, requestData, attempt),
-                    portkey
-                        ? (input, init) => portkey.fetch(input, init)
-                        : undefined,
-                );
-                if (!requestData.stream) {
-                    requireChatCompletionUsage(result);
-                }
-                return result;
-            },
+            (attempt) => generateChatAttempt(c, requestData, attempt),
             c.var.track?.attempts,
             (attempt) => enforceModelRateLimit(c, attempt),
         );
@@ -390,6 +380,7 @@ async function generateTextResponse(
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.
         const servedModelId = candidate.id || undefined;
+        const isVercel = candidate.definition?.provider === "vercel";
         if (requestData.stream) {
             if (!completion.responseStream) {
                 return sendTextStreamResponse(completion, servedModelId);
@@ -398,7 +389,7 @@ async function generateTextResponse(
             const [clientBody, trackingBody] = requireChatStreamUsage(
                 completion.responseStream,
             ).tee();
-            completion.responseStream = clientBody;
+            completion.responseStream = publicChatStream(clientBody);
             const response = sendTextStreamResponse(completion, servedModelId);
             c.var.track?.overrideResponseTracking(
                 new Response(trackingBody, { headers: response.headers }),
@@ -408,7 +399,7 @@ async function generateTextResponse(
         // Provider-reported cost is read post-response in track (clamp-and-alert
         // in the registry) — malformed/absent cost never fails the request.
         const trackingResponse = sendOpenAIResponse(completion, servedModelId);
-        const publicCompletion = publicChatCompletion(completion);
+        const publicCompletion = publicChatCompletion(completion, isVercel);
         if (contentResponse) {
             c.var.track?.overrideResponseTracking(trackingResponse.clone());
             return sendTextContentResponse(
@@ -435,11 +426,7 @@ export async function handleTextContentLocal(
     c: TextContext,
     body: CreateChatCompletionRequest,
 ): Promise<Response> {
-    const requestData = prepareRequestParameters(
-        getChatRequestData(body),
-        c.var.model.definition,
-    );
-    return generateTextResponse(c, requestData, true);
+    return generateTextResponse(c, getChatRequestData(body), true);
 }
 
 export async function handleSimpleTextLocal(
@@ -448,9 +435,9 @@ export async function handleSimpleTextLocal(
     model: string,
     query: GenerateTextRequestQueryParams,
 ): Promise<Response> {
-    const requestData = prepareRequestParameters(
+    return generateTextResponse(
+        c,
         getSimpleTextRequestData(prompt, model, query),
-        c.var.model.definition,
+        true,
     );
-    return generateTextResponse(c, requestData, true);
 }

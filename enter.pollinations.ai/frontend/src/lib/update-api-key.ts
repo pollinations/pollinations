@@ -1,4 +1,4 @@
-import { apiClient } from "../api.ts";
+import { accountClient } from "../api.ts";
 import { readError } from "../components/community-endpoints/types.ts";
 import type { ApiKeyUpdateParams } from "../components/keys/types.ts";
 
@@ -7,7 +7,7 @@ export async function updateApiKey(
     id: string,
     updates: ApiKeyUpdateParams,
 ): Promise<void> {
-    const response = await apiClient["api-keys"][":id"].update.$post({
+    const response = await accountClient.keys[":id"].$patch({
         param: { id },
         json: {
             ...updates,

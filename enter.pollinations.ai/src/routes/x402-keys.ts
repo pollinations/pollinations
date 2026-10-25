@@ -1,6 +1,6 @@
 import { isUserBanned } from "@shared/auth/ban.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
-import { getPollenPackByKey, POLLEN_PACKS } from "@shared/pollen-packs.ts";
+import { POLLEN_PACKS } from "@shared/pollen-packs.ts";
 import { weftPaymentMiddlewareHono } from "@weftlabs/sdk/facilitator/middleware";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { eq } from "drizzle-orm";
@@ -15,6 +15,7 @@ import {
     paymentId,
     paymentIdForPayload,
     preparePurchase,
+    purchaseAmountUsd,
 } from "../services/x402-key-purchases.ts";
 
 function paymentSignature(c: {
@@ -28,9 +29,9 @@ export const x402KeysRoutes = new Hono<Env>()
         "/",
         describeRoute({
             tags: ["👤 Account"],
-            summary: "List x402 prepaid key packs",
+            summary: "Choose an x402 prepaid API key amount",
             description:
-                "Buy a new secret API key without a Pollinations login. POST to a pack URL to receive an x402 payment challenge.",
+                "Buy a new secret API key without a Pollinations login. GET or POST to /api/x402/keys/0.50 for 0.50 Pollen, or use one of the existing pack URLs below. Choose any amount from $0.01 to $10,000 in cents.",
         }),
         (c) => {
             c.header("Cache-Control", "public, max-age=300");
@@ -48,13 +49,14 @@ export const x402KeysRoutes = new Hono<Env>()
             });
         },
     )
-    .post(
+    .on(
+        ["GET", "POST"],
         "/:packKey",
         describeRoute({
             tags: ["👤 Account"],
             summary: "Buy a prepaid API key with x402",
             description:
-                "Returns 402 with exact USDC payment terms; retry with PAYMENT-SIGNATURE. A successful payment returns a budgeted sk_ key. Replaying the same settled payment returns the same key, not more credits.",
+                "GET or POST to /api/x402/keys/{amountUsd} to pay that amount in USDC and receive the same amount of Pollen in a new secret API key. Existing pack keys also work. Returns 402 with exact payment terms; retry with PAYMENT-SIGNATURE. Replaying a settled payment returns the same key, not more credits.",
             responses: {
                 200: { description: "Prepaid API key" },
                 402: { description: "x402 payment required" },
@@ -63,10 +65,11 @@ export const x402KeysRoutes = new Hono<Env>()
         }),
         async (c) => {
             c.header("Cache-Control", "private, no-store");
-            const pack = getPollenPackByKey(c.req.param("packKey"));
-            if (!pack)
+            const purchaseKey = c.req.param("packKey");
+            const amountUsd = purchaseAmountUsd(purchaseKey);
+            if (!amountUsd)
                 throw new HTTPException(404, {
-                    message: "Unknown Pollen pack",
+                    message: "Invalid prepaid amount or Pollen pack",
                 });
 
             const { WEFT_SELLER_API_KEY, WEFT_PAY_TO, WEFT_NETWORK } = c.env;
@@ -110,17 +113,28 @@ export const x402KeysRoutes = new Hono<Env>()
                         c.executionCtx,
                         id,
                         holdingUserId,
-                        pack.packKey,
+                        purchaseKey,
                     );
                     return c.json({
                         id: issued.id,
                         key: issued.key,
-                        pollen: pack.amountUsd,
+                        pollen: amountUsd,
                     });
                 }
             }
 
             let issued: { id: string; key: string } | undefined;
+            const paymentRoute = {
+                accepts: [
+                    {
+                        scheme: "exact",
+                        network: WEFT_NETWORK as `${string}:${string}`,
+                        payTo: WEFT_PAY_TO,
+                        price: `$${amountUsd}`,
+                    },
+                ],
+                description: `${amountUsd} prepaid Pollinations Pollen in a new API key`,
+            };
             const payment = (
                 weftPaymentMiddlewareHono as unknown as (
                     routes: Parameters<typeof weftPaymentMiddlewareHono>[0],
@@ -128,17 +142,8 @@ export const x402KeysRoutes = new Hono<Env>()
                 ) => MiddlewareHandler<Env>
             )(
                 {
-                    "POST *": {
-                        accepts: [
-                            {
-                                scheme: "exact",
-                                network: WEFT_NETWORK as `${string}:${string}`,
-                                payTo: WEFT_PAY_TO,
-                                price: `$${pack.amountUsd}`,
-                            },
-                        ],
-                        description: `${pack.amountUsd} prepaid Pollinations Pollen in a new API key`,
-                    },
+                    "GET *": paymentRoute,
+                    "POST *": paymentRoute,
                 },
                 {
                     apiKey: WEFT_SELLER_API_KEY,
@@ -164,7 +169,7 @@ export const x402KeysRoutes = new Hono<Env>()
                             !pending ||
                             pending.credited_at !== null ||
                             pending.user_id !== holdingUserId ||
-                            pending.pack_key !== pack.packKey
+                            pending.pack_key !== purchaseKey
                         )
                             return undefined;
                         return candidate;
@@ -179,12 +184,12 @@ export const x402KeysRoutes = new Hono<Env>()
                     c.executionCtx,
                     id,
                     holdingUserId,
-                    pack.packKey,
+                    purchaseKey,
                 );
                 c.res = c.json({
                     id: issued.id,
                     key: issued.key,
-                    pollen: pack.amountUsd,
+                    pollen: amountUsd,
                 });
             });
             if (response) c.res = response;

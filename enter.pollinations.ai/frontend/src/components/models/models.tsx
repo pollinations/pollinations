@@ -4,10 +4,12 @@ import {
     BotIcon,
     ClockIcon,
     EditableCombobox,
+    ImageIcon,
     InlineLink,
     McpIcon,
     Section,
     SparklesIcon,
+    SpeakerIcon,
     TabButton,
     TokensIcon,
     UsageIcon,
@@ -65,6 +67,7 @@ import { useModelStats } from "./use-model-stats.ts";
 const MODEL_SECTION_ORDER: SectionType[] = [
     "all",
     "text",
+    "decision",
     "image",
     "video",
     "3d",
@@ -106,6 +109,7 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     audio: "audio",
     realtime: "realtime",
     text: "text",
+    decision: "decision",
     embedding: "embedding",
     agent: "agent",
     mcp: "MCP server",
@@ -122,6 +126,7 @@ function categorizeModels(
         audio: [],
         realtime: [],
         text: [],
+        decision: [],
         embedding: [],
         agent: [],
         mcp: [],
@@ -264,7 +269,13 @@ export const Models: FC = () => {
             options = options.filter((option) => !isSourceSuggestion(option));
         }
         return draftFilter
-            ? options.map(getModelQueryDraftSuggestionValue)
+            ? options.map((option) =>
+                  getModelQueryDraftSuggestionValue(
+                      option,
+                      visibleSearch,
+                      draftFilter.value,
+                  ),
+              )
             : options;
     }, [
         activeTabModels,
@@ -423,6 +434,10 @@ export const Models: FC = () => {
         if (draftFilter) {
             removeDraftFilter();
         } else if (lastFilter) {
+            // Auto-repeat is the tail of a held key that just cleared the
+            // text. It must not arm removal, or clearing a search would
+            // select the last filter.
+            if (event.repeat) return;
             setSearchOpen(false);
             if (pendingRemovalIndex === lastFilter.index) {
                 removeFilter(lastFilter);
@@ -678,6 +693,7 @@ export const Models: FC = () => {
                                     audioModels={sectionModels.audio}
                                     realtimeModels={sectionModels.realtime}
                                     textModels={sectionModels.text}
+                                    decisionModels={sectionModels.decision}
                                     embeddingModels={sectionModels.embedding}
                                     agentModels={sectionModels.agent}
                                     activeTab={activeTab}
@@ -692,38 +708,52 @@ export const Models: FC = () => {
                             <p className="flex items-start gap-1.5">
                                 <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                                 <span>
-                                    <strong>agent pricing</strong> — listed
-                                    rates are for the agent&apos;s base model
-                                    running its saved instructions.
+                                    <strong>agent pricing:</strong> listed rates
+                                    are for the agent&apos;s base model running
+                                    its saved instructions.
                                 </span>
                             </p>
                         )}
                         <p className="flex items-start gap-1.5">
                             <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>/gen</strong> — flat rate per image or
+                                <strong>/gen:</strong> flat rate per image or
                                 audio generation.
                             </span>
                         </p>
                         <p className="flex items-start gap-1.5">
                             <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>/K · /M</strong> — rates per thousand or
+                                <strong>/K · /M:</strong> rates per thousand or
                                 million tokens.
                             </span>
                         </p>
                         <p className="flex items-start gap-1.5">
                             <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>/sec · /hr</strong> — per second or hour
-                                of video/audio; TTS is estimated from text
-                                length.
+                                <strong>/sec · /hr:</strong> per second of video
+                                or audio; sub-cent audio rates use per hour.
+                            </span>
+                        </p>
+                        <p className="flex items-start gap-1.5">
+                            <ImageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong>/MP · /image:</strong> per megapixel, or
+                                per reference image.
+                            </span>
+                        </p>
+                        <p className="flex items-start gap-1.5">
+                            <SpeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong>/K chars · /K bytes:</strong> speech
+                                priced per thousand characters or UTF-8 bytes of
+                                input text.
                             </span>
                         </p>
                         <p className="flex items-start gap-1.5">
                             <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>requests /$1</strong> — estimated from
+                                <strong>requests /$1:</strong> estimated from
                                 the median observed cost over the last 7 days.
                             </span>
                         </p>

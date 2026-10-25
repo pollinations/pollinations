@@ -8,6 +8,7 @@ export type UserStripeBillingRow = {
     stripeCustomerId: string | null;
     autoTopUpEnabled: boolean;
     autoTopUpAmountUsd: number | null;
+    lastPackPollen: number | null;
 };
 
 export type PendingAutoTopUpAttempt = {
@@ -47,6 +48,8 @@ export type BillingOverview = {
         packAmountUsd: number;
         lastIssue: AutoTopUpIssue | null;
     };
+    /** Pollen of the buyer's last pack (checkout or auto top-up); null before the first. */
+    lastPackPollen: number | null;
     /** Every method Stripe saved for the buyer, default first. */
     paymentMethods: SavedPaymentMethod[];
     billingDetails: {

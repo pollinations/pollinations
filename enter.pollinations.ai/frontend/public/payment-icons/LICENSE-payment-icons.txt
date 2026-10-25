@@ -1,3 +1,7 @@
+crypto.svg is Stripe's Stablecoins and Crypto payment-method icon, sourced
+from the Stripe Dashboard payment-method settings (https://dashboard.stripe.com/settings/payment_methods).
+Copyright Stripe, Inc. It is not covered by the Shopify MIT License below.
+
 upi.svg, pix.svg, alipay.svg, blik.svg, ideal-wero.svg, bancontact.svg, mb-way.svg,
 satispay.svg, kakao-pay.svg, naver-pay.svg, eps.svg, p24.svg, mobilepay.svg,
 multibanco.svg, payco.svg and samsung-pay.svg are from

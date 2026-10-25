@@ -2,14 +2,15 @@ import chalk from "chalk";
 import { Command } from "commander";
 import { gen, genText, requireKey } from "../lib/api.js";
 import { setKeyOverride } from "../lib/config.js";
+import { numberOption } from "../lib/number-option.js";
 import {
     ExitSignal,
+    fail,
     getOutputMode,
     printError,
     printResult,
     printTable,
 } from "../lib/output.js";
-import { parseDaysWindow } from "./earnings.js";
 
 interface UsageRecord {
     timestamp: string;
@@ -19,6 +20,7 @@ interface UsageRecord {
     api_key_id: string | null;
     input_text_tokens?: number | null;
     input_cached_tokens?: number | null;
+    input_cache_write_tokens?: number | null;
     input_audio_tokens?: number | null;
     input_image_tokens?: number | null;
     output_text_tokens?: number | null;
@@ -51,6 +53,7 @@ interface DailyUsageResponse {
 
 interface BalanceResponse {
     balance: number;
+    accountBalance?: { total: number };
 }
 
 /** Minimal shape of a key as returned by /account/keys. */
@@ -95,10 +98,11 @@ export function resolveKeyIds(
     });
 }
 
-export function tokensIn(r: UsageRecord): number {
+export function tokensIn(r: Partial<UsageRecord>): number {
     return (
         (r.input_text_tokens ?? 0) +
         (r.input_cached_tokens ?? 0) +
+        (r.input_cache_write_tokens ?? 0) +
         (r.input_audio_tokens ?? 0) +
         (r.input_image_tokens ?? 0)
     );
@@ -120,7 +124,7 @@ export function filterDailyRows(
     return out;
 }
 
-export function tokensOut(r: UsageRecord): number {
+export function tokensOut(r: Partial<UsageRecord>): number {
     return (
         (r.output_text_tokens ?? 0) +
         (r.output_reasoning_tokens ?? 0) +
@@ -191,7 +195,7 @@ export const usageCommand = new Command("usage")
         collect,
         [] as string[],
     )
-    .option("--days <n>", "Rolling window in days, max 90")
+    .option("--days <n>", "Rolling window in days (--daily defaults to 7)")
     .option("--csv", "Print the raw CSV export")
     .addHelpText(
         "after",
@@ -199,7 +203,7 @@ export const usageCommand = new Command("usage")
             '\nKey filter:\n  --key <name-or-id>   Filter by API key name or id (repeatable, resolves\n                       names via /account/keys). Placed after "usage" it filters;\n                       before "usage" it stays the global auth override.',
         ),
     )
-    .action(async (opts) => {
+    .action(async (opts, command: Command) => {
         // Fix up the auth override before requireKey(): commander routes a
         // post-subcommand `--key` into the global option (and the preAction
         // hook), so restore the intended auth key here.
@@ -241,31 +245,34 @@ export const usageCommand = new Command("usage")
                 const data = await gen<BalanceResponse>("/account/balance", {
                     apiKey: key,
                 });
+                // `balance` is a budgeted key's remaining budget, not the
+                // wallet; the wallet is in `accountBalance` (needs
+                // account:usage). Same rule as `polli auth status`.
+                const wallet = data.accountBalance?.total;
+                const keyBudget =
+                    data.balance !== wallet ? data.balance : undefined;
                 if (getOutputMode() !== "human") {
-                    printResult({ pollen: data.balance });
+                    printResult({
+                        pollen: wallet ?? "unknown",
+                        key_budget: keyBudget,
+                    });
                     return;
                 }
-                const bal = data.balance;
-                let color = chalk.green;
-                if (bal <= 0) color = chalk.red;
-                else if (bal < 1) color = chalk.yellow;
-                printResult({ pollen: color(String(bal)) });
+                const colorize = (bal?: number) => {
+                    if (bal === undefined) return undefined;
+                    let color = chalk.green;
+                    if (bal <= 0) color = chalk.red;
+                    else if (bal < 1) color = chalk.yellow;
+                    return color(String(bal));
+                };
+                printResult({
+                    pollen: colorize(wallet) ?? "unknown",
+                    key_budget: colorize(keyBudget),
+                });
                 return;
             } catch (err) {
                 printError(
                     `Failed to fetch balance: ${err instanceof Error ? err.message : "unknown"}`,
-                );
-                throw new ExitSignal(1);
-            }
-        }
-
-        let days: number | undefined;
-        if (opts.days !== undefined) {
-            try {
-                days = parseDaysWindow(opts.days);
-            } catch (err) {
-                printError(
-                    err instanceof Error ? err.message : "Invalid --days value",
                 );
                 throw new ExitSignal(1);
             }
@@ -295,7 +302,10 @@ export const usageCommand = new Command("usage")
         }
 
         const params = new URLSearchParams();
-        if (days !== undefined) params.set("days", String(days));
+        // The daily endpoint's 90-day default times out on heavy accounts
+        // (#16560), so --daily asks for a week unless --days is given.
+        const days = opts.days ?? (opts.daily ? "7" : undefined);
+        if (days !== undefined) params.set("days", days);
 
         try {
             if (opts.daily) {
@@ -316,7 +326,18 @@ export const usageCommand = new Command("usage")
                 const data = await gen<DailyUsageResponse>(path, {
                     apiKey: key,
                 });
-                const rows = filterDailyRows(data.usage, keyIds, models);
+                let rows = filterDailyRows(data.usage, keyIds, models);
+                // --daily prints every row unless --limit is passed (#16947).
+                if (command.getOptionValueSource("limit") === "cli")
+                    rows = rows.slice(
+                        0,
+                        numberOption("--limit", opts.limit, 1, 100_000, true),
+                    );
+                // JSON keeps the API records: numeric cost_usd, no rounding.
+                if (getOutputMode() !== "human") {
+                    printResult(rows);
+                    return;
+                }
                 printTable(
                     rows.map((r) => ({
                         date: r.date,
@@ -333,12 +354,7 @@ export const usageCommand = new Command("usage")
                 return;
             }
 
-            const limit = Number(opts.limit);
-            if (!Number.isInteger(limit) || limit < 1) {
-                printError("--limit must be a positive integer");
-                throw new ExitSignal(1);
-            }
-            params.set("limit", String(limit));
+            params.set("limit", opts.limit);
             if (keyIds.length > 0) params.set("api_key_ids", keyIds.join(","));
             if (models.length > 0) params.set("models", models.join(","));
             if (opts.csv) params.set("format", "csv");
@@ -348,6 +364,10 @@ export const usageCommand = new Command("usage")
                 return;
             }
             const data = await gen<UsageResponse>(path, { apiKey: key });
+            if (getOutputMode() !== "human") {
+                printResult(data.usage);
+                return;
+            }
             printTable(
                 data.usage.map((r) => ({
                     time: r.timestamp,
@@ -362,9 +382,6 @@ export const usageCommand = new Command("usage")
                 })),
             );
         } catch (err) {
-            printError(
-                `Failed to fetch usage: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            throw new ExitSignal(1);
+            fail("Failed to fetch usage", err);
         }
     });
